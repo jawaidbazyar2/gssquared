@@ -45,7 +45,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug .
 make
 ```
 
-## MacOS
+## macOS
 
 GSSquared will build on both Intel and Apple Silicon Macs.
 
@@ -54,9 +54,7 @@ You will need:
 
 ```
 git clone https://github.com/jawaidbazyar2/gssquared.git
-cd gssquared
-mkdir -p vendored
-cd vendored
+cd gssquared/vendored
 git clone https://github.com/libsdl-org/SDL.git
 git clone https://github.com/libsdl-org/SDL_image.git
 cd ..
