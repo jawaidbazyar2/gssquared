@@ -15,44 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <unistd.h>
-#include <stdint.h>
 #include <string>
 
-//#include "cpu.hpp"
-
-/* Address types */
-typedef uint8_t zpaddr_t;
-typedef uint16_t absaddr_t;
-
-/* Data bus types */
-typedef uint8_t byte_t;
-typedef uint16_t word_t;
-typedef uint8_t opcode_t;
-
-typedef struct gs2_app_t {
-    std::string base_path;
-    std::string pref_path;
-    bool console_mode = false;
-    bool disk_accelerator = false;
-    bool sleep_mode = false;
-} gs2_app_t;
-
-extern gs2_app_t gs2_app_values;
-
-typedef enum {
-    SLOT_NONE = -1,
-    SLOT_0 = 0,
-    SLOT_1 = 1,
-    SLOT_2 = 2,
-    SLOT_3 = 3,
-    SLOT_4 = 4,
-    SLOT_5 = 5,
-    SLOT_6 = 6,
-    SLOT_7 = 7,
-    NUM_SLOTS = 8
-} SlotType_t;
-
-#define MOCKINGBOARD_ENABLED 1
+const std::string& get_base_path(bool console_mode);
+const std::string& get_pref_path(void);

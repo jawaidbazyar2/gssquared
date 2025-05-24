@@ -1249,9 +1249,9 @@ void init_slot_mockingboard(cpu_state *cpu, SlotType_t slot) {
 
 /** Init audio stream for the mockingboard device */
     SDL_AudioSpec spec = {
-        .freq = 44100,
         .format = SDL_AUDIO_F32LE,
-        .channels = 2
+        .channels = 2,
+        .freq = 44100
     };
 
     SDL_AudioStream *stream = SDL_CreateAudioStream(&spec, NULL);

@@ -27,6 +27,7 @@
 #include <SDL3/SDL_main.h>
 
 #include "gs2.hpp"
+#include "paths.hpp"
 #include "cpu.hpp"
 #include "clock.hpp"
 #include "memory.hpp"
@@ -417,7 +418,7 @@ void run_cpus(void) {
         //last_time_window_start = time_window_start;
         last_cycle_window_start = cycle_window_start;
     }
-    cpu->trace_buffer->save_to_file("trace.bin");
+    cpu->trace_buffer->save_to_file(gs2_app_values.pref_path + "trace.bin");
 }
 
 gs2_app_t gs2_app_values;
@@ -439,26 +440,10 @@ int main(int argc, char *argv[]) {
         gs2_app_values.console_mode = true;
     }
 
-/**
- * On a Mac, running as a bundle, the base path is BundlePath/Resources. 
- * Even if the Mac is running it as a cli i.e. debugger 
- * On other platforms, the base path is where the exe lives and we need to add "resources" to it. 
- * */
-
-#ifdef __APPLE__
-    if (gs2_app_values.console_mode) {
-        gs2_app_values.base_path = SDL_GetBasePath();
-        if (gs2_app_values.base_path.ends_with("/Resources/")) {
-            std::cout << "hello" << std::endl;
-        } else gs2_app_values.base_path += "resources/";
-    } else { 
-        gs2_app_values.base_path = SDL_GetBasePath();
-    }
-#else
-    gs2_app_values.base_path = SDL_GetBasePath();
-    gs2_app_values.base_path += "resources/";
-#endif
+    gs2_app_values.base_path = get_base_path(gs2_app_values.console_mode);
     printf("base_path: %s\n", gs2_app_values.base_path.c_str());
+    gs2_app_values.pref_path = get_pref_path();
+    printf("pref_path: %s\n", gs2_app_values.pref_path.c_str());
 
     if (gs2_app_values.console_mode) {
         // parse command line optionss

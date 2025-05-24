@@ -25,7 +25,7 @@
 #include "AssetAtlas.hpp"
 #include "util/dialog.hpp"
 
-AssetAtlas_t::AssetAtlas_t(SDL_Renderer *renderer, char *path, int target_w, int target_h) : renderer(renderer)
+AssetAtlas_t::AssetAtlas_t(SDL_Renderer *renderer, const char *path, int target_w, int target_h) : renderer(renderer)
 {
     elementCount = 1;
     elements = &default_element;

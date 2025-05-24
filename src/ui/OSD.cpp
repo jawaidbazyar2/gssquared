@@ -269,7 +269,7 @@ OSD::OSD(cpu_state *cpu, SDL_Renderer *rendererp, SDL_Window *windowp, SlotManag
     HUD.border_color = 0x000000FF;
     HUD.border_width = 0;
 
-    aa = new AssetAtlas_t(renderer, (char *)"img/atlas.png");
+    aa = new AssetAtlas_t(renderer, "img/atlas.png");
     aa->set_elements(MainAtlas_count, asset_rects);
 
     // Create a container for our drive buttons

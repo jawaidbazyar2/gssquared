@@ -104,6 +104,9 @@ void setupConfig() {
         .height = FRAME_HEIGHT,
         .colorBurst = colorBurst,
         .subcarrier = subcarrier,
+        .videoSaturation = 1.0f,
+        .videoHue = 0.05f,
+        .videoBrightness = 0.0f,
             // Set up filter coefficients based on measured YIQ filter response
         .filterCoefficients = {
             { 0.0f, 0.0f, 0.0f },
@@ -117,9 +120,6 @@ void setupConfig() {
             { 0.0f, 0.0f, 0.0f }
         },
         .decoderOffset = {0.0f, 0.0f, 0.0f}, // TODO: first value should brightness. -1 to +1.
-        .videoSaturation = 1.0f,
-        .videoHue = 0.05f,
-        .videoBrightness = 0.0f
     };
     generatePhaseInfo(/* scanlineY */ 0, colorBurst);
 

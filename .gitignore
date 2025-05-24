@@ -27,3 +27,6 @@ resources/*
 packages/*
 .DS_Store
 6502_65C02_functional_tests/*
+cfg/
+cfg/*
+*.AppImage

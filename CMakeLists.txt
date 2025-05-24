@@ -4,15 +4,16 @@ cmake_minimum_required(VERSION 3.10)
 project(gssquared)
 
 # Accepted settings:
-# BUILD_NATIVE         Set to build (on Mac) for only the current (native) architecture. Otherwise, build for both arm64 and x86_64.
-# DEV_MODE             Set to build for development mode (CLI executable instead of bundle/package)
+# GS2_BUILD_NATIVE     Set to build (on Mac) for only the current (native) architecture. Otherwise, build for both arm64 and x86_64.
+# GS2_PROGRAM_FILES    Set to build a directory of program files (bare executable and files instead of platform-specific format).
+# GS2_BUNDLE_LIBS      Set to bundle libraries with the build.
 # CMAKE_BUILD_TYPE     Release | Debug (default: Release)
 
 # Find Clang compilers before project() is called
 if(NOT WIN32)  # For Unix-like systems (Linux and Mac)
     find_program(CLANG_EXECUTABLE NAMES clang)
     find_program(CLANGPP_EXECUTABLE NAMES clang++)
-    
+
     if(CLANG_EXECUTABLE AND CLANGPP_EXECUTABLE)
         # Only set if not already set in cache
         if(NOT CMAKE_C_COMPILER)
@@ -27,13 +28,22 @@ if(NOT WIN32)  # For Unix-like systems (Linux and Mac)
 endif()
 
 # Define build options and set defaults
-option(BUILD_NATIVE "Build for native architecture only" OFF)
-option(DEV_MODE "Build for development mode (CLI executable instead of bundle)" OFF)
+option(GS2_BUILD_NATIVE "Build for native architecture only" OFF)
+if(WIN32 AND MSVC)
+    set(GS2_PROGRAM_FILES ON CACHE BOOL "Build a directory of program files (bare executable and files instead of bundle/package)" FORCE)
+else()
+    option(GS2_PROGRAM_FILES "Build a directory of program files (bare executable and files instead of bundle/package)" OFF)
+endif()
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT GS2_PROGRAM_FILES)
+    option(GS2_BUNDLE_LIBS "Bundle library dependencies with the build" OFF)
+else()
+    set(GS2_BUNDLE_LIBS ON CACHE BOOL "Bundle library dependencies with the build" FORCE)
+endif()
 
 # Set Apple architecture globally if on Apple platform
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0")
-    if(BUILD_NATIVE)
+    if(GS2_BUILD_NATIVE)
         if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
             set(APPLE_ARCHITECTURE "arm64")
         else()
@@ -78,12 +88,12 @@ add_custom_target(assemble_resources ALL
 
 function(configure_sdl_builds)
     set(BUILD_SHARED_LIBS ON)
-    
+
     # Force SDL to build with the correct SDK
     if(APPLE)
         set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0" CACHE STRING "Deployment target" FORCE)
     endif()
-    
+
     set(SDL_SHARED ON)
     set(SDLTTF_VENDORED ON)
 
@@ -122,7 +132,9 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 add_library(gs2_headers INTERFACE)
 target_include_directories(gs2_headers
-    INTERFACE ${PROJECT_SOURCE_DIR}/src)
+    INTERFACE ${CMAKE_SOURCE_DIR}/src
+    INTERFACE ${CMAKE_BINARY_DIR}/cfg
+)
 
 # all following targets will link to SDL3
 link_libraries(gs2_headers SDL3::SDL3-shared)
@@ -181,6 +193,7 @@ add_executable(GSSquared src/gs2.cpp src/bus.cpp src/clock.cpp src/debug.cpp src
     src/event_poll.cpp
     src/devices.cpp src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
+    src/paths.cpp
     ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns
     )
 
@@ -225,11 +238,11 @@ add_subdirectory(apps/gstrace)
 #### Packaging targets per platform
 ################################################################################
 
-if(APPLE)
-    if(DEV_MODE)
-        # DEV MODE: Build CLI executable, everything goes to build/ directory
-        message(STATUS "Building in DEV_MODE: CLI executable")
-        
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    if(GS2_PROGRAM_FILES)
+        # PROGRAM FILES: Build bare executable, everything goes to build/ directory
+        message(STATUS "Building as PROGRAM FILES: Bare executable and files in one directory")
+
         # Set RPATH for dev mode to look in build/lib
         set_target_properties(GSSquared PROPERTIES
             OUTPUT_NAME "GSSquared"
@@ -237,15 +250,15 @@ if(APPLE)
             BUILD_WITH_INSTALL_RPATH TRUE
             INSTALL_RPATH_USE_LINK_PATH TRUE
         )
-        
+
         # Resources are already set up by assemble_resources target
         # SDL libraries are already in build/lib
         # Executable will be in build/GSSquared
         # This gives you the structure: build/GSSquared, build/lib/, build/resources/
-        
+
     else()
-        # BUNDLE MODE: Build app bundle (current behavior)
-        message(STATUS "Building in BUNDLE_MODE: macOS app bundle")
+        # BUNDLE: Build app bundle (current behavior)
+        message(STATUS "Building as BUNDLE: macOS app bundle")
 
         # now, we always create a bundle, so we don't need to create a custom target for it
         # Add icon file as a resource for macOS bundles
@@ -260,7 +273,7 @@ if(APPLE)
             BUILD_WITH_INSTALL_RPATH TRUE
             INSTALL_RPATH_USE_LINK_PATH TRUE
         )
-        
+
         # Configure CPack
         set(CPACK_GENERATOR "Bundle")
         set(CPACK_BUNDLE_NAME "GSSquared")
@@ -303,7 +316,7 @@ if(APPLE)
         set(CPACK_DMG_VOLUME_NAME "GSSquared")
         set(CPACK_DMG_FORMAT "UDZO")
         set(CPACK_GENERATOR "Bundle;DragNDrop") # This creates both .app and .dmg
-        
+
         include(CPack)
     endif()
 endif()
@@ -329,42 +342,122 @@ if(WIN32)
     )
 endif()
 
-# Linux-packaging targets
-if(UNIX AND NOT APPLE)
-    # Linux-specific configuration here
-    
-    # Find the SDL libraries regardless of their exact filenames
-    file(GLOB SDL3_LIBS "${CMAKE_BINARY_DIR}/lib/libSDL3.so*")
-    file(GLOB SDL3_IMAGE_LIBS "${CMAKE_BINARY_DIR}/lib/libSDL3_image.so*")
-    
-    # Custom target for creating Linux package
-    add_custom_target(packages
-        # Delete contents of any current resources directory
-        COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/resources
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources
+# Non-Apple UNIX-specific configuration here
+if((UNIX OR MINGW) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    if(GS2_PROGRAM_FILES AND LINUX)
+        # TODO: Make this work for MSYS; no more hard-coded Linux stuff
+        # PROGRAM FILES: Build bare executable, everything goes to build/ directory
+        message(STATUS "Building as PROGRAM FILES: Bare executable and files in one directory")
 
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/roms
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/roms ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/roms
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/sounds
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/sounds ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/sounds
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/fonts
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/fonts ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/fonts
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:GSSquared> ${CMAKE_BINARY_DIR}/packages/linux-cli/
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/img
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/atlas.png ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/img/atlas.png
-        # Copy SDL dynamic libraries with correct names
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/linux-cli/lib
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/lib/libSDL3.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/lib/libSDL3_image.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/lib/libSDL3_ttf.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/
-        # Create necessary symlinks
-        COMMAND ${CMAKE_COMMAND} -E create_symlink libSDL3.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/libSDL3.so
-        COMMAND ${CMAKE_COMMAND} -E create_symlink libSDL3_image.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/libSDL3_image.so
-        COMMAND ${CMAKE_COMMAND} -E create_symlink libSDL3_ttf.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/libSDL3_ttf.so
-        # Fix up runtime paths with chrpath
-        COMMAND chrpath -r '$$ORIGIN/lib' ${CMAKE_BINARY_DIR}/packages/linux-cli/gs2
-        COMMAND chrpath -r '$$ORIGIN' ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/libSDL3_image.so.0
-        COMMAND chrpath -r '$$ORIGIN' ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/libSDL3_ttf.so.0
-        DEPENDS GSSquared
-    )
+        # Set RPATH for program files build to look in linux-cli/lib
+        set_target_properties(GSSquared PROPERTIES
+            OUTPUT_NAME "GSSquared"
+            INSTALL_RPATH "$ORIGIN/lib"
+            BUILD_WITH_INSTALL_RPATH TRUE
+            INSTALL_RPATH_USE_LINK_PATH TRUE
+        )
+
+        # Resources are already set up by assemble_resources target
+        # SDL libraries are already in build/lib
+        # Executable will be in build/GSSquared
+        # This gives you the structure: build/GSSquared, build/lib/, build/resources/
+
+        # Find the SDL libraries regardless of their exact filenames
+        file(GLOB SDL3_LIBS "${CMAKE_BINARY_DIR}/lib/libSDL3.so*")
+        file(GLOB SDL3_IMAGE_LIBS "${CMAKE_BINARY_DIR}/lib/libSDL3_image.so*")
+
+        # Custom target for creating Linux package
+        add_custom_target(packages
+            # Delete contents of any current resources directory
+            COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/resources
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources
+
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/roms
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/roms ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/roms
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/sounds
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/sounds ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/sounds
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/fonts
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/fonts ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/fonts
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:GSSquared> ${CMAKE_BINARY_DIR}/packages/linux-cli/
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/img
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/atlas.png ${CMAKE_BINARY_DIR}/packages/linux-cli/resources/img/atlas.png
+            # Copy SDL dynamic libraries with correct names
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/linux-cli/lib
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/lib/libSDL3.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/lib/libSDL3_image.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/lib/libSDL3_ttf.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/
+            # Create necessary symlinks
+            COMMAND ${CMAKE_COMMAND} -E create_symlink libSDL3.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/libSDL3.so
+            COMMAND ${CMAKE_COMMAND} -E create_symlink libSDL3_image.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/libSDL3_image.so
+            COMMAND ${CMAKE_COMMAND} -E create_symlink libSDL3_ttf.so.0 ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/libSDL3_ttf.so
+            # Fix up runtime paths with chrpath
+            COMMAND chrpath -r '$$ORIGIN/lib' ${CMAKE_BINARY_DIR}/packages/linux-cli/GSSquared
+            COMMAND chrpath -r '$$ORIGIN' ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/libSDL3_image.so.0
+            COMMAND chrpath -r '$$ORIGIN' ${CMAKE_BINARY_DIR}/packages/linux-cli/lib/libSDL3_ttf.so.0
+            DEPENDS GSSquared
+        )
+    else()
+        # GNU INSTALL DIRS: Install files per the GNU installation directories layout
+        # Used for both installing into the system (package managers) and AppDir
+        message(STATUS "Building as GNU INSTALL DIRS: GNU standard filesystem layout")
+
+        set(GS2_GNU_INSTALL_DIRS ON)
+        include(GNUInstallDirs)
+        set(GS2_INSTALL_DATADIR "${CMAKE_INSTALL_DATADIR}/GSSquared")
+        install(TARGETS GSSquared
+            TYPE RUNTIME
+            COMPONENT Runtime
+        )
+        set_target_properties(GSSquared PROPERTIES
+            OUTPUT_NAME "GSSquared"
+        )
+        if(GS2_BUNDLE_LIBS)
+            install(TARGETS 
+                SDL3-shared 
+                SDL3_image-shared 
+                SDL3_ttf-shared
+                TYPE LIBRARY
+                COMPONENT Runtime
+            )
+            set_target_properties(GSSquared PROPERTIES
+                INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
+                BUILD_WITH_INSTALL_RPATH TRUE
+                INSTALL_RPATH_USE_LINK_PATH TRUE
+            )
+        else()
+            set_target_properties(GSSquared PROPERTIES
+                INSTALL_RPATH "${CMAKE_BINARY_DIR}/lib"
+            )
+        endif()
+        install(DIRECTORY roms
+            DESTINATION "${GS2_INSTALL_DATADIR}"
+            COMPONENT Runtime
+        )
+        install(DIRECTORY assets/sounds
+            DESTINATION "${GS2_INSTALL_DATADIR}"
+            COMPONENT Runtime
+        )
+        install(DIRECTORY assets/fonts
+            DESTINATION "${GS2_INSTALL_DATADIR}"
+            COMPONENT Runtime
+        )
+        install(FILES assets/img/atlas.png
+            DESTINATION "${GS2_INSTALL_DATADIR}/img"
+            COMPONENT Runtime
+        )
+        if(LINUX)
+            # The files here are only used by Linux, not other platforms
+            # These are also required for AppDirs, when producing AppImage
+            install(FILES assets/img/GSSquared.svg
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps"
+                COMPONENT Runtime
+            )
+            install(FILES assets/GSSquared.desktop
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+                COMPONENT Runtime
+            )
+        endif()
+    endif()
 endif()
+
+configure_file(src/build_config.hpp.in "${CMAKE_BINARY_DIR}/cfg/build_config.hpp" @ONLY)

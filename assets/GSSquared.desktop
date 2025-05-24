@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=GSSquared
+Icon=GSSquared
+Comment=A complete Apple II series emulator
+Exec=GSSquared
+GenericName=GSSquared
+Categories=Game
+Terminal=false

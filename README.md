@@ -61,7 +61,7 @@ git submodule update --init --recursive
 If you just want to do a standard build that will result in a Mac App Bundle,
 
 ```
-cmake -DDEV_MODE=OFF  -DCMAKE_BUILD_TYPE=Release -S . -B build
+cmake -DGS2_PROGRAM_FILES=OFF  -DCMAKE_BUILD_TYPE=Release -S . -B build
 cmake --build build
 cmake --install build
 ```
@@ -78,17 +78,17 @@ cmake --build build --target package
 
 The app bundle and .dmg file are built into the packages/ directory.
 
-### Mac DEV Mode
+### Mac PROGRAM FILES Mode
 
-DEV Mode will just build executable into build/ (named GSSquared) suitable for execution from the command-line.
+PROGRAM FILES Mode will just build executable into build/ (named GSSquared) suitable for execution from the command-line.
 
 ```
-cmake -DDEV_MODE=ON  -DCMAKE_BUILD_TYPE=Release -S . -B build
+cmake -DGS2_PROGRAM_FILES=ON  -DCMAKE_BUILD_TYPE=Release -S . -B build
 cmake --build build
 build/GSSquared
 ```
 
-You may also use -DCMAKE_BUILD_TYPE=Debug , which will disable optimizations, and include debugger symbols in the result.
+You may also use -DCMAKE\_BUILD\_TYPE=Debug , which will disable optimizations, and include debugger symbols in the result.
 
 ### Mac Architecture
 
@@ -118,6 +118,16 @@ mkdir build
 cmake -DCMAKE_BUILD_TYPE=Release -S . -B build
 cmake --build build
 ```
+
+Alternatively, build in the "GNU install directories" style:
+```
+cmake -DCMAKE_BUILD_TYPE=Release -DGS2_PROGRAM_FILES=OFF -S . -B build
+cmake --build build
+cmake --install build
+```
+Now you should be able to run gs2 at command line anywhere via a `GSSquared`
+command, and it should also be available as an application from your
+applications list.
 
 ### Linux App Distribution
 

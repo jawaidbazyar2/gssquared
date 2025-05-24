@@ -62,7 +62,7 @@ public:
      * @param target_h Optional target height for scaling (0 for no scaling)
      * @throws std::runtime_error if image loading fails
      */
-    AssetAtlas_t(SDL_Renderer *renderer, char *path, int target_w = 0, int target_h = 0);
+    AssetAtlas_t(SDL_Renderer *renderer, const char *path, int target_w = 0, int target_h = 0);
 
     /**
      * @brief Destroys the asset atlas and frees associated resources.
