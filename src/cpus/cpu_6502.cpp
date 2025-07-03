@@ -14,30 +14,16 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+ 
+ #include "cpu_traits.hpp"
+ #include "base_6502.cpp"  // Include the template implementation
+ #include <memory>
 
-#include <iostream>
-#include <cstdio>
-#include <unistd.h>
-#include <sstream>
-#include <iomanip>
-#include <time.h>
-/* #include <mach/mach_time.h> */
-#include <getopt.h>
+class CPU6502 : public CPU6502Core<CPU6502Traits> {
+    // 6502-specific overrides if needed
+};
 
-#include "gs2.hpp"
-#include "cpu.hpp"
-#include "clock.hpp"
-#include "opcodes.hpp"
-#include "debug.hpp"
-
-#define CPU_6502
-
-// 6502-specific wrapper
-
-#include "core_6502.hpp"
-
-namespace cpu_6502 {
-
-#include "core_6502.cpp"
-
+// Factory function for creating 6502 instances
+std::unique_ptr<BaseCPU> create6502() {
+    return std::make_unique<CPU6502>();
 }

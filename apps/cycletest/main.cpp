@@ -23,7 +23,8 @@
 #include <SDL3/SDL.h>
 
 #include "gs2.hpp"
-#include "cpu.hpp"
+//#include "cpu.hpp"
+#include "cpus/cpu_implementations.cpp"
 #include "mmus/mmu.hpp"
 
 gs2_app_t gs2_app_inues;
@@ -1268,10 +1269,10 @@ test_record test_records[] = {
 
 int test_records_count = sizeof(test_records) / sizeof(test_records[0]);
 
-bool test_instruction(cpu_state *cpu, test_record *testrec) {
+bool test_instruction(std::unique_ptr<BaseCPU> &cpux, cpu_state *cpu, test_record *testrec) {
     uint64_t start_cycles = cpu->cycles;
 
-    (cpu->execute_next)(cpu);
+    (cpux->execute_next)(cpu);
     uint64_t elapsed = cpu->cycles - start_cycles;
     //printf("Instruction %04X took %llu cycles\n", testrec->operation.op[0], elapsed);
     uint64_t expected_cycles = testrec->expected_cycles;
@@ -1307,7 +1308,9 @@ int main(int argc, char **argv) {
     }
 
     cpu_state *cpu = new cpu_state();
-    cpu->set_processor(PROCESSOR_6502);
+    //cpu->set_processor(PROCESSOR_6502);
+    std::unique_ptr<BaseCPU> cpux = createCPU("6502");
+
     //cpu->init();
     cpu->trace = trace_on;
     cpu->set_mmu(mmu);
@@ -1335,7 +1338,7 @@ int main(int argc, char **argv) {
         mmu->write(0x1001, test_records[i].operation.op[1]);
         mmu->write(0x1002, test_records[i].operation.op[2]);
 
-        bool result = test_instruction(cpu, &test_records[i]);
+        bool result = test_instruction(cpux, cpu, &test_records[i]);
         char * trace_entry = cpu->trace_buffer->decode_trace_entry(&cpu->trace_entry);
         // trim the start (cycles always 0 is not informative)
         trace_entry[90] = '\0';

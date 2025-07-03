@@ -24,7 +24,7 @@ The ambition for this project is large - and it will take a while to get it done
 | Apple II  | ✅ |
 | Apple II+ | ✅ |
 | Apple II j-plus | ❌ |
-| Apple IIe | ❌ |
+| Apple IIe | ✅ |
 | Apple IIe (enh) | ❌ |
 | Apple IIc | ❌ |
 | Apple IIc+ | ❌ |

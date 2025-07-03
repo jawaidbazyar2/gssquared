@@ -23,7 +23,8 @@
 #include <SDL3/SDL.h>
 
 #include "gs2.hpp"
-#include "cpu.hpp"
+//#include "cpu.hpp"
+#include "cpus/cpu_implementations.cpp"
 #include "mmus/mmu.hpp"
 #include "util/ResourceFile.hpp"
 
@@ -77,9 +78,10 @@ int main(int argc, char **argv) {
         mmu->write(i, rom_data[i]);
     }
 
+    std::unique_ptr<BaseCPU> cpux = createCPU("6502");
+
     cpu_state *cpu = new cpu_state();
-    cpu->set_processor(PROCESSOR_6502);
-    //cpu->init();
+    //cpu->set_processor(PROCESSOR_6502);
     cpu->trace = trace_on;
     cpu->set_mmu(mmu);
 
@@ -87,7 +89,7 @@ int main(int argc, char **argv) {
     
     while (1) {
         uint16_t opc = cpu->pc;
-        (cpu->execute_next)(cpu);
+        (cpux->execute_next)(cpu);
 
         if (trace_on) {
                 char * trace_entry = cpu->trace_buffer->decode_trace_entry(&cpu->trace_entry);

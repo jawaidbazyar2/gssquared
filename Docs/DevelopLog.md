@@ -5096,3 +5096,9 @@ On IIe, what we have is this in the alt character set: 0-1f inverse uppercase le
 40-5f: inverse uppercase letters, 
 
 So what we need is a character map that is built, depending on character mode. ok, see Apple IIe Doc.
+
+## Jul 3, 2025
+
+ok I have a new template-based CPU implementation. It's all the same internal code, just wrapped up differently. First, it's a class. Claudio made a README.md for it. Short version, it uses template features and passing in static const "variables" that are resolved at compile-time when the 
+
+Ideally, I move all the cpu_struct stuff into it so it has "local" access to all the registers. However, that would be a ginormous lift. Push that change until sometime later.

@@ -233,6 +233,8 @@ add_library(gs2_mmu src/mmus/mmu.cpp src/mmus/mmu_ii.cpp src/mmus/mmu_iie.cpp)
 #add_library(gs2_cpu src/cpus/cpu_6502.cpp src/cpus/cpu_65c02.cpp src/cpu.cpp )
 add_library(gs2_cpu src/cpus/core_6502.cpp src/cpu.cpp )
 
+add_library(gs2_cpu_new src/cpus/cpu_implementations.cpp src/cpus/cpu_6502.cpp src/cpus/cpu_65c02.cpp)
+
 add_library(gs2_computer src/computer.cpp )
 
 add_library(gs2_event_dispatcher src/util/EventDispatcher.cpp )
