@@ -12,20 +12,24 @@ public:
 // cpu_traits.hpp
 struct CPU6502Traits {
     static constexpr bool has_indirect_bug = true;
-    static constexpr bool has_stz = false;
-    static constexpr bool has_zp_indirect = false;
-    static constexpr bool has_bra = false;
-    static constexpr bool has_phx_phy = false;
-    static constexpr bool has_inc_dec_acc = false;
-    static constexpr bool has_tsb_trb = false;
+    static constexpr bool has_65c02_ops = false;
+    static constexpr bool has_bbr_bbs = false;
 };
 
 struct CPU65C02Traits {
     static constexpr bool has_indirect_bug = false;
-    static constexpr bool has_stz = true;
-    static constexpr bool has_zp_indirect = true;
-    static constexpr bool has_bra = true;
-    static constexpr bool has_phx_phy = true;
-    static constexpr bool has_inc_dec_acc = true;
-    static constexpr bool has_tsb_trb = true;
+    static constexpr bool has_65c02_ops = true;
+    static constexpr bool has_bbr_bbs = false;
+};
+
+struct CPUR65C02Traits {
+    static constexpr bool has_indirect_bug = false;
+    static constexpr bool has_65c02_ops = true;
+    static constexpr bool has_bbr_bbs = true;
+};
+
+struct CPUWDC65C02Traits {
+    static constexpr bool has_indirect_bug = false;
+    static constexpr bool has_65c02_ops = true;
+    static constexpr bool has_bbr_bbs = true;
 };

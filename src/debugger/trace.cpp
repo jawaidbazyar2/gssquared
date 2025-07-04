@@ -72,9 +72,9 @@
 #define TB_PC 36
 #define TB_OPBYTES 42
 #define TB_OPCODE 54
-#define TB_OPERAND 58
-#define TB_OPERAND2 60
-#define TB_OPERAND3 62
+#define TB_OPERAND 59
+#define TB_OPERAND2 61
+#define TB_OPERAND3 63
 #define TB_EADDR 71
 #define TB_DATA 76
 
@@ -111,7 +111,7 @@
             decode_hex_byte(buffer + TB_OPBYTES + 6, (entry->operand >> 8) & 0xFF);
         }
 
-        if (opcode_name) memcpy(buffer + TB_OPCODE, opcode_name, 3);
+        if (opcode_name) memcpy(buffer + TB_OPCODE, opcode_name, strlen(opcode_name));
         else memcpy(buffer + TB_OPCODE, "???", 3);
 
         switch (da->mode) {
@@ -126,11 +126,13 @@
             case ABS:
             case ABS_X:
             case ABS_Y:
+            case ABS_IND_X: // 65c02
             case IMM:
             case INDIR:
             case INDEX_INDIR:
             case INDIR_INDEX:
             case ZP:
+            case ZP_IND: // 65c02
             case ZP_X:
             case ZP_Y:
                 snprintf(snpbuf, snpbuf_size, am->format, entry->operand);

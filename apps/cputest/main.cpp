@@ -69,7 +69,21 @@ int main(int argc, char **argv) {
         mmu->map_page_both(i, &memory[i*256], "TEST RAM");
     }
 
-    ResourceFile *rom = new ResourceFile("6502_functional_test.bin", READ_ONLY);
+    int cputype = 0;
+    if (argc >= 2) {
+        cputype = atoi(argv[1]);
+    }
+
+    ResourceFile *rom;
+    
+    if (cputype == 0) {
+        rom = new ResourceFile("6502_functional_test.bin", READ_ONLY);
+    } else if (cputype == 1) {
+        rom = new ResourceFile("65C02_extended_opcodes_test.bin", READ_ONLY);
+    } else {
+        printf("Invalid CPU type\n");
+        return 1;
+    }
     rom->load();
     uint8_t *rom_data = rom->get_data();
     int rom_size = rom->size();
@@ -78,7 +92,11 @@ int main(int argc, char **argv) {
         mmu->write(i, rom_data[i]);
     }
 
-    std::unique_ptr<BaseCPU> cpux = createCPU("6502");
+    std::unique_ptr<BaseCPU> cpux = createCPU(cputype == 1? "65C02" : "6502");
+    if (!cpux) {
+        printf("Failed to create CPU\n");
+        return 1;
+    }
 
     cpu_state *cpu = new cpu_state();
     //cpu->set_processor(PROCESSOR_6502);
@@ -107,7 +125,7 @@ int main(int argc, char **argv) {
     printf("Average 'cycle' time: %f ns\n", (double)duration / (double) cpu->cycles);
     printf("Effective MHz: %f\n", 1'000'000'000 / ((double)duration / (double) cpu->cycles) / 1000000);
 
-    if (cpu->pc == 0x3469) {
+    if (cpu->pc == 0x3469 || cpu->pc == 0x23BC) {
         printf("Test passed!\n");
     } else {
         printf("Test failed!\n");

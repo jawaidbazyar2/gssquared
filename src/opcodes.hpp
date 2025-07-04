@@ -265,4 +265,89 @@
 
 #define OP_HLT_IMP 0xFF
 
+#define OP_INOP_02 0x02
+#define OP_INOP_22 0x22
+#define OP_INOP_42 0x42
+#define OP_INOP_62 0x62
+#define OP_INOP_82 0x82
+#define OP_INOP_C2 0xC2
+#define OP_INOP_E2 0xE2
+
+#define OP_INOP_03 0x03
+#define OP_INOP_13 0x13
+#define OP_INOP_23 0x23
+#define OP_INOP_33 0x33
+#define OP_INOP_43 0x43
+#define OP_INOP_53 0x53
+#define OP_INOP_63 0x63
+#define OP_INOP_73 0x73
+#define OP_INOP_83 0x83
+#define OP_INOP_93 0x93
+#define OP_INOP_A3 0xA3
+#define OP_INOP_B3 0xB3
+#define OP_INOP_C3 0xC3
+#define OP_INOP_D3 0xD3
+#define OP_INOP_E3 0xE3
+#define OP_INOP_F3 0xF3
+
+#define OP_INOP_44 0x44
+#define OP_INOP_54 0x54
+#define OP_INOP_D4 0xD4
+#define OP_INOP_F4 0xF4
+
+#define OP_INOP_07 0x07
+#define OP_INOP_17 0x17
+#define OP_INOP_27 0x27
+#define OP_INOP_37 0x37
+#define OP_INOP_47 0x47
+#define OP_INOP_57 0x57
+#define OP_INOP_67 0x67
+#define OP_INOP_77 0x77
+#define OP_INOP_87 0x87
+#define OP_INOP_97 0x97
+#define OP_INOP_A7 0xA7
+#define OP_INOP_B7 0xB7
+#define OP_INOP_C7 0xC7
+#define OP_INOP_D7 0xD7
+#define OP_INOP_E7 0xE7
+#define OP_INOP_F7 0xF7
+
+#define OP_INOP_0B 0x0B
+#define OP_INOP_1B 0x1B
+#define OP_INOP_2B 0x2B
+#define OP_INOP_3B 0x3B
+#define OP_INOP_4B 0x4B
+#define OP_INOP_5B 0x5B
+#define OP_INOP_6B 0x6B
+#define OP_INOP_7B 0x7B
+#define OP_INOP_8B 0x8B
+#define OP_INOP_9B 0x9B
+#define OP_INOP_AB 0xAB
+#define OP_INOP_BB 0xBB
+#define OP_INOP_CB 0xCB
+#define OP_INOP_DB 0xDB
+#define OP_INOP_EB 0xEB
+#define OP_INOP_FB 0xFB
+
+#define OP_INOP_5C 0x5C
+#define OP_INOP_DC 0xDC
+#define OP_INOP_FC 0xFC
+
+#define OP_INOP_0F 0x0F
+#define OP_INOP_1F 0x1F
+#define OP_INOP_2F 0x2F
+#define OP_INOP_3F 0x3F
+#define OP_INOP_4F 0x4F
+#define OP_INOP_5F 0x5F
+#define OP_INOP_6F 0x6F
+#define OP_INOP_7F 0x7F
+#define OP_INOP_8F 0x8F
+#define OP_INOP_9F 0x9F
+#define OP_INOP_AF 0xAF
+#define OP_INOP_BF 0xBF
+#define OP_INOP_CF 0xCF
+#define OP_INOP_DF 0xDF
+#define OP_INOP_EF 0xEF
+#define OP_INOP_FF 0xFF
+
 const char *get_opcode_name(uint8_t);

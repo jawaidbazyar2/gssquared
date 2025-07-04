@@ -32,264 +32,266 @@ const address_mode_entry address_mode_formats[] = {
     { "$%02X", 2 },
     { "$%02X,X", 2 },
     { "$%02X,Y", 2 },
+    { "($%04X,X)", 3},
+    { "($%02X)", 2}
 };
 
 const disasm_entry disasm_table[256] = { 
-    { "BRK", IMP },  /* 00 */
-    { "ORA", INDEX_INDIR }, /* 01 */
-    { NULL, NONE }, /* 02 */
-    { NULL, NONE }, /* 03 */
-    { NULL, NONE }, /* 04 */
-    { "ORA", ZP }, /* 05 */
-    { "ASL", ZP }, /* 06 */
-    { NULL, NONE }, /* 07 */
-    { "PHP", IMP }, /* 08 */
-    { "ORA", IMM }, /* 09 */
-    { "ASL", ACC }, /* 0a */
-    { NULL, NONE }, /* 0b */
-    { NULL, NONE }, /* 0c */
-    { "ORA", ABS }, /* 0d */
-    { "ASL", ABS }, /* 0e */
-    { NULL, NONE }, /* 0f */
-    { "BPL", REL }, /* 10 */
-    { "ORA", INDEX_INDIR }, /* 11 */
-    { NULL, NONE }, /* 12 */
-    { NULL, NONE }, /* 13 */
-    { NULL, NONE }, /* 14 */
-    { "ORA", ZP_X }, /* 15 */
-    { "ASL", ZP_X }, /* 16 */
-    { NULL, NONE }, /* 17 */
-    { "CLC", IMP }, /* 18 */
-    { "ORA", ABS_Y }, /* 19 */
-    { NULL, NONE }, /* 1a */
-    { NULL, NONE }, /* 1b */
-    { NULL, NONE }, /* 1c */
-    { "ORA", ABS_X }, /* 1d */
-    { "ASL", ABS_X }, /* 1e */
-    { NULL, NONE }, /* 1f */
-    { "JSR", ABS }, /* 20 */
-    { "AND", INDEX_INDIR }, /* 21 */
-    { NULL, NONE }, /* 22 */
-    { NULL, NONE }, /* 23 */
-    { "BIT", ZP }, /* 24 */
-    { "AND", ZP }, /* 25 */
-    { "ROL", ZP }, /* 26 */
-    { NULL, NONE }, /* 27 */
-    { "PLP", IMP }, /* 28 */
-    { "AND", IMM }, /* 29 */
-    { "ROL", ACC }, /* 2a */
-    { NULL, NONE }, /* 2b */
-    { "BIT", ABS }, /* 2c */
-    { "AND", ABS }, /* 2d */
-    { "ROL", ABS }, /* 2e */
-    { NULL, NONE }, /* 2f */
-    { "BMI", REL }, /* 30 */
-    { "AND", INDIR_INDEX }, /* 31 */
-    { NULL, NONE }, /* 32 */
-    { NULL, NONE }, /* 33 */
-    { NULL, NONE }, /* 34 */
-    { "AND", ZP_X }, /* 35 */
-    { "ROL", ZP_X }, /* 36 */
-    { NULL, NONE }, /* 37 */
-    { "SEC", IMP }, /* 38 */
-    { "AND", ABS_Y }, /* 39 */
-    { NULL, NONE }, /* 3a */
-    { NULL, NONE }, /* 3b */
-    { NULL, NONE }, /* 3c */
-    { "AND", ABS_X }, /* 3d */
-    { "ROL", ABS_X }, /* 3e */
-    { NULL, NONE }, /* 3f */
-    { "RTI", IMP }, /* 40 */
-    { "EOR", INDEX_INDIR }, /* 41 */
-    { NULL, NONE }, /* 42 */
-    { NULL, NONE }, /* 43 */
-    { NULL, NONE }, /* 44 */
-    { "EOR", ZP }, /* 45 */
-    { "LSR", ZP }, /* 46 */
-    { NULL, NONE }, /* 47 */
-    { "PHA", IMP }, /* 48 */
-    { "EOR", IMM }, /* 49 */
-    { "LSR", ACC }, /* 4a */
-    { NULL, NONE }, /* 4b */
-    { "JMP", ABS }, /* 4c */
-    { "EOR", ABS }, /* 4d */
-    { "LSR", ABS }, /* 4e */
-    { NULL, NONE }, /* 4f */
-    { "BVC", REL }, /* 50 */
-    { "EOR", INDIR_INDEX }, /* 51 */
-    { NULL, NONE }, /* 52 */
-    { NULL, NONE }, /* 53 */
-    { NULL, NONE }, /* 54 */
-    { "EOR", ZP_X }, /* 55 */
-    { "LSR", ZP_X }, /* 56 */
-    { NULL, NONE }, /* 57 */
-    { "CLI", IMP }, /* 58 */
-    { "EOR", ABS_Y }, /* 59 */
-    { NULL, NONE }, /* 5a */
-    { NULL, NONE }, /* 5b */
-    { NULL, NONE }, /* 5c */
-    { "EOR", ABS_X }, /* 5d */
-    { "LSR", ABS_X }, /* 5e */
-    { NULL, NONE }, /* 5f */
-    { "RTS", IMP }, /* 60 */
-    { "ADC", INDEX_INDIR }, /* 61 */
-    { NULL, NONE }, /* 62 */
-    { NULL, NONE }, /* 63 */
-    { NULL, NONE }, /* 64 */
-    { "ADC", ZP }, /* 65 */
-    { "ROR", ZP }, /* 66 */
-    { NULL, NONE }, /* 67 */
-    { "PLA", IMP }, /* 68 */
-    { "ADC", IMM }, /* 69 */
-    { "ROR", ACC }, /* 6a */
-    { NULL, NONE }, /* 6b */
-    { "JMP", INDIR }, /* 6c */
-    { "ADC", ABS }, /* 6d */
-    { "ROR", ABS }, /* 6e */
-    { NULL, NONE }, /* 6f */
-    { "BVS", REL }, /* 70 */
-    { "ADC", INDIR_INDEX }, /* 71 */
-    { NULL, NONE }, /* 72 */
-    { NULL, NONE }, /* 73 */
-    { NULL, NONE }, /* 74 */
-    { "ADC", ZP_X }, /* 75 */
-    { "ROR", ZP_X }, /* 76 */
-    { NULL, NONE }, /* 77 */
-    { "SEI", IMP }, /* 78 */
-    { "ADC", ABS_Y }, /* 79 */
-    { NULL, NONE }, /* 7a */
-    { NULL, NONE }, /* 7b */
-    { NULL, NONE }, /* 7c */
-    { "ADC", ABS_X }, /* 7d */
-    { "ROR", ABS_X }, /* 7e */
-    { NULL, NONE }, /* 7f */
-    { NULL, NONE }, /* 80 */
-    { "STA", INDEX_INDIR }, /* 81 */
-    { NULL, NONE }, /* 82 */
-    { NULL, NONE }, /* 83 */
-    { "STY", ZP }, /* 84 */
-    { "STA", ZP }, /* 85 */
-    { "STX", ZP }, /* 86 */
-    { NULL, NONE }, /* 87 */
-    { "DEY", IMP }, /* 88 */
-    { NULL, NONE }, /* 89 */
-    { "TXA", IMP }, /* 8a */
-    { NULL, NONE }, /* 8b */
-    { "STY", ABS }, /* 8c */
-    { "STA", ABS }, /* 8d */
-    { "STX", ABS }, /* 8e */
-    { NULL, NONE }, /* 8f */
-    { "BCC", REL }, /* 90 */
-    { "STA", INDIR_INDEX}, /* 91 */
-    { NULL, NONE }, /* 92 */
-    { NULL, NONE }, /* 93 */
-    { "STY", ZP_X }, /* 94 */
-    { "STA", ZP_X }, /* 95 */
-    { "STX", ZP_Y }, /* 96 */
-    { NULL, NONE }, /* 97 */
-    { "TYA", IMP }, /* 98 */
-    { "STA", ABS_Y }, /* 99 */
-    { "TXS", IMP }, /* 9a */
-    { NULL, NONE }, /* 9b */
-    { NULL, NONE }, /* 9c */
-    { "STA", ABS_X }, /* 9d */
-    { NULL, NONE }, /* 9e */
-    { NULL, NONE }, /* 9f */
-    { "LDY", IMM }, /* a0 */
-    { "LDA", INDEX_INDIR }, /* a1 */
-    { "LDX", IMM }, /* a2 */
-    { NULL, NONE }, /* a3 */
-    { "LDY", ZP }, /* a4 */
-    { "LDA", ZP }, /* a5 */
-    { "LDX", ZP }, /* a6 */
-    { NULL, NONE }, /* a7 */
-    { "TAY", IMP }, /* a8 */
-    { "LDA", IMM }, /* a9 */
-    { "TAX", IMP }, /* aa */
-    { NULL, NONE }, /* ab */
-    { "LDY", ABS }, /* ac */
-    { "LDA", ABS }, /* ad */
-    { "LDX", ABS }, /* ae */
-    { NULL, NONE }, /* af */
-    { "BCS", REL }, /* b0 */
-    { "LDA", INDIR_INDEX }, /* b1 */
-    { NULL, NONE }, /* b2 */
-    { NULL, NONE }, /* b3 */
-    { "LDY", ZP_X }, /* b4 */
-    { "LDA", ZP_X }, /* b5 */
-    { "LDX", ZP_Y }, /* b6 */
-    { NULL, NONE }, /* b7 */
-    { "CLV", IMP }, /* b8 */
-    { "LDA", ABS_Y }, /* b9 */
-    { "TSX", IMP }, /* ba */
-    { NULL, NONE }, /* bb */
-    { "LDY", ABS_X }, /* bc */
-    { "LDA", ABS_X }, /* bd */
-    { "LDX", ABS_Y }, /* be */
-    { NULL, NONE }, /* bf */
-    { "CPY", IMM }, /* c0 */
-    { "CMP", INDEX_INDIR }, /* c1 */
-    { NULL, NONE }, /* c2 */
-    { NULL, NONE }, /* c3 */
-    { "CPY", ZP }, /* c4 */
-    { "CMP", ZP }, /* c5 */
-    { "DEC", ZP }, /* c6 */
-    { NULL, NONE }, /* c7 */
-    { "INY", IMP }, /* c8 */
-    { "CMP", IMM }, /* c9 */
-    { "DEX", IMP }, /* ca */
-    { NULL, NONE }, /* cb */
-    { "CPY", ABS }, /* cc */
-    { "CMP", ABS }, /* cd */
-    { "DEC", ABS }, /* ce */
-    { NULL, NONE }, /* cf */
-    { "BNE", REL }, /* d0 */
-    { "CMP", INDIR_INDEX }, /* d1 */
-    { NULL, NONE }, /* d2 */
-    { NULL, NONE }, /* d3 */
-    { NULL, NONE }, /* d4 */
-    { "CMP", ZP_X }, /* d5 */
-    { "DEC", ZP_X }, /* d6 */
-    { NULL, NONE }, /* d7 */
-    { "CLD", IMP }, /* d8 */
-    { "CMP", ABS_Y }, /* d9 */
-    { NULL, NONE }, /* da */
-    { NULL, NONE }, /* db */
-    { NULL, NONE }, /* dc */
-    { "CMP", ABS_X }, /* dd */
-    { "DEC", ABS_X }, /* de */
-    { NULL, NONE }, /* df */
-    { "CPX", IMM }, /* e0 */
-    { "SBC", INDEX_INDIR }, /* e1 */
-    { NULL, NONE }, /* e2 */
-    { NULL, NONE }, /* e3 */
-    { "CPX", ZP }, /* e4 */
-    { "SBC", ZP }, /* e5 */
-    { "INC", ZP }, /* e6 */
-    { NULL, NONE }, /* e7 */
-    { "INX", IMP }, /* e8 */
-    { "SBC", IMM }, /* e9 */
-    { "NOP", IMP }, /* ea */
-    { NULL, NONE }, /* eb */
-    { "CPX", ABS }, /* ec */
-    { "SBC", ABS }, /* ed */
-    { "INC", ABS }, /* ee */
-    { NULL, NONE }, /* ef */
-    { "BEQ", REL }, /* f0 */
-    { "SBC", INDIR_INDEX }, /* f1 */
-    { NULL, NONE }, /* f2 */
-    { NULL, NONE }, /* f3 */
-    { NULL, NONE }, /* f4 */
-    { "SBC", ZP_X }, /* f5 */
-    { "INC", ZP_X }, /* f6 */
-    { NULL, NONE }, /* f7 */
-    { "SED", IMP }, /* f8 */
-    { "SBC", ABS_Y }, /* f9 */
-    { NULL, NONE }, /* fa */
-    { NULL, NONE }, /* fb */
-    { NULL, NONE }, /* fc */
-    { "SBC", ABS_X }, /* fd */
-    { "INC", ABS_X }, /* fe */
-    { NULL, NONE }, /* ff */
+    { "BRK", IMP, CPU_ALL },  /* 00 */
+    { "ORA", INDEX_INDIR, CPU_ALL }, /* 01 */
+    { NULL,  NONE, CPU_ALL }, /* 02 */
+    { NULL,  NONE, CPU_ALL }, /* 03 */
+    { "TSB",  ZP, CPU_65C02 }, /* 04 */
+    { "ORA", ZP, CPU_ALL }, /* 05 */
+    { "ASL", ZP, CPU_ALL }, /* 06 */
+    { NULL,  NONE, CPU_ALL }, /* 07 */
+    { "PHP", IMP, CPU_ALL }, /* 08 */
+    { "ORA", IMM, CPU_ALL }, /* 09 */
+    { "ASL", ACC, CPU_ALL }, /* 0a */
+    { NULL,  NONE, CPU_ALL }, /* 0b */
+    { "TSB", ABS, CPU_65C02 }, /* 0c */
+    { "ORA", ABS, CPU_ALL }, /* 0d */
+    { "ASL", ABS, CPU_ALL }, /* 0e */
+    { "BBR0", REL, CPU_65C02 }, /* 0f */
+    { "BPL", REL, CPU_ALL }, /* 10 */
+    { "ORA", INDEX_INDIR, CPU_ALL }, /* 11 */
+    { "ORA", ZP_IND, CPU_65C02 }, /* 12 */
+    { NULL,  NONE, CPU_ALL }, /* 13 */
+    { "TRB",  ZP, CPU_65C02 }, /* 14 */
+    { "ORA", ZP_X, CPU_ALL }, /* 15 */
+    { "ASL", ZP_X, CPU_ALL }, /* 16 */
+    { NULL,  NONE, CPU_ALL }, /* 17 */
+    { "CLC", IMP, CPU_ALL }, /* 18 */
+    { "ORA", ABS_Y, CPU_ALL }, /* 19 */
+    { "INA",  IMP, CPU_65C02 }, /* 1a */
+    { NULL,  NONE, CPU_ALL }, /* 1b */
+    { "TRB", ABS, CPU_65C02 }, /* 1c */
+    { "ORA", ABS_X, CPU_ALL }, /* 1d */
+    { "ASL", ABS_X, CPU_ALL }, /* 1e */
+    { "BBR1", REL, CPU_65C02 }, /* 1f */
+    { "JSR", ABS, CPU_ALL }, /* 20 */
+    { "AND", INDEX_INDIR, CPU_ALL }, /* 21 */
+    { NULL,  NONE, CPU_ALL }, /* 22 */
+    { NULL,  NONE, CPU_ALL }, /* 23 */
+    { "BIT", ZP, CPU_ALL }, /* 24 */
+    { "AND", ZP, CPU_ALL }, /* 25 */
+    { "ROL", ZP , CPU_ALL}, /* 26 */
+    { NULL,  NONE, CPU_ALL }, /* 27 */
+    { "PLP", IMP, CPU_ALL }, /* 28 */
+    { "AND", IMM , CPU_ALL}, /* 29 */
+    { "ROL", ACC, CPU_ALL }, /* 2a */
+    { NULL,  NONE, CPU_ALL }, /* 2b */
+    { "BIT", ABS, CPU_ALL }, /* 2c */
+    { "AND", ABS, CPU_ALL }, /* 2d */
+    { "ROL", ABS, CPU_ALL }, /* 2e */
+    { "BBR2", REL, CPU_65C02 }, /* 2f */
+    { "BMI", REL, CPU_ALL }, /* 30 */
+    { "AND", INDIR_INDEX, CPU_ALL }, /* 31 */
+    { "AND", ZP_IND, CPU_65C02 }, /* 32 */
+    { NULL,  NONE, CPU_ALL }, /* 33 */
+    { "BIT", ZP_X, CPU_65C02 }, /* 34 */
+    { "AND", ZP_X, CPU_ALL }, /* 35 */
+    { "ROL", ZP_X, CPU_ALL }, /* 36 */
+    { NULL,  NONE, CPU_ALL }, /* 37 */
+    { "SEC", IMP, CPU_ALL }, /* 38 */
+    { "AND", ABS_Y, CPU_ALL }, /* 39 */
+    { "DEA",  IMP, CPU_65C02 }, /* 3a */
+    { NULL,  NONE, CPU_ALL }, /* 3b */
+    { "BIT", ABS_X, CPU_65C02 }, /* 3c */
+    { "AND", ABS_X, CPU_ALL }, /* 3d */
+    { "ROL", ABS_X, CPU_ALL }, /* 3e */
+    { "BBR3", REL, CPU_65C02 }, /* 3f */
+    { "RTI", IMP, CPU_ALL }, /* 40 */
+    { "EOR", INDEX_INDIR, CPU_ALL }, /* 41 */
+    { NULL,  NONE, CPU_ALL }, /* 42 */
+    { NULL,  NONE, CPU_ALL }, /* 43 */
+    { NULL,  NONE, CPU_ALL }, /* 44 */
+    { "EOR", ZP, CPU_ALL }, /* 45 */
+    { "LSR", ZP, CPU_ALL }, /* 46 */
+    { NULL,  NONE, CPU_ALL }, /* 47 */
+    { "PHA", IMP, CPU_ALL }, /* 48 */
+    { "EOR", IMM, CPU_ALL }, /* 49 */
+    { "LSR", ACC, CPU_ALL }, /* 4a */
+    { NULL,  NONE, CPU_ALL }, /* 4b */
+    { "JMP", ABS, CPU_ALL }, /* 4c */
+    { "EOR", ABS, CPU_ALL }, /* 4d */
+    { "LSR", ABS, CPU_ALL }, /* 4e */
+    { "BBR4", REL, CPU_65C02 }, /* 4f */
+    { "BVC", REL, CPU_ALL }, /* 50 */
+    { "EOR", INDIR_INDEX, CPU_ALL }, /* 51 */
+    { "EOR", ZP_IND, CPU_65C02 }, /* 52 */
+    { NULL,  NONE, CPU_ALL }, /* 53 */
+    { NULL,  NONE, CPU_ALL }, /* 54 */
+    { "EOR", ZP_X, CPU_ALL }, /* 55 */
+    { "LSR", ZP_X, CPU_ALL }, /* 56 */
+    { NULL,  NONE, CPU_ALL }, /* 57 */
+    { "CLI", IMP, CPU_ALL }, /* 58 */
+    { "EOR", ABS_Y, CPU_ALL }, /* 59 */
+    { "PHY", IMP, CPU_65C02 }, /* 5a */
+    { NULL,  NONE, CPU_ALL }, /* 5b */
+    { NULL,  NONE, CPU_ALL }, /* 5c */
+    { "EOR", ABS_X, CPU_ALL }, /* 5d */
+    { "LSR", ABS_X , CPU_ALL}, /* 5e */
+    { "BBR5", REL, CPU_65C02 }, /* 5f */
+    { "RTS", IMP, CPU_ALL }, /* 60 */
+    { "ADC", INDEX_INDIR, CPU_ALL }, /* 61 */
+    { NULL,  NONE, CPU_ALL }, /* 62 */
+    { NULL,  NONE, CPU_ALL }, /* 63 */
+    { "STZ", ZP, CPU_65C02 }, /* 64 */
+    { "ADC", ZP, CPU_ALL }, /* 65 */
+    { "ROR", ZP, CPU_ALL }, /* 66 */
+    { NULL,  NONE, CPU_ALL }, /* 67 */
+    { "PLA", IMP, CPU_ALL }, /* 68 */
+    { "ADC", IMM, CPU_ALL }, /* 69 */
+    { "ROR", ACC, CPU_ALL }, /* 6a */
+    { NULL,  NONE, CPU_ALL }, /* 6b */
+    { "JMP", INDIR, CPU_ALL }, /* 6c */
+    { "ADC", ABS, CPU_ALL }, /* 6d */
+    { "ROR", ABS, CPU_ALL }, /* 6e */
+    { "BBR6", REL, CPU_65C02 }, /* 6f */
+    { "BVS", REL, CPU_ALL }, /* 70 */
+    { "ADC", INDIR_INDEX, CPU_ALL }, /* 71 */
+    { "ADC", ZP_IND, CPU_65C02 }, /* 72 */
+    { NULL,  NONE, CPU_ALL }, /* 73 */
+    { "STZ", ZP_X, CPU_65C02 }, /* 74 */
+    { "ADC", ZP_X, CPU_ALL }, /* 75 */
+    { "ROR", ZP_X, CPU_ALL }, /* 76 */
+    { NULL, NONE, CPU_ALL }, /* 77 */
+    { "SEI", IMP, CPU_ALL }, /* 78 */
+    { "ADC", ABS_Y, CPU_ALL }, /* 79 */
+    { "PLY", IMP, CPU_65C02 }, /* 7a */
+    { NULL, NONE, CPU_ALL }, /* 7b */
+    { "JMP", ABS_IND_X, CPU_65C02 }, /* 7c */
+    { "ADC", ABS_X, CPU_ALL }, /* 7d */
+    { "ROR", ABS_X, CPU_ALL }, /* 7e */
+    { "BBR7", REL, CPU_65C02 }, /* 7f */
+    { "BRA", REL, CPU_65C02 }, /* 80 */
+    { "STA", INDEX_INDIR, CPU_ALL }, /* 81 */
+    { NULL, NONE, CPU_ALL }, /* 82 */
+    { NULL, NONE, CPU_ALL }, /* 83 */
+    { "STY", ZP, CPU_ALL }, /* 84 */
+    { "STA", ZP, CPU_ALL }, /* 85 */
+    { "STX", ZP, CPU_ALL }, /* 86 */
+    { NULL, NONE, CPU_ALL }, /* 87 */
+    { "DEY", IMP, CPU_ALL }, /* 88 */
+    { "BIT", IMM, CPU_65C02 }, /* 89 */
+    { "TXA", IMP, CPU_ALL }, /* 8a */
+    { NULL, NONE, CPU_ALL }, /* 8b */
+    { "STY", ABS, CPU_ALL }, /* 8c */
+    { "STA", ABS, CPU_ALL }, /* 8d */
+    { "STX", ABS, CPU_ALL }, /* 8e */
+    { "BBS0", REL, CPU_65C02 }, /* 8f */
+    { "BCC", REL, CPU_ALL }, /* 90 */
+    { "STA", INDIR_INDEX, CPU_ALL }, /* 91 */
+    { "STA", ZP_IND, CPU_65C02 }, /* 92 */
+    { NULL, NONE, CPU_ALL }, /* 93 */
+    { "STY", ZP_X, CPU_ALL }, /* 94 */
+    { "STA", ZP_X, CPU_ALL }, /* 95 */
+    { "STX", ZP_Y, CPU_ALL }, /* 96 */
+    { NULL, NONE, CPU_ALL }, /* 97 */
+    { "TYA", IMP, CPU_ALL }, /* 98 */
+    { "STA", ABS_Y, CPU_ALL }, /* 99 */
+    { "TXS", IMP, CPU_ALL }, /* 9a */
+    { NULL, NONE, CPU_ALL }, /* 9b */
+    { "STZ", ABS, CPU_65C02 }, /* 9c */
+    { "STA", ABS_X, CPU_ALL }, /* 9d */
+    { "STZ", ABS_X, CPU_65C02 }, /* 9e */
+    { "BBS1", REL, CPU_65C02 }, /* 9f */
+    { "LDY", IMM, CPU_ALL }, /* a0 */
+    { "LDA", INDEX_INDIR, CPU_ALL }, /* a1 */
+    { "LDX", IMM, CPU_ALL }, /* a2 */
+    { NULL, NONE, CPU_ALL }, /* a3 */
+    { "LDY", ZP, CPU_ALL }, /* a4 */
+    { "LDA", ZP, CPU_ALL }, /* a5 */
+    { "LDX", ZP, CPU_ALL }, /* a6 */
+    { NULL, NONE, CPU_ALL }, /* a7 */
+    { "TAY", IMP, CPU_ALL }, /* a8 */
+    { "LDA", IMM, CPU_ALL }, /* a9 */
+    { "TAX", IMP, CPU_ALL }, /* aa */
+    { NULL, NONE, CPU_ALL }, /* ab */
+    { "LDY", ABS, CPU_ALL }, /* ac */
+    { "LDA", ABS, CPU_ALL }, /* ad */
+    { "LDX", ABS, CPU_ALL }, /* ae */
+    { "BBS2", REL, CPU_65C02 }, /* af */
+    { "BCS", REL, CPU_ALL }, /* b0 */
+    { "LDA", INDIR_INDEX, CPU_ALL }, /* b1 */
+    { "LDA", ZP_IND, CPU_65C02 }, /* b2 */
+    { NULL, NONE, CPU_ALL }, /* b3 */
+    { "LDY", ZP_X, CPU_ALL }, /* b4 */
+    { "LDA", ZP_X, CPU_ALL }, /* b5 */
+    { "LDX", ZP_Y, CPU_ALL }, /* b6 */
+    { NULL, NONE, CPU_ALL }, /* b7 */
+    { "CLV", IMP, CPU_ALL }, /* b8 */
+    { "LDA", ABS_Y, CPU_ALL }, /* b9 */
+    { "TSX", IMP, CPU_ALL }, /* ba */
+    { NULL, NONE, CPU_ALL }, /* bb */
+    { "LDY", ABS_X, CPU_ALL }, /* bc */
+    { "LDA", ABS_X, CPU_ALL }, /* bd */
+    { "LDX", ABS_Y, CPU_ALL }, /* be */
+    { "BBS3", REL, CPU_65C02 }, /* bf */
+    { "CPY", IMM, CPU_ALL }, /* c0 */
+    { "CMP", INDEX_INDIR, CPU_ALL }, /* c1 */
+    { NULL, NONE, CPU_ALL }, /* c2 */
+    { NULL, NONE, CPU_ALL }, /* c3 */
+    { "CPY", ZP, CPU_ALL }, /* c4 */
+    { "CMP", ZP, CPU_ALL }, /* c5 */
+    { "DEC", ZP, CPU_ALL }, /* c6 */
+    { NULL, NONE, CPU_ALL }, /* c7 */
+    { "INY", IMP, CPU_ALL }, /* c8 */
+    { "CMP", IMM, CPU_ALL }, /* c9 */
+    { "DEX", IMP, CPU_ALL }, /* ca */
+    { NULL, NONE, CPU_ALL }, /* cb */
+    { "CPY", ABS, CPU_ALL }, /* cc */
+    { "CMP", ABS, CPU_ALL }, /* cd */
+    { "DEC", ABS, CPU_ALL }, /* ce */
+    { "BBS4", REL, CPU_65C02 }, /* cf */
+    { "BNE", REL, CPU_ALL }, /* d0 */
+    { "CMP", INDIR_INDEX, CPU_ALL }, /* d1 */
+    { "CMP", ZP_IND, CPU_65C02 }, /* d2 */
+    { NULL, NONE, CPU_ALL }, /* d3 */
+    { NULL, NONE, CPU_ALL }, /* d4 */
+    { "CMP", ZP_X, CPU_ALL }, /* d5 */
+    { "DEC", ZP_X, CPU_ALL }, /* d6 */
+    { NULL, NONE, CPU_ALL }, /* d7 */
+    { "CLD", IMP, CPU_ALL }, /* d8 */
+    { "CMP", ABS_Y, CPU_ALL }, /* d9 */
+    { "PHX", IMP, CPU_65C02 }, /* da */
+    { NULL, NONE, CPU_ALL }, /* db */
+    { NULL, NONE, CPU_ALL }, /* dc */
+    { "CMP", ABS_X, CPU_ALL }, /* dd */
+    { "DEC", ABS_X, CPU_ALL }, /* de */
+    { "BBS5", REL, CPU_65C02 }, /* df */
+    { "CPX", IMM, CPU_ALL }, /* e0 */
+    { "SBC", INDEX_INDIR, CPU_ALL }, /* e1 */
+    { NULL, NONE, CPU_ALL }, /* e2 */
+    { NULL, NONE, CPU_ALL }, /* e3 */
+    { "CPX", ZP, CPU_ALL }, /* e4 */
+    { "SBC", ZP, CPU_ALL }, /* e5 */
+    { "INC", ZP, CPU_ALL }, /* e6 */
+    { NULL, NONE, CPU_ALL }, /* e7 */
+    { "INX", IMP, CPU_ALL }, /* e8 */
+    { "SBC", IMM, CPU_ALL }, /* e9 */
+    { "NOP", IMP, CPU_ALL }, /* ea */
+    { NULL, NONE, CPU_ALL }, /* eb */
+    { "CPX", ABS, CPU_ALL }, /* ec */
+    { "SBC", ABS, CPU_ALL }, /* ed */
+    { "INC", ABS, CPU_ALL }, /* ee */
+    { "BBS6", REL, CPU_65C02 }, /* ef */
+    { "BEQ", REL, CPU_ALL }, /* f0 */
+    { "SBC", INDIR_INDEX, CPU_ALL }, /* f1 */
+    { "SBC", ZP_IND, CPU_65C02 }, /* f2 */
+    { NULL, NONE, CPU_ALL }, /* f3 */
+    { NULL, NONE, CPU_ALL }, /* f4 */
+    { "SBC", ZP_X, CPU_ALL }, /* f5 */
+    { "INC", ZP_X, CPU_ALL }, /* f6 */
+    { NULL, NONE, CPU_ALL }, /* f7 */
+    { "SED", IMP, CPU_ALL }, /* f8 */
+    { "SBC", ABS_Y, CPU_ALL }, /* f9 */
+    { "PLX", IMP, CPU_65C02 }, /* fa */
+    { NULL, NONE, CPU_ALL }, /* fb */
+    { NULL, NONE, CPU_ALL }, /* fc */
+    { "SBC", ABS_X, CPU_ALL }, /* fd */
+    { "INC", ABS_X, CPU_ALL }, /* fe */
+    { "BBS7", REL, CPU_65C02 }, /* ff */
 } ;
 

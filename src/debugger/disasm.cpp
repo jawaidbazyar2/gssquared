@@ -5,7 +5,7 @@
 
 //           11111111112222222222
 // 012345678901234567890123456789
-// xxxx: xx xx xx    LDA $1234
+// xxxx: xx xx xx    LDA  $1234
 
 #define TB_ADDRESS 0
 #define TB_OP1 6
@@ -13,7 +13,7 @@
 #define TB_OP3 12
 
 #define TB_OPCODE 18
-#define TB_OPERAND 22
+#define TB_OPERAND 23
 #define TB_EOL 40
 
 Disassembler::Disassembler(MMU *mmu) : mmu(mmu) {
@@ -70,7 +70,7 @@ void Disassembler::disassemble_one() {
         decode_hex_byte(bufptr + TB_OP3, op3);
     }
 
-    if (opcode_name) memcpy(bufptr + TB_OPCODE, opcode_name, 3);
+    if (opcode_name) memcpy(bufptr + TB_OPCODE, opcode_name, strlen(opcode_name));
     else memcpy(bufptr + TB_OPCODE, "???", 3);
 
     switch (da->mode) {
@@ -87,11 +87,13 @@ void Disassembler::disassemble_one() {
         case ABS_Y:
         case IMM:
         case INDIR:
+        case ABS_IND_X: // 65c02
         case INDEX_INDIR:
         case INDIR_INDEX:
         case ZP:
         case ZP_X:
         case ZP_Y:
+        case ZP_IND: // 65c02
             snprintf(snpbuf, snpbuf_size, am->format, operand);
             memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
             break;

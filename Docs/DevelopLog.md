@@ -5101,4 +5101,15 @@ So what we need is a character map that is built, depending on character mode. o
 
 ok I have a new template-based CPU implementation. It's all the same internal code, just wrapped up differently. First, it's a class. Claudio made a README.md for it. Short version, it uses template features and passing in static const "variables" that are resolved at compile-time when the 
 
-Ideally, I move all the cpu_struct stuff into it so it has "local" access to all the registers. However, that would be a ginormous lift. Push that change until sometime later.
+Ideally, I move all the cpu_struct stuff into it so it has "local" access to all the registers. However, that would be a ginormous lift. Push that change until sometime later. Also, Wm code touches in CPU in a place or two. So, let's get his code integrated in before I implement these new CPU modules.
+
+One thing, this approach will let me create 6502 instances with and without: trace, debugging, or the per-cycle video, and allow easily switching between CPU types at runtime. The '816 code will leverage this because an '816 has four modes; four combinations of A = 8/16 bit, XY = 8/16 bit.
+
+What's wild: the cpu emulator with two cpus is only 90 kilobytes. C++ makes super-compact code. I love it.
+
+But, can go ahead and implement 65c02 and test using the test harnesses.
+
+Other modules that need to be touched to properly support additional CPU types:
+* disassembler
+* opcodes.hpp (for use in the big switch statement)
+

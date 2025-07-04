@@ -80,6 +80,11 @@ inline void set_n_z_v_flags(cpu_state *cpu, uint8_t value, uint8_t N) {
     cpu->V = (N & 0x40) != 0; // is M6 set?
 }
 
+/* only set Z flag - used by some 65c02 instructions */
+inline void set_z_flag(cpu_state *cpu, uint8_t value) {
+    cpu->Z = (value == 0);
+}
+
 /**
  * Convert a binary-coded decimal byte to an integer.
  * Each nibble represents a decimal digit (0-9).
@@ -256,6 +261,14 @@ inline absaddr_t get_operand_address_absolute_indirect(cpu_state *cpu) {
     return taddr;
 }
 
+inline absaddr_t get_operand_address_absolute_indirect_x(cpu_state *cpu) {
+    absaddr_t addr = cpu->read_word_from_pc();
+    absaddr_t taddr = cpu->read_word((uint16_t)(addr + cpu->x_lo));
+    incr_cycles(cpu);
+    TRACE(cpu->trace_entry.operand = addr; cpu->trace_entry.eaddr = taddr; )
+    return taddr;
+}
+
 inline absaddr_t get_operand_address_absolute_x(cpu_state *cpu) {
     absaddr_t addr = cpu->read_word_from_pc();
     absaddr_t taddr = addr + cpu->x_lo;
@@ -300,6 +313,14 @@ inline absaddr_t get_operand_address_absolute_y(cpu_state *cpu) {
         incr_cycles(cpu);
     }
     TRACE(cpu->trace_entry.operand = addr; cpu->trace_entry.eaddr = taddr; )
+    return taddr;
+}
+
+// 65c02 only address mode
+inline uint16_t get_operand_address_zeropage_indirect(cpu_state *cpu) {
+    zpaddr_t zpaddr = cpu->read_byte_from_pc();
+    absaddr_t taddr = cpu->read_word((uint8_t)zpaddr); // make sure it wraps.
+    TRACE(cpu->trace_entry.operand = zpaddr; cpu->trace_entry.eaddr = taddr;)
     return taddr;
 }
 
@@ -617,6 +638,17 @@ inline absaddr_t pop_word(cpu_state *cpu) {
     return N;
 }
 
+inline void invalid_opcode(cpu_state *cpu, opcode_t opcode) {
+    fprintf(stdout, "Unknown opcode: %04X: 0x%02X", cpu->pc-1, ((unsigned int)opcode) & 0xFF);
+    //cpu->halt = HLT_INSTRUCTION;
+}
+
+inline void invalid_nop(cpu_state *cpu, int bytes, int cycles) {
+    cpu->pc += (bytes-1); // we already fetched the opcode, so just count bytes excl. that.
+    cpu->cycles += (cycles-1);
+    TRACE(cpu->trace_entry.data = 0;)
+}
+
 public:
 
 int execute_next(cpu_state *cpu) override {
@@ -652,7 +684,10 @@ int execute_next(cpu_state *cpu) override {
     if (!cpu->I && cpu->irq_asserted) { // if IRQ is not disabled, and IRQ is asserted, handle it.
         push_word(cpu, cpu->pc); // push current PC
         push_byte(cpu, cpu->p | FLAG_UNUSED); // break flag and Unused bit set to 1.
-        cpu->p |= FLAG_I; // interrupt disable flag set to 1.
+        cpu->I = 1; // interrupt disable flag set to 1.
+        if constexpr (CPUTraits::has_65c02_ops) {
+            cpu->D = 0; // turn off decimal mode on brk and interrupts
+        }
         cpu->pc = cpu->read_word(IRQ_VECTOR);
         incr_cycles(cpu);
         incr_cycles(cpu);
@@ -684,6 +719,13 @@ int execute_next(cpu_state *cpu) override {
                 byte_t N = get_operand_zeropage_x(cpu);
                 add_and_set_flags(cpu, N);
             }
+            break;
+
+        case OP_ADC_IND: /* ADC (Indirect) */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                absaddr_t addr = get_operand_address_zeropage_indirect(cpu);
+                add_and_set_flags(cpu, cpu->read_byte(addr));
+            } else invalid_opcode(cpu, opcode);
             break;
 
         case OP_ADC_ABS: /* ADC Absolute */
@@ -737,6 +779,14 @@ int execute_next(cpu_state *cpu) override {
                 cpu->a_lo &= N;
                 set_n_z_flags(cpu, cpu->a_lo);
             }
+            break;
+
+        case OP_AND_IND: /* AND (Indirect) */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                absaddr_t addr = get_operand_address_zeropage_indirect(cpu);
+                cpu->a_lo &= cpu->read_byte(addr);
+                set_n_z_flags(cpu, cpu->a_lo);
+            } else invalid_opcode(cpu, opcode);
             break;
 
         case OP_AND_ZP_X: /* AND Zero Page, X */
@@ -825,6 +875,119 @@ int execute_next(cpu_state *cpu) override {
         break;
 
     /* Branching --------------------------------- */
+        /* BBR and BBS - branch if bit reset (0) or set (1) in accumulator */
+        /* These implementations are wrong - we need a 3-byte instruction, opcode, then zp address, then relative address */
+        case OP_BBR0_REL: /* BBR0 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        case OP_BBR1_REL: /* BBR1 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        case OP_BBR2_REL: /* BBR2 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }   
+            break;
+
+        case OP_BBR3_REL: /* BBR3 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }   
+            break;
+
+        case OP_BBR4_REL: /* BBR4 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        case OP_BBR5_REL: /* BBR5 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        case OP_BBR6_REL: /* BBR6 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+        case OP_BBR7_REL: /* BBR6 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+        case OP_BBS0_REL: /* BBS0 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+        case OP_BBS1_REL: /* BBS0 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        case OP_BBS2_REL: /* BBS0 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        case OP_BBS3_REL: /* BBS0 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        case OP_BBS4_REL: /* BBS0 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        case OP_BBS5_REL: /* BBS0 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        case OP_BBS6_REL: /* BBS0 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        case OP_BBS7_REL: /* BBS0 Relative */
+            if constexpr (CPUTraits::has_bbr_bbs) {
+            } else {
+                invalid_nop(cpu, 1, 1);
+            }
+            break;
+
+        /* BCS / BCC */
+
         case OP_BCC_REL: /* BCC Relative */
             {
                 byte_t N = get_operand_relative(cpu);
@@ -867,6 +1030,13 @@ int execute_next(cpu_state *cpu) override {
             }
             break;
 
+        case OP_BRA_REL: /* BRA Relative */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                byte_t N = get_operand_relative(cpu);
+                branch_if(cpu, N, true);
+            }
+            break;
+
         case OP_BVC_REL: /* BVC Relative */
             {
                 uint8_t N = get_operand_relative(cpu);
@@ -887,6 +1057,13 @@ int execute_next(cpu_state *cpu) override {
                 byte_t N = get_operand_immediate(cpu);
                 compare_and_set_flags(cpu, cpu->a_lo, N);
             }
+            break;
+
+        case OP_CMP_IND: /* CMP (Indirect) */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                absaddr_t addr = get_operand_address_zeropage_indirect(cpu);
+                compare_and_set_flags(cpu, cpu->a_lo, cpu->read_byte(addr));
+            } else invalid_opcode(cpu, opcode);
             break;
 
         case OP_CMP_ZP: /* CMP Zero Page */
@@ -1039,6 +1216,14 @@ int execute_next(cpu_state *cpu) override {
             }
             break;
 
+        case OP_EOR_IND: /* EOR (Indirect) */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                absaddr_t addr = get_operand_address_zeropage_indirect(cpu);
+                cpu->a_lo ^= cpu->read_byte(addr);
+                set_n_z_flags(cpu, cpu->a_lo);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
         case OP_EOR_ZP: /* EOR Zero Page */
             {
                 byte_t N = get_operand_zeropage(cpu);
@@ -1093,6 +1278,24 @@ int execute_next(cpu_state *cpu) override {
                 cpu->a_lo ^= N;
                 set_n_z_flags(cpu, cpu->a_lo);
             }
+            break;
+
+
+        /* INC A / INA & DEC A / DEA --------------------------------- */
+        case OP_INA_ACC: /* INA Accumulator */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                cpu->a_lo++;
+                incr_cycles(cpu);
+                set_n_z_flags(cpu, cpu->a_lo);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_DEA_ACC: /* DEA Accumulator */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                cpu->a_lo--;
+                incr_cycles(cpu);
+                set_n_z_flags(cpu, cpu->a_lo);
+            } else invalid_opcode(cpu, opcode);
             break;
 
     /* INC --------------------------------- */
@@ -1184,6 +1387,14 @@ int execute_next(cpu_state *cpu) override {
                 cpu->a_lo = get_operand_absolute_y(cpu);
                 set_n_z_flags(cpu, cpu->a_lo);
             }
+            break;
+
+        case OP_LDA_IND: /* LDA (Indirect) */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                absaddr_t addr = get_operand_address_zeropage_indirect(cpu);
+                cpu->a_lo = cpu->read_byte(addr);
+                set_n_z_flags(cpu, cpu->a_lo);
+            } else invalid_opcode(cpu, opcode);
             break;
 
         case OP_LDA_IND_X: /* LDA (Indirect, X) */
@@ -1328,6 +1539,14 @@ int execute_next(cpu_state *cpu) override {
             }
             break;
 
+        case OP_ORA_IND: /* ORA (Indirect) */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                absaddr_t addr = get_operand_address_zeropage_indirect(cpu);
+                cpu->a_lo |= cpu->read_byte(addr);
+                set_n_z_flags(cpu, cpu->a_lo);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
         case OP_ORA_ZP: /* AND Zero Page */
             {
                 byte_t N = get_operand_zeropage(cpu);
@@ -1398,6 +1617,22 @@ int execute_next(cpu_state *cpu) override {
             }
             break;
 
+        case OP_PHX_IMP: /* PHX Implied */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                push_byte(cpu, cpu->x_lo);
+            } else {
+                invalid_opcode(cpu, opcode);
+            }
+            break;
+
+        case OP_PHY_IMP: /* PHY Implied */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                push_byte(cpu, cpu->y_lo);
+            } else {
+                invalid_opcode(cpu, opcode);
+            }
+            break;
+
         case OP_PLP_IMP: /* PLP Implied */
             {
                 cpu->p = pop_byte(cpu) & ~FLAG_B; // break flag is cleared.
@@ -1412,6 +1647,27 @@ int execute_next(cpu_state *cpu) override {
                 incr_cycles(cpu);
             }
             break;
+
+        case OP_PLX_IMP: /* PLX Implied */  
+            if constexpr (CPUTraits::has_65c02_ops) {
+                cpu->x_lo = pop_byte(cpu);
+                set_n_z_flags(cpu, cpu->x_lo);
+                incr_cycles(cpu);
+            } else {
+                invalid_opcode(cpu, opcode);
+            }
+            break;
+
+        case OP_PLY_IMP: /* PLY Implied */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                cpu->y_lo = pop_byte(cpu);
+                set_n_z_flags(cpu, cpu->y_lo);
+                incr_cycles(cpu);
+            } else {
+                invalid_opcode(cpu, opcode);
+            }
+            break;
+
     /* ROL --------------------------------- */
 
         case OP_ROL_ACC: /* ROL Accumulator */
@@ -1493,6 +1749,13 @@ int execute_next(cpu_state *cpu) override {
             }
             break;
 
+        case OP_SBC_IND: /* SBC (Indirect) */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                absaddr_t addr = get_operand_address_zeropage_indirect(cpu);
+                subtract_and_set_flags(cpu, cpu->read_byte(addr));
+            } else invalid_opcode(cpu, opcode);
+            break;
+
         case OP_SBC_ZP: /* SBC Zero Page */
             {
                 byte_t N = get_operand_zeropage(cpu);
@@ -1543,6 +1806,13 @@ int execute_next(cpu_state *cpu) override {
             break;
 
         /* STA --------------------------------- */
+        case OP_STA_IND: /* STA (Indirect) */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                absaddr_t addr = get_operand_address_zeropage_indirect(cpu);
+                cpu->write_byte(addr, cpu->a_lo); // TODO: one clock too many (get_operand.. burns 4)
+            } else invalid_opcode(cpu, opcode);
+            break;
+
         case OP_STA_ZP: /* STA Zero Page */
             {
                 store_operand_zeropage(cpu, cpu->a_lo);
@@ -1625,6 +1895,32 @@ int execute_next(cpu_state *cpu) override {
             }
             break;
 
+        /* STZ --------------------------------- */
+        case OP_STZ_ZP: /* STZ Zero Page */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                store_operand_zeropage(cpu, 0);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_STZ_ZP_X: /* STZ Zero Page, X */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                store_operand_zeropage_x(cpu, 0);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_STZ_ABS: /* STZ Absolute */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                store_operand_absolute(cpu, 0);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_STZ_ABS_X: /* STZ Absolute, X */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                store_operand_absolute_x(cpu, 0);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+
         /* Transfer between registers --------------------------------- */
 
 
@@ -1647,6 +1943,65 @@ int execute_next(cpu_state *cpu) override {
             }
             break;
 
+
+        /* TSB and TRB - test and set or test and reset bits */
+        case OP_TRB_ZP: /* TRB Zero Page */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                uint16_t addr = get_operand_address_zeropage(cpu);
+                byte_t N = cpu->read_byte(addr);
+                byte_t temp = cpu->a_lo & N;
+                set_z_flag(cpu, temp);
+                incr_cycles(cpu);
+                temp = N & ~(cpu->a_lo);
+                cpu->write_byte(addr, temp);
+            } else {
+                invalid_opcode(cpu, opcode);
+            }
+            break;
+
+        case OP_TRB_ABS: /* TRB Absolute */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                uint16_t addr = get_operand_address_absolute(cpu);
+                byte_t N = cpu->read_byte(addr);
+                byte_t temp = cpu->a_lo & N;
+                set_z_flag(cpu, temp);
+                incr_cycles(cpu);
+                temp = N & ~(cpu->a_lo);
+                cpu->write_byte(addr, temp);
+            } else {
+                invalid_opcode(cpu, opcode);
+            }
+            break;
+
+        case OP_TSB_ZP: /* TSB Zero Page */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                uint16_t addr = get_operand_address_zeropage(cpu);
+                byte_t N = cpu->read_byte(addr);
+                byte_t temp = cpu->a_lo & N;
+                set_z_flag(cpu, (temp != 0)); // if any of the bits were previously set, set Z flag.
+                incr_cycles(cpu);
+                temp = N | (cpu->a_lo);
+                cpu->write_byte(addr, temp);
+            } else {
+                invalid_opcode(cpu, opcode);
+            }
+            break;
+
+        case OP_TSB_ABS: /* TSB Absolute */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                uint16_t addr = get_operand_address_absolute(cpu);
+                byte_t N = cpu->read_byte(addr);
+                byte_t temp = cpu->a_lo & N;
+                set_z_flag(cpu, (temp != 0));
+                incr_cycles(cpu);
+                temp = N | (cpu->a_lo);
+                cpu->write_byte(addr, temp);
+            } else {
+                invalid_opcode(cpu, opcode);
+            }
+            break;
+
+        /* TSX - transfer stack pointer to X */
         case OP_TSX_IMP: /* TSX Implied */
             {
                 op_transfer_to_x(cpu, cpu->sp);
@@ -1670,7 +2025,10 @@ int execute_next(cpu_state *cpu) override {
             {               
                 push_word(cpu, cpu->pc+1); // pc of BRK plus 1 - leaves room for BRK 'mark'
                 push_byte(cpu, cpu->p | FLAG_B | FLAG_UNUSED); // break flag and Unused bit set to 1.
-                cpu->p |= FLAG_I; // interrupt disable flag set to 1.
+                cpu->I = 1; // interrupt disable flag set to 1.
+                if constexpr (CPUTraits::has_65c02_ops) {
+                    cpu->D = 0; // turn off decimal mode on brk and interrupts
+                }
                 cpu->pc = cpu->read_word(BRK_VECTOR);
             }
             break;
@@ -1684,9 +2042,18 @@ int execute_next(cpu_state *cpu) override {
             break;
 
         case OP_JMP_IND: /* JMP (Indirect) */
-            {
+            { // TODO: need to implement the "JMP" bug for non-65c02. The below is correct for 65c02.
                 absaddr_t addr = get_operand_address_absolute_indirect(cpu);
                 cpu->pc = addr;
+            }
+            break;
+
+        case OP_JMP_IND_X: /* JMP (Indirect), X */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                absaddr_t addr = get_operand_address_absolute_indirect_x(cpu);
+                cpu->pc = addr;
+            } else {
+                invalid_opcode(cpu, opcode);
             }
             break;
 
@@ -1801,19 +2168,120 @@ int execute_next(cpu_state *cpu) override {
             }
             break;
 
-        /* End of Opcodes -------------------------- */
+        case OP_BIT_IMM: /* BIT Immediate */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                byte_t N = get_operand_immediate(cpu);
+                byte_t temp = cpu->a_lo & N;
+                set_z_flag(cpu, temp);
+            } else invalid_opcode(cpu, opcode);
+            break;
 
-        /* Fake opcodes for testing -------------------------- */
+        case OP_BIT_ZP_X: /* BIT Zero Page, X */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                byte_t N = get_operand_zeropage_x(cpu);
+                byte_t temp = cpu->a_lo & N;
+                set_n_z_v_flags(cpu, temp, N);
+            } else invalid_opcode(cpu, opcode);
+            break;
 
-        case OP_HLT_IMP: /* HLT */
-            {
-                //cpu->halt = HLT_INSTRUCTION;
+        case OP_BIT_ABS_X: /* BIT Absolute, X */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                byte_t N = get_operand_absolute_x(cpu);
+                byte_t temp = cpu->a_lo & N;
+                set_n_z_v_flags(cpu, temp, N);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        /* A bunch of stuff that is unimplemented in the 6502/65c02, but present in 65816 */
+
+        case OP_INOP_02: /* INOP 02 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 2);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_22: /* INOP 22 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 2);
             }
             break;
 
+        case OP_INOP_42: /* INOP 42 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 2);
+            } else invalid_opcode(cpu, opcode);
+            break;
+            
+        case OP_INOP_62: /* INOP 62 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 2);
+            } else invalid_opcode(cpu, opcode);
+            break;
+            
+        case OP_INOP_82: /* INOP 82 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 2);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_C2: /* INOP C2 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 2);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_E2: /* INOP E2 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 2);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_44: /* INOP 44 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 3);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_54: /* INOP 54 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 4);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_D4: /* INOP D4 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 4);
+            } else invalid_opcode(cpu, opcode);
+            break;
+            
+        case OP_INOP_F4: /* INOP F4 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 2, 4);
+            } else invalid_opcode(cpu, opcode);
+            break;
+            
+        case OP_INOP_5C: /* INOP 5C */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 3, 8);
+            } else invalid_opcode(cpu, opcode);
+            break;
+            
+        case OP_INOP_DC: /* INOP DC */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 3, 4);
+            } else invalid_opcode(cpu, opcode);
+            break;
+            
+        case OP_INOP_FC: /* INOP FC */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 3, 4);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        /* End of Opcodes -------------------------- */
+
         default:
-            fprintf(stdout, "Unknown opcode: %04X: 0x%02X", cpu->pc-1, opcode);
-            //cpu->halt = HLT_INSTRUCTION;
+            invalid_opcode(cpu, opcode);
             break;
     }
 
