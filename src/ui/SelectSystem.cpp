@@ -34,7 +34,7 @@ Style_t CS;
     selected_system = -1;
 
     // add a text button for each system.
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
         Button_t *button = new Button_t(aa, BuiltinSystemConfigs[i].image_id, BS, 0);
         button->set_tile_size(200, 200);
         button->position_content(CP_CENTER, CP_CENTER);

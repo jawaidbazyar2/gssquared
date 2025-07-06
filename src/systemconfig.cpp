@@ -55,7 +55,7 @@ DeviceMap_t DeviceMap_IIE[] = {
     {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
     {DEVICE_ID_SPEAKER, SLOT_NONE},
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
-    {DEVICE_ID_MEM_EXPANSION, SLOT_7},
+    {DEVICE_ID_MEM_EXPANSION, SLOT_2},
     {DEVICE_ID_PD_BLOCK2, SLOT_5},
     {DEVICE_ID_DISK_II, SLOT_6},
     {DEVICE_ID_MOCKINGBOARD, SLOT_4},
@@ -83,6 +83,13 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         PLATFORM_APPLE_IIE,
         DeviceMap_IIE,
         Badge_IIE,
+        true
+    },
+        {
+        "Apple IIe Enhanced",
+        PLATFORM_APPLE_IIE_ENHANCED,
+        DeviceMap_IIE,
+        Badge_IIEEnh,
         true
     },
 /*     {

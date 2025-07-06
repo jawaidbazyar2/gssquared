@@ -283,6 +283,7 @@ target_link_libraries(GSSquared PRIVATE
 
 target_link_libraries(GSSquared 
     PUBLIC gs2_cpu 
+    gs2_cpu_new
     gs2_computer
     gs2_mmu
     #gs2_oldmmu

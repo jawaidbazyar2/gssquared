@@ -5119,3 +5119,6 @@ making progress on 65c02! There are a couple odds and ends that shouldn't affect
 
 Wm hooks his stuff in via cpu_struct, so, switching out cpu->execute_next for cpu->cpun->execute_next won't be a bother. So, we're a stone's throw from the enhanced IIe.
 
+disassembler is wrong for the BBS etc instructions (which aren't in my impl.)
+
+ha! Booted appleworks 4.3 and it recognized enhanced //e, used mousetext. Other mousetext aware programs are doing the right stuff. I bet MouseWrite doesn't run on unenhanced //e.

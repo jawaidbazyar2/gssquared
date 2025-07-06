@@ -47,7 +47,7 @@
 #include "util/EventTimer.hpp"
 #include "ui/SelectSystem.hpp"
 #include "ui/MainAtlas.hpp"
-
+#include "cpus/cpu_implementations.hpp"
 
 /**
  * References: 
@@ -143,7 +143,7 @@ void run_cpus(computer_t *computer) {
                                 if (computer->event_timer->isEventPassed(cpu->cycles)) {
                                     computer->event_timer->processEvents(cpu->cycles);
                                 }
-                                (cpu->execute_next)(cpu);
+                                (cpu->cpun->execute_next)(cpu);
                                 if (computer->debug_window->window_open) {
                                     if (computer->debug_window->check_breakpoint(&cpu->trace_entry)) {
                                         cpu->execution_mode = EXEC_STEP_INTO;
@@ -163,7 +163,7 @@ void run_cpus(computer_t *computer) {
                                 if (computer->event_timer->isEventPassed(cpu->cycles)) {
                                     computer->event_timer->processEvents(cpu->cycles);
                                 }
-                                (cpu->execute_next)(cpu);
+                                (cpu->cpun->execute_next)(cpu);
                             }
                         }
                         }
@@ -173,7 +173,7 @@ void run_cpus(computer_t *computer) {
                             if (computer->event_timer->isEventPassed(cpu->cycles)) {
                                 computer->event_timer->processEvents(cpu->cycles);
                             }
-                            (cpu->execute_next)(cpu);
+                            (cpu->cpun->execute_next)(cpu);
                             cpu->instructions_left--;
                         }
                         break;
@@ -472,8 +472,10 @@ int main(int argc, char *argv[]) {
 
     // need to tell the MMU about our ROM somehow.
     // need a function in MMU to "reset page to default".
-
+#if 0
     computer->cpu->set_processor(platform->processor_type);
+#endif
+    computer->cpu->cpun = createCPU(platform->processor_type);
     computer->mounts = new Mounts(computer->cpu);
 
     init_display_font(rd);

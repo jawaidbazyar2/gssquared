@@ -804,6 +804,9 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
         case PLATFORM_APPLE_IIE:
             charrom = new CharRom("assets/roms/apple2e/char.rom");
             break;
+        case PLATFORM_APPLE_IIE_ENHANCED:
+            charrom = new CharRom("assets/roms/apple2e_enh/char.rom");
+            break;
         case PLATFORM_APPLE_II_PLUS:
             charrom = new CharRom("assets/roms/apple2_plus/char.rom");
             break;
@@ -899,7 +902,7 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
         return update_display_apple2(cpu);
     });
 
-    if (computer->platform->id == PLATFORM_APPLE_IIE) {
+    if (computer->platform->id == PLATFORM_APPLE_IIE || computer->platform->id == PLATFORM_APPLE_IIE_ENHANCED) {
         ds->f_altcharset = false;
         ds->a2_display->set_char_set(ds->f_altcharset);
         mmu->set_C0XX_write_handler(0xC00C, { ds_bus_write_C00X, ds });

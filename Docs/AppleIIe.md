@@ -99,3 +99,10 @@ For IIPlus: build this table 1:1 to chars in rom except populate mode=flash base
 For IIe: build 2 tables; 1st per "norm" above, but override 40-7F to point to 0-3F and set mode flash; 2nd table, per "alt" above.
 
 ok, so you CAN haz flash in 80 cols. And, my "detect a flashing character" routine was just modified to support looking at the 80-col page. However, it's ugly and will also match and cause update for non-flashing inverse characters when alt char set is enabled. oh, we can do is_flash against the char rom, that will take active char set into account. Even better, if altcharset is 1 we can probably just exit and not do the update_flash routine at all.
+
+# Enhanced Apple IIe Functionality Checklist
+
+[ ] different video rom  
+[ ] different system rom  
+[ ] 65c02  
+[ ] different select tile, overlay the "enhanced" sticker on top of it.  

@@ -30,6 +30,8 @@
 #include "debugger/trace.hpp"
 #include "mmus/mmu_ii.hpp"
 #include "Module_ID.hpp"
+#include "cpus/processor_type.hpp"
+#include "cpus/cpu_traits.hpp"
 
 #define MAX_CPUS 1
 
@@ -37,12 +39,6 @@
 #define IRQ_VECTOR 0xFFFE
 #define NMI_VECTOR 0xFFFA
 #define RESET_VECTOR 0xFFFC
-
-enum processor_type {
-    PROCESSOR_6502 = 0,
-    PROCESSOR_65C02,
-    NUM_PROCESSOR_TYPES
-};
 
 enum execution_modes_t {
     EXEC_NORMAL = 0,
@@ -69,12 +65,15 @@ struct debug_window_t;
 
 typedef int (*execute_next_fn)(cpu_state *cpu);
 
+//class BaseCPU; // pre-declare this.
+
 struct processor_model {
     const char* name;
-    execute_next_fn execute_next;
+    //execute_next_fn execute_next;
+    std::unique_ptr<BaseCPU> cpun;
 };
 
-extern processor_model processor_models[NUM_PROCESSOR_TYPES];
+//extern processor_model processor_models[NUM_PROCESSOR_TYPES];
 
 namespace cpu_6502 {
     extern int execute_next(cpu_state *cpu);
@@ -190,7 +189,8 @@ struct cpu_state {
     clock_mode_t clock_mode = CLOCK_FREE_RUN;
     float e_mhz = 0;
     
-    execute_next_fn execute_next;
+    //execute_next_fn execute_next;
+    std::unique_ptr<BaseCPU> cpun; // CPU instance.
 
     void *module_store[MODULE_NUM_MODULES];
     SlotData *slot_store[NUM_SLOTS];

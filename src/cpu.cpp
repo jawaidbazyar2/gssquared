@@ -18,9 +18,9 @@
 #include <cstdio>
 #include <time.h>
 #include <cstdlib>
-#include <iostream>
 
 #include "cpu.hpp"
+#include "cpus/cpu_implementations.hpp"
 
 clock_mode_info_t clock_mode_info[NUM_CLOCK_MODES] = {
     { 0, 0, 17008 },
@@ -47,6 +47,7 @@ void toggle_clock_mode(cpu_state *cpu) {
     fprintf(stdout, "Clock mode: %d HZ_RATE: %llu\n", cpu->clock_mode, cpu->HZ_RATE);
 }
 
+#if 0
 processor_model processor_models[NUM_PROCESSOR_TYPES] = {
     { "6502 (nmos)", cpu_6502::execute_next },
     //{ "65C02 (cmos)", cpu_65c02::execute_next }
@@ -56,6 +57,7 @@ processor_model processor_models[NUM_PROCESSOR_TYPES] = {
 const char* processor_get_name(int processor_type) {
     return processor_models[processor_type].name;
 }
+#endif
 
 /** State storage for non-slot devices. */
 void *get_module_state(cpu_state *cpu, module_id_t module_id) {
@@ -125,9 +127,11 @@ cpu_state::cpu_state() {
     }
 }
 
+#if 0
 void cpu_state::set_processor(int processor_type) {
     execute_next = processor_models[processor_type].execute_next;
 }
+#endif
 
 void cpu_state::reset() {
     halt = 0; // if we were STPed etc.

@@ -18,7 +18,6 @@
 #pragma once
 
 #include "gs2.hpp"
-#include "cpu.hpp"
 #include "computer.hpp"
 
 #include "Device_ID.hpp"

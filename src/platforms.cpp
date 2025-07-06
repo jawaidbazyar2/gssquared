@@ -57,8 +57,8 @@ static  platform_info platforms[] = {
     { 
         PLATFORM_APPLE_IIE_ENHANCED, 
         "Apple IIe Enhanced",   
-        "apple2e_enhanced", 
-        0xD000, 
+        "apple2e_enh", 
+        0xC000, 
         PROCESSOR_65C02, 
         CLOCK_1_024MHZ,
         MMU_MMU_IIE
@@ -162,6 +162,7 @@ void free_platform_roms(rom_data* roms) {
 
 void print_platform_info(platform_info *platform) {
     fprintf(stdout, "Platform ID %d: %s \n", platform->id, platform->name);
-    fprintf(stdout, "  processor type: %s\n", processor_get_name(platform->processor_type));
+    //fprintf(stdout, "  processor type: %s\n", processor_get_name(platform->processor_type));
+    fprintf(stdout, "  processor type: %d\n", platform->processor_type);
     fprintf(stdout, "  folder name: %s\n", platform->rom_dir);
 }

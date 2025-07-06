@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "cpu_traits.hpp"
-#include "cpu.hpp"
+#include "processor_type.hpp"
 
 
 // Forward declarations of concrete CPU classes

@@ -21,6 +21,7 @@
 #include <stddef.h>
 #include "clock.hpp"
 #include "util/ResourceFile.hpp"
+#include "cpus/processor_type.hpp"
 
 typedef enum PlatformId_t {
     PLATFORM_APPLE_II = 0,
@@ -40,7 +41,7 @@ struct platform_info {
     const char* name;           // Human readable name
     const char* rom_dir;        // Directory under roms/
     uint16_t rom_base_addr;    // Base address for the roms
-    const int processor_type;   // processor type
+    const processor_type processor_type;   // processor type
     const clock_mode_t default_clock_mode; // default clock mode for this platform at startup.
     const MMU_Type_t mmu_type;
 };

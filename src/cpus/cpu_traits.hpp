@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cpu.hpp"
+struct cpu_state;
 
 // Base interface for all CPU implementations
 class BaseCPU {

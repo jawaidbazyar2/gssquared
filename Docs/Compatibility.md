@@ -171,7 +171,7 @@ gets past VBL check, but still dies on no mouse.
 
 ## Cybernoid Music Disk
 
-works, but has lowercase. 4.0 version is Prodos 2.0.3 needs enhanced apple iie.
+works, but has lowercase. 4.0 version is Prodos 2.0.3 needs enhanced apple iie. [works now]
 "DOS3.3" is Cybernoid 5.0, works. wants a mockingboard.
 Mixing is not great.
 
@@ -203,7 +203,7 @@ on 2mg disk. Boots right up, but, needs 80col support. There is now 80 col suppo
 
 ## ProTerm 2.2 on 143K
 
-boots prodos, but crashes to a brk at 8ab0. Might require enhanced IIe.
+boots prodos, but crashes to a brk at 8ab0. Might require enhanced IIe. Does want enhanced iie. boots, says confirm hardware, hit ESC to continue but just loops asking for keyboard input.
 
 ## Zork I
 
@@ -225,4 +225,4 @@ Well, it stops running correctly on Apple2TS also. Maybe the Demo just stops the
 
 ### AirHeart
 
-crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff.
+crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff.
