@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <stddef.h>
 #include <cstdint>
+#include <memory>
 
 #include <SDL3/SDL.h>
 

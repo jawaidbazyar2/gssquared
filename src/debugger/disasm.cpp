@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "mmus/mmu.hpp"
 #include "debugger/disasm.hpp"
 #include "debugger/trace_opcodes.hpp"
