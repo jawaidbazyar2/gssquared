@@ -134,3 +134,20 @@ Test suite:
 
 https://github.com/SingleStepTests/ProcessorTests/tree/main/65816
 
+The 816 has FIVE combinations of modes.
+
+| Mode | A | X |
+|-|-|-|
+| Emulation | 8 | 8 |
+| Native | 8 | 8 |
+| Native | 8 | 16 |
+| Native | 16 | 8 |
+| Native | 16 | 16 |
+
+There are a number of subtleties and variations between Emulation and Native mode. Emulation is not precisely the same as a 65c02, because of handling data and program banks etc.
+
+We could handle native as one mode, but, there is going to be a lot of testing of m/x flags and it will not be efficient. I think using constexpr and building five versions is memory inefficient, but, performance efficient.  The code will still look pretty normal.
+
+Now, it probably makes sense to have this be a separate code file from the 6502/65c02, as there will be a great many differences. Each address mode handler is two variations (8 / 16 bit). Probably want to make all add/subtract/compare/etc etc into two versions (8-bit and 16-bit).
+
+Any bugs that need fixing in the 02/c02 should be few and far between at this point and easily migrated to the 816 code.
