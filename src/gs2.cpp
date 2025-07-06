@@ -475,7 +475,7 @@ int main(int argc, char *argv[]) {
 #if 0
     computer->cpu->set_processor(platform->processor_type);
 #endif
-    computer->cpu->cpun = createCPU(platform->processor_type);
+    computer->cpu->cpun = createCPU(platform->cpu_type);
     computer->mounts = new Mounts(computer->cpu);
 
     init_display_font(rd);

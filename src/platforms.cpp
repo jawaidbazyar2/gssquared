@@ -163,6 +163,6 @@ void free_platform_roms(rom_data* roms) {
 void print_platform_info(platform_info *platform) {
     fprintf(stdout, "Platform ID %d: %s \n", platform->id, platform->name);
     //fprintf(stdout, "  processor type: %s\n", processor_get_name(platform->processor_type));
-    fprintf(stdout, "  processor type: %d\n", platform->processor_type);
+    fprintf(stdout, "  processor type: %d\n", platform->cpu_type);
     fprintf(stdout, "  folder name: %s\n", platform->rom_dir);
 }

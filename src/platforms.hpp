@@ -41,7 +41,7 @@ struct platform_info {
     const char* name;           // Human readable name
     const char* rom_dir;        // Directory under roms/
     uint16_t rom_base_addr;    // Base address for the roms
-    const processor_type processor_type;   // processor type
+    const processor_type cpu_type;   // processor type
     const clock_mode_t default_clock_mode; // default clock mode for this platform at startup.
     const MMU_Type_t mmu_type;
 };
