@@ -5113,3 +5113,9 @@ Other modules that need to be touched to properly support additional CPU types:
 * disassembler
 * opcodes.hpp (for use in the big switch statement)
 
+## Jul 5, 2025
+
+making progress on 65c02! There are a couple odds and ends that shouldn't affect operation much (some cycle counting stuff.)
+
+Wm hooks his stuff in via cpu_struct, so, switching out cpu->execute_next for cpu->cpun->execute_next won't be a bother. So, we're a stone's throw from the enhanced IIe.
+

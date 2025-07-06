@@ -123,6 +123,10 @@ inline void add_and_set_flags(cpu_state *cpu, uint8_t N) {
         uint8_t S8 = M + N1 + cpu->C;
         cpu->a_lo = int_to_bcd(S8);
         cpu->C = (S8 > 99);
+        if constexpr (CPUTraits::has_65c02_ops) {
+            // TODO: handle V flag
+            incr_cycles(cpu);
+        }
         set_n_z_flags(cpu, cpu->a_lo);
     }
 }
@@ -168,6 +172,10 @@ inline void subtract_and_set_flags(cpu_state *cpu, uint8_t N) {
             cpu->C = 1;
         }
         cpu->a_lo = int_to_bcd(S8);
+        if constexpr (CPUTraits::has_65c02_ops) {
+            // TODO: handle V flag
+            incr_cycles(cpu);
+        }
         set_n_z_flags(cpu, cpu->a_lo);
     }
 }
@@ -2278,6 +2286,296 @@ int execute_next(cpu_state *cpu) override {
             } else invalid_opcode(cpu, opcode);
             break;
 
+        case OP_INOP_03: /* INOP 03 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_13: /* INOP 13 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_23: /* INOP 23 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_33: /* INOP 33 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_43: /* INOP 43 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_53: /* INOP 53 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_63: /* INOP 63 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_73: /* INOP 73 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_83: /* INOP 83 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_93: /* INOP 93 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_A3: /* INOP A3 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_B3: /* INOP B3 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_C3: /* INOP C3 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_D3: /* INOP D3 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_E3: /* INOP E3 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_F3: /* INOP F3 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_07: /* INOP 07 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_17: /* INOP 17 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_27: /* INOP 27 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_37: /* INOP 37 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_47: /* INOP 47 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_57: /* INOP 57 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_67: /* INOP 67 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_77: /* INOP 77 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_87: /* INOP 87 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_97: /* INOP 97 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_A7: /* INOP A7 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_B7: /* INOP B7 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_C7: /* INOP C7 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_D7: /* INOP D7 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_E7: /* INOP E7 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_F7: /* INOP F7 */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_0B: /* INOP 0B */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_1B: /* INOP 1B */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_2B: /* INOP 2B */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_3B: /* INOP 3B */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_4B: /* INOP 4B */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_5B: /* INOP 5B */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_6B: /* INOP 6B */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_7B: /* INOP 7B */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_8B: /* INOP 8B */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_9B: /* INOP 9B */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_AB: /* INOP AB */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_BB: /* INOP BB */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_CB: /* INOP CB */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_DB: /* INOP DB */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_EB: /* INOP EB */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+        case OP_INOP_FB: /* INOP FB */
+            if constexpr (CPUTraits::has_65c02_ops) {
+                invalid_nop(cpu, 1, 1);
+            } else invalid_opcode(cpu, opcode);
+            break;
+
+
+            
         /* End of Opcodes -------------------------- */
 
         default:

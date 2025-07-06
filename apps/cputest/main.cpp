@@ -22,6 +22,7 @@
  */
 #include <SDL3/SDL.h>
 
+#include "cpu.hpp"
 #include "gs2.hpp"
 //#include "cpu.hpp"
 #include "cpus/cpu_implementations.cpp"
@@ -53,11 +54,55 @@ void write_memory(cpu_state *cpu, uint16_t address, uint8_t value) {
 
 int main(int argc, char **argv) {
     bool trace_on = false;
+    processor_type cputype = PROCESSOR_6502;
+    int testsuite = 0; // 0 = 6502 test, 1 = 65c02 test, 2 = decimal test
+    
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "trace") == 0) {
+            trace_on = true;
+        } else if (strcmp(argv[i], "6502") == 0) {
+            cputype = PROCESSOR_6502;
+        } else if (strcmp(argv[i], "65c02") == 0) {
+            cputype = PROCESSOR_65C02;
+        } else if (strcmp(argv[i], "testdecimal") == 0) {
+            testsuite = 2;
+        } else if (strcmp(argv[i], "test6502") == 0) {
+            testsuite = 0;
+        } else if (strcmp(argv[i], "test65c02") == 0) {
+            testsuite = 1;
+        } else {
+            printf("usage: cputest [trace] [6502|65c02] [test6502|test65c02|testdecimal]\n");
+        }
+    }
+
+    switch (testsuite) {
+        case 0:
+            printf("Running 6502 test suite\n");
+            break;
+        case 1:
+            printf("Running 65c02 test suite\n");
+            break;
+        case 2:
+            printf("Running decimal test suite\n");
+            break;
+        default:
+            printf("Invalid test suite\n");
+            exit(1);
+    }
+    switch (cputype) {
+        case 0:
+            printf("Running 6502\n");
+            break;
+        case 1:
+            printf("Running 65c02\n");
+            break;
+        default:
+            printf("Invalid CPU type\n");
+            exit(1);
+    }
 
     printf("Starting CPU test...\n");
-    if (argc > 1) {
-        trace_on = atoi(argv[1]);
-    }
+
 
     gs2_app_values.base_path = "./";
     gs2_app_values.pref_path = gs2_app_values.base_path;
@@ -69,17 +114,15 @@ int main(int argc, char **argv) {
         mmu->map_page_both(i, &memory[i*256], "TEST RAM");
     }
 
-    int cputype = 0;
-    if (argc >= 2) {
-        cputype = atoi(argv[1]);
-    }
 
     ResourceFile *rom;
     
-    if (cputype == 0) {
+    if (testsuite == 0) {
         rom = new ResourceFile("6502_functional_test.bin", READ_ONLY);
-    } else if (cputype == 1) {
+    } else if (testsuite == 1) {
         rom = new ResourceFile("65C02_extended_opcodes_test.bin", READ_ONLY);
+    } else if (testsuite == 2) {
+        rom = new ResourceFile("6502_decimal_test.bin", READ_ONLY);
     } else {
         printf("Invalid CPU type\n");
         return 1;
@@ -92,7 +135,7 @@ int main(int argc, char **argv) {
         mmu->write(i, rom_data[i]);
     }
 
-    std::unique_ptr<BaseCPU> cpux = createCPU(cputype == 1? "65C02" : "6502");
+    std::unique_ptr<BaseCPU> cpux = createCPU(cputype);
     if (!cpux) {
         printf("Failed to create CPU\n");
         return 1;

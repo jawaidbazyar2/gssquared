@@ -1309,7 +1309,7 @@ int main(int argc, char **argv) {
 
     cpu_state *cpu = new cpu_state();
     //cpu->set_processor(PROCESSOR_6502);
-    std::unique_ptr<BaseCPU> cpux = createCPU("6502");
+    std::unique_ptr<BaseCPU> cpux = createCPU(PROCESSOR_6502);
 
     //cpu->init();
     cpu->trace = trace_on;
