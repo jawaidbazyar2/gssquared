@@ -5122,3 +5122,29 @@ Wm hooks his stuff in via cpu_struct, so, switching out cpu->execute_next for cp
 disassembler is wrong for the BBS etc instructions (which aren't in my impl.)
 
 ha! Booted appleworks 4.3 and it recognized enhanced //e, used mousetext. Other mousetext aware programs are doing the right stuff. I bet MouseWrite doesn't run on unenhanced //e.
+
+Audit.dsk fails on iie :
+
+after sequence 
+```
+LDA #$1D
+STA $C007
+STA $C00B
+LDA $C300
+STA $C006
+want:
+C100-c2ff: ?
+c300-c3ff: ?
+c400-c7ff: ?
+c800-cffe: ?
+got:
+c100-c2ff: ?
+c300-c3ff: ?
+c400-c7ff: ?
+c800-cffe: ROM
+CXXX ROM test failed
+zellyn.com/a2audit/V0#E000B
+This is a the Cxxx-ROM check part of the auxiliary memory data-driven test (see E000A for a description of the other part). After a full reset, we perform a testdata-driven sequence of instructions. Finally we check which parts of Cxxx ROM seem to be visible. We check C100-C2FF, C300-C3FF, C400-C7FF (which should be the same as C100-C2FF), and C800-CFFE. For more details, see Understanding the Apple IIe, by James Fielding Sather, Pg 5-28.
+```
+
+[ ] Fix bug shown by audit.dsk in regards to c800-cffe. Seems like on a C006 we should reset the C800 space to nothing (default).  

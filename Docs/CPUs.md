@@ -126,3 +126,11 @@ All are NOPs:
 | 54, D4, F4 | 2 | 4 | Y |
 | 5C | 3 | 8 | Y |
 | DC, FC | 3 | 4 | Y |
+
+
+## 65816
+
+Test suite:
+
+https://github.com/SingleStepTests/ProcessorTests/tree/main/65816
+
