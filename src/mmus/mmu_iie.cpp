@@ -69,10 +69,11 @@ void iie_mmu_handle_C00X_write(void *context, uint16_t address, uint8_t value) {
     MMU_IIe *mmu = (MMU_IIe *)context;
 
     switch (address) {
-      case 0xC006: // INTCXROMOFF
+        case 0xC006: // INTCXROMOFF
             // enable slot ROM in pages $C1 - $CF
             mmu->f_intcxrom = false;
             mmu->compose_c1cf();
+            mmu->set_default_C8xx_map(); // TODO: is this right?  https://zellyn.com/a2audit/v0/#e000b
             //printf("IIe Memory: INTCXROMOFF\n");
             break;
         case 0xC007: // INTCXROMON
