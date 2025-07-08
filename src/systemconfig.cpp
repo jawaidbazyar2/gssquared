@@ -59,9 +59,22 @@ DeviceMap_t DeviceMap_IIE[] = {
     {DEVICE_ID_PD_BLOCK2, SLOT_5},
     {DEVICE_ID_DISK_II, SLOT_6},
     {DEVICE_ID_MOCKINGBOARD, SLOT_4},
-    //{DEVICE_ID_ANNUNCIATOR, SLOT_NONE}, // no annunciator because these are overridden by display - maybe have a IIe annunciator with less registers.
     {DEVICE_ID_END, SLOT_NONE}
 };
+
+DeviceMap_t DeviceMap_IIE_ENH_2MB[] = {
+    {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
+    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
+    {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
+    {DEVICE_ID_SPEAKER, SLOT_NONE},
+    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
+    {DEVICE_ID_PD_BLOCK2, SLOT_5},
+    {DEVICE_ID_DISK_II, SLOT_6},
+    {DEVICE_ID_MOCKINGBOARD, SLOT_4},
+    {DEVICE_ID_MOCKINGBOARD, SLOT_7},
+    {DEVICE_ID_END, SLOT_NONE}
+};
+
 
 SystemConfig_t BuiltinSystemConfigs[] = {
     {
@@ -69,28 +82,40 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         PLATFORM_APPLE_II, 
         DeviceMap_II,
         Badge_II,
-        true
+        true,
+        "48K RAM; Disk II"
     },
     {
         "Apple ][+", 
         PLATFORM_APPLE_II_PLUS, 
         DeviceMap_IIPLUS,
         Badge_IIPlus,
-        true
+        true,
+        "64K RAM (incl Lang Card); Disk II; ProDOS Clock; Parallel Port; VIDEX 80-col; Mockingboard"
     },
     {
         "Apple IIe",
         PLATFORM_APPLE_IIE,
         DeviceMap_IIE,
         Badge_IIE,
-        true
+        true,
+        "128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard"
     },
-        {
+    {
         "Apple IIe Enhanced",
         PLATFORM_APPLE_IIE_ENHANCED,
         DeviceMap_IIE,
         Badge_IIEEnh,
-        true
+        true,
+        "128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard"
+    },
+    {
+        "Apple IIe Enhanced Dual Mockingboard",
+        PLATFORM_APPLE_IIE_ENHANCED,
+        DeviceMap_IIE,
+        Badge_IIEEnh,
+        true,
+        "128K RAM; Disk II; ProDOS Clock; DUAL Mockingboard"
     },
 /*     {
         "Apple IIc",
@@ -100,6 +125,8 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     }, */
     // Add more built-in configurations as needed
 };
+
+const int NUM_SYSTEM_CONFIGS = sizeof(BuiltinSystemConfigs) / sizeof(BuiltinSystemConfigs[0]);
 
 SystemConfig_t *get_system_config(int index) {
     return &BuiltinSystemConfigs[index];

@@ -117,6 +117,10 @@ void video_system_t::present() {
     SDL_RenderPresent(renderer);
 }
 
+void video_system_t::set_window_title(const char *title) {
+    SDL_SetWindowTitle(window, title);
+}
+
 void video_system_t::render_frame(SDL_Texture *texture, float offset) {
     float w,h;
     SDL_GetTextureSize(texture, &w, &h);

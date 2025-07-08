@@ -133,6 +133,8 @@ All are NOPs:
 Test suite:
 
 https://github.com/SingleStepTests/ProcessorTests/tree/main/65816
+https://forums.nesdev.org/viewtopic.php?t=24940
+https://github.com/gilyon/snes-tests
 
 The 816 has FIVE combinations of modes.
 

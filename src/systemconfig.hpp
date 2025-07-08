@@ -30,8 +30,10 @@ struct SystemConfig_t {
     DeviceMap_t *device_map;
     int image_id;
     bool builtin;
+    const char *description;
 };
 
 extern SystemConfig_t BuiltinSystemConfigs[];
+extern const int NUM_SYSTEM_CONFIGS;
 
 SystemConfig_t *get_system_config(int index);

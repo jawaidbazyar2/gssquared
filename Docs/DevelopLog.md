@@ -5147,4 +5147,41 @@ zellyn.com/a2audit/V0#E000B
 This is a the Cxxx-ROM check part of the auxiliary memory data-driven test (see E000A for a description of the other part). After a full reset, we perform a testdata-driven sequence of instructions. Finally we check which parts of Cxxx ROM seem to be visible. We check C100-C2FF, C300-C3FF, C400-C7FF (which should be the same as C100-C2FF), and C800-CFFE. For more details, see Understanding the Apple IIe, by James Fielding Sather, Pg 5-28.
 ```
 
-[ ] Fix bug shown by audit.dsk in regards to c800-cffe. Seems like on a C006 we should reset the C800 space to nothing (default).  
+[x] Fix bug shown by audit.dsk in regards to c800-cffe. Seems like on a C006 we should reset the C800 space to nothing (default).  
+
+## Jul 6, 2025
+
+back to MB - a french touch demo (DD) doesn't work right at all. On startup, it programs the ACR on both AY chips with value 0x40. This is "continuous interrupts" on T1 "each time T1 is loaded", and "timed interrupt T2". I don't implement any checking of things on the ACR register at all. It's possible some stuff needs it. This, however, seems to program with the way I support in code now.
+Then it puts $C0 into C40E, and $40 into C48E. that's interrupt enable. So that is enabling INT 0x40 (T1) on chip 0 and disable T1 int on chip 1.
+then it turns interrupts off. Then it turns interrupts back on.
+This is after setting the timers, and storing $40 in both chip ACR registers.
+then it waits forever for an interrupt that never comes. You know this thing has source. Let's look at it.
+So this is T1 on chip 1. T1 interrupt is disabled on that chip. but we're looping waiting for the IFR flag to go high.
+Bit 7 of IFR is 1, when "any enabled interrupt" is 1. But, T1, T2 interrupt flags SHOULD get set even if they are disabled.
+If they are disabled, we just don't propagate that into Bit 7.
+I think I'm not setting that 0x40 bit, ever, if interrupts are disabled. When I should be. i.e. the timer callback etc should happen regardless of whether interrupts are on or off.
+```
+            if (tc->ier.bits.timer1) {
+                mb_d->event_timer->scheduleEvent(cpu_cycles + tc->t1_counter, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);
+            } else {
+                mb_d->event_timer->cancelEvents(0x10000000 | (slot << 8) | chip);
+            }
+```
+So those stanzas should get rid of the if, and just have the first if clause. should always schedule. Similar check in the callback routines mb_t1_timer_callback. 
+ok that makes the FT demo work, but, makes Ultima IV stop working! maybe. We probably need to set the timer callback every time we load the counter from the latch. found another place I needed to remove cancelEvent. Basically, we should never call cancelEvent. Ultima IV works again. Ultima V still doesn't work. Oh I wonder maybe it's trying to do voice? let's try MB-A for U5 then.. no dice.
+Maybe we need to start timers going by default no matter what.. skyfox still working generally but problem of certain channels stopping remains. That could be a timer thing. Skyfox seems unaltered / unimproved. It misbehaves a little differently every time.
+
+back to DD. 
+[ ] DD: there's a part where the screen goes into dhr mode back and forth but it's probably not intended. Might be using that annunciator-with-80col-off trick to turn off color delays and just change the color rendering, which I don't support (yet).  
+
+[ ] uh, bne 08cb (to itself) on chp.dsk demo is causing very odd behavior in the debugger, cycles are going crazy (139841mhz!) and I can't pause execution. Wut. might want 2 MB.  
+
+TLB2V12. 12 channel mockingboard music player. seems to work great!
+TLB1 loads up but then fails to play anything, it's sitting in a JMP loop to itself.
+CHP dies with a "KO" message. ok KO can be a number of things but these things DO check if they are a PAL system quite often. using the debugger I managed to trick chip. It plays some quite good songs on the mockinboard. 
+
+## Jul 7, 2025
+
+Got the audit to pass. oh weird. 
+
+ProTerm still failing. ok. Proterm says "was not installed on this machine". Press return to verify hardware or esc to continue. It did this from 848: JSR $C100. C100 is 0, because we have a mockingboard in slot 1. And that then does badness. This will probably work if we put a serial card and its firmware into slot 1.

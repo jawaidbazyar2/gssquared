@@ -5,6 +5,7 @@
 #include "Style.hpp"
 #include "util/TextRenderer.hpp"
 #include "MainAtlas.hpp"
+#include "SystemButton.hpp"
 
 SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     : vs(vs), aa(aa) {
@@ -14,7 +15,7 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 Style_t CS;
     CS.background_color = 0x000000FF;
     CS.border_width = 0;
-    CS.padding = 50;
+    CS.padding = 25;
 
     Style_t BS;
     BS.background_color = 0xBFBB98FF;
@@ -34,21 +35,18 @@ Style_t CS;
     selected_system = -1;
 
     // add a text button for each system.
-    for (int i = 0; i < 4; i++) {
-        Button_t *button = new Button_t(aa, BuiltinSystemConfigs[i].image_id, BS, 0);
+    int num_configs = NUM_SYSTEM_CONFIGS;
+    for (int i = 0; i < num_configs; i++) {
+        //Button_t *button = new Button_t(aa, BuiltinSystemConfigs[i].image_id, BS, 0);
+        SystemButton *button = new SystemButton(aa, &BuiltinSystemConfigs[i], BS);
         button->set_tile_size(200, 200);
         button->position_content(CP_CENTER, CP_CENTER);
         button->set_text_renderer(text_renderer);
-       /*  if (i == 2) {
-            button->set_opacity(0.5);
-            button->set_background_color(0xC0C0C0FF);
-            button->set_hover_color(0xC0C0C0FF);
-        } else { */
-            button->set_click_callback([this,i](const SDL_Event& event) -> bool {
-                selected_system = i;
-                return true;
-            });
-     /*    } */
+
+        button->set_click_callback([this,i](const SDL_Event& event) -> bool {
+            selected_system = i;
+            return true;
+        });
         container->add_tile(button, i);
     }
 

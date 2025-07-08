@@ -79,6 +79,7 @@ struct video_system_t {
     }; */
     video_system_t(computer_t *computer);
     ~video_system_t();
+    void set_window_title(const char *title);
     void window_resize(const SDL_Event &event);
     void toggle_fullscreen();
     void set_window_fullscreen(display_fullscreen_mode_t mode);
