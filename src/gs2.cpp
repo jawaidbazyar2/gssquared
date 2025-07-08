@@ -429,18 +429,21 @@ int main(int argc, char *argv[]) {
     aa->set_elements(MainAtlas_count, asset_rects);
 
     SelectSystem *select_system = new SelectSystem(vs, aa);
-    platform_id = select_system->select();
-    if (platform_id == -1) {
+    int system_id = select_system->select();
+    if (system_id == -1) {
         delete select_system;
         delete aa;
         delete computer;
         break;
     }
-// load platform roms - this info should get stored in the 'computer'
+    SystemConfig_t *system_config = get_system_config(system_id);
+    platform_id = system_config->platform_id;
+
     platform_info* platform = get_platform(platform_id);
     print_platform_info(platform);
     computer->set_platform(platform);
     
+    // TODO: load platform roms - this info should get stored in the 'computer'
     rom_data *rd = load_platform_roms(platform);
     if (!rd) {
         system_failure("Failed to load platform roms, exiting.");
@@ -480,7 +483,7 @@ int main(int argc, char *argv[]) {
 
     init_display_font(rd);
 
-    SystemConfig_t *system_config = get_system_config(platform_id);
+    //SystemConfig_t *system_config = get_system_config(platform_id);
 
     SlotManager_t *slot_manager = new SlotManager_t();
 

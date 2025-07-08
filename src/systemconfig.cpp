@@ -112,7 +112,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple IIe Enhanced Dual Mockingboard",
         PLATFORM_APPLE_IIE_ENHANCED,
-        DeviceMap_IIE,
+        DeviceMap_IIE_ENH_2MB,
         Badge_IIEEnh,
         true,
         "128K RAM; Disk II; ProDOS Clock; DUAL Mockingboard"
