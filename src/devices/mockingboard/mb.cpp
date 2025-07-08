@@ -940,9 +940,9 @@ void mb_t1_timer_callback(uint64_t instanceID, void *user_data) {
         counter = 65535;
     }
 
-    if (tc->ier.bits.timer1) {
+    //if (tc->ier.bits.timer1) {
         mb_d->event_timer->scheduleEvent(cpu->cycles + counter, mb_t1_timer_callback, instanceID , mb_d);
-    }
+    //}
 }
 
 // TODO: don't reschedule if interrupts are disabled.
@@ -964,9 +964,9 @@ void mb_t2_timer_callback(uint64_t instanceID, void *user_data) {
     if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
         counter = 65535;
     }
-    if (tc->ier.bits.timer2) {
+    //if (tc->ier.bits.timer2) {
         mb_d->event_timer->scheduleEvent(cpu->cycles + counter, mb_t2_timer_callback, instanceID , mb_d);
-    }
+    //}
 }
 
 void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
@@ -1031,11 +1031,11 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
             tc->t1_counter = tc->t1_latch ? tc->t1_latch : 65535;
             tc->ifr.bits.timer1 = 0;
             tc->t1_triggered_cycles = cpu_cycles;
-            if (tc->ier.bits.timer1) {
+            //if (tc->ier.bits.timer1) {
                 mb_d->event_timer->scheduleEvent(cpu_cycles + tc->t1_counter, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);
-            } else {
+            /* } else {
                 mb_d->event_timer->cancelEvents(0x10000000 | (slot << 8) | chip);
-            }
+            } */
             break;
         // TODO: T2C_L and T2C_H are not implemented.
         case MB_6522_T2C_L:
@@ -1047,11 +1047,11 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
             tc->ifr.bits.timer2 = 0;
             mb_6522_propagate_interrupt(mb_d);
             tc->t2_triggered_cycles = cpu_cycles;
-            if (tc->ier.bits.timer2) {
+            //if (tc->ier.bits.timer2) {
                 mb_d->event_timer->scheduleEvent(cpu_cycles + tc->t2_counter, mb_t2_timer_callback, 0x10010000 | (slot << 8) | chip , mb_d);
-            } else {
+            /* } else {
                 mb_d->event_timer->cancelEvents(0x10010000 | (slot << 8) | chip);
-            }
+            } */
             break;
 
         case MB_6522_PCR:
@@ -1085,9 +1085,9 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
                 mb_6522_propagate_interrupt(mb_d);
                 uint64_t instanceID = 0x10000000 | (slot << 8) | chip;
                 // if timer1 interrupt is disabled, cancel any pending events. (Only enable + write to T1C will reschedule)
-                if (!tc->ier.bits.timer1) {
+                /* if (!tc->ier.bits.timer1) {
                     mb_d->event_timer->cancelEvents(instanceID);
-                } else { // if we set the counter/latch BEFORE we enable interrupts.
+                } else */ { // if we set the counter/latch BEFORE we enable interrupts.
                     uint64_t cycle_base = tc->t1_triggered_cycles == 0 ? mb_d->computer->cpu->cycles : tc->t1_triggered_cycles;
                     uint16_t counter = tc->t1_counter;
                     if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
@@ -1097,9 +1097,9 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
                 }
                 
                 instanceID = 0x10010000 | (slot << 8) | chip;
-                if (!tc->ier.bits.timer2) {
+                /* if (!tc->ier.bits.timer2) {
                     mb_d->event_timer->cancelEvents(instanceID);
-                } else { // if we set the counter/latch BEFORE we enable interrupts.
+                } else */ { // if we set the counter/latch BEFORE we enable interrupts.
                     uint64_t cycle_base = tc->t2_triggered_cycles == 0 ? mb_d->computer->cpu->cycles : tc->t2_triggered_cycles;
                     uint16_t counter = tc->t2_counter;
                     if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
@@ -1336,6 +1336,10 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     computer->mmu->map_c1cf_page_read_h(0xC0 + slot, { mb_read_Cx00, mb_d }, "MB_IO");
 
     insert_empty_mockingboard_frame(mb_d);
+
+    mb_d->event_timer->scheduleEvent(computer->cpu->cycles + 65535, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 0 , mb_d);
+    mb_d->event_timer->scheduleEvent(computer->cpu->cycles + 65535, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 1 , mb_d);
+
 
     // set up a reset handler to reset the chips on mockingboard
     computer->register_reset_handler(
