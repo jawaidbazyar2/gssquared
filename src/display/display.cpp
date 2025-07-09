@@ -599,6 +599,7 @@ void ds_bus_write_C00X(void *context, uint16_t address, uint8_t value) {
             break;
     }
     update_line_mode(ds);
+    force_display_update(ds);
 }
 
 /**
