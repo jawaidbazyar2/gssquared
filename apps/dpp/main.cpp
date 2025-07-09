@@ -247,7 +247,7 @@ int main(int argc, char **argv) {
         for (int l = 0; l < 24; l++) {
             display_iiplus.generate_text40(text_page, frame_byte, l);
         }
-        monochrome.render(frame_byte, frame_rgba, (RGBA_t){.a = 0xFF, .b = 0x00, .g = 0xFF, .r = 0x00});
+        monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
     }
 
     end = SDL_GetTicksNS();
@@ -362,14 +362,14 @@ int main(int argc, char **argv) {
         }
         switch (render_mode) {
             case 1:
-                monochrome.render(frame_byte, frame_rgba, (RGBA_t){.a = 0xFF, .b = 0x00, .g = 0xFF, .r = 0x00});
+                monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
                 break;
             case 2:
-                ntsc_render.render(frame_byte, frame_rgba, (RGBA_t){.a = 0xFF, .b = 0x00, .g = 0xFF, .r = 0x00}, phaseoffset);
+                ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
                 break;
             case 3:
-                if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, (RGBA_t){.a = 0xFF, .b = 0xFF, .g = 0xFF, .r = 0xFF});
-                else rgb_render.render(frame_byte, frame_rgba, (RGBA_t){.a = 0xFF, .b = 0x00, .g = 0xFF, .r = 0x00}, phaseoffset);
+                if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
+                else rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
                 break;
         }
 

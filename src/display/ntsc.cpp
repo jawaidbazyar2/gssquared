@@ -319,7 +319,7 @@ void processAppleIIFrame_Mono (
     RGBA_t color_value
 )
 {
-    static RGBA_t p_black = { .a=0xFF, .b=0x00, .g=0x00, .r=0x00 };
+    static RGBA_t p_black = RGBA_t::make(0x00, 0x00, 0x00, 0xFF);
 
     // Process each scanline
     for (int y = y_start; y < y_end; y++)

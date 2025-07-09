@@ -72,9 +72,9 @@ void render_videx_scanline_80x24(cpu_state *cpu, videx_data * videx_d, int y, vo
 
             for (int px = 0; px < 8; px++) {
                 if (cursor_this_char) {
-                    *texturePixels = (cmap & 0x80) ? RGBA_t{0,0,0,0} : color_value;
+                    *texturePixels = (cmap & 0x80) ? RGBA_t::make(0,0,0,0) : color_value;
                 } else {
-                    *texturePixels = (cmap & 0x80) ? color_value : RGBA_t{0,0,0,0};
+                    *texturePixels = (cmap & 0x80) ? color_value : RGBA_t::make(0,0,0,0);
                 }
                 cmap <<= 1;
                 texturePixels++;

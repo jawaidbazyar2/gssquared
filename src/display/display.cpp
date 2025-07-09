@@ -301,13 +301,13 @@ bool update_display_apple2(cpu_state *cpu) {
         switch (vs->display_color_engine) {
             case DM_ENGINE_NTSC:
                 if (ds->display_mode == TEXT_MODE) {
-                    ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, (RGBA_t){.a = 0xFF, .b = 0xFF, .g = 0xFF, .r = 0xFF});
+                    ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
                 } else {
-                    ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, (RGBA_t){.a = 0xFF, .b = 0x00, .g = 0xFF, .r = 0x00}, 1);
+                    ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), 1);
                 }
                 break;
             case DM_ENGINE_RGB:
-                ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, (RGBA_t){.a = 0xFF, .b = 0x00, .g = 0xFF, .r = 0x00}, 1);
+                ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), 1);
                 break;
             case DM_ENGINE_MONO:
                 ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, mono_color_value);
@@ -435,7 +435,7 @@ void render_line_ntsc(cpu_state *cpu, int y) {
     else if (mode == LM_HIRES_MODE) render_hgrng_scanline(cpu, y, (uint8_t *)pixels);
     else render_text_scanline_ng(cpu, y);
 
-    RGBA_t mono_color_value = { 0xFF, 0xFF, 0xFF, 0xFF }; // override mono color to white when we're in color mode
+    RGBA_t mono_color_value = RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF); // override mono color to white when we're in color mode
 
     if (ds->display_mode == TEXT_MODE) {
         processAppleIIFrame_Mono(frameBuffer + (y * 8 * BASE_WIDTH), (RGBA_t *)pixels, y * 8, (y + 1) * 8, mono_color_value);
