@@ -48,7 +48,7 @@ struct RGBA_t {
     }
 };
 #define PIXEL_FORMAT SDL_PIXELFORMAT_RGBA8888
-#elif defined(__WINDOWS__)
+#elif defined(_WIN64)
 // Windows - BGRA
 struct RGBA_t {
     union {
