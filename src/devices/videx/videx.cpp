@@ -72,7 +72,7 @@ void map_rom_videx(void *context, SlotType_t slot) {
     videx_d->mmu->map_c1cf_page_write_h(0xCD, { videx_memory_write2, videx_d }, "VIDEXRAM");
     videx_d->mmu->map_c1cf_page_read_h(0xCC, { videx_memory_read2, videx_d }, "VIDEXRAM");
     videx_d->mmu->map_c1cf_page_read_h(0xCD, { videx_memory_read2, videx_d }, "VIDEXRAM");
-    videx_d->mmu->dump_page_table(0xC8,0xCF);
+    if (DEBUG(DEBUG_VIDEX)) videx_d->mmu->dump_page_table(0xC8,0xCF);
     
     //if (DEBUG(DEBUG_VIDEX)) fprintf(stdout, "mapped in videx $C800-$CFFF\n");
 }
