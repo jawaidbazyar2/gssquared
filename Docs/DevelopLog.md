@@ -5185,3 +5185,5 @@ CHP dies with a "KO" message. ok KO can be a number of things but these things D
 Got the audit to pass. oh weird. 
 
 ProTerm still failing. ok. Proterm says "was not installed on this machine". Press return to verify hardware or esc to continue. It did this from 848: JSR $C100. C100 is 0, because we have a mockingboard in slot 1. And that then does badness. This will probably work if we put a serial card and its firmware into slot 1.
+
+In selectsystem, have an enhanced iie option with "cycle accurate video". Add a systemconfig flag for that. And, create a system tile that is "make your own.."

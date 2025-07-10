@@ -48,6 +48,7 @@
 #include "ui/SelectSystem.hpp"
 #include "ui/MainAtlas.hpp"
 #include "cpus/cpu_implementations.hpp"
+#include "version.h"
 
 /**
  * References: 
@@ -356,6 +357,11 @@ gs2_app_t gs2_app_values;
 int main(int argc, char *argv[]) {
     std::cout << "Booting GSSquared!" << std::endl;
 
+    SDL_SetAppMetadata("GSSquared", VERSION_STRING, "Copyright 2025 by Jawaid Bazyar");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_COPYRIGHT_STRING, "Copyright 2025 by Jawaid Bazyar");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_CREATOR_STRING, "Jawaid Bazyar");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/jawaidbazyar/gssquared");
+    
     int platform_id = PLATFORM_APPLE_II_PLUS;  // default to Apple II Plus
     int opt;
     
@@ -542,7 +548,7 @@ int main(int argc, char *argv[]) {
     delete select_system;
     delete aa;
     }
-    SDL_Delay(1000); 
+    //SDL_Delay(1000); 
     SDL_Quit();
     return 0;
 }
