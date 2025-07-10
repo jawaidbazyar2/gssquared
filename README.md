@@ -162,39 +162,18 @@ git clone --recurse-submodules https://github.com/jawaidbazyar2/gssquared.git
 cd gssquared
 mkdir build
 cmake -G "MinGW Makefiles" -DGS2_PROGRAM_FILES=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B build -S .
-mingw32-make.exe
+cmake --build build --parallel
 ```
 
 ### Windows App Distribution
 
-After building, you can create a folder that contains libraries and assets for Windows.
+After building, you can create a ZIP archive for distribution for Windows.
 
 ```
-mingw32-make.exe packages
+cmake -G "MinGW Makefiles" -DGS2_PROGRAM_FILES=O -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B build -S .
+cmake --build build --parallel --target package
 ```
 
-
-## Creating Distribution Packages
-
-```
-cmake --build build --target packages
-```
-
-This will create a 'packages' directory with the following structure:
-
-```
-packages/
-├── linux-cli/
-├── mac-cli/
-├── GSSquared.dmg
-├── GSSquared.app/
-```
-
-The mac-package and mac-cli-package are the same, but the mac-cli-package is used to create a DMG file for the macOS app bundle.
-
-Only the appropriate package types for the platform you're building on will be created.
-
-"make", "make all", "make mac-dev" or "make linux-dev" will create a resources directory in the build tree, for local testing.
 
 # Documentation
 
