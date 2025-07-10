@@ -2,13 +2,18 @@
 #include <cstdio>
 #include <new>
 
+#include "paths.hpp"
 #include "CharRom.hpp"
 
 
 CharRom::CharRom(const char *filename) {
     data = new(std::align_val_t(64)) uint8_t[8192]; // max char rom size
 
-    FILE *f = fopen(filename, "rb");
+    std::string fullfilename;
+    fullfilename.assign(get_base_path(false));
+    fullfilename.append(filename);
+
+    FILE *f = fopen(fullfilename.c_str(), "rb");
     if (!f) {
         printf("Failed to open char rom file: %s\n", filename);
         valid = false;

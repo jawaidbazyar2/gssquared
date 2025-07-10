@@ -83,11 +83,7 @@ endif()
 
 # Define build options and set defaults
 option(GS2_BUILD_NATIVE "Build for native architecture only" OFF)
-if(WIN32 AND MSVC)
-    set(GS2_PROGRAM_FILES ON CACHE BOOL "Build a directory of program files (bare executable and files instead of bundle/package)" FORCE)
-else()
-    option(GS2_PROGRAM_FILES "Build a directory of program files (bare executable and files instead of bundle/package)" OFF)
-endif()
+option(GS2_PROGRAM_FILES "Build a directory of program files (bare executable and files instead of bundle/package)" OFF)
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT GS2_PROGRAM_FILES)
     option(GS2_BUNDLE_LIBS "Bundle library dependencies with the build" OFF)
 else()
@@ -110,7 +106,7 @@ if(APPLE)
     message(STATUS "Building for architectures: ${APPLE_ARCHITECTURE}")
 endif()
 
-# Set default install prefix to the build directory
+# Set default install prefix based on build target
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Default install path" FORCE)
 endif()
@@ -254,6 +250,8 @@ add_library(gs2_ntsc src/display/ntsc.cpp src/display/Matrix3x3.cpp src/display/
 
 add_library(gs2_message_bus src/mbus/MessageBus.cpp)
 
+add_library(gs2_paths src/paths.cpp)
+
 #add_library(gs2_oldmmu src/memory.cpp src/bus.cpp )
 
 target_link_libraries(gs2_ui SDL3_image::SDL3_image-shared SDL3_ttf::SDL3_ttf-shared)
@@ -270,7 +268,6 @@ add_executable(GSSquared src/gs2.cpp src/clock.cpp src/debug.cpp  src/opcodes.cp
     src/event_poll.cpp
     src/devices.cpp src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
-    src/paths.cpp
     ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns
     )
 
@@ -308,6 +305,7 @@ target_link_libraries(GSSquared
     gs2_event_dispatcher
     gs2_displaypp
     gs2_message_bus
+    gs2_paths
 )
 
 add_subdirectory(apps/nibblizer)
@@ -419,33 +417,82 @@ endif()
 ## Windows packaging targets
 
 if(WIN32)
-    add_custom_target(packages ALL
-        COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/packages/gssquared-win64/
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/gssquared-win64/
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:GSSquared> ${CMAKE_BINARY_DIR}/packages/gssquared-win64/
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/lib/libSDL3.dll.a ${CMAKE_BINARY_DIR}/packages/gssquared-win64/
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/lib/libSDL3_image.dll.a ${CMAKE_BINARY_DIR}/packages/gssquared-win64/
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/bin/SDL3.dll    ${CMAKE_BINARY_DIR}/packages/gssquared-win64/
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/bin/SDL3_image.dll    ${CMAKE_BINARY_DIR}/packages/gssquared-win64/
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/gssquared-win64/resources/roms
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/roms ${CMAKE_BINARY_DIR}/packages/gssquared-win64/resources/roms
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/gssquared-win64/resources/sounds
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/assets/sounds ${CMAKE_BINARY_DIR}/packages/gssquared-win64/resources/sounds
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/packages/gssquared-win64/resources/img
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/assets/img/atlas.png ${CMAKE_BINARY_DIR}/packages/gssquared-win64/resources/img/atlas.png
-        DEPENDS GSSquared
-    )
+    if(GS2_PROGRAM_FILES)
+        message(STATUS "Windows: Installing for PROGRAM_FILES (in-place run)")
+        # Install main executable
+        install(TARGETS GSSquared
+            RUNTIME DESTINATION bin
+            COMPONENT Runtime
+        )
+        # Install SDL DLLs to bin
+        install(FILES
+            ${CMAKE_BINARY_DIR}/SDL3.dll
+            ${CMAKE_BINARY_DIR}/SDL3_image.dll
+            ${CMAKE_BINARY_DIR}/SDL3_ttf.dll
+            DESTINATION bin
+            COMPONENT Runtime
+        )
+        # Install import libs to lib (optional for devs)
+        install(FILES
+            ${CMAKE_BINARY_DIR}/lib/libSDL3.dll.a
+            ${CMAKE_BINARY_DIR}/lib/libSDL3_image.dll.a
+            ${CMAKE_BINARY_DIR}/lib/libSDL3_ttf.dll.a
+            DESTINATION lib
+            COMPONENT Runtime
+        )
+        # Install resources
+        install(DIRECTORY ${CMAKE_BINARY_DIR}/resources/
+            DESTINATION resources
+            COMPONENT Runtime
+        )
+    else()
+        message(STATUS "Windows: Installing for packaging (zip)")
+        # Same as above, but set up CPack for zip
+        install(TARGETS GSSquared
+            RUNTIME DESTINATION .
+            COMPONENT Runtime
+        )
+        install(FILES
+            ${CMAKE_BINARY_DIR}/SDL3.dll
+            ${CMAKE_BINARY_DIR}/SDL3_image.dll
+            ${CMAKE_BINARY_DIR}/SDL3_ttf.dll
+            DESTINATION .
+            COMPONENT Runtime
+        )
+        install(FILES
+            ${CMAKE_BINARY_DIR}/lib/libSDL3.dll.a
+            ${CMAKE_BINARY_DIR}/lib/libSDL3_image.dll.a
+            ${CMAKE_BINARY_DIR}/lib/libSDL3_ttf.dll.a
+            DESTINATION lib
+            COMPONENT Runtime
+        )
+        install(DIRECTORY ${CMAKE_BINARY_DIR}/resources/
+            DESTINATION resources
+            COMPONENT Runtime
+        )
+        # CPack zip config
+        set(CPACK_GENERATOR "ZIP")
+        set(CPACK_PACKAGE_NAME "gssquared")
+        set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+        set(CPACK_PACKAGE_VENDOR "Jawaid Bazyar")
+        set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GSSquared Apple II Emulator")
+        include(CPack)
+    endif()
 endif()
 
 # Non-Apple UNIX-specific configuration here
-if((UNIX OR MINGW) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     if(GS2_PROGRAM_FILES)
         # TODO: Make this work for MSYS; no more hard-coded Linux stuff
         # PROGRAM FILES: Build bare executable, everything goes to build/ directory
         message(STATUS "Building as PROGRAM FILES: Bare executable and files in one directory")
 
-        # Set CPack variables for Linux
-        set(CPACK_GENERATOR "TGZ")
+        # Set CPack variables based on platform
+        if(WIN32)
+            set(CPACK_GENERATOR "ZIP")
+        else()
+            set(CPACK_GENERATOR "TGZ")
+        endif()
         set(CPACK_PACKAGE_NAME "gssquared")
         set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
         set(CPACK_PACKAGE_VENDOR "Jawaid Bazyar")
@@ -485,6 +532,17 @@ if((UNIX OR MINGW) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         # Used for both installing into the system (package managers) and AppDir
         message(STATUS "Building as GNU INSTALL DIRS: GNU standard filesystem layout")
 
+        # Set CPack generator based on platform
+        if(WIN32)
+            set(CPACK_GENERATOR "ZIP")
+        else()
+            set(CPACK_GENERATOR "TGZ")
+        endif()
+        set(CPACK_PACKAGE_NAME "gssquared")
+        set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+        set(CPACK_PACKAGE_VENDOR "Jawaid Bazyar")
+        set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GSSquared Apple II Emulator")
+
         set(GS2_GNU_INSTALL_DIRS ON)
         include(GNUInstallDirs)
         set(GS2_INSTALL_DATADIR "${CMAKE_INSTALL_DATADIR}/GSSquared")
@@ -513,19 +571,19 @@ if((UNIX OR MINGW) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
                 INSTALL_RPATH "${CMAKE_BINARY_DIR}/lib"
             )
         endif()
-        install(DIRECTORY roms
+        install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/roms"
             DESTINATION "${GS2_INSTALL_DATADIR}"
             COMPONENT Runtime
         )
-        install(DIRECTORY assets/sounds
+        install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/sounds"
             DESTINATION "${GS2_INSTALL_DATADIR}"
             COMPONENT Runtime
         )
-        install(DIRECTORY assets/fonts
+        install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/fonts"
             DESTINATION "${GS2_INSTALL_DATADIR}"
             COMPONENT Runtime
         )
-        install(FILES assets/img/atlas.png
+        install(FILES "${CMAKE_BINARY_DIR}/resources/img/atlas.png"
             DESTINATION "${GS2_INSTALL_DATADIR}/img"
             COMPONENT Runtime
         )
@@ -541,6 +599,7 @@ if((UNIX OR MINGW) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
                 COMPONENT Runtime
             )
         endif()
+        include(CPack)
     endif()
 endif()
 

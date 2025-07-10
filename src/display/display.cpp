@@ -803,16 +803,16 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
     CharRom *charrom = nullptr;
     switch (computer->platform->id) {
         case PLATFORM_APPLE_IIE:
-            charrom = new CharRom("assets/roms/apple2e/char.rom");
+            charrom = new CharRom("roms/apple2e/char.rom");
             break;
         case PLATFORM_APPLE_IIE_ENHANCED:
-            charrom = new CharRom("assets/roms/apple2e_enh/char.rom");
+            charrom = new CharRom("roms/apple2e_enh/char.rom");
             break;
         case PLATFORM_APPLE_II_PLUS:
-            charrom = new CharRom("assets/roms/apple2_plus/char.rom");
+            charrom = new CharRom("roms/apple2_plus/char.rom");
             break;
         case PLATFORM_APPLE_II:
-            charrom = new CharRom("assets/roms/apple2/char.rom");
+            charrom = new CharRom("roms/apple2/char.rom");
             break;
         default:
             system_failure("Unsupported platform in display engine init");
