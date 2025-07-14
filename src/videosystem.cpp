@@ -218,17 +218,15 @@ void video_system_t::set_window_fullscreen(display_fullscreen_mode_t mode) {
         selected_mode = modes[0];
 
         SDL_SetWindowAspectRatio(window, 0.0f, 0.0f);
-#if __APPLE__
-        SDL_SetWindowFullscreenMode(window, NULL);
-#else
         SDL_SetWindowFullscreenMode(window, selected_mode);
-#endif
+        SDL_SetWindowBordered(window, false);
         SDL_SetWindowFullscreen(window, display_fullscreen_mode);
         SDL_free(modes);
     } else {
         // Reapply window size and aspect ratio constraints in reverse order from above.
         SDL_SetWindowFullscreen(window, display_fullscreen_mode);
         SDL_SetWindowAspectRatio(window, aspect_ratio, aspect_ratio);
+        SDL_SetWindowBordered(window, true);
     } 
 }
 
