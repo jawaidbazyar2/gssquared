@@ -17,7 +17,7 @@
     <key>CFBundleIconFile</key>
     <string>gs2.icns</string>
     <key>LSMinimumSystemVersion</key>
-    <string>15.0</string>
+    <string>12.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>LSMultipleInstancesProhibited</key>
@@ -27,6 +27,6 @@
     <key>CFBundleGetInfoString</key>
     <string>GSSquared @PROJECT_VERSION@ (build @GIT_HASH@)</string>
     <key>NSHumanReadableDescription</key>
-    <string>Apple II+ and IIe Emulator, version @PROJECT_VERSION@</string>
+    <string>Apple II, II+ and IIe Emulator, version @PROJECT_VERSION@</string>
 </dict>
 </plist> 
