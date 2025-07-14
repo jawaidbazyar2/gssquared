@@ -63,8 +63,14 @@ configure_file(
 # GS2_BUNDLE_LIBS      Set to bundle libraries with the build.
 # CMAKE_BUILD_TYPE     Release | Debug (default: Release)
 
+if(WIN32) 
+    set(CMAKE_SYSTEM_NAME Windows)
+    set(CMAKE_SYSTEM_VERSION 10.0)
+    set(CMAKE_SYSTEM_PROCESSOR x86_64)
+endif()
+
 # Find Clang compilers before project() is called
-if(NOT WIN32)  # For Unix-like systems (Linux and Mac)
+#if(NOT WIN32)  # For Unix-like systems (Linux and Mac)
     find_program(CLANG_EXECUTABLE NAMES clang)
     find_program(CLANGPP_EXECUTABLE NAMES clang++)
 
@@ -79,7 +85,7 @@ if(NOT WIN32)  # For Unix-like systems (Linux and Mac)
     else()
         message(STATUS "Clang not found, using default system compiler")
     endif()
-endif()
+#endif() 
 
 # Define build options and set defaults
 option(GS2_BUILD_NATIVE "Build for native architecture only" OFF)
@@ -277,7 +283,10 @@ target_link_libraries(GSSquared PRIVATE
     SDL3_image::SDL3_image-shared
     #SDL3_ttf::SDL3_ttf-shared
 )
-
+if(WIN32)
+    # We'll bundle the MinGW runtime DLLs instead of static linking
+    # This is more reliable and easier to manage
+endif()
 target_link_libraries(GSSquared 
     PUBLIC gs2_cpu 
     gs2_cpu_new
@@ -432,6 +441,15 @@ if(WIN32)
             DESTINATION bin
             COMPONENT Runtime
         )
+        # Install MinGW runtime DLLs to bin
+        install(FILES
+            C:/msys64/mingw64/bin/libgcc_s_seh-1.dll
+            C:/msys64/mingw64/bin/libstdc++-6.dll
+            C:/msys64/mingw64/bin/libwinpthread-1.dll
+            DESTINATION bin
+            COMPONENT Runtime
+            OPTIONAL
+        )
         # Install import libs to lib (optional for devs)
         install(FILES
             ${CMAKE_BINARY_DIR}/lib/libSDL3.dll.a
@@ -458,6 +476,15 @@ if(WIN32)
             ${CMAKE_BINARY_DIR}/SDL3_ttf.dll
             DESTINATION .
             COMPONENT Runtime
+        )
+        # Install MinGW runtime DLLs to root
+        install(FILES
+            C:/msys64/mingw64/bin/libgcc_s_seh-1.dll
+            C:/msys64/mingw64/bin/libstdc++-6.dll
+            C:/msys64/mingw64/bin/libwinpthread-1.dll
+            DESTINATION .
+            COMPONENT Runtime
+            OPTIONAL
         )
         install(FILES
             ${CMAKE_BINARY_DIR}/lib/libSDL3.dll.a
