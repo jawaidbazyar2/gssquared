@@ -92,7 +92,7 @@ endif()
 
 # Set Apple architecture globally if on Apple platform
 if(APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0")
     if(GS2_BUILD_NATIVE)
         if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
             set(APPLE_ARCHITECTURE "arm64")
@@ -141,7 +141,7 @@ function(configure_sdl_builds)
 
     # Force SDL to build with the correct SDK
     if(APPLE)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0" CACHE STRING "Deployment target" FORCE)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Deployment target" FORCE)
     endif()
 
     set(SDL_SHARED ON)
