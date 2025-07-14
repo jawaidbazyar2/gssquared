@@ -5187,3 +5187,32 @@ Got the audit to pass. oh weird.
 ProTerm still failing. ok. Proterm says "was not installed on this machine". Press return to verify hardware or esc to continue. It did this from 848: JSR $C100. C100 is 0, because we have a mockingboard in slot 1. And that then does badness. This will probably work if we put a serial card and its firmware into slot 1.
 
 In selectsystem, have an enhanced iie option with "cycle accurate video". Add a systemconfig flag for that. And, create a system tile that is "make your own.."
+
+## Jul 13, 2025
+
+Some UI feedback:
+people are regularly confused by the disk ii icons that show up at the bottom when disks are on, thinking those should be interactive. and folks are confused by the mouse capture, and how to get out.
+
+some possibile treatments:
+* make the mouse captured message stay on screen much longer;
+* only do mouse capture on user request;
+
+* make the disk ii icons at bottom of screen also be interactive? But then it won't be clear how to unmount a disk.
+* Could have the disk ii icons open up the control panel.
+* scratch the control panel altogether and just have hover-activated controls for everything.
+
+* short and sweet how-to instructions on first bootup, or, prominent help menu
+
+* also suggestion to pause the emulator when the window is minimized.
+
+``
+[x] Bug:
+full-screen
+click in another window on 2nd monitor, causes app to minimize
+un-minimize
+exit full-screen
+there is no title bar on window
+full-screen and exit full-screen again - the window has a title bar again.
+
+ok that was me.
+``
