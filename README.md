@@ -55,7 +55,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug -S . -B build
 GSSquared will build on both Intel and Apple Silicon Macs.
 
 You will need:
-* Mac OSX 15 SDK, either Command-line or full Xcode.
+* Mac OSX 12 SDK, either Command-line or full Xcode.
 
 ```
 git clone --recurse-submodules https://github.com/jawaidbazyar2/gssquared.git
@@ -153,9 +153,10 @@ Creates a .TGZ package in the build/ directory that contains all the pieces you 
 
 We've successfully built for windows using the following environment:
 
+* git bash
 * mingw
-* VS Code
 * clang
+* VS Code
 
 ```
 git clone --recurse-submodules https://github.com/jawaidbazyar2/gssquared.git
@@ -170,7 +171,7 @@ cmake --build build --parallel
 After building, you can create a ZIP archive for distribution for Windows.
 
 ```
-cmake -G "MinGW Makefiles" -DGS2_PROGRAM_FILES=O -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B build -S .
+cmake -G "MinGW Makefiles" -DGS2_PROGRAM_FILES=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B build -S .
 cmake --build build --parallel --target package
 ```
 
