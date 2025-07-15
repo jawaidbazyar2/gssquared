@@ -23,16 +23,16 @@
 
 #include "display.hpp"
 #include "text_40x24.hpp"
-#include "lores_40x48.hpp"
+//#include "lores_40x48.hpp"
 #include "hgr_280x192.hpp"
 #include "platforms.hpp"
 #include "event_poll.hpp"
 
 #include "util/dialog.hpp"
 
-#include "display/displayng.hpp"
-#include "display/hgr.hpp"
-#include "display/lgr.hpp"
+//#include "display/displayng.hpp"
+//#include "display/hgr.hpp"
+//#include "display/lgr.hpp"
 #include "display/ntsc.hpp"
 
 #include "videosystem.hpp"
@@ -181,57 +181,11 @@ void set_display_page2(display_state_t *ds) {
     set_display_page(ds, DISPLAY_PAGE_2);
 }
 
+#if 0
 void init_display_font(rom_data *rd) {
     pre_calculate_font(rd);
 }
-
-#if 0
-/**
- * This is effectively a "redraw the entire screen each frame" method now.
- * With an optimization only update dirty lines.
- */
-bool update_display_apple2(cpu_state *cpu) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
-    video_system_t *vs = ds->video_system;
-
-    // the backbuffer must be cleared each frame. The docs state this clearly
-    // but I didn't know what the backbuffer was. Also, I assumed doing it once
-    // at startup was enough. NOPE. (oh, it's buffer flipping).
-
-    int updated = 0;
-    for (int line = 0; line < 24; line++) {
-        if (vs->force_full_frame_redraw || ds->dirty_line[line]) {
-            switch (vs->display_color_engine) {
-                case DM_ENGINE_NTSC:
-                    render_line_ntsc(cpu, line);
-                    break;
-                case DM_ENGINE_RGB:
-                    render_line_rgb(cpu, line);
-                    break;
-                default:
-                    render_line_mono(cpu, line);
-                    break;
-            }
-            ds->dirty_line[line] = 0;
-            updated = 1;
-        }
-    }
-
-    if (updated) { // only reload texture if we updated any lines.
-        void* pixels;
-        int pitch;
-        if (!SDL_LockTexture(ds->screenTexture, NULL, &pixels, &pitch)) {
-            fprintf(stderr, "Failed to lock texture: %s\n", SDL_GetError());
-            return true;
-        }
-        memcpy(pixels, ds->buffer, BASE_WIDTH * BASE_HEIGHT * sizeof(RGBA_t)); // load all buffer into texture
-        SDL_UnlockTexture(ds->screenTexture);
-    }
-    vs->force_full_frame_redraw = false;
-    vs->render_frame(ds->screenTexture);
-    return true;
-}
-#else
+#endif
 
 /**
  * This is effectively a "redraw the entire screen each frame" method now.
@@ -330,26 +284,6 @@ bool update_display_apple2(cpu_state *cpu) {
     return true;
 }
 
-#endif
-
-/* void update_display(cpu_state *cpu) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
-    annunciator_state_t * anc_d = (annunciator_state_t *)get_module_state(cpu, MODULE_ANNUNCIATOR);
-    videx_data * videx_d = (videx_data *)get_slot_state_by_id(cpu, DEVICE_ID_VIDEX);
-
-    // the backbuffer must be cleared each frame. The docs state this clearly
-    // but I didn't know what the backbuffer was. Also, I assumed doing it once
-    // at startup was enough. NOPE.
-    ds->video_system->clear();
-
-    if (videx_d && ds->display_mode == TEXT_MODE && anc_d && anc_d->annunciators[0] ) {
-        update_display_videx(cpu, videx_d ); 
-    } else {
-        update_display_apple2(cpu);
-    }
-    // TODO: IIgs will need a hook here too - do same video update callback function.
-} */
-
 void force_display_update(display_state_t *ds) {
     for (int y = 0; y < 24; y++) {
         ds->dirty_line[y] = 1;
@@ -420,7 +354,7 @@ void set_graphics_mode(display_state_t *ds, display_graphics_mode_t mode) {
 }
 
 // anything we lock we have to completely replace.
-
+#if 0
 void render_line_ntsc(cpu_state *cpu, int y) {
     display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
     video_system_t *vs = ds->video_system;
@@ -444,7 +378,9 @@ void render_line_ntsc(cpu_state *cpu, int y) {
     }
 
 }
+#endif
 
+#if 0
 void render_line_rgb(cpu_state *cpu, int y) {
     display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
     video_system_t *vs = ds->video_system;
@@ -459,7 +395,9 @@ void render_line_rgb(cpu_state *cpu, int y) {
     else render_text_scanline(cpu, y, pixels, pitch);
 
 }
+#endif
 
+#if 0
 void render_line_mono(cpu_state *cpu, int y) {
     display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
     video_system_t *vs = ds->video_system;
@@ -479,6 +417,7 @@ void render_line_mono(cpu_state *cpu, int y) {
 
     processAppleIIFrame_Mono(frameBuffer + (y * 8 * BASE_WIDTH), (RGBA_t *)pixels, y * 8, (y + 1) * 8, mono_color_value);
 }
+#endif
 
 uint8_t txt_bus_read_C050(void *context, uint16_t address) {
     display_state_t *ds = (display_state_t *)context;
@@ -657,34 +596,6 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
 /** Called by Clipboard to return current display buffer.
  * doubles scanlines and returns 2* the "native" height. */
 
-#if 0
-void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *width, uint32_t *height) {
-    display_state_t *ds = (display_state_t *)get_module_state(computer->cpu, MODULE_DISPLAY);
-    // pass back the size.
-    *width = BASE_WIDTH;
-    *height = BASE_HEIGHT * 2;
-    // BMP files have the last scanline first. What? 
-    // Copy RGB values without alpha channel
-    RGBA_t *src = (RGBA_t *)ds->buffer;
-    uint8_t *dst = buffer;
-    for (int scanline = BASE_HEIGHT - 1; scanline >= 0; scanline--) {
-        for (int i = 0; i < BASE_WIDTH; i++) {
-            *dst++ = src[scanline * BASE_WIDTH + i].b;
-            *dst++ = src[scanline * BASE_WIDTH + i].g;
-            *dst++ = src[scanline * BASE_WIDTH + i].r;
-        }
-        // do it again - scanline double
-        for (int i = 0; i < BASE_WIDTH; i++) {
-            *dst++ = src[scanline * BASE_WIDTH + i].b;
-            *dst++ = src[scanline * BASE_WIDTH + i].g;
-            *dst++ = src[scanline * BASE_WIDTH + i].r;
-        }
-    }
-    static char msgbuf[256];
-    snprintf(msgbuf, sizeof(msgbuf), "Screen snapshot taken");
-    computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
-}
-#else
 void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *width, uint32_t *height) {
     display_state_t *ds = (display_state_t *)get_module_state(computer->cpu, MODULE_DISPLAY);
     // pass back the size.
@@ -723,7 +634,6 @@ void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *
     snprintf(msgbuf, sizeof(msgbuf), "Screen snapshot taken");
     computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
 }
-#endif
 
 // Implement the switch, but text display doesn't use it yet.
 void display_write_switches(void *context, uint16_t address, uint8_t value) {
@@ -798,7 +708,6 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
     MMU_II *mmu = computer->mmu;
     ds->mmu = mmu;
 
-#if 1
     // new display engine setup
     CharRom *charrom = nullptr;
     switch (computer->platform->id) {
@@ -842,24 +751,6 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
     // NEAREST gets us sharp pixels.
     SDL_SetTextureScaleMode(ds->screenTexture, SDL_SCALEMODE_LINEAR);
 
-#else
-    // Create the screen texture
-    ds->screenTexture = SDL_CreateTexture(vs->renderer,
-        PIXEL_FORMAT,
-        SDL_TEXTUREACCESS_STREAMING,
-        BASE_WIDTH, BASE_HEIGHT);
-
-    if (!ds->screenTexture) {
-        fprintf(stderr, "Error creating screen texture: %s\n", SDL_GetError());
-    }
-
-    SDL_SetTextureBlendMode(ds->screenTexture, SDL_BLENDMODE_NONE); /* GRRRRRRR. This was defaulting to SDL_BLENDMODE_BLEND. */
-    // LINEAR gets us appropriately blurred pixels.
-    // NEAREST gets us sharp pixels.
-    SDL_SetTextureScaleMode(ds->screenTexture, SDL_SCALEMODE_LINEAR);
-
-    init_displayng();
-#endif
 
     // set in CPU so we can reference later
     set_module_state(cpu, MODULE_DISPLAY, ds);
@@ -894,7 +785,7 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
 
     computer->register_shutdown_handler([ds]() {
         SDL_DestroyTexture(ds->screenTexture);
-        deinit_displayng();
+        //deinit_displayng();
         delete ds;
         return true;
     });

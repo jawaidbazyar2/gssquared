@@ -267,13 +267,13 @@ target_link_libraries(gs2_computer SDL3_ttf::SDL3_ttf-shared)
 
 # Add the executable
 add_executable(GSSquared src/gs2.cpp src/clock.cpp src/debug.cpp  src/opcodes.cpp 
-    src/display/text_40x24.cpp src/display/lores_40x48.cpp src/display/hgr_280x192.cpp src/display/display.cpp
-    src/display/displayng.cpp src/display/font.cpp src/display/hgr.cpp src/display/lgr.cpp
+    src/display/text_40x24.cpp src/display/hgr_280x192.cpp src/display/display.cpp
     src/devices/diskii/diskii.cpp
     src/platforms.cpp
     src/event_poll.cpp
     src/devices.cpp src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
+    # src/display/lores_40x48.cpp src/display/hgr.cpp src/display/lgr.cpp src/display/displayng.cpp src/display/font.cpp 
     ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns
     )
 

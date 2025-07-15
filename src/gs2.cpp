@@ -487,7 +487,7 @@ int main(int argc, char *argv[]) {
     computer->cpu->cpun = createCPU(platform->cpu_type);
     computer->mounts = new Mounts(computer->cpu);
 
-    init_display_font(rd);
+    //init_display_font(rd);
 
     //SystemConfig_t *system_config = get_system_config(platform_id);
 

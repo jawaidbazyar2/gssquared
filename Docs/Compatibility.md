@@ -226,3 +226,7 @@ Well, it stops running correctly on Apple2TS also. Maybe the Demo just stops the
 ### AirHeart
 
 crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff.
+
+## Berzap
+
+boots. ctrl-c lets you configure mockingboard. there might be an attempt at speech which doesn't work of course.

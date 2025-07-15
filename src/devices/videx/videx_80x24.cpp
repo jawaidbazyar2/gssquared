@@ -25,7 +25,6 @@
 
 void render_videx_scanline_80x24(cpu_state *cpu, videx_data * videx_d, int y, void *pixels, int pitch) {
     display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
-    //videx_data * videx_d = (videx_data *)get_module_state(cpu, MODULE_VIDEX);
     RGBA_t *texturePixels = (RGBA_t *)pixels;
 
     RGBA_t color_value = ds->video_system->get_mono_color();

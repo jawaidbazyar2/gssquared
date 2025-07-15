@@ -5216,3 +5216,20 @@ full-screen and exit full-screen again - the window has a title bar again.
 
 ok that was me.
 ``
+
+So, action items
+
+1. Do a round of UI improvements
+1. implement Wms code
+1. bring in the enhanced speaker code
+1. Support .woz format?
+1. Choose between //c or GS as next stage.
+1. need to support the mouse card.
+
+I am feeling the bug for GS work. Will require a 65816 core.
+
+## Jul 15, 2025
+
+steps towards implement Wms code:
+1. eliminate all the old commented-out display code. Keep my RGB routines (somewhere) in case I decide to go back to those.
+1. test performance eliminating the "display update" cachey stuff, and see what performance is just updating every frame 100%.

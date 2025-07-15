@@ -21,5 +21,3 @@
 
 void txt_memory_write(void *context, uint16_t address, uint8_t value);
 void update_flash_state(cpu_state *cpu);
-void render_text_scanline(cpu_state *cpu, int y, void *pixels, int pitch);
-void render_text_scanline_ng(cpu_state *cpu, int y);

@@ -21,4 +21,3 @@
 #include "cpu.hpp"
 
 void hgr_memory_write(void *context, uint16_t address, uint8_t value);
-void render_hgr_scanline(cpu_state *cpu, int y, void *pixels, int pitch);
