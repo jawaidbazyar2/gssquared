@@ -3,6 +3,12 @@
 #include <cstdint>
 #include <cstdio>
 
+enum color_mode_t {
+    COLORBURST_OFF = 0,
+    COLORBURST_ON,
+};
+
+
 template<typename bs_t, uint16_t HEIGHT, uint16_t WIDTH>
 class Frame {
 private:
@@ -11,6 +17,7 @@ private:
     uint16_t f_width; // purely informational, for consumers
     uint16_t f_height;
     alignas(64) bs_t stream[HEIGHT][WIDTH];
+    color_mode_t line_mode[HEIGHT];
 
 public:
     Frame(uint16_t width, uint16_t height);  // pixels
@@ -33,6 +40,15 @@ public:
         scanline = line;
         hloc = 0;
     }
+
+    inline void set_color_mode(color_mode_t mode) {
+        line_mode[scanline] = mode;
+    }
+
+    inline color_mode_t get_color_mode() {
+        return line_mode[scanline];
+    }
+    
     inline uint16_t width() { return f_width; }
     inline uint16_t height() { return f_height; }
     void clear();

@@ -210,72 +210,85 @@ text looks like a** in it. */
 
         for (uint16_t y = 0; y < 192; y++)
         {
-            // Process each scanline
-            uint8_t phase = phaseoffset;
-            uint8_t ShiftReg = 0;
-            uint8_t BSOut = 0;
-            uint8_t LatchOut = 0;
-            uint8_t MuxOut = 0;
-            uint8_t Counter = 0;
+            color_mode_t color_mode = frame_byte->get_color_mode();
+            if (color_mode == COLORBURST_ON) {
+                // do color burst
 
-            bool JK43 = 0;
-            bool JK43_J = 0;
-            bool JK43_K = 0;
-            bool JK44 = 0;
-            bool JK44_J = 0;
-            bool JK44_K = 0;
-            bool INP;
+                // Process each scanline
+                uint8_t phase = phaseoffset;
+                uint8_t ShiftReg = 0;
+                uint8_t BSOut = 0;
+                uint8_t LatchOut = 0;
+                uint8_t MuxOut = 0;
+                uint8_t Counter = 0;
 
-            frame_byte->set_line(y);
-            frame_rgba->set_line(y);
+                bool JK43 = 0;
+                bool JK43_J = 0;
+                bool JK43_K = 0;
+                bool JK44 = 0;
+                bool JK44_J = 0;
+                bool JK44_K = 0;
+                bool INP;
 
-            INP = frame_byte->pull(); // preload the shift register for lookahead
-            phase = (phase + 1) % 4;
-            ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
-            INP = frame_byte->pull();
-            phase = (phase + 1) % 4;
-            ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
-            INP = frame_byte->pull();
-            phase = (phase + 1) % 4;
-            ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
-            INP = frame_byte->pull();
-            phase = (phase + 1) % 4;
-            ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
-            LatchOut = barrel_shifter[3][ShiftReg];
+                frame_byte->set_line(y);
+                frame_rgba->set_line(y);
 
-            for (uint16_t x = 4; x < framewidth; x++) {
-                // PRE-Clock
-                //phase = x % 4;
-
-                bool INP = frame_byte->pull();
-                ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
-
-                // the barrel shifter needs to rotate to the RIGHT based on phase number.
-                BSOut = barrel_shifter[phase][ShiftReg];
-
-                frame_rgba->push(gs_rgb_colors[LatchOut]);
-                /* if we only check hi bit, we don't switch between colors when hi bit changes. that's wrong.*/
-
-                if ((BSOut & 0b1111) != (LatchOut & 0b1111)) {
-                    Counter++;
-                }
-                if (Counter > 3) { // this 
-                    LatchOut = BSOut;
-                    Counter = 0;
-                }
-
-                // cycle color reference and 7m inputs to the barrel shifter.
+                INP = frame_byte->pull(); // preload the shift register for lookahead
                 phase = (phase + 1) % 4;
+                ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
+                INP = frame_byte->pull();
+                phase = (phase + 1) % 4;
+                ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
+                INP = frame_byte->pull();
+                phase = (phase + 1) % 4;
+                ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
+                INP = frame_byte->pull();
+                phase = (phase + 1) % 4;
+                ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
+                LatchOut = barrel_shifter[3][ShiftReg];
 
-                // cycle the latch.
-                //LatchOut = MuxOut;
+                for (uint16_t x = 4; x < framewidth; x++) {
+                    // PRE-Clock
+                    //phase = x % 4;
+
+                    bool INP = frame_byte->pull();
+                    ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
+
+                    // the barrel shifter needs to rotate to the RIGHT based on phase number.
+                    BSOut = barrel_shifter[phase][ShiftReg];
+
+                    frame_rgba->push(gs_rgb_colors[LatchOut]);
+                    /* if we only check hi bit, we don't switch between colors when hi bit changes. that's wrong.*/
+
+                    if ((BSOut & 0b1111) != (LatchOut & 0b1111)) {
+                        Counter++;
+                    }
+                    if (Counter > 3) { // this 
+                        LatchOut = BSOut;
+                        Counter = 0;
+                    }
+
+                    // cycle color reference and 7m inputs to the barrel shifter.
+                    phase = (phase + 1) % 4;
+
+                    // cycle the latch.
+                    //LatchOut = MuxOut;
+                }
+                // need to run out the rest of the line of pixels
+                // pretend 561 to 564
+                for (uint16_t x = 1; x <= 4; x++) {
+                    frame_rgba->push(gs_rgb_colors[LatchOut]);
+                }
+            } else {
+                // do mono (white) rendering 
+                frame_byte->set_line(y);
+                frame_rgba->set_line(y);
+                for (uint16_t x = 0; x < framewidth; x++) {
+                    bool bit = frame_byte->pull();
+                    frame_rgba->push(bit ? gs_rgb_colors[15] : gs_rgb_colors[0]);
+                }
             }
-            // need to run out the rest of the line of pixels
-            // pretend 561 to 564
-            for (uint16_t x = 1; x <= 4; x++) {
-                frame_rgba->push(gs_rgb_colors[LatchOut]);
-            }
-        }
+        } 
     }
 };
 

@@ -12,7 +12,6 @@
 class AppleII_Display {
 
 private: 
-    //uint8_t char_rom[4096];
     CharRom &char_rom;
     bool flash_state = false;
     bool alt_char_set = false;
@@ -116,6 +115,7 @@ public:
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
+            f->set_color_mode(COLORBURST_OFF);
             for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
 
             for (x = 0; x < 40; x++) {
@@ -168,7 +168,8 @@ public:
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
-            
+            f->set_color_mode(COLORBURST_OFF);
+
             for (x = 0; x < 40; x++) {
                 bool invert;
 
@@ -221,6 +222,7 @@ public:
         for (uint16_t line = 0; line < 8; line++) {
             // Process 40 bytes (one scanline)
             f->set_line(scanline);
+            f->set_color_mode(COLORBURST_ON);
             for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
 
             for (int x = 0; x < 40; x++) {
@@ -246,6 +248,7 @@ public:
 
         for (uint16_t line = 0; line < 8; line++) {
             f->set_line(scanline);
+            f->set_color_mode(COLORBURST_ON);
 
             for (int x = 0; x < 40; x++) {
                 uint8_t byteM = m[x];
@@ -275,6 +278,8 @@ public:
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
+            f->set_color_mode(COLORBURST_ON);
+
             for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
             
             for (x = 0; x < 40; x++) {
@@ -307,7 +312,8 @@ public:
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
-            
+            f->set_color_mode(COLORBURST_ON);
+
             for (uint16_t x = 0; x < 40; x++) {
                 uint8_t tchar = alttextpage[char_addr];
                 
