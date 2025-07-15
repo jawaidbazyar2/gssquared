@@ -110,10 +110,6 @@ public:
 
     SDL_Texture* screenTexture;
 
-   /*  display_color_engine_t display_color_engine;
-    display_mono_color_t display_mono_color;
-    display_pixel_mode_t display_pixel_mode; */
-
     display_mode_t display_mode;
     display_split_mode_t display_split_mode;
     display_graphics_mode_t display_graphics_mode;
@@ -122,9 +118,6 @@ public:
     bool f_altcharset = false;
     bool f_80col = false;
     uint64_t vbl_cycle_count = 0;
-
-    // for iie
-   // bool display_alt_charset;
 
     bool flash_state;
     int flash_counter;
@@ -148,19 +141,9 @@ public:
     MessageBus *mbus;
 } display_state_t;
 
-
-extern RGBA_t lores_color_table[16]; 
-
-/* void update_display(cpu_state *cpu); */
-
 void txt_memory_write(uint16_t , uint8_t );
 void update_flash_state(cpu_state *cpu);
 void init_mb_device_display(computer_t *computer, SlotType_t slot);
-void render_line_ntsc(cpu_state *cpu, int y);
-void render_line_rgb(cpu_state *cpu, int y);
-void render_line_mono(cpu_state *cpu, int y);
-void pre_calculate_font(rom_data *rd);
-void init_display_font(rom_data *rd);
 
 void display_dump_hires_page(cpu_state *cpu, int page);
 void display_dump_text_page(cpu_state *cpu, int page);
