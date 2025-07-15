@@ -41,14 +41,18 @@ public:
         hloc = 0;
     }
 
-    inline void set_color_mode(color_mode_t mode) {
-        line_mode[scanline] = mode;
+    inline void set_color_mode(int line, color_mode_t mode) {
+        if (line < 0 || line >= HEIGHT) {
+            printf("set_color_mode: line out of bounds: %d\n", line);
+            return;
+        }
+        line_mode[line] = mode;
     }
 
-    inline color_mode_t get_color_mode() {
-        return line_mode[scanline];
+    inline color_mode_t get_color_mode(int line) {
+        return line_mode[line];
     }
-    
+
     inline uint16_t width() { return f_width; }
     inline uint16_t height() { return f_height; }
     void clear();
@@ -65,6 +69,9 @@ Frame<bs_t, HEIGHT, WIDTH>::Frame(uint16_t width, uint16_t height) {
     f_height = height;
     scanline = 0;
     hloc = 0;
+    for (int i = 0; i < HEIGHT; i++) {
+        line_mode[i] = COLORBURST_OFF;
+    }
 }
 
 template<typename bs_t, uint16_t HEIGHT, uint16_t WIDTH>
