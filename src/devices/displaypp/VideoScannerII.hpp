@@ -5,6 +5,7 @@
 #include "mmus/mmu.hpp"
 #include "computer.hpp"
 #include "frame/Frames.hpp"
+#include "CharRom.hpp"
 
 typedef enum {
     VM_TEXT40 = 0,

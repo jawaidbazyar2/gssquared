@@ -95,7 +95,7 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                         }
                         
                         if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
-                            //for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
+                            for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
                         }
                     }
                     break;

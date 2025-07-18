@@ -2,6 +2,7 @@
 #include "VideoScannerII.hpp"
 #include "cpu.hpp"
 #include "frame/Frames.hpp"
+#include "CharRom.hpp"
 
 void VideoScannerII::init_video_addresses()
 {
@@ -149,6 +150,7 @@ VideoScannerII::VideoScannerII(uint8_t *ram)
 {
     //this->mmu = dynamic_cast<MMU_II *>(mmu);
     this->ram = ram;
+
     init_video_addresses();
 
     frame_scan = new FrameScan560(580, 192);

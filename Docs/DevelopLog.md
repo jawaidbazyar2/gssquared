@@ -5291,7 +5291,7 @@ So, need to implement the other video modes. I am wondering if mode selection sh
 * hires / lores
 * page 1 / page 2
 * 40col / 80col
-* unused
+* altcharset 0/1
 * unused
 
 Any given video byte's handling is defined by one of those. now what about split txt/graph - ..
@@ -5301,3 +5301,17 @@ text/lores: 0-191 point to 0x400
 hires: 0-191 point to 0x2000
 I think video_cycle should handle the split screen. because in split, 0-159 is mode and 160-191 is text. it can just put the right token in there.
 I whittled the list down. 
+
+## Jul 18, 2025
+
+So the VideoScanner starting to come together. have done lores, hires, dhires. still need dlores and the text modes. 
+
+DHGR frame time is 285-295us. Same for hires, and lores. So they're all going to be pretty consistent. Maybe hires takes a hair longer. 
+Mono takes 150us. Makes sense. RGB - about the same as ntsc. 
+Now once we have a full frame we need to ensure we don't try to shove more data into it. i.e. we need to run our loop for exactly 17,030 cycles.
+What happens if we go over a few, as is likely to happen inside an instruction - let's say worst-case is 7 or 8 cycles. video_cycle will be called maybe 7 times in the hbl and/or vbl. I think that's alright. In higher speed modes, however, video_cycle is going to have to count only 1mhz clocks, and be de-synchronized from the cpu clock. I think we can count this with a uint64_t.
+
+The video_byte needs to be readable from many different places. I am thinking maybe this can store the video_byte in the mmu. Then have an mmu method "read_floating_bus()" that will do the thing. (and when we're not using VideoScanner, that routine can just return 0xEE, which it will be set to by default.
+
+ALT char set - I kind of want the ROM to be passed not to Scanner, but to Generator. Remember the goal of the scanner is just to get the video bytes into a buffer as fast as possible, and not to process the data (which is timeconsuming). So, Scanner needs to tell Generator what the alt char set mode is at the time the byte was read. We have another whole byte of data we can use here. Let's use bit 0 (i.e., value of 1/0) to store the alt flag. That said, that also leans again towards: the mode byte is a bit field, not a value. Or, maybe have it be a value, but, -also- have the bit field. 
+So the Scanner set_video_mode will also calculate the flags field.

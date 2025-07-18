@@ -15,7 +15,6 @@ private:
     CharRom &char_rom;
     bool flash_state = false;
     bool alt_char_set = false;
-    uint16_t altbase = 0x0000;
     uint8_t hires40Font[2 * CHAR_NUM * CHAR_WIDTH];
 
     alignas(64) uint16_t A2_textMap[24] =
@@ -129,7 +128,7 @@ public:
                     invert = false;
                 }
 
-                uint8_t cdata = char_rom.get_char_scanline(tchar, y + altbase);
+                uint8_t cdata = char_rom.get_char_scanline(tchar, y);
 
                 f->push((cdata & 1) ^ invert); 
                 f->push((cdata & 1) ^ invert); 
@@ -175,7 +174,7 @@ public:
 
                 uint8_t tchar = alttextpage[char_addr];
 
-                uint8_t cdata = char_rom.get_char_scanline(tchar, y + altbase);
+                uint8_t cdata = char_rom.get_char_scanline(tchar, y);
 
                 if (char_rom.is_flash(tchar)) {
                     invert = flash_state;
@@ -192,7 +191,7 @@ public:
                 f->push((cdata & 1) ^ invert); cdata>>=1;
 
                 tchar = textpage[char_addr];
-                cdata = char_rom.get_char_scanline(tchar, y + altbase);
+                cdata = char_rom.get_char_scanline(tchar, y);
                 if (char_rom.is_flash(tchar)) {
                     invert = flash_state;
                 } else {
