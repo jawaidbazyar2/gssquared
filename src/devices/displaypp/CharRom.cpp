@@ -15,7 +15,7 @@ CharRom::CharRom(const char *filename) {
 
     FILE *f = fopen(fullfilename.c_str(), "rb");
     if (!f) {
-        printf("Failed to open char rom file: %s\n", filename);
+        printf("Failed to open char rom file: %s\n", fullfilename.c_str());
         valid = false;
         delete[] data;
         return;
