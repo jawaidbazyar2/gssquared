@@ -62,7 +62,7 @@ bool handle_sdl_keydown(computer_t *computer, cpu_state *cpu, SDL_Event event) {
         return true;
     }
 
-    if (key == SDLK_F6) {
+   /*  if (key == SDLK_F6) {
         if (mod & SDL_KMOD_CTRL) {
             // dump hires image page 1
             display_dump_text_page(cpu, 1);
@@ -73,8 +73,8 @@ bool handle_sdl_keydown(computer_t *computer, cpu_state *cpu, SDL_Event event) {
             display_dump_text_page(cpu, 2);
             return true;
         }
-    }
-    if (key == SDLK_F7) {
+    } */
+    /* if (key == SDLK_F7) {
         if (mod & SDL_KMOD_CTRL) {
             // dump hires image page 1
             display_dump_hires_page(cpu, 1);
@@ -85,7 +85,7 @@ bool handle_sdl_keydown(computer_t *computer, cpu_state *cpu, SDL_Event event) {
             display_dump_hires_page(cpu, 2);
             return true;
         }
-    }
+    } */
 
     return false;
 }
