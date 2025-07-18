@@ -284,9 +284,11 @@ int main(int argc, char **argv) {
                 }
                 if (event.key.key == SDLK_4) {
                     generate_mode = 4;
-                    video_scanner_iie->set_page_2();
+                    video_scanner_iie->set_graf();
+                    video_scanner_iie->set_page_1();
                     video_scanner_iie->set_80col();
                     video_scanner_iie->set_lores();
+                    video_scanner_iie->set_dblres();
                 }
                 if (event.key.key == SDLK_5) {
                     generate_mode = 5;

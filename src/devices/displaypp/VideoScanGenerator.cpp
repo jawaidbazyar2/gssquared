@@ -156,6 +156,40 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                         }
                     }
                     break;
+                case VM_DLORES: {
+                
+                    uint8_t tchar = scan.auxbyte;
+                    
+                    if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
+                        tchar = tchar >> 4;
+                    }
+                    uint16_t pixeloff = (hcount * 14) % 4;
+    
+                    for (uint16_t bits = 0; bits < 7; bits++) {
+                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
+                        frame_byte->push(bit);
+                        pixeloff = (pixeloff + 1) % 4;
+                    }
+
+                    tchar = scan.mainbyte;
+                    
+                    if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
+                        tchar = tchar >> 4;
+                    }
+                    // this is correct.
+                    pixeloff = (hcount * 14) % 4;
+    
+                    for (uint16_t bits = 0; bits < 7; bits++) {
+                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
+                        frame_byte->push(bit);
+                        pixeloff = (pixeloff + 1) % 4;
+                    }        
+                    
+                    if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
+                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
+                    }
+                }
+                break;
                 case VM_HIRES: {
                         if (hcount == 0) {
                             for (int i = 0; i < 7; i++) {
