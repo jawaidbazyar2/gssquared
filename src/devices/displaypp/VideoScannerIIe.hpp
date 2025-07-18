@@ -14,7 +14,7 @@ protected:
     virtual void set_video_mode() override;
 
 public:
-    VideoScannerIIe(MMU * mmu);
+    VideoScannerIIe(uint8_t *ram);
 
     inline bool is_80col()        { return sw80col;   }
     inline bool is_80store()      { return sw80store; }

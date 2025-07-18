@@ -8,6 +8,7 @@
 //#include "devices/displaypp/frame/frame_bit.hpp"
 #include "devices/displaypp/frame/Frames.hpp"
 #include "devices/displaypp/VideoScannerII.hpp"
+#include "devices/displaypp/VideoScannerIIe.hpp"
 #include "devices/displaypp/VideoScanGenerator.cpp"
 #include "devices/displaypp/render/Monochrome560.hpp"
 #include "devices/displaypp/render/NTSC560.hpp"
@@ -205,6 +206,7 @@ int main(int argc, char **argv) {
     GSRGB560 rgb_render;
 
     VideoScannerII *video_scanner = new VideoScannerII(ram);
+    VideoScannerIIe *video_scanner_iie = new VideoScannerIIe(ram);
     VideoScanGenerator *vsg = new VideoScanGenerator();
 
 /*     AppleII_Display display_iie(iie_rom);
@@ -290,8 +292,12 @@ int main(int argc, char **argv) {
                 }
                 if (event.key.key == SDLK_6) {
                     generate_mode = 6;
-                    video_scanner->set_page_1();
-                    video_scanner->set_hires();
+                    video_scanner_iie->set_dblres();
+                    video_scanner_iie->set_hires();
+                    video_scanner_iie->set_graf();
+                    video_scanner_iie->set_page_1();
+                    video_scanner_iie->set_80col();
+                    //video_scanner_iie->set_hires();
                 }
                 if (event.key.key == SDLK_N) {
                     render_mode = 2;
@@ -306,12 +312,14 @@ int main(int argc, char **argv) {
                     sharpness = 1 - sharpness;
                     SDL_SetTextureScaleMode(texture, sharpness ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST);
                 }
+                printf("key pressed: %d\n", event.key.key);
             }
         }
 
         start = SDL_GetTicksNS();
         int phaseoffset = 1; // now that I start normal (40) display at pixel 7, its phase is 1 also. So, both 40 and 80 display start at phase 1 now.
-       
+        FrameScan560 *frame_scan = nullptr;
+
         /* exactly one frame worth of video cycles */
         for (int vidcycle = 0; vidcycle < 17030; vidcycle++) {
             // hard-code a "cycle timed video switch" splitting screen into half hires and half lores
@@ -329,11 +337,17 @@ int main(int argc, char **argv) {
                 video_scanner->set_lores();
                 video_scanner->set_page_1();
             }  */
-            video_scanner->video_cycle();
+            if (generate_mode == 6) {
+                video_scanner_iie->video_cycle();
+                frame_scan = video_scanner_iie->get_frame_scan();
+            } else {
+                video_scanner->video_cycle();
+                frame_scan = video_scanner->get_frame_scan();
+            }
         }
 
         // now convert frame_scan to frame_byte
-        vsg->generate_frame(video_scanner->get_frame_scan(), frame_byte);
+        vsg->generate_frame(frame_scan, frame_byte);
 
         switch (render_mode) {
             case 1:

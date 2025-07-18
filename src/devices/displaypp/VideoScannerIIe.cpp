@@ -160,6 +160,8 @@ void VideoScannerIIe::set_video_mode()
 
 void VideoScannerIIe::video_cycle()
 {
+    uint32_t prev_vcount = vcount;
+
     hcount += 1;
     if (hcount == 65) {
         hcount = 0;
@@ -169,24 +171,33 @@ void VideoScannerIIe::video_cycle()
         }
     }
 
-    uint32_t address = (*(video_addresses))[65*vcount+hcount];
+    if (vcount != prev_vcount) {
+        if (vcount < 192) frame_scan->set_line(vcount);
+    }
 
-    //video_byte = mmu->read_raw(address);
-    uint8_t * ram = mmu->get_memory_base();
+    uint16_t address = (*(video_addresses))[65*vcount+hcount];
+
     uint8_t aux_byte = ram[address + 0x10000];
     video_byte = ram[address];
 
     if (is_vbl()) return;
-    if (hcount < 24) return;
+    if (hcount < 25) return;
 
-    if (hcount == 24) {
+/*     if (hcount == 24) {
         video_data[video_data_size++] = (uint8_t)VM_LAST_HBL;
         video_data[video_data_size++] = video_byte;
         return;
-    }
+    } */
+
+    Scan_t scan;
+    scan.mode = (uint8_t)video_mode;
+    scan.auxbyte = aux_byte;
+    scan.mainbyte = video_byte;
+    if (hcount < 65) frame_scan->push(scan);
+
 
     // I don't really like this.
-    bool aux_text = video_mode >= VM_TEXT80 && video_mode <= VM_DHIRES_ALT_MIXED80 && address < 0x2000;
+    /* bool aux_text = video_mode >= VM_TEXT80 && video_mode <= VM_DHIRES_ALT_MIXED80 && address < 0x2000;
     bool aux_graf = video_mode >= VM_DHIRES && video_mode <= VM_DHIRES_ALT_MIXED80 && address >= 0x2000;
     if ((video_mode == VM_LORES_MIXED80 || video_mode == VM_LORES_ALT_MIXED80) && vcount < 160)
         aux_text = false;
@@ -196,10 +207,10 @@ void VideoScannerIIe::video_cycle()
     if (aux_text || aux_graf)
         video_data[video_data_size++] = aux_byte;
 
-    video_data[video_data_size++] = video_byte;
+    video_data[video_data_size++] = video_byte; */
 }
 
-VideoScannerIIe::VideoScannerIIe(MMU * mmu) : VideoScannerII(mmu)
+VideoScannerIIe::VideoScannerIIe(uint8_t *ram) : VideoScannerII(ram)
 {
     init_video_addresses();
 
@@ -289,7 +300,7 @@ void vs_bus_write_C05F(void *context, uint16_t address, uint8_t data) {
     vs_bus_read_C05F(context, address);
 }
 
-void init_mb_video_scanner_iie(computer_t *computer, SlotType_t slot)
+/* void init_mb_video_scanner_iie(computer_t *computer, SlotType_t slot)
 {
     cpu_state *cpu = computer->cpu;
     
@@ -333,4 +344,4 @@ void init_mb_video_scanner_iie(computer_t *computer, SlotType_t slot)
     computer->mmu->set_C0XX_read_handler(0xC05F, { vs_bus_read_C05F, vs });
     computer->mmu->set_C0XX_write_handler(0xC05E, { vs_bus_write_C05E, vs });
     computer->mmu->set_C0XX_write_handler(0xC05F, { vs_bus_write_C05F, vs });
-}
+} */

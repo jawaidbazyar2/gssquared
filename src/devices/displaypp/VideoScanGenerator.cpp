@@ -29,7 +29,7 @@ void VideoScanGenerator::build_hires40Font(bool delayEnabled)
 
 void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *frame_byte)
 {
-    for (uint16_t vcount = 0; vcount < 192; ++vcount)
+    for (uint16_t vcount = 0; vcount < 192; vcount++)
     {
         frame_scan->set_line(vcount);
         frame_byte->set_line(vcount);
@@ -75,6 +75,28 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                             frame_byte->push(hires40Font[fontIndex + i]);
                         }
                         lastByte = byte;
+                    }
+                    break;
+                    case VM_DHIRES: {
+                        if (hcount == 0) {
+                            // dhgr starts at horz offset 0
+                            frame_byte->set_color_mode(vcount, COLORBURST_ON);
+                        }
+                         
+                        uint8_t byteM = scan.mainbyte;
+                        uint8_t byteA = scan.auxbyte;
+                        for (int i = 0; i < 7; i++ ) {
+                            frame_byte->push((byteA & 0x01) ? 1 : 0);
+                            byteA >>= 1;
+                        }
+                        for (int i = 0; i < 7; i++ ) {
+                            frame_byte->push((byteM & 0x01) ? 1 : 0);
+                            byteM >>= 1;
+                        }
+                        
+                        if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
+                            //for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
+                        }
                     }
                     break;
                 default:

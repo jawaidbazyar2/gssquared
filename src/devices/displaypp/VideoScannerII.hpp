@@ -51,6 +51,13 @@ typedef enum {
     VM_LAST_HBL
 } video_mode_t; */
 
+struct scan_address_t {
+    uint16_t address;
+    uint16_t hcount;
+    uint16_t vcount;
+    uint16_t unused;
+};
+
 class VideoScannerII
 {
 protected:

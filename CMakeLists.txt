@@ -258,7 +258,7 @@ add_library(gs2_message_bus src/mbus/MessageBus.cpp)
 
 add_library(gs2_paths src/paths.cpp)
 
-add_library(gs2_video_scanner src/devices/displaypp/VideoScannerII.cpp src/devices/displaypp/VideoScanGenerator.cpp)
+add_library(gs2_video_scanner src/devices/displaypp/VideoScannerII.cpp src/devices/displaypp/VideoScanGenerator.cpp src/devices/displaypp/VideoScannerIIe.cpp)
 
 #add_library(gs2_oldmmu src/memory.cpp src/bus.cpp )
 
