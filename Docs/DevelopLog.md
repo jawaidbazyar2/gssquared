@@ -5231,5 +5231,73 @@ I am feeling the bug for GS work. Will require a 65816 core.
 ## Jul 15, 2025
 
 steps towards implement Wms code:
-1. eliminate all the old commented-out display code. Keep my RGB routines (somewhere) in case I decide to go back to those.
+1. eliminate all the old commented-out display code. Keep my RGB routines (somewhere) in case I decide to go back to those. [done]
 1. test performance eliminating the "display update" cachey stuff, and see what performance is just updating every frame 100%.
+
+There is a bug in the RGB code exhibited in (for example) Choplifter. The counter digits have inappropriate color pixels when transitioning in certain cases.
+Maybe, black white black? Almost everything else is really good.
+counter>2 makes it worse.
+counter>3 is 99% correct. There must be some other issue..
+
+patterns:
+110111 (3b)    111100111111 000...
+111111 (3f)    111111111111 000...
+111011 (37)    111111001111 000...
+
+it's the last one, 111011, that gets hosed. That is a six-bit pattern.. it's generating a whole extra pixel compared to the other patterns. 
+
+## Jul 17, 2025
+
+So, the lookup table for the VideoScanner currently includes tables for:
+* lores
+* hires
+* mixed
+
+Plus versions based on the selected page. This does not discriminate based on 80-col mode, presumably he just uses the same address but in the aux bank. This is a 16-bit address; this will be added to mmu memory base to fetch bytes.
+If a cycle is in hbl or vbl then the address is 0 and we don't fetch any video memory there and just return fast.
+In addition to address, put in the hcount and vcount. And maybe we store the full 64-bit pointer so we don't have to do any math or get_memory_base() calls. We want video_cycle to be hyper-efficient.
+
+Videx is a completely different video system, so leave it as-is to generate a FrameRGBA directly.
+
+So what we want to do is, in any call to video_cycle:
+
+get current "video cycle index" - this is a number from 0 to 262*65-1 (17,030 - 1)
+lookup current mode
+fetch video memory byte based on LUT and video cycle index
+fetch video memory aux byte also (if iie)
+emit mode/vidbyte/vidbyte tuple into a FrameVid567 frame buffer.
+
+Wm uses hcount/vcount. but let's bake all that into just the cycle index.
+
+Have a VideoScanner call that converts display record settings to a simple mode index.
+
+Then we will have a Generator that is VideoScanner. This will look like Wm code, with a big switch statement to process the video byte bits based on the video mode in each datum.
+
+It's 7 pixels per cycle in regular mode, and 14 pixels per cycle in 80-col mode. When mode is changed, we start emitting the new mode in the tuples, and that will trigger different switch case. This is purely to generate the bit stream! Which I think is different from current code.
+
+Then the Bitstream will be rendered by whatever current backend rendering engine is selected.
+
+Process: implement as much as possible as-is. Then start hammering on optimizations. So:
+* start with current video_cycle implementation (except use a FrameVid).
+* change to cycle instead of hcount/vcount.
+
+OK! I have a test harness "vpp" for this. I implemented lores40 and hires40 so far. (options 3 and 5 in vpp). n and m work. r doesn't, it's rendering everything as monochrome because I'm not setting the line mode flags, which I should do.. ok that's easily done. hang a sec. ok, done. This seems to be working pretty well so far. I also simulated a "change mode every 4 cycles" thing. maybe do 5.. 
+
+So, need to implement the other video modes. I am wondering if mode selection should be based on flags instead of just values. How many toggles do we have..
+
+* shr = 1 / 0
+* 320/640 = 1/0
+* text / graphics
+* hires / lores
+* page 1 / page 2
+* 40col / 80col
+* unused
+* unused
+
+Any given video byte's handling is defined by one of those. now what about split txt/graph - ..
+
+40/80 doesn't matter. this is always the same byte, just in aux+mem but at same address.
+text/lores: 0-191 point to 0x400
+hires: 0-191 point to 0x2000
+I think video_cycle should handle the split screen. because in split, 0-159 is mode and 160-191 is text. it can just put the right token in there.
+I whittled the list down. 

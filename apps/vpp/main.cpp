@@ -7,7 +7,8 @@
 
 //#include "devices/displaypp/frame/frame_bit.hpp"
 #include "devices/displaypp/frame/Frames.hpp"
-#include "devices/displaypp/generate/AppleII.cpp"
+#include "devices/displaypp/VideoScannerII.hpp"
+#include "devices/displaypp/VideoScanGenerator.cpp"
 #include "devices/displaypp/render/Monochrome560.hpp"
 #include "devices/displaypp/render/NTSC560.hpp"
 #include "devices/displaypp/render/GSRGB560.hpp"
@@ -86,7 +87,7 @@ int main(int argc, char **argv) {
     //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
 
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_Window *window = SDL_CreateWindow("DisplayPP Test Harness", CANVAS_WIDTH, CANVAS_HEIGHT, SDL_WINDOW_RESIZABLE);
+    SDL_Window *window = SDL_CreateWindow("VideoScanner Test Harness", CANVAS_WIDTH, CANVAS_HEIGHT, SDL_WINDOW_RESIZABLE);
     if (!window) {
         printf("Failed to create window\n");
         return 1;
@@ -117,46 +118,6 @@ int main(int argc, char **argv) {
     int error = SDL_SetRenderTarget(renderer, nullptr);
 
     int testiterations = 10000;
-
-#if 0
-    // bitstream test. This performs worse than the bytestream.
-    printf("Testing bitstream\n");
-
-    start = SDL_GetTicksNS();
-    alignas(64) Frame_Bitstream frame(640, 200);
-   
-    for (int numframes = 0; numframes < testiterations; numframes++) {
-        frame.clear();
-        for (int i = 0; i < FB_BITSTREAM_HEIGHT; i++) {
-            frame.write_line(i);
-            for (int j = 0; j < FB_BITSTREAM_WIDTH/2; j++) {
-                frame.push(1);
-                frame.push(0);
-            }
-            frame.close_line();
-        }
-    }
-
-    end = SDL_GetTicksNS();
-    frame.print();
-    printf("Write Time taken: %llu microseconds per frame\n", (end - start) / 1000 / testiterations);
-
-    start = SDL_GetTicksNS();
-
-    for (int numframes = 0; numframes < testiterations; numframes++) {
-        for (int i = 0; i < FB_BITSTREAM_HEIGHT; i++) {
-            frame.read_line(i);
-            for (int i = 0; i < FB_BITSTREAM_WIDTH/2; i++) {
-                frame.pull();
-                frame.pull();
-            }
-        }
-    }
-    end = SDL_GetTicksNS();
-    printf("read Time taken: %llu microseconds per frame\n", (end - start) / 1000 / testiterations);
-
-    printf("Testing bytestream\n");
-#endif
 
     const uint16_t f_w = SCREEN_TEXTURE_WIDTH, f_h = SCREEN_TEXTURE_HEIGHT;
     Frame560 *frame_byte = new(std::align_val_t(64)) Frame560(f_w, f_h);
@@ -191,20 +152,23 @@ int main(int argc, char **argv) {
     printf("c: %d\n", c);
     //frame_byte->print();
 
-    uint8_t text_page[1024];
-    uint8_t alt_text_page[1024];
+    uint8_t *ram = new uint8_t[0x20000]; // 128k!
+
+    uint8_t *text_page = ram + 0x00400;
+    uint8_t *alt_text_page = ram + 0x10400;
     for (int i = 0; i < 1024; i++) {
         text_page[i] = i & 0xFF;
         alt_text_page[i] = (i+1) & 0xFF;
     }
 
-    uint8_t *lores_page = new uint8_t[1024];
-    uint8_t *alt_lores_page = new uint8_t[1024];
+    uint8_t *lores_page = ram + 0x00800;
+    uint8_t *alt_lores_page = ram + 0x10800;
     generate_dlgr_test_pattern(lores_page, alt_lores_page);
 
     //const char *testhgrpic_path = "/Users/bazyar/src/hgrdecode/HIRES/APPLE";
     const char *testhgrpic_path = "/Users/bazyar/src/gssquared/dump.hgr";
-    uint8_t *testhgrpic = new(std::align_val_t(64)) uint8_t[8192];
+//    uint8_t *testhgrpic = new(std::align_val_t(64)) uint8_t[8192];
+    uint8_t *testhgrpic = ram + 0x04000;
     FILE *f = fopen(testhgrpic_path, "rb");
     if (!f) {
         printf("Failed to load testhgrpic: %s\n", testhgrpic_path);
@@ -214,13 +178,16 @@ int main(int argc, char **argv) {
     fclose(f);
 
     const char *testdhgrpic_path = "/Users/bazyar/src/hgrdecode/DHIRES/LOGO.DHGR";
-    uint8_t *testdhgrpic = new(std::align_val_t(64)) uint8_t[16386];
+    uint8_t *testdhgrpic_alt = ram + 0x12000;
+    uint8_t *testdhgrpic = ram + 0x02000;
+//    uint8_t *testdhgrpic = new(std::align_val_t(64)) uint8_t[16386];
     FILE *f2 = fopen(testdhgrpic_path, "rb");
     if (!f2) {
         printf("Failed to load testdhgrpic: %s\n", testdhgrpic_path);
         return 1;
     }
-    fread(testdhgrpic, 1, 16384, f2);
+    fread(testdhgrpic_alt, 1, 8192, f2);
+    fread(testdhgrpic, 1, 8192, f2);
     fclose(f2);
 
     CharRom iiplus_rom("resources/roms/apple2_plus/char.rom");
@@ -237,20 +204,22 @@ int main(int argc, char **argv) {
     NTSC560 ntsc_render;
     GSRGB560 rgb_render;
 
-    AppleII_Display display_iie(iie_rom);
+    VideoScannerII *video_scanner = new VideoScannerII(ram);
+    VideoScanGenerator *vsg = new VideoScanGenerator();
+
+/*     AppleII_Display display_iie(iie_rom);
     iie_rom.print_matrix(0x40);
     AppleII_Display display_iiplus(iiplus_rom);
-    iiplus_rom.print_matrix(0x40);
-    //display.set_char_set(true);
+    iiplus_rom.print_matrix(0x40); */
 
     start = SDL_GetTicksNS();
-    for (int numframes = 0; numframes < testiterations; numframes++) {
+/*     for (int numframes = 0; numframes < testiterations; numframes++) {
         for (int l = 0; l < 24; l++) {
             display_iiplus.generate_text40(text_page, frame_byte, l);
         }
         monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
     }
-
+ */
     end = SDL_GetTicksNS();
     printf("text Time taken: %llu ns per frame\n", (end - start) / testiterations);
 
@@ -294,21 +263,35 @@ int main(int argc, char **argv) {
             if (event.type == SDL_EVENT_KEY_DOWN) {
                 if (event.key.key == SDLK_1) {
                     generate_mode = 1;
+                    video_scanner->set_page_1();
+                    video_scanner->set_text();
                 }
                 if (event.key.key == SDLK_2) {
                     generate_mode = 2;
+                    video_scanner->set_page_2();
+                    video_scanner->set_text();
                 }
                 if (event.key.key == SDLK_3) {
                     generate_mode = 3;
+                    video_scanner->set_page_1();
+                    video_scanner->set_graf();
+                    video_scanner->set_lores();
                 }
                 if (event.key.key == SDLK_4) {
                     generate_mode = 4;
+                    video_scanner->set_page_2();
+                    video_scanner->set_lores();
                 }
                 if (event.key.key == SDLK_5) {
                     generate_mode = 5;
+                    video_scanner->set_page_2();
+                    video_scanner->set_graf();
+                    video_scanner->set_hires();
                 }
                 if (event.key.key == SDLK_6) {
                     generate_mode = 6;
+                    video_scanner->set_page_1();
+                    video_scanner->set_hires();
                 }
                 if (event.key.key == SDLK_N) {
                     render_mode = 2;
@@ -328,39 +311,30 @@ int main(int argc, char **argv) {
 
         start = SDL_GetTicksNS();
         int phaseoffset = 1; // now that I start normal (40) display at pixel 7, its phase is 1 also. So, both 40 and 80 display start at phase 1 now.
-
-        if (flash_count++ > 14) {
-            flash_state = !flash_state;
-            flash_count = 0;
-            display_iiplus.set_flash_state(flash_state);
+       
+        /* exactly one frame worth of video cycles */
+        for (int vidcycle = 0; vidcycle < 17030; vidcycle++) {
+            // hard-code a "cycle timed video switch" splitting screen into half hires and half lores
+            /* if (vidcycle < 17030/2) {
+                video_scanner->set_hires();
+                video_scanner->set_page_2();
+            } else {
+                video_scanner->set_lores();
+                video_scanner->set_page_1();
+            } */
+            /* if (vidcycle % 5 < 2) { // every 5 cycles will create columns on the screen of different video modes.
+                video_scanner->set_hires();
+                video_scanner->set_page_2();
+            } else {
+                video_scanner->set_lores();
+                video_scanner->set_page_1();
+            }  */
+            video_scanner->video_cycle();
         }
 
-        for (int l = 0; l < 24; l++) {
-            switch (generate_mode) {
-                case 1:
-                    display_iiplus.generate_text40(text_page, frame_byte, l);
-                    break;
-                case 2:
-                    display_iie.generate_text80(text_page, alt_text_page, frame_byte, l);
-                    phaseoffset = 1;
-                    break;
-                case 3:
-                    display_iie.generate_lores40(text_page, frame_byte, l);
-                    break;
-                case 4:
-                    display_iie.generate_lores80(lores_page, alt_lores_page, frame_byte, l);
-                    phaseoffset = 1;
-                    break;        
-                case 5:
-                    display_iiplus.generate_hires40(testhgrpic, frame_byte, l);
-                    break;
-                case 6:
-                    // saved dhgr files are aux memory first, then main memory.
-                    display_iiplus.generate_hires80(testdhgrpic+0x2000, testdhgrpic, frame_byte, l);
-                    phaseoffset = 1;
-                    break;
-            }
-        }
+        // now convert frame_scan to frame_byte
+        vsg->generate_frame(video_scanner->get_frame_scan(), frame_byte);
+
         switch (render_mode) {
             case 1:
                 monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));

@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+        
         {
             "name": "Debug gs2",
             "type": "lldb",
@@ -15,6 +16,15 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/mmutest",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build-debug"
+        },
+        {
+            "name": "Debug vpp",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/vpp",
             "args": [],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build-debug"

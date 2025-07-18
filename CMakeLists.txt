@@ -258,6 +258,8 @@ add_library(gs2_message_bus src/mbus/MessageBus.cpp)
 
 add_library(gs2_paths src/paths.cpp)
 
+add_library(gs2_video_scanner src/devices/displaypp/VideoScannerII.cpp src/devices/displaypp/VideoScanGenerator.cpp)
+
 #add_library(gs2_oldmmu src/memory.cpp src/bus.cpp )
 
 target_link_libraries(gs2_ui SDL3_image::SDL3_image-shared SDL3_ttf::SDL3_ttf-shared)
@@ -336,6 +338,7 @@ add_subdirectory(apps/montest)
 add_subdirectory(apps/cycletest)
 
 add_subdirectory(apps/dpp)
+add_subdirectory(apps/vpp)
 
 add_subdirectory(apps/iieromcsum)
 
