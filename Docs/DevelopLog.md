@@ -5315,3 +5315,5 @@ The video_byte needs to be readable from many different places. I am thinking ma
 
 ALT char set - I kind of want the ROM to be passed not to Scanner, but to Generator. Remember the goal of the scanner is just to get the video bytes into a buffer as fast as possible, and not to process the data (which is timeconsuming). So, Scanner needs to tell Generator what the alt char set mode is at the time the byte was read. We have another whole byte of data we can use here. Let's use bit 0 (i.e., value of 1/0) to store the alt flag. That said, that also leans again towards: the mode byte is a bit field, not a value. Or, maybe have it be a value, but, -also- have the bit field. 
 So the Scanner set_video_mode will also calculate the flags field.
+ok, that's working. got altcharset support in. So what's the other thing I wanted in here.. the mixed mode I believe?
+ok, mixed mode and 80col both needed to be passed in. because in mixed mode, text could be in 40col or in 80col.

@@ -9,7 +9,8 @@ protected:
     bool sw80store;
     bool altchrset;
     bool dblres;
-
+    uint8_t mode_flags = 0;
+    
     virtual void set_video_mode() override;
 
 public:

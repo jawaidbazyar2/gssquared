@@ -2,7 +2,6 @@
 #include "VideoScannerII.hpp"
 #include "cpu.hpp"
 #include "frame/Frames.hpp"
-#include "CharRom.hpp"
 
 void VideoScannerII::init_video_addresses()
 {
@@ -74,23 +73,12 @@ void VideoScannerII::set_video_mode()
 
     if (graf) {
         if (hires) {
-            if (mixed) {
-                video_mode = VM_HIRES_MIXED;
-                if (page2) {
-                    video_addresses = &(mixed_p2_addresses);
-                } else {
-                    video_addresses = &(mixed_p1_addresses);
-                }
+            video_mode = VM_HIRES;
+            if (page2) {
+                video_addresses = &(hires_p2_addresses);
             } else {
-                video_mode = VM_HIRES;
-                if (page2) {
-                    video_addresses = &(hires_p2_addresses);
-                } else {
-                    video_addresses = &(hires_p1_addresses);
-                }
+                video_addresses = &(hires_p1_addresses);
             }
-        } else if (mixed) {
-            video_mode = VM_LORES_MIXED;
         } else {
             video_mode = VM_LORES;
         }

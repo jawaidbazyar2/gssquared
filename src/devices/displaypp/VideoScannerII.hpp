@@ -5,38 +5,25 @@
 #include "mmus/mmu.hpp"
 #include "computer.hpp"
 #include "frame/Frames.hpp"
-#include "CharRom.hpp"
 
 typedef enum {
     VM_TEXT40 = 0,
-    VM_ALT_TEXT40,
     VM_LORES,
     VM_HIRES,
     VM_HIRES_NOSHIFT,
-    VM_LORES_MIXED,
-    VM_LORES_ALT_MIXED,
-    VM_HIRES_MIXED,
-    VM_HIRES_ALT_MIXED,
-    VM_HIRES_NOSHIFT_MIXED,
-    VM_HIRES_NOSHIFT_ALT_MIXED,
     VM_TEXT80,
-    VM_ALT_TEXT80,
-    VM_LORES_MIXED80,
-    VM_LORES_ALT_MIXED80,
-    VM_HIRES_MIXED80,
-    VM_HIRES_ALT_MIXED80,
     VM_DLORES,
-    VM_DLORES_MIXED80,
-    VM_DLORES_ALT_MIXED80,
     VM_DHIRES,
-    VM_DHIRES_MIXED80,
-    VM_DHIRES_ALT_MIXED80,
     VM_SHR320,
     VM_SHR640,
     VM_PALETTE_DATA,
     VM_BORDER_COLOR,
     VM_LAST_HBL
 } video_mode_t;
+
+#define VS_FL_ALTCHARSET 0x01
+#define VS_FL_MIXED      0x02
+#define VS_FL_80COL      0x04
 
 /* typedef enum {
     VM_TEXT40 = 0,

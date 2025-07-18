@@ -72,66 +72,14 @@ void VideoScannerIIe::set_video_mode()
 
     if (graf) {
         if (hires) {
-            if (mixed) {
-                if (sw80col) {
-                    if (dblres) {
-                        if (altchrset)
-                            video_mode = VM_DHIRES_ALT_MIXED80;
-                        else
-                            video_mode = VM_DHIRES_MIXED80;
-                    }
-                    else {
-                        if (altchrset)
-                            video_mode = VM_HIRES_ALT_MIXED80;
-                        else
-                            video_mode = VM_HIRES_MIXED80;
-                    }
-                } else {
-                    if (dblres)
-                        video_mode = VM_HIRES_NOSHIFT_MIXED;
-                    else
-                        video_mode = VM_HIRES_MIXED;
-                }
-                if (page2 && !sw80store) {
-                    video_addresses = &(mixed_p2_addresses);
-                } else {
-                    video_addresses = &(mixed_p1_addresses);
-                }
-            } else {
-                if (dblres) {
-                    if (sw80col)
-                        video_mode = VM_DHIRES;
-                    else
-                        video_mode = VM_HIRES_NOSHIFT;
-                }
+            if (dblres) {
+                if (sw80col)
+                    video_mode = VM_DHIRES;
                 else
-                    video_mode = VM_HIRES;
-                if (page2 && !sw80store) {
-                    video_addresses = &(hires_p2_addresses);
-                } else {
-                    video_addresses = &(hires_p1_addresses);
-                }
+                    video_mode = VM_HIRES_NOSHIFT;
             }
-        } else if (mixed) {
-            if (sw80col) {
-                if (dblres) {
-                    if (altchrset)
-                        video_mode = VM_DLORES_ALT_MIXED80;
-                    else
-                        video_mode = VM_DLORES_MIXED80;
-                }
-                else {
-                    if (altchrset)
-                        video_mode = VM_LORES_ALT_MIXED80;
-                    else
-                        video_mode = VM_LORES_MIXED80;
-                }
-            } else {
-                if (altchrset)
-                    video_mode = VM_LORES_ALT_MIXED;
-                else
-                    video_mode = VM_LORES_MIXED;
-            }
+            else
+                video_mode = VM_HIRES;
         } else {
             if (dblres) {
                 if (sw80col)
@@ -144,17 +92,38 @@ void VideoScannerIIe::set_video_mode()
             }
         }
     } else if (sw80col) {
-        if (altchrset)
-            video_mode = VM_ALT_TEXT80;
-        else
-            video_mode = VM_TEXT80;
+        video_mode = VM_TEXT80;
     } else {
-        if (altchrset)
-            video_mode = VM_ALT_TEXT40;
-        else
-            video_mode = VM_TEXT40;
+        video_mode = VM_TEXT40;
     }
 
+    if (video_mode == VM_TEXT40 || video_mode == VM_TEXT80 || video_mode == VM_LORES || video_mode == VM_DLORES) { // text modes, page 1 and 2
+        if (page2 && !sw80store) {
+            video_addresses = &(lores_p2_addresses);
+        } else {
+            video_addresses = &(lores_p1_addresses);
+        }
+    } else { // a hires graphics mode.
+        if (mixed) { // if mixed.. 
+            if (page2 && !sw80store) { // page 2 / 1
+                video_addresses = &(mixed_p2_addresses);
+            } else {
+                video_addresses = &(mixed_p1_addresses);
+            }
+        } else { // not mixed..
+            if (page2 && !sw80store) {
+                video_addresses = &(hires_p2_addresses);
+            } else {
+                video_addresses = &(hires_p1_addresses);
+            }    
+        }
+    }
+
+    uint8_t flags = 0;
+    if (altchrset) flags |= VS_FL_ALTCHARSET;
+    if (mixed) flags |= VS_FL_MIXED;
+    if (sw80col) flags |= VS_FL_80COL;
+    mode_flags = flags;
     //printf("Video Mode: %d\n", video_mode);
 }
 
@@ -193,6 +162,7 @@ void VideoScannerIIe::video_cycle()
     scan.mode = (uint8_t)video_mode;
     scan.auxbyte = aux_byte;
     scan.mainbyte = video_byte;
+    scan.flags = mode_flags;
     if (hcount < 65) frame_scan->push(scan);
 
 

@@ -6,9 +6,10 @@
 #include "VideoScannerII.hpp"
 #include "VideoScanGenerator.hpp"
 
-VideoScanGenerator::VideoScanGenerator()
+VideoScanGenerator::VideoScanGenerator(CharRom *charrom)
 {
     build_hires40Font(true);
+    this->char_rom = charrom;
 }
 
 void VideoScanGenerator::build_hires40Font(bool delayEnabled) 
@@ -29,6 +30,12 @@ void VideoScanGenerator::build_hires40Font(bool delayEnabled)
 
 void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *frame_byte)
 {
+    flash_counter++;
+    if (flash_counter > 14) {
+        flash_state = !flash_state;
+        flash_counter = 0;
+    }
+
     for (uint16_t vcount = 0; vcount < 192; vcount++)
     {
         frame_scan->set_line(vcount);
@@ -38,8 +45,96 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
         for (int hcount = 0; hcount < 40; hcount++) {
 
             Scan_t scan = frame_scan->pull();
+            uint8_t eff_mode = scan.mode;
+            if ((scan.flags & VS_FL_MIXED) && (vcount >= 160)) {
+                eff_mode = (scan.flags & VS_FL_80COL) ? VM_TEXT80 : VM_TEXT40; // or TEXT80 depending on mode..
+            }
 
-            switch (scan.mode) {
+            switch (eff_mode) {
+                case VM_TEXT40: {
+                        if (hcount == 0) {
+                            for (int i = 0; i < 7; i++) {
+                                frame_byte->push(0);
+                            }
+                            frame_byte->set_color_mode(vcount, COLORBURST_OFF);
+                        }
+                        bool invert;
+                        char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
+
+                        uint8_t tchar = scan.mainbyte;
+        
+                        if (char_rom->is_flash(tchar)) {
+                            invert = flash_state;
+                        } else {
+                            invert = false;
+                        }
+        
+                        uint8_t cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
+        
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); 
+                        frame_byte->push((cdata & 1) ^ invert);     
+                    }
+                    break;
+                case VM_TEXT80: {
+                        if (hcount == 0) {
+                            frame_byte->set_color_mode(vcount, COLORBURST_OFF);
+                        }
+                        bool invert;
+
+                        uint8_t tchar = scan.auxbyte;
+                        char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
+                        uint8_t cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
+        
+                        if (char_rom->is_flash(tchar)) {
+                            invert = flash_state;
+                        } else {
+                            invert = false;
+                        }
+        
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+        
+                        tchar = scan.mainbyte;
+                        cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
+                        if (char_rom->is_flash(tchar)) {
+                            invert = flash_state;
+                        } else {
+                            invert = false;
+                        }
+        
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+            
+                    }
+                    break;
                 case VM_LORES: {
                         if (hcount == 0) {
                             for (int i = 0; i < 7; i++) {

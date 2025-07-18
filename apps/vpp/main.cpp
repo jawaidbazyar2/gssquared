@@ -205,9 +205,9 @@ int main(int argc, char **argv) {
     NTSC560 ntsc_render;
     GSRGB560 rgb_render;
 
-    VideoScannerII *video_scanner = new VideoScannerII(ram);
+    //VideoScannerII *video_scanner = new VideoScannerII(ram);
     VideoScannerIIe *video_scanner_iie = new VideoScannerIIe(ram);
-    VideoScanGenerator *vsg = new VideoScanGenerator();
+    VideoScanGenerator *vsg = new VideoScanGenerator(&iie_rom);
 
 /*     AppleII_Display display_iie(iie_rom);
     iie_rom.print_matrix(0x40);
@@ -265,30 +265,36 @@ int main(int argc, char **argv) {
             if (event.type == SDL_EVENT_KEY_DOWN) {
                 if (event.key.key == SDLK_1) {
                     generate_mode = 1;
-                    video_scanner->set_page_1();
-                    video_scanner->set_text();
+                    video_scanner_iie->set_page_1();
+                    video_scanner_iie->reset_80col();
+                    video_scanner_iie->set_text();
                 }
                 if (event.key.key == SDLK_2) {
                     generate_mode = 2;
-                    video_scanner->set_page_2();
-                    video_scanner->set_text();
+                    video_scanner_iie->set_page_1();
+                    video_scanner_iie->set_80col();
+                    video_scanner_iie->set_text();
                 }
                 if (event.key.key == SDLK_3) {
                     generate_mode = 3;
-                    video_scanner->set_page_1();
-                    video_scanner->set_graf();
-                    video_scanner->set_lores();
+                    video_scanner_iie->set_page_1();
+                    video_scanner_iie->set_graf();
+                    video_scanner_iie->reset_80col();
+                    video_scanner_iie->set_lores();
                 }
                 if (event.key.key == SDLK_4) {
                     generate_mode = 4;
-                    video_scanner->set_page_2();
-                    video_scanner->set_lores();
+                    video_scanner_iie->set_page_2();
+                    video_scanner_iie->set_80col();
+                    video_scanner_iie->set_lores();
                 }
                 if (event.key.key == SDLK_5) {
                     generate_mode = 5;
-                    video_scanner->set_page_2();
-                    video_scanner->set_graf();
-                    video_scanner->set_hires();
+                    video_scanner_iie->set_page_2();
+                    video_scanner_iie->reset_80col();
+                    video_scanner_iie->set_graf();
+                    video_scanner_iie->set_hires();
+                    video_scanner_iie->reset_dblres();
                 }
                 if (event.key.key == SDLK_6) {
                     generate_mode = 6;
@@ -307,6 +313,18 @@ int main(int argc, char **argv) {
                 }
                 if (event.key.key == SDLK_R) {
                     render_mode = 3;
+                }
+                if (event.key.key == SDLK_A) {
+                    video_scanner_iie->set_altchrset();
+                }
+                if (event.key.key == SDLK_S) {
+                    video_scanner_iie->reset_altchrset();
+                }
+                if (event.key.key == SDLK_X) {
+                    video_scanner_iie->set_mixed();
+                }
+                if (event.key.key == SDLK_Z) {
+                    video_scanner_iie->set_full();
                 }
                 if (event.key.key == SDLK_P) {
                     sharpness = 1 - sharpness;
@@ -337,13 +355,8 @@ int main(int argc, char **argv) {
                 video_scanner->set_lores();
                 video_scanner->set_page_1();
             }  */
-            if (generate_mode == 6) {
-                video_scanner_iie->video_cycle();
-                frame_scan = video_scanner_iie->get_frame_scan();
-            } else {
-                video_scanner->video_cycle();
-                frame_scan = video_scanner->get_frame_scan();
-            }
+            video_scanner_iie->video_cycle();
+            frame_scan = video_scanner_iie->get_frame_scan();
         }
 
         // now convert frame_scan to frame_byte
