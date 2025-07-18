@@ -145,8 +145,8 @@ void txt_memory_write(uint16_t , uint8_t );
 void update_flash_state(cpu_state *cpu);
 void init_mb_device_display(computer_t *computer, SlotType_t slot);
 
-void display_dump_hires_page(cpu_state *cpu, int page);
-void display_dump_text_page(cpu_state *cpu, int page);
+void display_dump_hires_page(MMU_II *mmu, int page);
+void display_dump_text_page(MMU_II *mmu, int page);
 
 void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *width, uint32_t *height);
 

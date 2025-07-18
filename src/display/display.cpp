@@ -590,6 +590,18 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
         ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
         return true;
     }
+    if (key == SDLK_F7) {
+        if (mod & SDL_KMOD_CTRL) {
+            // dump hires image page 1
+            display_dump_hires_page(ds->mmu, 1);
+            return true;
+        }
+        if (mod & SDL_KMOD_SHIFT) {
+            // dump hires image page 2
+            display_dump_hires_page(ds->mmu, 2);
+            return true;
+        }
+    }
     return false;
 }
 
@@ -819,7 +831,7 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
     }
 }
 
-void display_dump_file(cpu_state *cpu, const char *filename, uint16_t base_addr, uint16_t sizer) {
+void display_dump_file(MMU_II *mmu, const char *filename, uint16_t base_addr, uint16_t sizer) {
     FILE *fp = fopen(filename, "wb");
     if (fp == NULL) {
         fprintf(stderr, "Error: Could not open %s for writing\n", filename);
@@ -827,20 +839,20 @@ void display_dump_file(cpu_state *cpu, const char *filename, uint16_t base_addr,
     }
     // Write 8192 bytes (0x2000) from memory starting at base_addr
     for (uint16_t offset = 0; offset < sizer; offset++) {
-        uint8_t byte = cpu->mmu->read(base_addr + offset);
+        uint8_t byte = mmu->read(base_addr + offset);
         fwrite(&byte, 1, 1, fp);
     }
     fclose(fp);
 }
 
-void display_dump_hires_page(cpu_state *cpu, int page) {
+void display_dump_hires_page(MMU_II *mmu, int page) {
     uint16_t base_addr = (page == 1) ? 0x2000 : 0x4000;
-    display_dump_file(cpu, "dump.hgr", base_addr, 0x2000);
+    display_dump_file(mmu, "dump.hgr", base_addr, 0x2000);
     fprintf(stdout, "Dumped HGR page %d to dump.hgr\n", page);
 }
 
-void display_dump_text_page(cpu_state *cpu, int page) {
+void display_dump_text_page(MMU_II *mmu, int page) {
     uint16_t base_addr = (page == 1) ? 0x0400 : 0x0800;
-    display_dump_file(cpu, "dump.txt", base_addr, 0x0400);
+    display_dump_file(mmu, "dump.txt", base_addr, 0x0400);
     fprintf(stdout, "Dumped TXT page %d to dump.txt\n", page);
 }
