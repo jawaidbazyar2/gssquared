@@ -5317,3 +5317,4 @@ ALT char set - I kind of want the ROM to be passed not to Scanner, but to Genera
 So the Scanner set_video_mode will also calculate the flags field.
 ok, that's working. got altcharset support in. So what's the other thing I wanted in here.. the mixed mode I believe?
 ok, mixed mode and 80col both needed to be passed in. because in mixed mode, text could be in 40col or in 80col.
+ok, put in lgr80.
