@@ -906,17 +906,12 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     vs->register_frame_processor(0, [ds, cpu]() -> bool {
         bool ret;
         if (ds->framebased) ret = update_display_apple2(cpu);
-        else ret = update_display_apple2_cycle(cpu);
+        else {
+            ret = update_display_apple2_cycle(cpu);
+            // reset hcount/vcount to 0
+            ds->video_scanner->reset_counts();
+        }
         display_update_video_scanner(ds, cpu);
-
-        // Check if we have switched cpu clock mode.
-        /* if (cpu->clock_mode == CLOCK_FREE_RUN) {
-            ds->framebased = true;
-            cpu->video_scanner = nullptr;
-        } else {
-            ds->framebased = false;
-            cpu->video_scanner = ds->video_scanner;
-        } */
 
         return ret;
     });

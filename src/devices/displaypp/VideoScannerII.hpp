@@ -142,6 +142,8 @@ public:
     inline void reset_altchrset() { altchrset = false; set_video_mode(); }
     inline void reset_dblres()    { dblres    = false; set_video_mode(); }
 
+    inline void reset_counts() { /* hcount = 64; vcount = 261; */ }
+
     FrameScan560 *get_frame_scan();
 };
 

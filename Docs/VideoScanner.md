@@ -40,5 +40,4 @@ when operating at more than 1MHz, we need to track time elapsed instead of just 
 
 [ ] reset the hcount/vcount after each frame render, and track to see if we are getting a whole frame out.  
 [ ] when in framebased mode, split text is showing in green monochrome.  
-[ ] when in cycle mode, disable video memory shadowing.  
- 
+[x] when in cycle mode, disable video memory shadowing.  
