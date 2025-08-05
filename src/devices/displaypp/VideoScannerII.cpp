@@ -61,6 +61,106 @@ void VideoScannerII::init_video_addresses()
     }
 }
 
+void VideoScannerII::init_mode_table() {
+    for (int i = 0; i < 64; i++) {
+        mode_table[i] = calc_video_mode_x(i);
+    }
+}
+
+// calculate video mode and table based on the vmode flags
+mode_table_t VideoScannerII::calc_video_mode_x(uint8_t xvmode)
+{
+    bool xgraf = xvmode & F_GRAF;
+    bool xhires = xvmode & F_HIRES;
+    bool xpage2 = xvmode & F_PAGE2;
+    bool xsw80col = xvmode & F_80COL;
+    bool xdblres = xvmode & F_DBLRES;
+    bool xmixed = xvmode & F_MIXED;
+
+    mode_table_t mt;
+
+    // set a reasonable default for invalid vmodes
+    mt.mode = VM_TEXT40;
+    if (xpage2) {
+        mt.vaddr = &(lores_p2_addresses);
+    } else {
+        mt.vaddr = &(lores_p1_addresses);
+    }
+
+    if (xgraf) {
+        if (xhires) {
+            if (xdblres) {
+                if (xsw80col)
+                    mt.mode = VM_DHIRES;
+                else
+                    mt.mode = VM_HIRES_NOSHIFT;
+            }
+            else
+                mt.mode = VM_HIRES;
+        } else {
+            if (xdblres) {
+                if (xsw80col)
+                    mt.mode = VM_DLORES;
+                else
+                    mt.mode = VM_LORES; // is there a "noshift" lores?
+            }
+            else {
+                mt.mode = VM_LORES;
+            }
+        }
+    } else if (xsw80col) {
+        mt.mode = VM_TEXT80;
+    } else {
+        mt.mode = VM_TEXT40;
+    }
+
+    if (mt.mode == VM_TEXT40 || mt.mode == VM_TEXT80 || mt.mode == VM_LORES || mt.mode == VM_DLORES) { // text modes, page 1 and 2
+        if (xpage2 && !xsw80col) {
+            mt.vaddr = &(lores_p2_addresses);
+        } else {
+            mt.vaddr = &(lores_p1_addresses);
+        }
+    } else { // a hires graphics mode.
+        if (xmixed) { // if mixed.. 
+            if (xpage2 && !xsw80col) { // page 2 / 1
+                mt.vaddr = &(mixed_p2_addresses);
+            } else {
+                mt.vaddr = &(mixed_p1_addresses);
+            }
+        } else { // not mixed..
+            if (xpage2 && !xsw80col) {
+                mt.vaddr = &(hires_p2_addresses);
+            } else {
+                mt.vaddr = &(hires_p1_addresses);
+            }    
+        }
+    }
+
+    return mt;
+}
+
+void VideoScannerII::set_video_mode()
+{
+    vmode = 0;
+    vmode |= graf ? F_GRAF : 0;
+    vmode |= hires ? F_HIRES : 0;
+    vmode |= page2 ? F_PAGE2 : 0;
+    vmode |= sw80col ? F_80COL : 0;
+    vmode |= dblres ? F_DBLRES : 0;
+    vmode |= mixed ? F_MIXED : 0;
+    
+    mode_table_t mode = mode_table[vmode];
+    video_addresses = (uint16_t (*)[65*262])mode.vaddr;
+    video_mode = (video_mode_t)mode.mode;
+
+    uint8_t flags = 0;
+    if (altchrset) flags |= VS_FL_ALTCHARSET;
+    if (mixed) flags |= VS_FL_MIXED;
+    if (sw80col) flags |= VS_FL_80COL;
+    mode_flags = flags;
+}
+
+/* 
 void VideoScannerII::set_video_mode()
 {
     // Set combined mode and video address LUT
@@ -85,7 +185,7 @@ void VideoScannerII::set_video_mode()
     } else {
         video_mode = VM_TEXT40;
     }
-}
+} */
 
 void VideoScannerII::video_cycle()
 {
@@ -101,32 +201,31 @@ void VideoScannerII::video_cycle()
     }
 
     if (vcount != prev_vcount) {
-        if (vcount < 192) frame_scan->set_line(vcount);
+        if (vcount < 192) {
+            frame_scan->set_line(vcount);
+            if (video_mode == VM_TEXT40 || video_mode == VM_TEXT80) {
+                frame_scan->set_color_mode(vcount, COLORBURST_OFF);
+            } else {
+                frame_scan->set_color_mode(vcount, COLORBURST_ON);
+            }
+        }
     }
 
     uint16_t address = (*(video_addresses))[65*vcount+hcount];
 
-    //uint8_t * ram = mmu->get_memory_base();
+    uint8_t aux_byte = 0x00;
     video_byte = ram[address];
+    if (mmu) mmu->set_floating_bus(video_byte);
 
-    if (is_vbl()) return; // vcount>=192
-
-    if (hcount < 25) return; // this was off by 1 compared to is_hbl().
+    if (is_vbl()) return;
+    if (hcount < 25) return;
 
     Scan_t scan;
     scan.mode = (uint8_t)video_mode;
-    scan.auxbyte = 0;
+    scan.auxbyte = aux_byte;
     scan.mainbyte = video_byte;
+    scan.flags = mode_flags;
     if (hcount < 65) frame_scan->push(scan);
-/* 
-    if (hcount == 24) {
-        video_data[video_data_size++] = (uint8_t)VM_LAST_HBL;
-        video_data[video_data_size++] = video_byte;
-    }
-    else {
-        video_data[video_data_size++] = (uint8_t)video_mode;
-        video_data[video_data_size++] = video_byte;
-    } */
 }
 
 FrameScan560 *VideoScannerII::get_frame_scan()
@@ -134,12 +233,13 @@ FrameScan560 *VideoScannerII::get_frame_scan()
     return frame_scan;
 }
 
-VideoScannerII::VideoScannerII(uint8_t *ram)
+VideoScannerII::VideoScannerII(MMU_II *mmu)
 {
-    //this->mmu = dynamic_cast<MMU_II *>(mmu);
-    this->ram = ram;
+    this->mmu = mmu;
+    this->ram = mmu->get_memory_base();
 
     init_video_addresses();
+    init_mode_table();
 
     frame_scan = new FrameScan560(580, 192);
 
@@ -148,10 +248,13 @@ VideoScannerII::VideoScannerII(uint8_t *ram)
     hires = false;
     mixed = false;
     page2 = false;
+    sw80col   = false;
+    altchrset = false;
+    dblres    = false;
     set_video_mode();
 
     video_byte = 0;
-    video_data_size = 0;
+    //video_data_size = 0;
 
     hcount = 64;   // will increment to zero on first video scan
     vcount = 242;  // will increment to 243 on first video scan
@@ -172,96 +275,6 @@ VideoScannerII::VideoScannerII(uint8_t *ram)
     will produce video data for the current frame starting at the beginning of the
     top border.
     */
-}
-
-uint8_t vs_bus_read_C050(void *context, uint16_t address)
-{
-    VideoScannerII *vs = (VideoScannerII *)context;
-    vs->set_graf();
-    return vs->get_video_byte();
-}
-
-void vs_bus_write_C050(void *context, uint16_t address, uint8_t value) {
-    vs_bus_read_C050(context, address);
-}
-
-uint8_t vs_bus_read_C051(void *context, uint16_t address)
-{
-    VideoScannerII *vs = (VideoScannerII *)context;
-    vs->set_text();
-    return vs->get_video_byte();
-}
-
-void vs_bus_write_C051(void *context, uint16_t address, uint8_t value) {
-    vs_bus_read_C051(context, address);
-}
-
-uint8_t vs_bus_read_C052(void *context, uint16_t address)
-{
-    VideoScannerII *vs = (VideoScannerII *)context;
-    vs->set_full();
-    return vs->get_video_byte();
-}
-
-void vs_bus_write_C052(void *context, uint16_t address, uint8_t value) {
-    vs_bus_read_C052(context, address);
-}
-
-
-uint8_t vs_bus_read_C053(void *context, uint16_t address)
-{
-    VideoScannerII *vs = (VideoScannerII *)context;
-    vs->set_mixed();
-    return vs->get_video_byte();
-}
-
-void vs_bus_write_C053(void *context, uint16_t address, uint8_t value) {
-    vs_bus_read_C053(context, address);
-}
-
-
-uint8_t vs_bus_read_C054(void *context, uint16_t address)
-{
-    VideoScannerII *vs = (VideoScannerII *)context;
-    vs->set_page_1();
-    return vs->get_video_byte();
-}
-void vs_bus_write_C054(void *context, uint16_t address, uint8_t value) {
-    vs_bus_read_C054(context, address);
-}
-
-
-uint8_t vs_bus_read_C055(void *context, uint16_t address)
-{
-    VideoScannerII *vs = (VideoScannerII *)context;
-    vs->set_page_2();
-    return vs->get_video_byte();
-}
-
-void vs_bus_write_C055(void *context, uint16_t address, uint8_t value) {
-    vs_bus_read_C055(context, address);
-}
-
-uint8_t vs_bus_read_C056(void *context, uint16_t address)
-{
-    VideoScannerII *vs = (VideoScannerII *)context;
-    vs->set_lores();
-    return vs->get_video_byte();
-}
-
-void vs_bus_write_C056(void *context, uint16_t address, uint8_t value) {
-    vs_bus_read_C056(context, address);
-}
-
-uint8_t vs_bus_read_C057(void *context, uint16_t address)
-{
-    VideoScannerII *vs = (VideoScannerII *)context;
-    vs->set_hires();
-    return vs->get_video_byte();
-}
-
-void vs_bus_write_C057(void *context, uint16_t address, uint8_t value) {
-    vs_bus_read_C057(context, address);
 }
 
 /* void init_mb_video_scanner(computer_t *computer, SlotType_t slot)

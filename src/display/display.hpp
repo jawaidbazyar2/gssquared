@@ -34,6 +34,9 @@
 #include "devices/displaypp/render/GSRGB560.hpp"
 #include "devices/displaypp/generate/AppleII.cpp"
 
+class VideoScanGenerator ;
+class CharRom;
+
 // Graphics vs Text, C050 / C051
 typedef enum {
     TEXT_MODE = 0,
@@ -131,6 +134,9 @@ public:
     video_system_t *video_system;
     MMU_II *mmu;
     computer_t *computer;
+    VideoScannerII *video_scanner = nullptr; // if set, use this instead of default video generation.
+    VideoScanGenerator *vsg = nullptr;
+    CharRom *char_rom = nullptr;
 
     AppleII_Display *a2_display;
     Frame560     *frame_bits;

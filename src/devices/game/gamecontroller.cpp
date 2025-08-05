@@ -150,7 +150,7 @@ uint8_t strobe_game_inputs(void *context, uint16_t address) {
         ds->game_input_trigger_0 = x_trigger;
         ds->game_input_trigger_1 = y_trigger;
     }
-    return 0x00;
+    return ds->mmu->floating_bus_read();
 }
 
 void strobe_game_inputs_w(void *context, uint16_t address, uint8_t value) {
@@ -360,7 +360,8 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     // alloc and init display state
     gamec_state_t *ds = new gamec_state_t;
     ds->event_queue = computer->event_queue;
-
+    ds->mmu = computer->mmu;
+    
     ds->game_switch_0 = 0;
     ds->game_switch_1 = 0;
     ds->game_switch_2 = 0;

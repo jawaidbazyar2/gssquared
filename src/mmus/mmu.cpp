@@ -116,8 +116,12 @@ uint8_t *MMU::get_page_base_address(page_t page) {
     return page_table[page].read_p;
 }
 
+void MMU::set_floating_bus(uint8_t val) {
+    floating_bus_val = val;
+}
+
 uint8_t MMU::floating_bus_read() {
-    return 0xEE;
+    return floating_bus_val;
 }
 
 void MMU::map_page_both(page_t page, uint8_t *data, const char *read_d) {

@@ -24,6 +24,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "devices/displaypp/VideoScannerIIe.hpp"
 #include "memoryspecs.hpp"
 #include "clock.hpp"
 #include "devices.hpp"
@@ -204,6 +205,8 @@ struct cpu_state {
     execution_modes_t execution_mode = EXEC_NORMAL;
     uint64_t instructions_left = 0;
 
+    VideoScannerII *video_scanner = nullptr;
+
     //void init();
     cpu_state();
     ~cpu_state();
@@ -213,9 +216,11 @@ struct cpu_state {
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
 
+    inline void incr_cycles() { cycles++; if (video_scanner) video_scanner->video_cycle(); }
+
     inline uint8_t read_byte(uint16_t address) {
         uint8_t value = mmu->read(address);
-        incr_cycles(this);
+        this->incr_cycles();
         return value;
     }
 
@@ -234,7 +239,7 @@ struct cpu_state {
 
     inline void write_byte( uint16_t address, uint8_t value) {
         mmu->write(address, value);
-        incr_cycles(this);
+        this->incr_cycles();
     }
 
     inline void write_word(uint16_t address, uint16_t value) {

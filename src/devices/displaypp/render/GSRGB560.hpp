@@ -210,7 +210,7 @@ text looks like a** in it. */
 
         for (uint16_t y = 0; y < 192; y++)
         {
-            color_mode_t color_mode = frame_byte->get_color_mode(y);
+            color_mode_t color_mode = frame_byte->get_color_mode(y); // TODO: also need to know if we're in split mode so we can do lines > 160 correctly.
             if (color_mode == COLORBURST_ON) {
                 // do color burst
 

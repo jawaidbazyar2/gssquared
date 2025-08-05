@@ -91,6 +91,7 @@ class MMU {
             // if none of those things were set, silently do nothing.
         }
         virtual uint8_t floating_bus_read();
+        void set_floating_bus(uint8_t val);
 
         void map_page_both(page_t page, uint8_t *data, const char *read_d); // map page to same memory with no read or write handler.
         void map_page_read_only(page_t page, uint8_t *data, const char *read_d);
@@ -113,4 +114,5 @@ class MMU {
         int num_pages = 0;
         // this is an array of info about each page.
         page_table_entry_t *page_table;
+        uint8_t floating_bus_val = 0xEE;
 };

@@ -2,9 +2,20 @@
 #pragma once
 
 #include <cstdint>
-#include "mmus/mmu.hpp"
-#include "computer.hpp"
+#include "mmus/mmu_ii.hpp"
 #include "frame/Frames.hpp"
+#include "gs2.hpp"
+
+class MMU_II;
+struct display_state_t;
+struct computer_t;
+
+#define F_GRAF   0b10'0000
+#define F_HIRES  0b01'0000
+#define F_PAGE2  0b00'1000
+#define F_80COL  0b00'0100
+#define F_DBLRES 0b00'0010
+#define F_MIXED  0b00'0001
 
 typedef enum {
     VM_TEXT40 = 0,
@@ -25,26 +36,17 @@ typedef enum {
 #define VS_FL_MIXED      0x02
 #define VS_FL_80COL      0x04
 
-/* typedef enum {
-    VM_TEXT40 = 0,
-    VM_TEXT80,
-    VM_LORES,
-    VM_LORES80,
-    VM_HIRES,
-    VM_HIRES80,
-    VM_SHR320,
-    VM_SHR640,
-    VM_PALETTE_DATA,
-    VM_BORDER_COLOR,
-    VM_LAST_HBL
-} video_mode_t; */
-
 struct scan_address_t {
     uint16_t address;
     uint16_t hcount;
     uint16_t vcount;
     uint16_t unused;
 };
+
+typedef struct {
+    uint16_t (*vaddr)[65*262];
+    uint8_t mode;
+} mode_table_t;
 
 class VideoScannerII
 {
@@ -65,9 +67,9 @@ protected:
     // 2*53*40   53*40  vert border states, 1 mode byte + 1 data byte for each state
     // 33*200    200 SHR palettes, 1 mode byte + 32 data bytes per palette
     // 2*192     192 lines in legacy modes, 1 mode byte + 1 last HBL data byte for each line
-    static const int video_data_max = 5*40*200 + 2*13*20 + 2*53*40 + 33*200 + 2*192;
+   /*  static const int video_data_max = 5*40*200 + 2*13*20 + 2*53*40 + 33*200 + 2*192;
     uint8_t   video_data[video_data_max];
-    int       video_data_size;
+    int       video_data_size; */
     
     uint8_t *ram;
     FrameScan560 *frame_scan = nullptr;
@@ -78,27 +80,31 @@ protected:
     uint32_t  hcount;       // use separate hcount and vcount in order
     uint32_t  vcount;       // to simplify IIgs scanline interrupts
 
-    bool      graf;
-    bool      hires;
-    bool      mixed;
-    bool      page2;
+    bool      graf = false;
+    bool      hires = false;
+    bool      mixed = false;
+    bool      page2 = false;
+    bool      sw80col = false;
+    bool      altchrset = false;
+    bool      dblres = false;
+    uint8_t mode_flags = 0;
 
     video_mode_t video_mode;
+    uint8_t vmode = 0;
+    mode_table_t mode_table[64];
 
-    MMU_II * mmu;
+    MMU_II * mmu = nullptr;
 
+    mode_table_t calc_video_mode_x(uint8_t vmode);
     virtual void set_video_mode();
+    virtual void init_mode_table();
 
 public:
-    VideoScannerII(uint8_t *ram);
+    VideoScannerII(MMU_II *mmu);
+    virtual ~VideoScannerII() = default;
 
     virtual void video_cycle();
     virtual void init_video_addresses();
-
-    inline int       get_video_data_size() { return video_data_size; }
-    inline void      end_video_cycle()     { video_data_size = 0; }
-    inline uint8_t   get_video_byte()      { return video_byte; }
-    inline uint8_t * get_video_data()      { return video_data; }
 
     inline bool is_hbl()     { return hcount < 25;   }
     inline bool is_vbl()     { return vcount >= 192; }
@@ -121,25 +127,22 @@ public:
     inline bool is_text()   { return !graf;  }
     inline bool is_graf()   { return  graf;  }
 
+    inline bool is_80col()        { return sw80col;   }
+    inline bool is_altchrset()    { return altchrset; }
+    inline bool is_dblres()       { return dblres; }
+
+    inline void set_80col()       { sw80col   = true;  set_video_mode(); }
+    inline void set_altchrset()   { altchrset = true;  set_video_mode(); }
+    inline void set_dblres()      { dblres    = true;  set_video_mode(); }
+    inline void set_dblres_f(bool fl) { dblres    = fl;  set_video_mode(); }
+    inline void set_80col_f(bool fl) { sw80col   = fl;  set_video_mode(); }
+    inline void set_altchrset_f(bool fl) { altchrset = fl;  set_video_mode(); }
+
+    inline void reset_80col()     { sw80col   = false; set_video_mode(); }
+    inline void reset_altchrset() { altchrset = false; set_video_mode(); }
+    inline void reset_dblres()    { dblres    = false; set_video_mode(); }
+
     FrameScan560 *get_frame_scan();
 };
-
-uint8_t vs_bus_read_C050(void *context, uint16_t address);
-uint8_t vs_bus_read_C051(void *context, uint16_t address);
-uint8_t vs_bus_read_C052(void *context, uint16_t address);
-uint8_t vs_bus_read_C053(void *context, uint16_t address);
-uint8_t vs_bus_read_C054(void *context, uint16_t address);
-uint8_t vs_bus_read_C055(void *context, uint16_t address);
-uint8_t vs_bus_read_C056(void *context, uint16_t address);
-uint8_t vs_bus_read_C057(void *context, uint16_t address);
-
-void vs_bus_write_C050(void *context, uint16_t address, uint8_t value);
-void vs_bus_write_C051(void *context, uint16_t address, uint8_t value);
-void vs_bus_write_C052(void *context, uint16_t address, uint8_t value);
-void vs_bus_write_C053(void *context, uint16_t address, uint8_t value);
-void vs_bus_write_C054(void *context, uint16_t address, uint8_t value);
-void vs_bus_write_C055(void *context, uint16_t address, uint8_t value);
-void vs_bus_write_C056(void *context, uint16_t address, uint8_t value);
-void vs_bus_write_C057(void *context, uint16_t address, uint8_t value);
 
 void init_mb_video_scanner(computer_t *computer, SlotType_t slot);

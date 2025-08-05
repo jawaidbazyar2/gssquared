@@ -25,31 +25,43 @@ public:
             uint32_t bits = 0;
             frame_byte->set_line(y);
             frame_rgba->set_line(y);
-            
-            // for x = 0, we need bits preloaded with the first NUM_TAPS+1 bits in 
-            // 16-8, and 0's in 0-7.
-            // if num_taps = 6, 
-            // 11111 1X000000
-            for (uint16_t i = 0; i < NUM_TAPS; i++)
-            {
-                bits = bits >> 1;
-                if (frame_byte->pull() != 0) // TODO: if we assume values of 0 and 1 this might work a hair faster?
-                    bits = bits | (1 << ((NUM_TAPS*2)));
-            }
-            
-            // Process the scanline
-            for (uint16_t x = 0; x < framewidth; x++)
-            {
-                bits = bits >> 1;
-                if ((x < framewidth-NUM_TAPS) && (frame_byte->pull() != 0)) // at end of line insert 0s
-                    bits = bits | (1 << ((NUM_TAPS*2)));
+            color_mode_t color_mode = frame_byte->get_color_mode(y); // get color mode for this scanline
 
-                uint32_t phase = (phaseoffset + x) % 4;
+            if (color_mode == COLORBURST_OFF) {
+                // do nothing
+                for (uint16_t x = 0; x < framewidth; x++) {
+                    if (frame_byte->pull() != 0) {
+                        frame_rgba->push(color);
+                    } else {
+                        frame_rgba->push(RGBA_t::make(0x00, 0x00, 0x00, 0xFF));
+                    }
+                }
+            } else {
+                // do color burst
 
-                //  Use the phase and the bits as the index
-                frame_rgba->push( g_hgr_LUT[phase][bits] );
-                //outputImage++;
-                //frameData++;
+                // for x = 0, we need bits preloaded with the first NUM_TAPS+1 bits in 
+                // 16-8, and 0's in 0-7.
+                // if num_taps = 6, 
+                // 11111 1X000000
+                for (uint16_t i = 0; i < NUM_TAPS; i++)
+                {
+                    bits = bits >> 1;
+                    if (frame_byte->pull() != 0) // TODO: if we assume values of 0 and 1 this might work a hair faster?
+                        bits = bits | (1 << ((NUM_TAPS*2)));
+                }
+                
+                // Process the scanline
+                for (uint16_t x = 0; x < framewidth; x++)
+                {
+                    bits = bits >> 1;
+                    if ((x < framewidth-NUM_TAPS) && (frame_byte->pull() != 0)) // at end of line insert 0s
+                        bits = bits | (1 << ((NUM_TAPS*2)));
+
+                    uint32_t phase = (phaseoffset + x) % 4;
+
+                    //  Use the phase and the bits as the index
+                    frame_rgba->push( g_hgr_LUT[phase][bits] );
+                }
             }
         }
     }

@@ -15,6 +15,8 @@
 #include "devices/displaypp/render/GSRGB560.hpp"
 #include "devices/displaypp/CharRom.hpp"
 
+#include "mmus/mmu_iie.hpp"
+
 int text_addrs[24] =
   {   // text page 1 line addresses
             0x0000,
@@ -85,6 +87,8 @@ void generate_dlgr_test_pattern(uint8_t *textpage, uint8_t *altpage) {
 int main(int argc, char **argv) {
     uint64_t start = 0, end = 0;
 
+    MMU_IIe *mmu = new MMU_IIe(128, 128*1024, nullptr);
+
     //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
 
     SDL_Init(SDL_INIT_VIDEO);
@@ -153,7 +157,7 @@ int main(int argc, char **argv) {
     printf("c: %d\n", c);
     //frame_byte->print();
 
-    uint8_t *ram = new uint8_t[0x20000]; // 128k!
+    uint8_t *ram = mmu->get_memory_base(); //new uint8_t[0x20000]; // 128k!
 
     uint8_t *text_page = ram + 0x00400;
     uint8_t *alt_text_page = ram + 0x10400;
@@ -206,7 +210,7 @@ int main(int argc, char **argv) {
     GSRGB560 rgb_render;
 
     //VideoScannerII *video_scanner = new VideoScannerII(ram);
-    VideoScannerIIe *video_scanner_iie = new VideoScannerIIe(ram);
+    VideoScannerIIe *video_scanner_iie = new VideoScannerIIe(mmu);
     VideoScanGenerator *vsg = new VideoScanGenerator(&iie_rom);
 
 /*     AppleII_Display display_iie(iie_rom);
@@ -358,10 +362,9 @@ int main(int argc, char **argv) {
                 video_scanner->set_page_1();
             }  */
             video_scanner_iie->video_cycle();
-            frame_scan = video_scanner_iie->get_frame_scan();
         }
-
         // now convert frame_scan to frame_byte
+        frame_scan = video_scanner_iie->get_frame_scan();
         vsg->generate_frame(frame_scan, frame_byte);
 
         switch (render_mode) {
@@ -369,7 +372,7 @@ int main(int argc, char **argv) {
                 monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
                 break;
             case 2:
-                ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
+                ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF), phaseoffset); // no-color color is white.
                 break;
             case 3:
                 if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));

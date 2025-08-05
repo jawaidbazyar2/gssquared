@@ -317,6 +317,7 @@ target_link_libraries(GSSquared
     gs2_displaypp
     gs2_message_bus
     gs2_paths
+    gs2_video_scanner
 )
 
 add_subdirectory(apps/nibblizer)

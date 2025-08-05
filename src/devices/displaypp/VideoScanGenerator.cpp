@@ -1,7 +1,7 @@
 
 #include "Device_ID.hpp"
 
-#include "computer.hpp"
+//#include "computer.hpp"
 #include "frame/Frames.hpp"
 #include "VideoScannerII.hpp"
 #include "VideoScanGenerator.hpp"
@@ -41,6 +41,7 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
         frame_scan->set_line(vcount);
         frame_byte->set_line(vcount);
         uint8_t lastByte = 0x00; // for hires
+        color_mode_t color_mode = frame_scan->get_color_mode(vcount);
 
         for (int hcount = 0; hcount < 40; hcount++) {
 
@@ -56,7 +57,8 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                             for (int i = 0; i < 7; i++) {
                                 frame_byte->push(0);
                             }
-                            frame_byte->set_color_mode(vcount, COLORBURST_OFF);
+                            //frame_byte->set_color_mode(vcount, COLORBURST_OFF);
+                            frame_byte->set_color_mode(vcount, color_mode);
                         }
                         bool invert;
                         char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
@@ -95,7 +97,8 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                     break;
                 case VM_TEXT80: {
                         if (hcount == 0) {
-                            frame_byte->set_color_mode(vcount, COLORBURST_OFF);
+                            //frame_byte->set_color_mode(vcount, COLORBURST_OFF);
+                            frame_byte->set_color_mode(vcount, color_mode);
                         }
                         bool invert;
 
@@ -157,9 +160,12 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                     }
                     break;
                 case VM_DLORES: {
+                    if (hcount == 0) {
+                        frame_byte->set_color_mode(vcount, COLORBURST_ON);
+                    }
                 
                     uint8_t tchar = scan.auxbyte;
-                    
+
                     if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
                         tchar = tchar >> 4;
                     }
