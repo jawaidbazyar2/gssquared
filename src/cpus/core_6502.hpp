@@ -173,10 +173,10 @@ inline void branch_if(cpu_state *cpu, uint8_t N, bool condition) {
 
         cpu->pc = cpu->pc + (int8_t) N;
         // branch taken uses another clock to update the PC
-        incr_cycles(cpu); 
+        cpu->incr_cycles(); 
         /* If a branch is taken and the target is on a different page, this adds another CPU cycle (4 in total). */
         if ((oaddr & 0xFF00) != (taddr & 0xFF00)) {
-            incr_cycles(cpu);
+            cpu->incr_cycles();
         }
     }
 }
@@ -205,7 +205,7 @@ inline zpaddr_t get_operand_address_zeropage(cpu_state *cpu) {
 inline zpaddr_t get_operand_address_zeropage_x(cpu_state *cpu) {
     zpaddr_t zpaddr = cpu->read_byte_from_pc();
     zpaddr_t taddr = zpaddr + cpu->x_lo; // make sure it wraps.
-    incr_cycles(cpu); // ZP,X adds a cycle.
+    cpu->incr_cycles(); // ZP,X adds a cycle.
     TRACE(cpu->trace_entry.operand = zpaddr; cpu->trace_entry.eaddr = taddr; )
     return taddr;
 }
@@ -235,7 +235,7 @@ inline absaddr_t get_operand_address_absolute_x(cpu_state *cpu) {
     absaddr_t addr = cpu->read_word_from_pc();
     absaddr_t taddr = addr + cpu->x_lo;
     if ((addr & 0xFF00) != (taddr & 0xFF00)) {
-        incr_cycles(cpu);
+        cpu->incr_cycles();
     }
     TRACE(cpu->trace_entry.operand = addr; cpu->trace_entry.eaddr = taddr; )
     return taddr;
@@ -245,7 +245,7 @@ inline absaddr_t get_operand_address_absolute_x(cpu_state *cpu) {
 /* inline absaddr_t get_operand_address_absolute_x_rmw(cpu_state *cpu) {
     absaddr_t addr = cpu->read_word_from_pc(); // T1,T2 // TODO: is the order of reading the PC correct?
     absaddr_t taddr = addr + cpu->x_lo; // T3
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.operand = addr; cpu->trace_entry.eaddr = taddr; )
     return taddr;
 }
@@ -272,7 +272,7 @@ inline absaddr_t get_operand_address_absolute_y(cpu_state *cpu) {
     absaddr_t addr = cpu->read_word_from_pc();
     absaddr_t taddr = addr + cpu->y_lo;
     if ((addr & 0xFF00) != (taddr & 0xFF00)) {
-        incr_cycles(cpu);
+        cpu->incr_cycles();
     }
     TRACE(cpu->trace_entry.operand = addr; cpu->trace_entry.eaddr = taddr; )
     return taddr;
@@ -281,7 +281,7 @@ inline absaddr_t get_operand_address_absolute_y(cpu_state *cpu) {
 inline uint16_t get_operand_address_indirect_x(cpu_state *cpu) {
     zpaddr_t zpaddr = cpu->read_byte_from_pc();
     absaddr_t taddr = cpu->read_word((uint8_t)(zpaddr + cpu->x_lo)); // make sure it wraps.
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.operand = zpaddr; cpu->trace_entry.eaddr = taddr;)
     return taddr;
 }
@@ -292,7 +292,7 @@ inline absaddr_t get_operand_address_indirect_y(cpu_state *cpu) {
     absaddr_t taddr = iaddr + cpu->y_lo;
 
     if ((iaddr & 0xFF00) != (taddr & 0xFF00)) {
-        incr_cycles(cpu);
+        cpu->incr_cycles();
     }
     TRACE(cpu->trace_entry.operand = zpaddr; cpu->trace_entry.eaddr = taddr;)
     return taddr;
@@ -367,7 +367,7 @@ inline byte_t get_operand_zeropage_indirect_y(cpu_state *cpu) {
 
 inline void store_operand_zeropage_indirect_y(cpu_state *cpu, byte_t N) {
     absaddr_t addr = get_operand_address_indirect_y(cpu);
-    incr_cycles(cpu); // TODO: where should this extra cycle actually go?
+    cpu->incr_cycles(); // TODO: where should this extra cycle actually go?
     cpu->write_byte(addr, N);
     TRACE(cpu->trace_entry.data = N;)
 }
@@ -409,7 +409,7 @@ inline byte_t get_operand_absolute_y(cpu_state *cpu) {
 
 inline void store_operand_absolute_y(cpu_state *cpu, byte_t N) {
     absaddr_t addr = get_operand_address_absolute_y(cpu);
-    incr_cycles(cpu); // TODO: where should this extra cycle actually go?
+    cpu->incr_cycles(); // TODO: where should this extra cycle actually go?
     cpu->write_byte(addr, N);
     TRACE(cpu->trace_entry.data = N;)
 }
@@ -424,27 +424,27 @@ inline byte_t get_operand_relative(cpu_state *cpu) {
 inline void op_transfer_to_x(cpu_state *cpu, byte_t N) {
     cpu->x_lo = N;
     set_n_z_flags(cpu, cpu->x_lo);
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
 }
 
 inline void op_transfer_to_y(cpu_state *cpu, byte_t N) {
     cpu->y_lo = N;
     set_n_z_flags(cpu, cpu->y_lo);
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
 }
 
 inline void op_transfer_to_a(cpu_state *cpu, byte_t N) {
     cpu->a_lo = N;
     set_n_z_flags(cpu, cpu->a_lo);
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
 }
 
 inline void op_transfer_to_s(cpu_state *cpu, byte_t N) {
     cpu->sp = N;
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
 }
 
@@ -454,7 +454,7 @@ inline void op_transfer_to_s(cpu_state *cpu, byte_t N) {
 inline void dec_operand(cpu_state *cpu, absaddr_t addr) {
     byte_t N = cpu->read_byte(addr);
     N--;
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     cpu->write_byte(addr, N);
     set_n_z_flags(cpu, N);
     TRACE( cpu->trace_entry.data = N;)
@@ -466,7 +466,7 @@ inline void dec_operand(cpu_state *cpu, absaddr_t addr) {
 /* inline void inc_operand(cpu_state *cpu, absaddr_t addr) {
     byte_t N = cpu->read_byte(addr); // in abs,x this is T4
     N++;
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     cpu->write_byte(addr, N);
     set_n_z_flags(cpu, N);
     //if (DEBUG(DEBUG_OPCODE)) fprintf(stdout, "   [#%02X]", N);
@@ -492,7 +492,7 @@ inline byte_t logical_shift_right(cpu_state *cpu, byte_t N) {
     N = N >> 1;
     cpu->C = C;
     set_n_z_flags(cpu, N);
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     return N;
 }
 
@@ -509,7 +509,7 @@ inline byte_t arithmetic_shift_left(cpu_state *cpu, byte_t N) {
     N = N << 1;
     cpu->C = C;
     set_n_z_flags(cpu, N);
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
     return N;
 }
@@ -529,7 +529,7 @@ inline byte_t rotate_right(cpu_state *cpu, byte_t N) {
     N |= (cpu->C << 7);
     cpu->C = C;
     set_n_z_flags(cpu, N);
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
     return N;
 }
@@ -548,7 +548,7 @@ inline byte_t rotate_left(cpu_state *cpu, byte_t N) {
     N |= cpu->C;
     cpu->C = C;
     set_n_z_flags(cpu, N);
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
     return N;
 }
@@ -564,13 +564,13 @@ inline byte_t rotate_left_addr(cpu_state *cpu, absaddr_t addr) {
 inline void push_byte(cpu_state *cpu, byte_t N) {
     cpu->write_byte(0x0100 + cpu->sp, N);
     cpu->sp = (uint8_t)(cpu->sp - 1);
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
 }
 
 inline byte_t pop_byte(cpu_state *cpu) {
     cpu->sp = (uint8_t)(cpu->sp + 1);
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     byte_t N = cpu->read_byte(0x0100 + cpu->sp);
     TRACE(cpu->trace_entry.data = N;)
     return N;
@@ -580,14 +580,14 @@ inline void push_word(cpu_state *cpu, word_t N) {
     cpu->write_byte(0x0100 + cpu->sp, (N & 0xFF00) >> 8);
     cpu->write_byte(0x0100 + cpu->sp - 1, N & 0x00FF);
     cpu->sp = (uint8_t)(cpu->sp - 2);
-    //incr_cycles(cpu);
+    //cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
 }
 
 inline absaddr_t pop_word(cpu_state *cpu) {
     absaddr_t N = cpu->read_word(0x0100 + cpu->sp + 1);
     cpu->sp = (uint8_t)(cpu->sp + 2);
-    incr_cycles(cpu);
+    cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
     return N;
 }

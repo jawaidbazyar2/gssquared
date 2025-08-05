@@ -87,8 +87,8 @@ int execute_next(cpu_state *cpu) {
         push_byte(cpu, cpu->p | FLAG_UNUSED); // break flag and Unused bit set to 1.
         cpu->p |= FLAG_I; // interrupt disable flag set to 1.
         cpu->pc = cpu->read_word(IRQ_VECTOR);
-        incr_cycles(cpu);
-        incr_cycles(cpu);
+        cpu->incr_cycles();
+        cpu->incr_cycles();
         return 0;
     }
 
@@ -448,7 +448,7 @@ int execute_next(cpu_state *cpu) {
         case OP_DEX_IMP: /* DEX Implied */
             {
                 cpu->x_lo --;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
                 set_n_z_flags(cpu, cpu->x_lo);
             }
             break;
@@ -456,7 +456,7 @@ int execute_next(cpu_state *cpu) {
         case OP_DEY_IMP: /* DEY Implied */
             {
                 cpu->y_lo --;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
                 set_n_z_flags(cpu, cpu->y_lo);
             }
             break;
@@ -562,7 +562,7 @@ int execute_next(cpu_state *cpu) {
         case OP_INX_IMP: /* INX Implied */
             {
                 cpu->x_lo ++;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
                 set_n_z_flags(cpu, cpu->x_lo);
             }
             break;
@@ -570,7 +570,7 @@ int execute_next(cpu_state *cpu) {
         case OP_INY_IMP: /* INY Implied */
             {
                 cpu->y_lo ++;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
                 set_n_z_flags(cpu, cpu->y_lo);
             }
             break;
@@ -652,7 +652,7 @@ int execute_next(cpu_state *cpu) {
         case OP_LDX_ZP_Y: /* LDX Zero Page, Y */
             {
                 cpu->x_lo = get_operand_zeropage_y(cpu);
-                incr_cycles(cpu); // ldx zp, y uses an extra cycle.
+                cpu->incr_cycles(); // ldx zp, y uses an extra cycle.
                 set_n_z_flags(cpu, cpu->x_lo);
             }
             break;
@@ -834,7 +834,7 @@ int execute_next(cpu_state *cpu) {
         case OP_PLP_IMP: /* PLP Implied */
             {
                 cpu->p = pop_byte(cpu) & ~FLAG_B; // break flag is cleared.
-                incr_cycles(cpu); // TODO: where should this extra cycle actually go?
+                cpu->incr_cycles(); // TODO: where should this extra cycle actually go?
             }
             break;
 
@@ -842,7 +842,7 @@ int execute_next(cpu_state *cpu) {
             {
                 cpu->a_lo = pop_byte(cpu);
                 set_n_z_flags(cpu, cpu->a_lo);
-                incr_cycles(cpu);
+                cpu->incr_cycles();
             }
             break;
     /* ROL --------------------------------- */
@@ -1028,7 +1028,7 @@ int execute_next(cpu_state *cpu) {
         case OP_STX_ZP_Y: /* STX Zero Page, Y */
             {
                 store_operand_zeropage_y(cpu, cpu->x_lo);
-                incr_cycles(cpu); // ldx zp, y uses an extra cycle.
+                cpu->incr_cycles(); // ldx zp, y uses an extra cycle.
                 // TODO: look into this and see where the extra cycle might need to actually go.
             }
             break;
@@ -1130,7 +1130,7 @@ int execute_next(cpu_state *cpu) {
                 push_word(cpu, cpu->pc -1); // return address pushed is last byte of JSR instruction
                 cpu->pc = addr;
                 // load address fetched into the PC
-                incr_cycles(cpu);
+                cpu->incr_cycles();
             }
             break;
 
@@ -1151,9 +1151,9 @@ int execute_next(cpu_state *cpu) {
         case OP_RTS_IMP: /* RTS */
             {
                 cpu->pc = pop_word(cpu);
-                incr_cycles(cpu);
+                cpu->incr_cycles();
                 cpu->pc++;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
                 TRACE(cpu->trace_entry.operand = cpu->pc;)
             }
             break;
@@ -1161,7 +1161,7 @@ int execute_next(cpu_state *cpu) {
         /* NOP --------------------------------- */
         case OP_NOP_IMP: /* NOP */
             {
-                incr_cycles(cpu);
+                cpu->incr_cycles();
             }
             break;
 
@@ -1170,49 +1170,49 @@ int execute_next(cpu_state *cpu) {
         case OP_CLD_IMP: /* CLD Implied */
             {
                 cpu->D = 0;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
             }
             break;
 
         case OP_SED_IMP: /* SED Implied */
             {
                 cpu->D = 1;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
             }
             break;
 
         case OP_CLC_IMP: /* CLC Implied */
             {
                 cpu->C = 0;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
             }
             break;
 
         case OP_CLI_IMP: /* CLI Implied */
             {
                 cpu->I = 0;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
             }
             break;
 
         case OP_CLV_IMP: /* CLV */
             {
                 cpu->V = 0;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
             }
             break;
 
         case OP_SEC_IMP: /* SEC Implied */
             {
                 cpu->C = 1;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
             }
             break;
 
         case OP_SEI_IMP: /* SEI Implied */
             {
                 cpu->I = 1;
-                incr_cycles(cpu);
+                cpu->incr_cycles();
             }
             break;
 
