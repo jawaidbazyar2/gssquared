@@ -63,7 +63,7 @@ uint8_t kb_read_C01X(void *context, uint16_t address) {
 
     // Clear the keyboard latch
     kb_clear_strobe(kb_state);
-    return 0xEE;
+    return kb_state->mmu->floating_bus_read();
 }
 
 // iie only
@@ -167,6 +167,8 @@ void init_mb_iiplus_keyboard(computer_t *computer, SlotType_t slot) {
     keyboard_state_t *kb_state = new keyboard_state_t;
     computer->set_module_state(MODULE_KEYBOARD, kb_state);
 
+    kb_state->mmu = computer->mmu;
+
     /** Sather P31: 'The keyboard read addres sis $C00X and the strobe flip-flop reset address is $C01X. */
     for (int i = 0; i < 16; i++) {
         computer->mmu->set_C0XX_read_handler(0xC000+i, { kb_read_C00X, kb_state });
@@ -227,6 +229,8 @@ void init_mb_iie_keyboard(computer_t *computer, SlotType_t slot) {
     if (DEBUG(DEBUG_KEYBOARD)) fprintf(stdout, "init_keyboard\n");
     keyboard_state_t *kb_state = new keyboard_state_t;
     computer->set_module_state(MODULE_KEYBOARD, kb_state);
+
+    kb_state->mmu = computer->mmu;
 
     /** Sather P31: 'The keyboard read addres sis $C00X and the strobe flip-flop reset address is $C01X. */
     // IIe Read C000-C00F - same as II+.

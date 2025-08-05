@@ -30,6 +30,7 @@ struct keyboard_state_t {
     uint8_t kb_key_strobe = 0x41; 
     std::string paste_buffer;
     message_keyboard_t *mk = nullptr;
+    MMU_II *mmu = nullptr;
 } ;
 
 /* uint8_t kb_memory_read(uint16_t address);
