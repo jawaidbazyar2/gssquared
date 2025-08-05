@@ -467,7 +467,7 @@ uint8_t txt_bus_read_C050(void *context, uint16_t address) {
     // set graphics mode
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Graphics Mode\n");
     set_display_mode(ds, GRAPHICS_MODE);
-    ds->video_scanner->set_graf();
+    if (!ds->framebased) ds->video_scanner->set_graf();
     ds->video_system->set_full_frame_redraw();
     return ds->mmu->floating_bus_read();
 }
@@ -482,7 +482,7 @@ uint8_t txt_bus_read_C051(void *context, uint16_t address) {
 // set text mode
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Text Mode\n");
     set_display_mode(ds, TEXT_MODE);
-    ds->video_scanner->set_text();
+    if (!ds->framebased) ds->video_scanner->set_text();
     ds->video_system->set_full_frame_redraw();
     return ds->mmu->floating_bus_read();
 }
@@ -497,7 +497,7 @@ uint8_t txt_bus_read_C052(void *context, uint16_t address) {
     // set full screen
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Full Screen\n");
     set_split_mode(ds, FULL_SCREEN);
-    ds->video_scanner->set_full();
+    if (!ds->framebased) ds->video_scanner->set_full();
     ds->video_system->set_full_frame_redraw();
     return ds->mmu->floating_bus_read();
 }
@@ -511,7 +511,7 @@ uint8_t txt_bus_read_C053(void *context, uint16_t address) {
     // set split screen
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Split Screen\n");
     set_split_mode(ds, SPLIT_SCREEN);
-    ds->video_scanner->set_mixed();
+    if (!ds->framebased) ds->video_scanner->set_mixed();
     ds->video_system->set_full_frame_redraw();
     return ds->mmu->floating_bus_read();
 }
@@ -526,7 +526,7 @@ uint8_t txt_bus_read_C054(void *context, uint16_t address) {
     // switch to screen 1
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Switching to screen 1\n");
     set_display_page1(ds);
-    ds->video_scanner->set_page_1();
+    if (!ds->framebased) ds->video_scanner->set_page_1();
     ds->video_system->set_full_frame_redraw();
     return ds->mmu->floating_bus_read();
 }
@@ -540,7 +540,7 @@ uint8_t txt_bus_read_C055(void *context, uint16_t address) {
     // switch to screen 2
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Switching to screen 2\n");
     set_display_page2(ds);
-    ds->video_scanner->set_page_2();
+    if (!ds->framebased) ds->video_scanner->set_page_2();
     ds->video_system->set_full_frame_redraw();
     return ds->mmu->floating_bus_read();
 }
@@ -555,7 +555,7 @@ uint8_t txt_bus_read_C056(void *context, uint16_t address) {
     // set lo-res (graphics) mode
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Lo-Res Mode\n");
     set_graphics_mode(ds, LORES_MODE);
-    ds->video_scanner->set_lores();
+    if (!ds->framebased) ds->video_scanner->set_lores();
     ds->video_system->set_full_frame_redraw();
     return ds->mmu->floating_bus_read();
 }
@@ -569,7 +569,7 @@ uint8_t txt_bus_read_C057(void *context, uint16_t address) {
     // set hi-res (graphics) mode
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Hi-Res Mode\n");
     set_graphics_mode(ds, HIRES_MODE);
-    ds->video_scanner->set_hires();
+    if (!ds->framebased) ds->video_scanner->set_hires();
     ds->video_system->set_full_frame_redraw();
     return ds->mmu->floating_bus_read();
 }
@@ -588,7 +588,7 @@ void ds_bus_write_C00X(void *context, uint16_t address, uint8_t value) {
             ds->f_80col = true;
             break;
     }
-    ds->video_scanner->set_80col_f(ds->f_80col);
+    if (!ds->framebased) ds->video_scanner->set_80col_f(ds->f_80col);
     update_line_mode(ds);
     force_display_update(ds);
 }
@@ -622,7 +622,6 @@ display_state_t::~display_state_t() {
     delete video_scanner;
     delete char_rom;
 }
-
 
 bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
     SDL_Keymod mod = event.key.mod;
@@ -764,13 +763,36 @@ uint8_t display_read_vbl(void *context, uint16_t address) {
     return kbv | fl;
 }
 
-void init_mb_device_display(computer_t *computer, SlotType_t slot) {
+void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
+    if (cpu->clock_mode == CLOCK_FREE_RUN) {
+        ds->framebased = true;
+        cpu->video_scanner = nullptr;
+        for (int i = 0x04; i <= 0x0B; i++) {
+            ds->mmu->set_page_shadow(i, { txt_memory_write, cpu });
+        }
+        for (int i = 0x20; i <= 0x5F; i++) {
+            ds->mmu->set_page_shadow(i, { hgr_memory_write, cpu });
+        }
+    } else {
+        ds->framebased = false;
+        cpu->video_scanner = ds->video_scanner;
+        for (int i = 0x04; i <= 0x0B; i++) {
+            ds->mmu->set_page_shadow(i, { nullptr, cpu });
+        }
+        for (int i = 0x20; i <= 0x5F; i++) {
+            ds->mmu->set_page_shadow(i, { nullptr, cpu });
+        }
+    }
+}
+
+void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool cycleaccurate) {
     cpu_state *cpu = computer->cpu;
     
     // alloc and init display state
     display_state_t *ds = new display_state_t;
     video_system_t *vs = computer->video_system;
 
+    ds->framebased = false;
     ds->mbus = computer->mbus;
     ds->video_system = vs;
     ds->event_queue = computer->event_queue;
@@ -778,37 +800,47 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
     MMU_II *mmu = computer->mmu;
     ds->mmu = mmu;
 
-    // new display engine setup
+    // Grab appropriate Character ROM and load it.
     CharRom *charrom = nullptr;
     switch (computer->platform->id) {
         case PLATFORM_APPLE_IIE:
             charrom = new CharRom("roms/apple2e/char.rom");
-            ds->video_scanner = new VideoScannerIIe(mmu);
             break;
         case PLATFORM_APPLE_IIE_ENHANCED:
             charrom = new CharRom("roms/apple2e_enh/char.rom");
-            ds->video_scanner = new VideoScannerIIe(mmu);
             break;
         case PLATFORM_APPLE_II_PLUS:
             charrom = new CharRom("roms/apple2_plus/char.rom");
-            ds->video_scanner = new VideoScannerII(mmu);
             break;
         case PLATFORM_APPLE_II:
             charrom = new CharRom("roms/apple2/char.rom");
-            ds->video_scanner = new VideoScannerII(mmu);
             break;
         default:
             system_failure("Unsupported platform in display engine init");
             break;
     }
     
-    cpu->video_scanner = ds->video_scanner;
-    
-    ds->char_rom = charrom;
-    ds->a2_display = new AppleII_Display(*charrom);
-    
+    // create VideoScanner stuff if desired
+    switch (computer->platform->id) {
+        case PLATFORM_APPLE_IIE:
+        case PLATFORM_APPLE_IIE_ENHANCED:
+            ds->video_scanner = new VideoScannerIIe(mmu);
+            break;
+        case PLATFORM_APPLE_II_PLUS:
+        case PLATFORM_APPLE_II:
+            ds->video_scanner = new VideoScannerII(mmu);
+            break;
+        default:
+            system_failure("Unsupported platform in display engine init");
+            break;
+    }
+
+    /* cpu->video_scanner = ds->video_scanner; */
     // Initialize the VideoScanGenerator with the CharRom
     ds->vsg = new VideoScanGenerator(charrom);
+
+    ds->char_rom = charrom;
+    ds->a2_display = new AppleII_Display(*charrom);
     
     uint16_t f_w = BASE_WIDTH+20;
     uint16_t f_h = BASE_HEIGHT;
@@ -832,7 +864,6 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
     // NEAREST gets us sharp pixels.
     SDL_SetTextureScaleMode(ds->screenTexture, SDL_SCALEMODE_LINEAR);
 
-
     // set in CPU so we can reference later
     set_module_state(cpu, MODULE_DISPLAY, ds);
     
@@ -853,13 +884,14 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
     mmu->set_C0XX_read_handler(0xC057, { txt_bus_read_C057, ds });
     mmu->set_C0XX_write_handler(0xC057, { txt_bus_write_C057, ds });
 
-    for (int i = 0x04; i <= 0x0B; i++) {
+    display_update_video_scanner(ds, cpu);
+/*     for (int i = 0x04; i <= 0x0B; i++) {
         mmu->set_page_shadow(i, { txt_memory_write, cpu });
     }
     for (int i = 0x20; i <= 0x5F; i++) {
         mmu->set_page_shadow(i, { hgr_memory_write, cpu });
     }
-
+ */
     computer->sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [ds](const SDL_Event &event) {
         return handle_display_event(ds, event);
     });
@@ -871,9 +903,22 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
         return true;
     });
 
-    vs->register_frame_processor(0, [cpu]() -> bool {
-        //return update_display_apple2(cpu);
-        return update_display_apple2_cycle(cpu);
+    vs->register_frame_processor(0, [ds, cpu]() -> bool {
+        bool ret;
+        if (ds->framebased) ret = update_display_apple2(cpu);
+        else ret = update_display_apple2_cycle(cpu);
+        display_update_video_scanner(ds, cpu);
+
+        // Check if we have switched cpu clock mode.
+        /* if (cpu->clock_mode == CLOCK_FREE_RUN) {
+            ds->framebased = true;
+            cpu->video_scanner = nullptr;
+        } else {
+            ds->framebased = false;
+            cpu->video_scanner = ds->video_scanner;
+        } */
+
+        return ret;
     });
 
     if (computer->platform->id == PLATFORM_APPLE_IIE || computer->platform->id == PLATFORM_APPLE_IIE_ENHANCED) {
@@ -903,6 +948,15 @@ void init_mb_device_display(computer_t *computer, SlotType_t slot) {
         });
     }
 }
+
+void init_mb_device_display(computer_t *computer, SlotType_t slot) {
+    init_mb_device_display_common(computer, slot, true);
+}
+
+void init_mb_device_display_frameonly(computer_t *computer, SlotType_t slot) {
+    init_mb_device_display_common(computer, slot, false);
+}
+
 
 void display_dump_file(MMU_II *mmu, const char *filename, uint16_t base_addr, uint16_t sizer) {
     FILE *fp = fopen(filename, "wb");

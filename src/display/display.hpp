@@ -136,6 +136,7 @@ public:
     computer_t *computer;
     VideoScannerII *video_scanner = nullptr; // if set, use this instead of default video generation.
     VideoScanGenerator *vsg = nullptr;
+    bool framebased = true;
     CharRom *char_rom = nullptr;
 
     AppleII_Display *a2_display;
