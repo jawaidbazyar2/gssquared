@@ -5050,7 +5050,7 @@ OK, I'm a stone's throw from 80-column support now.
 So on an NTSC display, whether the colorburst is present at the start of a scanline will control the entire line. So "per scanline-ish" color killer is accurate.
 in RGB, that doesn't really apply. But we can use the same flag to determine whether to render using rgb algo or monochrome.
 
-btw I'm still seeing the "window doesn't update right when we're close to screen edge".
+btw I'm still seeing the "window doesn't update right when we're close to screen edge". (also btw, I saw the same thing with chrome on amazon video)
 
 I've got double lo-res in and tested now. Now I need to test double hi-res. What to do it with.. 
 
@@ -5318,3 +5318,132 @@ So the Scanner set_video_mode will also calculate the flags field.
 ok, that's working. got altcharset support in. So what's the other thing I wanted in here.. the mixed mode I believe?
 ok, mixed mode and 80col both needed to be passed in. because in mixed mode, text could be in 40col or in 80col.
 ok, put in lgr80.
+
+## Jul 29, 2025
+
+post-vaca.
+
+So, things to do to continue integrating the cycle-accurate-video.
+
+[ ] hook in to incr_cycles  
+[ ] hook in to update_display  
+[ ] hook in the floating bus read (this will be somewhat extensive)  
+
+This should get the Sather demos working.
+
+Those are the first bits to figure out. Then:
+
+[ ] alternate VBL implementation based on the LUT  
+[ ] 
+
+## Jul 31, 2025
+
+the first thing needed here, is to hook in the softswitches. So I need to change how the softswitches are tracked. Would it make sense to have the code read values from display_state_t ? Is everything I need in there?
+
+VideoScannerIIe needs to know the softswitch settings. So, feed it the display_t record when instantiating.
+The code runs set_video_mode every time there's a softswitch change. I don't have an analogue today in display.cpp for that. set_video_mode is setting the following:
+* video_addresses - video_cycle
+* video_mode - 
+* flags
+
+running into coupling issues. maybe I should create a separate struct for just the state, and not all the other stuff? or, use a Message? But the key thing is exposing only the fields that need exposed, in order to reduce coupling between modules.
+
+## Aug 3, 2025
+
+Are ya gonna do it already?
+instead of all these IF statements, what if I generated (and maintained) a bitfield and used that as a LUT index? Our values are:
+
+TEXT/GRAF
+LORES/HIRES
+PAGE1/PAGE2
+40COL/80COL
+SNGRES/DBLRES
+FULL/MIXED
+
+Wm code also vectors on 80STORE and chooses page1 vs page2 addresses, but I don't think that's right. I don't think 80STORE affects the video scanner, just the CPU interface to AUX memory. Well, if I'm wrong can add another flag later.
+
+So this table would be these 6 bits (64 values), and each entry the LUT address for the scanner values, and, the mode identifier (e.g., VM_TEXT80, VM_TEXT40, etc.)
+
+    display_mode_t display_mode; // text / graf
+    display_graphics_mode_t display_graphics_mode; // lores / hires
+    display_page_number_t display_page_num; // page1 / page2
+    bool f_80col = false; // 40col / 80col
+    bool f_double_graphics = true; // normal / dblres
+    display_split_mode_t display_split_mode; // full / mixed
+
+    display_page_t *display_page_table;
+    bool f_altcharset = false;
+    uint64_t vbl_cycle_count = 0;
+
+    bool flash_state;
+    int flash_counter;
+
+display_state_t is what handles all normal Apple II graphics modes. e.g., Videx is a separate device. The concept here is -device-.
+But, should this be broken into a device and some sub-components?
+
+OR, maybe the VideoScanner approach should be its own display device, instead of display.cpp.
+
+Then I'm going to have to replicate all the softswitch handling etc. ick.
+
+VideoScanner's logic can be used to drive floating read and vbl regardless of whether we're using the full video scanner (i.e., call a variant of video_cycle where we pass in the cycle index ). So, we will want a scanner in here no matter what to help with those functions even if we don't use it to generate frames.
+
+So how to I tell the system to use cycle-accurate scanner vs frame-based? Call a different init routine that each calls a common setup routine.
+video_state_init creates appropriate VideoScanner (in either event) and installs in cpu if there is intent to use. Sets a flag in video_state.
+
+OK, got that - and I've made a few tweaks to hook in video_cycle, and, to tell mmu what the floating bus value is, and, to then return that value from mmu and a few other modules when appropriate. 
+
+SUCCESS!!!
+
+Well, 98%. in Crazy Cycles, there is the occasional artifact. I suspect it is because of mismatch in VBL. (17008 cycles vs 17030 cycles, and every now and then it is out of sync in wrong place and draws wrong stuff?) Will work on that.
+
+Action Items:
+[ ] Artifacts in Crazy Cycles  
+[x] color killer in text mode not working  
+[x] RGB not working  
+[ ] Hunt down all the places where we need to call floating_bus_read()  
+[ ] Allow optional selection of cycle-accurate video on VM init  
+[x] Apple II+ crashses on startup  
+[ ] SPLIT DEMO has mixed text mode sometimes. it is not setting C052 so we might need to reset that switch on a RESET/powerup.  
+[ ] disable invalid modes (no 40 col text in double graf modes)  
+[x] color kill lines 160>> in rgb.  
+[x] at end of 80col lines we need to emit some blank pixels  
+[x] Double hires not working  
+[x] 80col not working  
+[x] double lo-res is rendering as mono i.e. no color processing  
+[x] alternate character set is not working  
+
+Invalid modes: double lores + 40 col text; double hires + 40 col text (mixed modes); only valid is hires + 80 col text.
+
+So, demos that take advantage of this:
+* Crazy Cycles
+* Crazy Cycles 2
+* DD (maybe?)
+* Fireworks
+* Sather
+* Apple II Split Screen Demo
+
+Ludicrous speed is now down to 215MHz. partly because we are doing the frame scan every fast cycle too instead of only on slow cycles. Maybe the thing to do is, automatically disable cycle-accurate when we're in Ludicrous speed. <-- this is probably good
+
+### Color killer
+
+let's see what split screen looks like in OE. It's got fringed text. So where should color killer be applied.. let's say, let's try having color killer set based on what mode is set AT THE START OF EACH SCANLINE. Google insists a monitor would switch to monochrome extremely quickly with loss of a color burst.
+
+Well, that's a thing.. it does not quite do the right thing in for instance split.dsk. It's less wrong in crazycycles.
+
+### Artifacts
+
+the artifact slowly scans up the display from bottom to top. It's almost certainly the 17008 vs 17030 thing. Hm. Well let's try 17030. That causes speaker distortion, and an artifact that is at the same place every frame. eeenteresting. 
+
+### Apple II Crashes
+
+was not creating vs and setting mmu etc., and also MMU_II does not have enough RAM. Corrected.
+
+### Mixed mode color
+
+if text mode (text40 or text80), all lines are colorburst off.
+If any graphics mode, all lines are colorburst on.
+
+if mixed mode and NTSC, all lines are colorburst on.
+If mixed mode and RGB, 0-159 are colorburst on, 160-191 are colorburst off.
+
+so this implies that we need to have special handling in RGB for this last case. OR, in ntsc mode, only check first scanline for colorburst on/off for the frame.

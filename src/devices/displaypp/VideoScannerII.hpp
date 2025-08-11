@@ -77,8 +77,6 @@ protected:
     // floating bus video data
     uint8_t   video_byte;
 
-    uint32_t  hcount;       // use separate hcount and vcount in order
-    uint32_t  vcount;       // to simplify IIgs scanline interrupts
 
     bool      graf = false;
     bool      hires = false;
@@ -100,6 +98,9 @@ protected:
     virtual void init_mode_table();
 
 public:
+uint32_t  hcount;       // use separate hcount and vcount in order
+uint32_t  vcount;       // to simplify IIgs scanline interrupts
+
     VideoScannerII(MMU_II *mmu);
     virtual ~VideoScannerII() = default;
 
@@ -142,7 +143,7 @@ public:
     inline void reset_altchrset() { altchrset = false; set_video_mode(); }
     inline void reset_dblres()    { dblres    = false; set_video_mode(); }
 
-    inline void reset_counts() { /* hcount = 64; vcount = 261; */ }
+    inline void reset_counts() { hcount = 0; vcount = 0; frame_scan->set_line(0);}
 
     FrameScan560 *get_frame_scan();
 };

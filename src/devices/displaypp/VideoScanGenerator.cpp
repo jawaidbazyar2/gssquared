@@ -136,6 +136,9 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                         frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
                         frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
             
+                        if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
+                            for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
+                        }
                     }
                     break;
                 case VM_LORES: {

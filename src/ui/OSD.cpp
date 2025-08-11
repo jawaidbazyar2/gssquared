@@ -666,6 +666,8 @@ void OSD::render() {
             snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f", cpu->e_mhz);
             SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderDebugText(renderer, 20, window_height - 30, hud_str);
+            if (cpu->video_scanner) snprintf(hud_str, sizeof(hud_str), "H: %d V: %d", cpu->video_scanner->hcount, cpu->video_scanner->vcount);
+            SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);
 #if 0
             snprintf(hud_str, sizeof(hud_str), "Cycles          PC   A  X  Y  P  (N V B D I Z C)");
             SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);

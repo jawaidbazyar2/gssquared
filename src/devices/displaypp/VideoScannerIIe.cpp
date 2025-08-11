@@ -81,7 +81,11 @@ void VideoScannerIIe::video_cycle()
             if (video_mode == VM_TEXT40 || video_mode == VM_TEXT80) {
                 frame_scan->set_color_mode(vcount, COLORBURST_OFF);
             } else {
-                frame_scan->set_color_mode(vcount, COLORBURST_ON);
+                if (mode_flags & VS_FL_MIXED && vcount >= 160) {
+                    frame_scan->set_color_mode(vcount, COLORBURST_OFF);
+                } else {
+                    frame_scan->set_color_mode(vcount, COLORBURST_ON);
+                }
             }
         }
     }
@@ -93,14 +97,14 @@ void VideoScannerIIe::video_cycle()
     if (mmu) mmu->set_floating_bus(video_byte);
 
     if (is_vbl()) return;
-    if (hcount < 25) return;
+    if (is_hbl()) return;
 
     Scan_t scan;
     scan.mode = (uint8_t)video_mode;
     scan.auxbyte = aux_byte;
     scan.mainbyte = video_byte;
     scan.flags = mode_flags;
-    if (hcount < 65) frame_scan->push(scan);
+    frame_scan->push(scan);
 }
 
 VideoScannerIIe::VideoScannerIIe(MMU_II *mmu) : VideoScannerII(mmu)

@@ -19,13 +19,13 @@ public:
     void render(Frame560 *frame_byte, Frame560RGBA *frame_rgba, RGBA_t color, uint16_t phaseoffset) {
         // Process each scanline
         uint16_t framewidth = frame_byte->width();
+        color_mode_t color_mode = frame_byte->get_color_mode(0); // get color mode for this frame (based on scanline 0)
 
         for (uint16_t y = 0; y < 192; y++)
         {
             uint32_t bits = 0;
             frame_byte->set_line(y);
             frame_rgba->set_line(y);
-            color_mode_t color_mode = frame_byte->get_color_mode(y); // get color mode for this scanline
 
             if (color_mode == COLORBURST_OFF) {
                 // do nothing

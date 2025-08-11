@@ -27,8 +27,13 @@
 
 #define SAMPLE_BUFFER_SIZE (4096)
 
-#define SAMPLE_RATE (51000)
-#define SAMPLES_PER_FRAME (850)
+/* #define SAMPLE_RATE (51000)
+#define SAMPLES_PER_FRAME (850) */
+
+// with change to 1021800 hz..
+#define SAMPLE_RATE (51060)
+#define SAMPLES_PER_FRAME (851)
+
 
 #define EVENT_BUFFER_SIZE 128000
 
