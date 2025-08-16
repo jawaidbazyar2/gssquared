@@ -206,32 +206,42 @@ uint8_t read_nybble(diskII& disk, bool motor)
     // Accurate version. Require the caller to shift each bit out one by one.
     if (disk.bit_position == 0) {
         // get next value from head_position to read_shift_register, increment head position.
-        disk.read_shift_register = disk.nibblized.tracks[disk.track/2].data[disk.head_position];
-        // "spin" the virtual diskette a little more
-        disk.head_position++;
-        if (disk.head_position >= disk.nibblized.tracks[disk.track/2].size) {
-            disk.head_position = 0;
+        if (disk.track <= 71) { // 71 is the last half track on a normal 35 track disk
+            disk.read_shift_register = disk.nibblized.tracks[disk.track/2].data[disk.head_position];
+
+            // "spin" the virtual diskette a little more
+            disk.head_position++;
+            if (disk.head_position >= disk.nibblized.tracks[disk.track/2].size) {
+                disk.head_position = 0;
+            }
+            /* if (disk.head_position >= 0x1A00) { // rotated around back to start.
+                disk.head_position = 0;
+            } */
+            if (disk.read_shift_register == 0xFF) { // for sync bytes simulate that they are 10 bits. (with two trailing zero bits)
+                disk.bit_position = 8; // at 10 c600 boot code never syncs 
+            } else {
+                disk.bit_position = 8;
+            }
+            disk.read_shift_register <<= 1; // "pre-shift" 6 bits to Accelerate. This may not work for some copy-protected disks.
+            disk.bit_position--;
+            disk.read_shift_register <<= 1;
+            disk.bit_position--;
+            disk.read_shift_register <<= 1;
+            disk.bit_position--;
+            disk.read_shift_register <<= 1;
+            disk.bit_position--;
+            disk.read_shift_register <<= 1;
+            disk.bit_position--;
+            disk.read_shift_register <<= 1;
+            disk.bit_position--;
+        } else { // provide random data for track out of bounds conditions.
+            disk.read_shift_register = disk.random_track[disk.head_position];   
+            disk.head_position++;
+            if (disk.head_position >= 0x1A00) {
+                disk.head_position = 0;
+            }
+            disk.bit_position = 8;     
         }
-        /* if (disk.head_position >= 0x1A00) { // rotated around back to start.
-            disk.head_position = 0;
-        } */
-        if (disk.read_shift_register == 0xFF) { // for sync bytes simulate that they are 10 bits. (with two trailing zero bits)
-            disk.bit_position = 8; // at 10 c600 boot code never syncs 
-        } else {
-            disk.bit_position = 8;
-        }
-        disk.read_shift_register <<= 1; // "pre-shift" 6 bits to Accelerate. This may not work for some copy-protected disks.
-        disk.bit_position--;
-        disk.read_shift_register <<= 1;
-        disk.bit_position--;
-        disk.read_shift_register <<= 1;
-        disk.bit_position--;
-        disk.read_shift_register <<= 1;
-        disk.bit_position--;
-        disk.read_shift_register <<= 1;
-        disk.bit_position--;
-        disk.read_shift_register <<= 1;
-        disk.bit_position--;
     }
 
     //uint8_t shiftedbyte = (disk.read_shift_register >> (disk.bit_position-1) );
@@ -650,6 +660,17 @@ void diskII_init(diskII_controller * diskII_d, SlotType_t slot) {
         diskII_d->drive[j].read_shift_register = 0; // when bit position = 0, this is 0. As bit_position increments, we shift in the next bit of the byte at head_position.
         diskII_d->drive[j].head_position = 0; // index into the track
     }
+    // create random data for "track out of bounds"
+    for (int drive = 0; drive < 2; drive++) {
+        for (int i = 0; i < 0x1A00; i++) { 
+            uint8_t value = 0;
+            for (int j = 0; j < 8; j++) {
+                value = (value << 1) | ((random() % 100) < 30 /* random1Percentage */);
+            }
+            diskII_d->drive[drive].random_track[i] = value;
+        }
+    }
+
     diskII_d->drive_select = 0;
     diskII_d->motor = 0;
     diskII_d->mark_cycles_turnoff = 0; // when DRIVES OFF, set this to current cpu cycles. Then don't actually set motor=0 until one second (1M cycles) has passed. Then reset this to 0.

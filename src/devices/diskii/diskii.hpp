@@ -63,6 +63,7 @@ struct diskII {
     disk_image_t media;
     nibblized_disk_t nibblized;
     media_descriptor *media_d;
+    uint8_t random_track[0x1A00];
 };
 
 struct diskII_controller : public SlotData {
