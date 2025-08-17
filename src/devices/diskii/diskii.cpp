@@ -206,7 +206,7 @@ uint8_t read_nybble(diskII& disk, bool motor)
     // Accurate version. Require the caller to shift each bit out one by one.
     if (disk.bit_position == 0) {
         // get next value from head_position to read_shift_register, increment head position.
-        if (disk.track <= 71) { // 71 is the last half track on a normal 35 track disk
+        if (disk.track <= 68) { // 68 is the last legal track on a normal 35 track disk
             disk.read_shift_register = disk.nibblized.tracks[disk.track/2].data[disk.head_position];
 
             // "spin" the virtual diskette a little more
@@ -589,6 +589,10 @@ uint8_t diskII_read_C0xx(void *context, uint16_t address) {
     if (seldrive.track < 0) {
         //if (DEBUG(DEBUG_DISKII)) fprintf(stdout, "track < 0, CHUGGA CHUGGA CHUGGA\n");
         seldrive.track = 0;
+    }
+    if (seldrive.track > 68) {
+        //if (DEBUG(DEBUG_DISKII)) fprintf(stdout, "track > 71, CHUGGA CHUGGA CHUGGA\n");
+        seldrive.track = 68;
     }
     return 0xEE;
 }
