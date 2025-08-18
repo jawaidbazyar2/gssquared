@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <new>
 
 #include <SDL3/SDL.h>
@@ -246,7 +247,7 @@ int main(int argc, char **argv) {
     void *pixels;
 
     SDL_LockTexture(texture, NULL, &pixels, &pitch);
-    std::memcpy(pixels, frame_rgba->data(), SCREEN_TEXTURE_WIDTH * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
+    memcpy(pixels, frame_rgba->data(), SCREEN_TEXTURE_WIDTH * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
     SDL_UnlockTexture(texture);
 
     uint64_t cumulative = 0;
@@ -382,7 +383,7 @@ int main(int argc, char **argv) {
 
         // update the texture - approx 300us
         SDL_LockTexture(texture, NULL, &pixels, &pitch);
-        std::memcpy(pixels, frame_rgba->data(), SCREEN_TEXTURE_WIDTH * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
+        memcpy(pixels, frame_rgba->data(), SCREEN_TEXTURE_WIDTH * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
         SDL_UnlockTexture(texture);
         
         // update widnow - approx 300us
