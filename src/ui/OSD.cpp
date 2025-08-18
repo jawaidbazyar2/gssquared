@@ -720,6 +720,9 @@ bool OSD::event(const SDL_Event &event) {
                 open_btn->reset_fade();
             }
             break;
+        case SDL_EVENT_WINDOW_RESIZED:
+            return(false); // we don't handle this, have gs2 loop send it to video_system.
+            break;
     }    
     return(active);
 }
