@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <cstdint>
+#include "util/media.hpp"
 
 #include "diskii_fmt.hpp"
 #include "debug.hpp"
@@ -316,19 +317,20 @@ void load_sector(sector_t& sect, const char *filename) {
     fclose(fp);
 }
 
-int load_disk_image(disk_image_t& disk_image, const std::string& filename) {
+int load_disk_image(media_descriptor *media, disk_image_t& disk_image) {
 
-    FILE *fp = fopen(filename.c_str(), "rb");
+    FILE *fp = fopen(media->filename.c_str(), "rb");
     if (!fp) {
-        std::cerr << "Could not open " << filename << std::endl;
+        std::cerr << "Could not open " << media->filename << std::endl;
         return -1;
     }
 
     int sect_index = 0;
+    fseek(fp, media->data_offset, SEEK_SET);
     for (int t = 0; t < TRACKS_PER_DISK; t++) {
         for (int s = 0; s < SECTORS_PER_TRACK; s++) {
             if (fread(disk_image.sectors[t][s], 1, SECTOR_SIZE, fp) != SECTOR_SIZE) {
-                std::cerr << "Could not read " << SECTOR_SIZE << " bytes from " << filename << std::endl;
+                std::cerr << "Could not read " << SECTOR_SIZE << " bytes from " << media->filename << std::endl;
                 fclose(fp);
                 return -1;
             }
@@ -498,13 +500,14 @@ void emit_disk(nibblized_disk_t& disk, disk_image_t& disk_image, int volume) {
     }
 }
 
-void write_nibblized_disk(nibblized_disk_t& disk, const std::string& filename) {
-    FILE *out_fp = fopen(filename.c_str(), "wb");
+void write_nibblized_disk(media_descriptor *media, nibblized_disk_t& disk) {
+
+    FILE *out_fp = fopen(media->filename.c_str(), "r+b");
     if (!out_fp) {
-        std::cerr << "Could not open " << filename << " for writing" << std::endl;
+        std::cerr << "Could not open " << media->filename << " for writing" << std::endl;
         return;
     }
-
+    fseek(out_fp, media->data_offset, SEEK_SET);
     for (int t = 0; t < TRACKS_PER_DISK; t++) {
         fwrite(disk.tracks[t].data, sizeof(uint8_t), TRACK_SIZE, out_fp);
     }
@@ -518,13 +521,28 @@ void write_nibblized_disk(nibblized_disk_t& disk, const std::string& filename) {
  * to write the data back to.
  */
 
-bool write_disk_image_po_do(disk_image_t& disk_image, const std::string& filename) {
+bool write_disk_image_po_do(media_descriptor *media, disk_image_t& disk_image) {
+    FILE *out_fp = fopen(media->filename.c_str(), "r+b");
+    if (!out_fp) {
+        std::cerr << "Could not open " << media->filename << " for writing" << std::endl;
+        return false;
+    }
+    fseek(out_fp, media->data_offset, SEEK_SET);
+    for (int t = 0; t < TRACKS_PER_DISK; t++) {
+        fwrite(disk_image.sectors[t], sizeof(sector_t), SECTORS_PER_TRACK, out_fp);
+    }
+
+    fclose(out_fp);
+    return true;
+}
+
+/* Write disk image to specified raw po_do file, at offset 0. */
+bool write_disk_image_po_do_filename(disk_image_t& disk_image, std::string& filename) {
     FILE *out_fp = fopen(filename.c_str(), "wb");
     if (!out_fp) {
         std::cerr << "Could not open " << filename << " for writing" << std::endl;
         return false;
     }
-
     for (int t = 0; t < TRACKS_PER_DISK; t++) {
         fwrite(disk_image.sectors[t], sizeof(sector_t), SECTORS_PER_TRACK, out_fp);
     }

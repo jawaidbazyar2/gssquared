@@ -40,7 +40,7 @@ void print_usage(const char* program_name) {
 }
 
 int main(int argc, char *argv[]) {
-    const char* output_filename = "output.dsk";
+    std::string output_filename = "output.dsk";
     const char* input_filename = nullptr;
     bool verbose = false;
     int opt;
@@ -95,9 +95,9 @@ int main(int argc, char *argv[]) {
         dump_disk_image(disk_image);
     }
 
-    bool ret2 = write_disk_image_po_do(disk_image, output_filename);
+    bool ret2 = write_disk_image_po_do_filename(disk_image, output_filename);
     if (!ret2) {
-        fprintf(stderr, "Failed to write disk image: %s\n", output_filename);
+        fprintf(stderr, "Failed to write disk image: %s\n", output_filename.c_str());
         exit(1);
     }
 

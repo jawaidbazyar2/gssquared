@@ -83,7 +83,8 @@ int main(int argc, char *argv[]) {
     sector_t sectors[16];
     disk_image_t disk_image;
 
-    int ret = load_disk_image(disk_image, input_filename);
+    //int ret = load_disk_image(disk_image, input_filename);
+    int ret = load_disk_image(&md, disk_image);
     if (ret < 0) {
         fprintf(stderr, "Failed to load disk image: %s\n", input_filename);
         exit(1);
@@ -93,7 +94,7 @@ int main(int argc, char *argv[]) {
     }
 
     emit_disk(disk, disk_image, md.dos33_volume);
-    write_nibblized_disk(disk, output_filename);
+    write_nibblized_disk(&md, disk /* , output_filename */);
 
     if (verbose) {
         dump_disk(disk);

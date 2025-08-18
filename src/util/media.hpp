@@ -19,7 +19,7 @@
 
 #include <stdio.h>
 #include "gs2.hpp"
-#include "devices/diskii/diskii_fmt.hpp"
+//#include "devices/diskii/diskii_fmt.hpp"
 
 /**
  * do and po only apply to 143k disks that we 'nibblize'.
@@ -95,6 +95,13 @@ typedef enum media_type_t {
     MEDIA_BLK, /* generic block image */
 } media_type_t;
 
+typedef enum media_interleave_t {
+    INTERLEAVE_NONE, /* Straight block image */
+    INTERLEAVE_DO,
+    INTERLEAVE_PO,
+    INTERLEAVE_CPM
+} media_interleave_t;
+
 //typedef uint8_t nibblized_image_t[0x1A00 * 35];
 
 typedef struct media_descriptor {
@@ -105,7 +112,7 @@ typedef struct media_descriptor {
     FILE *fp = nullptr;
     media_type_t media_type = MEDIA_BLK;
     media_interleave_t interleave = INTERLEAVE_NONE;
-    nibblized_disk_t* nibblized = nullptr;
+    //nibblized_disk_t* nibblized = nullptr;
     uint64_t data_offset = 0;
     uint16_t block_size = 0;
     uint32_t block_count = 0;

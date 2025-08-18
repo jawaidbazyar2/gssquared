@@ -18,11 +18,12 @@
 
 #pragma once
 
-#include "util/media.hpp"
-#include "util/mount.hpp"
 #include "devices.hpp"
 #include "slots.hpp"
 #include "computer.hpp"
+#include "devices/diskii/diskii_fmt.hpp"
+#include "util/media.hpp"
+#include "util/mount.hpp"
 
 #define DiskII_Ph0_Off 0x00
 #define DiskII_Ph0_On 0x01
@@ -63,7 +64,9 @@ struct diskII {
     disk_image_t media;
     nibblized_disk_t nibblized;
     media_descriptor *media_d;
+#if 0
     uint8_t random_track[0x1A00];
+#endif
 };
 
 struct diskII_controller : public SlotData {

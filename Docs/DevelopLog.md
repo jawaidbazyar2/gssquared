@@ -5447,3 +5447,20 @@ if mixed mode and NTSC, all lines are colorburst on.
 If mixed mode and RGB, 0-159 are colorburst on, 160-191 are colorburst off.
 
 so this implies that we need to have special handling in RGB for this last case. OR, in ntsc mode, only check first scanline for colorburst on/off for the frame.
+
+## Aug 18, 2025
+
+Looking at issue ".2mg" file can't mount successfully to Disk II. Indeed, the pdblock2 code properly deals with the data offset etc. and the Disk II code does not.
+
+This should be an easy tweak.. yes, but it's showing some weakness.
+
+Everything wants to deal with straight normal blocks/sectors. Only Disk II deals with nibblized (but we want to handle nibblized for conversion purposes, and disk ii wants it also)
+
+class Media
+    new Media(filename)
+    new Media(types, filename, etc)
+    read(offset, length) - applies any data offset that might be in the file
+    write(offset, length) - applies any data offset that might be in the file
+
+class NibblizedImage
+    new NibblizedImage(Media) - create and load nibble data based on the specified Media file.

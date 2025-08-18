@@ -234,7 +234,9 @@ uint8_t read_nybble(diskII& disk, bool motor)
             disk.bit_position--;
             disk.read_shift_register <<= 1;
             disk.bit_position--;
-        } else { // provide random data for track out of bounds conditions.
+        } 
+#if 0
+        else { // provide random data for track out of bounds conditions.
             disk.read_shift_register = disk.random_track[disk.head_position];   
             disk.head_position++;
             if (disk.head_position >= 0x1A00) {
@@ -242,6 +244,7 @@ uint8_t read_nybble(diskII& disk, bool motor)
             }
             disk.bit_position = 8;     
         }
+#endif
     }
 
     //uint8_t shiftedbyte = (disk.read_shift_register >> (disk.bit_position-1) );
@@ -315,7 +318,8 @@ void mount_diskII(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descriptor 
             memcpy(diskII_d->drive[drive].nibblized.interleave_logical_to_phys, do_logical_to_phys, sizeof(interleave_t));
         }
 
-        load_disk_image(diskII_d->drive[drive].media, media->filename); // pull this into diskii stuff somewhere.
+        //load_disk_image(diskII_d->drive[drive].media, media->filename); // pull this into diskii stuff somewhere.
+        load_disk_image(media, diskII_d->drive[drive].media); // pull this into diskii stuff somewhere.
         emit_disk(diskII_d->drive[drive].nibblized, diskII_d->drive[drive].media, media->dos33_volume);
         std::cout << "Mounted disk " << media->filestub << " volume " << media->dos33_volume << std::endl;
         /* printf("Mounted disk %s volume %d\n", media->filestub, media->dos33_volume); */
@@ -332,13 +336,13 @@ void writeback_diskII_image(cpu_state *cpu, uint8_t slot, uint8_t drive) {
 
     if (disk.media_d->media_type == MEDIA_PRENYBBLE) {
         std::cout << "writing back pre-nibblized disk image " << disk.media_d->filename << std::endl;
-        write_nibblized_disk(disk.nibblized, disk.media_d->filename);
+        write_nibblized_disk(disk.media_d, disk.nibblized);
     } else {
         std::cout << "writing back block disk image " << disk.media_d->filename << std::endl;
         media_interleave_t id = disk.media_d->interleave;
         disk_image_t new_disk_image;
         denibblize_disk_image(new_disk_image, disk.nibblized, id);
-        write_disk_image_po_do(new_disk_image, disk.media_d->filename);
+        write_disk_image_po_do(disk.media_d, new_disk_image);
     }
     disk.modified = false;
 }
@@ -664,6 +668,7 @@ void diskII_init(diskII_controller * diskII_d, SlotType_t slot) {
         diskII_d->drive[j].read_shift_register = 0; // when bit position = 0, this is 0. As bit_position increments, we shift in the next bit of the byte at head_position.
         diskII_d->drive[j].head_position = 0; // index into the track
     }
+#if 0
     // create random data for "track out of bounds"
     for (int drive = 0; drive < 2; drive++) {
         for (int i = 0; i < 0x1A00; i++) { 
@@ -674,6 +679,7 @@ void diskII_init(diskII_controller * diskII_d, SlotType_t slot) {
             diskII_d->drive[drive].random_track[i] = value;
         }
     }
+#endif
 
     diskII_d->drive_select = 0;
     diskII_d->motor = 0;
@@ -783,7 +789,7 @@ void debug_dump_disk_images(cpu_state *cpu) { // only dump slot 6.
     diskII_controller * diskII_d = (diskII_controller *)get_slot_state(cpu, (SlotType_t)diskii_slot);
     if ((diskII_d != nullptr) && (diskII_d->id == DEVICE_ID_DISK_II)) {
         printf("debug_dump_disk_images slot 6 drive 1\n");
-        write_nibblized_disk(diskII_d->drive[0].nibblized, "/tmp/disk1.nib");
-        write_nibblized_disk(diskII_d->drive[1].nibblized, "/tmp/disk2.nib");
+       /*  write_nibblized_disk(diskII_d->drive[0].nibblized, "/tmp/disk1.nib");
+        write_nibblized_disk(diskII_d->drive[1].nibblized, "/tmp/disk2.nib"); */
     }
 }
