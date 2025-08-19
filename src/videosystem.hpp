@@ -88,7 +88,7 @@ struct video_system_t {
     void render_frame(SDL_Texture *texture, float offset);
     void clear();
     void present();
-    void display_capture_mouse(bool capture);
+    bool display_capture_mouse(bool capture);
     void raise();
     void raise(SDL_Window *window);
     void hide(SDL_Window *window);

@@ -75,8 +75,9 @@ video_system_t::video_system_t(computer_t *computer) {
         return true;
     });
     computer->dispatch->registerHandler(SDL_EVENT_MOUSE_BUTTON_DOWN, [this](const SDL_Event &event) {
-        event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
-        display_capture_mouse(true);
+        if (display_capture_mouse(true)) {
+            event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
+        }
         return true;
     });
     computer->sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [this, computer](const SDL_Event &event) {
@@ -239,10 +240,13 @@ void video_system_t::toggle_fullscreen() {
     set_window_fullscreen(display_fullscreen_mode);
 }
 
-
-void video_system_t::display_capture_mouse(bool capture) {
+bool video_system_t::display_capture_mouse(bool capture) {
+    if (capture && SDL_GetWindowKeyboardGrab(window)) {
+        return false;
+    }
     SDL_SetWindowKeyboardGrab(window, capture);
     SDL_SetWindowRelativeMouseMode(window, capture);
+    return true;
 }
 
 void video_system_t::set_full_frame_redraw() {
