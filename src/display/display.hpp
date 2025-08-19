@@ -64,30 +64,6 @@ typedef enum {
     LM_HIRES80_MODE = 5,
 } line_mode_t;
 
-/** Display Modes */
-/* 
-typedef enum {
-    DM_ENGINE_NTSC = 0,
-    DM_ENGINE_RGB,
-    DM_ENGINE_MONO,
-    DM_NUM_COLOR_ENGINES
-} display_color_engine_t;
-
-typedef enum {
-    DM_MONO_WHITE = 0,
-    DM_MONO_GREEN,
-    DM_MONO_AMBER,
-    DM_NUM_MONO_MODES
-} display_mono_color_t;
-
-typedef enum {
-    DM_PIXEL_FUZZ = 0,
-    DM_PIXEL_SQUARE,
-    DM_NUM_PIXEL_MODES
-} display_pixel_mode_t; */
-
-/** End Display Modes */
-
 typedef uint16_t display_page_table_t[24] ;
 
 typedef struct display_page_t {
