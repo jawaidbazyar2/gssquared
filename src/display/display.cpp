@@ -299,13 +299,12 @@ bool update_display_apple2_cycle(cpu_state *cpu) {
 
     switch (vs->display_color_engine) {
         case DM_ENGINE_MONO:
-            ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
+            ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, vs->get_mono_color());
             break;
         case DM_ENGINE_NTSC:
             ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF), 1);
             break;
-        case DM_ENGINE_RGB:
-            //monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
+        case DM_ENGINE_RGB: // we send a green value here but mon_rgb does not use it.
             ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), 1);
             break;
         default:
