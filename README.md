@@ -209,6 +209,10 @@ I also shamelessly copied the Disk II sound files from OpenEmulator.
 
 for the lookup table approach to the new DisplayNG code.
 
+## William Simms
+
+for cycle-accurate video!
+
 ## Wyatt Wong
 
 for helping test in different build environments, and providing MacOS-Intel builds.
