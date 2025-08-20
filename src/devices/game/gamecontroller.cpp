@@ -51,7 +51,7 @@
  * 3ms = 2800 cycles.
  */
 
-#define GAME_INPUT_DECAY_TIME 2800
+#define GAME_INPUT_DECAY_TIME 2805
 
 /**
  * @struct JoystickValues
