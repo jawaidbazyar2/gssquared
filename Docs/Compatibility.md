@@ -189,6 +189,8 @@ looks like requires //e 80 column card.
 crashes after loading a few tracks of data; then it has also gone back to C600 and jumps again to $0801 which is an RTS which then wreaks various havoc, gets to a BRK, and ends up in monitor.
 Boots now, and "plays", but there may be an issue with the joystick. only seems to be able to go up and left.
 
+The gamecontroller timer used to be 2800 cycles. now I set to 2805 cycles, based on the PREAD routine 11 cycles * 255. Controls in jumpman work now.
+
 ## Ultima IV
 
 Works and supports Mockingboard on II Plus. Now works with Mockingboard on IIe.
