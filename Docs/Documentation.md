@@ -219,9 +219,9 @@ became known as the SmartPort / ProDOS block-device interface. See above.
 
 ## Mouse Capture
 
-If you click inside the window, the mouse will be "captured". This is important for Mouse-based Joystick emulation, and later for supporting a Mouse card.
+If you click inside the GS2 window, the mouse will be "captured". This is important for Mouse-based Joystick emulation, and later for supporting Mouse card emulation.
 
-To release the mouse, you can hit F1, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)
+To release the mouse, you can hit **F1**, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)
 
 Mouse capture also turns off the "mouse movement shows OSD controls" feature. It locks you into that keyboard-oriented Apple II experience.
 
@@ -229,7 +229,12 @@ Mouse capture also turns off the "mouse movement shows OSD controls" feature. It
 
 This is the "Control Panel" of the system.
 
-To open, press F4 or click the Triangle tab that appears near the upper left corner of the display when the mouse is moving.
+To open, press **F4** or click the Triangle tab that appears near the upper left corner of the display when the mouse is moving.
+
+Inside the OSD, there are buttons to control:
+
+* Display mode (NTSC, RGB, and three colors of monochrome);
+* Speed (1MHz, 2.8MHz, 4.0MHz, and Ludicrous speed)
 
 ## Reset
 
@@ -237,9 +242,9 @@ Apple II reset is Control-F10; or, press the RESET button in the OSD.
 
 You can Control-Alt-Reset to simulate a IIe style "force reboot" even on a II+. (This clears the reset vector to 0's to trigger a monitor ROM autostart).
 
-## Mounting Disks
+## Virtual Disks
 
-Mounting disks into the Emulator is hopefully simple!
+### Mounting disks into the Emulator is hopefully simple!
 
 1. Open the OSD.
 1. Click a disk drive.
@@ -250,11 +255,15 @@ Drive-specific details:
 
 * 3.5" Drives
 
-You can mount any 800K or bigger disk image file onto the 3.5 drives, including hard drive images, up to 32MB. Changes to these images are written immediately.
+You can mount any 800K or bigger disk image file onto the 3.5 drives, including hard drive images, up to 32MB. Changes to these images are written immediately whenever an emulated program writes to disk.
 
 * 5.25" Drives
 
 You can mount any exactly 143K (140K) disk image to a 5.25" drive. Changes written to these drives are held in memory until you unmount them. At that time the system will ask if you want to save changes back to the original disk image file.
+
+### Write-protection
+
+If the disk image is set in the host operating system as Read-Only (i.e., writes not allowed) then the image will be mounted into GS2 as Write Protected.
 
 ## Display Configuration
 
