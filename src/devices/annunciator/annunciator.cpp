@@ -49,7 +49,7 @@ void annunciator_write_C0xx_anc0(void *context, uint16_t addr, uint8_t data) {
 void init_annunciator(computer_t *computer, SlotType_t slot) {
     cpu_state *cpu = computer->cpu;
     
-    SDL_InitSubSystem(SDL_INIT_JOYSTICK);
+    SDL_InitSubSystem(SDL_INIT_JOYSTICK); // TODO: I don't think this belongs here?
     // alloc and init display state
     annunciator_state_t *anc_d = new annunciator_state_t;
     anc_d->annunciators[0] = 0;
