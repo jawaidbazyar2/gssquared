@@ -31,6 +31,7 @@
 #include "debug.hpp"
 #include "devices/game/gamecontroller.hpp"
 #include "devices/game/mousewheel.hpp"
+#include "devices/annunciator/annunciator.hpp"
 
 /**
  * this is a relatively naive implementation of game controller,
@@ -198,64 +199,101 @@ uint8_t read_game_input_3(void *context, uint16_t address) {
 uint8_t read_game_switch_0(void *context, uint16_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
-    if (ds->gps[0].game_type == GAME_INPUT_TYPE_GAMEPAD) {
-        if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
-            ds->game_switch_0 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
-            ds->game_switch_0 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER)) {
-            ds->game_switch_0 = 1;
-        } else {
-            ds->game_switch_0 = 0;
-        }
+    
+    if ((ds->joystick_mode == JOYSTICK_MODE_JOYPORT_ATARI) && (cpu->cycles > ds->joyport_activate)) { // reverse polarity for atari
+        bool val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
+        return val ? 0x00 : 0x80;    
     } else {
-        ds->game_switch_0 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_LEFT)) != 0;
+        if (ds->gps[0].game_type == GAME_INPUT_TYPE_GAMEPAD) {
+            if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
+                ds->game_switch_0 = 1;
+            } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
+                ds->game_switch_0 = 1;
+            } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER)) {
+                ds->game_switch_0 = 1;
+            } else {
+                ds->game_switch_0 = 0;
+            }
+        } else {
+            ds->game_switch_0 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_LEFT)) != 0;
+        }
+        if (SDL_GetModState() & SDL_KMOD_LGUI) { // TODO: restrict to Apple IIe
+            ds->game_switch_0 = 1;
+        }
+        return ds->game_switch_0 ? 0x80 : 0x00;
     }
-    if (SDL_GetModState() & SDL_KMOD_LGUI) { // TODO: restrict to Apple IIe
-        ds->game_switch_0 = 1;
-    }
-    return ds->game_switch_0 ? 0x80 : 0x00;
 }
 
 uint8_t read_game_switch_1(void *context, uint16_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
-    if (ds->gps[0].game_type == GAME_INPUT_TYPE_GAMEPAD) {
-        if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_SOUTH)) {
-            ds->game_switch_1 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_WEST)) {
-            ds->game_switch_1 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER)) {
-            ds->game_switch_1 = 1;
-        } else {
-            ds->game_switch_1 = 0;
+
+    if ((ds->joystick_mode == JOYSTICK_MODE_JOYPORT_ATARI) && (cpu->cycles > ds->joyport_activate)) {
+        bool val = false;
+
+        annunciator_state_t *anc_d = (annunciator_state_t *)get_module_state(cpu, MODULE_ANNUNCIATOR);
+        bool anc_1 = anc_d->annunciators[1];
+        if (anc_1) { // up-1 
+            val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP);
+        } else { // left-1
+            val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
         }
+        if (SDL_GetModState() & SDL_KMOD_RGUI) { // TODO: restrict to Apple IIe
+            val = true;
+        }
+        return val ? 0x00 : 0x80;
     } else {
-        ds->game_switch_1 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
+        if (ds->gps[0].game_type == GAME_INPUT_TYPE_GAMEPAD) {
+            if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_SOUTH)) {
+                ds->game_switch_1 = 1;
+            } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_WEST)) {
+                ds->game_switch_1 = 1;
+            } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER)) {
+                ds->game_switch_1 = 1;
+            } else {
+                ds->game_switch_1 = 0;
+            }
+        } else {
+            ds->game_switch_1 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
+        }
+        if (SDL_GetModState() & SDL_KMOD_RGUI) { // TODO: restrict to Apple IIe
+            ds->game_switch_1 = 1;
+        }
+        return ds->game_switch_1 ? 0x80 : 0x00;
     }
-    if (SDL_GetModState() & SDL_KMOD_RGUI) { // TODO: restrict to Apple IIe
-        ds->game_switch_1 = 1;
-    }
-    return ds->game_switch_1 ? 0x80 : 0x00;
 }
 
 uint8_t read_game_switch_2(void *context, uint16_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
-    if (ds->gps[1].game_type == GAME_INPUT_TYPE_GAMEPAD) {
-        if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
-            ds->game_switch_2 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
-            ds->game_switch_2 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER)) {
-            ds->game_switch_2 = 1;
-        } else {
-            ds->game_switch_2 = 0;
+
+    if ((ds->joystick_mode == JOYSTICK_MODE_JOYPORT_ATARI) && (cpu->cycles > ds->joyport_activate)) {
+        bool val = false;
+
+        annunciator_state_t *anc_d = (annunciator_state_t *)get_module_state(cpu, MODULE_ANNUNCIATOR);
+        bool anc_1 = anc_d->annunciators[1];
+        if (anc_1) { // down-1 
+            val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+        } else { // right-1
+            val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
         }
+        return val ? 0x00 : 0x80;
     } else {
-        ds->game_switch_2 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
+        if (ds->gps[1].game_type == GAME_INPUT_TYPE_GAMEPAD) {
+            if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
+                ds->game_switch_2 = 1;
+            } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
+                ds->game_switch_2 = 1;
+            } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER)) {
+                ds->game_switch_2 = 1;
+            } else {
+                ds->game_switch_2 = 0;
+            }
+        } else {
+            ds->game_switch_2 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
+        }
+        return ds->game_switch_2 ? 0x80 : 0x00;
     }
-    return ds->game_switch_2 ? 0x80 : 0x00;
 }
 
 /**
@@ -353,6 +391,27 @@ bool remove_gamepad(gamec_state_t *gp_d, const SDL_Event &event) {
     return recompute_gamepads(gp_d);
 }
 
+void set_joystick_mode(gamec_state_t *gp_d, joystick_mode_t mode) {
+    gp_d->joystick_mode = mode;
+}
+
+void toggle_joystick_mode(gamec_state_t *gp_d) {
+    const char *mode_names[] = {
+        "Apple Joystick",
+        "Atari Joysticks (Joyport)",
+        "Apple Joysticks (Joyport)"
+    };
+    
+    if (gp_d->joystick_mode == JOYSTICK_MODE_JOYPORT_ATARI) {
+        gp_d->joystick_mode = JOYSTICK_MODE_APPLE;
+    } else {
+        gp_d->joystick_mode = JOYSTICK_MODE_JOYPORT_ATARI;
+    }
+    static char buffer[256];
+    snprintf(buffer, sizeof(buffer), "Joystick mode set to %s", mode_names[gp_d->joystick_mode]);
+    gp_d->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, buffer));
+}
+
 void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     cpu_state *cpu = computer->cpu;
     
@@ -413,4 +472,18 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
         handle_mouse_wheel(ds, event);
         return true;
     });
+    computer->sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [ds, computer](const SDL_Event &event) {
+        int key = event.key.key;
+        if (key == SDLK_F6) {
+            toggle_joystick_mode(ds);
+            return true;
+        }
+        return false;
+    });
+
+    computer->register_reset_handler(
+        [ds,cpu]() {
+            ds->joyport_activate = cpu->cycles + 100000; // 100ms
+            return true;
+        });
 }

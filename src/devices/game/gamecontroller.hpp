@@ -61,7 +61,17 @@ typedef struct gamepad_state {
     SDL_Gamepad *gamepad;    
 } gamepad_state_t;
 
+typedef enum joystick_mode {
+    JOYSTICK_MODE_APPLE = 0,
+    JOYSTICK_MODE_JOYPORT_ATARI,
+    JOYSTICK_MODE_JOYPORT_APPLE,
+    NUM_JOYSTICK_MODES
+} joystick_mode_t;
+
 typedef struct gamec_state_t {
+    joystick_mode_t joystick_mode = JOYSTICK_MODE_APPLE;
+    uint64_t joyport_activate = 0;
+
     int game_switch_0;
     int game_switch_1;
     int game_switch_2;
