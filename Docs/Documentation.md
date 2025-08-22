@@ -111,7 +111,7 @@ Additional notes: Disk II does not support quarter or half tracks.
 | Modem / serial port | Not started | Intend to emulate SSC and Hayes-compatible modem to telnet |
 | ImageWriter printer emulation | Not started | |
 | Joystick / paddles | ✅ Complete | Mouse emulation of Joystick; Gamepads;  |
-| Atari JoyPort | not started | |
+| Sirius JoyPort (Atari) | Partial | Implement Single Joystick - enable mode with F6 |
 | Shift-key mod and Lowercase Character Generator | Not started | |
 
 ## Clocks
