@@ -67,11 +67,6 @@ void init_annunciator(computer_t *computer, SlotType_t slot) {
         computer->mmu->set_C0XX_read_handler(0xC058 + i*2 + 1, { annunciator_read_C0xx_anc0, cpu });
         computer->mmu->set_C0XX_write_handler(0xC058 + i*2, { annunciator_write_C0xx_anc0, cpu });
         computer->mmu->set_C0XX_write_handler(0xC058 + i*2 + 1, { annunciator_write_C0xx_anc0, cpu });
-
-        /* register_C0xx_memory_read_handler(0xC058 + i*2, annunciator_read_C0xx_anc0);
-        register_C0xx_memory_read_handler(0xC058 + i*2 + 1, annunciator_read_C0xx_anc0);
-        register_C0xx_memory_write_handler(0xC058 + i*2, annunciator_write_C0xx_anc0);
-        register_C0xx_memory_write_handler(0xC058 + i*2 + 1, annunciator_write_C0xx_anc0); */
     }
 
 }
