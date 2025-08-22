@@ -62,7 +62,7 @@ void init_annunciator(computer_t *computer, SlotType_t slot) {
 
     if (DEBUG(DEBUG_GAME)) fprintf(stdout, "Initializing annunciator\n");
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 3; i++) { // we'll handle annunciators 0-2 here. display will handle 3.
         computer->mmu->set_C0XX_read_handler(0xC058 + i*2, { annunciator_read_C0xx_anc0, cpu });
         computer->mmu->set_C0XX_read_handler(0xC058 + i*2 + 1, { annunciator_read_C0xx_anc0, cpu });
         computer->mmu->set_C0XX_write_handler(0xC058 + i*2, { annunciator_write_C0xx_anc0, cpu });
