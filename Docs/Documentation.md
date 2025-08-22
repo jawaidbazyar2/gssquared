@@ -260,8 +260,9 @@ You can mount any exactly 143K (140K) disk image to a 5.25" drive. Changes writt
 
 In the OSD, there are buttons to change the display engine - NTSC, RGB, and Monochrome. And, buttons to change the Monochrome color (green, amber, white).
 
-Pressing F2 cycles through the display engines.  
-Pressing F5 toggles between pixel-blur and rectangular. pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays. Rectangular performs an exact square upscaling/downscaling.
+* F2 cycles through the display engines.  
+* F5 toggles between pixel-blur and rectangular. pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays. Rectangular performs an exact square upscaling/downscaling.
+* F3 toggles between Full-Screen and Windowed modes.
 
 These are matters of personal preference, so you get to pick the one you like best.
 
