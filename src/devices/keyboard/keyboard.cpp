@@ -143,10 +143,16 @@ void handle_keydown_iiplus(const SDL_Event &event, keyboard_state_t *kb_state) {
 
     if (mod & SDL_KMOD_CTRL) { // still have to handle control this way..
         // Convert lowercase to control code (0x01-0x1A)
-        if (key >= 'a' && key <= 'z') {
-            key = key - 'a' + 1;
-            kb_key_pressed(kb_state, key);
-            /* if (DEBUG(DEBUG_KEYBOARD)) fprintf(stdout, "control key pressed: %08X\n", key); */
+        if (mod & SDL_KMOD_SHIFT && key == 'p') { // handle control-shift-P as a special case.
+            kb_key_pressed(kb_state, 0x00);
+        } else if (mod & SDL_KMOD_SHIFT && key == 'n') { // handle control-shift-N as a special case.
+            kb_key_pressed(kb_state, 0x1E);
+        } else {
+            if (key >= 'a' && key <= 'z') {
+                key = key - 'a' + 1;
+                kb_key_pressed(kb_state, key);
+                /* if (DEBUG(DEBUG_KEYBOARD)) fprintf(stdout, "control key pressed: %08X\n", key); */
+            } 
         }
     }  else {
         // map the scancode + mods to a sensible keycode
@@ -203,7 +209,12 @@ void handle_keydown_iie(const SDL_Event &event, keyboard_state_t *kb_state) {
             key = key - 'a' + 1;
             kb_key_pressed(kb_state, key);
             /* if (DEBUG(DEBUG_KEYBOARD)) fprintf(stdout, "control key pressed: %08X\n", key); */
+        } else if (mod & SDL_KMOD_SHIFT && key == '2') { // handle control-@ as a special case.
+            kb_key_pressed(kb_state, 0x00);
+        } else if (mod & SDL_KMOD_SHIFT && key == '6') { // handle control-shift-N as a special case.
+            kb_key_pressed(kb_state, 0x1E);
         }
+
     }  else {
         // we need to map backspace to 0x7F because SDL maps backspace/delete to 0x08 (not what we want)
         if (event.key.scancode == SDL_SCANCODE_BACKSPACE) {
