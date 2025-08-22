@@ -5461,6 +5461,7 @@ class Media
     new Media(types, filename, etc)
     read(offset, length) - applies any data offset that might be in the file
     write(offset, length) - applies any data offset that might be in the file
+    
 
 class NibblizedImage
     new NibblizedImage(Media) - create and load nibble data based on the specified Media file.
