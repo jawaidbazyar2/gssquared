@@ -111,7 +111,7 @@ Additional notes: Disk II does not support quarter or half tracks.
 | Modem / serial port | Not started | Intend to emulate SSC and Hayes-compatible modem to telnet |
 | ImageWriter printer emulation | Not started | |
 | Joystick / paddles | ✅ Complete | Mouse emulation of Joystick; Gamepads;  |
-| Sirius JoyPort (Atari) | Partial | Implement Single Joystick - enable mode with F6 |
+| Sirius JoyPort (Atari) | Partial | Implemented Single Joystick - enable mode with F6 |
 | Shift-key mod and Lowercase Character Generator | Not started | |
 
 ## Clocks
@@ -170,14 +170,15 @@ emulators fit the video game category quite closely.
 
 GSSquared supports three video display engines:
 * NTSC - a highly accurate rendering of Apple II video as it would have worked on a composite monitor of the time.
-* RGB - a more typical "emulator" rendering of video.
+* RGB - a more typical "emulator" rendering of video. Based on what I believe is the IIgs RGB video patent.
 * Monochrome - green, amber, or white high bandwidth monochrome display.
 
 At this time all video modes below work with all display engines.
 
 ### Text Mode
 
-Text mode is complete. It supports 40-column normal, inverse, and flash.
+Text mode is complete. It supports 40-column normal, inverse, and flash;
+80-column with standard and alternate character sets.
 
 ### Low-Resolution Graphics
 
@@ -186,6 +187,10 @@ Low-resolution graphics are complete. They work with screen 1, 2, split-screen, 
 ### High-Resolution Graphics
 
 Works with page 1, 2, split-screen, and full-screen.
+
+### Double Modes
+
+Double lo-res and Double hi-res supported fully, and with all video engines.
 
 ## Disk Drive Interfaces
 
@@ -259,6 +264,36 @@ Pressing F2 cycles through the display engines.
 Pressing F5 toggles between pixel-blur and rectangular. pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays. Rectangular performs an exact square upscaling/downscaling.
 
 These are matters of personal preference, so you get to pick the one you like best.
+
+## Game Controller (Joystick / Paddle / Joyport)
+
+### Mouse
+
+By default, if no gamepad is detected, GS2 tries its best to emulate a Apple II joystick/paddles using the mouse.
+It's best if you click inside the window to activate Mouse Capture mode. This prevents the mouse from leaving the bounds of the window and causing all kinds of weirdness.
+
+It's mapped as follows: 
+* Left to Right is the horizontal axis PDL(0). Up to Down is the vertical axis PDL(1).
+* The left mouse button is Button 0; right is Button 1. If you only have a 1-button mouse, you're limited to Button 0.
+
+### Gamepads
+
+GS2 will detect and activate multiple Gamepads if present. However, the current implementation only supports using the first Gamepad detected for user input.
+Tested devices: I have and have tested a 8BitDo Pro2 Gamepad. However, the underlying SDL library is known to work with hundreds of Gamepad models.
+
+Buttons A and B (the East and South buttons on a typical gamepad) are Button(0) and Button(1) respectively.
+The Left joystick is PDL(0) and PDL(1).
+
+### Sirius Joyport Emulation (Atari Joystick games)
+
+Enable Atari Joyport mode by pressing F6 on your keyboard. (Switch back to regular Apple Joystick mode by pressing F6 again).
+
+Joyport emulation only works with Gamepads, not the Mouse.
+
+The Gamepad D-PAD (+ shaped control) is what is used for the Atari Joystick.
+Currently, only the first Gamepad is recognized by the system, so no multi-player games.
+
+Almost all Joyport games will require configuration in-game to enable Joyport support. Many Sirius Software games use Control-Shift-@ (Apple IIe Emulation) or Control-Shift-P (Apple II+ Emulation) to enable Joyport. Other games have setup menus. You will have to check the manual for the game.
 
 
 # Code Organization
