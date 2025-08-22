@@ -232,3 +232,7 @@ crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card s
 ## Berzap
 
 boots. ctrl-c lets you configure mockingboard. there might be an attempt at speech which doesn't work of course.
+
+## Cyclod
+
+once the maze comes up, you have to hit enter to start. control-@ (control-shift-P, or control-shift-2) and F6 to enable joyport.
