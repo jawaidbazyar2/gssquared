@@ -6,6 +6,12 @@ It also allowed two sets of Apple paddles / joysticks to be connected, and to pr
 
 https://ia903106.us.archive.org/6/items/siriusjoyportmanual/Sirius%20Joyport%20Manual_text.pdf
 
+list of games that support Joyport:
+
+https://nerdlypleasures.blogspot.com/2021/08/digital-joysticks-and-apple-ii.html
+
+
+
 The mappings are very straightforward. However, we will need some user-interface.
 
 We need a mode button for game controller, for:
