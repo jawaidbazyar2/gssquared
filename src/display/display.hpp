@@ -62,6 +62,7 @@ typedef enum {
     LM_TEXT80_MODE  = 3,
     LM_LORES80_MODE = 4,
     LM_HIRES80_MODE = 5,
+    LM_HIRES_MODE_NOSHIFT = 6,
 } line_mode_t;
 
 typedef uint16_t display_page_table_t[24] ;

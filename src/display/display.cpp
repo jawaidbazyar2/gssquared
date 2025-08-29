@@ -236,6 +236,9 @@ bool update_display_apple2(cpu_state *cpu) {
                 case LM_HIRES_MODE:
                     ds->a2_display->generate_hires40(hgr_page, ds->frame_bits, line);
                     break;
+                case LM_HIRES_MODE_NOSHIFT:
+                    ds->a2_display->generate_hires40_noshift(hgr_page, ds->frame_bits, line);
+                    break;
                 case LM_TEXT80_MODE:
                     ds->a2_display->generate_text80(text_page, alt_text_page, ds->frame_bits, line);
                     break;
@@ -351,10 +354,18 @@ void update_line_mode(display_state_t *ds) {
                 top_mode = LM_LORES_MODE;
             }
         } else {
-            if (!ds->f_double_graphics) {
-                top_mode = LM_HIRES80_MODE;
+            if (ds->f_80col) {
+                if (!ds->f_double_graphics) {
+                    top_mode = LM_HIRES80_MODE;
+                } else {
+                    top_mode = LM_HIRES_MODE;
+                }
             } else {
-                top_mode = LM_HIRES_MODE;
+                if (!ds->f_double_graphics) {
+                    top_mode = LM_HIRES_MODE_NOSHIFT;
+                } else {
+                    top_mode = LM_HIRES_MODE;
+                }
             }
         }
     }

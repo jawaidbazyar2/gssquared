@@ -42,6 +42,7 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
         frame_byte->set_line(vcount);
         uint8_t lastByte = 0x00; // for hires
         color_mode_t color_mode = frame_scan->get_color_mode(vcount);
+        uint8_t color_delay_mask = 0xFF;
 
         for (int hcount = 0; hcount < 40; hcount++) {
 
@@ -199,6 +200,9 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                     }
                 }
                 break;
+                case VM_HIRES_NOSHIFT: // TODO: this needs to set a flag to disable color delay. But this should make it display something now.
+                    color_delay_mask = 0x7F;
+
                 case VM_HIRES: {
                         if (hcount == 0) {
                             for (int i = 0; i < 7; i++) {
@@ -206,7 +210,7 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                             }
                             frame_byte->set_color_mode(vcount, COLORBURST_ON);
                         }
-                        uint8_t byte = scan.mainbyte;
+                        uint8_t byte = scan.mainbyte & color_delay_mask;
                         size_t fontIndex = (byte | ((lastByte & 0x40) << 2)) * CHAR_WIDTH; // bit 6 from last byte selects 2nd half of font
                 
                         for (int i = 0; i < 14; i++) {

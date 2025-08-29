@@ -240,6 +240,33 @@ public:
         }
     }
 
+    void generate_hires40_noshift(uint8_t *hgrpage, Frame560 *f, uint16_t linegroup) {
+        uint8_t *d = hgrpage + A2_hiresMap[linegroup];
+        uint16_t scanline = linegroup * 8;
+
+        int lastByte = 0x00;
+        for (uint16_t line = 0; line < 8; line++) {
+            // Process 40 bytes (one scanline)
+            f->set_line(scanline);
+            f->set_color_mode(scanline, COLORBURST_ON);
+            for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
+
+            for (int x = 0; x < 40; x++) {
+                uint8_t byte = d[x] & 0x7F;
+
+                size_t fontIndex = (byte | ((lastByte & 0x40) << 2)) * CHAR_WIDTH; // bit 6 from last byte selects 2nd half of font
+
+                for (int i = 0; i < CELL_WIDTH; i++) {
+                    f->push(hires40Font[fontIndex + i]);
+                    //output[index++] = hires40Font[fontIndex + i];
+                }
+                lastByte = byte;
+            }
+            d += 0x400; // go to next line
+            scanline++;
+        }
+    }
+
     void generate_hires80(uint8_t *hgrpage, uint8_t *althgrpage, Frame560 *f, uint16_t linegroup) {
         uint8_t *m = hgrpage + A2_hiresMap[linegroup];
         uint8_t *a = althgrpage + A2_hiresMap[linegroup];
