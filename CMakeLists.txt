@@ -225,6 +225,8 @@ add_library(gs2_devices_mockingboard     src/devices/mockingboard/mb.cpp )
 
 add_library(gs2_devices_annunciator     src/devices/annunciator/annunciator.cpp )
 
+add_library(gs2_devices_mouse     src/devices/applemouseii/mouse.cpp )
+
 add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
 
 add_library(gs2_debugger src/debugger/trace.cpp src/debugger/trace_opcodes.cpp src/debugger/debugwindow.cpp src/debugger/MonitorCommand.cpp 
@@ -318,6 +320,7 @@ target_link_libraries(GSSquared
     gs2_message_bus
     gs2_paths
     gs2_video_scanner
+    gs2_devices_mouse
 )
 
 add_subdirectory(apps/nibblizer)

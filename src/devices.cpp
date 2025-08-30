@@ -32,6 +32,7 @@
 #include "devices/mockingboard/mb.hpp"
 #include "devices/annunciator/annunciator.hpp"
 #include "devices/iiememory/iiememory.hpp"
+#include "devices/applemouseii/mouse.hpp"
 
 Device_t NoDevice = {
         DEVICE_ID_END,
@@ -159,6 +160,13 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         "IIe Memory",
         false,
         init_iiememory,
+        NULL
+    },
+    {
+        DEVICE_ID_MOUSE,
+        "Apple Mouse II",
+        false,
+        init_mouse,
         NULL
     }
 };

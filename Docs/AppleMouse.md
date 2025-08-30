@@ -72,6 +72,11 @@ Here's a disassembly of the ROM:
 
 https://github.com/freitz85/AppleIIMouse/blob/master/mouse%20rom.s
 
+This is a project which emulates the Apple Mouse II card pretty closely:
+
+https://www.applefritter.com/content/a2usb-apple-ii-usb-mouse-interface-card-emulation
+
+
 ok I'm going to guess the following:
 
 BoundaryX provides a range from L to H - low value to high value. And a similar range for Y low to high.
@@ -233,3 +238,209 @@ CF83   48                   PHA
 ```
 
 This is really freakin crazy. They do all this just to save some address decode logic? Or was there some other purpose?
+
+# BazMouse
+
+ok, I think it may be significantly simpler to write my own mouse card setup.
+
+| Screen Hole | Description |
+|--|--|
+| $478 + n | Low byte of X position |
+| $4F8 + n | Low byte of Y position |
+| $578 + n | High byte of X position |
+| $5F8 + n | High byte of Y position |
+| $678 + n | Reserved |
+| $6F8 + n | Reserved |
+| $778 + n | Button and interrupt status |
+| $7F8 + n | Current mode |
+
+| Address | Name |
+|--|--|
+| C0s0 | RW | Position XL |
+| C0s1 | RW | Position XH |
+| C0s2 | RW | Position YL |
+| C0s3 | RW | Position YH |
+| C0s4 | RW | Clamp X Low Bound Low Byte |
+| C0s5 | RW | Clamp X Low Bound High Byte |
+| C0s6 | RW | Clamp X High Bound Low Byte |
+| C0s7 | RW | Clamp X High Bound High Byte |
+| C0s8 | RW | Clamp Y Low Bound Low Byte |
+| C0s9 | RW | Clamp Y Low Bound High Byte |
+| C0sA | RW | Clamp Y High Bound Low Byte |
+| C0sB | RW | Clamp Y High Bound Hi Byte |
+| C0sE | R | Status |
+| C0sF | RW | Mode | 
+
+Mode
+
+| Bit | Function |
+|--|--|
+| 0 | Turn mouse on |
+| 1 | Enable interrupts on mouse movement |
+| 2 | Enable interrupts when button pressed |
+| 3 | enable interrupts every screen refresh |
+| 4-7 | Reserved |
+
+Status
+
+| Bit | Function |
+|--|--|
+| Bit 7 | Button is down  |
+| 6 | Button was down at last reading  |
+| 5 | X or Y changed since last reading  |
+| 4 | Reserved |
+| 3 | Interrupt caused by screen refresh |
+| 2 | Interrupt caused by button press |
+| 1 | Interrupt caused by mouse movement |
+| 0 | Reserved |
+
+The application program is responsible for setting up the interrupt vector and handler routines.
+
+## Mouse API Routines
+
+### SETMOUSE
+
+Input:
+A = mode value
+X = $Cn
+Y = $n0
+
+Return:
+
+C = 1: if mode byte is illegal (greater than $0F)
+C = 0: everything fine.
+No change to registers or screen holes.
+
+### SERVEMOUSE
+
+If an interrupt was caused by mouse, SERVEMOUSE updates the status byte ($778+n) to show which event caused the interrupt.
+
+Return:
+C = 0: interrupt caused by mouse
+C = 1: interrupt not caused by mouse.
+
+### READMOUSE
+
+Transfers current mouse data to screen holes. Sets bits 1,2,3 in status byte to 0.
+
+### CLEARMOUSE
+
+Sets X and Y position values to 0, both in screen holes and on card. Button and interrupt status remains unchanged.
+
+### POSMOUSE
+
+sets position registers on peripheral card to the values it finds in the screen holes.
+
+### CLAMPMOUSE
+
+Input:
+A = 0: change X coordinate limits
+A = 1: change Y coordinate limits
+
+New boundaries are read from Apple main memory:
+$478 - low byte of lower bound
+$4F8 - low byte of higher bound
+$578 - high byte of lower bound
+$5F8 - high byte of higher bound
+
+destroys contents of mouse's X and Y position screen holes. Program must follow CLAMP with a READMOUSE.
+
+### HOMEMOUSE
+
+Sets mouse position registers on the peripheral card to the lower boundaries.
+Does not update the screen holes. To do that, you should follow with READMOUSE.
+
+### INITMOUSE
+
+sets internal default values for mouse subsystem and synchronizes with monitor's vertical blanking cycle.
+
+## Call jump table
+
+| Offset | Function |
+|--|--|
+| $Cn12 | Low byte of SETMOUSE entry point address |
+| $Cn13 | Low byte of SERVEMOUSE entry point address | 
+| $Cn14 | Low byte of READMOUSE entry point address | 
+| $Cn15 | Low byte of CLEARMOUSE entry point address | 
+| $Cn16 | Low byte of POSMOUSE entry point address | 
+| $Cn17 | Low byte of CLAMPMOUSE entry point address | 
+| $Cn18 | Low byte of HOMEMOUSE entry point address | 
+| $Cn19 | Low byte of INITMOUSE entry point address | 
+
+# Translation of Mouse Motion
+
+The virtual Apple will have its own clamping. This presents two options:
+1) SetWindowRelativeMouseMode will constrain the mouse to the interior of the window; when we're using the mouse in the gameport code, we translate and scale mouse-in-window coordinates to 0-255. This means there is a different scale vertically and horizontally. I don't think that's what we want.
+2) Have the above mode, BUT, use Mouse movement events to update the virtual mouse x and y positions.
+
+I think the latter approach is better - x and y will have the same sensitivity this way, and, we're not having to deal with translating and scaling. It also deals better with setting the mouse position, and we won't have to do a SDLSetMousePos call.
+
+SDL_MouseMotionEvent is the ticket.
+
+I have an odd conflict: A2Desktop can use both mouse and joystick and gets confused. So when the Mouse is active (turned on), disable Mouse-Joystick emulation.
+
+# Interrupts
+
+there are three interrupts: vbl, on mouse motion, on button click.
+"upon detecting an interrupt event, the mouse subsystem sends an IRQ to the 6502 at the end of the current monitor screen writing cycle".
+So, it only sends IRQ when we're in VBL. 
+
+OK, whenever we initmouse, this synchronizes with the vbl. So we can calculate where the vbl should be and set and event timer for that cycle.
+The handler for that event will check whether the mouse moved, button pressed, or .. i.e. we should set flags "this event occurred".
+when the handler is called, we (may) push these into the IRQ flags then OR them and set (or clear) the slot IRQ. then clear the underlying flags?
+
+ok. So we can grab the cycle counter whenever the mouse is enabled. grab this from the video routines. That's the simplest way, and will work on ii plus mode or //e mode.
+
+This is what Shufflepuck author learned writing it:
+
+https://www.colino.net/wordpress/en/archives/2025/05/08/yes-the-apple-ii-mousecard-irq-is-synced-to-the-vbl/
+
+(for initial test, we don't care, just pick current cycle plus 17,030)
+
+# Compatibility
+
+## A2Desktop
+
+working w/o interrupts. However, when the gamepad is not connected, and gamecontroller uses mouse to emulate joystick, there is a conflict in that some mouse clicks and motion cause joystick which interferes with reading from the mouse card. We should disable mouse-based gamecontroller when mouse card mode is Active.
+
+## Shufflepuck
+
+[x] starts to blank screen?  
+[ ] The mouse is overly sensitive  
+
+plays a short bit of music
+hangs on blank screen in a tight loop waiting for $B003 to become non-zero.
+
+likely waiting on mouse interrupts. maybe even vbl.
+
+the blank screen issue was unrelated to mouse, it was not handling the //e quasi video mode with 80col off but hires on doing no-shift mode.
+
+## DazzleDraw
+
+also likely waiting on mouse interrupts. specifically, DD wants VBL interrupt. So that's easy to implement.
+
+status byte toggles between 0x60 -> 0xA0 when I click mouse. If I spastically click mouse many times it may get one click every so often through.
+
+
+# Bugs
+
+[ ] When I click and drag (like choosing a menu), only the X or the Y coordinate can change, not both. That is weird. not reproducing this today with debugging off  
+
+[ ] when using apple-W to close, well it actually closes the emulator window.  
+
+Cmd-W is being acted on by the MacOS and closing the window before I ever have a chance to do anything with it.
+
+[ ] in DD, clicking in-window does not cause mouse to be captured  
+
+videosystem was returning true on the mouse capture section - changed to -false- because we also still want these clicks passed through to whatever there is underneath looking for these events.
+
+
+in DD about 20% to 40% of vertical area, the cursor gets weird. So VBL is in the wrong place.
+
+# Other Implementations
+
+## AppleWin
+
+Emulates the 6521 interface (labels it a 6821), so it's likely simulating the AppleMouseII fairly directly and using its firmware.
+
+## 

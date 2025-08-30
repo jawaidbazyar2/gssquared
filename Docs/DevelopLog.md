@@ -5465,3 +5465,37 @@ class Media
 
 class NibblizedImage
     new NibblizedImage(Media) - create and load nibble data based on the specified Media file.
+
+## Aug 23, 2025
+
+took a look at roadmap, and see the new more efficient speaker code on the list. Hunh! ok. So Mike's A2DVI CPU is either not FP efficient or it doesn't have FP. (I forget which). So, a Fixed point only solution could be beneficial for that project, as well as for what I'm doing here.
+
+Mike's project would require 44,100hz audio. Mike's approach is sampling at a consistent 380kish rate.
+
+What I have been contemplating is recording events by time, not by cycle, because the cycle times could change (and if I wanted to super-accurately simulate the 'stretched 65th cycle' I would). (The mockingboard code records events by time, though it does it statically by dividing cycles by a 1.0205mhz rate. Which I need to change to 1.0219 instead since the change to the cycle-accurate video.)
+
+So is fixpt the best representation here? What about 64-bit "whole seconds" and a separate 64-bit "fractional seconds"? Then I could record accurate times to arbitrarily small portions of a second, good for cycle times.
+
+Then the question becomes, translating those into 1/44100ths.
+
+For GS2, it's likely I could just pass raw very-high-frequency data into SDL3 and have it do the sample rate conversion.
+
+this is a productive chat:
+https://claude.ai/chat/9accfc75-7217-44ff-97c7-268b62723480
+
+the current cs code is extremely efficient but does not have filtering in it. But, going for the pure fixed-point approach might be worth a try, since the code in the chat builds in the filtering via modeling the speaker physics.
+
+A negative side-effect of the current code is that it takes more cpu time if the cycle count increases (at 2mhz execution goes from 4us per frame to 10us per frame).  The faster the emulated cpu the more time this speaker code will take. 23us at 4mhz). 
+
+An alternative approach entirely: 'sample' every time the cpu ticks a cycle. Would basically be like Mike's approach (except he's not filtering to model the speaker physics).
+
+ok, I'm done noodling around here. I think the current code is ok. However, if we're going to forklift this, there should be some clear benefit from it. That benefit should be to be able to have the cpu cycles each individually taking different amounts of time. I.e., recording speaker click events based on emulated realtime, instead of cycles. Secondarily, fixing the number of samples so this algorithm does not take more time if the emCPU is going faster.
+
+## Aug 29, 2025
+
+[x] in normal hires, if you hit $C05E (double hires related) without turning on 80-column, this is supposed to disable the color delay (i.e., ignore bit 7 of each hires byte).  
+[ ] the mouse VBL interrupt is definitely in the wrong place compared to my video routines. mouse disappears in shufflepuck in roughly same place as in dazzledraw.  Going to have to 
+
+[ ] when in dhr and switch to text, c054/c055 should go back to controlling display page not memory. Spacequest is switching from dhr to text40 and we are not selecting page 1 when we do that  
+
+
