@@ -630,18 +630,30 @@ inline byte_t pop_byte(cpu_state *cpu) {
     return N;
 }
 
+inline byte_t pop_byte_nocycle(cpu_state *cpu) {
+    cpu->sp = (uint8_t)(cpu->sp + 1);
+    //cpu->incr_cycles();
+    byte_t N = cpu->read_byte(0x0100 + cpu->sp);
+    TRACE(cpu->trace_entry.data = N;)
+    return N;
+}
+
 inline void push_word(cpu_state *cpu, word_t N) {
     cpu->write_byte(0x0100 + cpu->sp, (N & 0xFF00) >> 8);
-    cpu->write_byte(0x0100 + cpu->sp - 1, N & 0x00FF);
+    cpu->write_byte(0x0100 + (uint8_t)(cpu->sp - 1), N & 0x00FF);
     cpu->sp = (uint8_t)(cpu->sp - 2);
     //cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
 }
 
 inline absaddr_t pop_word(cpu_state *cpu) {
-    absaddr_t N = cpu->read_word(0x0100 + cpu->sp + 1);
+    uint8_t w_l = pop_byte(cpu);
+    uint8_t w_h = pop_byte(cpu);
+    absaddr_t N = (w_h << 8) | w_l;
+    //cpu->incr_cycles();
+    /* absaddr_t N = cpu->read_word(0x0100 + cpu->sp + 1); // TODO: this is wrong. We need to fetch one byte at a time and keep the SP an 8-bit value
     cpu->sp = (uint8_t)(cpu->sp + 2);
-    cpu->incr_cycles();
+    cpu->incr_cycles(); */
     TRACE(cpu->trace_entry.data = N;)
     return N;
 }
@@ -2081,7 +2093,7 @@ int execute_next(cpu_state *cpu) override {
             {
                 // pop status register "ignore B | unused" which I think means don't change them.
                 byte_t oldp = cpu->p & (FLAG_B | FLAG_UNUSED);
-                byte_t p = pop_byte(cpu) & ~(FLAG_B | FLAG_UNUSED);
+                byte_t p = pop_byte_nocycle(cpu) & ~(FLAG_B | FLAG_UNUSED);
                 cpu->p = p | oldp;
 
                 cpu->pc = pop_word(cpu);
@@ -2093,7 +2105,7 @@ int execute_next(cpu_state *cpu) override {
         case OP_RTS_IMP: /* RTS */
             {
                 cpu->pc = pop_word(cpu);
-                cpu->incr_cycles();
+                //cpu->incr_cycles();
                 cpu->pc++;
                 cpu->incr_cycles();
                 TRACE(cpu->trace_entry.operand = cpu->pc;)
