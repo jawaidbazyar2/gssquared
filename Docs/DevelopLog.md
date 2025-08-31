@@ -154,7 +154,7 @@ https://en.wikipedia.org/wiki/Apple_II_graphics
 Implemented in fake green-screen mode.
 
 Bugs:
-[ ] text line 21 does not update in mixed mode.
+[x] text line 21 does not update in mixed mode.
 
 
 ## Dec 26, 2024
@@ -562,7 +562,7 @@ https://github.com/kurtjd/rust-apple2/blob/main/src/sound.rs
 This is an apple 2 emulator written in Rust, and this is the sound code.
 
 ** ok, well now. I took out the display optimization. effective cycles per second is 1.01xxxmhz. I think the audio is working better.
-[ ] So it's due to the cpu clock running slightly faster than the audio timing.
+[x] So it's due to the cpu clock running slightly faster than the audio timing.
 
 
 ## Lo-Res Graphics
@@ -1000,8 +1000,8 @@ where the configurator is just a web app.
 
 [ ] Create struct configuration tables for memory map for each platform.
 
-[ ] There's an obvious optimization in the DiskII area - we don't have to shift the bits out of the register. We can just provide the full byte with the hi-bit set. This would 
-probably work and speed up disk emulation mightily.
+[x] There's an obvious optimization in the DiskII area - we don't have to shift the bits out of the register. We can just provide the full byte with the hi-bit set. This would 
+probably work and speed up disk emulation mightily. (ended up pre-shifting 6 bits out)
 
 ## Jan 5, 2025
 
@@ -1093,11 +1093,11 @@ argument 2 uint64_t
 
 This will be part of the CPU struct, so the actual function can be called with the CPU pointer.
 
-[ ] Add 'Language card' / 64K support.
-[ ] Add event queue system.
-[ ] Add Disk II write support.
-[ ] Add .nib and .po format support.
-[ ] Note infinite loop on the console, but do not terminate.
+[x] Add 'Language card' / 64K support.
+[x] Add event queue system.
+[x] Add Disk II write support.
+[x] Add .nib and .po format support.
+[x] Note infinite loop on the console, but do not terminate.
 
 
 ### Language Card:
@@ -1631,7 +1631,7 @@ of key values and handler function pointers and just iterate them on a key event
 
 Todo for this:
 
-[ ] get window dimensions by calling SDL_GetWindowSize
+[x] get window dimensions by calling SDL_GetWindowSize
 [x] buy a usb joystick and see what is needed for that to work right.
 
 
@@ -1663,7 +1663,7 @@ Since I got past my include file location issues of earlier, I can now be consis
 
 So have more thinking to do - for debug output, can write to a file. And create a debug log abstraction. 
 
-[ ] When a VM is off, its window can display the apple logo and the machine name underneath. (e.g. Apple IIe, //c etc.)
+[x] When a VM is off, its window can display the apple logo and the machine name underneath. (e.g. Apple IIe, //c etc.)
 [x] edit the icon so it's square, and, has a transparent background where the white is.
 
 Thinking about UI. Two ways to go here.
@@ -2220,7 +2220,7 @@ in lower portion when in graphics mode. But needed to also check to hi-res mode.
 Full screen mode works but it allows use of the wrong aspect ratio. I think in fullscreen mode we need to 
 force the scale to match aspect ratio, then center content inside the fullscreen window.
 
-[ ] in game code, window_width and height need to read the actual window size, or, use some other method
+[x] in game code, window_width and height need to read the actual window size, or, use some other method
 to constrain the mouse movement.
 
 ## Jan 24, 2025
@@ -2305,7 +2305,7 @@ a2ts and gs2. Do that tomorrow when I'm not yawning.
 
 Walking through the tracks in blank.nib one by one, each track starts with a different sector. F, then E, then D, etc.
 
-[ ] So, those two things to try: (1) pad out the sector gaps to make their uS duration similar to these other nibs; and do the skew
+[x] So, those two things to try: (1) pad out the sector gaps to make their uS duration similar to these other nibs; and do the skew
 thing. And if there are any bytes left, we should pad out with FF instead of with 00. (2) try just jumping to next track at
 same byte index, instead of resetting to 0.
 
@@ -3663,8 +3663,8 @@ Things for a "real" II+ release. Whoa, is that happening?
 
 This release goals (0.3):
 * [done] refactor all the other slot cards (like mb) to use the slot_store instead of device_store.
-* [ ] implement reset routine registry
-* [ ] implement accelerated floppy mode
+* [x] implement reset routine registry
+* [x] implement accelerated floppy mode
 * vector the RGB stuff as discussed in DisplayNG correctly.
 * make OSD fully match DisplayNG.
 * refactor the hinky code we have in bus for handling mockingboard, I/O space memory switching, etc.
@@ -3710,7 +3710,7 @@ Integrated in the new optimized video LUT generation routines, and am testing wi
 
 Interestingly, there is a minor "fade-in" effect at the left and right edges, where even with a white field, there are artifacts as we come onto white. Not sure if that's supposed to happen - not sure if it happened before. I don't think it did. Checked it out - in fact, they were there before. it might be a hair more pronounced on 7/45 than 8/50. But the images are -extremely- similar.
 
-[ ]: don't forget that the mockingboard still gets out of time sync slowly.
+[x]: don't forget that the mockingboard still gets out of time sync slowly.
 
 735 is sometimes not enough samples and causes crackling.
 736 consistently is too many - it's 3,600 extra samples per minute.
@@ -3735,7 +3735,7 @@ Disk II reset caused a segfault on linux? Oh, I may still have a problem there..
 
 on a lark I added "auto ludicrous speed when any disk II is on". it does indeed accelerate disk II accesses. they're instant. it screws up mockingboard output, which doesn't work after any period of ludicrous speed. But everything else is ace , ha ha. The audio generation window must get ahead of realtime, and can't come back. cycles gets ahead of the real time timer.
 
-[ ] needs to disable ludicrous speed --when disk is scheduled for turnoff, not when it's actually turned off--  
+[x] needs to disable ludicrous speed --when disk is scheduled for turnoff, not when it's actually turned off--  (moot, removed this experimental feature)
 
 Also, you can't ctrl-reset to stop things from booting because they --boot too fast--.
 
@@ -3930,7 +3930,7 @@ I have been in build-system hell for the past 3 days. But learned a LOT about cm
 
 Other than that, have just tweaked a few things.
 
-[ ] Still need to get Windows running with the new build system.  
+[x] Still need to get Windows running with the new build system.  
 
 
 ## May 25, 2025
