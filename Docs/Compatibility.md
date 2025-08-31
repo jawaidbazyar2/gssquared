@@ -17,6 +17,8 @@ So this is "mixing video modes". This won't work with our emulation approach at 
 
 This is intended for Apple IIe only. hangs on boot waiting for VBL. Then it hangs trying to read C070 - which is likely supposed to return "floating bus" value. At least, it does in OE.
 
+This works now.
+
 ## crazy cycles 2.dsk
 
 Apple II+.
@@ -25,6 +27,8 @@ when booting, displays "MB#" But disk is still running. it's loading a LOT? tryi
 Nothing happens.
 Same on OE with II+ and IIe. I guess this is just not working.
 in 0.3x, we don't even ever get off track 0, like it's not booting correctly.
+
+This works now, though we're a few cycles off in the VideoScanner.
 
 ## four_voice_music.dsk
 
@@ -110,6 +114,7 @@ Unknown opcode: FFFFFFFF: 0xFA
 
 we're looping on jmp (3f0) -> FFFF -> BRK.
 
+This works now after fixing the CarmenSandiego stack wrap problem.
 
 ## Clue
 
@@ -119,7 +124,9 @@ boots and is working, but, disk drive continues running inappropriately.
 
 Dies during game load with gazillions of unknown opcodes. last instructions before crash are sta c003 sta c005 - looks like a //e 128k game.
 With current state of IIe, it now boots, loads, plays music. But it is a double hi-res program, so the display isn't right yet.
-getting there, but still wrong. 
+getting there, but still wrong. (was working)
+
+was working, however with cycle-accurate video, we are in some mode that is not causing the display to update. (did I break double hires?)
 
 ## Karateka (Brutal Deluxe crack)
 
@@ -168,6 +175,7 @@ seems to work. don't know how to play :)
 
 needs: Mouse; VBL; 
 gets past VBL check, but still dies on no mouse.
+Working with mouse-in-progress. Needs VBL. Also used hires-with-nodelay mode.
 
 ## Cybernoid Music Disk
 
@@ -223,12 +231,6 @@ Then hit a key, and it dies with the PC in ZP and ALTZP on.
 
 Well, it stops running correctly on Apple2TS also. Maybe the Demo just stops there.
 
-## Total Replay
-
-### AirHeart
-
-crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff.
-
 ## Berzap
 
 boots. ctrl-c lets you configure mockingboard. there might be an attempt at speech which doesn't work of course.
@@ -236,3 +238,31 @@ boots. ctrl-c lets you configure mockingboard. there might be an attempt at spee
 ## Cyclod
 
 once the maze comes up, you have to hit enter to start. control-@ (control-shift-P, or control-shift-2) and F6 to enable joyport.
+
+## Where in the World is Carmen Sandiego
+
+This was broken due to pop_word not properly handling stack wraparound inside the word. Now working to boot.
+However, it won't accept side B. Trying the 4am crack. Yes, this is working fine.
+
+## Space Quest
+
+after pirate splash screen, the 80 col firmware goes wrong by jumping to ($3ED) in a little different way each time. 
+on II+ gets into a keyboard loop with nothing on the screen. Also hangs in Mariani. 
+
+4am crack boots ok but then hangs after title cards on text screen. it's wanting you to press a joystick button.
+I do that, and I get hgr again with "turn the disk over".
+
+Get the same doing help. It's displaying the wrong text page. I manually do c054 and I get the help screen.
+it's flipping between C054/C055 a lot, while drawing some graphics. This must be doing double hires. And when we go to text mode we should be doing 
+
+
+## MousePaint
+
+trying to read from mouse using I/O hooks which I don't support yet.
+
+
+# Total Replay
+
+## AirHeart
+
+crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff.
