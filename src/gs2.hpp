@@ -34,7 +34,7 @@ typedef struct gs2_app_t {
     std::string base_path;
     std::string pref_path;
     bool console_mode = false;
-    bool disk_accelerator = false;
+   /*  bool disk_accelerator = false; */
     bool sleep_mode = false;
 } gs2_app_t;
 

@@ -193,7 +193,7 @@ void run_cpus(computer_t *computer) {
         uint64_t event_time;
         uint64_t app_event_time;
 
-        bool this_free_run = (cpu->clock_mode == CLOCK_FREE_RUN) || (cpu->execution_mode == EXEC_STEP_INTO || (gs2_app_values.disk_accelerator && (any_diskii_motor_on(cpu))));
+        bool this_free_run = (cpu->clock_mode == CLOCK_FREE_RUN) || (cpu->execution_mode == EXEC_STEP_INTO /* || (gs2_app_values.disk_accelerator && (any_diskii_motor_on(cpu)) */ );
 
         if ((this_free_run) && (current_time - last_event_update > 16667000)
             || (!this_free_run)) {
@@ -404,9 +404,9 @@ int main(int argc, char *argv[]) {
                         }
                     }
                     break;
-                case 'x':
+                /* case 'x':
                     gs2_app_values.disk_accelerator = true;
-                    break;
+                    break; */
                 case 's':
                     gs2_app_values.sleep_mode = true;
                     break;
