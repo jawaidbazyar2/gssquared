@@ -304,3 +304,43 @@ mb_read_Cx00: 04
 
 That's the T1 low-order counter. In almost all cards, this will be ROM and the value won't change. I bet they're checking to see if it changes.
 
+### mb-audit
+
+I am finally getting around to running the mb-audit tool against GS2. The first issue is that it starts up and immediately goes into a mode where the interrupt service routine executes and then instantly runs again - i.e., the IRQ flag is never clearing.
+
+[x] ok, I need a debug feature that will show the MB registers without executing the logic.   
+
+
+bp 325e.32e6; c404.c405; c484.c485
+
+Timer 1 One-Shot Mode
+
+"Timer 1 one-shot mode generates a single interrupt for each timer load operation".
+
+Writing into T1L-H has no effect on timer operation (we know)
+when counter reaches zero,
+  interrupt flag is set
+  counter will continue to decrement at system clock rate.
+  
+  interrupt can't be set again unless it has been cleared
+  requires a write T1C-H to reenable another interrupt.
+
+Timer 2 Free-Run Mode
+
+each time counter reaches zero,
+  interrupt flag is set
+  latch -> counter
+  continue to decrement counter.
+
+  NOT necessary to rewrite timer value to enable interrupt when we reach 0 again.
+
+so the mb_t1_timer_callback is NOT correct currently. We need a flag "interrupt on next timer timeout".
+
+CRAZY CYCLES runs with interrupts disabled, because of course they can't tolerate an IRQ in the middle of their graphics routines. So they must not use the 6522 via timers.
+[ ] TLB1.dsk isn't working  
+[ ] DD (Digidream) drops audio frames like crazy in debug build and if debugger window is open. 
+
+mb-audit now failing with mockingboard failed test 50:06:00
+50: is 6522-A
+06: is test, 00 subtest
+

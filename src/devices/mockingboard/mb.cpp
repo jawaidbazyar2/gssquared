@@ -32,6 +32,7 @@
 #include "devices/speaker/speaker.hpp"
 #include "debug.hpp"
 #include "util/EventTimer.hpp"
+#include "util/DebugFormatter.hpp"
 
 enum AY_Registers {
     A_Tone_Low = 0,
@@ -934,15 +935,17 @@ void mb_t1_timer_callback(uint64_t instanceID, void *user_data) {
     // there are two chips; track each IRQ individually and update card IRQ line from that.
     mb_6522_regs *tc = &mb_d->d_6522[chip];
     
-    tc->t1_counter = tc->t1_latch;
-    uint16_t counter = tc->t1_counter;
-    if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
-        counter = 65535;
+    if (tc->acr & 0x40) { // continuous mode
+        tc->t1_counter = tc->t1_latch;
+        uint32_t next_counter = tc->t1_counter;
+        if (next_counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
+            next_counter = 65536;
+        }
+        mb_d->event_timer->scheduleEvent(cpu->cycles + next_counter, mb_t1_timer_callback, instanceID , mb_d);
+    } else {         // one-shot mode
+        // nothing. We don't schedule a next interrupt - that is only done when writing to T1C-H.
+        // and we don't reset the counter to the latch, we continue decrementing from 0.
     }
-
-    //if (tc->ier.bits.timer1) {
-        mb_d->event_timer->scheduleEvent(cpu->cycles + counter, mb_t1_timer_callback, instanceID , mb_d);
-    //}
 }
 
 // TODO: don't reschedule if interrupts are disabled.
@@ -958,15 +961,23 @@ void mb_t2_timer_callback(uint64_t instanceID, void *user_data) {
 
     // TODO: there are two chips; track each IRQ individually and update card IRQ line from that.
     mb_6522_regs *tc = &mb_d->d_6522[chip];
-    tc->t2_counter = tc->t2_latch;
     
-    uint16_t counter = tc->t2_counter;
-    if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
-        counter = 65535;
-    }
-    //if (tc->ier.bits.timer2) {
+    if (0) {
+        tc->t2_counter = tc->t2_latch;
+        
+        uint32_t counter = tc->t2_counter;
+        if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
+            counter = 65536;
+        }
+        
         mb_d->event_timer->scheduleEvent(cpu->cycles + counter, mb_t2_timer_callback, instanceID , mb_d);
-    //}
+    }
+    if (1) { // one-shot mode
+        // TODO: "after timing out, the counter will continue to decrement."
+        // so do NOT reset the counter to the latch.
+        // processor must rewrite T2C-H to enable setting of the interrupt flag.
+
+    }
 }
 
 void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
@@ -1023,35 +1034,40 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
             tc->t1_latch = (tc->t1_latch & 0xFF00) | data;
             break;
         case MB_6522_T1C_H:
+            {
             /* 8 bits loaded into T1 high-order latch. Also both high-and-low order latches transferred into T1 Counter. T1 Interrupt flag is also reset (2-42) */
             // write of t1 counter high clears the interrupt.
             mb_d->d_6522[chip].ifr.bits.timer1 = 0;
             mb_6522_propagate_interrupt(mb_d);
             tc->t1_latch = (tc->t1_latch & 0x00FF) | (data << 8);
-            tc->t1_counter = tc->t1_latch ? tc->t1_latch : 65535;
+            tc->t1_counter = tc->t1_latch /* ? tc->t1_latch : 65535 */;
+            uint32_t next_counter = tc->t1_counter ? tc->t1_counter : 65536;
             tc->ifr.bits.timer1 = 0;
             tc->t1_triggered_cycles = cpu_cycles;
             //if (tc->ier.bits.timer1) {
-                mb_d->event_timer->scheduleEvent(cpu_cycles + tc->t1_counter, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);
+                mb_d->event_timer->scheduleEvent(cpu_cycles + next_counter, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);
             /* } else {
                 mb_d->event_timer->cancelEvents(0x10000000 | (slot << 8) | chip);
             } */
+            }
             break;
         // TODO: T2C_L and T2C_H are not implemented.
         case MB_6522_T2C_L:
             tc->t2_latch = (tc->t2_latch & 0xFF00) | data;
             break;
-        case MB_6522_T2C_H:
+        case MB_6522_T2C_H: {
             tc->t2_latch = (tc->t2_latch & 0x00FF) | (data << 8);
-            tc->t2_counter = tc->t2_latch ? tc->t2_latch : 65535;
+            tc->t2_counter = tc->t2_latch /* ? tc->t2_latch : 65535 */;
+            uint32_t next_counter2 = tc->t2_counter ? tc->t2_counter : 65536;
             tc->ifr.bits.timer2 = 0;
             mb_6522_propagate_interrupt(mb_d);
             tc->t2_triggered_cycles = cpu_cycles;
             //if (tc->ier.bits.timer2) {
-                mb_d->event_timer->scheduleEvent(cpu_cycles + tc->t2_counter, mb_t2_timer_callback, 0x10010000 | (slot << 8) | chip , mb_d);
+                mb_d->event_timer->scheduleEvent(cpu_cycles + next_counter2, mb_t2_timer_callback, 0x10010000 | (slot << 8) | chip , mb_d);
             /* } else {
                 mb_d->event_timer->cancelEvents(0x10010000 | (slot << 8) | chip);
             } */
+            }
             break;
 
         case MB_6522_PCR:
@@ -1089,9 +1105,9 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
                     mb_d->event_timer->cancelEvents(instanceID);
                 } else */ { // if we set the counter/latch BEFORE we enable interrupts.
                     uint64_t cycle_base = tc->t1_triggered_cycles == 0 ? mb_d->computer->cpu->cycles : tc->t1_triggered_cycles;
-                    uint16_t counter = tc->t1_counter;
+                    uint32_t counter = tc->t1_counter;
                     if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
-                        counter = 65535;
+                        counter = 65536;
                     }
                     mb_d->event_timer->scheduleEvent(cycle_base + counter, mb_t1_timer_callback, instanceID , mb_d);
                 }
@@ -1101,9 +1117,9 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
                     mb_d->event_timer->cancelEvents(instanceID);
                 } else */ { // if we set the counter/latch BEFORE we enable interrupts.
                     uint64_t cycle_base = tc->t2_triggered_cycles == 0 ? mb_d->computer->cpu->cycles : tc->t2_triggered_cycles;
-                    uint16_t counter = tc->t2_counter;
+                    uint32_t counter = tc->t2_counter;
                     if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
-                        counter = 65535;
+                        counter = 65536;
                     }
                     mb_d->event_timer->scheduleEvent(cycle_base + counter, mb_t2_timer_callback, instanceID , mb_d);
                 }
@@ -1282,6 +1298,31 @@ void mb_reset(mb_cpu_data *mb_d) {
     mb_6522_propagate_interrupt(mb_d); // this reads the slot number and does the right IRQ thing.    
 }
 
+
+DebugFormatter *debug_registers_6522(mb_cpu_data *mb_d) {
+    DebugFormatter *df = new DebugFormatter();
+    cpu_state *cpu = mb_d->computer->cpu;
+    uint64_t m1_t1_diff = calc_cycle_diff_t1(&mb_d->d_6522[1], cpu->cycles);
+    uint64_t m1_t2_diff = calc_cycle_diff_t2(&mb_d->d_6522[1], cpu->cycles);
+    uint64_t m2_t1_diff = calc_cycle_diff_t1(&mb_d->d_6522[0], cpu->cycles);
+    uint64_t m2_t2_diff = calc_cycle_diff_t2(&mb_d->d_6522[0], cpu->cycles);
+
+    df->addLine("   6522 #2 (0x00)          |   6522 #1 (0x80)");
+    df->addLine("-------------------------- | ---------------------------");
+    df->addLine("DDRA: %02X    DDRB: %02X       | DDRA: %02X    DDRB: %02X", mb_d->d_6522[1].ddra, mb_d->d_6522[1].ddrb, mb_d->d_6522[0].ddra, mb_d->d_6522[0].ddrb);
+    df->addLine("ORA : %02X    ORB : %02X       | ORA : %02X    ORB : %02X", mb_d->d_6522[1].ora, mb_d->d_6522[1].orb, mb_d->d_6522[0].ora, mb_d->d_6522[0].orb);
+    df->addLine("T1L : %04X  T1C: %04X      | T1L : %04X  T1C: %04X", mb_d->d_6522[1].t1_latch, m1_t1_diff, mb_d->d_6522[0].t1_latch, m2_t1_diff);
+    df->addLine("T2L : %04X  T2C: %04X      | T2L : %04X  T2C: %04X", mb_d->d_6522[1].t2_latch, m1_t2_diff, mb_d->d_6522[0].t2_latch, m2_t2_diff);
+    //df->addLine("T1C: %04X                 | T1C: %04X", m1_t1_diff, m2_t1_diff);
+    //df->addLine("T2C: %04X                 | T2C: %04X", m1_t2_diff, m2_t2_diff);
+    df->addLine("SR  : %02X                   | SR  : %02X", mb_d->d_6522[1].sr, mb_d->d_6522[0].sr);
+    df->addLine("ACR : %02X                   | ACR : %02X", mb_d->d_6522[1].acr, mb_d->d_6522[0].acr);
+    df->addLine("PCR : %02X                   | PCR : %02X", mb_d->d_6522[1].pcr, mb_d->d_6522[0].pcr);
+    df->addLine("IFR : %02X    IER: %02X        | IFR : %02X    IER: %02X", mb_d->d_6522[1].ifr.value, mb_d->d_6522[1].ier.value, mb_d->d_6522[0].ifr.value, mb_d->d_6522[0].ier.value);
+    //df->addLine("IER: %02X                   | IER: %02X", mb_d->d_6522[0].ier.value, mb_d->d_6522[1].ier.value);
+    return df;
+}
+
 void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
 
     uint16_t slot_base = 0xC080 + (slot * 0x10);
@@ -1331,14 +1372,14 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     }
     mb_d->stream = stream;
 
-    //set_slot_state(cpu, slot, mb_d);
+    set_slot_state(computer->cpu, slot, mb_d);
     computer->mmu->map_c1cf_page_write_h(0xC0 + slot, { mb_write_Cx00, mb_d }, "MB_IO");
     computer->mmu->map_c1cf_page_read_h(0xC0 + slot, { mb_read_Cx00, mb_d }, "MB_IO");
 
     insert_empty_mockingboard_frame(mb_d);
 
-    mb_d->event_timer->scheduleEvent(computer->cpu->cycles + 65535, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 0 , mb_d);
-    mb_d->event_timer->scheduleEvent(computer->cpu->cycles + 65535, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 1 , mb_d);
+    mb_d->event_timer->scheduleEvent(computer->cpu->cycles + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 0 , mb_d);
+    mb_d->event_timer->scheduleEvent(computer->cpu->cycles + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 1 , mb_d);
 
 
     // set up a reset handler to reset the chips on mockingboard
@@ -1359,4 +1400,8 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
         delete mb_d;
         return true;
     });
+
+    // TODO: register a debug formatter handler, with a name, as a closure that will call here with the mb_d as context.
+    // then user can say "debug mb_registers" to call this and get the formatter output to display in watch window.
+
 }

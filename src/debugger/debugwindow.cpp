@@ -17,6 +17,7 @@
 #include "debugger/disasm.hpp"
 #include "devices/iiememory/iiememory.hpp"
 #include "mmus/mmu_iie.hpp"
+#include "devices/mockingboard/mb.hpp"
 
 debug_window_t::debug_window_t(computer_t *computer) {
     this->computer = computer;
@@ -377,6 +378,16 @@ void debug_window_t::render_pane_memory() {
             snprintf(buffer,255,"INTCX: %1d ALTCHR: %1d LC [ BNK1: %1d READ: %1d WRT: %1d ]",
                 mmu->f_intcxrom, ds->f_altcharset, iiem->FF_BANK_1, iiem->FF_READ_ENABLE, !iiem->_FF_WRITE_ENABLE);
             draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, buffer);
+            line++;
+        }
+    }
+    mb_cpu_data *mb_d = (mb_cpu_data *)computer->get_slot_state(SLOT_4);
+    if (mb_d && mb_d->id == DEVICE_ID_MOCKINGBOARD) {
+        separator_line(DEBUG_PANEL_MEMORY, base_line + line);
+        DebugFormatter *df = debug_registers_6522(mb_d);
+        const std::vector<std::string>& lines = df->getLines();
+        for (int i = 0; i < lines.size(); i++) {
+            draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, lines[i].c_str());
             line++;
         }
     }
