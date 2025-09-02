@@ -239,13 +239,15 @@ INIT:
     STA DDRB            
 ```
 
-AppleWin implements the whole 6522 and then separately 'attaches' it to the AY in its code. I will implement a simpler approach since we only need to support normal use cases. But at a minimum, we should emulate the DDR (direction registers) as they might also mask data being read/written.
+AppleWin implements the whole 6522 and then separately 'attaches' it to the AY in its code. I will implement a simpler approach since we only need to support normal use cases. But at a minimum, we should emulate the DDR (direction registers) as they might also mask data being read/written.* (I never did this, now biting me)
 
 In the case above, DDRB is set to 7 because port B is the 'Command' port, and commands are only 0-7. These may be wired directly to the AY somehow.. yes, PB2-PB0 are wired:
 
 * PB2 - /RESET
 * PB1 - BDIR - direction of data
 * PB0 - BC1
+
+BC2 is not present on AY-8913.
 
 Thus, the RESET routine is: clear that bit (/RESET means do a reset) then turn reset off (/RESET = 1 is disabled).
 
@@ -256,6 +258,12 @@ cmd -> ORA
 data -> ORA
 6, then 4 -> ORB
 ```
+ORA is the data; ORB is the PB2/1/0 commands.
+
+or you LATCH command (5?) then READ the data, i.e.
+cmd -> ORA
+7, then 4 -> ORB
+5, then 4 <- IRB
 
 That's pretty straightforward, if poorly documented.
 
@@ -264,6 +272,16 @@ https://www.princeton.edu/~mae412/HANDOUTS/Datasheets/6522.pdf
 
 lots more information on the timer counters and interrupt scheme.
 
+### Commands
+
+* 00 - 000 - RESET
+* 01 - 001 - RESET
+* 02 - 010 - RESET
+* 03 - 011 - RESET
+* 04 - 100 - end strobe (inactive)
+* 05 - 101 - read  from PSG (pb1 = 0)
+* 06 - 110 - write to PSG (pb1 = 1)
+* 07 - 111 - bus contains register address which should be latched.
 
 ## Interrupts
 
@@ -338,9 +356,91 @@ so the mb_t1_timer_callback is NOT correct currently. We need a flag "interrupt 
 
 CRAZY CYCLES runs with interrupts disabled, because of course they can't tolerate an IRQ in the middle of their graphics routines. So they must not use the 6522 via timers.
 [ ] TLB1.dsk isn't working  
-[ ] DD (Digidream) drops audio frames like crazy in debug build and if debugger window is open. 
+
+DD (Digidream) drops audio frames like crazy in debug build and if debugger window is open. 
 
 mb-audit now failing with mockingboard failed test 50:06:00
 50: is 6522-A
 06: is test, 00 subtest
+
+ok issue is with when we set T1C-H, we also set the latch.
+In one-shot mode, after 0, the counter will decrement to FFFF. In continuous, it will reset to the latch value.
+When we read the value at any other time, we calculate what the value is supposed to be, but assume always in continuous mode.
+
+t1_triggered_cycles is currently when the counter was written. Let's change to:
+
+when the counter will count down to 0. Which we set whenever we write T1C-H.
+And then:
+   if one-shot mode,
+       counter is trigger_cycles - cycles & 0xFFFF.
+   if continuous mode,
+       if cycles < trigger_cycles, counter is trigger_cycles - cycles & 0xFFFF.
+       if cycles >= trigger_cycles, counter is (trigger_cycles - cycles) % latchval like it is now.
+
+ok, next problem: we might be interrupting too quickl.y
+
+```
+   135                          										;   T1C
+   136                          										; $0006
+   137  2bd8 a902               	lda		#2					; 2cy	; $0004
+   138  2bda a201               	ldx		#1					; 2cy	; $0002
+   139  2bdc 58                 	cli							; 2cy	; $0000
+   140  2bdd 85fc               	sta		zpTmp2				; 3cy	; $ffff
+   141                          										; $0002	: real 6522 - IRQ occurs on 2nd cycle... so IRQ occurs after this 'sta zp'
+   142                          										; $0001	: FPGA 6522 - IRQ occurs on 3rd cycle... so IRQ deferred until after next 'stx zp'
+   143  2bdf 86fc               	stx		zpTmp2
+```
+
+They set T1C to 6 and then the values are supposed to be as above.. yes, we're interrupting 1 cycle too soon. 
+There was something about the counter needing to be one off. I can just add 1 to triggered_cycles when I set it initially.
+
+OK, that is now working correctly I think. I had to add an extra 2 cycles to delay triggering of the thing. I wonder if this is due to precisely when the 6502 is writing, and if I might be a cycle early? It's (FE),Y so I could be off (one of those phantom cycle things?)
+
+now I have failures: slot 4 warning unknown card (no AYs) ?
+
+So, this code:
+```
+    99  4208 a000               		ldy		#AY_AFINE
+   100  420a 20d550             		jsr		AY_Echo_ReadRegValueEx
+   101  420d c9aa               		cmp		#$AA
+   102  420f d01a               		bne		+
+```
+
+is failing (where it tries to read back the #$AA it wrote).
+DDRA is 0. ORA is 0. So am I not reading values back correctly?
+yah. So it sets the register it wants to read (in this case 00). And it sets DDR to 0 (all input).
+When it reads, it should be reading from the chip register. Instead it is just returning ora.
+I need to separate IRA (input register) and ORA (output register). When we strobe something with 5 (versus 6 or 4) we need to read the chip register and put in IRA/B. And then mask and return appropriately based on the DDRA/B value.
+
+## Comparing to Mariani / (AppleWin)
+
+on a reset, T1L is FFFF, not 0.
+
+[x] read of IER should always have bit 7 set to 1. I do this in code, but the debug output wasn't setting it. I set that now.
+
+
+
+## Mockingboard Sound-Speech Generator Disk
+
+boot, do music player, this is the ASDF to play notes program.
+
+the keyboard music player isn't working, because IFR bit is never being set. ACR is 0, IER is 0. But I wonder if IFR is supposed to come on anyway?
+PCR is B0 and it's checking BIT $10 here? 
+
+PCR B0 means: CB2 is Pulse Output, CB1 interrupt control is positive active edge.
+And BIT $10 is checking for CB1 active edge. 
+
+[ ] Implement whatever the heck CB2 / CB1 are.
+
+[ ] manually test Mariani to see if IFR T1 is set at 0 even if IER T1 is not set. NO, IFR T1 is never set if IER is off. (guessing).  
+
+ok, the AY code queues register changes, it does not set them immediately, because we generate audio based on time stamps of register changes. However, code in the 6502 needs to be able to read the instantaneous value of a register. So we need a raw_registers[0x18] which is basically a copy of the registers.
+
+ok!! Making some progress now. MB-Audit detects the card as a 'C', which I guess is Mockingboard C? Unsure. But it's better than a ? and no longer says "no AYs detected".
+Still failing 6522 Test: 11:00:00
+
+Run against some software to test. The suite should be:
+Ultima IV; Ultima V; Skyfox; mockingboard1.dsk; Nox Archaist Demo
+
+nox archaist volume is set to 7, a little on the low side esp once everything is mixed.
 

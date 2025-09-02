@@ -44,6 +44,7 @@
 #define MB_6522_1 0x00
 #define MB_6522_2 0x80
 
+#define AY_8913_REGISTER_COUNT 16
 
 union ifr_t {
     uint8_t value;
@@ -75,7 +76,9 @@ union ier_t {
 struct mb_6522_regs {
    
     uint8_t ora; /* 0x00 */
+    uint8_t ira; /* 0x00 */
     uint8_t orb; /* 0x01 */
+    uint8_t irb; /* 0x01 */
     uint8_t ddra; /* 0x02 */
     uint8_t ddrb; /* 0x03 */
 

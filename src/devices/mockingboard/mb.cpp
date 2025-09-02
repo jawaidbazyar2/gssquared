@@ -129,8 +129,9 @@ public:
         // Initialize chips
         for (int c = 0; c < 2; c++) {
             // Initialize registers to 0
-            for (int r = 0; r < 16; r++) {
+            for (int r = 0; r < AY_8913_REGISTER_COUNT; r++) {
                 chips[c].registers[r] = 0;
+                chips[c].live_registers[r] = 0;
             }
             
             // Initialize tone channels
@@ -173,10 +174,12 @@ public:
     
     void reset() {
         for (int c = 0; c < 2; c++) {
-            for (int r = 0; r < 16; r++) {
+            for (int r = 0; r < AY_8913_REGISTER_COUNT; r++) {
                 chips[c].registers[r] = 0;
+                chips[c].live_registers[r] = 0;
             }
             chips[c].registers[Mixer_Control] = 0x3F; // channels disabled
+            chips[c].live_registers[Mixer_Control] = 0x3F; // channels disabled
             chips[c].mixer_control = 0x3F; // channels disabled
         }
     }
@@ -192,6 +195,10 @@ public:
         pending_events.push_back(event);
         // Keep events sorted by timestamp
         std::sort(pending_events.begin(), pending_events.end());
+
+        AY3_8910& chip = chips[event.chip_index];
+        chip.live_registers[event.register_num] = event.value;
+
     }
     
     // Process a register change
@@ -653,6 +660,11 @@ public:
             chips[1].registers[Unknown_15]); */
     }
 
+    uint8_t read_register(int chip_index, uint8_t register_num) {
+        return chips[chip_index].live_registers[register_num];
+    }
+
+
 private:
     // Filter state
     filter_state filters[7] = {0.0f}; // One state per channel, and one for the mixed output
@@ -682,11 +694,15 @@ private:
         bool envelope_attack;      // Whether envelope is in attack phase
         float current_envelope_level;  // Interpolated envelope level
         float target_envelope_level;   // Target level we're interpolating towards
-        uint8_t registers[16];  // Raw register values
+        uint8_t registers[AY_8913_REGISTER_COUNT];  // register states during playback
+        uint8_t live_registers[AY_8913_REGISTER_COUNT];  // Live register values as the 6502 sees them
     };
     
     // Emulator state
+public:
     AY3_8910 chips[2];
+
+private:
     double current_time;
     double time_accumulator;
     double envelope_time_accumulator;  // New accumulator for envelope timing
@@ -941,6 +957,7 @@ void mb_t1_timer_callback(uint64_t instanceID, void *user_data) {
         if (next_counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
             next_counter = 65536;
         }
+        tc->t1_triggered_cycles += next_counter; // TODO: testing.
         mb_d->event_timer->scheduleEvent(cpu->cycles + next_counter, mb_t1_timer_callback, instanceID , mb_d);
     } else {         // one-shot mode
         // nothing. We don't schedule a next interrupt - that is only done when writing to T1C-H.
@@ -998,10 +1015,12 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
         case MB_6522_DDRB:
             tc->ddrb = data;
             break;
-        case MB_6522_ORA: case MB_6522_ORA_NH:
+        case MB_6522_ORA: case MB_6522_ORA_NH: // TODO: what the heck is NH here??
+            // TODO: need to mask with DDRA
             tc->ora = data;
             break;
         case MB_6522_ORB:
+            // TODO: instead of having this here, we could put this logic into the AY/Mockingboard code.
             tc->orb = data;
             if ((data & 0b100) == 0) { // /RESET is low, hence assert reset, reset the chip.
                 // reset the chip. Set all 16 registers to 0.
@@ -1010,15 +1029,19 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
                     double time = cpu_cycles / 1020500.0;
                     mb_d->mockingboard->queueRegisterChange(time, chip, i, 0);
                 }
-            }
-
-            if (data == 7) { // this is the register number.
+            } else if ((data & 0b111) == 7) { // this is the register number.
                 tc->reg_num = tc->ora;
                 if (DEBUG(DEBUG_MOCKINGBOARD)) printf("reg_num: %02x\n", tc->reg_num);
-            } else if (data == 6) { // write to the specified register
+            } else if ((data & 0b111) == 6) { // write to the specified register
+                // TODO: need to mask with ddrb
                 double time = cpu_cycles / 1020500.0;
                 mb_d->mockingboard->queueRegisterChange(time, chip, tc->reg_num, tc->ora);
                 if (DEBUG(DEBUG_MOCKINGBOARD)) printf("queueRegisterChange: [%lf] chip: %d reg: %02x val: %02x\n", time, chip, tc->reg_num, tc->ora);
+            } else if ((data & 0b111) == 5) { // read from the specified register
+                // to read, the command is run through ORB, but the data goes back and forth on ORA/IRA.
+                //printf("attempt to read with cmd 05 from PSG, unimplemented\n");
+                tc->ira = mb_d->mockingboard->read_register(chip, tc->reg_num);
+                printf("read register: %02X -> %02X\n", tc->reg_num, tc->ira);
             }
             break;
         case MB_6522_T1L_L: 
@@ -1043,9 +1066,9 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
             tc->t1_counter = tc->t1_latch /* ? tc->t1_latch : 65535 */;
             uint32_t next_counter = tc->t1_counter ? tc->t1_counter : 65536;
             tc->ifr.bits.timer1 = 0;
-            tc->t1_triggered_cycles = cpu_cycles;
+            tc->t1_triggered_cycles = cpu_cycles + next_counter + 2; // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
             //if (tc->ier.bits.timer1) {
-                mb_d->event_timer->scheduleEvent(cpu_cycles + next_counter, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);
+                mb_d->event_timer->scheduleEvent(tc->t1_triggered_cycles, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);
             /* } else {
                 mb_d->event_timer->cancelEvents(0x10000000 | (slot << 8) | chip);
             } */
@@ -1134,7 +1157,22 @@ inline uint64_t calc_cycle_diff_t1(mb_6522_regs *tc, uint64_t cycles) {
     if (latchval == 0) {
         latchval = 65536;
     }
-    return latchval - ((cycles - tc->t1_triggered_cycles) % latchval);
+    // we have to handle the two modes - one-shot (which will continue counting from 0 to FFFF, FFFE, etc.) and continuous 
+    // which will reset the counter to the latch value.
+#if 0
+        return (latchval - ((cycles - tc->t1_triggered_cycles) % latchval)) & 0xFFFF;
+#else
+    if ((tc->acr & 0x40) == 0) {
+        return (tc->t1_triggered_cycles - cycles) & 0xFFFF;
+    } else {
+        if (cycles < tc->t1_triggered_cycles) {
+            return (tc->t1_triggered_cycles- cycles) & 0xFFFF;
+        } else { // in continuous mode, use modulus of the latch value.
+            return (latchval - ((cycles - tc->t1_triggered_cycles) % latchval)) & 0xFFFF;
+        }
+    }
+#endif
+    //    return latchval - ((cycles - tc->t1_triggered_cycles) % latchval);
 }
 
 inline uint64_t calc_cycle_diff_t2(mb_6522_regs *tc, uint64_t cycles) {
@@ -1162,11 +1200,19 @@ uint8_t mb_read_Cx00(void *context, uint16_t addr) {
         case MB_6522_DDRB:
             retval = mb_d->d_6522[chip].ddrb;
             break;
-        case MB_6522_ORA: case MB_6522_ORA_NH:
-            retval = mb_d->d_6522[chip].ora;
+        case MB_6522_ORA: case MB_6522_ORA_NH: { // TODO: what the heck is NH here??
+            uint8_t a_in = mb_d->d_6522[chip].ira & (~mb_d->d_6522[chip].ddra);
+            uint8_t a_out = mb_d->d_6522[chip].ora & mb_d->d_6522[chip].ddra;
+            retval = a_out | a_in;
+            } 
+            //retval = mb_d->d_6522[chip].ora;
             break;
-        case MB_6522_ORB:
-            retval = mb_d->d_6522[chip].orb;
+        case MB_6522_ORB: {
+            uint8_t b_in = mb_d->d_6522[chip].orb & (~mb_d->d_6522[chip].ddrb);
+            uint8_t b_out = mb_d->d_6522[chip].orb & mb_d->d_6522[chip].ddrb;
+            retval = b_out | b_in;
+            } 
+        //retval = mb_d->d_6522[chip].orb;
             break;
         case MB_6522_T1L_L:
             /* 8 bits from T1 low order latch transferred to mpu. unlike read T1 low counter, does not cause reset of T1 IFR6. */
@@ -1318,8 +1364,26 @@ DebugFormatter *debug_registers_6522(mb_cpu_data *mb_d) {
     df->addLine("SR  : %02X                   | SR  : %02X", mb_d->d_6522[1].sr, mb_d->d_6522[0].sr);
     df->addLine("ACR : %02X                   | ACR : %02X", mb_d->d_6522[1].acr, mb_d->d_6522[0].acr);
     df->addLine("PCR : %02X                   | PCR : %02X", mb_d->d_6522[1].pcr, mb_d->d_6522[0].pcr);
-    df->addLine("IFR : %02X    IER: %02X        | IFR : %02X    IER: %02X", mb_d->d_6522[1].ifr.value, mb_d->d_6522[1].ier.value, mb_d->d_6522[0].ifr.value, mb_d->d_6522[0].ier.value);
+    df->addLine("IFR : %02X    IER: %02X        | IFR : %02X    IER: %02X", mb_d->d_6522[1].ifr.value, mb_d->d_6522[1].ier.value|0x80, mb_d->d_6522[0].ifr.value, mb_d->d_6522[0].ier.value|0x80);
     //df->addLine("IER: %02X                   | IER: %02X", mb_d->d_6522[0].ier.value, mb_d->d_6522[1].ier.value);
+    
+    MockingboardEmulator *mb = mb_d->mockingboard;
+
+    df->addLine("AY-8913 #0 registers:");
+    df->addLine("--------------------------");
+    df->addLine("Tone A: %04X  Tone B: %04X  Tone C: %04X", mb->chips[0].tone_channels[0].period,mb->chips[0].tone_channels[1].period, mb->chips[0].tone_channels[2].period);
+    df->addLine("Noise: %04X  Mixer: %04X", mb->chips[0].noise_period, mb->chips[0].mixer_control);
+    df->addLine("Ampl A: %02X  Ampl B: %02X  Ampl C: %02X", mb->read_register(0, Ampl_A), mb->read_register(0, Ampl_B), mb->read_register(0, Ampl_C));
+    df->addLine("Env Period: %04X  Env Shape: %02X", mb->chips[0].envelope_period, mb->chips[0].envelope_shape);
+    df->addLine("--------------------------------");
+    // now do AY chips registers
+    df->addLine("AY-8913 #1 registers:");
+    df->addLine("--------------------------");
+    df->addLine("Tone A: %04X  Tone B: %04X  Tone C: %04X", mb->chips[1].tone_channels[0].period, mb->chips[1].tone_channels[1].period, mb->chips[1].tone_channels[2].period);
+    df->addLine("Noise: %04X  Mixer: %04X", mb->chips[1].noise_period, mb->chips[1].mixer_control);
+    df->addLine("Ampl A: %02X  Ampl B: %02X  Ampl C: %02X", mb->read_register(1, Ampl_A), mb->read_register(1, Ampl_B), mb->read_register(1, Ampl_C));
+    df->addLine("Env Period: %04X  Env Shape: %02X", mb->chips[1].envelope_period, mb->chips[1].envelope_shape);
+    df->addLine("--------------------------------");
     return df;
 }
 
@@ -1339,10 +1403,12 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
         mb_d->d_6522[i].t2_counter = 0;
         mb_d->d_6522[i].t1_latch = 0;
         mb_d->d_6522[i].t2_latch = 0;
-        mb_d->d_6522[i].ddra = 0xFF;
-        mb_d->d_6522[i].ddrb = 0xFF;
+        mb_d->d_6522[i].ddra = 0x00;
+        mb_d->d_6522[i].ddrb = 0x00;
         mb_d->d_6522[i].ora = 0x00;
         mb_d->d_6522[i].orb = 0x00;
+        mb_d->d_6522[i].ira = 0x00;
+        mb_d->d_6522[i].irb = 0x00;
         mb_d->d_6522[i].reg_num = 0x00;
         mb_d->d_6522[i].ifr.value = 0;
         mb_d->d_6522[i].ier.value = 0;
