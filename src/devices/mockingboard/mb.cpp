@@ -1467,6 +1467,14 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
         return true;
     });
 
+    computer->register_debug_display_handler(
+        "mockingboard",
+        0x0000000000000001, // unique ID for this, need to have in a header.
+        [mb_d]() -> DebugFormatter * {
+            return debug_registers_6522(mb_d);
+        }
+    );
+
     // TODO: register a debug formatter handler, with a name, as a closure that will call here with the mb_d as context.
     // then user can say "debug mb_registers" to call this and get the formatter output to display in watch window.
 

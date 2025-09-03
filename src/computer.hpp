@@ -10,6 +10,7 @@
 #include "util/DeviceFrameDispatcher.hpp"
 #include "platforms.hpp"
 #include "mbus/MessageBus.hpp"
+#include "util/DebugFormatter.hpp"
 
 struct cpu_state;
 struct debug_window_t; // don't bring in debugwindow.hpp, it would create a depedence on SDL.
@@ -18,17 +19,18 @@ class Mounts;
 class EventTimer;
 class VideoScannerII;
 
-/* typedef void (*reset_handler_t)(void *context);
-
-struct reset_handler_rec {
-    reset_handler_t handler;
-    void *context;
-}; */
 
 struct computer_t {
 
     using ResetHandler = std::function<bool ()>;
     using ShutdownHandler = std::function<bool ()>;
+    using DebugDisplayHandler = std::function<DebugFormatter *()>;
+    
+    struct DebugDisplayHandlerInfo {
+        std::string name;
+        uint64_t id;
+        DebugDisplayHandler handler;
+    };
 
     cpu_state *cpu = nullptr;
     MMU_II *mmu = nullptr;
@@ -52,6 +54,7 @@ struct computer_t {
 
     std::vector<ResetHandler> reset_handlers;
     std::vector<ShutdownHandler> shutdown_handlers;
+    std::vector<DebugDisplayHandlerInfo> debug_display_handlers;
     
     void *module_store[MODULE_NUM_MODULES];
     SlotData *slot_store[NUM_SLOTS];
@@ -64,6 +67,8 @@ struct computer_t {
 
     void register_reset_handler(ResetHandler handler);
     void register_shutdown_handler(ShutdownHandler handler);
+    void register_debug_display_handler(std::string name, uint64_t id, DebugDisplayHandler handler);
+    DebugFormatter *call_debug_display_handler(std::string name);
 
     void *get_module_state( module_id_t module_id);
     void set_module_state( module_id_t module_id, void *state);

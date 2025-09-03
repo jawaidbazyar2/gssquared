@@ -128,7 +128,7 @@ void debug_window_t::execute_command(const std::string& command) {
     cmd->print();
 
     int num_mem_watches = memory_watches.size();
-    ExecuteCommand *exec = new ExecuteCommand(computer->mmu, cmd, &memory_watches, &breaks, disasm);
+    ExecuteCommand *exec = new ExecuteCommand(computer->mmu, cmd, &memory_watches, &breaks, disasm, &debug_displays);
     exec->execute();
     
     mon_history.push_back(command); // put into the scrollback
@@ -158,6 +158,7 @@ void debug_window_t::execute_command(const std::string& command) {
 }
 
 void debug_window_t::separator_line(debug_panel_t pane, int y) {
+    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
     int x = pane_area[pane].x;
     int w = pane_area[pane].w;
     SDL_RenderLine(renderer, x, (y*font_line_height)-3, x+w, (y*font_line_height)-3);
@@ -303,7 +304,6 @@ void debug_window_t::render_pane_devices() {
     int x = pane_area[DEBUG_PANEL_DEVICES].x;
     int y = pane_area[DEBUG_PANEL_DEVICES].y;
     int base_line = 0;
-
     
 }
 
@@ -381,7 +381,23 @@ void debug_window_t::render_pane_memory() {
             line++;
         }
     }
-    mb_cpu_data *mb_d = (mb_cpu_data *)computer->get_slot_state(SLOT_4);
+
+    for (auto &display : debug_displays) {
+        separator_line(DEBUG_PANEL_MEMORY, base_line + line);
+        draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, display.c_str());
+        line++;
+        auto debug_handler = computer->call_debug_display_handler(display);
+        if (debug_handler) {
+            const std::vector<std::string>& lines = debug_handler->getLines();
+            for (int i = 0; i < lines.size(); i++) {
+                draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, lines[i].c_str());
+                line++;
+            }
+            delete debug_handler;
+        }
+    }
+
+  /*   mb_cpu_data *mb_d = (mb_cpu_data *)computer->get_slot_state(SLOT_4);
     if (mb_d && mb_d->id == DEVICE_ID_MOCKINGBOARD) {
         separator_line(DEBUG_PANEL_MEMORY, base_line + line);
         DebugFormatter *df = debug_registers_6522(mb_d);
@@ -390,7 +406,8 @@ void debug_window_t::render_pane_memory() {
             draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, lines[i].c_str());
             line++;
         }
-    }
+        delete df;
+    } */
 }
    /*  bool FF_BANK_1;
     bool FF_READ_ENABLE;

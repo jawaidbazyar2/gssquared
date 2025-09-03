@@ -11,6 +11,7 @@
 #include "util/mount.hpp"
 #include "platforms.hpp"
 #include "mbus/MessageBus.hpp"
+#include "util/DebugFormatter.hpp"
 
 computer_t::computer_t() {
     // lots of stuff is going to need this.
@@ -85,6 +86,19 @@ void computer_t::register_reset_handler(ResetHandler handler) {
 
 void computer_t::register_shutdown_handler(ShutdownHandler handler) {
     shutdown_handlers.push_back(handler);
+}
+
+void computer_t::register_debug_display_handler(std::string name, uint64_t id, DebugDisplayHandler handler) {
+    debug_display_handlers.push_back({name, id, handler});
+}
+
+DebugFormatter *computer_t::call_debug_display_handler(std::string name) {
+    for (auto& handler : debug_display_handlers) {
+        if (handler.name == name) {
+            return handler.handler();
+        }
+    }
+    return 0;
 }
 
 void computer_t::reset(bool cold_start) {

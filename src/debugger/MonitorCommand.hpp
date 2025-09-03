@@ -30,6 +30,8 @@ enum mon_cmd_type_t {
     MON_CMD_NOBP,
     MON_CMD_LIST,
     MON_CMD_MAP,
+    MON_CMD_DEBUG,
+    MON_CMD_NODEBUG
 };
 
 struct mon_node_entry_t {

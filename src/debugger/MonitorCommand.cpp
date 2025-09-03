@@ -62,6 +62,8 @@ mon_cmd_type_t MonitorCommand::lookup_cmd(const std::string &cmd) {
     if (cmd == "list") return MON_CMD_LIST;
     if (cmd == "l") return MON_CMD_LIST;
     if (cmd == "map") return MON_CMD_MAP;
+    if (cmd == "debug") return MON_CMD_DEBUG;
+    if (cmd == "nodebug") return MON_CMD_NODEBUG;
     return MON_CMD_UNKNOWN;
 }
 

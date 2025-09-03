@@ -6,12 +6,13 @@
 #include <iomanip>
 #include "debugger/MemoryWatch.hpp"
 
-ExecuteCommand::ExecuteCommand(MMU *mmu, MonitorCommand *cmd, MemoryWatch *watches, MemoryWatch *breaks, Disassembler *disasm) {
+ExecuteCommand::ExecuteCommand(MMU *mmu, MonitorCommand *cmd, MemoryWatch *watches, MemoryWatch *breaks, Disassembler *disasm, std::vector<std::string> *debug_displays) {
     this->mmu = mmu;
     this->cmd = cmd;
     this->memory_watches = watches;
     this->breaks = breaks;
     this->disasm = disasm;
+    this->debug_displays = debug_displays;
 }
 
 ExecuteCommand::~ExecuteCommand() {
@@ -178,6 +179,8 @@ void ExecuteCommand::execute() {
         addOutput("load \"filename\" address      - load memory from file");
         addOutput("save \"filename\" lo.hi        - save memory range to file");
         addOutput("move lo.hi address           - move memory from lo to hi to address");
+        addOutput("debug \"displayname\"        - add debug display");
+        addOutput("nodebug \"displayname\"      - remove debug display");
         addOutput("help                         - this help");
         return;
     }
@@ -304,5 +307,29 @@ void ExecuteCommand::execute() {
             mmu->write(node2.val_number + (i - node1.val_range.lo), mmu->read(i));
         }
         addFormattedOutput("Moved %d bytes from %04X to %04X", node1.val_range.hi - node1.val_range.lo + 1, node1.val_range.lo, node2.val_number);
+    }
+    if (memory_watches && (node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_DEBUG)) {
+        if (cmd->nodes.size() == 1) {
+            addOutput("Current debug displays:");
+            for (auto &display : *debug_displays) {
+                addOutput(display);
+            }
+            return;
+        }
+        auto &node1 = cmd->nodes[1];
+        if (node1.type != MON_NODE_TYPE_STRING) {
+            addOutput("Error: expected string as second argument");
+            return;
+        }
+        debug_displays->push_back(node1.val_string);
+        addFormattedOutput("Added debug display: %s", node1.val_string.c_str());
+    }
+    if (memory_watches && (node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_NODEBUG)) {
+        auto &node1 = cmd->nodes[1];
+        if (node1.type != MON_NODE_TYPE_STRING) {
+            addOutput("Error: expected string as second argument");
+            return;
+        }
+        debug_displays->erase(std::remove(debug_displays->begin(), debug_displays->end(), node1.val_string), debug_displays->end());
     }
 }

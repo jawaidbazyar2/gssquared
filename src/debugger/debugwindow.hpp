@@ -44,7 +44,8 @@ struct debug_window_t {
     MemoryWatch breaks;
     Disassembler *disasm = nullptr;
     Disassembler *step_disasm = nullptr;
-
+    std::vector<std::string> debug_displays;
+    
     int panel_visible[DEBUG_PANEL_COUNT] = {0};
     SDL_Rect pane_area[DEBUG_PANEL_COUNT];
 
