@@ -92,6 +92,8 @@ struct mb_6522_regs {
     uint16_t t1_counter;  
     uint16_t t2_latch;
     uint16_t t2_counter;
+    uint16_t t1_oneshot_pending = 0;
+    uint16_t t2_oneshot_pending = 0;
 
     uint64_t t1_triggered_cycles; // used to calculate what t1 and t2 are at any given cycle. ((cycle_now - triggered_cycles) % latch)
     uint64_t t2_triggered_cycles;

@@ -412,6 +412,16 @@ yah. So it sets the register it wants to read (in this case 00). And it sets DDR
 When it reads, it should be reading from the chip register. Instead it is just returning ora.
 I need to separate IRA (input register) and ORA (output register). When we strobe something with 5 (versus 6 or 4) we need to read the chip register and put in IRA/B. And then mask and return appropriately based on the DDRA/B value.
 
+ok the next test is at $3010. It turns off interrupts; sets T1 for one-shot with value $0101, then waits for it to go below 0; then clears IFR.
+After it goes below 0, it then enables T1/T2 IRQ and waits for T1C to underrun -again-.
+Because we had done a 1-shot, and we have not reprogrammed T1C, it should not interrupt again, even though we enabled interrupts.
+in case MB_6522_IER we schedule an interrupt. But should only schedule an interrupt **if we're in continuous mode**.
+
+ok, I added state flags to T1 and T2. When we write the counter, the flag is set to indicate the one shot has not yet shot.
+In the interrupt handlers (because a timer is set whether IRQ are enabled or not, after writing a counter) if it's one-shot mode, AND the flag is set, we set IRQ.
+Otherwise the flag was off, and we do not re-irq.
+
+
 ## Comparing to Mariani / (AppleWin)
 
 on a reset, T1L is FFFF, not 0.
@@ -443,4 +453,3 @@ Run against some software to test. The suite should be:
 Ultima IV; Ultima V; Skyfox; mockingboard1.dsk; Nox Archaist Demo
 
 nox archaist volume is set to 7, a little on the low side esp once everything is mixed.
-

@@ -945,13 +945,14 @@ void mb_t1_timer_callback(uint64_t instanceID, void *user_data) {
     uint8_t chip = (instanceID & 0x000F);
 
     if (DEBUG(DEBUG_MOCKINGBOARD)) std::cout << "MB 6522 Timer callback " << slot << " " << chip << std::endl;
-    mb_d->d_6522[chip].ifr.bits.timer1 = 1; // "Set by 'time out of T1'"
-    mb_6522_propagate_interrupt(mb_d);
  
     // there are two chips; track each IRQ individually and update card IRQ line from that.
     mb_6522_regs *tc = &mb_d->d_6522[chip];
     
     if (tc->acr & 0x40) { // continuous mode
+        mb_d->d_6522[chip].ifr.bits.timer1 = 1; // "Set by 'time out of T1'"
+        mb_6522_propagate_interrupt(mb_d);
+
         tc->t1_counter = tc->t1_latch;
         uint32_t next_counter = tc->t1_counter;
         if (next_counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
@@ -960,8 +961,15 @@ void mb_t1_timer_callback(uint64_t instanceID, void *user_data) {
         tc->t1_triggered_cycles += next_counter; // TODO: testing.
         mb_d->event_timer->scheduleEvent(cpu->cycles + next_counter, mb_t1_timer_callback, instanceID , mb_d);
     } else {         // one-shot mode
-        // nothing. We don't schedule a next interrupt - that is only done when writing to T1C-H.
+        // if a T1 oneshot was pending, set interrupt status.
+        if (tc->t1_oneshot_pending) {
+            mb_d->d_6522[chip].ifr.bits.timer1 = 1; // "Set by 'time out of T1'"
+            mb_6522_propagate_interrupt(mb_d);
+        }
+        // We don't schedule a next interrupt - that is only done when writing to T1C-H.
         // and we don't reset the counter to the latch, we continue decrementing from 0.
+
+        tc->t1_oneshot_pending = 0;
     }
 }
 
@@ -973,8 +981,7 @@ void mb_t2_timer_callback(uint64_t instanceID, void *user_data) {
     uint8_t chip = (instanceID & 0x000F);
 
     if (DEBUG(DEBUG_MOCKINGBOARD)) std::cout << "MB 6522 Timer callback " << slot << " " << chip << std::endl;
-    mb_d->d_6522[chip].ifr.bits.timer2 = 1; // "Set by 'time out of T2'"
-    mb_6522_propagate_interrupt(mb_d);
+
 
     // TODO: there are two chips; track each IRQ individually and update card IRQ line from that.
     mb_6522_regs *tc = &mb_d->d_6522[chip];
@@ -993,7 +1000,11 @@ void mb_t2_timer_callback(uint64_t instanceID, void *user_data) {
         // TODO: "after timing out, the counter will continue to decrement."
         // so do NOT reset the counter to the latch.
         // processor must rewrite T2C-H to enable setting of the interrupt flag.
-
+        if (tc->t2_oneshot_pending) {
+            mb_d->d_6522[chip].ifr.bits.timer2 = 1; // "Set by 'time out of T2'"
+            mb_6522_propagate_interrupt(mb_d);
+        }
+        tc->t2_oneshot_pending = 0;
     }
 }
 
@@ -1067,6 +1078,7 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
             uint32_t next_counter = tc->t1_counter ? tc->t1_counter : 65536;
             tc->ifr.bits.timer1 = 0;
             tc->t1_triggered_cycles = cpu_cycles + next_counter + 2; // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
+            tc->t1_oneshot_pending = 1;
             //if (tc->ier.bits.timer1) {
                 mb_d->event_timer->scheduleEvent(tc->t1_triggered_cycles, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);
             /* } else {
@@ -1085,6 +1097,7 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
             tc->ifr.bits.timer2 = 0;
             mb_6522_propagate_interrupt(mb_d);
             tc->t2_triggered_cycles = cpu_cycles;
+            tc->t2_oneshot_pending = 1;
             //if (tc->ier.bits.timer2) {
                 mb_d->event_timer->scheduleEvent(cpu_cycles + next_counter2, mb_t2_timer_callback, 0x10010000 | (slot << 8) | chip , mb_d);
             /* } else {
@@ -1126,15 +1139,15 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
                 // if timer1 interrupt is disabled, cancel any pending events. (Only enable + write to T1C will reschedule)
                 /* if (!tc->ier.bits.timer1) {
                     mb_d->event_timer->cancelEvents(instanceID);
-                } else */ { // if we set the counter/latch BEFORE we enable interrupts.
-                    uint64_t cycle_base = tc->t1_triggered_cycles == 0 ? mb_d->computer->cpu->cycles : tc->t1_triggered_cycles;
-                    uint32_t counter = tc->t1_counter;
-                    if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
-                        counter = 65536;
-                    }
-                    mb_d->event_timer->scheduleEvent(cycle_base + counter, mb_t1_timer_callback, instanceID , mb_d);
+                } else */ 
+                // if we set the counter/latch BEFORE we enable interrupts.
+                uint64_t cycle_base = tc->t1_triggered_cycles == 0 ? mb_d->computer->cpu->cycles : tc->t1_triggered_cycles;
+                uint32_t counter = tc->t1_counter;
+                if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
+                    counter = 65536;
                 }
-                
+                mb_d->event_timer->scheduleEvent(cycle_base + counter, mb_t1_timer_callback, instanceID , mb_d);
+                                
                 instanceID = 0x10010000 | (slot << 8) | chip;
                 /* if (!tc->ier.bits.timer2) {
                     mb_d->event_timer->cancelEvents(instanceID);
@@ -1357,6 +1370,8 @@ DebugFormatter *debug_registers_6522(mb_cpu_data *mb_d) {
     df->addLine("-------------------------- | ---------------------------");
     df->addLine("DDRA: %02X    DDRB: %02X       | DDRA: %02X    DDRB: %02X", mb_d->d_6522[1].ddra, mb_d->d_6522[1].ddrb, mb_d->d_6522[0].ddra, mb_d->d_6522[0].ddrb);
     df->addLine("ORA : %02X    ORB : %02X       | ORA : %02X    ORB : %02X", mb_d->d_6522[1].ora, mb_d->d_6522[1].orb, mb_d->d_6522[0].ora, mb_d->d_6522[0].orb);
+    df->addLine("IRA : %02X    IRB : %02X       | IRA : %02X    IRB : %02X", mb_d->d_6522[1].ira, mb_d->d_6522[1].irb, mb_d->d_6522[0].ira, mb_d->d_6522[0].irb);
+    
     df->addLine("T1L : %04X  T1C: %04X      | T1L : %04X  T1C: %04X", mb_d->d_6522[1].t1_latch, m1_t1_diff, mb_d->d_6522[0].t1_latch, m2_t1_diff);
     df->addLine("T2L : %04X  T2C: %04X      | T2L : %04X  T2C: %04X", mb_d->d_6522[1].t2_latch, m1_t2_diff, mb_d->d_6522[0].t2_latch, m2_t2_diff);
     //df->addLine("T1C: %04X                 | T1C: %04X", m1_t1_diff, m2_t1_diff);
