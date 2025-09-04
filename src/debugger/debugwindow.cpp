@@ -223,9 +223,9 @@ void debug_window_t::render_pane_trace() {
     draw_text(DEBUG_PANEL_TRACE, x, 3, buffer);
   
     separator_line(DEBUG_PANEL_TRACE, 4);
-    draw_text(DEBUG_PANEL_TRACE, x, 4, "PC     A  X  Y  SP     N V - D B I Z C");
-    snprintf(buffer, sizeof(buffer), "%04X   %02X %02X %02X %04X   %d %d - %d %d %d %d %d", cpu->pc, cpu->a, cpu->x, cpu->y, cpu->sp, 
-        cpu->N, cpu->V, cpu->B, cpu->D, cpu->I, cpu->Z, cpu->C);
+    draw_text(DEBUG_PANEL_TRACE, x, 4, "PC     A  X  Y  SP     N V - D B I Z C  IRQ");
+    snprintf(buffer, sizeof(buffer), "%04X   %02X %02X %02X %04X   %d %d - %d %d %d %d %d   %d", cpu->pc, cpu->a, cpu->x, cpu->y, cpu->sp, 
+        cpu->N, cpu->V, cpu->B, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->irq_asserted!=0);
     draw_text(DEBUG_PANEL_TRACE, x, 5, buffer);
 
     snprintf(buffer, sizeof(buffer), "Cycles: %18llu    MHz: %10.5f", cpu->cycles, cpu->e_mhz);
