@@ -100,49 +100,53 @@
         const char *opcode_name = da->opcode;
         const address_mode_entry *am = &address_mode_formats[da->mode];
 
-        decode_hex_word(buffer + TB_PC, entry->pc);
-        buffer[TB_PC + 4] = ':';
+        if (entry->flags & TRACE_FLAG_IRQ) {
+            memcpy(buffer + TB_OPCODE, "IRQ", 3);
+        } else {
+            decode_hex_word(buffer + TB_PC, entry->pc);
+            buffer[TB_PC + 4] = ':';
 
-        decode_hex_byte(buffer + TB_OPBYTES, entry->opcode);
-        if (am->size > 1) {
-            decode_hex_byte(buffer + TB_OPBYTES + 3, entry->operand & 0xFF);
-        }
-        if (am->size > 2) {
-            decode_hex_byte(buffer + TB_OPBYTES + 6, (entry->operand >> 8) & 0xFF);
-        }
+            decode_hex_byte(buffer + TB_OPBYTES, entry->opcode);
+            if (am->size > 1) {
+                decode_hex_byte(buffer + TB_OPBYTES + 3, entry->operand & 0xFF);
+            }
+            if (am->size > 2) {
+                decode_hex_byte(buffer + TB_OPBYTES + 6, (entry->operand >> 8) & 0xFF);
+            }
 
-        if (opcode_name) memcpy(buffer + TB_OPCODE, opcode_name, strlen(opcode_name));
-        else memcpy(buffer + TB_OPCODE, "???", 3);
+            if (opcode_name) memcpy(buffer + TB_OPCODE, opcode_name, strlen(opcode_name));
+            else memcpy(buffer + TB_OPCODE, "???", 3);
 
-        switch (da->mode) {
-            case NONE:
-                memcpy(buffer + TB_OPERAND, "???", 3);
-                break;
-            case ACC:
-            case IMP:
-                memcpy(buffer + TB_OPERAND, am->format, strlen(am->format));
-                break;
+            switch (da->mode) {
+                case NONE:
+                    memcpy(buffer + TB_OPERAND, "???", 3);
+                    break;
+                case ACC:
+                case IMP:
+                    memcpy(buffer + TB_OPERAND, am->format, strlen(am->format));
+                    break;
 
-            case ABS:
-            case ABS_X:
-            case ABS_Y:
-            case ABS_IND_X: // 65c02
-            case IMM:
-            case INDIR:
-            case INDEX_INDIR:
-            case INDIR_INDEX:
-            case ZP:
-            case ZP_IND: // 65c02
-            case ZP_X:
-            case ZP_Y:
-                snprintf(snpbuf, snpbuf_size, am->format, entry->operand);
-                memcpy(buffer + TB_OPERAND, snpbuf, strlen(snpbuf));
-                break;
-            case REL:
-                uint16_t btarget = (entry->pc+2) + (int8_t)entry->operand;
-                snprintf(snpbuf, snpbuf_size, "$%04X", btarget);
-                memcpy(buffer + TB_OPERAND, snpbuf, strlen(snpbuf));
-                break;
+                case ABS:
+                case ABS_X:
+                case ABS_Y:
+                case ABS_IND_X: // 65c02
+                case IMM:
+                case INDIR:
+                case INDEX_INDIR:
+                case INDIR_INDEX:
+                case ZP:
+                case ZP_IND: // 65c02
+                case ZP_X:
+                case ZP_Y:
+                    snprintf(snpbuf, snpbuf_size, am->format, entry->operand);
+                    memcpy(buffer + TB_OPERAND, snpbuf, strlen(snpbuf));
+                    break;
+                case REL:
+                    uint16_t btarget = (entry->pc+2) + (int8_t)entry->operand;
+                    snprintf(snpbuf, snpbuf_size, "$%04X", btarget);
+                    memcpy(buffer + TB_OPERAND, snpbuf, strlen(snpbuf));
+                    break;
+            }
         }
 
         // print effective memory address

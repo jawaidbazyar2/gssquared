@@ -1,4 +1,4 @@
-/*
+/* DEPRECATED
  *   Copyright (c) 2025 Jawaid Bazyar
 
  *   This program is free software: you can redistribute it and/or modify
@@ -68,6 +68,8 @@ int execute_next(cpu_state *cpu) {
     tb->db = cpu->db;
     tb->pb = cpu->pb;
     tb->eaddr = 0;
+    tb->flags = 0;
+    tb->unused = 0;
     }
     )
 
@@ -88,7 +90,9 @@ int execute_next(cpu_state *cpu) {
         cpu->p |= FLAG_I; // interrupt disable flag set to 1.
         cpu->pc = cpu->read_word(IRQ_VECTOR);
         cpu->incr_cycles();
-        cpu->incr_cycles();
+        //cpu->incr_cycles(); // todo might be one too many, we're at 8, refs say it's 7. push_byte takes an extra cycle now?
+        TRACE ( tb->eaddr = cpu->pc; tb->flags = TRACE_FLAG_IRQ;);
+        TRACE(if (cpu->trace) cpu->trace_buffer->add_entry(cpu->trace_entry);)
         return 0;
     }
 

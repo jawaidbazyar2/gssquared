@@ -8,6 +8,8 @@
 #define TRACE(SETTER) { SETTER }
 //#define TRACE(SETTER) 
 
+#define TRACE_FLAG_IRQ 1
+
 // minimum of 8 byte chonkiness
 struct system_trace_entry_t {
     uint64_t cycle;
@@ -28,6 +30,8 @@ struct system_trace_entry_t {
     //uint8_t address_mode; // decoded address mode for instruction so we don't have to do it again.
     
     uint32_t eaddr; // the effective memory address used.
+    uint16_t flags;
+    uint16_t unused;
 };
 
 struct system_trace_buffer {

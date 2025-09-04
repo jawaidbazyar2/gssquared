@@ -687,6 +687,8 @@ int execute_next(cpu_state *cpu) override {
     tb->db = cpu->db;
     tb->pb = cpu->pb;
     tb->eaddr = 0;
+    tb->flags = 0;
+    tb->unused = 0;
     }
     )
 
@@ -701,7 +703,7 @@ int execute_next(cpu_state *cpu) override {
     }
 #endif
 
-    if (!cpu->I && cpu->irq_asserted) { // if IRQ is not disabled, and IRQ is asserted, handle it.
+    if (cpu->skip_next_irq_check == 0 && !cpu->I && cpu->irq_asserted) { // if IRQ is not disabled, and IRQ is asserted, handle it.
         push_word(cpu, cpu->pc); // push current PC
         push_byte(cpu, cpu->p | FLAG_UNUSED); // break flag and Unused bit set to 1.
         cpu->I = 1; // interrupt disable flag set to 1.
@@ -710,8 +712,13 @@ int execute_next(cpu_state *cpu) override {
         }
         cpu->pc = cpu->read_word(IRQ_VECTOR);
         cpu->incr_cycles();
-        cpu->incr_cycles();
+        //cpu->incr_cycles(); // todo might be one too many, we're at 8, refs say it's 7. push_byte takes an extra cycle now?
+        TRACE ( tb->eaddr = cpu->pc; tb->flags = TRACE_FLAG_IRQ;);
+        TRACE(if (cpu->trace) cpu->trace_buffer->add_entry(cpu->trace_entry);)
         return 0;
+    } 
+    if (cpu->skip_next_irq_check > 0) {
+        cpu->skip_next_irq_check--;
     }
 
     opcode_t opcode = cpu->read_byte_from_pc();
@@ -2144,6 +2151,7 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_CLI_IMP: /* CLI Implied */
             {
+                if (cpu->I) cpu->skip_next_irq_check = 1;
                 cpu->I = 0;
                 cpu->incr_cycles();
             }
