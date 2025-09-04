@@ -177,7 +177,8 @@ struct cpu_state {
     uint64_t cycles; /* Number of cycles since reset */
 
     uint64_t irq_asserted = 0; /** bits 0-7 correspond to slot IRQ lines slots 0-7. */
-
+    uint8_t skip_next_irq_check = 0; /* if set, skip the next IRQ check */
+    
     //MMU_II *mmu = nullptr;
     MMU *mmu = nullptr; // cpu only needs to know about base interface with read() and write().
 
