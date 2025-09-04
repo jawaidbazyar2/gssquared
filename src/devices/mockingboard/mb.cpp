@@ -1077,7 +1077,7 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
             tc->t1_counter = tc->t1_latch /* ? tc->t1_latch : 65535 */;
             uint32_t next_counter = tc->t1_counter ? tc->t1_counter : 65536;
             tc->ifr.bits.timer1 = 0;
-            tc->t1_triggered_cycles = cpu_cycles + next_counter + 2; // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
+            tc->t1_triggered_cycles = cpu_cycles + next_counter + 1; // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
             tc->t1_oneshot_pending = 1;
             //if (tc->ier.bits.timer1) {
                 mb_d->event_timer->scheduleEvent(tc->t1_triggered_cycles, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);

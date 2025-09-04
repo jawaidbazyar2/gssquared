@@ -4,8 +4,15 @@ Mockingboard is a sound card developed for Apple II computers, and was the best 
 
 The Mockingboard is built around the AY-3-8910 chip, a sound generation chip.
 
+Well, google says the C had one preinstalled speech chip. Which I don't have. And that A had no chip.
+So let's try A. Uh, nope.
+Says the Sound I and II had the 8910 chip, whereas A and C had the 8913 chip.
+This could be an issue.. 
+
 Wikipedia says:
 The AY-3-8910 is a simple finite-state machine.
+
+BTW the Yamaha 2149 is a much better data sheet. 
 
 Its state of sixteen 8-bit registers ..
 
@@ -23,6 +30,9 @@ Six registers control the pitches produced in the three primary channels. The fr
 Envelope types: sawtooth; triangle; starting on min or max. Only one envelope shared among all three channels.
 
 16 total registers.
+
+While the GI data sheet calls the registers R0-R7, and R10-R17, there are only 16 (not 18) and they are referenced using numbers 0-8. 
+OH. It's **octal**. Man that is pretty dumb.
 
 Some clone cards had multiple of these chips, one had four chips for 12 voices. Most software only supported 2 chips / 6 voices.
 
@@ -421,6 +431,48 @@ ok, I added state flags to T1 and T2. When we write the counter, the flag is set
 In the interrupt handlers (because a timer is set whether IRQ are enabled or not, after writing a counter) if it's one-shot mode, AND the flag is set, we set IRQ.
 Otherwise the flag was off, and we do not re-irq.
 
+now we've cleared that, and have an error 11:03:00. Expected F1, Actual F2.
+
+starts at $31F8: there was $FFFF in the latch, then we write 0 to L1H and reset counter to 00FF. When we readit back with lda c400,y we get F2, they are expecting F1. If I adjust the counter offset of +2 to +1, the previous tests where we check when the IRQ happens fail. ($50 and $60 which as 6522-A and 6522-B?). 
+
+ok, looking back at $2BD6, where it checks T1C IRQ timing on a 6-count countdown.
+Right after we: sta ($fe),y we are showing T1L of $0006, and T1C of $0007. That's obvious B.S. audit says it should be 6 and that makes sense to me.
+But also of note, the 6522 doc says the IRQ should be triggered when the counter reaches $0. 
+
+sta ($FE),y -> 0006
+lda #2 - 2 cycles, should be 4 after.
+ldx #1 - 2 cycles, 0002 after
+cli - 2 cycles, 0000 
+sta zpTmp2 ; 3cy; $ffff <- ?? what 
+```
+   140  2bdd 85fc               	sta		zpTmp2				; 3cy	; $ffff
+   141                          										; $0002	: real 6522 - IRQ occurs on 2nd cycle... so IRQ occurs after this 'sta zp'
+   142                          										; $0001	: FPGA 6522 - IRQ occurs on 3rd cycle... so IRQ deferred until after next 'stx zp'
+```
+so we hit 0 on the last cycle of the cli. we need the interrupt to trigger not then, but after. This is why I added +2 to the trigger.
+
+I do one step on STA $FC, and it sets PC to irq handler. 
+1) when should IRQ be checked?
+2) how soon after a cli will 6502 allow interrupt to occur?
+
+In debugger I should create a trace entry for an IRQ, so we have a record of it and it's a lot more clear what happened.
+
+"On the 6502 CPU, an interrupt will not stop an instruction mid-execution. The 6502 completes the current instruction before servicing an interrupt. This is a common design principle in many processors to maintain data integrity and avoid complex state management during partial instruction execution.
+Regarding the timing of interrupts after a CLI (Clear Interrupt Disable Flag) instruction:
+The effect of CLI is delayed by one instruction. This means that the interrupt disable flag (I flag) in the status register is cleared during the execution of the CLI instruction, but the CPU's ability to respond to IRQ interrupts is not enabled until the next instruction has begun.
+Therefore, an IRQ interrupt will not occur immediately after a CLI instruction. If an IRQ becomes pending during or immediately after the CLI, it will be recognized and serviced only after the instruction following the CLI has completed its execution. NMI (Non-Maskable Interrupts) are not affected by the I flag and can be serviced regardless of its state, but they still wait for the current instruction to complete."
+
+ok. So this is actually why the 2bdd code was failing. I did the wrong fix.
+So:
+if C was 1,
+and we CLI,
+skip next interrupt check.
+
+ok. I pulled the +2 back to +1, and, implemented the "skip irq next instruction" logic. The IRQ is triggering after STA zpTmp2.
+
+So now I have mb test 6522-A 50:07:01 failed. expected 40, got 00.
+and also 6522-B failed with 60:03:01, expected 40: actual 00
+
 
 ## Comparing to Mariani / (AppleWin)
 
@@ -453,3 +505,10 @@ Run against some software to test. The suite should be:
 Ultima IV; Ultima V; Skyfox; mockingboard1.dsk; Nox Archaist Demo
 
 nox archaist volume is set to 7, a little on the low side esp once everything is mixed.
+
+## The Ultima V Conundrum!
+
+I've never gotten this to work, but I've always been testing Mockingboard C. A didn't work either.
+
+with sound ii the IRQ never turns off. I bet it's just slamming in the IRQ handler. 
+Yep. I just did the RTI. and immediately back to the interrupt handler. ok, so at least I know a little more what's going on..
