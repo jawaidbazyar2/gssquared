@@ -5,6 +5,7 @@
 #include <vector>
 #include <iomanip>
 #include "debugger/MemoryWatch.hpp"
+#include <algorithm>
 
 ExecuteCommand::ExecuteCommand(MMU *mmu, MonitorCommand *cmd, MemoryWatch *watches, MemoryWatch *breaks, Disassembler *disasm, std::vector<std::string> *debug_displays) {
     this->mmu = mmu;
