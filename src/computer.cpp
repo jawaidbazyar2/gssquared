@@ -191,3 +191,46 @@ void computer_t::send_clock_mode_message() {
     snprintf(buffer, sizeof(buffer), "Clock Mode Set to %s", clock_mode_names[cpu->clock_mode]);
     event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, buffer));
 }
+
+/**
+ * call at end of every frame to update status and statistics.
+ */
+void computer_t::frame_status_update() {
+    // since this is every 60 frames, the cycles emitted will be 1021800 per frame instead of 1020500 (which is something we calculate based on 59.992 frames)
+    if (last_frame_end_time == 0) {
+        last_frame_end_time = SDL_GetTicksNS()-1;
+        last_5sec_update = last_frame_end_time;
+    }
+    frame_count++;
+    if (frame_count % 60 == 0) {
+        uint64_t this_frame_end_time = SDL_GetTicksNS();
+        uint64_t frame_counter_delta = this_frame_end_time - last_frame_end_time;
+
+        cpu->fps = ((float)frame_count * 1000000000) / frame_counter_delta;
+        last_frame_end_time = this_frame_end_time;
+        frame_count = 0;
+
+        // TODO: maybe should update this every second instead of every 5 seconds.
+        uint64_t delta = cpu->cycles - last_5sec_cycles;
+        cpu->e_mhz = 1000 * (double)delta / ((double)(this_frame_end_time - last_5sec_update));
+
+        status_count++;
+        if (status_count == 5) {
+            last_5sec_cycles = cpu->cycles;
+            last_5sec_update = this_frame_end_time;
+    
+            fprintf(stdout, "%llu delta %llu cycles clock-mode: %d CPS: %12.8f MHz [ slips: %llu]\n", 
+                delta, cpu->cycles, cpu->clock_mode, cpu->e_mhz, cpu->clock_slip);
+            uint64_t et = event_times.getAverage();
+            uint64_t at = audio_times.getAverage();
+            uint64_t dt = display_times.getAverage();
+            uint64_t aet = app_event_times.getAverage();
+            uint64_t total = et + at + dt + aet;
+            fprintf(stdout, "event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", 
+                et, at, dt, aet, total);
+            fprintf(stdout, "PC: %04X, A: %02X, X: %02X, Y: %02X, P: %02X\n", 
+                cpu->pc, cpu->a, cpu->x, cpu->y, cpu->p);        
+            status_count = 0;
+        }
+    }
+}

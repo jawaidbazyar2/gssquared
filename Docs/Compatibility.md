@@ -231,6 +231,8 @@ Then hit a key, and it dies with the PC in ZP and ALTZP on.
 
 Well, it stops running correctly on Apple2TS also. Maybe the Demo just stops there.
 
+OH. NO IT DOESN'T. This actually goes to a game screen now. I have no idea what I did to fix this; however, the stack overflow thing might be it. 
+
 ## Berzap
 
 boots. ctrl-c lets you configure mockingboard. there might be an attempt at speech which doesn't work of course.
@@ -255,6 +257,13 @@ I do that, and I get hgr again with "turn the disk over".
 Get the same doing help. It's displaying the wrong text page. I manually do c054 and I get the help screen.
 it's flipping between C054/C055 a lot, while drawing some graphics. This must be doing double hires. And when we go to text mode we should be doing 
 
+## Popeye
+
+This wasn't working at one point, it would just reboot cycle. However, now it is, and, it's playing some Mockingboard music to boot.
+The mockingboard output is just a little bit clicky in parts. I wonder if I should keep track of the mockingboard channels samples available, maybe I'm not quite sending out enough samples there? Hmm.
+
+It asks if I have a mb; then displays hires garbage, but playing music; hit a key, and it loads the game.
+Joystick doesn't seem to work.  
 
 ## MousePaint
 
@@ -266,3 +275,4 @@ trying to read from mouse using I/O hooks which I don't support yet.
 ## AirHeart
 
 crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff.
+

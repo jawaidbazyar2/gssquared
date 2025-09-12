@@ -46,7 +46,7 @@ extern uint64_t debug_level;
 #define DEBUG_MOCKINGBOARD    0x400000
 #define DEBUG_MOUSE           0x800000
 #define DEBUG_ANY           0xFFFFFFFF
-#define DEBUG_BOOT_FLAG     DEBUG_MOUSE
+#define DEBUG_BOOT_FLAG     0
 
 #define DEBUG(flag) (debug_level & flag)
 

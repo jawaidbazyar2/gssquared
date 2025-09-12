@@ -150,13 +150,11 @@ void init_cpus() { // this is the same as a power-on event.
         CPUs[i].y = 0;
         CPUs[i].p = 0;
         CPUs[i].cycles = 0;
-        CPUs[i].last_tick = 0;
+        //CPUs[i].last_tick = 0;
 
         //CPUs[i].execute_next = &execute_next_6502;
 
         set_clock_mode(&CPUs[i], CLOCK_1_024MHZ);
-
-        // TODO: this doesn't exist any more. update. CPUs[i].next_tick = mach_absolute_time() + CPUs[i].cycle_duration_ticks; 
     }
 }
 
@@ -187,7 +185,7 @@ void run_cpus(void) {
 #endif
         if (current_time - last_5sec_update > 5000000) {
             uint64_t delta = cpu->cycles - last_5sec_cycles;
-            fprintf(stdout, "%llu delta %llu cycles clock-mode: %d CPS: %f MHz [ slips: %llu, busy: %llu, sleep: %llu]\n", delta, cpu->cycles, cpu->clock_mode, (float)delta / float(5000000) , cpu->clock_slip, cpu->clock_busy, cpu->clock_sleep);
+            fprintf(stdout, "%llu delta %llu cycles clock-mode: %d CPS: %f MHz [ slips: %llu, busy: %llu]\n", delta, cpu->cycles, cpu->clock_mode, (float)delta / float(5000000) , cpu->clock_slip, cpu->clock_busy);
             last_5sec_cycles = cpu->cycles;
             last_5sec_update = current_time;
         }

@@ -20,6 +20,9 @@
 #include "cpu.hpp"
 #include "slots.hpp"
 #include "LowPass.hpp"
+#include "EventBuffer.hpp"
+#include "SpeakerX.hpp"
+
 #include "computer.hpp"
 
 #define AMPLITUDE_DECAY_RATE (0x20)
@@ -28,15 +31,18 @@
 #define SAMPLE_BUFFER_SIZE (4096)
 
 /* #define SAMPLE_RATE (51000)
-#define SAMPLES_PER_FRAME (850) */
-
+#define SAMPLES_PER_FRAME (850)
+ */
 // with change to 1021800 hz..
-#define SAMPLE_RATE (51060)
-#define SAMPLES_PER_FRAME (851)
-
+/* #define SAMPLE_RATE (51060)
+#define SAMPLES_PER_FRAME (851) */
+// this is wrong, but it's consistently wrong. (based on 850 samples * 59.923hz)
+#define SAMPLE_RATE (44100)
+#define SAMPLES_PER_FRAME (735)
 
 #define EVENT_BUFFER_SIZE 128000
 
+#if 0
 struct EventBuffer {
     uint64_t events[EVENT_BUFFER_SIZE];
     int write_pos;
@@ -75,11 +81,17 @@ struct EventBuffer {
         return true;
     }
 };
+#endif
+
+    
 
 typedef struct speaker_state_t {
     FILE *speaker_recording = NULL;
     SDL_AudioDeviceID device_id = 0;
     SDL_AudioStream *stream = NULL;
+
+    bool first_time = true;
+
     int device_started = 0;
     double polarity = 1.0f;
     double target_polarity = 1.0f;
@@ -88,8 +100,10 @@ typedef struct speaker_state_t {
     LowPassFilter *preFilter;
     LowPassFilter *postFilter;
 
-    int16_t working_buffer[SAMPLE_BUFFER_SIZE];
-    EventBuffer event_buffer;
+    int16_t *working_buffer;
+    EventBufferRing *event_buffer;
+    Speaker *sp;
+    
 } speaker_state_t;
 
 void init_mb_speaker(computer_t *computer, SlotType_t slot);
@@ -98,5 +112,5 @@ void dump_full_speaker_event_log();
 void dump_partial_speaker_event_log(uint64_t cycles_now);
 void speaker_start(cpu_state *cpu);
 void speaker_stop();
-//void audio_generate_frame(cpu_state *cpu);
-uint64_t audio_generate_frame(cpu_state *cpu, uint64_t last_cycle_window_start, uint64_t cycle_window_start);
+//uint64_t audio_generate_frame(cpu_state *cpu, uint64_t last_cycle_window_start, uint64_t cycle_window_start);
+uint64_t audio_generate_frame(cpu_state *cpu);

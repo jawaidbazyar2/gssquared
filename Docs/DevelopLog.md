@@ -5498,4 +5498,228 @@ ok, I'm done noodling around here. I think the current code is ok. However, if w
 
 [ ] when in dhr and switch to text, c054/c055 should go back to controlling display page not memory. Spacequest is switching from dhr to text40 and we are not selecting page 1 when we do that  
 
+Skyfox audio dropping out might just be how it works. it seems to behave the same way in Mariani. Trying to get a real MB from a friend.
+
+## Sep 4, 2025
+
+* Altering the Emulation to not use Float for event timekeeping
+
+At a certain point we will start to lose resolution as we increment the event counter.
+Also, this doesn't work at faster speeds. So the solution is to track a nanosecond counter in a uint64_t.
+uint64_t can hold 580 years worth of nanoseconds, so this won't lose precision and it won't ever wrap.
+
+Places that need to change:
+debug_register_change
+RegisterEvent::timestamp
+MockingboardEmulator::queueRegisterChange
+processChipCycle
+processEnvelope
+generateSamples
+variables: current_time, time_accumulator, envelope_time_accumulator
+inside the 
+
+Let's just add tracking the realtime, display in debugger, and see what happens.
+Works ok except ludicrous speed where I run into divide by zero issues. What if ludicrous speed is instead a fixed rate? that will cause issues with different speed PCs. I could measure it before and after every instruction. if I try to just take average I'll have the whole first frame with no data.
+what if I assume current speed for first iteration of "subloop". In LS we run some number of 17000 cycle iterations until we've done 1/60th second of frame. So maybe this:
+* when enter LS, set 5ns cycle time.
+* after each subloop iteration, calculate actual time.
+* reset base time to actual time.
+
+ok I'm runnin ga test. 3.1194 is the current clock skew. Let's see how it changes over time.
+3.1195.. 3.1196.. we're ticking up ever so slightly.
+
+Interesting so my realtime is increasing compared to my etime, which means I'm not executing enough cycles. Probably because of that +1 in the other cycle_ns calculation, and ending the loops based on cycles instead of time. ok so right now we're ten microseconds off per second or so.
+
+Mini-roadmap for this:
+* time the cpu loop based on this instead of cycles.
+* set cycle rate for 1mhz to 1023xxx. Then the effective MHz calculated should come out to 1020500.
+* add in handling the stretched 65th cycle, ensure synced to video scanner.
+
+Maybe the solution for ludicrous speed is to just somehow switch to realtime instead of emulated time, and to set emulated time to realtime when we switch from LS back to an emulated speed. (at 4mhz we have even divisors and the clock stays much more steady).
+
+ok, I sort of have this. And I am getting a variable number of cpu cycles per frame, which isn't exactly right. Also, they're between 17020 and 17028 (at least according to cpu_delta calculated in speaker). We should be aiming for 17030 exactly?
+however, the frames per second is 59.94, so.. It's actually 59.923. Once I do that, the average cpu_delta gets up to about 17030 cycles.
+
+Consideration: the cycle accurate video requires exactly 17,030 cycles of data per frame. (technically 12,480 outside the vbl).
+
+Let's focus for now on getting exactly 1020484 cycles per second effective rate. For some reason I keep "sticking" at 1.0217mhz.
+
+## Sep 5, 2025
+
+Apple II clocking is complex. That's all I got to say!
+
+Laying down some facts for consideration.
+
+| Item | Duration | Notes |
+|--|--|--|
+| 1 video frame |  17,030 cycles exactly (262 lines, 65 cycles per line) | |
+| Frames per second: 59.923 | |
+| CPU Clock Rate | 1.022727MHz | 14M / 14 |
+| Normal Cycle duration | 977.7779019ns | |
+| 14M Freq | 14.318180MHz | |
+| 14M Duration | 69.84127871ns | |
+| Long Cycle duration | 1117.460459ns | 977.777 + 69.841 + 69.841 - total of 16 14Ms |
+
+The 14M clock is the master clock signal. All other signals are derives from this master clock. 
+
+Wrote a test program in testdev/clocking; purpose is to explore granularity of different fixed point representations.
+
+ok. So instead of trying to track all of these in decimal fractions, what if we track them in integer? And instead of tracking the 1.0xx mhz as a base, why not represent the actual Apple II system base clock?
+
+i.e., have a F_14M counter. Have a F_1M counter, but it's units are in terms of the 14M counter. e.g., counting "1M" cycles looks like this: 0, 14, 28, 42, ... 896, 912
+The last increment was by 16 (i.e., normal 14 units of 14M plus two more).
+
+In a IIgs, the cpu clock is constantly changing but it's doing so in reference to a similar setup - e.g., a 28MHz clock. Then our counters are:
+1) wholly integer
+2) very high precision (our 'fraction' part on the 1M clock is only divided by 14, so we can still count up to 580/14 = 41 years of emulated time).
+3) if we ever need to calculate the current realtime in nanoseconds or microseconds it's just counter * nanoseconds per 14M. We will, when we determine how long to sleep in the main execution loop.
+
+So with this, one frame is: 262 scanlines; each scanline is 64 * 14 plus 1 * 16, or 912 14M clocks precisely; 238,944 ticks of 14M for a frame. 
+Times 69.84127871ns/14M, and we get : 16,688,154.5000 microseconds per frame. Go into one second, and we get 59.9227434 frames per second.
+So this is how we want to time cpu clocks in the main execution routine; 
+The frame delay/sleep routine has a very nice round number above (16,688,154.5) to time on.
+
+## Sep 7, 2025
+
+The new timing system is in - we are locked tight to 59.923 frames per second, and, 1020484 cycles per second!
+
+So for standard 1MHz Apple II, the clocking is working well.
+
+Audio was a mess, so I spent some time massaging the "new" speaker code to drop in. That is shall we say mostly working, though there is something causing an annoying click sound. Either something is wrong with the event buffer, or I'm underrunning like a mofo.
+
+The latter appears to be the case. I am always generating 735 samples, and doing it 59.92 times a second, so I am not generating enough data per second. I think I'm short about 59 bytes per second.
+And aside from that, I am now getting a super high pitched whine. That would imply super rapid polarity cycling which means something in event buffer isn't workin right..
+
+There are things that can cause the audio to desynchronize. Now I'm wondering if I should have it call me as a callback.. also, I need to add filtering. But so far the audio_time to generate one audio frame is significantly lower than it was before, usually 2us-4us sometimes 10-12us.
+
+cs4 is the latest test harness iteration that shares code modules with speaker.cpp.
+
+ok, trying to change output rate to 44042.. it's fine at the start. But then it gets progressively more distorted.
+
+it's got to be something related to the way I pull data out of the queue. (or feed it into the queue?)
+
+## Sep 9, 2025
+
+Progress! The relationship between Frames per second (59.923), output rate, and samples per frame need to result in samples per frame and output rate being absolutely as close to whole numbers as possible. I am currently using: 59.923, output rate = 44343.0f, samples per frame = 740. 
+
+The issue is we were not quite generating enough samples per frame, so it would eventually underrun, when the relation was not whole numbers.
+
+1) We still have the occasional underrun issue when the host system slows down the emulation (clicking between windows, etc.) I solved this before by adding samples to ensure there is a reasonable buffer in this sort of event. In the older audio code I just repeated the last sample. We can just return more samples than requested.
+2) we also still need to add a low-pass filter to the stream.
+
+I modified the volume to emit samples of only 5120 (instead of 32768, or 16384). And it's still more or less full volume on my Mac. Someone in the audio chain must be 
+
+So I should revisit the Mockingboard audio generation and mixing and see what I get there - perhaps I should just emit and add relatively low-volume signals, instead of adding and averaging. I.e., let components further down the stream do AGC which seems to be what's happening. Just make sure I don't overflow before emission in a given output channel. (I have two?)
+
+[ ] Need to add back support for the faster CPU speeds.
+
+[ ] I should also completely pause the emulation when we open the file dialog. I should be doing that in the main event loop so just setting a halt flag to continue out of the loop except for event handling ought to work. 
+[ ] there is a request to do the same when the emulator window is minimized.  
+[ ] I think amplitude between noise and actual mockingboard output is imbalanced.
+
+Faster cpu speeds: I don't think the cpu speed is directly tied to the output generation. Testing cs4 with 2.8mhz. Whups, that sounds like garbage. Increased buffer space.. no dice, though, I think that is potentially an issue. I tried doing exactly 2x 1020484 and there is some accumulated error. 
+Again, it wants the cycle/sec rate to be as close to an exact multiple of the frame cycle rate as possible. So, 59.923 * 34060 = 2040978 instead of the exact double of 2040968.
+
+Right now the question is am I correctly handling some fraction - and what is the fraction causing problems? And why doesn't it cause problems in cs2? I can put arbitrary stuff in cs2 and it's fine.
+
+ok I tried something close to 2.8, 2756458.0f, based on spreadsheet calculations. That failed. However, 2756460.0f worked.
+the first was a fraction under 46000 cycles per frame. The latter a fraction -over- 46000 cycles per frame.
+I think the issue is:
+if there is fractional cycles per frame;
+if it's under .0, like .999, then we are losing most of a cycle's worth of contribution.
+If it's a hair over .0, then we are losing almost none of a cycle's worth of contribution.
+cs2 uses float cycles_per_frame, but, does not use cycles_per_frame anywhere important.
+cs4 uses float cycles_per_frame but uses it to determine how many cycles to iterate through the loop, which is integer cycles, so we have an error that grows across time until it pops back close to the next integer cycle. So we're either missing or replaying data or something.
+So we need to use exactly whole cycles per frame - this is another constraint. Or we somehow need to keep track of contribution across a fractional cycle.
+
+Would reworking this to be based on time instead of cycle-based help this situation? 
+
+This first concept is, decoupling speaker audio generation from cycles. This would allow us to keep cycle-awareness in the softswitch handler. On a tick, it would convert 14M to say nanoseconds. Then the speaker code is independent, and converts nanoseconds (or some fraction thereof) to 
+
+In-emulator, we also have a situation where if something causes me to have a slow frame, the audio can fall behind realtime. Speaker.cpp has cycle_index which I bet is far behind real cycles now. 
+
+
+also getting hangs occasionally:
+```
+Terminating Process:   wezterm-gui [486]
+
+Thread 0 Crashed::  Dispatch queue: com.apple.main-thread
+0   GSSquared                     	       0x104ed0dac Speaker::generate_buffer_int(short*, unsigned long long) + 332
+1   GSSquared                     	       0x104ed0dc8 Speaker::generate_buffer_int(short*, unsigned long long) + 360
+2   GSSquared                     	       0x104ecfaec audio_generate_frame(cpu_state*, unsigned long long, unsigned long long) + 132
+3   GSSquared                     	       0x104ea5e2c run_cpus(computer_t*) + 532
+4   GSSquared                     	       0x104ea73f8 main + 3656
+5   dyld                          	       0x1905f6b98 start + 6076
+```
+
+ok I asked Claude and it concurred, and added a bit of code to track fractional cycles in the main loop as well as in the Speaker.cpp code. That seems to resolve the issue there. However, we still need for the output_rate / samples_per_frame to be as close to the frame_rate as possible. 44100/736 is 59.918 which causes artifacts.
+
+I wonder if one more fractionalization adjustment would help. And, is there some benefit to having 
+
+## Sep 11, 2025
+
+ok, I was radically increasing the end_frame_14m count because in single step mode I would add a full frame's worth ever iteration through loop, even if I was only single-stepping instructions. This caused the main loop to execute instructions for a long long time. 
+Audio gets fuzzy after single-step mode tho. Suspend normal audio generation during step - this is likely causing underflows or something (every time we do a step we're doing an audio frame and the counters get all out of whack). Or, perform some kind of forced-sync.
+
+Instead of lots of IFs everywhere on each component of the event loop.. maybe I should just have a different event loop for each mode. Modes:
+standard mode with fixed speed (1.0, 2.8, 4.0mhz - run based on 14M clock cycles)
+free-run mode (here we)
+step-wise mode
+
+Then it's easier to execute just the right functions. 
+
+Boy there's a lot of commented-out old stuff, unused variables, etc etc esp in the gs2 main loop and cpu etc. Cleaning some of that up a bit.
+
+## Sep 12, 2025
+
+### Standard Mode with fixed speed
+
+execute all the per-frame stuff every frame.
+
+### Free run mode
+
+use original 60fps video routines.
+disable audio - it's really
+
+so for all the stuff that I track (e.g. the event_time, audio_time, display_time, app_event_time) etc let's call this an instrumentation. And let's create a class for it. Instrumentation will record the last 60 samples worth of data, then give us methods for min, max, average whenever we call it. Pretty easily done as a circular buffer of depth 60. Since we rarely need the figures, calculate them on demand. Should take fractions of microseconds.
+
+class Meter {}
+
+we need to be able to switch modes between frames. So, call a func based on mode. OK that refactor is done. The 1MHz standard-mode loop is pretty clean now.
+
+Now, build back in 2.8MHz and 4MHz modes. 2.8 is 14.318/5, but, 4MHz is .. what, exactly? Start with 2.8 anyway.
+Have to consider how a GS @ 2.8mhz syncs to video. I suppose in ntsc we still have to sync at the end of every scanline but how many 14M cycles is that, exactly?
+ok once I go into faster mode, audio stops tracking at the correct speed. So I need to check the cpu speed settings and reconfigure the Speaker.
+
+ok, now tracking the cpu speed with audio speed, it starts out right but then gets off-kilter. 
+
+
+In-emulator, I really need cycles_per_frame to be a whole number. it is input_rate / frame_rate.
+2857355
+59.923
+47683.777 -> should be exactly 47684
+
+I use the "mixed effective clock speed" for cycles_per_frame. 2,857,368.332. So bump that up a hair so we're a bit over 47684. Make it 2'857'370.
+
+ok, I made a spreadsheet to calculate the correct figures, for 1, 2.8,7mhz, and 14mhz. I hadn't updated incr_cycles to use the right extra clock cycle count.
+
+There was one spot where I switched to a fast mode and back and audio was all messed up. But now I'm testing with Music Disk going back and forth between different speeds and it's all groovy.
+
+Definitely still getting the issue where delays caused by opening the file dialog cause audio to get out of sync. So it's Speaker::cycle_index. Could try resetting this to current cpu cycle on a reset.
+And should have an easy way to dump it and its skew at any particular moment. (is it this? or do we somewhere jam in a ton of extra samples so we're running behind playing?)
+
+[ ] resolve issue where speaker output can get delayed  
+
+OK, this is passable. Shall we now see about making the cycle-accurate video correct?
+
+video buffer that can hold around 32768 video samples. has to be more than 17030.
+Each VideoGenerator pass we will pull exactly 17030 samples out of it.
+Sometimes the cpu exec logic will use a little more than 17030 cycles; sometimes a little less - by a little, I mean, 0-7 cycles more or less (because cpu execution can't split an instruction).
+Right now the buffer that holds our scanner samples is:
+FrameScan560 *frame_scan = nullptr;
+That's a Scan_t. 
+
+
+[ ] Finally, modify to only grab video samples from RAM based on the 14M clock.   
+
 

@@ -33,32 +33,34 @@ void mouse_reset(mouse_state_t *ds) {
 
 uint8_t mouse_read_c0xx(void *context, uint16_t address) {
     mouse_state_t *ds = (mouse_state_t *)context;
+    uint8_t val;
     uint8_t addr = address & 0x0F;
+
     switch (addr) {
         case 0x00:
-            return ds->x_pos.l;
+            val = ds->x_pos.l; break;
         case 0x01:
-            return ds->x_pos.h;
+            val = ds->x_pos.h; break;
         case 0x02:
-            return ds->y_pos.l;
+            val = ds->y_pos.l; break;
         case 0x03:
-            return ds->y_pos.h;
+            val = ds->y_pos.h; break;
         case 0x04:
-            return ds->x_clamp_low.l;
+            val =  ds->x_clamp_low.l; break;
         case 0x05:
-            return ds->x_clamp_low.h;
+            val =  ds->x_clamp_low.h; break;
         case 0x06:
-            return ds->x_clamp_high.l;
+            val =  ds->x_clamp_high.l; break;
         case 0x07:
-            return ds->x_clamp_high.h;
+            val =  ds->x_clamp_high.h; break;
         case 0x08:
-            return ds->y_clamp_low.l;
+            val =  ds->y_clamp_low.l; break;
         case 0x09:
-            return ds->y_clamp_low.h;
+            val =  ds->y_clamp_low.h; break;
         case 0x0A:
-            return ds->y_clamp_high.l;
+            val =  ds->y_clamp_high.l; break;
         case 0x0B:
-            return ds->y_clamp_high.h;
+            val =  ds->y_clamp_high.h; break;
         case 0x0E: { // try clearing IRQ flags after we get the status value.
                 ds->status.last_button_down = ds->button_last_read; // this is what the button was the last time it was read.
                 ds->button_last_read = ds->status.button_down; // this is what the button is now.
@@ -68,13 +70,15 @@ uint8_t mouse_read_c0xx(void *context, uint16_t address) {
                 ds->status.int_button = 0;
                 ds->status.x_y_changed = 0;
                 mouse_propagate_interrupt(ds);
-                return tmp_status;
+                val = tmp_status;
             } break;
         case 0x0F:
-            return ds->mode.value;
+            val = ds->mode.value; break;
         default:
-            return 0xEE;
+            val = 0xEE; break;
     }
+    printf("Mouse read: %02X: %02X\n", address, val);
+    return val;
 }
 
 

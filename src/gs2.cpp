@@ -49,6 +49,7 @@
 #include "ui/MainAtlas.hpp"
 #include "cpus/cpu_implementations.hpp"
 #include "version.h"
+#include "util/Metrics.hpp"
 
 /**
  * References: 
@@ -87,60 +88,137 @@
  * and edition of ROM.
  */
 
-/**
- * TODO: Decide whether to implement the 'illegal' instructions. Maybe have that as a processor variant? the '816 does not implement them.
- * 
- */
-
 /** Globals we haven't dealt properly with yet. */
 OSD *osd = nullptr;
 
-#if 0
-cpu_state *CPUs[MAX_CPUS];
-void init_cpus() { // this is the same as a power-on event.
-    for (int i = 0; i < MAX_CPUS; i++) {
-        CPUs[i] = new cpu_state();
-        CPUs[i]->init();
+void frame_event(computer_t *computer, cpu_state *cpu) {
+    SDL_Event event;
+    while(SDL_PollEvent(&event)) {
+        // check for system "pre" events
+        if (computer->sys_event->dispatch(event)) {
+            continue;
+        }
+        if (computer->debug_window->handle_event(event)) { // ignores event if not for debug window
+            continue;
+        }
+        if (!osd->event(event)) { // if osd doesn't handle it..
+            computer->dispatch->dispatch(event); // they say call "once per frame"
+        }
+    }
+
+    osd->update();
+    bool diskii_run = any_diskii_motor_on(cpu);
+    soundeffects_update(diskii_run, diskii_tracknumber_on(cpu));
+}
+
+void frame_appevent(computer_t *computer, cpu_state *cpu) {
+    Event *event = computer->event_queue->getNextEvent();
+    if (event) {
+        switch (event->getEventType()) {
+            case EVENT_PLAY_SOUNDEFFECT:
+                soundeffects_play(event->getEventData());
+                break;
+            case EVENT_REFOCUS:
+                computer->video_system->raise();
+                break;
+            case EVENT_MODAL_SHOW:
+                osd->show_diskii_modal(event->getEventKey(), event->getEventData());
+                break;
+            case EVENT_MODAL_CLICK:
+                {
+                    uint64_t key = event->getEventKey();
+                    uint64_t data = event->getEventData();
+                    printf("EVENT_MODAL_CLICK: %llu %llu\n", key, data);
+                    if (data == 1) {
+                        // save and unmount.
+                        computer->mounts->unmount_media(key, SAVE_AND_UNMOUNT);
+                        osd->event_queue->addEvent(new Event(EVENT_PLAY_SOUNDEFFECT, 0, SE_SHUGART_OPEN));
+                    } else if (data == 2) {
+                        // save as - need to open file dialog, get new filename, change media filename, then unmount.
+                    } else if (data == 3) {
+                        // discard
+                        computer->mounts->unmount_media(key, DISCARD);
+                        osd->event_queue->addEvent(new Event(EVENT_PLAY_SOUNDEFFECT, 0, SE_SHUGART_OPEN));
+                    } else if (data == 4) {
+                        // cancel
+                        // Do nothing!
+                    }
+                    osd->close_diskii_modal(key, data);
+                }
+                break;
+            case EVENT_SHOW_MESSAGE:
+                osd->set_heads_up_message((const char *)event->getEventData(), 512);
+                break;
+         
+        }
+        delete event; // processed, we can now delete it.
     }
 }
-#endif
 
+/*
+ * Update window
+ */
+void frame_video_update(computer_t *computer, cpu_state *cpu) {
+    update_flash_state(cpu); // TODO: this goes into display.cpp frame handler.
+    computer->video_system->update_display();    
+    osd->render();
+    computer->debug_window->render();
+    computer->video_system->present();
+}
+
+void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time, uint64_t frame_count) {
+    uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
+        
+    // sleep out the rest of this frame.
+    uint64_t sleep_loops = 0;
+    uint64_t current_time = SDL_GetTicksNS();
+    if (current_time > wakeup_time) {
+        cpu->clock_slip++;
+        // TODO: log clock slip for later display.
+        //printf("Clock slip: event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", event_time, audio_time, display_time, app_event_time, event_time + audio_time + display_time + app_event_time);
+    } else {
+        if (gs2_app_values.sleep_mode) {
+            SDL_DelayPrecise(wakeup_time - SDL_GetTicksNS());
+        } else {
+            // busy wait sync cycle time
+            do {
+                sleep_loops++;
+            } while (SDL_GetTicksNS() < wakeup_time);
+        }
+    }
+}
+
+/*
+This is the run_cpus func with:
+speeds other than 1mhz ripped out,
+*/
 void run_cpus(computer_t *computer) {
     cpu_state *cpu = computer->cpu;
-
-    /* initialize time tracker vars */
-    uint64_t ct = SDL_GetTicksNS();
-    uint64_t last_event_update = ct;
-    uint64_t last_display_update = ct;
-    uint64_t last_audio_update = ct;
-    uint64_t last_app_event_update = ct;
-    uint64_t last_5sec_update = ct;
-    uint64_t last_mockingboard_update = ct;
-    uint64_t last_frame_update = ct;
-    uint64_t last_5sec_cycles = cpu->cycles;
-
-    uint64_t last_cycle_count =cpu->cycles;
+    
     uint64_t last_cycle_time = SDL_GetTicksNS();
 
-    uint64_t last_time_window_start = 0;
-    uint64_t last_cycle_window_start = 0;
+    // used to add an extra bit of time to frame sleep
+    uint64_t frame_count = 0;
 
-    while (1) {
-        uint64_t cycle_window_start = cpu->cycles;
-        uint64_t cycle_window_delta = cycle_window_start - last_cycle_window_start;
+    uint64_t last_frame_overrun = 0;
 
-        uint64_t last_cycle_count = cpu->cycles;
-        uint64_t last_cycle_time = SDL_GetTicksNS();
+    while (cpu->halt != HLT_USER) { // top of frame.
 
-        uint64_t cycles_for_this_burst = clock_mode_info[cpu->clock_mode].cycles_per_burst;
+        uint64_t end_frame_c_14M = cpu->next_frame_start_14M - last_frame_overrun;
+
+        // determine frame mode.
+
+        /* if (cpu->clock_mode == CLOCK_FREE_RUN) frame_free_run();
+        else if (cpu->execution_mode == EXEC_STEP_INTO) frame_step_into();
+        else if (cpu->execution_mode == EXEC_STEP_OVER) frame_step_over();
+        else frame_normal(); */
 
         if (! cpu->halt) {
             switch (cpu->execution_mode) {
                     case EXEC_NORMAL:
                         {
                         if (computer->debug_window->window_open) {
-                            uint64_t end_frame_cycles = cpu->cycles + cycles_for_this_burst;
-                            while (cpu->cycles < end_frame_cycles) { // 1/60th second.
+                            while (cpu->c_14M < end_frame_c_14M) { // 1/60th second.
                                 if (computer->event_timer->isEventPassed(cpu->cycles)) {
                                     computer->event_timer->processEvents(cpu->cycles);
                                 }
@@ -158,14 +236,160 @@ void run_cpus(computer_t *computer) {
                                     }
                                 }
                             }
+                            last_frame_overrun = cpu->c_14M - cpu->next_frame_start_14M;
                         } else { // skip all debug checks if the window is not open - this may seem repetitioius but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
-                            uint64_t end_frame_cycles = cpu->cycles + cycles_for_this_burst;
-                            while (cpu->cycles < end_frame_cycles) { // 1/60th second.
+                            while (cpu->c_14M < end_frame_c_14M) { // 1/60th second.
                                 if (computer->event_timer->isEventPassed(cpu->cycles)) {
                                     computer->event_timer->processEvents(cpu->cycles);
                                 }
                                 (cpu->cpun->execute_next)(cpu);
                             }
+                            last_frame_overrun = cpu->c_14M - cpu->next_frame_start_14M;
+                        }
+                        }
+                        break;
+                    case EXEC_STEP_INTO:
+                        while (cpu->instructions_left) {
+                            if (computer->event_timer->isEventPassed(cpu->cycles)) {
+                                computer->event_timer->processEvents(cpu->cycles);
+                            }
+                            (cpu->cpun->execute_next)(cpu);
+                            cpu->instructions_left--;
+                        }
+                        break;
+                    case EXEC_STEP_OVER:
+                        break;
+                }
+        } else {
+            // fake-increment cycle counter to keep audio in sync.
+            //cpu->cycles += cycles_for_this_burst;
+            // TODO: is this necessary?
+        }
+
+        uint64_t current_time = SDL_GetTicksNS();
+
+        bool this_free_run = (cpu->clock_mode == CLOCK_FREE_RUN) || (cpu->execution_mode == EXEC_STEP_INTO );
+        MEASURE(computer->event_times, frame_event(computer, cpu));
+
+        /* Emit Audio Frame */
+        MEASURE(computer->audio_times, audio_generate_frame(cpu /* , last_cycle_window_start, cycle_window_start */));
+
+        /* Process Internal Event Queue */
+        MEASURE(computer->app_event_times, frame_appevent(computer, cpu));
+
+        /* Execute Device Frames - 60 fps */
+        MEASURE(computer->device_times, computer->device_frame_dispatcher->dispatch());
+
+        /* Emit Video Frame */
+
+        MEASURE(computer->display_times, frame_video_update(computer, cpu));
+
+        // update frame window counters.
+        // TODO:if we're in stepwise mode, we should not increment these as if they're a full next frame.
+        if (cpu->c_14M >= end_frame_c_14M) {
+            cpu->current_frame_start_14M = cpu->next_frame_start_14M;
+            cpu->next_frame_start_14M += 238944;
+            cpu->frame_count++;
+        }
+
+        // calculate what sleep-until time should be.
+          uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
+        
+        // sleep out the rest of this frame.
+        frame_sleep(computer, cpu, last_cycle_time, frame_count);
+
+        /*
+         should this be last_cycle_time = wakeup_time? Then we don't lose some ns on the function return etc..
+         discussion: in the event of a clock slip, we get all confused if we only stay synced to wakeup_time.
+         as long as there are no slips, we're good.
+         */
+        last_cycle_time = SDL_GetTicksNS(); 
+
+        //last_time_window_start = time_window_start;
+       //last_cycle_window_start = cycle_window_start;
+        
+        // update frame status; calculate stats; move these variables into computer;
+        computer->frame_status_update();
+
+        frame_count++;
+    }
+
+    // save cpu trace buffer, then exit.
+    computer->video_system->update_display(); // update one last time to show the last state.
+
+    cpu->trace_buffer->save_to_file(gs2_app_values.pref_path + "trace.bin");
+}
+
+void run_cpus_old(computer_t *computer) {
+    cpu_state *cpu = computer->cpu;
+    uint64_t status_count = 0; // how many seconds since last status update basically (well, it's 60 * this frames)
+
+    /* initialize time tracker vars */
+    uint64_t ct = SDL_GetTicksNS();
+    uint64_t last_event_update = ct;
+    uint64_t last_display_update = ct;
+    uint64_t last_audio_update = ct;
+    uint64_t last_app_event_update = ct;
+    uint64_t last_5sec_update = ct;
+    uint64_t last_mockingboard_update = ct;
+    uint64_t last_frame_update = ct;
+    uint64_t last_5sec_cycles = cpu->cycles;
+
+    uint64_t last_cycle_count =cpu->cycles;
+    uint64_t last_cycle_time = SDL_GetTicksNS();
+
+    //uint64_t last_time_window_start = 0;
+    uint64_t last_cycle_window_start = 0;
+
+    uint64_t frame_counter_start_time = SDL_GetTicksNS();
+    uint64_t frame_count = 0;
+
+    uint64_t last_frame_overrun = 0;
+
+    while (1) {
+        uint64_t cycle_window_start = cpu->cycles;
+        uint64_t cycle_window_delta = cycle_window_start - last_cycle_window_start;
+
+        //uint64_t last_cycle_count = cpu->cycles;
+        //uint64_t last_cycle_time = SDL_GetTicksNS();
+
+        uint64_t cycles_for_this_burst = clock_mode_info[cpu->clock_mode].cycles_per_burst;
+        uint64_t end_frame_c_14M = cpu->next_frame_start_14M - last_frame_overrun;
+
+        if (! cpu->halt) {
+            //cpu->frame_end_ns_56_8 += ((uint64_t)1000000000*256) / (59.923f) - last_frame_overrun_56_8; // adjust for last frame's overrun
+            //cpu->frame_end_ns_56_8 += ((uint64_t)16'688'000*256) - last_frame_overrun_56_8; // adjust for last frame's overrun
+            switch (cpu->execution_mode) {
+                    case EXEC_NORMAL:
+                        {
+                        if (computer->debug_window->window_open) {
+                            while (cpu->c_14M < end_frame_c_14M) { // 1/60th second.
+                                if (computer->event_timer->isEventPassed(cpu->cycles)) {
+                                    computer->event_timer->processEvents(cpu->cycles);
+                                }
+                                (cpu->cpun->execute_next)(cpu);
+                                if (computer->debug_window->window_open) {
+                                    if (computer->debug_window->check_breakpoint(&cpu->trace_entry)) {
+                                        cpu->execution_mode = EXEC_STEP_INTO;
+                                        cpu->instructions_left = 0;
+                                        break;
+                                    }
+                                    if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
+                                        cpu->execution_mode = EXEC_STEP_INTO;
+                                        cpu->instructions_left = 0;
+                                        break;
+                                    }
+                                }
+                            }
+                            last_frame_overrun = cpu->c_14M - cpu->next_frame_start_14M;
+                        } else { // skip all debug checks if the window is not open - this may seem repetitioius but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
+                            while (cpu->c_14M < end_frame_c_14M) { // 1/60th second.
+                                if (computer->event_timer->isEventPassed(cpu->cycles)) {
+                                    computer->event_timer->processEvents(cpu->cycles);
+                                }
+                                (cpu->cpun->execute_next)(cpu);
+                            }
+                            last_frame_overrun = cpu->c_14M - cpu->next_frame_start_14M;
                         }
                         }
                         break;
@@ -227,7 +451,7 @@ void run_cpus(computer_t *computer) {
         current_time = SDL_GetTicksNS();
         if ((this_free_run) && (current_time - last_audio_update > 16667000)
             || (!this_free_run)) {            
-            audio_generate_frame(cpu, last_cycle_window_start, cycle_window_start);
+            audio_generate_frame(cpu  /* , last_cycle_window_start, cycle_window_start */);
             audio_time = SDL_GetTicksNS() - current_time;
             last_audio_update = current_time;
         }
@@ -303,25 +527,35 @@ void run_cpus(computer_t *computer) {
         }
 
         /* Emit 5-second Stats */
-        current_time = SDL_GetTicksNS();
-        if (current_time - last_5sec_update > 5000000000) {
+        /* current_time = SDL_GetTicksNS();
+        if (current_time - last_5sec_update > 5'000'000'000) {
             uint64_t delta = cpu->cycles - last_5sec_cycles;
-            cpu->e_mhz = (float)delta / float(5000000);
+            cpu->e_mhz = (float)delta / float(5'000'000);
 
-            fprintf(stdout, "%llu delta %llu cycles clock-mode: %d CPS: %f MHz [ slips: %llu, busy: %llu, sleep: %llu]\n", delta, cpu->cycles, cpu->clock_mode, cpu->e_mhz, cpu->clock_slip, cpu->clock_busy, cpu->clock_sleep);
+            fprintf(stdout, "%llu delta %llu cycles clock-mode: %d CPS: %f MHz [ slips: %llu ]\n", delta, cpu->cycles, cpu->clock_mode, cpu->e_mhz, cpu->clock_slip);
             fprintf(stdout, "event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", event_time, audio_time, display_time, app_event_time, event_time + audio_time + display_time + app_event_time);
             fprintf(stdout, "PC: %04X, A: %02X, X: %02X, Y: %02X, P: %02X\n", cpu->pc, cpu->a, cpu->x, cpu->y, cpu->p);
             last_5sec_cycles = cpu->cycles;
             last_5sec_update = current_time;
-        }
+        } */
 
         if (cpu->halt == HLT_USER) {
             computer->video_system->update_display(); // update one last time to show the last state.
             break;
         }
 
+        // update frame window counters.
+        // TODO:if we're in stepwise mode, we should not increment these as if they're a full next frame.
+        if (cpu->c_14M >= end_frame_c_14M) {
+            cpu->current_frame_start_14M = cpu->next_frame_start_14M;
+            cpu->next_frame_start_14M += 238944;
+            cpu->frame_count++;
+        }
+
         // calculate what sleep-until time should be.
-        uint64_t wakeup_time = last_cycle_time + (cpu->cycles - last_cycle_count) * cpu->cycle_duration_ns;
+        //uint64_t wakeup_time = last_cycle_time + (cpu->cycles - last_cycle_count) * cpu->cycle_duration_ns;
+        //uint64_t wakeup_time = last_cycle_time + ((uint64_t) 1000000000 / 59.923) ;
+        uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
 
         if (!this_free_run)  {
             uint64_t sleep_loops = 0;
@@ -341,13 +575,38 @@ void run_cpus(computer_t *computer) {
             }
         }
 
-        //printf("event_time / audio time / display time / total time: %9llu %9llu %9llu %9llu\n", event_time, audio_time, display_time, event_time + audio_time + display_time);
-
+        last_cycle_time = SDL_GetTicksNS(); // TODO: I am pretty sure this is redundant.
         last_cycle_count = cpu->cycles;
-        last_cycle_time = SDL_GetTicksNS();
 
         //last_time_window_start = time_window_start;
         last_cycle_window_start = cycle_window_start;
+        
+        if ((this_free_run) && (current_time - last_frame_update > 16667000) // we need this, free run is ludicrous OR step-into
+            || (!this_free_run)) {
+                frame_count++;
+                if (frame_count % 60 == 0) {
+                    uint64_t frame_counter_end_time = last_cycle_time;
+                    uint64_t frame_counter_delta = frame_counter_end_time - frame_counter_start_time;
+
+                    cpu->fps = ((float)frame_count * 1000000000) / frame_counter_delta;
+                    frame_counter_start_time = frame_counter_end_time;
+                    frame_count = 0;
+    
+                    uint64_t delta = cpu->cycles - last_5sec_cycles;
+                    cpu->e_mhz = 1000 * (double)delta / ((double)(frame_counter_end_time - last_5sec_update));
+                    last_5sec_cycles = cpu->cycles;
+                    last_5sec_update = frame_counter_end_time;
+
+                    // TODO: would like this to track like 1 sec or 5 sec rolling avg of these statistics.
+                    status_count++;
+                    if (status_count == 5) {
+                        fprintf(stdout, "%llu delta %llu cycles clock-mode: %d CPS: %12.8f MHz [ slips: %llu ]\n", delta, cpu->cycles, cpu->clock_mode, cpu->e_mhz, cpu->clock_slip);
+                        fprintf(stdout, "event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", event_time, audio_time, display_time, app_event_time, event_time + audio_time + display_time + app_event_time);
+                        fprintf(stdout, "PC: %04X, A: %02X, X: %02X, Y: %02X, P: %02X\n", cpu->pc, cpu->a, cpu->x, cpu->y, cpu->p);        
+                        status_count = 0;
+                    }
+                }
+        }
     }
     cpu->trace_buffer->save_to_file(gs2_app_values.pref_path + "trace.bin");
 }

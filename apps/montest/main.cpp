@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
     }
 
     Disassembler *disasm = new Disassembler(mmu);
+    std::vector<std::string> debug_displays;
 
     std::string command;
     while (1) {
@@ -43,7 +44,7 @@ int main(int argc, char **argv) {
         MonitorCommand *cmd = new MonitorCommand(command);
         cmd->print();
         
-        ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, nullptr, nullptr, disasm);
+        ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, nullptr, nullptr, disasm, &debug_displays);
         exec->execute();
         
         // Print the output buffer to stdout (you can remove this or redirect as needed)

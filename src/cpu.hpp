@@ -174,24 +174,33 @@ struct cpu_state {
         uint8_t p;  /* Processor Status Register */
     };
     uint8_t halt = 0; /* == 1 is HLT instruction halt; == 2 is user halt */
-    uint64_t cycles; /* Number of cycles since reset */
+    uint64_t cycles; /* Number of cpu cycles since reset */
 
     uint64_t irq_asserted = 0; /** bits 0-7 correspond to slot IRQ lines slots 0-7. */
     uint8_t skip_next_irq_check = 0; /* if set, skip the next IRQ check */
-    
-    //MMU_II *mmu = nullptr;
+
     MMU *mmu = nullptr; // cpu only needs to know about base interface with read() and write().
 
-    uint64_t last_tick;
-    uint64_t next_tick;
+    // clocking
     uint64_t clock_slip = 0;
-    uint64_t clock_busy = 0;
-    uint64_t clock_sleep = 0;
     uint64_t cycle_duration_ns;
     uint64_t HZ_RATE;
     clock_mode_t clock_mode = CLOCK_FREE_RUN;
-    float e_mhz = 0;
+    double e_mhz = 0;
+    double fps = 0;
     
+    uint64_t c_14M = 0;
+    uint64_t c_14M_per_cpu_cycle = 0;
+    uint64_t cycle_duration_ns_56_8 = 0;
+    uint16_t cycle_65th = 0;
+    uint64_t current_frame_start_14M = 0;
+    uint64_t next_frame_start_14M = 238944;
+    uint64_t frame_14M_duration = 238944;
+    uint64_t frame_count = 0;
+    uint64_t _14M_cycle_duration_ns_48_16 = ((uint64_t)1000000000<<16) / 14'318'180;
+    uint64_t cycles_per_scanline = 0;
+    uint64_t extra_per_scanline = 0;
+
     //execute_next_fn execute_next;
     std::unique_ptr<BaseCPU> cpun; // CPU instance.
 
@@ -217,7 +226,17 @@ struct cpu_state {
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
 
-    inline void incr_cycles() { cycles++; if (video_scanner) video_scanner->video_cycle(); }
+    inline void incr_cycles() { 
+        cycles++; 
+        //etime_ns_56_8 += cycle_duration_ns_56_8; 
+        if (++cycle_65th == cycles_per_scanline) {
+            cycle_65th = 0;
+            c_14M += c_14M_per_cpu_cycle + extra_per_scanline;
+        } else {
+            c_14M += c_14M_per_cpu_cycle;
+        }
+        if (video_scanner) video_scanner->video_cycle(); 
+    }
 
     inline uint8_t read_byte(uint16_t address) {
         uint8_t value = mmu->read(address);

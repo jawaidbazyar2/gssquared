@@ -34,11 +34,11 @@ typedef enum {
 typedef struct {
     uint64_t hz_rate;
     uint64_t cycle_duration_ns;
+    uint64_t cycle_duration_ns_56_8;
     uint64_t cycles_per_burst;
+    uint64_t c_14M_per_cpu_cycle;
+    uint64_t extra_per_scanline;
+    uint64_t cycles_per_scanline;
 } clock_mode_info_t;
 
 extern clock_mode_info_t clock_mode_info[NUM_CLOCK_MODES];
-
-//void emulate_clock_cycle(cpu_state *cpu) ;
-
-//#define incr_cycles(cpu) cpu->cycles++;

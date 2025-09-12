@@ -11,6 +11,7 @@
 #include "platforms.hpp"
 #include "mbus/MessageBus.hpp"
 #include "util/DebugFormatter.hpp"
+#include "util/Metrics.hpp"
 
 struct cpu_state;
 struct debug_window_t; // don't bring in debugwindow.hpp, it would create a depedence on SDL.
@@ -59,6 +60,12 @@ struct computer_t {
     void *module_store[MODULE_NUM_MODULES];
     SlotData *slot_store[NUM_SLOTS];
 
+    // Status, Statistics, etc.
+    Metrics event_times, audio_times, app_event_times, display_times, device_times;
+    uint64_t frame_count = 0, status_count = 0;
+    uint64_t last_5sec_cycles = 0;
+    uint64_t last_frame_end_time = 0, last_5sec_update = 0;
+
     computer_t();
     ~computer_t();
     void set_mmu(MMU_II *mmu) { this->mmu = mmu; }
@@ -80,5 +87,6 @@ struct computer_t {
     void set_slot_irq( uint8_t slot, bool irq);
 
     void send_clock_mode_message();
+    void frame_status_update();
 
 };

@@ -213,7 +213,7 @@ add_library(gs2_devices_languagecard     src/devices/languagecard/languagecard.c
 
 add_library(gs2_devices_keyboard     src/devices/keyboard/keyboard.cpp )
 
-add_library(gs2_devices_speaker     src/devices/speaker/speaker.cpp src/devices/speaker/LowPass.cpp )
+add_library(gs2_devices_speaker     src/devices/speaker/speaker.cpp src/devices/speaker/LowPass.cpp src/devices/speaker/SpeakerX.cpp src/devices/speaker/EventBuffer.cpp )
 
 add_library(gs2_devices_memexp     src/devices/memoryexpansion/memexp.cpp )
 
@@ -245,7 +245,7 @@ add_library(gs2_event_dispatcher src/util/EventDispatcher.cpp )
 
 add_library(gs2_util src/util/media.cpp src/util/ResourceFile.cpp src/util/dialog.cpp src/util/mount.cpp 
     src/util/soundeffects.cpp src/util/EventQueue.cpp src/util/Event.cpp src/util/EventTimer.cpp src/util/TextRenderer.cpp
-    src/util/HexDecode.cpp src/util/DeviceFrameDispatcher.cpp)
+    src/util/HexDecode.cpp src/util/DeviceFrameDispatcher.cpp src/util/Metrics.cpp)
 
 add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Button.cpp src/ui/Unidisk_Button.cpp 
     src/ui/MousePositionTile.cpp src/ui/OSD.cpp src/ui/Tile.cpp src/ui/Button.cpp src/ui/MainAtlas.cpp src/ui/ModalContainer.cpp
@@ -262,22 +262,19 @@ add_library(gs2_paths src/paths.cpp)
 
 add_library(gs2_video_scanner src/devices/displaypp/VideoScannerII.cpp src/devices/displaypp/VideoScanGenerator.cpp src/devices/displaypp/VideoScannerIIe.cpp)
 
-#add_library(gs2_oldmmu src/memory.cpp src/bus.cpp )
-
 target_link_libraries(gs2_ui SDL3_image::SDL3_image-shared SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_debugger gs2_util SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_util SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_computer SDL3_ttf::SDL3_ttf-shared)
 
 # Add the executable
-add_executable(GSSquared src/gs2.cpp src/clock.cpp src/debug.cpp  src/opcodes.cpp 
+add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
     src/display/text_40x24.cpp src/display/hgr_280x192.cpp src/display/display.cpp
     src/devices/diskii/diskii.cpp
     src/platforms.cpp
     src/event_poll.cpp
     src/devices.cpp src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
-    # src/display/lores_40x48.cpp src/display/hgr.cpp src/display/lgr.cpp src/display/displayng.cpp src/display/font.cpp 
     ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns
     )
 
@@ -285,7 +282,6 @@ add_executable(GSSquared src/gs2.cpp src/clock.cpp src/debug.cpp  src/opcodes.cp
 target_link_libraries(GSSquared PRIVATE 
     SDL3::SDL3-shared
     SDL3_image::SDL3_image-shared
-    #SDL3_ttf::SDL3_ttf-shared
 )
 if(WIN32)
     # We'll bundle the MinGW runtime DLLs instead of static linking
@@ -296,7 +292,6 @@ target_link_libraries(GSSquared
     gs2_cpu_new
     gs2_computer
     gs2_mmu
-    #gs2_oldmmu
     gs2_ntsc
     gs2_devices_tcp 
     gs2_devices_keyboard 
