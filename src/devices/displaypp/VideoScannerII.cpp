@@ -2,6 +2,7 @@
 #include "VideoScannerII.hpp"
 #include "cpu.hpp"
 #include "frame/Frames.hpp"
+#include "ScanBuffer.hpp"
 
 void VideoScannerII::init_video_addresses()
 {
@@ -200,7 +201,7 @@ void VideoScannerII::video_cycle()
         }
     }
 
-    if (vcount != prev_vcount) {
+    /* if (vcount != prev_vcount) {
         if (vcount < 192) {
             frame_scan->set_line(vcount);
             if (video_mode == VM_TEXT40 || video_mode == VM_TEXT80) { // pure text mode
@@ -213,7 +214,7 @@ void VideoScannerII::video_cycle()
                 }
             }
         }
-    }
+    } */
 
     uint16_t address = (*(video_addresses))[65*vcount+hcount];
 
@@ -228,11 +229,16 @@ void VideoScannerII::video_cycle()
     scan.mode = (uint8_t)video_mode;
     scan.auxbyte = aux_byte;
     scan.mainbyte = video_byte;
-    scan.flags = mode_flags;
+    scan.flags = mode_flags /* | (colorburst ? VS_FL_COLORBURST : 0) */;
     frame_scan->push(scan);
 }
 
-FrameScan560 *VideoScannerII::get_frame_scan()
+/* FrameScan560 *VideoScannerII::get_frame_scan()
+{
+    return frame_scan;
+} */
+
+ScanBuffer *VideoScannerII::get_frame_scan()
 {
     return frame_scan;
 }
@@ -245,7 +251,8 @@ VideoScannerII::VideoScannerII(MMU_II *mmu)
     init_video_addresses();
     init_mode_table();
 
-    frame_scan = new FrameScan560(580, 192);
+    //frame_scan = new FrameScan560(580, 192);
+    frame_scan = new ScanBuffer;
 
     // set initial video mode: text, lores, not mixed, page 1
     graf  = false;

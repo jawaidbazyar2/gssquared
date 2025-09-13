@@ -666,7 +666,8 @@ void OSD::render() {
             snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f", cpu->e_mhz, cpu->fps);
             SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderDebugText(renderer, 20, window_height - 30, hud_str);
-            if (cpu->video_scanner) snprintf(hud_str, sizeof(hud_str), "H: %d V: %d", cpu->video_scanner->hcount, cpu->video_scanner->vcount);
+
+            if (cpu->video_scanner) snprintf(hud_str, sizeof(hud_str), "H: %3d V: %3d c: %6d", cpu->video_scanner->hcount, cpu->video_scanner->vcount, cpu->video_scanner->get_frame_scan()->get_count());
             SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);
             
             uint64_t etime, esecs, emsecs;

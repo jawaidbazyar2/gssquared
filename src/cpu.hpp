@@ -200,6 +200,7 @@ struct cpu_state {
     uint64_t _14M_cycle_duration_ns_48_16 = ((uint64_t)1000000000<<16) / 14'318'180;
     uint64_t cycles_per_scanline = 0;
     uint64_t extra_per_scanline = 0;
+    uint64_t video_cycle_14M_count = 0;
 
     //execute_next_fn execute_next;
     std::unique_ptr<BaseCPU> cpun; // CPU instance.
@@ -228,14 +229,28 @@ struct cpu_state {
 
     inline void incr_cycles() { 
         cycles++; 
-        //etime_ns_56_8 += cycle_duration_ns_56_8; 
+        //etime_ns_56_8 += cycle_duration_ns_56_8;
+        uint64_t c14s_this_cycle; 
+        bool last_cycle = false;
         if (++cycle_65th == cycles_per_scanline) {
             cycle_65th = 0;
-            c_14M += c_14M_per_cpu_cycle + extra_per_scanline;
+            c14s_this_cycle = c_14M_per_cpu_cycle + extra_per_scanline;
+            last_cycle = true;
         } else {
-            c_14M += c_14M_per_cpu_cycle;
+            c14s_this_cycle = c_14M_per_cpu_cycle;
         }
-        if (video_scanner) video_scanner->video_cycle(); 
+        c_14M += c14s_this_cycle;
+        if (video_scanner) {
+            video_cycle_14M_count += c14s_this_cycle;
+            if (last_cycle) {
+                video_scanner->video_cycle();
+                video_cycle_14M_count = 0;
+            } else if (video_cycle_14M_count >= 14) {
+                video_scanner->video_cycle(); 
+                video_cycle_14M_count -= 14; // consume this cycle's worth of 14m's
+            }
+            //video_scanner->video_cycle();
+        }
     }
 
     inline uint8_t read_byte(uint16_t address) {

@@ -114,7 +114,7 @@ public:
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
-            f->set_color_mode(scanline, COLORBURST_OFF);
+            f->set_color_mode(scanline, {0,0}); // COLORBURST_OFF);
             for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
 
             for (x = 0; x < 40; x++) {
@@ -167,7 +167,7 @@ public:
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
-            f->set_color_mode(scanline, COLORBURST_OFF);
+            f->set_color_mode(scanline, {0,0}); // COLORBURST_OFF);
 
             for (x = 0; x < 40; x++) {
                 bool invert;
@@ -221,7 +221,7 @@ public:
         for (uint16_t line = 0; line < 8; line++) {
             // Process 40 bytes (one scanline)
             f->set_line(scanline);
-            f->set_color_mode(scanline, COLORBURST_ON);
+            f->set_color_mode(scanline, {1,0}); // COLORBURST_ON);
             for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
 
             for (int x = 0; x < 40; x++) {
@@ -248,7 +248,7 @@ public:
         for (uint16_t line = 0; line < 8; line++) {
             // Process 40 bytes (one scanline)
             f->set_line(scanline);
-            f->set_color_mode(scanline, COLORBURST_ON);
+            f->set_color_mode(scanline, {1,0}); // COLORBURST_ON);
             for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
 
             for (int x = 0; x < 40; x++) {
@@ -274,7 +274,7 @@ public:
 
         for (uint16_t line = 0; line < 8; line++) {
             f->set_line(scanline);
-            f->set_color_mode(scanline, COLORBURST_ON);
+            f->set_color_mode(scanline, {1,0}); // COLORBURST_ON);
 
             for (int x = 0; x < 40; x++) {
                 uint8_t byteM = m[x];
@@ -304,7 +304,7 @@ public:
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
-            f->set_color_mode(scanline, COLORBURST_ON);
+            f->set_color_mode(scanline, {1,0}); // COLORBURST_ON);
 
             for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
             
@@ -338,7 +338,7 @@ public:
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
-            f->set_color_mode(scanline, COLORBURST_ON);
+            f->set_color_mode(scanline, {1,0}); // COLORBURST_ON);
 
             for (uint16_t x = 0; x < 40; x++) {
                 uint8_t tchar = alttextpage[char_addr];

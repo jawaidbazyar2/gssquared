@@ -15,6 +15,7 @@
 #include "devices/displaypp/render/NTSC560.hpp"
 #include "devices/displaypp/render/GSRGB560.hpp"
 #include "devices/displaypp/CharRom.hpp"
+#include "devices/displaypp/ScanBuffer.hpp"
 
 #include "mmus/mmu_iie.hpp"
 
@@ -343,7 +344,7 @@ int main(int argc, char **argv) {
 
         start = SDL_GetTicksNS();
         int phaseoffset = 1; // now that I start normal (40) display at pixel 7, its phase is 1 also. So, both 40 and 80 display start at phase 1 now.
-        FrameScan560 *frame_scan = nullptr;
+        ScanBuffer *frame_scan = nullptr;
 
         /* exactly one frame worth of video cycles */
         for (int vidcycle = 0; vidcycle < 17030; vidcycle++) {

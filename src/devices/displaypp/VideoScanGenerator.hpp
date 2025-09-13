@@ -2,6 +2,7 @@
 
 #include "frame/Frames.hpp"
 #include "CharRom.hpp"
+#include "ScanBuffer.hpp"
 
 #define CHAR_NUM 256
 #define CHAR_WIDTH 16
@@ -19,5 +20,5 @@ private:
 public:
     VideoScanGenerator(CharRom *charrom);
 
-    void generate_frame(FrameScan560 *frame_scan, Frame560 *frame_byte);
+    void generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte);
 };

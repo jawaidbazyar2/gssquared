@@ -28,8 +28,17 @@ void VideoScanGenerator::build_hires40Font(bool delayEnabled)
     }
 }
 
-void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *frame_byte)
+void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte)
 {
+    uint64_t fcnt = frame_scan->get_count();
+    if (fcnt < 192*40) { // if there is less than a full frame, don't generate anything, ignore, and print a warning
+        printf("Warning: less than a full frame in ScanBuffer\n");
+        return;
+    }
+    if (fcnt > 192*40+8) {
+        printf("Warning: more than a full frame in ScanBuffer\n");
+    }
+
     flash_counter++;
     if (flash_counter > 14) {
         flash_state = !flash_state;
@@ -38,13 +47,16 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
 
     for (uint16_t vcount = 0; vcount < 192; vcount++)
     {
-        frame_scan->set_line(vcount);
+        //frame_scan->set_line(vcount);
         frame_byte->set_line(vcount);
         uint8_t lastByte = 0x00; // for hires
-        color_mode_t color_mode = frame_scan->get_color_mode(vcount);
+        Scan_t peek_scan = frame_scan->peek();
+        color_mode_t color_mode;
+        color_mode.colorburst = (peek_scan.mode == VM_TEXT40 || peek_scan.mode == VM_TEXT80) ? 0 : 1;
+        color_mode.mixed_mode = peek_scan.flags & VS_FL_MIXED ? 1 : 0;
         uint8_t color_delay_mask = 0xFF;
 
-        for (int hcount = 0; hcount < 40; hcount++) {
+        for (int hcount = 0; hcount < 40; hcount++) { 
 
             Scan_t scan = frame_scan->pull();
             uint8_t eff_mode = scan.mode;
@@ -147,7 +159,7 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                             for (int i = 0; i < 7; i++) {
                                 frame_byte->push(0);
                             }
-                            frame_byte->set_color_mode(vcount, COLORBURST_ON);
+                            frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
                         }
                         uint8_t tchar = scan.mainbyte;
                         
@@ -165,7 +177,7 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                     break;
                 case VM_DLORES: {
                     if (hcount == 0) {
-                        frame_byte->set_color_mode(vcount, COLORBURST_ON);
+                        frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
                     }
                 
                     uint8_t tchar = scan.auxbyte;
@@ -208,7 +220,7 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                             for (int i = 0; i < 7; i++) {
                                 frame_byte->push(0);
                             }
-                            frame_byte->set_color_mode(vcount, COLORBURST_ON);
+                            frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
                         }
                         uint8_t byte = scan.mainbyte & color_delay_mask;
                         size_t fontIndex = (byte | ((lastByte & 0x40) << 2)) * CHAR_WIDTH; // bit 6 from last byte selects 2nd half of font
@@ -222,7 +234,7 @@ void VideoScanGenerator::generate_frame(FrameScan560 *frame_scan, Frame560 *fram
                     case VM_DHIRES: {
                         if (hcount == 0) {
                             // dhgr starts at horz offset 0
-                            frame_byte->set_color_mode(vcount, COLORBURST_ON);
+                            frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
                         }
                          
                         uint8_t byteM = scan.mainbyte;

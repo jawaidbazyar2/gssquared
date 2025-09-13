@@ -5611,7 +5611,7 @@ I modified the volume to emit samples of only 5120 (instead of 32768, or 16384).
 
 So I should revisit the Mockingboard audio generation and mixing and see what I get there - perhaps I should just emit and add relatively low-volume signals, instead of adding and averaging. I.e., let components further down the stream do AGC which seems to be what's happening. Just make sure I don't overflow before emission in a given output channel. (I have two?)
 
-[ ] Need to add back support for the faster CPU speeds.
+[ ] Need to add back support for the faster CPU speeds. part done. have everything except true free-run.
 
 [ ] I should also completely pause the emulation when we open the file dialog. I should be doing that in the main event loop so just setting a halt flag to continue out of the loop except for event handling ought to work. 
 [ ] there is a request to do the same when the emulator window is minimized.  
@@ -5717,9 +5717,54 @@ Each VideoGenerator pass we will pull exactly 17030 samples out of it.
 Sometimes the cpu exec logic will use a little more than 17030 cycles; sometimes a little less - by a little, I mean, 0-7 cycles more or less (because cpu execution can't split an instruction).
 Right now the buffer that holds our scanner samples is:
 FrameScan560 *frame_scan = nullptr;
-That's a Scan_t. 
+That's a Scan_t.
+ok, created a new ScanBuffer class.
+We had a thing where we could store flags in the FrameBuffer. For instance, set_color_mode, which is colorbust on or off. pretty sure this should be sampled per scanline at the end of the video data, or end of the hbl. But, we need to include the value of that in the flags in each sample.
 
+in single step mode, we get an error "less than a full frame in ScanBuffer". This is because, yes, of course there is. We could tweak VideoScanGenerator to generate X cycles worth of new video from last position and then return. So as we single-step through the code we will be updating small bits of the video.
 
 [ ] Finally, modify to only grab video samples from RAM based on the 14M clock.   
 
+also, a branch (e.g. bne) to itself causes the emulator to lock up in single step mode.
 
+800: lda #1
+802: cmp #0
+804: bne $804
+
+shows this..
+uhh, I had this in there still:
+```
+if ((oaddr-2) == taddr) { // this test should back up 2 bytes.. so the infinite branch is actually bxx FE.
+  fprintf(stdout, "JUMP TO SELF INFINITE LOOP Branch $%04X -> %01X\n", taddr, condition);
+  cpu->halt = HLT_INSTRUCTION;
+}
+```
+commented this out. This was dumb. ha.
+[ ] HLT other than the one should exit the run loop.
+
+shufflepuck still has vbl issues because the mouse vbl is not synced with display.
+
+ok, now I need to only generate 17,030 video entries per frame, otherwise, when we switch to faster clock rates, the video scanner gets desynchronized. Ludicrous speed works because it falls back to the other video system.
+track in incr_cycles, or in video_cycle.
+We need 14 14Ms to elapse before we grab the next video byte.
+
+[x] in RGB mode, split graphics/text text is being color decoded, instead of showing as white. Man I keep regressing this. lol  
+
+now set a mixed_mode flag along with color mode in the per-scanline color_mode in frame.
+
+## Sep 13, 2025
+
+ok so I switched from 1 to 2.8mhz, and triggered the video desync issue. Right now, there are 41252 entries in the Scanbuf. That's not right. We should be getting only 7,680 samples per frame. So what happened here.. oh, my cpu struct is wrong. oops.
+So we are typically not getting more than 7680 samples in the buffer, because the handful of cycles plus or minus, are occurring during blanking typically (though not always)
+Current incr_cycles routine is not correct.
+ok there are exactly 17,030 (65 * 262) CPU cycles per frame. Each of these CPU cycles matches one video byte read.
+
+ok my issue here was the logic around tracking the cycle overrun or underrun each frame loop was wrong. Now I just keep track of the 14M count we're supposed to have at the end of each video frame. I was causing oscillation around that value unnecessarily. Now, when running one of the cycle counting demos, we lock in on the exact same h/v location at the end of each frame as reported by osd. And the number of excess bytes in the video buffer is always 0. So this is spot on for 1mhz. Now let's see what happens at 2.8. ha ha.
+
+now I -could- skip trying to support video_scanner stuff when the speed is ANY speed except 1mhz. but that may not work with iigs stuff. OK, keep pressing onward.
+
+So how do I still get exactly 17,030 video scanner calls per frame even when we're at higher speed.
+OK, we will always emit bytes on the same 14M cycle boundaries per scanline. i.e., bytes emitted at 14, 28, etc. 
+and on the last cycle of a scanline, just emit and reset the counter.
+0, 14, 28, etc etc then whatever.
+that is working now for 1m and 2.8m. not for 7m. Must have something wrong in my counts/setups.

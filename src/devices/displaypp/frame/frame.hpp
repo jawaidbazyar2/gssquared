@@ -3,11 +3,15 @@
 #include <cstdint>
 #include <cstdio>
 
-enum color_mode_t {
+/* enum color_mode_t {
     COLORBURST_OFF = 0,
     COLORBURST_ON,
-};
+}; */
 
+struct color_mode_t {
+    uint8_t colorburst:1;
+    uint8_t mixed_mode:1;
+};
 
 template<typename bs_t, uint16_t HEIGHT, uint16_t WIDTH>
 class Frame {
@@ -70,7 +74,7 @@ Frame<bs_t, HEIGHT, WIDTH>::Frame(uint16_t width, uint16_t height) {
     scanline = 0;
     hloc = 0;
     for (int i = 0; i < HEIGHT; i++) {
-        line_mode[i] = COLORBURST_OFF;
+        line_mode[i] = {0, 0};
     }
 }
 

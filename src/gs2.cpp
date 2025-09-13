@@ -200,11 +200,15 @@ void run_cpus(computer_t *computer) {
     // used to add an extra bit of time to frame sleep
     uint64_t frame_count = 0;
 
-    uint64_t last_frame_overrun = 0;
+    uint64_t frame_14M_marker = 0;
+    uint64_t last_frame_14M_marker = 0;
 
     while (cpu->halt != HLT_USER) { // top of frame.
 
-        uint64_t end_frame_c_14M = cpu->next_frame_start_14M - last_frame_overrun;
+        //uint64_t vidcnt = cpu->video_scanner->get_frame_scan()->get_count();
+        uint64_t frdiff = frame_14M_marker - last_frame_14M_marker; // this is just a check.
+        last_frame_14M_marker = frame_14M_marker;
+        uint64_t end_frame_c_14M = frame_14M_marker;
 
         // determine frame mode.
 
@@ -236,7 +240,6 @@ void run_cpus(computer_t *computer) {
                                     }
                                 }
                             }
-                            last_frame_overrun = cpu->c_14M - cpu->next_frame_start_14M;
                         } else { // skip all debug checks if the window is not open - this may seem repetitioius but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
                             while (cpu->c_14M < end_frame_c_14M) { // 1/60th second.
                                 if (computer->event_timer->isEventPassed(cpu->cycles)) {
@@ -244,7 +247,6 @@ void run_cpus(computer_t *computer) {
                                 }
                                 (cpu->cpun->execute_next)(cpu);
                             }
-                            last_frame_overrun = cpu->c_14M - cpu->next_frame_start_14M;
                         }
                         }
                         break;
@@ -289,11 +291,12 @@ void run_cpus(computer_t *computer) {
         if (cpu->c_14M >= end_frame_c_14M) {
             cpu->current_frame_start_14M = cpu->next_frame_start_14M;
             cpu->next_frame_start_14M += 238944;
+            frame_14M_marker += 238944;
             cpu->frame_count++;
         }
 
         // calculate what sleep-until time should be.
-          uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
+        uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
         
         // sleep out the rest of this frame.
         frame_sleep(computer, cpu, last_cycle_time, frame_count);

@@ -1,7 +1,7 @@
 
 #include "VideoScannerIIe.hpp"
 #include "VideoScannerII.hpp"
-
+#include "ScanBuffer.hpp"
 #include "mmus/mmu_ii.hpp"
 
 void VideoScannerIIe::init_video_addresses()
@@ -75,7 +75,7 @@ void VideoScannerIIe::video_cycle()
         }
     }
 
-    if (vcount != prev_vcount) {
+    /* if (vcount != prev_vcount) {
         if (vcount < 192) {
             frame_scan->set_line(vcount);
             if (video_mode == VM_TEXT40 || video_mode == VM_TEXT80) {
@@ -88,7 +88,7 @@ void VideoScannerIIe::video_cycle()
                 }
             }
         }
-    }
+    } */
 
     uint16_t address = (*(video_addresses))[65*vcount+hcount];
 
@@ -103,7 +103,7 @@ void VideoScannerIIe::video_cycle()
     scan.mode = (uint8_t)video_mode;
     scan.auxbyte = aux_byte;
     scan.mainbyte = video_byte;
-    scan.flags = mode_flags;
+    scan.flags = mode_flags /* | (colorburst ? VS_FL_COLORBURST : 0) */;
     frame_scan->push(scan);
 }
 

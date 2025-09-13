@@ -5,6 +5,7 @@
 #include "mmus/mmu_ii.hpp"
 #include "frame/Frames.hpp"
 #include "gs2.hpp"
+#include "ScanBuffer.hpp"
 
 class MMU_II;
 struct display_state_t;
@@ -35,6 +36,7 @@ typedef enum {
 #define VS_FL_ALTCHARSET 0x01
 #define VS_FL_MIXED      0x02
 #define VS_FL_80COL      0x04
+#define VS_FL_COLORBURST 0x08
 
 struct scan_address_t {
     uint16_t address;
@@ -72,7 +74,8 @@ protected:
     int       video_data_size; */
     
     uint8_t *ram;
-    FrameScan560 *frame_scan = nullptr;
+    //FrameScan560 *frame_scan = nullptr;
+    ScanBuffer *frame_scan = nullptr;
 
     // floating bus video data
     uint8_t   video_byte;
@@ -103,6 +106,8 @@ uint32_t  vcount;       // to simplify IIgs scanline interrupts
 
     VideoScannerII(MMU_II *mmu);
     virtual ~VideoScannerII() = default;
+
+    virtual void reset() { frame_scan->clear(); hcount = 64; vcount = 261; };
 
     virtual void video_cycle();
     virtual void init_video_addresses();
@@ -143,9 +148,10 @@ uint32_t  vcount;       // to simplify IIgs scanline interrupts
     inline void reset_altchrset() { altchrset = false; set_video_mode(); }
     inline void reset_dblres()    { dblres    = false; set_video_mode(); }
 
-    inline void reset_counts() { hcount = 0; vcount = 0; frame_scan->set_line(0);}
+    inline void reset_counts() { /* hcount = 0; vcount = 0; frame_scan->set_line(0); */}
 
-    FrameScan560 *get_frame_scan();
+    //FrameScan560 *get_frame_scan();
+    ScanBuffer *get_frame_scan();
 };
 
 void init_mb_video_scanner(computer_t *computer, SlotType_t slot);

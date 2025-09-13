@@ -297,7 +297,7 @@ bool update_display_apple2_cycle(cpu_state *cpu) {
 
     ds->vbl_cycle_count = cpu->cycles;
 
-    FrameScan560 *frame_scan = ds->video_scanner->get_frame_scan();
+    ScanBuffer *frame_scan = ds->video_scanner->get_frame_scan();
     ds->vsg->generate_frame(frame_scan, ds->frame_bits);
 
     switch (vs->display_color_engine) {
