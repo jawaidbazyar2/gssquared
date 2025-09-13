@@ -128,8 +128,7 @@ cpu_state::cpu_state() {
     trace = true;
     trace_buffer = new system_trace_buffer(100000);
 
-    //set_clock_mode(this, CLOCK_1_024MHZ);
-    set_clock_mode(this, CLOCK_4MHZ);
+    set_clock_mode(this, CLOCK_1_024MHZ);
 
     // initialize these things
     for (int i = 0; i < NUM_SLOTS; i++) {
