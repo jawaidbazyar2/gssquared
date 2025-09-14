@@ -77,7 +77,7 @@ uint8_t mouse_read_c0xx(void *context, uint16_t address) {
         default:
             val = 0xEE; break;
     }
-    printf("Mouse read: %02X: %02X\n", address, val);
+    //printf("Mouse read: %02X: %02X\n", address, val);
     return val;
 }
 
@@ -146,7 +146,7 @@ void mouse_write_c0xx(void *context, uint16_t address, uint8_t value) {
         default:
             break;
     }
-    printf("Mouse write: %02X: %02X\n", address, value);
+    //printf("Mouse write: %02X: %02X\n", address, value);
 
     // re-clamp mouse based on any changes to values above.
     int tmp_x = ds->x_pos.value;
@@ -184,7 +184,7 @@ bool mouse_motion(mouse_state_t *ds, const SDL_Event &event) {
             mouse_propagate_interrupt(ds);
         }
  /*    } */
-     printf("motion_x: %d, motion_y: %d status: %02X\n", motion_x, motion_y, ds->status.value);
+     //printf("motion_x: %d, motion_y: %d status: %02X\n", motion_x, motion_y, ds->status.value);
 
     return true;
 }
@@ -216,6 +216,19 @@ void mouse_vbl_interrupt(uint64_t instanceID, void *user_data) {
     ds->event_timer->scheduleEvent(ds->vbl_cycle, mouse_vbl_interrupt, instanceID, ds);
 }
 
+DebugFormatter * debug_mouse(mouse_state_t *ds) {
+    DebugFormatter *df = new DebugFormatter();
+        
+    df->addLine("   Mouse ");
+    df->addLine("  X: %6d Y: %6d", ds->x_pos.value, ds->y_pos.value);
+    df->addLine("  X Clamp Low: %6d X Clamp High: %6d", ds->x_clamp_low.value, ds->x_clamp_high.value);
+    df->addLine("  Y Clamp Low: %6d Y Clamp High: %6d", ds->y_clamp_low.value, ds->y_clamp_high.value);
+    df->addLine("  Status: %02X", ds->status.value);
+    df->addLine("  Mode: %02X", ds->mode.value);
+    df->addLine("  VBL Offset %6d", ds->vbl_offset);
+    return df;
+}
+
 void init_mouse(computer_t *computer, SlotType_t slot) {
 
     // alloc and init display state
@@ -224,8 +237,8 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     ds->computer = computer;
     ds->event_timer = computer->event_timer;
     mouse_reset(ds);
-    ds->vbl_cycle = 0;
-    ds->vbl_offset = 0;
+    ds->vbl_offset = 12480;
+    ds->vbl_cycle = 12480;
 
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE,"1");
 
@@ -291,8 +304,21 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
                 printf("vbl_cycle: %llu, vbl_offset: %llu\n", ds->vbl_cycle, ds->vbl_offset);
             }
             return true;
-        });
+        }
+    );
+
+    computer->register_debug_display_handler(
+        "mouse",
+        0x0000000000000002, // unique ID for this, need to have in a header.
+        [ds]() -> DebugFormatter * {
+            return debug_mouse(ds);
+        }
+    );
+    
+    // schedule timer for vbl to start during vbl of next frame.
     ds->event_timer->scheduleEvent(ds->vbl_cycle + 17030, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
+
+
 
     if (DEBUG(DEBUG_MOUSE)) fprintf(stdout, "Mouse initialized\n");
 }
