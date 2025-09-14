@@ -204,10 +204,10 @@ inline void branch_if(cpu_state *cpu, uint8_t N, bool condition) {
     uint16_t taddr = oaddr + (int8_t) N;
 
     if (condition) {
-        if ((oaddr-2) == taddr) { // this test should back up 2 bytes.. so the infinite branch is actually bxx FE.
+        /* if ((oaddr-2) == taddr) { // this test should back up 2 bytes.. so the infinite branch is actually bxx FE.
             fprintf(stdout, "JUMP TO SELF INFINITE LOOP Branch $%04X -> %01X\n", taddr, condition);
             cpu->halt = HLT_INSTRUCTION;
-        }
+        } */
 
         cpu->pc = cpu->pc + (int8_t) N;
         // branch taken uses another clock to update the PC
