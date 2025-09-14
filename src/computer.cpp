@@ -185,7 +185,7 @@ void computer_t::send_clock_mode_message() {
         "Ludicrous Speed",
         "1.0205MHz",
         "2.8 MHz",
-        "4.0 MHz"
+        "7.1435 MHz"
     };
 
     snprintf(buffer, sizeof(buffer), "Clock Mode Set to %s", clock_mode_names[cpu->clock_mode]);
