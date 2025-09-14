@@ -667,8 +667,10 @@ void OSD::render() {
             SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderDebugText(renderer, 20, window_height - 30, hud_str);
 
-            if (cpu->video_scanner) snprintf(hud_str, sizeof(hud_str), "H: %3d V: %3d c: %6d", cpu->video_scanner->hcount, cpu->video_scanner->vcount, cpu->video_scanner->get_frame_scan()->get_count());
-            SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);
+            if (cpu->video_scanner) {
+                snprintf(hud_str, sizeof(hud_str), "H: %3d V: %3d c: %6d", cpu->video_scanner->hcount, cpu->video_scanner->vcount, cpu->video_scanner->get_frame_scan()->get_count());
+                SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);
+            }
             
             uint64_t etime, esecs, emsecs;
 /*             uint64_t etime = cpu->etime_ns_56_8 >> 8; // remove the fractional part

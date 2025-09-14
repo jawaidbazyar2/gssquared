@@ -148,9 +148,6 @@ uint32_t  vcount;       // to simplify IIgs scanline interrupts
     inline void reset_altchrset() { altchrset = false; set_video_mode(); }
     inline void reset_dblres()    { dblres    = false; set_video_mode(); }
 
-    inline void reset_counts() { /* hcount = 0; vcount = 0; frame_scan->set_line(0); */}
-
-    //FrameScan560 *get_frame_scan();
     ScanBuffer *get_frame_scan();
 };
 

@@ -227,7 +227,7 @@ struct cpu_state {
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
 
-    inline void incr_cycles() { 
+    void slow_incr_cycles() { 
         cycles++; 
         //etime_ns_56_8 += cycle_duration_ns_56_8;
         uint64_t c14s_this_cycle; 
@@ -251,6 +251,11 @@ struct cpu_state {
             }
             //video_scanner->video_cycle();
         }
+    }
+
+    inline void incr_cycles() {
+        if (clock_mode == CLOCK_FREE_RUN) cycles++;
+        else slow_incr_cycles();
     }
 
     inline uint8_t read_byte(uint16_t address) {

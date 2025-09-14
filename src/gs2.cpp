@@ -197,119 +197,203 @@ void run_cpus(computer_t *computer) {
     
     uint64_t last_cycle_time = SDL_GetTicksNS();
 
-    // used to add an extra bit of time to frame sleep
-    uint64_t frame_count = 0;
+    uint64_t frame_count = 0;     // used to add an extra bit of time to frame sleep
 
     uint64_t frame_14M_marker = 0;
     uint64_t last_frame_14M_marker = 0;
 
     while (cpu->halt != HLT_USER) { // top of frame.
 
-        //uint64_t vidcnt = cpu->video_scanner->get_frame_scan()->get_count();
         uint64_t frdiff = frame_14M_marker - last_frame_14M_marker; // this is just a check.
         last_frame_14M_marker = frame_14M_marker;
         uint64_t end_frame_c_14M = frame_14M_marker;
 
-        // determine frame mode.
-
-        /* if (cpu->clock_mode == CLOCK_FREE_RUN) frame_free_run();
-        else if (cpu->execution_mode == EXEC_STEP_INTO) frame_step_into();
-        else if (cpu->execution_mode == EXEC_STEP_OVER) frame_step_over();
-        else frame_normal(); */
-
-        if (! cpu->halt) {
-            switch (cpu->execution_mode) {
-                    case EXEC_NORMAL:
-                        {
-                        if (computer->debug_window->window_open) {
-                            while (cpu->c_14M < end_frame_c_14M) { // 1/60th second.
-                                if (computer->event_timer->isEventPassed(cpu->cycles)) {
-                                    computer->event_timer->processEvents(cpu->cycles);
-                                }
-                                (cpu->cpun->execute_next)(cpu);
-                                if (computer->debug_window->window_open) {
-                                    if (computer->debug_window->check_breakpoint(&cpu->trace_entry)) {
-                                        cpu->execution_mode = EXEC_STEP_INTO;
-                                        cpu->instructions_left = 0;
-                                        break;
-                                    }
-                                    if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
-                                        cpu->execution_mode = EXEC_STEP_INTO;
-                                        cpu->instructions_left = 0;
-                                        break;
-                                    }
-                                }
-                            }
-                        } else { // skip all debug checks if the window is not open - this may seem repetitioius but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
-                            while (cpu->c_14M < end_frame_c_14M) { // 1/60th second.
-                                if (computer->event_timer->isEventPassed(cpu->cycles)) {
-                                    computer->event_timer->processEvents(cpu->cycles);
-                                }
-                                (cpu->cpun->execute_next)(cpu);
-                            }
-                        }
-                        }
-                        break;
-                    case EXEC_STEP_INTO:
-                        while (cpu->instructions_left) {
-                            if (computer->event_timer->isEventPassed(cpu->cycles)) {
-                                computer->event_timer->processEvents(cpu->cycles);
-                            }
-                            (cpu->cpun->execute_next)(cpu);
-                            cpu->instructions_left--;
-                        }
-                        break;
-                    case EXEC_STEP_OVER:
-                        break;
+        if (cpu->execution_mode == EXEC_STEP_INTO) {
+            
+            /* This will run about 60fps, primarily waiting on user input in the debugger window. */
+            while (cpu->instructions_left) {
+                if (computer->event_timer->isEventPassed(cpu->cycles)) {
+                    computer->event_timer->processEvents(cpu->cycles);
                 }
-        } else {
-            // fake-increment cycle counter to keep audio in sync.
-            //cpu->cycles += cycles_for_this_burst;
-            // TODO: is this necessary?
-        }
+                (cpu->cpun->execute_next)(cpu);
+                cpu->instructions_left--;
+            }
+            uint64_t current_time = SDL_GetTicksNS();
 
-        uint64_t current_time = SDL_GetTicksNS();
+            MEASURE(computer->event_times, frame_event(computer, cpu));
+    
+            /* Emit Audio Frame */
+            // disable audio in step mode.
+            //MEASURE(computer->audio_times, audio_generate_frame(cpu /* , last_cycle_window_start, cycle_window_start */));
+    
+            /* Process Internal Event Queue */
+            MEASURE(computer->app_event_times, frame_appevent(computer, cpu));
+    
+            /* Execute Device Frames - 60 fps */
+            MEASURE(computer->device_times, computer->device_frame_dispatcher->dispatch());
+    
+            /* Emit Video Frame */
+            /* if there is a video scanner and it has a full frame, briefly switch to normal mode and update display
+            to consume the frame data.
+            */
+            update_flash_state(cpu); // TODO: this goes into display.cpp frame handler.
+            if (cpu->video_scanner != nullptr) {
+                if (cpu->video_scanner->get_frame_scan()->get_count() >= 7680) { // consume a cycle's worth of frame data.
+                    cpu->execution_mode = EXEC_NORMAL;
+                    computer->video_system->update_display();    
+                    cpu->execution_mode = EXEC_STEP_INTO;
+                }
+            }
+            osd->render();
+            computer->debug_window->render();
+            computer->video_system->present();
+            MEASURE(computer->display_times, frame_video_update(computer, cpu));
+    
+            // update frame window counters.
+            // TODO:if we're in stepwise mode, we should not increment these as if they're a full next frame.
+            if (cpu->c_14M >= end_frame_c_14M) {
+                cpu->current_frame_start_14M = cpu->next_frame_start_14M;
+                cpu->next_frame_start_14M += 238944;
+                frame_14M_marker += 238944;
+                cpu->frame_count++;
+            }
 
-        bool this_free_run = (cpu->clock_mode == CLOCK_FREE_RUN) || (cpu->execution_mode == EXEC_STEP_INTO );
-        MEASURE(computer->event_times, frame_event(computer, cpu));
+            // sleep for 1/60th second ish, without updating frame counts etc.
+            uint64_t wakeup_time = last_cycle_time + 16667000;
+            SDL_DelayPrecise(wakeup_time - SDL_GetTicksNS());
+            
+        } else if (cpu->execution_mode == EXEC_STEP_OVER) {
 
-        /* Emit Audio Frame */
-        MEASURE(computer->audio_times, audio_generate_frame(cpu /* , last_cycle_window_start, cycle_window_start */));
+        } else if ((cpu->execution_mode == EXEC_NORMAL) && (cpu->clock_mode != CLOCK_FREE_RUN)) {
+            if (computer->debug_window->window_open) {
+                while (cpu->c_14M < end_frame_c_14M) { // 1/60th second.
+                    if (computer->event_timer->isEventPassed(cpu->cycles)) {
+                        computer->event_timer->processEvents(cpu->cycles);
+                    }
+                    (cpu->cpun->execute_next)(cpu);
+                    if (computer->debug_window->window_open) {
+                        if (computer->debug_window->check_breakpoint(&cpu->trace_entry)) {
+                            cpu->execution_mode = EXEC_STEP_INTO;
+                            cpu->instructions_left = 0;
+                            break;
+                        }
+                        if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
+                            cpu->execution_mode = EXEC_STEP_INTO;
+                            cpu->instructions_left = 0;
+                            break;
+                        }
+                    }
+                }
+            } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
+                while (cpu->c_14M < end_frame_c_14M) { // 1/60th second.
+                    if (computer->event_timer->isEventPassed(cpu->cycles)) {
+                        computer->event_timer->processEvents(cpu->cycles);
+                    }
+                    (cpu->cpun->execute_next)(cpu);
+                }
+            }
 
-        /* Process Internal Event Queue */
-        MEASURE(computer->app_event_times, frame_appevent(computer, cpu));
+            uint64_t current_time = SDL_GetTicksNS();
 
-        /* Execute Device Frames - 60 fps */
-        MEASURE(computer->device_times, computer->device_frame_dispatcher->dispatch());
+            /* Process Events */
+            MEASURE(computer->event_times, frame_event(computer, cpu));
+    
+            /* Emit Audio Frame */
+            MEASURE(computer->audio_times, audio_generate_frame(cpu /* , last_cycle_window_start, cycle_window_start */));
+    
+            /* Process Internal Event Queue */
+            MEASURE(computer->app_event_times, frame_appevent(computer, cpu));
+    
+            /* Execute Device Frames - 60 fps */
+            MEASURE(computer->device_times, computer->device_frame_dispatcher->dispatch());
+    
+            /* Emit Video Frame */
+    
+            MEASURE(computer->display_times, frame_video_update(computer, cpu));
+    
+            // update frame window counters.
+            // TODO:if we're in stepwise mode, we should not increment these as if they're a full next frame.
+            //if (cpu->c_14M >= end_frame_c_14M) {
+                cpu->current_frame_start_14M = cpu->next_frame_start_14M;
+                cpu->next_frame_start_14M += 238944;
+                frame_14M_marker += 238944;
+                cpu->frame_count++;
+            //}
+    
+            // calculate what sleep-until time should be.
+            uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
+            
+            // sleep out the rest of this frame.
+            frame_sleep(computer, cpu, last_cycle_time, frame_count);
 
-        /* Emit Video Frame */
+        } else { // Ludicrous Speed!
 
-        MEASURE(computer->display_times, frame_video_update(computer, cpu));
+            uint64_t next_frame_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
 
-        // update frame window counters.
-        // TODO:if we're in stepwise mode, we should not increment these as if they're a full next frame.
-        if (cpu->c_14M >= end_frame_c_14M) {
-            cpu->current_frame_start_14M = cpu->next_frame_start_14M;
-            cpu->next_frame_start_14M += 238944;
-            frame_14M_marker += 238944;
-            cpu->frame_count++;
-        }
+            if (computer->debug_window->window_open) {
+                while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
+                    if (computer->event_timer->isEventPassed(cpu->cycles)) {
+                        computer->event_timer->processEvents(cpu->cycles);
+                    }
+                    (cpu->cpun->execute_next)(cpu);
+                    if (computer->debug_window->window_open) {
+                        if (computer->debug_window->check_breakpoint(&cpu->trace_entry)) {
+                            cpu->execution_mode = EXEC_STEP_INTO;
+                            cpu->instructions_left = 0;
+                            break;
+                        }
+                        if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
+                            cpu->execution_mode = EXEC_STEP_INTO;
+                            cpu->instructions_left = 0;
+                            break;
+                        }
+                    }
+                }
+            } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
+                while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
+                    if (computer->event_timer->isEventPassed(cpu->cycles)) {
+                        computer->event_timer->processEvents(cpu->cycles);
+                    }
+                    (cpu->cpun->execute_next)(cpu);
+                }
+            }
 
-        // calculate what sleep-until time should be.
-        uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
+            uint64_t current_time = SDL_GetTicksNS();
+
+            if (current_time >= next_frame_time) {
+
+                /* Process Events */
+                MEASURE(computer->event_times, frame_event(computer, cpu));
         
-        // sleep out the rest of this frame.
-        frame_sleep(computer, cpu, last_cycle_time, frame_count);
+                /* Emit Audio Frame */
+                //MEASURE(computer->audio_times, audio_generate_frame(cpu /* , last_cycle_window_start, cycle_window_start */));
+        
+                /* Process Internal Event Queue */
+                MEASURE(computer->app_event_times, frame_appevent(computer, cpu));
+        
+                /* Execute Device Frames - 60 fps */
+                MEASURE(computer->device_times, computer->device_frame_dispatcher->dispatch());
+        
+                /* Emit Video Frame */
+        
+                MEASURE(computer->display_times, frame_video_update(computer, cpu));
+        
+                // update frame window counters.
 
+                cpu->current_frame_start_14M = cpu->next_frame_start_14M;
+                cpu->next_frame_start_14M += 238944;
+                frame_14M_marker += 238944;
+                cpu->frame_count++;
+            }
+
+        }
+        
         /*
          should this be last_cycle_time = wakeup_time? Then we don't lose some ns on the function return etc..
          discussion: in the event of a clock slip, we get all confused if we only stay synced to wakeup_time.
          as long as there are no slips, we're good.
          */
         last_cycle_time = SDL_GetTicksNS(); 
-
-        //last_time_window_start = time_window_start;
-       //last_cycle_window_start = cycle_window_start;
         
         // update frame status; calculate stats; move these variables into computer;
         computer->frame_status_update();

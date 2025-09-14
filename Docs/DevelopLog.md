@@ -5674,12 +5674,19 @@ Boy there's a lot of commented-out old stuff, unused variables, etc etc esp in t
 
 ### Standard Mode with fixed speed
 
-execute all the per-frame stuff every frame.
+execute all the per-frame stuff every frame, like we have now.
+
+### Debugger Single Step Mode
+
+Disable Audio
+Run old video update instead of scanner. However, we are still accumulating ScanBuffer data and if we have accumulated 7,680 or however many bytes it is, then run VideoScanGenerator to refresh screen and empty it out. Using the old video update means we'll see changes as they happen. It might also be cool to be able to spool out video byte updates as they happen in VideoScanner mode, you could debug cycle-accurate code that way.. hmm!
 
 ### Free run mode
 
 use original 60fps video routines.
-disable audio - it's really
+disable audio
+
+
 
 so for all the stuff that I track (e.g. the event_time, audio_time, display_time, app_event_time) etc let's call this an instrumentation. And let's create a class for it. Instrumentation will record the last 60 samples worth of data, then give us methods for min, max, average whenever we call it. Pretty easily done as a circular buffer of depth 60. Since we rarely need the figures, calculate them on demand. Should take fractions of microseconds.
 
@@ -5761,10 +5768,34 @@ ok there are exactly 17,030 (65 * 262) CPU cycles per frame. Each of these CPU c
 
 ok my issue here was the logic around tracking the cycle overrun or underrun each frame loop was wrong. Now I just keep track of the 14M count we're supposed to have at the end of each video frame. I was causing oscillation around that value unnecessarily. Now, when running one of the cycle counting demos, we lock in on the exact same h/v location at the end of each frame as reported by osd. And the number of excess bytes in the video buffer is always 0. So this is spot on for 1mhz. Now let's see what happens at 2.8. ha ha.
 
-now I -could- skip trying to support video_scanner stuff when the speed is ANY speed except 1mhz. but that may not work with iigs stuff. OK, keep pressing onward.
+Now I -could- skip trying to support video_scanner stuff when the speed is ANY speed except 1mhz. but that may not work with iigs stuff. OK, keep pressing onward.
 
 So how do I still get exactly 17,030 video scanner calls per frame even when we're at higher speed.
 OK, we will always emit bytes on the same 14M cycle boundaries per scanline. i.e., bytes emitted at 14, 28, etc. 
 and on the last cycle of a scanline, just emit and reset the counter.
 0, 14, 28, etc etc then whatever.
 that is working now for 1m and 2.8m. not for 7m. Must have something wrong in my counts/setups.
+
+[ ] when using cycle-accurate video, disable the old call to update_flash; also look into removing the shadow setups. (though these won't need shadow, and it might not matter that much, it should probably improve performance a lot at 7mhz..)
+[ ] also evaluate whether shadow + optimized is better than just doing whole frames.
+
+So I still need to re-implement ludicrous speed, which is going to be differences in the main event loop.
+[ ] reimplement ludicrous speed.  
+
+
+Of course, this now opens the door to support PAL video timing. 
+
+ok single step is working. Check breakpoints.. when I bp, Scanbuf has some random # of bytes in it. Then if I resume, it's as if we forget to update the screen afterward.. of course I need to call the old videogen.
+
+oh duh I do have a routine that switches video backends and disables shadow. it's display_update_video_scanner. I just added a bit to it to also check step mode. So when we switch into or out of step mode we need to run that. it's run automatically at the end of each video frame update. So we should switch into it in single-step.. yes. but When I exit step mode the video is out of sync.
+
+Ludicrous speed coming along, but, you cannot shift back into normal speed(s). it locks up. Probably need to reset the 14M counters that the other methods use to gauge frames. Also we've lost like 150MHz since then because incr_cycles used to be cycles++ and now it's all this horrendous stuff. Maybe do this:
+
+```
+if (ludicrous) cycles++;
+else slow_incr_cycles();
+```
+
+This may actually be better from a cache perspective.. 
+
+[x] in cycle-accurate video mode, videx never consumes any data, then video is out of sync when exit videx mode.  
