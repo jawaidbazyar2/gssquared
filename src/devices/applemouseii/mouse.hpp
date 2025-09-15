@@ -83,6 +83,8 @@ struct mouse_state_t: public SlotData {
     uint64_t vbl_offset = 0;
     uint16_t last_x_pos;
     uint16_t last_y_pos;
+    int16_t motion_x;
+    int16_t motion_y;
 };
 
 void init_mouse(computer_t *computer, SlotType_t slot);

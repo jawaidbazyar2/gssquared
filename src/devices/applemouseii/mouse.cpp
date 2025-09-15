@@ -166,7 +166,9 @@ bool mouse_motion(mouse_state_t *ds, const SDL_Event &event) {
         return false;
     }
     // by definition the mouse will have moved in here.
-    
+    ds->motion_x = motion_x;
+    ds->motion_y = motion_y;
+
     int tmp_x = ds->x_pos.value + motion_x;
     int tmp_y = ds->y_pos.value + motion_y;
     clamp_mouse(ds, tmp_x, tmp_y);
@@ -226,6 +228,7 @@ DebugFormatter * debug_mouse(mouse_state_t *ds) {
     df->addLine("  Status: %02X", ds->status.value);
     df->addLine("  Mode: %02X", ds->mode.value);
     df->addLine("  VBL Offset %6d", ds->vbl_offset);
+    df->addLine("  Motion X: %6d  Y: %6d", ds->motion_x, ds->motion_y);
     return df;
 }
 
