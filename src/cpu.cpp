@@ -54,8 +54,11 @@ void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
     fprintf(stdout, "Clock mode: %d HZ_RATE: %llu cycle_duration_ns: %llu \n", cpu->clock_mode, cpu->HZ_RATE, cpu->cycle_duration_ns);
 }
 
-void toggle_clock_mode(cpu_state *cpu) {
-    set_clock_mode(cpu, (clock_mode_t)((cpu->clock_mode + 1) % NUM_CLOCK_MODES));
+void toggle_clock_mode(cpu_state *cpu, int direction) {
+    int new_mode = (cpu->clock_mode + direction);
+    if (new_mode < 0) new_mode = NUM_CLOCK_MODES - 1;
+    if (new_mode >= NUM_CLOCK_MODES) new_mode = 0;
+    set_clock_mode(cpu, (clock_mode_t)new_mode);
     fprintf(stdout, "Clock mode: %d HZ_RATE: %llu\n", cpu->clock_mode, cpu->HZ_RATE);
 }
 

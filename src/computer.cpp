@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "SDL3/SDL_keycode.h"
 #include "gs2.hpp"
 #include "cpu.hpp"
 
@@ -53,7 +54,11 @@ computer_t::computer_t() {
             return true;
         }
         if (key == SDLK_F9) { 
-            toggle_clock_mode(cpu);
+            if (mod & SDL_KMOD_SHIFT) {
+                toggle_clock_mode(cpu, -1);
+            } else {
+                toggle_clock_mode(cpu, 1);
+            }
             send_clock_mode_message();
             return true; 
         }
