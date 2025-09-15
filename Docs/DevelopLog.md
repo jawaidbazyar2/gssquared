@@ -5810,6 +5810,17 @@ was playing a game and ran into some kind of infinite loop in the Speaker code. 
 How many cycles is 4,913,136,230 .. 
 4814 seconds.
 
-[ ] mouse vbl is hardcoded for 1mhz - improve the code to run at other clock speeds (vbl stops working after higher speeds). test running glider after high speed. 
-[ ] ON A Restart (i.e. close vm and start new vm) the joystick isn't recognized.  
+Yeah I think that fixed the problem. that's a pretty radical issue though, once the counter exceeded int (32 bit?) 
 
+[ ] mouse vbl is hardcoded for 1mhz - improve the code to run at other clock speeds (vbl stops working after higher speeds). test running glider after high speed. 
+[ ] ON A Restart (i.e. close vm and start new vm) the joystick isn't recognized. I have code in for this, is it not working right? recompute_gamepads.  
+
+## Sep 15, 2025
+
+compare current speaker code to previous speaker code, and look at how I previously handled buffer sync etc. There are a couple edge conditions I probably need to handle.
+
+[x] Remove vbl_cycle_count from display, since I don't use that any more. it just calls is_vbl.
+
+For the mouse issue, I need to calculate the next vbl from the VideoScanner. and ask the VideoScanner for it. And if the scanner isn't active (ludicrous speed) don't activate that timer. ok, to test this: shufflepuck, verify vbl working. Then speed up and slow down, should still be working. however, not working at higher speed. looks like it's still using 12480 cycles for that.
+
+[ ] when speed-shifting, we end up with 80 excess unused bytes in the ScanBuffer.  

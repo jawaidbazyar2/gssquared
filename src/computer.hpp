@@ -65,12 +65,15 @@ struct computer_t {
     uint64_t frame_count = 0, status_count = 0;
     uint64_t last_5sec_cycles = 0;
     uint64_t last_frame_end_time = 0, last_5sec_update = 0;
+    uint64_t frame_start_cycle = 0;
 
     computer_t();
     ~computer_t();
     void set_mmu(MMU_II *mmu) { this->mmu = mmu; }
     void set_platform(platform_info *platform) { this->platform = platform; }
     void reset(bool cold_start);
+    void set_frame_start_cycle();
+    uint64_t get_frame_start_cycle() { return frame_start_cycle; }
 
     void register_reset_handler(ResetHandler handler);
     void register_shutdown_handler(ShutdownHandler handler);

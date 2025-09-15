@@ -200,6 +200,7 @@ struct cpu_state {
     uint64_t _14M_cycle_duration_ns_48_16 = ((uint64_t)1000000000<<16) / 14'318'180;
     uint64_t cycles_per_scanline = 0;
     uint64_t extra_per_scanline = 0;
+    uint64_t cycles_per_frame = 0;
     uint64_t video_cycle_14M_count = 0;
 
     //execute_next_fn execute_next;

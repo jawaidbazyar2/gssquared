@@ -37,10 +37,10 @@ clock_mode_info_t clock_mode_info[NUM_CLOCK_MODES] = {
 };
 
 void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
-    // TODO: if this is ever called from inside a CPU loop, we need to exit that loop
-    // immediately in order to avoid weird calculations around.
+    // TODO: if this is ever called from inside a CPU loop, we need to exit that loop immediately in order to avoid weird calculations.
     // So add a "speedshift" cpu flag.
 
+    // TODO: copy the entire struct into the cpu state.
     cpu->HZ_RATE = clock_mode_info[mode].hz_rate;
     // Lookup time per emulated cycle
     cpu->cycle_duration_ns = clock_mode_info[mode].cycle_duration_ns;
@@ -48,8 +48,10 @@ void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
     cpu->c_14M_per_cpu_cycle = clock_mode_info[mode].c_14M_per_cpu_cycle;
     cpu->cycles_per_scanline = clock_mode_info[mode].cycles_per_scanline;
     cpu->extra_per_scanline = clock_mode_info[mode].extra_per_scanline;
-    // TODO: maybe reset the video scanner here.
-    if (cpu->video_scanner)cpu->video_scanner->reset();
+    cpu->cycles_per_frame = clock_mode_info[mode].cycles_per_frame;
+
+    // TODO: maybe reset the video scanner here. maybe not.
+    //if (cpu->video_scanner)cpu->video_scanner->reset();
     cpu->clock_mode = mode;
     fprintf(stdout, "Clock mode: %d HZ_RATE: %llu cycle_duration_ns: %llu \n", cpu->clock_mode, cpu->HZ_RATE, cpu->cycle_duration_ns);
 }

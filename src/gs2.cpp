@@ -256,6 +256,9 @@ void run_cpus(computer_t *computer) {
                 cpu->next_frame_start_14M += 238944;
                 frame_14M_marker += 238944;
                 cpu->frame_count++;
+
+                // set next frame cycle time.
+                computer->set_frame_start_cycle();
             }
 
             // sleep for 1/60th second ish, without updating frame counts etc.
@@ -265,6 +268,8 @@ void run_cpus(computer_t *computer) {
         } else if (cpu->execution_mode == EXEC_STEP_OVER) {
 
         } else if ((cpu->execution_mode == EXEC_NORMAL) && (cpu->clock_mode != CLOCK_FREE_RUN)) {
+            computer->set_frame_start_cycle();
+
             if (computer->debug_window->window_open) {
                 while (cpu->c_14M < end_frame_c_14M) { // 1/60th second.
                     if (computer->event_timer->isEventPassed(cpu->cycles)) {
@@ -328,6 +333,8 @@ void run_cpus(computer_t *computer) {
 
         } else { // Ludicrous Speed!
 
+            // TODO: how to handle VBL timing here. estimate it based on realtime?
+            
             uint64_t next_frame_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
 
             if (computer->debug_window->window_open) {
@@ -440,7 +447,7 @@ void run_cpus_old(computer_t *computer) {
         //uint64_t last_cycle_count = cpu->cycles;
         //uint64_t last_cycle_time = SDL_GetTicksNS();
 
-        uint64_t cycles_for_this_burst = clock_mode_info[cpu->clock_mode].cycles_per_burst;
+        uint64_t cycles_for_this_burst = clock_mode_info[cpu->clock_mode].cycles_per_frame;
         uint64_t end_frame_c_14M = cpu->next_frame_start_14M - last_frame_overrun;
 
         if (! cpu->halt) {

@@ -212,7 +212,14 @@ bool mouse_updown(mouse_state_t *ds, const SDL_Event &event) {
 
 void mouse_vbl_interrupt(uint64_t instanceID, void *user_data) {
     mouse_state_t *ds = (mouse_state_t *)user_data;
-    ds->vbl_cycle += 17030;
+    //ds->vbl_cycle += 17030;
+    
+    // calc based on cycle at start of frame, 
+    // number of cycles in a frame divided by 262 times 192nd scanline (vbl area)
+    //ds->vbl_cycle = ds->computer->get_frame_start_cycle() + (ds->computer->cpu->cycles_per_scanline * 192);
+    // current frame - plus cycle per frame (next frame) at scanline 192.
+    ds->vbl_cycle = ds->computer->get_frame_start_cycle() + ds->computer->cpu->cycles_per_frame  + ds->computer->cpu->cycles_per_scanline * 192;
+    
     ds->status.int_vbl = 1;
     mouse_propagate_interrupt(ds);
     ds->event_timer->scheduleEvent(ds->vbl_cycle, mouse_vbl_interrupt, instanceID, ds);
@@ -240,8 +247,9 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     ds->computer = computer;
     ds->event_timer = computer->event_timer;
     mouse_reset(ds);
-    ds->vbl_offset = 12480;
-    ds->vbl_cycle = 12480;
+    //ds->vbl_cycle = 12480;
+    ds->vbl_cycle = (ds->computer->cpu->cycles_per_scanline * 192);
+    ds->vbl_offset = ds->vbl_cycle;
 
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE,"1");
 
@@ -318,8 +326,8 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     );
     
     // schedule timer for vbl to start during vbl of next frame.
-    ds->event_timer->scheduleEvent(ds->vbl_cycle + 17030, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
-
+    //ds->event_timer->scheduleEvent(ds->vbl_cycle + 17030, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
+    ds->event_timer->scheduleEvent(computer->get_frame_start_cycle() + ds->vbl_offset, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
 
 
     if (DEBUG(DEBUG_MOUSE)) fprintf(stdout, "Mouse initialized\n");

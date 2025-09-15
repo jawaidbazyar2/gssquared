@@ -88,7 +88,7 @@ protected:
     bool      sw80col = false;
     bool      altchrset = false;
     bool      dblres = false;
-    uint8_t mode_flags = 0;
+    uint8_t   mode_flags = 0;
 
     video_mode_t video_mode;
     uint8_t vmode = 0;

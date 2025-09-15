@@ -198,8 +198,6 @@ bool update_display_apple2(cpu_state *cpu) {
     display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
     video_system_t *vs = ds->video_system;
 
-    ds->vbl_cycle_count = cpu->cycles;
-
     // first push flash state into AppleII_Display
     ds->a2_display->set_flash_state(ds->flash_state);
 
@@ -294,8 +292,6 @@ bool update_display_apple2(cpu_state *cpu) {
 bool update_display_apple2_cycle(cpu_state *cpu) {
     display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
     video_system_t *vs = ds->video_system;
-
-    ds->vbl_cycle_count = cpu->cycles;
 
     ScanBuffer *frame_scan = ds->video_scanner->get_frame_scan();
     ds->vsg->generate_frame(frame_scan, ds->frame_bits);
@@ -766,7 +762,7 @@ void display_write_C05EF(void *context, uint16_t address, uint8_t value) {
 uint8_t display_read_vbl(void *context, uint16_t address) {
     // This is enough to get basic VBL working. Total Replay boots anyway.
     display_state_t *ds = (display_state_t *)context;
-    //uint8_t fl = (ds->computer->cpu->cycles - ds->vbl_cycle_count) < 4550 ? 0x00 : 0x80;
+
     uint8_t fl = (ds->video_scanner->is_vbl()) ? 0x00 : 0x80;
     KeyboardMessage *keymsg = (KeyboardMessage *)ds->mbus->read(MESSAGE_TYPE_KEYBOARD);
     uint8_t kbv = (keymsg ? keymsg->mk->last_key_val :  ds->mmu->floating_bus_read()) & 0x7F;

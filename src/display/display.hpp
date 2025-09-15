@@ -97,7 +97,6 @@ public:
     display_page_t *display_page_table;
     bool f_altcharset = false;
     bool f_80col = false;
-    uint64_t vbl_cycle_count = 0;
 
     bool flash_state;
     int flash_counter;

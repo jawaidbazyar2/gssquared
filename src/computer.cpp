@@ -85,6 +85,10 @@ computer_t::~computer_t() {
     delete device_frame_dispatcher;
 }
 
+void computer_t::set_frame_start_cycle() {
+    frame_start_cycle = cpu->cycles;
+}
+
 void computer_t::register_reset_handler(ResetHandler handler) {
     reset_handlers.push_back(handler);
 }
