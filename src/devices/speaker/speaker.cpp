@@ -183,10 +183,11 @@ uint64_t audio_generate_frame(cpu_state *cpu  /* , uint64_t cycle_window_start, 
     }
 
     uint64_t queued_samples = SDL_GetAudioStreamQueued(speaker_state->stream);
-    bool addsamples = false;
-    if (queued_samples < (sc->samples_per_frame/2)) { 
-        printf("queue underrun %llu %f %f adding 2 extra samples\n", queued_samples, speaker_state->amplitude, speaker_state->polarity);
-        addsamples = true;
+    int16_t addsamples = 0;
+    if (queued_samples < (sc->samples_per_frame)) { // was a half frame, but we want more.
+        addsamples = 5;
+        printf("queue underrun %llu %f %f adding %d extra samples\n", queued_samples, speaker_state->amplitude, speaker_state->polarity, addsamples);
+        
         // attempt to calculate how much time slipped and generate that many samples
         /* for (int x = 0; x < SAMPLES_PER_FRAME; x++) {
             working_buffer[x] = speaker_state->amplitude * speaker_state->polarity;
@@ -199,9 +200,10 @@ uint64_t audio_generate_frame(cpu_state *cpu  /* , uint64_t cycle_window_start, 
     speaker_state->sp->generate_buffer_int(speaker_state->working_buffer, sc->samples_per_frame );
     if (addsamples) {
         int16_t extra_sample = speaker_state->working_buffer[sc->samples_per_frame - 1];
-        speaker_state->working_buffer[sc->samples_per_frame] = extra_sample;
-        speaker_state->working_buffer[sc->samples_per_frame + 1] = extra_sample;
-        SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, (sc->samples_per_frame + 2) * sizeof(int16_t));
+        for (int i = 0; i < addsamples; i++) {
+            speaker_state->working_buffer[sc->samples_per_frame + i] = extra_sample;
+        }
+        SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, (sc->samples_per_frame + addsamples) * sizeof(int16_t));
     } else {
         SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame * sizeof(int16_t));
     }
@@ -265,6 +267,22 @@ void speaker_stop(cpu_state *cpu) {
     speaker_state->device_started = 0;
 }
 
+DebugFormatter * debug_speaker(speaker_state_t *ds) {
+    DebugFormatter *df = new DebugFormatter();
+        
+    df->addLine("   Speaker ");
+    uint16_t samples = SDL_GetAudioStreamQueued(ds->stream);
+    uint64_t frame_index = (samples * 10) / ds->sp->config->samples_per_frame;
+
+    df->addLine("  Samples: ---------+---------+---------+---------+---------+", samples);
+    df->addLine("         : %.*s|            ", frame_index, "                                                  ");
+    //df->addLine("  Amplitude: %6d", ds->amplitude);
+    df->addLine("  Polarity: %6.1f", ds->sp->get_polarity());
+    df->addLine("  Device Started: %6d", ds->device_started);
+    df->addLine("  Cycle Index: %16llu SampleInd: %16llu CpuCycles: %16llu", ds->sp->cycle_index, ds->sp->sample_index, ds->computer->cpu->cycles);
+    return df;
+}
+
 void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     cpu_state *cpu = computer->cpu;
 
@@ -276,7 +294,8 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     speaker_state->event_buffer = eb;
     uint16_t bufsize = next_power_of_2(sc->samples_per_frame);
     speaker_state->working_buffer = new int16_t[bufsize];
-
+    speaker_state->computer = computer;
+    
     //speaker_state->cpu = cpu;
     speaker_state->speaker_recording = nullptr;
 
@@ -330,6 +349,14 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
         delete speaker_state;
         return true;
     });
+
+    computer->register_debug_display_handler(
+        "speaker",
+        0x0000000000000003, // unique ID for this, need to have in a header.
+        [speaker_state]() -> DebugFormatter * {
+            return debug_speaker(speaker_state);
+        }
+    );
 }
 
 

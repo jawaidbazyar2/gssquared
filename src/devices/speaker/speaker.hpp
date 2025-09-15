@@ -103,7 +103,7 @@ typedef struct speaker_state_t {
     int16_t *working_buffer;
     EventBufferRing *event_buffer;
     Speaker *sp;
-    
+    computer_t *computer;
 } speaker_state_t;
 
 void init_mb_speaker(computer_t *computer, SlotType_t slot);

@@ -72,7 +72,8 @@ class Speaker {
             event_buffer->add_event(500);
             event_buffer->add_event(LAST_SAMPLE);
         }
-    
+        inline double get_polarity() { return polarity; }
+
     private:
         double polarity = 1.0f;
         double leftover = 0.0f;

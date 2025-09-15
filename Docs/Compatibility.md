@@ -104,7 +104,8 @@ hard looping at $0E86. This is a tight loop BIT $C019 BMI $0E86. I.e., it's look
 
 The Apple II plus did not have the VBL register. So this software not compatible with Apple II plus!
 
-Glider now boots, but, keyboard control doesn't work - it's reading $C010 and expecting the keypress to be there.
+Glider now boots, but, keyboard control doesn't work - it's reading $C010 and expecting the keypress to be there. ok that has been fixed.
+
 
 ## Wall Street
 
@@ -269,10 +270,16 @@ Joystick doesn't seem to work.
 
 trying to read from mouse using I/O hooks which I don't support yet.
 
+## Xtra8bit
+
+looks like it's trying to in#4 to read mouse.
+
+## MousePaint
+
+also looks like it's trying to in#4 to read mouse.
 
 # Total Replay
 
 ## AirHeart
 
 crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff.
-

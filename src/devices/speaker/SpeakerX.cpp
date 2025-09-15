@@ -46,7 +46,7 @@ uint64_t Speaker::generate_buffer_int(int16_t *buffer, uint64_t num_samples /* ,
             cycle_index = sample_end_cycle;
         } else {
             // loop through the whole cycles in this sample.
-            while (cycle_index < (int)(sample_end_cycle)) {
+            while (cycle_index < /* (uint64_t) */(sample_end_cycle)) {
                 DEB(printf(" => [2] : cycle_index: %llu\n", cycle_index));
                 getCheckPolarity(cycle_index); // check here for change in polarity event
                 contribution += polarity;

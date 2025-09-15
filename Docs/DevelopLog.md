@@ -5799,3 +5799,17 @@ else slow_incr_cycles();
 This may actually be better from a cache perspective.. 
 
 [x] in cycle-accurate video mode, videx never consumes any data, then video is out of sync when exit videx mode.  
+
+## Sep 14, 2025
+
+Mouse velocity. It looks like Shufflepuck on a real apple he moves about 1.5 to 2 inches to go horizontally.
+I tried dividing the movement update by 8, however, this loses precision - slow precise movements end up not allowing the mouse to move at all.
+So we need to track at higher resolution, and then scale down (or use floating point).
+
+was playing a game and ran into some kind of infinite loop in the Speaker code. I think I've seen this a few times before. I think I found an inappropriate cast.
+How many cycles is 4,913,136,230 .. 
+4814 seconds.
+
+[ ] mouse vbl is hardcoded for 1mhz - improve the code to run at other clock speeds (vbl stops working after higher speeds). test running glider after high speed. 
+[ ] ON A Restart (i.e. close vm and start new vm) the joystick isn't recognized.  
+
