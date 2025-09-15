@@ -278,7 +278,6 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
         });
     computer->dispatch->registerHandler(SDL_EVENT_MOUSE_MOTION, 
         [ds](const SDL_Event &event) {
-            printf("mouse_motion\n");
             return mouse_motion(ds, event);
             //return true;
         });
