@@ -157,7 +157,7 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
  * Update window
  */
 void frame_video_update(computer_t *computer, cpu_state *cpu) {
-    //update_flash_state(cpu); // TODO: this goes into display.cpp frame handler.
+
     computer->video_system->update_display();    
     osd->render();
     computer->debug_window->render();
