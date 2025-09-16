@@ -161,6 +161,7 @@ In DOS at $B800 lives the "prenibble routine" . I could perhaps steal that. hehe
 
 #include "cpu.hpp"
 #include "diskii.hpp"
+#include "util/Event.hpp"
 #include "util/media.hpp"
 #include "util/ResourceFile.hpp"
 #include "devices/diskii/diskii_fmt.hpp"
@@ -788,6 +789,29 @@ void init_slot_diskII(computer_t *computer, SlotType_t slot) {
             //diskii_frame_event(diskII_d, cpu);
             bool diskii_run = any_diskii_motor_on(cpu);
             soundeffects_update(diskii_run, diskii_tracknumber_on(cpu));
+            return true;
+        });
+
+    computer->dispatch->registerHandler(SDL_EVENT_DROP_FILE,
+        [diskII_d,cpu](const SDL_Event &event) {
+            printf("SDL_EVENT_DROP_FILE\n");
+            const char *filename = event.drop.data;
+            printf("filename: %s\n", filename);
+            // x and y coordinates are where in my window the file was dropped.
+            printf("x: %6.1f, y: %6.1f\n", event.drop.x, event.drop.y);
+            disk_mount_t dm;
+            dm.filename = strndup(filename, 1024);
+            dm.slot = 6;
+            dm.drive = 0;   
+            int retval = diskII_d->computer->mounts->mount_media(dm);
+            if (retval == 0) {
+                diskII_d->computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Failed to mount media"));
+                return false;
+            }
+            diskII_d->computer->event_queue->addEvent(new Event(EVENT_PLAY_SOUNDEFFECT, 0, SE_SHUGART_CLOSE));
+            diskII_d->computer->event_queue->addEvent(new Event(EVENT_REFOCUS, 0, (uint64_t)0));
+            diskII_d->computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Disk Mounted Slot 6, Drive 1"));
+
             return true;
         });
 }
