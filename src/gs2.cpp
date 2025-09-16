@@ -159,7 +159,7 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
  * Update window
  */
 void frame_video_update(computer_t *computer, cpu_state *cpu) {
-    update_flash_state(cpu); // TODO: this goes into display.cpp frame handler.
+    //update_flash_state(cpu); // TODO: this goes into display.cpp frame handler.
     computer->video_system->update_display();    
     osd->render();
     computer->debug_window->render();
@@ -236,7 +236,7 @@ void run_cpus(computer_t *computer) {
             /* if there is a video scanner and it has a full frame, briefly switch to normal mode and update display
             to consume the frame data.
             */
-            update_flash_state(cpu); // TODO: this goes into display.cpp frame handler.
+            //update_flash_state(cpu); // TODO: this goes into display.cpp frame handler.
             if (cpu->video_scanner != nullptr) {
                 if (cpu->video_scanner->get_frame_scan()->get_count() >= 7680) { // consume a cycle's worth of frame data.
                     cpu->execution_mode = EXEC_NORMAL;
@@ -317,13 +317,10 @@ void run_cpus(computer_t *computer) {
             MEASURE(computer->display_times, frame_video_update(computer, cpu));
     
             // update frame window counters.
-            // TODO:if we're in stepwise mode, we should not increment these as if they're a full next frame.
-            //if (cpu->c_14M >= end_frame_c_14M) {
-                cpu->current_frame_start_14M = cpu->next_frame_start_14M;
-                cpu->next_frame_start_14M += 238944;
-                frame_14M_marker += 238944;
-                cpu->frame_count++;
-            //}
+            cpu->current_frame_start_14M = cpu->next_frame_start_14M;
+            cpu->next_frame_start_14M += 238944;
+            frame_14M_marker += 238944;
+            cpu->frame_count++;
     
             // calculate what sleep-until time should be.
             uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
@@ -332,11 +329,15 @@ void run_cpus(computer_t *computer) {
             frame_sleep(computer, cpu, last_cycle_time, frame_count);
 
         } else { // Ludicrous Speed!
-
             // TODO: how to handle VBL timing here. estimate it based on realtime?
+            computer->set_frame_start_cycle(); // todo: unsure if this is right..
             
             uint64_t next_frame_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
 
+            uint64_t frdiff = frame_14M_marker - last_frame_14M_marker; // this is just a check.
+            last_frame_14M_marker = frame_14M_marker;
+            uint64_t end_frame_c_14M = frame_14M_marker;
+            
             if (computer->debug_window->window_open) {
                 while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
                     if (computer->event_timer->isEventPassed(cpu->cycles)) {
@@ -364,10 +365,17 @@ void run_cpus(computer_t *computer) {
                     (cpu->cpun->execute_next)(cpu);
                 }
             }
+            // this was roughly one video frame so let's pretend we went that many.
+            cpu->c_14M += 238944; // fake increment this so it doesn't get wildly out of sync.
+            cpu->current_frame_start_14M = cpu->next_frame_start_14M;
+            cpu->next_frame_start_14M += 238944;
+            frame_14M_marker += 238944;
+            cpu->frame_count++;
+            // TODO: either push current cpu count into Speaker here or have Speaker sync up when we leave ludicrous speed.
 
             uint64_t current_time = SDL_GetTicksNS();
 
-            if (current_time >= next_frame_time) {
+            // if it's been roughly 1/60th second then do a device/display/etc frame update.
 
                 /* Process Events */
                 MEASURE(computer->event_times, frame_event(computer, cpu));
@@ -385,13 +393,11 @@ void run_cpus(computer_t *computer) {
         
                 MEASURE(computer->display_times, frame_video_update(computer, cpu));
         
-                // update frame window counters.
 
-                cpu->current_frame_start_14M = cpu->next_frame_start_14M;
-                cpu->next_frame_start_14M += 238944;
-                frame_14M_marker += 238944;
-                cpu->frame_count++;
-            }
+            // update frame window counters.
+            // this gets wildly out of sync because we're not actually executing this many cycles in the loop,
+            // because we are basing loop on time. So, maybe loop should be based on cycles per below after all,
+            // while just periodically doing the frame update stuff here.
 
         }
         
@@ -611,7 +617,7 @@ void run_cpus_old(computer_t *computer) {
         current_time = SDL_GetTicksNS();
         if ((this_free_run) && (current_time - last_display_update > 16667000)
             || (!this_free_run)) {
-            update_flash_state(cpu); // TODO: this goes into display.cpp frame handler.
+            //_state(cpu); // TODO: this goes into display.cpp frame handler.
             computer->video_system->update_display();    
             osd->render();
             computer->debug_window->render();

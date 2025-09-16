@@ -51,7 +51,9 @@ void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
     cpu->cycles_per_frame = clock_mode_info[mode].cycles_per_frame;
 
     // TODO: maybe reset the video scanner here. maybe not.
-    //if (cpu->video_scanner)cpu->video_scanner->reset();
+    //if (cpu->video_scanner) cpu->video_scanner->reset(); // going from ludicrous to regular speed have to reset scanner.
+    if ((cpu->clock_mode == CLOCK_FREE_RUN) && (cpu->video_scanner)) cpu->video_scanner->reset(); // going from ludicrous to regular speed have to reset scanner.
+
     cpu->clock_mode = mode;
     fprintf(stdout, "Clock mode: %d HZ_RATE: %llu cycle_duration_ns: %llu \n", cpu->clock_mode, cpu->HZ_RATE, cpu->cycle_duration_ns);
 }

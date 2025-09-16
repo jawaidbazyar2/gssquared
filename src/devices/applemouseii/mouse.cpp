@@ -218,10 +218,15 @@ void mouse_vbl_interrupt(uint64_t instanceID, void *user_data) {
     // number of cycles in a frame divided by 262 times 192nd scanline (vbl area)
     //ds->vbl_cycle = ds->computer->get_frame_start_cycle() + (ds->computer->cpu->cycles_per_scanline * 192);
     // current frame - plus cycle per frame (next frame) at scanline 192.
+    // going from ludicrous (or likely any higher speed to a lower speed). 
     ds->vbl_cycle = ds->computer->get_frame_start_cycle() + ds->computer->cpu->cycles_per_frame  + ds->computer->cpu->cycles_per_scanline * 192;
     
     ds->status.int_vbl = 1;
     mouse_propagate_interrupt(ds);
+    if (ds->vbl_cycle < ds->computer->cpu->cycles) {
+        fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", ds->vbl_cycle, ds->computer->cpu->cycles);
+        return;
+    }
     ds->event_timer->scheduleEvent(ds->vbl_cycle, mouse_vbl_interrupt, instanceID, ds);
 }
 

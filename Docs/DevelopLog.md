@@ -5780,7 +5780,7 @@ that is working now for 1m and 2.8m. not for 7m. Must have something wrong in my
 [ ] also evaluate whether shadow + optimized is better than just doing whole frames.
 
 So I still need to re-implement ludicrous speed, which is going to be differences in the main event loop.
-[ ] reimplement ludicrous speed.  
+[x] reimplement ludicrous speed.  
 
 
 Of course, this now opens the door to support PAL video timing. 
@@ -5812,7 +5812,7 @@ How many cycles is 4,913,136,230 ..
 
 Yeah I think that fixed the problem. that's a pretty radical issue though, once the counter exceeded int (32 bit?) 
 
-[ ] mouse vbl is hardcoded for 1mhz - improve the code to run at other clock speeds (vbl stops working after higher speeds). test running glider after high speed. 
+[x] mouse vbl is hardcoded for 1mhz - improve the code to run at other clock speeds (vbl stops working after higher speeds). test running glider after high speed. 
 [ ] ON A Restart (i.e. close vm and start new vm) the joystick isn't recognized. I have code in for this, is it not working right? recompute_gamepads.  
 
 ## Sep 15, 2025
@@ -5824,3 +5824,23 @@ compare current speaker code to previous speaker code, and look at how I previou
 For the mouse issue, I need to calculate the next vbl from the VideoScanner. and ask the VideoScanner for it. And if the scanner isn't active (ludicrous speed) don't activate that timer. ok, to test this: shufflepuck, verify vbl working. Then speed up and slow down, should still be working. however, not working at higher speed. looks like it's still using 12480 cycles for that.
 
 [ ] when speed-shifting, we end up with 80 excess unused bytes in the ScanBuffer.  
+
+I think we have a problem if we schedule events for before the current cpu cycle esp if we keep doing it.
+
+when leaving ludicrous speed for a slower mode, c_14m and end_frame_c_14m are wildly out of sync.
+            // this gets wildly out of sync because we're not actually executing this many cycles in the loop,
+            // because we are basing loop on time. So, maybe loop should be based on cycles per below after all,
+            // while just periodically doing the frame update stuff here.
+oh duh:
+
+    inline void incr_cycles() {
+        if (clock_mode == CLOCK_FREE_RUN) cycles++;
+
+So if I do it like I did before I have to calculate some fake whole number of 14m frame counts, based on the -time-. which makes some sense - 14m is a faster clock but not as fast as our 300mhz pseudo-cpu. I just increment by the 14m rate for that frame. it's close, at least, it doesn't cause a hang leaving LS any more :)
+
+So, the concept here might be, when leaving free-run mode, resync cpu to video frame.
+
+the next challenge is to get the mockingboard to work at faster cpu speed. a basic choice: have it run 2x as fast (i.e. timers go twice as fast etc), or, refactor it to be time-based?
+
+For that matter, keep thinking about having Speaker be time (instead of cycle-) based.
+
