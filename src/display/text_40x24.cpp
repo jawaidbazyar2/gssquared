@@ -37,7 +37,8 @@ void update_flash_state(cpu_state *cpu) {
     }
     ds->flash_counter = 0;
     ds->flash_state = !ds->flash_state;
-
+    ds->a2_display->set_flash_state(ds->flash_state);
+ return; // well we still want to update flash state.
     uint8_t *ram = ds->mmu->get_memory_base();
 
     for (int y = 0; y < 24; y++) {

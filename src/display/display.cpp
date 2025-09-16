@@ -223,7 +223,7 @@ bool update_display_apple2(cpu_state *cpu) {
 
     int updated = 0;
     for (uint16_t line = 0; line < 24; line++) {
-        if (vs->force_full_frame_redraw || ds->dirty_line[line]) {
+        //if (vs->force_full_frame_redraw || ds->dirty_line[line]) {
             switch (ds->line_mode[line]) {
                 case LM_TEXT_MODE:
                     ds->a2_display->generate_text40(text_page, ds->frame_bits, line);
@@ -249,7 +249,7 @@ bool update_display_apple2(cpu_state *cpu) {
             }
             ds->dirty_line[line] = 0;
             updated = 1;
-        }
+       // }
     }
 
     if (updated) { // only reload texture if we updated any lines.
@@ -773,12 +773,12 @@ void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
     if (cpu->clock_mode == CLOCK_FREE_RUN) {
         ds->framebased = true;
         cpu->video_scanner = nullptr;
-        for (int i = 0x04; i <= 0x0B; i++) {
+        /* for (int i = 0x04; i <= 0x0B; i++) {
             ds->mmu->set_page_shadow(i, { txt_memory_write, cpu });
         }
         for (int i = 0x20; i <= 0x5F; i++) {
             ds->mmu->set_page_shadow(i, { hgr_memory_write, cpu });
-        }
+        } */
     } else {
         ds->framebased = false;
         cpu->video_scanner = ds->video_scanner;
