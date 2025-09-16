@@ -5747,7 +5747,7 @@ if ((oaddr-2) == taddr) { // this test should back up 2 bytes.. so the infinite 
 }
 ```
 commented this out. This was dumb. ha.
-[ ] HLT other than the one should exit the run loop.
+[ ] HLT other than the one should exit the run loop. no, just eliminate all other halt.
 
 shufflepuck still has vbl issues because the mouse vbl is not synced with display.
 
@@ -5813,7 +5813,7 @@ How many cycles is 4,913,136,230 ..
 Yeah I think that fixed the problem. that's a pretty radical issue though, once the counter exceeded int (32 bit?) 
 
 [x] mouse vbl is hardcoded for 1mhz - improve the code to run at other clock speeds (vbl stops working after higher speeds). test running glider after high speed. 
-[ ] ON A Restart (i.e. close vm and start new vm) the joystick isn't recognized. I have code in for this, is it not working right? recompute_gamepads.  
+[ ] ON A Restart (i.e. close vm and start new vm) the joystick sometimes isn't recognized. I have code in for this, is it not working right? recompute_gamepads.  
 
 ## Sep 15, 2025
 
@@ -5823,7 +5823,7 @@ compare current speaker code to previous speaker code, and look at how I previou
 
 For the mouse issue, I need to calculate the next vbl from the VideoScanner. and ask the VideoScanner for it. And if the scanner isn't active (ludicrous speed) don't activate that timer. ok, to test this: shufflepuck, verify vbl working. Then speed up and slow down, should still be working. however, not working at higher speed. looks like it's still using 12480 cycles for that.
 
-[ ] when speed-shifting, we end up with 80 excess unused bytes in the ScanBuffer.  
+[ ] when speed-shifting, we end up with 80 excess (sometimes other) unused bytes in the ScanBuffer.  
 
 I think we have a problem if we schedule events for before the current cpu cycle esp if we keep doing it.
 
@@ -5844,3 +5844,31 @@ the next challenge is to get the mockingboard to work at faster cpu speed. a bas
 
 For that matter, keep thinking about having Speaker be time (instead of cycle-) based.
 
+## Sep 16, 2025
+
+Could LS be a fixed but very fast clock speed? I contemplated this before. It would mean the speed is limited even if you have a very fast computer. But it would solve some of these timing problems. OTOH, 1, 2.8, 7MHz are all perfectly good speeds for an Apple II.
+
+So let's contemplate my original reasons for the ludicrous speed setting. Part of my vision here is to have an ultra-fast Apple IIgs type computer. For software development, the benefit of compiling/testing at super-fast speeds is attractive. And CrossRunner is still not available for Mac/Linux and may not be that fast. can't tell, it doesn't have a speedometer.
+
+So, leave LS as really just for an experimental thing. Most people just wanting to run old software, well, it doesn't work right at 300mhz lol.
+
+ok, so shadow + optimized versus just redraw the whole frame. Let's try it.
+I will need to:
+disable shadowing
+disable the flash mode stuff that scans the text frame
+disable stuff that checks linemode
+
+ok flash isn't working.. [fixed]
+
+ack I ran into another hang in mouse/some infinite loop. maybe put a check in the scheduleEvent routine itself.
+
+[ ] split gr/text mode in L.S. is monochrome in ntsc mode, should be color/ntsc    
+[ ] videx mode (apple ii+) in l.s. causes crash  
+
+Trace on/off seems to make hardly any difference in cpu performance. That was not the case before. 
+
+I readded the multiply in the speaker code that gradually reduces the polarity to 0 but increased the timeout to two more decimal places. it seems to work ok. The thing where I add 5 extra samples when the buffer is low, does cause some audio artifacts, as I would expect it to, esp if I load a disk then hit reset I can hear a warble.
+
+Last question is whether to add the lowpass filter. I think before, filtering was required because of the distortions. I should listen to some of this stuff on the real II. SAM, and timelord. Timelord I am not hearing any high pitched whine. I didn't on SAM either. interesting.
+
+Hm, supporting drag'n'drop for disks will avoid having to use the file dialog. maybe that's the thing to do.. so let's say we drag and while hovering we show a drive icon 
