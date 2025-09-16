@@ -228,7 +228,7 @@ struct cpu_state {
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
 
-    void slow_incr_cycles() { 
+    inline void slow_incr_cycles() { 
         cycles++; 
         //etime_ns_56_8 += cycle_duration_ns_56_8;
         uint64_t c14s_this_cycle; 
