@@ -911,8 +911,10 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
 
     vs->register_frame_processor(0, [ds, cpu]() -> bool {
         bool ret;
-        if ((ds->framebased) || (cpu->execution_mode == EXEC_STEP_INTO)) ret = update_display_apple2(cpu);
-        else {
+        if ((ds->framebased) || (cpu->execution_mode == EXEC_STEP_INTO)) {
+            update_flash_state(cpu);
+            ret = update_display_apple2(cpu);
+        } else {
             ret = update_display_apple2_cycle(cpu);
         }
         display_update_video_scanner(ds, cpu);
