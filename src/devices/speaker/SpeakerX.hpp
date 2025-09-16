@@ -47,17 +47,18 @@ class Speaker {
         }
     
         inline void getCheckPolarity(uint64_t cycle) {
-            //uint64_t evt;
-            //if (event_buffer->peek_oldest(evt)) {
-                //if (cycle >= evt) {
-                if (cycle >= event_buffer->peek()) {
-                    //event_buffer->pop_oldest(evt);
-                    event_buffer->pop();
-                    polarity = -polarity;
-                }
-            //}
+        
+            if (cycle >= event_buffer->peek()) {
+        
+                event_buffer->pop();
+                /* polarity = -polarity; */
+                polarity_impulse = -polarity_impulse;
+                polarity = polarity_impulse;
+            }
+            
         }
         uint64_t generate_buffer_int(int16_t *buffer, uint64_t num_samples);
+        uint64_t generate_fill_buffer(int16_t *buffer, uint64_t num_samples);
         void synthesize_event_data(int frequency);
         bool load_event_data(const char *filename);
         
@@ -73,9 +74,11 @@ class Speaker {
             event_buffer->add_event(LAST_SAMPLE);
         }
         inline double get_polarity() { return polarity; }
+        inline double get_polarity_impulse() { return polarity_impulse; }
 
     private:
         double polarity = 1.0f;
+        double polarity_impulse = 1.0f;
         double leftover = 0.0f;
         double frac = 0.0f;
     

@@ -275,11 +275,12 @@ DebugFormatter * debug_speaker(speaker_state_t *ds) {
     uint64_t frame_index = (samples * 10) / ds->sp->config->samples_per_frame;
 
     df->addLine("  Samples: ---------+---------+---------+---------+---------+", samples);
-    df->addLine("         : %.*s|            ", frame_index, "                                                  ");
+    df->addLine("  %6d : %.*s|            ", samples, frame_index, "                                                  ");
     //df->addLine("  Amplitude: %6d", ds->amplitude);
-    df->addLine("  Polarity: %6.1f", ds->sp->get_polarity());
+    df->addLine("  Polarity: %6.1f / %6.1f", ds->sp->get_polarity(), ds->sp->get_polarity_impulse());
+    //df->addLine("  Polarity: %6.1f", ds->sp->get_polarity());
     df->addLine("  Device Started: %6d", ds->device_started);
-    df->addLine("  Cycle Index: %16llu SampleInd: %16llu CpuCycles: %16llu", ds->sp->cycle_index, ds->sp->sample_index, ds->computer->cpu->cycles);
+    df->addLine("  Cycle Index: %13llu SampleInd: %9llu CpuCycles: %13llu", ds->sp->cycle_index, ds->sp->sample_index, ds->computer->cpu->cycles);
     return df;
 }
 
