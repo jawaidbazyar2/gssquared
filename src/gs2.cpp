@@ -107,8 +107,6 @@ void frame_event(computer_t *computer, cpu_state *cpu) {
     }
 
     osd->update();
-    bool diskii_run = any_diskii_motor_on(cpu);
-    soundeffects_update(diskii_run, diskii_tracknumber_on(cpu));
 }
 
 void frame_appevent(computer_t *computer, cpu_state *cpu) {
@@ -517,7 +515,7 @@ void run_cpus_old(computer_t *computer) {
         uint64_t event_time;
         uint64_t app_event_time;
 
-        bool this_free_run = (cpu->clock_mode == CLOCK_FREE_RUN) || (cpu->execution_mode == EXEC_STEP_INTO /* || (gs2_app_values.disk_accelerator && (any_diskii_motor_on(cpu)) */ );
+        bool this_free_run = (cpu->clock_mode == CLOCK_FREE_RUN) || (cpu->execution_mode == EXEC_STEP_INTO );
 
         if ((this_free_run) && (current_time - last_event_update > 16667000)
             || (!this_free_run)) {
@@ -540,8 +538,6 @@ void run_cpus_old(computer_t *computer) {
             }
 
             osd->update();
-            bool diskii_run = any_diskii_motor_on(cpu);
-            soundeffects_update(diskii_run, diskii_tracknumber_on(cpu));
 
             event_time = SDL_GetTicksNS() - current_time;
             last_event_update = current_time;

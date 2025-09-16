@@ -166,6 +166,7 @@ In DOS at $B800 lives the "prenibble routine" . I could perhaps steal that. hehe
 #include "devices/diskii/diskii_fmt.hpp"
 #include "debug.hpp"
 #include "util/mount.hpp"
+#include "util/soundeffects.hpp"
 
 /* uint8_t diskII_firmware[256] = {
  0xA2,  0x20,  0xA0,  0x00,   0xA2,  0x03,  0x86,  0x3C,   0x8A,  0x0A,  0x24,  0x3C,   0xF0,  0x10,  0x05,  0x3C,  
@@ -782,6 +783,13 @@ void init_slot_diskII(computer_t *computer, SlotType_t slot) {
             return true;
         });
 
+    computer->device_frame_dispatcher->registerHandler(
+        [diskII_d,cpu]() {
+            //diskii_frame_event(diskII_d, cpu);
+            bool diskii_run = any_diskii_motor_on(cpu);
+            soundeffects_update(diskii_run, diskii_tracknumber_on(cpu));
+            return true;
+        });
 }
 
 void debug_dump_disk_images(cpu_state *cpu) { // only dump slot 6.
