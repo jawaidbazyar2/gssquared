@@ -185,16 +185,9 @@ uint64_t audio_generate_frame(cpu_state *cpu  /* , uint64_t cycle_window_start, 
     uint64_t queued_samples = SDL_GetAudioStreamQueued(speaker_state->stream);
     int16_t addsamples = 0;
     if (queued_samples < (sc->samples_per_frame)) { // was a half frame, but we want more.
-        addsamples = 5;
+        addsamples = (sc->samples_per_frame - queued_samples) / 2; // half of what we need so we asymptotically approach the target.
+        if (addsamples > 500) addsamples = 500;
         printf("queue underrun %llu %f %f adding %d extra samples\n", queued_samples, speaker_state->amplitude, speaker_state->polarity, addsamples);
-        
-        // attempt to calculate how much time slipped and generate that many samples
-        /* for (int x = 0; x < SAMPLES_PER_FRAME; x++) {
-            working_buffer[x] = speaker_state->amplitude * speaker_state->polarity;
-            speaker_state->amplitude = speaker_state->amplitude - AMPLITUDE_DECAY_RATE;
-            if (speaker_state->amplitude < 0) speaker_state->amplitude = 0; // TEST
-        }
-        SDL_PutAudioStreamData(speaker_state->stream, working_buffer, SAMPLES_PER_FRAME*sizeof(int16_t)); */
     }
 
     speaker_state->sp->generate_buffer_int(speaker_state->working_buffer, sc->samples_per_frame );
@@ -293,7 +286,8 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     EventBufferRing *eb = new EventBufferRing(next_power_of_2(120'000));
     speaker_state->sp = new Speaker(sc, eb);
     speaker_state->event_buffer = eb;
-    uint16_t bufsize = next_power_of_2(sc->samples_per_frame);
+    // make sure we allocate plenty of room for extra samples for catchup in generate.
+    uint16_t bufsize = next_power_of_2(sc->samples_per_frame * 2);
     speaker_state->working_buffer = new int16_t[bufsize];
     speaker_state->computer = computer;
     
