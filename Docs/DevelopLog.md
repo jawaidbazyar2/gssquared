@@ -5907,3 +5907,24 @@ Then OSD, drag and drop, debugger etc are clients of this class.
 
 
 btw, French Touch crazy cycles says "headache for emulators, good luck guys"! I should record a video and somehow send it to their attention. But I should validate how these things work on a real apple ii.
+
+Those mockingboard pops are definitely present on ultima iv and were not before. So I bet it is related to the clocking/timing change. One note, we are not 1020500, we are 1020484 - I wonder if that's related. Also, we could change the timing to be based on the cpu c14m instead of the regular cpu clock, so the timing is correct regardless of the current cpu speed or history of cpu speed. Another possibility is - the generator is being called 59.9227 times per second, but the audio parameters are assuming 60fps (44100 / 735). Maybe I need to step up to the whack 44135 / 740 or whatever it is?
+
+Test She's the Shooter on French touch 12-channel audio.
+The event timer should be based on 14m because this will always be accurate (except l.s.)
+the synthesizer should always be based on whatever the audio stream is using - but should be related to the 59.9227 fps because that's how often we're being called. We -could- run this in a thread perhaps, since there is no need to exactly sync to cpu emissions (cpu is referenced only to generate event times, but the cpu is not directly generating waveform data unlike in the Speaker case )
+ran the 12ch FT demo for a while - came back and the event timing is a little out of sync, as I'd expect it to be given the 1020484/1020500 difference.
+As to losing precision as our numbers get a lot bigger, I don't think that's the key thing here.
+[x] switch to using c14m as the event timer base;
+[x] switch to 44345/740 (or whatever) to deal with 59.9227 fps instead of 60fps.  
+[x] lower amplitude and mix by simple addition, not averaging.
+
+the latter seems to have dealt with the crackling. The former has provided some ability to handle and sync back up with cpu speed changes - sortof. There is a delay before a change taking effect - this could be based on us having a bunch of stuff buffered. it like goes on for almost a second.. I should put some queue monitoring into the mockingboard debug view. oh, I forgot to change the output audio rate. Fixed, and, speed/sound changes take effect immediately..
+
+the new mixer seems to be working quite well too. I am not getting the highly variable output that I was before. Wonder what that will do to skyfox and some other things I was having trouble with before..
+
+Cybernoid music disk works much better than it used to with the new mixing. It's possible the noise channel is too loud. I believe it does respect the volume, however, maybe the noise amplitude should be tamped down a bit. ok so I multiply it down by 0.5 and that seems better balanced on cybernoid. Let's try the french touch ch12 again. esp with the external speakers, it's fricken amazing!
+
+weird ok somehow all the audio has gotten delayed by a couple seconds - speaker and MB. that's gonna be because of the fricken delayed audio issue when too much time is taken by the file dialog. So for testing purposes right now, use the drag'n'drop.
+
+I think maybe I just have to build my own file picker. (They're just not that hard).

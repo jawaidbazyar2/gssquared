@@ -105,7 +105,7 @@ hard looping at $0E86. This is a tight loop BIT $C019 BMI $0E86. I.e., it's look
 The Apple II plus did not have the VBL register. So this software not compatible with Apple II plus!
 
 Glider now boots, but, keyboard control doesn't work - it's reading $C010 and expecting the keypress to be there. ok that has been fixed.
-
+And it works with the mouse card emulation as well, though the mouse is overly sensitive as it is in shufflepuck.
 
 ## Wall Street
 
@@ -128,6 +128,10 @@ With current state of IIe, it now boots, loads, plays music. But it is a double 
 getting there, but still wrong. (was working)
 
 was working, however with cycle-accurate video, we are in some mode that is not causing the display to update. (did I break double hires?)
+
+## Bouncing Kamungas
+
+A to enable atari joystick. Mockingboard automatic. works great now.
 
 ## Karateka (Brutal Deluxe crack)
 
@@ -182,7 +186,7 @@ Working with mouse-in-progress. Needs VBL. Also used hires-with-nodelay mode.
 
 works, but has lowercase. 4.0 version is Prodos 2.0.3 needs enhanced apple iie. [works now]
 "DOS3.3" is Cybernoid 5.0, works. wants a mockingboard.
-Mixing is not great.
+Mixing is not great. After mixing change (pre-0.5) plays significantly better. The noise amplitude might be a bit on the high side.
 
 ## Apple Cider Spider - 4am crack
 
@@ -236,8 +240,9 @@ OH. NO IT DOESN'T. This actually goes to a game screen now. I have no idea what 
 
 ## Berzap
 
-boots. ctrl-c lets you configure mockingboard. there might be an attempt at speech which doesn't work of course.
-
+boots. ctrl-c lets you configure mockingboard and atari joystick. there might be an attempt at speech which doesn't work of course.
+use mockingboard A in settings as C assumes there's a speech chip and we hang later. (only uses one ay chip, 3 channels for music, sound effects in the other speaker?)
+ 
 ## Cyclod
 
 once the maze comes up, you have to hit enter to start. control-@ (control-shift-P, or control-shift-2) and F6 to enable joyport.

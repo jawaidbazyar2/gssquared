@@ -83,7 +83,10 @@ struct filter_state {
 };
 
 // Global constants
-constexpr double OUTPUT_SAMPLE_RATE = 44100.0;
+// must be based on 59.9227 fps rate just like Speaker code.
+constexpr double OUTPUT_SAMPLE_RATE = 44343.0;
+constexpr uint32_t OUTPUT_SAMPLE_RATE_INT = 44343;
+constexpr uint32_t SAMPLES_PER_FRAME_INT = 740;
 
 // Event to represent register changes with timestamps
 struct RegisterEvent {
@@ -100,10 +103,10 @@ struct RegisterEvent {
 
 // Add a static array for the normalized volume levels
 static const float normalized_levels[16] = {
-    0x0000 / 65535.0f * 0.6f, 0x0385 / 65535.0f * 0.6f, 0x053D / 65535.0f * 0.6f, 0x0770 / 65535.0f * 0.6f,
-    0x0AD7 / 65535.0f * 0.6f, 0x0FD5 / 65535.0f * 0.6f, 0x15B0 / 65535.0f * 0.6f, 0x230C / 65535.0f * 0.6f,
-    0x2B4C / 65535.0f * 0.6f, 0x43C1 / 65535.0f * 0.6f, 0x5A4B / 65535.0f * 0.6f, 0x732F / 65535.0f * 0.6f,
-    0x9204 / 65535.0f * 0.6f, 0xAFF1 / 65535.0f * 0.6f, 0xD921 / 65535.0f * 0.6f, 0xFFFF / 65535.0f * 0.6f
+    0x0000 / 65535.0f * 0.25f, 0x0385 / 65535.0f * 0.25f, 0x053D / 65535.0f * 0.25f, 0x0770 / 65535.0f * 0.25f,
+    0x0AD7 / 65535.0f * 0.25f, 0x0FD5 / 65535.0f * 0.25f, 0x15B0 / 65535.0f * 0.25f, 0x230C / 65535.0f * 0.25f,
+    0x2B4C / 65535.0f * 0.25f, 0x43C1 / 65535.0f * 0.25f, 0x5A4B / 65535.0f * 0.25f, 0x732F / 65535.0f * 0.25f,
+    0x9204 / 65535.0f * 0.25f, 0xAFF1 / 65535.0f * 0.25f, 0xD921 / 65535.0f * 0.25f, 0xFFFF / 65535.0f * 0.25f
 };
 
 // Add a static array for the normalized volume levels
@@ -541,12 +544,12 @@ public:
                         float tone_contribution = tone.output ? tone.volume : -tone.volume;
                         
                         // For noise: true = +volume, false = -volume
-                        float noise_contribution = chip.noise_output ? tone.volume : -tone.volume;
+                        float noise_contribution = (chip.noise_output ? tone.volume : -tone.volume) * 0.5f;
                         float channel_output;
 
                         // If both are enabled, average them
                         if (is_tone && is_noise) {
-                            channel_output = (tone_contribution + noise_contribution) * 0.5f;
+                            channel_output = (tone_contribution + noise_contribution) /* * 0.5f */;
                         } else if (is_tone) {
                             channel_output = tone_contribution;
                         } else if (is_noise) {
@@ -559,9 +562,9 @@ public:
                 }
 
                 // Scale by number of active channels
-                if (active_channels[c] > 0) {
+                /* if (active_channels[c] > 0) {
                     mixed_output[c] /= active_channels[c];
-                }
+                } */
                 
             }
             // Append the mixed samples to the buffer
@@ -1017,6 +1020,7 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
     if (DEBUG(DEBUG_MOCKINGBOARD)) printf("mb_write_Cx00: %02d %d %02x %02x\n", slot, chip, alow, data);
     mb_6522_regs *tc = &mb_d->d_6522[chip]; // which 6522 chip this is.
     uint64_t cpu_cycles = mb_d->computer->cpu->cycles;
+    uint64_t cpu_14m_cycles = mb_d->computer->cpu->c_14M;
 
     switch (alow) {
 
@@ -1037,7 +1041,8 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
                 // reset the chip. Set all 16 registers to 0.
                 for (int i = 0; i < 16; i++) {
                     // TODO: is there a better way to get this?
-                    double time = cpu_cycles / 1020500.0;
+                    //double time = cpu_cycles / 1020500.0;
+                    double time = cpu_14m_cycles / 14318180.0;
                     mb_d->mockingboard->queueRegisterChange(time, chip, i, 0);
                 }
             } else if ((data & 0b111) == 7) { // this is the register number.
@@ -1045,7 +1050,8 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
                 if (DEBUG(DEBUG_MOCKINGBOARD)) printf("reg_num: %02x\n", tc->reg_num);
             } else if ((data & 0b111) == 6) { // write to the specified register
                 // TODO: need to mask with ddrb
-                double time = cpu_cycles / 1020500.0;
+                //double time = cpu_cycles / 1020500.0;
+                double time = cpu_14m_cycles / 14318180.0;
                 mb_d->mockingboard->queueRegisterChange(time, chip, tc->reg_num, tc->ora);
                 if (DEBUG(DEBUG_MOCKINGBOARD)) printf("queueRegisterChange: [%lf] chip: %d reg: %02x val: %02x\n", time, chip, tc->reg_num, tc->ora);
             } else if ((data & 0b111) == 5) { // read from the specified register
@@ -1292,16 +1298,19 @@ void generate_mockingboard_frame(mb_cpu_data *mb_d) {
     static int frames = 0;
 
     // TODO: We need to calculate number of samples based on cycles. (Does the buffer management below handle this, or is this for some other reason?)
-    int samples_per_frame = 735;
+    //int samples_per_frame = 735;
+    int samples_per_frame = SAMPLES_PER_FRAME_INT;
 
     if (mb_d->stream) {
         int samples_in_buffer = SDL_GetAudioStreamAvailable(mb_d->stream) / sizeof(float);
         if (samples_in_buffer < 1000) {
-            samples_per_frame = 736;
+            //samples_per_frame = 736;
+            samples_per_frame ++;
         } else if (samples_in_buffer > 2000) {
-            samples_per_frame = 734;
+            //samples_per_frame = 734;
+            samples_per_frame --;
         } else {
-            samples_per_frame = 735;
+            //samples_per_frame = 735; no change
         }
     }
 
@@ -1441,7 +1450,7 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
 
 /** Init audio stream for the mockingboard device */
     SDL_AudioSpec spec;
-    spec.freq = 44100;
+    spec.freq = OUTPUT_SAMPLE_RATE_INT;
     spec.format = SDL_AUDIO_F32LE;
     spec.channels = 2;
 
