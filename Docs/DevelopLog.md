@@ -998,7 +998,7 @@ where the configurator is just a web app.
 
 [ ] DiskII should get volume byte from DOS33 VTOC and 'format' the disk image with it.
 
-[ ] Create struct configuration tables for memory map for each platform.
+[x] Create struct configuration tables for memory map for each platform.
 
 [x] There's an obvious optimization in the DiskII area - we don't have to shift the bits out of the register. We can just provide the full byte with the hi-bit set. This would 
 probably work and speed up disk emulation mightily. (ended up pre-shifting 6 bits out)
@@ -4131,7 +4131,7 @@ of course we're also: doing a function call, and, doubling up on
 We can put the memory read first - need to make sure we never have both read_p and read_h, or write_p and write_h. (should be exclusive). Might also consider struct of arrays instead of array of structs for the page table arrays.
 
 Action items:
-[ ] the MMU should be cognizant of the starting address of the system ROM rd. Perhaps pass in the rd struct instead of the raw address, because then we can get the starting address to do the page map correctly on setup.
+[x] the MMU should be cognizant of the starting address of the system ROM rd. Perhaps pass in the rd struct instead of the raw address, because then we can get the starting address to do the page map correctly on setup.
 
 manually putting the mmu:read stiuff into mmu_ii is good for about 30MHz improvement.
 of course in the keyboard loop there are a ton of calls to the keyboard C000 read routine. look at the context trick above.
@@ -4146,7 +4146,7 @@ test with trace compiled out:
 
 [ ] There is a slight issue here which is that the cpu has a member for MMU_II. This should be MMU. And then all the things that need to use it need to cast it to MMU_II. Or, provide some sort of middleware that converts to a minimal interface for the CPU that only provides read and write (and context to use).
 
-[ ] I had a thought about speed-shifting. Which is, changing speeds in the middle of a frame. Instead of only counting cycles, we will count virtual nanoseconds. We know how many nanoseconds per cycle there are. We can do it in the main loop. And then, instead of the main run loop waiting for about 17,000 cycles, it checks to see if exactly 16.6666667 milliseconds have elapsed, regardless of speed (60fps). We could also count the ns elapsed based on feedback from the MMU - this would be for the GS and other "accelerated" platforms where inside a single instruction the clock could be numerous different speeds.
+[x] I had a thought about speed-shifting. Which is, changing speeds in the middle of a frame. Instead of only counting cycles, we will count virtual nanoseconds. We know how many nanoseconds per cycle there are. We can do it in the main loop. And then, instead of the main run loop waiting for about 17,000 cycles, it checks to see if exactly 16.6666667 milliseconds have elapsed, regardless of speed (60fps). We could also count the ns elapsed based on feedback from the MMU - this would be for the GS and other "accelerated" platforms where inside a single instruction the clock could be numerous different speeds. (right now, done by counting discrete whole 14Ms)
 
 OK, next step is to start going through devices and seeing if I can reduce the codependencies on the CPU some more. Some things go into Computer. Like VideoSystem. 
 
@@ -4491,7 +4491,7 @@ the trouble with this is, for any given chunk of bytes, there could be many inte
 [ ] create a scrollbar widget. the up, down, home, end, pg up and pg down events will go to it. it handles paging, and lets the caller query the current position.  
 [ ] scrollbar should be clickable, and this jumps the position to that location  
 
-[ ] Have device frame registration function and call from main event loop  
+[x] Have device frame registration function and call from main event loop  
 
 I decided that devices can have private state - but also "published" state, that other modules in the system can query. I am currently kind of using SlotData and MODULE data for both purposes. But, we want these separate.
 
@@ -4627,7 +4627,7 @@ Oops. Just sitting at the retro experience menu, we're leaking memory. Whoopsie!
 
 there is no leak running with the VM on. started VM, then stopped. now 138MB. start: 193, then 145MB. now 150MB. ok, definitely some leakage.. Hmm, we need to shut down the audio system.
 
-[ ] sometimes after a stop vm and start new vm it's like reset got hit but the vm starts right back up where it left off. Whaa? I should erase all of RAM on MMU init.  
+[x] sometimes after a stop vm and start new vm it's like reset got hit but the vm starts right back up where it left off. Whaa? I should erase all of RAM on MMU init. (that was it)  
 
 now I am leaking while just running the drive at boot. HMM. tracing? turn off tracing.
 once I open the debug window, it uses and does not free up memory. maybe I should destroy the debug window and renderer..
@@ -4862,7 +4862,7 @@ When composing, keep track of OLD and NEW values (e.g. oldZP and newZP) and only
 
 Whenever HIRES or PAGE2 switches change, IIe Memory needs to know. So, that thing where it takes over those switches? What if we just overwrite the existing settings, and ensure IIeMemory always comes after Display in the systemconfig? Side-effect hell, but, simple and effective.
 
-[ ] I think the video scanner draws from main memory no matter the settings of RAMRD/RAMWRT etc. This implies we have to change the code in HGR etc. to lookup base_memory instead of pulling the page table entry. Which it seems they are doing, though I am unsure why, I thought I used mmu->read in places.. check it out anyway.
+[x] I think the video scanner draws from main memory no matter the settings of RAMRD/RAMWRT etc. This implies we have to change the code in HGR etc. to lookup base_memory instead of pulling the page table entry. Which it seems they are doing, though I am unsure why, I thought I used mmu->read in places.. check it out anyway.
 
 When 80STORE is on, PAGE2 should NOT change video page. Video settings should be set to PAGE1 even though PAGE2 flag is set.
 
@@ -4904,8 +4904,8 @@ Then MMU is responsible for composing the memory map, instead of various parts o
 We could have a couple different mmu routines to "update" the map.
 C100-CFFF
 
-[ ] open question: does CFFF function go away when INTCXROM is ON ? or does it also remove the C8-CF mapped area?  
-[ ] open question: memexp card, slot 7 - if I access C700 does it activate C8-CF ROM for that under the INTCX? I am guessing not.. though it may not matter.  
+[x] open question: does CFFF function go away when INTCXROM is ON ? or does it also remove the C8-CF mapped area?  
+[x] open question: memexp card, slot 7 - if I access C700 does it activate C8-CF ROM for that under the INTCX? I am guessing not.. though it may not matter. (I think this logic proven correct at this point)  
 
 maybe move INTCXROM handling to the mmu itself? Then I know the things (inside mmu).. checking..
 
@@ -5055,12 +5055,12 @@ btw I'm still seeing the "window doesn't update right when we're close to screen
 I've got double lo-res in and tested now. Now I need to test double hi-res. What to do it with.. 
 
 [ ] I think I am missing a memory management soft-switch to reset on a RESET, esp with stuff that wants to do 80-col, dlgr, dhgr.  
-[ ] need vbl c019 support  
+[x] need vbl c019 support  
 [x] open-apple and closed-apple  
 
 OA-CA can go into the game controller. it can just call SDL to see if the appropriate modifiers are being pressed.
 
-[ ] Broke original Apple II model.  crashes in update_apple2_display.  
+[x] Broke original Apple II model.  crashes in update_apple2_display.  
 
 ## Jul 1, 2025
 
@@ -5172,9 +5172,9 @@ ok that makes the FT demo work, but, makes Ultima IV stop working! maybe. We pro
 Maybe we need to start timers going by default no matter what.. skyfox still working generally but problem of certain channels stopping remains. That could be a timer thing. Skyfox seems unaltered / unimproved. It misbehaves a little differently every time.
 
 back to DD. 
-[ ] DD: there's a part where the screen goes into dhr mode back and forth but it's probably not intended. Might be using that annunciator-with-80col-off trick to turn off color delays and just change the color rendering, which I don't support (yet).  
+[x] DD: there's a part where the screen goes into dhr mode back and forth but it's probably not intended. Might be using that annunciator-with-80col-off trick to turn off color delays and just change the color rendering, which I don't support (yet) (yes it was, and it works now).  
 
-[ ] uh, bne 08cb (to itself) on chp.dsk demo is causing very odd behavior in the debugger, cycles are going crazy (139841mhz!) and I can't pause execution. Wut. might want 2 MB.  
+[x] uh, bne 08cb (to itself) on chp.dsk demo is causing very odd behavior in the debugger, cycles are going crazy (139841mhz!) and I can't pause execution. Wut. might want 2 MB. (assuming this was because I was erroneously halting the cpu on branch to itself)  
 
 TLB2V12. 12 channel mockingboard music player. seems to work great!
 TLB1 loads up but then fails to play anything, it's sitting in a JMP loop to itself.
@@ -5325,16 +5325,16 @@ post-vaca.
 
 So, things to do to continue integrating the cycle-accurate-video.
 
-[ ] hook in to incr_cycles  
-[ ] hook in to update_display  
-[ ] hook in the floating bus read (this will be somewhat extensive)  
+[x] hook in to incr_cycles  
+[x] hook in to update_display  
+[x] hook in the floating bus read (this will be somewhat extensive)  
 
 This should get the Sather demos working.
 
 Those are the first bits to figure out. Then:
 
-[ ] alternate VBL implementation based on the LUT  
-[ ] 
+[-] alternate VBL implementation based on the LUT (this was done by calling is_vbl) 
+
 
 ## Jul 31, 2025
 
@@ -5397,13 +5397,13 @@ SUCCESS!!!
 Well, 98%. in Crazy Cycles, there is the occasional artifact. I suspect it is because of mismatch in VBL. (17008 cycles vs 17030 cycles, and every now and then it is out of sync in wrong place and draws wrong stuff?) Will work on that.
 
 Action Items:
-[ ] Artifacts in Crazy Cycles  
+[x] Artifacts in Crazy Cycles  
 [x] color killer in text mode not working  
 [x] RGB not working  
 [ ] Hunt down all the places where we need to call floating_bus_read()  
-[ ] Allow optional selection of cycle-accurate video on VM init  
+[x] Allow optional selection of cycle-accurate video on VM init (default to on for speeds other than LS)  
 [x] Apple II+ crashses on startup  
-[ ] SPLIT DEMO has mixed text mode sometimes. it is not setting C052 so we might need to reset that switch on a RESET/powerup.  
+[-] SPLIT DEMO has mixed text mode sometimes. it is not setting C052 so we might need to reset that switch on a RESET/powerup. (I think this is just a split demo bug)  
 [ ] disable invalid modes (no 40 col text in double graf modes)  
 [x] color kill lines 160>> in rgb.  
 [x] at end of 80col lines we need to emit some blank pixels  
@@ -5494,7 +5494,7 @@ ok, I'm done noodling around here. I think the current code is ok. However, if w
 ## Aug 29, 2025
 
 [x] in normal hires, if you hit $C05E (double hires related) without turning on 80-column, this is supposed to disable the color delay (i.e., ignore bit 7 of each hires byte).  
-[ ] the mouse VBL interrupt is definitely in the wrong place compared to my video routines. mouse disappears in shufflepuck in roughly same place as in dazzledraw.  Going to have to 
+[x] the mouse VBL interrupt is definitely in the wrong place compared to my video routines. mouse disappears in shufflepuck in roughly same place as in dazzledraw.  Going to have to 
 
 [ ] when in dhr and switch to text, c054/c055 should go back to controlling display page not memory. Spacequest is switching from dhr to text40 and we are not selecting page 1 when we do that  
 
@@ -5611,11 +5611,11 @@ I modified the volume to emit samples of only 5120 (instead of 32768, or 16384).
 
 So I should revisit the Mockingboard audio generation and mixing and see what I get there - perhaps I should just emit and add relatively low-volume signals, instead of adding and averaging. I.e., let components further down the stream do AGC which seems to be what's happening. Just make sure I don't overflow before emission in a given output channel. (I have two?)
 
-[ ] Need to add back support for the faster CPU speeds. part done. have everything except true free-run.
+[x] Need to add back support for the faster CPU speeds. part done. have everything except true free-run.
 
-[ ] I should also completely pause the emulation when we open the file dialog. I should be doing that in the main event loop so just setting a halt flag to continue out of the loop except for event handling ought to work. 
+[-] I should also completely pause the emulation when we open the file dialog. I should be doing that in the main event loop so just setting a halt flag to continue out of the loop except for event handling ought to work. (I use catchup for now instead)  
 [ ] there is a request to do the same when the emulator window is minimized.  
-[ ] I think amplitude between noise and actual mockingboard output is imbalanced.
+[ ] I think amplitude between noise and actual mockingboard output is imbalanced. (if tone and noise on same channel it might get inappropriately louder..)  
 
 Faster cpu speeds: I don't think the cpu speed is directly tied to the output generation. Testing cs4 with 2.8mhz. Whups, that sounds like garbage. Increased buffer space.. no dice, though, I think that is potentially an issue. I tried doing exactly 2x 1020484 and there is some accumulated error. 
 Again, it wants the cycle/sec rate to be as close to an exact multiple of the frame cycle rate as possible. So, 59.923 * 34060 = 2040978 instead of the exact double of 2040968.
@@ -5730,7 +5730,7 @@ We had a thing where we could store flags in the FrameBuffer. For instance, set_
 
 in single step mode, we get an error "less than a full frame in ScanBuffer". This is because, yes, of course there is. We could tweak VideoScanGenerator to generate X cycles worth of new video from last position and then return. So as we single-step through the code we will be updating small bits of the video.
 
-[ ] Finally, modify to only grab video samples from RAM based on the 14M clock.   
+[x] Finally, modify to only grab video samples from RAM based on the 14M clock.   
 
 also, a branch (e.g. bne) to itself causes the emulator to lock up in single step mode.
 
@@ -5747,7 +5747,7 @@ if ((oaddr-2) == taddr) { // this test should back up 2 bytes.. so the infinite 
 }
 ```
 commented this out. This was dumb. ha.
-[ ] HLT other than the one should exit the run loop. no, just eliminate all other halt.
+[x] HLT other than the one should exit the run loop. no, just eliminate all other halt.
 
 shufflepuck still has vbl issues because the mouse vbl is not synced with display.
 
@@ -5776,7 +5776,7 @@ and on the last cycle of a scanline, just emit and reset the counter.
 0, 14, 28, etc etc then whatever.
 that is working now for 1m and 2.8m. not for 7m. Must have something wrong in my counts/setups.
 
-[ ] when using cycle-accurate video, disable the old call to update_flash; also look into removing the shadow setups. (though these won't need shadow, and it might not matter that much, it should probably improve performance a lot at 7mhz..)
+[x] when using cycle-accurate video, disable the old call to update_flash; also look into removing the shadow setups. (though these won't need shadow, and it might not matter that much, it should probably improve performance a lot at 7mhz..)
 [ ] also evaluate whether shadow + optimized is better than just doing whole frames.
 
 So I still need to re-implement ludicrous speed, which is going to be differences in the main event loop.
@@ -5813,7 +5813,7 @@ How many cycles is 4,913,136,230 ..
 Yeah I think that fixed the problem. that's a pretty radical issue though, once the counter exceeded int (32 bit?) 
 
 [x] mouse vbl is hardcoded for 1mhz - improve the code to run at other clock speeds (vbl stops working after higher speeds). test running glider after high speed. 
-[ ] ON A Restart (i.e. close vm and start new vm) the joystick sometimes isn't recognized. I have code in for this, is it not working right? recompute_gamepads.  
+[-] ON A Restart (i.e. close vm and start new vm) the joystick sometimes isn't recognized. I have code in for this, is it not working right? recompute_gamepads. (I think it's working?)  
 
 ## Sep 15, 2025
 
@@ -5863,7 +5863,7 @@ ok flash isn't working.. [fixed]
 ack I ran into another hang in mouse/some infinite loop. maybe put a check in the scheduleEvent routine itself.
 
 [ ] split gr/text mode in L.S. is monochrome in ntsc mode, should be color/ntsc    
-[ ] videx mode (apple ii+) in l.s. causes crash  
+[x] videx mode (apple ii+) in l.s. causes crash  
 
 Trace on/off seems to make hardly any difference in cpu performance. That was not the case before. 
 
@@ -5872,3 +5872,38 @@ I readded the multiply in the speaker code that gradually reduces the polarity t
 Last question is whether to add the lowpass filter. I think before, filtering was required because of the distortions. I should listen to some of this stuff on the real II. SAM, and timelord. Timelord I am not hearing any high pitched whine. I didn't on SAM either. interesting.
 
 Hm, supporting drag'n'drop for disks will avoid having to use the file dialog. maybe that's the thing to do.. so let's say we drag and while hovering we show a drive icon 
+
+So each disk type can ask for SDL_EVENT_DROP_FILE. If it's the wrong file type or otherwise doesn't like it, it can return false and then maybe the other disk type will handle it.
+We're gonna want some method like mountByMediaType that automatically checks out the media type, figures out the slot, etc. For now, it's just hardcoded slot 6 which of course will fail for anything except a 143k floppy image.
+[ ] Drag and drop mount anywhere in window, it tries to figure out the best place to go.  
+[ ] drag and drop onto a drive icon at the bottom, it will use that specific device  
+
+There is also drag and drop of text, which can be used for copy/paste.
+
+### Preferences, and Save File Paths
+
+we currently use get_base_path which is for determining where the app resources lie.
+There is also get_prefs_path which is where we can store per-user per-application preferences. This is likely where we should place custom configurations. (unless we end up doing it with individual files).
+However there is also GetUserFolder, which looks for: Documents, Desktop, Downloads, Music, Screenshots, etc etc.
+
+So, we want to dump the trace log to let's say Screenshots (or desktop?) or Home.
+
+And we want a, I think, static global class to grab this stuff. That might be the easiest. "Singleton" with automatic initialization. Unless we need something passed in from main, in which case we do it as static class with manual initialization. 
+
+## Sep 17, 2025
+
+There is some hinky code in mount, that assumes the diskii is slot 6 and smartport slot 5. What we need to do, is that devices construct a Mount map as they come online and define mountable media spots; e.g. disk ii controller will register two mount locations as well as various callbacks. (or a single message-passing callback with a message type?)
+
+the computer->Mounts will look like this:
+
+slot / drive
+media type (hard disk, 143K floppy, 800k floppy)
+Mount callback
+Unmount callback
+Save callback
+Status callback
+
+Then OSD, drag and drop, debugger etc are clients of this class.
+
+
+btw, French Touch crazy cycles says "headache for emulators, good luck guys"! I should record a video and somehow send it to their attention. But I should validate how these things work on a real apple ii.
