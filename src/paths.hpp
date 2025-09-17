@@ -19,3 +19,18 @@
 
 const std::string& get_base_path(bool console_mode);
 const std::string& get_pref_path(void);
+
+
+class Paths {
+    static std::string base_path;
+    static std::string pref_path;
+    static std::string docs_folder;
+    static std::string home_folder;
+
+    public:
+        static void initialize(bool console_mode);
+        static void calc_base(std::string& return_path, std::string file) ;
+        static void calc_pref(std::string& return_path, std::string file) ;
+        static void calc_docs(std::string& return_path, std::string file) ;
+        static void calc_home(std::string& return_path, std::string file) ;
+};

@@ -15,11 +15,19 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <SDL3/SDL.h>
 #include <SDL3/SDL_filesystem.h>
 #include <iostream>
 
 #include "paths.hpp"
 #include "build_config.hpp"
+
+// Define static member variables
+// this is a little weird, but C++ is a little weird.
+std::string Paths::base_path;
+std::string Paths::pref_path;
+std::string Paths::home_folder;
+std::string Paths::docs_folder;
 
 /**
  * On a Mac, running as a bundle, the base path is BundlePath/Resources. 
@@ -76,4 +84,28 @@ const std::string& get_pref_path(void) {
 #endif
 
     return pref_path;
+}
+
+void Paths::initialize(bool console_mode) {
+    base_path = get_base_path(console_mode);
+    pref_path = get_pref_path();
+    // this returns a const char * and SDL_free wants char *, so ...
+    home_folder = SDL_GetUserFolder(SDL_FOLDER_HOME);
+    docs_folder = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+}
+
+void Paths::calc_base(std::string& return_path, std::string file) {
+     return_path = base_path + file;
+}
+
+void Paths::calc_pref(std::string& return_path, std::string file) {
+    return_path = pref_path + file;
+}
+
+void Paths::calc_home(std::string& return_path, std::string file) {
+    return_path = home_folder + file;
+}
+
+void Paths::calc_docs(std::string& return_path, std::string file) {
+    return_path = docs_folder + file;
 }

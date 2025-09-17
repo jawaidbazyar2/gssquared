@@ -415,7 +415,10 @@ void run_cpus(computer_t *computer) {
     // save cpu trace buffer, then exit.
     computer->video_system->update_display(); // update one last time to show the last state.
 
-    cpu->trace_buffer->save_to_file(gs2_app_values.pref_path + "trace.bin");
+    //cpu->trace_buffer->save_to_file(gs2_app_values.pref_path + "trace.bin");
+    std::string tracepath;
+    Paths::calc_docs(tracepath, "trace.bin");
+    cpu->trace_buffer->save_to_file(tracepath);
 }
 
 void run_cpus_old(computer_t *computer) {
@@ -728,6 +731,7 @@ int main(int argc, char *argv[]) {
     if (isatty(fileno(stdin))) {
         gs2_app_values.console_mode = true;
     }
+    Paths::initialize(gs2_app_values.console_mode);
 
     gs2_app_values.base_path = get_base_path(gs2_app_values.console_mode);
     printf("base_path: %s\n", gs2_app_values.base_path.c_str());
