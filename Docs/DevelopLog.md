@@ -5925,6 +5925,6 @@ the new mixer seems to be working quite well too. I am not getting the highly va
 
 Cybernoid music disk works much better than it used to with the new mixing. It's possible the noise channel is too loud. I believe it does respect the volume, however, maybe the noise amplitude should be tamped down a bit. ok so I multiply it down by 0.5 and that seems better balanced on cybernoid. Let's try the french touch ch12 again. esp with the external speakers, it's fricken amazing!
 
-weird ok somehow all the audio has gotten delayed by a couple seconds - speaker and MB. that's gonna be because of the fricken delayed audio issue when too much time is taken by the file dialog. So for testing purposes right now, use the drag'n'drop.
+weird ok somehow all the audio has gotten delayed by a couple seconds - speaker and MB. that's gonna be because of the fricken delayed audio issue when too much time is taken by the file dialog. So for testing purposes right now, use the drag'n'drop. I think maybe I just have to build my own file picker. (They're just not that hard).
 
-I think maybe I just have to build my own file picker. (They're just not that hard).
+[x] instead of dynamically altering the mb filter, just set it to a fixed value. Trying 14KHz for now. It sounds way more "open" and dynamic.  
