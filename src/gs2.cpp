@@ -203,8 +203,8 @@ void run_cpus(computer_t *computer) {
     while (cpu->halt != HLT_USER) { // top of frame.
 
         uint64_t frdiff = frame_14M_marker - last_frame_14M_marker; // this is just a check.
-        last_frame_14M_marker = frame_14M_marker;
-        uint64_t end_frame_c_14M = frame_14M_marker;
+        //last_frame_14M_marker = frame_14M_marker;
+        uint64_t end_frame_c_14M = frame_14M_marker + 238944;
 
         if (cpu->execution_mode == EXEC_STEP_INTO) {
             
@@ -410,6 +410,7 @@ void run_cpus(computer_t *computer) {
         computer->frame_status_update();
 
         frame_count++;
+        last_frame_14M_marker = frame_14M_marker;
     }
 
     // save cpu trace buffer, then exit.
