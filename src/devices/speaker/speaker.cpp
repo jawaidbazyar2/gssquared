@@ -169,37 +169,39 @@ uint64_t audio_generate_frame(cpu_state *cpu  /* , uint64_t cycle_window_start, 
 
     if (last_hz_rate != cpu->HZ_RATE) {
         last_hz_rate = cpu->HZ_RATE;
-        sc->reconfigure(59.923f, cpu->HZ_RATE, 44343.0f, 740);
+        sc->reconfigure(59.9227f, cpu->HZ_RATE, 44343.0f, 740);
         sc->print();
     }
 
-    if (speaker_state->first_time) {
+    // the primary purpose of this is to put even more samples in - if we stretch a frame early on, the apple ii boot beep gets distorted.
+    /* if (speaker_state->first_time) {
         speaker_state->first_time = false;
         printf("audio_generate_frame: first time send empty frame and a bit more\n");
         memset(speaker_state->working_buffer, 0, sc->samples_per_frame * sizeof(int16_t));
         SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
-        SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
+        //SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
         return sc->samples_per_frame*2;
-    }
+    } */
 
-    uint64_t queued_samples = SDL_GetAudioStreamQueued(speaker_state->stream);
+    uint64_t queued_samples = SDL_GetAudioStreamQueued(speaker_state->stream) / sizeof(int16_t);
     int16_t addsamples = 0;
     if (queued_samples < (sc->samples_per_frame)) { // was a half frame, but we want more.
         addsamples = (sc->samples_per_frame - queued_samples) / 2; // half of what we need so we asymptotically approach the target.
         if (addsamples > 500) addsamples = 500;
-        printf("queue underrun %llu %f %f adding %d extra samples\n", queued_samples, speaker_state->amplitude, speaker_state->polarity, addsamples);
+        //printf("queue underrun %llu %f %f adding %d extra samples\n", queued_samples, speaker_state->amplitude, speaker_state->polarity, addsamples);
     }
 
     speaker_state->sp->generate_buffer_int(speaker_state->working_buffer, sc->samples_per_frame );
-    if (addsamples) {
+
+    if ( addsamples ) {
         int16_t extra_sample = speaker_state->working_buffer[sc->samples_per_frame - 1];
         for (int i = 0; i < addsamples; i++) {
             speaker_state->working_buffer[sc->samples_per_frame + i] = extra_sample;
         }
         SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, (sc->samples_per_frame + addsamples) * sizeof(int16_t));
-    } else {
+    } else { 
         SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame * sizeof(int16_t));
-    }
+     }
     
     return sc->samples_per_frame;
 }
@@ -234,15 +236,20 @@ void speaker_memory_write(void *context, uint16_t address, uint8_t value) {
 void speaker_start(cpu_state *cpu) {
     speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
     speaker_config_t *sc = speaker_state->sp->config;
+    
+    int x = SDL_GetAudioStreamQueued(speaker_state->stream);
 
     // Start audio playback
     // put a frame of blank audio into the buffer to prime the pump.
+    memset(speaker_state->working_buffer, 0, sc->samples_per_frame * sizeof(int16_t));
+    bool ret = SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
+    ret = SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
+
+    x = SDL_GetAudioStreamQueued(speaker_state->stream);
 
     if (!SDL_ResumeAudioDevice(speaker_state->device_id)) {
         std::cerr << "Error resuming audio device: " << SDL_GetError() << std::endl;
     }
-    memset(speaker_state->working_buffer, 0, sc->samples_per_frame * sizeof(int16_t));
-    SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
 
     speaker_state->device_started = 1;
 }
@@ -264,7 +271,7 @@ DebugFormatter * debug_speaker(speaker_state_t *ds) {
     DebugFormatter *df = new DebugFormatter();
         
     df->addLine("   Speaker ");
-    uint16_t samples = SDL_GetAudioStreamQueued(ds->stream);
+    uint16_t samples = SDL_GetAudioStreamQueued(ds->stream) / sizeof(int16_t); // return is bytes not samples
     uint64_t frame_index = (samples * 10) / ds->sp->config->samples_per_frame;
 
     df->addLine("  Samples: ---------+---------+---------+---------+---------+", samples);
@@ -282,7 +289,7 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 
     speaker_state_t *speaker_state = new speaker_state_t;
 
-    speaker_config_t *sc = new speaker_config_t(59.923f, 1020484.0f, 44343.0f, 740);
+    speaker_config_t *sc = new speaker_config_t(59.9227f, 1020484.0f, 44343.0f, 740);
     EventBufferRing *eb = new EventBufferRing(next_power_of_2(120'000));
     speaker_state->sp = new Speaker(sc, eb);
     speaker_state->event_buffer = eb;
@@ -322,9 +329,9 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 
     SDL_PauseAudioDevice(speaker_state->device_id);
 
-    // prime the pump with a few frames of silence.
-    memset(speaker_state->working_buffer, 0, SAMPLES_PER_FRAME * sizeof(int16_t));
-    SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, SAMPLES_PER_FRAME*sizeof(int16_t));
+    // prime the pump with a few frames of silence - make sure we use the correct frame size so we pass the check in generate.
+    /* memset(speaker_state->working_buffer, 0, speaker_state->sp->config->samples_per_frame * sizeof(int16_t));
+    SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, speaker_state->sp->config->samples_per_frame*sizeof(int16_t)); */
 
     if (DEBUG(DEBUG_SPEAKER)) fprintf(stdout, "init_speaker\n");
     for (uint16_t addr = 0xC030; addr <= 0xC03F; addr++) {
