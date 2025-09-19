@@ -544,7 +544,7 @@ public:
                         float tone_contribution = tone.output ? tone.volume : -tone.volume;
                         
                         // For noise: true = +volume, false = -volume
-                        float noise_contribution = (chip.noise_output ? tone.volume : -tone.volume) * 0.5f;
+                        float noise_contribution = (chip.noise_output ? tone.volume : -tone.volume) * 0.6f;
                         float channel_output;
 
                         // If both are enabled, average them
@@ -567,6 +567,7 @@ public:
                 } */
                 
             }
+            // TODO: add checks here to detect overdriving/exceeding -1.0/1.0. 
             // Append the mixed samples to the buffer
             audio_buffer->push_back(mixed_output[0]);
             audio_buffer->push_back(mixed_output[1]);
@@ -743,8 +744,9 @@ private:
         int tone_period = chips[chip_index].tone_channels[channel].period;
         int tp = tone_period > 0 ? tone_period : 1;
 
-        float cutofffreq = (63781.0f / tp) * 3;
-        cutofffreq = cutofffreq < 19500.0f ? cutofffreq : 19500.0f;
+        /* float cutofffreq = (63781.0f / tp) * 3;
+        cutofffreq = cutofffreq < 19500.0f ? cutofffreq : 19500.0f; */
+        float cutofffreq = 14000.0f;
 
         int filter_index = 1 + channel + chip_index * 2;  
         filter_state& filter = filters[filter_index];
