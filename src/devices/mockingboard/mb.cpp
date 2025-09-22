@@ -120,7 +120,7 @@ static const float normalized_levels[16] = {
 class MockingboardEmulator {
 private:
     // Constants
-    static constexpr double MASTER_CLOCK = 1020500.0; // 1MHz
+    static constexpr double MASTER_CLOCK = /* 1020500.0 */ 1020484.0; // 1MHz
     static constexpr int CLOCK_DIVIDER = 16;
     static constexpr double CHIP_FREQUENCY = MASTER_CLOCK / CLOCK_DIVIDER; // 62.5kHz
     static constexpr int ENVELOPE_CLOCK_DIVIDER = 256;  // First stage divider for envelope
@@ -202,6 +202,13 @@ public:
         AY3_8910& chip = chips[event.chip_index];
         chip.live_registers[event.register_num] = event.value;
 
+        // for debugging, store the timestamp of event and current emulated time.
+        dbg_last_event = event.timestamp;
+        dbg_last_time = current_time;
+
+        if (dbg_last_event < current_time) {
+            std::cout << "[" << current_time << "] Event timestamp is in the past: " << dbg_last_event << std::endl;
+        }
     }
     
     // Process a register change
@@ -215,29 +222,6 @@ public:
         
         //debug_register_change(current_time, event.chip_index, event.register_num, event.value);
         if (DEBUG(DEBUG_MOCKINGBOARD)) display_registers();
-
-/*         // Debug output for important register changes
-        if (event.chip_index == 0) {
-            switch (event.register_num) {
-                case Envelope_Period_Low: case Envelope_Period_High:
-                    if (DEBUG) std::cout << "[" << current_time << "] Envelope period set to: " 
-                              << ((chip.registers[Envelope_Period_High] << 8) | chip.registers[Envelope_Period_Low]) 
-                              << std::endl;
-                    break;
-                case Envelope_Shape:
-                    if (DEBUG) std::cout << "[" << current_time << "] Envelope shape set to: " << static_cast<int>(event.value & 0x0F) 
-                              << " (attack=" << ((event.value & 0x04) != 0)
-                              << ", hold=" << ((event.value & 0x01) == 0)
-                              << ")" << std::endl;
-                    break;
-                case Ampl_A: case Ampl_B: case Ampl_C:
-                    if (DEBUG) std::cout << "[" << current_time << "] Channel " << (event.register_num - Ampl_A) 
-                              << " volume set to: " << static_cast<int>(event.value & 0x0F)
-                              << " (envelope=" << ((event.value & 0x10) != 0) << ")" 
-                              << std::endl;
-                    break;
-            }
-        } */
         
         // Update internal state based on register change
         switch (event.register_num) {
@@ -706,6 +690,9 @@ private:
 public:
     AY3_8910 chips[2];
 
+    double dbg_last_event =0.0f;
+    double dbg_last_time =0.0f;
+
 private:
     double current_time;
     double time_accumulator;
@@ -713,6 +700,7 @@ private:
     std::deque<RegisterEvent> pending_events;
     std::vector<float>* audio_buffer;  // Pointer to external audio buffer
     float alpha;
+
 
     // Helper function to write a 16-bit value to a file
     void write16(std::ofstream& file, uint16_t value) {
@@ -1410,6 +1398,7 @@ DebugFormatter *debug_registers_6522(mb_cpu_data *mb_d) {
     df->addLine("Ampl A: %02X  Ampl B: %02X  Ampl C: %02X", mb->read_register(1, Ampl_A), mb->read_register(1, Ampl_B), mb->read_register(1, Ampl_C));
     df->addLine("Env Period: %04X  Env Shape: %02X", mb->chips[1].envelope_period, mb->chips[1].envelope_shape);
     df->addLine("--------------------------------");
+    df->addLine("Last event: %14.6f  Last time: %14.6f", mb->dbg_last_event, mb->dbg_last_time);
     return df;
 }
 
