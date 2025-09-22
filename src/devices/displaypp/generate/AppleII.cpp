@@ -12,7 +12,7 @@
 class AppleII_Display {
 
 private: 
-    CharRom &char_rom;
+    CharRom *char_rom;
     bool flash_state = false;
     bool alt_char_set = false;
     uint8_t hires40Font[2 * CHAR_NUM * CHAR_WIDTH];
@@ -77,12 +77,12 @@ private:
     };
 
 public:
-    AppleII_Display(CharRom &char_rom) : char_rom(char_rom) { 
+    AppleII_Display(CharRom *char_rom) : char_rom(char_rom) { 
         buildHires40Font(true);
      }
 
     void set_char_set(bool alt_char_set) {
-        char_rom.set_char_set(alt_char_set);
+        char_rom->set_char_set(alt_char_set);
     }
 
     void set_flash_state(bool flash_state) {
@@ -122,13 +122,13 @@ public:
 
                 uint8_t tchar = textpage[char_addr];
 
-                if (char_rom.is_flash(tchar)) {
+                if (char_rom->is_flash(tchar)) {
                     invert = flash_state;
                 } else {
                     invert = false;
                 }
 
-                uint8_t cdata = char_rom.get_char_scanline(tchar, y);
+                uint8_t cdata = char_rom->get_char_scanline(tchar, y);
 
                 f->push((cdata & 1) ^ invert); 
                 f->push((cdata & 1) ^ invert); 
@@ -174,9 +174,9 @@ public:
 
                 uint8_t tchar = alttextpage[char_addr];
 
-                uint8_t cdata = char_rom.get_char_scanline(tchar, y);
+                uint8_t cdata = char_rom->get_char_scanline(tchar, y);
 
-                if (char_rom.is_flash(tchar)) {
+                if (char_rom->is_flash(tchar)) {
                     invert = flash_state;
                 } else {
                     invert = false;
@@ -191,8 +191,8 @@ public:
                 f->push((cdata & 1) ^ invert); cdata>>=1;
 
                 tchar = textpage[char_addr];
-                cdata = char_rom.get_char_scanline(tchar, y);
-                if (char_rom.is_flash(tchar)) {
+                cdata = char_rom->get_char_scanline(tchar, y);
+                if (char_rom->is_flash(tchar)) {
                     invert = flash_state;
                 } else {
                     invert = false;

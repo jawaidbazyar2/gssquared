@@ -846,7 +846,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     ds->vsg = new VideoScanGenerator(charrom);
 
     ds->char_rom = charrom;
-    ds->a2_display = new AppleII_Display(*charrom);
+    ds->a2_display = new AppleII_Display(charrom);
     
     uint16_t f_w = BASE_WIDTH+20;
     uint16_t f_h = BASE_HEIGHT;

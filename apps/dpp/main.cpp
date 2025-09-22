@@ -237,9 +237,9 @@ int main(int argc, char **argv) {
     NTSC560 ntsc_render;
     GSRGB560 rgb_render;
 
-    AppleII_Display display_iie(iie_rom);
+    AppleII_Display display_iie(&iie_rom);
     iie_rom.print_matrix(0x40);
-    AppleII_Display display_iiplus(iiplus_rom);
+    AppleII_Display display_iiplus(&iiplus_rom);
     iiplus_rom.print_matrix(0x40);
     //display.set_char_set(true);
 
