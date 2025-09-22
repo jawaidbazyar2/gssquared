@@ -176,11 +176,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 configure_sdl_builds()
 
 # Define flags for different build types
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3 -fsanitize=address,undefined -fno-omit-frame-pointer")
+#set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3 -fsanitize=address,undefined -fno-omit-frame-pointer")
+if(WIN32)
+    # Windows debug build without sanitizers
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3")
+else()
+    # Non-Windows debug build with sanitizers
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3 -fsanitize=address,undefined -fno-omit-frame-pointer")
+endif()
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # When using sanitizers, we need to link with them too
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT WIN32)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address,undefined")
 endif()
 
