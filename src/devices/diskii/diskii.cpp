@@ -159,6 +159,7 @@ In DOS at $B800 lives the "prenibble routine" . I could perhaps steal that. hehe
 #include <stdlib.h>
 #include <cstring>
 
+#include "util/strndup.h"
 #include "cpu.hpp"
 #include "diskii.hpp"
 #include "util/Event.hpp"
