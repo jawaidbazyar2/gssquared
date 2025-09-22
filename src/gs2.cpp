@@ -187,8 +187,11 @@ void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time,
 }
 
 /*
-This is the run_cpus func with:
-speeds other than 1mhz ripped out,
+main emulation loop.
+Each iteration inside (while cpu->halt) is a frame.
+A frame is:
+execution of a certain number of CPU cycles based on cpu speed setting;
+execution of device frame handlers, including video frame output and audio frame output;
 */
 void run_cpus(computer_t *computer) {
     cpu_state *cpu = computer->cpu;
