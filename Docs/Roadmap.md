@@ -34,7 +34,7 @@
 [x] Implement cycle-accurate video display to support apps that switch video mode by counting cycles  
 [x] implement floating-bus read based on video data  
 
-[x] provide a mode for Atari Joyport - use the dpad. https://lukazi.blogspot.com/2009/04/game-controller-atari-joysticks.html. Can also use gamepad.    
+[x] provide a mode for Atari Joyport - use the dpad. https://lukazi.blogspot.com/2009/04/game-controller-atari-joysticks.html. Can also use gamepad.  
 
 ## Release 0.6
 

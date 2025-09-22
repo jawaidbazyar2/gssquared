@@ -5928,3 +5928,40 @@ Cybernoid music disk works much better than it used to with the new mixing. It's
 weird ok somehow all the audio has gotten delayed by a couple seconds - speaker and MB. that's gonna be because of the fricken delayed audio issue when too much time is taken by the file dialog. So for testing purposes right now, use the drag'n'drop. I think maybe I just have to build my own file picker. (They're just not that hard).
 
 [x] instead of dynamically altering the mb filter, just set it to a fixed value. Trying 14KHz for now. It sounds way more "open" and dynamic.  
+
+ah ha, I found a volume issue that is fairly easily reproducible. The music disk for cricket and mockingboard. 
+play gay nineties ragtime dance. a number of times the first few bars come across in ultra-low volume, even though the Ampl register is set to F. 
+of course it doesn't want to fail when running in the debugger. ok now it's doing it.
+alright, so when we finally get around to setting the volume, current_time is 280.07056, and timestamp of the event we're processing is 280.0306.. So we're out of sync on the frame. The register change is happening in the past compared to current audio frame. so it's missed? 
+
+## Sep 20, 2025
+
+OK so the mockingboard issue is definitely when: open file dialog causes emulator to skip frames, the decoding window and current cpu cycles/time gets out of sync, and events get posted to times BEFORE the current decoding window. If I load disks through drag and drop then there is no problemo. After I cause a few delays, I get these issues.
+
+This is the same cause as speaker issues. 
+
+ok lets try the "freeze emulator while dialog is open" thing.
+Alright so let's say I'm doing that. SDL_GetTicksNS is gonna continue incrementing even if the cpu counters don't. Let's see where all I use that.
+it's used by Metrics; no problem. OSD for calculating some stuff, no problem. pdblock2 to turn the drive light off after 1s; ok. WAS used in mb.cpp but not any more. 
+used in cpu/get_current_time_in_microseconds but that's commented-out.
+void computer_t::frame_status_update() just for display purposes.
+of course by frame_sleep, to sync to the next frame. Give that one some thought.
+main event loop ludicrous speed stanza;
+
+OK. So nothing except ludicrous speed cares about this, and that only during execution of a frame which will not cause the issue. Let's see where we call SDL_FileOpen. 
+only in OSD event handler, which occurs after CPU processing but before emitting other device frames. So what we want to do is:
+
+stop all audio output;
+instead of doing show open file dialog there, we pass a message to halt execution and then open it inside a special event loop. (This is such a big PITA). 
+
+Let's analyze and more thoroughly document how the MB works.
+
+### processChipCycle
+
+the intention here is for every chip (CPU) cycle that has elapsed (assuming fixed 1.0205 mhz rate) we process one iteration of the counters. The counter starts at the programmed tone interval, and for each cpu cycle, decrements. At 1/2 the counter, and at 0, we flip the channel.output variable between 0 and 1, which causes code later to include a contribution of either +volume or -volume. I.e., toggling between high and low of a square wave.
+
+generateSamples loops from 0 to number of samples (740 currently) per frame. We have calculated the fractional cycles per sample. 
+
+except for the timestamp check at the top, this function deals with all integer values. 
+
+The Envelope Generator can tick at the fastest at 3.986khz. This is further divided by the Envelope Period. So if EP is set to 4096, the envelope will process at 0.973hz. (this is then divided by 16 sub-cycles). 

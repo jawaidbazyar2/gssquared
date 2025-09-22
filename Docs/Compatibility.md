@@ -30,6 +30,14 @@ in 0.3x, we don't even ever get off track 0, like it's not booting correctly.
 
 This works now, though we're a few cycles off in the VideoScanner.
 
+## Mad Effects #2
+
+another french touch demo - this one synchronizes the mb timers to vbl (works on either ntsc or pal). It does not play right at all. So there must be something wrong with my handling of: when VBL takes effect, or MB timing specifics. I'm actually wondering about the vbl timing. Also, possible phantom read stuff.
+
+the source code is at https://github.com/Fr3nchT0uch/Mad_Effect_2/blob/main/main.a 
+
+they do a lot of their cycle counting inside the interrupt handler, so this will be a doozy!
+
 ## four_voice_music.dsk
 
 A random collection, but the most interesting thing here is a demo program that plays 4 voice music pieces.
