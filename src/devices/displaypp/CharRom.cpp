@@ -17,7 +17,7 @@ CharRom::CharRom(const char *filename) {
     if (!f) {
         printf("Failed to open char rom file: %s\n", fullfilename.c_str());
         valid = false;
-        delete[] data;
+        ::operator delete[](data, std::align_val_t(64));
         return;
     }
 
@@ -26,7 +26,7 @@ CharRom::CharRom(const char *filename) {
     if (size != 2048 && size != 4096 && size != 8192) {
         printf("Invalid char rom file: %s\n", filename);
         valid = false;
-        delete[] data;
+        ::operator delete[](data, std::align_val_t(64));
         return;
     }
 
@@ -85,7 +85,7 @@ CharRom::CharRom(const char *filename) {
 }
 
 CharRom::~CharRom() {
-    delete[] data;
+    ::operator delete[](data, std::align_val_t(64));
 }
 
 uint8_t CharRom::reverse_bits(uint8_t b) {
