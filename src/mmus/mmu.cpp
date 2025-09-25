@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "mmu.hpp"
+#include "util/DebugFormatter.hpp"
 
 /**
  * MMU provides the memory management interface for the CPU.
@@ -216,6 +217,22 @@ void MMU::dump_page_table(page_t start_page, page_t end_page) {
             page_table[i].shadow_h.write, page_table[i].shadow_h.context
         );
     }
+}
+
+void MMU::debug_output_page(DebugFormatter *f, page_t page, bool header) {
+    if (header) {
+        f->addLine("Page                        R-Ptr            W-Ptr              read_h   (    context     )        write_h  (     context    )        S-Handler(     context    )\n");
+        f->addLine("-------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+    }
+    f->addLine("%02X (%8s %8s): %16p %16p %16p(%16p) %16p(%16p) %16p(%16p)\n", 
+        page, 
+        page_table[page].read_d, page_table[page].write_d, //page_table[i].readable, page_table[i].writeable,
+        page_table[page].read_p,
+        page_table[page].write_p, 
+        page_table[page].read_h.read, page_table[page].read_h.context,
+        page_table[page].write_h.write, page_table[page].write_h.context,
+        page_table[page].shadow_h.write, page_table[page].shadow_h.context
+    );
 }
 
 void MMU::dump_page_table() {
