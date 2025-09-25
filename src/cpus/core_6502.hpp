@@ -26,16 +26,6 @@
 namespace cpu_6502 {
 
 /**
- * not sure how I feel about this. I could just leave them back in the core_6502.cpp file..
- */
-
-#if 0
-uint64_t get_current_time_in_microseconds() {
-    return SDL_GetTicksNS() / 1000;
-}
-#endif
-
-/**
  * This group of routines implement reused addressing mode calculations.
  *
  */
