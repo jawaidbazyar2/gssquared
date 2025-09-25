@@ -5975,7 +5975,7 @@ on windows, we're crashing out somewhere in calling the shutdown_handlers in com
 
 bugs!
 
-[ ] skull island dhgr splash screen displays wrong hires page
+[x] skull island dhgr splash screen displays wrong hires page
 
 300g
 turns on double hires (c05e)
@@ -6065,3 +6065,11 @@ this means, display and iiememory BOTH need to track these. More specifically, i
 [ ] per table 5.4 also, C018 is MMU, C01C/C01D are IOU (display).
 
 [ ] check condition after reset on table 7.1 of understanding iie - make sure we are implementing those reset conditions.  
+
+## Sep 25, 2025
+
+[ ] Mouse Reset tends to cause emulator to lock up by sending an infinite series of new scheduleEvent for current cpu cycle. Do it by launching Skull Island, wait for MB to start, then hit reset a few times. should probably also disable interrupts?    
+
+[ ] Chiptunes stuff (skull island, crazy cycles 2) generate unending streams of: 
+[Current Time:   101.782942] Event timestamp is in the past:   101.777735
+

@@ -44,4 +44,5 @@
 [ ] Can edit slots / hw config before powering-on. (Click edit under tile to edit it)
 [ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  
 [ ] put "modified" indicator of some kind on the disk icons.  
-[ ] Support PAL video emulation  
+[ ] Support PAL video timing  
+
