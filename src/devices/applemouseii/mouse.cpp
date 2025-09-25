@@ -223,7 +223,7 @@ void mouse_vbl_interrupt(uint64_t instanceID, void *user_data) {
     
     ds->status.int_vbl = 1;
     mouse_propagate_interrupt(ds);
-    if (ds->vbl_cycle < ds->computer->cpu->cycles) {
+    if (ds->vbl_cycle <= ds->computer->cpu->cycles) {
         fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", ds->vbl_cycle, ds->computer->cpu->cycles);
         return;
     }
