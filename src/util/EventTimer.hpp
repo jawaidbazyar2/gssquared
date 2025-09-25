@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "gs2.hpp"
+#include "cpu.hpp"
 
 class EventTimer {
 public:
@@ -11,8 +12,9 @@ public:
         uint64_t instanceID;
         void* userData;
     };
+    cpu_state *cpu;
     uint64_t next_event_cycle = 0;
-    EventTimer();
+    EventTimer(cpu_state *cpu = nullptr) { this->cpu = cpu; }
     ~EventTimer();
 
     void scheduleEvent(uint64_t triggerCycles, void (*callback)(uint64_t, void*), uint64_t instanceID, void* userData = nullptr);

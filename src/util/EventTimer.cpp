@@ -3,9 +3,11 @@
 #include <limits>
 #include <iostream>
 #include "debug.hpp"
+#include "cpu.hpp"
 
 // Constructor implementation
-EventTimer::EventTimer() = default;
+/* EventTimer::EventTimer(cpu_state *cpu) : cpu(cpu) {
+} */
 
 // Destructor implementation 
 EventTimer::~EventTimer() = default;
@@ -18,7 +20,10 @@ inline void EventTimer::updateNextEventCycle() {
 // Add a new event to the queue
 void EventTimer::scheduleEvent(uint64_t triggerCycles, void (*callback)(uint64_t, void*), uint64_t instanceID, void* userData) {
     if (DEBUG(DEBUG_EVENT_TIMER)) std::cout << "scheduleEvent: " << triggerCycles << " InstanceID: " << instanceID << std::endl;
-    
+    if (cpu && triggerCycles < cpu->cycles) {
+        std::cout << "scheduleEvent: Event in the past, skipping" << std::endl;
+        return;
+    }
     // Check if an event with the same instanceID already exists
     auto existingEvent = std::find_if(events.begin(), events.end(), 
         [instanceID](const Event& event) { return event.instanceID == instanceID; });
