@@ -11,12 +11,13 @@ class MMU_II;
 struct display_state_t;
 struct computer_t;
 
-#define F_GRAF   0b10'0000
-#define F_HIRES  0b01'0000
-#define F_PAGE2  0b00'1000
-#define F_80COL  0b00'0100
-#define F_DBLRES 0b00'0010
-#define F_MIXED  0b00'0001
+#define F_80STORE 0b100'0000
+#define F_GRAF   0b010'0000
+#define F_HIRES  0b001'0000
+#define F_PAGE2  0b000'1000
+#define F_80COL  0b000'0100
+#define F_DBLRES 0b000'0010
+#define F_MIXED  0b000'0001
 
 typedef enum {
     VM_TEXT40 = 0,
@@ -88,21 +89,22 @@ protected:
     bool      sw80col = false;
     bool      altchrset = false;
     bool      dblres = false;
+    bool      f_80store = false;
     uint8_t   mode_flags = 0;
 
     video_mode_t video_mode;
     uint8_t vmode = 0;
-    mode_table_t mode_table[64];
+    mode_table_t mode_table[128];
 
     MMU_II * mmu = nullptr;
 
     mode_table_t calc_video_mode_x(uint8_t vmode);
-    virtual void set_video_mode();
     virtual void init_mode_table();
 
 public:
 uint32_t  hcount;       // use separate hcount and vcount in order
 uint32_t  vcount;       // to simplify IIgs scanline interrupts
+virtual void set_video_mode();
 
     VideoScannerII(MMU_II *mmu);
     virtual ~VideoScannerII() = default;
@@ -123,6 +125,7 @@ uint32_t  vcount;       // to simplify IIgs scanline interrupts
     inline void set_hires()  { hires = true;  set_video_mode(); }
     inline void set_text()   { graf  = false; set_video_mode(); }
     inline void set_graf()   { graf  = true;  set_video_mode(); }
+    inline void set_80store(bool fl) { f_80store = fl; set_video_mode(); }
 
     inline bool is_page_1() { return !page2; }
     inline bool is_page_2() { return  page2; }

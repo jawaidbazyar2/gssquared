@@ -5965,3 +5965,103 @@ generateSamples loops from 0 to number of samples (740 currently) per frame. We 
 except for the timestamp check at the top, this function deals with all integer values. 
 
 The Envelope Generator can tick at the fastest at 3.986khz. This is further divided by the Envelope Period. So if EP is set to 4096, the envelope will process at 0.973hz. (this is then divided by 16 sub-cycles). 
+
+## Sep 22, 2025
+
+on windows, we're crashing out somewhere in calling the shutdown_handlers in computer. I guess I need to get a debugger going cuz printf isn't catching it. I want to cut a release so let's log an issue.
+
+
+# Sep 24, 2025
+
+bugs!
+
+[ ] skull island dhgr splash screen displays wrong hires page
+
+300g
+turns on double hires (c05e)
+
+does auxmove 2000 - 3fff to 4000-5fff in aux
+C00D - enable 80-col mode
+c050 - graphics mode
+c052 - full screen graphics
+c055 - page2 - uses dhgr page 2???
+c057 - hires mode
+c010 - clear keyboard 
+
+return to basic
+
+after this, page 2 is enabled (C01C is high)
+
+I'm guessing this is supposed to be still on page1. 
+
+ok, in L.S. I get the correct results (display is page2 dhgr)
+There must be something wrong in the cycle-accurate display code
+VideoScannerII:calc_video_mode_x.. 
+
+The VideoScanner calc_mode_x routine was wrong. it was not allowing the page2 switch to control if 80col happened to be set. We actually prevent page2 s/s from doing that in iiememory:
+
+        case 0xC054: // PAGE2OFF
+            if (!iiememory_d->f_80store) retval = txt_bus_read_C054(ds, address);
+            else iiememory_d->s_page2 = false;
+            break;
+
+ok space quest is now not remotely working correctly.
+
+I am getting inconsistent behavior between emulators:
+
+So let's say we do:
+   lda c054 <- page 1
+   sta c001 <- 80store
+
+What happens? 
+
+   lda c055 <- page 2
+   sta c001 <- 80store
+
+a2ts: we get text page 2, aux ram.
+mariani: we get text page 1, ?? ram.
+real iie: text page 1, ?? ram.
+
+This is feeling like when 80STORE is on, the video scanner is forced to page1.
+
+what happens here:
+   sta c001
+   lda c055
+page2 flag reads 1; display is still page 1; 80store=1
+
+How about:
+  lda c055
+  sta c001
+  sta c000
+
+Mariani: we end up displaying text page 2.
+real iie: display text page 2
+
+ok. SO. it's the SAME switch. the MMU and IOU each track the value.
+But when 80STORE is on, the video display IGNORES the page2 setting, and displays page1.
+
+So these tweaks are going to fix VideoScanner, and I will have to separately fix AppleII video generation.
+* iiememory_read_display
+* update_display_flags
+* calc_video_mode_x (leave this as-is)
+
+So -always- sync s_page2 in iiememory; -always- call the display txt_c054/5 handler; 
+page2 doesn't change; but video mode needs to be recalculated because of the changed handling of page2;
+
+oh oh. 
+video scanner is checking 80col, not 80store. DUH.
+
+"80STORE, PAGE2, and HIRES are mechanized identically in the MMU and IOU. "- sather
+this means, display and iiememory BOTH need to track these. More specifically, iiememory can tell the video scanner the state of 80store whenerver it's updated.
+
+[ ] bug:
+   booted with joystick off
+   keyboard kept reading joystick button 0 down and rebooting.
+   turn joystick on, then the reading clears to 0 and ctrl-reset works as exepcted.
+
+[ ] ds->video_system->set_full_frame_redraw(); <-- we can get rid of all these once we're confident we're sticking with the "redraw full frames in LS mode.
+
+[ ] check condition after reset on table 5.4 of understanding iie - make sure we are implementing those reset conditions.  
+[ ] per table 5.4 also, C018 is MMU, C01C/C01D are IOU (display).
+
+[ ] check condition after reset on table 7.1 of understanding iie - make sure we are implementing those reset conditions.  

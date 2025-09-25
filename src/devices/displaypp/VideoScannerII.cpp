@@ -63,7 +63,7 @@ void VideoScannerII::init_video_addresses()
 }
 
 void VideoScannerII::init_mode_table() {
-    for (int i = 0; i < 64; i++) {
+    for (int i = 0; i < 128; i++) {
         mode_table[i] = calc_video_mode_x(i);
     }
 }
@@ -77,6 +77,7 @@ mode_table_t VideoScannerII::calc_video_mode_x(uint8_t xvmode)
     bool xsw80col = xvmode & F_80COL;
     bool xdblres = xvmode & F_DBLRES;
     bool xmixed = xvmode & F_MIXED;
+    bool xf80store = xvmode & F_80STORE;
 
     mode_table_t mt;
 
@@ -116,20 +117,22 @@ mode_table_t VideoScannerII::calc_video_mode_x(uint8_t xvmode)
     }
 
     if (mt.mode == VM_TEXT40 || mt.mode == VM_TEXT80 || mt.mode == VM_LORES || mt.mode == VM_DLORES) { // text modes, page 1 and 2
-        if (xpage2 && !xsw80col) {
+        if (xpage2 && !xf80store) {
             mt.vaddr = &(lores_p2_addresses);
         } else {
             mt.vaddr = &(lores_p1_addresses);
         }
     } else { // a hires graphics mode.
+        // Experiment shows that when **80STORE** is on, the video scanner is forced to page1.
+        // this should be checking 80STORE, not 80COL.
         if (xmixed) { // if mixed.. 
-            if (xpage2 && !xsw80col) { // page 2 / 1
+            if (xpage2 && !xf80store) { // page 2 / 1
                 mt.vaddr = &(mixed_p2_addresses);
             } else {
                 mt.vaddr = &(mixed_p1_addresses);
             }
         } else { // not mixed..
-            if (xpage2 && !xsw80col) {
+            if (xpage2 && !xf80store) {
                 mt.vaddr = &(hires_p2_addresses);
             } else {
                 mt.vaddr = &(hires_p1_addresses);
@@ -143,6 +146,7 @@ mode_table_t VideoScannerII::calc_video_mode_x(uint8_t xvmode)
 void VideoScannerII::set_video_mode()
 {
     vmode = 0;
+    vmode |= f_80store ? F_80STORE : 0;
     vmode |= graf ? F_GRAF : 0;
     vmode |= hires ? F_HIRES : 0;
     vmode |= page2 ? F_PAGE2 : 0;
@@ -160,33 +164,6 @@ void VideoScannerII::set_video_mode()
     if (sw80col) flags |= VS_FL_80COL;
     mode_flags = flags;
 }
-
-/* 
-void VideoScannerII::set_video_mode()
-{
-    // Set combined mode and video address LUT
-    // assume text/lores addresses until proven otherwise
-    if (page2) {
-        video_addresses = &(lores_p2_addresses);
-    } else {
-        video_addresses = &(lores_p1_addresses);
-    }
-
-    if (graf) {
-        if (hires) {
-            video_mode = VM_HIRES;
-            if (page2) {
-                video_addresses = &(hires_p2_addresses);
-            } else {
-                video_addresses = &(hires_p1_addresses);
-            }
-        } else {
-            video_mode = VM_LORES;
-        }
-    } else {
-        video_mode = VM_TEXT40;
-    }
-} */
 
 void VideoScannerII::video_cycle()
 {
@@ -233,11 +210,6 @@ void VideoScannerII::video_cycle()
     frame_scan->push(scan);
 }
 
-/* FrameScan560 *VideoScannerII::get_frame_scan()
-{
-    return frame_scan;
-} */
-
 ScanBuffer *VideoScannerII::get_frame_scan()
 {
     return frame_scan;
@@ -262,6 +234,7 @@ VideoScannerII::VideoScannerII(MMU_II *mmu)
     sw80col   = false;
     altchrset = false;
     dblres    = false;
+    f_80store = false;
     set_video_mode();
 
     video_byte = 0;
@@ -287,33 +260,6 @@ VideoScannerII::VideoScannerII(MMU_II *mmu)
     top border.
     */
 }
-
-/* void init_mb_video_scanner(computer_t *computer, SlotType_t slot)
-{
-    cpu_state *cpu = computer->cpu;
-    
-    // alloc and init video scanner
-    VideoScannerII * vs = new VideoScannerII(computer->mmu);
-    computer->video_scanner = vs;
-    printf("Allocated video scanner: %p\n", vs);
-    
-    computer->mmu->set_C0XX_read_handler(0xC050, { vs_bus_read_C050, vs });
-    computer->mmu->set_C0XX_write_handler(0xC050, { vs_bus_write_C050, vs });
-    computer->mmu->set_C0XX_read_handler(0xC051, { vs_bus_read_C051, vs });
-    computer->mmu->set_C0XX_write_handler(0xC051, { vs_bus_write_C051, vs });
-    computer->mmu->set_C0XX_read_handler(0xC052, { vs_bus_read_C052, vs });
-    computer->mmu->set_C0XX_write_handler(0xC052, { vs_bus_write_C052, vs });
-    computer->mmu->set_C0XX_read_handler(0xC053, { vs_bus_read_C053, vs });
-    computer->mmu->set_C0XX_write_handler(0xC053, { vs_bus_write_C053, vs });
-    computer->mmu->set_C0XX_read_handler(0xC054, { vs_bus_read_C054, vs });
-    computer->mmu->set_C0XX_write_handler(0xC054, { vs_bus_write_C054, vs });
-    computer->mmu->set_C0XX_read_handler(0xC055, { vs_bus_read_C055, vs });
-    computer->mmu->set_C0XX_write_handler(0xC055, { vs_bus_write_C055, vs });
-    computer->mmu->set_C0XX_read_handler(0xC056, { vs_bus_read_C056, vs });
-    computer->mmu->set_C0XX_write_handler(0xC056, { vs_bus_write_C056, vs });
-    computer->mmu->set_C0XX_read_handler(0xC057, { vs_bus_read_C057, vs });
-    computer->mmu->set_C0XX_write_handler(0xC057, { vs_bus_write_C057, vs });
-} */
 
 /*
  * *** NEEDS UPDATE ***

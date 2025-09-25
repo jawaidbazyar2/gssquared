@@ -245,7 +245,7 @@ void update_display_flags(iiememory_state_t *iiememory_d) {
     iiememory_d->s_text = ds->display_mode == TEXT_MODE;
     iiememory_d->s_hires = ds->display_graphics_mode == HIRES_MODE;
     // if 80STORE is off, get page2 from display; otherwise just keep our local version, as display version is always set to page 1.
-    if (!iiememory_d->f_80store) iiememory_d->s_page2 = ds->display_page_num == DISPLAY_PAGE_2;
+    // TODO: if (!iiememory_d->f_80store) iiememory_d->s_page2 = ds->display_page_num == DISPLAY_PAGE_2;
     iiememory_d->s_mixed = ds->display_split_mode == SPLIT_SCREEN;
 }
 
@@ -382,9 +382,13 @@ void iiememory_write_C00X(void *context, uint16_t address, uint8_t data) {
 
         case 0xC000: // 80STOREOFF
             iiememory_d->f_80store = false;
+            // TODO: force display mode to be recalculated
+            ds->video_scanner->set_80store(false);
             break;
         case 0xC001: // 80STOREON
             iiememory_d->f_80store = true;
+            // TODO: force display mode to be recalculated
+            ds->video_scanner->set_80store(true);
             break;
         case 0xC002: // RAMRDOFF
             iiememory_d->f_ramrd = false;
@@ -483,12 +487,12 @@ uint8_t iiememory_read_display(void *context, uint16_t address) {
             retval = txt_bus_read_C053(ds, address);
             break;
         case 0xC054: // PAGE2OFF
-            if (!iiememory_d->f_80store) retval = txt_bus_read_C054(ds, address);
-            else iiememory_d->s_page2 = false;
+            /* if (!iiememory_d->f_80store)  */retval = txt_bus_read_C054(ds, address);
+            /* else */ iiememory_d->s_page2 = false;
             break;
         case 0xC055: // PAGE2ON
-            if (!iiememory_d->f_80store) retval = txt_bus_read_C055(ds, address);
-            else iiememory_d->s_page2 = true;
+            /* if (!iiememory_d->f_80store)  */retval = txt_bus_read_C055(ds, address);
+            /* else */ iiememory_d->s_page2 = true;
             break;
         case 0xC056: // HIRESOFF
             retval = txt_bus_read_C056(ds, address);
@@ -506,6 +510,24 @@ uint8_t iiememory_read_display(void *context, uint16_t address) {
 void iiememory_write_display(void *context, uint16_t address, uint8_t data) {
     iiememory_state_t *iiememory_d = (iiememory_state_t *)context;
     iiememory_read_display(context, address);
+}
+
+DebugFormatter *debug_iiememory(iiememory_state_t *iiememory_d) {
+    DebugFormatter *f = new DebugFormatter();
+    /* f->addLine("IIe Memory: m_zp: %d, m_text1_r: %d, m_text1_w: %d, m_hires1_r: %d, m_hires1_w: %d, m_all_r: %d, m_all_w: %d\n", 
+        iiememory_d->m_zp, iiememory_d->m_text1_r, iiememory_d->m_text1_w, iiememory_d->m_hires1_r, iiememory_d->m_hires1_w, iiememory_d->m_all_r, iiememory_d->m_all_w); */
+    iiememory_d->mmu->debug_output_page(f, 0x00, true);
+    iiememory_d->mmu->debug_output_page(f, 0x02);
+    iiememory_d->mmu->debug_output_page(f, 0x04);
+    iiememory_d->mmu->debug_output_page(f, 0x08);
+    iiememory_d->mmu->debug_output_page(f, 0x20);
+    iiememory_d->mmu->debug_output_page(f, 0x40);
+    iiememory_d->mmu->debug_output_page(f, 0xC1);
+    iiememory_d->mmu->debug_output_page(f, 0xC3);
+    iiememory_d->mmu->debug_output_page(f, 0xC8);
+    iiememory_d->mmu->debug_output_page(f, 0xD0);
+    iiememory_d->mmu->debug_output_page(f, 0xE0);
+    return f;
 }
 
 /*
@@ -589,5 +611,13 @@ void init_iiememory(computer_t *computer, SlotType_t slot) {
             reset_iiememory(iiememory_d);
             return true;
         });
+
+    computer->register_debug_display_handler(
+        "memory",
+        0x0000000000000004, // unique ID for this, need to have in a header.
+        [iiememory_d]() -> DebugFormatter * {
+            return debug_iiememory(iiememory_d);
+        }
+    );
 }
 
