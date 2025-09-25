@@ -207,7 +207,7 @@ public:
         dbg_last_time = current_time;
 
         if (dbg_last_event < current_time) {
-            std::cout << "[" << current_time << "] Event timestamp is in the past: " << dbg_last_event << std::endl;
+            printf("[Current Time: %12.6f] Event timestamp is in the past: %12.6f\n", current_time, dbg_last_event);
         }
     }
     
