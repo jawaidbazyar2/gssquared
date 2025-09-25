@@ -22,8 +22,6 @@ computer_t::computer_t() {
         exit(1);
     }
 
-    event_timer = new EventTimer();
-
     mbus = new MessageBus();
 
     sys_event = new EventDispatcher(); // different queue for "system" events that get processed first.
@@ -32,6 +30,8 @@ computer_t::computer_t() {
 
     cpu = new cpu_state();
     //cpu->init();
+
+    event_timer = new EventTimer(cpu);
 
     mounts = new Mounts(cpu);
 
