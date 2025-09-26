@@ -28,6 +28,26 @@ RGB output. (Partially implemented now, I think).
 
 A shared serial bus (precursor of the USB concept) for keyboard, mouse, potentially other devices.
 
+
+The ADB Protocol is fairly straightforward. The 65816-side registers are documented in Apple IIGS Hardware Reference Chapter 6.  The microcontroller side is discussed here:
+https://llx.com/Neil/a2/adb.html
+
+however, I don't think there is any reason to emulate anything other than the keyboard and mouse. We do need to handle generic / general-purpose ADB commands/responses, but again the protocol is very simple. There are several types of interrupts the ADB can generate.
+
+The C000/C010 keyboard logic should be fed from the ADB module.
+
+Have an ADBGLU class, that acts as a middleman between the devices and the "motherboard". Need to be able to queue stuff. I am guessing the GLU handles the 16-character typeahead buffer? Or is it in the keyboard. this is unclear, but unlikely to be relevant for our purposes.
+
+### Memory Map
+
+The IIgs has a 16MB (24-bit) address space. All I/O is done in the legacy $C000 space.
+
+Apple IIe emulation is run in banks $E0 and $E1.
+Banks $00 and $01 are "shadowed" to banks $E0 and $E1 if shadowing is enabled.
+
+
+
+
 ### 2 built-in serial ports via Zilog SCC chip 
 
 Zilog SCC chip supports 2 built-in serial ports.
