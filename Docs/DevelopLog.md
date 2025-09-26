@@ -6073,3 +6073,72 @@ this means, display and iiememory BOTH need to track these. More specifically, i
 [ ] Chiptunes stuff (skull island, crazy cycles 2) generate unending streams of: 
 [Current Time:   101.782942] Event timestamp is in the past:   101.777735
 
+## Sep 26, 2025
+
+looking at issue #60. So here's what happens high level on a speed switch down.
+
+I switch from 1M to 2.8, and back to 1. On the 4th try, going from 2.8 to 1 resulted in ScanBuffer having 80 extra samples. This is two scanlines' worth of data,
+and indeed V=2,H=12-14 at end of each frame.
+
+Premise: 
+not every time, but sometimes:
+cpu cycles exceed the frame maxmimum by 1-7 (1M speed) or 3-21 (2.86MHz) speed.
+This means there are already a few extra samples of video data in ScanBuffer (probably, since we are 
+
+We're measuring frames by multiples of 14M.
+But we call cpu->set_frame_start_cycle to equal the cycle counter as it is now. (only used by mouse, so disregard this for now).
+we speed shift - this is done in the event handler area. This calls set_clock_mode. 
+
+Now the number of 14M should be synced to the video frame. So if we exceeded 
+
+I can do a check and breakpoint whenever samples > 0 after doing video update.
+
+done - there are 15 samples in buffer, and hcount is 39! That is not right, it's out of bounds.
+what if I display this data whenever there's a speed change. Maybe I have something accumulating?
+the most number of extra samples we should ever get at end of cpu loop is 1-7 in 1mhz mode. 
+maybe 2.8 mode figures are wrong?
+if there are extra bytes, we are speed-switching in the middle of a scanline. now the 14m counts should work out.
+I can check to make sure the video_cycle_14M_count is always exactly 0 at the end of a scanline. It's not. in 1mhz mode, we need 2 extra 14M's. 
+The video scanner in a real II is clocked on the CPU clock, not the 14m clock (though it does use the 14m clock as the pixel dot clock).
+if we have emitted a few extra video bytes in a frame, at 14m, we need to make certain when the speed switches, we don't end up emitting too many.
+
+```
+        if (++cycle_65th == cycles_per_scanline) {
+            cycle_65th = 0;
+```
+
+So this counter has changed.. will not always be 0 at end of a frame. But is changing from 182 per scanline to 65 per scanline, so its scale is changing.
+This feels like the culprit.. 
+the goal here is to add the extra 14ms to the end of a cpu cycle. 
+may could do something more like.. 
+65 * 14 is 910.
+182 * 5 is 910.
+455 * 2 is 910.
+and then these all have 2 extra. 
+So instead of checking the 65 counter here, just check if we've hit 910. 
+or if we have emitted 65 video bytes
+
+```
+        scanline_video_bytes_emitted;
+
+        c_14M += c_14M_per_cpu_cycle;
+        
+        if (video_scanner) {
+          video_cycle_14M_count += c_14M_per_cpu_cycle;
+          scanline_14M_count += c_14M_per_cpu_cycle;
+
+          if (video_cycle_14M_count >= 14) {
+            video_cycle_14M_count -= 14;
+            video_scanner->video_cycle();
+          }
+          if (scanline_14M_count >= 910) {  // end of scanline
+            c_14M += extra_per_scanline;
+            scanline_14M_count = 0;
+          }
+        } else {
+          // add extra cycles or not when scanner disabled.
+        }
+```
+ok, yah, that did it!
+speed-shifting in Crazy Cycles results in oddball behavior, but we expect that, because the app's counting and timers is going to get confused.
+however, I slowed 1 mhz, rebooted, and it worked just fine. up and downshifting speeds a lot, and the video is not getting out of sync at all.

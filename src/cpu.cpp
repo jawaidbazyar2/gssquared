@@ -30,10 +30,10 @@
 }; */
 
 clock_mode_info_t clock_mode_info[NUM_CLOCK_MODES] = {
-    { 14'318'180, 0, ((uint64_t)1000000000 * 256) / (50000000), 238420, 1, 0, 912 }, // cycle times here are fake.
-    { 1'020'484, (1000000000 / 1022727)+1, ((uint64_t)1'000'000'000 * 256) / (1'022'727), 17030, 14, 2, 65 },
-    { 2'857'370, (1000000000 / 2'863'636), ((uint64_t)1'000'000'000 * 256) / (2'863'636), 47684, 5, 2, 182},
-    { 7'143'390, (1000000000 / 7'159090), ((uint64_t)1'000'000'000 * 256) / (7159090), 119210, 2, 2, 455 }
+    { 14'318'180, ((uint64_t)1000000000 * 256) / (50000000), 238420, 1, 0, 912 }, // cycle times here are fake.
+    { 1'020'484, ((uint64_t)1'000'000'000 * 256) / (1'022'727), 17030, 14, 2, 65 },
+    { 2'857'370, ((uint64_t)1'000'000'000 * 256) / (2'863'636), 47684, 5, 2, 182},
+    { 7'143'390, ((uint64_t)1'000'000'000 * 256) / (7159090), 119210, 2, 2, 455 }
 };
 
 void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
@@ -44,7 +44,7 @@ void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
     cpu->HZ_RATE = clock_mode_info[mode].hz_rate;
     // Lookup time per emulated cycle
     cpu->cycle_duration_ns = clock_mode_info[mode].cycle_duration_ns;
-    cpu->cycle_duration_ns_56_8 = clock_mode_info[mode].cycle_duration_ns_56_8;
+    //cpu->cycle_duration_ns_56_8 = clock_mode_info[mode].cycle_duration_ns_56_8;
     cpu->c_14M_per_cpu_cycle = clock_mode_info[mode].c_14M_per_cpu_cycle;
     cpu->cycles_per_scanline = clock_mode_info[mode].cycles_per_scanline;
     cpu->extra_per_scanline = clock_mode_info[mode].extra_per_scanline;
@@ -56,6 +56,9 @@ void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
 
     cpu->clock_mode = mode;
     fprintf(stdout, "Clock mode: %d HZ_RATE: %llu cycle_duration_ns: %llu \n", cpu->clock_mode, cpu->HZ_RATE, cpu->cycle_duration_ns);
+    if (cpu->video_scanner) {
+        fprintf(stdout, "Video scanner has %d samples @ speed shift [%d,%d]\n", cpu->video_scanner->get_frame_scan()->get_count(), cpu->video_scanner->hcount, cpu->video_scanner->vcount);
+    }
 }
 
 void toggle_clock_mode(cpu_state *cpu, int direction) {

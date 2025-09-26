@@ -191,8 +191,7 @@ struct cpu_state {
     
     uint64_t c_14M = 0;
     uint64_t c_14M_per_cpu_cycle = 0;
-    uint64_t cycle_duration_ns_56_8 = 0;
-    uint16_t cycle_65th = 0;
+    uint64_t scanline_14M_count = 0;
     uint64_t current_frame_start_14M = 0;
     uint64_t next_frame_start_14M = 238944;
     uint64_t frame_14M_duration = 238944;
@@ -228,29 +227,22 @@ struct cpu_state {
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
 
-    inline void slow_incr_cycles() { 
+    inline void slow_incr_cycles() {
         cycles++; 
-        //etime_ns_56_8 += cycle_duration_ns_56_8;
-        uint64_t c14s_this_cycle; 
-        bool last_cycle = false;
-        if (++cycle_65th == cycles_per_scanline) {
-            cycle_65th = 0;
-            c14s_this_cycle = c_14M_per_cpu_cycle + extra_per_scanline;
-            last_cycle = true;
-        } else {
-            c14s_this_cycle = c_14M_per_cpu_cycle;
-        }
-        c_14M += c14s_this_cycle;
+        c_14M += c_14M_per_cpu_cycle;
+        
         if (video_scanner) {
-            video_cycle_14M_count += c14s_this_cycle;
-            if (last_cycle) {
+            video_cycle_14M_count += c_14M_per_cpu_cycle;
+            scanline_14M_count += c_14M_per_cpu_cycle;
+
+            if (video_cycle_14M_count >= 14) {
+                video_cycle_14M_count -= 14;
                 video_scanner->video_cycle();
-                video_cycle_14M_count = 0;
-            } else if (video_cycle_14M_count >= 14) {
-                video_scanner->video_cycle(); 
-                video_cycle_14M_count -= 14; // consume this cycle's worth of 14m's
             }
-            //video_scanner->video_cycle();
+            if (scanline_14M_count >= 910) {  // end of scanline
+                c_14M += extra_per_scanline;
+                scanline_14M_count = 0;
+            }
         }
     }
 
