@@ -44,7 +44,6 @@ void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
     cpu->HZ_RATE = clock_mode_info[mode].hz_rate;
     // Lookup time per emulated cycle
     cpu->cycle_duration_ns = clock_mode_info[mode].cycle_duration_ns;
-    //cpu->cycle_duration_ns_56_8 = clock_mode_info[mode].cycle_duration_ns_56_8;
     cpu->c_14M_per_cpu_cycle = clock_mode_info[mode].c_14M_per_cpu_cycle;
     cpu->cycles_per_scanline = clock_mode_info[mode].cycles_per_scanline;
     cpu->extra_per_scanline = clock_mode_info[mode].extra_per_scanline;
