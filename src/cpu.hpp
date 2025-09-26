@@ -192,8 +192,6 @@ struct cpu_state {
     uint64_t c_14M = 0;
     uint64_t c_14M_per_cpu_cycle = 0;
     uint64_t scanline_14M_count = 0;
-    //uint64_t frame_14M_duration = 238944;
-    //uint64_t _14M_cycle_duration_ns_48_16 = ((uint64_t)1000000000<<16) / 14'318'180;
     uint64_t cycles_per_scanline = 0;
     uint64_t extra_per_scanline = 0;
     uint64_t cycles_per_frame = 0;
