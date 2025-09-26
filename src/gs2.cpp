@@ -245,8 +245,8 @@ void run_cpus(computer_t *computer) {
                     cpu->execution_mode = EXEC_STEP_INTO;
                 }
             }
-            osd->render();
-            computer->debug_window->render();
+            osd->render(); // TODO: is this needed here? in single step mode probably want to not have osd.
+            computer->debug_window->render(); // TODO: this might need to be in the IF above.
             computer->video_system->present();
             MEASURE(computer->display_times, frame_video_update(computer, cpu));
     
