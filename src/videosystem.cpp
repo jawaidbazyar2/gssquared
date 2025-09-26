@@ -302,11 +302,11 @@ void video_system_t::register_frame_processor(int weight, FrameHandler handler) 
     frame_handlers.insert({weight, handler});
 }
 
-void video_system_t::update_display() {
+void video_system_t::update_display(bool force_full_frame) {
     clear(); // clear the backbuffer.
 
     for (const auto& pair : frame_handlers) {
-        if (pair.second()) {
+        if (pair.second(force_full_frame)) {
             break; // Stop processing if handler returns true
         }
     }

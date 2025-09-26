@@ -260,7 +260,7 @@ void init_slot_videx(computer_t *computer, SlotType_t slot) {
         return true;
     });
 
-    computer->video_system->register_frame_processor(1, [videx_d]() {
+    computer->video_system->register_frame_processor(1, [videx_d](bool force_full_frame) -> bool {
         bool ret = videx_frame(videx_d);
         if (ret) {
             // TODO: clear the main video scan buffer. this is sort of ugly to have here.. big dependency.

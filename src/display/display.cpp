@@ -909,9 +909,9 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         return true;
     });
 
-    vs->register_frame_processor(0, [ds, cpu]() -> bool {
+    vs->register_frame_processor(0, [ds, cpu](bool force_full_frame) -> bool {
         bool ret;
-        if ((ds->framebased) || (cpu->execution_mode == EXEC_STEP_INTO)) {
+        if (ds->framebased || force_full_frame) {
             update_flash_state(cpu);
             ret = update_display_apple2(cpu);
         } else {

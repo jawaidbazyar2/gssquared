@@ -6142,3 +6142,35 @@ or if we have emitted 65 video bytes
 ok, yah, that did it!
 speed-shifting in Crazy Cycles results in oddball behavior, but we expect that, because the app's counting and timers is going to get confused.
 however, I slowed 1 mhz, rebooted, and it worked just fine. up and downshifting speeds a lot, and the video is not getting out of sync at all.
+
+Bug 61:
+
+There are two possible views here.
+1. simulate the electron beam cycle by cycle as it scans. This would let people possibly more accurately debug cycle-accurate programs as they could see exactly what is going out the beam and when.
+1. when we pause or bp - ignore the contents of scanbuffer - but don't zap it - do frame updates using Apple II. all display updates while in step mode are done by Apple II. When we resume,  
+
+in single step mode, the below ought to give us the ability to watch the electron beam do updates:
+
+if there is a partial frame to display, process what we have to the frame texture.
+As we single-step (or however), also process what we have to frame texture whenever we have it.
+So these are the same tasks - if we are single-stepping, do a partial frame update using AppleII class.
+Any time there is a partial frame update, we must track H/V location in the partial update.
+
+but maybe what we want is this:
+if we're inside step_into, track whether we went past frame end after (potentially very short) cpu loop - and then and only then execute frame update stuff. we DO need to run these each loop:
+frame_event
+frame_appevent
+video - if we executed any instructions, draw full updated video frame and leave scanbuffer alone
+
+but only at end of 238944 c14's:
+
+update end_frame_c14m
+device_frames
+eat one frame's worth of scanbuffer
+
+frame_video_update is doing a bunch of excess stuff tho. it is doing video->update, osd->render, debug->render, video->present which we already did.
+
+when we return to regular mode after step, we need to finish the previous frame's worth of cpu. it feels like we're running too much.
+
+OK IT HAS BEEN FIXED!!!! What a pain.
+

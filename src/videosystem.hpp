@@ -43,7 +43,7 @@ typedef enum {
 
 
 struct video_system_t {
-    using FrameHandler = std::function<bool()>;
+    using FrameHandler = std::function<bool(bool)>;
 
     std::multimap<int, FrameHandler, std::greater<int>> frame_handlers;
 
@@ -100,6 +100,6 @@ struct video_system_t {
     void set_display_mono_color(display_mono_color_t mode);
     void flip_display_scale_mode();
     void register_frame_processor(int weight, FrameHandler handler);
-    void update_display();
+    void update_display(bool force_full_frame = false);
     RGBA_t get_mono_color() { return mono_color_table[display_mono_color]; };
 };
