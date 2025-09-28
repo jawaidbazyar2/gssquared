@@ -164,8 +164,30 @@ This discusses the registers in detail:
 
 https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/storage/disks/IWM-Controlling%20the%203.5%20Drive%20Hardware%20on%20the%20Apple%20IIGS.pdf
 
+### Debugger
 
-## 65816
+Technically not hardware - but, the various debugger modules must be updated to support 24-bit address and 16-bit data values.
+This should involve cleanup/refactor of the trace, disasm, and monitor module more specifically. 
+
+1. allow "bp" and "watch" on single address
+1. monitor commands must be enhanced to support 32-bit addresses.
+1. convert iiememory info section to be a callback like the others.
+
+### Trace
+
+1. all this to make room for decoding addresses -> symbols, as well as 16-bit widths for: A, X, Y, SP, PC.  That's two more characters for each of those.
+1. have debugger BP -before- instruction execute. i.e. if the PC is going to be XXXX, then BP before it executes. And highlight that instruction in the display.
+1. instead of showing whole cycle, what if we just display last say 6 digits of cycle. That would be enough to show differences while not taking up too much screen.
+1. make generation of the lines much easier by having a line class that tracks a horizontal 'cursor' inside the line.
+1. pack opcode and operand into a single 32-bit value, instead of 32-bit plus 8-bit.
+1. the other fields in the trace record are otherwise the right size.
+1. have a trace decoder base class plus two (maybe 3?) derived classes: 6502, 65c02, 65816. 
+1. Same for disassembler.
+1. in 6502/65c02 mode, show SP as just a byte, to free up room.
+1. use p flags m/x to determine trace formatting in 65816 class.
+
+
+## 65816 Tests
 
 Test suite for the 65816.
 
