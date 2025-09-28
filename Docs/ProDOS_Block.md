@@ -59,3 +59,21 @@ Values 0x01 through 0x06 mirror the values at $0042 to $0047.
 | 0x00 | No error |
 | 0xFC | Invalid Command block |
 
+## Other errors:
+
+https://prodos8.com/docs/technote/21/
+
+| Code | Error |
+|--|--|
+| $27 |  I/O error |
+| $28 |  No Device Connected |
+| $2B |  Write Protected |
+| $2F |  Device off-line |
+| $45 |  Volume directory not found |
+| $52 |  Not a ProDOS disk |
+| $55 |  Volume Control Block full |
+| $56 |  Bad buffer address |
+| $57 |  Duplicate volume on-line |
+
+$2F is what we should return if a drive is present, but there is no media in it.
+There is also the potential for error $2B (write protected).

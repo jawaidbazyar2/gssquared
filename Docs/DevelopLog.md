@@ -6174,3 +6174,14 @@ when we return to regular mode after step, we need to finish the previous frame'
 
 OK IT HAS BEEN FIXED!!!! What a pain.
 
+
+Bug reported in A2Desktop:
+3.5 not seen after boot;
+it tries to do a read on each drive; we return 
+```
+    if (st) {
+        pdblock_d->cmd_buffer.error = PD_ERROR_NO_DEVICE;
+        return;
+    }
+```
+for each. Then it doesn't try to scan or read from us again even on a Special>Check All Drives

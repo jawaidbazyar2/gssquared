@@ -269,15 +269,16 @@ on II+ gets into a keyboard loop with nothing on the screen. Also hangs in Maria
 I do that, and I get hgr again with "turn the disk over".
 
 Get the same doing help. It's displaying the wrong text page. I manually do c054 and I get the help screen.
-it's flipping between C054/C055 a lot, while drawing some graphics. This must be doing double hires. And when we go to text mode we should be doing 
+it's flipping between C054/C055 a lot, while drawing some graphics. This must be doing double hires.
+
+This is now fixed!
 
 ## Popeye
 
-This wasn't working at one point, it would just reboot cycle. However, now it is, and, it's playing some Mockingboard music to boot.
+This wasn't working at one point, it would just reboot cycle. (I think this tries to run past track 35). However, now it is, and, it's playing some Mockingboard music to boot.
 The mockingboard output is just a little bit clicky in parts. I wonder if I should keep track of the mockingboard channels samples available, maybe I'm not quite sending out enough samples there? Hmm.
 
 It asks if I have a mb; then displays hires garbage, but playing music; hit a key, and it loads the game.
-Joystick doesn't seem to work.  
 
 ## MousePaint
 
@@ -286,10 +287,6 @@ trying to read from mouse using I/O hooks which I don't support yet.
 ## Xtra8bit
 
 looks like it's trying to in#4 to read mouse.
-
-## MousePaint
-
-also looks like it's trying to in#4 to read mouse.
 
 # Total Replay
 
