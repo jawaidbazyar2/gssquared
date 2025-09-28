@@ -83,6 +83,7 @@ enum pdblock_cmd {
 #define PD_ERROR_IO   0x27
 #define PD_ERROR_NO_DEVICE 0x28
 #define PD_ERROR_WRITE_PROTECTED 0x2B
+#define PD_ERROR_DEVICE_OFFLINE 0x2F
 
 void pdblock2_execute(cpu_state *cpu, pdblock2_data *pdblock_d);
 void init_pdblock2(computer_t *computer, SlotType_t slot);

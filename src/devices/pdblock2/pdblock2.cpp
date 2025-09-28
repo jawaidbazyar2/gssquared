@@ -169,7 +169,7 @@ void pdblock2_execute(cpu_state *cpu, pdblock2_data *pdblock_d) {
 
     uint8_t st = pdblock2_status(cpu, pdblock_d, slot, drive);
     if (st) {
-        pdblock_d->cmd_buffer.error = PD_ERROR_NO_DEVICE;
+        pdblock_d->cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE;
         return;
     }
     if (cmd == 0x00) {
