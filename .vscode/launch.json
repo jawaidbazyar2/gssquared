@@ -7,7 +7,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/GSSquared",
-            "args": ["-ds5d1=/Users/bazyar/src/gssquared/disk_images/AppleIISystem800k.hdv"],
+            "args": [], //["-ds5d1=/Users/bazyar/src/gssquared/disk_images/AppleIISystem800k.hdv"],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build-debug"
         },

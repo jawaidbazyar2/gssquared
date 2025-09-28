@@ -37,7 +37,7 @@
         {
             "label": "profile-gssquared-with-instruments",
             "type": "shell",
-            "command": "xcrun xctrace record --template 'CPU Profiler' --no-prompt --output /tmp/gssquared_profile_$(date +%Y%m%d_%H%M%S).trace --target-stdout - --launch -- ${workspaceFolder}/build/GSSquared -ds5d1=/Users/bazyar/src/gssquared/disk_images/AppleIISystem800k.hdv && open /tmp/gssquared_profile_*.trace",
+            "command": "xcrun xctrace record --template 'CPU Profiler' --no-prompt --output /tmp/gssquared_profile_$(date +%Y%m%d_%H%M%S).trace --target-stdout - --launch -- ${workspaceFolder}/build/GSSquared && open /tmp/gssquared_profile_*.trace",
             "group": "test",
             "presentation": {
                 "echo": true,
@@ -62,7 +62,7 @@
         {
             "label": "profile-gssquared-manual",
             "type": "shell",
-            "command": "xcrun xctrace record --template 'CPU Profiler' --no-prompt --output /tmp/gssquared_profile_$(date +%Y%m%d_%H%M%S).trace --target-stdout - --launch -- ${workspaceFolder}/build/GSSquared -ds5d1=/Users/bazyar/src/gssquared/disk_images/AppleIISystem800k.hdv",
+            "command": "xcrun xctrace record --template 'CPU Profiler' --no-prompt --output /tmp/gssquared_profile_$(date +%Y%m%d_%H%M%S).trace --target-stdout - --launch -- ${workspaceFolder}/build/GSSquared",
             "group": "test",
             "presentation": {
                 "echo": true,
