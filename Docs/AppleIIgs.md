@@ -8,6 +8,21 @@ New Hardware
 
 The GS features a variety of new hardware.
 
+### 65816 Processor
+
+This looks like an excellent resource:
+
+http://www.6502.org/tutorials/65c816opcodes.html
+
+Test suite for the 65816.
+
+https://forums.nesdev.org/viewtopic.php?t=24940
+
+First one to start using:
+https://github.com/gilyon/snes-tests
+
+
+
 ### Ensoniq 5503 DOC
 
 See Ensoniq.md. Accessed via new $C0xx registers.
@@ -186,17 +201,13 @@ This should involve cleanup/refactor of the trace, disasm, and monitor module mo
 1. in 6502/65c02 mode, show SP as just a byte, to free up room.
 1. use p flags m/x to determine trace formatting in 65816 class.
 
-
-## 65816 Tests
-
-Test suite for the 65816.
-
-https://forums.nesdev.org/viewtopic.php?t=24940
-
-# Bootstrapping
+# Development Roadmap
 
 I think we likely need to implement in this order.
 
 1. 65816
-2. mmu
-3. 
+   1. emulation mode
+   1. native mode 8,8
+1. mmu
+
+65816 emulation mode - the key element here is going to be to switch all the functions to use auto to allow us to switch from 8-bit to 16-bit more easily. By using auto, the compiler will .. uh, automatically.. pick the right data types based on calling parameters, stuff like that. 

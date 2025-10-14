@@ -28,8 +28,7 @@ computer_t::computer_t() {
     dispatch = new EventDispatcher(); // has to be very first thing, devices etc are going to immediately register handlers.
     device_frame_dispatcher = new DeviceFrameDispatcher();
 
-    cpu = new cpu_state();
-    //cpu->init();
+    cpu = new cpu_state(PROCESSOR_6502); // default to 6502, then we will override later.
 
     event_timer = new EventTimer(cpu);
 

@@ -96,14 +96,38 @@ void Disassembler::disassemble_one() {
         case ZP_X:
         case ZP_Y:
         case ZP_IND: // 65c02
+        case IND_LONG:
+        case IND_Y_LONG:
+        case REL_S:
+        case REL_S_Y:
+        case ABSL:
+        case ABSL_X:
+        case ABS_IND_LONG:
+        case IMM_S:
             snprintf(snpbuf, snpbuf_size, am->format, operand);
             memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
             break;
-        case REL:
-            uint16_t btarget = (address+2) + (int8_t)operand;
-            snprintf(snpbuf, snpbuf_size, "$%04X", btarget);
-            memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+        case REL: {
+                uint16_t btarget = (address+2) + (int8_t)operand;
+                snprintf(snpbuf, snpbuf_size, "$%04X", btarget);
+                memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+            }
             break;
+        case REL_L: {
+                uint16_t btargetl = (address+3) + (int16_t)operand;
+                snprintf(snpbuf, snpbuf_size, "$%04X", btargetl);
+                memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+            }
+            break;
+        case MOVE:  
+            {
+                printf("move operand %04X\n", operand);
+                snprintf(snpbuf, snpbuf_size, am->format,
+                    operand & 0x00FF, operand >> 8);
+                memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+            }
+            break;
+
     }
     address += am->size; // get ready for next instruction
     bufptr[TB_EOL] = '\0';

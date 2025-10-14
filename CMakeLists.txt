@@ -240,12 +240,13 @@ add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
 add_library(gs2_debugger src/debugger/trace.cpp src/debugger/trace_opcodes.cpp src/debugger/debugwindow.cpp src/debugger/MonitorCommand.cpp 
     src/debugger/ExecuteCommand.cpp src/debugger/MemoryWatch.cpp src/debugger/disasm.cpp)
 
-add_library(gs2_mmu src/mmus/mmu.cpp src/mmus/mmu_ii.cpp src/mmus/mmu_iie.cpp)
+add_library(gs2_mmu src/mmus/mmu.cpp src/mmus/mmu_ii.cpp src/mmus/mmu_iie.cpp src/mmus/mmu_iigs.cpp)
 
 #add_library(gs2_cpu src/cpus/cpu_6502.cpp src/cpus/cpu_65c02.cpp src/cpu.cpp )
-add_library(gs2_cpu src/cpus/core_6502.cpp src/cpu.cpp )
+#add_library(gs2_cpu src/cpus/core_6502.cpp src/cpu.cpp )
+add_library(gs2_cpu src/cpu.cpp )
 
-add_library(gs2_cpu_new src/cpus/cpu_implementations.cpp src/cpus/cpu_6502.cpp src/cpus/cpu_65c02.cpp)
+add_library(gs2_cpu_new src/cpus/cpu_implementations.cpp src/cpus/cpu_6502.cpp src/cpus/cpu_65c02.cpp src/cpus/cpu_65816.cpp)
 
 add_library(gs2_computer src/computer.cpp )
 
@@ -348,6 +349,8 @@ add_subdirectory(apps/dpp)
 add_subdirectory(apps/vpp)
 
 add_subdirectory(apps/iieromcsum)
+
+add_subdirectory(apps/cpu816test)
 
 ################################################################################
 #### Packaging targets per platform

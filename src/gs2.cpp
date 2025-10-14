@@ -526,6 +526,10 @@ int main(int argc, char *argv[]) {
 
     platform_info* platform = get_platform(platform_id);
     print_platform_info(platform);
+
+    //computer->set_cpu(new cpu_state(platform->cpu_type));
+    computer->cpu->set_processor(platform->cpu_type);
+
     computer->set_platform(platform);
     
     // TODO: load platform roms - this info should get stored in the 'computer'
@@ -560,10 +564,9 @@ int main(int argc, char *argv[]) {
 
     // need to tell the MMU about our ROM somehow.
     // need a function in MMU to "reset page to default".
-#if 0
-    computer->cpu->set_processor(platform->processor_type);
-#endif
     computer->cpu->cpun = createCPU(platform->cpu_type);
+    computer->cpu->core = computer->cpu->cpun.get(); // set the core. Probably need a better set cpu for cpu_state.
+
     computer->mounts = new Mounts(computer->cpu);
 
     //init_display_font(rd);

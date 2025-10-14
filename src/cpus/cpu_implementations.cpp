@@ -9,11 +9,14 @@ std::unique_ptr<BaseCPU> createCPU(const processor_type cpuType) {
     // These will be implemented elsewhere and linked in
     extern std::unique_ptr<BaseCPU> create6502();
     extern std::unique_ptr<BaseCPU> create65C02();
+    extern std::unique_ptr<BaseCPU> create65816();
     
     if (cpuType == PROCESSOR_6502) {
         return create6502();
     } else if (cpuType == PROCESSOR_65C02) {
         return create65C02();
+    } else if (cpuType == PROCESSOR_65816) {
+        return create65816();
     } else {
         return nullptr;
     }

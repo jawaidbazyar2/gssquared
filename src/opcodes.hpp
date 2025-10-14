@@ -73,6 +73,25 @@
 #define OP_BBS6_REL 0xEF
 #define OP_BBS7_REL 0xFF
 
+#define OP_ORA_ABSL 0x0F
+#define OP_AND_ABSL 0x2F
+#define OP_EOR_ABSL 0x4F
+#define OP_ADC_ABSL 0x6F
+#define OP_STA_ABSL 0x8F
+#define OP_LDA_ABSL 0xAF
+#define OP_CMP_ABSL 0xCF
+#define OP_SBC_ABSL 0xEF
+
+#define OP_ORA_ABSL_X 0x1F
+#define OP_AND_ABSL_X 0x3F
+#define OP_ADC_ABSL_X 0x7F
+#define OP_EOR_ABSL_X 0x5F
+#define OP_STA_ABSL_X 0x9F
+#define OP_LDA_ABSL_X 0xBF
+#define OP_CMP_ABSL_X 0xDF
+#define OP_SBC_ABSL_X 0xFF
+
+
 #define OP_BCC_REL 0x90
 #define OP_BCS_REL 0xB0
 #define OP_BEQ_REL 0xF0
@@ -273,6 +292,8 @@
 #define OP_INOP_C2 0xC2
 #define OP_INOP_E2 0xE2
 
+#define OP_BRL_REL_L 0x82
+
 #define OP_INOP_03 0x03
 #define OP_INOP_13 0x13
 #define OP_INOP_23 0x23
@@ -290,10 +311,31 @@
 #define OP_INOP_E3 0xE3
 #define OP_INOP_F3 0xF3
 
+#define OP_ORA_S 0x03
+#define OP_ORA_S_Y 0x13
+#define OP_AND_S 0x23
+#define OP_AND_S_X 0x33
+#define OP_EOR_S 0x43
+#define OP_EOR_S_X 0x53
+#define OP_ADC_S 0x63
+#define OP_ADC_S_X 0x73
+#define OP_STA_S 0x83
+#define OP_STA_S_X 0x93
+#define OP_LDA_S 0xA3
+#define OP_LDA_S_X 0xB3
+#define OP_CMP_S 0xC3
+#define OP_CMP_S_X 0xD3
+#define OP_SBC_S 0xE3
+#define OP_SBC_S_X 0xF3
+
 #define OP_INOP_44 0x44
 #define OP_INOP_54 0x54
 #define OP_INOP_D4 0xD4
 #define OP_INOP_F4 0xF4
+
+#define OP_PEA_S 0xF4
+#define OP_PEI_S 0xD4
+#define OP_PER_S 0x62
 
 #define OP_INOP_07 0x07
 #define OP_INOP_17 0x17
@@ -312,6 +354,24 @@
 #define OP_INOP_E7 0xE7
 #define OP_INOP_F7 0xF7
 
+#define OP_ORA_IND_LONG 0x07
+#define OP_AND_IND_LONG 0x27
+#define OP_EOR_IND_LONG 0x47
+#define OP_ADC_IND_LONG 0x67
+#define OP_STA_IND_LONG 0x87
+#define OP_LDA_IND_LONG 0xA7
+#define OP_CMP_IND_LONG 0xC7
+#define OP_SBC_IND_LONG 0xE7
+
+#define OP_ORA_IND_Y_LONG 0x17
+#define OP_AND_IND_Y_LONG 0x37
+#define OP_EOR_IND_Y_LONG 0x57
+#define OP_ADC_IND_Y_LONG 0x77
+#define OP_STA_IND_Y_LONG 0x97
+#define OP_LDA_IND_Y_LONG 0xB7
+#define OP_CMP_IND_Y_LONG 0xD7
+#define OP_SBC_IND_Y_LONG 0xF7
+
 #define OP_INOP_0B 0x0B
 #define OP_INOP_1B 0x1B
 #define OP_INOP_2B 0x2B
@@ -328,6 +388,23 @@
 #define OP_INOP_DB 0xDB
 #define OP_INOP_EB 0xEB
 #define OP_INOP_FB 0xFB
+
+#define OP_PHD_S 0x0B
+#define OP_TCS_IMP 0x1B
+#define OP_PLD_S 0x2B
+#define OP_TSC_IMP 0x3B
+#define OP_PHK_S 0x4B
+#define OP_TCD_IMP 0x5B
+#define OP_RTL_S 0x6B
+#define OP_TDC_IMP 0x7B
+#define OP_PHB_S 0x8B
+#define OP_TXY_IMP 0x9B
+#define OP_PLB_S 0xAB
+#define OP_TYX_IMP 0xBB
+#define OP_WAI_IMP 0xCB
+#define OP_STP_IMP 0xDB
+#define OP_XBA_IMP 0xEB
+#define OP_XCE_IMP 0xFB
 
 #define OP_INOP_5C 0x5C
 #define OP_INOP_DC 0xDC

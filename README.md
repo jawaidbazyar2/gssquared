@@ -16,6 +16,14 @@ I am hoping I can get someone else to build on Windows. :-)
 
 A binary release is available at [https://github.com/jawaidbazyar2/gssquared/releases](https://github.com/jawaidbazyar2/gssquared/releases).
 
+For the Mac, you will need to tell MacOS the software is A-OK even though it's from the Internet.
+
+```
+% xattr -d com.apple.quarantine gssquared.dmg 
+```
+
+
+
 # Building
 
 General Build Instructions:

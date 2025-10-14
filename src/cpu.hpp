@@ -37,10 +37,20 @@
 
 #define MAX_CPUS 1
 
-#define BRK_VECTOR 0xFFFE
-#define IRQ_VECTOR 0xFFFE
-#define NMI_VECTOR 0xFFFA
-#define RESET_VECTOR 0xFFFC
+// Emulation mode / 6502 Vectors
+#define BRK_VECTOR    0xFFFE
+#define IRQ_VECTOR    0xFFFE
+#define RESET_VECTOR  0xFFFC
+#define NMI_VECTOR    0xFFFA
+#define ABORTB_VECTOR 0xFFF8
+#define COP_VECTOR    0xFFF4
+
+// Native mode / 65816 Vectors
+#define N_IRQ_VECTOR    0xFFEE
+#define N_NMI_VECTOR    0xFFEA
+#define N_ABORTB_VECTOR 0xFFE8
+#define N_BRK_VECTOR    0xFFE6
+#define N_COP_VECTOR    0xFFE4
 
 enum execution_modes_t {
     EXEC_NORMAL = 0,
@@ -103,7 +113,22 @@ struct cpu_state {
     };
 
     uint8_t db;   /* Data Bank register */
-    uint16_t sp;  /* Stack Pointer */
+    //uint16_t sp;  /* Stack Pointer */
+    union {
+        struct {
+            #if SDL_BYTEORDER == SDL_LIL_ENDIAN
+                uint8_t sp_lo;  /* Lower 8 bits of Stack Pointer */
+                uint8_t sp_hi;  /* Upper 8 bits of Stack Pointer */
+            #elif SDL_BYTEORDER == SDL_BIG_ENDIAN
+                uint8_t sp_hi;  /* Upper 8 bits of Stack Pointer */
+                uint8_t sp_lo;  /* Lower 8 bits of Stack Pointer */
+            #else   
+                #error "Endianness not supported"
+            #endif
+        };
+        uint16_t sp;  /* Full 16-bit Stack Pointer */
+    };
+
     union {
         struct {
             #if SDL_BYTEORDER == SDL_LIL_ENDIAN
@@ -158,10 +183,10 @@ struct cpu_state {
                 #error "Endianness not supported"
             #endif
         };
-        uint16_t d;   /* Full 16-bit Y Index Register */
+        uint16_t d;   /* Full 16-bit Direct Page Register */
     };
     union {
-        struct {
+        struct { // 6502 / 65c02 flags.
             uint8_t C : 1;  /* Carry Flag */
             uint8_t Z : 1;  /* Zero Flag */
             uint8_t I : 1;  /* Interrupt Disable Flag */
@@ -171,10 +196,22 @@ struct cpu_state {
             uint8_t V : 1;  /* Overflow Flag */
             uint8_t N : 1;  /* Negative Flag */
         };
+        struct { // 65816 flags
+            uint8_t _C : 1;  /* Carry Flag */
+            uint8_t _Z : 1;  /* Zero Flag */
+            uint8_t _I : 1;  /* Interrupt Disable Flag */
+            uint8_t _D : 1;  /* Decimal Mode Flag */
+            uint8_t _X : 1;  /* Index Width Flag 1 = 8 bit, 0 = 16 bit */
+            uint8_t _M : 1;  /* Accumulator Width Flag 1 = 8 bit, 0 = 16 bit */
+            uint8_t _V : 1;  /* Overflow Flag */
+            uint8_t _N : 1;  /* Negative Flag */
+        };
         uint8_t p;  /* Processor Status Register */
     };
+    uint8_t E : 1;  /* Emulation Flag */
+
     uint8_t halt = 0; /* == 1 is HLT instruction halt; == 2 is user halt */
-    uint64_t cycles; /* Number of cpu cycles since reset */
+    uint64_t cycles; /* Number of cpu cycles since poweron */
 
     uint64_t irq_asserted = 0; /** bits 0-7 correspond to slot IRQ lines slots 0-7. */
     uint8_t skip_next_irq_check = 0; /* if set, skip the next IRQ check */
@@ -199,6 +236,7 @@ struct cpu_state {
 
     //execute_next_fn execute_next;
     std::unique_ptr<BaseCPU> cpun; // CPU instance.
+    BaseCPU *core = nullptr;
 
     void *module_store[MODULE_NUM_MODULES];
     SlotData *slot_store[NUM_SLOTS];
@@ -214,13 +252,15 @@ struct cpu_state {
     VideoScannerII *video_scanner = nullptr;
 
     //void init();
-    cpu_state();
+    cpu_state(processor_type cpu_type);
     ~cpu_state();
 
-    void set_processor(int processor_type);
+    void set_processor(processor_type new_cpu_type);
     void reset();
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
+
+    inline uint32_t get_pcl() { return db << 16 | pc; }
 
     inline void slow_incr_cycles() {
         cycles++; 
@@ -246,40 +286,6 @@ struct cpu_state {
         else slow_incr_cycles();
     }
 
-    inline uint8_t read_byte(uint16_t address) {
-        uint8_t value = mmu->read(address);
-        this->incr_cycles();
-        return value;
-    }
-
-    inline uint16_t read_word(uint16_t address) {
-        return read_byte(address) | (read_byte(address + 1) << 8);
-    }
-
-    inline uint16_t read_word_from_pc() {
-        // make sure this is read lo-byte first.
-        addr_t ad;
-        ad.al = read_byte(pc);
-        ad.ah = read_byte(pc + 1);
-        pc += 2;
-        return ad.a;
-    }
-
-    inline void write_byte( uint16_t address, uint8_t value) {
-        mmu->write(address, value);
-        this->incr_cycles();
-    }
-
-    inline void write_word(uint16_t address, uint16_t value) {
-        write_byte(address, value & 0xFF);
-        write_byte(address + 1, value >> 8);
-    }
-
-    inline uint8_t read_byte_from_pc() {
-        uint8_t opcode = read_byte(pc);
-        pc++;
-        return opcode;
-    }
 };
 
 #define HLT_INSTRUCTION 1

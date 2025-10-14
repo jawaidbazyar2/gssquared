@@ -124,7 +124,7 @@ void set_slot_irq(cpu_state *cpu, uint8_t slot, bool irq) {
     }
 }
 
-cpu_state::cpu_state() {
+cpu_state::cpu_state(processor_type cpu_type) {
     pc = 0x0400;
     sp = rand() & 0xFF; // simulate a random stack pointer
     a = 0;
@@ -135,7 +135,7 @@ cpu_state::cpu_state() {
     //last_tick = 0;
     
     trace = true;
-    trace_buffer = new system_trace_buffer(100000);
+    trace_buffer = new system_trace_buffer(100000, cpu_type);
 
     set_clock_mode(this, CLOCK_1_024MHZ);
 
@@ -148,17 +148,16 @@ cpu_state::cpu_state() {
     }
 }
 
-#if 0
-void cpu_state::set_processor(int processor_type) {
-    execute_next = processor_models[processor_type].execute_next;
+void cpu_state::set_processor(processor_type new_cpu_type) {
+    trace_buffer->set_cpu_type(new_cpu_type);
 }
-#endif
 
 void cpu_state::reset() {
     halt = 0; // if we were STPed etc.
     I = 1; // set interrupt flag.
     skip_next_irq_check = 0;
-    pc = read_word(RESET_VECTOR);
+    //pc = read_word(RESET_VECTOR);
+    core->reset(this);
 }
 
 cpu_state::~cpu_state() {

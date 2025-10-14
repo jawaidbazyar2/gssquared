@@ -21,6 +21,33 @@
             "preLaunchTask": "build-debug"
         },
         {
+            "name": "Debug cpu816test",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/cpu816test",
+            "args": [],
+            "cwd": "/Users/bazyar/src/snes-tests",
+            "preLaunchTask": "build-debug"
+        },
+        {
+            "name": "Debug cputest",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/cputest",
+            "args": [],
+            "cwd": "/Users/bazyar/src/6502_65C02_functional_tests/bin_2025",
+            "preLaunchTask": "build-debug"
+        },
+        {
+            "name": "Debug cputest 65C02",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/cputest",
+            "args": ["65c02", "test65c02"],
+            "cwd": "/Users/bazyar/src/6502_65C02_functional_tests/bin_2025",
+            "preLaunchTask": "build-debug"
+        },
+        {
             "name": "Debug vpp",
             "type": "lldb",
             "request": "launch",

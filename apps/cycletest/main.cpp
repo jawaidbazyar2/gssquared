@@ -1307,16 +1307,18 @@ int main(int argc, char **argv) {
         mmu->map_page_both(i, &memory[i*256], "TEST RAM");
     }
 
-    cpu_state *cpu = new cpu_state();
+    cpu_state *cpu = new cpu_state(PROCESSOR_6502);
     //cpu->set_processor(PROCESSOR_6502);
-    std::unique_ptr<BaseCPU> cpux = createCPU(PROCESSOR_6502);
+    cpu->cpun = createCPU(PROCESSOR_6502);
+    cpu->core = cpu->cpun.get();
 
     //cpu->init();
     cpu->trace = trace_on;
     cpu->set_mmu(mmu);
 
-    uint64_t start_time = SDL_GetTicksNS();
+    cpu->reset(); // reset the CPU - AFTER setting MMU - required to set additional registers etc on powerup/reset.
 
+    uint64_t start_time = SDL_GetTicksNS();
 
 // set up page crossing test for (ZP),Y
     mmu->write(0x0002, 0xFF);
@@ -1338,7 +1340,7 @@ int main(int argc, char **argv) {
         mmu->write(0x1001, test_records[i].operation.op[1]);
         mmu->write(0x1002, test_records[i].operation.op[2]);
 
-        bool result = test_instruction(cpux, cpu, &test_records[i]);
+        bool result = test_instruction(cpu->cpun, cpu, &test_records[i]);
         char * trace_entry = cpu->trace_buffer->decode_trace_entry(&cpu->trace_entry);
         // trim the start (cycles always 0 is not informative)
         trace_entry[90] = '\0';

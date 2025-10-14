@@ -91,7 +91,7 @@ int execute_next(cpu_state *cpu) {
         cpu->pc = cpu->read_word(IRQ_VECTOR);
         cpu->incr_cycles();
         //cpu->incr_cycles(); // todo might be one too many, we're at 8, refs say it's 7. push_byte takes an extra cycle now?
-        TRACE ( tb->eaddr = cpu->pc; tb->flags = TRACE_FLAG_IRQ;);
+        TRACE ( tb->eaddr = cpu->pc; tb->f_irq = 1;);
         TRACE(if (cpu->trace) cpu->trace_buffer->add_entry(cpu->trace_entry);)
         return 0;
     }

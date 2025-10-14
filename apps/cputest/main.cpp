@@ -64,6 +64,8 @@ int main(int argc, char **argv) {
             cputype = PROCESSOR_6502;
         } else if (strcmp(argv[i], "65c02") == 0) {
             cputype = PROCESSOR_65C02;
+        } else if (strcmp(argv[i], "65816") == 0) {
+            cputype = PROCESSOR_65816;
         } else if (strcmp(argv[i], "testdecimal") == 0) {
             testsuite = 2;
         } else if (strcmp(argv[i], "test6502") == 0) {
@@ -75,33 +77,38 @@ int main(int argc, char **argv) {
         }
     }
 
+    printf("   Test Suite: ");
     switch (testsuite) {
         case 0:
-            printf("Running 6502 test suite\n");
+            printf(" 6502\n");
             break;
         case 1:
-            printf("Running 65c02 test suite\n");
+            printf(" 65c02\n");
             break;
         case 2:
-            printf("Running decimal test suite\n");
+            printf(" decimal\n");
             break;
         default:
-            printf("Invalid test suite\n");
+            printf(" Invalid test suite\n");
             exit(1);
     }
+    printf("   CPU Type: ");
     switch (cputype) {
-        case 0:
-            printf("Running 6502\n");
+        case PROCESSOR_6502:
+            printf(" 6502\n");
             break;
-        case 1:
-            printf("Running 65c02\n");
+        case PROCESSOR_65C02:
+            printf(" 65c02\n");
+            break;
+        case PROCESSOR_65816:
+            printf(" 65816\n");
             break;
         default:
             printf("Invalid CPU type\n");
             exit(1);
     }
 
-    printf("Starting CPU test...\n");
+    printf("   Starting CPU test...\n");
 
 
     gs2_app_values.base_path = "./";
@@ -130,18 +137,18 @@ int main(int argc, char **argv) {
     rom->load();
     uint8_t *rom_data = rom->get_data();
     int rom_size = rom->size();
-    printf("ROM size: %d\n", rom_size);
+    printf("   ROM size: %d\n", rom_size);
     for (int i = 0; i < rom_size; i++) {
         mmu->write(i, rom_data[i]);
     }
 
     std::unique_ptr<BaseCPU> cpux = createCPU(cputype);
     if (!cpux) {
-        printf("Failed to create CPU\n");
+        printf("XXX Failed to create CPU\n");
         return 1;
     }
 
-    cpu_state *cpu = new cpu_state();
+    cpu_state *cpu = new cpu_state(cputype);
     //cpu->set_processor(PROCESSOR_6502);
     cpu->trace = trace_on;
     cpu->set_mmu(mmu);
@@ -164,15 +171,16 @@ int main(int argc, char **argv) {
     uint64_t end_time = SDL_GetTicksNS();
 
     uint64_t duration = end_time - start_time;
-    printf("Test took %llu ns\n", duration);
-    printf("Average 'cycle' time: %f ns\n", (double)duration / (double) cpu->cycles);
-    printf("Effective MHz: %f\n", 1'000'000'000 / ((double)duration / (double) cpu->cycles) / 1000000);
+    printf("   Test took %12llu ns\n", duration);
+    printf("   Average 'cycle' time: %f ns\n", (double)duration / (double) cpu->cycles);
+    printf("   Effective MHz: %f\n", 1'000'000'000 / ((double)duration / (double) cpu->cycles) / 1000000);
 
     if (cpu->pc == 0x3469 || cpu->pc == 0x23BC) {
-        printf("Test passed!\n");
+        printf("+++ Test passed!\n");
     } else {
-        printf("Test failed!\n");
+        printf("--- Test failed at PC = 0x%04X!\n", cpu->pc);
     }
+    printf("--------------------------------\n");
     
     return 0;
 }

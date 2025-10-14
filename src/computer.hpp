@@ -70,6 +70,7 @@ struct computer_t {
     computer_t();
     ~computer_t();
     void set_mmu(MMU_II *mmu) { this->mmu = mmu; }
+    void set_cpu(cpu_state *cpu) { this->cpu = cpu; }
     void set_platform(platform_info *platform) { this->platform = platform; }
     void reset(bool cold_start);
     void set_frame_start_cycle();
