@@ -6185,3 +6185,18 @@ it tries to do a read on each drive; we return
     }
 ```
 for each. Then it doesn't try to scan or read from us again even on a Special>Check All Drives
+
+## Oct 13, 2025
+
+OK well there's an 816 CPU in the repo now. :-)
+
+I also implemented it for a lark on a IIe host. This code proves it:
+```
+800: 18 FB C2 30 AD 00 09 8D 00 04 38 FB 60
+800g
+```
+writes TWO bytes to video memory.
+
+I don't like the coupling between platform and display.cpp where it needs to know which "platform".. I mean, ... eh maybe it's ok.
+
+It's not running as slowly there (270mhz?) as it was in the snes-test. I wonder why that is.

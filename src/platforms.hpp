@@ -28,6 +28,7 @@ typedef enum PlatformId_t {
     PLATFORM_APPLE_II_PLUS,
     PLATFORM_APPLE_IIE,
     PLATFORM_APPLE_IIE_ENHANCED,
+    PLATFORM_APPLE_IIE_65816,
     PLATFORM_END
 } PlatformId_t;
 

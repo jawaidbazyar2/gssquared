@@ -63,6 +63,15 @@ static  platform_info platforms[] = {
         CLOCK_1_024MHZ,
         MMU_MMU_IIE
      },
+     {
+        PLATFORM_APPLE_IIE_65816,
+        "Apple IIe Enhanced 65816",
+        "apple2e_enh",
+        0xC000,
+        PROCESSOR_65816,
+        CLOCK_1_024MHZ,
+        MMU_MMU_IIE
+     },
     // Add more platforms as needed:
     // { "Apple IIc",         "apple2c" },
     // { "Apple IIc Plus",    "apple2c_plus" },

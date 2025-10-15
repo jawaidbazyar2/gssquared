@@ -141,6 +141,14 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         "128K RAM; Disk II; ProDOS Clock; DUAL Mockingboard"
     },
+    {
+        "Apple IIe 65816 w/Mouse",
+        PLATFORM_APPLE_IIE_65816,
+        DeviceMap_IIE_MOUSE,
+        Badge_IIEEnh,
+        true,
+        "128K RAM; Disk II; ProDOS Clock; Mouse; 65816"
+    }, 
 /*     {
         "Apple IIc",
         PLATFORM_APPLE_IIC,

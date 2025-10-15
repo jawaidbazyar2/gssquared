@@ -25,7 +25,9 @@ Style_t CS;
     BS.border_width = 1;
     BS.text_color = 0xFFFFFFFF;
 
-    container = new Container_t(vs->renderer, 6, CS); 
+    int num_configs = NUM_SYSTEM_CONFIGS;
+
+    container = new Container_t(vs->renderer, num_configs, CS); 
 
     container->set_tile_size(1024, 768);
     SDL_GetWindowSize(vs->window, &window_width, &window_height);
@@ -35,7 +37,6 @@ Style_t CS;
     selected_system = -1;
 
     // add a text button for each system.
-    int num_configs = NUM_SYSTEM_CONFIGS;
     for (int i = 0; i < num_configs; i++) {
         //Button_t *button = new Button_t(aa, BuiltinSystemConfigs[i].image_id, BS, 0);
         SystemButton *button = new SystemButton(aa, &BuiltinSystemConfigs[i], BS);

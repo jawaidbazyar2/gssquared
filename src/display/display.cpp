@@ -812,6 +812,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         case PLATFORM_APPLE_IIE:
             charrom = new CharRom("roms/apple2e/char.rom");
             break;
+        case PLATFORM_APPLE_IIE_65816:
         case PLATFORM_APPLE_IIE_ENHANCED:
             charrom = new CharRom("roms/apple2e_enh/char.rom");
             break;
@@ -830,6 +831,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     switch (computer->platform->id) {
         case PLATFORM_APPLE_IIE:
         case PLATFORM_APPLE_IIE_ENHANCED:
+        case PLATFORM_APPLE_IIE_65816:
             ds->video_scanner = new VideoScannerIIe(mmu);
             break;
         case PLATFORM_APPLE_II_PLUS:
@@ -922,7 +924,8 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         return ret;
     });
 
-    if (computer->platform->id == PLATFORM_APPLE_IIE || computer->platform->id == PLATFORM_APPLE_IIE_ENHANCED) {
+    if (computer->platform->id == PLATFORM_APPLE_IIE || computer->platform->id == PLATFORM_APPLE_IIE_ENHANCED
+    || computer->platform->id == PLATFORM_APPLE_IIE_65816) {
         ds->f_altcharset = false;
         ds->a2_display->set_char_set(ds->f_altcharset);
         mmu->set_C0XX_write_handler(0xC00C, { ds_bus_write_C00X, ds });
