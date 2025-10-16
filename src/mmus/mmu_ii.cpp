@@ -165,13 +165,19 @@ void MMU_II::compose_c1cf() {
  * CFFF to reset the C8xx map.
  */
 uint8_t MMU_II::read(uint32_t address) {
-    uint8_t bank = address >> 12;
-    page_t page = address >> 8;
+    uint16_t eaddress = address & 0xFFFF;
+    uint8_t bank = eaddress >> 12;
+    page_t page = eaddress >> 8;
+    
+    if (eaddress != address) {
+        printf("MMU_II::read: address %06X is out of bounds\n", address);
+    }
+
     if (bank == 0xC) {
         if (page == 0xC0) {
-            read_handler_t funcptr =  C0xx_memory_read_handlers[address & 0xFF];
+            read_handler_t funcptr =  C0xx_memory_read_handlers[eaddress & 0xFF];
             if (funcptr.read != nullptr) {
-                return (*funcptr.read)(funcptr.context, address);
+                return (*funcptr.read)(funcptr.context, eaddress);
             }
             return floating_bus_read();
         }
@@ -185,41 +191,45 @@ uint8_t MMU_II::read(uint32_t address) {
             uint8_t slot = page & 0x7; // slot number is just the lower digit of page
             if (C8xx_slot != slot) call_C8xx_handler((SlotType_t)slot);
         } else 
-            if (address == 0xCFFF) set_default_C8xx_map(); // When CFFF is read, reset the C8xx map to default, then execute the underlying read of CFFF.
+            if (eaddress == 0xCFFF) set_default_C8xx_map(); // When CFFF is read, reset the C8xx map to default, then execute the underlying read of CFFF.
     }
     page_table_entry_t *pte = &page_table[page];
-    if (pte->read_p != nullptr) return pte->read_p[address & 0xFF];
-    else if (pte->read_h.read != nullptr) return pte->read_h.read(pte->read_h.context, address);
+    if (pte->read_p != nullptr) return pte->read_p[eaddress & 0xFF];
+    else if (pte->read_h.read != nullptr) return pte->read_h.read(pte->read_h.context, eaddress);
     else return floating_bus_read();
     /* return MMU::read(address); */
 }
 
 
 void MMU_II::write(uint32_t address, uint8_t value) {
-    uint8_t bank = address >> 12;
-    page_t page = address >> 8;
+    uint16_t eaddress = address & 0xFFFF;
+    uint8_t bank = eaddress >> 12;
+    page_t page = eaddress >> 8;
+    if (eaddress != address) {
+        printf("MMU_II::write: address %06X is out of bounds\n", address);
+    }
 
     if (bank == 0xC) {
         if (page == 0xC0) {
-            write_handler_t funcptr =  C0xx_memory_write_handlers[address & 0xFF];
+            write_handler_t funcptr =  C0xx_memory_write_handlers[eaddress & 0xFF];
             if (funcptr.write != nullptr) {
-                (*funcptr.write)(funcptr.context, address, value);
+                (*funcptr.write)(funcptr.context, eaddress, value);
             }
             return;
         }
 
         /** Handle the C800-CFFF mapping  */
         if (page < 0xC8) { // it's not C0, and less than C8 - Slot-card firmware area.
-            uint8_t slot = (address / 0x100) & 0x7;
+            uint8_t slot = (eaddress / 0x100) & 0x7;
             if (C8xx_slot != slot) call_C8xx_handler((SlotType_t)slot);            
-        } else if (address == 0xCFFF) set_default_C8xx_map();
+        } else if (eaddress == 0xCFFF) set_default_C8xx_map();
     }
 
     // if there is a write handler, call it instead of writing directly.
     page_table_entry_t *pte = &page_table[page];
-    if (pte->write_h.write != nullptr) pte->write_h.write(pte->write_h.context, address, value);
-    else if (pte->write_p) pte->write_p[address & 0xFF] = value;
-    if (pte->shadow_h.write != nullptr) pte->shadow_h.write(pte->shadow_h.context, address, value);
+    if (pte->write_h.write != nullptr) pte->write_h.write(pte->write_h.context, eaddress, value);
+    else if (pte->write_p) pte->write_p[eaddress & 0xFF] = value;
+    if (pte->shadow_h.write != nullptr) pte->shadow_h.write(pte->shadow_h.context, eaddress, value);
 
     /* MMU::write(address, value); */
 }
