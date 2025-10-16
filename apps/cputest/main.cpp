@@ -153,6 +153,9 @@ int main(int argc, char **argv) {
     cpu->trace = trace_on;
     cpu->set_mmu(mmu);
 
+    //cpu->reset(); // TODO: this causes a crash here. We must be failing to initialize something correctly..
+    cpu->pc = 0x0400; // these tests start at 0x0400
+
     uint64_t start_time = SDL_GetTicksNS();
     
     while (1) {

@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
     cpu->core = cpu->cpun.get();
 
     //cpu->set_processor(PROCESSOR_6502);
-    cpu->trace = trace_on;
+    cpu->trace = true; // trace_on; always trace.
     cpu->set_mmu(mmu);
 
     cpu->reset(); // reset the CPU - AFTER setting MMU - required to set additional registers etc on powerup/reset.
@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
     int tile_index = 0;
 
     while (1) {
-        uint32_t opc = cpu->get_pcl();
+        uint32_t opc = cpu->full_pc;
         (cpu->core->execute_next)(cpu);
 
         if (trace_on) {
@@ -192,28 +192,40 @@ int main(int argc, char **argv) {
             printf("%s\n", trace_entry);
         }
 
+        if (display) {
+            if (cpu->trace_entry.eaddr == 0x002116) {
+                tile_index = cpu->trace_entry.data;
+            }
+    
+            // the snes has a register at 0x002118 for outputting text
+            if (cpu->trace_entry.eaddr == 0x002118) {
+                msgbuf[tile_index++] = cpu->trace_entry.data;
+                if (!trace_on) update_display(msgbuf, true);
+            }
+        }
+
         if (cpu->trace_entry.eaddr == 0x002116) {
             tile_index = cpu->trace_entry.data;
         }
 
         // the snes has a register at 0x002118 for outputting text
-        if (cpu->trace_entry.eaddr == 0x002118) {
+       /*  if (cpu->trace_entry.eaddr == 0x002118) {
             if (display) {
                 msgbuf[tile_index++] = cpu->trace_entry.data;
                 if (!trace_on) update_display(msgbuf, true);
             }
-        }
-        if (cpu->get_pcl() == 0x0081A2) {
+        } */
+        if (cpu->full_pc == 0x0081A2) {
             failed = false;
             break;
         }
 
         if ( // PC doesn't change on mvn or mvp moves, don't break for those.
-            (cpu->get_pcl() == opc) && 
+            (cpu->full_pc == opc) && 
             ((cpu->trace_entry.opcode != 0x54)  &&
             (cpu->trace_entry.opcode != 0x44))
         ) { 
-            printf("Test failed at PC: %06X\n", cpu->get_pcl());
+            printf("Test failed at PC: %06X\n", cpu->full_pc);
             failed = true;
             break; 
         }
