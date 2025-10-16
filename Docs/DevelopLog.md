@@ -6200,3 +6200,34 @@ writes TWO bytes to video memory.
 I don't like the coupling between platform and display.cpp where it needs to know which "platform".. I mean, ... eh maybe it's ok.
 
 It's not running as slowly there (270mhz?) as it was in the snes-test. I wonder why that is.
+
+## Oct 15, 2025
+
+The current system operated well at 400mhz effective. When I added cycle accurate video, speeds dropped to around 280-290mhz. I think the MMU can benefit from some improvements.
+
+MMU work:
+
+[x] I put a bounds check into MMU_II read() and write() functions. It throws a warning to stdout when it detects an out of bounds address and also normalizes to 0xFFFF.
+[ ] Switch the MMUs to use a Struct-of-Arrays approach instead of an Array-of-Structs. Compare performance. This could be a video subject.
+[ ] Implement as templates so that these values can be static: num_pages, page_size, debug.
+[ ] Allocate the page table statically and use alignas(64). 
+[ ] Statically define an address mask to apply to all addresses passed into read() or write().
+[ ] in debug mode we'll also have a separate out of bounds check, that will log a warning.
+
+I originally defined pages as 256 bytes because in the //e we have various memory regions that swappable:
+zp: 256
+stack: 256
+text1/text2: 1024
+hires: 8k
+Lang Card: 4K, 8K
+
+So I chose 256 as the least-common denominator. However, it's kind of funny, the "page table entry" is 80 bytes to map 256 bytes of memory. lolz.
+
+Now the GS will allocate probably a 16M chunk. That would be 65536 page table entries which is kind of silly. Most banks in the GS cannot be delineated like that. Just the legacy stuff.
+Everything else is done at the bank level I think. Bank E0/E1 mapped to MMU_IIe. Bank 0 and 1 are only partially shadowed (text pages, hires pages). I/O Space is always available in 0/1/E0/E1. So that could imply a 4k page size. And this is a reasonable choice also for 65816-with-virtual-memory pseudo-device: 4k is a good page size for memory protection. And:
+Text pages are in the first 4k. we can have a simple handler that sub-divides handling of these areas.
+
+I might be able to simplify the MMU design by:
+register the C000-CFFF space as r_handler and w_handler, inside another object. The MMU itself would then have no knowledge of this and would not have to do a bunch of page checking, nor have the specialized C8xx etc handling stuff in it. That would go into the anciliary class. We'd use 4K pages; and 3 of them - 00-0F; C0-CF; would have sub-handlers, with sub-pagetables at either 256 bytes, 1024 bytes (text pages); or the very specialized CXXX handling stuff. Registered as a generic handler. 
+Then there'd be 16 pagetable entries on a II, II+, IIe. Then the same independent handlers could easily be registered into the IIgs memory map as appropriate. (The II+ doesn't even need a handler for anything except C0-FF). Page changes for things like hires main/aux would be much faster since fewer 16 times fewer entries are changing. (1 entry for D0, instead of 16).
+I like this for a post-v1.0 enhancement. Or if we run into any significant GS EMU performance issues.

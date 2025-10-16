@@ -62,7 +62,7 @@ public:
     void reset(cpu_state* cpu) override {
         if constexpr (CPUTraits::has_65816_ops) {
             cpu->d = 0x0000;
-            cpu->db = 0x00;
+            cpu->full_db = 0x00;
             cpu->pb = 0x00;
             cpu->sp_hi = 0x01; // sp forced to page 1
             cpu->x_hi = 0x00; // hi bytes cleared
@@ -165,7 +165,7 @@ inline uint32_t make_direct_long(cpu_state *cpu, uint8_t address) {
 /** Calculate Data Access address from a 16-bit address */
 inline uint32_t make_address_long(cpu_state *cpu, uint16_t address) {
     if constexpr (CPUTraits::has_65816_ops && !CPUTraits::e_mode)
-        return (cpu->db << 16) | address;
+        return (cpu->full_db | address);
     else return address;
 }
 
@@ -359,7 +359,8 @@ static auto& _Y(cpu_state* cpu) {
 
 inline uint32_t _PC(cpu_state *cpu) {
     if constexpr (CPUTraits::has_65816_ops) {
-        return (cpu->pb << 16) | cpu->pc;
+        //return (cpu->pb << 16) | cpu->pc;
+        return cpu->full_pc;
     } else {
         return cpu->pc;
     }
@@ -489,7 +490,7 @@ inline void read_abs(cpu_state *cpu, T &reg) {
     uint32_t eaddr = address_abs(cpu);
 
     if constexpr (CPUTraits::has_65816_ops)
-        eaddr |= (cpu->db << 16);
+        eaddr |= (cpu->full_db);
 
     read_data(cpu, eaddr, reg);
 
@@ -501,7 +502,7 @@ inline void write_abs(cpu_state *cpu, T &reg) {
     uint32_t eaddr = address_abs(cpu);
 
     if constexpr (CPUTraits::has_65816_ops)
-        eaddr |= (cpu->db << 16);
+        eaddr |= (cpu->full_db);
 
     write_data(cpu, eaddr, reg);
 
@@ -515,7 +516,7 @@ inline void rmw_abs(cpu_state *cpu, Operation operation) {
     alu_t reg;
 
     if constexpr (CPUTraits::has_65816_ops)
-        eaddr |= (cpu->db << 16);
+        eaddr |= (cpu->full_db);
 
     read_data(cpu, eaddr, reg);
 
@@ -620,7 +621,7 @@ inline uint32_t address_abs_x(cpu_state *cpu, uint32_t index) {
 
     if constexpr (CPUTraits::has_65816_ops) {
         base = address_abs(cpu);
-        base = (cpu->db << 16) | base;
+        base = (cpu->full_db | base);
         eaddr = base + index;
 
         if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) {
@@ -632,7 +633,7 @@ inline uint32_t address_abs_x(cpu_state *cpu, uint32_t index) {
         }
     } else {
         base = address_abs(cpu);
-        eaddr = base + index;
+        eaddr = (uint16_t)(base + index);          // force to 16-bit address space.
         if ((base & 0xFF00) != (eaddr & 0xFF00)) { // if we crossed page boundary
             phantom_read(cpu, (eaddr & 0xFF00) | ((base + index) & 0xFF) );
         }
@@ -647,7 +648,7 @@ inline uint32_t address_abs_x_write(cpu_state *cpu, uint32_t index) {
 
     if constexpr (CPUTraits::has_65816_ops) {
         base = address_abs(cpu);
-        base = (cpu->db << 16) | base;
+        base = (cpu->full_db | base);
         eaddr = base + index;
 
         if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) {
@@ -657,7 +658,7 @@ inline uint32_t address_abs_x_write(cpu_state *cpu, uint32_t index) {
         }
     } else {
         base = address_abs(cpu);
-        eaddr = base + index;
+        eaddr = (uint16_t)(base + index);          // force to 16-bit address space.
         phantom_read(cpu, (eaddr & 0xFF00) | ((base + index) & 0xFF) );
     }
     return eaddr;
@@ -687,7 +688,7 @@ inline uint32_t address_rmw_abs_x(cpu_state *cpu, uint32_t index) {
 
     if constexpr (CPUTraits::has_65816_ops) {
         base = address_abs(cpu);
-        base = (cpu->db << 16) | base;
+        base = (cpu->full_db | base);
         eaddr = base + index;
 
         if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) {
@@ -697,7 +698,7 @@ inline uint32_t address_rmw_abs_x(cpu_state *cpu, uint32_t index) {
         }
     } else {
         base = address_abs(cpu);
-        eaddr = base + index;
+        eaddr = (uint16_t)(base + index);          // force to 16-bit address space.
         phantom_read(cpu, (eaddr & 0xFF00) | ((base + index) & 0xFF) );
     }
     return eaddr;
@@ -902,7 +903,7 @@ inline void read_direct_x_ind(cpu_state *cpu, T &reg, U &index ) {
         eaddr = bus_read(cpu, (uint16_t)(eaddr_16));
         eaddr |= bus_read(cpu, (uint16_t)(eaddr_16 & 0xFF00) | (uint8_t)((eaddr_16 & 0x00FF) + 1)) << 8;
     }
-    if constexpr (CPUTraits::has_65816_ops) eaddr = (cpu->db << 16) | eaddr; // add data bank
+    if constexpr (CPUTraits::has_65816_ops) eaddr = (cpu->full_db | eaddr); // add data bank
 
     read_data(cpu, eaddr, reg);
 
@@ -924,7 +925,7 @@ inline void write_direct_x_ind(cpu_state *cpu, T &reg, U &index ) {
         eaddr = bus_read(cpu, (uint16_t)(eaddr_16));
         eaddr |= bus_read(cpu, (uint16_t)(eaddr_16 & 0xFF00) | (uint8_t)((eaddr_16 & 0x00FF) + 1)) << 8;
     }    
-    if constexpr (CPUTraits::has_65816_ops) eaddr = (cpu->db << 16) | eaddr; // add data bank
+    if constexpr (CPUTraits::has_65816_ops) eaddr = (cpu->full_db | eaddr); // add data bank
 
     write_data(cpu, eaddr, reg);
 
@@ -938,7 +939,7 @@ uint32_t address_direct_indirect(cpu_state *cpu) {
 
     uint32_t eaddr = bus_read(cpu, (uint16_t)(eaddr_16)); // cycle 3
     eaddr |= bus_read(cpu, (uint16_t)(eaddr_16+1)) << 8; // cycle 4
-    if constexpr (CPUTraits::has_65816_ops) eaddr |= cpu->db << 16; // cycle 5
+    if constexpr (CPUTraits::has_65816_ops) eaddr |= cpu->full_db; // cycle 5
     TRACE(cpu->trace_entry.eaddr = eaddr;)
     return eaddr;
 }
@@ -978,7 +979,7 @@ inline void read_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
 
     //phantom_read needed here similar to address_abs_x
     if constexpr (CPUTraits::has_65816_ops) {
-        base = (cpu->db << 16) | eaddr_16; // add data bank
+        base = (cpu->full_db | eaddr_16); // add data bank
         eaddr = /* eaddr_16 */ base + index; // calculate effective address
 
         if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) { // (c)
@@ -990,7 +991,7 @@ inline void read_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
         }
         read_data(cpu, eaddr, reg);
     } else { // 65c02 and NMOS 6502
-        base = eaddr_16; // add data bank
+        base = eaddr_16;
         eaddr = (uint16_t)(base + index); // calculate effective address
 
         if ((eaddr & 0xFF00) != (base & 0xFF00)) {
@@ -1013,7 +1014,7 @@ inline void write_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
 
     //phantom_read needed here similar to address_abs_x
     if constexpr (CPUTraits::has_65816_ops) {
-        base = (cpu->db << 16) | eaddr_16; // add data bank
+        base = cpu->full_db | eaddr_16; // add data bank
         eaddr = base + index; // calculate effective address
 
         if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) { // (c)
@@ -1023,7 +1024,7 @@ inline void write_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
         }
         write_data(cpu, eaddr, reg);
     } else { // 65c02 and NMOS 6502
-        base = eaddr_16; // add data bank
+        base = eaddr_16;
         eaddr = (uint16_t)(base + index); // calculate effective address
 
         phantom_read(cpu, (eaddr & 0x00FF00) | ((eaddr + index) & 0xFF));
@@ -1127,7 +1128,7 @@ inline void read_stack_relative_y(cpu_state *cpu, T &reg) {
     
     phantom_read(cpu, cpu->sp); // cycle 6
 
-    base |= (cpu->db << 16);
+    base |= (cpu->full_db);
     uint32_t eaddr = base + _Y(cpu);
 
     if constexpr (is_byte<T>) {
@@ -1150,7 +1151,7 @@ inline void write_stack_relative_y(cpu_state *cpu, T &reg) {
     
     phantom_read(cpu, cpu->sp); // cycle 6
 
-    base |= (cpu->db << 16);
+    base |= cpu->full_db;
     uint32_t eaddr = base + _Y(cpu);
 
     if constexpr (is_byte<T>) {
@@ -2034,12 +2035,12 @@ inline void move_memory(cpu_state *cpu) {
     uint8_t SBA = fetch_pc(cpu); // cycle 3
 
     cpu->db = SBA;
-    uint8_t N = bus_read(cpu, (cpu->db << 16) | _X(cpu)); // cycle 4
+    uint8_t N = bus_read(cpu, (cpu->full_db | _X(cpu))); // cycle 4
     cpu->db = DBA;
-    bus_write(cpu, (cpu->db << 16) | _Y(cpu), N); // cycle 5
-    uint8_t dummy;
-    phantom_read_ign(cpu, (cpu->db << 16) | _Y(cpu)); // cycle 6
-    phantom_read_ign(cpu, (cpu->db << 16) | _Y(cpu)); // cycle 7
+    bus_write(cpu, (cpu->full_db | _Y(cpu)), N); // cycle 5
+
+    phantom_read_ign(cpu, (cpu->full_db | _Y(cpu))); // cycle 6
+    phantom_read_ign(cpu, (cpu->full_db | _Y(cpu))); // cycle 7
     if (cpu->a--) { // uses full accumulator
         cpu->pc = cpu->pc - 3;
     };

@@ -112,8 +112,24 @@ struct cpu_state {
         uint32_t full_pc; /* Full 24-bit program counter (with 8 unused bits) */
     };
 
-    uint8_t db;   /* Data Bank register */
-    //uint16_t sp;  /* Stack Pointer */
+    union {
+        struct {
+            #if SDL_BYTEORDER == SDL_LIL_ENDIAN
+                uint16_t unused_db;  /* Program Counter - lower 16 bits of the 24-bit program counter */
+                uint8_t db;   /* Program Bank - upper 8 bits of the 24-bit program counter */
+                uint8_t unused_db_2; /* Padding to align with 32-bit full_pc */
+            #elif SDL_BYTEORDER == SDL_BIG_ENDIAN
+                uint8_t unused_db_2; /* Padding to align with 32-bit full_pc */
+                uint8_t pb;   /* Program Bank - upper 8 bits of the 24-bit program counter */
+                uint16_t unused_db;  /* Program Counter - lower 16 bits of the 24-bit program counter */
+            #else
+                #error "Endianness not supported"
+            #endif
+        };
+        uint32_t full_db; /* Full 24-bit program counter (with 8 unused bits) */
+    };
+    //uint8_t db;   /* Data Bank register */
+
     union {
         struct {
             #if SDL_BYTEORDER == SDL_LIL_ENDIAN
@@ -259,8 +275,6 @@ struct cpu_state {
     void reset();
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
-
-    inline uint32_t get_pcl() { return db << 16 | pc; }
 
     inline void slow_incr_cycles() {
         cycles++; 

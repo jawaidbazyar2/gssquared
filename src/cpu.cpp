@@ -125,12 +125,14 @@ void set_slot_irq(cpu_state *cpu, uint8_t slot, bool irq) {
 }
 
 cpu_state::cpu_state(processor_type cpu_type) {
-    pc = 0x0400;
+    full_db = 0;
+    full_pc = 0; // was 0x400 from original tests, ha!
     sp = rand() & 0xFF; // simulate a random stack pointer
     a = 0;
     x = 0;
     y = 0;
     p = 0;
+    d = 0;
     cycles = 0;
     //last_tick = 0;
     
