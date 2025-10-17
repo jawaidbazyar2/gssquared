@@ -32,6 +32,7 @@
 #include "devices/game/gamecontroller.hpp"
 #include "devices/game/mousewheel.hpp"
 #include "devices/annunciator/annunciator.hpp"
+#include "util/applekeys.hpp"
 
 /**
  * this is a relatively naive implementation of game controller,
@@ -217,7 +218,8 @@ uint8_t read_game_switch_0(void *context, uint16_t address) {
         } else {
             ds->game_switch_0 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_LEFT)) != 0;
         }
-        if (SDL_GetModState() & SDL_KMOD_LGUI) { // TODO: restrict to Apple IIe
+        SDL_Keymod mod = SDL_GetModState();
+        if (SDL_GetModState() & KEYMOD_OPENAPPLE) { // TODO: restrict to Apple IIe
             ds->game_switch_0 = 1;
         }
         return ds->game_switch_0 ? 0x80 : 0x00;
@@ -238,7 +240,7 @@ uint8_t read_game_switch_1(void *context, uint16_t address) {
         } else { // left-1
             val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
         }
-        if (SDL_GetModState() & SDL_KMOD_RGUI) { // TODO: restrict to Apple IIe
+        if (SDL_GetModState() & KEYMOD_CLOSEDAPPLE) { // TODO: restrict to Apple IIe
             val = true;
         }
         return val ? 0x00 : 0x80;
@@ -256,7 +258,7 @@ uint8_t read_game_switch_1(void *context, uint16_t address) {
         } else {
             ds->game_switch_1 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
         }
-        if (SDL_GetModState() & SDL_KMOD_RGUI) { // TODO: restrict to Apple IIe
+        if (SDL_GetModState() & KEYMOD_CLOSEDAPPLE) { // TODO: restrict to Apple IIe
             ds->game_switch_1 = 1;
         }
         return ds->game_switch_1 ? 0x80 : 0x00;

@@ -13,6 +13,7 @@
 #include "platforms.hpp"
 #include "mbus/MessageBus.hpp"
 #include "util/DebugFormatter.hpp"
+#include "util/applekeys.hpp"
 
 computer_t::computer_t() {
     // lots of stuff is going to need this.
@@ -40,18 +41,20 @@ computer_t::computer_t() {
     sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [this](const SDL_Event &event) {
         int key = event.key.key;
         SDL_Keymod mod = event.key.mod;
-        if ((mod & SDL_KMOD_CTRL) && (key == SDLK_F10)) {
-            if (mod & SDL_KMOD_ALT) {
-                reset(true); 
+        if ((mod & SDL_KMOD_CTRL) && (key == KEY_RESET)) {
+            if ((mod & KEYMOD_OPENAPPLE) && (this->platform->id <= PLATFORM_APPLE_II_PLUS)) { // only II+ and earlier.
+                reset(true);
+                return true;
             } else {
                 reset(false); 
+                return false;
             }
-            return true;
+            //return true;
         }
-        if (key == SDLK_F12) { 
+        /* if (key == SDLK_F12) { 
             cpu->halt = HLT_USER; 
             return true;
-        }
+        } */
         if (key == SDLK_F9) { 
             if (mod & SDL_KMOD_SHIFT) {
                 toggle_clock_mode(cpu, -1);

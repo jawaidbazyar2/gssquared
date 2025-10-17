@@ -127,12 +127,23 @@ Additional notes: Disk II does not support quarter or half tracks.
 
 ### Apple II+
 
+| Platform | Open Apple | Closed Apple |
+|-|-|-|
+| Mac | Option (Left) | Option (Right) |
+| PC/Linux | Windows (Left) | Windows (Right) |
+
+Hopefully these get typical Apple II Open-Apple and Closed-Apple sequences out of any conflict with host-OS command sequences.
+
+On the Mac, you will want to disable "Pressing Option 5 Times enables Mouse Keys".
+
+BTW, Control-OpenApple-Reset will also "force reboot" a II+ mode, because it's super-useful, even though OpenApple and ClosedApple are NOT mapped to the game controller buttons on the II+.
+
 1. control keys: YES
 1. shift keys: YES
 1. arrow keys: YES. II+ only has left and right arrow keys.
 1. Escape key: YES
-1. RESET key: YES. Map Control+F10 to this.
-1. EXIT key: YES. Map F12 to this.
+1. RESET key: YES. Control+F10.
+1. EXIT key: YES. Command-Q on Mac, other depends on OS.
 1. REPT key: no. But we don't need this, autorepeat driven by real keyboard.
 1. Backspace - YES. This apparently maps to same as back arrow. Got lucky.
 
@@ -142,8 +153,8 @@ Additional notes: Disk II does not support quarter or half tracks.
 1. shift keys: YES
 1. arrow keys: YES. All 4 arrow keys.
 1. Escape key: YES
-1. RESET key: YES. Map Control+F10 to this.
-1. EXIT key: YES. Map F12 to this.
+1. RESET key: YES. Control+F10.
+1. EXIT key: YES. Command-Q on Mac, other depends on OS
 1. REPT key: no. But we don't need this, autorepeat driven by real keyboard.
 1. Backspace - YES. Mapped to 0x7F.
 1. OA and CA - YES. Mapped to Command on Mac, Windows on Win/Linux.

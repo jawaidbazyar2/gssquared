@@ -6231,3 +6231,108 @@ I might be able to simplify the MMU design by:
 register the C000-CFFF space as r_handler and w_handler, inside another object. The MMU itself would then have no knowledge of this and would not have to do a bunch of page checking, nor have the specialized C8xx etc handling stuff in it. That would go into the anciliary class. We'd use 4K pages; and 3 of them - 00-0F; C0-CF; would have sub-handlers, with sub-pagetables at either 256 bytes, 1024 bytes (text pages); or the very specialized CXXX handling stuff. Registered as a generic handler. 
 Then there'd be 16 pagetable entries on a II, II+, IIe. Then the same independent handlers could easily be registered into the IIgs memory map as appropriate. (The II+ doesn't even need a handler for anything except C0-FF). Page changes for things like hires main/aux would be much faster since fewer 16 times fewer entries are changing. (1 entry for D0, instead of 16).
 I like this for a post-v1.0 enhancement. Or if we run into any significant GS EMU performance issues.
+
+I spent most of the last 3-odd weeks in the 65816.md file, for anyone who might be following along.
+
+## Oct 16, 2025
+
+Just thinking about the IIgs Disk motor-on-detector and was wondering about how we would handle speed shifts inside a frame. Well, it would actually work. Since we now clock based on 14M, the clock speed change would just trigger and we would start counting a different number of 14Ms per instruction immediately. The frame loop would still exit on or around counting the right number of 14Ms. It could even take effect -inside- an instruction depending on how we hit it.
+
+Should really consider having that clock module.
+
+the "internal" shr pixel closk is 16.xMHz. It is apparently exactly an 8/7 ratio from 14M.. so, 16.3636. An Apple II reads 40 bytes to generate a single scanline of text/lores/hires, with 7 pixels emitted per byte. And this is 14 14M's, 1 pixel each two 14M's in essence though we don't operate at that resolution. Double hi-res/lores/80col is 80 bytes per scanline, or twice the video data bandwidth. A IIgs SHR display needs to read - for 320 4-bit pixels - 160 bytes per scanline, or exactly four times as many. That each cycle spits out one extra pixel here (hence the 16M clock) is irrelevant to our emulation purposes. The 16M clock is entirely internal to the VGC and does not impact the CPU -- paraphrasing John Brooks.
+
+IIgs video is very straightforward in theory.  Also from John:
+
+```
+So I think the VGC does this:
+6 cycle right border, reading $C034 border color reg each cycle
+1 cycle start hblank & read SCB, determine 320 or 640 pixel clock
+8 cycles to read selected palette
+4 cycles complete hblank
+6 cycle left border, reading $C034
+40 cycles active video, reading 4 bytes per cycle for SHR modes
+```
+Note this is still that magical "65 cycles" per scanline.
+
+The details around border colors are In IIgs mode for cycle-accurate video are above and are interesting. This implies the following changes:
+the border area left and right would be: left and right border are "6 cycle", i.e. 7 pixels * 6 = 42 pixels. Or is some of this hidden on a typical monitor?
+
+What if instead of simply having a 560x192 (er, 580x192) buffer, we have a buffer for this complete picture - 560 + 42 + 42 = 644? hm. what about 640 + 42 + 42 = 724.. ah, that is close to 720 which feels like a thing. The border color can be changed in the middle of drawing border and there is a demo that shows that. In the Scanner LUT we can have a flag "read border color". The challenge is: the content area is either 560 pixels or 640 pixels before scaling.  When switching between modes we don't want the relative proportions of the border/content to change. So: emit an appropriate number of border pixels depending on the mode; in apple ii modes, base on 7 pixels per byte; in shr mode, base on 8 pixels per byte. Use different buffers for a2/shr. Then when we "paint" in it's scaled correctly and should "just work".
+
+This feels like there is too much border. I suppose on a real machine this was adjustable; change the horizontal beam rate to increase the picture width and get more "x". ok, I drew it. It's actually a good ratio. Each border is only 7.5% of the content area. For a total of 15%. Let's compare to my current border numbers..
+and we know double hires-80 etc. shift the start of that by 7 pixels. So that gives us area to work inside for this effect.
+So shr: 736 x 200
+apple2: 644 x 192
+
+Currently our border width is 30 pixels pre-scaled. So we just need to make the window a hair wider.
+
+Now, for vertical, is it the same thing? it's only 8 additional scanlines, so this feels like we probably just have less top and bottom border and instead of scrunching it a fraction we define slightly smaller vertical borders.
+
+NTSC has 525 lines; an apple ii frame is 262.5. that means, in apple II mode we have 35 scanlines above and below our content. Currently we only set up 20. So after doubling vertical, it's 42 pixels by 70 pixels, which looks about like maybe what kegs is doing. hard to tell exactly.
+
+KEGS has an extra-wide right border in Apple II mode. I think he is doing only integer scaling, so in SHR mode I would expect less border.. yep, that's what's going on. In SHR in Kegs the aspect ratio is really off.
+
+So then this comes into the aspect ratio conversation. I suppose since I have a "real" monitor I can just take some measurements!
+
+For cleanliness in the system, we'd backport this stuff to the stock Apple II platforms.
+
+Using an aspect ratio of x/y = 2.4 seems to work pretty well and gets us close. I think making this a user option is the way to go - switch between the current 2.0 ('square' pixels) and 2.4 (more accurate).
+
+## Oct 17, 2025
+
+Key bindings! Figure out key bindings for Apple II special keys that don't conflict on various O/S for defaults. 
+
+I think this is the desired outcome here..
+
+| Platform | Apple II | Mapped | SDL Keymod |
+|-|-|-|
+| MacOS | Open-Apple | Option (Left) | SDLK_LALT |
+| | Closed-Apple | Option (Right) | |
+| | Reset | F10 | |
+| MacOS 104-key | Open-Apple | Option (Left) | |
+| | Closed-Apple | Option (Left) | |
+| | Reset | F10 | |
+| Linux | Open-Apple | Windows (Left) | |
+| | Closed-Apple | Windows (Right) | |
+| | Reset | F10 | |
+| Windows | Open-Apple | Windows (Left) | |
+| | Closed-Apple | Windows (Right) | |
+| | Reset | F10 | |
+
+F12 - should get rid of F12 to "quit" and just rely on whatever the platform's "quit" key is.  Put up a dialog asking user to confirm they really want to quit, when they do this.
+
+I do already have Option mapped to "fake control-openapple-reset" in Apple II+ mode. This snippet of code should only work on pre-IIe.
+
+On Mac, people don't necessarily always have Function keys enabled or mapped. 
+
+On a PC keyboard on a Mac, Windows => Command; Alt => Option; that's how SDL will read them on a Mac keyboard.
+I had the keys reversed in my setup with PC keyboard. 
+
+So I am now checking for ALT.. on a regular Mac KB, that will be option. And on my Mac with PC KB, I have these reversed, so I actually hit the Windows key for these.
+BUT on a regular Windows PC or Linux, ALT is ALT. And we know that this is going to have lots of conflicts. SO, the root issue here is, between Mac and PC/Linux, I need to reverse which keys I am checking for.
+
+Mac: ALT (option);
+PC/Linux: GUI (windows);
+
+### Testing Results
+
+* Aplworks 4.3 / IIe_Enh
+
+the OA-? does not work. I wonder if we're getting some whack key map or if SDL is not mapping right when modifier is set?
+OA-up arrow and down arrow are working.
+
+Here's what happens when we map keycode with modifiers down:
+Key down:       2F [mapped: 0000003F] 00000002 00000002
+Key down:       2F [mapped: 000000BF] 00000102 00000102
+
+ha, whoops. So when I send to map, I need to filter out these modifiers.
+
+* Merlin-16
+
+OA-A is not assembling. This was working before but now it's not.
+
+
+
+
+[ ] Aside: to generate a phosphor-persistence effect, can keep 2 (or more) textures. Alternate between them. When emitting a frame, draw the old one at some fractional intensity, then draw the real one on top of it normally.  

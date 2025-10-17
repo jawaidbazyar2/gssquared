@@ -22,7 +22,7 @@
 #include "computer.hpp"
 #include "debug.hpp"
 #include "keyboard.hpp"
-
+#include "util/applekeys.hpp"
 #include "mbus/KeyboardMessage.hpp"
 
 // Software should be able to:
@@ -155,8 +155,8 @@ void handle_keydown_iiplus(const SDL_Event &event, keyboard_state_t *kb_state) {
             } 
         }
     }  else {
-        // map the scancode + mods to a sensible keycode
-        SDL_Keycode mapped = SDL_GetKeyFromScancode(event.key.scancode, event.key.mod, false);
+        // map the scancode + mods to a sensible keycode. Strip ALT/GUI to prevent weird mapping where hi bit gets set.
+        SDL_Keycode mapped = SDL_GetKeyFromScancode(event.key.scancode, event.key.mod & KEYMOD_REMOVE, false);
         if (DEBUG(DEBUG_KEYBOARD)) printf("mapped key: %08X\n", mapped);
 
         if (mapped == SDLK_LEFT) { kb_key_pressed(kb_state, 0x08); return; }
@@ -222,7 +222,7 @@ void handle_keydown_iie(const SDL_Event &event, keyboard_state_t *kb_state) {
             return;
         }
         // map the scancode + mods to a sensible keycode
-        SDL_Keycode mapped = SDL_GetKeyFromScancode(event.key.scancode, event.key.mod, false);
+        SDL_Keycode mapped = SDL_GetKeyFromScancode(event.key.scancode, event.key.mod & KEYMOD_REMOVE, false);
         if (DEBUG(DEBUG_KEYBOARD)) printf("mapped key: %08X\n", mapped);
 
         if (mapped == SDLK_LEFT) { kb_key_pressed(kb_state, 0x08); return; }
