@@ -1290,6 +1290,38 @@ bool test_instruction(std::unique_ptr<BaseCPU> &cpux, cpu_state *cpu, test_recor
 
 int main(int argc, char **argv) {
     bool trace_on = true;
+    processor_type cputype = PROCESSOR_6502;
+
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "trace") == 0) {
+            trace_on = true;
+        } else if (strcmp(argv[i], "6502") == 0) {
+            cputype = PROCESSOR_6502;
+        } else if (strcmp(argv[i], "65c02") == 0) {
+            cputype = PROCESSOR_65C02;
+        } else if (strcmp(argv[i], "65816") == 0) {
+            cputype = PROCESSOR_65816;
+        } else {
+            printf("usage: cputest [trace] [6502|65c02] [test6502|test65c02|testdecimal]\n");
+        }
+    }
+
+    printf("   CPU Type: ");
+    switch (cputype) {
+        case PROCESSOR_6502:
+            printf(" 6502\n");
+            break;
+        case PROCESSOR_65C02:
+            printf(" 65c02\n");
+            break;
+        case PROCESSOR_65816:
+            printf(" 65816\n");
+            break;
+        default:
+            printf("Invalid CPU type\n");
+            exit(1);
+    }
 
     printf("Starting CPU Cycle Counts test...\n");
     if (argc > 1) {
@@ -1307,9 +1339,9 @@ int main(int argc, char **argv) {
         mmu->map_page_both(i, &memory[i*256], "TEST RAM");
     }
 
-    cpu_state *cpu = new cpu_state(PROCESSOR_6502);
+    cpu_state *cpu = new cpu_state(cputype);
     //cpu->set_processor(PROCESSOR_6502);
-    cpu->cpun = createCPU(PROCESSOR_6502);
+    cpu->cpun = createCPU(cputype);
     cpu->core = cpu->cpun.get();
 
     //cpu->init();
