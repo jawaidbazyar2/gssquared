@@ -384,11 +384,13 @@ void iiememory_write_C00X(void *context, uint16_t address, uint8_t data) {
             iiememory_d->f_80store = false;
             // TODO: force display mode to be recalculated
             ds->video_scanner->set_80store(false);
+            ds->a2_display->set_80store(false);
             break;
         case 0xC001: // 80STOREON
             iiememory_d->f_80store = true;
             // TODO: force display mode to be recalculated
             ds->video_scanner->set_80store(true);
+            ds->a2_display->set_80store(true);
             break;
         case 0xC002: // RAMRDOFF
             iiememory_d->f_ramrd = false;

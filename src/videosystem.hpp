@@ -9,7 +9,7 @@
 #include "ui/Clipboard.hpp"
 #include "devices/displaypp/RGBA.hpp"
 
-#define BORDER_WIDTH 30
+#define BORDER_WIDTH 42
 #define BORDER_HEIGHT 20
 
 

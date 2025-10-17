@@ -15,6 +15,7 @@ private:
     CharRom *char_rom;
     bool flash_state = false;
     bool alt_char_set = false;
+    bool f_80store = false;
     uint8_t hires40Font[2 * CHAR_NUM * CHAR_WIDTH];
 
     alignas(64) uint16_t A2_textMap[24] =
@@ -88,6 +89,12 @@ public:
     void set_flash_state(bool flash_state) {
         this->flash_state = flash_state;
     }
+
+    inline void set_80store(bool f_80store) {
+        this->f_80store = f_80store;
+    }
+
+    inline bool is_80store() { return f_80store; }
 
     /** delayEnabled is true for any Apple II model except Apple II Rev 0. */
     void buildHires40Font(bool delayEnabled)

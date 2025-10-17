@@ -6332,7 +6332,7 @@ ha, whoops. So when I send to map, I need to filter out these modifiers.
 
 OA-A is not assembling. This was working before but now it's not.
 
-
+OK I hope I have it right this time! Mac and PC are the opposite of each other.. and on MY Mac, I have option/cmd reversed so they're the same as a PC, on my PC keyboard.
 
 
 [ ] Aside: to generate a phosphor-persistence effect, can keep 2 (or more) textures. Alternate between them. When emitting a frame, draw the old one at some fractional intensity, then draw the real one on top of it normally.  

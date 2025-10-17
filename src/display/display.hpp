@@ -26,8 +26,8 @@
 #define SCALE_Y 4
 #define BASE_WIDTH 560
 #define BASE_HEIGHT 192
-#define BORDER_WIDTH 30
-#define BORDER_HEIGHT 20
+//#define BORDER_WIDTH 30
+//#define BORDER_HEIGHT 20
 
 #include "devices/displaypp/render/Monochrome560.hpp"
 #include "devices/displaypp/render/NTSC560.hpp"

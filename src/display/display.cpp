@@ -209,7 +209,7 @@ bool update_display_apple2(cpu_state *cpu) {
     uint8_t *hgr_page;
     uint8_t *alt_text_page;
     uint8_t *alt_hgr_page;
-    if (ds->display_page_num == DISPLAY_PAGE_1) {
+    if (ds->display_page_num == DISPLAY_PAGE_1 || ds->a2_display->is_80store()) {
         text_page     = ram + 0x0400;
         alt_text_page = ram + 0x10400;
         hgr_page      = ram + 0x2000;
