@@ -20,7 +20,7 @@
 
 #include "iiememory.hpp"
 #include "Module_ID.hpp"
-#include "display/display.hpp"
+//#include "display/display.hpp"
 #include "devices/languagecard/languagecard.hpp" // to get bit flag names
 
 #include "mmus/mmu_iie.hpp"
@@ -516,8 +516,18 @@ void iiememory_write_display(void *context, uint16_t address, uint8_t data) {
 
 DebugFormatter *debug_iiememory(iiememory_state_t *iiememory_d) {
     DebugFormatter *f = new DebugFormatter();
-    /* f->addLine("IIe Memory: m_zp: %d, m_text1_r: %d, m_text1_w: %d, m_hires1_r: %d, m_hires1_w: %d, m_all_r: %d, m_all_w: %d\n", 
-        iiememory_d->m_zp, iiememory_d->m_text1_r, iiememory_d->m_text1_w, iiememory_d->m_hires1_r, iiememory_d->m_hires1_w, iiememory_d->m_all_r, iiememory_d->m_all_w); */
+    MMU_IIe *mmu = (MMU_IIe *)iiememory_d->mmu; // we are in fact a iie
+
+    // dump the page table
+    f->addLine("80ST: %1d RAMR: %1d RAMW: %1d ALTZP: %1d SLOTC3: %1d",
+        iiememory_d->f_80store, iiememory_d->f_ramrd, iiememory_d->f_ramwrt, iiememory_d->f_altzp, mmu->f_slotc3rom);
+
+    f->addLine("INTCX: %1d LC [ BNK1: %1d READ: %1d WRT: %1d ]",
+        mmu->f_intcxrom, iiememory_d->FF_BANK_1, iiememory_d->FF_READ_ENABLE, !iiememory_d->_FF_WRITE_ENABLE);
+    
+   /*  ds->f_altcharset  => to debug "display"
+    ds->f_80col */
+
     iiememory_d->mmu->debug_output_page(f, 0x00, true);
     iiememory_d->mmu->debug_output_page(f, 0x02);
     iiememory_d->mmu->debug_output_page(f, 0x04);
@@ -615,7 +625,7 @@ void init_iiememory(computer_t *computer, SlotType_t slot) {
         });
 
     computer->register_debug_display_handler(
-        "memory",
+        "iiememory",
         0x0000000000000004, // unique ID for this, need to have in a header.
         [iiememory_d]() -> DebugFormatter * {
             return debug_iiememory(iiememory_d);

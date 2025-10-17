@@ -365,7 +365,7 @@ void debug_window_t::render_pane_memory() {
         index = 0;
     }
     //
-    display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
+/*     display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
     if (computer->platform->id == PLATFORM_APPLE_IIE || computer->platform->id == PLATFORM_APPLE_IIE_ENHANCED) {
         iiememory_state_t *iiem = (iiememory_state_t *)computer->get_module_state(MODULE_IIEMEMORY);
         MMU_IIe *mmu = (MMU_IIe *)computer->mmu;
@@ -380,7 +380,7 @@ void debug_window_t::render_pane_memory() {
             draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, buffer);
             line++;
         }
-    }
+    } */
 
     for (auto &display : debug_displays) {
         separator_line(DEBUG_PANEL_MEMORY, base_line + line);
@@ -409,10 +409,6 @@ void debug_window_t::render_pane_memory() {
         delete df;
     } */
 }
-   /*  bool FF_BANK_1;
-    bool FF_READ_ENABLE;
-    bool FF_PRE_WRITE;
-    bool _FF_WRITE_ENABLE; */
 
 void debug_window_t::render() {
     char buffer[256];
