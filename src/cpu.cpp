@@ -20,14 +20,6 @@
 #include <cstdlib>
 
 #include "cpu.hpp"
-#include "cpus/cpu_implementations.hpp"
-
-/* clock_mode_info_t clock_mode_info[NUM_CLOCK_MODES] = {
-    { 0, 0, ((uint64_t)1000000000 * 256) / (50000000), 17008 }, // cycle times here are fake.
-    { 1020500, (1000000000 / 1022727)+1, ((uint64_t)1'000'000'000 * 256) / (1'022'727), 17030 },
-    { 2800000, (1000000000 / 2800000), ((uint64_t)1'000'000'000 * 256) / (2'800'000), 46666 },
-    { 4000000, (1000000000 / 4000000), ((uint64_t)1'000'000'000 * 256) / (4'000'000), 66665 }
-}; */
 
 clock_mode_info_t clock_mode_info[NUM_CLOCK_MODES] = {
     { 14'318'180, ((uint64_t)1000000000 * 256) / (50000000), 238420, 1, 0, 912 }, // cycle times here are fake.
@@ -37,10 +29,7 @@ clock_mode_info_t clock_mode_info[NUM_CLOCK_MODES] = {
 };
 
 void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
-    // TODO: if this is ever called from inside a CPU loop, we need to exit that loop immediately in order to avoid weird calculations.
-    // So add a "speedshift" cpu flag.
-
-    // TODO: copy the entire struct into the cpu state.
+    // TODO: copy the entire struct into the cpu state?
     cpu->HZ_RATE = clock_mode_info[mode].hz_rate;
     // Lookup time per emulated cycle
     cpu->cycle_duration_ns = clock_mode_info[mode].cycle_duration_ns;
@@ -64,18 +53,6 @@ clock_mode_t toggle_clock_mode(cpu_state *cpu, int direction) {
     fprintf(stdout, "Clock mode: %d\n", new_mode);
     return (clock_mode_t)new_mode;
 }
-
-#if 0
-processor_model processor_models[NUM_PROCESSOR_TYPES] = {
-    { "6502 (nmos)", cpu_6502::execute_next },
-    //{ "65C02 (cmos)", cpu_65c02::execute_next }
-    { "65C02 (cmos)", cpu_6502::execute_next }
-};
-
-const char* processor_get_name(int processor_type) {
-    return processor_models[processor_type].name;
-}
-#endif
 
 /** State storage for non-slot devices. */
 void *get_module_state(cpu_state *cpu, module_id_t module_id) {
