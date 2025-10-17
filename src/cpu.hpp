@@ -316,7 +316,7 @@ struct cpu_state {
 
 extern struct cpu_state *CPUs[MAX_CPUS];
 
-void toggle_clock_mode(cpu_state *cpu, int direction);
+clock_mode_t toggle_clock_mode(cpu_state *cpu, int direction);
 
 void set_clock_mode(cpu_state *cpu, clock_mode_t mode);
 

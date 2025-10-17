@@ -39,6 +39,10 @@ struct computer_t {
     platform_info *platform = nullptr;
     MessageBus *mbus = nullptr;
 
+    // handle speed shift requests (between frames)
+    bool speed_shift = false;
+    clock_mode_t speed_new = CLOCK_1_024MHZ;
+
     EventDispatcher *sys_event = nullptr;
     EventDispatcher *dispatch = nullptr;
 

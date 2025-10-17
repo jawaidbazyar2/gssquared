@@ -919,8 +919,6 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         } else {
             ret = update_display_apple2_cycle(cpu);
         }
-        display_update_video_scanner(ds, cpu);
-
         return ret;
     });
 
@@ -947,6 +945,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
             ds->video_scanner->reset_altchrset();
             ds->video_scanner->reset_dblres();
             ds->a2_display->set_char_set(ds->f_altcharset);
+            ds->a2_display->set_80store(false); // TODO: check this, but it makes sense.
             update_line_mode(ds);
             return true;
         });

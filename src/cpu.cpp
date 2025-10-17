@@ -49,23 +49,20 @@ void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
     cpu->extra_per_scanline = clock_mode_info[mode].extra_per_scanline;
     cpu->cycles_per_frame = clock_mode_info[mode].cycles_per_frame;
 
-    // TODO: maybe reset the video scanner here. maybe not.
-    //if (cpu->video_scanner) cpu->video_scanner->reset(); // going from ludicrous to regular speed have to reset scanner.
-    if ((cpu->clock_mode == CLOCK_FREE_RUN) && (cpu->video_scanner)) cpu->video_scanner->reset(); // going from ludicrous to regular speed have to reset scanner.
-
     cpu->clock_mode = mode;
     fprintf(stdout, "Clock mode: %d HZ_RATE: %llu cycle_duration_ns: %llu \n", cpu->clock_mode, cpu->HZ_RATE, cpu->cycle_duration_ns);
-    if (cpu->video_scanner) {
-        fprintf(stdout, "Video scanner has %d samples @ speed shift [%d,%d]\n", cpu->video_scanner->get_frame_scan()->get_count(), cpu->video_scanner->hcount, cpu->video_scanner->vcount);
-    }
 }
 
-void toggle_clock_mode(cpu_state *cpu, int direction) {
-    int new_mode = (cpu->clock_mode + direction);
-    if (new_mode < 0) new_mode = NUM_CLOCK_MODES - 1;
-    if (new_mode >= NUM_CLOCK_MODES) new_mode = 0;
-    set_clock_mode(cpu, (clock_mode_t)new_mode);
-    fprintf(stdout, "Clock mode: %d HZ_RATE: %llu\n", cpu->clock_mode, cpu->HZ_RATE);
+clock_mode_t toggle_clock_mode(cpu_state *cpu, int direction) {
+    int new_mode = (int)cpu->clock_mode + direction;
+    
+    if (new_mode < 0) {
+        new_mode = (NUM_CLOCK_MODES - 1);
+    } else if (new_mode >= NUM_CLOCK_MODES) {
+        new_mode = 0;
+    }
+    fprintf(stdout, "Clock mode: %d\n", new_mode);
+    return (clock_mode_t)new_mode;
 }
 
 #if 0

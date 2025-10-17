@@ -6336,3 +6336,45 @@ OK I hope I have it right this time! Mac and PC are the opposite of each other..
 
 
 [ ] Aside: to generate a phosphor-persistence effect, can keep 2 (or more) textures. Alternate between them. When emitting a frame, draw the old one at some fractional intensity, then draw the real one on top of it normally.  
+
+working on bug #74: the issue isn't when we switch out, it's when we switch -in- to L.S.
+
+So here's the event loop when in normal mode:
+
+```
+execute cpu:
+    if we're not free run, we call video_cycle (putting stuff into scanbuffer)
+
+execute events:
+    if ((cpu->clock_mode == CLOCK_FREE_RUN) && (cpu->video_scanner)) cpu->video_scanner->reset(); // going from ludicrous to regular speed have to reset scanner.
+    cpu->clock_mode = mode;
+
+display_frame:
+        if (ds->framebased || force_full_frame) {
+            update_flash_state(cpu);
+            ret = update_display_apple2(cpu);
+        } else {
+            ret = update_display_apple2_cycle(cpu);
+        }
+
+    if (cpu->clock_mode == CLOCK_FREE_RUN) {
+        ds->framebased = true;
+        cpu->video_scanner = nullptr;
+    } else {
+        ds->framebased = false;
+        cpu->video_scanner = ds->video_scanner;
+    }
+```
+
+Maybe this would be clearer/cleaner if speed changes were handled somewhere else. Being done in the middle of the event loop must somehow be the problem. Working on that.. still getting the extra stuff in the scanbuffer.
+
+incr_cycles calls video_cycle as long as we're not in FREE_RUN.
+video stuff is based on framebased, which is set by update_display_mode whatever. 
+well this ought to be working. It's possible I am somehow allocating two ScanBuffer and sometimes populating the wrong one.
+let's check the values in SB when I: change speed INTO LS and when I change out.
+
+wait.. so let's go step by step in frame mode and see what the frame parameters are. Because I get hit first with a "no data" and then a "too much data" thing.
+yeah ok, when we go from LS back to 7, the end_frame_c14M is all out of whack.
+So thinking about this, what we're after, is that:
+   in LS, we still process a 'frame' at a time.. where a 'frame' is still 260xxx 14m's. But we'll keep doing those until we ALSO exceed the time limit.
+So this means keep incrementing end_frame_c14M same as we do in normal mode.

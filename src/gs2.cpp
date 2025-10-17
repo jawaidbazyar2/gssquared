@@ -24,6 +24,7 @@
 #include <SDL3/SDL_main.h>
 
 #include "gs2.hpp"
+#include "Module_ID.hpp"
 #include "paths.hpp"
 #include "cpu.hpp"
 #include "clock.hpp"
@@ -206,6 +207,20 @@ void run_cpus(computer_t *computer) {
 
     while (cpu->halt != HLT_USER) { // top of frame.
 
+        if (computer->speed_shift) {
+            display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+            computer->speed_shift = false;
+            /* if (cpu->clock_mode == CLOCK_FREE_RUN) {
+                ds->video_scanner->reset(); // going from ludicrous to regular speed have to reset scanner.
+            } */
+            set_clock_mode(cpu, computer->speed_new);
+            display_update_video_scanner(ds, cpu);
+            int x = ds->video_scanner->get_frame_scan()->get_count();
+            if (x > 0) {
+                printf("Video scanner has %d samples @ speed shift [%d,%d]\n", x, cpu->video_scanner->hcount, cpu->video_scanner->vcount);
+            }
+        }
+
         if (cpu->execution_mode == EXEC_STEP_INTO) {
 
             /* This will run about 60fps, primarily waiting on user input in the debugger window. */
@@ -335,7 +350,7 @@ void run_cpus(computer_t *computer) {
 
             uint64_t frdiff = start_frame_c14m - last_start_frame_c14m; // this is just a check.
             last_start_frame_c14m = start_frame_c14m;
-            uint64_t end_frame_c14M = start_frame_c14m;
+            //uint64_t end_frame_c14M = start_frame_c14m;
             
             if (computer->debug_window->window_open) {
                 while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
@@ -402,6 +417,7 @@ void run_cpus(computer_t *computer) {
             // update frame status; calculate stats; move these variables into computer;
             computer->frame_status_update();
             start_frame_c14m += 238944;
+            end_frame_c14M = start_frame_c14m + 238944; // we had forgotten this one...
             frame_count++;
             last_start_frame_c14m = start_frame_c14m;
         }

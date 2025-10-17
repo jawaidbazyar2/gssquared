@@ -44,22 +44,17 @@ computer_t::computer_t() {
         if ((mod & SDL_KMOD_CTRL) && (key == KEY_RESET)) {
             if ((mod & KEYMOD_OPENAPPLE) && (this->platform->id <= PLATFORM_APPLE_II_PLUS)) { // only II+ and earlier.
                 reset(true);
-                return true;
             } else {
                 reset(false); 
-                return false;
             }
-            //return true;
-        }
-        /* if (key == SDLK_F12) { 
-            cpu->halt = HLT_USER; 
             return true;
-        } */
+        }
         if (key == SDLK_F9) { 
+            this->speed_shift = true;
             if (mod & SDL_KMOD_SHIFT) {
-                toggle_clock_mode(cpu, -1);
+                this->speed_new = toggle_clock_mode(cpu, -1);
             } else {
-                toggle_clock_mode(cpu, 1);
+                this->speed_new = toggle_clock_mode(cpu, 1);
             }
             send_clock_mode_message();
             return true; 
@@ -199,7 +194,7 @@ void computer_t::send_clock_mode_message() {
         "7.1435 MHz"
     };
 
-    snprintf(buffer, sizeof(buffer), "Clock Mode Set to %s", clock_mode_names[cpu->clock_mode]);
+    snprintf(buffer, sizeof(buffer), "Clock Mode Set to %s", clock_mode_names[this->speed_new]);
     event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, buffer));
 }
 

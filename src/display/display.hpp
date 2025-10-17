@@ -132,6 +132,7 @@ void display_dump_hires_page(MMU_II *mmu, int page);
 void display_dump_text_page(MMU_II *mmu, int page);
 
 void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *width, uint32_t *height);
+void display_update_video_scanner(display_state_t *ds, cpu_state *cpu);
 
 uint8_t txt_bus_read_C050(void *context, uint16_t address);
 uint8_t txt_bus_read_C051(void *context, uint16_t address);
