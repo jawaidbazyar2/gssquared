@@ -114,6 +114,8 @@ void ExecuteCommand::execute() {
         auto &node1 = cmd->nodes[1];
         if (node1.type == MON_NODE_TYPE_RANGE) {
             memory_watches->add(node1.val_range.lo, node1.val_range.hi);
+        } else if (node1.type == MON_NODE_TYPE_NUMBER) {
+            memory_watches->add(node1.val_number, node1.val_number);
         } else {
             addOutput("Error: expected range as first argument");
         }
@@ -143,6 +145,8 @@ void ExecuteCommand::execute() {
         auto &node1 = cmd->nodes[1];
         if (node1.type == MON_NODE_TYPE_RANGE) {
             breaks->add(node1.val_range.lo, node1.val_range.hi);
+        } else if (node1.type == MON_NODE_TYPE_NUMBER) {
+            breaks->add(node1.val_number, node1.val_number);
         } else {
             addOutput("Error: expected range as first argument");
         }
