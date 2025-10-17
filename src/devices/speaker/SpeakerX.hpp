@@ -76,6 +76,8 @@ class Speaker {
         inline double get_polarity() { return polarity; }
         inline double get_polarity_impulse() { return polarity_impulse; }
 
+        inline void reset_cycle_index(uint64_t new_count) { cycle_index = new_count; frac = 0.0f;}
+
     private:
         double polarity = 1.0f;
         double polarity_impulse = 1.0f;

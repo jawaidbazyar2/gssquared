@@ -267,6 +267,10 @@ void speaker_stop(cpu_state *cpu) {
     speaker_state->device_started = 0;
 }
 
+void speaker_reset(speaker_state_t *speaker_state) {
+    speaker_state->sp->reset_cycle_index(speaker_state->computer->cpu->cycles);
+}
+
 DebugFormatter * debug_speaker(speaker_state_t *ds) {
     DebugFormatter *df = new DebugFormatter();
         

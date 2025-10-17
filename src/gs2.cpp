@@ -213,6 +213,10 @@ void run_cpus(computer_t *computer) {
             /* if (cpu->clock_mode == CLOCK_FREE_RUN) {
                 ds->video_scanner->reset(); // going from ludicrous to regular speed have to reset scanner.
             } */
+             if (cpu->clock_mode == CLOCK_FREE_RUN) {
+                speaker_state_t *ss = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
+                speaker_reset(ss);
+             }
             set_clock_mode(cpu, computer->speed_new);
             display_update_video_scanner(ds, cpu);
             int x = ds->video_scanner->get_frame_scan()->get_count();
