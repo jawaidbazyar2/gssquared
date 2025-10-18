@@ -1895,7 +1895,7 @@ inline void push_byte_new(cpu_state *cpu, byte_t N) {
         cpu->sp = cpu->sp - 1;
     } else { // any 6502 mode, sp is just 8-bit.
         // compile-time assert failure here.
-        static_assert(false, "push_byte_new called in 6502 mode");
+        static_assert(!CPUTraits::has_65816_ops, "push_byte_new called in 6502 mode");
     }
     //cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
@@ -1909,7 +1909,7 @@ inline void push_word_new(cpu_state *cpu, word_t N) {
         cpu->sp = cpu->sp - 1;
     } else { // any 6502 mode, sp is just 8-bit.
         // compile-time assert failure here.
-        static_assert(false, "push_byte_new called in 6502 mode");
+        static_assert(!CPUTraits::has_65816_ops, "push_word_new called in 6502 mode");
     }
     //cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
@@ -1921,7 +1921,7 @@ inline byte_t pop_byte_new(cpu_state *cpu) {
         cpu->sp = (uint16_t)(cpu->sp + 1);
         N = bus_read(cpu, cpu->sp);
     } else {
-        static_assert(false, "push_byte_new called in 6502 mode");
+        static_assert(!CPUTraits::has_65816_ops, "pop_byte_new called in 6502 mode");
     }
     //cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
@@ -1936,7 +1936,7 @@ inline void pop_word_new(cpu_state *cpu, word_t &N) {
         N |= bus_read(cpu, cpu->sp ) << 8;
     } else { // any 6502 mode, sp is just 8-bit.
         // compile-time assert failure here.
-        static_assert(false, "push_byte_new called in 6502 mode");
+        static_assert(!CPUTraits::has_65816_ops, "pop_word_new called in 6502 mode");
     }
     //cpu->incr_cycles();
     TRACE(cpu->trace_entry.data = N;)
