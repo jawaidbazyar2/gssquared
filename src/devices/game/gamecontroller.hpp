@@ -47,7 +47,6 @@
 #define MAX_GAMEPAD_COUNT 2
 
 typedef struct gamepad_state {
-//    game_input_t game_type;
     SDL_JoystickID id;
     SDL_Gamepad *gamepad;    
 } gamepad_state_t;
