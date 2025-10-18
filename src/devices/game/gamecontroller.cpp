@@ -136,8 +136,6 @@ uint8_t strobe_game_inputs(void *context, uint16_t address) {
             ds->game_input_trigger_1 = y_trigger;
         }
         if (DEBUG(DEBUG_GAME)) fprintf(stdout, "Strobe game inputs: %f, %f: %llu, %llu\n", mouse_x, mouse_y, ds->game_input_trigger_0, ds->game_input_trigger_1);
-    /*}  else if (ds->gps[0].game_type == GAME_INPUT_TYPE_MOUSEWHEEL) {
-        ds->game_input_trigger_0 = cpu->cycles + (GAME_INPUT_DECAY_TIME / 255) * ds->mouse_wheel_pos_0; */
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD /* ds->gps[0].game_type == GAME_INPUT_TYPE_GAMEPAD */) {
         // Scale the axes larger, to get the corners to full extent
         
@@ -246,7 +244,6 @@ uint8_t read_game_switch_1(void *context, uint16_t address) {
         }
         return val ? 0x00 : 0x80;
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
-        /* if (ds->gps[0].game_type == GAME_INPUT_TYPE_GAMEPAD) { */
         if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_SOUTH)) {
             ds->game_switch_1 = 1;
         } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_WEST)) {
@@ -257,7 +254,6 @@ uint8_t read_game_switch_1(void *context, uint16_t address) {
             ds->game_switch_1 = 0;
         }
     } else if (ds->joystick_mode == JOYSTICK_APPLE_MOUSE) {
-        /* } else { */
         ds->game_switch_1 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
     } else {
         ds->game_switch_1 = 0;
@@ -286,7 +282,6 @@ uint8_t read_game_switch_2(void *context, uint16_t address) {
         }
         return val ? 0x00 : 0x80;
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
-        /* if (ds->gps[1].game_type == GAME_INPUT_TYPE_GAMEPAD) { */
         if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
             ds->game_switch_2 = 1;
         } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
@@ -302,7 +297,6 @@ uint8_t read_game_switch_2(void *context, uint16_t address) {
         ds->game_switch_2 = 0;
     }
     return ds->game_switch_2 ? 0x80 : 0x00;
-    /* } */
 }
 
 /**
@@ -336,8 +330,6 @@ bool recompute_gamepads(gamec_state_t *gp_d) {
 
     // if there is only one, connect to it.
     if (gpcount == 0) {
-        /* gp_d->gps[0].game_type = GAME_INPUT_TYPE_MOUSE;
-        gp_d->gps[1].game_type = GAME_INPUT_TYPE_MOUSE; */
         gp_d->gps[0].gamepad = nullptr;
         gp_d->gps[1].gamepad = nullptr;
         gp_d->gps[0].id = -1;
@@ -350,10 +342,7 @@ bool recompute_gamepads(gamec_state_t *gp_d) {
             return false;
         }
         gp_d->gps[0].id = gpid[0];
-        //gp_d->gps[0].game_type = GAME_INPUT_TYPE_GAMEPAD;
-
         // zero out second gamepad info, because there is only one.
-        //gp_d->gps[1].game_type = GAME_INPUT_TYPE_MOUSE;
         gp_d->gps[1].gamepad = nullptr;
         gp_d->gps[1].id = -1;
     }
@@ -365,36 +354,17 @@ bool recompute_gamepads(gamec_state_t *gp_d) {
             return false;
         }
         gp_d->gps[1].id = gpid[1];
-        //gp_d->gps[1].game_type = GAME_INPUT_TYPE_GAMEPAD;
     }
     return true;
 }
 
-#if 0
-bool add_gamepad(cpu_state *cpu, const SDL_Event &event) {
-    gamec_state_t *gp_d = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
-    printf("add_gamepad: %d\n", event.type);
-
-    return recompute_gamepads(gp_d);
-}
-
-bool remove_gamepad(cpu_state *cpu, const SDL_Event &event) {
-    gamec_state_t *gp_d = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
-    printf("remove_gamepad: %d\n", event.type);
-
-    return recompute_gamepads(gp_d);
-}
-#endif
-
 bool add_gamepad(gamec_state_t *gp_d, const SDL_Event &event) {
-    //gamec_state_t *gp_d = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     printf("add_gamepad: %d\n", event.type);
 
     return recompute_gamepads(gp_d);
 }
 
 bool remove_gamepad(gamec_state_t *gp_d, const SDL_Event &event) {
-    //gamec_state_t *gp_d = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     printf("remove_gamepad: %d\n", event.type);
 
     return recompute_gamepads(gp_d);
@@ -416,11 +386,7 @@ void toggle_joystick_mode(gamec_state_t *gp_d) {
         new_mode = 0;
     }
     gp_d->joystick_mode = (joystick_mode_t)new_mode;
-/*     if (gp_d->joystick_mode == JOYSTICK_MODE_JOYPORT_ATARI) {
-        gp_d->joystick_mode = JOYSTICK_MODE_APPLE;
-    } else {
-        gp_d->joystick_mode = JOYSTICK_MODE_JOYPORT_ATARI;
-    } */
+
     static char buffer[256];
     snprintf(buffer, sizeof(buffer), "Joystick mode set to %s", mode_names[gp_d->joystick_mode]);
     gp_d->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, buffer));
@@ -445,8 +411,6 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     ds->game_input_trigger_3 = 0;
     ds->mouse_wheel_pos_0 = 0;
     ds->paddle_flip_01 = 0; // to swap the mouse axes so Y is paddle 0
-    //ds->gps[0].game_type = GAME_INPUT_TYPE_MOUSE;
-    //ds->gps[1].game_type = GAME_INPUT_TYPE_MOUSE;
     ds->gps[0].gamepad = nullptr;
     ds->gps[1].gamepad = nullptr;
     ds->gps[0].id = -1;
