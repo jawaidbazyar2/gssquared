@@ -1949,7 +1949,7 @@ inline void stack_fix_new(cpu_state *cpu) {
         }
     } else {
         // compile-time assert failure here.
-        static_assert(false, "stack_fix_new called in 6502 mode");
+        static_assert(!CPUTraits::has_65816_ops, "stack_fix_new called in 6502 mode");
     }
 }
 
