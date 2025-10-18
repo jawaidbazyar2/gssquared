@@ -176,14 +176,14 @@ void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time,
         // TODO: log clock slip for later display.
         //printf("Clock slip: event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", event_time, audio_time, display_time, app_event_time, event_time + audio_time + display_time + app_event_time);
     } else {
-        if (gs2_app_values.sleep_mode) {
-            SDL_DelayPrecise(wakeup_time - SDL_GetTicksNS());
-        } else {
-            // busy wait sync cycle time
-            do {
-                sleep_loops++;
-            } while (SDL_GetTicksNS() < wakeup_time);
+        if (gs2_app_values.sleep_mode) { // sleep most of it, but more aggressively sneak up on target than SDL_DelayPrecise does itself
+            SDL_DelayPrecise((wakeup_time - SDL_GetTicksNS())*0.98);
         }
+        // busy wait sync cycle time
+        do {
+            sleep_loops++;
+        } while (SDL_GetTicksNS() < wakeup_time);
+
     }
 }
 
