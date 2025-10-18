@@ -46,30 +46,35 @@
 
 #define MAX_GAMEPAD_COUNT 2
 
-typedef enum game_input_type {
+/* typedef enum game_input_type {
     GAME_INPUT_TYPE_NONE = 0,
     GAME_INPUT_TYPE_MOUSE = 1,
     GAME_INPUT_TYPE_MOUSEWHEEL,
     GAME_INPUT_TYPE_GAMEPAD,
     GAME_INPUT_TYPE_JOYSTICK,
     NUM_GAME_INPUT_TYPES
-} game_input_t;
+} game_input_t; */
 
 typedef struct gamepad_state {
-    game_input_t game_type;
+//    game_input_t game_type;
     SDL_JoystickID id;
     SDL_Gamepad *gamepad;    
 } gamepad_state_t;
 
 typedef enum joystick_mode {
-    JOYSTICK_MODE_APPLE = 0,
-    JOYSTICK_MODE_JOYPORT_ATARI,
-    JOYSTICK_MODE_JOYPORT_APPLE,
+/*     JOYSTICK_MODE_APPLE = 0, */
+/*     JOYSTICK_MODE_JOYPORT_ATARI, */
+/*     JOYSTICK_MODE_JOYPORT_APPLE, */
+    JOYSTICK_APPLE_GAMEPAD = 0,
+    JOYSTICK_APPLE_MOUSE,
+    JOYSTICK_ATARI_DPAD,
+    //JOYSTICK_ATARI_KEYPAD,
+    //PADDLES_XXXX,
     NUM_JOYSTICK_MODES
 } joystick_mode_t;
 
 typedef struct gamec_state_t {
-    joystick_mode_t joystick_mode = JOYSTICK_MODE_APPLE;
+    joystick_mode_t joystick_mode = JOYSTICK_APPLE_GAMEPAD;
     uint64_t joyport_activate = 0;
 
     int game_switch_0;

@@ -4460,7 +4460,7 @@ And also I had been doing a lot of thinking about the '816, its 16 bit registers
 And this implies a different code re-use strategy. In fact it may not be possible to reuse large chunks of the switch statement because of this as I'd originally envisioned. And, the "undocumented opcodes" probably shouldn't be ignored.
 
 [x] I have a lot of functions where the instruction switch just calls the function. I should flatten that out. That will also help unoptimized execution time.  
-[ ] Explore: can I have an optimized memory read function for zero page, stack since they can't possibly do any I/O stuff? They -can- be remapped but can't do I/O. Not sure it will make a big difference.
+[-] Explore: can I have an optimized memory read function for zero page, stack since they can't possibly do any I/O stuff? They -can- be remapped but can't do I/O. Not sure it will make a big difference. (deal with this very differently with new mmu optimizations)
 
 
 [x] implement cache of things like 'is trace on' by checking once per frame, not every instruction execution.  
@@ -5400,7 +5400,7 @@ Action Items:
 [x] Artifacts in Crazy Cycles  
 [x] color killer in text mode not working  
 [x] RGB not working  
-[ ] Hunt down all the places where we need to call floating_bus_read()  
+[x] Hunt down all the places where we need to call floating_bus_read()  
 [x] Allow optional selection of cycle-accurate video on VM init (default to on for speeds other than LS)  
 [x] Apple II+ crashses on startup  
 [-] SPLIT DEMO has mixed text mode sometimes. it is not setting C052 so we might need to reset that switch on a RESET/powerup. (I think this is just a split demo bug)  
@@ -5496,7 +5496,7 @@ ok, I'm done noodling around here. I think the current code is ok. However, if w
 [x] in normal hires, if you hit $C05E (double hires related) without turning on 80-column, this is supposed to disable the color delay (i.e., ignore bit 7 of each hires byte).  
 [x] the mouse VBL interrupt is definitely in the wrong place compared to my video routines. mouse disappears in shufflepuck in roughly same place as in dazzledraw.  Going to have to 
 
-[ ] when in dhr and switch to text, c054/c055 should go back to controlling display page not memory. Spacequest is switching from dhr to text40 and we are not selecting page 1 when we do that  
+[x] when in dhr and switch to text, c054/c055 should go back to controlling display page not memory. Spacequest is switching from dhr to text40 and we are not selecting page 1 when we do that (I was wrong, with 80store on, displays are forced to page 1) 
 
 Skyfox audio dropping out might just be how it works. it seems to behave the same way in Mariani. Trying to get a real MB from a friend.
 
@@ -5823,7 +5823,7 @@ compare current speaker code to previous speaker code, and look at how I previou
 
 For the mouse issue, I need to calculate the next vbl from the VideoScanner. and ask the VideoScanner for it. And if the scanner isn't active (ludicrous speed) don't activate that timer. ok, to test this: shufflepuck, verify vbl working. Then speed up and slow down, should still be working. however, not working at higher speed. looks like it's still using 12480 cycles for that.
 
-[ ] when speed-shifting, we end up with 80 excess (sometimes other) unused bytes in the ScanBuffer.  
+[x] when speed-shifting, we end up with 80 excess (sometimes other) unused bytes in the ScanBuffer.  
 
 I think we have a problem if we schedule events for before the current cpu cycle esp if we keep doing it.
 
@@ -6378,3 +6378,29 @@ yeah ok, when we go from LS back to 7, the end_frame_c14M is all out of whack.
 So thinking about this, what we're after, is that:
    in LS, we still process a 'frame' at a time.. where a 'frame' is still 260xxx 14m's. But we'll keep doing those until we ALSO exceed the time limit.
 So this means keep incrementing end_frame_c14M same as we do in normal mode.
+
+## Oct 18, 2025
+
+thinking about reset - if you hold control-reset on a //e, it holds the reset signal against the cpu (and presumably everything else in the system). In our current emulation, we send a transient reset.
+
+What we could do - when we get ctrl-reset key down, set a "reset" flag that would:
+  stop cpu, frame, etc execution -except- for events (waiting only for key up event)
+  on ctrl-reset key up - restore normal frame operation.
+
+Game controller - we want these Modes:
+
+Joystick (Gamepad)    - Default
+Joystick (Gamepad) Atari Joyport
+Joystick (Keyboard) Atari Joyport
+Joystick (Mouse) - also Trackpad, Trackball.
+Paddles - somehow
+
+Currently we have joystick_mode (Apple, Atari) but then also game_type (per pdl() input). Is it still correct to have these two vectors? There are some combinations not currently handled with this, e.g. "Mouse+Atari" (and, this would be very awkward to use). Though, having joyport via 10-keypad would actually be workable.
+
+Apple Joystick - Gamepad (Default)
+Apple Joystick - Mouse
+Atari Joyport - Gamepad D-Pad
+Atari Joyport - Keypad
+Paddles - somehow (Keyboard?)
+
+When in Gamepad mode, do -not- automatically switch to Mouse if no Gamepad connected.
