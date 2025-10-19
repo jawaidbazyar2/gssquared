@@ -6265,11 +6265,23 @@ and we know double hires-80 etc. shift the start of that by 7 pixels. So that gi
 So shr: 736 x 200
 apple2: 644 x 192
 
-Currently our border width is 30 pixels pre-scaled. So we just need to make the window a hair wider.
+Currently our border width is 30 pixels pre-scaled. So we just need to make the window a hair wider. 
 
 Now, for vertical, is it the same thing? it's only 8 additional scanlines, so this feels like we probably just have less top and bottom border and instead of scrunching it a fraction we define slightly smaller vertical borders.
 
-NTSC has 525 lines; an apple ii frame is 262.5. that means, in apple II mode we have 35 scanlines above and below our content. Currently we only set up 20. So after doubling vertical, it's 42 pixels by 70 pixels, which looks about like maybe what kegs is doing. hard to tell exactly.
+NTSC has 525 lines; an apple ii frame is 262.5. that means, in apple II mode we have 35 scanlines above and below our content (31 in shr). Currently we only set up 20. So after doubling vertical, it's 42 pixels by 70 pixels, which looks about like maybe what kegs is doing. hard to tell exactly.
+
+Depending on the settings of a real monitor, some of those top and bottom border scanlines would not be visible. You would typically have some of them hidden in order to have lots of vertical space in your display area. So, we don't have to actually generate that many pixels.
+
+The native window size would be nominally 1288 x 1048 if I stuck with 35 scanlines top and bottom. OK, that's not right - Claude points out that some of the period is taken up doing vertical blanking, and that 20-25 of the 262.5 scanlines might be used up by VBL. I bet Sather can tell us exactly.. (IIe, page 3-16) it's shown as 4 cycles plus another 4 cycles of colorburst. A GS wouldn't have colorburst on the ntsc port.
+9 cpu cycles on the right and 8 on the left, which is wider than the 6 cycles John suggested, so just a diff ratio on the IIgs. on IIe, all the borders area would be hblank/vblank.
+
+I just found this:
+https://www.brutaldeluxe.fr/documentation/cortland/v6/Apple%20-%20IIgs%20RGB%20monitor%20-%20Timing%20chart.pdf
+
+Excellent detail from Apple.
+
+So this is suggesting: 19 scanlines of top border, 21 of bottom border; more like 6 cycles left and 7 cycles right. ISH. This aspect of the timing does not correspond to the cpu cycles exactly. It might to 14M, explore that some more. (and 14M would be, two 14M per dot). So this would be pretty straightforward to implement into the VideoScanner, just knowing the hcount and vcount where we should read and emit border color. This is where I think we use a special flag or value in the VideoScanner table - "no output". (that could just be memory location 0). For reading the palettes in SHR, those would have certain addresses, and be in the LUT but would be interpreted not as "emit color dot" but "transfer palette value". (might have to do 4 transfers per cycle). Also, a flag for "border color" which would read the border color register at that moment. 
 
 KEGS has an extra-wide right border in Apple II mode. I think he is doing only integer scaling, so in SHR mode I would expect less border.. yep, that's what's going on. In SHR in Kegs the aspect ratio is really off.
 
@@ -6404,3 +6416,83 @@ Atari Joyport - Keypad
 Paddles - somehow (Keyboard?)
 
 When in Gamepad mode, do -not- automatically switch to Mouse if no Gamepad connected.
+
+Well that went fairly well. (done)
+
+### Back to the (Future) Scanner
+
+Back to IIgs video scanner - I have a detailed spreadsheet with all the timings in it. II modes are the same as now with the addition some flags. Ah, except I need more bytes with which to store the border and/or text colors. Currently the struct is:
+
+```
+Scan_t scan;
+    scan.mode = (uint8_t)video_mode; // so far, a value up to 11.
+    scan.auxbyte = aux_byte; // these two can't change
+    scan.mainbyte = video_byte;
+    scan.flags = mode_flags  // so far, 3 bits
+```
+
+so we'll need a new video_mode for shr. But where o where do we put the color info. border color: 4 bits; text color: 8 bits (4 fg, 4 bg).
+well now, for border, we can just put the color index right into the mainbyte and/or auxbyte.
+For text, I'm gonna need 8 bits.
+So perhaps what we do here, is stuff the palette reads into here. Palette is read once per scanline, as part of the scanner process.
+For shr, each "cycle" we need 32 bits of data. So maybe just expand this thing to 64 bits.
+It won't make that big a difference.
+
+Scan_t scan == 64 bits.
+```
+    scan.mode = (uint8_t)video_mode; // so far, a value up to 11.
+    scan.flags = mode_flags  // so far, 3 bits
+    scan.auxbyte = aux_byte; // these two can't change
+    scan.mainbyte = video_byte;
+    scan.shr_data = (uint32_t). 
+```
+Alternatively, we could reserve aux/main for apple ii stuff and have vbyte0-3.. oh, actually, we can read 4 bytes at a time here. I.e. have the address be 
+B + 0, B + 4, B + 8, etc. and read the 32-bit word from each of these, and put into scan.shrdata when in that mode.
+
+We need the following additional scan.mode values: shr320, shr640, palette, border. text just adds the fg/bg stuff in the new bytes.
+
+--
+looking at videoscanner performance a bit.
+
+boot apple iie enhanced
+hit ctrl-reset.
+sitting at applesoft prompt.
+
+273-275mhz.
+--
+make set_floating_bus and floating_bus_read inline funcs: 271-272mhz. Wut.
+UN inline them: back to 273-274. So that did not have the expected effect. Must be cache locality stuff.
+--
+set up SCANNER_LUT_SIZE as a constexpr and that gave us 1-2 mhz (275.7)
+
+trying alignas on the LUT arrays now.. no difference. but leave it in.
+--
+II+ is running at 281-282.
+eliminating weird double-pointer thing from VideoScanner. Still 282. But way easier to read.
+iie is at 274-276.
+Oh I'm a dummy, this isn't affecting these modes AT ALL. I need to check vpp.
+
+--
+ok these aren't really helping. The compilers are just too good. And I bet even if I got rid of the .. ok it says 5 to 10 cycles for a virtual method lookup. 1 million per second, is 5-10M cycles/sec. 0.1% to 0.2% of 300uS which is 3uS which is not going to move the needle here. So stop worrying about this part.. I even just doubled the scanner LUT struct size and that makes no difference either. Also, I gotta keep reminding myself, THIS DOES NOT AFFECT L.S.
+
+If I really wanted to make a difference here, it would likely be to use shaders to do the image processing.
+
+## Oct 19, 2025
+
+I've added blanking flags during VideoScanner init so instead of checking hcount/vcount for blank time, we check the flags.
+
+Oh, THIS is fun:
+https://paleotronic.com/2019/03/11/microm8-update-super-hi-res-shr-support-1-2/
+
+Yah, gotta do that. Also, would provide a step 1 platform for testing shr code (besides in vpp).
+
+A challenge:
+VideoScanner starts with h=0, v=0, and idx=0. But this is not the upper left corner of the screen.
+We actually need to start with h=0, but v = 243, idx = 15795.
+
+I've got overrun here. ScanBuffer has 17,030 entries, which is exactly what we expect.
+VideoScanGenerator is overrunning the output Frame at 645 (it's 644 wide). 
+12 * 7 = 84, plus 560, is indeed 644. let's step through and see what data we're getting..
+ok, I struggled through it - I made the border cycles 7 pixels (instead of 14) to make the border smaller. Also, the colorburst isn't working.
+Also, frames are taking up to 30% longer, because we have quite a lot more data we're pushing out. Even more once I add the top/bottom borders.
+

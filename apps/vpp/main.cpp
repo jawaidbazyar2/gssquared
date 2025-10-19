@@ -81,15 +81,20 @@ void generate_dlgr_test_pattern(uint8_t *textpage, uint8_t *altpage) {
     }
 }
 
-#define CANVAS_WIDTH ((560+20)*2)
-#define CANVAS_HEIGHT (192*4)
-#define SCREEN_TEXTURE_WIDTH (560+20)
-#define SCREEN_TEXTURE_HEIGHT (192)
+//#define SCREEN_TEXTURE_WIDTH (560+20)
+#define SCREEN_TEXTURE_WIDTH (744)
+//#define SCREEN_TEXTURE_HEIGHT (192)
+#define SCREEN_TEXTURE_HEIGHT (192+40)
+
+#define CANVAS_WIDTH (SCREEN_TEXTURE_WIDTH*2)
+#define CANVAS_HEIGHT (SCREEN_TEXTURE_HEIGHT*4)
+
 
 int main(int argc, char **argv) {
     uint64_t start = 0, end = 0;
+    uint8_t *rom = new uint8_t[12*1024];
 
-    MMU_IIe *mmu = new MMU_IIe(128, 128*1024, nullptr);
+    MMU_IIe *mmu = new MMU_IIe(128, 128*1024, rom);
 
     //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
 
@@ -172,8 +177,8 @@ int main(int argc, char **argv) {
     uint8_t *alt_lores_page = ram + 0x10800;
     generate_dlgr_test_pattern(lores_page, alt_lores_page);
 
-    //const char *testhgrpic_path = "/Users/bazyar/src/hgrdecode/HIRES/APPLE";
-    const char *testhgrpic_path = "/Users/bazyar/src/gssquared/dump.hgr";
+    const char *testhgrpic_path = "/Users/bazyar/src/hgrdecode/HIRES/APPLE";
+    //const char *testhgrpic_path = "/Users/bazyar/src/gssquared/dump.hgr";
 //    uint8_t *testhgrpic = new(std::align_val_t(64)) uint8_t[8192];
     uint8_t *testhgrpic = ram + 0x04000;
     FILE *f = fopen(testhgrpic_path, "rb");

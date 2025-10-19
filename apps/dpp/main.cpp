@@ -202,8 +202,8 @@ int main(int argc, char **argv) {
     uint8_t *alt_lores_page = new uint8_t[1024];
     generate_dlgr_test_pattern(lores_page, alt_lores_page);
 
-    //const char *testhgrpic_path = "/Users/bazyar/src/hgrdecode/HIRES/APPLE";
-    const char *testhgrpic_path = "/Users/bazyar/src/gssquared/dump.hgr";
+    const char *testhgrpic_path = "/Users/bazyar/src/hgrdecode/HIRES/APPLE";
+    //const char *testhgrpic_path = "/Users/bazyar/src/gssquared/dump.hgr";
     uint8_t *testhgrpic = new(std::align_val_t(64)) uint8_t[8192];
     FILE *f = fopen(testhgrpic_path, "rb");
     if (!f) {

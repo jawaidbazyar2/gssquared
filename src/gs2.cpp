@@ -221,7 +221,7 @@ void run_cpus(computer_t *computer) {
             display_update_video_scanner(ds, cpu);
             int x = ds->video_scanner->get_frame_scan()->get_count();
             if (x > 0) {
-                printf("Video scanner has %d samples @ speed shift [%d,%d]\n", x, cpu->video_scanner->hcount, cpu->video_scanner->vcount);
+                printf("Video scanner has %d samples @ speed shift [%d,%d]\n", x, cpu->video_scanner->hcount, cpu->video_scanner->get_vcount());
             }
         }
 

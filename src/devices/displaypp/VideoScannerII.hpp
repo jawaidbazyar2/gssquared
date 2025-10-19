@@ -11,6 +11,8 @@ class MMU_II;
 struct display_state_t;
 struct computer_t;
 
+constexpr uint16_t SCANNER_LUT_SIZE = 65*262;
+
 #define F_80STORE 0b100'0000
 #define F_GRAF   0b010'0000
 #define F_HIRES  0b001'0000
@@ -39,30 +41,35 @@ typedef enum {
 #define VS_FL_80COL      0x04
 #define VS_FL_COLORBURST 0x08
 
+#define SA_FLAG_HBL 0x01
+#define SA_FLAG_VBL 0x02
+#define SA_FLAG_BORDER 0x04
+#define SA_FLAG_BLANK (SA_FLAG_HBL | SA_FLAG_VBL)
+
 struct scan_address_t {
-    uint16_t address;
-    uint16_t hcount;
-    uint16_t vcount;
-    uint16_t unused;
+    uint16_t addr;
+    uint16_t flags;
 };
 
-typedef struct {
-    uint16_t (*vaddr)[65*262];
+typedef struct mode_table_t {
+    scan_address_t *vaddr = nullptr;
     uint8_t mode;
 } mode_table_t;
+
+typedef scan_address_t scanner_lut_t[SCANNER_LUT_SIZE];
 
 class VideoScannerII
 {
 protected:
     // LUTs for video addresses
-    uint16_t lores_p1_addresses[65*262];
-    uint16_t lores_p2_addresses[65*262];
-    uint16_t hires_p1_addresses[65*262];
-    uint16_t hires_p2_addresses[65*262];
-    uint16_t mixed_p1_addresses[65*262];
-    uint16_t mixed_p2_addresses[65*262];
+    alignas(64) scanner_lut_t lores_p1;
+    alignas(64) scanner_lut_t lores_p2;
+    alignas(64) scanner_lut_t hires_p1;
+    alignas(64) scanner_lut_t hires_p2;
+    alignas(64) scanner_lut_t mixed_p1;
+    alignas(64) scanner_lut_t mixed_p2;
 
-    uint16_t (*video_addresses)[65*262];
+    scan_address_t *video_addresses;
     
     // video mode/memory data
     // 5*40*200: 40*200 video states for SHR, 1 mode byte + 4 data bytes for each state
@@ -75,22 +82,31 @@ protected:
     int       video_data_size; */
     
     uint8_t *ram;
-    //FrameScan560 *frame_scan = nullptr;
+
     ScanBuffer *frame_scan = nullptr;
+    uint16_t scan_index = 0;
 
     // floating bus video data
     uint8_t   video_byte;
-
 
     bool      graf = false;
     bool      hires = false;
     bool      mixed = false;
     bool      page2 = false;
+
+    // IIe
     bool      sw80col = false;
     bool      altchrset = false;
     bool      dblres = false;
     bool      f_80store = false;
+
+    // IIGS
+    uint16_t   text_bg = 0x0000;
+    uint16_t   text_fg = 0x0FFF;
+    uint16_t   border_color = 0x0000;
+    
     uint8_t   mode_flags = 0;
+
 
     video_mode_t video_mode;
     uint8_t vmode = 0;
@@ -103,20 +119,22 @@ protected:
 
 public:
 uint32_t  hcount;       // use separate hcount and vcount in order
-uint32_t  vcount;       // to simplify IIgs scanline interrupts
-virtual void set_video_mode();
-
+//uint32_t  vcount;       // to simplify IIgs scanline interrupts
+    
     VideoScannerII(MMU_II *mmu);
     virtual ~VideoScannerII() = default;
 
-    virtual void reset() { frame_scan->clear(); hcount = 64; vcount = 261; };
+    virtual void reset() { frame_scan->clear(); hcount = 0; scan_index = 6 /* (65*243) */; };
 
     virtual void video_cycle();
     virtual void init_video_addresses();
 
-    inline bool is_hbl()     { return hcount < 25;   }
-    inline bool is_vbl()     { return vcount >= 192; }
+    //inline bool is_hbl()     { return hcount < 25;   }
+    inline bool is_hbl()     { return (scan_index % 65) < 25;   }
+    inline bool is_vbl()     { return scan_index >= (192*65); }
+    inline uint16_t get_vcount() { return scan_index / 65; }
 
+    virtual void set_video_mode();
     inline void set_page_1() { page2 = false; set_video_mode(); }
     inline void set_page_2() { page2 = true;  set_video_mode(); }
     inline void set_full()   { mixed = false; set_video_mode(); }
@@ -150,6 +168,10 @@ virtual void set_video_mode();
     inline void reset_80col()     { sw80col   = false; set_video_mode(); }
     inline void reset_altchrset() { altchrset = false; set_video_mode(); }
     inline void reset_dblres()    { dblres    = false; set_video_mode(); }
+
+    inline void set_text_bg(uint16_t bg) { text_bg = bg; }
+    inline void set_text_fg(uint16_t fg) { text_fg = fg; }
+    inline void set_border_color(uint16_t color) { border_color = color; }
 
     ScanBuffer *get_frame_scan();
 };

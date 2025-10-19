@@ -31,13 +31,13 @@ void VideoScanGenerator::build_hires40Font(bool delayEnabled)
 void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte)
 {
     uint64_t fcnt = frame_scan->get_count();
-    if (fcnt < 192*40) { // if there is less than a full frame, don't generate anything, ignore, and print a warning
-        printf("Warning: less than a full frame in ScanBuffer\n");
+    /* if (fcnt < 192*40) { // if there is less than a full frame, don't generate anything, ignore, and print a warning
+        printf("Warning: less than a full frame in ScanBuffer: %lld\n", fcnt);
         return;
-    }
-    if (fcnt > 192*40+8) {
+    } */
+    /* if (fcnt > 192*40+8) {
         printf("Warning: more than a full frame in ScanBuffer\n");
-    }
+    } */
 
     flash_counter++;
     if (flash_counter > 14) {
@@ -56,7 +56,7 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
         color_mode.mixed_mode = peek_scan.flags & VS_FL_MIXED ? 1 : 0;
         uint8_t color_delay_mask = 0xFF;
 
-        for (int hcount = 0; hcount < 40; hcount++) { 
+        for (int hcount = 0; hcount < 53; hcount++) { 
 
             Scan_t scan = frame_scan->pull();
             uint8_t eff_mode = scan.mode;
@@ -65,14 +65,19 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
             }
 
             switch (eff_mode) {
+                case VM_BORDER_COLOR: {
+                        for (int i = 0; i < 7; i++) {
+                            frame_byte->push(0);
+                        }
+                    }
+                    break;
                 case VM_TEXT40: {
-                        if (hcount == 0) {
+                        /* if (hcount == 0) {
                             for (int i = 0; i < 7; i++) {
                                 frame_byte->push(0);
                             }
-                            //frame_byte->set_color_mode(vcount, COLORBURST_OFF);
                             frame_byte->set_color_mode(vcount, color_mode);
-                        }
+                        } */
                         bool invert;
                         char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
 
