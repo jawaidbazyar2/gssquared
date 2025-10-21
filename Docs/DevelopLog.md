@@ -6496,3 +6496,42 @@ VideoScanGenerator is overrunning the output Frame at 645 (it's 644 wide).
 ok, I struggled through it - I made the border cycles 7 pixels (instead of 14) to make the border smaller. Also, the colorburst isn't working.
 Also, frames are taking up to 30% longer, because we have quite a lot more data we're pushing out. Even more once I add the top/bottom borders.
 
+Checked out some videos of VidHD. I think it makes sense to display the wide (6 cycle) borders on big widescreen monitors in fullscreen like the card does; however, it seems like way too much windowed.
+
+Will probably want some options: for apple II stuff, I can imagine some people wanting no borders. For GS, I think a border of half the width (I mocked up 42 pixel wide border and I that does not seem unreasonable.) Note that 19 / 21 top and bottom borders are also quite large as they will be scanline doubled. So after multiplying by standard scale 2/4 respectively, the left/right borders will take up 84 pixels each and the top/bottom will take up 80 pixels each, or 168 pixels of the X and 160 pixels of the Y. That's a lot.
+
+Also, it occurs that I'm currently trying to interpret border data elements as apple ii bitstream, which is wrong. I mean I could hack it to work that way, but that's not what we want.. what we can do is push a special value like 0x8X where X is the color index, and the 8 is a flag saying "this is a special value".
+
+A whole different approach here could be, generate border info to a separate texture, then draw the border texture, then overlay the content texture. Then the content texture is the same (current) Apple II size. When doing VideoScanGenerator we'd emit the border stuff to a different texture buffer. And we can compose by drawing 4 sections; top, bottom, left, right, using rects. (maybe even have 4 textures). This is fun because we can also scale the border area when we blit - instead of generating 14 pixels per cycle, the left area would be (for instance):
+6 x 192 (or, 6 x 262). Hm, I think there are 8 sections here that each need separate X/Y scaling. E.g. if we are medium (half scaling) then the top left corner or border must be scaled X * 0.5, Y * 0.5.
+But the Right side border would be scaled only X * 0.5 - Y stays the same to match the content scanlines. etc. When I say scaled here, I am just talking about 
+The existing NTSC/RGB/etc processing doesn't change, that frame size doesn't change, and so the performance won't change!
+
+So, ONE texture update, and 8 texture copy calls. Precalculate the rectangles for these blits.
+So the actual border texture then is 65 x 262, 17030 entries of RGBA_t.
+
+So it's a very small texture, and we rely on the video hardware to expand it to 84 wide or 42 wide or *any border scale* we want, while not losing any information. Can have setting, Border Scale: Small, Medium, Large.
+
+[ ] I also have a potential optimization for the Frame stuff. Use a single linear array:
+```
+now:
+    alignas(64) bs_t stream[HEIGHT][WIDTH];
+
+    inline void push(bs_t bit) 
+        stream[scanline][hloc++] = bit;   // currently does likely 2 multiplications and an addition. (or a mult, a shift, and an add)
+
+new:
+    alignas(64) bs_t stream[HEIGHT*WIDTH];
+        stream[index++] = bit;           // no multiplies, just an add to go to next index.
+    setline
+        index = line * WIDTH;            // only do one multiply for whole scanline, and then only if needed.
+```
+And we don't even have to call setline, if we are careful with our pixel emission counts, we just automagically wrap to the next line after we push last pixel on this line.
+
+Swank.
+
+One thing my overall approach will not handle, is rapid switching between super hires and legacy modes in the way the Apple II demos do. Each frame is one or the other. I'm not aware of any though that doesn't mean there aren't any - but handling the 7/8 scaling issue on a per-cycle basis would be very difficult.
+
+Overall question: is it better to scale 8 to 7, or 7 to 8? Plan so far is 8 to 7.
+
+For L.S. mode we can color and update the texture only as needed on a color change.
