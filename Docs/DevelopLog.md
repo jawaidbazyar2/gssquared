@@ -6555,3 +6555,18 @@ MTL_HUD_ENABLED=1
 export MTL_HUD_ENABLED
 
 So the time to render a 320 shr frame and get it to window is 135 to 140uS. Comparable with text! Which makes sense because we're only doing a single stage, and no complex lookups. Scrunching the image from 640 pixels into 560 pixels looks ok on here too. of course we're not really downsizing we're upsizing once the double-scale is taken into account. I haven't implemented 320 fill mode of course.
+
+Linear interpolation subtly changes perceived colors in dithered source by altering the ratio of one color to the next. An area in the Airball screen streaming from the moon is orange dithered with blue, and that gets noticably more blue when using linear interpolation. In straight upscaling however some IIgs pixels are smaller than others, as you might expect. The only way around this will be to have a mode where we display the pixels 1:1 (well, guaranteed 2:4 anyway :). In KEGS there is exactly ONE scale (presumably, the integer scale) where a 640 desktop doesn't have noticeable and awful weird banding in the GS/OS desktop dithering.
+
+Ah ha! SDL3 now supports scale mode PIXELART. with the legacy apple ii modes, it seems to be indistinguishable from nearest - ah, because we're not doing fractional scaling in dpp. however, in SHR mode, it DOES make a difference since we are not scaling horizontally. it makes a big difference!! it's got those sharp edges line nearest, but pixel dot sizes are much more consistent.   I think add this scale mode to GS2 and experiment with it a lot. Compared to scaling in preview, the colors seem unchanged, and color balance unchanged. This could be a big game changer.  
+
+ok, that actually looks pretty good - EXCEPT in text mode, where the color is too bright. Well, that's because I'm doing 0xFFFFFF, and what I'm used to is linear toning that down somewhat. I think this is definitely the way to go for GS modes. And maybe tone that white and green levels down a bit when in that mode in text.
+
+Acid test: I got a GSOS desktop image out of kegs. In pixelart mode, it's not awful - the scaling from 640 to 560 is every 4th dither line is a little different than the others. It's noticable, but consistent unlike KEGS where you get the weird banding. nearest IS awful. and linear is pretty decent too. The fuzz actually isn't that bad. There would likely be a window size with no scaling artifacts, just like there is in KEGS. And, of course my aspect ratio is better.  Text on shr is nice and crisp.
+
+-> Again, I think maybe we start an emulated GS in a window size that provides integer scaling - with PIXELART mode that should be pretty good. And hope they have a big enough monitor. ha ha.
+
+I should put window resizing and scaling into dpp.
+
+[ ] bug - after going into full screen mode and coming back, window is no longer aspect-ratio-constrained.
+

@@ -6,6 +6,7 @@
 #include <SDL3/SDL.h>
 
 //#include "devices/displaypp/frame/frame_bit.hpp"
+#include "SDL3/SDL_surface.h"
 #include "devices/displaypp/frame/Frames.hpp"
 #include "devices/displaypp/generate/AppleII.cpp"
 #include "devices/displaypp/render/Monochrome560.hpp"
@@ -126,12 +127,19 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    SDL_ScaleMode scales[3] = { SDL_SCALEMODE_PIXELART, SDL_SCALEMODE_LINEAR, SDL_SCALEMODE_NEAREST };
+
     const char *rname = SDL_GetRendererName(renderer);
     printf("Renderer: %s\n", rname);
     //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
     SDL_SetRenderScale(renderer, 2.0f, 4.0f);
-    SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
+
+    SDL_SetTextureScaleMode(texture,  scales[0] /* SDL_SCALEMODE_LINEAR */);
     SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE); 
+
+    SDL_SetTextureScaleMode(shrtexture,  scales[0] /* SDL_SCALEMODE_LINEAR */);
+    SDL_SetTextureBlendMode(shrtexture, SDL_BLENDMODE_NONE); 
+
     int error = SDL_SetRenderTarget(renderer, nullptr);
 
     int testiterations = 10000;
@@ -198,7 +206,7 @@ int main(int argc, char **argv) {
     }
     
     uint8_t *testshrpic = new(std::align_val_t(64)) uint8_t[32768];
-    res = readFile("/Users/bazyar/src/hgrdecode/SHR/AIRBALL", testshrpic, 32768);
+    res = readFile("/Users/bazyar/src/hgrdecode/SHR/desktop", testshrpic, 32768);
     if (!res) {
         printf("Failed to load testshrpic\n");
         return 1;
@@ -304,11 +312,14 @@ int main(int argc, char **argv) {
                     render_mode = 3;
                 }
                 if (event.key.key == SDLK_P) {
-                    sharpness = 1 - sharpness;
-                    SDL_SetTextureScaleMode(texture, sharpness ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST);
+                    sharpness = (sharpness + 1) % 3;
+                    SDL_SetTextureScaleMode(texture, scales[sharpness]);
+                    SDL_SetTextureScaleMode(shrtexture, scales[sharpness]);
+                    printf("Sharpness: %d\n", sharpness);
                 }
             }
         }
+
 
         start = SDL_GetTicksNS();
         int phaseoffset = 1; // now that I start normal (40) display at pixel 7, its phase is 1 also. So, both 40 and 80 display start at phase 1 now.
