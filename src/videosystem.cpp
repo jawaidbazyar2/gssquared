@@ -137,7 +137,7 @@ void video_system_t::render_frame(SDL_Texture *texture, float offset) {
     if (display_pixel_mode == DM_PIXEL_FUZZ) {
         SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
     } else {
-        SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
+        SDL_SetTextureScaleMode(texture, /* SDL_SCALEMODE_NEAREST */ SDL_SCALEMODE_PIXELART);
     }
 
     SDL_FRect dstrect = {
