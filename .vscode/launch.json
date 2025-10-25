@@ -48,6 +48,15 @@
             "preLaunchTask": "build-debug"
         },
         {
+            "name": "Debug dpp",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/dpp",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build-debug"
+        },
+        {
             "name": "Debug vpp",
             "type": "lldb",
             "request": "launch",

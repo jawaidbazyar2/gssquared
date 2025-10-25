@@ -6530,8 +6530,28 @@ And we don't even have to call setline, if we are careful with our pixel emissio
 
 Swank.
 
-One thing my overall approach will not handle, is rapid switching between super hires and legacy modes in the way the Apple II demos do. Each frame is one or the other. I'm not aware of any though that doesn't mean there aren't any - but handling the 7/8 scaling issue on a per-cycle basis would be very difficult.
+One thing my overall approach will not handle, is rapid switching between super hires and legacy modes in the way the Apple II demos do. Each frame is one or the other. I'm not aware of any though that doesn't mean there aren't any - but handling the 7/8 scaling issue on a per-cycle basis would be very difficult. This prompted a big discussion on Slack and there are in fact a few programs that do this.  when GS switches from legacy (14mhz) to shr (16mhz) the screen is distorted for what looks like 6-8 scanlines while the PLL in the monitor catches up, gradually changing frequency.
+
 
 Overall question: is it better to scale 8 to 7, or 7 to 8? Plan so far is 8 to 7.
 
 For L.S. mode we can color and update the texture only as needed on a color change.
+
+## Oct 22, 2025
+
+ScanBuffer is a circular buffer. That part doesn't change - all the bits of data are mixed into there. In fact we could add bits if we wanted like where HSYNC and VSYNC, presence of COLORBURST, etc.. The split into border and main content will occur in VideoScanGenerator.
+
+Currently we pass it ScanBuffer and the output buffer; so it needs to change to get two output buffers, one for border and one for main content. These should be: 184 x 262 dimension in pixels; but, we really only need it in *cycles*. So that's 6 + 7 = 13 cylces. We will expand to however many pixels we want, by stretching it in RenderTexture. So, it's 13 x 262.
+
+VideoScanGenerator needs to know the mode - or, needs to obey hsync and vsync markers and set and increment hcount/vcount accordingly. I guess I could say, if border, do to 53 otherwise do to 40. But there's the top border too.
+
+OK have to think about how to handle transition from border into single-res mode. Single-res modes fill either with black (II, IIe) or need to fill with the underlying border color. OH, we can alpha that. Let's say we push value 2 (or 255) - this is interpreted as "0, transparent." for purposes of the video display algorithm. The same thing applies to the right side, as in 80 col mode the entire display shifts to the left 1 80col char. So we have empty bits at the right? yes. The 560 pixels are either at col 0 (80 col mode) or col 7 (40 col mode).
+
+## Oct 24, 2025
+
+thinking about the dpp harness, and SHR. Do I add it to AppleII_Display? Sure why not. 
+
+MTL_HUD_ENABLED=1
+export MTL_HUD_ENABLED
+
+So the time to render a 320 shr frame and get it to window is 135 to 140uS. Comparable with text! Which makes sense because we're only doing a single stage, and no complex lookups. Scrunching the image from 640 pixels into 560 pixels looks ok on here too. of course we're not really downsizing we're upsizing once the double-scale is taken into account. I haven't implemented 320 fill mode of course.

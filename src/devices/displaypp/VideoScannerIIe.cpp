@@ -69,8 +69,8 @@ void VideoScannerIIe::init_video_addresses()
         uint16_t vc = idx / 65;
         if (hc < 25) fl |= SA_FLAG_HBL;
         if (vc >= 192) fl |= SA_FLAG_VBL;
-        if ( (vc >= 0 and vc <= 191) &&  
-            (((hc >= 40) && (hc <= 46)) || ((hc >= 59) && (hc <= 64)) )) fl |= SA_FLAG_BORDER;
+       /*  if ( (vc >= 0 and vc <= 191) &&  
+            (((hc >= 40) && (hc <= 46)) || ((hc >= 59) && (hc <= 64)) )) fl |= SA_FLAG_BORDER; */
 
         lores_p1[idx].flags = fl;
         lores_p2[idx].flags = fl;
@@ -122,13 +122,13 @@ void VideoScannerIIe::video_cycle()
     mmu->set_floating_bus(video_byte);
 
     Scan_t scan;
-    if (sa.flags & (SA_FLAG_BORDER)) {
+    /* if (sa.flags & (SA_FLAG_BORDER)) {
         scan.mode = VM_BORDER_COLOR;
         scan.mainbyte = 0;
         scan.flags = mode_flags;
         frame_scan->push(scan);
 
-    } else if (!(sa.flags & SA_FLAG_BLANK)) {
+    } else  */if (!(sa.flags & SA_FLAG_BLANK)) {
         scan.mode = (uint8_t)video_mode;
         scan.auxbyte = ram[address + 0x10000];
         scan.mainbyte = video_byte;

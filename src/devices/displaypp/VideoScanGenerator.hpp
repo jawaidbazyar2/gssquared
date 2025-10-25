@@ -16,9 +16,10 @@ private:
     CharRom *char_rom = nullptr;
     bool flash_state = false;
     uint16_t flash_counter = 0;
+    //bool border_enabled = false;
 
 public:
-    VideoScanGenerator(CharRom *charrom);
+    VideoScanGenerator(CharRom *charrom, bool border_enabled = false);
 
-    void generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte);
+    void generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte, FrameBorder *border = nullptr);
 };

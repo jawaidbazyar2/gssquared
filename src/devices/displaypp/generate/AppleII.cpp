@@ -3,11 +3,12 @@
 
 #include "devices/displaypp/frame/Frames.hpp"
 #include "devices/displaypp/CharRom.hpp"
-
+#include "AppleIIgs.hpp"
 
 #define CHAR_NUM 256
 #define CHAR_WIDTH 16
 #define CELL_WIDTH 14
+
 
 class AppleII_Display {
 
@@ -382,4 +383,44 @@ public:
         }
     }
 
+    void generate_shr(SHR *shrPage, Frame640 *f) {
+        for (uint16_t line = 0; line < 200; line++) {
+            SHRMode mode = shrPage->modes[line];
+            uint8_t p_num = mode.p;
+
+            f->set_line(line);
+
+            if (mode.mode640) { // each byte is 4 pixels
+                for (int x = 0; x < 160; x++) {
+                    uint8_t pval = shrPage->pixels[line * 160 + x];
+    
+                    SHRColor pind = shrPage->palettes[p_num].colors[pixel640<3>(pval) + 0x8];
+                    f->push(convert12bitTo24bit(pind));
+                    
+                    pind = shrPage->palettes[p_num].colors[pixel640<2>(pval) + 0x0C];
+                    f->push(convert12bitTo24bit(pind));
+    
+                    pind = shrPage->palettes[p_num].colors[pixel640<1>(pval) + 0x00];
+                    f->push(convert12bitTo24bit(pind));
+    
+                    pind = shrPage->palettes[p_num].colors[pixel640<0>(pval) + 0x04];
+                    f->push(convert12bitTo24bit(pind));
+                }
+            } else {
+                for (int x = 0; x < 160; x++) { // each byte is 2 pixels
+                    uint8_t pval = shrPage->pixels[line * 160 + x];
+    
+                    SHRColor pind = shrPage->palettes[p_num].colors[pixel320<1>(pval)];
+                    RGBA_t xx = convert12bitTo24bit(pind);
+                    f->push(xx);
+                    f->push(xx);
+    
+                    pind = shrPage->palettes[p_num].colors[pixel320<0>(pval)];
+                    xx = convert12bitTo24bit(pind);
+                    f->push(xx);
+                    f->push(xx);
+                }
+            }
+        }
+    }
 };

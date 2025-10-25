@@ -79,12 +79,6 @@ void VideoScannerII::init_video_addresses()
         mixed_p1[idx].flags = fl;
         mixed_p2[idx].flags = fl;
     }
-    int borderpixels = 0;
-    for (int idx = 0; idx < SCANNER_LUT_SIZE; ++idx) {
-        if (lores_p1[idx].flags & SA_FLAG_BORDER) {
-            borderpixels++;
-        }
-    }
 }
 
 void VideoScannerII::init_mode_table() {
@@ -231,18 +225,13 @@ void VideoScannerII::video_cycle()
     mmu->set_floating_bus(video_byte);
 
     Scan_t scan;
-    if (sa.flags & SA_FLAG_BLANK) {
+    if (!(sa.flags & SA_FLAG_BLANK)) {
         scan.mode = (uint8_t)video_mode;
         scan.auxbyte = 0x00;
         scan.mainbyte = video_byte;
         scan.flags = mode_flags;
-        
-    } else {
-        scan.mode = VM_BORDER_COLOR;
-        scan.mainbyte = 0;
-        scan.flags = mode_flags;
+        frame_scan->push(scan);
     }
-    frame_scan->push(scan);
     if (++scan_index == 17030) {
         scan_index = 0;
     }

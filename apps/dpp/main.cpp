@@ -75,6 +75,18 @@ void generate_dlgr_test_pattern(uint8_t *textpage, uint8_t *altpage) {
     }
 }
 
+
+bool readFile(const char *path, uint8_t *data, size_t size) {
+    FILE *f3 = fopen(path, "rb");
+    if (!f3) {
+        printf("Failed to load file: %s\n", path);
+        return false;
+    }
+    fread(data, 1, size, f3);
+    fclose(f3);
+    return true;
+}
+
 #define CANVAS_WIDTH ((560+20)*2)
 #define CANVAS_HEIGHT (192*4)
 #define SCREEN_TEXTURE_WIDTH (560+20)
@@ -102,6 +114,12 @@ int main(int argc, char **argv) {
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
     }
+    SDL_Texture *shrtexture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 640, 200);
+    if (!texture) {
+        printf("Failed to create shrtexture\n");
+        printf("SDL Error: %s\n", SDL_GetError());
+        return 1;
+    }
     if (!SDL_SetRenderVSync(renderer, SDL_RENDERER_VSYNC_DISABLED)) {
         printf("Failed to set render vsync\n");
         printf("SDL Error: %s\n", SDL_GetError());
@@ -118,49 +136,10 @@ int main(int argc, char **argv) {
 
     int testiterations = 10000;
 
-#if 0
-    // bitstream test. This performs worse than the bytestream.
-    printf("Testing bitstream\n");
-
-    start = SDL_GetTicksNS();
-    alignas(64) Frame_Bitstream frame(640, 200);
-   
-    for (int numframes = 0; numframes < testiterations; numframes++) {
-        frame.clear();
-        for (int i = 0; i < FB_BITSTREAM_HEIGHT; i++) {
-            frame.write_line(i);
-            for (int j = 0; j < FB_BITSTREAM_WIDTH/2; j++) {
-                frame.push(1);
-                frame.push(0);
-            }
-            frame.close_line();
-        }
-    }
-
-    end = SDL_GetTicksNS();
-    frame.print();
-    printf("Write Time taken: %llu microseconds per frame\n", (end - start) / 1000 / testiterations);
-
-    start = SDL_GetTicksNS();
-
-    for (int numframes = 0; numframes < testiterations; numframes++) {
-        for (int i = 0; i < FB_BITSTREAM_HEIGHT; i++) {
-            frame.read_line(i);
-            for (int i = 0; i < FB_BITSTREAM_WIDTH/2; i++) {
-                frame.pull();
-                frame.pull();
-            }
-        }
-    }
-    end = SDL_GetTicksNS();
-    printf("read Time taken: %llu microseconds per frame\n", (end - start) / 1000 / testiterations);
-
-    printf("Testing bytestream\n");
-#endif
-
     const uint16_t f_w = SCREEN_TEXTURE_WIDTH, f_h = SCREEN_TEXTURE_HEIGHT;
     Frame560 *frame_byte = new(std::align_val_t(64)) Frame560(f_w, f_h);
 
+#if 0
     start = SDL_GetTicksNS();
     for (int numframes = 0; numframes < testiterations; numframes++) {
         for (int i = 0; i < 192; i++) {
@@ -190,6 +169,7 @@ int main(int argc, char **argv) {
     //printf("Size of bytestream entries: %zu bytes\n", sizeof(bs_t));
     printf("c: %d\n", c);
     //frame_byte->print();
+#endif
 
     uint8_t text_page[1024];
     uint8_t alt_text_page[1024];
@@ -202,26 +182,27 @@ int main(int argc, char **argv) {
     uint8_t *alt_lores_page = new uint8_t[1024];
     generate_dlgr_test_pattern(lores_page, alt_lores_page);
 
-    const char *testhgrpic_path = "/Users/bazyar/src/hgrdecode/HIRES/APPLE";
-    //const char *testhgrpic_path = "/Users/bazyar/src/gssquared/dump.hgr";
+    /* -- */
     uint8_t *testhgrpic = new(std::align_val_t(64)) uint8_t[8192];
-    FILE *f = fopen(testhgrpic_path, "rb");
-    if (!f) {
-        printf("Failed to load testhgrpic: %s\n", testhgrpic_path);
+    bool res = readFile("/Users/bazyar/src/hgrdecode/HIRES/APPLE", testhgrpic, 8192);
+    if (!res) {
+        printf("Failed to load testhgrpic\n");
         return 1;
     }
-    fread(testhgrpic, 1, 8192, f);
-    fclose(f);
-
-    const char *testdhgrpic_path = "/Users/bazyar/src/hgrdecode/DHIRES/LOGO.DHGR";
+    
     uint8_t *testdhgrpic = new(std::align_val_t(64)) uint8_t[16386];
-    FILE *f2 = fopen(testdhgrpic_path, "rb");
-    if (!f2) {
-        printf("Failed to load testdhgrpic: %s\n", testdhgrpic_path);
+    res = readFile("/Users/bazyar/src/hgrdecode/DHIRES/LOGO.DHGR", testdhgrpic, 16384);
+    if (!res) {
+        printf("Failed to load testdhgrpic\n");
         return 1;
     }
-    fread(testdhgrpic, 1, 16384, f2);
-    fclose(f2);
+    
+    uint8_t *testshrpic = new(std::align_val_t(64)) uint8_t[32768];
+    res = readFile("/Users/bazyar/src/hgrdecode/SHR/AIRBALL", testshrpic, 32768);
+    if (!res) {
+        printf("Failed to load testshrpic\n");
+        return 1;
+    }
 
     CharRom iiplus_rom("resources/roms/apple2_plus/char.rom");
     CharRom iie_rom("resources/roms/apple2e_enh/char.rom");
@@ -232,7 +213,8 @@ int main(int argc, char **argv) {
     }
 
     Frame560RGBA *frame_rgba = new(std::align_val_t(64)) Frame560RGBA(f_w, f_h);
-
+    Frame640 *frame640_byte = new(std::align_val_t(64)) Frame640(640, 200);
+    
     Monochrome560 monochrome;
     NTSC560 ntsc_render;
     GSRGB560 rgb_render;
@@ -241,8 +223,8 @@ int main(int argc, char **argv) {
     iie_rom.print_matrix(0x40);
     AppleII_Display display_iiplus(&iiplus_rom);
     iiplus_rom.print_matrix(0x40);
-    //display.set_char_set(true);
 
+#if 0
     start = SDL_GetTicksNS();
     for (int numframes = 0; numframes < testiterations; numframes++) {
         for (int l = 0; l < 24; l++) {
@@ -253,6 +235,7 @@ int main(int argc, char **argv) {
 
     end = SDL_GetTicksNS();
     printf("text Time taken: %llu ns per frame\n", (end - start) / testiterations);
+#endif
 
     SDL_FRect dstrect = {
         (float)0.0,
@@ -270,10 +253,6 @@ int main(int argc, char **argv) {
     int pitch;
     void *pixels;
 
-    SDL_LockTexture(texture, NULL, &pixels, &pitch);
-    std::memcpy(pixels, frame_rgba->data(), SCREEN_TEXTURE_WIDTH * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
-    SDL_UnlockTexture(texture);
-
     uint64_t cumulative = 0;
     uint64_t times[900];
     uint64_t framecnt = 0;
@@ -286,6 +265,8 @@ int main(int argc, char **argv) {
     int flash_count = 0;
 
     while (++framecnt && !exiting)  {
+        uint64_t frame_start = SDL_GetTicksNS();
+
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
@@ -309,6 +290,9 @@ int main(int argc, char **argv) {
                 }
                 if (event.key.key == SDLK_6) {
                     generate_mode = 6;
+                }
+                if (event.key.key == SDLK_7) {
+                    generate_mode = 7;
                 }
                 if (event.key.key == SDLK_N) {
                     render_mode = 2;
@@ -335,63 +319,83 @@ int main(int argc, char **argv) {
             display_iiplus.set_flash_state(flash_state);
         }
 
-        for (int l = 0; l < 24; l++) {
+        if (generate_mode == 7) {
+            display_iie.generate_shr((SHR *)testshrpic, frame640_byte);
+            SDL_LockTexture(shrtexture, NULL, &pixels, &pitch);
+            std::memcpy(pixels, frame640_byte->data(), 640 * 200 * sizeof(RGBA_t));
+            SDL_UnlockTexture(shrtexture);
+
+            SDL_RenderClear(renderer);
+            SDL_RenderTexture(renderer, shrtexture, nullptr /* &srcrect */, &dstrect);       
+        } else {
+            //for (int l = 0; l < 24; l++) {
             switch (generate_mode) {
                 case 1:
-                    display_iiplus.generate_text40(text_page, frame_byte, l);
+                    for (int l = 0; l < 24; l++) 
+                        display_iiplus.generate_text40(text_page, frame_byte, l);
                     break;
                 case 2:
-                    display_iie.generate_text80(text_page, alt_text_page, frame_byte, l);
+                    for (int l = 0; l < 24; l++) 
+                        display_iie.generate_text80(text_page, alt_text_page, frame_byte, l);
                     phaseoffset = 1;
                     break;
                 case 3:
-                    display_iie.generate_lores40(text_page, frame_byte, l);
+                    for (int l = 0; l < 24; l++) 
+                        display_iie.generate_lores40(text_page, frame_byte, l);
                     break;
                 case 4:
-                    display_iie.generate_lores80(lores_page, alt_lores_page, frame_byte, l);
+                    for (int l = 0; l < 24; l++) 
+                        display_iie.generate_lores80(lores_page, alt_lores_page, frame_byte, l);
                     phaseoffset = 1;
                     break;        
                 case 5:
-                    display_iiplus.generate_hires40(testhgrpic, frame_byte, l);
+                    for (int l = 0; l < 24; l++) 
+                        display_iiplus.generate_hires40(testhgrpic, frame_byte, l);
                     break;
                 case 6:
                     // saved dhgr files are aux memory first, then main memory.
-                    display_iiplus.generate_hires80(testdhgrpic+0x2000, testdhgrpic, frame_byte, l);
+                    for (int l = 0; l < 24; l++) 
+                        display_iiplus.generate_hires80(testdhgrpic+0x2000, testdhgrpic, frame_byte, l);
                     phaseoffset = 1;
                     break;
             }
-        }
-        switch (render_mode) {
-            case 1:
-                monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
-                break;
-            case 2:
-                ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
-                break;
-            case 3:
-                if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
-                else rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
-                break;
-        }
+            switch (render_mode) {
+                case 1:
+                    monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
+                    break;
+                case 2:
+                    ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
+                    break;
+                case 3:
+                    if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
+                    else rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
+                    break;
+            }
 
-        // update the texture - approx 300us
-        SDL_LockTexture(texture, NULL, &pixels, &pitch);
-        std::memcpy(pixels, frame_rgba->data(), SCREEN_TEXTURE_WIDTH * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
-        SDL_UnlockTexture(texture);
-        
-        // update widnow - approx 300us
-        SDL_RenderClear(renderer);
-        SDL_RenderTexture(renderer, texture, &srcrect, &dstrect);       
-        end = SDL_GetTicksNS();
+            // update the texture 
+            SDL_LockTexture(texture, NULL, &pixels, &pitch);
+            std::memcpy(pixels, frame_rgba->data(), SCREEN_TEXTURE_WIDTH * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
+            SDL_UnlockTexture(texture);
+            
+            // update widnow - approx 300us
+            SDL_RenderClear(renderer);
+            SDL_RenderTexture(renderer, texture, &srcrect, &dstrect);       
+        }
         SDL_RenderPresent(renderer);      
+        end = SDL_GetTicksNS();
 
         cumulative += (end-start);
+        
         if (framecnt == 300) {
             times[framecnt] = (end-start);
             printf("Render Time taken:%llu  %llu ns per frame\n", cumulative, cumulative / 300);
             cumulative = 0;
             framecnt = 0;
         }
+
+        while (SDL_GetTicksNS() - frame_start < 16'688'819) ;
+
+        //SDL_Delay(16);
     }
     
     printf("Render Time taken:%llu  %llu ns per frame\n", cumulative, cumulative / 900);

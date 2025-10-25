@@ -6,10 +6,31 @@
 #include "VideoScannerII.hpp"
 #include "VideoScanGenerator.hpp"
 
-VideoScanGenerator::VideoScanGenerator(CharRom *charrom)
+static const RGBA_t gs_text_palette[16] = {
+    RGBA_t::make(0x00, 0x00, 0x00, 0xFF), // 0x0000 - Black        0b0000 - ok
+    RGBA_t::make(0xDD, 0x00, 0x33, 0xFF), // 0x0D03 - Deep Red     0b0001 - ok
+    RGBA_t::make(0x88, 0x55, 0x00, 0xFF), // 0x0850 - Brown        0b1000 - dk blue
+    RGBA_t::make(0xFF, 0x66, 0x00, 0xFF), // 0x0F60 - Orange       0b1001 - purple
+    RGBA_t::make(0x00, 0x77, 0x22, 0xFF), // 0x0072 - Dark Green   0b0100 - ok
+    RGBA_t::make(0x55, 0x55, 0x55, 0xFF), // 0x0555 - Dark Gray    0b0101 - ok
+    RGBA_t::make(0x11, 0xDD, 0x00, 0xFF), // 0x01D0 - Light Green 0b1100 - med blu
+    RGBA_t::make(0xFF, 0xFF, 0x00, 0xFF), // 0x0FF0 - Yellow      0b1101 - lt blue
+
+    RGBA_t::make(0x00, 0x00, 0x99, 0xFF), // 0x0009 - Dark Blue    0b0010 - brown
+    RGBA_t::make(0xDD, 0x22, 0xDD, 0xFF), // 0x0D2D - Purple       0b0011 - orange
+    RGBA_t::make(0xAA, 0xAA, 0xAA, 0xFF), // 0x0AAA - Light Gray  0b1010 - ok
+    RGBA_t::make(0xFF, 0x99, 0x88, 0xFF), // 0x0F98 - Pink        0b1011 - ok
+    RGBA_t::make(0x22, 0x22, 0xFF, 0xFF), // 0x022F - Medium Blue  0b0110 - light green
+    RGBA_t::make(0x66, 0xAA, 0xFF, 0xFF), // 0x06AF - Light Blue   0b0111 - yellow
+    RGBA_t::make(0x44, 0xFF, 0x99, 0xFF), // 0x04F9 - Aquamarine  0b1110 - ok
+    RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF)  // 0x0FFF - White       0b1111 - ok
+};
+
+VideoScanGenerator::VideoScanGenerator(CharRom *charrom, bool border_enabled)
 {
     build_hires40Font(true);
     this->char_rom = charrom;
+    //this->border_enabled = border_enabled;
 }
 
 void VideoScanGenerator::build_hires40Font(bool delayEnabled) 
@@ -28,9 +49,16 @@ void VideoScanGenerator::build_hires40Font(bool delayEnabled)
     }
 }
 
-void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte)
+void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte, FrameBorder *border)
 {
     uint64_t fcnt = frame_scan->get_count();
+    if (fcnt == 0) {
+        printf("Warning: no data in ScanBuffer\n");
+        return;
+    }
+    if (border != nullptr) {
+        assert(1);
+    }
     /* if (fcnt < 192*40) { // if there is less than a full frame, don't generate anything, ignore, and print a warning
         printf("Warning: less than a full frame in ScanBuffer: %lld\n", fcnt);
         return;
@@ -49,14 +77,20 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
     {
         //frame_scan->set_line(vcount);
         frame_byte->set_line(vcount);
+        if (border != nullptr) {
+            border->set_line(vcount);
+        }
         uint8_t lastByte = 0x00; // for hires
         Scan_t peek_scan = frame_scan->peek();
         color_mode_t color_mode;
         color_mode.colorburst = (peek_scan.mode == VM_TEXT40 || peek_scan.mode == VM_TEXT80) ? 0 : 1;
         color_mode.mixed_mode = peek_scan.flags & VS_FL_MIXED ? 1 : 0;
         uint8_t color_delay_mask = 0xFF;
+        bool data_seen = false;
+        int hcount = 0;
+        int linewidth = (border != nullptr) ? 53 : 40;
 
-        for (int hcount = 0; hcount < 53; hcount++) { 
+        for (int lineidx = 0; lineidx < linewidth; lineidx++) { 
 
             Scan_t scan = frame_scan->pull();
             uint8_t eff_mode = scan.mode;
@@ -66,18 +100,19 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
 
             switch (eff_mode) {
                 case VM_BORDER_COLOR: {
-                        for (int i = 0; i < 7; i++) {
-                            frame_byte->push(0);
+                        if (border != nullptr) {
+                            border->push(gs_text_palette[scan.mainbyte & 0x0F]);
                         }
                     }
-                    break;
+                    break; // we don't increment hcount here.
                 case VM_TEXT40: {
-                        /* if (hcount == 0) {
+                        if (!data_seen) {
+                            data_seen = true;
                             for (int i = 0; i < 7; i++) {
                                 frame_byte->push(0);
                             }
                             frame_byte->set_color_mode(vcount, color_mode);
-                        } */
+                        }
                         bool invert;
                         char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
 
@@ -112,9 +147,11 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                         frame_byte->push((cdata & 1) ^ invert); 
                         frame_byte->push((cdata & 1) ^ invert);     
                     }
+                    hcount++;
                     break;
                 case VM_TEXT80: {
-                        if (hcount == 0) {
+                        if (!data_seen) {
+                            data_seen = true;
                             //frame_byte->set_color_mode(vcount, COLORBURST_OFF);
                             frame_byte->set_color_mode(vcount, color_mode);
                         }
@@ -158,9 +195,11 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                             for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
                         }
                     }
+                    hcount++;
                     break;
                 case VM_LORES: {
-                        if (hcount == 0) {
+                        if (!data_seen) {
+                            data_seen = true;
                             for (int i = 0; i < 7; i++) {
                                 frame_byte->push(0);
                             }
@@ -179,49 +218,53 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                             pixeloff = (pixeloff + 1) % 4;
                         }
                     }
+                    hcount++;
                     break;
                 case VM_DLORES: {
-                    if (hcount == 0) {
-                        frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
-                    }
-                
-                    uint8_t tchar = scan.auxbyte;
-
-                    if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
-                        tchar = tchar >> 4;
-                    }
-                    uint16_t pixeloff = (hcount * 14) % 4;
-    
-                    for (uint16_t bits = 0; bits < 7; bits++) {
-                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
-                        frame_byte->push(bit);
-                        pixeloff = (pixeloff + 1) % 4;
-                    }
-
-                    tchar = scan.mainbyte;
+                        if (!data_seen) {
+                            data_seen = true;
+                            frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
+                        }
                     
-                    if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
-                        tchar = tchar >> 4;
+                        uint8_t tchar = scan.auxbyte;
+
+                        if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
+                            tchar = tchar >> 4;
+                        }
+                        uint16_t pixeloff = (hcount * 14) % 4;
+        
+                        for (uint16_t bits = 0; bits < 7; bits++) {
+                            uint8_t bit = ((tchar >> pixeloff) & 0x01);
+                            frame_byte->push(bit);
+                            pixeloff = (pixeloff + 1) % 4;
+                        }
+
+                        tchar = scan.mainbyte;
+                        
+                        if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
+                            tchar = tchar >> 4;
+                        }
+                        // this is correct.
+                        pixeloff = (hcount * 14) % 4;
+        
+                        for (uint16_t bits = 0; bits < 7; bits++) {
+                            uint8_t bit = ((tchar >> pixeloff) & 0x01);
+                            frame_byte->push(bit);
+                            pixeloff = (pixeloff + 1) % 4;
+                        }        
+                        
+                        if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
+                            for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
+                        }
                     }
-                    // this is correct.
-                    pixeloff = (hcount * 14) % 4;
-    
-                    for (uint16_t bits = 0; bits < 7; bits++) {
-                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
-                        frame_byte->push(bit);
-                        pixeloff = (pixeloff + 1) % 4;
-                    }        
-                    
-                    if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
-                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
-                    }
-                }
-                break;
+                    hcount++;
+                    break;
                 case VM_HIRES_NOSHIFT: // TODO: this needs to set a flag to disable color delay. But this should make it display something now.
                     color_delay_mask = 0x7F;
 
                 case VM_HIRES: {
-                        if (hcount == 0) {
+                        if (!data_seen) {
+                            data_seen = true;
                             for (int i = 0; i < 7; i++) {
                                 frame_byte->push(0);
                             }
@@ -236,8 +279,9 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                         lastByte = byte;
                     }
                     break;
-                    case VM_DHIRES: {
-                        if (hcount == 0) {
+                case VM_DHIRES: {
+                        if (!data_seen) {
+                            data_seen = true;
                             // dhgr starts at horz offset 0
                             frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
                         }
@@ -257,6 +301,7 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                             for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
                         }
                     }
+                    hcount++;
                     break;
                 default:
                     break;

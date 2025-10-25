@@ -310,14 +310,14 @@ bool update_display_apple2_cycle(cpu_state *cpu) {
             break;
     }
 
-    // update the texture - approx 300us
+    // update the texture
     void* pixels;
     int pitch;
     SDL_LockTexture(ds->screenTexture, NULL, &pixels, &pitch);
     std::memcpy(pixels, ds->frame_rgba->data(), (560+20) * BASE_HEIGHT * sizeof(RGBA_t));
     SDL_UnlockTexture(ds->screenTexture);
     
-    // update widnow - approx 300us
+    // update widnow
     //SDL_RenderClear(renderer);
     //SDL_RenderTexture(renderer, texture, &srcrect, &dstrect);     
     vs->render_frame(ds->screenTexture, -7.0f);
