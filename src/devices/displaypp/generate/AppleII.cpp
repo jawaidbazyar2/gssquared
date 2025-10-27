@@ -383,6 +383,7 @@ public:
         }
     }
 
+    // TODO: need to implement 320 fill mode.
     void generate_shr(SHR *shrPage, Frame640 *f) {
         for (uint16_t line = 0; line < 200; line++) {
             SHRMode mode = shrPage->modes[line];

@@ -6643,3 +6643,36 @@ took a photo of the GS screen, I measured 1.36 AR for shr. but if I was at an an
 Now need to put borders onto dpp. Then implement SHR mode in VideoScanner/VideoScanGenerator. Back to border mixing.
 Draw borders first; then draw content on top; 7 pixels on left or right need to be rendered as alpha=0 so existing border shows through. Right now, bit->push() we use values 0 and 1 for, you know. However, what if we also include 0x80 as a flag bit to say "treat as zero but render transparent"? We could alternatively have a flag for whether the line is -7 or 0 offset, and set the alpha appropriately. (Need to always draw the Frame567 (580) at the -7 position.) Flag could work for full frame render..
 what about VideoScanner.. here we spit out 7 pixels of blank (or trail) if we are the first or last byte of a line and rendering an 80 mode. Those are not being interpreted as video bits, we can just emit them transparent right there.
+
+Also learned about highdpi displays. My Macbook has a native resolution of 2560x1600, in a 13" display, and about 230dpi pitch. This is "Retina" and how Macs obtain extremely clear text. We could detect if the user has a display of this type, and if present enable a . The dot pitch of these systems we're trying to emulate is 
+MB screen is 11.25" and 2560 pixels means 230dpi. 0.116mm pixel size (not counting subpixels). AppleColor RGB has "0.37 millimeter tri-dot pattern". Suggesting 0.37mm dot pitch shadow mask triangular layout, or, distance between center of one to the next similar color.
+
+```
+ R G B R G
+G B R G B R
+```
+In a shadow mask like the above, the dot pitch is the distance between the first G on 2nd line and 1st G on 1st line. I don't know if the measurements are correct but here is example layout to modern pixels:
+
+```
+  ....BBB.RRR.
+  ....BBB.RRR.
+  ....BBB.RRR.
+  ............
+  ..RRR.GGG.BB
+  ..RRR.GGG.BB
+  ..RRR.GGG.BB
+  ```
+
+  We can alias the corner pixels to provide a "rounder" appearance. Our target is about .4mm from one red to to the next and I think this layout is too big. 
+
+  ```
+  ....BB.RR.
+  ....BB.RR.
+  ..........
+  ..RR.GG.BB
+  ..RR.GG.BB
+  ```
+
+  This might be close: 5 x 3 x 4 where the 4 is the dot pitch; yes, close. No opportunity for antialiasing here unless we do it in the (otherwise black) border pixels. Yes, we can have an effective 4x4 pixel with the edges shared with the next phosphor dot. Some of that bleed could be legit anyway.
+  
+TIL that CrossRunner does a color-mixing mode when in 640. "solid color conversion". I didn't see a way to turn it off, but, it does make the desktop and all the colors you can set on the desktop to be solid. Apparently the AppleColor RGB did not have high enough bandwidth to display the 640 columns as discrete stripes. The algorithm is likely something like: current pixel is weighted average of this pixel and surrounding two pixels. Won't mix black and white. just b+color or w+color. Or c+color.
