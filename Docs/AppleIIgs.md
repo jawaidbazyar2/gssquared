@@ -208,7 +208,7 @@ on my GS RGB SHR is 7.75 inches across and regular hires is 7.75 inches across. 
 
 # Development Roadmap
 
-We can implement implement in this order.
+We can implement in this order.
 
 1. 65816 [initial version done]
 1. text mode enhancements (colored text / border)
@@ -220,3 +220,4 @@ We can implement implement in this order.
 
 65816 emulation mode - the key element here is going to be to switch all the functions to use auto to allow us to switch from 8-bit to 16-bit more easily. By using auto, the compiler will .. uh, automatically.. pick the right data types based on calling parameters, stuff like that. 
 
+So I jumped ahead and did SHR stuff. Got it in the dpp framework, now need to implement it in vpp (VideoScanner). Then go back to text/borders.

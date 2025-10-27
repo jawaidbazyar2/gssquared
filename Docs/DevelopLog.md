@@ -6530,6 +6530,9 @@ And we don't even have to call setline, if we are careful with our pixel emissio
 
 Swank.
 
+[ ] and another optimization: the final stage, Render, can be made to render directly into the LockTexture buffer. Right now we are double-buffering and have an excess copy of a half megabyte. That's not trivial.
+
+
 One thing my overall approach will not handle, is rapid switching between super hires and legacy modes in the way the Apple II demos do. Each frame is one or the other. I'm not aware of any though that doesn't mean there aren't any - but handling the 7/8 scaling issue on a per-cycle basis would be very difficult. This prompted a big discussion on Slack and there are in fact a few programs that do this.  when GS switches from legacy (14mhz) to shr (16mhz) the screen is distorted for what looks like 6-8 scanlines while the PLL in the monitor catches up, gradually changing frequency.
 
 
@@ -6568,5 +6571,75 @@ Acid test: I got a GSOS desktop image out of kegs. In pixelart mode, it's not aw
 
 I should put window resizing and scaling into dpp.
 
-[ ] bug - after going into full screen mode and coming back, window is no longer aspect-ratio-constrained.
+Lots of testing:
 
+"Final Aspect Ratio" is the ratio of X to Y pixels in Squareland. We want this to match the original monitor aspect ratio, which I measured to be approximately 1.2. But between 1.2 and 1.3 is fine, and VidHD uses 1.28:
+640x200 -> 1280x1000 : this is what VidHD does.
+
+For GS display, we really truly need integer multiples - or, some kind of way of converting dithered 640 colors to a "real" color shade. 1.28 aspect provides integer scaling for both X AND Y, for two target resolutions:
+
+640x500; 1280x1000
+
+the X scaling is 2 and Y scaling is 5. And don't forget we need some extra pixels for  
+
+So, if I take out the memcpy in the typical rendering loop, for shr my render times goes from 200uS to 136-150uS. This is a 30 to 35% time reduction, just not doing the double-copy. Well then. Seems like rendering the new frame texture directly into the buffer SDL3 gives us for a texture update, is the way to go.
+
+Struggling with scaling math. SHould be butt simple but I always have difficulty keeping different concepts straight.
+
+So let's define terms first. Canvas is the window we're drawing into. We want two: one optimized (and as a default size) for old Apple II modes; and one optimized for the Apple IIgs. 
+
+Target 1.28 Canvas Aspect.
+
+For 1.28 aspect, we need the following ideal window sizes and scales:
+
+640x200 -> 1280 x 1000 -> [2, 5]
+580x200 -> 1160 x 906  -> [2, 4.53]
+580x192 -> 1160 x 870  -> [2, 4.53]
+
+the extra 8 shr scanlines come at the expense of border area. So we will draw both 
+
+Then there's source Aspect. e.g. 640/200 = 3.2; 560/192 = 2.92; but I think we can ignore this. 
+
+C_ASPECT = 1.28
+xscale = canvas.w / source.w
+yheight = canvas.w / canvas.aspect
+yscale = yheight / source.h
+
+OK I'm real close now, except that apple II modes should use 8 scanlines less of the target, and they're not, they're being scaled to exactly fit the window. the window is based on 200 scanlines, the source is 192 scanlines, and I need to account for that in the Y scale calculation. We should assume the canvas is always set up to be 200 scanline capable. Right? Yes because shr works fine here. apple II mode is actually a little different. 
+
+Recent testing: 320 mode frame time is 138uS; 640 mode around 200? Interesting. It's fewer lookups I guess.
+
+## Oct 26, 2025
+
+Doing some thinking about scaling. If we're in 640 mode and doing dithering, instead of scaling the pixels, scale the pattern. e.g.
+ABABABAB
+scaled naively might be
+AABBAABBAABBAABB
+however, what if you scaled that instead as:
+ABABABABABABABAB
+
+Alternatively, what if we define C = average A and B. Then we draw as:
+CCCCCCCCCCCCCCCC
+Could special case when pixels are black and white and not do the averaging, assuming these are text and require clear definition.
+
+Scaling generally: did some reading which suggested that you might get good results for this old pixelart stuff, by doing the following:
+1. use nearest integer scale and nearest, from 560x192 to something somewhat bigger than your target.
+2. Then use linear to downscale from that to your target.
+
+Integer up and integer down, I saw something about this talking about audio resampling. So let's see here: we're normally 2x5. 3x7.5 is non-integer. So 4x10 is 2320 x 1920. Then scale back down.
+ok using pixelart as the last step renderer I am not seeing any difference between bare pixelart and the "upscale first" approach. Maybe pixelart is already doing this.
+
+Claude's got some discussion about modeling at the analog crt phosphor-dot level. Could be done with 4K, 5K (retina) and 8k displays that have sufficiently small pixels.
+https://claude.ai/chat/a3a08084-6186-4f0d-9d95-59f3b0b4ffb4
+
+This is an awesome compendium of SDL3 examples:
+https://www.bilgigunlugum.net/gameprog/sdl3/sdl3_img_stretch
+
+This is a good discussion on shaders to simulate crt subpixels
+https://forums.libretro.com/t/ten-years-of-crt-shaders/22336/33
+
+took a photo of the GS screen, I measured 1.36 AR for shr. but if I was at an angle that could be skewing it (could also have something to do with crt curvature). Redo this later. But that 1.28 has the benefit of being integer-scale for both X / Y and that's worth something.
+
+Now need to put borders onto dpp. Then implement SHR mode in VideoScanner/VideoScanGenerator. Back to border mixing.
+Draw borders first; then draw content on top; 7 pixels on left or right need to be rendered as alpha=0 so existing border shows through. Right now, bit->push() we use values 0 and 1 for, you know. However, what if we also include 0x80 as a flag bit to say "treat as zero but render transparent"? We could alternatively have a flag for whether the line is -7 or 0 offset, and set the alpha appropriately. (Need to always draw the Frame567 (580) at the -7 position.) Flag could work for full frame render..
+what about VideoScanner.. here we spit out 7 pixels of blank (or trail) if we are the first or last byte of a line and rendering an 80 mode. Those are not being interpreted as video bits, we can just emit them transparent right there.
