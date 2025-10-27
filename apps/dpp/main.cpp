@@ -14,6 +14,29 @@
 #include "devices/displaypp/render/GSRGB560.hpp"
 #include "devices/displaypp/CharRom.hpp"
 
+/* math is hard, yo 
+
+   our original 640 x 200
+   
+   needs to map into a even multiple of 640 , plus a Y that
+   gives us a 1.2 aspect ratio of modern pixels 
+*/
+
+
+struct canvas_t {
+    float w;
+    float h;
+};
+
+#define ASPECT_RATIO (1.28f)
+#define SCALE_X 2
+#define SCALE_Y (4*ASPECT_RATIO)
+#define XY_RATIO (SCALE_Y / SCALE_X)
+
+// the horz here must match the width of Frame since we copy via memcpy later.
+#define II_SCREEN_TEXTURE_WIDTH (580)
+#define II_SCREEN_TEXTURE_HEIGHT (192)
+
 int text_addrs[24] =
   {   // text page 1 line addresses
             0x0000,
@@ -88,18 +111,76 @@ bool readFile(const char *path, uint8_t *data, size_t size) {
     return true;
 }
 
-#define CANVAS_WIDTH ((560+20)*2)
-#define CANVAS_HEIGHT (192*4)
-#define SCREEN_TEXTURE_WIDTH (560+20)
-#define SCREEN_TEXTURE_HEIGHT (192)
+void print_canvas(const char *name, canvas_t *c) {
+    printf("%s: (%f, %f)\n", name, c->w, c->h);
+}
+
+bool calculateScale(SDL_Renderer *renderer, canvas_t &c, canvas_t &s) {
+    
+    /* C_ASPECT = 1.28
+    xscale = canvas.w / source.w
+    yheight = canvas.w / canvas.aspect
+    yscale = yheight / source.h */
+
+    float new_scale_x = c.w / s.w;
+    float new_y_height = c.w / ASPECT_RATIO;
+    float new_scale_y = new_y_height / 200 /* s.h */;
+
+    // now we want to constrain the Y scale to the aspect ratio target.
+
+    float scale_ratio = new_scale_y / new_scale_x;
+    print_canvas("c", &c);
+    print_canvas("s", &s);
+    printf("window_resize: new w/h (%f, %f) -> (%f, %f) scale ratio: %f\n", c.w, c.h, new_scale_x, new_scale_y, scale_ratio);
+    return SDL_SetRenderScale(renderer, new_scale_x, new_scale_y);
+}
+
+// manually set window size
+bool setWindowSize(SDL_Window *window, SDL_Renderer *renderer, canvas_t &c, canvas_t &s) {
+
+    float new_aspect = (float)c.w / c.h;
+    printf("setWindowSize: (%f, %f) @ %f\n", c.w, c.h, new_aspect);
+    
+    bool res = SDL_SetWindowSize(window, c.w, c.h);
+    if (!res) {
+        return false;
+    }
+    return calculateScale(renderer, c, s);
+}
+
+// handle window resize - user resized.
+bool window_resize(const SDL_Event &event, canvas_t &s, SDL_Window *window, SDL_Renderer *renderer) {
+
+    canvas_t c = { (float)event.window.data1, (float)event.window.data2 };
+
+    return calculateScale(renderer, c, s);
+
+}
+
 
 int main(int argc, char **argv) {
     uint64_t start = 0, end = 0;
 
+    // 
+    canvas_t canvasses[2] = {
+        { (float)1160, (float)906 },
+        {  (float)1280, (float)1000 }
+    };
+    canvas_t sources[9] = {
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // UNUSED
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 40 text
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 80 text
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 40 lores
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 80 lores
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 40 hires
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 80 hires
+        { (float)640, (float)200 }, // shr
+        { (float)640, (float)200 } // shr
+    };
     //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
 
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_Window *window = SDL_CreateWindow("DisplayPP Test Harness", CANVAS_WIDTH, CANVAS_HEIGHT, SDL_WINDOW_RESIZABLE);
+    SDL_Window *window = SDL_CreateWindow("DisplayPP Test Harness", canvasses[0].w*SCALE_X, canvasses[0].h*SCALE_Y, SDL_WINDOW_RESIZABLE);
     if (!window) {
         printf("Failed to create window\n");
         return 1;
@@ -109,7 +190,7 @@ int main(int argc, char **argv) {
         printf("Failed to create renderer\n");
         return 1;
     }
-    SDL_Texture *texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, SCREEN_TEXTURE_WIDTH, SCREEN_TEXTURE_HEIGHT);
+    SDL_Texture *texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, II_SCREEN_TEXTURE_WIDTH, II_SCREEN_TEXTURE_HEIGHT);
     if (!texture) {
         printf("Failed to create texture\n");
         printf("SDL Error: %s\n", SDL_GetError());
@@ -121,6 +202,14 @@ int main(int argc, char **argv) {
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
     }
+    SDL_Texture *scale_txt = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 2320, 1920);
+    if (!scale_txt) {
+        printf("Failed to create shrtexture\n");
+        printf("SDL Error: %s\n", SDL_GetError());
+        return 1;
+    }
+    SDL_SetTextureScaleMode(scale_txt, SDL_SCALEMODE_LINEAR);
+
     if (!SDL_SetRenderVSync(renderer, SDL_RENDERER_VSYNC_DISABLED)) {
         printf("Failed to set render vsync\n");
         printf("SDL Error: %s\n", SDL_GetError());
@@ -142,9 +231,11 @@ int main(int argc, char **argv) {
 
     int error = SDL_SetRenderTarget(renderer, nullptr);
 
+    //SDL_SetWindowAspectRatio(window, ASPECT_RATIO-0.01f, ASPECT_RATIO+0.01f);
+
     int testiterations = 10000;
 
-    const uint16_t f_w = SCREEN_TEXTURE_WIDTH, f_h = SCREEN_TEXTURE_HEIGHT;
+    const uint16_t f_w = II_SCREEN_TEXTURE_WIDTH, f_h = II_SCREEN_TEXTURE_HEIGHT;
     Frame560 *frame_byte = new(std::align_val_t(64)) Frame560(f_w, f_h);
 
 #if 0
@@ -206,7 +297,14 @@ int main(int argc, char **argv) {
     }
     
     uint8_t *testshrpic = new(std::align_val_t(64)) uint8_t[32768];
-    res = readFile("/Users/bazyar/src/hgrdecode/SHR/desktop", testshrpic, 32768);
+    res = readFile("/Users/bazyar/src/hgrdecode/SHR/AIRBALL", testshrpic, 32768);
+    if (!res) {
+        printf("Failed to load testshrpic\n");
+        return 1;
+    }
+
+    uint8_t *testshrpic2 = new(std::align_val_t(64)) uint8_t[32768];
+    res = readFile("/Users/bazyar/src/hgrdecode/SHR/desktop", testshrpic2, 32768);
     if (!res) {
         printf("Failed to load testshrpic\n");
         return 1;
@@ -245,19 +343,6 @@ int main(int argc, char **argv) {
     printf("text Time taken: %llu ns per frame\n", (end - start) / testiterations);
 #endif
 
-    SDL_FRect dstrect = {
-        (float)0.0,
-        (float)0.0,
-        (float)SCREEN_TEXTURE_WIDTH, 
-        (float)SCREEN_TEXTURE_HEIGHT
-    };
-    SDL_FRect srcrect = {
-        (float)0.0,
-        (float)0.0,
-        (float)SCREEN_TEXTURE_WIDTH, 
-        (float)SCREEN_TEXTURE_HEIGHT
-    };
-
     int pitch;
     void *pixels;
 
@@ -266,19 +351,35 @@ int main(int argc, char **argv) {
     uint64_t framecnt = 0;
 
     int generate_mode = 1;
+    int last_generate_mode = -1;
+    
+    int last_canvas_mode = -1;
+    int canvas_mode = 0;
+    
     int render_mode = 1;
     int sharpness = 0;
     bool exiting = false;
     bool flash_state = false;
     int flash_count = 0;
+    SDL_Event event;
 
     while (++framecnt && !exiting)  {
         uint64_t frame_start = SDL_GetTicksNS();
 
-        SDL_Event event;
+        if ((last_canvas_mode != canvas_mode) || (last_generate_mode != generate_mode)) {
+            last_canvas_mode = canvas_mode;
+            last_generate_mode = generate_mode;
+            setWindowSize(window, renderer, canvasses[canvas_mode], sources[generate_mode]);
+            print_canvas("canvasses", &canvasses[canvas_mode]);
+            print_canvas("source_rects", &sources[generate_mode]);
+        }
+
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
                 exiting = true;
+            }
+            if (event.type == SDL_EVENT_WINDOW_RESIZED) {
+                window_resize(event, sources[generate_mode], window, renderer);
             }
             if (event.type == SDL_EVENT_KEY_DOWN) {
                 if (event.key.key == SDLK_1) {
@@ -302,6 +403,9 @@ int main(int argc, char **argv) {
                 if (event.key.key == SDLK_7) {
                     generate_mode = 7;
                 }
+                if (event.key.key == SDLK_8) {
+                    generate_mode = 8;
+                }
                 if (event.key.key == SDLK_N) {
                     render_mode = 2;
                 }
@@ -317,9 +421,11 @@ int main(int argc, char **argv) {
                     SDL_SetTextureScaleMode(shrtexture, scales[sharpness]);
                     printf("Sharpness: %d\n", sharpness);
                 }
+                if (event.key.key == SDLK_C) {
+                    canvas_mode = (canvas_mode + 1) % 2;
+                }
             }
         }
-
 
         start = SDL_GetTicksNS();
         int phaseoffset = 1; // now that I start normal (40) display at pixel 7, its phase is 1 also. So, both 40 and 80 display start at phase 1 now.
@@ -330,14 +436,16 @@ int main(int argc, char **argv) {
             display_iiplus.set_flash_state(flash_state);
         }
 
-        if (generate_mode == 7) {
-            display_iie.generate_shr((SHR *)testshrpic, frame640_byte);
+        if (generate_mode >= 7) {
+            display_iie.generate_shr((SHR *)(generate_mode == 7 ? testshrpic : testshrpic2), frame640_byte);
             SDL_LockTexture(shrtexture, NULL, &pixels, &pitch);
             std::memcpy(pixels, frame640_byte->data(), 640 * 200 * sizeof(RGBA_t));
             SDL_UnlockTexture(shrtexture);
 
             SDL_RenderClear(renderer);
-            SDL_RenderTexture(renderer, shrtexture, nullptr /* &srcrect */, &dstrect);       
+
+            SDL_FRect source_rect = { 0.0, 0.0, sources[generate_mode].w, sources[generate_mode].h };
+            SDL_RenderTexture(renderer, shrtexture, &source_rect, &source_rect);       
         } else {
             //for (int l = 0; l < 24; l++) {
             switch (generate_mode) {
@@ -385,12 +493,22 @@ int main(int argc, char **argv) {
 
             // update the texture 
             SDL_LockTexture(texture, NULL, &pixels, &pitch);
-            std::memcpy(pixels, frame_rgba->data(), SCREEN_TEXTURE_WIDTH * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
+            std::memcpy(pixels, frame_rgba->data(), II_SCREEN_TEXTURE_WIDTH * II_SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
             SDL_UnlockTexture(texture);
-            
-            // update widnow - approx 300us
+#if 1            
+            // update widnow
             SDL_RenderClear(renderer);
-            SDL_RenderTexture(renderer, texture, &srcrect, &dstrect);       
+
+            SDL_FRect source_rect = { 0.0, 0.0, sources[generate_mode].w, sources[generate_mode].h };
+            SDL_RenderTexture(renderer, texture, &source_rect,  &source_rect);       
+#else
+            SDL_SetRenderTarget(renderer, scale_txt);
+            SDL_RenderTexture(renderer, texture, nullptr, nullptr);
+            SDL_SetRenderTarget(renderer, nullptr);
+            SDL_FRect source_rect = { 0.0, 0.0, sources[generate_mode].w, sources[generate_mode].h };
+            SDL_RenderTexture(renderer, scale_txt, nullptr,  &source_rect);       
+#endif
+
         }
         SDL_RenderPresent(renderer);      
         end = SDL_GetTicksNS();
