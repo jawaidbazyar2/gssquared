@@ -5,7 +5,8 @@
 class VideoScannerIIgs : public VideoScannerII
 {
 protected:
-
+    uint8_t palette_index = 0;
+    
 public:
     VideoScannerIIgs(MMU_II *mmu);
 

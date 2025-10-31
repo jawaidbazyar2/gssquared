@@ -47,8 +47,8 @@ void VideoScannerII::init_video_addresses()
             mixed_p2[idx].addr = lores_address + 0x400;
         }
         else {
-            mixed_p1[idx].addr   = hires_address;
-            mixed_p2[idx].addr   = hires_address + 0x2000;
+            mixed_p1[idx].addr = hires_address;
+            mixed_p2[idx].addr = hires_address + 0x2000;
         }
 
         if (hcount) {
@@ -63,15 +63,16 @@ void VideoScannerII::init_video_addresses()
             hcount = 0x40;
         }
 
+        // set the flags for the current scan address
         uint16_t fl = 0;
         uint16_t hc = idx % 65;
         uint16_t vc = idx / 65;
         if (hc < 25) fl |= SA_FLAG_HBL;
         if (vc >= 192) fl |= SA_FLAG_VBL;
         // hc=0 vc=0 here is upper left pixel of data display.
-        if ( (vc >= 0 and vc <= 191) &&  
-            (((hc >= 0) && (hc <= 6)) || ((hc >= 19) && (hc <= 24)) )) fl |= SA_FLAG_BORDER;
-        //if ( ((vc >= 243) && (vc <= 261)) || ((vc >= 192) && (vc <= 220) ) ) fl |= SA_FLAG_BORDER;
+        if ((hc == 64) && (vc < 261)) fl |= SA_FLAG_HSYNC;
+        if ((hc == 64) && (vc == 261)) fl |= SA_FLAG_VSYNC;
+
         lores_p1[idx].flags = fl;
         lores_p2[idx].flags = fl;
         hires_p1[idx].flags = fl;
@@ -82,7 +83,7 @@ void VideoScannerII::init_video_addresses()
 }
 
 void VideoScannerII::init_mode_table() {
-    for (int i = 0; i < 128; i++) {
+    for (int i = 0; i < 256; i++) {
         mode_table[i] = calc_video_mode_x(i);
     }
 }
@@ -97,18 +98,21 @@ mode_table_t VideoScannerII::calc_video_mode_x(uint8_t xvmode)
     bool xdblres = xvmode & F_DBLRES;
     bool xmixed = xvmode & F_MIXED;
     bool xf80store = xvmode & F_80STORE;
-
+    bool xshr = xvmode & F_SHR;
+    
     mode_table_t mt;
-
+    mt.vaddr = nullptr;
     // set a reasonable default for invalid vmodes
     mt.mode = VM_TEXT40;
-    if (xpage2) {
+   /*  if (xpage2) {
         mt.vaddr = lores_p2;
     } else {
         mt.vaddr = lores_p1;
-    }
+    } */
 
-    if (xgraf) {
+    if (xshr) {
+        mt.mode = VM_SHR;
+    } else if (xgraf) {
         if (xhires) {
             if (xdblres) {
                 if (xsw80col)
@@ -135,7 +139,9 @@ mode_table_t VideoScannerII::calc_video_mode_x(uint8_t xvmode)
         mt.mode = VM_TEXT40;
     }
 
-    if (mt.mode == VM_TEXT40 || mt.mode == VM_TEXT80 || mt.mode == VM_LORES || mt.mode == VM_DLORES) { // text modes, page 1 and 2
+    if (mt.mode == VM_SHR) {
+        mt.vaddr = shr_p1;
+    } else if (mt.mode == VM_TEXT40 || mt.mode == VM_TEXT80 || mt.mode == VM_LORES || mt.mode == VM_DLORES) { // text modes, page 1 and 2
         if (xpage2 && !xf80store) {
             mt.vaddr = lores_p2;
         } else {
@@ -158,7 +164,9 @@ mode_table_t VideoScannerII::calc_video_mode_x(uint8_t xvmode)
             }    
         }
     }
-
+    if (mt.vaddr == nullptr) {
+        printf("Warning: invalid video mode: %d\n", xvmode); // ensure we set a vaddr etc for every vmode.
+    }
     return mt;
 }
 
@@ -172,7 +180,8 @@ void VideoScannerII::set_video_mode()
     vmode |= sw80col ? F_80COL : 0;
     vmode |= dblres ? F_DBLRES : 0;
     vmode |= mixed ? F_MIXED : 0;
-    
+    vmode |= shr ? F_SHR : 0;
+
     mode_table_t &mode = mode_table[vmode];
 
     video_addresses = mode.vaddr;
@@ -184,36 +193,6 @@ void VideoScannerII::set_video_mode()
     if (sw80col) flags |= VS_FL_80COL;
     mode_flags = flags;
 }
-
-#if 0
-void VideoScannerII::video_cycle()
-{
-    hcount += 1;
-    if (hcount == 65) {
-        hcount = 0;
-        vcount += 1;
-        if (vcount == 262) {
-            vcount = 0;
-            scan_index = 0;
-        }
-    }
-
-    uint16_t address = video_addresses[scan_index++];
-
-    video_byte = ram[address];
-    /* if (mmu) */ mmu->set_floating_bus(video_byte);
-
-    if (is_vbl()) return;
-    if (is_hbl()) return;
-
-    Scan_t scan;
-    scan.mode = (uint8_t)video_mode;
-    scan.auxbyte = 0x00;
-    scan.mainbyte = video_byte;
-    scan.flags = mode_flags /* | (colorburst ? VS_FL_COLORBURST : 0) */;
-    frame_scan->push(scan);
-}
-#endif
 
 void VideoScannerII::video_cycle()
 {
@@ -229,6 +208,18 @@ void VideoScannerII::video_cycle()
         scan.mode = (uint8_t)video_mode;
         scan.auxbyte = 0x00;
         scan.mainbyte = video_byte;
+        scan.flags = mode_flags;
+        frame_scan->push(scan);
+    }
+    if (sa.flags & SA_FLAG_VSYNC) {
+        scan.mode = (uint8_t)VM_VSYNC;
+        scan.mainbyte = 0;
+        scan.flags = mode_flags;
+        frame_scan->push(scan);
+    }
+    if (sa.flags & SA_FLAG_HSYNC) {
+        scan.mode = (uint8_t)VM_HSYNC;
+        scan.mainbyte = 0;
         scan.flags = mode_flags;
         frame_scan->push(scan);
     }
@@ -248,11 +239,17 @@ VideoScannerII::VideoScannerII(MMU_II *mmu)
     this->mmu = mmu;
     this->ram = mmu->get_memory_base();
 
-    init_video_addresses();
+    // Note: init_video_addresses() is not called here because it's virtual
+    // and needs to be called from derived class constructors to ensure
+    // the correct derived implementation is used
     init_mode_table();
 
     frame_scan = new ScanBuffer;
 
+    text_bg = 0x00;
+    text_fg = 0x0F;
+    border_color = 0x00;
+    
     // set initial video mode: text, lores, not mixed, page 1
     graf  = false;
     hires = false;
@@ -262,6 +259,7 @@ VideoScannerII::VideoScannerII(MMU_II *mmu)
     altchrset = false;
     dblres    = false;
     f_80store = false;
+    shr = false;
     set_video_mode();
 
     video_byte = 0;

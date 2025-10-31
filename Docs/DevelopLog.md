@@ -6676,3 +6676,156 @@ In a shadow mask like the above, the dot pitch is the distance between the first
   This might be close: 5 x 3 x 4 where the 4 is the dot pitch; yes, close. No opportunity for antialiasing here unless we do it in the (otherwise black) border pixels. Yes, we can have an effective 4x4 pixel with the edges shared with the next phosphor dot. Some of that bleed could be legit anyway.
   
 TIL that CrossRunner does a color-mixing mode when in 640. "solid color conversion". I didn't see a way to turn it off, but, it does make the desktop and all the colors you can set on the desktop to be solid. Apparently the AppleColor RGB did not have high enough bandwidth to display the 640 columns as discrete stripes. The algorithm is likely something like: current pixel is weighted average of this pixel and surrounding two pixels. Won't mix black and white. just b+color or w+color. Or c+color.
+
+## Oct 28, 2025
+
+Testing putting the shr stuff into VideoScanGenerator. however, VSG creates an Apple II bitmap. So there are some changes required here.
+
+Remember, the pipeline is:
+
+VideoScanner -> VideoScanGenerator -> Frame Render (NTSC, Mono, RGB)
+
+VideoScanner: input: mmu bytes; output: ScanBuffer. get and queue video byte values as they are at a particular CPU cycle
+VideoScanGenerator: input: ScanBuffer; output: Frame (bit). dequeue these and create a 560-bit-wide image
+Frame Render: input: Frame (bit). Output: convert bit image into monitor output using different algorithms.
+
+1. VSG will need to paint into a 640-wide buffer if it is to accommodate shr pixels.
+1. VSG target is a Bit map, not rgb.
+1. SHR does NOT generate a bitmap, we need to emit 24-bit RGB values. The place for that is likely inside Frame Render.
+
+What if we do something like this:
+
+(II) VideoScanner -> VideoScanGenerator -> Frame Render (NTSC, Mono, RGB) --> Composite the correct frame or mix of both frames.
+(SHR)                                  |-> Output Frame (directly). --------^
+
+VSG sees both II and SHR data. and based on video mode at that time it can emit to a different output buffer. Then a final stage composites either or both buffers.
+Initially we will just display one or the other based on video mode at top of frame. Then we can try to ID if there was a mode switch mid-screen, and shape accordingly. This will involve shaders to create and map the images the way we want, to simulate the pixel clock change.
+
+alright! I've got a shr image up in VideoScanner. Abeit with a fake gray palette. And a fake flags check.
+
+I have gotten around an issue where when we instantiated a scanner, we were calling the wrong init_addresses. Now we have to call ->initialize() whenever we instantiate a scanner. I'm not super-thrilled by that. Do more research.
+
+ok next step is to implement the flags that say "grab next palette bytes" and "grab mode byte". OK, have the cycles mapped out in the CycleTiming spreadsheet. 
+```
+46	6		Right Border		SCB	$9D00+vcount	1
+47	7	X	Front Porch		Palette	$9E00+(pnum*32)+0	4
+48	8	X	H. Sync		Palette	$9E00+(pnum*32)+4	4
+49	9	X	H. Sync		Palette	$9E00+(pnum*32)+8	4
+50	10	X	H. Sync		Palette	$9E00+(pnum*32)+12	4
+51	11	X	H. Sync		Palette	$9E00+(pnum*32)+16	4
+52	12	X	Backporch		Palette	$9E00+(pnum*32)+20	4
+53	13	X	Backporch		Palette	$9E00+(pnum*32)+24	4
+54	14	X	Backporch		Palette	$9E00+(pnum*32)+28	4
+```
+
+Display is out of sync in shr meaning I am generating the wrong number of Scan entries. Let's think this through..
+
+video_cycle: original was: "emit video data whenever we're not in blank". So it checks !SA_FLAG_BLANK.
+new is: emit data when: border, shr, scb, palette. Issue likely 192 vs 200 scanlines. So how do we know in VSG how many scanlines. Or do we care? Once vertical borders are in, we need to generate 244 (or whatever) period. But right, how do we know how many lines to process? This is where I think maybe we do need to put in the hsync/vsync entries. Then VSG just eats up to 262 markers. (it's always 65 horz). In one respect we've been thinking of this as "emit commands into the circular buffer". However another way to look at this is, the scanner LUT is also the instructions for VSG. There are instructions - i.e., is it border, is it 'active' area, is it 'get the scb'. Then there is the data - the video bytes PLUS video state so we know how to render the bytes. We don't need to replicate the instructions in the data stream? 
+Give this some thought. I think we still need circular buffer because we may go past 17030 cycles in any given cpu execution run. That hasn't changed. Maybe the difference here is really, always emit 17030 entries per frame, instead of trying to shortcut sometimes.
+
+Another approach: put in hsync and vsync markers. hsync means end of line; vsync means end of frame.
+
+for any given cycle, we may:
+emit pixel (if border or shr or old type non-blank)
+load control data (if scb or palette)
+
+for a scanline, there will either be 40 or 53 pixel elements, some other number of control elements.
+So I am counting the pixel elements; but, I am also counting control as pixel. So I need to increment lineidx only on pixel elements;
+
+ok so I am updating lineidx only as we consume video data bytes, and that is working!
+
+Things remaining: 
+[ ] text colors  
+[ ] top and bottom borders. Combined, these are 53 cycles wide and 40 (or 48) cycles tall. So need a Border texture here that is 53 x 240 tall.
+[x] we're cutting frames off a hair (maybe 2 1/2 scanlines?) early in legacy II modes, regardless of scanner.
+[x] Detect 192 vs 200 scanlines of active area.  
+
+Top of content area is always exactly the same. Bottom varies - i.e., we have 8 fewer scanlines of border when in 200 mode. So, draw border first assuming 192 scanlines. Then when we draw the shr content, it will overwrite the top 8 lines of bottom border.
+
+A thought occurred: have the Frame objects (optionally) tie to a texture. i.e. we can request local storage, or, texture storage and when we render we render into a locked texture area directly. Maybe the local storage could be done as a Surface, giving us the ability to perform higher level SDL operations against either?
+
+ok, have the 3 scanners updated to use the new ScanBuffer commands (vsync, hsync) and VSG now: reset scanline on hsync, and return on vsync.
+
+It's line 24; 4th scanline.  Well it's working inside GS2! I should have tested that before. maybe my texture in vpp isn't big enough and it's getting overwritten or something? or I'm not copying enough bytes?
+MOTHERFLICKER! That was it. In the memcpy I was not copying the right # of bytes (567 scanline instead of 580).
+
+So I should now have 200 scanlines worth of SHR data. Check my rectangles.. that's fine. I bet I am marking that as being in the blanking area... nope, but I had a < 192 that needed to be < 200 in VideoScannerIIgs. And now I have 200 scanlines.
+
+We don't 'detect' it. VSG just spits out however many scanlines are in the ScanBuffer, under the control of the Scanner.
+Whups. if I go into gr or hgr it hangs. set_color_mode line out of bounds: all the way up to 65535. But games were working fine.. weird.
+taxman still works.. maybe it's mixed mode? try gr2.. still crash. ok it IS mixed mode. c050 followed by c053 crashes. 
+ah well, fix it tomorrow.
+ok, hitting 'x' in vpp causes crash. Definitely a problem with mixed mode.
+even if I'm in text, if I hit the mixed mode switch, I crash. Check what set_video_mode does here..
+in vpp I was instantiating frame_byte with large buffer parameters - which are larger than the actual buffer? which was causing render to exceed line width.
+If instead you instantiate with 567 wide, that is the correct thing. The underlying buffer is still always 580, but 567 is the actual data width and controls what the renderers do. I should maybe reconsider that..
+ok split is still crashing. 
+```
+        lores_p1[idx].flags = fl;
+        lores_p2[idx].flags = fl;
+        hires_p1[idx].flags = fl;
+        hires_p2[idx].flags = fl;
+        mixed_p1[idx].flags = fl;
+        mixed_p2[idx].flags = fl;
+```
+
+So there are six lookup tables here. (This has been working, right?) lores_* is text and lores graphics, same memory locations. hires is hires of course. mixed must specifically be hires+text. I bet in calc_video_mode there are "invalid" entries being set with invalid vaddr. let's check for that.. not it.
+ok we're exceeding on scanline 160, the first text scanline in "mixed" mode. color_mode is color 0 and mixed=1. 
+ok, so we're generating a full text line, but then adding another character beyond that. hcount is 40. are we missing an hsync?
+ahhh, in mixed mode, VSG is overwriting the hsync/vsync markers. ooopsie! FIXED!
+
+ok, we are now checking for colorburst at the beginning of each frame only. That check should get moved to where exactly.. maybe should have a colorburst element?
+
+Crazy Cycles 2 has 1-2 pixels that seem incorrect on the left edge on first demo.. I wonder if this is related to starting on index 6. Also CC1 on certain screens. Almost like it's stuff leftover from the previous scanline? Something wrong about scanline lead-in.. fixed. "last_byte" needed to be reset to 0 each scanline for the hgr code. So it WAS relying on some data from the last scanline. I feel like there was something in Sather about this somewhere. Research it. Yeah, it's UTA2 page 8-21, 2nd column. It's not the bit from the previous scanline, it's bit 6 of the byte scanned during HBL just before video goes active. Looks like Mariani (i.e. applewin) doesn't handle this either. Eeenteresting.
+
+For vpp text background and text color, we need to include the color nibbles in the data byte. Stick them into two low bytes of the 32-bit data value.
+
+So text colors.. hmm.. first off, text mode renders in white, or green/amber, depending on the mode setting. AppleII text routines do not render the colors, they only generate bitmaps. In NTSC560:
+```
+if (color_mode.colorburst == 0) {
+  // do nothing
+  for (uint16_t x = 0; x < framewidth; x++) {
+      if (frame_byte->pull() != 0) {
+          frame_rgba->push(color);
+      } else {
+          frame_rgba->push(RGBA_t::make(0x00, 0x00, 0x00, 0xFF));
+      }
+  }
+```
+
+that's it right there. Should be similar code in RGB and Monochrome. GS can render grayscale. need to look into that some more. But for now, let's say it's just NTSC and GSRGB. GSRGB already has the color tables! tee hee. 
+```
+  for (uint16_t x = 0; x < framewidth; x++) {
+      bool bit = frame_byte->pull();
+      frame_rgba->push(bit ? gs_rgb_colors[15] : gs_rgb_colors[0]);
+  }
+```
+
+this is fine for AppleII. However, the cycle-accurate code needs to be able to change these colors every character. So we just have to have another byte of input data, that gives us the fg/bg colors for text at that moment. What if it's just the byte? 00 would still be a black pixel. Any other value would be byte FB, where F is foreground nibble and B is background nibble. To be applied only when "no colorburst". That might work. For II+/IIe we'd just always set the color values to F and 0. 00 would be black (two black values) as it is now. F0 white on black. NTSC and Mono can just interpret any non-zero as white/fg color at that moment.
+
+```
+        vvv read text colors here
+(II) VideoScanner -> VideoScanGenerator --> Frame Render (NTSC, Mono, RGB) --> Composite the correct frame or mix of both frames.
+                                AppleII -|
+                                       ^^^ inject text colors here.
+```
+
+So to be clear about this:
+1. vpp will read the text color values in VideoScanner; inject them as part of a Scan_t entry (the IIgs 32-bit); and VSG will inject those into frame_bit to feed into Frame Render.
+1. dpp will read the text color at start of 8-line group render; and inject those into frame_bit to feed into Frame Render.
+1. only GSRGB renderer will respect the text colors; the other two renderers will treat any non-zero as 'white' (or the mono color), and 0 as black.
+1. Render class will have methods to set text_fg and text_bg as RGBA_t values - to be used only for non-RGB-text rendering.
+1. AppleII and VideoScanner class will have methods to set text_fg and text_bg as nibble values.
+
+So could have a little fun by implementing individual text color selection mode. The straightforward approach would be, put these color nibbles into say page 2 at 800-BFF. So you have a byte for the character, and a byte for the color. 
+
+Another fun thing would be to allow software-definable text characters using 8x8 matrix (80 x 8 = 640, 25 x 8 = 200). So let's say it's still in the SHR buffer, but part of it is used for the character set. And ideally the text pages (allow 2?) are mapped linearly. 
+80 x 25 = 2000 * 2 = 4000 bytes.  so have at $2000, $3000. 
+And because we have color control, don't need to steal hi bit for flash/inverse; can have a full 256 colors. If we're doing this, use the PC character set or another one that has.
+Some peripherals need bytes in the otherwise unused text areas. So ignore those.
+Alternatively, implement it like the Videx, with the video memory mapped into CXXX?
+Additional features: have hardware scrolling where we can move the start of frame buffer?
+using mvn / mvp we can scroll in 28000 cycles; even at 1mhz, slightly more than one frame. At 2.8mhz, faster than a frame.
+ok ok that's for later.
+

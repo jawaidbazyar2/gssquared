@@ -5,6 +5,7 @@
 #include "frame/Frames.hpp"
 #include "VideoScannerII.hpp"
 #include "VideoScanGenerator.hpp"
+#include "generate/AppleIIgs.hpp"
 
 static const RGBA_t gs_text_palette[16] = {
     RGBA_t::make(0x00, 0x00, 0x00, 0xFF), // 0x0000 - Black        0b0000 - ok
@@ -49,23 +50,17 @@ void VideoScanGenerator::build_hires40Font(bool delayEnabled)
     }
 }
 
-void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte, FrameBorder *border)
+void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte, FrameBorder *border, Frame640 *frame_shr)
 {
     uint64_t fcnt = frame_scan->get_count();
     if (fcnt == 0) {
         printf("Warning: no data in ScanBuffer\n");
         return;
     }
+
     if (border != nullptr) {
         assert(1);
     }
-    /* if (fcnt < 192*40) { // if there is less than a full frame, don't generate anything, ignore, and print a warning
-        printf("Warning: less than a full frame in ScanBuffer: %lld\n", fcnt);
-        return;
-    } */
-    /* if (fcnt > 192*40+8) {
-        printf("Warning: more than a full frame in ScanBuffer\n");
-    } */
 
     flash_counter++;
     if (flash_counter > 14) {
@@ -73,240 +68,333 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
         flash_counter = 0;
     }
 
-    for (uint16_t vcount = 0; vcount < 192; vcount++)
-    {
-        //frame_scan->set_line(vcount);
-        frame_byte->set_line(vcount);
-        if (border != nullptr) {
-            border->set_line(vcount);
+    SHRMode mode = { .p = 0 };    // TODO: shrPage->modes[line]; (hard code 320 palette 0 for now, need to process Palette entries from ScanBuffer
+    Palette palette = { .colors = {0} };
+
+    //uint16_t lineidx = 0;
+    uint16_t vcount = 0;
+    frame_byte->set_line(vcount);
+    if (border != nullptr) {
+        border->set_line(vcount);
+    }
+    if (frame_shr != nullptr) {
+        frame_shr->set_line(vcount);
+    }
+
+    uint8_t lastByte = 0x00; // for hires
+    Scan_t peek_scan = frame_scan->peek();
+    color_mode_t color_mode;
+    color_mode.colorburst = (peek_scan.mode == VM_TEXT40 || peek_scan.mode == VM_TEXT80) ? 0 : 1;
+    color_mode.mixed_mode = peek_scan.flags & VS_FL_MIXED ? 1 : 0;
+    uint8_t color_delay_mask = 0xFF;
+    bool data_seen = false;
+    int hcount = 0;
+    //int linewidth = (border != nullptr) ? 53 : 40;
+    int palette_index = 0; // reset to 0 each scanline.
+
+    while (1) {
+        if (vcount >= 262) {
+            vcount=vcount;
         }
-        uint8_t lastByte = 0x00; // for hires
-        Scan_t peek_scan = frame_scan->peek();
-        color_mode_t color_mode;
-        color_mode.colorburst = (peek_scan.mode == VM_TEXT40 || peek_scan.mode == VM_TEXT80) ? 0 : 1;
-        color_mode.mixed_mode = peek_scan.flags & VS_FL_MIXED ? 1 : 0;
-        uint8_t color_delay_mask = 0xFF;
-        bool data_seen = false;
-        int hcount = 0;
-        int linewidth = (border != nullptr) ? 53 : 40;
+        if (hcount >= 40) {
+            hcount=hcount;
+        }
+        Scan_t scan = frame_scan->pull();
+        uint8_t eff_mode = scan.mode;
+        if ((eff_mode <= VM_DHIRES) && (scan.flags & VS_FL_MIXED) && (vcount >= 160)) {
+            eff_mode = (scan.flags & VS_FL_80COL) ? VM_TEXT80 : VM_TEXT40; // or TEXT80 depending on mode..
+        }
 
-        for (int lineidx = 0; lineidx < linewidth; lineidx++) { 
+        switch (eff_mode) {
+            case VM_VSYNC:  // end of frame
+                    return; 
 
-            Scan_t scan = frame_scan->pull();
-            uint8_t eff_mode = scan.mode;
-            if ((scan.flags & VS_FL_MIXED) && (vcount >= 160)) {
-                eff_mode = (scan.flags & VS_FL_80COL) ? VM_TEXT80 : VM_TEXT40; // or TEXT80 depending on mode..
-            }
-
-            switch (eff_mode) {
-                case VM_BORDER_COLOR: {
-                        if (border != nullptr) {
-                            border->push(gs_text_palette[scan.mainbyte & 0x0F]);
-                        }
+            case VM_HSYNC: {
+                    //lineidx = 0;
+                    lastByte = 0x00; // for hires
+                    hcount = 0;
+                    data_seen = false;
+                    vcount++;
+                    if (vcount >= 200) {
+                        assert(1);
                     }
-                    break; // we don't increment hcount here.
-                case VM_TEXT40: {
-                        if (!data_seen) {
-                            data_seen = true;
-                            for (int i = 0; i < 7; i++) {
-                                frame_byte->push(0);
-                            }
-                            frame_byte->set_color_mode(vcount, color_mode);
-                        }
-                        bool invert;
-                        char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
-
-                        uint8_t tchar = scan.mainbyte;
-        
-                        if (char_rom->is_flash(tchar)) {
-                            invert = flash_state;
-                        } else {
-                            invert = false;
-                        }
-        
-                        uint8_t cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
-        
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); 
-                        frame_byte->push((cdata & 1) ^ invert);     
+                    frame_byte->set_line(vcount);
+                    if (border != nullptr) {
+                        border->set_line(vcount);
                     }
-                    hcount++;
-                    break;
-                case VM_TEXT80: {
-                        if (!data_seen) {
-                            data_seen = true;
-                            //frame_byte->set_color_mode(vcount, COLORBURST_OFF);
-                            frame_byte->set_color_mode(vcount, color_mode);
-                        }
-                        bool invert;
-
-                        uint8_t tchar = scan.auxbyte;
-                        char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
-                        uint8_t cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
-        
-                        if (char_rom->is_flash(tchar)) {
-                            invert = flash_state;
-                        } else {
-                            invert = false;
-                        }
-        
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-        
-                        tchar = scan.mainbyte;
-                        cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
-                        if (char_rom->is_flash(tchar)) {
-                            invert = flash_state;
-                        } else {
-                            invert = false;
-                        }
-        
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                        frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-            
-                        if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
-                            for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
-                        }
+                    if (frame_shr != nullptr) {
+                        frame_shr->set_line(vcount);
                     }
-                    hcount++;
-                    break;
-                case VM_LORES: {
-                        if (!data_seen) {
-                            data_seen = true;
-                            for (int i = 0; i < 7; i++) {
-                                frame_byte->push(0);
-                            }
-                            frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
-                        }
-                        uint8_t tchar = scan.mainbyte;
-                        
-                        if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
-                            tchar = tchar >> 4;
-                        }
-                        uint16_t pixeloff = (hcount * 14) % 4;
-        
-                        for (int bits = 0; bits < CELL_WIDTH; bits++) {
-                            uint8_t bit = ((tchar >> pixeloff) & 0x01);
-                            frame_byte->push(bit);
-                            pixeloff = (pixeloff + 1) % 4;
-                        }
+                }
+                break;
+            case VM_BORDER_COLOR: {
+                    if (border != nullptr) {
+                        border->push(gs_text_palette[scan.mainbyte & 0x0F]);
                     }
-                    hcount++;
-                    break;
-                case VM_DLORES: {
-                        if (!data_seen) {
-                            data_seen = true;
-                            frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
-                        }
+                }
+                //lineidx++;
+                break; // we don't increment hcount here.
+            case VM_SHR: {
                     
-                        uint8_t tchar = scan.auxbyte;
+                    uint8_t p_num = mode.p;
+                    uint32_t shr_bytes = scan.shr_bytes; // 4 video bytes in 32 bits.
+                    for (int x = 0; x < 4; x++) {
+                        uint8_t pval = shr_bytes & 0xFF;
+                        shr_bytes >>= 8;
 
-                        if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
-                            tchar = tchar >> 4;
-                        }
-                        uint16_t pixeloff = (hcount * 14) % 4;
-        
-                        for (uint16_t bits = 0; bits < 7; bits++) {
-                            uint8_t bit = ((tchar >> pixeloff) & 0x01);
-                            frame_byte->push(bit);
-                            pixeloff = (pixeloff + 1) % 4;
-                        }
-
-                        tchar = scan.mainbyte;
-                        
-                        if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
-                            tchar = tchar >> 4;
-                        }
-                        // this is correct.
-                        pixeloff = (hcount * 14) % 4;
-        
-                        for (uint16_t bits = 0; bits < 7; bits++) {
-                            uint8_t bit = ((tchar >> pixeloff) & 0x01);
-                            frame_byte->push(bit);
-                            pixeloff = (pixeloff + 1) % 4;
-                        }        
-                        
-                        if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
-                            for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
-                        }
-                    }
-                    hcount++;
-                    break;
-                case VM_HIRES_NOSHIFT: // TODO: this needs to set a flag to disable color delay. But this should make it display something now.
-                    color_delay_mask = 0x7F;
-
-                case VM_HIRES: {
-                        if (!data_seen) {
-                            data_seen = true;
-                            for (int i = 0; i < 7; i++) {
-                                frame_byte->push(0);
-                            }
-                            frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
-                        }
-                        uint8_t byte = scan.mainbyte & color_delay_mask;
-                        size_t fontIndex = (byte | ((lastByte & 0x40) << 2)) * CHAR_WIDTH; // bit 6 from last byte selects 2nd half of font
+                        if (mode.mode640) { // each byte is 4 pixels
                 
-                        for (int i = 0; i < 14; i++) {
-                            frame_byte->push(hires40Font[fontIndex + i]);
+                            SHRColor pind = palette.colors[pixel640<3>(pval) + 0x8];
+                            frame_shr->push(convert12bitTo24bit(pind));
+                            
+                            pind = palette.colors[pixel640<2>(pval) + 0x0C];
+                            frame_shr->push(convert12bitTo24bit(pind));
+            
+                            pind = palette.colors[pixel640<1>(pval) + 0x00];
+                            frame_shr->push(convert12bitTo24bit(pind));
+            
+                            pind = palette.colors[pixel640<0>(pval) + 0x04];
+                            frame_shr->push(convert12bitTo24bit(pind));
+                        } else {
+                
+                            SHRColor pind = palette.colors[pixel320<1>(pval)];
+                            RGBA_t xx = convert12bitTo24bit(pind);
+                            frame_shr->push(xx);
+                            frame_shr->push(xx);
+            
+                            pind = palette.colors[pixel320<0>(pval)];
+                            xx = convert12bitTo24bit(pind);
+                            frame_shr->push(xx);
+                            frame_shr->push(xx);
                         }
-                        lastByte = byte;
                     }
-                    break;
-                case VM_DHIRES: {
-                        if (!data_seen) {
-                            data_seen = true;
-                            // dhgr starts at horz offset 0
-                            frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
+                }
+                //lineidx++;                    
+                break;
+            case VM_SHR_MODE: {
+                    mode.v = scan.mainbyte;
+                }
+                break;
+            case VM_SHR_PALETTE: { // load the palette values into palette based on index.
+                    palette.colors[palette_index].v = scan.shr_bytes & 0xFFFF;
+                    palette.colors[palette_index+1].v = (scan.shr_bytes >> 16) & 0xFFFF;
+                    palette_index = (palette_index + 2) % 16;
+                }
+                break;
+            case VM_TEXT40: {
+                    if (!data_seen) {
+                        data_seen = true;
+                        for (int i = 0; i < 7; i++) {
+                            frame_byte->push(0);
                         }
-                         
-                        uint8_t byteM = scan.mainbyte;
-                        uint8_t byteA = scan.auxbyte;
-                        for (int i = 0; i < 7; i++ ) {
-                            frame_byte->push((byteA & 0x01) ? 1 : 0);
-                            byteA >>= 1;
+                        frame_byte->set_color_mode(vcount, color_mode);
+                    }
+                    bool invert;
+                    char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
+
+                    uint8_t tchar = scan.mainbyte;
+    
+                    if (char_rom->is_flash(tchar)) {
+                        invert = flash_state;
+                    } else {
+                        invert = false;
+                    }
+    
+                    uint8_t cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
+    
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); 
+                    frame_byte->push((cdata & 1) ^ invert);     
+                }
+                hcount++;
+                //lineidx++;
+                break;
+            case VM_TEXT80: {
+                    if (!data_seen) {
+                        data_seen = true;
+                        //frame_byte->set_color_mode(vcount, COLORBURST_OFF);
+                        frame_byte->set_color_mode(vcount, color_mode);
+                    }
+                    bool invert;
+
+                    uint8_t tchar = scan.auxbyte;
+                    char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
+                    uint8_t cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
+    
+                    if (char_rom->is_flash(tchar)) {
+                        invert = flash_state;
+                    } else {
+                        invert = false;
+                    }
+    
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+    
+                    tchar = scan.mainbyte;
+                    cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
+                    if (char_rom->is_flash(tchar)) {
+                        invert = flash_state;
+                    } else {
+                        invert = false;
+                    }
+    
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
+        
+                    if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
+                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
+                    }
+                }
+                hcount++;
+                //lineidx++;
+                break;
+            case VM_LORES: {
+                    if (!data_seen) {
+                        data_seen = true;
+                        for (int i = 0; i < 7; i++) {
+                            frame_byte->push(0);
                         }
-                        for (int i = 0; i < 7; i++ ) {
-                            frame_byte->push((byteM & 0x01) ? 1 : 0);
-                            byteM >>= 1;
+                        frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
+                    }
+                    uint8_t tchar = scan.mainbyte;
+                    
+                    if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
+                        tchar = tchar >> 4;
+                    }
+                    uint16_t pixeloff = (hcount * 14) % 4;
+    
+                    for (int bits = 0; bits < CELL_WIDTH; bits++) {
+                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
+                        frame_byte->push(bit);
+                        pixeloff = (pixeloff + 1) % 4;
+                    }
+                }
+                hcount++;
+                //lineidx++;
+                break;
+            case VM_DLORES: {
+                    if (!data_seen) {
+                        data_seen = true;
+                        frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
+                    }
+                
+                    uint8_t tchar = scan.auxbyte;
+
+                    if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
+                        tchar = tchar >> 4;
+                    }
+                    uint16_t pixeloff = (hcount * 14) % 4;
+    
+                    for (uint16_t bits = 0; bits < 7; bits++) {
+                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
+                        frame_byte->push(bit);
+                        pixeloff = (pixeloff + 1) % 4;
+                    }
+
+                    tchar = scan.mainbyte;
+                    
+                    if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
+                        tchar = tchar >> 4;
+                    }
+                    // this is correct.
+                    pixeloff = (hcount * 14) % 4;
+    
+                    for (uint16_t bits = 0; bits < 7; bits++) {
+                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
+                        frame_byte->push(bit);
+                        pixeloff = (pixeloff + 1) % 4;
+                    }        
+                    
+                    if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
+                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
+                    }
+                }
+                hcount++;
+                //lineidx++;
+                break;
+            
+            case VM_HIRES_NOSHIFT: // TODO: this needs to set a flag to disable color delay. But this should make it display something now.
+                color_delay_mask = 0x7F;
+
+            case VM_HIRES: {
+                    if (!data_seen) {
+                        data_seen = true;
+                        for (int i = 0; i < 7; i++) {
+                            frame_byte->push(0);
                         }
+                        frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
+                    }
+                    uint8_t byte = scan.mainbyte & color_delay_mask;
+                    size_t fontIndex = (byte | ((lastByte & 0x40) << 2)) * CHAR_WIDTH; // bit 6 from last byte selects 2nd half of font
+            
+                    for (int i = 0; i < 14; i++) {
+                        frame_byte->push(hires40Font[fontIndex + i]);
+                    }
+                    lastByte = byte;
+                }
+                hcount++;
+                //lineidx++;
+                break;
+            case VM_DHIRES: {
+                    if (!data_seen) {
+                        data_seen = true;
+                        // dhgr starts at horz offset 0
+                        frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
+                    }
                         
-                        if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
-                            for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
-                        }
+                    uint8_t byteM = scan.mainbyte;
+                    uint8_t byteA = scan.auxbyte;
+                    for (int i = 0; i < 7; i++ ) {
+                        frame_byte->push((byteA & 0x01) ? 1 : 0);
+                        byteA >>= 1;
                     }
-                    hcount++;
-                    break;
-                default:
-                    break;
-            }
+                    for (int i = 0; i < 7; i++ ) {
+                        frame_byte->push((byteM & 0x01) ? 1 : 0);
+                        byteM >>= 1;
+                    }
+                    
+                    if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
+                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
+                    }
+                }
+                hcount++;
+                //lineidx++;
+                break;
+            default:
+                break;
         }
+    }
+
+    fcnt = frame_scan->get_count();
+    if (fcnt > 100) {
+        printf("Warning: %lld elements left in ScanBuffer at end of generate_frame\n", fcnt);
     }
 }
 

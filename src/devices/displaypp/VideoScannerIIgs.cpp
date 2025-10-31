@@ -6,7 +6,7 @@
 
 void VideoScannerIIgs::init_video_addresses()
 {
-    printf("IIe init_video_addresses()\n"); fflush(stdout);
+    printf("IIgs init_video_addresses()\n"); fflush(stdout);
 
     uint32_t hcount = 0;     // beginning of right border
     uint32_t vcount = 0x100; // first scanline at top of screen
@@ -69,8 +69,28 @@ void VideoScannerIIgs::init_video_addresses()
         uint16_t vc = idx / 65;
         if (hc < 25) fl |= SA_FLAG_HBL;
         if (vc >= 192) fl |= SA_FLAG_VBL;
-        if ( (vc >= 0 and vc <= 191) &&  
-            (((hc >= 40) && (hc <= 46)) || ((hc >= 59) && (hc <= 64)) )) fl |= SA_FLAG_BORDER;
+        if ((hc == 64) && (vc < 261)) fl |= SA_FLAG_HSYNC;
+        if ((hc == 64) && (vc == 261)) fl |= SA_FLAG_VSYNC;
+
+        if ( (vc >= 0 and vc < 192) &&  
+            (((hc >= 0) && (hc <= 6)) || ((hc >= 19) && (hc <= 24)) )) fl |= SA_FLAG_BORDER;
+        if (
+            ((vc >= 243 && vc <= 261) || (vc >= 192 && vc <= 220)) && 
+            (((hc <= 6) || (hc>= 19)))
+        ) fl |= SA_FLAG_BORDER;
+
+        // SHR Mode
+        // shr buffer is linear. But there are also some cycles where we need to read the palette data from RAM.
+        // each cycle in SHR mode grabs 4 bytes from RAM.
+        uint16_t shr_addr = 0x2000; // dummy default
+        uint8_t shr_fl = fl;
+        if (vc < 200) { // shr is 200 scanlines..
+            if (hc>=25) { shr_addr = 0x2000 + ((hc-25)*4) + (vc * 160); shr_fl |= SA_FLAG_SHR; } // shr data
+            else if (hc == 6) { shr_addr = 0x9D00 + vc; shr_fl |= SA_FLAG_SCB; } // SCB
+            else if (hc >= 7 && hc <= 14) { shr_addr = 0x9E00 + ((hc - 7) * 4); shr_fl |= SA_FLAG_PALETTE; } // Palette
+        }
+        shr_p1[idx].addr = shr_addr;
+        shr_p1[idx].flags = shr_fl;
 
         lores_p1[idx].flags = fl;
         lores_p2[idx].flags = fl;
@@ -101,10 +121,40 @@ void VideoScannerIIgs::video_cycle()
         scan.mainbyte = border_color;
         scan.flags = mode_flags;
         frame_scan->push(scan);
+    }
+    if (sa.flags & SA_FLAG_SHR) {
+        scan.mode = (uint8_t)video_mode; // SHR_PIXEL, SHR_PALETTE, SHR_MODE
+        scan.shr_bytes = *((uint32_t *)(ram + 0x1'0000 + address));
+        frame_scan->push(scan);
+    } else if (sa.flags & SA_FLAG_SCB) {
+        scan.mode = (uint8_t)VM_SHR_MODE;
+        scan.mainbyte = ram[address + 0x10000];
+        scan.flags = mode_flags;
+        frame_scan->push(scan);
+        palette_index = (scan.mainbyte & 0x0F); // store palette index to control next palette read
+    } else if (sa.flags & SA_FLAG_PALETTE) {
+        scan.mode = (uint8_t)VM_SHR_PALETTE;
+        uint32_t eaddr = address + (palette_index * 32) + 0x1'0000;
+        scan.shr_bytes = *((uint32_t *)(ram + eaddr));
+        scan.flags = mode_flags;
+        frame_scan->push(scan);
     } else if (!(sa.flags & SA_FLAG_BLANK)) {
-        scan.mode = (uint8_t)video_mode;
+        scan.mode = (uint8_t)video_mode; 
         scan.auxbyte = ram[address + 0x10000];
         scan.mainbyte = video_byte;
+        scan.flags = mode_flags;
+        frame_scan->push(scan);
+    }
+
+    if (sa.flags & SA_FLAG_VSYNC) {
+        scan.mode = (uint8_t)VM_VSYNC;
+        scan.mainbyte = 0;
+        scan.flags = mode_flags;
+        frame_scan->push(scan);
+    }
+    if (sa.flags & SA_FLAG_HSYNC) {
+        scan.mode = (uint8_t)VM_HSYNC;
+        scan.mainbyte = 0;
         scan.flags = mode_flags;
         frame_scan->push(scan);
     }
@@ -117,6 +167,4 @@ void VideoScannerIIgs::video_cycle()
 
 VideoScannerIIgs::VideoScannerIIgs(MMU_II *mmu) : VideoScannerII(mmu)
 {
-    //init_video_addresses();
-
 }

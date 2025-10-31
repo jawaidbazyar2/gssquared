@@ -22,6 +22,17 @@
 
 #include "mmus/mmu_iie.hpp"
 
+
+#define ASPECT_RATIO (1.28f)
+#define SCALE_X 2
+#define SCALE_Y (4*ASPECT_RATIO)
+#define XY_RATIO (SCALE_Y / SCALE_X)
+
+struct canvas_t {
+    float w;
+    float h;
+};
+
 int text_addrs[24] =
   {   // text page 1 line addresses
             0x0000,
@@ -84,9 +95,10 @@ void generate_dlgr_test_pattern(uint8_t *textpage, uint8_t *altpage) {
     }
 }
 
-//#define SCREEN_TEXTURE_WIDTH (560+20)
+#define II_SCREEN_TEXTURE_WIDTH (580)
+#define II_SCREEN_TEXTURE_HEIGHT (192)
+
 #define SCREEN_TEXTURE_WIDTH (567)
-//#define SCREEN_TEXTURE_HEIGHT (192)
 #define SCREEN_TEXTURE_HEIGHT (192)
 
 #define SCANNER_II 1
@@ -98,7 +110,8 @@ struct border_rect_t {
     SDL_FRect dst;
 };
 
-border_rect_t borders[3][3]; // [y][x]
+border_rect_t ii_borders[3][3]; // [y][x]
+border_rect_t shr_borders[3][3]; // [y][x]
 
 #define B_TOP 0
 #define B_CEN 1
@@ -107,20 +120,108 @@ border_rect_t borders[3][3]; // [y][x]
 #define B_RT 2
 
 void init_border_rects() {
-    borders[B_CEN][B_LT].src = {0.0, 0.0, 6.0, SCREEN_TEXTURE_HEIGHT};
-    borders[B_CEN][B_LT].dst = {0.0, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+    ii_borders[B_CEN][B_LT].src = {0.0, 0.0, 6.0, SCREEN_TEXTURE_HEIGHT};
+    ii_borders[B_CEN][B_LT].dst = {0.0, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
 
-    borders[B_CEN][B_CEN].src = {0.0, 0.0, SCREEN_TEXTURE_WIDTH, (float)SCREEN_TEXTURE_HEIGHT};
-    borders[B_CEN][B_CEN].dst = {42.0-7.0, 19.0, SCREEN_TEXTURE_WIDTH, SCREEN_TEXTURE_HEIGHT};
+    ii_borders[B_CEN][B_CEN].src = {0.0, 0.0, SCREEN_TEXTURE_WIDTH, (float)SCREEN_TEXTURE_HEIGHT};
+    ii_borders[B_CEN][B_CEN].dst = {42.0-7.0, 19.0, SCREEN_TEXTURE_WIDTH, SCREEN_TEXTURE_HEIGHT};
 
-    borders[B_CEN][B_RT].src = {6.0, 0.0, 6.0, SCREEN_TEXTURE_HEIGHT};
-    borders[B_CEN][B_RT].dst = {42+560, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+    ii_borders[B_CEN][B_RT].src = {6.0, 0.0, 6.0, SCREEN_TEXTURE_HEIGHT};
+    ii_borders[B_CEN][B_RT].dst = {42+560, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+
+    shr_borders[B_CEN][B_LT].src = {0.0, 0.0, 6.0, SCREEN_TEXTURE_HEIGHT};
+    shr_borders[B_CEN][B_LT].dst = {0.0, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+
+    shr_borders[B_CEN][B_CEN].src = {0.0, 0.0, 640, 200};
+    shr_borders[B_CEN][B_CEN].dst = {42.0, 19.0, SCREEN_TEXTURE_WIDTH, SCREEN_TEXTURE_HEIGHT};
+
+    shr_borders[B_CEN][B_RT].src = {6.0, 0.0, 6.0, SCREEN_TEXTURE_HEIGHT};
+    shr_borders[B_CEN][B_RT].dst = {42+560, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+}
+
+bool readFile(const char *path, uint8_t *data, size_t size) {
+    FILE *f3 = fopen(path, "rb");
+    if (!f3) {
+        printf("Failed to load file: %s\n", path);
+        return false;
+    }
+    fread(data, 1, size, f3);
+    fclose(f3);
+    return true;
+}
+
+void print_canvas(const char *name, canvas_t *c) {
+    printf("%s: (%f, %f)\n", name, c->w, c->h);
+}
+
+bool calculateScale(SDL_Renderer *renderer, canvas_t &c, canvas_t &s) {
+    
+    /* C_ASPECT = 1.28
+    xscale = canvas.w / source.w
+    yheight = canvas.w / canvas.aspect
+    yscale = yheight / source.h */
+
+    float new_scale_x = c.w / s.w;
+    float new_y_height = c.w / ASPECT_RATIO;
+    float new_scale_y = new_y_height / 200 /* s.h */;
+
+    // now we want to constrain the Y scale to the aspect ratio target.
+
+    float scale_ratio = new_scale_y / new_scale_x;
+    print_canvas("c", &c);
+    print_canvas("s", &s);
+    printf("window_resize: new w/h (%f, %f) -> (%f, %f) scale ratio: %f\n", c.w, c.h, new_scale_x, new_scale_y, scale_ratio);
+    return SDL_SetRenderScale(renderer, new_scale_x, new_scale_y);
+}
+
+// manually set window size
+bool setWindowSize(SDL_Window *window, SDL_Renderer *renderer, canvas_t &c, canvas_t &s) {
+
+    float new_aspect = (float)c.w / c.h;
+    printf("setWindowSize: (%f, %f) @ %f\n", c.w, c.h, new_aspect);
+    
+    bool res = SDL_SetWindowSize(window, c.w, c.h);
+    if (!res) {
+        return false;
+    }
+    return calculateScale(renderer, c, s);
+}
+
+// handle window resize - user resized.
+bool window_resize(const SDL_Event &event, canvas_t &s, SDL_Window *window, SDL_Renderer *renderer) {
+
+    canvas_t c = { (float)event.window.data1, (float)event.window.data2 };
+
+    return calculateScale(renderer, c, s);
+}
+
+void copyToMMU(MMU_IIe *mmu, uint8_t *data, uint32_t addr, uint32_t size) {
+    memcpy(mmu->get_memory_base() + addr, data, size);
 }
 
 int main(int argc, char **argv) {
-    init_border_rects();
+    SDL_ScaleMode scales[3] = { SDL_SCALEMODE_PIXELART, SDL_SCALEMODE_LINEAR, SDL_SCALEMODE_NEAREST };
 
     uint64_t start = 0, end = 0;
+
+    canvas_t canvasses[2] = {
+        { (float)1160, (float)906 },
+        {  (float)1280, (float)1000 }
+    };
+    canvas_t sources[9] = {
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // UNUSED
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 40 text
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 80 text
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 40 lores
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 80 lores
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 40 hires
+        { (float)II_SCREEN_TEXTURE_WIDTH, (float)192 }, // 80 hires
+        { (float)640, (float)200 }, // shr
+        { (float)640, (float)200 } // shr
+    };
+
+    init_border_rects();
+
     uint8_t *rom = new uint8_t[12*1024];
 
     MMU_IIe *mmu = new MMU_IIe(128, 128*1024, rom);
@@ -145,15 +246,21 @@ int main(int argc, char **argv) {
         printf("Failed to create renderer\n");
         return 1;
     }
-    SDL_Texture *texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, SCREEN_TEXTURE_WIDTH, SCREEN_TEXTURE_HEIGHT);
+    SDL_Texture *texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, II_SCREEN_TEXTURE_WIDTH, II_SCREEN_TEXTURE_HEIGHT);
     if (!texture) {
         printf("Failed to create texture\n");
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
     }
-    SDL_Texture *border_texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 13, SCREEN_TEXTURE_HEIGHT);
+    SDL_Texture *border_texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 53, II_SCREEN_TEXTURE_HEIGHT);
     if (!border_texture) {
         printf("Failed to create texture\n");
+        printf("SDL Error: %s\n", SDL_GetError());
+        return 1;
+    }
+    SDL_Texture *shrtexture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 640, 200);
+    if (!texture) {
+        printf("Failed to create shrtexture\n");
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
     }
@@ -173,37 +280,7 @@ int main(int argc, char **argv) {
 
     int testiterations = 10000;
 
-    Frame560 *frame_byte = new(std::align_val_t(64)) Frame560(f_w, f_h);
-
-    start = SDL_GetTicksNS();
-    for (int numframes = 0; numframes < testiterations; numframes++) {
-        for (int i = 0; i < 192; i++) {
-            frame_byte->set_line(i);
-            for (int j = 0; j < 560/2; j++) {
-                frame_byte->push(1);
-                frame_byte->push(0);
-            }
-        }
-    }
-    end = SDL_GetTicksNS();
-    printf("Write Time taken: %llu ns per frame\n", (end - start) / testiterations);
-
-    start = SDL_GetTicksNS();
-    int c = 0;
-    for (int numframes = 0; numframes < testiterations; numframes++) {
-        for (int i = 0; i < f_h; i++) {
-            frame_byte->set_line(i);
-            for (int j = 0; j < f_w/2; j++) {
-                c += frame_byte->pull();
-                c += frame_byte->pull();
-            }
-        }
-    }
-    end = SDL_GetTicksNS();
-    printf("read Time taken: %llu ns per frame\n", (end - start) / testiterations);
-    //printf("Size of bytestream entries: %zu bytes\n", sizeof(bs_t));
-    printf("c: %d\n", c);
-    //frame_byte->print();
+    Frame560 *frame_byte = new(std::align_val_t(64)) Frame560(567, II_SCREEN_TEXTURE_HEIGHT);
 
     uint8_t *ram = mmu->get_memory_base(); //new uint8_t[0x20000]; // 128k!
 
@@ -218,30 +295,36 @@ int main(int argc, char **argv) {
     uint8_t *alt_lores_page = ram + 0x10800;
     generate_dlgr_test_pattern(lores_page, alt_lores_page);
 
-    const char *testhgrpic_path = "/Users/bazyar/src/hgrdecode/HIRES/APPLE";
-    //const char *testhgrpic_path = "/Users/bazyar/src/gssquared/dump.hgr";
-//    uint8_t *testhgrpic = new(std::align_val_t(64)) uint8_t[8192];
-    uint8_t *testhgrpic = ram + 0x04000;
-    FILE *f = fopen(testhgrpic_path, "rb");
-    if (!f) {
-        printf("Failed to load testhgrpic: %s\n", testhgrpic_path);
+    /* -- */
+    uint8_t *testhgrpic = new(std::align_val_t(64)) uint8_t[8192];
+    //uint8_t *testhgrpic = ram + 0x04000;
+    bool res = readFile("/Users/bazyar/src/hgrdecode/HIRES/APPLE", testhgrpic, 8192);
+    if (!res) {
+        printf("Failed to load testhgrpic\n");
         return 1;
     }
-    fread(testhgrpic, 1, 8192, f);
-    fclose(f);
+    copyToMMU(mmu, testhgrpic, 0x04000, 8192);
 
-    const char *testdhgrpic_path = "/Users/bazyar/src/hgrdecode/DHIRES/LOGO.DHGR";
-    uint8_t *testdhgrpic_alt = ram + 0x12000;
-    uint8_t *testdhgrpic = ram + 0x02000;
-//    uint8_t *testdhgrpic = new(std::align_val_t(64)) uint8_t[16386];
-    FILE *f2 = fopen(testdhgrpic_path, "rb");
-    if (!f2) {
-        printf("Failed to load testdhgrpic: %s\n", testdhgrpic_path);
+    uint8_t *testdhgrpic = new(std::align_val_t(64)) uint8_t[16386];
+    res = readFile("/Users/bazyar/src/hgrdecode/DHIRES/LOGO.DHGR", testdhgrpic, 16384);
+    if (!res) {
+        printf("Failed to load testdhgrpic\n");
         return 1;
     }
-    fread(testdhgrpic_alt, 1, 8192, f2);
-    fread(testdhgrpic, 1, 8192, f2);
-    fclose(f2);
+
+    uint8_t *testshrpic = new(std::align_val_t(64)) uint8_t[32768];
+    res = readFile("/Users/bazyar/src/hgrdecode/SHR/AIRBALL", testshrpic, 32768);
+    if (!res) {
+        printf("Failed to load testshrpic\n");
+        return 1;
+    }
+
+    uint8_t *testshrpic2 = new(std::align_val_t(64)) uint8_t[32768];
+    res = readFile("/Users/bazyar/src/hgrdecode/SHR/desktop", testshrpic2, 32768);
+    if (!res) {
+        printf("Failed to load testshrpic\n");
+        return 1;
+    }
 
     CharRom iiplus_rom("resources/roms/apple2_plus/char.rom");
     CharRom iie_rom("resources/roms/apple2e_enh/char.rom");
@@ -251,8 +334,9 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    Frame560RGBA *frame_rgba = new(std::align_val_t(64)) Frame560RGBA(f_w, f_h);
+    Frame560RGBA *frame_rgba = new(std::align_val_t(64)) Frame560RGBA(567, II_SCREEN_TEXTURE_HEIGHT);
     FrameBorder *fr_border = new(std::align_val_t(64)) FrameBorder(13, 262);
+    Frame640 *frame_shr = new(std::align_val_t(64)) Frame640(640, 200);
 
     Monochrome560 monochrome;
     NTSC560 ntsc_render;
@@ -261,56 +345,64 @@ int main(int argc, char **argv) {
     uint16_t border_color = 0x0F;
 
     VideoScannerII *video_scanner_ii = new VideoScannerII(mmu);
+    video_scanner_ii->initialize();
     VideoScannerIIe *video_scanner_iie = new VideoScannerIIe(mmu);
+    video_scanner_iie->initialize();
     VideoScannerIIgs *video_scanner_iigs = new VideoScannerIIgs(mmu);
+    video_scanner_iigs->initialize();
     video_scanner_iigs->set_border_color(0x0F);
     VideoScanGenerator *vsg = new VideoScanGenerator(&iie_rom);
 
-/*     AppleII_Display display_iie(iie_rom);
-    iie_rom.print_matrix(0x40);
-    AppleII_Display display_iiplus(iiplus_rom);
-    iiplus_rom.print_matrix(0x40); */
-
-    start = SDL_GetTicksNS();
-/*     for (int numframes = 0; numframes < testiterations; numframes++) {
-        for (int l = 0; l < 24; l++) {
-            display_iiplus.generate_text40(text_page, frame_byte, l);
-        }
-        monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
-    }
- */
-    end = SDL_GetTicksNS();
-    printf("text Time taken: %llu ns per frame\n", (end - start) / testiterations);
-
     int pitch;
     void *pixels;
-
-    SDL_LockTexture(texture, NULL, &pixels, &pitch);
-    memcpy(pixels, frame_rgba->data(), SCREEN_TEXTURE_WIDTH * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
-    SDL_UnlockTexture(texture);
 
     uint64_t cumulative = 0;
     uint64_t times[900];
     uint64_t framecnt = 0;
 
-    int generate_mode = 1;
     int render_mode = 1;
     int sharpness = 0;
     bool exiting = false;
     bool flash_state = false;
     int flash_count = 0;
-    int scanner_choice = SCANNER_IIE;
+    int scanner_choice = SCANNER_II;
     int old_scanner_choice = -1;
     bool rolling_border = false;
 
+    int generate_mode = 1;
+    int last_generate_mode = -1;
+    
+    int last_canvas_mode = -1;
+    int canvas_mode = 0;
+    
     while (++framecnt && !exiting)  {
         VideoScannerII *scanner;
         
+        uint64_t frame_start = SDL_GetTicksNS();
+
         if (old_scanner_choice != scanner_choice) {
             if (scanner_choice == SCANNER_II) scanner = video_scanner_ii;
             else if (scanner_choice == SCANNER_IIE) scanner = video_scanner_iie;
             else if (scanner_choice == SCANNER_IIGS) scanner = video_scanner_iigs;
             old_scanner_choice = scanner_choice;
+        }
+
+        if ((last_canvas_mode != canvas_mode) || (last_generate_mode != generate_mode)) {
+            last_canvas_mode = canvas_mode;
+            last_generate_mode = generate_mode;
+
+            switch (generate_mode) {
+                case 6: 
+                    copyToMMU(mmu, testdhgrpic, 0x12000, 8192); // aux is first
+                    copyToMMU(mmu, testdhgrpic+0x2000, 0x02000, 8192);
+                    break;
+                case 7:
+                    copyToMMU(mmu, testshrpic, 0x12000, 32768);
+                    break;
+                case 8:
+                    copyToMMU(mmu, testshrpic2, 0x12000, 32768);
+                    break;
+            }           
         }
 
         SDL_Event event;
@@ -324,12 +416,14 @@ int main(int argc, char **argv) {
                     scanner->set_page_1();
                     scanner->reset_80col();
                     scanner->set_text();
+                    scanner->reset_shr();
                 }
                 if (event.key.key == SDLK_2) {
                     generate_mode = 2;
                     scanner->set_page_1();
                     scanner->set_80col();
                     scanner->set_text();
+                    scanner->reset_shr();
                 }
                 if (event.key.key == SDLK_3) {
                     generate_mode = 3;
@@ -337,6 +431,7 @@ int main(int argc, char **argv) {
                     scanner->set_graf();
                     scanner->reset_80col();
                     scanner->set_lores();
+                    scanner->reset_shr();
                 }
                 if (event.key.key == SDLK_4) {
                     generate_mode = 4;
@@ -345,6 +440,7 @@ int main(int argc, char **argv) {
                     scanner->set_80col();
                     scanner->set_lores();
                     scanner->set_dblres();
+                    scanner->reset_shr();
                 }
                 if (event.key.key == SDLK_5) {
                     generate_mode = 5;
@@ -353,6 +449,7 @@ int main(int argc, char **argv) {
                     scanner->set_graf();
                     scanner->set_hires();
                     scanner->reset_dblres();
+                    scanner->reset_shr();
                 }
                 if (event.key.key == SDLK_6) {
                     generate_mode = 6;
@@ -361,7 +458,15 @@ int main(int argc, char **argv) {
                     scanner->set_graf();
                     scanner->set_page_1();
                     scanner->set_80col();
-                    //video_scanner_iie->set_hires();
+                    scanner->reset_shr();
+                }
+                if (event.key.key == SDLK_7) {
+                    generate_mode = 7;
+                    scanner->set_shr();
+                }
+                if (event.key.key == SDLK_8) {
+                    generate_mode = 8;
+                    scanner->set_shr();
                 }
                 if (event.key.key == SDLK_N) {
                     render_mode = 2;
@@ -385,8 +490,10 @@ int main(int argc, char **argv) {
                     scanner->set_full();
                 }
                 if (event.key.key == SDLK_P) {
-                    sharpness = 1 - sharpness;
-                    SDL_SetTextureScaleMode(texture, sharpness ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST);
+                    sharpness = (sharpness + 1) % 3;
+                    SDL_SetTextureScaleMode(texture, scales[sharpness]);
+                    SDL_SetTextureScaleMode(shrtexture, scales[sharpness]);
+                    printf("Sharpness: %d\n", sharpness);
                 }
                 if (event.key.key == SDLK_B) {
                     border_color = (border_color + 1) & 0x0F;
@@ -441,49 +548,68 @@ int main(int argc, char **argv) {
         }
         // now convert frame_scan to frame_byte
         frame_scan = scanner->get_frame_scan();
-        vsg->generate_frame(frame_scan, frame_byte, (old_scanner_choice == SCANNER_IIGS) ? fr_border : nullptr);
+        vsg->generate_frame(
+            frame_scan, 
+            frame_byte, 
+            (old_scanner_choice == SCANNER_IIGS) ? fr_border : nullptr,
+            (old_scanner_choice == SCANNER_IIGS) ? frame_shr : nullptr
+        );
         
-        uint16_t cnt;
-        if ((cnt = frame_scan->get_count()) != 0) {
-            printf("Frame scan count: %u\n", cnt);
-        }
-        switch (render_mode) {
-            case 1:
-                monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
-                break;
-            case 2:
-                ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF), phaseoffset); // no-color color is white.
-                break;
-            case 3:
-                if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
-                else rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
-                break;
-        }
+        if (generate_mode < 7) {
+            switch (render_mode) {
+                case 1:
+                    monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
+                    break;
+                case 2:
+                    ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF), phaseoffset); // no-color color is white.
+                    break;
+                case 3:
+                    if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
+                    else rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
+                    break;
+            }
 
-        // update the texture
-        SDL_LockTexture(texture, NULL, &pixels, &pitch);
-        memcpy(pixels, frame_rgba->data(), SCREEN_TEXTURE_WIDTH * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
-        SDL_UnlockTexture(texture);
+            // update the legacy II texture
+            SDL_LockTexture(texture, NULL, &pixels, &pitch);
+            memcpy(pixels, frame_rgba->data(), II_SCREEN_TEXTURE_WIDTH * II_SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
+            SDL_UnlockTexture(texture);
+        } else {
+            // update the shr texture
+            SDL_LockTexture(shrtexture, NULL, &pixels, &pitch);
+            memcpy(pixels, frame_shr->data(), 640 * 200 * sizeof(RGBA_t));
+            SDL_UnlockTexture(shrtexture);
+        }
 
         if (old_scanner_choice == SCANNER_IIGS) {
             SDL_LockTexture(border_texture, NULL, &pixels, &pitch);
-            memcpy(pixels, fr_border->data(), 13 * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
+            memcpy(pixels, fr_border->data(), 53 * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
             SDL_UnlockTexture(border_texture);
         }
 
-        // update widnow
+        // clear backbuffer
         SDL_RenderClear(renderer);
+
+        // draw some border
         if (old_scanner_choice == SCANNER_IIGS) {
-            SDL_RenderTexture(renderer, border_texture, &borders[B_CEN][B_LT].src, &borders[B_CEN][B_LT].dst);
-        }
-        // draw over border but shiftable portions need to be alpha'd with border color.
-        SDL_RenderTexture(renderer, texture, &borders[B_CEN][B_CEN].src, &borders[B_CEN][B_CEN].dst); 
-        if (old_scanner_choice == SCANNER_IIGS) {
-            SDL_RenderTexture(renderer, border_texture, &borders[B_CEN][B_RT].src, &borders[B_CEN][B_RT].dst);
+            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_CEN][B_LT].src, &ii_borders[B_CEN][B_LT].dst);
         }
 
-        end = SDL_GetTicksNS();
+        // Draw the screen texture.
+        if (generate_mode < 7) {
+            // draw over border but shiftable portions need to be alpha'd with border color.
+            SDL_RenderTexture(renderer, texture, &ii_borders[B_CEN][B_CEN].src, &ii_borders[B_CEN][B_CEN].dst); 
+        } else {
+            SDL_RenderTexture(renderer, shrtexture, &shr_borders[B_CEN][B_CEN].src, &shr_borders[B_CEN][B_CEN].dst);
+        }
+
+        // Draw more border
+        if (old_scanner_choice == SCANNER_IIGS) {
+            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_CEN][B_RT].src, &ii_borders[B_CEN][B_RT].dst);
+        }
+
+        // Emit!
         SDL_RenderPresent(renderer);      
+        end = SDL_GetTicksNS();
 
         cumulative += (end-start);
         if (framecnt == 300) {
@@ -492,6 +618,9 @@ int main(int argc, char **argv) {
             cumulative = 0;
             framecnt = 0;
         }
+
+        while (SDL_GetTicksNS() - frame_start < 16'688'819) ;
+
     }
     
     printf("Render Time taken:%llu  %llu ns per frame\n", cumulative, cumulative / 900);

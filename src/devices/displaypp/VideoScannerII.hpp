@@ -13,6 +13,7 @@ struct computer_t;
 
 constexpr uint16_t SCANNER_LUT_SIZE = 65*262;
 
+#define F_SHR    0b1000'0000
 #define F_80STORE 0b100'0000
 #define F_GRAF   0b010'0000
 #define F_HIRES  0b001'0000
@@ -29,10 +30,12 @@ typedef enum {
     VM_TEXT80,
     VM_DLORES,
     VM_DHIRES,
-    VM_SHR320,
-    VM_SHR640,
-    VM_PALETTE_DATA,
+    VM_SHR,
+    VM_SHR_MODE,
+    VM_SHR_PALETTE,
     VM_BORDER_COLOR,
+    VM_VSYNC,
+    VM_HSYNC,
     VM_LAST_HBL
 } video_mode_t;
 
@@ -44,6 +47,11 @@ typedef enum {
 #define SA_FLAG_HBL 0x01
 #define SA_FLAG_VBL 0x02
 #define SA_FLAG_BORDER 0x04
+#define SA_FLAG_SCB 0x08
+#define SA_FLAG_PALETTE 0x10
+#define SA_FLAG_SHR 0x20
+#define SA_FLAG_VSYNC 0x40
+#define SA_FLAG_HSYNC 0x80
 #define SA_FLAG_BLANK (SA_FLAG_HBL | SA_FLAG_VBL)
 
 struct scan_address_t {
@@ -68,6 +76,7 @@ protected:
     alignas(64) scanner_lut_t hires_p2;
     alignas(64) scanner_lut_t mixed_p1;
     alignas(64) scanner_lut_t mixed_p2;
+    alignas(64) scanner_lut_t shr_p1;
 
     scan_address_t *video_addresses;
     
@@ -101,16 +110,16 @@ protected:
     bool      f_80store = false;
 
     // IIGS
-    uint16_t   text_bg = 0x0000;
-    uint16_t   text_fg = 0x0FFF;
-    uint16_t   border_color = 0x0000;
-    
-    uint8_t   mode_flags = 0;
+    uint16_t   text_bg = 0x00;
+    uint16_t   text_fg = 0x0F;
+    uint16_t   border_color = 0x00;
+    bool      shr = false;
 
+    uint8_t   mode_flags = 0;
 
     video_mode_t video_mode;
     uint8_t vmode = 0;
-    mode_table_t mode_table[128];
+    mode_table_t mode_table[256];
 
     MMU_II * mmu = nullptr;
 
@@ -124,7 +133,10 @@ uint32_t  hcount;       // use separate hcount and vcount in order
     VideoScannerII(MMU_II *mmu);
     virtual ~VideoScannerII() = default;
 
-    virtual void reset() { frame_scan->clear(); hcount = 0; scan_index = 6 /* (65*243) */; };
+    // Call this after construction to properly initialize video addresses
+    virtual void initialize() { init_video_addresses(); }
+
+    virtual void reset() { frame_scan->clear(); hcount = 0; scan_index = 7 /* (65*243) */; };
 
     virtual void video_cycle();
     virtual void init_video_addresses();
@@ -144,6 +156,7 @@ uint32_t  hcount;       // use separate hcount and vcount in order
     inline void set_text()   { graf  = false; set_video_mode(); }
     inline void set_graf()   { graf  = true;  set_video_mode(); }
     inline void set_80store(bool fl) { f_80store = fl; set_video_mode(); }
+    inline void set_shr() { shr = true; set_video_mode(); }
 
     inline bool is_page_1() { return !page2; }
     inline bool is_page_2() { return  page2; }
@@ -168,6 +181,7 @@ uint32_t  hcount;       // use separate hcount and vcount in order
     inline void reset_80col()     { sw80col   = false; set_video_mode(); }
     inline void reset_altchrset() { altchrset = false; set_video_mode(); }
     inline void reset_dblres()    { dblres    = false; set_video_mode(); }
+    inline void reset_shr()       { shr       = false; set_video_mode(); }
 
     inline void set_text_bg(uint16_t bg) { text_bg = bg; }
     inline void set_text_fg(uint16_t fg) { text_fg = fg; }

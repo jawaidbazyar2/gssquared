@@ -21,5 +21,5 @@ private:
 public:
     VideoScanGenerator(CharRom *charrom, bool border_enabled = false);
 
-    void generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte, FrameBorder *border = nullptr);
+    void generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte, FrameBorder *border = nullptr, Frame640 *frame_shr = nullptr);
 };

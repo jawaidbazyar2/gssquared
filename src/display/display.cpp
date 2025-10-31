@@ -833,10 +833,12 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         case PLATFORM_APPLE_IIE_ENHANCED:
         case PLATFORM_APPLE_IIE_65816:
             ds->video_scanner = new VideoScannerIIe(mmu);
+            ds->video_scanner->initialize();
             break;
         case PLATFORM_APPLE_II_PLUS:
         case PLATFORM_APPLE_II:
             ds->video_scanner = new VideoScannerII(mmu);
+            ds->video_scanner->initialize();
             break;
         default:
             system_failure("Unsupported platform in display engine init");

@@ -69,8 +69,9 @@ void VideoScannerIIe::init_video_addresses()
         uint16_t vc = idx / 65;
         if (hc < 25) fl |= SA_FLAG_HBL;
         if (vc >= 192) fl |= SA_FLAG_VBL;
-       /*  if ( (vc >= 0 and vc <= 191) &&  
-            (((hc >= 40) && (hc <= 46)) || ((hc >= 59) && (hc <= 64)) )) fl |= SA_FLAG_BORDER; */
+        // hc=0 vc=0 here is upper left pixel of data display.
+        if ((hc == 64) && (vc < 261)) fl |= SA_FLAG_HSYNC;
+        if ((hc == 64) && (vc == 261)) fl |= SA_FLAG_VSYNC;
 
         lores_p1[idx].flags = fl;
         lores_p2[idx].flags = fl;
@@ -81,38 +82,6 @@ void VideoScannerIIe::init_video_addresses()
     }
 }
 
-#if 0
-void VideoScannerIIe::video_cycle()
-{
-    hcount += 1;
-    if (hcount == 65) {
-        hcount = 0;
-        vcount += 1;
-        if (vcount == 262) {
-            vcount = 0;
-            scan_index = 0;
-        }
-    }
-
-    //uint16_t address = (*(video_addresses))[65*vcount+hcount];
-    uint16_t address = video_addresses[scan_index++];
-
-    uint8_t aux_byte = ram[address + 0x10000];
-    video_byte = ram[address];
-    /* if (mmu) */ mmu->set_floating_bus(video_byte);
-
-    if (is_vbl()) return;
-    if (is_hbl()) return;
-
-    Scan_t scan;
-    scan.mode = (uint8_t)video_mode;
-    scan.auxbyte = aux_byte;
-    scan.mainbyte = video_byte;
-    scan.flags = mode_flags /* | (colorburst ? VS_FL_COLORBURST : 0) */;
-    frame_scan->push(scan);
-}
-#endif
-
 void VideoScannerIIe::video_cycle()
 {
     scan_address_t &sa = video_addresses[scan_index];
@@ -122,20 +91,25 @@ void VideoScannerIIe::video_cycle()
     mmu->set_floating_bus(video_byte);
 
     Scan_t scan;
-    /* if (sa.flags & (SA_FLAG_BORDER)) {
-        scan.mode = VM_BORDER_COLOR;
-        scan.mainbyte = 0;
-        scan.flags = mode_flags;
-        frame_scan->push(scan);
-
-    } else  */if (!(sa.flags & SA_FLAG_BLANK)) {
+    if (!(sa.flags & SA_FLAG_BLANK)) {
         scan.mode = (uint8_t)video_mode;
         scan.auxbyte = ram[address + 0x10000];
         scan.mainbyte = video_byte;
         scan.flags = mode_flags;
         frame_scan->push(scan);
     }
-
+    if (sa.flags & SA_FLAG_VSYNC) {
+        scan.mode = (uint8_t)VM_VSYNC;
+        scan.mainbyte = 0;
+        scan.flags = mode_flags;
+        frame_scan->push(scan);
+    }
+    if (sa.flags & SA_FLAG_HSYNC) {
+        scan.mode = (uint8_t)VM_HSYNC;
+        scan.mainbyte = 0;
+        scan.flags = mode_flags;
+        frame_scan->push(scan);
+    }
     if (++scan_index == 17030) {
         scan_index = 0;
     }
@@ -144,6 +118,4 @@ void VideoScannerIIe::video_cycle()
 
 VideoScannerIIe::VideoScannerIIe(MMU_II *mmu) : VideoScannerII(mmu)
 {
-    //init_video_addresses();
-
 }

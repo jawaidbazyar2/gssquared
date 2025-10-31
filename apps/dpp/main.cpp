@@ -154,14 +154,14 @@ bool window_resize(const SDL_Event &event, canvas_t &s, SDL_Window *window, SDL_
     canvas_t c = { (float)event.window.data1, (float)event.window.data2 };
 
     return calculateScale(renderer, c, s);
-
 }
 
 
 int main(int argc, char **argv) {
+    SDL_ScaleMode scales[3] = { SDL_SCALEMODE_PIXELART, SDL_SCALEMODE_LINEAR, SDL_SCALEMODE_NEAREST };
+
     uint64_t start = 0, end = 0;
 
-    // 
     canvas_t canvasses[2] = {
         { (float)1160, (float)906 },
         {  (float)1280, (float)1000 }
@@ -215,8 +215,6 @@ int main(int argc, char **argv) {
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
     }
-
-    SDL_ScaleMode scales[3] = { SDL_SCALEMODE_PIXELART, SDL_SCALEMODE_LINEAR, SDL_SCALEMODE_NEAREST };
 
     const char *rname = SDL_GetRendererName(renderer);
     printf("Renderer: %s\n", rname);
