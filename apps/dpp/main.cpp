@@ -22,6 +22,10 @@
    gives us a 1.2 aspect ratio of modern pixels 
 */
 
+#define SCANNER_II 1
+#define SCANNER_IIE 2
+#define SCANNER_IIGS 3
+
 
 struct canvas_t {
     float w;
@@ -234,7 +238,7 @@ int main(int argc, char **argv) {
     int testiterations = 10000;
 
     const uint16_t f_w = II_SCREEN_TEXTURE_WIDTH, f_h = II_SCREEN_TEXTURE_HEIGHT;
-    Frame560 *frame_byte = new(std::align_val_t(64)) Frame560(f_w, f_h);
+    Frame560 *frame_byte = new(std::align_val_t(64)) Frame560(560, f_h);
 
 #if 0
     start = SDL_GetTicksNS();
@@ -316,7 +320,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    Frame560RGBA *frame_rgba = new(std::align_val_t(64)) Frame560RGBA(f_w, f_h);
+    Frame560RGBA *frame_rgba = new(std::align_val_t(64)) Frame560RGBA(567, f_h);
     Frame640 *frame640_byte = new(std::align_val_t(64)) Frame640(640, 200);
     
     Monochrome560 monochrome;
@@ -354,15 +358,21 @@ int main(int argc, char **argv) {
     int last_canvas_mode = -1;
     int canvas_mode = 0;
     
+    int scanner_choice = 0;
+    int old_scanner_choice = -1;
+
     int render_mode = 1;
     int sharpness = 0;
     bool exiting = false;
     bool flash_state = false;
     int flash_count = 0;
     SDL_Event event;
+    uint8_t fg = 0x0F;
+    uint8_t bg = 0x00;
 
     while (++framecnt && !exiting)  {
         uint64_t frame_start = SDL_GetTicksNS();
+
 
         if ((last_canvas_mode != canvas_mode) || (last_generate_mode != generate_mode)) {
             last_canvas_mode = canvas_mode;
@@ -380,47 +390,62 @@ int main(int argc, char **argv) {
                 window_resize(event, sources[generate_mode], window, renderer);
             }
             if (event.type == SDL_EVENT_KEY_DOWN) {
-                if (event.key.key == SDLK_1) {
-                    generate_mode = 1;
-                }
-                if (event.key.key == SDLK_2) {
-                    generate_mode = 2;
-                }
-                if (event.key.key == SDLK_3) {
-                    generate_mode = 3;
-                }
-                if (event.key.key == SDLK_4) {
-                    generate_mode = 4;
-                }
-                if (event.key.key == SDLK_5) {
-                    generate_mode = 5;
-                }
-                if (event.key.key == SDLK_6) {
-                    generate_mode = 6;
-                }
-                if (event.key.key == SDLK_7) {
-                    generate_mode = 7;
-                }
-                if (event.key.key == SDLK_8) {
-                    generate_mode = 8;
-                }
-                if (event.key.key == SDLK_N) {
-                    render_mode = 2;
-                }
-                if (event.key.key == SDLK_M) {
-                    render_mode = 1;
-                }
-                if (event.key.key == SDLK_R) {
-                    render_mode = 3;
-                }
-                if (event.key.key == SDLK_P) {
-                    sharpness = (sharpness + 1) % 3;
-                    SDL_SetTextureScaleMode(texture, scales[sharpness]);
-                    SDL_SetTextureScaleMode(shrtexture, scales[sharpness]);
-                    printf("Sharpness: %d\n", sharpness);
-                }
-                if (event.key.key == SDLK_C) {
-                    canvas_mode = (canvas_mode + 1) % 2;
+                switch (event.key.key) {
+                    case SDLK_1:
+                        generate_mode = 1;
+                        break;
+                    case SDLK_2:
+                        generate_mode = 2;
+                        break;
+                    case SDLK_3:
+                        generate_mode = 3;
+                        break;
+                    case SDLK_4:
+                        generate_mode = 4;
+                        break;
+                    case SDLK_5:
+                        generate_mode = 5;
+                        break;
+                    case SDLK_6:
+                        generate_mode = 6;
+                        break;
+                    case SDLK_7:
+                        generate_mode = 7;
+                        break;
+                    case SDLK_8:
+                        generate_mode = 8;
+                        break;
+                    case SDLK_N:
+                        render_mode = 2;
+                        break;
+                    case SDLK_M:
+                        render_mode = 1;
+                        break;
+                    case SDLK_R:
+                        render_mode = 3;
+                        break;
+                    case SDLK_P:
+                        sharpness = (sharpness + 1) % 3;
+                        SDL_SetTextureScaleMode(texture, scales[sharpness]);
+                        SDL_SetTextureScaleMode(shrtexture, scales[sharpness]);
+                        printf("Sharpness: %d\n", sharpness);
+                        break;
+                    case SDLK_C:
+                        canvas_mode = (canvas_mode + 1) % 2;
+                        break;
+                    
+                    case SDLK_F:
+                        fg = (fg + 1) & 0x0F;
+                        display_iiplus.set_text_fg(fg);
+                        display_iie.set_text_fg(fg);
+                        break;
+
+                    case SDLK_G:
+                        bg = (bg + 1) & 0x0F;
+                        display_iiplus.set_text_bg(bg);
+                        display_iie.set_text_bg(bg);
+                        break;
+                    
                 }
             }
         }
@@ -432,6 +457,7 @@ int main(int argc, char **argv) {
             flash_state = !flash_state;
             flash_count = 0;
             display_iiplus.set_flash_state(flash_state);
+            display_iie.set_flash_state(flash_state);
         }
 
         if (generate_mode >= 7) {
@@ -481,11 +507,11 @@ int main(int argc, char **argv) {
                     monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
                     break;
                 case 2:
-                    ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
+                    ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF)/* , phaseoffset */);
                     break;
                 case 3:
-                    if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
-                    else rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
+                    /* if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
+                    else  */rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) /* , phaseoffset */);
                     break;
             }
 

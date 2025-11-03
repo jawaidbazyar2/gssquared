@@ -6,11 +6,13 @@
 class Render {
 
     public:
-        Render() {};
+        Render(bool shift_enabled = true) : shift_enabled(shift_enabled) {};
         ~Render() {};
+
+        void set_shift_enabled(bool shift_enabled) { this->shift_enabled = shift_enabled; }
 
         void render(Frame560 *frame_byte, Frame560RGBA *frame_rgba);
 
-    private:
-        
+    protected:
+        bool shift_enabled = false;
 };

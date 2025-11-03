@@ -18,6 +18,10 @@ private:
     bool alt_char_set = false;
     bool f_80store = false;
     uint8_t hires40Font[2 * CHAR_NUM * CHAR_WIDTH];
+    uint8_t text_fg = 0x0F;
+    uint8_t text_bg = 0x00;
+    uint8_t text_color = 0xF0;
+    uint8_t border_color = 0x00;
 
     alignas(64) uint16_t A2_textMap[24] =
     {   // text page 1 line addresses
@@ -97,6 +101,18 @@ public:
 
     inline bool is_80store() { return f_80store; }
 
+    inline void set_text_fg(uint8_t fg) {
+        this->text_fg = fg & 0x0F;
+    }
+
+    inline void set_text_bg(uint8_t bg) {
+        this->text_bg = bg& 0x0F;
+    }
+
+    inline void set_border_color(uint8_t color) {
+        this->border_color = color;
+    }
+
     /** delayEnabled is true for any Apple II model except Apple II Rev 0. */
     void buildHires40Font(bool delayEnabled)
     {
@@ -119,45 +135,33 @@ public:
         uint16_t scanline = linegroup * 8;
         uint16_t x = 0;
 
+        uint8_t tc = (text_fg << 4) | 1;
+        uint8_t td = text_bg << 4;
+
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
-            f->set_color_mode(scanline, {0,0}); // COLORBURST_OFF);
-            for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
+            color_mode_t cmode = {0,0,0};  // COLORBURST_OFF
+            f->set_color_mode(scanline, cmode);
 
             for (x = 0; x < 40; x++) {
-                bool invert;
 
                 uint8_t tchar = textpage[char_addr];
 
+                uint8_t invert;
                 if (char_rom->is_flash(tchar)) {
-                    invert = flash_state;
+                    invert = flash_state ? 0xFF : 0x00;
                 } else {
-                    invert = false;
+                    invert = 0x00;
                 }
 
                 uint8_t cdata = char_rom->get_char_scanline(tchar, y);
-
-                f->push((cdata & 1) ^ invert); 
-                f->push((cdata & 1) ^ invert); 
-                cdata>>=1;
-                f->push((cdata & 1) ^ invert); 
-                f->push((cdata & 1) ^ invert); 
-                cdata>>=1;
-                f->push((cdata & 1) ^ invert); 
-                f->push((cdata & 1) ^ invert); 
-                cdata>>=1;
-                f->push((cdata & 1) ^ invert); 
-                f->push((cdata & 1) ^ invert); 
-                cdata>>=1;
-                f->push((cdata & 1) ^ invert); 
-                f->push((cdata & 1) ^ invert); 
-                cdata>>=1;
-                f->push((cdata & 1) ^ invert); 
-                f->push((cdata & 1) ^ invert); 
-                cdata>>=1;
-                f->push((cdata & 1) ^ invert); 
-                f->push((cdata & 1) ^ invert); 
+                cdata ^= invert;
+                for (int n = 0; n < 7; n++) { // it's ok compiler will unroll this
+                    f->push((cdata & 1) ? tc : td); 
+                    f->push((cdata & 1) ? tc : td); 
+                    cdata>>=1;
+                }
 
                 char_addr++;
             }
@@ -172,51 +176,45 @@ public:
         bool pixel_on = 1;
         bool pixel_off = 0;
 
+        uint8_t tc = (text_fg << 4) | 1;
+        uint8_t td = text_bg << 4;
+
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
-            f->set_color_mode(scanline, {0,0}); // COLORBURST_OFF);
+            color_mode_t cmode = {0,0,1};  // COLORBURST_OFF
+            f->set_color_mode(scanline, cmode);
 
             for (x = 0; x < 40; x++) {
-                bool invert;
-
                 uint8_t tchar = alttextpage[char_addr];
-
                 uint8_t cdata = char_rom->get_char_scanline(tchar, y);
 
+                uint8_t invert;
                 if (char_rom->is_flash(tchar)) {
-                    invert = flash_state;
+                    invert = flash_state ? 0xFF : 0x00;
                 } else {
-                    invert = false;
+                    invert = 0x00;
                 }
-
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
+                cdata ^= invert;
+                for (int n = 0; n < 7; n++) {
+                    f->push((cdata & 1) ? tc : td); cdata>>=1;
+                }
 
                 tchar = textpage[char_addr];
                 cdata = char_rom->get_char_scanline(tchar, y);
-                if (char_rom->is_flash(tchar)) {
-                    invert = flash_state;
-                } else {
-                    invert = false;
-                }
 
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
-                f->push((cdata & 1) ^ invert); cdata>>=1;
+                if (char_rom->is_flash(tchar)) {
+                    invert = flash_state ? 0xFF : 0x00;
+                } else {
+                    invert = 0x00;
+                }
+                cdata ^= invert;
+                for (int n = 0; n < 7; n++) {
+                    f->push((cdata & 1) ? tc : td); cdata>>=1;
+                }
 
                 char_addr++;
             }
-            for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
             scanline++;
         }
     }
@@ -229,8 +227,8 @@ public:
         for (uint16_t line = 0; line < 8; line++) {
             // Process 40 bytes (one scanline)
             f->set_line(scanline);
-            f->set_color_mode(scanline, {1,0}); // COLORBURST_ON);
-            for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
+            color_mode_t cmode = {1,0,0};  // COLORBURST_ON
+            f->set_color_mode(scanline, cmode);
 
             for (int x = 0; x < 40; x++) {
                 uint8_t byte = d[x];
@@ -256,8 +254,8 @@ public:
         for (uint16_t line = 0; line < 8; line++) {
             // Process 40 bytes (one scanline)
             f->set_line(scanline);
-            f->set_color_mode(scanline, {1,0}); // COLORBURST_ON);
-            for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
+            color_mode_t cmode = {1,0,0};  // COLORBURST_ON
+            f->set_color_mode(scanline, cmode);
 
             for (int x = 0; x < 40; x++) {
                 uint8_t byte = d[x] & 0x7F;
@@ -282,7 +280,8 @@ public:
 
         for (uint16_t line = 0; line < 8; line++) {
             f->set_line(scanline);
-            f->set_color_mode(scanline, {1,0}); // COLORBURST_ON);
+            color_mode_t cmode = {1,0,1};  // COLORBURST_ON
+            f->set_color_mode(scanline, cmode);
 
             for (int x = 0; x < 40; x++) {
                 uint8_t byteM = m[x];
@@ -298,7 +297,6 @@ public:
             }
             m += 0x400; // go to next line
             a += 0x400; // go to next line
-            for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
             scanline++;
         }
     }
@@ -312,9 +310,8 @@ public:
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
-            f->set_color_mode(scanline, {1,0}); // COLORBURST_ON);
-
-            for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
+            color_mode_t cmode = {1,0,0};  // COLORBURST_ON
+            f->set_color_mode(scanline, cmode);
             
             for (x = 0; x < 40; x++) {
                 uint8_t tchar = textpage[char_addr];
@@ -346,7 +343,8 @@ public:
         for (uint16_t y = 0; y < 8; y++) {
             uint16_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
-            f->set_color_mode(scanline, {1,0}); // COLORBURST_ON);
+            color_mode_t cmode = {1,0,1};  // COLORBURST_ON
+            f->set_color_mode(scanline, cmode);
 
             for (uint16_t x = 0; x < 40; x++) {
                 uint8_t tchar = alttextpage[char_addr];
@@ -378,7 +376,6 @@ public:
 
                 char_addr++;
             }
-            for (uint16_t pp = 0; pp < 7; pp++) f->push(0);
             scanline++;
         }
     }

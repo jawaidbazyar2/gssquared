@@ -72,6 +72,7 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
     Palette palette = { .colors = {0} };
 
     //uint16_t lineidx = 0;
+    uint16_t hcount = 0;
     uint16_t vcount = 0;
     frame_byte->set_line(vcount);
     if (border != nullptr) {
@@ -82,24 +83,28 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
     }
 
     uint8_t lastByte = 0x00; // for hires
-    Scan_t peek_scan = frame_scan->peek();
     color_mode_t color_mode;
-    color_mode.colorburst = (peek_scan.mode == VM_TEXT40 || peek_scan.mode == VM_TEXT80) ? 0 : 1;
-    color_mode.mixed_mode = peek_scan.flags & VS_FL_MIXED ? 1 : 0;
+    
     uint8_t color_delay_mask = 0xFF;
-    bool data_seen = false;
-    int hcount = 0;
-    //int linewidth = (border != nullptr) ? 53 : 40;
+
     int palette_index = 0; // reset to 0 each scanline.
+    bool modeChecks = true;
 
     while (1) {
-        if (vcount >= 262) {
+       /*  if (vcount >= 262) {
             vcount=vcount;
         }
         if (hcount >= 40) {
             hcount=hcount;
-        }
+        } */
         Scan_t scan = frame_scan->pull();
+        if (modeChecks && scan.mode <= VM_DHIRES) {
+            //Scan_t peek_scan = frame_scan->peek();
+            color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
+            color_mode.mixed_mode = scan.flags & VS_FL_MIXED ? 1 : 0;
+            modeChecks = false;
+        }
+
         uint8_t eff_mode = scan.mode;
         if ((eff_mode <= VM_DHIRES) && (scan.flags & VS_FL_MIXED) && (vcount >= 160)) {
             eff_mode = (scan.flags & VS_FL_80COL) ? VM_TEXT80 : VM_TEXT40; // or TEXT80 depending on mode..
@@ -110,14 +115,13 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     return; 
 
             case VM_HSYNC: {
-                    //lineidx = 0;
                     lastByte = 0x00; // for hires
                     hcount = 0;
-                    data_seen = false;
                     vcount++;
                     if (vcount >= 200) {
                         assert(1);
                     }
+                    modeChecks = true;
                     frame_byte->set_line(vcount);
                     if (border != nullptr) {
                         border->set_line(vcount);
@@ -132,7 +136,6 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                         border->push(gs_text_palette[scan.mainbyte & 0x0F]);
                     }
                 }
-                //lineidx++;
                 break; // we don't increment hcount here.
             case VM_SHR: {
                     
@@ -169,7 +172,6 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                         }
                     }
                 }
-                //lineidx++;                    
                 break;
             case VM_SHR_MODE: {
                     mode.v = scan.mainbyte;
@@ -182,106 +184,90 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                 }
                 break;
             case VM_TEXT40: {
-                    if (!data_seen) {
-                        data_seen = true;
-                        for (int i = 0; i < 7; i++) {
-                            frame_byte->push(0);
-                        }
-                        frame_byte->set_color_mode(vcount, color_mode);
+                    if (hcount == 0) {
+                        /* for (int i = 0; i < 7; i++) {
+                            frame_byte->push(0b10);
+                        } */
+                        color_mode_t cmode = color_mode;
+                        cmode.phase_offset = 0;
+                        frame_byte->set_color_mode(vcount, cmode);
                     }
-                    bool invert;
+                    
                     char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
 
                     uint8_t tchar = scan.mainbyte;
-    
+                    uint8_t invert;
                     if (char_rom->is_flash(tchar)) {
-                        invert = flash_state;
+                        invert = flash_state ? 0xFF : 0x00;
                     } else {
-                        invert = false;
+                        invert = 0x00;
                     }
-    
+                    uint8_t tc = (scan.shr_bytes & 0xF0) | 1;
+                    uint8_t td = (scan.shr_bytes & 0x0F) << 4;
                     uint8_t cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
-    
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); 
-                    frame_byte->push((cdata & 1) ^ invert);     
+                    cdata ^= invert;
+
+                    for (int n = 0; n < 7; n++) { // it's ok compiler will unroll this
+                        frame_byte->push((cdata & 1) ? tc : td); 
+                        frame_byte->push((cdata & 1) ? tc : td); 
+                        cdata>>=1;
+                    }
                 }
                 hcount++;
-                //lineidx++;
                 break;
             case VM_TEXT80: {
-                    if (!data_seen) {
-                        data_seen = true;
+                    if (hcount == 0) {
                         //frame_byte->set_color_mode(vcount, COLORBURST_OFF);
-                        frame_byte->set_color_mode(vcount, color_mode);
+                        color_mode_t cmode = color_mode;
+                        cmode.phase_offset = 1;
+                        frame_byte->set_color_mode(vcount, cmode);
                     }
-                    bool invert;
+                    uint8_t invert;
 
                     uint8_t tchar = scan.auxbyte;
                     char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
                     uint8_t cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
     
                     if (char_rom->is_flash(tchar)) {
-                        invert = flash_state;
+                        invert = flash_state ? 0xFF : 0x00;
                     } else {
-                        invert = false;
+                        invert = 0x00;
                     }
-    
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-    
+                    cdata ^= invert;
+                    uint8_t tc = (scan.shr_bytes & 0xF0) | 1;
+                    uint8_t td = (scan.shr_bytes & 0x0F) << 4;
+
+                    for (int n = 0; n < 7; n++) {
+                        frame_byte->push((cdata & 1) ? tc : td); cdata>>=1;
+                    }
+
                     tchar = scan.mainbyte;
                     cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
                     if (char_rom->is_flash(tchar)) {
-                        invert = flash_state;
+                        invert = flash_state ? 0xFF : 0x00;
                     } else {
-                        invert = false;
+                        invert = 0x00;
                     }
-    
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-                    frame_byte->push((cdata & 1) ^ invert); cdata>>=1;
-        
+                    cdata ^= invert;
+                    tc = (scan.shr_bytes & 0xF0) | 1;
+                    td = (scan.shr_bytes & 0x0F) << 4;
+                    for (int n = 0; n < 7; n++) {
+                        frame_byte->push((cdata & 1) ? tc : td); cdata>>=1;
+                    }
+        /* 
                     if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
-                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
-                    }
+                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0b10);
+                    } */
                 }
                 hcount++;
-                //lineidx++;
                 break;
             case VM_LORES: {
-                    if (!data_seen) {
-                        data_seen = true;
-                        for (int i = 0; i < 7; i++) {
-                            frame_byte->push(0);
-                        }
-                        frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
+                    if (hcount == 0) {
+                        /* for (int i = 0; i < 7; i++) {
+                            frame_byte->push(0b10);
+                        } */
+                        color_mode_t cmode = {1,0, 0};
+                        frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
                     }
                     uint8_t tchar = scan.mainbyte;
                     
@@ -297,12 +283,11 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     }
                 }
                 hcount++;
-                //lineidx++;
                 break;
             case VM_DLORES: {
-                    if (!data_seen) {
-                        data_seen = true;
-                        frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
+                    if (hcount == 0) {
+                        color_mode_t cmode = {1,0, 1};
+                        frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
                     }
                 
                     uint8_t tchar = scan.auxbyte;
@@ -332,24 +317,23 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                         pixeloff = (pixeloff + 1) % 4;
                     }        
                     
-                    if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
-                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
-                    }
+                    /* if (hcount == 39 && display_shift_enabled) { // but they do have a trailing 7-pixel thing.. or do they?
+                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0b10);
+                    } */
                 }
                 hcount++;
-                //lineidx++;
                 break;
             
             case VM_HIRES_NOSHIFT: // TODO: this needs to set a flag to disable color delay. But this should make it display something now.
                 color_delay_mask = 0x7F;
 
             case VM_HIRES: {
-                    if (!data_seen) {
-                        data_seen = true;
-                        for (int i = 0; i < 7; i++) {
-                            frame_byte->push(0);
-                        }
-                        frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
+                    if (hcount == 0) {
+                        /* for (int i = 0; i < 7; i++) {
+                            frame_byte->push(0b10);
+                        } */
+                        color_mode_t cmode = {1,0, 0};
+                        frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
                     }
                     uint8_t byte = scan.mainbyte & color_delay_mask;
                     size_t fontIndex = (byte | ((lastByte & 0x40) << 2)) * CHAR_WIDTH; // bit 6 from last byte selects 2nd half of font
@@ -360,13 +344,12 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     lastByte = byte;
                 }
                 hcount++;
-                //lineidx++;
                 break;
             case VM_DHIRES: {
-                    if (!data_seen) {
-                        data_seen = true;
+                    if (hcount == 0) {
                         // dhgr starts at horz offset 0
-                        frame_byte->set_color_mode(vcount, {1,0}); // COLORBURST_ON);
+                        color_mode_t cmode = {1,0, 1};
+                        frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
                     }
                         
                     uint8_t byteM = scan.mainbyte;
@@ -380,12 +363,11 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                         byteM >>= 1;
                     }
                     
-                    if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
-                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0);
-                    }
+                    /* if (hcount == 39 && display_shift_enabled) { // but they do have a trailing 7-pixel thing.. or do they?
+                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0b10);
+                    } */
                 }
                 hcount++;
-                //lineidx++;
                 break;
             default:
                 break;

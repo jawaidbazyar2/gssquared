@@ -112,6 +112,7 @@ protected:
     // IIGS
     uint16_t   text_bg = 0x00;
     uint16_t   text_fg = 0x0F;
+    uint8_t    text_color = 0xF0;
     uint16_t   border_color = 0x00;
     bool      shr = false;
 
@@ -183,8 +184,8 @@ uint32_t  hcount;       // use separate hcount and vcount in order
     inline void reset_dblres()    { dblres    = false; set_video_mode(); }
     inline void reset_shr()       { shr       = false; set_video_mode(); }
 
-    inline void set_text_bg(uint16_t bg) { text_bg = bg; }
-    inline void set_text_fg(uint16_t fg) { text_fg = fg; }
+    inline void set_text_bg(uint16_t bg) { text_bg = bg; text_color = text_fg << 4 | text_bg; }
+    inline void set_text_fg(uint16_t fg) { text_fg = fg; text_color = text_fg << 4 | text_bg; }
     inline void set_border_color(uint16_t color) { border_color = color; }
 
     ScanBuffer *get_frame_scan();

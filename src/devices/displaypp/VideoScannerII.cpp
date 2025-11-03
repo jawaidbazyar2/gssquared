@@ -209,6 +209,7 @@ void VideoScannerII::video_cycle()
         scan.auxbyte = 0x00;
         scan.mainbyte = video_byte;
         scan.flags = mode_flags;
+        scan.shr_bytes = text_color;
         frame_scan->push(scan);
     }
     if (sa.flags & SA_FLAG_VSYNC) {
@@ -226,7 +227,6 @@ void VideoScannerII::video_cycle()
     if (++scan_index == 17030) {
         scan_index = 0;
     }
-
 }
 
 ScanBuffer *VideoScannerII::get_frame_scan()
@@ -248,6 +248,7 @@ VideoScannerII::VideoScannerII(MMU_II *mmu)
 
     text_bg = 0x00;
     text_fg = 0x0F;
+    text_color = 0xF0;
     border_color = 0x00;
     
     // set initial video mode: text, lores, not mixed, page 1

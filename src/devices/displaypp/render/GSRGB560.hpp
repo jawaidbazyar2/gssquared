@@ -48,7 +48,7 @@ class GSRGB560 : public Render {
 
 public:
     uint8_t barrel_shifter[4][16];
-    GSRGB560() {
+    GSRGB560(bool shift_enabled = true) : Render(shift_enabled) {
         // Set up the lookup table.
         for (uint8_t phase = 0; phase < 4; phase++) {
             for (uint8_t val = 0; val < 16; val++) {
@@ -204,18 +204,30 @@ end of the line.. dlgr is passable. I need to see what dlgr looks like on the GS
 need to test against hi-res.
 text looks like a** in it. */
 
-    void render(Frame560 *frame_byte, Frame560RGBA *frame_rgba, RGBA_t color, uint16_t phaseoffset)
+    void render(Frame560 *frame_byte, Frame560RGBA *frame_rgba, RGBA_t color /* , uint16_t phaseoffset */)
     {
         uint16_t framewidth = frame_byte->width();
 
         for (uint16_t y = 0; y < 192; y++)
         {
+            frame_byte->set_line(y);
+            frame_rgba->set_line(y);
+
             color_mode_t color_mode = frame_byte->get_color_mode(y); // TODO: also need to know if we're in split mode so we can do lines > 160 correctly.
+
+            uint8_t phase_offset = color_mode.phase_offset;
+
+            if (phase_offset == 0 && shift_enabled) {
+                for (int i = 0; i < 7; i++) {
+                    frame_rgba->push(RGBA_t::make(0x00, 0x00, 0x00, 0x00));
+                }
+            }
+
             if (color_mode.colorburst == 1 && color_mode.mixed_mode == 0) {
                 // do color burst
 
                 // Process each scanline
-                uint8_t phase = phaseoffset;
+                uint8_t phase = phase_offset;
                 uint8_t ShiftReg = 0;
                 uint8_t BSOut = 0;
                 uint8_t LatchOut = 0;
@@ -230,19 +242,18 @@ text looks like a** in it. */
                 bool JK44_K = 0;
                 bool INP;
 
-                frame_byte->set_line(y);
-                frame_rgba->set_line(y);
+                uint8_t bit = frame_byte->peek();
 
-                INP = frame_byte->pull(); // preload the shift register for lookahead
+                INP = frame_byte->pull() & 1; // preload the shift register for lookahead
                 phase = (phase + 1) % 4;
                 ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
-                INP = frame_byte->pull();
+                INP = frame_byte->pull() & 1;
                 phase = (phase + 1) % 4;
                 ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
-                INP = frame_byte->pull();
+                INP = frame_byte->pull() & 1;
                 phase = (phase + 1) % 4;
                 ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
-                INP = frame_byte->pull();
+                INP = frame_byte->pull() & 1;
                 phase = (phase + 1) % 4;
                 ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
                 LatchOut = barrel_shifter[3][ShiftReg];
@@ -250,16 +261,17 @@ text looks like a** in it. */
                 for (uint16_t x = 4; x < framewidth; x++) {
                     // PRE-Clock
                     //phase = x % 4;
-
-                    bool INP = frame_byte->pull();
+                    uint8_t bit = frame_byte->pull();
+                    bool INP = bit & 1;
                     ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
 
                     // the barrel shifter needs to rotate to the RIGHT based on phase number.
                     BSOut = barrel_shifter[phase][ShiftReg];
 
-                    frame_rgba->push(gs_rgb_colors[LatchOut]);
-                    /* if we only check hi bit, we don't switch between colors when hi bit changes. that's wrong.*/
+                    RGBA_t pixel = gs_rgb_colors[LatchOut];
+                    frame_rgba->push(pixel);
 
+                    /* if we only check hi bit, we don't switch between colors when hi bit changes. that's wrong.*/
                     if ((BSOut & 0b1111) != (LatchOut & 0b1111)) {
                         Counter++;
                     }
@@ -277,15 +289,20 @@ text looks like a** in it. */
                 // need to run out the rest of the line of pixels
                 // pretend 561 to 564
                 for (uint16_t x = 1; x <= 4; x++) {
-                    frame_rgba->push(gs_rgb_colors[LatchOut]);
+                    RGBA_t pixel = gs_rgb_colors[LatchOut];
+                    frame_rgba->push(pixel);
                 }
             } else {
-                // do mono (white) rendering 
-                frame_byte->set_line(y);
-                frame_rgba->set_line(y);
+                // do mono (white) rendering (or colored with GS colors)
                 for (uint16_t x = 0; x < framewidth; x++) {
-                    bool bit = frame_byte->pull();
-                    frame_rgba->push(bit ? gs_rgb_colors[15] : gs_rgb_colors[0]);
+                    uint8_t bit = frame_byte->pull();
+                    RGBA_t pixel = gs_rgb_colors[bit >> 4];
+                    frame_rgba->push(pixel);
+                }
+            }
+            if (phase_offset == 1 && shift_enabled) {
+                for (int i = 0; i < 7; i++) {
+                    frame_rgba->push(RGBA_t::make(0x00, 0x00, 0x00, 0x00));
                 }
             }
         } 

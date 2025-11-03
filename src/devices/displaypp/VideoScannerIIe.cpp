@@ -96,6 +96,7 @@ void VideoScannerIIe::video_cycle()
         scan.auxbyte = ram[address + 0x10000];
         scan.mainbyte = video_byte;
         scan.flags = mode_flags;
+        scan.shr_bytes = text_color;
         frame_scan->push(scan);
     }
     if (sa.flags & SA_FLAG_VSYNC) {

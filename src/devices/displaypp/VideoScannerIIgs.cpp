@@ -78,6 +78,10 @@ void VideoScannerIIgs::init_video_addresses()
             ((vc >= 243 && vc <= 261) || (vc >= 192 && vc <= 220)) && 
             (((hc <= 6) || (hc>= 19)))
         ) fl |= SA_FLAG_BORDER;
+        /* if (((vc >= 243 && vc <= 261) || (vc >= 192 && vc <= 220)) && 
+            ((hc <= 6 || hc >= 25))) {
+            fl |= SA_FLAG_BORDER;
+        } */
 
         // SHR Mode
         // shr buffer is linear. But there are also some cycles where we need to read the palette data from RAM.
@@ -143,6 +147,7 @@ void VideoScannerIIgs::video_cycle()
         scan.auxbyte = ram[address + 0x10000];
         scan.mainbyte = video_byte;
         scan.flags = mode_flags;
+        scan.shr_bytes = text_color;
         frame_scan->push(scan);
     }
 

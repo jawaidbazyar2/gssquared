@@ -11,6 +11,7 @@
 struct color_mode_t {
     uint8_t colorburst:1;
     uint8_t mixed_mode:1;
+    uint8_t phase_offset:1;
 };
 
 template<typename bs_t, uint16_t HEIGHT, uint16_t WIDTH>
@@ -39,6 +40,10 @@ public:
     inline bs_t pull() { 
         return stream[scanline][hloc++];
     }
+
+    inline bs_t peek() {
+        return stream[scanline][hloc];
+    }
     
     inline void set_line(int line) { 
         scanline = line;
@@ -59,7 +64,7 @@ public:
 
     inline uint16_t width() { return f_width; }
     inline uint16_t height() { return f_height; }
-    void clear();
+    void clear(bs_t clr = {0});
     
     // Getters for template parameters
     static constexpr uint16_t max_width() { return WIDTH; }
@@ -79,11 +84,12 @@ Frame<bs_t, HEIGHT, WIDTH>::Frame(uint16_t width, uint16_t height) {
 }
 
 template<typename bs_t, uint16_t HEIGHT, uint16_t WIDTH>
-void Frame<bs_t, HEIGHT, WIDTH>::clear() {
+void Frame<bs_t, HEIGHT, WIDTH>::clear(bs_t clr) {
+    
     // Implementation would go here - clearing the bitstream array
     for (int i = 0; i < HEIGHT; ++i) {
         for (int j = 0; j < WIDTH; ++j) {
-            stream[i][j] = bs_t{};
+            stream[i][j] = clr;
         }
     }
     scanline = 0;

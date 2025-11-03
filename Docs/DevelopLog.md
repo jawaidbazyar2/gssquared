@@ -6736,10 +6736,11 @@ So I am counting the pixel elements; but, I am also counting control as pixel. S
 ok so I am updating lineidx only as we consume video data bytes, and that is working!
 
 Things remaining: 
-[ ] text colors  
-[ ] top and bottom borders. Combined, these are 53 cycles wide and 40 (or 48) cycles tall. So need a Border texture here that is 53 x 240 tall.
+[x] text colors  
+[x] top and bottom borders. Combined, these are 53 cycles wide and 40 (or 48) cycles tall. So need a Border texture here that is 53 x 240 tall.
 [x] we're cutting frames off a hair (maybe 2 1/2 scanlines?) early in legacy II modes, regardless of scanner.
 [x] Detect 192 vs 200 scanlines of active area.  
+[ ] Aspect Ratio correction in vpp.  
 
 Top of content area is always exactly the same. Bottom varies - i.e., we have 8 fewer scanlines of border when in 200 mode. So, draw border first assuming 192 scanlines. Then when we draw the shr content, it will overwrite the top 8 lines of bottom border.
 
@@ -6829,3 +6830,114 @@ Additional features: have hardware scrolling where we can move the start of fram
 using mvn / mvp we can scroll in 28000 cycles; even at 1mhz, slightly more than one frame. At 2.8mhz, faster than a frame.
 ok ok that's for later.
 
+Instead of inverting every single text bit, why don't I invert cdata first/ Duh.
+```
+before:
+Render Time taken:101833709  339445 ns per frame
+Render Time taken:99777049  332590 ns per frame
+Render Time taken:96198921  320663 ns per frame
+to
+Render Time taken:97616251  325387 ns per frame
+Render Time taken:97821327  326071 ns per frame
+```
+maybe a hair better.
+
+Minor issue: when in NTSC or Monochrome mode, and BG is non-zero, we get an all-white display. So these need to what, mask with 0xF0 instead of the equivalent of (bit != 0) ?
+text color controls added to dpp; same issue with mono etc. So let's fix that..
+That's not right..
+I need to send the color (hi nibble) and the on/off (bit 0) so the receiver can read what it needs- bit 0 for mono/ntsc, bits 7-4 for rgb.
+ok then!
+
+[ ] Maybe instead of uint8_t I should have the bit-frame data type be a 1-byte struct to give it some readability and structure.
+
+| 7-4 | 3 | 2 | 1 | 0 |
+|-|-|-|-|-|
+| Tixel Color | n/a | n/a | n/a | Pixel On/Off |
+
+## Nov 1, 2025
+
+So what's next?  Top and bottom borders. and aspect ratio in vpp. At this point, top/bottom borders should be pretty straightforward - just flag the appropriate border bit in the video scanner.
+
+I need the transparency. I think we can use bit 1 above for that! Have bit - use bit. THIS IS THE WAY.
+
+## Nov 2, 2025
+
+so, border! Getting pretty close. Things I've learned so far - scaling from a single pixel to 42x5 pixels or whatever the scale is, using linear mode, that just does not work well. It creates a gradation from left to right that is just not correct. It also tends to want to mix with stuff that isn't exactly there. The only solution to that, would be to emit 14 pixels instead of 1 per 'cycle'. Which is certainly doable, though it's a lot more computation. So the border is just going to be kind of blockyish, unless I do that more horizontal pixels thing.
+
+Well I just discovered that on a IIgs and AppleColor (at least) that there is -no- 7 dot shift when in double-width modes. This is good as it simplifies some things. To handle this, we can either:
+1. not insert the 7 extra dots at all, based on a config variable in VideoScanGenerator, or;
+1. remove them when rendering in RGB.
+
+I suspect this was done because otherwise handling the border timing etc would not work right. As it wasn't for me here, ha!
+
+[x] if we're in IIGS mode, have to draw the frame w/o 7-pixel shift
+[x] test correct colors in lores, hires, and text fringe
+[x] test correct colors in dlr, dhgr, 80col fringe.
+
+
+Some other things I learned: 
+1. on composite output, we do have borders. Including on a green screen. They are grayscaled.
+1. also, (using a Monitor /// green) but in graphics modes, they are generated using ntsc bit patterns.
+
+## Nov 3, 2025
+
+So, it's when emulating a IIgs. Only the IIgs has borders. If we do the "RGB" display on a II+/IIe we still want the position shift. So I think we want to, when we're being a IIgs, set a flag in VideoScanGenerator to not insert bitshifts. We'll still use a 567 buffer because there's no point having yet another data struct.  It's possible I am going to have to deal with phase now? yes, in 40 modes, the phase is wrong in all renderers. Currently I hard set phase to 1 (inverted) because with the 7-dot shift for 40 modes, that gives us the correct phase at the first actual dot. Do I now need another way to tell the phase? This is a little complex. 
+
+So maybe the simpler thing is in fact to remove the shift when rendering rgb. Except it's not just rgb, on a IIGS there is no shift on composite either.
+
+If I keep this functionality in VSG, then instead of adding 7 pixels, it needs to produce a phaseOffset: 1=shifted (80) 0=unshifted (40). And the NTSC and RGB renderer would use that. ntsc would grab the phase offset per scanline from the colorburst value perhaps. 
+
+ok, so let's think about this.. Two modes. shift enabled (for IIe/IIc), shift disabled. (for IIgs). Does not apply to II.
+
+Shift enabled:
+in VSG:
+the bit buffer is only 560 pixels
+add a phase bit to the colorburst value.
+instead of adding 7 extra pixels to the bit buffer, we deal with this later on a per-scanline basis in the renderers.
+40 lines: phase=1
+80 lines: phase=0
+
+in Renderer:
+So the renderer also needs the shift enabled flag
+pixel buffer is 567 pixels
+reads phase bit from colorburst value
+if phase=1: insert 7 blank pixels at start (40 mode, move whole image over a bit)
+if phase=0: insert 7 blank pixels at end of line
+use phase to guide color selection
+
+Shift Disabled:
+in VSG:
+still set phase per above
+
+in Renderer:
+pixel buffer is 567 pixels but we will only ever emit 560 pixels per line, so 40 and 80 are aligned (just drawn with different starting phase)
+still use phase to guide color selection
+Do not insert extra pixels
+
+Then, based on the noshift setting, we draw the entire frame 7 pixels to the left (shift enabled) or not (shift disabled) and 560 versus 567 wide.
+
+In short, right now the presence of shifted pixels is overloaded with the pixel phase on each scanline, and this is decoupling those so we can control these independently. So really, shift enabled will only be set on the IIe. Borders will only be enabled on the IIgs (we want to skip the whole border mode if not using VideoScannerIIgs).
+
+ok this is coming along. I do have an issue in a couple places where I am not copying enough pixels from output texture to the screen.. need to copy 567 pixels. May need to make sure we're emitting 567 per line..
+got a weird one. 80 col mode doesn't work in: dpp, rgb. Fine everywhere else. wtf, over.
+
+At this point I undid all that stuff with 0b10 ("transparent flag" in bit) because it was in the wrong place. It's much better having the scanline flag for the offset, and letting that control transparency (in the renderers).
+
+Now I still need to add and respect the "shift" flag. Let's default that to false, allow setting to true. when using a iie scanner we need to set to false.
+
+Well ok then! That wasn't so awful. And it's done, and looks great!
+
+not done of course. 
+
+[x] in SHR, we're drawing 7 pixels too wide. (fix in calc_rects)
+[ ] the right border is not quite right its offset - because the color goes down a line at right border, but then goes back up for last cycle. and it should be 
+
+So this latter, let's discuss. In the video scanner, Hcount 0 to 39 is data; then we do right border, then hsync, then left border. Basing it on the 17030 cycle count, hsync is at hc = 11. I think these are off because the scanner is emitting the hsync at the wrong place. I can -sort- of patch over this by grabbing different pieces of texture, but that's a dirty dirty hack. 
+
+Study the Sather some more and be real sure where the syncs are and that we have them in the right place.
+
+Let's think about this from the perspective of the video beam first. there is these things in order: h.sync, backporch, left border, data, right border, front porch.
+
+Sather has hsync as 49-52 but I have it (From the GS doc?) as 48-51 ? 
+
+It says Vertical position increments after data cycle 39. 

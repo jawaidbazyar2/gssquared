@@ -4,7 +4,11 @@
 #include "devices/displaypp/RGBA.hpp"
 
 
-using Frame560 = Frame<uint8_t, 262, 580>;
+// legacy apple ii mode bitstream
+using Frame560 = Frame<uint8_t, 262, 560>;
+// legacy apple II mode texture
 using Frame560RGBA = Frame<RGBA_t, 262, 580>;
-using FrameBorder = Frame<RGBA_t, 262, 53>;
+// border texture
+using FrameBorder = Frame<RGBA_t, 263, 53>;
+// shr texture
 using Frame640 = Frame<RGBA_t, 200, 640>;

@@ -119,24 +119,81 @@ border_rect_t shr_borders[3][3]; // [y][x]
 #define B_LT 0
 #define B_RT 2
 
-void init_border_rects() {
-    ii_borders[B_CEN][B_LT].src = {0.0, 0.0, 6.0, SCREEN_TEXTURE_HEIGHT};
-    ii_borders[B_CEN][B_LT].dst = {0.0, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+/*
+border texture is laid out based on the hc/vc positions. i.e
+   0-6: right border
+   7-12: left border
+   13-52: top/bottom border center content
 
-    ii_borders[B_CEN][B_CEN].src = {0.0, 0.0, SCREEN_TEXTURE_WIDTH, (float)SCREEN_TEXTURE_HEIGHT};
-    ii_borders[B_CEN][B_CEN].dst = {42.0-7.0, 19.0, SCREEN_TEXTURE_WIDTH, SCREEN_TEXTURE_HEIGHT};
+*/ 
 
-    ii_borders[B_CEN][B_RT].src = {6.0, 0.0, 6.0, SCREEN_TEXTURE_HEIGHT};
-    ii_borders[B_CEN][B_RT].dst = {42+560, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+void calculate_border_rects(bool shift_enabled) {
+    float shift_offset = shift_enabled ? 7.0f : 0.0f;
+    float width = shift_enabled ? 567.0f : 560.0f;
 
-    shr_borders[B_CEN][B_LT].src = {0.0, 0.0, 6.0, SCREEN_TEXTURE_HEIGHT};
-    shr_borders[B_CEN][B_LT].dst = {0.0, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+    constexpr float b_l_x = 7.0f;
+    constexpr float b_l_w = 6.0f;
+
+    constexpr float b_r_x = 0.0f;
+    constexpr float b_r_w = 7.0f;
+
+    // top
+    ii_borders[B_TOP][B_LT].src = {b_l_x, 243.0, b_l_w, 19};
+    ii_borders[B_TOP][B_LT].dst = {0.0, 0.0, 42.0, 19};
+
+    ii_borders[B_TOP][B_CEN].src = {13, 243.0, 40, 19};
+    ii_borders[B_TOP][B_CEN].dst = {42, 0.0, 560, 19};
+
+    ii_borders[B_TOP][B_RT].src = {0, 243.0, b_r_w, 19};
+    ii_borders[B_TOP][B_RT].dst = {42.0f+560.0f-shift_offset, 0.0, 56.0, 19};
+
+    // center
+    ii_borders[B_CEN][B_LT].src = {b_l_x, 0.0, b_l_w, SCREEN_TEXTURE_HEIGHT};
+    ii_borders[B_CEN][B_LT].dst = {0, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+
+    ii_borders[B_CEN][B_CEN].src = {0.0, 0.0, width, (float)SCREEN_TEXTURE_HEIGHT}; // not from border texture
+    ii_borders[B_CEN][B_CEN].dst = {42.0f-shift_offset, 19.0, width, SCREEN_TEXTURE_HEIGHT}; // not from border texture
+
+    ii_borders[B_CEN][B_RT].src = {0.0, 0.0, b_r_w, SCREEN_TEXTURE_HEIGHT};
+    ii_borders[B_CEN][B_RT].dst = {42.0f+560.0f-shift_offset, 19.0, 56.0, SCREEN_TEXTURE_HEIGHT};
+
+    // bottom
+    ii_borders[B_BOT][B_LT].src = {b_l_x, 192.0, b_l_w, 21};
+    ii_borders[B_BOT][B_LT].dst = {0.0, 19+SCREEN_TEXTURE_HEIGHT, 42.0, 21};
+
+    ii_borders[B_BOT][B_CEN].src = {13.0, 192.0, 40, 21};
+    ii_borders[B_BOT][B_CEN].dst = {42, 19+SCREEN_TEXTURE_HEIGHT, 560, 21};
+
+    ii_borders[B_BOT][B_RT].src = {0, 192.0, b_r_w, 21};
+    ii_borders[B_BOT][B_RT].dst = {42.0f+560.0f-shift_offset, 19+SCREEN_TEXTURE_HEIGHT, 56.0, 21};
+
+    // SHR
+
+    shr_borders[B_CEN][B_LT].src = {0.0, 0.0, b_l_w, SCREEN_TEXTURE_HEIGHT};
+    shr_borders[B_CEN][B_LT].dst = {0.0, 19.0, 42.0, 200};
 
     shr_borders[B_CEN][B_CEN].src = {0.0, 0.0, 640, 200};
-    shr_borders[B_CEN][B_CEN].dst = {42.0, 19.0, SCREEN_TEXTURE_WIDTH, SCREEN_TEXTURE_HEIGHT};
+    shr_borders[B_CEN][B_CEN].dst = {42.0, 19.0, width, 200};
 
-    shr_borders[B_CEN][B_RT].src = {6.0, 0.0, 6.0, SCREEN_TEXTURE_HEIGHT};
-    shr_borders[B_CEN][B_RT].dst = {42+560, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+    shr_borders[B_CEN][B_RT].src = {0.0, 1.0, b_r_w, SCREEN_TEXTURE_HEIGHT};
+    shr_borders[B_CEN][B_RT].dst = {42+560, 19.0, 42.0, 200};
+}
+
+void print_rect(const char *name, border_rect_t &r) {
+    printf("%s: SRC: (%f, %f, %f, %f)\n", name, r.src.x, r.src.y, r.src.w, r.src.h);
+    printf("%s: DST: (%f, %f, %f, %f)\n", name, r.dst.x, r.dst.y, r.dst.w, r.dst.h);
+}
+
+void print_border_rects() {
+    /* print_rect("ii_borders[B_TOP][B_LT]", ii_borders[B_TOP][B_LT]);
+    print_rect("ii_borders[B_TOP][B_CEN]", ii_borders[B_TOP][B_CEN]);
+    print_rect("ii_borders[B_TOP][B_RT]", ii_borders[B_TOP][B_RT]);
+    print_rect("ii_borders[B_CEN][B_LT]", ii_borders[B_CEN][B_LT]); */
+    print_rect("ii_borders[B_CEN][B_CEN]", ii_borders[B_CEN][B_CEN]);
+    /* print_rect("ii_borders[B_CEN][B_RT]", ii_borders[B_CEN][B_RT]);
+    print_rect("ii_borders[B_BOT][B_LT]", ii_borders[B_BOT][B_LT]);
+    print_rect("ii_borders[B_BOT][B_CEN]", ii_borders[B_BOT][B_CEN]);
+    print_rect("ii_borders[B_BOT][B_RT]", ii_borders[B_BOT][B_RT]); */
 }
 
 bool readFile(const char *path, uint8_t *data, size_t size) {
@@ -220,8 +277,6 @@ int main(int argc, char **argv) {
         { (float)640, (float)200 } // shr
     };
 
-    init_border_rects();
-
     uint8_t *rom = new uint8_t[12*1024];
 
     MMU_IIe *mmu = new MMU_IIe(128, 128*1024, rom);
@@ -252,7 +307,7 @@ int main(int argc, char **argv) {
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
     }
-    SDL_Texture *border_texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 53, II_SCREEN_TEXTURE_HEIGHT);
+    SDL_Texture *border_texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 53, 263);
     if (!border_texture) {
         printf("Failed to create texture\n");
         printf("SDL Error: %s\n", SDL_GetError());
@@ -275,7 +330,8 @@ int main(int argc, char **argv) {
     //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
     SDL_SetRenderScale(renderer, 2.0f, 4.0f); // this means our coordinate system is 1x1 according to Apple II scanlines/pixels etc.
     SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
-    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE); 
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureScaleMode(border_texture, SDL_SCALEMODE_PIXELART);
     int error = SDL_SetRenderTarget(renderer, nullptr);
 
     int testiterations = 10000;
@@ -335,8 +391,9 @@ int main(int argc, char **argv) {
     }
 
     Frame560RGBA *frame_rgba = new(std::align_val_t(64)) Frame560RGBA(567, II_SCREEN_TEXTURE_HEIGHT);
-    FrameBorder *fr_border = new(std::align_val_t(64)) FrameBorder(13, 262);
+    FrameBorder *fr_border = new(std::align_val_t(64)) FrameBorder(13, 263);
     Frame640 *frame_shr = new(std::align_val_t(64)) Frame640(640, 200);
+    //fr_border->clear(RGBA_t::make(0xff, 0xff, 0xff, 0xFF));
 
     Monochrome560 monochrome;
     NTSC560 ntsc_render;
@@ -353,6 +410,13 @@ int main(int argc, char **argv) {
     video_scanner_iigs->set_border_color(0x0F);
     VideoScanGenerator *vsg = new VideoScanGenerator(&iie_rom);
 
+    vsg->set_display_shift(false);
+    rgb_render.set_shift_enabled(false);
+    ntsc_render.set_shift_enabled(false);
+    monochrome.set_shift_enabled(false);
+    calculate_border_rects(false);
+    print_border_rects();
+
     int pitch;
     void *pixels;
 
@@ -367,14 +431,20 @@ int main(int argc, char **argv) {
     int flash_count = 0;
     int scanner_choice = SCANNER_II;
     int old_scanner_choice = -1;
+    
     bool rolling_border = false;
+    int border_cycles = 0;
+    bool border_is_hc = false;
+    bool border_is_vc = false;
 
     int generate_mode = 1;
     int last_generate_mode = -1;
     
     int last_canvas_mode = -1;
     int canvas_mode = 0;
-    
+    int fg = 0x0F;
+    int bg = 0x00;
+
     while (++framecnt && !exiting)  {
         VideoScannerII *scanner;
         
@@ -411,108 +481,164 @@ int main(int argc, char **argv) {
                 exiting = true;
             }
             if (event.type == SDL_EVENT_KEY_DOWN) {
-                if (event.key.key == SDLK_1) {
-                    generate_mode = 1;
-                    scanner->set_page_1();
-                    scanner->reset_80col();
-                    scanner->set_text();
-                    scanner->reset_shr();
-                }
-                if (event.key.key == SDLK_2) {
-                    generate_mode = 2;
-                    scanner->set_page_1();
-                    scanner->set_80col();
-                    scanner->set_text();
-                    scanner->reset_shr();
-                }
-                if (event.key.key == SDLK_3) {
-                    generate_mode = 3;
-                    scanner->set_page_1();
-                    scanner->set_graf();
-                    scanner->reset_80col();
-                    scanner->set_lores();
-                    scanner->reset_shr();
-                }
-                if (event.key.key == SDLK_4) {
-                    generate_mode = 4;
-                    scanner->set_graf();
-                    scanner->set_page_1();
-                    scanner->set_80col();
-                    scanner->set_lores();
-                    scanner->set_dblres();
-                    scanner->reset_shr();
-                }
-                if (event.key.key == SDLK_5) {
-                    generate_mode = 5;
-                    scanner->set_page_2();
-                    scanner->reset_80col();
-                    scanner->set_graf();
-                    scanner->set_hires();
-                    scanner->reset_dblres();
-                    scanner->reset_shr();
-                }
-                if (event.key.key == SDLK_6) {
-                    generate_mode = 6;
-                    scanner->set_dblres();
-                    scanner->set_hires();
-                    scanner->set_graf();
-                    scanner->set_page_1();
-                    scanner->set_80col();
-                    scanner->reset_shr();
-                }
-                if (event.key.key == SDLK_7) {
-                    generate_mode = 7;
-                    scanner->set_shr();
-                }
-                if (event.key.key == SDLK_8) {
-                    generate_mode = 8;
-                    scanner->set_shr();
-                }
-                if (event.key.key == SDLK_N) {
-                    render_mode = 2;
-                }
-                if (event.key.key == SDLK_M) {
-                    render_mode = 1;
-                }
-                if (event.key.key == SDLK_R) {
-                    render_mode = 3;
-                }
-                if (event.key.key == SDLK_A) {
-                    scanner->set_altchrset();
-                }
-                if (event.key.key == SDLK_S) {
-                    scanner->reset_altchrset();
-                }
-                if (event.key.key == SDLK_X) {
-                    scanner->set_mixed();
-                }
-                if (event.key.key == SDLK_Z) {
-                    scanner->set_full();
-                }
-                if (event.key.key == SDLK_P) {
-                    sharpness = (sharpness + 1) % 3;
-                    SDL_SetTextureScaleMode(texture, scales[sharpness]);
-                    SDL_SetTextureScaleMode(shrtexture, scales[sharpness]);
-                    printf("Sharpness: %d\n", sharpness);
-                }
-                if (event.key.key == SDLK_B) {
-                    border_color = (border_color + 1) & 0x0F;
-                    scanner->set_border_color(border_color);
-                }
-                if (event.key.key == SDLK_V) {
-                    rolling_border = !rolling_border;
-                }
-                if (event.key.key == SDLK_F1) {
-                    scanner_choice = SCANNER_II;
-                    printf("Scanner choice: II\n");
-                }
-                if (event.key.key == SDLK_F2) {
-                    scanner_choice = SCANNER_IIE;
-                    printf("Scanner choice: IIe\n");
-                }
-                if (event.key.key == SDLK_F3) {
-                    scanner_choice = SCANNER_IIGS;
-                    printf("Scanner choice: IIgs\n");
+                switch (event.key.key) { 
+                    case SDLK_1:
+                        generate_mode = 1;
+                        scanner->set_page_1();
+                        scanner->reset_80col();
+                        scanner->set_text();
+                        scanner->reset_shr();
+                        break;
+                
+                    case SDLK_2:
+                        generate_mode = 2;
+                        scanner->set_page_1();
+                        scanner->set_80col();
+                        scanner->set_text();
+                        scanner->reset_shr();
+                        break;
+                    
+                    case SDLK_3:
+                        generate_mode = 3;
+                        scanner->set_page_1();
+                        scanner->set_graf();
+                        scanner->reset_80col();
+                        scanner->set_lores();
+                        scanner->reset_shr();
+                        break;
+
+                    case SDLK_4:
+                        generate_mode = 4;
+                        scanner->set_graf();
+                        scanner->set_page_1();
+                        scanner->set_80col();
+                        scanner->set_lores();
+                        scanner->set_dblres();
+                        scanner->reset_shr();
+                        break;
+                    
+                    case SDLK_5:
+                        generate_mode = 5;
+                        scanner->set_page_2();
+                        scanner->reset_80col();
+                        scanner->set_graf();
+                        scanner->set_hires();
+                        scanner->reset_dblres();
+                        scanner->reset_shr();
+                        break;
+                    
+                    case SDLK_6:
+                        generate_mode = 6;
+                        scanner->set_dblres();
+                        scanner->set_hires();
+                        scanner->set_graf();
+                        scanner->set_page_1();
+                        scanner->set_80col();
+                        scanner->reset_shr();
+                        break;
+                    
+                    case SDLK_7:
+                        generate_mode = 7;
+                        scanner->set_shr();
+                        break;
+                    
+                    case SDLK_8:
+                        generate_mode = 8;
+                        scanner->set_shr();
+                        break;
+                    
+                    case SDLK_N:
+                        render_mode = 2;
+                        break;
+                    
+                    case SDLK_M:
+                        render_mode = 1;
+                        break;
+                    
+                    case SDLK_R:
+                        render_mode = 3;
+                        break;
+
+                    case SDLK_A:
+                        scanner->set_altchrset();
+                        break;
+                    
+                    case SDLK_S:
+                        scanner->set_altchrset();
+                        break;
+                    
+                    case SDLK_X:
+                        scanner->reset_altchrset();
+                        break;
+                    
+                    case SDLK_Z:
+                        scanner->set_full();
+                        break;
+                    
+                    case SDLK_P:
+                        sharpness = (sharpness + 1) % 3;
+                        SDL_SetTextureScaleMode(texture, scales[sharpness]);
+                        SDL_SetTextureScaleMode(shrtexture, scales[sharpness]);
+                        printf("Sharpness: %d\n", sharpness);
+                        break;
+                    
+                    case SDLK_B:
+                        border_color = (border_color + 1) & 0x0F;
+                        scanner->set_border_color(border_color);
+                        break;
+                    case SDLK_O:
+                        border_is_hc = !border_is_hc;
+                        break;
+                    case SDLK_I:
+                        border_is_vc = !border_is_vc;
+                        break;
+        
+                    case SDLK_F:
+                        fg = (fg + 1) & 0x0F;
+                        scanner->set_text_fg(fg);
+                        break;
+
+                    case SDLK_G:
+                        bg = (bg + 1) & 0x0F;
+                        scanner->set_text_bg(bg);
+                        break;
+                    
+                    case SDLK_V:
+                        rolling_border = !rolling_border;
+                        break;
+                    
+                    case SDLK_F1:
+                        scanner_choice = SCANNER_II;
+                        vsg->set_display_shift(false);
+                        rgb_render.set_shift_enabled(false);
+                        ntsc_render.set_shift_enabled(false);
+                        monochrome.set_shift_enabled(false);
+                        calculate_border_rects(false);
+                        print_border_rects();
+                        printf("Scanner choice: II\n");
+                        break;
+                    
+                    case SDLK_F2:
+                        scanner_choice = SCANNER_IIE;
+                        vsg->set_display_shift(true);
+                        rgb_render.set_shift_enabled(true);
+                        ntsc_render.set_shift_enabled(true);
+                        monochrome.set_shift_enabled(true);
+                        calculate_border_rects(true);
+                        print_border_rects();
+                        printf("Scanner choice: IIe\n");
+                        break;
+                    
+                    case SDLK_F3:
+                        scanner_choice = SCANNER_IIGS;
+                        vsg->set_display_shift(false);
+                        rgb_render.set_shift_enabled(false);
+                        ntsc_render.set_shift_enabled(false);
+                        monochrome.set_shift_enabled(false);
+                        calculate_border_rects(false);
+                        print_border_rects();
+                        printf("Scanner choice: IIgs\n");
+                        break;                
                 }
                 printf("key pressed: %d\n", event.key.key);
             }
@@ -539,8 +665,22 @@ int main(int argc, char **argv) {
                 video_scanner_iie->set_lores();
                 video_scanner_iie->set_page_1();
             }  */
-            if (rolling_border) {
+            if ((rolling_border) && (++border_cycles == 650)) {
                 border_color = (border_color + 1) & 0x0F;
+                fg = (fg + 1) & 0x0F;
+                bg = (bg + 1) & 0x0F;
+                scanner->set_text_fg(fg);
+                scanner->set_text_bg(bg);
+                scanner->set_border_color(border_color);
+
+                border_cycles = 0;
+            }
+            if (border_is_hc) {
+                border_color = (vidcycle % 65) & 0x0F;
+                scanner->set_border_color(border_color);
+            }
+            if (border_is_vc) {
+                border_color = (vidcycle / 65) & 0x0F;
                 scanner->set_border_color(border_color);
             }
     
@@ -561,11 +701,11 @@ int main(int argc, char **argv) {
                     monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
                     break;
                 case 2:
-                    ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF), phaseoffset); // no-color color is white.
+                    ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) /* , phaseoffset */); // no-color color is white.
                     break;
                 case 3:
-                    if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
-                    else rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), phaseoffset);
+                    /* if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
+                    else */ rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF)  /* , phaseoffset */);
                     break;
             }
 
@@ -582,7 +722,7 @@ int main(int argc, char **argv) {
 
         if (old_scanner_choice == SCANNER_IIGS) {
             SDL_LockTexture(border_texture, NULL, &pixels, &pitch);
-            memcpy(pixels, fr_border->data(), 53 * SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
+            memcpy(pixels, fr_border->data(), 53 * 263 * sizeof(RGBA_t));
             SDL_UnlockTexture(border_texture);
         }
 
@@ -591,7 +731,16 @@ int main(int argc, char **argv) {
 
         // draw some border
         if (old_scanner_choice == SCANNER_IIGS) {
-            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_CEN][B_LT].src, &ii_borders[B_CEN][B_LT].dst);
+            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_TOP][B_LT].src, &ii_borders[B_TOP][B_LT].dst); // top left
+            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_TOP][B_CEN].src, &ii_borders[B_TOP][B_CEN].dst); // top
+            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_TOP][B_RT].src, &ii_borders[B_TOP][B_RT].dst); // top right
+
+            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_CEN][B_LT].src, &ii_borders[B_CEN][B_LT].dst); // left
+            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_CEN][B_RT].src, &ii_borders[B_CEN][B_RT].dst); // right
+        
+            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_BOT][B_LT].src, &ii_borders[B_BOT][B_LT].dst); // bottom left
+            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_BOT][B_CEN].src, &ii_borders[B_BOT][B_CEN].dst); // bottom
+            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_BOT][B_RT].src, &ii_borders[B_BOT][B_RT].dst); // bottom right
         }
 
         // Draw the screen texture.
@@ -600,11 +749,6 @@ int main(int argc, char **argv) {
             SDL_RenderTexture(renderer, texture, &ii_borders[B_CEN][B_CEN].src, &ii_borders[B_CEN][B_CEN].dst); 
         } else {
             SDL_RenderTexture(renderer, shrtexture, &shr_borders[B_CEN][B_CEN].src, &shr_borders[B_CEN][B_CEN].dst);
-        }
-
-        // Draw more border
-        if (old_scanner_choice == SCANNER_IIGS) {
-            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_CEN][B_RT].src, &ii_borders[B_CEN][B_RT].dst);
         }
 
         // Emit!

@@ -261,11 +261,11 @@ bool update_display_apple2(cpu_state *cpu) {
                 if (ds->display_mode == TEXT_MODE) {
                     ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
                 } else {
-                    ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), 1);
+                    ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
                 }
                 break;
             case DM_ENGINE_RGB:
-                ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), 1);
+                ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
                 break;
             case DM_ENGINE_MONO:
                 ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, mono_color_value);
@@ -301,10 +301,10 @@ bool update_display_apple2_cycle(cpu_state *cpu) {
             ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, vs->get_mono_color());
             break;
         case DM_ENGINE_NTSC:
-            ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF), 1);
+            ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF)  /* , 1 */);
             break;
         case DM_ENGINE_RGB: // we send a green value here but mon_rgb does not use it.
-            ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), 1);
+            ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
             break;
         default:
             break;
@@ -855,7 +855,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     uint16_t f_w = BASE_WIDTH+20;
     uint16_t f_h = BASE_HEIGHT;
     ds->frame_rgba = new(std::align_val_t(64)) Frame560RGBA(f_w, f_h);
-    ds->frame_bits = new(std::align_val_t(64)) Frame560(f_w, f_h);
+    ds->frame_bits = new(std::align_val_t(64)) Frame560(560, f_h);
     ds->frame_rgba->clear(); // clear the frame buffers at startup.
     ds->frame_bits->clear();
 

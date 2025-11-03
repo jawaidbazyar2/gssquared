@@ -16,10 +16,13 @@ private:
     CharRom *char_rom = nullptr;
     bool flash_state = false;
     uint16_t flash_counter = 0;
-    //bool border_enabled = false;
+
+    bool display_shift_enabled = true;
 
 public:
     VideoScanGenerator(CharRom *charrom, bool border_enabled = false);
 
     void generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte, FrameBorder *border = nullptr, Frame640 *frame_shr = nullptr);
+    void set_display_shift(bool enable) { display_shift_enabled = enable; }
+    
 };
