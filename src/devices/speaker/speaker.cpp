@@ -225,7 +225,10 @@ uint64_t speaker_event_log[SPEAKER_EVENT_LOG_SIZE]; */
 
 uint8_t speaker_memory_read(void *context, uint16_t address) {
     log_speaker_blip((cpu_state *)context);
-    return 0xA0; // what does speaker read return?
+    cpu_state *cpu = (cpu_state *)context;
+    
+    return (cpu->mmu->floating_bus_read());
+    //return 0xA0; // what does speaker read return?
 }
 
 void speaker_memory_write(void *context, uint16_t address, uint8_t value) {

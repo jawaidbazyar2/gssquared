@@ -159,39 +159,52 @@ void strobe_game_inputs_w(void *context, uint16_t address, uint8_t value) {
 uint8_t read_game_input_0(void *context, uint16_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
-
+    uint8_t val;
     if (ds->game_input_trigger_0 > cpu->cycles) {
-        return 0x80;
+        val = 0x80;
+    } else {
+        val = 0x00;
     }
-    return 0x00;
+    return val | (ds->mmu->floating_bus_read() & 0x7F);
 }
 
 uint8_t read_game_input_1(void *context, uint16_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+    
+    uint8_t val;
     if (ds->game_input_trigger_1 > cpu->cycles) {   
-        return 0x80;
+        val = 0x80;
+    } else {
+        val = 0x00;
     }
-    return 0x00;
+    return val | (ds->mmu->floating_bus_read() & 0x7F);
 }
 
 uint8_t read_game_input_2(void *context, uint16_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
 
+    uint8_t val;
     if (ds->game_input_trigger_2 > cpu->cycles) {
-        return 0x80;
+        val = 0x80;
+    } else {
+        val = 0x00;
     }
-    return 0x00;
+    return val | (ds->mmu->floating_bus_read() & 0x7F);
 }
 
 uint8_t read_game_input_3(void *context, uint16_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+    
+    uint8_t val;
     if (ds->game_input_trigger_3 > cpu->cycles) {
-        return 0x80;
+        val = 0x80;
+    } else {
+        val = 0x00;
     }
-    return 0x00;
+    return val | (ds->mmu->floating_bus_read() & 0x7F);
 }
 
 uint8_t read_game_switch_0(void *context, uint16_t address) {
@@ -200,7 +213,7 @@ uint8_t read_game_switch_0(void *context, uint16_t address) {
     
     if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (cpu->cycles > ds->joyport_activate)) { // reverse polarity for atari
         bool val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
-        return val ? 0x00 : 0x80;    
+        return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);    
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
         if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
             ds->game_switch_0 = 1;
@@ -221,7 +234,7 @@ uint8_t read_game_switch_0(void *context, uint16_t address) {
     if (SDL_GetModState() & KEYMOD_OPENAPPLE) { // TODO: restrict to Apple IIe
         ds->game_switch_0 = 1;
     }
-    return ds->game_switch_0 ? 0x80 : 0x00;
+    return (ds->game_switch_0 ? 0x80 : 0x00) | (ds->mmu->floating_bus_read() & 0x7F);
 
 }
 
@@ -242,7 +255,7 @@ uint8_t read_game_switch_1(void *context, uint16_t address) {
         if (SDL_GetModState() & KEYMOD_CLOSEDAPPLE) { // TODO: restrict to Apple IIe
             val = true;
         }
-        return val ? 0x00 : 0x80;
+        return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
         if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_SOUTH)) {
             ds->game_switch_1 = 1;
@@ -262,7 +275,7 @@ uint8_t read_game_switch_1(void *context, uint16_t address) {
     if (SDL_GetModState() & KEYMOD_CLOSEDAPPLE) { // TODO: restrict to Apple IIe
         ds->game_switch_1 = 1;
     }
-    return ds->game_switch_1 ? 0x80 : 0x00;
+    return (ds->game_switch_1 ? 0x80 : 0x00) | (ds->mmu->floating_bus_read() & 0x7F);
    /*  } */
 }
 
@@ -280,7 +293,7 @@ uint8_t read_game_switch_2(void *context, uint16_t address) {
         } else { // right-1
             val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
         }
-        return val ? 0x00 : 0x80;
+        return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
         if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
             ds->game_switch_2 = 1;
@@ -296,7 +309,7 @@ uint8_t read_game_switch_2(void *context, uint16_t address) {
     } else {
         ds->game_switch_2 = 0;
     }
-    return ds->game_switch_2 ? 0x80 : 0x00;
+    return (ds->game_switch_2 ? 0x80 : 0x00) | (ds->mmu->floating_bus_read() & 0x7F);
 }
 
 /**
@@ -422,14 +435,15 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     if (DEBUG(DEBUG_GAME)) fprintf(stdout, "Initializing game controller\n");
 
     // register the I/O ports
-    computer->mmu->set_C0XX_read_handler(GAME_ANALOG_0, { read_game_input_0, cpu });
-    computer->mmu->set_C0XX_read_handler(GAME_ANALOG_1, { read_game_input_1, cpu });
-    computer->mmu->set_C0XX_read_handler(GAME_ANALOG_2, { read_game_input_2, cpu });
-    computer->mmu->set_C0XX_read_handler(GAME_ANALOG_3, { read_game_input_3, cpu });
-    computer->mmu->set_C0XX_read_handler(GAME_SWITCH_0, { read_game_switch_0, cpu });
-    computer->mmu->set_C0XX_read_handler(GAME_SWITCH_1, { read_game_switch_1, cpu });
-    computer->mmu->set_C0XX_read_handler(GAME_SWITCH_2, { read_game_switch_2, cpu }); 
-
+    for (int i = 0; i <= 8; i+=8) { // in II+ and //e appears at C061 etc AND C069 etc.
+        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_0 + i, { read_game_input_0, cpu });
+        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_1 + i, { read_game_input_1, cpu });
+        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_2 + i, { read_game_input_2, cpu });
+        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_3 + i, { read_game_input_3, cpu });
+        computer->mmu->set_C0XX_read_handler(GAME_SWITCH_0 + i, { read_game_switch_0, cpu });
+        computer->mmu->set_C0XX_read_handler(GAME_SWITCH_1 + i, { read_game_switch_1, cpu });
+        computer->mmu->set_C0XX_read_handler(GAME_SWITCH_2 + i, { read_game_switch_2, cpu }); 
+    }
     // the reset strobe apparently responds at 0xC070-7F.
     for (int i = 0x00; i < 0x10; i++) {
         computer->mmu->set_C0XX_read_handler(GAME_ANALOG_RESET + i, { strobe_game_inputs, cpu });

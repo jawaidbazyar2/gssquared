@@ -33,6 +33,7 @@
 #include "devices/annunciator/annunciator.hpp"
 #include "devices/iiememory/iiememory.hpp"
 #include "devices/applemouseii/mouse.hpp"
+#include "devices/cassette/cassette.hpp"
 
 Device_t NoDevice = {
         DEVICE_ID_END,
@@ -167,6 +168,13 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         "Apple Mouse II",
         false,
         init_mouse,
+        NULL
+    },
+    {
+        DEVICE_ID_CASSETTE,
+        "Cassette",
+        false,
+        init_mb_cassette,
         NULL
     }
 };
