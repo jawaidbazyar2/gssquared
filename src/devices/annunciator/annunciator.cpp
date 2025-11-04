@@ -34,7 +34,7 @@ uint8_t annunciator_read_C0xx_anc0(void *context, uint16_t addr) {
     uint8_t anc_state = (addr & 0x1);
     anc_d->annunciators[anc_id] = anc_state;
     if (DEBUG(DEBUG_VIDEX)) fprintf(stdout, "videx_read_C0xx_anc0: %04X %d\n", addr, anc_d->annunciators[anc_id]);
-    return 0xEE; // TODO: return floating bus.
+    return anc_d->mmu->floating_bus_read(); // TODO: return floating bus.
 }
 
 void annunciator_write_C0xx_anc0(void *context, uint16_t addr, uint8_t data) {
@@ -52,6 +52,7 @@ void init_annunciator(computer_t *computer, SlotType_t slot) {
     SDL_InitSubSystem(SDL_INIT_JOYSTICK); // TODO: I don't think this belongs here?
     // alloc and init display state
     annunciator_state_t *anc_d = new annunciator_state_t;
+    anc_d->mmu = computer->mmu;
     anc_d->annunciators[0] = 0;
     anc_d->annunciators[1] = 0;
     anc_d->annunciators[2] = 0;

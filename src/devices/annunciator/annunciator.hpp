@@ -6,6 +6,7 @@
 
 struct annunciator_state_t {
     uint8_t annunciators[4] = {0, 0, 0, 0};
+    MMU_II *mmu = nullptr;
 };
 
 uint8_t read_annunciator(cpu_state *cpu, uint8_t id);
