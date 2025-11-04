@@ -6941,3 +6941,7 @@ Let's think about this from the perspective of the video beam first. there is th
 Sather has hsync as 49-52 but I have it (From the GS doc?) as 48-51 ? 
 
 It says Vertical position increments after data cycle 39. 
+
+There is a discrepancy between John Brooks description of cycle timing above and the IIgs document I have - he suggests hblank is 13 cycles; it says 12. He says right border is 6 cycles; it says 7. 
+
+Wm has scanner start at hcount = 0, vcount = 0x100. Hcount 0 is beginning of HBL - "clock 40". vcount 0x100 is beginning of the first data line. So this is our cycle 0. ok yes, that's what we have here. Though in the spreadsheet what I call "hcount" is 40, which isn't right.
