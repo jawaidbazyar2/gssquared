@@ -34,6 +34,7 @@
 #include "devices/iiememory/iiememory.hpp"
 #include "devices/applemouseii/mouse.hpp"
 #include "devices/cassette/cassette.hpp"
+#include "devices/vidhd/vidhd.hpp"
 
 Device_t NoDevice = {
         DEVICE_ID_END,
@@ -175,6 +176,13 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         "Cassette",
         false,
         init_mb_cassette,
+        NULL
+    },
+    {
+        DEVICE_ID_VIDHD,
+        "VIDHD",
+        false,
+        init_slot_vidhd,
         NULL
     }
 };
