@@ -124,37 +124,16 @@ void video_system_t::set_window_title(const char *title) {
     SDL_SetWindowTitle(window, title);
 }
 
-void video_system_t::render_frame(SDL_Texture *texture, float offset) {
-    float w,h;
-    SDL_GetTextureSize(texture, &w, &h);
-    float nw = w, nh = h;
+void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_FRect *dstrect, bool respect_mode /* , float offset */) {
 
-    float xoffset = (offset/2.0f) * scale_x;
-    if (nw == 640) { // TODO: kind of a cheesy hack to say "scale into the base display area"
-        nw = BASE_WIDTH;
-        nh = BASE_HEIGHT;
+    if (respect_mode) {
+        if (display_pixel_mode == DM_PIXEL_FUZZ) {
+            SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
+        } else {
+            SDL_SetTextureScaleMode(texture,  SDL_SCALEMODE_PIXELART); // SDL_SCALEMODE_NEAREST
+        }
     }
-    if (display_pixel_mode == DM_PIXEL_FUZZ) {
-        SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
-    } else {
-        SDL_SetTextureScaleMode(texture, /* SDL_SCALEMODE_NEAREST */ SDL_SCALEMODE_PIXELART);
-    }
-
-    SDL_FRect dstrect = {
-        (float)border_width + xoffset,
-        (float)border_height,
-       // (float)BASE_WIDTH, 
-        //(float)BASE_HEIGHT
-        nw, // should be minus 7 for Display, but no change for videx/GS.
-        nh
-    };
-    SDL_FRect srcrect = {
-        (float)0.0,
-        (float)0.0,
-        (float)w, 
-        (float)h
-    };
-    SDL_RenderTexture(renderer, texture, &srcrect, &dstrect);
+    SDL_RenderTexture(renderer, texture, srcrect, dstrect);
 }
 
 void video_system_t::clear() {

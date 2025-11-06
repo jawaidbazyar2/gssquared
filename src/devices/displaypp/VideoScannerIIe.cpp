@@ -65,8 +65,8 @@ void VideoScannerIIe::init_video_addresses()
 
         // set the flags for the current scan address
         uint16_t fl = 0;
-        uint16_t hc = idx % 65;
-        uint16_t vc = idx / 65;
+        uint32_t hc = idx % 65;
+        uint32_t vc = idx / 65;
         if (hc < 25) fl |= SA_FLAG_HBL;
         if (vc >= 192) fl |= SA_FLAG_VBL;
         // hc=0 vc=0 here is upper left pixel of data display.

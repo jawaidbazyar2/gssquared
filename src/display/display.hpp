@@ -82,6 +82,25 @@ typedef enum {
     NUM_DISPLAY_PAGES
 } display_page_number_t;
 
+typedef enum {
+    VS_II = 0,
+    VS_IIE,
+    VS_IIGS,
+    NUM_VIDEO_SCANNERS
+
+} video_scanner_t;
+
+#define B_TOP 0
+#define B_CEN 1
+#define B_BOT 2
+#define B_LT 0
+#define B_RT 2
+
+struct border_rect_t {
+    SDL_FRect src;
+    SDL_FRect dst;
+};
+
 typedef class display_state_t {
 
 public:
@@ -110,6 +129,7 @@ public:
     video_system_t *video_system;
     MMU_II *mmu;
     computer_t *computer;
+    video_scanner_t video_scanner_type = VS_II;
     VideoScannerII *video_scanner = nullptr; // if set, use this instead of default video generation.
     VideoScanGenerator *vsg = nullptr;
     bool framebased = true;
@@ -122,6 +142,16 @@ public:
     NTSC560 mon_ntsc;
     GSRGB560 mon_rgb;
     MessageBus *mbus;
+
+    // IIGS specific
+    FrameBorder *fr_border = nullptr;
+    Frame640 *fr_shr = nullptr;
+    uint8_t new_video = 0x01;
+    uint8_t text_color = 0x0F0;
+    uint8_t border_color = 0x00;
+    border_rect_t ii_borders[3][3]; // [y][x]
+    border_rect_t shr_borders[3][3]; // [y][x]
+    
 } display_state_t;
 
 void txt_memory_write(uint16_t , uint8_t );

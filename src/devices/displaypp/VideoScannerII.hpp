@@ -93,7 +93,7 @@ protected:
     uint8_t *ram;
 
     ScanBuffer *frame_scan = nullptr;
-    uint16_t scan_index = 0;
+    uint32_t scan_index = 0;
 
     // floating bus video data
     uint8_t   video_byte;
