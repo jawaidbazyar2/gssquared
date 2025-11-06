@@ -15,7 +15,7 @@ private:
     void build_hires40Font(bool delayEnabled);
     CharRom *char_rom = nullptr;
     bool flash_state = false;
-    uint16_t flash_counter = 0;
+    uint32_t flash_counter = 0;
 
     bool display_shift_enabled = true;
 

@@ -67,10 +67,10 @@ DeviceMap_t DeviceMap_IIE[] = {
 };
 
 DeviceMap_t DeviceMap_IIE_MOUSE[] = {
+    {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
     {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
     {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
     {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
-    {DEVICE_ID_SPEAKER, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
     {DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
@@ -78,6 +78,22 @@ DeviceMap_t DeviceMap_IIE_MOUSE[] = {
     {DEVICE_ID_PD_BLOCK2, SLOT_5},
     {DEVICE_ID_DISK_II, SLOT_6},
     {DEVICE_ID_MOUSE, SLOT_4},
+    {DEVICE_ID_END, SLOT_NONE}
+};
+
+DeviceMap_t DeviceMap_IIX[] = {
+    {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
+    {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
+    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
+    {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
+    {DEVICE_ID_CASSETTE, SLOT_NONE},
+    {DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
+    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
+    {DEVICE_ID_MEM_EXPANSION, SLOT_2},
+    {DEVICE_ID_PD_BLOCK2, SLOT_5},
+    {DEVICE_ID_DISK_II, SLOT_6},
+    {DEVICE_ID_MOUSE, SLOT_4},
+    {DEVICE_ID_VIDHD, SLOT_7},
     {DEVICE_ID_END, SLOT_NONE}
 };
 
@@ -149,7 +165,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple IIe 65816 w/Mouse",
         PLATFORM_APPLE_IIE_65816,
-        DeviceMap_IIE_MOUSE,
+        DeviceMap_IIX,
         Badge_IIEEnh,
         true,
         "128K RAM; Disk II; ProDOS Clock; Mouse; 65816"

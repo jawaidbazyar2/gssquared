@@ -6941,3 +6941,115 @@ Let's think about this from the perspective of the video beam first. there is th
 Sather has hsync as 49-52 but I have it (From the GS doc?) as 48-51 ? 
 
 It says Vertical position increments after data cycle 39. 
+
+There is a discrepancy between John Brooks description of cycle timing above and the IIgs document I have - he suggests hblank is 13 cycles; it says 12. He says right border is 6 cycles; it says 7. 
+
+Wm has scanner start at hcount = 0, vcount = 0x100. Hcount 0 is beginning of HBL - "clock 40". vcount 0x100 is beginning of the first data line. So this is our cycle 0. ok yes, that's what we have here. Though in the spreadsheet what I call "hcount" is 40, which isn't right.
+
+So we now have what is needed to create an SHR device. Things needed:
+1. systemconfig needs the VideoScannerIIgs
+1. register the shr softswitches
+1. register the additional display softswitches
+1. create the SHR texture and border texture
+
+It feels like VideoScanner could just be another system device. When we boot a system it will have one (and only one) VideoScanner. Or could these be a 
+
+IIGS-video Softswitches
+
+```
+      |   7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
+$C029 | SHR  | MM  | DHR |  reserved             | EBL |
+$C022 | Text FG                |         Text BG       |
+$C034 | RTC                    |      Border Color     |
+$C021 | M/C  |   reserved                              |   
+```
+
+M/C: 1 = b/w (grayscale); 0 = Color (Composite)
+SHR: 1 = super hires video; 0 = legacy Apple II modes
+MM: 0 = "apple iie memory map"; 1 = "shr memory map"
+DHR: 0 = dhr in color; 1 = dhr in black and white
+EBL: if 1, 17th address bit used to select main / aux bank. data bit 0 used as 17th address bit. <? what?> if address bit 0, memory softswitches determines bank as on IIe. 0 = 17th address bit ignored. Default in Monitor mode is 1.
+
+I think EBL is that thing that will map ALL even/odd banks to bank 0 and bank 1. 
+Writing C1 to C029 enables SHR mode.
+
+When Display is set to Monochrome, we get grayscale output on the Monitor ///. Horizontal lines are filled in. I don't see any bit patterns. Since we're greenscale, the scale is provided by modulating the luma.
+When set to Color, we get a composite bitstream rendering on the Monitor /// (e.g., an shr display is shown as a composite bitstream, as is gr, hgr, etc). Text (white) shows up as you'd expect too, the normal text bits are on. All pixel brightness is modulated by the luma. So 'orange' is not just the orange bit pattern, it is those bits with luma also set for orange.
+
+So it must be mapping color to 16 colors and then perhaps also adjusting the luma to try to approximate the colors better. I wonder how good a job it does. And maybe that is one of the other patents.
+
+## Nov 4, 2025
+
+The videosystem is a repository of methods for managing the display. The stuff that calculates the display rectangles (esp for borders) will go in there, replacing the code there now. It also has update_display which drives video generation, by calling frame handlers in order by weight, stopping after the first one claims the frame. That's how the Videx code works. Now the Videx is a little different because it does not do any cycle-accurate stuff. In display, there are conditionals for full-frame or cycle-accurate. 
+
+SHR: weight 1, return true or false
+normal: weight 0
+
+current update_display_apple2_cycle:
+call VideoScanGenerator
+call display render
+
+update_display_iigs:
+  call VideoScanGenerator(with border and shr texture pointers)
+  render border
+  if shr, render shr display
+  else render legacy display
+
+When doing GS mode we also need to render the border in legacy modes. So have a separate frame_processor callback for GS. Then there are less conditionals to confuse things.
+
+I think the logic here is pretty tightly bound up with display.cpp for better or worse and was designed to drop in to that. So be it - no separate shr device. (Could always segregate these out some time in the future if there is a reason to).
+
+Where should the window sizing stuff live. 
+
+Roadmap:
+
+[x] refactor Frames to allow using locked texture region as buffer - for performance and simplicity  
+[x] frame allocates its own texture  
+[x] render_frame modified to accept texture, src, and dst rectangles. 
+[ ] implement correct aspect ratio and new window size defaults  
+[ ] hot key to generate "ii-friendly" and "gs-friendly" window size toggles  
+[ ] function for border render  
+[ ] function for shr render  
+[x] write update_display_iigs
+[x] register distinct iigs frame processor callback  
+[x] see if pixelart obviates need to draw Videx twice for brightness (no it did not)  
+[ ] The PrntScrn button is referencing illegal memory. the pointer from LockTexture is not valid after unlock.  
+[ ] calculate_rects needs to center display in window esp in fullscreen mode  
+
+Currently Frame uses a static array defined in the template as opposed to allocated memory. First we need to figure out how to use regular array semantics. Then test performance difference if we malloc vs static. Claude suggests no difference in optimized code. So:
+1. change to malloc'd memory. Test. very slow.
+1. switched counters to 32-bit and that improved back to original performance.
+1. add a template parameter to tie to Texture instead of using Malloc.
+1. the lock texture / unlock texture semantic will need to be replicated, with let's say open and close methods.
+1. add constructor checks to ensure supplied width/height do not exceed bounds.
+
+Which frames are we copying into textures: shr; border; Frame560RGBA. Maybe these can get less unclear names.
+
+After switching to malloc'd memory, performance went from 360uS to 530uS. Ouch!
+After changing to 32-bit hloc, it improved to 300uS. What. This is all compiler and cache nonsense. The compiler can create significantly faster code by aliasing. Let's check some more __restrict applications here..
+Actually maybe we should check -JUST- int16.
+It could be that the issue was the combination of int16 with whatever code calculates indexes. Because I felt like I should not -lose- performance. If I switch back to using local memory+memcpy and it's WAY faster then I'll know.
+Tried removing the row[] lookup optimization - yowza, that is a huge performance hit.
+
+We are defining frame size in *3* different places: the template, arguments to the constructor, and the texture. This is madness.
+
+I have the code sort of back to the 'old' way (except for 32-bit indices) and I'm at 300uS in F1 40-col text.
+memcpy to texture; 32-bit indices; F1 40col; 300uS
+memcpy to texture; 16-bit indices; F1 40col; 475uS
+direct to texture; 32-bit indices; F1 40col; 295uS
+
+THE reading in emu at this point is 258-264uS per frame. So we got a 15% improvement there. 
+
+Let's see if index size makes a difference to ScanBuffer.. nope, nor did reducing buffer size to 16384. So this 16-bit effect is limited to indexing into memory that's been malloc'd.
+
+"On the software renderer, you can write directly to the final destination with LockTexture, whereas UpdateTexture will need to make a copy from your buffer to ours.
+On the other renderers, it's probably the same (the GLES2 renderer, for example, literally just calls UpdateTexture for its UnlockTexture implementation)...but if you ever need a software renderer, this is the thing that would benefit most from texture locking.
+But in real life, with actual GPUs, it doesn't really matter a whole lot."
+
+# Nov 5, 2025
+
+well we have support for a minimal "sorta looks like a VidHD" and IIgs Video in the Apple IIx! In Total Replay, if you hit Control-Shift-2 you get a slideshow of specifically all the SHR box art. There are, I dunno, upwards of 200 maybe. That's a great "demo" of SHR graphics.
+
+Also got colored text support implemented in emu. The init_display arch is creaking a bit - lots of IF's etc that are hard to read. Will have to work on that code some more. But this is great for demo video purposes. And maybe a nice long-form one of just the slideshow.
+
+[x] AppleII_Display renderer is broken - ludicrous speed - but only using VideoScannerIIgs.  

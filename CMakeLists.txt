@@ -239,6 +239,8 @@ add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
 
 add_library(gs2_devices_cassette     src/devices/cassette/cassette.cpp )
 
+add_library(gs2_devices_vidhd     src/devices/vidhd/vidhd.cpp )
+
 add_library(gs2_debugger src/debugger/trace.cpp src/debugger/trace_opcodes.cpp src/debugger/debugwindow.cpp src/debugger/MonitorCommand.cpp 
     src/debugger/ExecuteCommand.cpp src/debugger/MemoryWatch.cpp src/debugger/disasm.cpp)
 
@@ -311,6 +313,7 @@ target_link_libraries(GSSquared
     gs2_devices_prodos_clock
     gs2_devices_speaker
     gs2_devices_cassette
+    gs2_devices_vidhd
     gs2_devices_game
     gs2_devices_memexp
     gs2_devices_parallel

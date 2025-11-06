@@ -71,9 +71,8 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
     SHRMode mode = { .p = 0 };    // TODO: shrPage->modes[line]; (hard code 320 palette 0 for now, need to process Palette entries from ScanBuffer
     Palette palette = { .colors = {0} };
 
-    //uint16_t lineidx = 0;
-    uint16_t hcount = 0;
-    uint16_t vcount = 0;
+    uint32_t hcount = 0;
+    uint32_t vcount = 0;
     frame_byte->set_line(vcount);
     if (border != nullptr) {
         border->set_line(vcount);
@@ -91,15 +90,8 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
     bool modeChecks = true;
 
     while (1) {
-       /*  if (vcount >= 262) {
-            vcount=vcount;
-        }
-        if (hcount >= 40) {
-            hcount=hcount;
-        } */
         Scan_t scan = frame_scan->pull();
         if (modeChecks && scan.mode <= VM_DHIRES) {
-            //Scan_t peek_scan = frame_scan->peek();
             color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
             color_mode.mixed_mode = scan.flags & VS_FL_MIXED ? 1 : 0;
             modeChecks = false;
@@ -185,9 +177,6 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                 break;
             case VM_TEXT40: {
                     if (hcount == 0) {
-                        /* for (int i = 0; i < 7; i++) {
-                            frame_byte->push(0b10);
-                        } */
                         color_mode_t cmode = color_mode;
                         cmode.phase_offset = 0;
                         frame_byte->set_color_mode(vcount, cmode);
@@ -254,18 +243,11 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     for (int n = 0; n < 7; n++) {
                         frame_byte->push((cdata & 1) ? tc : td); cdata>>=1;
                     }
-        /* 
-                    if (hcount == 39) { // but they do have a trailing 7-pixel thing.. or do they?
-                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0b10);
-                    } */
                 }
                 hcount++;
                 break;
             case VM_LORES: {
                     if (hcount == 0) {
-                        /* for (int i = 0; i < 7; i++) {
-                            frame_byte->push(0b10);
-                        } */
                         color_mode_t cmode = {1,0, 0};
                         frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
                     }
@@ -274,9 +256,9 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
                         tchar = tchar >> 4;
                     }
-                    uint16_t pixeloff = (hcount * 14) % 4;
+                    uint32_t pixeloff = (hcount * 14) % 4;
     
-                    for (int bits = 0; bits < CELL_WIDTH; bits++) {
+                    for (size_t bits = 0; bits < CELL_WIDTH; bits++) {
                         uint8_t bit = ((tchar >> pixeloff) & 0x01);
                         frame_byte->push(bit);
                         pixeloff = (pixeloff + 1) % 4;
@@ -295,9 +277,9 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
                         tchar = tchar >> 4;
                     }
-                    uint16_t pixeloff = (hcount * 14) % 4;
+                    uint32_t pixeloff = (hcount * 14) % 4;
     
-                    for (uint16_t bits = 0; bits < 7; bits++) {
+                    for (size_t bits = 0; bits < 7; bits++) {
                         uint8_t bit = ((tchar >> pixeloff) & 0x01);
                         frame_byte->push(bit);
                         pixeloff = (pixeloff + 1) % 4;
@@ -311,15 +293,11 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     // this is correct.
                     pixeloff = (hcount * 14) % 4;
     
-                    for (uint16_t bits = 0; bits < 7; bits++) {
+                    for (size_t bits = 0; bits < 7; bits++) {
                         uint8_t bit = ((tchar >> pixeloff) & 0x01);
                         frame_byte->push(bit);
                         pixeloff = (pixeloff + 1) % 4;
                     }        
-                    
-                    /* if (hcount == 39 && display_shift_enabled) { // but they do have a trailing 7-pixel thing.. or do they?
-                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0b10);
-                    } */
                 }
                 hcount++;
                 break;
@@ -329,16 +307,13 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
 
             case VM_HIRES: {
                     if (hcount == 0) {
-                        /* for (int i = 0; i < 7; i++) {
-                            frame_byte->push(0b10);
-                        } */
                         color_mode_t cmode = {1,0, 0};
                         frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
                     }
                     uint8_t byte = scan.mainbyte & color_delay_mask;
                     size_t fontIndex = (byte | ((lastByte & 0x40) << 2)) * CHAR_WIDTH; // bit 6 from last byte selects 2nd half of font
             
-                    for (int i = 0; i < 14; i++) {
+                    for (size_t i = 0; i < 14; i++) {
                         frame_byte->push(hires40Font[fontIndex + i]);
                     }
                     lastByte = byte;
@@ -354,18 +329,14 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                         
                     uint8_t byteM = scan.mainbyte;
                     uint8_t byteA = scan.auxbyte;
-                    for (int i = 0; i < 7; i++ ) {
+                    for (size_t i = 0; i < 7; i++ ) {
                         frame_byte->push((byteA & 0x01) ? 1 : 0);
                         byteA >>= 1;
                     }
-                    for (int i = 0; i < 7; i++ ) {
+                    for (size_t i = 0; i < 7; i++ ) {
                         frame_byte->push((byteM & 0x01) ? 1 : 0);
                         byteM >>= 1;
                     }
-                    
-                    /* if (hcount == 39 && display_shift_enabled) { // but they do have a trailing 7-pixel thing.. or do they?
-                        for (uint16_t pp = 0; pp < 7; pp++) frame_byte->push(0b10);
-                    } */
                 }
                 hcount++;
                 break;

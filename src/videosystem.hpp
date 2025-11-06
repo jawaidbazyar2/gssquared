@@ -9,9 +9,9 @@
 #include "ui/Clipboard.hpp"
 #include "devices/displaypp/RGBA.hpp"
 
+// somewhere calculate the window size properly (42+49, and 19+21)
 #define BORDER_WIDTH 42
 #define BORDER_HEIGHT 20
-
 
 typedef enum {
     DISPLAY_WINDOWED_MODE = 0,
@@ -85,7 +85,7 @@ struct video_system_t {
     void set_window_fullscreen(display_fullscreen_mode_t mode);
     display_fullscreen_mode_t get_window_fullscreen();
     void sync_window();
-    void render_frame(SDL_Texture *texture, float offset);
+    void render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_FRect *dstrect , bool respect_mode = true  /* , float offset */);
     void clear();
     void present();
     bool display_capture_mouse(bool capture);

@@ -219,9 +219,10 @@ void run_cpus(computer_t *computer) {
              }
             set_clock_mode(cpu, computer->speed_new);
             display_update_video_scanner(ds, cpu);
+            // cpu->video_scanner might be null here.
             int x = ds->video_scanner->get_frame_scan()->get_count();
             if (x > 0) {
-                printf("Video scanner has %d samples @ speed shift [%d,%d]\n", x, cpu->video_scanner->hcount, cpu->video_scanner->get_vcount());
+                printf("Video scanner has %d samples @ speed shift [%d,%d]\n", x, ds->video_scanner->hcount, ds->video_scanner->get_vcount());
             }
         }
 

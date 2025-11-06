@@ -65,8 +65,8 @@ void VideoScannerIIgs::init_video_addresses()
 
         // set the flags for the current scan address
         uint16_t fl = 0;
-        uint16_t hc = idx % 65;
-        uint16_t vc = idx / 65;
+        uint32_t hc = idx % 65;
+        uint32_t vc = idx / 65;
         if (hc < 25) fl |= SA_FLAG_HBL;
         if (vc >= 192) fl |= SA_FLAG_VBL;
         if ((hc == 64) && (vc < 261)) fl |= SA_FLAG_HSYNC;
@@ -103,12 +103,12 @@ void VideoScannerIIgs::init_video_addresses()
         mixed_p1[idx].flags = fl;
         mixed_p2[idx].flags = fl;
     }
-    int borderpixels = 0;
+    /* int borderpixels = 0;
     for (int idx = 0; idx < SCANNER_LUT_SIZE; ++idx) {
         if (lores_p1[idx].flags & SA_FLAG_BORDER) {
             borderpixels++;
         }
-    }
+    } */
 }
 
 void VideoScannerIIgs::video_cycle()
