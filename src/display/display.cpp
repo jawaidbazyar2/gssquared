@@ -862,8 +862,10 @@ void display_write_C029(void *context, uint16_t address, uint8_t value) {
     ds->new_video = value;
     if (ds->new_video & 0x80) {
         ds->video_scanner->set_shr();
+        // TODO: ds->a2_display->set_shr();
     } else {
         ds->video_scanner->reset_shr();
+        // TODO: ds->a2_display->reset_shr();
     }
 }
 
@@ -881,6 +883,8 @@ void display_write_C022(void *context, uint16_t address, uint8_t value) {
     ds->text_color = value;
     ds->video_scanner->set_text_bg(value & 0x0F);
     ds->video_scanner->set_text_fg(value >> 4);
+    ds->a2_display->set_text_fg(value >> 4);
+    ds->a2_display->set_text_bg(value & 0x0F);
     // TODO: also set in AppleII_Display
 }
 
@@ -894,6 +898,7 @@ void display_write_C034(void *context, uint16_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     ds->border_color = value & 0x0F;
     ds->video_scanner->set_border_color(value);
+    ds->a2_display->set_border_color(value);
 }
 
 /**

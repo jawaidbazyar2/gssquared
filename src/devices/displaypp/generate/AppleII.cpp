@@ -23,7 +23,7 @@ private:
     uint8_t text_color = 0xF0;
     uint8_t border_color = 0x00;
 
-    alignas(64) uint16_t A2_textMap[24] =
+    alignas(64) uint32_t A2_textMap[24] =
     {   // text page 1 line addresses
         0x0000,
         0x0080,
@@ -53,7 +53,7 @@ private:
         0x03D0,
     };
 
-    alignas(64) uint16_t A2_hiresMap[24] = {
+    alignas(64) uint32_t A2_hiresMap[24] = {
         0x0000,
         0x0080,
         0x0100,
@@ -132,19 +132,19 @@ public:
 
 /** Call with: pointer to text memory; pointer to frame; linegroup number */
     void generate_text40(uint8_t *textpage, Frame560 *f, uint16_t linegroup) {
-        uint16_t scanline = linegroup * 8;
-        uint16_t x = 0;
+        uint32_t scanline = linegroup * 8;
+        //uint32_t x = 0;
 
         uint8_t tc = (text_fg << 4) | 1;
         uint8_t td = text_bg << 4;
 
-        for (uint16_t y = 0; y < 8; y++) {
-            uint16_t char_addr = A2_textMap[linegroup];
+        for (uint32_t y = 0; y < 8; y++) {
+            uint32_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
             color_mode_t cmode = {0,0,0};  // COLORBURST_OFF
             f->set_color_mode(scanline, cmode);
 
-            for (x = 0; x < 40; x++) {
+            for (uint32_t x = 0; x < 40; x++) {
 
                 uint8_t tchar = textpage[char_addr];
 
@@ -157,7 +157,7 @@ public:
 
                 uint8_t cdata = char_rom->get_char_scanline(tchar, y);
                 cdata ^= invert;
-                for (int n = 0; n < 7; n++) { // it's ok compiler will unroll this
+                for (uint32_t n = 0; n < 7; n++) { // it's ok compiler will unroll this
                     f->push((cdata & 1) ? tc : td); 
                     f->push((cdata & 1) ? tc : td); 
                     cdata>>=1;
@@ -171,16 +171,16 @@ public:
 
 
     void generate_text80(uint8_t *textpage, uint8_t *alttextpage, Frame560 *f, uint16_t linegroup) {
-        uint16_t scanline = linegroup * 8;
-        uint16_t x = 0;
+        uint32_t scanline = linegroup * 8;
+        uint32_t x = 0;
         bool pixel_on = 1;
         bool pixel_off = 0;
 
         uint8_t tc = (text_fg << 4) | 1;
         uint8_t td = text_bg << 4;
 
-        for (uint16_t y = 0; y < 8; y++) {
-            uint16_t char_addr = A2_textMap[linegroup];
+        for (uint32_t y = 0; y < 8; y++) {
+            uint32_t char_addr = A2_textMap[linegroup];
             f->set_line(scanline);
             color_mode_t cmode = {0,0,1};  // COLORBURST_OFF
             f->set_color_mode(scanline, cmode);
