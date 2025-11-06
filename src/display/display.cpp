@@ -42,6 +42,10 @@
 #include "devices/displaypp/VideoScannerIIe.hpp"
 #include "devices/displaypp/VideoScannerII.hpp"
 
+#include "devices/displaypp/AppleIIgsColors.hpp"
+
+static constexpr const RGBA_t (&gs_text_colors)[16] = AppleIIgs::RGB_COLORS;
+
 display_page_t display_pages[NUM_DISPLAY_PAGES] = {
     {
         0x0400,
@@ -358,6 +362,21 @@ bool update_display_apple2(cpu_state *cpu) {
         SDL_UnlockTexture(ds->screenTexture); */
     }
     vs->force_full_frame_redraw = false;
+
+    if (ds->video_scanner_type == VS_IIGS) {
+        // draw borders using rectangles.
+        RGBA_t border_color = gs_text_colors[ds->border_color];
+        SDL_SetRenderDrawColor(vs->renderer, border_color.r, border_color.g, border_color.b, border_color.a);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_LT].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_CEN].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_RT].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_CEN][B_LT].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_CEN][B_RT].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_LT].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_CEN].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_RT].dst);
+    }
+
     vs->render_frame(ds->screenTexture, &ds->ii_borders[B_CEN][B_CEN].src, &ds->ii_borders[B_CEN][B_CEN].dst);
     return true;
 }

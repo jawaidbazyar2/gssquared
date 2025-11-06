@@ -1,9 +1,9 @@
 #include "Render.hpp"
+#include "../AppleIIgsColors.hpp"
 
 /** Generate a 'frame' (i.e., a group of 8 scanlines) of video output data using the lookup table.  */
 
-// 16-entry RGB color table for Apple IIgs colors
-// Each color is 4-bit R, G, B scaled to 8-bit RGBA
+// Legacy color table - kept for reference (wrong order)
 static const RGBA_t gs_rgb_colors_wrong[16] = {
     RGBA_t::make(0x00, 0x00, 0x00, 0xFF), // 0x0000 - Black        0b0000 - ok
     RGBA_t::make(0xDD, 0x00, 0x33, 0xFF), // 0x0D03 - Deep Red     0b0001 - ok
@@ -23,25 +23,8 @@ static const RGBA_t gs_rgb_colors_wrong[16] = {
     RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF)  // 0x0FFF - White       0b1111 - ok
 };
 
-static const RGBA_t gs_rgb_colors[16] = {
-    RGBA_t::make(0x00, 0x00, 0x00, 0xFF), // 0x0000 - Black        0b0000 - ok
-    RGBA_t::make(0xDD, 0x00, 0x33, 0xFF), // 0x0D03 - Deep Red     0b0001 - ok
-    RGBA_t::make(0x88, 0x55, 0x00, 0xFF), // 0x0850 - Brown        0b1000 - dk blue
-    RGBA_t::make(0xFF, 0x66, 0x00, 0xFF), // 0x0F60 - Orange       0b1001 - purple
-    RGBA_t::make(0x00, 0x77, 0x22, 0xFF), // 0x0072 - Dark Green   0b0100 - ok
-    RGBA_t::make(0x55, 0x55, 0x55, 0xFF), // 0x0555 - Dark Gray    0b0101 - ok
-    RGBA_t::make(0x11, 0xDD, 0x00, 0xFF), // 0x01D0 - Light Green 0b1100 - med blu
-    RGBA_t::make(0xFF, 0xFF, 0x00, 0xFF), // 0x0FF0 - Yellow      0b1101 - lt blue
-
-    RGBA_t::make(0x00, 0x00, 0x99, 0xFF), // 0x0009 - Dark Blue    0b0010 - brown
-    RGBA_t::make(0xDD, 0x22, 0xDD, 0xFF), // 0x0D2D - Purple       0b0011 - orange
-    RGBA_t::make(0xAA, 0xAA, 0xAA, 0xFF), // 0x0AAA - Light Gray  0b1010 - ok
-    RGBA_t::make(0xFF, 0x99, 0x88, 0xFF), // 0x0F98 - Pink        0b1011 - ok
-    RGBA_t::make(0x22, 0x22, 0xFF, 0xFF), // 0x022F - Medium Blue  0b0110 - light green
-    RGBA_t::make(0x66, 0xAA, 0xFF, 0xFF), // 0x06AF - Light Blue   0b0111 - yellow
-    RGBA_t::make(0x44, 0xFF, 0x99, 0xFF), // 0x04F9 - Aquamarine  0b1110 - ok
-    RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF)  // 0x0FFF - White       0b1111 - ok
-};
+// Use the shared Apple IIgs color table
+static constexpr const RGBA_t (&gs_rgb_colors)[16] = AppleIIgs::RGB_COLORS;
 
 
 class GSRGB560 : public Render {

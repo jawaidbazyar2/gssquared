@@ -4,11 +4,11 @@
 #include "devices/displaypp/frame/Frames.hpp"
 #include "devices/displaypp/CharRom.hpp"
 #include "AppleIIgs.hpp"
+#include "devices/displaypp/AppleIIgsColors.hpp"
 
 #define CHAR_NUM 256
 #define CHAR_WIDTH 16
 #define CELL_WIDTH 14
-
 
 class AppleII_Display {
 

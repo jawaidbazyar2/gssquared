@@ -7015,6 +7015,7 @@ Roadmap:
 [x] see if pixelart obviates need to draw Videx twice for brightness (no it did not)  
 [ ] The PrntScrn button is referencing illegal memory. the pointer from LockTexture is not valid after unlock.  
 [ ] calculate_rects needs to center display in window esp in fullscreen mode  
+[ ] implement border color for Apple2_Display  
 
 Currently Frame uses a static array defined in the template as opposed to allocated memory. First we need to figure out how to use regular array semantics. Then test performance difference if we malloc vs static. Claude suggests no difference in optimized code. So:
 1. change to malloc'd memory. Test. very slow.
@@ -7026,7 +7027,7 @@ Currently Frame uses a static array defined in the template as opposed to alloca
 Which frames are we copying into textures: shr; border; Frame560RGBA. Maybe these can get less unclear names.
 
 After switching to malloc'd memory, performance went from 360uS to 530uS. Ouch!
-After changing to 32-bit hloc, it improved to 300uS. What. This is all compiler and cache nonsense. The compiler can create significantly faster code by aliasing. Let's check some more __restrict applications here..
+After changing to 32-bit hloc, it improved to 300uS. What. This is all compiler and cache nonsense. The compiler can create significantly faster code by assuming no aliasing. Let's check some more __restrict applications here..
 Actually maybe we should check -JUST- int16.
 It could be that the issue was the combination of int16 with whatever code calculates indexes. Because I felt like I should not -lose- performance. If I switch back to using local memory+memcpy and it's WAY faster then I'll know.
 Tried removing the row[] lookup optimization - yowza, that is a huge performance hit.
@@ -7046,6 +7047,8 @@ Let's see if index size makes a difference to ScanBuffer.. nope, nor did reducin
 On the other renderers, it's probably the same (the GLES2 renderer, for example, literally just calls UpdateTexture for its UnlockTexture implementation)...but if you ever need a software renderer, this is the thing that would benefit most from texture locking.
 But in real life, with actual GPUs, it doesn't really matter a whole lot."
 
+So this seems to be saying if I just use UpdateTexture it will be just as fast on virtually every computer. And a fair bit simpler. 
+
 # Nov 5, 2025
 
 well we have support for a minimal "sorta looks like a VidHD" and IIgs Video in the Apple IIx! In Total Replay, if you hit Control-Shift-2 you get a slideshow of specifically all the SHR box art. There are, I dunno, upwards of 200 maybe. That's a great "demo" of SHR graphics.
@@ -7053,3 +7056,5 @@ well we have support for a minimal "sorta looks like a VidHD" and IIgs Video in 
 Also got colored text support implemented in emu. The init_display arch is creaking a bit - lots of IF's etc that are hard to read. Will have to work on that code some more. But this is great for demo video purposes. And maybe a nice long-form one of just the slideshow.
 
 [x] AppleII_Display renderer is broken - ludicrous speed - but only using VideoScannerIIgs.  
+
+oops, I did not even consider how to do border in A2_Display. Since there is no cycle-accurate business to worry about, could we simply have a 1-pixel texture and blow that up to full screen size? why not? the gpu is much more efficient, and then we're also only updating a isngle pixel texture instead of whatever. Alternatively, instead of doing a texture update thing (kinda hinky) can we just draw rectangles in the correct color? sure why not. Using the same rectangles we calculated.
