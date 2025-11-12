@@ -7049,7 +7049,7 @@ But in real life, with actual GPUs, it doesn't really matter a whole lot."
 
 So this seems to be saying if I just use UpdateTexture it will be just as fast on virtually every computer. And a fair bit simpler. 
 
-# Nov 5, 2025
+## Nov 5, 2025
 
 well we have support for a minimal "sorta looks like a VidHD" and IIgs Video in the Apple IIx! In Total Replay, if you hit Control-Shift-2 you get a slideshow of specifically all the SHR box art. There are, I dunno, upwards of 200 maybe. That's a great "demo" of SHR graphics.
 
@@ -7058,3 +7058,94 @@ Also got colored text support implemented in emu. The init_display arch is creak
 [x] AppleII_Display renderer is broken - ludicrous speed - but only using VideoScannerIIgs.  
 
 oops, I did not even consider how to do border in A2_Display. Since there is no cycle-accurate business to worry about, could we simply have a 1-pixel texture and blow that up to full screen size? why not? the gpu is much more efficient, and then we're also only updating a isngle pixel texture instead of whatever. Alternatively, instead of doing a texture update thing (kinda hinky) can we just draw rectangles in the correct color? sure why not. Using the same rectangles we calculated.
+
+## Nov 6, 2025
+
+reviewing RGB finally.
+
+First off, do in hgr:
+2000:87 2001:87
+
+the pixels at 2000 are wrong. they should be white just like the pixels at 2001. So there's an incorrect lead-in. We should probably latch and use the first color of actual pixel data - NOT assumed leading 0's. It's possible I broke this just recently by getting rid of leading 0's in the frame_bits.
+[fixed]
+
+Second test case: 11011 = 1b
+2801:9b
+this resolves to 560 pixels as (shifted) 1111001111
+This should render as two white, a black, and two white pixels. in ntsc, this gets plenty of fringe such that the black in the middle is actually obscured. But that's likely what someone would want. This is basically what we get in the choplifter score counters, which is wr0ng.
+
+[ ] another bug: in crazy cycles, when the line starts as text then switches to a hires mode, I believe it's trying to render the whole line as no-colorburst, and so it's expecting color nibbles with the (hires) bits but of course there aren't any. This is because it thinks the whole line is txt.. the line -should- be monochrome. but need the bits!  
+
+## Nov 10, 2025
+
+Analyzing the graphics conversion routines in CiderPress2. What I find is that hires and double hires use very different approaches. The hires is similar to my old "rgb" code in that it's looking at hires bits, not 560 bits. So that won't necessarily be relevant. The current RGB renderer is actually working really well EXCEPT for places where we go white to black to white and it fills in all with white. 
+
+## Nov 11, 2025
+
+Went down a rabbit hole - I was curious so I checked out the GUS emulator source code. And I found this:
+```
+The basic idea is to get 11-bits worth of IIgs Hires/DoubleHires
+pixel data and lookup the pixel colors in this table for 4 distinct
+Macintosh pixels (560 pixels across being the mimic'd IIgs screen).
+
+After each 4 pixel color values are figured out, the 11-bit "window"
+is advanced by 4 bits in the IIgs pixel data stream, then the
+process is repeated.
+
+The Hires "Mirror" tables are needed to bit-double the hires bits
+into Double-Hires Bits and display everything according to the
+double-hires display algorithms.
+
+According to John Arkley (who wrote the original Apple IIe card code)
+he wrote a state machine for the set of PALs that were in the Mega II
+which decode some lines into a color signal.  He then fed all possible
+values for each of those lines (which makes me think there were 11 lines)
+into the state machine and recorded the value which was output.  There
+are 2048 outputs because there were 11 lines of input to John's original
+state machine (and I would guess that also applies to some set of traces
+inside the Mega II in the IIGS).
+```
+
+where have I heard this before? haha. 
+```
+// Prev = 0000				M1 A2    Prev Sorc Next    Video Pixel Colors
+		0xFFFF,			//  00 00 >> 0000|0000|0000 => Blk.Blk.Blk.Blk
+		0xFFFF,			//  00 40 >> 0000|0000|0010 => Blk.Blk.Blk.Blk
+```
+The LUT is organized like so: 16 chunks (by 'Prev') as the high 4 bits; then Sorc (current 4 bits); then a 3-bit lookahead.
+And that is shifted left 1 bit because the pixel entries are 16 bits (2 bytes) each so we're doubling that.
+
+So what we'd do here is have an 11-bit shift reg. We shift in from the right. i.e.
+shift = (shift << 1) | newbit
+At the left edge of screen, we start with shiftreg = 0. Then preload with 7 bits;
+then iterate 560-7 = 553 times more. at the end of the scanline (last 4 bits) the 'next' bits need to be just shifted in as 0. So break it up like I do in rgb today, which is:
+preload
+iterate 560-7-4; (normal, with ->pull)
+iterate 4 (shift in 0)
+
+we can run in a test program and see what we get with my test patterns.
+
+ok. So we preload 3.
+then the first iteration, we load 4 more. <- 139 iterations
+then load 1 last bit and 3 0 bits, and clock those out
+
+that looks amazing! It is for sure the GS algorithm.
+
+The double hires table is not laid out the same at all, and pixels are laid out backwards (e.g look at what should be smoothly curving edge in the apple pic). So they must have manipulated them somehow due to differences in their code. So I will need to unravel what they did, or, separately try to figure out a phase difference when doing color lookups. Likely the best approach is to generate a new table for the DHGR phase offset.
+
+// Hires - 2nd entry (index 1)
+Prev = 0000				M1 A2    Prev Sorc Next    Video Pixel Colors
+0xFFFF,  			//  00 40 >> 0000|0000|0010 => Blk.Blk.Blk.Blk
+
+// ("Dbl hires") - 2nd entry (index 1)
+//  - I suspect just means phase shift. But unsure.
+0xFFFF,				//  08 00 >> 1000|0000|0000 => Blk.Blk.Blk.Blk
+                                     ___
+for dbl, the bits shown there are in reverse. The last chunk, the final bit never is 1, so I think that is "next". BUT that is the high bit of the index.
+So the leftmost bit here, is the leftmost bit in the data stream.
+
+ok, so rotating 90% is sort of right. Pink to Blue is good. let's just try thexder for fun hehe. That doesn't look that bad actually. Maybe I can suss out the mapping?
+The color palette should be exactly the same, yes? And just bitshifted or something? Because that's what "phase" means here. 90 degree phase is 1 bit difference, because the entire color wheel is 4 bits. (14M / 4 = 3.58).
+
+Compared photos on the GS to my current output rendering. Hires is exactly spot-on. Lores on the GS does -not- show any gaps/artifacts between bars, whereas I do. I surmise that the GS handles lores specially. i.e. the way I did in the very first iteration of display code. hah. Circling around back to the start.
+

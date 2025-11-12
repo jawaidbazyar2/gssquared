@@ -1,30 +1,11 @@
+#include "GSRGB_LUT.hpp"
 #include "Render.hpp"
 #include "../AppleIIgsColors.hpp"
 
 /** Generate a 'frame' (i.e., a group of 8 scanlines) of video output data using the lookup table.  */
 
-// Legacy color table - kept for reference (wrong order)
-static const RGBA_t gs_rgb_colors_wrong[16] = {
-    RGBA_t::make(0x00, 0x00, 0x00, 0xFF), // 0x0000 - Black        0b0000 - ok
-    RGBA_t::make(0xDD, 0x00, 0x33, 0xFF), // 0x0D03 - Deep Red     0b0001 - ok
-    RGBA_t::make(0x00, 0x00, 0x99, 0xFF), // 0x0009 - Dark Blue    0b0010 - brown
-    RGBA_t::make(0xDD, 0x22, 0xDD, 0xFF), // 0x0D2D - Purple       0b0011 - orange
-    RGBA_t::make(0x00, 0x77, 0x22, 0xFF), // 0x0072 - Dark Green   0b0100 - ok
-    RGBA_t::make(0x55, 0x55, 0x55, 0xFF), // 0x0555 - Dark Gray    0b0101 - ok
-    RGBA_t::make(0x22, 0x22, 0xFF, 0xFF), // 0x022F - Medium Blue  0b0110 - light green
-    RGBA_t::make(0x66, 0xAA, 0xFF, 0xFF), // 0x06AF - Light Blue   0b0111 - yellow
-    RGBA_t::make(0x88, 0x55, 0x00, 0xFF), // 0x0850 - Brown        0b1000 - dk blue
-    RGBA_t::make(0xFF, 0x66, 0x00, 0xFF), // 0x0F60 - Orange       0b1001 - purple
-    RGBA_t::make(0xAA, 0xAA, 0xAA, 0xFF), // 0x0AAA - Light Gray  0b1010 - ok
-    RGBA_t::make(0xFF, 0x99, 0x88, 0xFF), // 0x0F98 - Pink        0b1011 - ok
-    RGBA_t::make(0x11, 0xDD, 0x00, 0xFF), // 0x01D0 - Light Green 0b1100 - med blu
-    RGBA_t::make(0xFF, 0xFF, 0x00, 0xFF), // 0x0FF0 - Yellow      0b1101 - lt blue
-    RGBA_t::make(0x44, 0xFF, 0x99, 0xFF), // 0x04F9 - Aquamarine  0b1110 - ok
-    RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF)  // 0x0FFF - White       0b1111 - ok
-};
-
-// Use the shared Apple IIgs color table
-static constexpr const RGBA_t (&gs_rgb_colors)[16] = AppleIIgs::RGB_COLORS;
+// Alias to the shared Apple IIgs color table for backward compatibility
+static const RGBA_t (&gs_rgb_colors)[16] = AppleIIgs::RGB_COLORS;
 
 
 class GSRGB560 : public Render {
@@ -187,7 +168,7 @@ end of the line.. dlgr is passable. I need to see what dlgr looks like on the GS
 need to test against hi-res.
 text looks like a** in it. */
 
-    void render(Frame560 *frame_byte, Frame560RGBA *frame_rgba, RGBA_t color /* , uint16_t phaseoffset */)
+    void render_bestworking(Frame560 *frame_byte, Frame560RGBA *frame_rgba, RGBA_t color /* , uint16_t phaseoffset */)
     {
         uint16_t framewidth = frame_byte->width();
 
@@ -225,9 +206,12 @@ text looks like a** in it. */
                 bool JK44_K = 0;
                 bool INP;
 
-                uint8_t bit = frame_byte->peek();
+                //uint8_t bit = frame_byte->peek();
+                LatchOut = barrel_shifter[3][0];
+                INP = 0;
 
-                INP = frame_byte->pull() & 1; // preload the shift register for lookahead
+                // this code -did- sort of work before when we had bits prefixed..
+                /* INP = frame_byte->pull() & 1; // preload the shift register for lookahead
                 phase = (phase + 1) % 4;
                 ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
                 INP = frame_byte->pull() & 1;
@@ -239,9 +223,9 @@ text looks like a** in it. */
                 INP = frame_byte->pull() & 1;
                 phase = (phase + 1) % 4;
                 ShiftReg = ((ShiftReg << 1) | INP) & 0xF;
-                LatchOut = barrel_shifter[3][ShiftReg];
+                LatchOut = barrel_shifter[3][ShiftReg]; */
 
-                for (uint16_t x = 4; x < framewidth; x++) {
+                for (uint16_t x = 0; x < framewidth; x++) {
                     // PRE-Clock
                     //phase = x % 4;
                     uint8_t bit = frame_byte->pull();
@@ -258,6 +242,7 @@ text looks like a** in it. */
                     if ((BSOut & 0b1111) != (LatchOut & 0b1111)) {
                         Counter++;
                     }
+                    // This is implementation of Fig-6 (fixed counter)
                     if (Counter > 3) { // this 
                         LatchOut = BSOut;
                         Counter = 0;
@@ -277,6 +262,7 @@ text looks like a** in it. */
                 }
             } else {
                 // do mono (white) rendering (or colored with GS colors)
+                // TODO: only works with text. We're not even looking at bit here.
                 for (uint16_t x = 0; x < framewidth; x++) {
                     uint8_t bit = frame_byte->pull();
                     RGBA_t pixel = gs_rgb_colors[bit >> 4];
@@ -289,6 +275,192 @@ text looks like a** in it. */
                 }
             }
         } 
+    }
+
+    void render_new(Frame560 *frame_byte, Frame560RGBA *frame_rgba, RGBA_t color /* , uint16_t phaseoffset */)
+    {
+        uint16_t framewidth = frame_byte->width();
+
+        for (uint16_t y = 0; y < 192; y++)
+        {
+            frame_byte->set_line(y);
+            frame_rgba->set_line(y);
+
+            color_mode_t color_mode = frame_byte->get_color_mode(y); // TODO: also need to know if we're in split mode so we can do lines > 160 correctly.
+
+            uint8_t phase_offset = color_mode.phase_offset;
+
+            if (phase_offset == 0 && shift_enabled) {
+                for (int i = 0; i < 7; i++) {
+                    frame_rgba->push(RGBA_t::make(0x00, 0x00, 0x00, 0x00));
+                }
+            }
+
+            if (color_mode.colorburst == 1 && color_mode.mixed_mode == 0) {
+                // do color burst
+
+                // Process each scanline
+                uint8_t phase = phase_offset;
+                uint8_t ShiftReg = 0;
+                uint8_t BSOut = 0;
+                uint8_t LatchOut = 0;
+                uint8_t MuxOut = 0;
+                uint8_t Counter = 0;
+
+                bool INP;
+
+                //uint8_t bit = frame_byte->peek();
+                LatchOut = barrel_shifter[3][0];
+                INP = 0;
+
+                // read first four dots, start emitting those colors.
+                INP = frame_byte->pull() & 1;
+                ShiftReg = ((ShiftReg << 1) | INP) & 0x1F;
+                INP = frame_byte->pull() & 1;
+                ShiftReg = ((ShiftReg << 1) | INP) & 0x1F;
+                INP = frame_byte->pull() & 1;
+                ShiftReg = ((ShiftReg << 1) | INP) & 0x1F;
+                INP = frame_byte->pull() & 1;
+                ShiftReg = ((ShiftReg << 1) | INP) & 0x1F;
+                LatchOut = barrel_shifter[(phase+3)%4][ShiftReg & 0x0F];
+
+                for (uint16_t x = 4; x < framewidth; x++) {
+                    // PRE-Clock
+                    uint8_t bit = frame_byte->pull();
+                    bool INP = bit & 1;
+                    ShiftReg = ((ShiftReg << 1) | INP) & 0x1F; // keep 5 bits.
+
+                    // the barrel shifter needs to rotate to the RIGHT based on phase number.
+                    BSOut = barrel_shifter[phase][ShiftReg & 0x0F];
+
+                    RGBA_t pixel;
+                    
+                    /* if most recent bit is different from 4 bits ago, we have a color change, so re-use latch value .*/
+                    if (((ShiftReg >> 4) & 1) == ((ShiftReg & 1))) { // no 'color' change, so use current color value.
+                        LatchOut = BSOut;
+                    }
+                    pixel = gs_rgb_colors[LatchOut];
+                    frame_rgba->push(pixel);
+
+                    phase = (phase + 1) % 4;
+                }
+                // need to run out the rest of the line of pixels
+                // pretend 561 to 564
+                for (uint16_t x = 1; x <= 4; x++) {
+                    RGBA_t pixel = gs_rgb_colors[LatchOut];
+                    frame_rgba->push(pixel);
+                }
+            } else {
+                // do mono (white) rendering (or colored with GS colors)
+                // TODO: only works with text. We're not even looking at bit here.
+                for (uint16_t x = 0; x < framewidth; x++) {
+                    uint8_t bit = frame_byte->pull();
+                    RGBA_t pixel = gs_rgb_colors[bit >> 4];
+                    frame_rgba->push(pixel);
+                }
+            }
+            if (phase_offset == 1 && shift_enabled) {
+                for (int i = 0; i < 7; i++) {
+                    frame_rgba->push(RGBA_t::make(0x00, 0x00, 0x00, 0x00));
+                }
+            }
+        } 
+    }
+
+    void render(Frame560 *frame_byte, Frame560RGBA *frame_rgba, RGBA_t color ) {
+        uint16_t framewidth = frame_byte->width();
+        uint16_t *lut;
+
+        for (uint16_t y = 0; y < 192; y++) {
+            frame_byte->set_line(y);
+            frame_rgba->set_line(y);
+
+            color_mode_t color_mode = frame_byte->get_color_mode(y); // TODO: also need to know if we're in split mode so we can do lines > 160 correctly.
+
+            uint8_t phase_offset = color_mode.phase_offset;
+
+            if (phase_offset == 0 && shift_enabled) {
+                for (int i = 0; i < 7; i++) {
+                    frame_rgba->push(RGBA_t::make(0x00, 0x00, 0x00, 0x00));
+                }
+            }
+            lut = (uint16_t *)HiresColorTable;
+            RGBColor *ctable = (phase_offset == 0) ? (RGBColor *)GSHGRColors : (RGBColor *)GSHGRColors_ph1;
+
+            if (color_mode.colorburst == 1 && color_mode.mixed_mode == 0) {
+                // do color burst
+
+                int bitindex = 0;
+                int ph = 0;
+                uint8_t latch = 0, pixel = 0;
+                bool diff = false;
+                uint32_t shiftreg = 0;
+                bool bit;
+
+                // Preload 3 bits
+                for (int i = 0; i < 3; i++) {
+                    bit = frame_byte->pull() & 1;
+                    shiftreg = ((shiftreg << 1) | bit);
+                }
+
+                for (int i = 0; i < framewidth/4-1; i++) {
+                    // fetch 4 bits at a time
+                    bit = frame_byte->pull() & 1;
+                    shiftreg = ((shiftreg << 1) | bit);
+                    bit = frame_byte->pull() & 1;
+                    shiftreg = ((shiftreg << 1) | bit);
+                    bit = frame_byte->pull() & 1;
+                    shiftreg = ((shiftreg << 1) | bit);
+                    bit = frame_byte->pull() & 1;
+                    shiftreg = ((shiftreg << 1) | bit);
+                    shiftreg = shiftreg & 0x7FF; // 11 bits
+
+                    uint16_t pixels = lut[shiftreg];
+
+                    //RGBColor color = GSHGRColors[(pixels >> 12) & 0xF];
+                    RGBColor c = ctable[(pixels >> 12) & 0xF];
+                    frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
+                    c = ctable[(pixels >> 8) & 0xF];
+                    frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
+                    c = ctable[(pixels >> 4) & 0xF];
+                    frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
+                    c = ctable[pixels & 0xF];
+                    frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
+                }
+
+                // trail out last 4 visible bits
+                shiftreg = ((shiftreg << 1) | (frame_byte->pull() & 1));
+                shiftreg = ((shiftreg << 1) | 0);
+                shiftreg = ((shiftreg << 1) | 0);
+                shiftreg = ((shiftreg << 1) | 0);
+                shiftreg = shiftreg & 0x7FF; // 11 bits
+
+                uint16_t pixels = lut[shiftreg];
+
+                RGBColor c = ctable[(pixels >> 12) & 0xF];
+                frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
+                c = ctable[(pixels >> 8) & 0xF];
+                frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
+                c = ctable[(pixels >> 4) & 0xF];
+                frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
+                c = ctable[pixels & 0xF];
+                frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
+            
+            } else {
+                // do mono (white) rendering (or colored with GS colors)
+                // TODO: only works with text. We're not even looking at bit here.
+                for (uint16_t x = 0; x < framewidth; x++) {
+                    uint8_t bit = frame_byte->pull();
+                    RGBA_t pixel = gs_rgb_colors[bit >> 4];
+                    frame_rgba->push(pixel);
+                }
+            }
+            if (phase_offset == 1 && shift_enabled) {
+                for (int i = 0; i < 7; i++) {
+                    frame_rgba->push(RGBA_t::make(0x00, 0x00, 0x00, 0x00));
+                }
+            }
+        }
     }
 };
 

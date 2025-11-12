@@ -8,6 +8,12 @@ New Hardware
 
 The GS features a variety of new hardware.
 
+Test Suite for Emulators generally:
+
+http://krue.net/truegs/
+
+
+
 ### 65816 Processor
 
 This looks like an excellent resource:
