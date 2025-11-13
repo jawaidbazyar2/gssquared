@@ -7149,3 +7149,45 @@ The color palette should be exactly the same, yes? And just bitshifted or someth
 
 Compared photos on the GS to my current output rendering. Hires is exactly spot-on. Lores on the GS does -not- show any gaps/artifacts between bars, whereas I do. I surmise that the GS handles lores specially. i.e. the way I did in the very first iteration of display code. hah. Circling around back to the start.
 
+ok, so I think let's reorder the table. the dhgr table is clearly backwards compared to the hgr table (why? don't know!)
+
+for each index in the table;
+  get value by index;
+  exactly reverse bits;
+  store value in new index
+forend
+print out the new table alone with the bits and the just like ...
+
+nope!
+
+```
+2100:11 44
+supposed to be two sets of red pixels
+1 0 0 0 1 0 0 -   x x x x x x x -  x x x x x x x x - 0 0 1 0 0 0 1 -
+                  0 1 0 0 0 1 0    0 0 1 0 0 0 1 0
+```
+literally just 1 0 0 0 repeating. 
+
+well here that is:
+                           prev | cur| new
+0xFFFF,				//  08 00 >> 1000|0000|000 => Blk.Blk.Blk.Blk
+0x3333,				//  40 08 >> 0001|0001|000 => Red.Red.Red.Red
+0xBBBF,				//  38 07 >> 1110|1110|000 => Aqu.Aqu.Aqu.Blk real index is 000 0111 0111
+
+Aqua is what.. 14? yes, 1110. So that tracks. 
+So I have the real index. but what we need is an index that has:
+1 1 1 0 1 1 1 0 0 0 0 <- newest bit, lsb
+and that's just the reverse.
+
+oh that's a confusion here. I am preloading 3 bits. That is the lsb 3 bits in the index in the hires table.
+But what that means is, we're doing a 3-bit lookahead.
+
+## Nov 13, 2025
+
+well ok duh. I was doing that the superduper hard way. It WAS just a matter of a phase shift. i.e., the regular hires table works just fine if I preload in only two bits instead of three. I also have it grab an extra one at the end.
+
+SO. Now that leaves lores and double lores, which are interesting cases. Testing on the GS showed they are -not- just handled with the hires logic because there are no artifacts.
+Space Quest looks good. splash screen on Skull Island looks great.
+
+Yeah, Skull Island dlores shows perfectly rectangular and consistently sized dots.
+

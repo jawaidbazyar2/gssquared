@@ -385,7 +385,7 @@ text looks like a** in it. */
                 }
             }
             lut = (uint16_t *)HiresColorTable;
-            RGBColor *ctable = (phase_offset == 0) ? (RGBColor *)GSHGRColors : (RGBColor *)GSHGRColors_ph1;
+            RGBColor *ctable = (RGBColor *)GSHGRColors;
 
             if (color_mode.colorburst == 1 && color_mode.mixed_mode == 0) {
                 // do color burst
@@ -398,7 +398,7 @@ text looks like a** in it. */
                 bool bit;
 
                 // Preload 3 bits
-                for (int i = 0; i < 3; i++) {
+                for (int i = 0; i < 3-phase_offset; i++) {
                     bit = frame_byte->pull() & 1;
                     shiftreg = ((shiftreg << 1) | bit);
                 }
@@ -430,7 +430,11 @@ text looks like a** in it. */
 
                 // trail out last 4 visible bits
                 shiftreg = ((shiftreg << 1) | (frame_byte->pull() & 1));
-                shiftreg = ((shiftreg << 1) | 0);
+                if (phase_offset == 1) {
+                    shiftreg = ((shiftreg << 1) | (frame_byte->pull() & 1)); // grab extra
+                } else {
+                    shiftreg = ((shiftreg << 1) | 0);
+                }
                 shiftreg = ((shiftreg << 1) | 0);
                 shiftreg = ((shiftreg << 1) | 0);
                 shiftreg = shiftreg & 0x7FF; // 11 bits
@@ -463,10 +467,3 @@ text looks like a** in it. */
         }
     }
 };
-
-/**
-flip:
-
-brown / dark blue
-orange and purple
- */
