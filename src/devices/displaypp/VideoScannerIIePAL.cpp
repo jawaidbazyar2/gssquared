@@ -1,10 +1,10 @@
 
-#include "VideoScannerIIe.hpp"
+#include "VideoScannerIIePAL.hpp"
 #include "VideoScannerII.hpp"
 #include "ScanBuffer.hpp"
 #include "mmus/mmu_ii.hpp"
 
-void VideoScannerIIe::init_video_addresses()
+void VideoScannerIIePAL::init_video_addresses()
 {
     allocate();
     init_mode_table();
@@ -14,7 +14,7 @@ void VideoScannerIIe::init_video_addresses()
     uint32_t hcount = 0;     // beginning of right border
     uint32_t vcount = 0x100; // first scanline at top of screen
 
-    for (int idx = 0; idx < SCANNER_LUT_SIZE; ++idx)
+    for (int idx = 0; idx < cycles_per_frame; ++idx)
     {
         // hcount and vcount here are as they are defined inside the Apple II. They do not directly correspond to
         // the hcount and vcount values used in the video_cycle() function.
@@ -59,7 +59,7 @@ void VideoScannerIIe::init_video_addresses()
             if (hcount == 0) {
                 vcount = (vcount + 1) & 0x1FF;
                 if (vcount == 0)
-                    vcount = 0xFA;  // PRESET to 011 111 010
+                    vcount = 0xFA; // PRESET to 011 001 000 (0xC8)
             }
         }
         else {
@@ -73,8 +73,12 @@ void VideoScannerIIe::init_video_addresses()
         if (hc < 25) fl |= SA_FLAG_HBL;
         if (vc >= 192) fl |= SA_FLAG_VBL;
         // hc=0 vc=0 here is upper left pixel of data display.
-        if ((hc == 64) && (vc < 261)) fl |= SA_FLAG_HSYNC;
-        if ((hc == 64) && (vc == 261)) fl |= SA_FLAG_VSYNC;
+
+        if (vc > 300) {
+            int a = 1;
+        }
+        if ((hc == 64) && (vc < 311)) fl |= SA_FLAG_HSYNC;
+        if ((hc == 64) && (vc == 311)) fl |= SA_FLAG_VSYNC;
 
         lores_p1[idx].flags = fl;
         lores_p2[idx].flags = fl;
@@ -85,7 +89,7 @@ void VideoScannerIIe::init_video_addresses()
     }
 }
 
-void VideoScannerIIe::video_cycle()
+void VideoScannerIIePAL::video_cycle()
 {
     scan_address_t &sa = video_addresses[scan_index];
     uint16_t address = sa.addr;
@@ -114,12 +118,12 @@ void VideoScannerIIe::video_cycle()
         scan.flags = mode_flags;
         frame_scan->push(scan);
     }
-    if (++scan_index == 17030) {
+    if (++scan_index == cycles_per_frame) {
         scan_index = 0;
     }
 }
 
-
-VideoScannerIIe::VideoScannerIIe(MMU_II *mmu) : VideoScannerII(mmu)
+VideoScannerIIePAL::VideoScannerIIePAL(MMU_II *mmu) : VideoScannerII(mmu)
 {
+    cycles_per_frame = SCANNER_CYCLES;  
 }

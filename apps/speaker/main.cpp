@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < num_frames; i++) {
         event_poll_local(cpu);
         
-        uint64_t samps = audio_generate_frame(cpu, cycle_window_last, cpu->cycles);
+        uint64_t samps = audio_generate_frame(computer, cpu, cycle_window_last, cpu->cycles);
         if (write_output) {
             fwrite(speaker_state->working_buffer, sizeof(int16_t), samps, wav_file);
         }

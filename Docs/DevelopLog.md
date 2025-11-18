@@ -7191,3 +7191,23 @@ Space Quest looks good. splash screen on Skull Island looks great.
 
 Yeah, Skull Island dlores shows perfectly rectangular and consistently sized dots.
 
+## Nov 14, 2025
+
+Perform testing to make sure we're not missing any pixels anywhere due to the preloading: hcolor=7, hplot 0,0 to 0,191 and hplot 279,0 to 279,191 show basically the same on ntsc/rgb. now how do I do that in dhgr.. yah, so on the right side of screen, 1F shows some pixels, 3F one more, but 7F does not add one. 
+
+put into double hires mode
+2027:7f
+after the main loop, shiftreg contains 0x1F. 
+shiftreg becomes 508 0x1FC. That lookup entry is four white pixels.  the previous emission was b.b.w.w. So we have a total of 6 white pixels. and really ought to have 7..
+but I'm not missing any data here. that's just the rendering.
+
+let's see what something like a2desktop looks like. the mouse on the very right edge, you can see one pixel worth of angle at the top of the cursor. the whole screen shifts to the right one dot going from ntsc to rgb mode. Something to review later.
+
+## Nov 17, 2025
+
+oh my pal scanner is crashing because I'm not iterating enough cycles in the main gs2 loop.
+ok well "first draft" PAL is in and sort of working. Things that remain to be done:
+[ ] refactor the speaker for hopefully the last time.  
+[ ] fix mockingboard to use new cpu clock construct  
+[ ] make cpu clock construct a class so it's less junky  
+

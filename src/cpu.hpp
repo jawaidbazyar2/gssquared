@@ -236,7 +236,7 @@ struct cpu_state {
 
     // clocking
     uint64_t clock_slip = 0;
-    uint64_t cycle_duration_ns;
+    //uint64_t cycle_duration_ns;
     uint64_t HZ_RATE;
     clock_mode_t clock_mode = CLOCK_FREE_RUN;
     double e_mhz = 0;
@@ -319,6 +319,7 @@ extern struct cpu_state *CPUs[MAX_CPUS];
 clock_mode_t toggle_clock_mode(cpu_state *cpu, int direction);
 
 void set_clock_mode(cpu_state *cpu, clock_mode_t mode);
+void select_system_clock(clock_set_t clock_set);
 
 const char* processor_get_name(int processor_type);
 

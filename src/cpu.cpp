@@ -21,25 +21,47 @@
 
 #include "cpu.hpp"
 
-clock_mode_info_t clock_mode_info[NUM_CLOCK_MODES] = {
-    { 14'318'180, ((uint64_t)1000000000 * 256) / (50000000), 238420, 1, 0, 912 }, // cycle times here are fake.
-    { 1'020'484, ((uint64_t)1'000'000'000 * 256) / (1'022'727), 17030, 14, 2, 65 },
-    { 2'857'370, ((uint64_t)1'000'000'000 * 256) / (2'863'636), 47684, 5, 2, 182},
-    { 7'143'390, ((uint64_t)1'000'000'000 * 256) / (7159090), 119210, 2, 2, 455 }
+clock_mode_info_t us_clock_mode_info[NUM_CLOCK_MODES] = {
+    { 14'318'180, 14318180, 238420, 1, 0, 912, 238944, 16688154, 16688155, 1020484 }, // cycle times here are fake.
+    { 1'020'484, 14318180, 17030, 14, 2, 65, 238944, 16688154, 16688155, 1020484 },
+    { 2'857'370, 14318180,  47684, 5, 2, 182, 238944, 16688154, 16688155, 2857356 },
+    { 7'143'390, 14318180, 119210, 2, 2, 455, 238944, 16688154, 16688155, 7143390 }
 };
+
+clock_mode_info_t pal_clock_mode_info[NUM_CLOCK_MODES] = {
+    { 14'250'450, 14250450, 238420, 1, 0, 912, 284544, 19967369, 19967370, 1'015'657 }, // cycle times here are fake.
+    { 1'015'657, 14250450,  17030, 14, 2, 65, 284544, 19967369, 19967370, 1'015'657 },
+    { 2'857'370, 14250450,  47684, 5, 2, 182, 284544, 19967369, 19967370, 2'843'839 },
+    { 7'143'390,14250450,  119210, 2, 2, 455, 284544, 19967369, 19967370, 7'109'599 }
+};
+
+clock_mode_info_t *system_clock_mode_info = us_clock_mode_info;
+
+void select_system_clock(clock_set_t clock_set) {
+    if (clock_set == CLOCK_SET_US) {
+        system_clock_mode_info = us_clock_mode_info;
+    } else if (clock_set == CLOCK_SET_PAL) {
+        system_clock_mode_info = pal_clock_mode_info;
+    }
+}
 
 void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
     // TODO: copy the entire struct into the cpu state?
-    cpu->HZ_RATE = clock_mode_info[mode].hz_rate;
+    cpu->HZ_RATE = system_clock_mode_info[mode].hz_rate;
     // Lookup time per emulated cycle
-    cpu->cycle_duration_ns = clock_mode_info[mode].cycle_duration_ns;
-    cpu->c_14M_per_cpu_cycle = clock_mode_info[mode].c_14M_per_cpu_cycle;
-    cpu->cycles_per_scanline = clock_mode_info[mode].cycles_per_scanline;
-    cpu->extra_per_scanline = clock_mode_info[mode].extra_per_scanline;
-    cpu->cycles_per_frame = clock_mode_info[mode].cycles_per_frame;
+    //cpu->cycle_duration_ns = clock_mode_info[mode].cycle_duration_ns;
+    cpu->c_14M_per_cpu_cycle = system_clock_mode_info[mode].c_14M_per_cpu_cycle;
+    cpu->cycles_per_scanline = system_clock_mode_info[mode].cycles_per_scanline;
+    cpu->extra_per_scanline = system_clock_mode_info[mode].extra_per_scanline;
+    cpu->cycles_per_frame = system_clock_mode_info[mode].cycles_per_frame;
 
     cpu->clock_mode = mode;
-    fprintf(stdout, "Clock mode: %d HZ_RATE: %llu cycle_duration_ns: %llu \n", cpu->clock_mode, cpu->HZ_RATE, cpu->cycle_duration_ns);
+    //fprintf(stdout, "Clock mode: %d HZ_RATE: %llu cycle_duration_ns: %llu \n", cpu->clock_mode, cpu->HZ_RATE, cpu->cycle_duration_ns);
+    fprintf(stdout, "Clock mode: %d HZ_RATE: %llu \n", cpu->clock_mode, cpu->HZ_RATE);
+}
+
+clock_mode_info_t *get_clock_line(cpu_state *cpu) {
+    return &system_clock_mode_info[cpu->clock_mode];
 }
 
 clock_mode_t toggle_clock_mode(cpu_state *cpu, int direction) {

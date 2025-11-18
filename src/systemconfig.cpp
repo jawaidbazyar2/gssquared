@@ -18,6 +18,7 @@
 #include "gs2.hpp"
 #include "systemconfig.hpp"
 #include "ui/MainAtlas.hpp"
+#include "devices/displaypp/VideoScanner.hpp"
 
 DeviceMap_t DeviceMap_II[] = {
     {DEVICE_ID_KEYBOARD_IIPLUS, SLOT_NONE},
@@ -120,7 +121,9 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         DeviceMap_II,
         Badge_II,
         true,
-        "48K RAM; Disk II"
+        CLOCK_SET_US,
+        Scanner_AppleII,
+        "48K RAM; Disk II",
     },
     {
         "Apple ][+", 
@@ -128,7 +131,9 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         DeviceMap_IIPLUS,
         Badge_IIPlus,
         true,
-        "64K RAM (incl Lang Card); Disk II; ProDOS Clock; Parallel Port; VIDEX 80-col; Mockingboard"
+        CLOCK_SET_US,
+        Scanner_AppleII,
+        "64K RAM (incl Lang Card); Disk II; ProDOS Clock; Parallel Port; VIDEX 80-col; Mockingboard",
     },
     {
         "Apple IIe",
@@ -136,7 +141,9 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         DeviceMap_IIE,
         Badge_IIE,
         true,
-        "128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard"
+        CLOCK_SET_US,
+        Scanner_AppleIIe,
+        "128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard",
     },
     {
         "Apple IIe Enhanced",
@@ -144,7 +151,9 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         DeviceMap_IIE,
         Badge_IIEEnh,
         true,
-        "128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard"
+        CLOCK_SET_US,
+        Scanner_AppleIIe,
+        "128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard",
     },
     {
         "Apple IIe Enhanced w/Mouse",
@@ -152,7 +161,9 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         DeviceMap_IIE_MOUSE,
         Badge_IIEEnh,
         true,
-        "128K RAM; Disk II; ProDOS Clock; Mouse"
+        CLOCK_SET_US,
+        Scanner_AppleIIe,
+        "128K RAM; Disk II; ProDOS Clock; Mouse",
     },
     {
         "Apple IIe Enhanced Dual Mockingboard",
@@ -160,7 +171,9 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         DeviceMap_IIE_ENH_2MB,
         Badge_IIEEnh,
         true,
-        "128K RAM; Disk II; ProDOS Clock; DUAL Mockingboard"
+        CLOCK_SET_US,
+        Scanner_AppleIIe,
+        "128K RAM; Disk II; ProDOS Clock; DUAL Mockingboard",
     },
     {
         "Apple IIe 65816 w/Mouse",
@@ -168,8 +181,20 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         DeviceMap_IIX,
         Badge_IIEEnh,
         true,
+        CLOCK_SET_US,
+        Scanner_AppleIIgs,
         "128K RAM; Disk II; ProDOS Clock; Mouse; 65816"
     }, 
+    {
+        "Apple IIe Enhanced / PAL",
+        PLATFORM_APPLE_IIE_ENHANCED,
+        DeviceMap_IIE,
+        Badge_IIEEnh,
+        true,
+        CLOCK_SET_PAL,
+        Scanner_AppleIIePAL,
+        "PAL Video; 128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard",
+    },
 /*     {
         "Apple IIc",
         PLATFORM_APPLE_IIC,

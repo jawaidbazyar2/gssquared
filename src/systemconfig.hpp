@@ -17,9 +17,12 @@
 
 #pragma once
 
-#include "gs2.hpp"
+//#include "gs2.hpp"
 #include "platforms.hpp"
 #include "devices.hpp"
+#include "clock.hpp"
+#include "devices/displaypp/VideoScanner.hpp"
+
 /**
  * a System Configuraiton is a platform, and, a list of devices and their slots.
  */
@@ -30,6 +33,8 @@ struct SystemConfig_t {
     DeviceMap_t *device_map;
     int image_id;
     bool builtin;
+    clock_set_t clock_set;
+    video_scanner_t scanner_type;
     const char *description;
 };
 

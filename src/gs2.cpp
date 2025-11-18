@@ -165,9 +165,10 @@ void frame_video_update(computer_t *computer, cpu_state *cpu, bool force_full_fr
     computer->video_system->present();
 }
 
-void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time, uint64_t frame_count) {
-    uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
-        
+void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time, uint64_t ns_per_frame)
+    /* uint64_t frame_count) */ {
+    uint64_t wakeup_time = last_cycle_time + ns_per_frame; /*  + (frame_count & 1); */ // even frames have 16688154, odd frames have 16688154 + 1
+
     // sleep out the rest of this frame.
     uint64_t sleep_loops = 0;
     uint64_t current_time = SDL_GetTicksNS();
@@ -197,15 +198,19 @@ execution of device frame handlers, including video frame output and audio frame
 void run_cpus(computer_t *computer) {
     cpu_state *cpu = computer->cpu;
     
+    computer->set_clock(&system_clock_mode_info[computer->speed_new]);
+
     uint64_t last_cycle_time = SDL_GetTicksNS();
 
     uint64_t frame_count = 0;     // used to add an extra bit of time to frame sleep
 
     uint64_t start_frame_c14m = 0;
     uint64_t last_start_frame_c14m = 0;
-    uint64_t end_frame_c14M = start_frame_c14m + 238944; // init outside the loop
+    uint64_t end_frame_c14M = start_frame_c14m + computer->clock->c14M_per_frame; // init outside the loop
 
     while (cpu->halt != HLT_USER) { // top of frame.
+
+        uint64_t c14M_per_frame = computer->clock->c14M_per_frame;
 
         if (computer->speed_shift) {
             display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
@@ -218,6 +223,7 @@ void run_cpus(computer_t *computer) {
                 speaker_reset(ss);
              }
             set_clock_mode(cpu, computer->speed_new);
+            computer->set_clock(&system_clock_mode_info[computer->speed_new]);
             display_update_video_scanner(ds, cpu);
             // cpu->video_scanner might be null here.
             int x = ds->video_scanner->get_frame_scan()->get_count();
@@ -260,8 +266,8 @@ void run_cpus(computer_t *computer) {
                 }
 
                 // update frame window counters.
-                start_frame_c14m += 238944;
-                end_frame_c14M = start_frame_c14m + 238944;
+                start_frame_c14m += c14M_per_frame;
+                end_frame_c14M = start_frame_c14m + c14M_per_frame;
                 frame_count++;
                 // set next frame cycle time (used for mouse) is at top of frame.
                 computer->set_frame_start_cycle();
@@ -311,7 +317,7 @@ void run_cpus(computer_t *computer) {
             MEASURE(computer->event_times, frame_event(computer, cpu));
     
             /* Emit Audio Frame */
-            MEASURE(computer->audio_times, audio_generate_frame(cpu /* , last_cycle_window_start, cycle_window_start */));
+            MEASURE(computer->audio_times, audio_generate_frame(computer, cpu /* , last_cycle_window_start, cycle_window_start */));
     
             /* Process Internal Event Queue */
             MEASURE(computer->app_event_times, frame_appevent(computer, cpu));
@@ -324,10 +330,10 @@ void run_cpus(computer_t *computer) {
             MEASURE(computer->display_times, frame_video_update(computer, cpu));
     
             // calculate what sleep-until time should be.
-            uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
-            
+            //uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
+            uint64_t frame_length_ns = (frame_count & 1) ? computer->clock->us_per_frame_odd : computer->clock->us_per_frame_even;
             // sleep out the rest of this frame.
-            frame_sleep(computer, cpu, last_cycle_time, frame_count);
+            frame_sleep(computer, cpu, last_cycle_time, frame_length_ns);
 
             /*
             should this be last_cycle_time = wakeup_time? Then we don't lose some ns on the function return etc..
@@ -342,16 +348,16 @@ void run_cpus(computer_t *computer) {
             // if we completed a full frame, update the frame counters. otherwise we were interrupted by breakpoint etc 
             // 
             if (cpu->c_14M >= end_frame_c14M) {
-                start_frame_c14m += 238944;
-                end_frame_c14M = start_frame_c14m + 238944;
+                start_frame_c14m += c14M_per_frame;
+                end_frame_c14M = start_frame_c14m + c14M_per_frame;
                 frame_count++;
                 last_start_frame_c14m = start_frame_c14m;
             }
         } else { // Ludicrous Speed!
             // TODO: how to handle VBL timing here. estimate it based on realtime?
             computer->set_frame_start_cycle(); // todo: unsure if this is right..
-            
-            uint64_t next_frame_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
+            uint64_t frame_length_ns = (frame_count & 1) ? computer->clock->us_per_frame_odd : computer->clock->us_per_frame_even;
+            uint64_t next_frame_time = last_cycle_time + frame_length_ns; // even frames have 16688154, odd frames have 16688154 + 1
 
             uint64_t frdiff = start_frame_c14m - last_start_frame_c14m; // this is just a check.
             last_start_frame_c14m = start_frame_c14m;
@@ -385,7 +391,7 @@ void run_cpus(computer_t *computer) {
                 }
             }
             // this was roughly one video frame so let's pretend we went that many.
-            cpu->c_14M += 238944; // fake increment this so it doesn't get wildly out of sync.
+            cpu->c_14M += c14M_per_frame; // fake increment this so it doesn't get wildly out of sync.
             //cpu->current_frame_start_14M = cpu->next_frame_start_14M;
             //cpu->next_frame_start_14M += 238944;
 
@@ -421,8 +427,8 @@ void run_cpus(computer_t *computer) {
             
             // update frame status; calculate stats; move these variables into computer;
             computer->frame_status_update();
-            start_frame_c14m += 238944;
-            end_frame_c14M = start_frame_c14m + 238944; // we had forgotten this one...
+            start_frame_c14m += c14M_per_frame;
+            end_frame_c14M = start_frame_c14m + c14M_per_frame; // we had forgotten this one...
             frame_count++;
             last_start_frame_c14m = start_frame_c14m;
         }
@@ -548,10 +554,14 @@ int main(int argc, char *argv[]) {
     platform_info* platform = get_platform(platform_id);
     print_platform_info(platform);
 
+    select_system_clock(system_config->clock_set);
+    computer->set_clock(&system_clock_mode_info[computer->speed_new]);
+
     //computer->set_cpu(new cpu_state(platform->cpu_type));
     computer->cpu->set_processor(platform->cpu_type);
 
     computer->set_platform(platform);
+    computer->set_video_scanner(system_config->scanner_type);
     
     // TODO: load platform roms - this info should get stored in the 'computer'
     rom_data *rd = load_platform_roms(platform);

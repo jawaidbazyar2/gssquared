@@ -6,6 +6,9 @@
 
 void VideoScannerII::init_video_addresses()
 {
+    allocate();
+    init_mode_table();
+    
     printf("II+ init_video_addresses()\n"); fflush(stdout);
 
     uint32_t hcount = 0;     // beginning of right border
@@ -236,13 +239,14 @@ ScanBuffer *VideoScannerII::get_frame_scan()
 
 VideoScannerII::VideoScannerII(MMU_II *mmu)
 {
+
     this->mmu = mmu;
     this->ram = mmu->get_memory_base();
 
     // Note: init_video_addresses() is not called here because it's virtual
     // and needs to be called from derived class constructors to ensure
     // the correct derived implementation is used
-    init_mode_table();
+    //init_mode_table();
 
     frame_scan = new ScanBuffer;
 
@@ -286,6 +290,19 @@ VideoScannerII::VideoScannerII(MMU_II *mmu)
     will produce video data for the current frame starting at the beginning of the
     top border.
     */
+}
+
+
+void VideoScannerII::allocate()
+{
+    lores_p1 = new scan_address_t[cycles_per_frame];
+    lores_p2 = new scan_address_t[cycles_per_frame];
+    hires_p1 = new scan_address_t[cycles_per_frame];
+    hires_p2 = new scan_address_t[cycles_per_frame];
+    mixed_p1 = new scan_address_t[cycles_per_frame];
+    mixed_p2 = new scan_address_t[cycles_per_frame];
+    shr_p1 = new scan_address_t[cycles_per_frame];
+    video_addresses = lores_p1;
 }
 
 /*

@@ -512,3 +512,11 @@ I've never gotten this to work, but I've always been testing Mockingboard C. A d
 
 with sound ii the IRQ never turns off. I bet it's just slamming in the IRQ handler. 
 Yep. I just did the RTI. and immediately back to the interrupt handler. ok, so at least I know a little more what's going on..
+is it the voice stuff?
+
+# Other implementations
+
+This is a cycle-by-cycle emulation for the 6522. Check it out to see if it can help understand some of the 6522 behavior I'm unsure about.
+
+https://github.com/floooh/chips/blob/master/chips/m6522.h
+

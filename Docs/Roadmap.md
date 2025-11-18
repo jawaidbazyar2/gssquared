@@ -39,7 +39,7 @@
 ## Release 0.6
 
 [ ] put common controls in hover-over on main page - reset, restart, power-off, open debugger  
-[ ] Refactor CPU to be more cycle-accurate including false/phantom reads/writes  
+[x] Refactor CPU to be more cycle-accurate including false/phantom reads/writes  
 
 [ ] Can edit slots / hw config before powering-on. (Click edit under tile to edit it)
 [ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  

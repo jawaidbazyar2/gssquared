@@ -161,15 +161,20 @@ inline void log_speaker_blip(cpu_state *cpu) {
 #endif
 
 
-uint64_t audio_generate_frame(cpu_state *cpu  /* , uint64_t cycle_window_start, uint64_t cycle_window_end */) {
+uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu  /* , uint64_t cycle_window_start, uint64_t cycle_window_end */) {
 
     speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
     speaker_config_t *sc = speaker_state->sp->config;
     static uint64_t last_hz_rate = 0;
 
-    if (last_hz_rate != cpu->HZ_RATE) {
+    if (last_hz_rate != cpu->HZ_RATE) { // this will always trigger the 1st time through.
         last_hz_rate = cpu->HZ_RATE;
-        sc->reconfigure(59.9227f, cpu->HZ_RATE, 44343.0f, 740);
+        double frame_rate = (double)computer->clock->c14M_per_second / (double)computer->clock->c14M_per_frame;
+        double cpu_rate = (double)computer->clock->eff_cpu_rate;
+    
+        sc->reconfigure( frame_rate, cpu_rate, 44343.0f, 44343.0f / frame_rate );
+    
+//        sc->reconfigure(59.9227f, cpu->HZ_RATE, 44343.0f, 740);
         sc->print();
     }
 
@@ -296,7 +301,10 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 
     speaker_state_t *speaker_state = new speaker_state_t;
 
-    speaker_config_t *sc = new speaker_config_t(59.9227f, 1020484.0f, 44343.0f, 740);
+    double frame_rate = (double)computer->clock->c14M_per_second / (double)computer->clock->c14M_per_frame;
+    double cpu_rate = (double)computer->clock->eff_cpu_rate;
+
+    speaker_config_t *sc = new speaker_config_t(/* 59.9227f */ frame_rate, /* 1020484.0f */ cpu_rate, 44343.0f, 44343.0f / frame_rate /* 740 */);
     EventBufferRing *eb = new EventBufferRing(next_power_of_2(120'000));
     speaker_state->sp = new Speaker(sc, eb);
     speaker_state->event_buffer = eb;

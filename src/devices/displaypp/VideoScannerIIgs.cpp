@@ -6,6 +6,9 @@
 
 void VideoScannerIIgs::init_video_addresses()
 {
+    allocate();
+    init_mode_table();
+    
     printf("IIgs init_video_addresses()\n"); fflush(stdout);
 
     uint32_t hcount = 0;     // beginning of right border

@@ -12,6 +12,7 @@
 #include "mbus/MessageBus.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/Metrics.hpp"
+#include "devices/displaypp/VideoScanner.hpp"
 
 struct cpu_state;
 struct debug_window_t; // don't bring in debugwindow.hpp, it would create a depedence on SDL.
@@ -71,11 +72,17 @@ struct computer_t {
     uint64_t last_frame_end_time = 0, last_5sec_update = 0;
     uint64_t frame_start_cycle = 0;
 
+    video_scanner_t video_scanner = Scanner_AppleII;
+    clock_mode_info_t *clock = nullptr;
+
     computer_t();
     ~computer_t();
+    void set_clock(clock_mode_info_t *clock) { this->clock = clock; }
     void set_mmu(MMU_II *mmu) { this->mmu = mmu; }
     void set_cpu(cpu_state *cpu) { this->cpu = cpu; }
     void set_platform(platform_info *platform) { this->platform = platform; }
+    void set_video_scanner(video_scanner_t video_scanner) { this->video_scanner = video_scanner; }
+    video_scanner_t get_video_scanner() { return video_scanner; }
     void reset(bool cold_start);
     void set_frame_start_cycle();
     uint64_t get_frame_start_cycle() { return frame_start_cycle; }

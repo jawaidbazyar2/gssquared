@@ -277,7 +277,7 @@ text looks like a** in it. */
         } 
     }
 
-    void render_new(Frame560 *frame_byte, Frame560RGBA *frame_rgba, RGBA_t color /* , uint16_t phaseoffset */)
+    void render_new1(Frame560 *frame_byte, Frame560RGBA *frame_rgba, RGBA_t color /* , uint16_t phaseoffset */)
     {
         uint16_t framewidth = frame_byte->width();
 
@@ -428,7 +428,7 @@ text looks like a** in it. */
                     frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
                 }
 
-                // trail out last 4 visible bits
+                // trail out last 4 visible bits (pulls these into next, not current..)
                 shiftreg = ((shiftreg << 1) | (frame_byte->pull() & 1));
                 if (phase_offset == 1) {
                     shiftreg = ((shiftreg << 1) | (frame_byte->pull() & 1)); // grab extra

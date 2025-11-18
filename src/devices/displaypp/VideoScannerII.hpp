@@ -70,16 +70,26 @@ class VideoScannerII
 {
 protected:
     // LUTs for video addresses
-    alignas(64) scanner_lut_t lores_p1;
+    /* alignas(64) scanner_lut_t lores_p1;
     alignas(64) scanner_lut_t lores_p2;
     alignas(64) scanner_lut_t hires_p1;
     alignas(64) scanner_lut_t hires_p2;
     alignas(64) scanner_lut_t mixed_p1;
     alignas(64) scanner_lut_t mixed_p2;
-    alignas(64) scanner_lut_t shr_p1;
+    alignas(64) scanner_lut_t shr_p1; */
+
+    scan_address_t *lores_p1 = nullptr;
+    scan_address_t *lores_p2 = nullptr;
+    scan_address_t *hires_p1 = nullptr;
+    scan_address_t *hires_p2 = nullptr;
+    scan_address_t *mixed_p1 = nullptr;
+    scan_address_t *mixed_p2 = nullptr;
+    scan_address_t *shr_p1 = nullptr;
 
     scan_address_t *video_addresses;
     
+    uint32_t cycles_per_frame = 17030;
+
     // video mode/memory data
     // 5*40*200: 40*200 video states for SHR, 1 mode byte + 4 data bytes for each state
     // 2*13*200: 13*200 horz border states, 1 mode byte + 1 data byte for each state
@@ -136,6 +146,7 @@ uint32_t  hcount;       // use separate hcount and vcount in order
 
     // Call this after construction to properly initialize video addresses
     virtual void initialize() { init_video_addresses(); }
+    virtual void allocate();
 
     virtual void reset() { frame_scan->clear(); hcount = 0; scan_index = 7 /* (65*243) */; };
 

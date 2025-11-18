@@ -114,4 +114,4 @@ void speaker_start(cpu_state *cpu);
 void speaker_stop();
 void speaker_reset(speaker_state_t *speaker_state);
 //uint64_t audio_generate_frame(cpu_state *cpu, uint64_t last_cycle_window_start, uint64_t cycle_window_start);
-uint64_t audio_generate_frame(cpu_state *cpu);
+uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu);

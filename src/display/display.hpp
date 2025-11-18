@@ -33,6 +33,7 @@
 #include "devices/displaypp/render/NTSC560.hpp"
 #include "devices/displaypp/render/GSRGB560.hpp"
 #include "devices/displaypp/generate/AppleII.cpp"
+#include "devices/displaypp/VideoScanner.hpp"
 
 class VideoScanGenerator ;
 class CharRom;
@@ -82,13 +83,13 @@ typedef enum {
     NUM_DISPLAY_PAGES
 } display_page_number_t;
 
-typedef enum {
+/* typedef enum {
     VS_II = 0,
     VS_IIE,
     VS_IIGS,
     NUM_VIDEO_SCANNERS
 
-} video_scanner_t;
+} video_scanner_t; */
 
 #define B_TOP 0
 #define B_CEN 1
@@ -129,7 +130,7 @@ public:
     video_system_t *video_system;
     MMU_II *mmu;
     computer_t *computer;
-    video_scanner_t video_scanner_type = VS_II;
+    video_scanner_t video_scanner_type = Scanner_AppleII;
     VideoScannerII *video_scanner = nullptr; // if set, use this instead of default video generation.
     VideoScanGenerator *vsg = nullptr;
     bool framebased = true;

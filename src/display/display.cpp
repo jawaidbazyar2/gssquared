@@ -40,6 +40,7 @@
 
 #include "devices/displaypp/VideoScannerIIgs.hpp"
 #include "devices/displaypp/VideoScannerIIe.hpp"
+#include "devices/displaypp/VideoScannerIIePAL.hpp"
 #include "devices/displaypp/VideoScannerII.hpp"
 
 #include "devices/displaypp/AppleIIgsColors.hpp"
@@ -363,7 +364,7 @@ bool update_display_apple2(cpu_state *cpu) {
     }
     vs->force_full_frame_redraw = false;
 
-    if (ds->video_scanner_type == VS_IIGS) {
+    if (ds->video_scanner_type == Scanner_AppleIIgs) {
         // draw borders using rectangles.
         RGBA_t border_color = gs_text_colors[ds->border_color];
         SDL_SetRenderDrawColor(vs->renderer, border_color.r, border_color.g, border_color.b, border_color.a);
@@ -1028,26 +1029,26 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     }
     
     // create VideoScanner stuff if desired
-    switch (computer->platform->id) {
-        case PLATFORM_APPLE_IIE_65816:
-            ds->video_scanner_type = VS_IIGS;
+    ds->video_scanner_type = computer->get_video_scanner();
+    switch (ds->video_scanner_type) {
+        case Scanner_AppleIIgs:
             ds->video_scanner = new VideoScannerIIgs(mmu);
             ds->video_scanner->initialize();
             break;
-        case PLATFORM_APPLE_IIE:
-        case PLATFORM_APPLE_IIE_ENHANCED:
-            ds->video_scanner_type = VS_IIE;
+        case Scanner_AppleIIePAL:
+            ds->video_scanner = new VideoScannerIIePAL(mmu);
+            ds->video_scanner->initialize();
+            break;
+        case Scanner_AppleIIe:
             ds->video_scanner = new VideoScannerIIe(mmu);
             ds->video_scanner->initialize();
             break;
-        case PLATFORM_APPLE_II_PLUS:
-        case PLATFORM_APPLE_II:
-            ds->video_scanner_type = VS_II;
+        case Scanner_AppleII:
             ds->video_scanner = new VideoScannerII(mmu);
             ds->video_scanner->initialize();
             break;
         default:
-            system_failure("Unsupported platform in display engine init");
+            system_failure("Unsupported VideoScanner type in display engine init");
             break;
     }
 
@@ -1136,11 +1137,12 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     }
 
     switch (ds->video_scanner_type) {
-        case VS_IIGS:
-        case VS_II:
+        case Scanner_AppleIIgs:
+        case Scanner_AppleII:
             calculate_border_rects(ds, false);
             break;
-        case VS_IIE:
+        case Scanner_AppleIIe:
+        case Scanner_AppleIIePAL:
             calculate_border_rects(ds, true);
             break;
         default:
@@ -1166,7 +1168,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         ds->mon_rgb.set_shift_enabled(false);
     }
 
-    if (ds->video_scanner_type == VS_IIGS) {
+    if (ds->video_scanner_type == Scanner_AppleIIgs) {
         vs->register_frame_processor(0, [ds, cpu](bool force_full_frame) -> bool {
             bool ret;
             if (ds->framebased || force_full_frame) {
