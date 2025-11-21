@@ -7209,5 +7209,180 @@ oh my pal scanner is crashing because I'm not iterating enough cycles in the mai
 ok well "first draft" PAL is in and sort of working. Things that remain to be done:
 [ ] refactor the speaker for hopefully the last time.  
 [ ] fix mockingboard to use new cpu clock construct  
+[ ] fix mouse to work properly at variable clock rates  
 [ ] make cpu clock construct a class so it's less junky  
 
+The speaker is getting ever so slightly out of sync in PAL. Let's double check ntsc.   
+
+Speaker enhancements required:
+[ ] refactor to use 100% fixed point using large uint like I did in new synth test code  
+[ ] examine the "two close clicks cancel each other out" phenom which implies going not from 1 to -1, but from 1 to 0.  
+
+## Nov 18, 2025
+
+SpeakerX is a small module that does the actual conversions from blips to modern sample stream. We want to create a new Speaker class that encapsulates the following:
+
+event queue
+recording
+management of clock rates, input rate, output sample rate, etc.
+
+We also want to do something similar with the Clock concepts.
+
+There is some occasional crackle; but also, in PAL mode the speaker gets out of sync still (even though I tweaked a few things). it's likely due to math errors with fractional samples.
+
+So key elements of the new (5th? haha) implementation:
+
+samples: we must draw an integer number of samples each frame.
+We must also draw exactly the correct number of samples per second (also integer).
+input rate: currently based on CPU effective speed at any given time. Must be somewhat arbitrary.
+
+this is how I ended up with 44343 - it's almost exactly an even number of samples per second given our weird fractional frame rate per second.
+
+input rate is: number of cycles per frame * frames/sec. e.g. 17030 * 59.9227 = 1020484. (3.5 rounded up actually).
+
+Beep Sound on the GS - we're going to have to track this on the basis of 14m? Because 'speed' will change pretty regularly. i.e., it's just counting different divisions of 14m, not in any even way, but it can/will be quite irregular. The same principle applies even to 1mhz as time between certain audio cycles will be stretched 65th. (GS CPU is essentially an "accelerator" that periodically slows down for 1mhz speed, so other "accelerated" speeds would work similarly.)
+
+Now - regardless of input rate, the number of input cycles per -our frame- is a whole number. 
+
+Maybe the thing to do here is go back to the thing where SDL3 pulls audio data, instead of us pushing. the generate routine can always pass it some whole number of samples, based on fractional contributions and fractional input cycles. It doesn't have to always return the requested number of samples?
+
+now here's an idea, since we can pass more or less arbitrary streams to SDL, what if we let it handle the conversion? like, we'd just give it input rate of cpu cycles per second; each chunk of data it would ask for would then be that many unsigned 8-bit values. Each frame could be quite large. I think we should test that approach. Their resampling code is likely to be quite good. 
+
+## Nov 19, 2025
+
+Well, the results are mixed. It is quite a lot of data we're throwing at it, so there is some CPU usage and maybe cache contention. It's a little buzzy but I'm not doing any filtering on it, nor am I doing the slow fade to 0.
+
+At 2.8mhz, process time per frame is 248uS average. At 1MHz, it's 86uS. So scales roughly with the 'speed'. And significantly slower than my code. If we were to switch to 14M timing for this it would be well over 1ms, and this is without the filtering we likely need. So I don't think this is a good approach - the SDL3 code and/or just the sheer volume of memory bytes being thrown around is not efficient.
+
+Alright, let's review my code again, but switch it to full fixed-point processing. Since we're dealing with negative numbers, use int64_t instead of uint64_t. Then we should get some stuff for free (e.g. sign extension). Instead of bit-shifting, we need to code constants using * and /.
+
+The algorithm is this:
+
+generate_samples
+  iterate a whole number of samples desired
+  start with contribution=0
+  calculate what fractional cycle this sample ends on
+  if there was any leftover fractional cycle component add it now
+  iterate whole number of cycles_per_sample, add contribution.
+  (there is also the optimization if the next tick is after this sample, we multiply once to  do the whole sample).
+  add any remaining fractional cycle contribution to this sample.
+  decay polarity
+loop
+
+At 1mhz there are about 23.14 cycles per (44.1KHz) sample. 
+At 14.31818MHz there are 324.675 cycles per (44.1KHz) sample. That's a lot of looping and math - worst-case. best-case is same as now where most samples are optimized out.
+
+Variables:
+  cycle_whole
+  cycle_fractional
+  polarity
+  polarity_decay
+
+The issue here is that with escalating CPU frequency our workload increases here dramatically (granted, many many of these will be optimized out). Also, you can't possibly generate sound at these frequencies. Practically, anything over the 44100Hz rate cannot generate human-audible sound. So is there an optimization there? Can a tick be quantized down to 44100 in some way. Well that's what my optimization does. I had Claude analyze the code and Claude thinks it's already pretty heavily optimized. We could get somewhat fancier. Currently I only optimize if we can convert the entire sample with one, as Claude calls it, "rectangle integration". Instead of ticking cycles, then, what if we tick *rectangles* at a time.
+So the loop is
+  for each sample in (whole number of samples in this period):
+    start with current rectangle, or calculate the next rectangle.
+    identify portion of rectangle that is in this sample;
+    if (rect >= sample) add contrib(based on sample) and go to next sample;
+    if (rect < sample) add contrib(based on rect) then continue inside current sample;
+
+calculate next rectangle means, pull next event and create rectangle of that size. if we have run out of samples, we have an underrun and should return some reasonable replacement sample.
+https://claude.ai/chat/6ad0e230-0c8e-44a7-b06b-906f2cbbafbc
+
+So let's say we reserve 12 bits for whole portion and 52 bits for fractional portion. (This could also be 12 bits and 20 bits using 32 bit values). (2^20 is one millionth, which is pretty precise). I would still like the algorithm to work with arbitrary input and output rates.
+
+```
+Variables:
+   uint64_t cycles_per_sample
+   uint64_t rect_remaining // remaining portion of rectangle from input square waveform represented by events
+   uint64_t sample_remaining // remaining portion of current sample being constructed
+   int64_t polarity
+   int64_t polarity_decay; (or some other clever math to decay polarity)
+
+calculate cycles_per_sample = blah blah (so it's responsive to speed changes)
+sample_remaining = cycles_per_sample
+
+for (i = 0; i < num_samples; i++)
+  sample_remain = cycles_per_sample
+
+  while (sample_remain)
+    if rect_remain = 0, 
+      if an event, rect_remain = next_event_time - last_event_time; flip polarity; last_event_time = next_event_time;
+
+    if (rect_remain == 0)
+      add_contrib(sample_remain, polarity); sample_remain = 0;
+    else if (rect_remain >= sample_remain)
+      add_contrib(sample_remain, polarity); rect_remain -= sample_remain; sample_remain = 0; 
+    else
+      add_contrib(rect_remain, polarity); sample_remain -= rect_remain; rect_remain = 0;
+
+```
+
+if there are not (at this time) any next events, rect_remain can stay 0? and we chuck in whatever's left of sample as the contrib.
+
+Now, a key thing here is for either:
+main loop asks for correct number of samples in each request to ensure we emit exactly 44100 samples/sec, or,
+we use the callback type.
+
+ok! I did initial implementation with doubles, not fixed point. I had a few tweaks to the algorithm above, but it basically worked first time. How bout them apples!? I guess that's the W you get from doing it 5 times, lol.
+
+Some perf testing: at 1mhz, average 19uS, low: 2uS, high: 48uS
+At 14mhz, low 2.5uS, high: 47uS, avg 18uS.
+
+The PWM programs caused more 'load' on the speaker, as you might expect, because there is a lot more flip-flopping back and forth. using a very large EventBuffer might cause some slowdown as the modulus causes a divide instead of a bitshift. (This is why we had the buffer be a power of 2).
+
+Now here's what I think is going to happen: using 14M markers but 1M actual data source, we'll have very low utilization because it will be the same O (flips) just with the numbers scaled up some.
+
+So next step, reimplement this using fixed point.
+
+## Nov 20, 2025
+
+First, clean up all the unused stuff from four generations of code, lol.
+
+Testing a few different options: double vs float; use a pre-calculated sample scaling factor instead of doing a divide -and- multiply to scale to the integer output.
+
+One thing I noticed: I can select arbitrary output rates, but if it's not evenly divisible by 60, then I get some super high pitched aliasing. This makes some sense as I'm missing some fractional data here by only using an int. Not a huge issue, but something to keep in mind. It's certainly far less erroneous than the current gen code with poorly chosen output sample rate.
+
+The input sample rate also suffers from some high pitch aliasing when playing for example speaker_turkish at arbitrary input rates. However, not with lemonade. I will suspect this is because the PWM approach taken by the music player relies in some way on the 1020484 clock rate when generating pulses.
+At 1MHz tho, turkish is super clean.
+
+Timelord has a high pitched whine even at 1mhz. We're definitely going to need to use a lowpass filter.
+
+double vs float is only a hair slower, likely due to just memory bandwidth. On a 64-bit ARM. I can't discern any difference in audio quality.
+
+At 14318180 cycles per samp is 325ish. That's as fast as we'll try to run the code. (Though, should try it at 50M for lolz). How many bits do we need? 12 bits whole (up to +/- 2048) + 20 bits fractional are probably good. Do we need +/-? What if we just track it between 0 and 1, then apply a DC offset when scaling the output sample? Hm, this goes back to that video about how the Apple II toggle works exactly.
+
+https://www.youtube.com/watch?v=o7zE7rPMarU
+
+From baseline, voltage starts at 1.2V offset, then settles to 0.5V, where it is held for 30ms, then relaxes over the next 70ms.
+If we toggle speaker low, and leave it for 30ms, it will relax back to high state at end of 100ms. Next access then tries to pull the voltage high, but it's already there, so no speaker movement.
+
+so, I get double clicks because I am not taking the above into account. Also Mariani does the same. Virtual II get no clicks at all from single C030 accesses. KEGS also doubles up the clicks. Only OpenEmulator currently gets this right.
+
+mathematically identical is: start at 0, then click high goes to 1.0, and click low goes to 0.0, and we decay from 1.0 back to 0.0 just like we do now. Need to check the coefficient tho to match the 70ms dropoff.
+
+Will need to see about applying a DC offset here?
+
+So polarity toggle needs to go from 0 to 1 and to 0. Instead of polarity = -polarity, we do polarity = 1.0 - polarity. or polarity = (polarity == 0) ? 1.0 : 0.0;
+
+OK, coeff of .9999 results in still having 0.73 value at 70ms mark. Let's tweak that down.. 0.9990 for testing right now.
+But the other part of this, is the hold for 30ms. I can set a hold_counter and tick that down, and only when that number of samples has elapsed do we then start to decay.
+
+## Nov 21, 2025
+
+12 bits whole, 20 (or 52) bits fraction for all these values.
+
+The fixed point version is coming along! However, there is some weird clicky distortion after sounds play. This could be overflow of a fixedp number somewhere. It doesn't seem to happen if sound plays continuously.
+
+Doesn't seem to make a diff if fract bits is 10 or 20.. maybe i'm overflowing 16-bit output. look into that.. ahh, yes, I am overflowing the output result. eeenteresting. by how much?
+oh, I think the polarity decay was actually operating in reverse, lolz. IT WORKS! IT IS HAPPENING!!! fixed point, but still 64-bit. I tried 32-bit and it all played with large gaps of silence being super compressed. That would almost certainly be the event timer and rect_remain overflowing now. If you're just processing one frame at a time, you could bypass this issue. i.e. process events as relative to start of current frame.
+
+Observations: 20 bit fract works great; 10 bit seems good; 8 bit is great on lemonade. 8 bit not bad on turkish - might be some slight increase in distortion.
+
+it occurs there is yet another optimization we could add: check to see if there is no event before the end of the current audio frame, in which case the entire frame is all the same sample and we can skip a loop of 735 
+
+this code is likely to blow chunks if we ever catch up to end of buffer. So we do need a check in there for that... NO I think it's ok. If we don't get any new event from peek, then rect_remain is 0 and we fill the rest of the sample with sample*polarity.
+
+if we have a superduper long gap, we need to create a fake rectangle to fill in the current frame, instead of trying to consume the entire (perhaps superduper long) gap.
+
+Kent Dickey reported a real GS clicks on every $C030 hit, and I confirmed on my GS. So, the speaker behaves differently in this respect between a II(/+/e) and a GS. Fun!  SO. What's the easiest fix here? For my purposes I'll just use the floating point version, and have a setting for which algorithm is used to toggle polarity (either 0 to 1, or 1 to -1).

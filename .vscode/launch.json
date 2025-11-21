@@ -66,6 +66,24 @@
             "preLaunchTask": "build-debug"
         },
         {
+            "name": "Debug speaker",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/speaker",
+            "args": ["/Users/bazyar/src/gssquared/testdev/speaker/speaker_event_log.txt"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build-debug"
+        },
+        {
+            "name": "Debug newspeakfx",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/newspeakfx",
+            "args": ["/Users/bazyar/src/gssquared/testdev/speaker/speaker_event_log.txt"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build-debug"
+        },
+        {
             "name": "Profile mmutest (Instruments)",
             "type": "lldb",
             "request": "launch",

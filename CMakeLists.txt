@@ -211,6 +211,8 @@ add_library(gs2_devices_diskii_fmt
     src/devices/diskii/diskii_fmt.cpp
 )
 
+add_library(gs2_util_audio src/devices/speaker/LowPass.cpp src/devices/speaker/SpeakerX.cpp)
+
 add_library(gs2_devices_pdblock2 src/devices/pdblock2/pdblock2.cpp )
 
 add_library(gs2_devices_prodos_clock src/devices/prodos_clock/prodos_clock.cpp )
@@ -221,7 +223,7 @@ add_library(gs2_devices_languagecard     src/devices/languagecard/languagecard.c
 
 add_library(gs2_devices_keyboard     src/devices/keyboard/keyboard.cpp )
 
-add_library(gs2_devices_speaker     src/devices/speaker/speaker.cpp src/devices/speaker/LowPass.cpp src/devices/speaker/SpeakerX.cpp src/devices/speaker/EventBuffer.cpp )
+add_library(gs2_devices_speaker     src/devices/speaker/speaker.cpp  src/devices/speaker/EventBuffer.cpp )
 
 add_library(gs2_devices_memexp     src/devices/memoryexpansion/memexp.cpp )
 
@@ -241,7 +243,9 @@ add_library(gs2_devices_cassette     src/devices/cassette/cassette.cpp )
 
 add_library(gs2_devices_vidhd     src/devices/vidhd/vidhd.cpp )
 
-add_library(gs2_debugger src/debugger/trace.cpp src/debugger/trace_opcodes.cpp src/debugger/debugwindow.cpp src/debugger/MonitorCommand.cpp 
+add_library(gs2_trace src/debugger/trace.cpp src/debugger/trace_opcodes.cpp)
+
+add_library(gs2_debugger  src/debugger/debugwindow.cpp src/debugger/MonitorCommand.cpp 
     src/debugger/ExecuteCommand.cpp src/debugger/MemoryWatch.cpp src/debugger/disasm.cpp)
 
 add_library(gs2_mmu src/mmus/mmu.cpp src/mmus/mmu_ii.cpp src/mmus/mmu_iie.cpp src/mmus/mmu_iigs.cpp)
@@ -281,7 +285,7 @@ add_library(gs2_video_scanner
     src/devices/displaypp/VideoScannerIIgs.cpp)
 
 target_link_libraries(gs2_ui SDL3_image::SDL3_image-shared SDL3_ttf::SDL3_ttf-shared)
-target_link_libraries(gs2_debugger gs2_util SDL3_ttf::SDL3_ttf-shared)
+target_link_libraries(gs2_debugger gs2_trace gs2_util SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_util SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_computer SDL3_ttf::SDL3_ttf-shared)
 
@@ -328,7 +332,9 @@ target_link_libraries(GSSquared
     gs2_devices_annunciator
     gs2_devices_iiememory
     gs2_debugger
+    gs2_trace
     gs2_util
+    gs2_util_audio
     gs2_ui
     gs2_event_dispatcher
     gs2_displaypp
@@ -344,7 +350,7 @@ add_subdirectory(apps/denibblizer)
 
 add_subdirectory(apps/diskid)
 
-#add_subdirectory(apps/speaker) # Temporarily remove until I make a "fake computer" interface.
+add_subdirectory(apps/speaker) # Temporarily remove until I make a "fake computer" interface.
 
 add_subdirectory(apps/gstrace)
 

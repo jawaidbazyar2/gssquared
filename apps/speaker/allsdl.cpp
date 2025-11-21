@@ -8,6 +8,7 @@
 #include "devices/speaker/speaker.hpp"
 #include "event_poll.hpp"
 
+
 uint64_t debug_level;
 bool write_output = false;
 
@@ -117,43 +118,28 @@ void usage(const char *exe) {
     exit(1);
 }
 
-uint64_t audio_generate_frame_local(speaker_state_t *speaker_state /* computer_t *computer, */ /* cpu_state *cpu */  /* , uint64_t cycle_window_start, uint64_t cycle_window_end */) {
+int8_t buffer[40000];
+
+uint64_t audio_generate_frame_local(speaker_state_t *speaker_state, uint64_t cycle, uint64_t num_samples) {
 
     //speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
-    speaker_config_t *sc = speaker_state->sp->config;
-    static uint64_t last_hz_rate = 0;
+    //speaker_config_t *sc = speaker_state->sp->config;
 
-    // the primary purpose of this is to put even more samples in - if we stretch a frame early on, the apple ii boot beep gets distorted.
-    /* if (speaker_state->first_time) {
-        speaker_state->first_time = false;
-        printf("audio_generate_frame: first time send empty frame and a bit more\n");
-        memset(speaker_state->working_buffer, 0, sc->samples_per_frame * sizeof(int16_t));
-        SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
-        //SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
-        return sc->samples_per_frame*2;
-    } */
-
-    uint64_t queued_samples = SDL_GetAudioStreamQueued(speaker_state->stream) / sizeof(int16_t);
-    int16_t addsamples = 0;
-    if (queued_samples < (sc->samples_per_frame)) { // was a half frame, but we want more.
-        addsamples = (sc->samples_per_frame - queued_samples) / 2; // half of what we need so we asymptotically approach the target.
-        if (addsamples > 500) addsamples = 500;
-        //printf("queue underrun %llu %f %f adding %d extra samples\n", queued_samples, speaker_state->amplitude, speaker_state->polarity, addsamples);
+    for (int i = 0; i < num_samples; i++) {
+        uint64_t event_cycle;
+        speaker_state->event_buffer->peek_oldest(event_cycle);
+        if (event_cycle != LAST_SAMPLE) {
+            if (event_cycle <= cycle + i) {
+                speaker_state->event_buffer->pop_oldest(event_cycle);
+                speaker_state->polarity = -speaker_state->polarity;
+            }
+        }
+        buffer[i] = 16 * speaker_state->polarity;
     }
 
-    speaker_state->sp->generate_buffer_int(speaker_state->working_buffer, sc->samples_per_frame );
+    SDL_PutAudioStreamData(speaker_state->stream, buffer, num_samples);
 
-    if ( addsamples ) {
-        int16_t extra_sample = speaker_state->working_buffer[sc->samples_per_frame - 1];
-        for (int i = 0; i < addsamples; i++) {
-            speaker_state->working_buffer[sc->samples_per_frame + i] = extra_sample;
-        }
-        SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, (sc->samples_per_frame + addsamples) * sizeof(int16_t));
-    } else { 
-        SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame * sizeof(int16_t));
-     }
-    
-    return sc->samples_per_frame;
+    return num_samples;
 }
 
 // Utility function to round up to the next power of 2
@@ -179,28 +165,19 @@ void init_mb_speaker_local(speaker_state_t *speaker_state, clock_mode_info_t *cl
     double frame_rate = (double)clock->c14M_per_second / (double)clock->c14M_per_frame;
     double cpu_rate = (double)clock->eff_cpu_rate;
 
-    //speaker_config_t *sc = new speaker_config_t(/* 59.9227f */ frame_rate, /* 1020484.0f */ cpu_rate, 44343.0f, 44343.0f / frame_rate /* 740 */);
-    speaker_config_t *sc = new speaker_config_t(frame_rate, cpu_rate, 44100.0f, 44100.0f / frame_rate );
     EventBufferRing *eb = new EventBufferRing(next_power_of_2(120'000));
-    speaker_state->sp = new Speaker(sc, eb);
     speaker_state->event_buffer = eb;
     // make sure we allocate plenty of room for extra samples for catchup in generate.
-    uint16_t bufsize = next_power_of_2(sc->samples_per_frame * 2);
-    speaker_state->working_buffer = new int16_t[bufsize];
-    //speaker_state->computer = computer;
-    
-    //speaker_state->cpu = cpu;
     speaker_state->speaker_recording = nullptr;
 
-    //set_module_state(cpu, MODULE_SPEAKER, speaker_state);
 
 	// Initialize SDL audio - is this right, to do this again here?
 	SDL_Init(SDL_INIT_AUDIO);
 	
     SDL_AudioSpec desired = {};
     //desired.freq = SAMPLE_RATE;
-    desired.freq = sc->output_rate;
-    desired.format = SDL_AUDIO_S16LE;
+    desired.freq = clock->eff_cpu_rate ;
+    desired.format = SDL_AUDIO_S8;
     desired.channels = 1;
 
     speaker_state->device_id = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
@@ -232,18 +209,7 @@ void init_mb_speaker_local(speaker_state_t *speaker_state, clock_mode_info_t *cl
 }
 
 void speaker_start(speaker_state_t *speaker_state) {
-    //speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
-    speaker_config_t *sc = speaker_state->sp->config;
-    
-    int x = SDL_GetAudioStreamQueued(speaker_state->stream);
-
     // Start audio playback
-    // put a frame of blank audio into the buffer to prime the pump.
-    memset(speaker_state->working_buffer, 0, sc->samples_per_frame * sizeof(int16_t));
-    bool ret = SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
-    ret = SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
-
-    x = SDL_GetAudioStreamQueued(speaker_state->stream);
 
     if (!SDL_ResumeAudioDevice(speaker_state->device_id)) {
         std::cerr << "Error resuming audio device: " << SDL_GetError() << std::endl;
@@ -258,7 +224,7 @@ int main(int argc, char **argv) {
     cpu_state *cpu = new cpu_state(PROCESSOR_65C02);
     speaker_state_t *speaker_state = new speaker_state_t();
 
-    select_system_clock(CLOCK_SET_PAL);
+    select_system_clock(CLOCK_SET_US);
 
     MMU_II *mmu = new MMU_II(256, 48*1024, nullptr);
     cpu->set_mmu(mmu);
@@ -310,6 +276,7 @@ int main(int argc, char **argv) {
         last_event = event;
     }
     fclose(recording);
+    speaker_state->event_buffer->dump_event_data();
 
     speaker_start(speaker_state);
 
@@ -318,35 +285,49 @@ int main(int argc, char **argv) {
     if (write_output) {
         wav_file = create_wav_file("test.wav");
     }
+
+    uint64_t cycles_per_frame = clock->eff_cpu_rate / ((double)clock->c14M_per_second / (double)clock->c14M_per_frame);
+
     uint64_t cycle_window_last = 0;
-    uint64_t num_frames = ((last_event - first_event) / 17030);
+    uint64_t num_frames = ((last_event - first_event) / cycles_per_frame);
 
     printf("first_event: %llu last_event: %llu\n", first_event, last_event);
     printf("num_frames: %llu\n", num_frames);
 
+    uint64_t frame_timer;
+    uint64_t total_time = 0;
+
     for (int i = 0; i < num_frames; i++) {
+        frame_timer = SDL_GetTicksNS();
         event_poll_local(cpu);
         
-        uint64_t samps = audio_generate_frame_local(speaker_state);
+        uint64_t samps = audio_generate_frame_local(speaker_state, cpu->cycles, cycles_per_frame);
         if (write_output) {
             fwrite(speaker_state->working_buffer, sizeof(int16_t), samps, wav_file);
         }
         cycle_window_last = cpu->cycles;
-        cpu->cycles += 17030;
+        cpu->cycles += cycles_per_frame;
+        uint64_t processing_time = SDL_GetTicksNS() - frame_timer;
+        total_time += processing_time;
         
-        SDL_Delay(5);
         printf("frame %d\r", i);
         fflush(stdout);
 
+        SDL_Delay(12);
+        while (SDL_GetTicksNS() < frame_timer + 16667000) {
+            // busy wait to the next frame.
+        }
+
+        //SDL_Delay(17);
     }
-    printf("\n");
+    printf("total_time: %llu per frame: %llu\n", total_time, total_time / num_frames);
     int queued = 0;
     if (!write_output) {
         while ((queued = SDL_GetAudioStreamAvailable(speaker_state->stream)) > 0) {
             //printf("queued: %d\n", queued);
             event_poll_local(cpu);
             printf("queued: %d\r", queued);
-            fflush(stdout);    
+            fflush(stdout);
         }
     }
     if (write_output) {
