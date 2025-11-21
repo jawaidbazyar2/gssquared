@@ -51,14 +51,15 @@ class Speaker {
             if (cycle >= event_buffer->peek()) {
         
                 event_buffer->pop();
-                /* polarity = -polarity; */
-                polarity_impulse = -polarity_impulse;
+                polarity_impulse = (polarity_impulse == 0.0f) ? 1.0f : 0.0f;
+                //polarity_impulse = -polarity_impulse;
                 polarity = polarity_impulse;
+                hold_counter = hold_counter_value;
             }
             
         }
         uint64_t generate_buffer_int(int16_t *buffer, uint64_t num_samples);
-        uint64_t generate_fill_buffer(int16_t *buffer, uint64_t num_samples);
+        //uint64_t generate_fill_buffer(int16_t *buffer, uint64_t num_samples);
         void synthesize_event_data(int frequency);
         bool load_event_data(const char *filename);
         
@@ -81,6 +82,8 @@ class Speaker {
     private:
         double polarity = 1.0f;
         double polarity_impulse = 1.0f;
+        uint64_t hold_counter = 0;
+        uint64_t hold_counter_value = 3070;
         double leftover = 0.0f;
         double frac = 0.0f;
     

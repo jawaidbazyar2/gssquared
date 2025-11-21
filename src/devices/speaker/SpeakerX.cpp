@@ -15,9 +15,9 @@
 #define DEB(x)
 #endif
 
-uint64_t Speaker::generate_fill_buffer(int16_t *buffer, uint64_t num_samples) {
+/* uint64_t Speaker::generate_fill_buffer(int16_t *buffer, uint64_t num_samples) {
 
-}
+} */
 
 uint64_t Speaker::generate_buffer_int(int16_t *buffer, uint64_t num_samples) {
     double fractional_cycle_per_sample = (config->cycle_per_sample - (int)config->cycle_per_sample);
@@ -83,7 +83,8 @@ uint64_t Speaker::generate_buffer_int(int16_t *buffer, uint64_t num_samples) {
         if (contribution < -config->contribution_max || contribution > config->contribution_max) {
             printf("contr %f > max %f\n", contribution, config->contribution_max);
         }
-        polarity *= 0.9999f; // this was in the original code. it may affect the audio quality.
+        if (hold_counter) hold_counter--; // implement 30ms hold time.
+        else polarity *= 0.9988f; // this was in the original code. it may affect the audio quality.
     }
     sample_index += num_samples;
     return num_samples;
