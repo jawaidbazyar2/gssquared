@@ -15,9 +15,11 @@ void MMU_II::init_map() {
        
     } */
     // Then 12K of ROM. D000 - FFFF
-    for (int i = 0; i < (ROM_KB / GS2_PAGE_SIZE); i++) {
-        map_page_read_only(i + 0xD0, main_rom_D0 + i * GS2_PAGE_SIZE, "SYS_ROM");
-    }   
+    if (main_rom_D0 != nullptr) {
+        for (int i = 0; i < (ROM_KB / GS2_PAGE_SIZE); i++) {
+            map_page_read_only(i + 0xD0, main_rom_D0 + i * GS2_PAGE_SIZE, "SYS_ROM");
+        }   
+    }
 }
 
 void MMU_II::power_on_randomize(uint8_t *ram, int ram_size) {
