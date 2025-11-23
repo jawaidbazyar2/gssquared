@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
     cpu_state *cpu = new cpu_state(PROCESSOR_65C02);
     EventBuffer *recording = new EventBuffer(2'000'000);
 
-    SpeakerFX *speaker = new SpeakerFX(input_rate, output_rate, 2'000'000, 4096);
+    SpeakerFX *speaker = new SpeakerFX(input_rate, output_rate, 128*1024, 4096);
     
     select_system_clock(CLOCK_SET_US);
 

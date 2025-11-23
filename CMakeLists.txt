@@ -350,7 +350,7 @@ add_subdirectory(apps/denibblizer)
 
 add_subdirectory(apps/diskid)
 
-add_subdirectory(apps/speaker) # Temporarily remove until I make a "fake computer" interface.
+#add_subdirectory(apps/speaker) # Temporarily remove until I make a "fake computer" interface.
 
 add_subdirectory(apps/gstrace)
 

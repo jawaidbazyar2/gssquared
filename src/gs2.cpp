@@ -218,10 +218,10 @@ void run_cpus(computer_t *computer) {
             /* if (cpu->clock_mode == CLOCK_FREE_RUN) {
                 ds->video_scanner->reset(); // going from ludicrous to regular speed have to reset scanner.
             } */
-             if (cpu->clock_mode == CLOCK_FREE_RUN) {
+            /* if (cpu->clock_mode == CLOCK_FREE_RUN) {
                 speaker_state_t *ss = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
                 speaker_reset(ss);
-             }
+            } */
             set_clock_mode(cpu, computer->speed_new);
             computer->set_clock(&system_clock_mode_info[computer->speed_new]);
             display_update_video_scanner(ds, cpu);
@@ -317,7 +317,7 @@ void run_cpus(computer_t *computer) {
             MEASURE(computer->event_times, frame_event(computer, cpu));
     
             /* Emit Audio Frame */
-            MEASURE(computer->audio_times, audio_generate_frame(computer, cpu /* , last_cycle_window_start, cycle_window_start */));
+            MEASURE(computer->audio_times, audio_generate_frame(computer, cpu, end_frame_c14M ));
     
             /* Process Internal Event Queue */
             MEASURE(computer->app_event_times, frame_appevent(computer, cpu));

@@ -7465,3 +7465,17 @@ I seem to have it playing ok now except during "live playback" I am getting some
 
 I tried the remainder method suggested by Claude and that did the trick. no more running out of samples. Will still need a way to deal with running out of samples due to macOS being dumb and taking 1.5 seconds to open the damn file dialog.
 
+## Nov 23, 2025
+
+ok! I've got SpeakerFX integrated into GS2 now. The frame routine does the remainder stuff, and, it seems to be working well in PAL mode. Leave it running until 3pm and see if the audio is still in sync.
+
+What isn't hooked in yet: 
+I am also feeling like the frame rate and some of those other timing parameters ought to be kept in the Class, so it's all in one convenient place, even if we don't use it inside the class.
+
+[x] samples_per_frame isn't correct. and we don't use it inside the module. Move it out for debug.    
+[ ] allow output rate to be configurable with a const in speaker.cpp  
+[ ] fix reset() to resync audio after it being off for a while in LS.  
+[ ] Detect audio de-sync due to MacOS dumbness and flush queue and call reset() during frame handler  
+[ ] change speaker to work based on 14M clock.  
+
+after LS last_event_time is reset, but stays frozen. is it because it's in the past or something? Hm. maybe just switch it now to 14M. Get some real work done first!

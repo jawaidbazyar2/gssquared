@@ -21,7 +21,7 @@
 #include "slots.hpp"
 #include "LowPass.hpp"
 #include "EventBuffer.hpp"
-#include "SpeakerX.hpp"
+#include "SpeakerFX.hpp"
 
 #include "computer.hpp"
 
@@ -101,9 +101,16 @@ typedef struct speaker_state_t {
     LowPassFilter *postFilter;
 
     int16_t *working_buffer;
-    EventBufferRing *event_buffer;
-    Speaker *sp;
+    EventBufferBase *event_buffer;
+    SpeakerFX *sp;
     computer_t *computer;
+
+    float frame_rate;
+    float samples_per_frame;
+    int32_t samples_per_frame_int;
+    float samples_per_frame_remainder;
+    float samples_accumulated = 0.0f;
+    int last_hz_rate = -1;
 } speaker_state_t;
 
 void init_mb_speaker(computer_t *computer, SlotType_t slot);
@@ -113,5 +120,4 @@ void dump_partial_speaker_event_log(uint64_t cycles_now);
 void speaker_start(cpu_state *cpu);
 void speaker_stop();
 void speaker_reset(speaker_state_t *speaker_state);
-//uint64_t audio_generate_frame(cpu_state *cpu, uint64_t last_cycle_window_start, uint64_t cycle_window_start);
-uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu);
+uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end_frame_c14M );
