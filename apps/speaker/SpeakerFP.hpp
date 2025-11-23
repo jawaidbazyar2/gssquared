@@ -2,25 +2,29 @@
 #include "devices/speaker/EventBuffer.hpp"
 #include <SDL3/SDL.h>
 
+#define DEB(x) 
+
 typedef double speaker_t;
 
 class SpeakerFP {
     private:
         //speaker_config_t *config;
-        EventBufferBase *event_buffer;
         SDL_AudioStream *stream;
         SDL_AudioDeviceID device_id;
-        int16_t *working_buffer;
         uint16_t bufsize;
         int device_started = 0;
         uint64_t first_event = 0;
         uint64_t last_event = 0;
         constexpr static speaker_t decay_coeff = 0.9990f;
+        uint64_t ring_buffer_size = 0;
 
     public:
         //uint64_t cycle_index = 0; // whole part of cycle count
         //uint64_t sample_index = 0;
         //uint64_t event_index = 0;
+
+        int16_t *working_buffer;
+        EventBufferBase *event_buffer;
 
         double frame_rate;
         speaker_t input_rate = 1020484.0f;
@@ -32,23 +36,25 @@ class SpeakerFP {
         speaker_t cycles_per_sample;
         speaker_t rect_remain = 0.0f;
         speaker_t sample_remain = 0.0f;
-        speaker_t polarity_impulse = 1.0f;
-        speaker_t polarity = 1.0f;
+        speaker_t polarity_impulse = 0.0f; // starts at 0.
+        speaker_t polarity = 0.0f; // starts at 0.
         uint64_t hold_counter = 0;
         uint64_t hold_counter_value = 0;
         uint64_t last_event_time = 0;
+        uint32_t last_event_fake = 1;
 
         FILE *speaker_recording = nullptr;
 
         SpeakerFP(uint32_t input_rate, uint32_t output_rate, uint64_t min_event_buffer_size, uint32_t min_sample_buffer_size) {
-            this->event_buffer = new EventBufferRing(next_power_of_2(min_event_buffer_size));
+            ring_buffer_size = next_power_of_2(min_event_buffer_size);
+            this->event_buffer = new EventBufferRing(ring_buffer_size);
 
             this->output_rate = (speaker_t)output_rate;
             configure((speaker_t)input_rate);
             //this->input_rate = (speaker_t)input_rate;
             //cycles_per_sample = this->input_rate / this->output_rate;
             polarity = polarity_impulse;
-            
+
             samples_per_frame = output_rate / 60;
 
             // make sure we allocate plenty of room for extra samples for catchup in generate.
@@ -83,7 +89,8 @@ class SpeakerFP {
         }
 
         void print() {
-            printf("===== Speaker2 Configuration =====\n");
+            printf("===== SpeakerFP Configuration =====\n");
+            printf("ring_buffer_size: %llu\n", ring_buffer_size);
             printf("frame_rate: %f\n", frame_rate);
             printf("input_rate: %f\n", input_rate);
             printf("output_rate: %f\n", output_rate);
@@ -115,9 +122,9 @@ class SpeakerFP {
         configure() method at setup time or during runtime.
         Previous versions were O(input frequency). This version is now O(state changes), regardless of input frequency (e.g. 14.31818MHz).
         */
-        uint64_t generate_samples(int16_t *buffer, uint64_t num_samples) {
+        uint64_t generate_samples(int16_t *buffer, uint64_t num_samples, uint64_t frame_next_cycle_start) {
 
-            for (uint64_t i = 0; i < num_samples; i++) {
+            for (uint32_t i = 0; i < num_samples; i++) {
                 sample_remain = cycles_per_sample;
                 speaker_t contrib = 0.0f;
         
@@ -126,22 +133,43 @@ class SpeakerFP {
                     if (rect_remain == 0.0f) { // if there is nothing left in current rect, get next event and calc new rectangle.
                         if (event_buffer->peek_oldest(event_time)) {
                             event_buffer->pop();
+
                             rect_remain = event_time - last_event_time;
-                            polarity_impulse = (polarity_impulse == 0.0f) ? 1.0f : 0.0f;
-                            //polarity_impulse = -polarity_impulse;
-                            polarity = polarity_impulse;
+                            DEB(printf("+/- %llu %llu\n", event_time, last_event_time);)
+
+                            if (last_event_fake == 0) {
+                                polarity_impulse = (polarity_impulse == 1.0f) ? 0.0f : 1.0f; // if GS, use -1 instead of 0 here.
+                                polarity = polarity_impulse;
+                                hold_counter = hold_counter_value;
+                            }    
                             last_event_time = event_time;
-                            hold_counter = hold_counter_value;
+                            last_event_fake = 0;
+                        } else {
+                            // no events pending, pretend one from now until end of frame.
+                            event_time = frame_next_cycle_start;
+                            rect_remain = event_time - last_event_time;
+                            DEB(printf("  0ev %llu %llu %llu\n", event_time, frame_next_cycle_start, last_event_time);)
+                            
+                            if (last_event_fake == 0) {
+                                polarity_impulse = (polarity_impulse == 1.0f) ? 0.0f : 1.0f; // if GS, use -1 instead of 0 here.
+                                polarity = polarity_impulse;
+                                hold_counter = hold_counter_value;
+                            }
+                            last_event_time = event_time;
+                            last_event_fake = 1;
                         }
                     }
                     if (rect_remain == 0.0f) {   // If no pending events, immediately finish sample based on current polarity.
+                        DEB(printf("  rr == 0 %f %f\n", rect_remain, sample_remain);)
                         contrib += (sample_remain * polarity);
                         sample_remain = 0.0f;
                     } else if (rect_remain >= sample_remain) { // if current rect is larger or equal than remaining sample, finish out sample.
+                        DEB(printf("  rr >= sr %f %f\n", rect_remain, sample_remain);)
                         contrib += (sample_remain * polarity);
                         rect_remain -= sample_remain;
                         sample_remain = 0.0f;
                     } else {  // current rect is smaller than sample - consume it and loop.
+                        DEB(printf("  rr < sr %f %f\n", rect_remain, sample_remain);)
                         contrib += (rect_remain * polarity); 
                         sample_remain -= rect_remain; 
                         rect_remain = 0.0f;
@@ -149,6 +177,7 @@ class SpeakerFP {
                 }
 
                 buffer[i] = (int16_t)(contrib * sample_scale);  // use precalculated scaling factor.
+                DEB(printf("[%d] (%f - %f) %d\n", i, rect_remain, sample_remain, buffer[i]);)
                 if (hold_counter) hold_counter--; // implement 30ms hold time.
                 else polarity *= decay_coeff; 
             }
@@ -182,15 +211,15 @@ class SpeakerFP {
             return samp;
         }
 
-        uint64_t generate_and_queue(int num_samples ) {
+        uint64_t generate_and_queue(int num_samples, uint64_t frame_next_cycle_start) {
 
             uint64_t queued_samples = get_queued_samples();
 
             int16_t addsamples = 0;
         
-            int samples_generated = generate_samples(working_buffer, num_samples );
+            int samples_generated = generate_samples(working_buffer, num_samples, frame_next_cycle_start);
         
-            SDL_PutAudioStreamData(stream, working_buffer, num_samples * sizeof(int16_t));
+            SDL_PutAudioStreamData(stream, working_buffer, samples_generated * sizeof(int16_t));
             
             return samples_generated;
         }

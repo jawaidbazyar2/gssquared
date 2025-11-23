@@ -84,6 +84,15 @@
             "preLaunchTask": "build-debug"
         },
         {
+            "name": "Debug newspeakfp",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/newspeakfp",
+            "args": ["/Users/bazyar/src/gssquared/testdev/speaker/speaker_event_log.txt"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build-debug"
+        },
+        {
             "name": "Profile mmutest (Instruments)",
             "type": "lldb",
             "request": "launch",

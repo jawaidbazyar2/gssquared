@@ -7386,3 +7386,82 @@ this code is likely to blow chunks if we ever catch up to end of buffer. So we d
 if we have a superduper long gap, we need to create a fake rectangle to fill in the current frame, instead of trying to consume the entire (perhaps superduper long) gap.
 
 Kent Dickey reported a real GS clicks on every $C030 hit, and I confirmed on my GS. So, the speaker behaves differently in this respect between a II(/+/e) and a GS. Fun!  SO. What's the easiest fix here? For my purposes I'll just use the floating point version, and have a setting for which algorithm is used to toggle polarity (either 0 to 1, or 1 to -1).
+
+I theorized this is because the GS needs to perform audio mixing with the ensoniq and couldn't do that with a permanent DC offset. He also suggested the volume control and amplifier.
+
+samples per frame: 44100 / 59.9227 = 735; 59 * 735 = 43365; 
+
+```
+Practical implementation using a fractional accumulator:
+
+Start with remainder = 0
+Each frame: remainder += 0.94815
+If remainder ≥ 1: emit 736 samples, remainder -= 1
+Otherwise: emit 735 samples
+
+This gives a pattern where you emit 736 samples most of the time, and only occasionally emit 735 samples (roughly 1 out of every 19-20 frames).
+```
+this makes sense, should work. This concept is all over the audio code! remainder can just be times 10,000 or times 100,000, and subtract 100,000 or 1,000,000. 
+
+During nap, I considered how to handle running out of samples. if there are no more samples in this frame, assume a fake "event" at end of frame that does not toggle polarity. Thus a rect will never be much longer than a frame. We need to know what cycle is at the end of the frame, so that needs to be an argument that is passed in.
+
+In the test harness, there is -always- a next event. Until the last, when we shut down the simulation.
+In emulator, we will have situations where there is not a next event quite regularly - for instance if there just have been no clicks for a while. I will be processing a frame at a time, asking for a certain number of samples to execute that frame, but not necessarily exactly.
+```
+If no event;
+  if there's a next event, current code;
+  if not, pretend there is an event;
+    from now until start of next frame;
+      event_time = start of next frame;
+      rect_remain = event_time - last_event_time;
+      last_event_time = event_time;
+      ;; do not change polarity, or reset hold_counter;      
+```
+
+This will keep event and last_event synced up to our input stream.
+
+To simulate this in the test harness, we need to keep track of frame cycle counts, and only feed events into the buffer as they occur.
+
+ok, I am trying to implement the above; however, num_samples and frame_next_cycle_start don't equate. I'm doing 17030 cycles and 735 samples; yet 17030 / 23.14022.. is 735.9478.
+Maybe I need to return less than the requested number of samples?
+I feel like the issue is that we're adding too much time when breaking across the frame, based on incorrect cycle count or something.
+
+## Nov 22, 2025
+
+ah, no that's not the issue. The problem is this:
+```
+[728] (10.774694 - 0.000000) 5120
+  rr < sr 10.774694 23.140227
+999999999999999999 17008 16880
+  rr >= sr 128.000000 12.365533
+[729] (115.634467 - 0.000000) 5120
+  rr >= sr 115.634467 23.140227
+[730] (92.494240 - 0.000000) 5120
+  rr >= sr 92.494240 23.140227
+[731] (69.354014 - 0.000000) 5120
+  rr >= sr 69.354014 23.140227
+[732] (46.213787 - 0.000000) 5120
+  rr >= sr 46.213787 23.140227
+[733] (23.073560 - 0.000000) 5120
+  rr < sr 23.073560 23.140227
+999999999999999999 17008 17008
+  rr == 0 0.000000 0.066667
+[734] (0.000000 - 0.000000) 5120
+```
+
+We're adding the right rectangle, but, the wrong polarity. Because 16880 was a real event, we need to flip that. Later, it's only if the previous event was a fake event, we don't flip polarity. So we need state "last_event_fake": 1 = last event was fake, don't flip. 0 = last event was real, flip. When we see a new event, that's when we create the "rectangle that just passed" and generate samples from it.
+
+look at the boot beep. We start with polarity=1 (why?). Should be 0. And last_event_fake set to 1.
+last_event is 0; we read the first event at 11966. Since lef is 1, we do not flip polarity (still 0); and set lef to 0. The rect is 11966.
+when we run out of that, we read the 2nd event, which is 12512. Since lef is 0, we flip polarity and set lef to 0. The rect is 546.
+...
+we're still in the same frame. last event was 16880, **there is no pending event**. So we create a fake event at 17008; since lef is 0, we flip polarity; and set lef to 1. the rect is 128.
+**might need to bail if last_event == frame_next_cycle_start**
+when we get into the next frame, we encounter the next event at 17426. lef was 1, so we don't flip; set lef to 0. then we keep flipping as normal inside this frame.
+
+Now if there is NOT a new event inside this frame, we will be out of rect; there is no event, so create fake event at 34016; since lef is 1, we don't flip; and we set lef to 1. So we "maintain and hold" the current polarity the entire frame, with sample decay of course.
+
+I seem to have it playing ok now except during "live playback" I am getting some dropouts late in a 10-second synth - but in the wav file, there are no problems. So that is going to be not feeding enough samples to sdl.
+
+I tried the remainder method suggested by Claude and that did the trick. no more running out of samples. Will still need a way to deal with running out of samples due to macOS being dumb and taking 1.5 seconds to open the damn file dialog.
+

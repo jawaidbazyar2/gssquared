@@ -9,12 +9,10 @@
 #include "SpeakerFP.hpp"
 
 uint64_t debug_level;
-bool write_output = false;
 
 FILE *wav_file = NULL;
 
-#if 0
-FILE *create_wav_file(const char *filename) {
+FILE *create_wav_file(const char *filename, uint32_t sample_rate) {
     FILE *wav_file = fopen(filename, "wb");
     if (!wav_file) {
         std::cerr << "Error: Could not open wav file\n";
@@ -48,7 +46,7 @@ FILE *create_wav_file(const char *filename) {
     fwrite(&num_channels, 2, 1, wav_file);
     
     // Sample rate (44100Hz)
-    uint32_t sample_rate = SAMPLE_RATE;
+    //uint32_t sample_rate = SAMPLE_RATE;
     fwrite(&sample_rate, 4, 1, wav_file);
     
     // Byte rate = SampleRate * NumChannels * BitsPerSample/8
@@ -89,7 +87,7 @@ void finalize_wav_file(FILE *wav_file) {
     // Close the file
     fclose(wav_file);
 }
-#endif
+
 
 void event_poll_local(cpu_state *cpu) {
     SDL_Event event;
@@ -106,6 +104,13 @@ void usage(const char *exe) {
     exit(1);
 }
 
+/* SDL_AudioStreamCallback audio_callback(void *userdata, int16_t *buffer, int len) {
+    SpeakerFP *speaker = (SpeakerFP *)userdata;
+    int samples_generated = generate_samples(buffer, len / 2, frame_next_cycle_start);
+        
+    SDL_PutAudioStreamData(stream, working_buffer, samples_generated * sizeof(int16_t));    return 0;
+} */
+
 int main(int argc, char **argv) {
     debug_level = DEBUG_SPEAKER;
 
@@ -116,16 +121,22 @@ int main(int argc, char **argv) {
         -w filename : write output to WAV file
         filename : pre-recorded event file to playback.
     */
+    bool write_output = false;
+    bool fast_forward = false;
     bool debug_mode = false;
     bool log_results = false;
     int input_rate = 1020484;
     int output_rate = 44100;
+    float frame_rate = 59.9227f;
     uint32_t synth_frequency = 1000;
     const char *wav_filename = nullptr;
     const char *playback_file = nullptr;
     int opt;
-    while ((opt = getopt(argc, argv, "dlf:i:o:w:")) != -1) {
+    while ((opt = getopt(argc, argv, "zdlf:i:o:w:")) != -1) {
         switch (opt) {
+            case 'z':
+                fast_forward = true;
+                break;
             case 'd':
                 debug_mode = true;
                 break;
@@ -140,6 +151,7 @@ int main(int argc, char **argv) {
                 break;
             case 'w':
                 wav_filename = optarg;
+                write_output = true;
                 break;
             case 'l':
                 log_results = true;
@@ -156,8 +168,9 @@ int main(int argc, char **argv) {
 
 
     cpu_state *cpu = new cpu_state(PROCESSOR_65C02);
-    
-    SpeakerFP *speaker = new SpeakerFP(input_rate, output_rate, 2'000'000, 1024);
+    EventBuffer *recording = new EventBuffer(2'000'000);
+
+    SpeakerFP *speaker = new SpeakerFP(input_rate, output_rate, 128*1024, 4096);
     //speaker->configure((speaker_t)input_rate);
     
     select_system_clock(CLOCK_SET_US);
@@ -179,13 +192,14 @@ int main(int argc, char **argv) {
     printf("eff_cpu_rate       : %llu\n", clock->eff_cpu_rate);
 
     if (playback_file) {
-        if (!speaker->load_events(playback_file)) {
+        if (!recording->load_event_data(playback_file)) {
             printf("Error: Could not load events\n");        
             return 1;
         }
     } else {
         printf("Synthesizing %dHz events for 10 seconds\n", synth_frequency);
-        speaker->synthesize_events(synth_frequency, 10);
+        //speaker->synthesize_events(synth_frequency, 10);
+        recording->synthesize_event_data(synth_frequency, input_rate, 10);
     }
 
     speaker->print();
@@ -193,39 +207,96 @@ int main(int argc, char **argv) {
     speaker->start();
 
     // skip to the first event
-    cpu->cycles = speaker->get_first_event();
-    speaker->fast_forward(cpu->cycles);
+    cpu->cycles = recording->first_event;
 
-    uint32_t samples_per_frame = speaker->samples_per_frame;
+    //float samples_per_frame = speaker->samples_per_frame;
+    float samples_per_frame = output_rate / frame_rate;
+    int32_t samples_per_frame_int = (int32_t)samples_per_frame;
+    float samples_per_frame_remainder = samples_per_frame - samples_per_frame_int;
+    float samples_accumulated = 0.0f;
 
-    uint64_t cycles_per_frame = speaker->cycles_per_sample * samples_per_frame; // only used to estimate the number of frames.
+    //uint64_t cycles_per_frame = speaker->cycles_per_sample * samples_per_frame; // only used to estimate the number of frames.
+    uint64_t cycles_per_frame = (uint64_t)(input_rate / frame_rate);
 
-    /* if (write_output) {
-        wav_file = create_wav_file("test.wav");
-    } */
-    uint64_t cycle_window_last = 0;
-    uint64_t num_frames = ((speaker->get_last_event() - speaker->get_first_event()) / cycles_per_frame);
+    if (write_output) {
+        wav_file = create_wav_file(wav_filename, output_rate);
+    }
 
-    printf("first_event: %llu last_event: %llu\n", speaker->get_first_event(), speaker->get_last_event());
-    printf("num_frames: %llu\n", num_frames);
+    uint64_t num_frames;
+    uint64_t frame_cycle_start;
+    uint64_t frame_next_cycle_start;
+
+    if (fast_forward) {
+        num_frames = ((recording->last_event + 50000 - recording->first_event) / cycles_per_frame);
+        frame_cycle_start = recording->first_event;
+        speaker->fast_forward(recording->first_event);
+    } else {
+        num_frames = (recording->last_event + 50000) / cycles_per_frame;
+        frame_cycle_start = 0;
+    }
+
+    printf("first_event: %llu last_event: %llu\n", recording->first_event, recording->last_event);
+    printf("frame rate: %f num_frames: %llu\n", frame_rate, num_frames);
+    printf("cycles_per_frame: %llu\n", cycles_per_frame);
+    printf("samples_per_frame: %f\n", samples_per_frame);
+    printf("samples_per_frame_int: %d\n", samples_per_frame_int);
 
     uint64_t frame_timer;
     uint64_t total_time = 0;
     uint64_t lowest_processing_time = 9999999999999999, highest_processing_time = 0;
 
+/*     bool res = SDL_SetAudioStreamGetCallback(speaker->stream, audio_callback, speaker);
+    if (!res) {
+        fprintf(stderr, "Error: Could not set audio stream callback\n");
+        fflush(stderr);
+        return 1;
+    } */
+
+
     for (int i = 0; i < num_frames; i++) {
+        frame_timer = SDL_GetTicksNS();
+        frame_next_cycle_start = frame_cycle_start + cycles_per_frame;
+
         event_poll_local(cpu);
 
-        frame_timer = SDL_GetTicksNS();
-        
-        uint64_t samps = speaker->generate_and_queue(samples_per_frame);
-        /* if (write_output) {
-            fwrite(speaker_state->working_buffer, sizeof(int16_t), samps, wav_file);
-        } */
-        cycle_window_last = cpu->cycles;
+        while (1) {
+            uint64_t event_time;
+            if (recording->peek_oldest(event_time)) {
+                if (event_time < frame_next_cycle_start) {
+                    recording->pop();
+                    speaker->event_buffer->add_event(event_time);
+                } else {
+                    break;
+                }
+            } else break;
+        }
+
+        uint64_t queue = speaker->get_queued_samples();
+        if (queue < 100) {
+            printf("queue underrun %llu\n", queue);
+            fflush(stdout);
+        }
+
+        uint64_t perf_timer = SDL_GetTicksNS();
+
+        // we can only generate and queue whole number of samples. But each Apple II frame here is not a whole number of samples.
+        // sometimes we need to emit 735 samples, sometimes 736. This is done by tracking the remainder of samples_per_frame calculation,
+        // adding it to an accumulator each frame. If we ever exceed 1.0f, then we need 1 extra sample this frame.
+        // This is only necessary when using Apple II frame rate of 59.9227 fps and a sample rate of 44100 Hz.
+        // In an environment where the frame rate is e.g. 60Hz even, 44100Hz divides evenly into 60 (735 samples per frame) so
+        // no remainder and you probably don't need to do this trick.
+        // So if you're using this code in a hardware device you can just peg everything at 60fps and 44100Hz and not worry about it.
+        samples_accumulated += samples_per_frame_remainder;
+        uint32_t samples_this_frame = samples_per_frame_int;
+        if (samples_accumulated >= 1.0f) {
+            samples_this_frame = samples_per_frame_int+1;
+            samples_accumulated -= 1.0f;
+        }
+        uint64_t samps = speaker->generate_and_queue(samples_this_frame, frame_next_cycle_start);
+
         cpu->cycles += cycles_per_frame;
                
-        uint64_t processing_time = SDL_GetTicksNS() - frame_timer;
+        uint64_t processing_time = SDL_GetTicksNS() - perf_timer;
         total_time += processing_time;
         if (processing_time < lowest_processing_time) {
             lowest_processing_time = processing_time;
@@ -234,15 +305,20 @@ int main(int argc, char **argv) {
             highest_processing_time = processing_time;
         }
 
-        printf("frame %d\r", i);
-        fflush(stdout);
-
-        //SDL_Delay(12);
-        while (SDL_GetTicksNS() < frame_timer + 16667000) {
-            // busy wait to the next frame.
+        if (write_output) {
+            fwrite(speaker->working_buffer, sizeof(int16_t), samps, wav_file);
         }
 
+        /* printf("frame %d\r", i);
+        fflush(stdout); */
+
+        // 59.9227 fps
+        while (SDL_GetTicksNS() < frame_timer + 16688170) {
+            // busy wait to the next frame.
+        }
+        frame_cycle_start = frame_next_cycle_start;
     }
+
     printf("\n");
     printf("total_time: %llu \n", total_time );
     printf("lowest_processing_time: %llu highest_processing_time: %llu\nAverage per frame: %llu\n", lowest_processing_time, highest_processing_time, total_time / num_frames);
@@ -255,9 +331,9 @@ int main(int argc, char **argv) {
             fflush(stdout);    
         }
     }
-    /* if (write_output) {
+    if (write_output) {
         finalize_wav_file(wav_file);
-    } */
+    }
 
     if (log_results) {
         FILE *ff = fopen("results.txt", "a+");

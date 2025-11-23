@@ -3,7 +3,7 @@
 #include <SDL3/SDL.h>
 
 typedef uint64_t speaker_t;
-#define FRACTION_BITS 12
+#define FRACTION_BITS 20
 #define FRACTION_MASK ((1ULL << FRACTION_BITS) - 1)
 
 /* 
@@ -14,10 +14,8 @@ typedef uint32_t speaker_t;
 class SpeakerFX {
     private:
         //speaker_config_t *config;
-        EventBufferBase *event_buffer;
         SDL_AudioStream *stream;
         SDL_AudioDeviceID device_id;
-        int16_t *working_buffer;
         uint16_t bufsize;
         int device_started = 0;
         uint64_t first_event = 0;
@@ -30,6 +28,8 @@ class SpeakerFX {
         //uint64_t cycle_index = 0; // whole part of cycle count
         //uint64_t sample_index = 0;
         //uint64_t event_index = 0;
+        int16_t *working_buffer;
+        EventBufferBase *event_buffer;
 
         double frame_rate;
         speaker_t input_rate = 1020484;
@@ -46,6 +46,7 @@ class SpeakerFX {
         uint64_t hold_counter = 0;
         uint64_t hold_counter_value = 0;
         uint64_t last_event_time = 0;
+        uint32_t last_event_fake = 1;
 
         FILE *speaker_recording = nullptr;
 
@@ -127,7 +128,7 @@ class SpeakerFX {
         configure() method at setup time or during runtime.
         Previous versions were O(input frequency). This version is now O(state changes), regardless of input frequency (e.g. 14.31818MHz).
         */
-        uint64_t generate_samples(int16_t *buffer, uint64_t num_samples) {
+        uint64_t generate_samples(int16_t *buffer, uint64_t num_samples, uint64_t frame_next_cycle_start) {
 
             for (uint64_t i = 0; i < num_samples; i++) {
                 sample_remain = cycles_per_sample;
@@ -140,10 +141,23 @@ class SpeakerFX {
                             event_buffer->pop();
                             // if this is a very large span of time (exceeding blah) then we overflow. instead of returning huge number, we need to somehow track this.
                             rect_remain = (event_time - last_event_time) << FRACTION_BITS;
-                            polarity_impulse = (polarity_impulse == 0) ? 1 : 0;
-                            polarity = ( polarity_impulse << FRACTION_BITS);
+                            if (last_event_fake == 0) {
+                                polarity_impulse = (polarity_impulse == 0) ? 1 : 0; // if GS, use 2 instead of 1 here.. and apply DC offset of -1 to contrib when we generate the sample.
+                                polarity = ( polarity_impulse << FRACTION_BITS);
+                                hold_counter = hold_counter_value;
+                            }
                             last_event_time = event_time;
-                            hold_counter = hold_counter_value;
+                            last_event_fake = 0;
+                        } else {
+                            event_time = frame_next_cycle_start;
+                            rect_remain = (event_time - last_event_time) << FRACTION_BITS;
+                            if (last_event_fake == 0) {
+                                polarity_impulse = (polarity_impulse == 0) ? 1 : 0; // if GS, use 2 instead of 1 here.. and apply DC offset of -1 to contrib when we generate the sample.
+                                polarity = ( polarity_impulse << FRACTION_BITS);
+                                hold_counter = hold_counter_value;
+                            }
+                            last_event_time = event_time;
+                            last_event_fake = 1;
                         }
                     }
                     if (rect_remain == 0) {   // If no pending events, immediately finish sample based on current polarity.
@@ -161,7 +175,7 @@ class SpeakerFX {
                 }
                 // can also do >> fraction_bits * 2 but have to do << fraction_bits*2 in config so why bother?
                 uint32_t contrib32 = (uint32_t)((contrib * sample_scale) >> FRACTION_BITS);
-                if (contrib32 > 16000) printf("barf %08X\n", contrib32);
+                //if (contrib32 > 16000) printf("barf %08X\n", contrib32);
                 buffer[i] = (int16_t)(contrib32);  // use precalculated scaling factor.; we shift twice to get only the whole part.
                 if (hold_counter) hold_counter--; // implement 30ms hold time.
                 else polarity = (polarity * decay_coeff) >> FRACTION_BITS; 
@@ -196,13 +210,13 @@ class SpeakerFX {
             return samp;
         }
 
-        uint64_t generate_and_queue(int num_samples ) {
+        uint64_t generate_and_queue(int num_samples, uint64_t frame_next_cycle_start) {
 
             uint64_t queued_samples = get_queued_samples();
 
             int16_t addsamples = 0;
         
-            int samples_generated = generate_samples(working_buffer, num_samples );
+            int samples_generated = generate_samples(working_buffer, num_samples, frame_next_cycle_start);
         
             SDL_PutAudioStreamData(stream, working_buffer, num_samples * sizeof(int16_t));
             
