@@ -203,7 +203,7 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 
     // prime the pump with a few frames of silence - make sure we use the correct frame size so we pass the check in generate.
     //memset(speaker_state->working_buffer, 0, speaker_state->sp->samples_per_frame * sizeof(int16_t));
-    speaker_state->sp->generate_and_queue(300, 0);
+    speaker_state->sp->generate_and_queue(500, 0);
 
     if (DEBUG(DEBUG_SPEAKER)) fprintf(stdout, "init_speaker\n");
     for (uint16_t addr = 0xC030; addr <= 0xC03F; addr++) {
