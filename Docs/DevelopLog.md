@@ -7474,7 +7474,7 @@ I am also feeling like the frame rate and some of those other timing parameters 
 
 [x] samples_per_frame isn't correct. and we don't use it inside the module. Move it out for debug.    
 [ ] allow output rate to be configurable with a const in speaker.cpp  
-[ ] fix reset() to resync audio after it being off for a while in LS.  
+[x] fix reset() to resync audio after it being off for a while in LS.  
 [ ] Detect audio de-sync due to MacOS dumbness and flush queue and call reset() during frame handler  
 [x] change speaker to work based on 14M clock.  
 
