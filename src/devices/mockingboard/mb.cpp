@@ -84,8 +84,8 @@ struct filter_state {
 
 // Global constants
 // must be based on 59.9227 fps rate just like Speaker code.
-constexpr double OUTPUT_SAMPLE_RATE = 44343.0;
-constexpr uint32_t OUTPUT_SAMPLE_RATE_INT = 44343;
+//constexpr double OUTPUT_SAMPLE_RATE = 44100.0;
+constexpr uint32_t OUTPUT_SAMPLE_RATE_INT = 44100;
 constexpr uint32_t SAMPLES_PER_FRAME_INT = 740;
 
 // Event to represent register changes with timestamps
@@ -197,7 +197,7 @@ public:
         
         pending_events.push_back(event);
         // Keep events sorted by timestamp
-        std::sort(pending_events.begin(), pending_events.end());
+        //std::sort(pending_events.begin(), pending_events.end()); // TODO: say what now?
 
         AY3_8910& chip = chips[event.chip_index];
         chip.live_registers[event.register_num] = event.value;
@@ -455,7 +455,7 @@ public:
                   << ", hold: " << (chips[0].envelope_hold ? "true" : "false")
                   << ")" << std::endl;
         
-        const double output_time_step = 1.0 / OUTPUT_SAMPLE_RATE;
+        const double output_time_step = 1.0f / OUTPUT_SAMPLE_RATE_INT;
         const double chip_time_step = 1.0 / CHIP_FREQUENCY;
         const double envelope_base_frequency = MASTER_CLOCK / ENVELOPE_CLOCK_DIVIDER;
         const double envelope_base_time_step = 1.0 / envelope_base_frequency;
@@ -582,8 +582,8 @@ public:
         write32(file, 16);                        // Subchunk size
         write16(file, 1);                         // Audio format (1 = PCM)
         write16(file, 1);                         // Number of channels
-        write32(file, static_cast<uint32_t>(OUTPUT_SAMPLE_RATE));  // Sample rate
-        write32(file, static_cast<uint32_t>(OUTPUT_SAMPLE_RATE * 2));  // Byte rate
+        write32(file, static_cast<uint32_t>(OUTPUT_SAMPLE_RATE_INT));  // Sample rate
+        write32(file, static_cast<uint32_t>(OUTPUT_SAMPLE_RATE_INT * 2));  // Byte rate
         write16(file, 2);                         // Block align
         write16(file, 16);                        // Bits per sample
         
@@ -739,9 +739,9 @@ private:
         int filter_index = 1 + channel + chip_index * 2;  
         filter_state& filter = filters[filter_index];
   
-        filter.alpha = computeAlpha(cutofffreq, OUTPUT_SAMPLE_RATE);
-        if (DEBUG(DEBUG_MOCKINGBOARD)) printf("setChannelAlpha(%d:%d): tonePeriod: %d (%d), cutoffHz: %f, sampleRate: %f, alpha: %f\n", 
-            chip_index, channel, tone_period, tp, cutofffreq, OUTPUT_SAMPLE_RATE, filter.alpha);
+        filter.alpha = computeAlpha(cutofffreq, OUTPUT_SAMPLE_RATE_INT);
+        if (DEBUG(DEBUG_MOCKINGBOARD)) printf("setChannelAlpha(%d:%d): tonePeriod: %d (%d), cutoffHz: %f, sampleRate: %d, alpha: %f\n", 
+            chip_index, channel, tone_period, tp, cutofffreq, OUTPUT_SAMPLE_RATE_INT, filter.alpha);
     }
 
     float applyLowPassFilter(float input, int chip_index, int channel /* , float alpha */) {
@@ -1032,7 +1032,7 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
                 for (int i = 0; i < 16; i++) {
                     // TODO: is there a better way to get this?
                     //double time = cpu_cycles / 1020500.0;
-                    double time = cpu_14m_cycles / 14318180.0;
+                    double time = (double)cpu_14m_cycles / mb_d->c14m_rate;
                     mb_d->mockingboard->queueRegisterChange(time, chip, i, 0);
                 }
             } else if ((data & 0b111) == 7) { // this is the register number.
@@ -1041,7 +1041,7 @@ void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
             } else if ((data & 0b111) == 6) { // write to the specified register
                 // TODO: need to mask with ddrb
                 //double time = cpu_cycles / 1020500.0;
-                double time = cpu_14m_cycles / 14318180.0;
+                double time = (double)cpu_14m_cycles / mb_d->c14m_rate;
                 mb_d->mockingboard->queueRegisterChange(time, chip, tc->reg_num, tc->ora);
                 if (DEBUG(DEBUG_MOCKINGBOARD)) printf("queueRegisterChange: [%lf] chip: %d reg: %02x val: %02x\n", time, chip, tc->reg_num, tc->ora);
             } else if ((data & 0b111) == 5) { // read from the specified register
@@ -1287,11 +1287,18 @@ uint8_t mb_read_Cx00(void *context, uint16_t addr) {
 void generate_mockingboard_frame(mb_cpu_data *mb_d) {
     static int frames = 0;
 
+    mb_d->samples_accumulated += mb_d->samples_per_frame_remainder;
+    uint32_t samples_this_frame = mb_d->samples_per_frame_int;
+    if (mb_d->samples_accumulated >= 1.0f) {
+        samples_this_frame = mb_d->samples_per_frame_int+1;
+        mb_d->samples_accumulated -= 1.0f;
+    }
+
     // TODO: We need to calculate number of samples based on cycles. (Does the buffer management below handle this, or is this for some other reason?)
     //int samples_per_frame = 735;
-    int samples_per_frame = SAMPLES_PER_FRAME_INT;
+    //int samples_per_frame = SAMPLES_PER_FRAME_INT;
 
-    if (mb_d->stream) {
+    /* if (mb_d->stream) {
         int samples_in_buffer = SDL_GetAudioStreamAvailable(mb_d->stream) / sizeof(float);
         if (samples_in_buffer < 1000) {
             //samples_per_frame = 736;
@@ -1302,14 +1309,14 @@ void generate_mockingboard_frame(mb_cpu_data *mb_d) {
         } else {
             //samples_per_frame = 735; no change
         }
-    }
+    } */
 
-    uint64_t cycle_diff = mb_d->computer->cpu->cycles - mb_d->last_cycle;
-    //const int samples_per_frame = ((cycle_diff * 44100) / 1020500.0);
+    //uint64_t cycle_diff = mb_d->computer->cpu->cycles - mb_d->last_cycle;
+    ////const int samples_per_frame = ((cycle_diff * 44100) / 1020500.0);
 
     mb_d->last_cycle = mb_d->computer->cpu->cycles;
 
-    mb_d->mockingboard->generateSamples(samples_per_frame);
+    mb_d->mockingboard->generateSamples(samples_this_frame);
 
     // Clear the audio buffer after each frame to prevent memory buildup
     // Send the generated audio data to the SDL audio stream
@@ -1328,7 +1335,7 @@ void generate_mockingboard_frame(mb_cpu_data *mb_d) {
             if (mb_d->stream) {
                 samples_in_buffer = SDL_GetAudioStreamAvailable(mb_d->stream) / sizeof(float);
             }
-            printf("MB Status: buffer: %d, audio buffer size: %d, samples_per_frame: %d\n", samples_in_buffer, abs, samples_per_frame);
+            printf("MB Status: buffer: %d, audio buffer size: %d, samples_per_frame: %d\n", samples_in_buffer, abs, samples_this_frame);
         }
     }
 }
@@ -1438,6 +1445,13 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
 // TODO: create an "audiosystem" module and move this stuff to it like we did videosystem.
     speaker_state_t *speaker_d = (speaker_state_t *)get_module_state(computer->cpu, MODULE_SPEAKER);
     int dev_id = speaker_d->device_id;
+
+    mb_d->frame_rate = (double)computer->clock->c14M_per_second / (double)computer->clock->c14M_per_frame;
+    mb_d->samples_per_frame = (float)OUTPUT_SAMPLE_RATE_INT / mb_d->frame_rate;
+    mb_d->samples_per_frame_int = (int32_t)mb_d->samples_per_frame;
+    mb_d->samples_per_frame_remainder = mb_d->samples_per_frame - mb_d->samples_per_frame_int;
+
+    mb_d->c14m_rate = computer->clock->c14M_per_second;
 
 /** Init audio stream for the mockingboard device */
     SDL_AudioSpec spec;

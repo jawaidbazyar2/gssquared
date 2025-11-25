@@ -7476,6 +7476,71 @@ I am also feeling like the frame rate and some of those other timing parameters 
 [ ] allow output rate to be configurable with a const in speaker.cpp  
 [ ] fix reset() to resync audio after it being off for a while in LS.  
 [ ] Detect audio de-sync due to MacOS dumbness and flush queue and call reset() during frame handler  
-[ ] change speaker to work based on 14M clock.  
+[x] change speaker to work based on 14M clock.  
 
 after LS last_event_time is reset, but stays frozen. is it because it's in the past or something? Hm. maybe just switch it now to 14M. Get some real work done first!
+
+testing! the French Touch SSS demo works in both ntsc and PAL. On PAL, the screen timing is good. However, there is some problem with mockingboard in PAL mode. 
+shufflepuck is actually working just fine! I took 17030-specific stuff out of mouse.cpp a while back I guess.
+
+The MB code does have one hard reference to 1020484 in it. MB is working at faster CPU speed (i.e. 2.86 and 7.1) so it's not likely anything to do with 14M. Sound finally came out like 5 minutes after I booted the MB demo disk. Weeeird. And it was feeling slow. slower than a half percent. Last_event and Last_Time are out of sync, badly. And we're not emitting enough samples per frame to keep up. Oh maybe that is the issue and we're inserting some huge number of excess samples when we underrun..
+
+weirdly, if I hit P to play, Ampl a/b/c and last event/last time update, but the tone values do not. Am I directly changing ampl instead of queueing the changes? That could be my longstanding MB bug..
+I have no clue what is causing this.
+
+For posterity, an amazing math treatment of Apple II speaker simulation / conversion.
+
+https://gitlab.com/wiz21/accurapple/-/blob/wozwrite/speaker/maths.pdf?ref_type=heads
+
+
+(side track) This mouse implementation is compatible with the actual Apple ROM. I can use this to fix up my implementation and have it use the Apple ROM.
+https://github.com/oliverschmidt/mouse-interface/
+
+## Nov 24, 2025
+
+the MB code should never be throwing these "timestamp is in the past" things and yet it is. examples:
+```
+[Current Time:  1183.432312] Event timestamp is in the past:  1183.430920
+[Current Time:  1183.432312] Event timestamp is in the past:  1183.430989
+[Current Time:  1183.432312] Event timestamp is in the past:  1183.431057
+```
+
+So the event timestamps are just c14m / 14318180/. They have to monotonically increase. In theory, current time should never go past our current frame_end_c14. But, that must be what's happening. There are likely rounding errors in here.
+
+Similar concerns as speaker:
+1. we nominally must generate 44100 output samples per second
+2. Because of our odd frame rate of 59.9227, we are currently using a sample rate of 44343 (divide by 59.9227) to get us 740.003 bytes per frame.
+3. Should use the new "remainder" method to figure out how to generate the right samples/sec based on 44100, instead of hacky 44343.
+4. unlike speaker, mb doesn't have an input data stream, it is synthesizing outputs based on programmed frequencies and changes these during synth at times dictated by user input.
+
+Should use c14m as the event time. 
+
+I guess the thing to do is rip this out into a test harness and go from there, integrating in the new synth code. I already have the synth and envelope stuff, need to add noisegen.
+
+For ease of testing, must create a recording bit to record MB register changes into a file. For just testing synthesis, that ought to do the trick.
+
+I am now calculating frame_rate and samples/frame from the computer clock settings. So now MB utilities in PAL is working -way- better.
+
+I also brought over the sample remain logic from speaker and now while I'm still getting "timestamp in the past", for example:
+```
+[Current Time:   825.396742] Event timestamp is in the past:   825.396169
+[Current Time:   862.511209] Event timestamp is in the past:   862.510639
+```
+They're not as far off as they used to be.
+
+event loop:
+process cpu
+  register MB events using 
+generate frame
+  process MB events
+  update "cycle time" which is a double of: seconds of cycles emitted.
+
+Shufflepuck and Glider are both working well in PAL mode (audio, and there is no flicker so we're doing vbl correctly).
+
+But we may be a hair off on cycle count. I mathed it before but maybe that's not what people are expecting. Hmm.
+
+// what is the actual PAL clock?
+14250450 - 1015657 . Discrete clock.
+14250000 - 1015625 . Hybrid clock.
+
+This is working as well in PAL as it is in NTSC, so let's defer the full fix and refactor of the MB code (needs it) to 0.7.

@@ -113,6 +113,13 @@ struct mb_cpu_data: public SlotData {
     uint64_t last_cycle;
     uint8_t slot;
     EventTimer *event_timer;
+
+    float samples_accumulated = 0.0f;
+    float frame_rate;
+    float samples_per_frame;
+    uint32_t samples_per_frame_int;
+    float samples_per_frame_remainder;
+    uint64_t c14m_rate;
 };
 
 void init_slot_mockingboard(computer_t *computer, SlotType_t slot);
