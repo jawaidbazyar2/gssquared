@@ -67,6 +67,7 @@ void Button_t::set_content_size_from_text() {
 Button_t::Button_t(AssetAtlas_t* assetp, int assetID, const Style_t& style, int group)
     : Tile_t(style), aa(assetp), assetID(assetID), group_id(group), buttonType(BT_Atlas) {
         set_size_from_asset();
+        position_content(CP_CENTER, CP_CENTER);
     }
 
 /**
