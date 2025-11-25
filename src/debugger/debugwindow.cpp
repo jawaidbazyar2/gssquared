@@ -60,27 +60,27 @@ debug_window_t::debug_window_t(computer_t *computer) {
     SS.padding = 4;
     SS.border_width = 1;
     
-    Button_t* s1 = new Button_t("Trace", SS);
-    s1->set_tile_size(60, 20);
-    s1->set_text_renderer(text_renderer); // set text renderer for the button
+    Button_t* s1 = new Button_t("Trace", text_renderer, SS);
+    s1->set_tile_size(70, 22);
+    //s1->set_text_renderer(text_renderer); // set text renderer for the button
     s1->set_click_callback([this](const SDL_Event& event) -> bool {
         toggle_panel(DEBUG_PANEL_TRACE);
         return true;
     });
     tab_container->add_tile(s1,0);
     
-    Button_t* s2 = new Button_t("Monitor", SS);
-    s2->set_tile_size(60, 20);
-    s2->set_text_renderer(text_renderer); // set text renderer for the button
+    Button_t* s2 = new Button_t("Monitor", text_renderer, SS);
+    s2->set_tile_size(70, 22);
+    //s2->set_text_renderer(text_renderer); // set text renderer for the button
     s2->set_click_callback([this](const SDL_Event& event) -> bool {
         toggle_panel(DEBUG_PANEL_MONITOR);
         return true;
     });
     tab_container->add_tile(s2,1);
 
-    Button_t* s3 = new Button_t("Memory", SS);
-    s3->set_tile_size(60, 20);
-    s3->set_text_renderer(text_renderer); // set text renderer for the button
+    Button_t* s3 = new Button_t("Memory", text_renderer, SS);
+    s3->set_tile_size(70, 22);
+    //s3->set_text_renderer(text_renderer); // set text renderer for the button
     s3->set_click_callback([this](const SDL_Event& event) -> bool {
         toggle_panel(DEBUG_PANEL_MEMORY);
         return true;
