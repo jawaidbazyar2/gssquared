@@ -144,7 +144,8 @@ public:
     int calc_opacity(uint32_t color);
 
     void position_content(ContentPosition_t pos_h, ContentPosition_t pos_v);
-
+    void print();
+    
 protected:
     /**
      * @brief Called when hover state changes.

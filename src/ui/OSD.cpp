@@ -345,8 +345,8 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     for (int i = 7; i >= 0; i--) {
         char slot_text[128];
         snprintf(slot_text, sizeof(slot_text), "Slot %d: %s", i, slot_manager->get_device(static_cast<SlotType_t>(i))->name);
-        Button_t* slot = new Button_t(slot_text, SS);
-        slot->set_text_renderer(text_render); // set text renderer for the button
+        Button_t* slot = new Button_t(slot_text, text_render, SS);
+        //slot->set_text_renderer(text_render); // set text renderer for the button
         slot->set_tile_size(300, 30);
         slot_container->add_tile(slot, 7 - i);    // Add in reverse order (7 to 0)
     }
@@ -447,18 +447,18 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     TextButtonCfg.border_color = 0x000000FF;
     TextButtonCfg.padding = 2;
     
-    save_btn = new Button_t("Save", TextButtonCfg);
-    save_as_btn = new Button_t("Save As", TextButtonCfg);
-    discard_btn = new Button_t("Discard", TextButtonCfg);
-    cancel_btn = new Button_t("Cancel", TextButtonCfg);
+    save_btn = new Button_t("Save", text_render, TextButtonCfg);
+    save_as_btn = new Button_t("Save As", text_render, TextButtonCfg);
+    discard_btn = new Button_t("Discard", text_render, TextButtonCfg);
+    cancel_btn = new Button_t("Cancel", text_render, TextButtonCfg);
     save_btn->set_tile_size(100, 30);
     save_as_btn->set_tile_size(100, 30);
     discard_btn->set_tile_size(100, 30);
     cancel_btn->set_tile_size(100, 30);
-    save_btn->set_text_renderer(text_render);
-    //save_as_btn->set_text_renderer(text_render);
-    discard_btn->set_text_renderer(text_render);
-    cancel_btn->set_text_renderer(text_render);
+    //save_btn->set_text_renderer(text_render);
+    ////save_as_btn->set_text_renderer(text_render);
+    //discard_btn->set_text_renderer(text_render);
+    //cancel_btn->set_text_renderer(text_render);
     save_btn->set_click_callback(modal_diskii_click, new diskii_modal_callback_data_t{this, diskii_save_con, 1});
     //save_as_btn->set_click_callback(modal_diskii_click, new diskii_modal_callback_data_t{this, diskii_save_con, 2});
     discard_btn->set_click_callback(modal_diskii_click, new diskii_modal_callback_data_t{this, diskii_save_con, 3});

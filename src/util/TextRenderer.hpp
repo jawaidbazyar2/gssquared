@@ -30,6 +30,7 @@ struct TextRenderer {
     void render(const std::string &text, int x, int y) { render(text, x, y, TEXT_ALIGN_LEFT); }
     void render(const std::string &text, int x, int y, TextAlignment alignment);
     int char_width(char c);
+    int string_width(const std::string &text);
     int get_font_line_height() { return font_line_height; }
 };
 

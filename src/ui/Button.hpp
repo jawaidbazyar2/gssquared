@@ -56,6 +56,11 @@ protected:
      */
     void set_content_size_from_tile();
 
+    /**
+     * @brief Updates button size based on the text.
+     */
+    void set_content_size_from_text();
+
 public:
     /**
      * @brief Constructs a text button with style.
@@ -65,6 +70,15 @@ public:
      */
     Button_t(const std::string& button_text, const Style_t& style = Style_t(), int group = 0);
     
+    /**
+     * @brief Constructs a text button with style.
+     * @param button_text The text to display
+     * @param text_render Pointer to the text renderer
+     * @param style The button's style settings
+     * @param group The button group ID
+     */
+    Button_t(const std::string& button_text, TextRenderer *tr, const Style_t& style = Style_t(), int group = 0);
+
     /**
      * @brief Constructs an image button with style.
      * @param assetp Pointer to the asset atlas

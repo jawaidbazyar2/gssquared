@@ -222,3 +222,15 @@ void Tile_t::set_text_renderer(TextRenderer *text_render) {
 void Tile_t::set_opacity(int o) {
     opacity = o;
 }
+
+void Tile_t::print() {
+    printf("Tile_t:\n");
+    // print tp x, y, w, h
+    printf("tp: x=%6.1f, y=%6.1f, w=%6.1f, h=%6.1f\n", tp.x, tp.y, tp.w, tp.h);
+    // print cp x, y, w, h
+    printf("cp: x=%6.1f, y=%6.1f, w=%6.1f, h=%6.1f\n", cp.x, cp.y, cp.w, cp.h);
+    // print pos_h and pos_v
+    printf("pos_h: %6d, pos_v: %6d\n", pos_h, pos_v);
+    // print visible, active, is_hovering
+    printf("visible: %d, active: %d, is_hovering: %d\n", visible, active, is_hovering);
+}
