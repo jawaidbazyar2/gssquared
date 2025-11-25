@@ -34,7 +34,8 @@ typedef enum {
     CLOCK_1_024MHZ,
     CLOCK_2_8MHZ,
     CLOCK_4MHZ,
-    NUM_CLOCK_MODES
+    NUM_CLOCK_MODES,
+    INVALID_CLOCK_MODE = -1
 } clock_mode_t;
 
 typedef struct {

@@ -110,7 +110,7 @@ typedef struct speaker_state_t {
     int32_t samples_per_frame_int;
     float samples_per_frame_remainder;
     float samples_accumulated = 0.0f;
-    int last_hz_rate = -1;
+    clock_mode_t last_clock_mode = CLOCK_FREE_RUN;
 } speaker_state_t;
 
 void init_mb_speaker(computer_t *computer, SlotType_t slot);

@@ -238,7 +238,7 @@ struct cpu_state {
     uint64_t clock_slip = 0;
     //uint64_t cycle_duration_ns;
     uint64_t HZ_RATE;
-    clock_mode_t clock_mode = CLOCK_FREE_RUN;
+    clock_mode_t clock_mode = INVALID_CLOCK_MODE;
     double e_mhz = 0;
     double fps = 0;
     

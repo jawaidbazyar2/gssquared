@@ -53,10 +53,13 @@ uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end
         speaker_state->sp->start();
     }
 
-    if (speaker_state->last_hz_rate != cpu->HZ_RATE) { // this will always trigger the 1st time through.
-        if (cpu->HZ_RATE == 0) speaker_state->sp->reset(cpu->cycles); // coming out of LS.
-
-        speaker_state->last_hz_rate = cpu->HZ_RATE;
+    // This really doesn't do much of anything now. C14m (frame rate) calc is always the same. cpu_rate changes but we don't use it
+    // except for display.
+    if (speaker_state->last_clock_mode != cpu->clock_mode) { // this will always trigger the 1st time through.
+        printf("Old clock mode: %d, New clock mode: %d\n", speaker_state->last_clock_mode, cpu->clock_mode);
+        //if (speaker_state->last_clock_mode == CLOCK_FREE_RUN) speaker_state->sp->reset(end_frame_c14M - computer->clock->c14M_per_frame); // coming out of LS.
+        
+        speaker_state->last_clock_mode = cpu->clock_mode;
         double frame_rate = (double)computer->clock->c14M_per_second / (double)computer->clock->c14M_per_frame;
         double cpu_rate = (double)computer->clock->eff_cpu_rate;
     
