@@ -354,6 +354,8 @@ add_subdirectory(apps/diskid)
 
 add_subdirectory(apps/gstrace)
 
+add_subdirectory(apps/iigsmmutest)
+
 add_subdirectory(apps/mmutest)
 
 add_subdirectory(apps/cputest)
