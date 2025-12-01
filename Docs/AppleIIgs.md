@@ -28,6 +28,12 @@ First one to start using:
 https://github.com/gilyon/snes-tests
 
 
+The CPU code will need to distinguish, for incr_cycles() purposes, between:
+* internal cycles
+* bus cycles, with a speed returned by the mmu
+
+Hm, ARE there any purely "internal" cycles? Every CPU cycle hits the memory bus. 
+
 
 ### Ensoniq 5503 DOC
 
@@ -66,14 +72,50 @@ The Keyboard is ADB but there is a simulation of the $C000/$C010 scheme. The ADB
 
 The IIgs has a 16MB (24-bit) address space. All I/O is done in the legacy $C000 space.
 
-Use 4K pages in MMU_GS.
+Shadowing: normally, only banks 00/01 shadow - and that's writes, and that's to banks E0/E1, and then, only portions of those banks, controlled by shadowing register.
 
-Apple IIe emulation is run in banks $E0 and $E1. This is "slow ram", always runs @ 1MHz.
+00/01 runs at full speed, except shadowed writes, which slow down and sync to 1MHz. In native mode programs might only have I/O shadowing enabled.
+E0/E1 runs at 1MHz, period. This is "slow ram", always runs @ 1MHz.
+
+Apple IIe emulation is run in banks $00 and $01, but with shadowing to E0/E1 for I/O and video.  
+This allows reads by 8-bit software to occur at full speed, but shadowed writes are synced to 1MHz.
+There is various stuff in banks E0/E1 used by GS/OS, interrupt handlers, etc.
+
+I'll need something to return the speed and sync of a r/w. Maybe just a simple flag "1mhz read/write", which is:
+* any shadowed write in 00/01
+* any read or write in E0/E1
+
+So computer will have the RegMMU, but also FastMMU. RegMMU is injected into FastMMU.
+The CPU calls FastMMU. Everything else is injected with RegMMU.
+FastMMU is controlled by device iigsmemory, which exposes registers:
+* shadow register
+* New-Video register.
+
+iigsmemory will also replicate the language card functionality, and have those registers, because that bank switching exists in banks 00/01.
+
+New-Video, controls linearity or interleave of some memory in bank 1. Also, controls whether ALL even/odd banks are shadowed?
+
 So have page maps that map these banks to the Apple II MMU.
 Banks $00 - $01 are 128K built-in in ROM01 (plus E0/E1 = 256K). Banks $00 - $0F for ROM03 (1.125M total)
 Banks $00 and $01 are "shadowed" to banks $E0 and $E1 if shadowing is enabled - this is exact use of shadow handler for those pages.
 
 Fast ROM is banks $F0 to $FF. (1MB total).
+
+The $C000 - $FFFF space in E0/E1 is controlled by the LC. The Shadow register bit 6 just controls whether a WINDOW in those locations in banks0/1 is present or not.
+LC memory writes are NOT shadowed to E0/E1.
+
+The ROM01 file is 256KB exactly, and would map to banks $FC $FD $FE $FF. It looks like $FF/C000 is various slot card firmware, including at $C800-$CFFF (I forget, did the IIe have stuff here too?)
+$FF/D000 is AppleSoft etc. $F800 should be monitor ROM.. yep. All largely unmodified. So mapping this should be straightforward. Of course the reset/etc vectors are different.
+
+Weirdly, there is ROM data at $C06E-$C0FF. For example, $C06E is a JMP 9D36. what? 
+
+The IRQ/BRK vector is 74 C0 ($C074). At that location in the ROM is this:
+B8 5C 10 00 E1
+
+which is CLV then JML $E1/0010. What? E1/0010 etc are interrupt vectors. What about apple II software that uses page 0? Ah, that is not shadowed.
+
+JBrooks: "$C07x ROM is active in bank 0 & 1 when I/O shadowing is enabled, or after the CPU does a vector pull (interrupt) via $FFEx/FFFx"
+We determined that we think C07x ROM is controlled purely by the I/O shadowing flag.
 
 
 Shadowing: not all the regions in $00/$01 are shadowed:
@@ -89,6 +131,36 @@ https://retrocomputing.stackexchange.com/questions/5555/apple-iigs-hardware-impl
 6 - C000...DFFF - Switches/Slot Memory
 7 - Speed indicator
 ```
+
+ok. There is Fast RAM and Slow RAM. Slow RAM has the I/O stuff.
+
+#### Fast RAM - banks $00 - $7F
+
+Banks $02 - $7F are pure RAM (well, you -can- shadow them but this is rarely used in practice).
+Banks $00 - $01 are half of legacy Apple II emulation. 
+
+Use a 64KByte page size. Banks $00 and $01 get special read/write handler controlled by iigsmemory, that 
+The other banks are basically always mapped directly to RAM and that's it. So the MMU function for these will
+be the fastest performance. These handlers must handle Apple II LC bank switching; but also be able to set
+these banks to pure-RAM operation just like $02 - $7F. iigsmemory will likely have the custom handlers for these
+banks: native (what we'll call the "it's just ram" handler); and emulation (what we'll call what handles all the IIe memory mangling)
+
+Runs at average of 2.5MHz speed and is affected by RAM refresh timing.
+
+#### Fast ROM - banks $F0 - $FF
+
+Runs at full 2.8MHz and is unaffected by RAM refresh timing.
+
+#### Slow RAM - banks $E0 - $E1
+
+These two banks are comprised of: display pages; I/O space. The I/O space mapping and ROM mapping for it are here and
+handled the same way they are in a IIe.
+All accesses in this space are clocked at 1MHz to share access with video scanner.
+
+#### State Register - C068
+
+this is a condensed version of all the bank0/1 memory map features, in one place. And these likely coincide with the ones iigsmemory will deal with.
+
 
 ### Bus Timing
 

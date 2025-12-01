@@ -48,7 +48,7 @@ void displayTest(const MMUTest::Test& test) {
 void EmitTestAssembly(int testnum, const MMUTest::Test& test, AsmFile *a) {
     a->w("; Running: %s - %s\n", test.name.c_str(), test.description.c_str());
 
-    a->w("test%d:", testnum);
+    a->w("test%d", testnum);
     a->w("        ldx #00");
     int subtestnum = 1;
 
@@ -60,9 +60,11 @@ void EmitTestAssembly(int testnum, const MMUTest::Test& test, AsmFile *a) {
                 a->w(";  Write to %02X/%04X: ", 
                        MMUTest::GetBank(operation.location),
                        MMUTest::GetAddress(operation.location) );
+                int bytecount = 0;
                 for (auto byte : operation.data) {
-                    a->w("        lda #%02X ", byte);
-                    a->w("        sta $%02X/%04X", MMUTest::GetBank(operation.location), MMUTest::GetAddress(operation.location));
+                    a->w("        lda #$%02X ", byte);
+                    a->w("        sta >$%02X%04X", MMUTest::GetBank(operation.location), MMUTest::GetAddress(operation.location)+bytecount);
+                    bytecount++;
                 }
             }
             else if constexpr (std::is_same_v<T, MMUTest::CopyOp>) {
@@ -72,10 +74,10 @@ void EmitTestAssembly(int testnum, const MMUTest::Test& test, AsmFile *a) {
                        MMUTest::GetAddress(operation.source),
                        MMUTest::GetBank(operation.destination),
                        MMUTest::GetAddress(operation.destination));
-                a->w("        lda $%02X/%04X",
+                a->w("        lda >$%02X%04X",
                       MMUTest::GetBank(operation.source),
                       MMUTest::GetAddress(operation.source));
-                a->w("        sta $%02X/%04X",
+                a->w("        sta >$%02X%04X",
                       MMUTest::GetBank(operation.destination),
                       MMUTest::GetAddress(operation.destination));
             }
@@ -85,14 +87,17 @@ void EmitTestAssembly(int testnum, const MMUTest::Test& test, AsmFile *a) {
                        MMUTest::GetBank(operation.location),
                        MMUTest::GetAddress(operation.location));
                 a->w("        ldx #01");
+                int bytecount = 0;
                 for (auto byte : operation.expected) {
-                    a->w("        lda $%02X/%04X", MMUTest::GetBank(operation.location), MMUTest::GetAddress(operation.location));
-                    a->w("        cmp #%02X ", byte);
-                    a->w("        beq test%da%dgood", testnum, subtestnum);
-                    a->w("        lda #%02X",testnum);
-                    a->w("        jmp testfailed");
-                    a->w("test%da%dgood:    inx", testnum, subtestnum);
+                    a->w("        lda >$%02X%04X", MMUTest::GetBank(operation.location), MMUTest::GetAddress(operation.location)+bytecount);
+                    a->w("        cmp #$%02X ", byte);
+                    a->w("        beq test%da%db%dok", testnum, subtestnum, bytecount);
+                    a->w("        lda #$%02X",testnum);
+                    a->w("        jsr recordfail");
+                    a->w("test%da%db%dok", testnum, subtestnum, bytecount);
+                    bytecount++;
                 }
+                a->w("test%da%dgood    inx", testnum, subtestnum);
                 subtestnum++;
             }
         }, op);
@@ -100,14 +105,52 @@ void EmitTestAssembly(int testnum, const MMUTest::Test& test, AsmFile *a) {
 }
 
 void EmitAssemblyPreamble(AsmFile *a) {
-    a->w("    .org $0800");
+    std::vector<std::string> testnames = {
+        "        org $0800",
+        "        ldy #00",
+        "        lda #00",
+        };
+    for (const auto& testname : testnames) {
+        a->w(testname.c_str());
+    }
 }
+
 void EmitAssemblyPostamble(AsmFile *a) {
-    a->w("testpassed   lda #00");
-    a->w("testfailed   sta $00/07FE");
-    a->w("        txa");
-    a->w("        sta $00/07FF");
-    a->w("        rts");    
+    std::vector<std::string> testnames = {
+    "testpassed   lda #00",
+    "testfailed   cpy #00",
+    "        beq exittest",
+    "        jsr displayfail",
+    "exittest     rts",
+
+    "recordfail",
+    "        sta failtable,Y",  // test number
+    "        iny",
+    "        txa",
+    "        sta failtable,Y",  // subtest number
+    "        iny",
+    "        rts",
+    "displayfail",
+    "        tyx",
+    "        ldy #00",
+    "dfloop",
+    "        lda failtable,Y",
+    "        jsr $FDDA",
+    "        iny",
+    "        lda failtable,Y",
+    "        jsr $FDDA",
+    "        iny",
+    "        lda #$8D",
+    "        jsr $FDED",
+    "        dex",
+    "        dex",
+    "        bne dfloop",
+    "        rts",
+    "failtable ds 256",
+    };
+    for (const auto& testname : testnames) {
+        a->w(testname.c_str());
+    }
 }
 
 int main(int argc, char *argv[]) 

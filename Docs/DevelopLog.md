@@ -7544,3 +7544,86 @@ But we may be a hair off on cycle count. I mathed it before but maybe that's not
 14250000 - 1015625 . Hybrid clock.
 
 This is working as well in PAL as it is in NTSC, so let's defer the full fix and refactor of the MB code (needs it) to 0.7.
+
+## Nov 25, 2025
+
+fixed the issue with speed changes. I had the speed-change-detect logic IN audio_generate_frame but of course when we shifted INTO LS that stopped getting called, so it never updated its internal state to LS. Coming out of LS it was still set to the previous speed. (assuming step up to LS and step down. wrap-around speed change would have triggered it..) I'm not happy having to call audio specifically from the gs2 loop so need to rethink this. Maybe speaker itself could return and generate no audio if in LS. It's coupled to CPU speed that way, but, gs2 is decoupled from speaker internals. Probably the better trade-off..
+
+## Nov 27, 2025
+
+likely bug:
+
+[ ] iiememory does not manipulate LC memory mapping in Aux Memory.  
+
+I'm impressed as much stuff works as it does. Things that are broken that are likely due to this:
+Airheart on Total Replay
+
+## Nov 29, 2025
+
+Short version on iigsmemory/MMU_IIgs: woefully complex. As in, full of woe. Ultimately, this may suggest a very different approach compared to the MMU_IIe.
+
+GuS and KEGS both rely on the same concept I have in MMU_IIe, namely, a page table where the handler for each group of 256 bytes (or the memory address of the real storage) is stored in a table. For a 16M machine, there are 65536 of these page table entries. That's a lot. It breaks memory locality, but, it also potentially requires setting vast numbers of entries when certain changes are made.
+
+For instance: if we enable shadowing in all RAM banks via the Speed/CYA registers; we potentially have to do language card calculations for all those banks; set up shadowing to E0/E1 for all those banks; just the shr shadowing is 32Kbyte or 128 pages times say you have 8M of RAM, or 128 banks; that means setting 16384 page table entries. ugharoonie! If this register is changed rapidly, this becomes a problem. (Does that happen much in real life? Perhaps not).
+
+But even just having to perform the same LC logic in four banks ($0/$1/$E0/$E1) is awful.
+
+So the possible solution is to perform address munging logic for these. Now the downside of that is we then perform these calculations on every single memory access.
+
+On the other hand, perhaps this can be optimized with lookup tables that are more specialized per type of memory area. E.g., let's say $C000 - $CFFF, there could be a table like this:
+16 entries ($10 pages), with some number of input state bits. Let's say there are 20 state bits. That then is 20 * 16 = 320 entries. Manageable. Then the trick is to efficiently determine when we're hitting that $C0 range and to use its lookup table routine. Perhaps that could be done with a 4K or some other resolution map. 16M of 4K is only 4096 entries.
+
+The tradeoff is: does managing the state take more resources than calculating the state. Remember that "managing the state" also includes cache locality.
+
+Bank characters:
+1. ROM only
+2. RAM only
+3. RAM with shadowing
+4. SLOW RAM
+
+Then for 3 of course there is the specific shadowing config. Lots of options there. but "shadowing on" generally means: video shadowing; AND Act like Apple IIe Memory.
+Normally any shadowing is only banks $0/$1. The "ALL Bank Shadow" enables that for all RAM banks. So an update there is going to modify (up to) 128 bank entries. 
+
+
+OK so let's toy with LC flags. Our inputs are:
+* FF_BANK_1
+* FF_READ_ENABLE
+* FF_WRITE_ENABLE
+
+BANK_1 is stored in "Real RAM" $C000. Bank 2 is "Real RAM" $D000.
+READ_ENABLE=1 means reads come from RAM; =0 from ROM.
+WRITE_ENABLE=1 means writes are to RAM; =0 to ROM (i.e., basically ignore)
+
+For READ or WRITE ENABLE:
+Input addresses are from $D000 to $FFFF.
+If input addr is $D..., and FF_BANK_1, change $D... to $C...
+
+Then offset in the real 64K bank. otherwise, remap to ROM.
+
+Using those three inputs we have a total of 8 possible tables. So then we can do this:
+N = ADDR >> 12;
+map_addr = lc_map_table[FF_BANK_1][FF_READ_ENABLE][FF_WRITE_ENABLE][N]
+7 bits, or 128 entries. Each entry can be a real address, maybe a ram/rom flag so we can calc  the offset.
+
+The flag can then case a switch to add the offset to the correct base (ram or rom) address to obtain the final address.
+
+In a IIe, all pages may vary based on memory mapping.
+
+with 80store
+$0 - text pages can be main/aux depending on PAGE2
+$2-5: hires, can be in main/aux on PAGE2
+
+with RAMRD/RAMWRT:
+$0200 - $BFFF
+
+with ALTZP:
+$0000 - $01FF
+$D000 - $FFFF - main or aux
+
+Other "all the time" stuff:
+$C: I/O
+$D-$F: language card
+
+If shadowing enabled, this functionality must be replicated in banks $00 (and potentially all even banks). So set the bank map for those.
+
+Shadowing is a separate stage, where we pass the original address/val down through the "MegaII" (i.e. MMU_IIe).

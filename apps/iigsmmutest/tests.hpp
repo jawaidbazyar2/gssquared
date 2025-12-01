@@ -73,12 +73,21 @@ inline const std::vector<Test> ALL_TESTS = {
             WriteOp{0xe0c035, 0x08},
             WriteOp{0xe0c036, 0x84},
             WriteOp{0x000400, {0x12, 0x34}},
-            //WriteOp{0x000401, 0x34},
-            CopyOp{0xe00400, 0xe10400},
             AssertOp{0xe00400, 0x12},
             AssertOp{0xe00401, 0x34},
             WriteOp{0xe0c029, 0x01},
 
+        }
+    },
+    Test{
+        "test2",
+        "shadow all banks copies data from any even bank to bank E0",
+        {
+            WriteOp{0xE0C036, 0x94},
+            WriteOp{0x000400, {0x12, 0x34}},
+            WriteOp{0x020402, {0x56, 0x78}},
+            WriteOp{0xE0C036, 0x94},
+            AssertOp{0xE00402, {0x56, 0x78}},
         }
     },
     
