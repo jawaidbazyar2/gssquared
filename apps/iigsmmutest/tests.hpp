@@ -246,6 +246,45 @@ inline const std::vector<Test> ALL_TESTS = {
             AssertOp{0x03'6200, { 0x12, 0x34}},            
         }
     },
+    Test{
+        15,
+        "IOLC inhibit does not disable other IIe memory management: aux write",
+        {          
+            WriteOp{0x00'6400, {0x00, 0x00}}, // clear test areas
+            WriteOp{0x01'6400, {0x00, 0x00}},
+            WriteOp{0xE0'6400, {0x00, 0x00}},
+            WriteOp{0xE1'6400, {0x00, 0x00}},
+
+            WriteOp{0xE0'C035, 0x68}, // disable IOLC; disable Text Page 2; disable SHR;
+            WriteOp{0xE0'C005, 0x01}, // enable RAMWRT
+            WriteOp{0x00'6400, {0x56, 0x78}}, // should go to 01/6400
+            WriteOp{0xE0'6401, 0x89}, // would go to E0/6001; but RAMWRT is on so it goes to E1/6001
+            WriteOp{0xE0'C004, 0x01}, // disable RAMWRT
+            WriteOp{0xE0'C035, 0x28}, // enable IOLC; disable Text Page 2; disable SHR;
+
+            AssertOp{0x00'6400, {0x00, 0x00}}, // no change here
+            AssertOp{0x01'6400, {0x56, 0x78}}, // 00 writes should go here
+            AssertOp{0xE0'6400, {0x00, 0x00}}, // but the E0 write
+            AssertOp{0xE1'6400, {0x00, 0x89}}, // should go here
+        }
+    },
+    Test{ // NO. But it does with all bank shadow enabled (see test 6)
+        16,
+        "does RAMWRT work in banks 02/03 w/o all bank shadow",
+        {
+            WriteOp{0xE1'6000, {0x00, 0x00}},
+            WriteOp{0x02'6000, {0x00, 0x00}},
+            WriteOp{0x03'6000, {0x00, 0x00}},
+            
+            WriteOp{0xE0'C005, 0x01},
+            WriteOp{0x02'6000, {0x56, 0x78}},
+            WriteOp{0xE0'C004, 0x01},           
+           
+            AssertOp(0xE1'6000, {0x00, 0x00}),
+            AssertOp(0x02'6000, {0x00, 0x00}),
+            AssertOp(0x03'6000, {0x56, 0x78}),
+        }
+    },
 
     Test{
         0x99,
