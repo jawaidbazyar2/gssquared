@@ -69,13 +69,13 @@ inline const std::vector<Test> ALL_TESTS = {
         "test1",
         "Normal text page video shadowing",
         {
-            WriteOp{0xe0c029, 0x01},
-            WriteOp{0xe0c035, 0x08},
-            WriteOp{0xe0c036, 0x84},
-            WriteOp{0x000400, {0x12, 0x34}},
-            AssertOp{0xe00400, 0x12},
-            AssertOp{0xe00401, 0x34},
-            WriteOp{0xe0c029, 0x01},
+            WriteOp{0xE0'c029, 0x01},
+            WriteOp{0xE0'c035, 0x08},
+            WriteOp{0xE0'c036, 0x84},
+            WriteOp{0x00'0400, {0x12, 0x34}},
+            AssertOp{0xE0'0400, 0x12},
+            AssertOp{0xE0'0401, 0x34},
+            WriteOp{0xE0'c029, 0x01},
 
         }
     },
@@ -83,14 +83,100 @@ inline const std::vector<Test> ALL_TESTS = {
         "test2",
         "shadow all banks copies data from any even bank to bank E0",
         {
-            WriteOp{0xE0C036, 0x94},
-            WriteOp{0x000400, {0x12, 0x34}},
-            WriteOp{0x020402, {0x56, 0x78}},
-            WriteOp{0xE0C036, 0x94},
-            AssertOp{0xE00402, {0x56, 0x78}},
+            WriteOp{0xE0'C036, 0x94},
+            WriteOp{0x00'0400, {0x12, 0x34}},
+            WriteOp{0x02'0402, {0x56, 0x78}},
+            WriteOp{0xE0'C036, 0x94},
+            AssertOp{0xE0'0402, {0x56, 0x78}},
         }
     },
-    
+    Test{
+        "test3",
+        "shadow only copies data written to video pages",
+        {
+            WriteOp{0xE0'6000, {0xFF, 0xFF}},
+            WriteOp{0x00'6000, {0x12, 0x34}},
+            AssertOp{0xE0'6000, {0xFF, 0xFF}},
+        }
+    },
+    Test{
+        "test4",
+        "write to text 1 with ramwrt=1 shadowed to e1",
+        {
+            WriteOp{0xE0'0400, {0x00, 0x00}},
+            WriteOp{0xE1'0400, {0x00, 0x00}},
+            WriteOp{0xE0'C005, 0x01},
+            WriteOp{0x00'0400, {0x56, 0x78}},
+            WriteOp{0xE0'C004, 0x01},
+            AssertOp{0xE1'0400, {0x56, 0x78}},
+            AssertOp{0xE0'0400, {0x00, 0x00}},
+        }
+    },
+    Test{
+        "test5",
+        "aux write (non-video) put in aux but not shadowed to e1",
+        {
+            WriteOp{0x01'6000, {0x00, 0x00}},            
+            WriteOp{0xE1'6000, {0x00, 0x00}},            
+            WriteOp{0xE0'C005, 0x01},
+            WriteOp{0x00'6000, {0x56, 0x78}},
+            WriteOp{0xE0'C004, 0x01},
+            AssertOp{0xE1'6000, {0x00, 0x00}},
+            AssertOp{0x01'6000, {0x56, 0x78}},
+        }
+    },
+    Test{
+        "test6",
+        "bank 2 + aux write (non-video) stored in 'aux' and not shadowed to e1 (all banks shadow)",
+        {
+            WriteOp{0xE1'6000, {0x00, 0x00}},
+            WriteOp{0x02'6000, {0x00, 0x00}},
+            WriteOp{0x03'6000, {0x00, 0x00}},
+            
+            WriteOp{0xE0'C036, 0x94},
+            WriteOp{0xE0'C005, 0x01},
+            WriteOp{0x02'6000, {0x56, 0x78}},
+            WriteOp{0xE0'C004, 0x01},           
+            WriteOp{0xE0'C036, 0x84},
+           
+            AssertOp(0xE1'6000, {0x00, 0x00}),
+            AssertOp(0x02'6000, {0x00, 0x00}),
+            AssertOp(0x03'6000, {0x56, 0x78}),
+        }
+    },
+    Test{
+        "test7",
+        "aux write shadowed to e1 - direct access to aux bank",
+        {
+            WriteOp{0xE1'0400, {0x00,0x00}},
+            WriteOp{0x01'0400, {0x56, 0x78}},
+            AssertOp{0xE1'0400, {0x56, 0x78}},
+        }
+    },
+    Test{
+        "test8",
+        "aux write to odd bank 3 with all bank shadow enabled",
+        {
+            WriteOp{0xE1'0400, {0x00,0x00}}, // clear
+            WriteOp{0xE0'c036, 0x94}, // enable all bank shadow
+            WriteOp{0x03'0400, {0x56, 0x78}},
+            WriteOp{0x03'C030, 0x00}, // set bank 3
+            WriteOp{0xE0'c036, 0x84}, // disable all bank shadow
+            AssertOp{0xE1'0400, {0x56, 0x78}},
+        }
+    },
+    Test{
+        "test9",
+        "IOLC inhibit disables access to CXXX in bank 0",
+        {
+            WriteOp{0xE0'0400, 0x00},
+            WriteOp{0xE0'c035, 0x68}, // disable IOLC; disable Text Page 2; disable SHR;
+            WriteOp{0x00'C010, 0x12},
+            CopyOp{0x00'C010, 0xE0'0400},
+            WriteOp{0xE0'c035, 0x28}, // enable IOLC; disable Text Page 2; disable SHR;
+            AssertOp{0xE0'0400, 0x12},
+        }
+    }
     // Add more tests here...
     // Test{
     //     "test2",
