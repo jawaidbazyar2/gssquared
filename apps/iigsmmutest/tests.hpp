@@ -54,19 +54,22 @@ using Operation = std::variant<WriteOp, CopyOp, AssertOp>;
 
 // A single test case
 struct Test {
-    std::string name;
+    int number;
     std::string description;
     std::vector<Operation> operations;
     
-    Test(std::string n, std::string desc, std::initializer_list<Operation> ops)
-        : name(std::move(n)), description(std::move(desc)), operations(ops) {}
+    Test(int n, std::string desc, std::initializer_list<Operation> ops)
+        : number(n), description(std::move(desc)), operations(ops) {}
 };
 
-// All tests
+/**
+ * All tests pass on a real Apple IIgs.
+ */
+
 inline const std::vector<Test> ALL_TESTS = {
     // Test 1: Normal text page video shadowing
     Test{
-        "test1",
+        1,
         "Normal text page video shadowing",
         {
             WriteOp{0xE0'c029, 0x01},
@@ -80,7 +83,7 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
     Test{
-        "test2",
+        2,
         "shadow all banks copies data from any even bank to bank E0",
         {
             WriteOp{0xE0'C036, 0x94},
@@ -91,7 +94,7 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
     Test{
-        "test3",
+        3,
         "shadow only copies data written to video pages",
         {
             WriteOp{0xE0'6000, {0xFF, 0xFF}},
@@ -100,7 +103,7 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
     Test{
-        "test4",
+        4,
         "write to text 1 with ramwrt=1 shadowed to e1",
         {
             WriteOp{0xE0'0400, {0x00, 0x00}},
@@ -113,7 +116,7 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
     Test{
-        "test5",
+        5,
         "aux write (non-video) put in aux but not shadowed to e1",
         {
             WriteOp{0x01'6000, {0x00, 0x00}},            
@@ -126,7 +129,7 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
     Test{
-        "test6",
+        6,
         "bank 2 + aux write (non-video) stored in 'aux' and not shadowed to e1 (all banks shadow)",
         {
             WriteOp{0xE1'6000, {0x00, 0x00}},
@@ -145,7 +148,7 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
     Test{
-        "test7",
+        7,
         "aux write shadowed to e1 - direct access to aux bank",
         {
             WriteOp{0xE1'0400, {0x00,0x00}},
@@ -154,7 +157,7 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
     Test{
-        "test8",
+        8,
         "aux write to odd bank 3 with all bank shadow enabled",
         {
             WriteOp{0xE1'0400, {0x00,0x00}}, // clear
@@ -166,7 +169,7 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
     Test{
-        "test9",
+        9,
         "IOLC inhibit disables access to CXXX in bank 0",
         {
             WriteOp{0xE0'0400, 0x00},
@@ -176,16 +179,83 @@ inline const std::vector<Test> ALL_TESTS = {
             WriteOp{0xE0'c035, 0x28}, // enable IOLC; disable Text Page 2; disable SHR;
             AssertOp{0xE0'0400, 0x12},
         }
+    },
+    Test{
+        10,
+        "there is normally no IOLC in bank 2",
+        {
+            WriteOp{0x02'C010, 0x12}, // normally, this should be RAM.
+            AssertOp{0x02'C010, 0x12},
+        }
+    },
+    Test{
+        11,
+        "there is an IOLC in bank 2 with ALL BANK SHADOW enabled",
+        {
+            WriteOp{0x02'C010, 0x00}, // currently RAM.
+            WriteOp{0xE0'c036, 0x94}, // enable all bank shadow
+            WriteOp{0x02'C010, 0x12}, // this should now be IO, and our write should not go to RAM.
+            WriteOp{0xE0'c036, 0x84}, // disable all bank shadow
+            AssertOp{0x02'C010, 0x00}, // this should be unchanged since write occurred to IO.
+        }
+    },
+    Test{
+        12,
+        "bank latch disabled, write to E1 goes to E0 instead",
+        {
+            WriteOp{0xE0'6000, {0x00, 0x00}},
+            WriteOp{0xE1'6000, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x00}, // disable bank latch
+            WriteOp{0xE1'6000, {0x12, 0x34}},
+            WriteOp{0xE0'C029, 0x01}, // reenable bank latch
+            AssertOp(0xE0'6000, {0x12, 0x34}), // write should have gone to E0.
+            AssertOp(0xE1'6000, {0x00, 0x00}),
+        }
+    },
+    Test{
+        13,
+        "bank latch disabled; write to E0 goes to E1 with RAMWRT set",
+        {
+            WriteOp{0xE0'6100, { 0x00, 0x00}},
+            WriteOp{0xE1'6100, { 0x00, 0x00}},
+
+            WriteOp{0xE0'C029, 0x00}, // disable bank latch
+            WriteOp{0xE0'C005, 0x01},
+            WriteOp{0xE0'6100, { 0x12, 0x34 }},
+            WriteOp{0xE0'C004, 0x01},
+            WriteOp{0xE0'C029, 0x01}, // reenable bank latch
+            AssertOp{ 0xE0'6100, { 0x00, 0x00}},
+            AssertOp{ 0xE1'6100, { 0x12, 0x34}},
+        }
+    },
+    Test{
+        14,
+        "bank latch disabled, all bank shadowing enabled, write to 03 goes to 03",
+        {
+            WriteOp{0x02'6200, { 0x00, 0x00}},
+            WriteOp{0x03'6200, { 0x00, 0x00}},
+            WriteOp{0xE0'C036, 0x94}, // enable all bank shadow
+            WriteOp{0xE0'C029, 0x00}, // disable bank latch
+
+            WriteOp{0x03'6200, { 0x12, 0x34}},
+
+            WriteOp{0xE0'C029, 0x01}, // reenable bank latch
+            WriteOp{0xE0'C036, 0x84}, // disable all bank shadow
+
+            AssertOp{0x02'6200, { 0x00, 0x00}},
+            AssertOp{0x03'6200, { 0x12, 0x34}},            
+        }
+    },
+
+    Test{
+        0x99,
+        "floating bus behavior: ram bank higher than real RAM data reads as the bank number",
+        {
+            AssertOp{0x81'0000, 0x81},
+            AssertOp{0x82'0000, 0x82},
+        }
     }
-    // Add more tests here...
-    // Test{
-    //     "test2",
-    //     "Another test description",
-    //     {
-    //         WriteOp{0x001000, {0xAA, 0xBB, 0xCC}},  // Multiple bytes use brackets
-    //         AssertOp{0x001000, {0xAA, 0xBB, 0xCC}},
-    //     }
-    // },
+
 };
 
 } // namespace MMUTest

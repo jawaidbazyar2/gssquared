@@ -12,7 +12,8 @@ Given input test data, perform one of several functions:
 */
 
 void displayTest(const MMUTest::Test& test) {
-    printf("Running: %s - %s\n", test.name.c_str(), test.description.c_str());
+    int testnum = test.number;
+    printf("Running: %d - %s\n", testnum, test.description.c_str());
     
     for (const auto& op : test.operations) {
         std::visit([](auto&& operation) {
@@ -45,8 +46,10 @@ void displayTest(const MMUTest::Test& test) {
     }
 }
 
-void EmitTestAssembly(int testnum, const MMUTest::Test& test, AsmFile *a) {
-    a->w("; Running: %s - %s\n", test.name.c_str(), test.description.c_str());
+void EmitTestAssembly(const MMUTest::Test& test, AsmFile *a) {
+    int testnum = test.number;
+
+    a->w("; Running: %d - %s\n", test.number, test.description.c_str());
 
     a->w("test%d", testnum);
     a->w("        ldx #00");
@@ -140,11 +143,13 @@ void EmitAssemblyPostamble(AsmFile *a) {
     "        lda failtable,Y",
     "        jsr $FDDA",
     "        iny",
-    "        lda #$8D",
+    "        lda #$A0",
     "        jsr $FDED",
     "        dex",
     "        dex",
     "        bne dfloop",
+    "        lda #$8D",
+    "        jsr $FDED",
     "        rts",
     "failtable ds 256",
     };
@@ -164,10 +169,8 @@ int main(int argc, char *argv[])
 
     AsmFile *a = new AsmFile("test.asm");
     EmitAssemblyPreamble(a);
-    int testnum = 1;
     for (const auto& test : MMUTest::ALL_TESTS) {
-        EmitTestAssembly(testnum, test, a);
-        testnum++;
+        EmitTestAssembly(test, a);
     }
     EmitAssemblyPostamble(a);
     delete a;
