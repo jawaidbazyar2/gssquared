@@ -52,7 +52,7 @@ void EmitTestAssembly(const MMUTest::Test& test, AsmFile *a) {
     a->w("; Running: %d - %s\n", test.number, test.description.c_str());
 
     a->w("test%d", testnum);
-    a->w("        ldx #00");
+    a->w("        ldx #01");
     int subtestnum = 1;
 
     for (const auto& op : test.operations) {
@@ -89,7 +89,7 @@ void EmitTestAssembly(const MMUTest::Test& test, AsmFile *a) {
                 a->w(";  Assert %02X/%04X", 
                        MMUTest::GetBank(operation.location),
                        MMUTest::GetAddress(operation.location));
-                a->w("        ldx #01");
+                //a->w("        ldx #01");
                 int bytecount = 0;
                 for (auto byte : operation.expected) {
                     a->w("        lda >$%02X%04X", MMUTest::GetBank(operation.location), MMUTest::GetAddress(operation.location)+bytecount);
