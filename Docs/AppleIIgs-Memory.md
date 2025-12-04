@@ -187,8 +187,8 @@ The State Register duplicates in the FPI certain memory management bits that can
 | 6 | PAGE2 | 1 = Text Page 2 Selected |
 | 5 | RAMRD | 1 = Aux RAM is read-enabled |
 | 4 | RAMWRT | 1 = aux RAM is write-enabled |
-| 3 | RDROM | Whether ROM or RAM shows up in LC area |
-| 2 | LCBNK2 | LC Bank 1 Selected |
+| 3 | RDROM | 1 = ROM is read enabled in LC area; 0 = RAM read enabled in LC area |
+| 2 | LCBNK2 | 1 = LC Bank 1 Selected |
 | 1 | ROMBANK | Must always be 0 |
 | 0 | INTCXROM | 1 = internal ROM at $Cx00 is selected; 0 = peripheral-card ROM |
 
@@ -340,3 +340,19 @@ W means "write", as in write VAL into ADDR24. ADDR24 is an address that is passe
 PADDR24 is a raw physical address read directly from the memory array, NOT via the MMU.
 V means "validate" - read the value from ADDR24, compare to VAL; continue if a match, error if mismatch.
 VA means "Validate absolute", or compare a value at physical address 24.
+
+
+# Boiled Down
+
+"shadow map"
+
+We could compress "shadow / not shadow" into a single bit, and an entire 64k bank into 256 bits at 1 bit per 256 bytes.
+Shadowing may even be fine on 1KB boundaries. So, 64 bits per bank. A single word.
+So then, we can trivially have a lookup table for any variation of the shadow register bits as the LUT index. This then means a bit test and function call down to MMU_IIe.
+
+Have an init func create a LUT based on every possible shadow bit (256 indices) and the 64-bit shadow mask above.
+
+"shadow enabled / disabled"
+
+Either banks $00/$01, or, ALL ram banks, may be set to shadow to $E0 and $E1, based on the shadow map above. (There are 3 or 4 basic methods each for read and write, for these options).
+

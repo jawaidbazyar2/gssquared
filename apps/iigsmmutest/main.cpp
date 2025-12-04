@@ -2,6 +2,9 @@
 #include "AsmFile.hpp"
 #include "tests.hpp"
 
+/* #include "mmus/mmu_iigs.hpp"
+#include "mmus/mmu_iie.hpp"
+ */
 /*
 
 Given input test data, perform one of several functions:
@@ -24,6 +27,14 @@ void displayTest(const MMUTest::Test& test) {
                        MMUTest::GetBank(operation.location),
                        MMUTest::GetAddress(operation.location));
                 for (auto byte : operation.data) printf("%02X ", byte);
+                printf("\n");
+            }
+            else if constexpr (std::is_same_v<T, MMUTest::ReadOp>) {
+                // Handle read
+                printf("  Read from %02X/%04X: ", 
+                       MMUTest::GetBank(operation.location),
+                       MMUTest::GetAddress(operation.location));
+                //for (auto byte : operation.expected) printf("%02X ", byte);
                 printf("\n");
             }
             else if constexpr (std::is_same_v<T, MMUTest::CopyOp>) {
@@ -69,6 +80,13 @@ void EmitTestAssembly(const MMUTest::Test& test, AsmFile *a) {
                     a->w("        sta >$%02X%04X", MMUTest::GetBank(operation.location), MMUTest::GetAddress(operation.location)+bytecount);
                     bytecount++;
                 }
+            }
+            else if constexpr (std::is_same_v<T, MMUTest::ReadOp>) {
+                // Handle read
+                a->w(";  Read from %02X/%04X\n",
+                       MMUTest::GetBank(operation.location),
+                       MMUTest::GetAddress(operation.location));
+                a->w("        lda >$%02X%04X", MMUTest::GetBank(operation.location), MMUTest::GetAddress(operation.location));
             }
             else if constexpr (std::is_same_v<T, MMUTest::CopyOp>) {
                 // Handle copy
@@ -161,12 +179,14 @@ void EmitAssemblyPostamble(AsmFile *a) {
 int main(int argc, char *argv[]) 
 {
     printf("Starting IIgs MMU test...\n\n");
-    
+
+    // Print the tests
     for (const auto& test : MMUTest::ALL_TESTS) {
         displayTest(test);
         printf("\n");
     }
 
+    // Generate .asm file to run the tests on hardware/emulator
     AsmFile *a = new AsmFile("test.asm");
     EmitAssemblyPreamble(a);
     for (const auto& test : MMUTest::ALL_TESTS) {
@@ -175,5 +195,9 @@ int main(int argc, char *argv[])
     EmitAssemblyPostamble(a);
     delete a;
 
+/*     // Run the tests against our iigs mmu module
+    MMU_IIe *mmu_iie = new MMU_IIe(256, 48*1024, nullptr);
+    MMU_IIgs *mmu_iigs = new MMU_IIgs(256);
+ */
     return 0;
 }
