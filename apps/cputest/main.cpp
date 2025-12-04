@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     gs2_app_values.console_mode = false;
 
 // create MMU, map all pages to our "ram"
-    MMU *mmu = new MMU(256);
+    MMU *mmu = new MMU(256, GS2_PAGE_SIZE);
     for (int i = 0; i < 256; i++) {
         mmu->map_page_both(i, &memory[i*256], "TEST RAM");
     }

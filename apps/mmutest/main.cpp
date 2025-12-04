@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
 
 
 int main2(int argc, char **argv) {
-    MMU mmu(MEM_SIZE / PAGE_SIZE);
+    MMU mmu(MEM_SIZE / PAGE_SIZE, PAGE_SIZE);
     
     uint8_t *ram = new uint8_t[MEM_SIZE];
     for (int page = 0; page < MEM_SIZE / PAGE_SIZE; page++) {
