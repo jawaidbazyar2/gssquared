@@ -4,6 +4,7 @@
 #include "mmu.hpp"
 #include "util/DebugFormatter.hpp"
 
+#if 0
 /**
  * MMU provides the memory management interface for the CPU.
  * 
@@ -259,3 +260,4 @@ void MMU::get_page_table_entry(page_t page, page_table_entry_t *pte) {
 void MMU::set_page_table_entry(page_t page, page_table_entry_t *pte) {
     page_table[page] = *pte;
 }
+#endif
