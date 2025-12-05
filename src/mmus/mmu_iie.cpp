@@ -15,9 +15,11 @@ void MMU_IIe::init_map() {
     } */
     // Then 12K of ROM. D000 - FFFF.
     // the iie ROM file is from $C000 - $FFFF, so skip the first 0x1000 bytes here.
-    for (int i = 0; i < (ROM_KB / GS2_PAGE_SIZE); i++) {
-        map_page_read_only(i + 0xD0, main_rom_D0 + 0x1000 + i * GS2_PAGE_SIZE, "SYS_ROM");
-    }   
+    if (main_rom_D0 != nullptr) {
+        for (int i = 0; i < (ROM_KB / GS2_PAGE_SIZE); i++) {
+            map_page_read_only(i + 0xD0, main_rom_D0 + 0x1000 + i * GS2_PAGE_SIZE, "SYS_ROM");
+        }   
+    }
 }
 
 void MMU_IIe::power_on_randomize(uint8_t *ram, int ram_size) {
