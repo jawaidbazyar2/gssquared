@@ -364,23 +364,6 @@ void debug_window_t::render_pane_memory() {
         ptr = buffer;
         index = 0;
     }
-    //
-/*     display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
-    if (computer->platform->id == PLATFORM_APPLE_IIE || computer->platform->id == PLATFORM_APPLE_IIE_ENHANCED) {
-        iiememory_state_t *iiem = (iiememory_state_t *)computer->get_module_state(MODULE_IIEMEMORY);
-        MMU_IIe *mmu = (MMU_IIe *)computer->mmu;
-        if (iiem) {
-            // dump the page table
-            snprintf(buffer,255,"80ST: %1d RAMR: %1d RAMW: %1d ALTZP: %1d SLOTC3: %1d 80COL: %1d",
-                iiem->f_80store, iiem->f_ramrd, iiem->f_ramwrt, iiem->f_altzp, mmu->f_slotc3rom, ds->f_80col);
-            draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, buffer);
-            line++;
-            snprintf(buffer,255,"INTCX: %1d ALTCHR: %1d LC [ BNK1: %1d READ: %1d WRT: %1d ]",
-                mmu->f_intcxrom, ds->f_altcharset, iiem->FF_BANK_1, iiem->FF_READ_ENABLE, !iiem->_FF_WRITE_ENABLE);
-            draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, buffer);
-            line++;
-        }
-    } */
 
     for (auto &display : debug_displays) {
         separator_line(DEBUG_PANEL_MEMORY, base_line + line);
@@ -397,17 +380,6 @@ void debug_window_t::render_pane_memory() {
         }
     }
 
-  /*   mb_cpu_data *mb_d = (mb_cpu_data *)computer->get_slot_state(SLOT_4);
-    if (mb_d && mb_d->id == DEVICE_ID_MOCKINGBOARD) {
-        separator_line(DEBUG_PANEL_MEMORY, base_line + line);
-        DebugFormatter *df = debug_registers_6522(mb_d);
-        const std::vector<std::string>& lines = df->getLines();
-        for (int i = 0; i < lines.size(); i++) {
-            draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, lines[i].c_str());
-            line++;
-        }
-        delete df;
-    } */
 }
 
 void debug_window_t::render() {
