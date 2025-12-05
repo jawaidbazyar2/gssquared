@@ -100,14 +100,14 @@ inline void log_speaker_blip(cpu_state *cpu) {
     }
 }
 
-uint8_t speaker_memory_read(void *context, uint16_t address) {
+uint8_t speaker_memory_read(void *context, uint32_t address) {
     log_speaker_blip((cpu_state *)context);
     cpu_state *cpu = (cpu_state *)context;
     
     return (cpu->mmu->floating_bus_read());
 }
 
-void speaker_memory_write(void *context, uint16_t address, uint8_t value) {
+void speaker_memory_write(void *context, uint32_t address, uint8_t value) {
     log_speaker_blip((cpu_state *)context);
 }
 

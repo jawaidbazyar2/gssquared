@@ -613,7 +613,7 @@ void render_line_mono(cpu_state *cpu, int y) {
 }
 #endif
 
-uint8_t txt_bus_read_C050(void *context, uint16_t address) {
+uint8_t txt_bus_read_C050(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     // set graphics mode
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Graphics Mode\n");
@@ -623,12 +623,12 @@ uint8_t txt_bus_read_C050(void *context, uint16_t address) {
     return ds->mmu->floating_bus_read();
 }
 
-void txt_bus_write_C050(void *context, uint16_t address, uint8_t value) {
+void txt_bus_write_C050(void *context, uint32_t address, uint8_t value) {
     txt_bus_read_C050(context, address);
 }
 
 
-uint8_t txt_bus_read_C051(void *context, uint16_t address) {
+uint8_t txt_bus_read_C051(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
 // set text mode
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Text Mode\n");
@@ -638,12 +638,12 @@ uint8_t txt_bus_read_C051(void *context, uint16_t address) {
     return ds->mmu->floating_bus_read();
 }
 
-void txt_bus_write_C051(void *context, uint16_t address, uint8_t value) {
+void txt_bus_write_C051(void *context, uint32_t address, uint8_t value) {
     txt_bus_read_C051(context, address);
 }
 
 
-uint8_t txt_bus_read_C052(void *context, uint16_t address) {
+uint8_t txt_bus_read_C052(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     // set full screen
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Full Screen\n");
@@ -653,11 +653,11 @@ uint8_t txt_bus_read_C052(void *context, uint16_t address) {
     return ds->mmu->floating_bus_read();
 }
 
-void txt_bus_write_C052(void *context, uint16_t address, uint8_t value) {
+void txt_bus_write_C052(void *context, uint32_t address, uint8_t value) {
     txt_bus_read_C052(context, address);
 }
 
-uint8_t txt_bus_read_C053(void *context, uint16_t address) {
+uint8_t txt_bus_read_C053(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     // set split screen
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Split Screen\n");
@@ -667,12 +667,12 @@ uint8_t txt_bus_read_C053(void *context, uint16_t address) {
     return ds->mmu->floating_bus_read();
 }
 
-void txt_bus_write_C053(void *context, uint16_t address, uint8_t value) {
+void txt_bus_write_C053(void *context, uint32_t address, uint8_t value) {
     txt_bus_read_C053(context, address);
 }
 
 
-uint8_t txt_bus_read_C054(void *context, uint16_t address) {
+uint8_t txt_bus_read_C054(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     // switch to screen 1
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Switching to screen 1\n");
@@ -682,11 +682,11 @@ uint8_t txt_bus_read_C054(void *context, uint16_t address) {
     return ds->mmu->floating_bus_read();
 }
 
-void txt_bus_write_C054(void *context, uint16_t address, uint8_t value) {
+void txt_bus_write_C054(void *context, uint32_t address, uint8_t value) {
     txt_bus_read_C054(context, address);
 }
 
-uint8_t txt_bus_read_C055(void *context, uint16_t address) {
+uint8_t txt_bus_read_C055(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     // switch to screen 2
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Switching to screen 2\n");
@@ -696,12 +696,12 @@ uint8_t txt_bus_read_C055(void *context, uint16_t address) {
     return ds->mmu->floating_bus_read();
 }
 
-void txt_bus_write_C055(void *context, uint16_t address, uint8_t value) {
+void txt_bus_write_C055(void *context, uint32_t address, uint8_t value) {
     txt_bus_read_C055(context, address);
 }
 
 
-uint8_t txt_bus_read_C056(void *context, uint16_t address) {
+uint8_t txt_bus_read_C056(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     // set lo-res (graphics) mode
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Lo-Res Mode\n");
@@ -711,11 +711,11 @@ uint8_t txt_bus_read_C056(void *context, uint16_t address) {
     return ds->mmu->floating_bus_read();
 }
 
-void txt_bus_write_C056(void *context, uint16_t address, uint8_t value) {
+void txt_bus_write_C056(void *context, uint32_t address, uint8_t value) {
     txt_bus_read_C056(context, address);
 }
 
-uint8_t txt_bus_read_C057(void *context, uint16_t address) {
+uint8_t txt_bus_read_C057(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     // set hi-res (graphics) mode
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Set Hi-Res Mode\n");
@@ -725,11 +725,11 @@ uint8_t txt_bus_read_C057(void *context, uint16_t address) {
     return ds->mmu->floating_bus_read();
 }
 
-void txt_bus_write_C057(void *context, uint16_t address, uint8_t value) {
+void txt_bus_write_C057(void *context, uint32_t address, uint8_t value) {
     txt_bus_read_C057(context, address);
 }
 
-void ds_bus_write_C00X(void *context, uint16_t address, uint8_t value) {
+void ds_bus_write_C00X(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     switch (address) {
         case 0xC00C:
@@ -855,7 +855,7 @@ void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *
     computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
 }
 
-void display_write_switches(void *context, uint16_t address, uint8_t value) {
+void display_write_switches(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     switch (address) {
         case 0xC00E:
@@ -872,12 +872,12 @@ void display_write_switches(void *context, uint16_t address, uint8_t value) {
 /**
  * IIGS Video Control Registers
  */
-uint8_t display_read_C029(void *context, uint16_t address) {
+uint8_t display_read_C029(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     return ds->new_video;
 }
 
-void display_write_C029(void *context, uint16_t address, uint8_t value) {
+void display_write_C029(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     ds->new_video = value;
     if (ds->new_video & 0x80) {
@@ -893,12 +893,12 @@ void display_write_C029(void *context, uint16_t address, uint8_t value) {
  * IIGS Text Control Registers
  */
 
-uint8_t display_read_C022(void *context, uint16_t address) {
+uint8_t display_read_C022(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     return ds->text_color;
 }
 
-void display_write_C022(void *context, uint16_t address, uint8_t value) {
+void display_write_C022(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     ds->text_color = value;
     ds->video_scanner->set_text_bg(value & 0x0F);
@@ -909,12 +909,12 @@ void display_write_C022(void *context, uint16_t address, uint8_t value) {
 }
 
 // TODO: this register is split between realtime clock and border color. and needs to override speaker.
-uint8_t display_read_C034(void *context, uint16_t address) {
+uint8_t display_read_C034(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     return ds->border_color;
 }
 
-void display_write_C034(void *context, uint16_t address, uint8_t value) {
+void display_write_C034(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     ds->border_color = value & 0x0F;
     ds->video_scanner->set_border_color(value);
@@ -925,7 +925,7 @@ void display_write_C034(void *context, uint16_t address, uint8_t value) {
  * IIe
  */
 
-uint8_t display_read_C01E(void *context, uint16_t address) {
+uint8_t display_read_C01E(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     uint8_t fl = (ds->f_altcharset) ? 0x80 : 0x00;
     
@@ -934,7 +934,7 @@ uint8_t display_read_C01E(void *context, uint16_t address) {
     return kbv | fl;
 }
 
-uint8_t display_read_C01F(void *context, uint16_t address) {
+uint8_t display_read_C01F(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     uint8_t fl = (ds->f_80col) ? 0x80 : 0x00;
 
@@ -943,7 +943,7 @@ uint8_t display_read_C01F(void *context, uint16_t address) {
     return kbv | fl;
 }
 
-uint8_t display_read_C05EF(void *context, uint16_t address) {
+uint8_t display_read_C05EF(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     ds->f_double_graphics = (address & 0x1); // this is inverted sense
     ds->video_scanner->set_dblres_f(!ds->f_double_graphics);
@@ -952,7 +952,7 @@ uint8_t display_read_C05EF(void *context, uint16_t address) {
     return 0;
 }
 
-void display_write_C05EF(void *context, uint16_t address, uint8_t value) {
+void display_write_C05EF(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     ds->f_double_graphics = (address & 0x1); // this is inverted sense
     ds->video_scanner->set_dblres_f(!ds->f_double_graphics);
@@ -960,7 +960,7 @@ void display_write_C05EF(void *context, uint16_t address, uint8_t value) {
     ds->video_system->set_full_frame_redraw();
 }
 
-uint8_t display_read_vbl(void *context, uint16_t address) {
+uint8_t display_read_vbl(void *context, uint32_t address) {
     // This is enough to get basic VBL working. Total Replay boots anyway.
     display_state_t *ds = (display_state_t *)context;
 

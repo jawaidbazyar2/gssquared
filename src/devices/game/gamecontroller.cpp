@@ -115,7 +115,7 @@ JoystickValues convertJoystickValues(int32_t x, int32_t y) {
     };
 }
 
-uint8_t strobe_game_inputs(void *context, uint16_t address) {
+uint8_t strobe_game_inputs(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
 
@@ -152,11 +152,11 @@ uint8_t strobe_game_inputs(void *context, uint16_t address) {
     return ds->mmu->floating_bus_read();
 }
 
-void strobe_game_inputs_w(void *context, uint16_t address, uint8_t value) {
+void strobe_game_inputs_w(void *context, uint32_t address, uint8_t value) {
     strobe_game_inputs(context, address);
 }
 
-uint8_t read_game_input_0(void *context, uint16_t address) {
+uint8_t read_game_input_0(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     uint8_t val;
@@ -168,7 +168,7 @@ uint8_t read_game_input_0(void *context, uint16_t address) {
     return val | (ds->mmu->floating_bus_read() & 0x7F);
 }
 
-uint8_t read_game_input_1(void *context, uint16_t address) {
+uint8_t read_game_input_1(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     
@@ -181,7 +181,7 @@ uint8_t read_game_input_1(void *context, uint16_t address) {
     return val | (ds->mmu->floating_bus_read() & 0x7F);
 }
 
-uint8_t read_game_input_2(void *context, uint16_t address) {
+uint8_t read_game_input_2(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
 
@@ -194,7 +194,7 @@ uint8_t read_game_input_2(void *context, uint16_t address) {
     return val | (ds->mmu->floating_bus_read() & 0x7F);
 }
 
-uint8_t read_game_input_3(void *context, uint16_t address) {
+uint8_t read_game_input_3(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     
@@ -207,7 +207,7 @@ uint8_t read_game_input_3(void *context, uint16_t address) {
     return val | (ds->mmu->floating_bus_read() & 0x7F);
 }
 
-uint8_t read_game_switch_0(void *context, uint16_t address) {
+uint8_t read_game_switch_0(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     
@@ -238,7 +238,7 @@ uint8_t read_game_switch_0(void *context, uint16_t address) {
 
 }
 
-uint8_t read_game_switch_1(void *context, uint16_t address) {
+uint8_t read_game_switch_1(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
 
@@ -279,7 +279,7 @@ uint8_t read_game_switch_1(void *context, uint16_t address) {
    /*  } */
 }
 
-uint8_t read_game_switch_2(void *context, uint16_t address) {
+uint8_t read_game_switch_2(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
 

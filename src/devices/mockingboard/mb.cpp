@@ -1001,7 +1001,7 @@ void mb_t2_timer_callback(uint64_t instanceID, void *user_data) {
     }
 }
 
-void mb_write_Cx00(void *context, uint16_t addr, uint8_t data) {
+void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
     mb_cpu_data *mb_d = (mb_cpu_data *)context;
     uint8_t slot = (addr & 0x0F00) >> 8;
     uint8_t alow = addr & 0x7F;
@@ -1193,7 +1193,7 @@ inline uint64_t calc_cycle_diff_t2(mb_6522_regs *tc, uint64_t cycles) {
     return latchval - ((cycles - tc->t2_triggered_cycles) % latchval);
 }
 
-uint8_t mb_read_Cx00(void *context, uint16_t addr) {
+uint8_t mb_read_Cx00(void *context, uint32_t addr) {
     mb_cpu_data *mb_d = (mb_cpu_data *)context;
     cpu_state *cpu = mb_d->computer->cpu;
     uint8_t slot = (addr & 0x0F00) >> 8;

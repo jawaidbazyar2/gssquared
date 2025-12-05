@@ -20,7 +20,7 @@
 #include "memexp.hpp"
 #include "debug.hpp"
 
-void memexp_write_C0x0(void *context, uint16_t addr, uint8_t data) {
+void memexp_write_C0x0(void *context, uint32_t addr, uint8_t data) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
     memexp_data * memexp_d = (memexp_data *)get_slot_state(cpu, (SlotType_t)slot);
@@ -37,7 +37,7 @@ void memexp_write_C0x0(void *context, uint16_t addr, uint8_t data) {
     }
 }
 
-void memexp_write_C0x1(void *context, uint16_t addr, uint8_t data) {
+void memexp_write_C0x1(void *context, uint32_t addr, uint8_t data) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
     memexp_data * memexp_d = (memexp_data *)get_slot_state(cpu, (SlotType_t)slot);
@@ -51,7 +51,7 @@ void memexp_write_C0x1(void *context, uint16_t addr, uint8_t data) {
     }
 }
 
-void memexp_write_C0x2(void *context, uint16_t addr, uint8_t data) {
+void memexp_write_C0x2(void *context, uint32_t addr, uint8_t data) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
     memexp_data * memexp_d = (memexp_data *)get_slot_state(cpu, (SlotType_t)slot);
@@ -59,7 +59,7 @@ void memexp_write_C0x2(void *context, uint16_t addr, uint8_t data) {
     memexp_d->addr_high = data;
 }
 
-uint8_t memexp_read_C0x0(void *context, uint16_t addr) {
+uint8_t memexp_read_C0x0(void *context, uint32_t addr) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
     memexp_data * memexp_d = (memexp_data *)get_slot_state(cpu, (SlotType_t)slot);
@@ -67,7 +67,7 @@ uint8_t memexp_read_C0x0(void *context, uint16_t addr) {
     return memexp_d->addr_low;
 }
 
-uint8_t memexp_read_C0x1(void *context, uint16_t addr) {
+uint8_t memexp_read_C0x1(void *context, uint32_t addr) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
     memexp_data * memexp_d = (memexp_data *)get_slot_state(cpu, (SlotType_t)slot);
@@ -75,7 +75,7 @@ uint8_t memexp_read_C0x1(void *context, uint16_t addr) {
     return memexp_d->addr_med;
 }
 
-uint8_t memexp_read_C0x2(void *context, uint16_t addr) {
+uint8_t memexp_read_C0x2(void *context, uint32_t addr) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
     memexp_data * memexp_d = (memexp_data *)get_slot_state(cpu, (SlotType_t)slot);
@@ -83,7 +83,7 @@ uint8_t memexp_read_C0x2(void *context, uint16_t addr) {
     return memexp_d->addr_high | 0xF0; // hi nybble here is always 0xF if card has 1MB or less.
 }
 
-uint8_t memexp_read_C0x3(void *context, uint16_t addr) {
+uint8_t memexp_read_C0x3(void *context, uint32_t addr) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
     memexp_data * memexp_d = (memexp_data *)get_slot_state(cpu, (SlotType_t)slot);
@@ -96,7 +96,7 @@ uint8_t memexp_read_C0x3(void *context, uint16_t addr) {
     return data;
 }
 
-void memexp_write_C0x3(void *context, uint16_t addr, uint8_t data) {
+void memexp_write_C0x3(void *context, uint32_t addr, uint8_t data) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
     memexp_data * memexp_d = (memexp_data *)get_slot_state(cpu, (SlotType_t)slot);

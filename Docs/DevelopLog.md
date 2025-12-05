@@ -7627,3 +7627,57 @@ $D-$F: language card
 If shadowing enabled, this functionality must be replicated in banks $00 (and potentially all even banks). So set the bank map for those.
 
 Shadowing is a separate stage, where we pass the original address/val down through the "MegaII" (i.e. MMU_IIe).
+
+## Dec 4, 2025
+
+ok the test generator for GS MMU stuff is in place, and a number of tests written so far which all pass on a real GS. Some tests don't pass on KEGS but these are all related to "all banks shadow" which KEGS only handles far enough to make one demo work. (Same with the other currently working GS emulators).
+
+Have done a minor refactor of MMU to allow for page sizes other than 256 bytes; MMU_IIgs of course is using 64KByte "pages" (i.e. banks). Does not seem to be affecting performance using variables instead of constant for page table calculations and memory fetches.
+
+looking at using read and write handlers for certain banks now (e.g., ram banks above 0x80 should return the bank number on a read).
+
+I am not directly using set_
+Terror!
+
+I had to convert all the read_h and write_h routines in various places to use 32-bit address inputs, previously they were all 16-bit. Now, I don't -think- there were any places where I was sending in a 32-bit value with stuff in the high half to these 16-bit routines. But, this change touched every device so it is certainly possible something is screwed up here.
+
+And thinking about this, all these things are in the MMU. But could I even have a different interface on the MMU_IIgs for these routines versus the MMU_IIe? Could IIgs override MMU's 16-bit with a 32-bit? 
+It seems like it might have sped up the IIe a hair in LS.
+
+Cursory testing shows that I didn't break anything too seriously..
+
+## Dec 5, 2025
+
+Let's give some serious thought to 
+
+The GS emulation of IIe Aux Mem and II+ LC stuff can apply to many banks. At minimum, $00-$01, and $E0-$E1. But also every other bank. So the address transformations need to be generic.
+
+In the II+ and IIe, we use the page table for everything, sometimes requiring updating/changing many PTEs for a single softswitch access. E.g., RAMWRT requires us to change 190 PTEs sometimes. And it requires breaking down the 64K bank into 256 pages.
+
+For GS stuff I would prefer a transform that converts an address based on the softswitch settings. Then the same transform routine can be used across any relevant bank.
+
+The transforms that are required:
+
+IIe Memory:
+    even bank w/shadow, or bank $E0: access memory in AUX bank. (i.e., add $1'0000 to effective address)
+    access IIe internal vs card ROM is $C100-$CFFF: (lookup effective address from table)
+    access IIgs built-in slot ROM vs add-in card slot ROM (lookup effective address from table)
+
+II+ Memory:
+    access RAM vs ROM
+        access ROM "bank" (i.e., use the ROM base address)
+    access bank 1 vs bank 2
+        $D000 -> $C000 if bank 1; subtract $0'1000.
+
+| 7 | ALTZP | 1 = ZP, Stack, LC are in Main; 0 = in Aux |
+| 6 | PAGE2 | 1 = Text Page 2 Selected |
+| 5 | RAMRD | 1 = Aux RAM is read-enabled |
+| 4 | RAMWRT | 1 = aux RAM is write-enabled |
+|   | 80STORE | 1 = 80-store is active (PAGE2 controls Main vs Aux) |
+
+| 3 | RDROM | 1 = ROM is read enabled in LC area; 0 = RAM read enabled in LC area |
+| 2 | LCBNK2 | 1 = LC Bank 1 Selected |
+
+| 0 | INTCXROM | 1 = internal ROM at $Cx00 is selected; 0 = peripheral-card ROM |
+
+| 1 | ROMBANK | Must always be 0 |

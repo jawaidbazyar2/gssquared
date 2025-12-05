@@ -3,7 +3,7 @@
 #include "debug.hpp"
 #include "parallel.hpp"
 
-void parallel_write_C0x0(void *context, uint16_t addr, uint8_t data) {
+void parallel_write_C0x0(void *context, uint32_t addr, uint8_t data) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
     parallel_data * parallel_d = (parallel_data *)get_slot_state(cpu, (SlotType_t)slot);

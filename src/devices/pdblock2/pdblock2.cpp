@@ -223,7 +223,7 @@ void unmount_pdblock2(cpu_state *cpu, uint64_t key) {
     }
 }
 
-void pdblock2_write_C0x0(void *context, uint16_t addr, uint8_t data) {
+void pdblock2_write_C0x0(void *context, uint32_t addr, uint8_t data) {
     cpu_state *cpu = (cpu_state *)context;
     SlotType_t slot = (SlotType_t)((addr - 0xC080) / 0x10);
     pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, slot);
@@ -244,7 +244,7 @@ void pdblock2_write_C0x0(void *context, uint16_t addr, uint8_t data) {
     } 
 }
 
-uint8_t pdblock2_read_C0x0(void *context, uint16_t addr) {
+uint8_t pdblock2_read_C0x0(void *context, uint32_t addr) {
     cpu_state *cpu = (cpu_state *)context;
     SlotType_t slot = (SlotType_t)((addr - 0xC080) / 0x10);
     pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, slot);

@@ -31,7 +31,7 @@ void mouse_reset(mouse_state_t *ds) {
     ds->last_y_pos = 0;
 }
 
-uint8_t mouse_read_c0xx(void *context, uint16_t address) {
+uint8_t mouse_read_c0xx(void *context, uint32_t address) {
     mouse_state_t *ds = (mouse_state_t *)context;
     uint8_t val;
     uint8_t addr = address & 0x0F;
@@ -97,7 +97,7 @@ void clamp_mouse(mouse_state_t *ds, int &x, int &y) {
     }
 }
 
-void mouse_write_c0xx(void *context, uint16_t address, uint8_t value) {
+void mouse_write_c0xx(void *context, uint32_t address, uint8_t value) {
     mouse_state_t *ds = (mouse_state_t *)context;
     uint8_t addr = address & 0x0F;
     switch (addr) {

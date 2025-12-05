@@ -86,7 +86,7 @@ void prodos_clock_getln_handler(cpu_state *cpu, char *buf) {
     //printf("prodos_clock_getln_handler: %s\n", buf);
 }
 
-void prodos_clock_write_register(void *context, uint16_t address, uint8_t value) {
+void prodos_clock_write_register(void *context, uint32_t address, uint8_t value) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (address - 0xC080) >> 4;
     prodos_clock_state * prodosclock_d = (prodos_clock_state *)get_slot_state(cpu, (SlotType_t)slot);

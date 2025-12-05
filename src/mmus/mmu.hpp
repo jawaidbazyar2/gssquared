@@ -20,8 +20,8 @@ typedef uint8_t *page_ref;
 typedef uint32_t page_t;
 
 // Function pointer type for memory bus handlers
-typedef uint8_t (*memory_read_func)(void *context, uint16_t address);
-typedef void (*memory_write_func)(void *context, uint16_t address, uint8_t value);
+typedef uint8_t (*memory_read_func)(void *context, uint32_t address);
+typedef void (*memory_write_func)(void *context, uint32_t address, uint8_t value);
 
 struct read_handler_t {
     memory_read_func read;

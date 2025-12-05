@@ -438,7 +438,7 @@ int diskii_tracknumber_on(cpu_state *cpu) {
  * (some images might be half tracked or even quarter tracked. I don't handle 1/4 track images yet.)
  */
 
-uint8_t diskII_read_C0xx(void *context, uint16_t address) {
+uint8_t diskII_read_C0xx(void *context, uint32_t address) {
     //cpu_state *cpu = (cpu_state *)context;
     diskII_controller *thisSlot = (diskII_controller *)context;
     cpu_state *cpu = thisSlot->computer->cpu;
@@ -604,7 +604,7 @@ uint8_t diskII_read_C0xx(void *context, uint16_t address) {
     return 0xEE;
 }
 
-void diskII_write_C0xx(void *context, uint16_t address, uint8_t value) {
+void diskII_write_C0xx(void *context, uint32_t address, uint8_t value) {
     //cpu_state *cpu = (cpu_state *)context;
     diskII_controller *diskII_d = (diskII_controller *)context;
     cpu_state *cpu = diskII_d->computer->cpu;

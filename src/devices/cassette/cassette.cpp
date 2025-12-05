@@ -5,7 +5,7 @@
 
 // This basically does nothing right now. Just return floating bus state.
 
-uint8_t cassette_memory_read(void *context, uint16_t address) {
+uint8_t cassette_memory_read(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     return cpu->mmu->floating_bus_read() & 0x7F;
 }

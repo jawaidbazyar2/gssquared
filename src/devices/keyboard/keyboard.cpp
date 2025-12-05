@@ -39,7 +39,7 @@ inline void kb_clear_strobe(keyboard_state_t *kb_state) {
     if (kb_state->mk) kb_state->mk->last_key_val = kb_state->kb_key_strobe;
 }
 
-uint8_t kb_read_C00X(void *context, uint16_t address) {
+uint8_t kb_read_C00X(void *context, uint32_t address) {
     //fprintf(stderr, "kb_memory_read %04X\n", address);
     keyboard_state_t *kb_state = (keyboard_state_t *)context;
 
@@ -58,7 +58,7 @@ uint8_t kb_read_C00X(void *context, uint16_t address) {
     return key;
 }
 
-uint8_t kb_read_C01X(void *context, uint16_t address) {
+uint8_t kb_read_C01X(void *context, uint32_t address) {
     keyboard_state_t *kb_state = (keyboard_state_t *)context;
 
     // Clear the keyboard latch
@@ -67,7 +67,7 @@ uint8_t kb_read_C01X(void *context, uint16_t address) {
 }
 
 // iie only
-uint8_t kb_read_C010(void *context, uint16_t address) {
+uint8_t kb_read_C010(void *context, uint32_t address) {
     keyboard_state_t *kb_state = (keyboard_state_t *)context;
 
     // Clear the keyboard latch
@@ -86,7 +86,7 @@ uint8_t kb_read_C010(void *context, uint16_t address) {
     return kb_state->kb_key_strobe | (akd ? 0x80 : 0x00);
 }
 
-void kb_write_C01X(void *context, uint16_t address, uint8_t value) {
+void kb_write_C01X(void *context, uint32_t address, uint8_t value) {
     keyboard_state_t *kb_state = (keyboard_state_t *)context;
 
     // Clear the keyboard latch

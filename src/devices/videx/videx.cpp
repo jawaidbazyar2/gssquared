@@ -82,7 +82,7 @@ void update_videx_screen_memory(videx_data * videx_d) {
     videx_d->mmu->map_c1cf_page_read_only(0xCD, videx_d->screen_memory + (videx_d->selected_page * 2) * 0x100 + 0x100, "VIDEXRAM");
 }
 
-uint8_t videx_read_C0xx(void *context, uint16_t addr) {
+uint8_t videx_read_C0xx(void *context, uint32_t addr) {
     videx_data * videx_d = (videx_data *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
 
@@ -99,7 +99,7 @@ uint8_t videx_read_C0xx(void *context, uint16_t addr) {
     return 0x00; // TODO: return floating bus - one emu says return 0? openemu returns floating for sure.
 }
 
-void videx_write_C0xx(void *context, uint16_t addr, uint8_t data) {
+void videx_write_C0xx(void *context, uint32_t addr, uint8_t data) {
     videx_data * videx_d = (videx_data *)context;
     uint8_t slot = (addr - 0xC080) >> 4;
     uint8_t reg = addr & 0xF;

@@ -27,7 +27,7 @@ uint8_t read_annunciator(cpu_state *cpu, uint8_t id) {
     return anc_d->annunciators[id];
 }
 
-uint8_t annunciator_read_C0xx_anc0(void *context, uint16_t addr) {
+uint8_t annunciator_read_C0xx_anc0(void *context, uint32_t addr) {
     cpu_state *cpu = (cpu_state *)context;
     annunciator_state_t * anc_d = (annunciator_state_t *)get_module_state(cpu, MODULE_ANNUNCIATOR);
     uint8_t anc_id = (addr & 0x7) >> 1;
@@ -37,7 +37,7 @@ uint8_t annunciator_read_C0xx_anc0(void *context, uint16_t addr) {
     return anc_d->mmu->floating_bus_read(); // TODO: return floating bus.
 }
 
-void annunciator_write_C0xx_anc0(void *context, uint16_t addr, uint8_t data) {
+void annunciator_write_C0xx_anc0(void *context, uint32_t addr, uint8_t data) {
     cpu_state *cpu = (cpu_state *)context;
     annunciator_state_t * anc_d = (annunciator_state_t *)get_module_state(cpu, MODULE_ANNUNCIATOR);
     uint8_t anc_id = (addr & 0x7) >> 1;

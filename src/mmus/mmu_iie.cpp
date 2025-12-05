@@ -65,7 +65,7 @@ void MMU_IIe::reset() {
     compose_c1cf();
 }
 
-void iie_mmu_handle_C00X_write(void *context, uint16_t address, uint8_t value) {
+void iie_mmu_handle_C00X_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIe *mmu = (MMU_IIe *)context;
 
     switch (address) {

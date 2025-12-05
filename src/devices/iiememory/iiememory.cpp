@@ -97,7 +97,7 @@ void bsr_map_memory(iiememory_state_t *lc) {
     }
 }
 
-uint8_t bsr_read_C0xx(void *context, uint16_t address) {
+uint8_t bsr_read_C0xx(void *context, uint32_t address) {
     iiememory_state_t *lc = (iiememory_state_t *)context;
 
     if (DEBUG(DEBUG_LANGCARD)) printf("languagecard read %04X ", address);
@@ -160,7 +160,7 @@ uint8_t bsr_read_C0xx(void *context, uint16_t address) {
 }
 
 
-void bsr_write_C0xx(void *context, uint16_t address, uint8_t value) {
+void bsr_write_C0xx(void *context, uint32_t address, uint8_t value) {
     iiememory_state_t *lc = (iiememory_state_t *)context;
 
     if (DEBUG(DEBUG_LANGCARD)) printf("languagecard write %04X value: %02X\n", address, value);
@@ -205,7 +205,7 @@ void bsr_write_C0xx(void *context, uint16_t address, uint8_t value) {
     bsr_map_memory(lc);
 }
 
-uint8_t bsr_read_C011(void *context, uint16_t address) {
+uint8_t bsr_read_C011(void *context, uint32_t address) {
     iiememory_state_t *lc = (iiememory_state_t *)context;
 
     if (DEBUG(DEBUG_LANGCARD)) printf("languagecard_read_C011 %04X FF_BANK_1: %d\n", address, lc->FF_BANK_1);
@@ -216,7 +216,7 @@ uint8_t bsr_read_C011(void *context, uint16_t address) {
     return kbv | fl;
 }
 
-uint8_t bsr_read_C012(void *context, uint16_t address) {
+uint8_t bsr_read_C012(void *context, uint32_t address) {
     iiememory_state_t *lc = (iiememory_state_t *)context;
 
     if (DEBUG(DEBUG_LANGCARD)) printf("languagecard_read_C012 %04X FF_READ_ENABLE: %d\n", address, lc->FF_READ_ENABLE);
@@ -373,7 +373,7 @@ void iiememory_compose_map(iiememory_state_t *iiememory_d) {
     //iiememory_debug(iiememory_d);
 }
 
-void iiememory_write_C00X(void *context, uint16_t address, uint8_t data) {
+void iiememory_write_C00X(void *context, uint32_t address, uint8_t data) {
     iiememory_state_t *iiememory_d = (iiememory_state_t *)context;
     uint8_t *main_rom = iiememory_d->mmu->get_rom_base();
     display_state_t *ds = (display_state_t *)iiememory_d->computer->get_module_state(MODULE_DISPLAY);
@@ -416,7 +416,7 @@ void iiememory_write_C00X(void *context, uint16_t address, uint8_t data) {
 
 }
 
-uint8_t iiememory_read_C01X(void *context, uint16_t address) {
+uint8_t iiememory_read_C01X(void *context, uint32_t address) {
     iiememory_state_t *iiememory_d = (iiememory_state_t *)context;
     update_display_flags(iiememory_d);
     uint8_t fl = 0x00;
@@ -469,7 +469,7 @@ uint8_t iiememory_read_C01X(void *context, uint16_t address) {
     //return iie_kb_read_strobe(iiememory_d->computer) | fl;
 }
 
-uint8_t iiememory_read_display(void *context, uint16_t address) {
+uint8_t iiememory_read_display(void *context, uint32_t address) {
     iiememory_state_t *iiememory_d = (iiememory_state_t *)context;
     display_state_t *ds = (display_state_t *)iiememory_d->computer->get_module_state(MODULE_DISPLAY);
 
@@ -509,7 +509,7 @@ uint8_t iiememory_read_display(void *context, uint16_t address) {
 }
 
 // write - do same as read but disregard return value.
-void iiememory_write_display(void *context, uint16_t address, uint8_t data) {
+void iiememory_write_display(void *context, uint32_t address, uint8_t data) {
     iiememory_state_t *iiememory_d = (iiememory_state_t *)context;
     iiememory_read_display(context, address);
 }

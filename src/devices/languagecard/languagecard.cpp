@@ -61,7 +61,7 @@ void set_memory_pages_based_on_flags(languagecard_state_t *lc) {
     }
 }
 
-uint8_t languagecard_read_C0xx(void *context, uint16_t address) {
+uint8_t languagecard_read_C0xx(void *context, uint32_t address) {
     languagecard_state_t *lc = (languagecard_state_t *)context;
 
     if (DEBUG(DEBUG_LANGCARD)) printf("languagecard read %04X ", address);
@@ -124,7 +124,7 @@ uint8_t languagecard_read_C0xx(void *context, uint16_t address) {
 }
 
 
-void languagecard_write_C0xx(void *context, uint16_t address, uint8_t value) {
+void languagecard_write_C0xx(void *context, uint32_t address, uint8_t value) {
     languagecard_state_t *lc = (languagecard_state_t *)context;
 
     if (DEBUG(DEBUG_LANGCARD)) printf("languagecard write %04X value: %02X\n", address, value);
@@ -169,14 +169,14 @@ void languagecard_write_C0xx(void *context, uint16_t address, uint8_t value) {
     set_memory_pages_based_on_flags(lc);
 }
 
-uint8_t languagecard_read_C011(void *context, uint16_t address) {
+uint8_t languagecard_read_C011(void *context, uint32_t address) {
     languagecard_state_t *lc = (languagecard_state_t *)context;
 
     if (DEBUG(DEBUG_LANGCARD)) printf("languagecard_read_C011 %04X FF_BANK_1: %d\n", address, lc->FF_BANK_1);
    return (lc->FF_BANK_1 == 0) ? 0x80 : 0x00;
 }
 
-uint8_t languagecard_read_C012(void *context, uint16_t address) {
+uint8_t languagecard_read_C012(void *context, uint32_t address) {
     languagecard_state_t *lc = (languagecard_state_t *)context;
 
     if (DEBUG(DEBUG_LANGCARD)) printf("languagecard_read_C012 %04X FF_READ_ENABLE: %d\n", address, lc->FF_READ_ENABLE);

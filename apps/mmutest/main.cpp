@@ -36,22 +36,22 @@ void fake_videx_c8xx(void *context, SlotType_t slot) {
     }
 }
 
-uint8_t fake_C000_read_handler(void *context, uint16_t address) {
+uint8_t fake_C000_read_handler(void *context, uint32_t address) {
     printf("C000 handler called for address %04X\n", address);
     return 0;
 };
 
-uint8_t fake_mb_CSXX_read_handler(void *context, uint16_t address) {
+uint8_t fake_mb_CSXX_read_handler(void *context, uint32_t address) {
     printf("CSXX MB read handler called for address %04X\n", address);
     return 0;
 };
 
-void fake_mb_CSXX_write_handler(void *context, uint16_t address, uint8_t value) {
+void fake_mb_CSXX_write_handler(void *context, uint32_t address, uint8_t value) {
     printf("CSXX MB write handler called for address %04X: %02X\n", address, value);
     return;
 };
 
-void fake_text_page_write_handler(void *context, uint16_t address, uint8_t value) {
+void fake_text_page_write_handler(void *context, uint32_t address, uint8_t value) {
     //printf("T");
     // calculate modified line here. Verified we are indeed being called.
     return;

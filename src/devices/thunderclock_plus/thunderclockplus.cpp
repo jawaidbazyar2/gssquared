@@ -88,7 +88,7 @@ uint64_t get_thunderclock_time() {
 /**
  * The first bit we fetch is the LSB of the seconds-units field. 
  */
-uint8_t thunderclock_read_register(void *context, uint16_t address) {
+uint8_t thunderclock_read_register(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (address - 0xC080) >> 4;
     thunderclock_state * thunderclock_d = (thunderclock_state *)get_slot_state(cpu, (SlotType_t)slot);
@@ -101,7 +101,7 @@ uint8_t thunderclock_read_register(void *context, uint16_t address) {
     return reg;
 }
 
-void thunderclock_write_register(void *context, uint16_t address, uint8_t value) {
+void thunderclock_write_register(void *context, uint32_t address, uint8_t value) {
     cpu_state *cpu = (cpu_state *)context;
     uint8_t slot = (address - 0xC080) >> 4;
     thunderclock_state * thunderclock_d = (thunderclock_state *)get_slot_state(cpu, (SlotType_t)slot);
