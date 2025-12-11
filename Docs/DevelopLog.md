@@ -7669,11 +7669,18 @@ II+ Memory:
     access bank 1 vs bank 2
         $D000 -> $C000 if bank 1; subtract $0'1000.
 
+* Main/Aux
+
+The bits in the State register are those needed for efficient interrupt handling. I guess they don't figure people will mess with 80STORE, HIRES, etc. in an interrupt. And they're probably right.
+
 | 7 | ALTZP | 1 = ZP, Stack, LC are in Main; 0 = in Aux |
 | 6 | PAGE2 | 1 = Text Page 2 Selected |
 | 5 | RAMRD | 1 = Aux RAM is read-enabled |
 | 4 | RAMWRT | 1 = aux RAM is write-enabled |
 |   | 80STORE | 1 = 80-store is active (PAGE2 controls Main vs Aux) |
+|   | HIRES | 1 = hires graphics mode active |
+
+These 6 flags plus page number put into a LUT to return a bool 0 = main 1 = aux that adds $1'0000 to effective address.
 
 | 3 | RDROM | 1 = ROM is read enabled in LC area; 0 = RAM read enabled in LC area |
 | 2 | LCBNK2 | 1 = LC Bank 1 Selected |
@@ -7681,3 +7688,88 @@ II+ Memory:
 | 0 | INTCXROM | 1 = internal ROM at $Cx00 is selected; 0 = peripheral-card ROM |
 
 | 1 | ROMBANK | Must always be 0 |
+
+So we also have to configure the MegaII when these (and other) softswitches are hit. I think the thing to do, is call the gsmmu->mmu_iie field "megaii"; and then to have replacements for the routines in iiememory in mmu_iigs. The megaII must be configured like iiememory does it, page at a time. Well no, it doesn't, actually. We could set page table handlers for read_h and write_h just like we're doing for banks, and handle it that way, instead of constantly changing the PTEs. This is trading perhaps some runtime performance for taking time every time we change softswitches - it's the whole reason I went with the PTE approach in the first place. At some point I should do a performance test harness for this...
+
+The other key difference here is I am building most of this logic into iigs_mmu instead of a separate iigsmemory device. (remember, iigs_mmu is basically an implementation of the FPI). This is the end of the trail for this class - nothing will be overriding it later. And if I do an "Apple IIx" thing later, then it is gonna get its own mmu class because that will be very different from this. And software compatibility with weird things like Demos won't be an issue.
+
+OK, I have made peace with this interesting approach.
+
+$00-$01: shadow_bank_(read|write)
+    if C000 and not inhibit, then call megaii->readwrite
+$E0: bank_e0_(read|write)
+    call megaii->read|write
+$E1: bank_e1_(read|write)
+    do what now? need some special handling here
+
+megaii_c0xx_(read|write): C0XX handlers
+triggered by calling megaii->write(Cxxx)
+
+What should the interface to the Mega II be. There are two:
+normal Main bank interface. When writing into Even Shadowed, or, $E0. uses pagetable entries.
+Direct-to-Aux bank interface (only from IIgs). this is if shadow_bank bit 17 is high. When writing into Odd Shadowed or $E1.
+let's call these MainWrite and AuxWrite.
+MainWrite just sends byte to the MegaII. AuxWrite must index into the aux memory directly.
+
+00 ->  MainWrite -> MegaII(16-bit)
+E0 ->
+
+01 -> AuxWrite -> MegaII(index ram directly)
+
+## Dec 6, 2025
+
+Making some progress in the tests! The layers of behavior are pretty hard to keep straight. Ugh.
+
+But, here is an example call stack for a write to a softswitch:
+
+MMU::write() - MMU_iigs write
+bank_e0_write() - write_h routine for that bank
+MMU_II::write() - megaII write, dispatches to C0XX handler
+megaii_c0xx_write() - wrapper for C0XX handler routine
+MMU_IIgs::write_c0xx() - back inside mmu_iigs to actually process the s/s write
+
+Some of this would get optimized out, (e.g. the last two steps I think). But there are several routines here! Now that's bank E0 write.
+A Shadowed bank would be similar.
+A full-RAM bank would just be:
+MMU::write() - MMU_iigs write
+So native IIgs software is going to be pretty fast.
+The above should be optimized quite a bit I think, using inline.
+
+I'm on test 13 - this is where I need to be configuring the memory mapping inside megaii based on the softswitches.
+
+## Dec 7, 2025
+
+around test 17 now - working on LC mapping including ROM mapping. So we need a ROM passed into MMU_iigs and into MMU_iie.
+
+## Dec 8, 2025
+
+we're passing a bunch of tests, but there is a bunch of stuff we're not testing. Here are some action items, and some things to add tests for:
+
+[x] Test 2 ROM bytes mapped into LC area;
+[x] test same bytes accessed directly via FF/xxxx  
+[ ] need to bring in C006/7 and C00A/B switches
+[ ] Implement Slot Register ($C02D)
+[ ] save handlers set by display for page2, hires, whatever else, and call them.  (maybe just copy the whole thing?)
+[ ] bring in C01X status read switches  
+[ ] create a debug display handler  
+
+the first ROM I got had the FE/FF banks reversed. Weird. Using ROM01 for now.
+
+C006/7 and C02D all need to work in tandem. The "slot" rom exposed works just like it does in IIe, except, C02D provides ROM (and I/O?) from the IIgs ROM, instead of exposing the slot ROM.
+
+## Dec 10, 2025
+
+The IIgs supports the C1/CF mapping like the IIe but has another layer, the "built-in" versions of those devices. So right now, I have it just calling the megaii mmu for C006/etc but something needs to take into account the slots register that can ALSO substitute in the GS built-in firmware. AND choose between two sets of softswitches.
+
+For initial testing, I should be able to just act as if I have all slots set to "Your card".
+
+But, for reality: we're going to have "GS onboard" devices. These devices will be GS-only. And they will need to register their softswitches 
+normal slot:
+set_C0XX_write_handler
+built-in device:
+set_gs_C0XX_write_handler
+
+now: do these rely on C800 mapping for anything? Or do they go into native mode and jump into big rom area?
+C600 does not go into emulation mode. it does however, force 8-bit registers. does it assume nobody calls C600 except in emulation mode?
+
+c600 does not trigger c500. no built-in slots do EXCEPT C300. That is 80 column firmware. 

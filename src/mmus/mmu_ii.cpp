@@ -56,8 +56,8 @@ MMU_II::MMU_II(int page_table_size, int ram_amount, uint8_t *rom_pointer) : MMU(
 MMU_II::~MMU_II() {
     // free up memory areas.
     delete[] main_ram;
-    //delete[] main_io_4;
-    delete[] main_rom_D0;
+    // TODO: we did not allocate, so we should not deallocate this. 
+    //delete[] main_rom_D0;
 }
 
 /**
