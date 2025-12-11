@@ -25,13 +25,15 @@ class MemoryStorage {
         T* ptr;
     public:
         MemoryStorage() {}
-        ~MemoryStorage() { free(ptr); }
+        ~MemoryStorage() {
+            operator delete(ptr, std::align_val_t(64));
+        }
 
         T* allocate(size_t width, size_t height, size_t size) {
             printf("Allocating %zu bytes for [%zu][%zu] x %zu\n", size * height * width, size, width, height);
             size_t total_size = size * height * width;
             size_t aligned_size = (total_size + 63) & ~63;
-            ptr = static_cast<T*>(aligned_alloc(64, aligned_size));
+            ptr = static_cast<T*>(operator new(aligned_size, std::align_val_t(64)));
             return ptr;
         }
         
