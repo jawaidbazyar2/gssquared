@@ -15,7 +15,7 @@ Summary:        GSSquared - A Complete Apple II Series Emulator.
 License:        GPL3
 URL:            https://github.com/jawaidbazyar2/gssquared
 Source0:        %{name}.tgz
-Patch0:        %{name}-CMakeLists.patch
+#Patch0:        %{name}-CMakeLists.patch
 Vendor:         Jawaid Bazyar
 Packager:       Rickard Osser <rickard.osser@bluapp.com>
 Group:          Application/Emulator
@@ -31,13 +31,16 @@ GSSquared is a complete emulator for the Apple II series of computers. It is wri
 
 %setup -n %{name}
 cd ..
-git clone https://github.com/jawaidbazyar2/gssquared.git -b v%{version}
+#git clone https://github.com/jawaidbazyar2/gssquared.git -b v%{version}
+git clone --recurse-submodules https://github.com/jawaidbazyar2/gssquared.git -b v%{version}
+
 cd gssquared
-%patch 0
+#%patch 0
 
 %build
-cmake -DCMAKE_BUILD_TYPE=Release -DGS2_PROGRAM_FILES=OFF -DCMAKE_INSTALL_PREFIX=%{_prefix} -S . -B build
-cmake --build build
+#cmake -DCMAKE_BUILD_TYPE=Release -DGS2_PROGRAM_FILES=OFF -DCMAKE_INSTALL_PREFIX=%{_prefix} -S . -B build
+cmake -DCMAKE_BUILD_TYPE=Release -DGS2_PROGRAM_FILES=OFF -S . -B build
+#cmake --build build
 cmake --build build --target package
 
 
