@@ -10,8 +10,6 @@ The code base builds and has been tested on:
 * Mac Mini M4
 * Ubuntu Linux 22.04 (x64 AMD)
 
-I am hoping I can get someone else to build on Windows. :-)
-
 # Download Binary
 
 A binary release is available at [https://github.com/jawaidbazyar2/gssquared/releases](https://github.com/jawaidbazyar2/gssquared/releases).

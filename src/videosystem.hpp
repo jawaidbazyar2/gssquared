@@ -60,6 +60,8 @@ struct video_system_t {
     float aspect_ratio = 0.0;
     float scale_x = 2.0f;
     float scale_y = 4.0f;
+    int window_width = 0;
+    int window_height = 0;
     
     EventQueue *event_queue = nullptr;
 
