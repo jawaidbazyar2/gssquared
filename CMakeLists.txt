@@ -648,11 +648,37 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             DESTINATION "${GS2_INSTALL_DATADIR}/img"
             COMPONENT Runtime
         )
-        if(LINUX)
+        if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             # The files here are only used by Linux, not other platforms
             # These are also required for AppDirs, when producing AppImage
             install(FILES assets/img/GSSquared.svg
                 DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps"
+                COMPONENT Runtime
+            )
+            # Install PNG icons for better file manager support
+            install(FILES assets/img/MyIcon.iconset/icon_16x16.png
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/16x16/apps"
+                RENAME GSSquared.png
+                COMPONENT Runtime
+            )
+            install(FILES assets/img/MyIcon.iconset/icon_32x32.png
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/32x32/apps"
+                RENAME GSSquared.png
+                COMPONENT Runtime
+            )
+            install(FILES assets/img/MyIcon.iconset/icon_128x128.png
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/128x128/apps"
+                RENAME GSSquared.png
+                COMPONENT Runtime
+            )
+            install(FILES assets/img/MyIcon.iconset/icon_256x256.png
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps"
+                RENAME GSSquared.png
+                COMPONENT Runtime
+            )
+            install(FILES assets/img/MyIcon.iconset/icon_512x512.png
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/512x512/apps"
+                RENAME GSSquared.png
                 COMPONENT Runtime
             )
             install(FILES assets/GSSquared.desktop
@@ -661,6 +687,99 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             )
         endif()
         include(CPack)
+    endif()
+
+    # AppImage build target using linuxdeploy
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        # Find linuxdeploy
+        find_program(LINUXDEPLOY_EXECUTABLE
+            NAMES linuxdeploy linuxdeploy-x86_64.AppImage
+            PATHS
+                ${CMAKE_BINARY_DIR}
+                ${CMAKE_SOURCE_DIR}
+                /usr/local/bin
+                /usr/bin
+                $ENV{HOME}/.local/bin
+        )
+
+        set(LINUXDEPLOY_APPIMAGE "${CMAKE_BINARY_DIR}/linuxdeploy-x86_64.AppImage")
+        set(LINUXDEPLOY_NEEDS_DOWNLOAD FALSE)
+        
+        if(NOT LINUXDEPLOY_EXECUTABLE)
+            # Download linuxdeploy if not found
+            set(LINUXDEPLOY_URL "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage")
+            set(LINUXDEPLOY_NEEDS_DOWNLOAD TRUE)
+            
+            message(STATUS "linuxdeploy not found, will download to ${LINUXDEPLOY_APPIMAGE}")
+            
+            # Find curl or wget for downloading
+            find_program(CURL_EXECUTABLE NAMES curl)
+            find_program(WGET_EXECUTABLE NAMES wget)
+            
+            if(CURL_EXECUTABLE)
+                add_custom_command(
+                    OUTPUT ${LINUXDEPLOY_APPIMAGE}
+                    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}
+                    COMMAND ${CURL_EXECUTABLE} -L ${LINUXDEPLOY_URL} -o ${LINUXDEPLOY_APPIMAGE}
+                    COMMAND chmod +x ${LINUXDEPLOY_APPIMAGE}
+                    COMMENT "Downloading linuxdeploy"
+                )
+            elseif(WGET_EXECUTABLE)
+                add_custom_command(
+                    OUTPUT ${LINUXDEPLOY_APPIMAGE}
+                    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}
+                    COMMAND ${WGET_EXECUTABLE} ${LINUXDEPLOY_URL} -O ${LINUXDEPLOY_APPIMAGE}
+                    COMMAND chmod +x ${LINUXDEPLOY_APPIMAGE}
+                    COMMENT "Downloading linuxdeploy"
+                )
+            else()
+                message(FATAL_ERROR "linuxdeploy not found and neither curl nor wget available to download it")
+            endif()
+            
+            set(LINUXDEPLOY_EXECUTABLE ${LINUXDEPLOY_APPIMAGE})
+        else()
+            message(STATUS "Found linuxdeploy: ${LINUXDEPLOY_EXECUTABLE}")
+        endif()
+
+        # Set AppDir path
+        set(APPIMAGE_APPDIR "${CMAKE_BINARY_DIR}/AppDir")
+
+        # Prepare dependencies list
+        set(APPIMAGE_DEPENDS GSSquared assemble_resources)
+        # If we're downloading linuxdeploy, add it as a dependency
+        if(LINUXDEPLOY_NEEDS_DOWNLOAD)
+            list(APPEND APPIMAGE_DEPENDS ${LINUXDEPLOY_APPIMAGE})
+        endif()
+
+        # Create AppImage target
+        add_custom_target(appimage
+            # Clean and create AppDir
+            COMMAND ${CMAKE_COMMAND} -E remove_directory ${APPIMAGE_APPDIR}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${APPIMAGE_APPDIR}
+            # Install into AppDir
+            COMMAND ${CMAKE_COMMAND} --install . --prefix ${APPIMAGE_APPDIR}/usr --component Runtime
+            # Ensure library directory exists (linuxdeploy will find and bundle libraries automatically)
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${APPIMAGE_APPDIR}/usr/${CMAKE_INSTALL_LIBDIR}
+            # Copy PNG icon to AppDir root as .DirIcon for file manager display
+            # This ensures file managers see a proper PNG icon, not just a symlink
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${APPIMAGE_APPDIR}/usr/share/icons/hicolor/256x256/apps/GSSquared.png
+                    ${APPIMAGE_APPDIR}/.DirIcon
+            # Run linuxdeploy to create AppImage
+            # linuxdeploy will automatically find and bundle dependencies
+            # Use PNG icon (256x256) for better file manager support
+            COMMAND ${LINUXDEPLOY_EXECUTABLE}
+                    --appdir ${APPIMAGE_APPDIR}
+                    --executable ${APPIMAGE_APPDIR}/usr/bin/GSSquared
+                    --desktop-file ${APPIMAGE_APPDIR}/usr/share/applications/GSSquared.desktop
+                    --icon-file ${APPIMAGE_APPDIR}/usr/share/icons/hicolor/256x256/apps/GSSquared.png
+                    --output appimage
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            DEPENDS ${APPIMAGE_DEPENDS}
+            COMMENT "Creating AppImage with linuxdeploy"
+        )
+
+        message(STATUS "AppImage target available: cmake --build build --target appimage")
     endif()
 endif()
 
