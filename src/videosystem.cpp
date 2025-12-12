@@ -21,8 +21,8 @@ video_system_t::video_system_t(computer_t *computer) {
     display_fullscreen_mode = DISPLAY_WINDOWED_MODE;
     event_queue = computer->event_queue;
 
-    int window_width = (BASE_WIDTH + border_width*2) * SCALE_X;
-    int window_height = (BASE_HEIGHT + border_height*2) * SCALE_Y;
+    /* int */ window_width = (BASE_WIDTH + border_width*2) * SCALE_X;
+    /* int */ window_height = (BASE_HEIGHT + border_height*2) * SCALE_Y;
     aspect_ratio = (float)window_width / (float)window_height;
 
     window = SDL_CreateWindow(
@@ -133,7 +133,13 @@ void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_
             SDL_SetTextureScaleMode(texture,  SDL_SCALEMODE_PIXELART); // SDL_SCALEMODE_NEAREST
         }
     }
-    SDL_RenderTexture(renderer, texture, srcrect, dstrect);
+    SDL_FRect dstrect_shifted = *dstrect;
+    if (display_fullscreen_mode) {
+        // shift the coords to center the image.
+        float x_shift = (((float)window_width / scale_x) - ((dstrect->x * 2.0f) + dstrect->w)) / 2.0f;
+        dstrect_shifted.x += x_shift;
+    }
+    SDL_RenderTexture(renderer, texture, srcrect, &dstrect_shifted);
 }
 
 void video_system_t::clear() {
@@ -181,6 +187,8 @@ void video_system_t::window_resize(const SDL_Event &event) {
     SDL_SetRenderScale(renderer, new_scale_x, new_scale_y);
     scale_x = new_scale_x;
     scale_y = new_scale_y;
+    window_width = new_w;
+    window_height = new_h;
 }
 
 display_fullscreen_mode_t video_system_t::get_window_fullscreen() {
