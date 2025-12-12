@@ -1,10 +1,13 @@
 #include <cstdio>
+#include <unistd.h>
 #include "AsmFile.hpp"
 #include "tests.hpp"
 
-/* #include "mmus/mmu_iigs.hpp"
+#include "mmus/mmu_iigs.hpp"
 #include "mmus/mmu_iie.hpp"
- */
+
+uint64_t debug_level = 0;
+
 /*
 
 Given input test data, perform one of several functions:
@@ -176,28 +179,165 @@ void EmitAssemblyPostamble(AsmFile *a) {
     }
 }
 
+void liveTest(const MMUTest::Test& test, MMU_IIgs *mmu_iigs) {
+    int testnum = test.number;
+    printf("Running: %d - %s\n", testnum, test.description.c_str());
+    
+    for (const auto& op : test.operations) {
+        std::visit([mmu_iigs](auto&& operation) {
+            using T = std::decay_t<decltype(operation)>;
+            if constexpr (std::is_same_v<T, MMUTest::WriteOp>) {
+                // Handle write
+                printf("  Write to %02X/%04X: ", 
+                       MMUTest::GetBank(operation.location),
+                       MMUTest::GetAddress(operation.location));
+                uint32_t address = operation.location;
+                for (auto byte : operation.data) {
+                    printf("%02X ", byte);
+                    mmu_iigs->write(address, byte);
+                    address++;
+                }
+                printf("\n");
+            }
+            else if constexpr (std::is_same_v<T, MMUTest::ReadOp>) {
+                // Handle read
+                printf("  Read from %02X/%04X: ", 
+                       MMUTest::GetBank(operation.location),
+                       MMUTest::GetAddress(operation.location));
+                
+                uint32_t address = operation.location;
+                uint8_t value = mmu_iigs->read(address);
+                printf("%02X ", value);
+                printf("\n");
+            }
+            else if constexpr (std::is_same_v<T, MMUTest::CopyOp>) {
+                // Handle copy
+                printf("  Copy from %02X/%04X to %02X/%04X\n",
+                       MMUTest::GetBank(operation.source),
+                       MMUTest::GetAddress(operation.source),
+                       MMUTest::GetBank(operation.destination),
+                       MMUTest::GetAddress(operation.destination));
+                uint32_t source_address = operation.source;
+                uint32_t destination_address = operation.destination;
+                uint8_t value = mmu_iigs->read(source_address);
+                mmu_iigs->write(destination_address, value);
+                printf("%06X -> %02X -> %06X\n", source_address, value, destination_address);
+            }
+            else if constexpr (std::is_same_v<T, MMUTest::AssertOp>) {
+                // Handle assert
+                printf("  Assert %02X/%04X == ", 
+                       MMUTest::GetBank(operation.location),
+                       MMUTest::GetAddress(operation.location));
+                uint32_t address = operation.location;
+                for (auto byte : operation.expected) {
+                    //printf("%02X ", byte);
+                    uint8_t val = mmu_iigs->read(address);
+                    if (val != byte) {
+                        printf("    failed: (expected %06X = %02X, got %02X)\n", 
+                            address,
+                            byte,
+                            val);
+                    } else {
+                        printf("     good: %06X = %02X\n", address, val);
+                    }
+                    address++;
+                }
+            }
+        }, op);
+    }
+}
+
+void printUsage(const char *progname) {
+    printf("Usage: %s [-a] [-l] [-p]\n", progname);
+    printf("  -a  Emit assembly output (test.asm)\n");
+    printf("  -l  Run live test against MMU module\n");
+    printf("  -p  Print the tests\n");
+    printf("\nIf no flags are specified, all operations are performed.\n");
+}
+
 int main(int argc, char *argv[]) 
 {
+    bool emit_assembly = false;
+    bool live_test = false;
+    bool print_tests = false;
+    bool any_flag_set = false;
+    int testNumber = -1;
+
+    int opt;
+    while ((opt = getopt(argc, argv, "alph")) != -1) {
+        switch (opt) {
+            case 'a':
+                emit_assembly = true;
+                any_flag_set = true;
+                break;
+            case 'l':
+                live_test = true;
+                any_flag_set = true;
+                break;
+            case 'p':
+                print_tests = true;
+                any_flag_set = true;
+                break;
+            case 'h':
+                printUsage(argv[0]);
+                return 0;
+            default:
+                printUsage(argv[0]);
+                return 1;
+        }
+    }
+
+    // Parse optional non-option argument as test number
+    if (optind < argc) {
+        testNumber = atoi(argv[optind]);
+    }
+
+    if (!any_flag_set) {
+        printf("Usage: %s [-a] [-l] [-p]\n", argv[0]);
+        return 1;
+    }
+
     printf("Starting IIgs MMU test...\n\n");
 
     // Print the tests
-    for (const auto& test : MMUTest::ALL_TESTS) {
-        displayTest(test);
-        printf("\n");
+    if (print_tests) {
+        for (const auto& test : MMUTest::ALL_TESTS) {
+            displayTest(test);
+            printf("\n");
+        }
     }
 
     // Generate .asm file to run the tests on hardware/emulator
-    AsmFile *a = new AsmFile("test.asm");
-    EmitAssemblyPreamble(a);
-    for (const auto& test : MMUTest::ALL_TESTS) {
-        EmitTestAssembly(test, a);
+    if (emit_assembly) {
+        AsmFile *a = new AsmFile("test.asm");
+        EmitAssemblyPreamble(a);
+        for (const auto& test : MMUTest::ALL_TESTS) {
+            EmitTestAssembly(test, a);
+        }
+        EmitAssemblyPostamble(a);
+        delete a;
+        printf("Assembly output written to test.asm\n");
     }
-    EmitAssemblyPostamble(a);
-    delete a;
 
-/*     // Run the tests against our iigs mmu module
-    MMU_IIe *mmu_iie = new MMU_IIe(256, 48*1024, nullptr);
-    MMU_IIgs *mmu_iigs = new MMU_IIgs(256);
- */
+    // Run the tests against our iigs mmu module
+    if (live_test) {
+        uint8_t *rom = new uint8_t[128*1024];
+        // load ROM file into here.
+        FILE *rom_file = fopen("/Users/bazyar/src/GSROM/APPLE2GS.ROM", "rb");
+        fread(rom, 1, 128*1024, rom_file);
+        fclose(rom_file);
+        
+        MMU_IIe *mmu_iie = new MMU_IIe(256, 128*1024, rom + 0x1'D000);
+        MMU_IIgs *mmu_iigs = new MMU_IIgs(256, 8*1024*1024, 128*1024, rom, mmu_iie);
+        mmu_iigs->init_map();
+        //mmu_iigs->dump_page_table();
+        for (const auto& test : MMUTest::ALL_TESTS) {
+            if (testNumber != -1 && test.number != testNumber) continue;
+            liveTest(test, mmu_iigs);
+        }
+        delete mmu_iigs;
+        delete mmu_iie;
+    }
+
     return 0;
 }

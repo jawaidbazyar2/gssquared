@@ -93,6 +93,15 @@
             "preLaunchTask": "build-debug"
         },
         {
+            "name": "Debug iigsmmutest",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/iigsmmutest",
+            "args": ["-l","20"],
+            "cwd": "${workspaceFolder}/testdev/gsmmu/",
+            "preLaunchTask": "build-debug"
+        },
+        {
             "name": "Profile mmutest (Instruments)",
             "type": "lldb",
             "request": "launch",

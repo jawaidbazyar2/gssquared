@@ -5,6 +5,8 @@
 #include <string>
 #include <variant>
 
+#include "mmus/iigs_shadow_flags.hpp"
+
 namespace MMUTest {
 
 // Helper to extract bank and address from 32-bit value
@@ -87,10 +89,23 @@ inline const std::vector<Test> ALL_TESTS = {
             WriteOp{0xE0'c035, 0x08},
             WriteOp{0xE0'c036, 0x84},
             WriteOp{0x00'0400, {0x12, 0x34}},
-            AssertOp{0xE0'0400, 0x12},
-            AssertOp{0xE0'0401, 0x34},
+            AssertOp{0xE0'0400, {0x12, 0x34}},
             WriteOp{0xE0'c029, 0x01},
 
+        }
+    },
+    Test{
+        201,
+        "text page 1 shadowing inhibited",
+        {
+            WriteOp{0xE0'0400, {0x00, 0x00}},
+            WriteOp{0xE0'c029, 0x01},
+            WriteOp{0xE0'c035, 0x08 | SHADOW_INH_TEXT1},
+            WriteOp{0xE0'c036, 0x84},
+            WriteOp{0x00'0400, {0x12, 0x34}},
+            AssertOp{0xE0'0400, {0x00, 0x00}},
+            WriteOp{0xE0'c029, 0x01},
+            WriteOp{0xE0'c035, 0x08},
         }
     },
     Test{
@@ -100,7 +115,7 @@ inline const std::vector<Test> ALL_TESTS = {
             WriteOp{0xE0'C036, 0x94},
             WriteOp{0x00'0400, {0x12, 0x34}},
             WriteOp{0x02'0402, {0x56, 0x78}},
-            WriteOp{0xE0'C036, 0x94},
+            WriteOp{0xE0'C036, 0x84},
             AssertOp{0xE0'0402, {0x56, 0x78}},
         }
     },
@@ -281,19 +296,19 @@ inline const std::vector<Test> ALL_TESTS = {
     },
     Test{ // NO. But it does with all bank shadow enabled (see test 6)
         16,
-        "does RAMWRT work in banks 02/03 w/o all bank shadow",
+        "RAMWRT has no effect in banks 02/03 without all bank shadow",
         {
-            WriteOp{0xE1'6000, {0x00, 0x00}},
-            WriteOp{0x02'6000, {0x00, 0x00}},
-            WriteOp{0x03'6000, {0x00, 0x00}},
+            WriteOp{0xE1'6500, {0x00, 0x00}},
+            WriteOp{0x02'6500, {0x00, 0x00}},
+            WriteOp{0x03'6500, {0x00, 0x00}},
             
             WriteOp{0xE0'C005, 0x01},
-            WriteOp{0x02'6000, {0x56, 0x78}},
+            WriteOp{0x02'6500, {0x56, 0x78}},
             WriteOp{0xE0'C004, 0x01},           
            
-            AssertOp(0xE1'6000, {0x00, 0x00}),
-            AssertOp(0x02'6000, {0x00, 0x00}),
-            AssertOp(0x03'6000, {0x56, 0x78}),
+            AssertOp(0xE1'6500, {0x00, 0x00}),
+            AssertOp(0x02'6500, {0x56, 0x78}),
+            AssertOp(0x03'6500, {0x00, 0x00}),
         }
     },
     Test{
@@ -348,6 +363,22 @@ inline const std::vector<Test> ALL_TESTS = {
             WriteOp(0xE0'C035,0x68), // inhibit IOLC shadow
             AssertOp(0x00'C000,0x12), // read from flat bank 0 ram
             WriteOp(0xE0'C035,0x28), // re-enable IOLC shadow
+        }
+    },
+    Test{
+        21,
+        "ROM appears in bank FF",
+        {
+            AssertOp{0xFF'D000, 0x6f},
+            AssertOp{0xFF'E000, 0x4C},
+        }
+    },
+    Test{
+        22,
+        "ROM appears in bank 00 shadowed",
+        {
+            AssertOp{0x00'D000, 0x6f},
+            AssertOp{0x00'E000, 0x4C},
         }
     },
     Test{
