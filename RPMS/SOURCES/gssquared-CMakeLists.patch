@@ -1,0 +1,65 @@
+--- CMakeLists.txt.org	2025-12-08 01:10:06.893000195 +0100
++++ CMakeLists.txt	2025-12-08 01:09:11.092015175 +0100
+@@ -143,20 +143,20 @@
+ )
+ 
+ function(configure_sdl_builds)
+-    set(BUILD_SHARED_LIBS ON)
++    set(BUILD_SHARED_LIBS OFF)
+ 
+     # Force SDL to build with the correct SDK
+     if(APPLE)
+         set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Deployment target" FORCE)
+     endif()
+ 
+-    set(SDL_SHARED ON)
+-    set(SDLTTF_VENDORED ON)
++    set(SDL_SHARED OFF)
++    set(SDLTTF_VENDORED OFF)
+ 
+     # Force rebuild SDL with these settings
+-    add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL)
+-    add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_image)
+-    add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_ttf)
++    #add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL)
++    #add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_image)
++    #add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_ttf)
+     set(BUILD_SHARED_LIBS OFF)
+ endfunction()
+ 
+@@ -202,7 +202,8 @@
+ )
+ 
+ # all following targets will link to SDL3
+-link_libraries(gs2_headers SDL3::SDL3-shared)
++link_libraries(gs2_headers -lSDL3)
++#gs2_headers SDL3::SDL3-shared)
+ 
+ add_library(gs2_devices_game src/devices/game/gamecontroller.cpp src/devices/game/mousewheel.cpp )
+ 
+@@ -270,10 +271,10 @@
+ 
+ add_library(gs2_video_scanner src/devices/displaypp/VideoScannerII.cpp src/devices/displaypp/VideoScanGenerator.cpp src/devices/displaypp/VideoScannerIIe.cpp)
+ 
+-target_link_libraries(gs2_ui SDL3_image::SDL3_image-shared SDL3_ttf::SDL3_ttf-shared)
+-target_link_libraries(gs2_debugger gs2_util SDL3_ttf::SDL3_ttf-shared)
+-target_link_libraries(gs2_util SDL3_ttf::SDL3_ttf-shared)
+-target_link_libraries(gs2_computer SDL3_ttf::SDL3_ttf-shared)
++target_link_libraries(gs2_ui -lSDL3_image -lSDL3_ttf)
++target_link_libraries(gs2_debugger gs2_util -lSDL3_ttf)
++target_link_libraries(gs2_util -lSDL3_ttf)
++target_link_libraries(gs2_computer -lSDL3_ttf)
+ 
+ # Add the executable
+ add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
+@@ -288,8 +289,8 @@
+ 
+ # Link SDL3 and required frameworks
+ target_link_libraries(GSSquared PRIVATE 
+-    SDL3::SDL3-shared
+-    SDL3_image::SDL3_image-shared
++    -lSDL3
++    -lSDL3_image
+ )
+ if(WIN32)
+     # We'll bundle the MinGW runtime DLLs instead of static linking
