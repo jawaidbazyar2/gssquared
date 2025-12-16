@@ -1056,6 +1056,10 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             tc->t1_latch = (tc->t1_latch & 0xFF00) | data;
             break;
         case MB_6522_T1L_H:
+            /* 6522 doc doesn't say it, but AppleWin and UltimaV clear timer1 interrupt flag when T1L_H is written. */
+            mb_d->d_6522[chip].ifr.bits.timer1 = 0;
+            mb_6522_propagate_interrupt(mb_d);       
+        
             /* 8 bits loaded into T1 high-order latches. Unlike REG 4 OPERATION, no latch-to-counter transfers take place (2-42) */
             tc->t1_latch = (tc->t1_latch & 0x00FF) | (data << 8);
             break;
@@ -1067,12 +1071,13 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             {
             /* 8 bits loaded into T1 high-order latch. Also both high-and-low order latches transferred into T1 Counter. T1 Interrupt flag is also reset (2-42) */
             // write of t1 counter high clears the interrupt.
-            mb_d->d_6522[chip].ifr.bits.timer1 = 0;
+            //mb_d->d_6522[chip].ifr.bits.timer1 = 0;
+            tc->ifr.bits.timer1 = 0;
             mb_6522_propagate_interrupt(mb_d);
             tc->t1_latch = (tc->t1_latch & 0x00FF) | (data << 8);
             tc->t1_counter = tc->t1_latch /* ? tc->t1_latch : 65535 */;
             uint32_t next_counter = tc->t1_counter ? tc->t1_counter : 65536;
-            tc->ifr.bits.timer1 = 0;
+            
             tc->t1_triggered_cycles = cpu_cycles + next_counter + 1; // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
             tc->t1_oneshot_pending = 1;
             //if (tc->ier.bits.timer1) {

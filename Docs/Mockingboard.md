@@ -514,6 +514,15 @@ with sound ii the IRQ never turns off. I bet it's just slamming in the IRQ handl
 Yep. I just did the RTI. and immediately back to the interrupt handler. ok, so at least I know a little more what's going on..
 is it the voice stuff?
 
+The interrupt handler does this:
+check to see if this is the timer1 interrupt
+if so, write new value to T1L_L and T1L_H. The latch.
+Since it's immediately falling back into interrupt routine, it's expecting this write to the latch to clear the timer1 interrupt.
+But the 6522 data sheet says the timer1 interrupt flag is reset by writing to T1CH (which I do). Says nothing about T1LH.
+However, AppleWin clears the timer1 flag when the T1L_H is written to.
+So, both the UltimaV code and AppleWin strongly suggest we need to clear timer1 int on T1L_H write.
+Sigh. FIXED.
+
 # Other implementations
 
 This is a cycle-by-cycle emulation for the 6522. Check it out to see if it can help understand some of the 6522 behavior I'm unsure about.
