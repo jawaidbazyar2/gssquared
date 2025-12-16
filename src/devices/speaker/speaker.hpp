@@ -88,7 +88,7 @@ struct EventBuffer {
 typedef struct speaker_state_t {
     FILE *speaker_recording = NULL;
     SDL_AudioDeviceID device_id = 0;
-    SDL_AudioStream *stream = NULL;
+    //SDL_AudioStream *stream = NULL;
 
     bool first_time = true;
 
@@ -105,12 +105,15 @@ typedef struct speaker_state_t {
     SpeakerFX *sp;
     computer_t *computer;
 
-    float frame_rate;
-    float samples_per_frame;
+    double frame_rate;
+    double samples_per_frame;
     int32_t samples_per_frame_int;
-    float samples_per_frame_remainder;
-    float samples_accumulated = 0.0f;
+    double samples_per_frame_remainder;
+    double samples_accumulated = 0.0;
     clock_mode_t last_clock_mode = CLOCK_FREE_RUN;
+    uint64_t samples_added = 0;
+    uint64_t sample_frames = 0;
+    uint64_t end_frame_c14M = 0;
 } speaker_state_t;
 
 void init_mb_speaker(computer_t *computer, SlotType_t slot);

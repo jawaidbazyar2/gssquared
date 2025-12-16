@@ -223,6 +223,11 @@ class SpeakerFX {
             return value;
         }
 
+        void prebuffer() {
+            int16_t prebuffer[4410] = {0};
+            SDL_PutAudioStreamData(stream, prebuffer, 1470 * sizeof(int16_t)); // 2 frames
+        }
+
         int get_queued_samples() {
             int samp = SDL_GetAudioStreamAvailable(stream) / sizeof(int16_t);
             return samp;
@@ -232,7 +237,7 @@ class SpeakerFX {
 
             int samples_generated = generate_samples(working_buffer, num_samples, frame_next_cycle_start);
         
-            SDL_PutAudioStreamData(stream, working_buffer, num_samples * sizeof(int16_t));
+            SDL_PutAudioStreamData(stream, working_buffer, samples_generated * sizeof(int16_t));
             
             return samples_generated;
         }

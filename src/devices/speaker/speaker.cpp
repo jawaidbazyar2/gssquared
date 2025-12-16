@@ -74,18 +74,35 @@ uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end
     // In an environment where the frame rate is e.g. 60Hz even, 44100Hz divides evenly into 60 (735 samples per frame) so
     // no remainder and you probably don't need to do this trick.
     // So if you're using this code in a hardware device you can just peg everything at 60fps and 44100Hz and not worry about it.
-    speaker_state->samples_accumulated += speaker_state->samples_per_frame_remainder;
-    uint32_t samples_this_frame = speaker_state->samples_per_frame_int;
-    if (speaker_state->samples_accumulated >= 1.0f) {
-        samples_this_frame = speaker_state->samples_per_frame_int+1;
-        speaker_state->samples_accumulated -= 1.0f;
+
+    size_t queued = speaker_state->sp->get_queued_samples();
+    const size_t MAX_QUEUE = 4410;  // ~100ms at 44.1kHz, adjust as needed
+    
+    if (queued < MAX_QUEUE) {
+        speaker_state->samples_accumulated += speaker_state->samples_per_frame_remainder;
+        uint32_t samples_this_frame = speaker_state->samples_per_frame_int;
+        if (speaker_state->samples_accumulated >= 1.0f) {
+            samples_this_frame ++;
+            speaker_state->samples_accumulated -= 1.0f;
+        }
+
+        // Generate and queue your 735 samples
+        uint64_t samps = speaker_state->sp->generate_and_queue(samples_this_frame, end_frame_c14M);
+        speaker_state->samples_added += samps;
+        speaker_state->sample_frames ++;
+        return samps;
+
+    } else {
+        // Skip this frame's audio generation, queue is full enough
+        return 0;
     }
 
-    // I need to know the actual end of the current frame in cycles; cpu->cycles is not right.
+/*     // I need to know the actual end of the current frame in cycles; cpu->cycles is not right.
     uint64_t samps = speaker_state->sp->generate_and_queue(samples_this_frame, end_frame_c14M);
+    speaker_state->samples_added += samps;
+    speaker_state->sample_frames ++;
 
-
-    return samps;
+    return samps; */
 }
 
 
@@ -154,19 +171,30 @@ void speaker_reset(speaker_state_t *speaker_state) {
 }
 
 DebugFormatter * debug_speaker(speaker_state_t *ds) {
+    static uint32_t counter = 0;
+    static uint16_t samplecounts[60] = {0};
     DebugFormatter *df = new DebugFormatter();
         
-    df->addLine("   Speaker ");
+    //df->addLine("   Speaker ");
     uint16_t samples = ds->sp->get_queued_samples();
+
     uint64_t frame_index = (samples * 10) / ds->samples_per_frame;
+    samplecounts[counter++] = samples;
+    if (counter == 60) counter = 0;
+    uint32_t samplesum = 0;
+    for (uint32_t i = 0; i < 60; i++) {
+        samplesum += samplecounts[i];
+    }
+    uint32_t samplesavg = samplesum / 60;
 
     df->addLine("  Samples: ---------+---------+---------+---------+---------+", samples);
     df->addLine("  %6d : %.*s|            ", samples, frame_index, "                                                  ");
+    df->addLine("  Samples Avg: %6d %12.6f", samplesavg, (double)ds->samples_added / (double)ds->sample_frames);
     df->addLine("  Polarity: %10llu / %10llu", ds->sp->polarity, ds->sp->polarity_impulse);
     df->addLine("  last_event: %13llu Rect_Rem: %13llu::%13llu", ds->sp->last_event_time, ds->sp->rect_remain>>FRACTION_BITS, ds->sp->rect_remain & FRACTION_MASK);
 
-    df->addLine("  Fr Rate: %8.4f   Samp/Fr: %8.3f   Cycle/Samp: %llu::%llu", ds->frame_rate, ds->samples_per_frame, ds->sp->cycles_per_sample>>FRACTION_BITS, ds->sp->cycles_per_sample & FRACTION_MASK);
-    df->addLine("  Accumulated: %8.4f", ds->samples_accumulated);
+    df->addLine("  Fr Rate: %12.8f   Samp/Fr: %12.7f   Cycle/Samp: %llu::%llu", ds->frame_rate, ds->samples_per_frame, ds->sp->cycles_per_sample>>FRACTION_BITS, ds->sp->cycles_per_sample & FRACTION_MASK);
+    df->addLine("  Accumulated: %12.8f", ds->samples_accumulated);
     df->addLine("  Device Started: %6d", ds->sp->started() ? 1 : 0);
     // TODO: what else should this display here?
     //df->addLine("  Cycle Index: %13llu SampleInd: %9llu CpuCycles: %13llu", ds->sp->cycle_index, ds->sp->sample_index, ds->computer->cpu->cycles);
@@ -178,6 +206,17 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 	// Initialize SDL audio - is this right, to do this again here?
 	SDL_Init(SDL_INIT_AUDIO);
     
+    // for info purposes, print out the available devices and their formats.
+    int num_devices = 0;
+    SDL_AudioDeviceID *devices = SDL_GetAudioPlaybackDevices(&num_devices);
+    for (int i = 0; i < num_devices; i++) {
+        SDL_AudioSpec spec;
+        SDL_GetAudioDeviceFormat(devices[i], &spec, NULL);
+        printf("AudioDevice %d: %s %d\n", i, SDL_GetAudioDeviceName(devices[i]), spec.freq);
+
+    }
+    SDL_free(devices);
+
     cpu_state *cpu = computer->cpu;
 
     speaker_state_t *speaker_state = new speaker_state_t;
@@ -206,7 +245,8 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 
     // prime the pump with a few frames of silence - make sure we use the correct frame size so we pass the check in generate.
     //memset(speaker_state->working_buffer, 0, speaker_state->sp->samples_per_frame * sizeof(int16_t));
-    speaker_state->sp->generate_and_queue(500, 0);
+    //speaker_state->sp->generate_and_queue(4410, 0);
+    speaker_state->sp->prebuffer();
 
     if (DEBUG(DEBUG_SPEAKER)) fprintf(stdout, "init_speaker\n");
     for (uint16_t addr = 0xC030; addr <= 0xC03F; addr++) {
@@ -234,6 +274,9 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
             return debug_speaker(speaker_state);
         }
     );
+
+    speaker_state->sp->start();
+
 }
 
 
