@@ -54,6 +54,8 @@ struct debug_window_t {
     std::vector<std::string> mon_history;
     int mon_history_position = 0;
 
+    MMU *mmu = nullptr;
+
     debug_window_t(computer_t *computer);
     ~debug_window_t();
 
@@ -77,6 +79,7 @@ struct debug_window_t {
     void event_pane_monitor(SDL_Event &event);
     bool handle_pane_event_monitor(SDL_Event &event);
     bool check_breakpoint(system_trace_entry_t *entry);
+    void set_mmu(MMU *mmu) { this->mmu = mmu; }
 
 protected:
     void execute_command(const std::string& command);

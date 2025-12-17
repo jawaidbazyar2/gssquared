@@ -40,7 +40,7 @@ struct mon_node_entry_t {
     uint32_t val_address;
     mon_range_t val_range;   
     std::string val_string;
-    uint16_t val_number;
+    uint32_t val_number;
 };
 
 struct MonitorCommand {

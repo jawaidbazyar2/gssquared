@@ -27,15 +27,15 @@ Disassembler::Disassembler(MMU *mmu) : mmu(mmu) {
 Disassembler::~Disassembler() {
 }
 
-void Disassembler::setAddress(uint16_t address) {
+void Disassembler::setAddress(uint32_t address) {
     this->address = address;
 }
 
-uint8_t Disassembler::read_mem(uint16_t address) {
+uint8_t Disassembler::read_mem(uint32_t address) {
     if (address >= 0xC000 && address < 0xC0FF) {
         return 0xEE; // do not actually trigger I/O when we're trying to disassemble.
     }
-    return mmu->read_raw(address);
+    return mmu->read(address);
 }
 
 void Disassembler::disassemble_one() {
@@ -54,6 +54,11 @@ void Disassembler::disassemble_one() {
     const char *opcode_name = da->opcode;
     const address_mode_entry *am = &address_mode_formats[da->mode];
     uint32_t operand;
+
+    if (address & 0xFF0000) {
+        decode_hex_byte(bufptr + TB_ADDRESS - 3, address >> 16);
+        bufptr[TB_ADDRESS - 1] = '/';
+    }
 
     decode_hex_word(bufptr + TB_ADDRESS, address);
     bufptr[TB_ADDRESS + 4] = ':';

@@ -21,6 +21,7 @@
 
 debug_window_t::debug_window_t(computer_t *computer) {
     this->computer = computer;
+    this->mmu = computer->mmu;
     this->cpu = computer->cpu;
 
     panel_visible[DEBUG_PANEL_TRACE] = 1; // all default to off, so enable here.
@@ -128,7 +129,7 @@ void debug_window_t::execute_command(const std::string& command) {
     cmd->print();
 
     int num_mem_watches = memory_watches.size();
-    ExecuteCommand *exec = new ExecuteCommand(computer->mmu, cmd, &memory_watches, &breaks, disasm, &debug_displays);
+    ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, &memory_watches, &breaks, disasm, &debug_displays);
     exec->execute();
     
     mon_history.push_back(command); // put into the scrollback
@@ -210,7 +211,7 @@ void debug_window_t::render_pane_trace() {
     }
     if (single_step) {
         step_disasm->setLinePrepend(36);
-        step_disasm->setAddress(cpu->pc);
+        step_disasm->setAddress(cpu->full_pc);
         std::vector<std::string> disasm_lines = step_disasm->disassemble(10);
         text_renderer->set_color(0, 255, 255, 255);
         for (int i = 0; i < disasm_lines.size(); i++) {
@@ -223,9 +224,19 @@ void debug_window_t::render_pane_trace() {
     draw_text(DEBUG_PANEL_TRACE, x, 3, buffer);
   
     separator_line(DEBUG_PANEL_TRACE, 4);
-    draw_text(DEBUG_PANEL_TRACE, x, 4, "PC     A  X  Y  SP     N V - D B I Z C  IRQ");
-    snprintf(buffer, sizeof(buffer), "%04X   %02X %02X %02X %04X   %d %d - %d %d %d %d %d   %d", cpu->pc, cpu->a, cpu->x, cpu->y, cpu->sp, 
-        cpu->N, cpu->V, cpu->B, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->irq_asserted!=0);
+
+    if (cpu->cpu_type == PROCESSOR_65816) {
+        draw_text(DEBUG_PANEL_TRACE, x, 4, "PB/PC   DB    A  X  Y  SP     N V M XB D I Z C  e  IRQ");
+        snprintf(buffer, sizeof(buffer), "%02X/%04X %02X   %02X %02X %02X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
+        cpu->pb, cpu->pc, cpu->db, cpu->a, cpu->x, cpu->y, cpu->sp, 
+        cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
+    } else {
+        draw_text(DEBUG_PANEL_TRACE, x, 4, "PC     A  X  Y  SP     N V - B D I Z C    e  IRQ");
+        snprintf(buffer, sizeof(buffer), "%04X   %02X %02X %02X %04X   %d %d - %d %d %d %d %d  %d  %d", cpu->pc, cpu->a, cpu->x, cpu->y, cpu->sp, 
+        cpu->N, cpu->V, cpu->B, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
+    }
+    //draw_text(DEBUG_PANEL_TRACE, x, 4, "PC     A  X  Y  SP     N V - D B I Z C  e  IRQ");
+
     draw_text(DEBUG_PANEL_TRACE, x, 5, buffer);
 
     snprintf(buffer, sizeof(buffer), "Cycles: %18llu    MHz: %10.5f", cpu->cycles, cpu->e_mhz);
@@ -337,7 +348,7 @@ void debug_window_t::render_pane_memory() {
                 *ptr++ = ':';
                 *ptr++ = ' ';
             }
-            uint8_t mem = computer->mmu->read(i);
+            uint8_t mem = mmu->read(i);
             decode_hex_byte( ptr, mem);
             decode_ascii(buffer+54+index, mem);
             ptr+=2;
@@ -547,8 +558,8 @@ bool debug_window_t::is_open() {
 }
 
 void debug_window_t::set_open() {
-    disasm = new Disassembler(computer->mmu);
-    step_disasm = new Disassembler(computer->mmu);
+    disasm = new Disassembler(mmu);
+    step_disasm = new Disassembler(mmu);
     window_open = true;
     computer->video_system->show(window);
     computer->video_system->raise(window);

@@ -14,10 +14,7 @@
         tail = 0;
         count = 0;
         cpu_mask = 0;
-        if (cpu_type == PROCESSOR_65816) cpu_mask = CPU_65816;
-        if (cpu_type == PROCESSOR_65C02) cpu_mask = CPU_65C02;
-        if (cpu_type == PROCESSOR_6502) cpu_mask = CPU_6502;
-        this->cpu_type = cpu_type;
+        set_cpu_type(cpu_type);
     }
 
     system_trace_buffer::~system_trace_buffer() {

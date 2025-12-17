@@ -38,12 +38,12 @@ void ExecuteCommand::execute() {
     auto &node0 = cmd->nodes[0];
     if (node0.type == MON_NODE_TYPE_NUMBER) {
         // start with number, it's an address to show a single value.
-        uint16_t address = node0.val_number;
-        addFormattedOutput("%04X: %02x", address, mmu->read(address));
+        uint32_t address = node0.val_number;
+        addFormattedOutput("%06X: %02x", address, mmu->read(address));
     }
     if (node0.type == MON_NODE_TYPE_ADDRESS_SET) {
         // start with address, it's an address to write a value starting at address - short hand for "set address val val val"
-        uint16_t address = node0.val_address;
+        uint32_t address = node0.val_address;
         for (int i = 1; i < cmd->nodes.size(); i++) {
             auto &node = cmd->nodes[i];
             if (node.type == MON_NODE_TYPE_NUMBER) {
@@ -192,7 +192,7 @@ void ExecuteCommand::execute() {
     if ((node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_SET)) {
         // set memory from range
         auto &node1 = cmd->nodes[1];
-        uint16_t address = node1.val_number;
+        uint32_t address = node1.val_number;
         for (int i = 2; i < cmd->nodes.size(); i++) {
             auto &node = cmd->nodes[i];
             if (node.type == MON_NODE_TYPE_NUMBER) {
@@ -247,7 +247,7 @@ void ExecuteCommand::execute() {
         }
         auto &node2 = cmd->nodes[2];
         if (node2.type == MON_NODE_TYPE_NUMBER) {
-            uint16_t address = node2.val_number;
+            uint32_t address = node2.val_number;
             FILE *file = fopen(filename.c_str(), "rb");
             int i = 0;
             if (file) {

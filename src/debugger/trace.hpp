@@ -5,6 +5,7 @@
 
 #include "gs2.hpp"
 #include "cpus/processor_type.hpp"
+#include "debugger/trace_opcodes.hpp"
 
 /* #define TRACE_FLAG_IRQ 0x01
 #define TRACE_FLAG_X   0x10
@@ -64,7 +65,12 @@ struct system_trace_buffer {
 
     char *decode_trace_entry(system_trace_entry_t *entry);
 
-    void set_cpu_type(processor_type cpu_type) { this->cpu_type = cpu_type; }
+    void set_cpu_type(processor_type cpu_type) { 
+        this->cpu_type = cpu_type;
+        if (cpu_type == PROCESSOR_65816) cpu_mask = CPU_65816;
+        if (cpu_type == PROCESSOR_65C02) cpu_mask = CPU_65C02;
+        if (cpu_type == PROCESSOR_6502) cpu_mask = CPU_6502;
+    }
 
 private:
     char *decode_trace_entry_6502(system_trace_entry_t *entry);
