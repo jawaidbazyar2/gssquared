@@ -381,6 +381,17 @@ inline const std::vector<Test> ALL_TESTS = {
             AssertOp{0x00'E000, 0x4C},
         }
     },
+
+    // TODO: verify C071-C07F are present when IOLC enabled
+    Test{
+        23,
+        "C071-C07F are present when IOLC enabled",
+        {
+            //WriteOp{0xE0'C035, 0x68}, // inhibit IOLC shadow
+            AssertOp{0x00'C071, {0xE2, 0x40, 0x50, 0xB8}},      
+        }
+    },
+
     Test{
         0x99,
         "floating bus behavior: ram bank higher than real RAM data reads as the bank number",
@@ -388,7 +399,10 @@ inline const std::vector<Test> ALL_TESTS = {
             AssertOp{0x81'0000, 0x81},
             AssertOp{0x82'0000, 0x82},
         }
-    }
+    },
+    // TODO: verify C000 operates in bank E1
+    // TODO: verify C011-C01F "read switch status" works
+    // TODO: test C068 State Register
 
 };
 
