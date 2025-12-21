@@ -38,15 +38,18 @@
 
 ## Release 0.6
 
-[ ] put common controls in hover-over on main page - reset, restart, power-off, open debugger  
 [x] Refactor CPU to be more cycle-accurate including false/phantom reads/writes  
+[x] Support PAL video timing  
+[x] Implement even more optimized audio code  
 
+## Release 0.7
+
+[ ] put common controls in hover-over on main page - reset, restart, power-off, open debugger  
 [ ] Can make custom hw config. (Click "+ Custom").
 [ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  
 [ ] put "modified" indicator of some kind on the disk icons.  
-[x] Support PAL video timing  
 
-## Release 0.7
+## Release 0.8
 
 [ ] First Apple IIgs release  
 [ ] Refactor MB to use new synth, and pass Shuttleworth tests  

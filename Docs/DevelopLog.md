@@ -7750,8 +7750,8 @@ we're passing a bunch of tests, but there is a bunch of stuff we're not testing.
 [ ] need to bring in C006/7 and C00A/B switches
 [ ] Implement Slot Register ($C02D)
 [ ] save handlers set by display for page2, hires, whatever else, and call them.  (maybe just copy the whole thing?)
-[ ] bring in C01X status read switches  
-[ ] create a debug display handler  
+[ ] bring in C01X status read switches (part done, did C013 - C018) 
+[x] create a debug display handler  
 
 the first ROM I got had the FE/FF banks reversed. Weird. Using ROM01 for now.
 
@@ -7773,3 +7773,113 @@ now: do these rely on C800 mapping for anything? Or do they go into native mode 
 C600 does not go into emulation mode. it does however, force 8-bit registers. does it assume nobody calls C600 except in emulation mode?
 
 c600 does not trigger c500. no built-in slots do EXCEPT C300. That is 80 column firmware. 
+
+## Dec 13, 2025
+
+So overnight, the speaker code got out of sync. I think I see the issue: I now take a running 60-frame average of number of samples queued up. At first boot, this started at about 5,000. Now, after being up for about 10 minutes, the count is up to 5800. So we are slowly feeding too many samples into the buffer.
+
+Frame rate is 59.9227; samples/fr = 735.948. That is basically exactly 44,100 samples per second.
+
+Double clicking the window to expand it, caused about 1,000 samples to be consumed (dropped to 4900). But then it's slowly ticking up again.
+I am currently using a float to track these variables. A float "guarantees between 6 and 9 decimal places of precision". But 1/44000 is 0.000022. So perhaps I should try .
+I could also force a reset to 0 of the counter every so often; on frame counts where 59.9227 and 60 are coincident.
+
+let's also count how many samples we add over time average.
+
+The figures seem spot on. That tell us that perhaps something in the timing is causing us to add more samples per second than we think.. which could mean the entire emulation is running slightly fast.
+Or, that SDL3 is consuming fewer cycles than expected.
+
+A suggestion was made to slightly slow down the emulation if we exceed a watermark of samples in the queue. I am doing 5uS right now, and that is definitely correcting, maybe a bit too hard. It's possible I am running the emulation just a bit too fast? I am not measuring at the frame start when calculating the frame rate etc. 
+what's really interesting, is if I open speaker debug, and run applevision with this hack in place, while the video is playing, the avg samples crawls downward. Then when it stops, it starts crawling upwards.
+
+The code in there now to delay 2.5 microseconds does bring the queue length down and hold it around 5000. Maybe the issue is around timing frame lengths, and should be reviewed. There are noticeable audio artifacts though. Why?
+
+Also interesting: the samples in the buffer should start at 0, right? But by the time I get the debug window open, it's already shot up to 7000 or more samples in queue. which means it's even higher but I just don't see it cuz it takes a minute to get the debug open.
+
+So we are pumping data into the buffer before SDL starts playing it? That must be the case. I am currently using a new approach, tweak by a whole frame. I still use the frame remainder calculation when I decide to emit a frame. Seems to work okay, though in the first few seconds there is a bit of warble and the boot beep is not great. maybe I can buffer that a bit more.
+
+Makes no difference. And shouldn't.
+However, we have the frame_buffer_start thing. if we skip generating a frame, perhaps we shouldn't change that.
+
+Sometimes (not every time) there is a glitch in the boot beep. Like, one out of 5. Try starting the stream sooner, instead of when we're putting data in the first time.
+I did at the end of init_speaker, no difference really. Hmm. It does feel maybe like a threading issue. Is there a call to ask "is audio actually fully started"?
+The default device on my Mac is built-in speaker 44100. The hdmi audio is 48000 but that's not being used, these monitors don't have speakers, they do have an external speaker jack. which is weird. So the rate isn't being changed, requiring maybe extra buffering.
+Warbles do seem to settle down after boot time, it's just annoying. That first BEEP is such a key part of the Apple II experience, it's got to be right!
+I will put this aside for the time being.
+
+## Dec 16, 2025
+
+ok then, let's try composing a GS system!
+
+I have some pieces together, but I am getting an infinite loop of this:
+
+Write: Effective address: 00019A
+Write: Effective address: 000199
+Write: Effective address: 000198
+Read: ROM Effective address: 00FFFE
+Read: ROM Effective address: 00FFFF
+Read: ROM Effective address: 00F37C
+Read: ROM Effective address: 00F37C
+
+FFFE/F is the BRK vector? yes, emulation mode vector.
+Then we're doing what, running instruction at F37C?
+then writing some stuff on the stack
+then brk again.
+
+ok I am now starting the emu (for GS mode) with debug window. I also disabled the prospective disassembly because read_raw is crashing - so is monitor read, which uses read(), so, something not getting set up correctly there. what mmu is being passed to debugger?
+but, importantly, the **CPU** is correctly reading memory.
+
+ok, got TSB working. I have to (re-) set the processor type in the trace_buffer after startup, for dumb reasons. And I needed to recalculate the cpu_mask in there, which I wasn't doing. So that's fixed.. So here are our first two GS ROM instructions:
+```
+LDA #01
+TSB $C029
+```
+I believe this is setting the bank latch. Then a bit later is reads C036, but we're getting 0xEE (garbagio). Why isn't that working.. 
+oops, need a C036 read routine.
+
+[x] after a CLD the debugwindow doesn't show D as 0, it still shows 1.  was displaying B in wrong place.  
+[x] Show the P bits in order from MSB to LSB, and, change the legend in 65816 mode since we have additional bits.  
+
+Handling the display softswitches - unlike iiememory, gsmmu is setting handlers *before* device init is executed. So need a better scheme for this. Maybe "set_mmu_softswitch_handler" as well as the current one? Have to think about this..
+[x] Monitor needs to do 32-bit addresses.  
+[ ] Monitor should be able to "remember" banks like the IIgs monitor does so you don't have to type full address every time.  
+
+The mmu the debugger is getting, is megaii. That's not right. however then it's maybe especially confusing why read c035/6 aren't working.
+[x] GS should change the mmu in the debugger.  
+done. And the others set the debugger mmu also. Wonder about splitting this up some..
+
+OK, the disassembler was doing read_raw, which really isn't what we wanted. It probably somewhat worked by accident in the IIe mode. definitely not in GS, we have to have megaii memory mapping.
+[x] four byte instructions (e.g. lda $xx/yyyy) don't disasm correctly in the monitor disassembler.  
+
+STILL $C036 isn't reading, lol. (ah, it was being overwritten by speaker. fixed.)
+
+Hanging on $C034:7 to go to 0. But we're reading EE, so that never works. Ah, the data bank is $E1 and -that- is not working. Eenteresting.
+
+[x] Debugger trace- correctly display DB, K, etc in header and disassemblies.  
+
+C035 and C036 reads aren't working because they're connected to the Speaker and I get inappropriate clicks. So this is coming back to my notes above, that other motherboard devices may be overwriting the MMU stuff.
+But why is is 0xEE? the scanner value isn't getting set, or is getting set in the wrong mmu.
+
+[ ] if the screen isn't just the right size, you can see scaling artifacts between the border and main display area.
+
+## Dec 17, 2025
+
+So at minimum these registers are not working right:
+$C034 (not implemented)
+$C036 - returning 0xEE
+
+## Dec 20, 2025
+
+one of these has been fixed. 
+
+battery ram/RTC registers have been implemented at C033 C034.
+
+C034 also saves the display handler for C034 (Border) and calls down to that display routine.
+
+hitting ctrl-oa-reset actually triggered the self test / ram test somehow, and it ran pretty well for a while, tho eventually crashed in generate_frame.
+There are other times where I've hit ctrl-reset where it did the same, as well as other failures (in MMU). So there's some weirdness still in memory handling.
+
+## Dec 21, 2025
+
+I've been wondering why the system does not come up in white-on-blue text. The 0911 ADB error seems to throw before we set display colors from battery ram.
+So, is C022 FC by default on power-on in the VGC? Clemens defaults them as such (but border to 0). GuS sets to 0xF0. 
