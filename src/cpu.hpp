@@ -233,6 +233,8 @@ struct cpu_state {
     uint8_t skip_next_irq_check = 0; /* if set, skip the next IRQ check */
 
     MMU *mmu = nullptr; // cpu only needs to know about base interface with read() and write().
+    
+    processor_type cpu_type = PROCESSOR_6502;
 
     // clocking
     uint64_t clock_slip = 0;

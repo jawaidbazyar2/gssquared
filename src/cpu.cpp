@@ -147,6 +147,7 @@ cpu_state::cpu_state(processor_type cpu_type) {
 }
 
 void cpu_state::set_processor(processor_type new_cpu_type) {
+    cpu_type = new_cpu_type;
     trace_buffer->set_cpu_type(new_cpu_type);
 }
 
