@@ -250,6 +250,20 @@ void MMU_II::set_C0XX_write_handler(uint16_t address, write_handler_t handler) {
     C0xx_memory_write_handlers[address - C0X0_BASE] = handler;
 }
 
+void MMU_II::get_C0XX_read_handler(uint16_t address, read_handler_t &handler) {
+    if (address < C0X0_BASE || address >= C0X0_BASE + C0X0_SIZE) {
+        return;
+    }
+    handler = C0xx_memory_read_handlers[address - C0X0_BASE];
+}
+
+void MMU_II::get_C0XX_write_handler(uint16_t address, write_handler_t &handler) {
+    if (address < C0X0_BASE || address >= C0X0_BASE + C0X0_SIZE) {
+        return;
+    }
+    handler = C0xx_memory_write_handlers[address - C0X0_BASE];
+}
+
 uint8_t *MMU_II::get_rom_base() {
     return main_rom_D0;
 }
