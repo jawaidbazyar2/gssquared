@@ -13,6 +13,7 @@
 #define TB_OP1 6
 #define TB_OP2 9
 #define TB_OP3 12
+#define TB_OP4 15
 
 #define TB_OPCODE 18
 #define TB_OPERAND 23
@@ -64,7 +65,7 @@ void Disassembler::disassemble_one() {
     bufptr[TB_ADDRESS + 4] = ':';
     decode_hex_byte(bufptr + TB_OP1, read_mem(address));
 
-    operand = 0; uint8_t op2, op3;
+    operand = 0; uint8_t op2, op3, op4;
     if (am->size == 2) {
         op2 = read_mem(address + 1);
         operand = op2;
@@ -75,6 +76,14 @@ void Disassembler::disassemble_one() {
         operand = op2 | (op3 << 8);
         decode_hex_byte(bufptr + TB_OP2, op2);
         decode_hex_byte(bufptr + TB_OP3, op3);
+    } else if (am->size == 4) {
+        op2 = read_mem(address + 1);
+        op3 = read_mem(address + 2);
+        op4 = read_mem(address + 3);
+        operand = op2 | (op3 << 8) | (op4 << 16);
+        decode_hex_byte(bufptr + TB_OP2, op2);
+        decode_hex_byte(bufptr + TB_OP3, op3);
+        decode_hex_byte(bufptr + TB_OP4, op4);
     }
 
     if (opcode_name) memcpy(bufptr + TB_OPCODE, opcode_name, strlen(opcode_name));
