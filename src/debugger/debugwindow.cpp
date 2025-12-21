@@ -116,8 +116,10 @@ debug_window_t::~debug_window_t() {
 
 bool debug_window_t::check_breakpoint(system_trace_entry_t *entry) {
     for (MemoryWatch::iterator watch = breaks.begin(); watch != breaks.end(); ++watch) {
-        if ((entry->pc >= watch->start && entry->pc <= watch->end) ||
-            (entry->eaddr >= watch->start && entry->eaddr <= watch->end)) {
+        uint16_t pc16 = entry->pc & 0xFFFF;
+        uint16_t eaddr16 = entry->eaddr & 0xFFFF;
+        if ((pc16 >= watch->start && pc16 <= watch->end) ||
+            (eaddr16 >= watch->start && eaddr16 <= watch->end)) {
             return true;
         }
     }
