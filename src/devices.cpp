@@ -35,6 +35,7 @@
 #include "devices/applemouseii/mouse.hpp"
 #include "devices/cassette/cassette.hpp"
 #include "devices/vidhd/vidhd.hpp"
+#include "devices/rtc/rtc_pram.hpp"
 
 Device_t NoDevice = {
         DEVICE_ID_END,
@@ -183,6 +184,13 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         "VIDHD",
         false,
         init_slot_vidhd,
+        NULL
+    },
+    {
+        DEVICE_ID_RTC_PRAM,
+        "RTC (Clock + Battery RAM)",
+        false,
+        init_slot_rtc_pram,
         NULL
     }
 };

@@ -31,7 +31,6 @@ static  platform_info platforms[] = {
         PLATFORM_APPLE_II, 
         "Apple II", 
         "apple2", 
-        0xD000, 
         PROCESSOR_6502, 
         CLOCK_1_024MHZ ,
         MMU_MMU_II,
@@ -40,7 +39,6 @@ static  platform_info platforms[] = {
         PLATFORM_APPLE_II_PLUS, 
         "Apple II Plus", 
         "apple2_plus", 
-        0xD000, 
         PROCESSOR_6502, 
         CLOCK_1_024MHZ, 
         MMU_MMU_II,
@@ -49,7 +47,6 @@ static  platform_info platforms[] = {
         PLATFORM_APPLE_IIE, 
         "Apple IIe", 
         "apple2e", 
-        0xC000,
         PROCESSOR_6502, 
         CLOCK_1_024MHZ, 
         MMU_MMU_IIE,
@@ -58,7 +55,6 @@ static  platform_info platforms[] = {
         PLATFORM_APPLE_IIE_ENHANCED, 
         "Apple IIe Enhanced",   
         "apple2e_enh", 
-        0xC000, 
         PROCESSOR_65C02, 
         CLOCK_1_024MHZ,
         MMU_MMU_IIE
@@ -67,10 +63,17 @@ static  platform_info platforms[] = {
         PLATFORM_APPLE_IIE_65816,
         "Apple IIe Enhanced 65816",
         "apple2e_enh",
-        0xC000,
         PROCESSOR_65816,
         CLOCK_1_024MHZ,
         MMU_MMU_IIE
+     },
+     {
+        PLATFORM_APPLE_IIGS,
+        "Apple IIgs",
+        "apple2gs",
+        PROCESSOR_65816,
+        CLOCK_2_8MHZ,
+        MMU_MMU_IIGS
      },
     // Add more platforms as needed:
     // { "Apple IIc",         "apple2c" },
@@ -106,24 +109,6 @@ rom_data* load_platform_roms(platform_info *platform) {
     char filepath[256];
     struct stat st;
 
- /*    // Read base address
-    snprintf(filepath, sizeof(filepath), "roms/%s/base.addr", platform->rom_dir);
-    FILE* base_file = fopen(filepath, "r");
-    if (!base_file) {
-        char *debugstr = new char[512];
-        snprintf(debugstr, 512, "Failed to open base_addr %s errno: %d\n", filepath, errno);
-        system_failure(debugstr);
-        delete roms;
-        return nullptr;
-    }
-    char base_addr_str[10];
-    fgets(base_addr_str, sizeof(base_addr_str), base_file);
-    fclose(base_file);
-    roms->main_base_addr = strtol(base_addr_str, NULL, 16);
- */
-
-    roms->main_base_addr = platform->rom_base_addr;
-
     // Load main ROM
     snprintf(filepath, sizeof(filepath), "roms/%s/main.rom", platform->rom_dir);
     roms->main_rom_file = new ResourceFile(filepath, READ_ONLY);
@@ -134,8 +119,7 @@ rom_data* load_platform_roms(platform_info *platform) {
         delete roms;
         return nullptr;
     }
-    roms->main_rom_data = (main_rom_t*) roms->main_rom_file->load();
-    //roms->main_rom_file->size();
+    roms->main_rom_data = roms->main_rom_file->load();
 
     // Load character ROM
     snprintf(filepath, sizeof(filepath), "roms/%s/char.rom", platform->rom_dir);
@@ -149,11 +133,10 @@ rom_data* load_platform_roms(platform_info *platform) {
         return nullptr;
     }
     roms->char_rom_data = (char_rom_t*) roms->char_rom_file->load();
-    //roms->char_size = char_rom_file.size();
+
     roms->char_rom_file->dump();
 
     fprintf(stdout, "ROM Data:\n");
-    fprintf(stdout, "  Main ROM Base Address: 0x%04X\n", roms->main_base_addr);
     fprintf(stdout, "  Main ROM Size: %zu bytes\n", roms->main_rom_file->size());
     fprintf(stdout, "  Character ROM Size: %zu bytes\n", roms->char_rom_file->size());
 

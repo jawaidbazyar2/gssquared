@@ -284,6 +284,8 @@ add_library(gs2_video_scanner
     src/devices/displaypp/VideoScannerIIePAL.cpp 
     src/devices/displaypp/VideoScannerIIgs.cpp)
 
+add_library(gs2_devices_rtc_pram src/devices/rtc/rtc_pram.cpp)
+
 target_link_libraries(gs2_ui SDL3_image::SDL3_image-shared SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_debugger gs2_trace gs2_util SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_util SDL3_ttf::SDL3_ttf-shared)
@@ -342,6 +344,7 @@ target_link_libraries(GSSquared
     gs2_paths
     gs2_video_scanner
     gs2_devices_mouse
+    gs2_devices_rtc_pram
 )
 
 add_subdirectory(apps/nibblizer)
@@ -372,6 +375,8 @@ add_subdirectory(apps/iieromcsum)
 #add_subdirectory(apps/cpu816test)
 
 add_subdirectory(apps/ui)
+
+add_subdirectory(apps/rtctest)
 
 ################################################################################
 #### Packaging targets per platform

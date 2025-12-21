@@ -113,6 +113,17 @@ DeviceMap_t DeviceMap_IIE_ENH_2MB[] = {
     {DEVICE_ID_END, SLOT_NONE}
 };
 
+DeviceMap_t DeviceMap_IIGS[] = {
+    {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
+    {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
+    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
+    {DEVICE_ID_RTC_PRAM, SLOT_NONE}, // after display, because we call back to it for border color changes.
+    {DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
+    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
+    {DEVICE_ID_PD_BLOCK2, SLOT_5},
+    {DEVICE_ID_DISK_II, SLOT_6},
+    {DEVICE_ID_END, SLOT_NONE}
+};
 
 SystemConfig_t BuiltinSystemConfigs[] = {
     {
@@ -194,6 +205,16 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         CLOCK_SET_PAL,
         Scanner_AppleIIePAL,
         "PAL Video; 128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard",
+    },
+    {
+        "Apple IIgs",
+        PLATFORM_APPLE_IIGS,
+        DeviceMap_IIGS,
+        Badge_IIEEnh,
+        true,
+        CLOCK_SET_US,
+        Scanner_AppleIIgs,
+        "Apple IIgs 16MB RAM"
     },
 /*     {
         "Apple IIc",

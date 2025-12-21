@@ -1013,8 +1013,9 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         case PLATFORM_APPLE_IIE:
             charrom = new CharRom("roms/apple2e/char.rom");
             break;
-        case PLATFORM_APPLE_IIE_65816:
         case PLATFORM_APPLE_IIE_ENHANCED:
+        case PLATFORM_APPLE_IIE_65816:
+        case PLATFORM_APPLE_IIGS:
             charrom = new CharRom("roms/apple2e_enh/char.rom");
             break;
         case PLATFORM_APPLE_II_PLUS:
@@ -1108,7 +1109,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     });
 
     if (computer->platform->id == PLATFORM_APPLE_IIE || computer->platform->id == PLATFORM_APPLE_IIE_ENHANCED
-    || computer->platform->id == PLATFORM_APPLE_IIE_65816) {
+    || computer->platform->id == PLATFORM_APPLE_IIE_65816 || computer->platform->id == PLATFORM_APPLE_IIGS) {
         ds->f_altcharset = false;
         ds->a2_display->set_char_set(ds->f_altcharset);
         mmu->set_C0XX_write_handler(0xC00C, { ds_bus_write_C00X, ds });
@@ -1150,7 +1151,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
             break;
     }
 
-    if (computer->platform->id == PLATFORM_APPLE_IIE_65816) {
+    if (computer->platform->id == PLATFORM_APPLE_IIE_65816 || computer->platform->id == PLATFORM_APPLE_IIGS) {
         // allocate border and shr frame buffers.
         ds->fr_border = new(std::align_val_t(64)) FrameBorder(53, 263, vs->renderer, PIXEL_FORMAT);
         ds->fr_shr = new(std::align_val_t(64)) Frame640(640, 200, vs->renderer, PIXEL_FORMAT);
@@ -1166,6 +1167,12 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         ds->mon_mono.set_shift_enabled(false);
         ds->mon_ntsc.set_shift_enabled(false);
         ds->mon_rgb.set_shift_enabled(false);
+        
+        // Set default video scanner colors for Apple IIgs.
+        ds->text_color = 0xFC; ds->video_scanner->set_text_fg(0x0F); ds->video_scanner->set_text_bg(0x0C);
+        ds->a2_display->set_text_fg(0x0F); ds->a2_display->set_text_bg(0x0C);
+        ds->border_color = 0x0C; ds->video_scanner->set_border_color(0x0C);
+        ds->a2_display->set_border_color(0x0C);
     }
 
     if (ds->video_scanner_type == Scanner_AppleIIgs) {

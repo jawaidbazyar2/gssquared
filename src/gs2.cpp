@@ -29,7 +29,6 @@
 #include "cpu.hpp"
 #include "clock.hpp"
 #include "display/display.hpp"
-#include "display/text_40x24.hpp"
 #include "event_poll.hpp"
 #include "devices/speaker/speaker.hpp"
 #include "platforms.hpp"
@@ -39,12 +38,12 @@
 #include "systemconfig.hpp"
 #include "slots.hpp"
 #include "util/soundeffects.hpp"
-#include "devices/diskii/diskii.hpp"
 #include "videosystem.hpp"
 #include "debugger/debugwindow.hpp"
 #include "computer.hpp"
 #include "mmus/mmu_ii.hpp"
 #include "mmus/mmu_iie.hpp"
+#include "mmus/mmu_iigs.hpp"
 #include "util/EventTimer.hpp"
 #include "ui/SelectSystem.hpp"
 #include "ui/MainAtlas.hpp"
@@ -188,6 +187,34 @@ void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time,
     }
 }
 
+
+DebugFormatter *debug_clock(computer_t *computer) {
+    DebugFormatter *f = new DebugFormatter();
+    f->addLine("CPU Expected Rate: %d", computer->clock->hz_rate);
+    f->addLine("CPU eMHZ: %12.8f, FPS: %12.8f", computer->cpu->e_mhz, computer->cpu->fps);
+    return f;
+}
+
+void register_clock_debug(computer_t *computer) {
+
+    computer->register_debug_display_handler(
+        "clock",
+        0x0000000000000005, // unique ID for this, need to have in a header.
+        [computer]() -> DebugFormatter * {
+            return debug_clock(computer);
+        }
+    );
+
+}
+
+
+DebugFormatter *debug_mmu_iigs(MMU_IIgs *mmu_iigs) {
+    DebugFormatter *f = new DebugFormatter();
+    mmu_iigs->debug_dump(f);
+    return f;
+}
+
+
 /*
 main emulation loop.
 Each iteration inside (while cpu->halt) is a frame.
@@ -207,6 +234,8 @@ void run_cpus(computer_t *computer) {
     uint64_t start_frame_c14m = 0;
     uint64_t last_start_frame_c14m = 0;
     uint64_t end_frame_c14M = start_frame_c14m + computer->clock->c14M_per_frame; // init outside the loop
+
+    speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
 
     while (cpu->halt != HLT_USER) { // top of frame.
 
@@ -337,14 +366,14 @@ void run_cpus(computer_t *computer) {
             //uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
             uint64_t frame_length_ns = (frame_count & 1) ? computer->clock->us_per_frame_odd : computer->clock->us_per_frame_even;
             // sleep out the rest of this frame.
-            frame_sleep(computer, cpu, last_cycle_time, frame_length_ns);
+            //frame_sleep(computer, cpu, last_cycle_time, frame_length_ns);
 
             /*
             should this be last_cycle_time = wakeup_time? Then we don't lose some ns on the function return etc..
             discussion: in the event of a clock slip, we get all confused if we only stay synced to wakeup_time.
             as long as there are no slips, we're good.
             */
-            last_cycle_time = SDL_GetTicksNS(); 
+            //last_cycle_time = SDL_GetTicksNS(); 
             
             // update frame status; calculate stats; move these variables into computer;
             computer->frame_status_update();
@@ -357,6 +386,13 @@ void run_cpus(computer_t *computer) {
                 frame_count++;
                 last_start_frame_c14m = start_frame_c14m;
             }
+            // claude suggested - to keep the audio queue in sync, gently slow down the frame rate if we are getting too far ahead.
+            /* if (speaker_state->sp->get_queued_samples() > 5000) {
+                frame_length_ns += 2500;
+            } */
+            frame_sleep(computer, cpu, last_cycle_time, frame_length_ns);
+            last_cycle_time = SDL_GetTicksNS(); 
+
         } else { // Ludicrous Speed!
             // TODO: how to handle VBL timing here. estimate it based on realtime?
             computer->set_frame_start_cycle(); // todo: unsure if this is right..
@@ -558,11 +594,16 @@ int main(int argc, char *argv[]) {
     platform_info* platform = get_platform(platform_id);
     print_platform_info(platform);
 
+    // TODO: This is a little disjointed. the clock abstraction should probably program all the things that need the clock.
+    // the initial setting here is 1MHz, except for platform which has the right starting clock?
     select_system_clock(system_config->clock_set);
     computer->set_clock(&system_clock_mode_info[computer->speed_new]);
+    set_clock_mode(computer->cpu, platform->default_clock_mode);
+
+    computer->cpu->set_processor(platform->cpu_type);
+
 
     //computer->set_cpu(new cpu_state(platform->cpu_type));
-    computer->cpu->set_processor(platform->cpu_type);
 
     computer->set_platform(platform);
     computer->set_video_scanner(system_config->scanner_type);
@@ -580,17 +621,28 @@ int main(int argc, char *argv[]) {
     // always 12k rom, but not necessarily always the same ROM.
     MMU_II *mmu_ii = nullptr;
     MMU_IIe *mmu_iie = nullptr;
+    MMU_IIgs *mmu_iigs = nullptr;
 
     switch (platform->mmu_type) {
         case MMU_MMU_II:
             mmu_ii = new MMU_II(256, 48*1024, (uint8_t *) rd->main_rom_data);
             computer->cpu->set_mmu(mmu_ii);
             computer->set_mmu(mmu_ii);
+            computer->debug_window->set_mmu(mmu_ii);
             break;
         case MMU_MMU_IIE:
             mmu_iie = new MMU_IIe(256, 128*1024, (uint8_t *) rd->main_rom_data);
             computer->cpu->set_mmu(mmu_iie);
             computer->set_mmu(mmu_iie);
+            computer->debug_window->set_mmu(mmu_iie);
+            break;
+        case MMU_MMU_IIGS:
+            mmu_iie = new MMU_IIe(256, 128*1024, /* (uint8_t *) */rd->main_rom_data + 0x1'D000);
+            mmu_iigs = new MMU_IIgs(256, 8*1024*1024, 128*1024, /* (uint8_t *) */rd->main_rom_data, mmu_iie);
+            mmu_iigs->init_map();
+            computer->cpu->set_mmu(mmu_iigs); // cpu gets FPI
+            computer->set_mmu(mmu_iie); // everything else gets the Mega II
+            computer->debug_window->set_mmu(mmu_iigs);
             break;
         default:
             printf("Unknown MMU type: %d\n", platform->mmu_type);
@@ -626,6 +678,8 @@ int main(int argc, char *argv[]) {
 
     bool result = soundeffects_init(computer);
 
+    register_clock_debug(computer);
+
     computer->cpu->reset();
 
     // mount disks - AFTER device init.
@@ -648,6 +702,21 @@ int main(int argc, char *argv[]) {
     //computer->mmu->dump_page_table(0x00, 0x0f);
     computer->video_system->update_display(); // check for events 60 times per second.
 
+    if (platform->mmu_type == MMU_MMU_IIGS) {
+        computer->debug_window->set_open();
+        computer->cpu->execution_mode = EXEC_STEP_INTO;
+        
+        computer->register_debug_display_handler(
+            "mmugs",
+            0x0000000000000006, // unique ID for this, need to have in a header.
+            [mmu_iigs]() -> DebugFormatter * {
+                return debug_mmu_iigs(mmu_iigs);
+            }
+        );
+        computer->cpu->trace_buffer->set_cpu_type(PROCESSOR_65816);
+        computer->video_system->set_display_engine(DM_ENGINE_RGB);
+    }
+
     run_cpus(computer);
 
     // deallocate stuff.
@@ -659,6 +728,10 @@ int main(int argc, char *argv[]) {
             delete mmu_ii;
             break;
         case MMU_MMU_IIE:
+            delete mmu_iie;
+            break;
+        case MMU_MMU_IIGS:
+            delete mmu_iigs;
             delete mmu_iie;
             break;
     }

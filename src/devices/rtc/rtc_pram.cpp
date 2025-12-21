@@ -21,6 +21,9 @@ void rtc_pram_write_C034(void *context, uint32_t address, uint8_t value) {
     printf("write_c034: %02X\n", value);
 
     rtc_pram_state_t *st = (rtc_pram_state_t *)context;
+    if (value & 0x0F) {
+        printf("write_c034: border color %02X\n", value & 0x0F);
+    }
     if (st->display_wr_handler.write) st->display_wr_handler.write(st->display_wr_handler.context, address, value & 0x0F);
     st->rtc->write_control_reg(value >> 5);
 }

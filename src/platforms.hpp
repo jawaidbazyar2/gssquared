@@ -29,38 +29,32 @@ typedef enum PlatformId_t {
     PLATFORM_APPLE_IIE,
     PLATFORM_APPLE_IIE_ENHANCED,
     PLATFORM_APPLE_IIE_65816,
+    PLATFORM_APPLE_IIGS,
     PLATFORM_END
 } PlatformId_t;
 
 typedef enum MMU_Type_t {
     MMU_MMU_II,
     MMU_MMU_IIE,
+    MMU_MMU_IIGS,
 } MMU_Type_t;
 
 struct platform_info {
     const PlatformId_t id;       
     const char* name;           // Human readable name
     const char* rom_dir;        // Directory under roms/
-    uint16_t rom_base_addr;    // Base address for the roms
     const processor_type cpu_type;   // processor type
     const clock_mode_t default_clock_mode; // default clock mode for this platform at startup.
     const MMU_Type_t mmu_type;
 };
 
 typedef uint8_t char_rom_t[256 * 8];
-typedef uint8_t main_rom_t[0x3000];
 
 struct rom_data {
-    uint16_t main_base_addr;
     ResourceFile *main_rom_file;
     ResourceFile *char_rom_file;
-    main_rom_t *main_rom_data;
+    uint8_t *main_rom_data;
     char_rom_t *char_rom_data;
-
-/*     uint8_t* main_rom;
-    size_t main_size;
-    uint8_t* char_rom;
-    size_t char_size; */
 };
 
 extern  int num_platforms;
