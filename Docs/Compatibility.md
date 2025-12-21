@@ -219,6 +219,7 @@ Works and supports Mockingboard on II Plus. Now works with Mockingboard on IIe.
 ## Ultima V
 
 Is now booting on IIe emulation with 128K. I should stick a Mockingboard in it and see if it works! It doesn't. ha! Fixed a bug in MB with new mmu routines for c1cf, still doesn't work. Fully implemented T2 counter and interrupt; still no dice.
+Bug fix 12/12/25, mockingboard C (at least) now works.
 
 ## AppleWorks 1.3
 
