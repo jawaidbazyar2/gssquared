@@ -116,6 +116,11 @@ class MMU_IIgs : public MMU {
 
         inline void set_shadow_register(uint8_t value) { if (DEBUG(DEBUG_MMUGS)) printf("setting shadow register: %02X\n", value); reg_shadow = value; }
         inline void set_speed_register(uint8_t value) { if (DEBUG(DEBUG_MMUGS)) printf("setting speed register: %02X\n", value); reg_speed = value; }
+        inline void set_state_register(uint8_t value) { if (DEBUG(DEBUG_MMUGS)) printf("setting state register: %02X\n", value); reg_state = value; }
+        inline uint8_t shadow_register() { return reg_shadow; }
+        inline uint8_t speed_register() { return reg_speed; }
+        inline uint8_t state_register() { return reg_state; }
+
         void set_ram_shadow_banks();
         //void shadow_register(uint16_t address, bool rw); // track accesses to softswitches the FPI also tracks.
         inline bool is_lc_bank1() { return FF_BANK_1 == 1; }
@@ -126,6 +131,8 @@ class MMU_IIgs : public MMU {
         inline void set_lc_read_enable(bool value) { FF_READ_ENABLE = value; }
         inline void set_lc_write_enable(bool value) { _FF_WRITE_ENABLE = value; }
         inline void set_lc_pre_write(bool value) { FF_PRE_WRITE = value; }
+        inline bool is_80store() { return g_80store ? true : false; }
+        inline bool is_slotc3rom() { return megaii->f_slotc3rom ? true : false; }
         void bsr_map_memory();
 
         uint32_t calc_aux_write(uint32_t address);
@@ -138,4 +145,5 @@ class MMU_IIgs : public MMU {
         virtual uint8_t *get_memory_base() { return main_ram; };
         virtual void init_map();
         virtual void reset() { reg_new_video = 0x01; reg_shadow = 0x08; reg_state = 0; g_80store = false; g_hires = false; g_rdrom = true; }
+        void debug_dump(DebugFormatter *df);
 };

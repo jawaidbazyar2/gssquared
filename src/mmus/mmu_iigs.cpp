@@ -22,7 +22,7 @@ inline void bank_e0_write(void *context, uint32_t address, uint8_t value) {
 
 inline uint8_t bank_e1_read(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
-    if ((address & 0xFF00) == 0xC000) return mmu_iigs->read_c0xx(address);
+    if ((address & 0xFF00) == 0xC000) return mmu_iigs->megaii->read(address & 0xFFFF);  // return mmu_iigs->read_c0xx(address);
     
     if (!mmu_iigs->is_bank_latch()) {
         return mmu_iigs->megaii->read(address & 0xFFFF);
@@ -35,7 +35,7 @@ inline uint8_t bank_e1_read(void *context, uint32_t address) {
 
 inline void bank_e1_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
-    if ((address & 0xFF00) == 0xC000) mmu_iigs->write_c0xx(address, value);
+    if ((address & 0xFF00) == 0xC000) mmu_iigs->megaii->write(address & 0xFFFF, value); // mmu_iigs->write_c0xx(address, value);
 
     if (!mmu_iigs->is_bank_latch()) {
         mmu_iigs->megaii->write(address & 0xFFFF, value);
@@ -101,6 +101,23 @@ inline uint8_t MMU_IIgs::read_c0xx(uint16_t address) {
     return retval;
 }
 
+uint8_t read_c068(void *context, uint32_t address) {
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    return mmu_iigs->state_register();
+}
+
+void write_c068(void *context, uint32_t address, uint8_t value) {
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_state_register(value);
+    mmu_iigs->megaii_compose_map();
+    mmu_iigs->bsr_map_memory();
+    // also set PAGE2 display in video scanner
+    if (value & 0x40) {
+        mmu_iigs->megaii->write(0xC055, 0x00);
+    } else {
+        mmu_iigs->megaii->write(0xC054, 0x00);
+    }
+}
 
 // read/write handlers for C0XX registers as handed to the MegaII.
 inline uint8_t megaii_c0xx_read(void *context, uint32_t address) {
@@ -395,34 +412,54 @@ void gs_bsr_write_C0xx(void *context, uint32_t address, uint8_t value) {
 
 }
 
-uint8_t gs_bsr_read_C011(void *context, uint32_t address) {
+uint8_t gs_bsr_read_C01x(void *context, uint32_t address) {
     MMU_IIgs *lc = (MMU_IIgs *)context;
 
-    if (DEBUG(DEBUG_MMUGS)) printf("languagecard_read_C011 %04X FF_BANK_1: %d\n", address, lc->is_lc_bank1());
-    uint8_t fl = (lc->is_lc_bank1() == 0) ? 0x80 : 0x00;
+    if (DEBUG(DEBUG_MMUGS)) printf("gs_bsr_read_C01x %04X \n", address);
+    uint8_t fl = 0x00;
+    switch (address & 0xF) {
+        case 0x1: /* C011 */ fl = (lc->is_lc_bank1() == 0) ? 0x80 : 0x00; break;
+        case 0x2: /* C012 */ fl = (lc->is_lc_read_enable() != 0) ? 0x80 : 0x00; break;
+        case 0x3: /* C013 */ fl = (lc->state_register() & 0x20) ? 0x80 : 0x00; break;
+        case 0x4: /* C014 */ fl = (lc->state_register() & 0x10) ? 0x80 : 0x00; break;
+        case 0x5: /* C015 */ fl = (lc->state_register() & 0x01) ? 0x80 : 0x00; break;
+        case 0x6: /* C016 */ fl = (lc->state_register() & 0x80) ? 0x80 : 0x00; break;
+        case 0x7: /* C017 */ fl = lc->is_slotc3rom() ? 0x80 : 0x00; break;
+        case 0x8: /* C018 */ fl = lc->is_80store() ? 0x80 : 0x00; break;
+
+        case 0xA: /* C01A */ break;
+        case 0xB: /* C01B */ break;
+        case 0xC: /* C01C */ break;
+        case 0xD: /* C01D */ break;
+
+    }
     
-    /* KeyboardMessage *keymsg = (KeyboardMessage *)lc->mbus->read(MESSAGE_TYPE_KEYBOARD);
-    uint8_t kbv = (keymsg ? keymsg->mk->last_key_val : 0xEE) & 0x7F;
-    return kbv | fl; */
-}
-
-uint8_t gs_bsr_read_C012(void *context, uint32_t address) {
-    MMU_IIgs *lc = (MMU_IIgs *)context;
-
-    if (DEBUG(DEBUG_MMUGS)) printf("languagecard_read_C012 %04X FF_READ_ENABLE: %d\n", address, lc->is_lc_read_enable());
-
-    uint8_t fl = (lc->is_lc_read_enable() != 0) ? 0x80 : 0x00; /* << 7; */
-
     /* KeyboardMessage *keymsg = (KeyboardMessage *)lc->mbus->read(MESSAGE_TYPE_KEYBOARD);
     uint8_t kbv = (keymsg ? keymsg->mk->last_key_val : 0xEE) & 0x7F;
     return kbv | fl; */
     return fl;
 }
 
+/*
+need to add:
+c015, c016, c017, c018, c01a, c01b, c01c, c01d 
+*/
+
+
 // set shadow register
 void c035_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_shadow_register(value);
+}
+
+uint8_t c035_read(void *context, uint32_t address) {
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    return mmu_iigs->shadow_register();
+}
+
+uint8_t c036_read(void *context, uint32_t address) {
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    return mmu_iigs->speed_register();
 }
 
 // set speed register
@@ -486,7 +523,7 @@ uint8_t bank_shadow_read(void *context, uint32_t address) {
     }
     
     address += mmu_iigs->calc_aux_read(address);    // handle RAMRD, 80STORE, ALTZP, PAGE2, HIRES (cuz we can have this AND LC at same time)
-    printf("Read: Effective address: %06X\n", address);
+    if (DEBUG(DEBUG_MMUGS)) printf("Read: Effective address: %06X\n", address);
     return mmu_iigs->get_memory_base()[address];
 }
 
@@ -525,6 +562,11 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
     mmu_iigs->get_memory_base()[address] = value;
 }
 
+uint8_t iolc_rom_read(void *context, uint32_t address) {
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    return mmu_iigs->get_rom_base()[0x1'0000 + (address & 0xFFFF)];
+}
+
 read_handler_t float_read_handler = { (memory_read_func)float_area_read, nullptr };
 
 void MMU_IIgs::init_c0xx_handlers() {
@@ -532,9 +574,9 @@ void MMU_IIgs::init_c0xx_handlers() {
         megaii->set_C0XX_write_handler(i, {megaii_c0xx_write, this});
     }
 
-    megaii->set_C0XX_read_handler(0xC011, {gs_bsr_read_C011, this});
-    megaii->set_C0XX_read_handler(0xC012, {gs_bsr_read_C012, this});
-
+    for (uint32_t i = 0xC011; i <= 0xC018; i++) {
+        megaii->set_C0XX_read_handler(i, {gs_bsr_read_C01x, this});
+    }
 
     for (uint32_t i = 0xC054; i <= 0xC057; i++) {
         megaii->set_C0XX_write_handler(i, {megaii_c0xx_write, this});
@@ -546,12 +588,20 @@ void MMU_IIgs::init_c0xx_handlers() {
         megaii->set_C0XX_read_handler(i, {g_bsr_read_C0xx, this});
     }
 
+    for (uint32_t i = 0xC071; i <= 0xC07F; i++) {
+        megaii->set_C0XX_read_handler(i, {iolc_rom_read, this});
+    }
+
     megaii->set_C0XX_write_handler(0xC035, {c035_write, this});
     megaii->set_C0XX_write_handler(0xC036, {c036_write, this});
-
+    megaii->set_C0XX_read_handler(0xC035, {c035_read, this});
+    megaii->set_C0XX_read_handler(0xC036, {c036_read, this});
+    
     megaii->set_C0XX_write_handler(0xC029, {megaii_c0xx_write, this});
     megaii->set_C0XX_read_handler(0xC029, {megaii_c0xx_read, this});
     
+    megaii->set_C0XX_read_handler(0xC068, {read_c068, this});
+    megaii->set_C0XX_write_handler(0xC068, {write_c068, this});
 }
 
 void MMU_IIgs::set_ram_shadow_banks() {
@@ -595,4 +645,36 @@ void MMU_IIgs::init_map() {
     set_ram_shadow_banks();
 
     init_c0xx_handlers();
+}
+
+void MMU_IIgs::debug_dump(DebugFormatter *df) {
+    df->addLine("LC: BANK_1: %d, READ_ENABLE: %d, PRE_WRITE: %d, /WRITE_ENABLE: %d", FF_BANK_1, FF_READ_ENABLE, FF_PRE_WRITE, _FF_WRITE_ENABLE);
+    df->addLine("Shadow: %02X: ![IOLC: %d T2: %d AUXH: %d SHR: %d H2: %d H1: %d T1: %d]",
+        reg_shadow,
+        (reg_shadow & SHADOW_INH_IOLC) != 0,
+        (reg_shadow & SHADOW_INH_TEXT2) != 0,
+        (reg_shadow & SHADOW_INH_AUXHGR) != 0,
+        (reg_shadow & SHADOW_INH_SHR) != 0,
+        (reg_shadow & SHADOW_INH_HGR2) != 0,
+        (reg_shadow & SHADOW_INH_HGR1) != 0,
+        (reg_shadow & SHADOW_INH_TEXT1) != 0);
+
+    df->addLine("State: %02X: INTCXROM: %d ROMBANK: %d LCBNK2: %d RDROM: %d",         
+        reg_state,
+        g_intcxrom,
+        g_rombank,
+        g_lcbnk2,
+        g_rdrom
+    );
+    df->addLine("           RAMWRT:   %d RAMRD:   %d PAGE2:  %d ALTZP: %d",
+        g_ramwrt,
+        g_ramrd,
+        g_page2,
+        g_altzp);
+    df->addLine("           80STORE:  %d HIRES:   %d", g_80store, g_hires);
+    
+    df->addLine("Speed: %02X", reg_speed);
+    debug_output_page(df, 0x00);
+    debug_output_page(df, 0x02);
+    megaii->debug_output_page(df, 0xFF);
 }
