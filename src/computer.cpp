@@ -202,7 +202,6 @@ void computer_t::send_clock_mode_message() {
  * call at end of every frame to update status and statistics.
  */
 void computer_t::frame_status_update() {
-    // since this is every 60 frames, the cycles emitted will be 1021800 per frame instead of 1020500 (which is something we calculate based on 59.992 frames)
     if (last_frame_end_time == 0) {
         last_frame_end_time = SDL_GetTicksNS()-1;
         last_5sec_update = last_frame_end_time;
