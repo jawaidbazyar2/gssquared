@@ -188,7 +188,15 @@ void VideoScannerII::set_video_mode()
     mode_table_t &mode = mode_table[vmode];
 
     video_addresses = mode.vaddr;
-    video_mode = (video_mode_t)mode.mode;
+    
+    // Validate mode.mode is within valid enum range (0-13) before assigning to enum
+    // This prevents UBSan "INVALID ENUM LOAD" warnings
+    // video_mode = (video_mode_t)mode.mode;
+    uint8_t mode_val = mode.mode;
+    if (mode_val > static_cast<uint8_t>(VM_LAST_HBL)) {
+        mode_val = static_cast<uint8_t>(VM_TEXT40); // fallback to safe default
+    }
+    video_mode = static_cast<video_mode_t>(mode_val);
 
     uint8_t flags = 0;
     if (altchrset) flags |= VS_FL_ALTCHARSET;

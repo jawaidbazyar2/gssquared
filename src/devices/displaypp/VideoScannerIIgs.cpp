@@ -130,7 +130,7 @@ void VideoScannerIIgs::video_cycle()
         frame_scan->push(scan);
     }
     if (sa.flags & SA_FLAG_SHR) {
-        scan.mode = (uint8_t)video_mode; // SHR_PIXEL, SHR_PALETTE, SHR_MODE
+        scan.mode = static_cast<uint8_t>(video_mode); // SHR_PIXEL, SHR_PALETTE, SHR_MODE
         scan.shr_bytes = *((uint32_t *)(ram + 0x1'0000 + address));
         frame_scan->push(scan);
     } else if (sa.flags & SA_FLAG_SCB) {
@@ -146,7 +146,7 @@ void VideoScannerIIgs::video_cycle()
         scan.flags = mode_flags;
         frame_scan->push(scan);
     } else if (!(sa.flags & SA_FLAG_BLANK)) {
-        scan.mode = (uint8_t)video_mode; 
+        scan.mode = static_cast<uint8_t>(video_mode); 
         scan.auxbyte = ram[address + 0x10000];
         scan.mainbyte = video_byte;
         scan.flags = mode_flags;
