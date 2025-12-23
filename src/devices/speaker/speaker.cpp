@@ -25,6 +25,7 @@
 #include "devices/speaker/speaker.hpp"
 #include "devices/speaker/LowPass.hpp"
 #include "devices/speaker/SpeakerFX.hpp"
+#include "util/DebugHandlerIDs.hpp"
 
 
 // Utility function to round up to the next power of 2
@@ -270,7 +271,7 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 
     computer->register_debug_display_handler(
         "speaker",
-        0x0000000000000003, // unique ID for this, need to have in a header.
+        DH_SPEAKER, // unique ID for this, need to have in a header.
         [speaker_state]() -> DebugFormatter * {
             return debug_speaker(speaker_state);
         }

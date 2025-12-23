@@ -7883,3 +7883,4 @@ There are other times where I've hit ctrl-reset where it did the same, as well a
 
 I've been wondering why the system does not come up in white-on-blue text. The 0911 ADB error seems to throw before we set display colors from battery ram.
 So, is C022 FC by default on power-on in the VGC? Clemens defaults them as such (but border to 0). GuS sets to 0xF0. 
+I'm going to default all these to white-on-blue.

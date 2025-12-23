@@ -21,7 +21,6 @@ class Mounts;
 class EventTimer;
 class VideoScannerII;
 
-
 struct computer_t {
 
     using ResetHandler = std::function<bool ()>;

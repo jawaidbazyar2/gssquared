@@ -5,6 +5,7 @@
 #include "mouse.hpp"
 #include "computer.hpp"
 #include "debug.hpp"
+#include "util/DebugHandlerIDs.hpp"
 
 
 void mouse_propagate_interrupt(mouse_state_t *ds) {
@@ -324,7 +325,7 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
 
     computer->register_debug_display_handler(
         "mouse",
-        0x0000000000000002, // unique ID for this, need to have in a header.
+        DH_MOUSE, // unique ID for this, need to have in a header.
         [ds]() -> DebugFormatter * {
             return debug_mouse(ds);
         }

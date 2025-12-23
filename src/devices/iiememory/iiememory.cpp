@@ -28,6 +28,8 @@
 #include "mbus/KeyboardMessage.hpp"
 #include "mbus/MessageBus.hpp"
 
+#include "util/DebugHandlerIDs.hpp"
+
 /**
  * First, handling the "language card" portion or what the IIe manual calls the "Bank Switch RAM".
  * 
@@ -626,7 +628,7 @@ void init_iiememory(computer_t *computer, SlotType_t slot) {
 
     computer->register_debug_display_handler(
         "iiememory",
-        0x0000000000000004, // unique ID for this, need to have in a header.
+        DH_IIEMEMORY, // unique ID for this, need to have in a header.
         [iiememory_d]() -> DebugFormatter * {
             return debug_iiememory(iiememory_d);
         }

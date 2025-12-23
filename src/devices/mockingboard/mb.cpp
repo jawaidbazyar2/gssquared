@@ -33,6 +33,7 @@
 #include "debug.hpp"
 #include "util/EventTimer.hpp"
 #include "util/DebugFormatter.hpp"
+#include "util/DebugHandlerIDs.hpp"
 
 enum AY_Registers {
     A_Tone_Low = 0,
@@ -1503,7 +1504,7 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
 
     computer->register_debug_display_handler(
         "mockingboard",
-        0x0000000000000001, // unique ID for this, need to have in a header.
+        DH_MOCKINGBOARD, // unique ID for this, need to have in a header.
         [mb_d]() -> DebugFormatter * {
             return debug_registers_6522(mb_d);
         }

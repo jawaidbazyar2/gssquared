@@ -50,6 +50,7 @@
 #include "cpus/cpu_implementations.hpp"
 #include "version.h"
 #include "util/Metrics.hpp"
+#include "util/DebugHandlerIDs.hpp"
 
 /**
  * References: 
@@ -199,7 +200,7 @@ void register_clock_debug(computer_t *computer) {
 
     computer->register_debug_display_handler(
         "clock",
-        0x0000000000000005, // unique ID for this, need to have in a header.
+        DH_CLOCK, // unique ID for this, need to have in a header.
         [computer]() -> DebugFormatter * {
             return debug_clock(computer);
         }
@@ -708,7 +709,7 @@ int main(int argc, char *argv[]) {
         
         computer->register_debug_display_handler(
             "mmugs",
-            0x0000000000000006, // unique ID for this, need to have in a header.
+            DH_MMUGS, // unique ID for this, need to have in a header.
             [mmu_iigs]() -> DebugFormatter * {
                 return debug_mmu_iigs(mmu_iigs);
             }
