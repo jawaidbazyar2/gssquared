@@ -92,7 +92,7 @@ z0000101 R/W    Clock seconds register next-to-lo
 z0001001 R/W    Clock seconds register next-to-hi
 z0001101 R/W    Clock seconds register hi
 00110001 W-Only Write to test register Always set bits 6 & 7 to "0".
-00110101 W-Only Write to write-protect register Setting bit 7 to "1" locks out further writes to the BRAM/Clock
+00110101 W-Only Write to write-protect register ## (wrong) Setting bit 7 to "1" locks out further writes to the BRAM/Clock
 z010ab01 R/W    Access BRAM address 100ab
 z1abcd01 R/W    Access BRAM address 0abcd
 z0111abc R/W    Followed by 0defgh00. Access BRAM address abcdefgh
@@ -130,6 +130,13 @@ should normally be set to 0 (setting them to anything else interferes with
 normal clock functioning).
 
 I can't find any code in the IIGS ROM that accesses these registers.
+
+(jb) Write Protect: From Cortland manual.
+This is essentially a write-only register.
+Write 1101'010x data to WP register to write protect
+Write 0101'010x data to WP register to remove write protect.
+
+
 
 ---------------------
 Battery Ram Locations
@@ -770,3 +777,9 @@ McGraw-Hill, Inc.
 This seems to be the only source that lists the legal values for most of
 the BRAM locations.
 ```
+
+## Cortland ERS (Apple Spec)
+
+https://www.brutaldeluxe.fr/documentation/cortland/v6/3430042B%20Real-Time%20Clock%20ERS%20198411.pdf
+
+This indicates the bram is not mapped straight through based on the value, but the address pins are mapped in a weird way to support the old "20 byte" version of the RTC chip.
