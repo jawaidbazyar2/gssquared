@@ -3,6 +3,7 @@
 
 #include "devices/rtc/RTC.hpp"
 
+uint64_t debug_level = DEBUG_RTC;
 
 void transaction (RTC &rtc, bool read_write) {
 

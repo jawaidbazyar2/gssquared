@@ -2,23 +2,24 @@
 #include "SlotData.hpp"
 #include "RTC.hpp"
 #include "rtc_pram.hpp"
-
+#include "util/DebugHandlerIDs.hpp"
+#include "debug.hpp"
 
 void rtc_pram_write_C033(void *context, uint32_t address, uint8_t value) {
     rtc_pram_state_t *st = (rtc_pram_state_t *)context;
-    printf("write_c033: %02X\n", value);
+    if (DEBUG(DEBUG_RTC)) printf("write_c033: %02X\n", value);
     st->rtc->write_data_reg(value);
 }
 
 uint8_t rtc_pram_read_C033(void *context, uint32_t address) {
     rtc_pram_state_t *st = (rtc_pram_state_t *)context;
     uint8_t val = st->rtc->read_data_reg();
-    printf("read_c033: %02X\n", val);
+    if (DEBUG(DEBUG_RTC)) printf("read_c033: %02X\n", val);
     return val;
 }
 
 void rtc_pram_write_C034(void *context, uint32_t address, uint8_t value) {
-    printf("write_c034: %02X\n", value);
+    if (DEBUG(DEBUG_RTC)) printf("write_c034: %02X\n", value);
 
     rtc_pram_state_t *st = (rtc_pram_state_t *)context;
     if (value & 0x0F) {
@@ -33,9 +34,14 @@ uint8_t rtc_pram_read_C034(void *context, uint32_t address) {
     uint8_t dispval;
     if (st->display_rd_handler.read) dispval = st->display_rd_handler.read(st->display_rd_handler.context, address);
     uint8_t rtcval = st->rtc->read_control_reg();
-    printf("read_c034: %02X\n", dispval | (rtcval << 5));
+    if (DEBUG(DEBUG_RTC)) printf("read_c034: %02X\n", dispval | (rtcval << 5));
 
     return dispval | (rtcval << 5);
+}
+
+DebugFormatter *rtc_pram_debug_display(void *context) {
+    rtc_pram_state_t *st = (rtc_pram_state_t *)context;
+    return st->rtc->debug_display();
 }
 
 void init_slot_rtc_pram(computer_t *computer, SlotType_t slot) {
@@ -58,5 +64,13 @@ void init_slot_rtc_pram(computer_t *computer, SlotType_t slot) {
         delete st;
         return true;
     });
+
+    computer->register_debug_display_handler(
+        "rtc",
+        DH_RTC_PRAM, // unique ID for this, need to have in a header.
+        [st]() -> DebugFormatter * {
+            return rtc_pram_debug_display(st);
+        }
+    );
 
 }
