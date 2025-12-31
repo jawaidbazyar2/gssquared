@@ -50,8 +50,8 @@ struct uc_vars_t {
     uint8_t code;
     uint8_t xkeys;
 
-    uint32_t kc_read_index = 0;
-    uint32_t kc_write_index = 0;
+    //uint32_t kc_read_index = 0;
+    //uint32_t kc_write_index = 0;
     uint32_t elements_in_buffer = 0;
 };
 
@@ -69,8 +69,8 @@ class KeyGloo
 
         uint8_t key_mods[16];
         uint8_t key_codes[16];
-        uint32_t kc_read_index = 0;
-        uint32_t kc_write_index = 0;
+        //uint32_t kc_read_index = 0;
+        //uint32_t kc_write_index = 0;
         uint32_t elements_in_buffer = 0;
 
         /*
@@ -107,15 +107,15 @@ class KeyGloo
             adb_host->add_device(0x02, new ADB_Keyboard());
             adb_host->add_device(0x03, new ADB_Mouse());
 
-            kc_read_index = 0;
-            kc_write_index = 0;
+            vars.inpt = 0;
+            vars.outpt = 0;
             key_latch = {0,0};
         };
         ~KeyGloo();
     
         void reset() {
-            kc_read_index = 0;
-            kc_write_index = 0;
+            vars.inpt = 0;
+            vars.outpt = 0;
             key_latch = {0,0};
             cmd_index = 0;
             cmd_bytes = 1;
@@ -135,8 +135,8 @@ class KeyGloo
             cmd_bytes = 1;
             response_index = 0;
             response_bytes = 0;
-            kc_read_index = 0;
-            kc_write_index = 0;
+            vars.inpt = 0;
+            vars.outpt = 0;
             key_latch = {0,0};
         }
 
@@ -253,16 +253,18 @@ class KeyGloo
         }
 
         void load_key_from_buffer() {
-            if (kc_read_index == kc_write_index) return;
-            key_latch = key_buffer[kc_read_index];
-            kc_read_index = (kc_read_index + 1) % 16;
+            if (vars.inpt == vars.outpt) return;
+            key_latch.keycode = key_codes[vars.inpt];
+            key_latch.modifiers = key_mods[vars.inpt];
+            vars.inpt = (vars.inpt + 1) % 16;
         }
         
         void store_key_to_buffer(uint8_t keycode, uint8_t modifiers) {
-            if ((kc_write_index + 1) % 16 == kc_read_index) return;
-            key_buffer[kc_write_index] = { keycode, modifiers };
-            kc_write_index = (kc_write_index + 1) % 16;
-            elements_in_buffer = (kc_write_index - kc_read_index + 16) % 16;
+            if ((vars.outpt + 1) % 16 == vars.inpt) return;
+            key_codes[vars.outpt] = keycode;
+            key_mods[vars.outpt] = modifiers;
+            vars.outpt = (vars.outpt + 1) % 16;
+            elements_in_buffer = (vars.outpt - vars.inpt + 16) % 16;
             // if the latch is cleared, load it.
             if (key_latch.keycode & 0x80) return;
             load_key_from_buffer();
