@@ -6,11 +6,6 @@
 #include "ADB_Keyboard.hpp"
 #include "ADB_Mouse.hpp"
 
-struct key_code_t {
-    uint8_t keycode;
-    uint8_t modifiers;
-};
-
 #define BUFSIZE 0x10
 
 struct uc_vars_t {
@@ -255,14 +250,14 @@ class KeyGloo
         void load_key_from_buffer() {
             if (vars.inpt == vars.outpt) return;
             key_latch.keycode = key_codes[vars.inpt];
-            key_latch.modifiers = key_mods[vars.inpt];
+            key_latch.keymods.value = key_mods[vars.inpt];
             vars.inpt = (vars.inpt + 1) % 16;
         }
         
-        void store_key_to_buffer(uint8_t keycode, uint8_t modifiers) {
+        void store_key_to_buffer(uint8_t keycode, uint8_t keymods) {
             if ((vars.outpt + 1) % 16 == vars.inpt) return;
             key_codes[vars.outpt] = keycode;
-            key_mods[vars.outpt] = modifiers;
+            key_mods[vars.outpt] = keymods;
             vars.outpt = (vars.outpt + 1) % 16;
             elements_in_buffer = (vars.outpt - vars.inpt + 16) % 16;
             // if the latch is cleared, load it.
@@ -274,7 +269,7 @@ class KeyGloo
             return key_latch.keycode;
         }
         uint8_t read_mod_latch() {
-            return key_latch.modifiers;
+            return key_latch.keymods.value;
         }
         uint8_t read_key_strobe() {
             key_latch.keycode &= 0x7F; // clear the strobe bit.

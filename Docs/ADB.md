@@ -326,3 +326,14 @@ Great convo on this on the slack: https://apple2infinitum.slack.com/archives/CPS
 
 I am motivated to run this PACMAN GAME on my emulated GS!!
 
+## Dec 31, 2025
+
+happy new year!
+
+ok, the ADB test harness is starting to come together.
+
+SDL event -> keyglu -> adb_host -> adb_keyboard
+
+the SDL scancode is getting converted to ADB scan codes. I need to fill the table in quite a bit.
+
+the keyboard needs a concept of "what keys are down right now".
