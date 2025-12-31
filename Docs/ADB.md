@@ -3,9 +3,8 @@
 The ADB-related registers are:
 
 • Keyboard Data register ($C000)
-• Keyboard Strobe register ($C010)
-
 • Modifier Key register ($C025)
+• Keyboard Strobe register ($C010)
 
 • Mouse Data register ($C024)
 
@@ -15,6 +14,11 @@ The ADB-related registers are:
 C000/C010 are legacy registers to emulate Apple //e. The others are new and ADB-specific.
 
 C000/C010 must be implemented using the underlying ADB logic.
+
+Those registers are all managed by the KeyGloo, a 6502-based Microcontroller that interposes between GS and ADB bus. The GS host has access to about 20 commands it can send to the uC, and it is the uC that manages the actual ADB bus - likely chosen this way because the ADB bus is extremely timing sensitive.
+
+In this emulator, we do not need to go to that level of detail - a real IIgs cannot do anything with ADB except via the uC. The one thing to be mindful about, is that GS software can read from and write to the ADB memory, and does so (address 0x51) in one case to determine if the machine was reset or just powered on. So we should allocate 3K for the ROM and 96 bytes for the RAM inside the keygloo object.
+
 
 ## Interrupts
 
@@ -54,6 +58,9 @@ So, I think the microcontroller is what is implementing ADB protocol for Mouse a
 "acts as a transceiver chip for other FDB devices".
 
 https://www.brutaldeluxe.fr/documentation/cortland/v3_10_FDBERS.pdf
+
+Also this has links to a dump of the ROM
+https://llx.com/Neil/a2/adb.html
 
 There is a separate KEYGLOO chip "acts as holding register so that data written by uC can be read by system and data written by system can be read by uC". Also this is the chip that generates interrupts.
 
@@ -257,3 +264,65 @@ So, we need to implement just like the ADB microcontroller.
 Apparently you send commands to the uC in a format different from the ADB bus itself. That makes sense, the ADB bus timing is very particular.
 
 See Page 13 on in the v3_10_FDBERS document.
+
+# KeyGloo Dev notes
+
+Even though today I only have two devices, and am unsure about ever supporting any other devices (graphics tablets? radio tuners? security keys?)
+
+[ ] Patch in event handling for keyboard.
+[ ] Patch in event handling for Mouse.
+[ ] test harness  
+
+Apparently the CDA panel is handled by the firmware during VBL interrupts.
+
+Event handling. Put it into this object?
+Or, handle it at the device level and decouple the KeyGloo object from: timing, SDL, etc?
+Yeah, let's try that.
+
+ok. So, events are sent in this way:
+main -> KeyGloo -> ADB_Host -> ADB_Device1, Device2, etc.
+then, based on this, the ADB devices should set some information in their registers.
+Then, KeyGloo should poll through the ADB Host to get some kind of status. E.g. was a key pressed.
+It would do this with a talk() command.
+KeyGloo does have special knowledge of Keyboards and Mice.
+
+in the ADB Keyboard device, the keycodes are scan codes, not ascii, even though the GS manual says ascii.
+So if we're to maintain this fiction, there is a lot to do.
+
+1. Convert PC/SDL scancode to ADB keyboard scan code.
+2. convert ADB Scancode to ascii (in the key latch). or leave it as-is for direct reads from the adb key device.
+
+now, this is ickyish because we already have to call an SDL routine to map from scancode to ascii, in order to take account of international keyboards.
+Each international keyboard in a GS is going to have a map. Would this imply we need a unique 
+
+KB register 0 just packs up to two events into one message. 
+
+https://www.brutaldeluxe.fr/documentation/cortland/v3/The%20ADB%20uC%20Tool%20Set%20-%20Peter%20Baum%20-%20Rev%201.1%20-%2019860515.pdf
+
+https://gemini.google.com/app/c600196fa04cec55
+
+OK, the buffer DOES live in the microcontroller, NOT in the keyboard device. Well, the keyboard device seems to be able to hold two keypresses.
+
+```
+Example Scan
+If you press the 'A' key (ADB code 0x00):
+
+Register 0 result: 0x00FF
+00: High byte (Bit 15=0 for Down, Bits 14-8=0x00 for 'A').
+FF: Low byte (No second key, idling).
+
+If you release the 'A' key:
+
+Register 0 result: 0x80FF
+80: High byte (Bit 15=1 for Up, Bits 14-8=0x00 for 'A').
+FF: Low byte (Idling).
+```
+
+So while we -could- use both bytes we really probably don't have to. It said "if no data, request ignored". not sure that's right..
+if there's data, it goes in high byte, and 0xFF in low byte.
+0xFFFF is reset / poweron.
+
+Great convo on this on the slack: https://apple2infinitum.slack.com/archives/CPSGNGE05/p1767030235302959
+
+I am motivated to run this PACMAN GAME on my emulated GS!!
+

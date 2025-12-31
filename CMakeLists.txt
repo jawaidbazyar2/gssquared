@@ -347,6 +347,8 @@ target_link_libraries(GSSquared
     gs2_devices_rtc_pram
 )
 
+add_subdirectory(apps/adbtest)
+
 add_subdirectory(apps/nibblizer)
 
 add_subdirectory(apps/denibblizer)
