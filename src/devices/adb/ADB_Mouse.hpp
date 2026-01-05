@@ -9,7 +9,7 @@ class ADB_Mouse : public ADB_Device
 
     void reset(uint8_t cmd, uint8_t reg) override { }
     void flush(uint8_t cmd, uint8_t reg) override { }
-    void listen(uint8_t command, uint8_t reg) override { }
+    void listen(uint8_t command, uint8_t reg, ADB_Register &msg) override { }
     ADB_Register talk(uint8_t command, uint8_t reg) override {
         ADB_Register reg_result = {};
         return reg_result;

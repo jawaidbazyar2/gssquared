@@ -5,6 +5,7 @@
 #include "ADB_Host.hpp"
 #include "ADB_Keyboard.hpp"
 #include "ADB_Mouse.hpp"
+#include "ADB_ASCII.hpp"
 
 #define BUFSIZE 0x10
 
@@ -22,8 +23,8 @@ struct uc_vars_t {
     uint8_t respstat; // response / status return from cmd->set
     uint8_t fdbxtra; // various bits
     uint8_t fdbxkeys; // modifier bits (set if pressed)
-    uint8_t currmod; // keep track for internal and fdb mod state
-    uint8_t prevmod; // previous modifier keys status
+    adb_mod_key_t currmod; // keep track for internal and fdb mod state
+    adb_mod_key_t prevmod; // previous modifier keys status
     uint8_t ctlshfcnt; // control, shift counts
     uint8_t applecnt; // open apple, solid apple counts
     uint8_t stickstat; // sticky mod status
@@ -102,9 +103,10 @@ class KeyGloo
             adb_host->add_device(0x02, new ADB_Keyboard());
             adb_host->add_device(0x03, new ADB_Mouse());
 
-            vars.inpt = 0;
+            reset();
+            /* vars.inpt = 0;
             vars.outpt = 0;
-            key_latch = {0,0};
+            key_latch = {0,0}; */
         };
         ~KeyGloo();
     
@@ -116,6 +118,9 @@ class KeyGloo
             cmd_bytes = 1;
             response_index = 0;
             response_bytes = 0;
+
+            vars.currmod.value = 0;
+            vars.prevmod.value = 0;
         }
 
         void abort() {
@@ -143,8 +148,50 @@ class KeyGloo
             configuration_bytes[2] = 0x24; // 3/4 sec delay, 15/sec rate
         }
         
-        // there are 
-
+        // unlike the //e and //+ conversion where we mostly rely on SDL, here we have to fully
+        // map our scancode to ascii, taking account of modifiers.
+        uint8_t map_us(uint8_t code, adb_mod_key_t mods) {
+            if (code >= 0x40) return code;
+            uint8_t ascii = adb_ascii_us[code];
+            if (mods.ctrl) {
+                if (ascii >= 'a' && ascii <= 'z') ascii = ascii - 'a' + 1; // convert to ASCII control code
+                if ((mods.shift) && (ascii == '2')) ascii = 0x00; // control-@ is special case
+                if ((mods.shift) && (ascii == '6')) ascii = 0x1E; // control-shift-6 is special case
+                return ascii;
+            }
+            if (mods.caps) { // caps lock only affects letters
+                if (ascii >= 'a' && ascii <= 'z') ascii = ascii - 'a' + 'A'; // convert to uppercase
+                // fall through to shift, which won't match lowercase letters any more, but will match punctuation.
+            }
+            if (mods.shift) { // shift is used for uppercase and punctuation
+                if (ascii >= 'a' && ascii <= 'z') ascii = ascii - 'a' + 'A'; // convert to uppercase
+                else {
+                    switch (ascii) {
+                        case '1': ascii = '!'; break;
+                        case '2': ascii = '@'; break;
+                        case '3': ascii = '#'; break;
+                        case '4': ascii = '$'; break;
+                        case '5': ascii = '%'; break;
+                        case '6': ascii = '^'; break;
+                        case '7': ascii = '&'; break;
+                        case '8': ascii = '*'; break;
+                        case '9': ascii = '('; break;
+                        case '0': ascii = ')'; break;
+                        case '-': ascii = '_'; break;
+                        case '=': ascii = '+'; break;
+                        case '[': ascii = '{'; break;
+                        case ']': ascii = '}'; break;
+                        case ';': ascii = ':'; break;
+                        case '\'': ascii = '"'; break;
+                        case ',': ascii = '<'; break;
+                        case '.': ascii = '>'; break;
+                        case '/': ascii = '?'; break;
+                        case '`': ascii = '~'; break;
+                    }
+                }
+            } 
+            return ascii;
+        }
 
         void execute_command() {
             uint8_t value = cmd[0];
@@ -249,7 +296,10 @@ class KeyGloo
 
         void load_key_from_buffer() {
             if (vars.inpt == vars.outpt) return;
-            key_latch.keycode = key_codes[vars.inpt];
+            // only if there is no key in the latch currently.
+            if (key_latch.keycode & 0x80) return;
+
+            key_latch.keycode = key_codes[vars.inpt] | 0x80; // set the 'key present' bit.
             key_latch.keymods.value = key_mods[vars.inpt];
             vars.inpt = (vars.inpt + 1) % 16;
         }
@@ -265,17 +315,37 @@ class KeyGloo
             load_key_from_buffer();
         }
 
+        void print() {
+            printf("KeyGloo: currmod: %02X, prevmod: %02X\n", vars.currmod.value, vars.prevmod.value);
+            printf("KeyGloo: key_latch: %02X, key_mods: %02X\n", key_latch.keycode, key_latch.keymods.value);
+            printf("KeyGloo: key_codes: ");
+            for (int i = 0; i < 16; i++) {
+                printf("%02X ", key_codes[i]);
+            }
+            printf("\n");
+            printf("KeyGloo: key_mods: ");
+            for (int i = 0; i < 16; i++) {
+                printf("%02X ", key_mods[i]);
+            }
+        }
+
         uint8_t read_key_latch() {
             return key_latch.keycode;
         }
+
         uint8_t read_mod_latch() {
             return key_latch.keymods.value;
         }
+
         uint8_t read_key_strobe() {
             key_latch.keycode &= 0x7F; // clear the strobe bit.
+            load_key_from_buffer();
+            return 0xEE; // TODO: return floating bus value.
         }
+
         void write_key_strobe() {
             key_latch.keycode &= 0x7F; // clear the strobe bit.
+            load_key_from_buffer();
         }
 
         uint8_t read_data_register() {
@@ -353,6 +423,33 @@ class KeyGloo
         } 
 
         bool process_event(SDL_Event &event) {
-            return adb_host->process_event(event);
+            // TODO: after processing event, check keyboard register for new key event and read it here.
+            bool status = adb_host->process_event(event);
+            if (status) {
+                ADB_Register reg;
+                adb_host->talk(0x02, 0b11, 0, reg);
+                // for each key event in returned reg, process and update modifiers.
+                // and keycode.
+                for (int i = 0; i < reg.size; i++) {
+                    if (reg.data[i] == 0xFF) break;
+                    uint8_t keycode = reg.data[i] & 0x7F;
+                    uint8_t keyupdown = reg.data[i] & 0x80 ? false : true; // true = key down, false = key up
+                    switch (keycode) {
+                        case ADB_CONTROL: vars.prevmod = vars.currmod; vars.currmod.ctrl = keyupdown; break;
+                        case ADB_LEFT_SHIFT: vars.prevmod = vars.currmod; vars.currmod.shift = keyupdown; break;
+                        case ADB_COMMAND: vars.prevmod = vars.currmod; vars.currmod.open = keyupdown; break;
+                        case ADB_OPTION: vars.prevmod = vars.currmod; vars.currmod.closed = keyupdown; break;
+                        default:           
+                            // TODO: I think we need to map the keycode here through a language map table,
+                            // based on map setting. Surely these tables are in the ROM somewhere..
+                            // TODO: do we get a key in C000 on key down, key up, or ... ?
+                                      
+                            if (keyupdown) store_key_to_buffer(map_us(keycode, vars.currmod), vars.currmod.value); // TODO: update modifiers.
+                            break;
+                    }
+                }
+            }
+            print();
+            return status;
         }
 };

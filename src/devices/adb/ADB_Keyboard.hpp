@@ -1,8 +1,6 @@
 #pragma once
 
 #include "ADB_Device.hpp"
-#include "SDL3/SDL_keycode.h"
-
 
 struct adb_mod_key_t {
     union {
@@ -197,178 +195,185 @@ class ADB_Keyboard : public ADB_Device
         ADB_COMMA, // SDL_SCANCODE_COMMA = 50,
         ADB_PERIOD, // SDL_SCANCODE_PERIOD = 51,
         ADB_SLASH, // SDL_SCANCODE_SLASH = 52,
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
-        0x7F, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
+        0xFF, 
         ADB_CONTROL, // SDL_SCANCODE_LCTRL = 224,
+        ADB_LEFT_SHIFT, // SDL_SCANCODE_LSHIFT = 225,
+        ADB_COMMAND, // SDL_SCANCODE_LGUI = 226,
+        ADB_OPTION, // SDL_SCANCODE_LALT = 227,
+        0xFF,
+        ADB_LEFT_SHIFT, // SDL_SCANCODE_RSHIFT = 229,
+        ADB_COMMAND, // SDL_SCANCODE_RGUI = 230,
+        ADB_OPTION, // SDL_SCANCODE_RALT = 231,
     };
 
     void print_key_buffer() {
@@ -397,36 +402,83 @@ class ADB_Keyboard : public ADB_Device
     }
 
     public:
-    ADB_Keyboard(uint8_t id = 0x02) : ADB_Device(id) { }
+    ADB_Keyboard(uint8_t id = 0x02) : ADB_Device(id) {
+        registers[0].size = 2;
+        registers[0].data[0] = 0xFF; // hi byte
+        registers[0].data[1] = 0xFF; // lo byte
+        /* `Register 3
+        * Bit 15: reserved, must be 0.
+        * Bit 14: exceptional event.
+        * Bit 13: SR enable
+        * Bit 12: Reserved, must be 0.
+        * Bit 11-8: Device address.
+        * Bit 7-0: Device handler. */
+        registers[1].size = 0;
+        registers[2].size = 0;
+
+        registers[3].size = 2;
+        registers[3].data[0] = id;  // hi byte
+        registers[3].data[1] = 0x00;  // lo byte
+    }
 
     void reset(uint8_t cmd, uint8_t reg) override { }
+
     void flush(uint8_t cmd, uint8_t reg) override { }
-    void listen(uint8_t command, uint8_t reg) override { }
+
+    void listen(uint8_t command, uint8_t reg, ADB_Register &msg) override { }
+
     ADB_Register talk(uint8_t command, uint8_t reg) override {
         ADB_Register reg_result = {};
+        reg_result.size = registers[reg].size;
+        for (int i = 0; i < registers[reg].size; i++) {
+            reg_result.data[i] = registers[reg].data[i];
+        }
+        registers[reg].data[0] = 0xFF; // clear reg0
+        registers[reg].data[1] = 0xFF;
         return reg_result;
     }
+
     bool process_event(SDL_Event &event) override {
         // register 0 is keyboard data.
         uint8_t k1_released = 0;
         uint8_t k2_released = 0;
+        bool status = false;
 
         if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
             const char *updown = (event.type == SDL_EVENT_KEY_DOWN) ? "down" : "up";    
             printf("Key %s: %08X\n", updown, event.key.key);
             k1_released = 0;
-            key_event_t key = map_sdl_to_adb_key(event);
-            enqueue_key(key);
+            map_sdl_to_adb_key_enqueue(event);
+            status = true;
         }
 
-        return false;
+        // if there is something in the key queue, and room in register 0,
+        // dequeue the key and put it into register 0.
+        // the MSB (byte) first.
+        if (registers[0].data[0] == 0xFF && count > 0) {
+            key_event_t key;
+            dequeue_key(&key);
+            uint8_t code = ((key.status == KEY_STATUS_UP) ? 0x80 : 0x00) | key.keycode;
+            registers[0].data[0] = code;
+        }
+        if (registers[0].data[1] == 0xFF && count > 0) {
+            key_event_t key;
+            dequeue_key(&key);
+            uint8_t code = ((key.status == KEY_STATUS_UP) ? 0x80 : 0x00) | key.keycode;
+            registers[0].data[1] = code;
+        }
+        print_registers();
+
+        return status;
     }
 
-    key_event_t map_sdl_to_adb_key(SDL_Event &event) {
+    void map_sdl_to_adb_key_enqueue(SDL_Event &event) {
         key_event_t key = {};
         uint32_t scancode = event.key.scancode;
         scancode &= (SDL_SCANCODE_COUNT-1);
-        key.keycode = sdl_to_adb_key_map[scancode];
+        uint8_t scancode_mapped = sdl_to_adb_key_map[scancode];
+        if (scancode_mapped == 0xFF) return; // unmapped, ignore
+        key.keycode = scancode_mapped;
         key.status = (event.type == SDL_EVENT_KEY_DOWN) ? KEY_STATUS_DOWN : KEY_STATUS_UP;
         
 /*         key.keymods.value = 0;
@@ -435,6 +487,6 @@ class ADB_Keyboard : public ADB_Device
         key.keymods.open = (SDL_KMOD_ALT & event.key.mod) ? 1 : 0;
         key.keymods.closed = (SDL_KMOD_GUI & event.key.mod) ? 1 : 0;
         key.keymods.caps = (SDL_KMOD_CAPS & event.key.mod) ? 1 : 0; */
-        return key;
+        enqueue_key(key);
     }
 };

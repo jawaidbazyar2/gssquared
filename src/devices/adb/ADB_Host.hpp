@@ -31,20 +31,20 @@ class ADB_Host
         return true;
     }
 
-    bool listen(uint8_t addr, uint8_t cmd, uint8_t reg) {
+    bool listen(uint8_t addr, uint8_t cmd, uint8_t reg, ADB_Register &msg) {
         for (auto &device : devices) {
             if (device->get_id() == addr) {
-                device->listen(cmd, reg);
+                device->listen(cmd, reg, msg);
                 return true;
             }
         }
         return false;
     }
 
-    bool talk(uint8_t addr, uint8_t cmd, uint8_t reg) {
+    bool talk(uint8_t addr, uint8_t cmd, uint8_t reg, ADB_Register &msg) {
         for (auto &device : devices) {
             if (device->get_id() == addr) {
-                device->talk(cmd, reg);
+                msg = device->talk(cmd, reg);
                 return true;
             }
         }
@@ -59,8 +59,8 @@ class ADB_Host
         switch (cmd) {
             case 0b00: return reset(addr, cmd, reg); break;
             case 0b01: return flush(addr, cmd, reg); break;
-            case 0b10: return listen(addr, cmd, reg); break;
-            case 0b11: return talk(addr, cmd, reg); break;
+            case 0b10: return listen(addr, cmd, reg, msg); break;
+            case 0b11: return talk(addr, cmd, reg, msg); break;
             default:
                 assert(false);
         }

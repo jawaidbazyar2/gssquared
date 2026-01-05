@@ -7884,3 +7884,15 @@ There are other times where I've hit ctrl-reset where it did the same, as well a
 I've been wondering why the system does not come up in white-on-blue text. The 0911 ADB error seems to throw before we set display colors from battery ram.
 So, is C022 FC by default on power-on in the VGC? Clemens defaults them as such (but border to 0). GuS sets to 0xF0. 
 I'm going to default all these to white-on-blue.
+
+## Jan 2, 2025
+
+This little project:
+
+https://github.com/cheyao/sdl-menu
+
+shows how to override default MacOS menu in SDL with something more like what you want.
+
+That is working pretty well in the adbtest thing. I can change and/or just remove keybindings for menu items; have whatever menu items I want; etc. I made Close Window cmd-F12. I can program the command strip, which would be fun, even if they don't make them any more.
+
+but let's say I went this route - I'd have 3 separate versions of menu code, for Windows, Mac, and Linux, ultimately. 

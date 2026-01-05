@@ -337,3 +337,15 @@ SDL event -> keyglu -> adb_host -> adb_keyboard
 the SDL scancode is getting converted to ADB scan codes. I need to fill the table in quite a bit.
 
 the keyboard needs a concept of "what keys are down right now".
+
+## Jan 2, 2026
+
+On Standard Keyboards left and right modifiers cannot be discriminated. Right Shift acts just as left Shift for example.
+
+So, I think this means regardless of USB code, send an ADB_LEFT_SHIFT. We can try it, anyway.
+
+## Jan 3, 2026
+
+the ADB uC should be the entity responsible for mapping from ADB Keyboard scancodes to ASCII, based on the language setting. However, it's not done with pure lookup tables. It seems there might be a partial lut somewhere but for compactness there is probably also some code somewhere to handle stuff like lowercase to uppercase letters when user is holding shift, etc.
+
+This is what we need to be putting in the queue.
