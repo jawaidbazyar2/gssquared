@@ -349,3 +349,7 @@ So, I think this means regardless of USB code, send an ADB_LEFT_SHIFT. We can tr
 the ADB uC should be the entity responsible for mapping from ADB Keyboard scancodes to ASCII, based on the language setting. However, it's not done with pure lookup tables. It seems there might be a partial lut somewhere but for compactness there is probably also some code somewhere to handle stuff like lowercase to uppercase letters when user is holding shift, etc.
 
 This is what we need to be putting in the queue.
+
+The KeyGLU might be a separate chip from the ADB uController. i.e. it might be the bit that is the four registers between the GS and the ADB uC. Consider renaming the classes? Currently, the functions are merged and the KeyGloo class is both the registers and the uC. Other than potential future reusability, there is no benefit to splitting these out and adding extra complexity.
+
+What I implemented so far is: partial lookup table for 0x00 - 0x5F: and then a bunch of IF statements checking various modifier keys. E.g., shift and 'a' subs 32 from the char to get 'A'. 

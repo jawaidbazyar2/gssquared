@@ -199,7 +199,7 @@ class ADB_Keyboard : public ADB_Device
         0xFF, 
         0xFF, 
         0xFF, 
-        0xFF, 
+        ADB_CAPS_LOCK, // SDL_SCANCODE_CAPSLOCK, 
         0xFF, 
         0xFF, 
         0xFF, 
@@ -377,7 +377,7 @@ class ADB_Keyboard : public ADB_Device
     };
 
     void print_key_buffer() {
-        printf("Key buffer: ");
+        printf("02::Key buffer: ");
         uint32_t j = index_out;
         for (int i = 0; i < count; i++) {
             printf("%s %02X  ", keyqueue[j].status == KEY_STATUS_UP ? "↑" : "↓", keyqueue[j].keycode);
@@ -446,7 +446,7 @@ class ADB_Keyboard : public ADB_Device
 
         if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
             const char *updown = (event.type == SDL_EVENT_KEY_DOWN) ? "down" : "up";    
-            printf("Key %s: %08X\n", updown, event.key.key);
+            printf("02::Key %s: %08X\n", updown, event.key.key);
             k1_released = 0;
             map_sdl_to_adb_key_enqueue(event);
             status = true;

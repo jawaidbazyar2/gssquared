@@ -45,10 +45,6 @@ struct uc_vars_t {
     uint8_t matrixcd; // indirect jump vector
     uint8_t code;
     uint8_t xkeys;
-
-    //uint32_t kc_read_index = 0;
-    //uint32_t kc_write_index = 0;
-    uint32_t elements_in_buffer = 0;
 };
 
 class KeyGloo
@@ -65,9 +61,6 @@ class KeyGloo
 
         uint8_t key_mods[16];
         uint8_t key_codes[16];
-        //uint32_t kc_read_index = 0;
-        //uint32_t kc_write_index = 0;
-        uint32_t elements_in_buffer = 0;
 
         /*
             byte 1: 7-4: FDB Mouse Address
@@ -213,6 +206,8 @@ class KeyGloo
                         configuration_bytes[1] = cmd[2];
                         configuration_bytes[2] = cmd[3];
                     } else if (value == 0x07) { // SYNCH
+                        // TODO: the docs imply this will take arguments for both the modes_byte and the configuration_bytes.
+                        // but I'm not sure about that.
                         // set modes byte followed by configuration bytes.
                         // on boot/reset there should be mode that accepts only synch command, and after that we're good.
                         modes_byte = cmd[1];
@@ -302,6 +297,7 @@ class KeyGloo
             key_latch.keycode = key_codes[vars.inpt] | 0x80; // set the 'key present' bit.
             key_latch.keymods.value = key_mods[vars.inpt];
             vars.inpt = (vars.inpt + 1) % 16;
+            //elements_in_buffer = (vars.outpt - vars.inpt + 16) % 16;
         }
         
         void store_key_to_buffer(uint8_t keycode, uint8_t keymods) {
@@ -309,41 +305,41 @@ class KeyGloo
             key_codes[vars.outpt] = keycode;
             key_mods[vars.outpt] = keymods;
             vars.outpt = (vars.outpt + 1) % 16;
-            elements_in_buffer = (vars.outpt - vars.inpt + 16) % 16;
+            //elements_in_buffer = (vars.outpt - vars.inpt + 16) % 16;
             // if the latch is cleared, load it.
             if (key_latch.keycode & 0x80) return;
             load_key_from_buffer();
         }
 
         void print() {
-            printf("KeyGloo: currmod: %02X, prevmod: %02X\n", vars.currmod.value, vars.prevmod.value);
-            printf("KeyGloo: key_latch: %02X, key_mods: %02X\n", key_latch.keycode, key_latch.keymods.value);
-            printf("KeyGloo: key_codes: ");
+            printf("KG> KeyGloo: currmod: %02X, prevmod: %02X\n", vars.currmod.value, vars.prevmod.value);
+            printf("KG> KeyGloo: key_latch: %02X, key_mods: %02X\n", key_latch.keycode, key_latch.keymods.value);
+            printf("KG> KeyGloo: key_codes: ");
             for (int i = 0; i < 16; i++) {
                 printf("%02X ", key_codes[i]);
             }
             printf("\n");
-            printf("KeyGloo: key_mods: ");
+            printf("KG> KeyGloo: key_mods: ");
             for (int i = 0; i < 16; i++) {
                 printf("%02X ", key_mods[i]);
             }
         }
 
-        uint8_t read_key_latch() {
+        uint8_t read_key_latch() {  // c000
             return key_latch.keycode;
         }
 
-        uint8_t read_mod_latch() {
+        uint8_t read_mod_latch() {  // c025
             return key_latch.keymods.value;
         }
 
-        uint8_t read_key_strobe() {
+        uint8_t read_key_strobe() { // c010
             key_latch.keycode &= 0x7F; // clear the strobe bit.
             load_key_from_buffer();
             return 0xEE; // TODO: return floating bus value.
         }
 
-        void write_key_strobe() {
+        void write_key_strobe() { // c010
             key_latch.keycode &= 0x7F; // clear the strobe bit.
             load_key_from_buffer();
         }
@@ -439,9 +435,16 @@ class KeyGloo
                         case ADB_LEFT_SHIFT: vars.prevmod = vars.currmod; vars.currmod.shift = keyupdown; break;
                         case ADB_COMMAND: vars.prevmod = vars.currmod; vars.currmod.open = keyupdown; break;
                         case ADB_OPTION: vars.prevmod = vars.currmod; vars.currmod.closed = keyupdown; break;
+                        case ADB_CAPS_LOCK: 
+                            // caps lock is a special case, it toggles the caps lock state, but only on key up.
+                            // TODO: should I do it on the key down instead?
+                            if (!keyupdown) {
+                                vars.prevmod = vars.currmod; 
+                                vars.currmod.caps = ! vars.currmod.caps;
+                            }
+                            break;
                         default:           
-                            // TODO: I think we need to map the keycode here through a language map table,
-                            // based on map setting. Surely these tables are in the ROM somewhere..
+                            // TODO: Map the keycode here through a mapper based on the language setting.
                             // TODO: do we get a key in C000 on key down, key up, or ... ?
                                       
                             if (keyupdown) store_key_to_buffer(map_us(keycode, vars.currmod), vars.currmod.value); // TODO: update modifiers.

@@ -12,6 +12,13 @@ struct MyAppState {
     SDL_Window *window;
 };
 
+const char *cmd_names[] = {
+    "ReadKbd",
+    "Flush",
+    "Reset",
+};
+const int num_cmds = sizeof(cmd_names)/sizeof(cmd_names[0]);
+
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SDL_Init(SDL_INIT_VIDEO);
 
@@ -32,10 +39,19 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     as->kg = kg;
     as->window = window;
 
+    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+    SDL_RenderClear(renderer);
+
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    for (int i = 0; i < num_cmds; i++) {
+        SDL_RenderDebugText(renderer, 10 + i * 8 * 8, 10, cmd_names[i]);
+    }
+    SDL_RenderPresent(renderer);
+
     initMenu(window);
 
     *appstate = as;
-    printf("SDL_AppInit\n");
+
     return SDL_APP_CONTINUE;
 }
 
@@ -49,20 +65,42 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         //printf("ignoring quit event\n");
     }
     if (event->type == SDL_EVENT_KEY_DOWN || event->type == SDL_EVENT_KEY_UP) {
-        printf("Key event: [%d] %08X %08X\n", event->type, event->key.key, event->key.mod);
+        printf("< Key event: [%d] %08X %08X\n", event->type, event->key.key, event->key.mod);
 
         kg->process_event(event_copy);
         printf("--------------------------------\n");
-        printf("Key latch: %08X\n", kg->read_key_latch());
-        printf("Mod latch: %08X\n", kg->read_mod_latch());
+        printf("< Key latch: %08X\n", kg->read_key_latch());
+        printf("< Mod latch: %08X\n", kg->read_mod_latch());
     } 
     if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-        printf("Mouse button down: %d\n", event->button.button);
-        uint8_t k = kg->read_key_latch(); // lda c000
-        uint8_t m = kg->read_mod_latch(); // lda c0?? - get modifiers
-        kg->write_key_strobe(); // sta c010 - clear key latch
-        printf("Key read: %02X, Mod read: %02X\n", k, m);
-        printf("--------------------------------\n");
+        float x = event->button.x;
+        float y = event->button.y;
+        if (y >= 20) return SDL_APP_CONTINUE;
+
+        if (x < 10 + num_cmds * 8 * 8) {
+            int cmd_index = (x - 10.0) / (8 * 8);
+            printf("Command: %s\n", cmd_names[cmd_index]);
+            switch (cmd_index) {
+                case 0:
+                    {
+                        printf("< Mouse button down: %d\n", event->button.button);
+                        uint8_t k = kg->read_key_latch(); // lda c000
+                        uint8_t m = kg->read_mod_latch(); // lda c0?? - get modifiers
+                        kg->write_key_strobe(); // sta c010 - clear key latch
+                        printf("< Key read: %02X, Mod read: %02X\n", k, m);
+                        printf("--------------------------------\n");
+                    }
+                    break;
+                case 1: 
+                    kg->flush();
+                    break;
+                case 2:
+                    kg->reset();
+                    break;
+            }
+
+            return SDL_APP_CONTINUE;
+        }
     }
     
     

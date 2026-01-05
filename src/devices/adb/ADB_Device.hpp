@@ -26,13 +26,15 @@ public:
     virtual bool process_event(SDL_Event &event) = 0;
 
     void print_registers() {
+        printf("%02d: Registers: ", id);
         for (int i = 0; i < 4; i++) {
-            printf("Register %d: ", i);
+            printf(" %02X: [", i);
             for (int j = 0; j < registers[i].size; j++) {
                 printf("%02X ", registers[i].data[j]);
             }
-            printf("\n");
+            printf("]");
         }
+        printf("\n");
     }
 };
 
