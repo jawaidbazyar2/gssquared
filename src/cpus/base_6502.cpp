@@ -2044,7 +2044,8 @@ inline void move_memory(cpu_state *cpu) {
     if (cpu->a--) { // uses full accumulator
         cpu->pc = cpu->pc - 3;
     };
-    TRACE(cpu->trace_entry.operand = (DBA << 8) | SBA; cpu->trace_entry.f_op_sz = 2;)
+    // TODO: put the address written into the trace eaddr. Eventually we need both.
+    TRACE(cpu->trace_entry.operand = (DBA << 8) | SBA; cpu->trace_entry.f_op_sz = 2; cpu->trace_entry.eaddr = (cpu->full_db | _Y(cpu));)
 }
 
 inline void invalid_opcode(cpu_state *cpu, opcode_t opcode) {
