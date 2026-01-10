@@ -9,7 +9,7 @@
 #include "generate/AppleIIgs.hpp"
 
 // Alias to the shared Apple IIgs color table for text rendering
-static const RGBA_t (&gs_text_palette)[16] = AppleIIgs::RGB_COLORS;
+static const RGBA_t (&gs_text_palette)[16] = AppleIIgs::TEXT_COLORS;
 
 VideoScanGenerator::VideoScanGenerator(CharRom *charrom, bool border_enabled)
 {

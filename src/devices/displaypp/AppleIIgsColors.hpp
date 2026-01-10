@@ -7,6 +7,7 @@ namespace AppleIIgs {
     // Each color is 4-bit R, G, B scaled to 8-bit RGBA
     // Defined in AppleIIgsColors.cpp
     extern const RGBA_t RGB_COLORS[16];
+    extern const RGBA_t TEXT_COLORS[16];
 
     // Color indices for common colors
     enum ColorIndex : uint8_t {

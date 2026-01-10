@@ -6,6 +6,7 @@
 
 // Alias to the shared Apple IIgs color table for backward compatibility
 static const RGBA_t (&gs_rgb_colors)[16] = AppleIIgs::RGB_COLORS;
+static const RGBA_t (&gs_txt_colors)[16] = AppleIIgs::TEXT_COLORS;
 
 
 class GSRGB560 : public Render {
@@ -455,7 +456,7 @@ text looks like a** in it. */
                 // TODO: only works with text. We're not even looking at bit here.
                 for (uint16_t x = 0; x < framewidth; x++) {
                     uint8_t bit = frame_byte->pull();
-                    RGBA_t pixel = gs_rgb_colors[bit >> 4];
+                    RGBA_t pixel = gs_txt_colors[bit >> 4];
                     frame_rgba->push(pixel);
                 }
             }

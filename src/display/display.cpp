@@ -45,7 +45,7 @@
 
 #include "devices/displaypp/AppleIIgsColors.hpp"
 
-static constexpr const RGBA_t (&gs_text_colors)[16] = AppleIIgs::RGB_COLORS;
+static constexpr const RGBA_t (&gs_text_colors)[16] = AppleIIgs::TEXT_COLORS;
 
 display_page_t display_pages[NUM_DISPLAY_PAGES] = {
     {
@@ -1168,11 +1168,11 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         ds->mon_ntsc.set_shift_enabled(false);
         ds->mon_rgb.set_shift_enabled(false);
         
-        // Set default video scanner colors for Apple IIgs.
-        ds->text_color = 0xFC; ds->video_scanner->set_text_fg(0x0F); ds->video_scanner->set_text_bg(0x0C);
-        ds->a2_display->set_text_fg(0x0F); ds->a2_display->set_text_bg(0x0C);
-        ds->border_color = 0x0C; ds->video_scanner->set_border_color(0x0C);
-        ds->a2_display->set_border_color(0x0C);
+        // Set default video scanner colors for Apple IIgs. (F, 6, 6)
+        ds->text_color = 0xF6; ds->video_scanner->set_text_fg(0x0F); ds->video_scanner->set_text_bg(0x06);
+        ds->a2_display->set_text_fg(0x0F); ds->a2_display->set_text_bg(0x06);
+        ds->border_color = 0x06; ds->video_scanner->set_border_color(0x06);
+        ds->a2_display->set_border_color(0x06);
     }
 
     if (ds->video_scanner_type == Scanner_AppleIIgs) {
