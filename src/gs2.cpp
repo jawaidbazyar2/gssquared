@@ -360,8 +360,9 @@ void run_cpus(computer_t *computer) {
             MEASURE(computer->device_times, computer->device_frame_dispatcher->dispatch());
     
             /* Emit Video Frame */
-    
-            MEASURE(computer->display_times, frame_video_update(computer, cpu));
+            if (cpu->execution_mode != EXEC_STEP_INTO) {
+                MEASURE(computer->display_times, frame_video_update(computer, cpu));
+            }
     
             // calculate what sleep-until time should be.
             //uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
