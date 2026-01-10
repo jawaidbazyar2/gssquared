@@ -228,7 +228,7 @@ void debug_window_t::render_pane_trace() {
     separator_line(DEBUG_PANEL_TRACE, 4);
 
     if (cpu->cpu_type == PROCESSOR_65816) {
-        draw_text(DEBUG_PANEL_TRACE, x, 4, "PB/PC   DB    A  X  Y  SP     N V M XB D I Z C  e  IRQ");
+        draw_text(DEBUG_PANEL_TRACE, x, 4, "PB/PC   DB    A  X  Y  SP        N V M XB D I Z C  e  IRQ");
         snprintf(buffer, sizeof(buffer), "%02X/%04X %02X   %02X %02X %02X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
         cpu->pb, cpu->pc, cpu->db, cpu->a, cpu->x, cpu->y, cpu->sp, 
         cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
@@ -343,21 +343,21 @@ void debug_window_t::render_pane_memory() {
 
     for (MemoryWatch::iterator watch = memory_watches.begin(); watch != memory_watches.end(); ++watch) {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        for (int i = watch->start; i <= watch->end; i++) {
+        for (uint32_t i = watch->start; i <= watch->end; i++) {
             if (index == 0) {
-                decode_hex_word(buffer, i);
-                ptr += 4;
+                decode_hex_addr(buffer, i);
+                ptr += 6;
                 *ptr++ = ':';
                 *ptr++ = ' ';
             }
             uint8_t mem = mmu->read(i);
             decode_hex_byte( ptr, mem);
-            decode_ascii(buffer+54+index, mem);
+            decode_ascii(buffer+56+index, mem);
             ptr+=2;
             *ptr++ = ' ';
             index++;
             if (index == 16) {
-                buffer[70] = 0;
+                buffer[72] = 0;
                 draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, buffer);
                 memset(buffer, ' ', sizeof(buffer));
                 ptr = buffer;
@@ -367,7 +367,7 @@ void debug_window_t::render_pane_memory() {
         }
         // draw anything left over
         if (index > 0 && index < 16) {
-            buffer[70] = 0;
+            buffer[72] = 0;
             draw_text(DEBUG_PANEL_MEMORY, x, base_line + line, buffer);
             memset(buffer, ' ', sizeof(buffer));
             line++;

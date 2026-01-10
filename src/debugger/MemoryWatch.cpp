@@ -4,7 +4,7 @@ MemoryWatch::MemoryWatch() {
     // Initialize empty watch list
 }
 
-void MemoryWatch::add(uint16_t start, uint16_t end) {
+void MemoryWatch::add(uint32_t start, uint32_t end) {
     // Create new watch entry
     watch_entry_t entry = {start, end};
     
@@ -12,7 +12,7 @@ void MemoryWatch::add(uint16_t start, uint16_t end) {
     watches.push_back(entry);
 }
 
-void MemoryWatch::remove(uint16_t start) {
+void MemoryWatch::remove(uint32_t start) {
     // Remove any watches whose first address matches start
     for (auto it = watches.begin(); it != watches.end(); ++it) {
         if (it->start == start) {

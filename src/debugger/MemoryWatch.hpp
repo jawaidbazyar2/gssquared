@@ -4,10 +4,10 @@
 #include <vector>
 
 struct watch_entry_t {
-    uint16_t start;
-    uint16_t end;
+    uint32_t start;
+    uint32_t end;
 
-    watch_entry_t(uint16_t start, uint16_t end) {
+    watch_entry_t(uint32_t start, uint32_t end) {
         this->start = start;
         this->end = end;
     }
@@ -18,8 +18,8 @@ class MemoryWatch {
 
     public:
         MemoryWatch();
-        void add(uint16_t start, uint16_t end);
-        void remove(uint16_t start);
+        void add(uint32_t start, uint32_t end);
+        void remove(uint32_t start);
         void clear();
         int size() const { return watches.size(); }
 

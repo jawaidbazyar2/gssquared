@@ -57,8 +57,9 @@ void Disassembler::disassemble_one() {
     uint32_t operand;
 
     if (address & 0xFF0000) {
-        decode_hex_byte(bufptr + TB_ADDRESS - 3, address >> 16);
-        bufptr[TB_ADDRESS - 1] = '/';
+        decode_hex_byte(bufptr + TB_ADDRESS, address >> 16);
+        bufptr[TB_ADDRESS + 2] = '/';
+        bufptr+=3;
     }
 
     decode_hex_word(bufptr + TB_ADDRESS, address);
