@@ -212,7 +212,7 @@ void debug_window_t::render_pane_trace() {
         draw_text(DEBUG_PANEL_TRACE, x, 8 + i, line);
     }
     if (single_step) {
-        step_disasm->setLinePrepend(36);
+        step_disasm->setLinePrepend(cpu->cpu_type == PROCESSOR_65816 ? 35 : 34);
         step_disasm->setAddress(cpu->full_pc);
         std::vector<std::string> disasm_lines = step_disasm->disassemble(10);
         text_renderer->set_color(0, 255, 255, 255);
@@ -227,11 +227,26 @@ void debug_window_t::render_pane_trace() {
   
     separator_line(DEBUG_PANEL_TRACE, 4);
 
+    // TODO: do this better by using functions to emit items into a buffer tracking 'cursor'
     if (cpu->cpu_type == PROCESSOR_65816) {
-        draw_text(DEBUG_PANEL_TRACE, x, 4, "PB/PC   DB    A  X  Y  SP        N V M XB D I Z C  e  IRQ");
-        snprintf(buffer, sizeof(buffer), "%02X/%04X %02X   %02X %02X %02X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
-        cpu->pb, cpu->pc, cpu->db, cpu->a, cpu->x, cpu->y, cpu->sp, 
-        cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
+        draw_text(DEBUG_PANEL_TRACE, x, 4, "PB/PC   DB     A    X    Y  SP    N V M XB D I Z C  e  IRQ");
+        if ((cpu->_M == 1) && (cpu->_X == 1)) {
+            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X    %02X   %02X   %02X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
+                cpu->pb, cpu->pc, cpu->db, cpu->a & 0xFF, cpu->x & 0xFF, cpu->y & 0xFF, cpu->sp, 
+                cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
+        } else if ((cpu->_M == 1) && (cpu->_X == 0)) {
+            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X    %02X %04X %04X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
+                cpu->pb, cpu->pc, cpu->db, cpu->a & 0xFF, cpu->x, cpu->y, cpu->sp, 
+                cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
+        } else if ((cpu->_M == 0) && (cpu->_X == 1)) {
+            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X  %04X   %02X   %02X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
+                cpu->pb, cpu->pc, cpu->db, cpu->a, cpu->x & 0xFF, cpu->y & 0xFF, cpu->sp, 
+                cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
+        } else {
+            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X  %04X %04X %04X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
+                cpu->pb, cpu->pc, cpu->db, cpu->a, cpu->x, cpu->y, cpu->sp, 
+                cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
+        }
     } else {
         draw_text(DEBUG_PANEL_TRACE, x, 4, "PC     A  X  Y  SP     N V - B D I Z C    e  IRQ");
         snprintf(buffer, sizeof(buffer), "%04X   %02X %02X %02X %04X   %d %d - %d %d %d %d %d  %d  %d", cpu->pc, cpu->a, cpu->x, cpu->y, cpu->sp, 
@@ -245,7 +260,12 @@ void debug_window_t::render_pane_trace() {
     draw_text(DEBUG_PANEL_TRACE, x, 6, buffer);
 
     separator_line(DEBUG_PANEL_TRACE, 7);
-    draw_text(DEBUG_PANEL_TRACE, x, 7, "   Cycle         A  X  Y  SP   P     PC                                Eff  M");
+    if (cpu->cpu_type == PROCESSOR_65816) {
+        draw_text(DEBUG_PANEL_TRACE, x, 7, "   Cycle      A    X    Y  SP   P     PC                                Eff  M");
+    } else {
+        draw_text(DEBUG_PANEL_TRACE, x, 7, "   Cycle      A  X  Y  SP   P      PC                                Eff  M");
+    }
+    
     separator_line(DEBUG_PANEL_TRACE, 8);
 
     SDL_RenderLine(renderer, w + x -1.0f, 0, w + x -1.0f, window_height);
@@ -560,8 +580,8 @@ bool debug_window_t::is_open() {
 }
 
 void debug_window_t::set_open() {
-    disasm = new Disassembler(mmu);
-    step_disasm = new Disassembler(mmu);
+    disasm = new Disassembler(mmu, cpu->cpu_type); // used in monitor pane
+    step_disasm = new Disassembler(mmu, cpu->cpu_type); // used in trace pane
     window_open = true;
     computer->video_system->show(window);
     computer->video_system->raise(window);
@@ -585,11 +605,13 @@ void debug_window_t::set_closed() {
 }
 
 void debug_window_t::resize_window() {
-   window_width = 0;
+    constexpr int TRACE_WIDTH = 765;
+
+    window_width = 0;
     if (panel_visible[DEBUG_PANEL_TRACE]) {
         pane_area[DEBUG_PANEL_TRACE].x = window_width;
-        pane_area[DEBUG_PANEL_TRACE].w = 720;
-        window_width += 720;
+        pane_area[DEBUG_PANEL_TRACE].w = TRACE_WIDTH;
+        window_width += TRACE_WIDTH;
     }    
     if (panel_visible[DEBUG_PANEL_MONITOR]) {
         pane_area[DEBUG_PANEL_MONITOR].x = window_width;
@@ -601,8 +623,8 @@ void debug_window_t::resize_window() {
         pane_area[DEBUG_PANEL_MEMORY].w = 640;
         window_width += 640;
     }
-    if (window_width < 720) {
-        window_width = 720;
+    if (window_width < TRACE_WIDTH) {
+        window_width = TRACE_WIDTH;
     }
     SDL_SetWindowSize(window, window_width, window_height);
 }

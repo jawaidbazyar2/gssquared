@@ -4,6 +4,7 @@
 #include "debugger/disasm.hpp"
 #include "debugger/trace_opcodes.hpp"
 #include "util/HexDecode.hpp"
+#include "debugger/line_buffer.hpp"
 
 //           11111111112222222222
 // 012345678901234567890123456789
@@ -19,7 +20,7 @@
 #define TB_OPERAND 23
 #define TB_EOL 40
 
-Disassembler::Disassembler(MMU *mmu) : mmu(mmu) {
+Disassembler::Disassembler(MMU *mmu, processor_type cputype) : mmu(mmu), cpu_type(cputype) {
     address = 0;
     length = 0;
     line_prepend = 0;
@@ -40,14 +41,14 @@ uint8_t Disassembler::read_mem(uint32_t address) {
 }
 
 void Disassembler::disassemble_one() {
-    char buffer[200];
+    line_buffer buffer;
     char snpbuf[100];
     size_t buffer_size = sizeof(buffer);
     size_t snpbuf_size = sizeof(snpbuf);
 
-    memset(buffer, ' ', buffer_size);
+    //memset(buffer, ' ', buffer_size);
 
-    char *bufptr = buffer + line_prepend;
+    //char *bufptr = buffer + line_prepend;
 
     uint8_t opcode = read_mem(address);
         
@@ -56,47 +57,68 @@ void Disassembler::disassemble_one() {
     const address_mode_entry *am = &address_mode_formats[da->mode];
     uint32_t operand;
 
-    if (address & 0xFF0000) {
-        decode_hex_byte(bufptr + TB_ADDRESS, address >> 16);
+    buffer.pos(line_prepend);
+    if (cpu_type == PROCESSOR_65816) {        
+        buffer.put(address);
+/*         decode_hex_byte(bufptr + TB_ADDRESS, address >> 16);
         bufptr[TB_ADDRESS + 2] = '/';
-        bufptr+=3;
+        bufptr+=3; */
+    } else {
+        buffer.put((uint16_t)address );
+        //decode_hex_word(bufptr + TB_ADDRESS, address);
     }
 
-    decode_hex_word(bufptr + TB_ADDRESS, address);
-    bufptr[TB_ADDRESS + 4] = ':';
-    decode_hex_byte(bufptr + TB_OP1, read_mem(address));
+    buffer.put(": ");
+
+    buffer.put((uint8_t)opcode);
+    buffer.put(' ');
 
     operand = 0; uint8_t op2, op3, op4;
     if (am->size == 2) {
         op2 = read_mem(address + 1);
         operand = op2;
-        decode_hex_byte(bufptr + TB_OP2, op2);
+        buffer.put((uint8_t)op2);
+        buffer.put(' ');
+        buffer.pos(buffer.pos() + 6);
     } else if (am->size == 3) {
         op2 = read_mem(address + 1);
         op3 = read_mem(address + 2);
         operand = op2 | (op3 << 8);
-        decode_hex_byte(bufptr + TB_OP2, op2);
-        decode_hex_byte(bufptr + TB_OP3, op3);
+        buffer.put((uint8_t)op2);
+        buffer.put(' ');
+        buffer.put((uint8_t)op3);
+        buffer.put(' ');
+        buffer.pos(buffer.pos() + 3);
     } else if (am->size == 4) {
         op2 = read_mem(address + 1);
         op3 = read_mem(address + 2);
         op4 = read_mem(address + 3);
         operand = op2 | (op3 << 8) | (op4 << 16);
-        decode_hex_byte(bufptr + TB_OP2, op2);
-        decode_hex_byte(bufptr + TB_OP3, op3);
-        decode_hex_byte(bufptr + TB_OP4, op4);
+        buffer.put((uint8_t)op2);
+        buffer.put(' ');
+        buffer.put((uint8_t)op3);
+        buffer.put(' ');
+        buffer.put((uint8_t)op4);
+        buffer.put(' ');
+    } else {
+        buffer.pos(buffer.pos() + 9);
     }
 
-    if (opcode_name) memcpy(bufptr + TB_OPCODE, opcode_name, strlen(opcode_name));
-    else memcpy(bufptr + TB_OPCODE, "???", 3);
+    if (opcode_name) buffer.put((char *)opcode_name);
+    //memcpy(bufptr + TB_OPCODE, opcode_name, strlen(opcode_name));
+    else buffer.put("???");
+    //memcpy(bufptr + TB_OPCODE, "???", 3);
+    buffer.put("  ");
 
     switch (da->mode) {
         case NONE:
-            memcpy(bufptr + TB_OPERAND, "???", 3);
+            //memcpy(bufptr + TB_OPERAND, "???", 3);
+            buffer.put("???");
             break;
         case ACC:
         case IMP:
-            memcpy(bufptr + TB_OPERAND, am->format, strlen(am->format));
+            //memcpy(bufptr + TB_OPERAND, am->format, strlen(am->format));
+            buffer.put((char *)am->format);
             break;
 
         case ABS:
@@ -120,18 +142,21 @@ void Disassembler::disassemble_one() {
         case ABS_IND_LONG:
         case IMM_S:
             snprintf(snpbuf, snpbuf_size, am->format, operand);
-            memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+            //memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+            buffer.put(snpbuf);
             break;
         case REL: {
                 uint16_t btarget = (address+2) + (int8_t)operand;
                 snprintf(snpbuf, snpbuf_size, "$%04X", btarget);
-                memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+                //memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+                buffer.put(snpbuf);
             }
             break;
         case REL_L: {
                 uint16_t btargetl = (address+3) + (int16_t)operand;
                 snprintf(snpbuf, snpbuf_size, "$%04X", btargetl);
-                memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+                //memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+                buffer.put(snpbuf);
             }
             break;
         case MOVE:  
@@ -139,14 +164,15 @@ void Disassembler::disassemble_one() {
                 printf("move operand %04X\n", operand);
                 snprintf(snpbuf, snpbuf_size, am->format,
                     operand & 0x00FF, operand >> 8);
-                memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+                //memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
+                buffer.put(snpbuf);
             }
             break;
 
     }
     address += am->size; // get ready for next instruction
-    bufptr[TB_EOL] = '\0';
-    output_buffer.push_back(buffer);
+    //bufptr[TB_EOL] = '\0';
+    output_buffer.push_back(buffer.get());
 }
 
 // returns vector of disassembled instructions

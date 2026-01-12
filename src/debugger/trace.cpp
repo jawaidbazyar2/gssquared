@@ -119,10 +119,10 @@ char *system_trace_buffer::decode_trace_entry(system_trace_entry_t *entry) {
         const address_mode_entry *am = &address_mode_formats[da->mode];
 
         if (entry->f_irq) {
-            buffer.pos(TB_OPCODE);
+            buffer.pos(52);
             buffer.put("IRQ");
         } else {
-            buffer.pos(TB_PC);
+            buffer.pos(34);
             buffer.put((uint16_t) entry->pc);
             buffer.put(": ");
 
@@ -140,7 +140,7 @@ char *system_trace_buffer::decode_trace_entry(system_trace_entry_t *entry) {
                 }
                 x_op >>= 8;
             }
-            buffer.pos(TB_OPCODE);
+            buffer.pos(52);
             // if the opcode is valid, but not match current cpu, then treat as unknown opcode.
             if ((opcode_name) && (da->cpu_mask & cpu_mask)) {
                 buffer.put((char *)opcode_name);
@@ -150,7 +150,7 @@ char *system_trace_buffer::decode_trace_entry(system_trace_entry_t *entry) {
             }
             buffer.put("  ");
 
-            buffer.pos(TB_OPERAND);
+            buffer.pos(57);
             switch (da->mode) {
                 case NONE:
                     buffer.put("???");
@@ -196,13 +196,13 @@ char *system_trace_buffer::decode_trace_entry(system_trace_entry_t *entry) {
             case ACC:             case IMP:            case IMM:            case REL:
                 break;
             default:
-                buffer.pos(TB_EADDR);
+                buffer.pos(69);
                 buffer.put((uint16_t) entry->eaddr);
                 break;
         }
 
         // print memory data
-        buffer.pos(TB_DATA);
+        buffer.pos(74);
         switch (da->mode) {
             case REL:
             case IMP:
