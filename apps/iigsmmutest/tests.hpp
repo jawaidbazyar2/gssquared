@@ -391,6 +391,35 @@ inline const std::vector<Test> ALL_TESTS = {
             AssertOp{0x00'C071, {0xE2, 0x40, 0x50, 0xB8}},      
         }
     },
+    /* These are tests against a specific bug I had in iigs_mmu that caused the aux bank offset to be triggered
+       anytime LC_BANK2 was enabled. */
+    Test{
+        24, 
+        "LC Bank 2 Does Not Trigger aux_read 0x1'0000 offset - calc_aux_write",
+        {
+            WriteOp{0x00'0036, {0x12, 0x34}},
+            WriteOp{0xE0'C068, 0x0C},
+            AssertOp{0x00'0036, {0x12, 0x34}},
+            WriteOp{0xE0'C068, 0x08},
+        }
+    },
+    Test{
+        25, 
+        "LC Bank 2 Does Not Trigger aux_read 0x1'0000 offset - calc_aux_write",
+        {
+            WriteOp{0xE0'C068, 0x0C},
+            WriteOp{0x00'0036, {0x12, 0x34}},
+            WriteOp{0xE0'C068, 0x08},
+            AssertOp{0x00'0036, {0x12, 0x34}},
+        }
+    },
+
+    // Test: when IOLC not inhibited, interrupt vector pull reads from ROM.
+    // Test: when IOLC inhibited, interrupt vector pull reads from RAM.
+    // Test: when LC RAM READ enabled, bit 3 in State tracks.
+    // Test: when bit 3 in State is changed, LC RAM READ ENABLE tracks.
+    // Test: ramwrt does not affect ZP/Stack
+    // Test: altzp affects ZP/Stack
 
     Test{
         0x99,
