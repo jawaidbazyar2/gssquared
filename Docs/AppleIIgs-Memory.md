@@ -254,6 +254,39 @@ On a direct access to an odd shadowed bank, it goes directly to that bank. (Does
 Otherwise, an access to an even shadowed bank, gets transformed and might result in an access to its corresponding odd bank.
 
 
+## Vector Pulls
+
+Need to add these MMU tests. Not sure about this!
+    // Test: when IOLC not inhibited, interrupt vector pull reads from ROM.
+    // Test: when IOLC inhibited, interrupt vector pull reads from RAM.
+
+1. Set up vector for BRK?
+1. make sure IOLC enabled and ROM enabled
+1. BRK
+1. our vector handler will store a value into memory
+1. Test it.
+
+WriteOp(0x2000, 0x00)
+WriteOp(0x1000, )
+AssertOp(0x2000, 0xAE)
+
+```
+PHA
+LDA #$AE
+STA $00/2000
+PLA
+RTI
+
+PHA
+LDA #$EF
+STA $00/2000
+PLA
+RTI
+
+```
+Somehow, I'm going to have to signal a vector pull to the MMU module. I could use a different read() routine for those.
+Add a vector_read() routine.
+
 
 ## Notes
 

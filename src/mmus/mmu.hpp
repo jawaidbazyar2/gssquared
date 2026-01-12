@@ -157,6 +157,11 @@ class MMU {
             // if none of those things were set, silently do nothing.
         }
 
+        // By default, this is the same as read.
+        inline virtual uint8_t vp_read(uint32_t address) {
+            return read(address);
+        }
+
         void set_floating_bus(uint8_t val) { floating_bus_val = val; }
     
         uint8_t floating_bus_read() { return floating_bus_val; }
@@ -272,7 +277,7 @@ class MMU {
             printf("\n");
         }
 
-        void reset() {
+        virtual void reset() {
             // do nothing.
         }
 

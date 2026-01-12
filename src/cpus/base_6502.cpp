@@ -106,6 +106,12 @@ inline void bus_write(cpu_state *cpu, uint32_t addr, uint8_t data) {
     cpu->incr_cycles();
 }
 
+inline uint8_t vp_read(cpu_state *cpu, uint32_t addr) {
+    uint8_t data = cpu->mmu->vp_read(addr);
+    cpu->incr_cycles();
+    return data;
+}
+
 /** Phantom Read Routines */
 /*
  these are the same kinds of routines, EXCEPT - they are named this way
@@ -231,9 +237,10 @@ inline uint16_t read_word_from_pc(cpu_state *cpu) {
     return word(al, ah);
 }
 
+// Vector pull - read word using vector pull
 inline word_t read_word_bank0(cpu_state *cpu, uint16_t address) {
-    byte_t vl = bus_read(cpu, (uint16_t)(address));
-    byte_t vh = bus_read(cpu, (uint16_t)(address + 1));
+    byte_t vl = vp_read(cpu, (uint16_t)(address));
+    byte_t vh = vp_read(cpu, (uint16_t)(address + 1));
     word_t value = word(vl, vh);
     TRACE(cpu->trace_entry.eaddr = address; cpu->trace_entry.data = value;)
     return value;
