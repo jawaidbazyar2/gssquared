@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
         mmu->map_page_both(i, &memory[i*256], "TEST RAM");
     }
 
-    Disassembler *disasm = new Disassembler(mmu);
+    Disassembler *disasm = new Disassembler(mmu, PROCESSOR_6502);
     std::vector<std::string> debug_displays;
 
     std::string command;
