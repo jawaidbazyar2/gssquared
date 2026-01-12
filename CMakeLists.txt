@@ -239,9 +239,13 @@ add_library(gs2_devices_mouse     src/devices/applemouseii/mouse.cpp )
 
 add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
 
+add_library(gs2_devices_iigsmemory src/devices/iigsmemory/iigsmemory.cpp)
+
 add_library(gs2_devices_cassette     src/devices/cassette/cassette.cpp )
 
 add_library(gs2_devices_vidhd     src/devices/vidhd/vidhd.cpp )
+
+add_library(gs2_devices_adb     src/devices/adb/keygloo.cpp )
 
 add_library(gs2_trace src/debugger/trace.cpp src/debugger/trace_opcodes.cpp)
 
@@ -333,6 +337,7 @@ target_link_libraries(GSSquared
     gs2_devices_mockingboard
     gs2_devices_annunciator
     gs2_devices_iiememory
+    gs2_devices_iigsmemory
     gs2_debugger
     gs2_trace
     gs2_util
@@ -345,6 +350,7 @@ target_link_libraries(GSSquared
     gs2_video_scanner
     gs2_devices_mouse
     gs2_devices_rtc_pram
+    gs2_devices_adb
 )
 
 add_subdirectory(apps/adbtest)
