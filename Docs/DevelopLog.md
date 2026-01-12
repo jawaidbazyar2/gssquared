@@ -7885,7 +7885,7 @@ I've been wondering why the system does not come up in white-on-blue text. The 0
 So, is C022 FC by default on power-on in the VGC? Clemens defaults them as such (but border to 0). GuS sets to 0xF0. 
 I'm going to default all these to white-on-blue.
 
-## Jan 2, 2025
+## Jan 2, 2026
 
 This little project:
 
@@ -7896,3 +7896,169 @@ shows how to override default MacOS menu in SDL with something more like what yo
 That is working pretty well in the adbtest thing. I can change and/or just remove keybindings for menu items; have whatever menu items I want; etc. I made Close Window cmd-F12. I can program the command strip, which would be fun, even if they don't make them any more.
 
 but let's say I went this route - I'd have 3 separate versions of menu code, for Windows, Mac, and Linux, ultimately. 
+
+## Jan 8, 2026
+
+Ah, so the issue with the debugger breakpoints early in boot:
+1. if we BP we exit the main frame CPU loop early.
+1. then this line doesn't have any / enough data to operate on.
+            MEASURE(computer->display_times, frame_video_update(computer, cpu));
+
+In fact this would be any breakpoint hitting at a point in a frame before enough data has been emitted.
+We need to skip the other end-of-frame stuff too. Or rethink how we handle stepwise.
+
+[ ] with 8 bit A, we're printing too big a value in the register status line.  
+[ ] register status line, registers are wrong width, and not enough space given for them.
+
+## Jan 10, 2026
+
+so we're booting past the ADB setup code, but crashing when the rom does
+JMP ($0036)
+
+00/0036 fdf0.   e1/0036: ffb6.   e1/0036: ffb5; 
+
+36 is being overwritten with 0's, by 00/F8C9:MVN $00,00
+
+however the setup here is supposed to only clear 800 - BFFF, so why is 36 being written over? oh, it's somewhere before the mvn.
+let's do a watch on 0.ff.
+page 0 starts out as all BEs. Something clears it to 0's.
+
+is the memory map starting off wrong and then we're switching ? Doesn't seem right, wouldn't it all be BE to start?
+Actually, why is page 0 BE to start. The first 4K (0-FFF) is BE. red herring.
+FCDE is part of some delay routine before the beep starts. 
+it's FCA8. nope, issue is before that.
+
+ok boom - it's a #$0C -> C068. This is turning on LC Bank 2, and that is (erroneously) causing my RAM to disappear.
+OH. that's why that region is BE, and why it's 4K. We're subtracting 4K from the effective address inappropriately.
+the culprit seems to be:
+calc_aux_read:
+    if (((page >= 0x00 && page <= 0x01) || (page >= 0xD0 && page <= 0xFF)) && (g_altzp || g_lcbnk2)) return 0x1'0000;
+when altzp is on, it has nothing to do with lcbnk. 
+ok, I fixed that. (I think it was AI nonsense?)
+
+Now getting past that thing in the boot, and am in an infinite loop around FF/CA64. Note: text page hasn't been cleared yet.
+it's hitting 057B with F0.
+ah I seem to be infinitely looping on a BRK now:
+```
+JML E1/0010
+"CC CC 00" - CPY $00CC
+$00 - BRK
+```
+So this is uninitialized memory. Something needs to set up this vector and it's not doing it correctly.
+bp on 0010 isn't working right.. 
+oops, supposed to do the same fix in calc_aux_write.
+
+WAHOO!!!! I am now at the "Apple IIgs" boot screen.
+
+
+the watch command and display only supports 16-bit addresses. Fix this..
+[x] MVN isn't setting the effective memory address. 
+[ ] enable click-to-move-scrollbar-point  
+[ ] add monitor command to display stack  
+[ ] page up/down in trace listing isn't displaying the right chunk - it's not getting rid of the proforma trace when you page up. And it's miscalculating the display range.
+[x] "l" disasm with a 24-bit address crashes.  
+[ ] debugger disassembler needs to let you set flags for A and X width to disassemble correctly. And it might have to trace direct rep / sep. no way to track other modifications to P.  
+[ ] address parser should support /  
+[ ] bp on 0 inappropriately triggers on things like LDA #1
+[ ] create a BP on "memory location equals value"
+[x] trace header in 816 mode is not aligned correctly with trace
+
+for mvn / mvp, we have choice of TWO addresses. in each instruction loop iteration, there's a read and a write. These are the only instructions where these could be different. I guess for now, let's make it the write, and, maybe I need to add another field in the trace log for this (ugh!) maybe I can overload a field..
+
+ok, the text color is screwed up: $E1/02DB is 06. BRAM is copied to $E1/02C0. 1B is background color. Medium blue is $6, not $C. Well how did I get that screwed up?
+The table I am using, has the colors ordered for use by hires, which is of course different from these text color assignments. Maybe it's a phase thing? unsure. Anyway, I have fixed the colors. $F6 is correct.
+
+On a boot, I get the GS screen. 
+What I'd LIKE to do is hit ctrl-reset to get into basic. But sometimes that is triggering selftest; and sometimes crashing. oh I am probably not resetting some memory map flags correctly on a reset.
+
+ok, self test is working up until test 09 (or 08?) where the firmware is reading a bunch of values out of the ADB ROM:
+
+```
+ADB_Micro> Executing command: 09 00 14 
+ADB_Micro> Response (2 bytes): 81 BE 
+ADB_Micro> Executing command: 09 01 14 
+ADB_Micro> Response (2 bytes): 81 BE 
+ADB_Micro> Executing command: 09 02 14 
+ADB_Micro> Response (2 bytes): 81 BE 
+```
+
+Fixing this a couple ways I think it's supposed to work, causes the ADB 0911 error. Well, gotta do some other stuff for now, come back to this later. Good progress!!
+
+[ ] the debug frame step stuff - when enter/exit step, don't try to consume frame; also don't modify the regular frame end stuff.
+[x] if we exit when in step mode, the "emit one more frame" call is causing a crash  
+
+
+ok, we have a classy problem.
+
+MMU_IIgs derives from MMU.
+Computer stores an MMU_II (indeed, is configured with a pointer to the mega_ii), which is right.
+so we need to set a reset handler in gs2 when we set this stuff up.
+
+## Jan 11, 2026
+
+ok, I removed the slot5/6 devices. -- there is no apple iigs ROM in CXXX right now --. I crash in some routines intended to set up the RAMDisk. The RAMDisk shows up in slot 5. (if you have 3.5 drives it will get moved to S5D2 or S2D1? that seems right). I bet the crash is because I got no GS ROM showing up there. But I'd like to know -why-.
+
+The BRK it hits is $F8B0.
+
+but I now handle the vector pull read. and we are now pulling the correct vector!
+the prospective disasm returns EE for all instructions here, because it won't read out of IO space (needed, but a little awkward).
+
+It's going through some monitor stuff, FF/BB0D: jml $00FA56
+Well this is all 0's, because the LC is enabled for read and write.
+
+```
+This bit in State is set:
+| 3 | RDROM | 1 = ROM is read enabled in LC area; 0 = RAM read enabled in LC area |
+but READ_ENABLE:1 in LC also.
+```
+
+So they are inconsistent.
+Is this the same bit as READ_ENABLE ?
+Does it have any effect on /WRITE_ENABLE?
+
+ok the funky thing here is that FF_READ_ENABLE has the same function, but opposite sense, of State:g_rdrom. So I am faced with having to, when one is set, setting the other to the inverse at the same time.
+
+ok that is fixed - and VOILA! on a power-up I now hit the "Check startup device" screen!! M0R PR0GRESS!
+
+however, when I hit control-reset to try to get to BASIC, the ROM does JML $00/2007 and there I crash into a BRK.
+
+ok, well, that is something to do with the self test. And there is supposed to be code there that isn't there, it's not being copied or not being copied correctly.
+Whenever I hit ctrl-reset, we are jumping into the self test. I think this is because there's an LDA $C046 that is coming back with value $FF.
+It was reading C046 and sometimes going into selftest on a reset. C046 bit 5 is the AN3 flag; bit 7 is.. ? it's checking bit 7 = 1 to force self-test.
+
+Now when I hit ctrl-reset it keeps looping to Check Startup Device and doesn't let me RESET into BASIC.
+
+Self-test is ctrl-leftwin-rightwin-reset. System self test fails with System Bad: 03011500
+It dies on BRK trying to jump into the Cxxx space.
+
+But, Technote 95 says that is 03 (softswitch test failed), 01 (state register bit), CC (15) low byte of switch address. Handy.
+OK that is SLOTCXROM not working, or at least, not reflecting in C015's output. and indeed it seems to be not!
+C015 returns bit from state; but c006/c007 tweak the megaii. So they are not in sync with state.
+bp on 77a8
+ok I stepped through the routing SOFT_SW, and it's failing when it tests setting RAMWRT. It does:
+sta c005 (set ramwrt)
+JSR
+return address is being stored in bank 1 (aux)
+RTS
+return address is being read from bank 0 (main)
+ALTZP is 0 across this, so, my code is wrong and not handling ALTZP / RAMRD-WRT.
+FIXED! I needed to add an extra IF stanza checking if PAGE between 02 and BF.
+Now we're failing on 03, 40, 1C, which is the Page2 Selected switch. Now that's odd, should be in Display?
+ah, C01A-C01D are not handled properly in mmu_iigs. They need 
+iiememory has a routine to fetch the values from display whenever we update the memory map. Doesn't quite work like that here.. maybe just call the updater when we need to read these values.
+page2 is not updated when we tag c054/c055. I had the logic wrong in set_state; setting page2 there works now. But setting c054/c055 doesn't. 
+
+## Jan 12, 2026
+
+Maybe: A cleaner way around some of these issues, is to more fully Classy up some of these modules, and, then have a device for the platform that manages shared registers. E.g.:
+
+iigsmemory is a simple device that:
+1. reads current c054/c055 handers
+1. stores them
+1. registers new ones
+1. When called, can call each module accordingly.
+
+In this case, we need to call mmu_iie (megaii), and, display.
+
+iiememory tracks text and hires mode flags, but, doesn't appear to use it for anything except reporting the softswitch states. It does not use it to calculate the main/aux memory map.
+Should this be in display?
