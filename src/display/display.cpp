@@ -960,6 +960,16 @@ void display_write_C05EF(void *context, uint32_t address, uint8_t value) {
     ds->video_system->set_full_frame_redraw();
 }
 
+/*
+ * AN3 returned in bit 5.
+ * the selftest / reset code checks bit 7, if 1, it jumps into selftest
+ */
+uint8_t display_read_an3(void *context, uint32_t address) {
+    display_state_t *ds = (display_state_t *)context;
+    uint8_t an3val = ds->f_double_graphics ? 0x20 : 0x00;
+    return an3val;
+}
+
 uint8_t display_read_vbl(void *context, uint32_t address) {
     // This is enough to get basic VBL working. Total Replay boots anyway.
     display_state_t *ds = (display_state_t *)context;
@@ -1135,6 +1145,9 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
             update_line_mode(ds);
             return true;
         });
+    }
+    if (computer->platform->id == PLATFORM_APPLE_IIGS) {
+        mmu->set_C0XX_read_handler(0xC046, { display_read_an3, ds });
     }
 
     switch (ds->video_scanner_type) {

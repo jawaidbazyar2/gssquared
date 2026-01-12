@@ -36,6 +36,8 @@
 #include "devices/cassette/cassette.hpp"
 #include "devices/vidhd/vidhd.hpp"
 #include "devices/rtc/rtc_pram.hpp"
+#include "devices/adb/keygloo.hpp"
+#include "devices/iigsmemory/iigsmemory.hpp"
 
 Device_t NoDevice = {
         DEVICE_ID_END,
@@ -191,6 +193,20 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         "RTC (Clock + Battery RAM)",
         false,
         init_slot_rtc_pram,
+        NULL
+    },
+    {
+        DEVICE_ID_KEYGLOO,
+        "ADB (KeyGloo)",
+        false,
+        init_slot_keygloo,
+        NULL
+    },
+    {
+        DEVICE_ID_IIGS_MEMORY,
+        "IIGS Memory",
+        false,
+        init_iigsmemory,
         NULL
     }
 };

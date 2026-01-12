@@ -30,6 +30,9 @@ class MMU_IIgs : public MMU {
         };
         uint8_t g_80store;
         uint8_t g_hires;
+        bool g_text;
+        bool g_mixed;
+            
         union {
             uint8_t reg_new_video=0;
             struct {
@@ -44,6 +47,7 @@ class MMU_IIgs : public MMU {
         bool f_slotc3rom = false; */
 
         // "current memory map state" flags.
+        // does not imply we need to track text s/s
         bool m_zp = false; // this is both read and write.
         bool m_text1_r = false; // 
         bool m_text1_w = false; // 
@@ -57,15 +61,18 @@ class MMU_IIgs : public MMU {
         bool FF_PRE_WRITE = 0;
         bool _FF_WRITE_ENABLE = 1;
 
+        bool map_initialized = false;
+
     public:
         MMU_IIe *megaii = nullptr;
 
         MMU_IIgs(size_t num_banks, int ram_size, uint32_t rom_size, uint8_t *rom, MMU_IIe *mmu_iie) : MMU(num_banks, BANK_SIZE), megaii(mmu_iie) {
-            reset();
             ram_banks = ram_size / BANK_SIZE;
             main_ram = new uint8_t[ram_banks * BANK_SIZE];
             rom_banks = rom_size / BANK_SIZE;
             main_rom = rom;
+            map_initialized = false;
+            reset();
         };
         virtual ~MMU_IIgs() { delete main_ram; delete main_rom; };
         
@@ -116,7 +123,11 @@ class MMU_IIgs : public MMU {
 
         inline void set_shadow_register(uint8_t value) { if (DEBUG(DEBUG_MMUGS)) printf("setting shadow register: %02X\n", value); reg_shadow = value; }
         inline void set_speed_register(uint8_t value) { if (DEBUG(DEBUG_MMUGS)) printf("setting speed register: %02X\n", value); reg_speed = value; }
-        inline void set_state_register(uint8_t value) { if (DEBUG(DEBUG_MMUGS)) printf("setting state register: %02X\n", value); reg_state = value; }
+        inline void set_state_register(uint8_t value) { 
+            if (DEBUG(DEBUG_MMUGS)) printf("setting state register: %02X\n", value); 
+            reg_state = value; 
+            FF_READ_ENABLE = !g_rdrom;
+        }
         inline uint8_t shadow_register() { return reg_shadow; }
         inline uint8_t speed_register() { return reg_speed; }
         inline uint8_t state_register() { return reg_state; }
@@ -124,16 +135,28 @@ class MMU_IIgs : public MMU {
         void set_ram_shadow_banks();
         //void shadow_register(uint16_t address, bool rw); // track accesses to softswitches the FPI also tracks.
         inline bool is_lc_bank1() { return FF_BANK_1 == 1; }
+        inline void set_lc_bank1(bool value) { FF_BANK_1 = value; g_lcbnk2 = value; }
         inline bool is_lc_read_enable() { return FF_READ_ENABLE == 1; }
+        inline void set_lc_read_enable(bool value) { FF_READ_ENABLE = value; g_rdrom = !value; }
         inline bool is_lc_pre_write() { return FF_PRE_WRITE == 1; }
-        inline bool is_lc_write_enable() { return _FF_WRITE_ENABLE == 0; } // reverse sense since this is active low
-        inline void set_lc_bank1(bool value) { FF_BANK_1 = value; }
-        inline void set_lc_read_enable(bool value) { FF_READ_ENABLE = value; }
-        inline void set_lc_write_enable(bool value) { _FF_WRITE_ENABLE = value; }
         inline void set_lc_pre_write(bool value) { FF_PRE_WRITE = value; }
+        inline bool is_lc_write_enable() { return _FF_WRITE_ENABLE == 0; } // reverse sense since this is active low
+        inline void set_lc_write_enable(bool value) { _FF_WRITE_ENABLE = value; }
+        inline bool is_page2() { return g_page2; }
+        inline void set_page2(bool value) { g_page2 = value; }
+        inline bool is_hires() { return g_hires; }
+        inline void set_hires(bool value) { g_hires = value; }
+        inline bool is_text() { return g_text; }
+        inline void set_text(bool value) { g_text = value; }
+        inline bool is_mixed() { return g_mixed; }
+        inline void set_mixed(bool value) { g_mixed = value; }
+        
         inline bool is_80store() { return g_80store ? true : false; }
         inline bool is_slotc3rom() { return megaii->f_slotc3rom ? true : false; }
+        inline void set_intcxrom(bool value);
+
         void bsr_map_memory();
+        virtual uint8_t vp_read(uint32_t address) override;
 
         uint32_t calc_aux_write(uint32_t address);
         uint32_t calc_aux_read(uint32_t address);
@@ -144,6 +167,6 @@ class MMU_IIgs : public MMU {
         virtual uint8_t *get_rom_base() { return main_rom; };
         virtual uint8_t *get_memory_base() { return main_ram; };
         virtual void init_map();
-        virtual void reset() { reg_new_video = 0x01; reg_shadow = 0x08; reg_state = 0; g_80store = false; g_hires = false; g_rdrom = true; }
+        virtual void reset() override;
         void debug_dump(DebugFormatter *df);
 };

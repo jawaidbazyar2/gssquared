@@ -490,7 +490,8 @@ void run_cpus(computer_t *computer) {
     }
 
     // save cpu trace buffer, then exit.
-    computer->video_system->update_display(); // update one last time to show the last state.
+    // TODO: do we even really need this any more?
+    //computer->video_system->update_display(); // update one last time to show the last state.
 
     //cpu->trace_buffer->save_to_file(gs2_app_values.pref_path + "trace.bin");
     std::string tracepath;
@@ -717,6 +718,11 @@ int main(int argc, char *argv[]) {
         );
         computer->cpu->trace_buffer->set_cpu_type(PROCESSOR_65816);
         computer->video_system->set_display_engine(DM_ENGINE_RGB);
+
+        computer->register_reset_handler([mmu_iigs]() {
+            mmu_iigs->reset();
+            return true;
+        });
     }
 
     run_cpus(computer);
