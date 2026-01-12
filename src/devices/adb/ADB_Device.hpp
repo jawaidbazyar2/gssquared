@@ -9,6 +9,7 @@ struct ADB_Register
     uint8_t data[8];
 };
 
+#define ADB_SR_ENABLE 0x20
 
 class ADB_Device
 {
@@ -17,7 +18,14 @@ protected:
     ADB_Register registers[4];
 
 public:
-    ADB_Device(uint8_t id) : id(id) { }
+    ADB_Device(uint8_t id) : id(id) { 
+        registers[1].size = 0;
+        registers[2].size = 0;
+
+        registers[3].size = 2;
+        registers[3].data[0] = 0;
+        registers[3].data[1] = id | ADB_SR_ENABLE;
+    }
     uint8_t get_id() { return id; }
     virtual void reset(uint8_t cmd, uint8_t reg) = 0;
     virtual void flush(uint8_t cmd, uint8_t reg) = 0;
@@ -29,7 +37,8 @@ public:
         printf("%02d: Registers: ", id);
         for (int i = 0; i < 4; i++) {
             printf(" %02X: [", i);
-            for (int j = 0; j < registers[i].size; j++) {
+            // print from MSB to LSB
+            for (int j = registers[i].size - 1; j >= 0; j--) {
                 printf("%02X ", registers[i].data[j]);
             }
             printf("]");

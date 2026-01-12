@@ -79,7 +79,7 @@ enum adb_keycode_t {
     ADB_QUOTE = 0x27,
     ADB_K = 0x28,
     ADB_SEMICOLON = 0x29,
-    // ADB_BACKSLASH = 0x2A, no
+    ADB_BACKSLASH = 0x2A, // no
     ADB_COMMA = 0x2B,
     ADB_SLASH = 0x2C,
     ADB_N = 0x2D,
@@ -189,16 +189,16 @@ class ADB_Keyboard : public ADB_Device
         ADB_SPACE, // SDL_SCANCODE_SPACE = 44,
         ADB_MINUS, // SDL_SCANCODE_MINUS = 45,
         ADB_EQUAL, // SDL_SCANCODE_EQUALS = 46,
-        ADB_RIGHT_BRACKET, // SDL_SCANCODE_RIGHTBRACKET = 47,
-        ADB_LEFT_BRACKET, // SDL_SCANCODE_LEFTBRACKET = 48,
-        0x7F, // ADB_BACKSLASH, // SDL_SCANCODE_BACKSLASH = 49,
+        ADB_LEFT_BRACKET,  // SDL_SCANCODE_LEFTBRACKET = 47,
+        ADB_RIGHT_BRACKET, // SDL_SCANCODE_RIGHTBRACKET = 48,
+        ADB_BACKSLASH, // SDL_SCANCODE_BACKSLASH = 49,
+        0x7F,
+        ADB_SEMICOLON,
+        ADB_QUOTE,
+        ADB_GRAVE, // SDL_SCANCODE_GRAVE = 53
         ADB_COMMA, // SDL_SCANCODE_COMMA = 50,
         ADB_PERIOD, // SDL_SCANCODE_PERIOD = 51,
         ADB_SLASH, // SDL_SCANCODE_SLASH = 52,
-        0xFF, 
-        0xFF, 
-        0xFF, 
-        0xFF, 
         ADB_CAPS_LOCK, // SDL_SCANCODE_CAPSLOCK, 
         0xFF, 
         0xFF, 
@@ -221,6 +221,10 @@ class ADB_Keyboard : public ADB_Device
         0xFF, 
         0xFF, 
         0xFF, 
+        ADB_RIGHT_ARROW, 
+        ADB_LEFT_ARROW, 
+        ADB_DOWN_ARROW, 
+        ADB_UP_ARROW, 
         0xFF, 
         0xFF, 
         0xFF, 
@@ -361,11 +365,7 @@ class ADB_Keyboard : public ADB_Device
         0xFF, 
         0xFF, 
         0xFF, 
-        0xFF, 
-        0xFF, 
-        0xFF, 
-        0xFF, 
-        0xFF, 
+        0xFF,
         ADB_CONTROL, // SDL_SCANCODE_LCTRL = 224,
         ADB_LEFT_SHIFT, // SDL_SCANCODE_LSHIFT = 225,
         ADB_COMMAND, // SDL_SCANCODE_LGUI = 226,
@@ -406,26 +406,25 @@ class ADB_Keyboard : public ADB_Device
         registers[0].size = 2;
         registers[0].data[0] = 0xFF; // hi byte
         registers[0].data[1] = 0xFF; // lo byte
-        /* `Register 3
-        * Bit 15: reserved, must be 0.
-        * Bit 14: exceptional event.
-        * Bit 13: SR enable
-        * Bit 12: Reserved, must be 0.
-        * Bit 11-8: Device address.
-        * Bit 7-0: Device handler. */
-        registers[1].size = 0;
-        registers[2].size = 0;
-
-        registers[3].size = 2;
-        registers[3].data[0] = id;  // hi byte
-        registers[3].data[1] = 0x00;  // lo byte
+        /** Register 3
+            * Bit 15: reserved, must be 0.
+            * Bit 14: exceptional event.
+            * Bit 13: SR enable
+            * Bit 12: Reserved, must be 0.
+            * Bit 11-8: Device address.
+            * Bit 7-0: Device handler. */
     }
 
     void reset(uint8_t cmd, uint8_t reg) override { }
 
     void flush(uint8_t cmd, uint8_t reg) override { }
 
-    void listen(uint8_t command, uint8_t reg, ADB_Register &msg) override { }
+    void listen(uint8_t command, uint8_t reg, ADB_Register &msg) override { 
+        if (reg == 3) {
+            registers[3] = msg;
+            id = msg.data[1] & 0x0F; // change device address
+        }
+    }
 
     ADB_Register talk(uint8_t command, uint8_t reg) override {
         ADB_Register reg_result = {};
@@ -454,20 +453,21 @@ class ADB_Keyboard : public ADB_Device
 
         // if there is something in the key queue, and room in register 0,
         // dequeue the key and put it into register 0.
-        // the MSB (byte) first.
+        // the LSB (byte) first.
         if (registers[0].data[0] == 0xFF && count > 0) {
             key_event_t key;
             dequeue_key(&key);
             uint8_t code = ((key.status == KEY_STATUS_UP) ? 0x80 : 0x00) | key.keycode;
             registers[0].data[0] = code;
         }
+        // and now the MSB byte.
         if (registers[0].data[1] == 0xFF && count > 0) {
             key_event_t key;
             dequeue_key(&key);
             uint8_t code = ((key.status == KEY_STATUS_UP) ? 0x80 : 0x00) | key.keycode;
             registers[0].data[1] = code;
         }
-        print_registers();
+        if (status) print_registers();
 
         return status;
     }
