@@ -980,6 +980,21 @@ uint8_t display_read_vbl(void *context, uint32_t address) {
     return kbv | fl;
 }
 
+
+/* 
+Calculate the video counters (as they would exist in the real video scanner), compose them as they are 
+in the IIgs, and return whichever one was asked-for.
+*/
+uint8_t display_read_C02EF(void *context, uint32_t address) {
+    display_state_t *ds = (display_state_t *)context;
+    uint16_t vcounter = ds->video_scanner->get_vcounter() & 0x1FF;
+    uint16_t hcounter = ds->video_scanner->get_hcounter() & 0x7F;
+    uint8_t c02e = (vcounter >> 1);
+    uint8_t c02f = ((vcounter & 0x1) << 7) | hcounter;
+    if (address & 0x1) return c02f;
+    else return c02e;
+}
+
 void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
     if (cpu->clock_mode == CLOCK_FREE_RUN) {
         ds->framebased = true;
@@ -1169,6 +1184,9 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         ds->fr_border = new(std::align_val_t(64)) FrameBorder(53, 263, vs->renderer, PIXEL_FORMAT);
         ds->fr_shr = new(std::align_val_t(64)) Frame640(640, 200, vs->renderer, PIXEL_FORMAT);
         SDL_SetTextureScaleMode(ds->fr_border->get_texture(), SDL_SCALEMODE_PIXELART);
+
+        mmu->set_C0XX_read_handler(0xC02E, { display_read_C02EF, ds });
+        mmu->set_C0XX_read_handler(0xC02F, { display_read_C02EF, ds });
 
         mmu->set_C0XX_read_handler(0xC029, { display_read_C029, ds });
         mmu->set_C0XX_write_handler(0xC029, { display_write_C029, ds });

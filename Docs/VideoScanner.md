@@ -114,3 +114,72 @@ Each frame, we will have exactly 17,030 samples, or a few more. If there are a f
 
 in split demo, first time run from power-up, one of the oscillators volume is super low. Hit reset and reboot, and the volume is normal. Then at a certain point it stopped playing correctly, the other volume went completely to zero. So weird.
 
+# Apple IIgs Video Counter Registers
+
+The IIgs exposes the video counters at $C02E and $C02F, like so:
+
+9 bits of vertical counter
+high 8 bits in bits 7-0 of C02E
+low bit, is in hi bit of C02F
+7 bits of horz counter are in bits 0-6 of C02F.
+
+horz counter: $00, then $40 to $7F. (65 cycles)
+vert counter: 
+
+Do I have these values anywhere? I don't think so. They are calculated in the Video Scanner routines, but not saved anywhere. I need to map them.
+I don't think there's anything that relies on this stuff (well, the scanline interrupt does, but that is a trivial scan_index / 65 calculation).
+
+"Note that the VBL interrupts always trigger at scan line 192 even in Super hires display mode, and C019 soft switch indicates vbl is in effect starting at scan line 192"
+
+Well, it seems I can have fairly simple math convert these things.
+
+Video scanner tracks only the video cycle counter: 0 - 17029, aka scan_index.
+
+    //inline bool is_hbl()     { return hcount < 25;   }
+    inline bool is_hbl()     { return (scan_index % 65) < 25;   }
+    inline bool is_vbl()     { return scan_index >= (192*65); }
+    inline uint16_t get_vcount() { return scan_index / 65; }
+
+scan_index 0 is scanline 0, first cycle of borders. I.e. pixel data starts at cycle 25.
+
+horz
+| horz cycle | counter value | description |
+|-|-|-|
+| 0 - 24 | $00, $40 - $57 | hbl |
+| 25 - 64 | $58 - $7F | Video Data |
+
+vertical
+| scanline | counter value | description |
+|-|-|-|
+| 0 - 191 | $100 - $1BF | video data |
+| 192 - 261 | $1C0 - $1FF, $FA - $FF | vbl |
+
+So:
+```
+uint16_t horz = (scan_index % 65);
+if (horz == 0) hcounter = 0;
+else hcounter = (0x40 + horz - 1);
+
+uint16_t vert = scan_index / 65;
+if (vert < 192) vcounter = 0x100 + vert;
+else if (vert < 256) vcounter = 0x1C0 + (vert - 192);
+else vcounter = 0xFA + (vert - 256);
+```
+
+Tested using this code: 
+```
+800: lda c02e
+  and #1
+  beq 809
+  bne 80e
+  lda c055
+  bra 800
+  lda c054
+  bra 800
+
+e0/800:60
+e0/801<800.bfem
+0/800g
+```
+
+This appears to be correct. Interestingly if you just shove C02E to the screen, you get a more or less fixed video counter value, because what hits the phosphor is gonna be the same each frame based on timing.
