@@ -63,6 +63,8 @@ class MMU_IIgs : public MMU {
 
         bool map_initialized = false;
 
+        bool is_rom03 = false;
+
     public:
         MMU_IIe *megaii = nullptr;
 
@@ -83,7 +85,7 @@ class MMU_IIgs : public MMU {
             if ((address_16 >= 0x0400 && address_16 <= 0x07FF) && !(reg_shadow & SHADOW_INH_TEXT1)) {
                 return true;
             }
-            if ((address_16 >= 0x0800 && address_16 <= 0x0BFF) && !(reg_shadow & SHADOW_INH_TEXT2)) {
+            if (is_rom03 && ((address_16 >= 0x0800 && address_16 <= 0x0BFF) && !(reg_shadow & SHADOW_INH_TEXT2))) {
                 return true;
             }
             if ((address_16 >= 0x2000 && address_16 <= 0x3FFF) && !(reg_shadow & SHADOW_INH_HGR1)) {
