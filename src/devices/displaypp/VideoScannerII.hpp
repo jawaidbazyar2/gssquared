@@ -158,6 +158,22 @@ uint32_t  hcount;       // use separate hcount and vcount in order
     inline bool is_vbl()     { return scan_index >= (192*65); }
     inline uint16_t get_vcount() { return scan_index / 65; }
 
+    inline uint16_t get_hcounter() {
+        uint16_t hcounter;
+        uint16_t horz = (scan_index % 65);
+        if (horz == 0) hcounter = 0;
+        else hcounter = (0x40 + horz - 1);
+        return hcounter;
+    }
+    inline uint16_t get_vcounter() { 
+        uint16_t vcounter;
+        uint16_t vert = scan_index / 65;
+        if (vert < 192) vcounter = 0x100 + vert;
+        else if (vert < 256) vcounter = 0x1C0 + (vert - 192);
+        else vcounter = 0xFA + (vert - 256);
+        return vcounter;
+    }
+
     virtual void set_video_mode();
     inline void set_page_1() { page2 = false; set_video_mode(); }
     inline void set_page_2() { page2 = true;  set_video_mode(); }
