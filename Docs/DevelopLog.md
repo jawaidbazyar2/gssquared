@@ -8062,3 +8062,79 @@ In this case, we need to call mmu_iie (megaii), and, display.
 
 iiememory tracks text and hires mode flags, but, doesn't appear to use it for anything except reporting the softswitch states. It does not use it to calculate the main/aux memory map.
 Should this be in display?
+
+Got into the monitor, when self test 4 crashes to it! ctrl-B cleans BASIC and can write programs!
+
+04000000 - is "RAM ADDRESS TEST", BB is failed bank number which is 00. Not very helpful.
+It is actually crashing into monitor on a COP instruction. which isn't super-helpful because the address is 0. That doesn't seem right.
+But, likely is a memory management failure. Have to read the source again.
+
+my handling of caps lock works! however, it can, of course, get out of sync with other applications. I've seen that before. Will have to give that some consideration.
+
+ctrl-reset is still being treated like a 3-finger. will have to see how that's handled in the ROM.
+
+ah ha! It was the ADB ram location 0x51. The ADB uP commands that returned data were not returning the correct data. I can now boot, get Check Startup Device, and hit ctrl-reset to get a applesoft prompt!!! WHOOHOO!!
+
+Trying to boot now. 3.5 Prodos stuff is crashing after the ProDOS splash screen. Some horsepucky. Let's try 5.25 dos..
+ah, no, infinite hang in the ROM because it thought it was the IWM drive. I can try slot 2..
+Nope, we crash mounting media in slot 2. There's a bunch of hardcoded stuff that requires these stupid drives to be in slots 5 and 6, isn't there.. ok neither of those are working.
+
+I suppose the next major device step is the IWM. But I should boot trace a 3.5 with ProDOS8 and see if I can figure out what memory map thing is wrong. Something ain't right.
+
+It could be missing firmware, particularly, missing 80-col firmware. I suppose I should try mapping that in. See if I can get 80-col mode, etc. Oh yeah, it's doing a JSR $C311. So definitely need some peripheral memory magic.
+
+## Jan 13, 2026
+
+[ ] have bp for: PC only, MEM only, BOTH
+
+[ ] Debug window open. When edge of debug window gets near screen edge, and there is flash on the main window, the flash starts going really fast. and debug window updates go slow..
+
+ok test 4 that's failing is the "RAM_ADDR" or "RAM Address Test". It starts at ff/7C86. So let's BP there. In the ROM03 source, It's in file diag.tests.asm.
+
+Failures can come from:
+subroutine cmpit returning with carry set;
+Failure reading KEY_VERSION
+KEY_VERSION is < 6 (032B) (check value of this) (E0=00, E1=FF, unsure if it's even been set here yet)
+
+ROM01 doesn't seem to be checking that.ok, in a ROM03 it checks that to see if it should test up to RAM Bank $10.
+ok, so the sub WriteIt does this:
+X = start addr; Y = end addr;
+```
+loc= bank << 16
+while (y < RamEndAddr)
+  add current address to ram bank.
+  store in loc,y
+  iny, iny (incr by 2)
+```
+So in bank 0 you'll get a pattern like:
+1000:00 10
+1002:02 10
+in bank 1 you'll get:
+1000:01 10
+1002:03 10
+bank E1:
+E1/400:05E1
+Hm, F0 is E1 01 so it's the bank plus another 100. Hmm. 
+
+shadow was =0, we set to 5f, which should disable all shadowing and inhibit C000 space. It does seem to. So wait, what does this imply then about operation of the lc bank switching when inhibit is set. (Well, it should still work in E0/E1? )
+
+ok the error is checking E1/0800. The value there is 0901, but the value should be 09E1. 
+This value is identical to bank 1's value. So bank 1 page 8 is being inappropriately shadowed to E1.
+Whereas the data on Page $0C is correct. And at $0400 is correct because it tested those values okay.
+
+Interesting. The shadow value they set is $5F. Which means "text page 2" shadowing was still enabled. Did I implement that??
+| 5 | Inhibit Shadowing text page 2 | ROM03 only | value = $20
+```
+if ((address_16 >= 0x0800 && address_16 <= 0x0BFF) && !(reg_shadow & SHADOW_INH_TEXT2)) {
+    return true;
+}
+```
+I sure did!
+ok, man, that was painful!
+So, somehow, I need to have a flag for ROM01 vs ROM03 hardware, and, not shadow Text 2 on a ROM01. For now, just create a flag and have it check the flag.
+
+Awesome!! Passed Test 4, moving on to Test 5: 05010200
+That is "Speed test: Speed stuck fast". Well, it sure is cowboy.
+
+This test relies on two things.
+1) the 
