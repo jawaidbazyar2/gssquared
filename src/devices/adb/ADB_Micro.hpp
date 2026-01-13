@@ -230,8 +230,8 @@ class KeyGloo
 
         void execute_command() {
             uint8_t value = cmd[0];
-            response_bytes = 1; // by default
-            uint8_t response_bytes_reported = 1;
+            response_bytes = 0; // by default
+            //uint8_t response_bytes_reported = 1;
             //response_index = 0; // TODO: on a new command, reset the response index. we may have the wrong # of response bytes on one of our commands. or GS might not be reading them all.
 
             printf("ADB_Micro> Executing command: ");
@@ -244,10 +244,8 @@ class KeyGloo
                 case 0b00'000000:
                     if (value == 0x01) { // ABORT COMMAND
                         abort();
-                        response_bytes = 1;
                     } else if (value == 0x02) { // RESET uC
                         reset();
-                        response_bytes = 1;
                     } else if (value == 0x03) { // FLUSH COMMAND
                         printf("FLUSH COMMAND - unimplemented\n");
                     } else if (value == 0x04) { // set modes
@@ -267,8 +265,8 @@ class KeyGloo
                         configuration_bytes[1] = cmd[3];
                         configuration_bytes[2] = cmd[4];
                         reset();
-                        response_bytes = 1;
-                        response_bytes_reported = 1;
+                        //response_bytes = 1;
+                        //response_bytes_reported = 1;
                     } else if (value == 0x08) { // WRITE uC MEMORY
                         // write 1 byte to uC memory
                         ram[cmd[1]] = cmd[2];
@@ -276,48 +274,48 @@ class KeyGloo
                         // read 1 byte from uC memory
                         uint16_t addr = cmd[1] | (cmd[2] << 8);
                         if (addr < 96) {
-                            response[1] = ram[addr];
+                            response[0] = ram[addr];
                         } else {
-                            response[1] = rom[addr - 0x1400];
+                            response[0] = rom[addr - 0x1400];
                         }
-                        response_bytes = 2;
-                        response_bytes_reported = 2;
+                        response_bytes = 1;
+                        //response_bytes_reported = 2;
                     } else if (value == 0x0A) { // READ MODES BYTE
-                        response[1] = modes_byte;
-                        response_bytes = 2;
-                        response_bytes_reported = 2;
+                        response[0] = modes_byte;
+                        response_bytes = 1;
+                        //response_bytes_reported = 2;
                     } else if (value == 0x0B) { // READ CONFIGURATION BYTES
-                        response[1] = configuration_bytes[0];
-                        response[2] = configuration_bytes[1];
-                        response[3] = configuration_bytes[2];
-                        response_bytes = 4;
-                        response_bytes_reported = 4;
+                        response[0] = configuration_bytes[0];
+                        response[1] = configuration_bytes[1];
+                        response[2] = configuration_bytes[2];
+                        response_bytes = 3;
+                        //response_bytes_reported = 4;
                     } else if (value == 0x0C) { // READ THEN CLEAR ERROR BYTE
-                        response[1] = error_byte;
+                        response[0] = error_byte;
                         error_byte = 0;
-                        response_bytes = 2;
-                        response_bytes_reported = 2;
+                        response_bytes = 1;
+                        //response_bytes_reported = 2;
                     } else if (value == 0x0D) { // GET VERSION NUMBER
-                        response[1] = adb_version; // Version ?
-                        response_bytes = 2;
-                        response_bytes_reported = 2;
+                        response[0] = adb_version; // Version ?
+                        response_bytes = 1;
+                        //response_bytes_reported = 2;
                     } else if (value == 0x0E) { // READ CHAR SETS AVAILABLE
-                        response[1] = 0x08; // TODO: unsure about bytes returned value here, need to read the docs again.
+                        response[0] = 0x08; // TODO: unsure about bytes returned value here, need to read the docs again.
                         for (int i = 0; i < 8; i++) {
-                            response[i+2] = i;
+                            response[i+1] = i;
                         }
-                        response_bytes = 8;
-                        response_bytes_reported = 2;
+                        response_bytes = 9;
+                        //response_bytes_reported = 2;
                     } else if (value == 0x0F) { // READ LAYOUTS AVAILABLE
-                        response[1] = 0x08;
+                        response[0] = 0x08;
                         for (int i = 0; i < 8; i++) {
-                            response[i+2] = i;
+                            response[i+1] = i;
                         }
-                        response_bytes = 8;
-                        response_bytes_reported = 2;
+                        response_bytes = 9;
+                        //response_bytes_reported = 2;
                     } else if (value == 0x10) { // RESET SYSTEM
                         reset();
-                        response_bytes = 1;
+                        //response_bytes = 1;
                     } else if (value == 0x11) { // SEND FDB KEYCODE
                         store_key_to_buffer(cmd[1], 0);
                     } 
@@ -349,13 +347,7 @@ class KeyGloo
                     printf("POLL FDB DEVICE - unimplemented\n");
                     break;
             }
-            // the first byte after every command is always this:
-            response[0] = (response_bytes > 0 ? 0x80 : 0x00) |
-                (error_byte > 0 ? 0x40 : 0x00) |
-                (/* reset_sequence */ false ? 0x20 : 0x00) |
-                (/* buffer_flush_sequence */ false ? 0x10 : 0x00) |
-                (/* service_request_valid */ false ? 0x08 : 0x00) |
-                ((response_bytes_reported-1) & 0x07);
+
             data_register_full = true;
             printf("ADB_Micro> Response (%d bytes/ %d): ", response_bytes, response_index);
             for (int i = 0; i < response_bytes; i++) { 
@@ -445,6 +437,14 @@ class KeyGloo
         }
 
         uint8_t read_data_register() {
+            // at interrupt time we need to return this.
+            /* response[0] = (response_bytes > 0 ? 0x80 : 0x00) |
+            (error_byte > 0 ? 0x40 : 0x00) |
+            ( false ? 0x20 : 0x00) | // reset_sequence
+            ( false ? 0x10 : 0x00) | // buffer_flush_sequence
+            ( false ? 0x08 : 0x00) | // service_request_valid
+            ((response_bytes_reported-1) & 0x07); */
+
             uint8_t retval = 0;
 
             if (response_bytes > 0) {

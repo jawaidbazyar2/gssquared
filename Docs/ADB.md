@@ -115,6 +115,9 @@ On a write:
 The command (as defined below) is written in these 8 bits. These are uC commands, not directly ADB commands.
 
 On a read:
+Bits 0-7 are data from the keyboard micro
+
+AT INTERRUPT TIME, on a read: (Per Cortland 2.01 Apple IIgs Firmware Reference Manual Appendix E)
 
 | Bit | Name | Description |
 |-|-|-|
@@ -496,11 +499,13 @@ now:
 
 --
 
-I am now dumping the complete 
+I am now dumping the complete ADB Command and Response messages.
+
+## BUG FIX
+
+ok, SO: The bits 2-0 being number of valid bytes thing, this ONLY applies to C026 "during interrupt time". I'm guessing, an IRQ is triggered, this value is set.
+If there is no interrupt then it's normal response.
+
+
 
 ## Debugging
-
-Missing Keys
-
-Arrows
-/, ?
