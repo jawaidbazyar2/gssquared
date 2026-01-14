@@ -640,7 +640,7 @@ int main(int argc, char *argv[]) {
             computer->debug_window->set_mmu(mmu_iie);
             break;
         case MMU_MMU_IIGS:
-            mmu_iie = new MMU_IIe(256, 128*1024, /* (uint8_t *) */rd->main_rom_data + 0x1'D000);
+            mmu_iie = new MMU_IIe(256, 128*1024, /* (uint8_t *) */rd->main_rom_data + 0x1'C000);
             mmu_iigs = new MMU_IIgs(256, 8*1024*1024, 128*1024, /* (uint8_t *) */rd->main_rom_data, mmu_iie);
             mmu_iigs->init_map();
             computer->cpu->set_mmu(mmu_iigs); // cpu gets FPI
