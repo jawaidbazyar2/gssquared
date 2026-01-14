@@ -288,6 +288,14 @@ Somehow, I'm going to have to signal a vector pull to the MMU module. I could us
 Add a vector_read() routine.
 
 
+## C1-CF Mapping
+
+This works a little differently on the GS than IIe.
+
+There is (perhaps) the IIe behavior of INTCXROM SLOTC3ROM.
+There is of course the ability to set the slot roms between internal and slot.
+
+
 ## Notes
 
 

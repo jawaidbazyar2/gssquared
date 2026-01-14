@@ -8161,3 +8161,12 @@ Eventually, have a clock construct independent of cpu. then that would be respon
 
 It works!! Sorta. The audio is fonky and is out of sync. well, we are in debug. let's try recompiling. Oh, yeah, that's much better. Well it's possible I will pass self-test 5 now.. nope, still croaks at 05012400. Well, need to do some "real" work for now, will come back to this later.. Arekkusu says this routine is very timing sensitive and depends on the RAM refresh stuff as well.
 
+Currently megaii->compose_c1_cf is the iie version. Need to make a GS-specific version of this, and use it, instead of calling megaii's version. This will handle the additional complexity the GS has here.
+Right now I tried setting c3 rom with megaii and compose_c1_cf overwrites the entry with rom_d0 + 0x300, which is wrong.
+In iie that rom starts at C000, so that + 300 is correct. But in mmu_iigs I set the rom offset to D000? 
+Ah, I set to C000, and there is some improvement! The c300 rom is in the right place.
+in 80 column mode, we are often flipping between page1 and page2.
+
+[ ] 80store/page1 stuff isn't working right. i.e. with 80store on, page2 is changing to page2 instead of forcing page1.
+[ ] ^G in 80 column mode causes a page out of range assertion and hard crash.  
+
