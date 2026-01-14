@@ -65,6 +65,8 @@ class MMU_IIgs : public MMU {
 
         bool is_rom03 = false;
 
+        cpu_state *cpu = nullptr;
+        
     public:
         MMU_IIe *megaii = nullptr;
 
@@ -171,4 +173,9 @@ class MMU_IIgs : public MMU {
         virtual void init_map();
         virtual void reset() override;
         void debug_dump(DebugFormatter *df);
+
+        void set_cpu(cpu_state *cpux) { this->cpu = cpux; }
+        cpu_state *get_cpu() { return this->cpu; }
+
+        
 };

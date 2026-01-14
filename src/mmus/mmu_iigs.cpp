@@ -495,6 +495,12 @@ uint8_t c036_read(void *context, uint32_t address) {
 // set speed register
 void c036_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    uint8_t current_speed_reg = mmu_iigs->speed_register();
+    if ((current_speed_reg ^ value) & 0x80) {
+        // speed change.
+        if (value & 0x80) set_clock_mode(mmu_iigs->get_cpu(), CLOCK_2_8MHZ);
+        else set_clock_mode(mmu_iigs->get_cpu(), CLOCK_1_024MHZ);
+    }
     mmu_iigs->set_speed_register(value);
     mmu_iigs->set_ram_shadow_banks();
 }

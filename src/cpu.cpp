@@ -56,8 +56,8 @@ void set_clock_mode(cpu_state *cpu, clock_mode_t mode) {
     cpu->cycles_per_frame = system_clock_mode_info[mode].cycles_per_frame;
 
     cpu->clock_mode = mode;
-    //fprintf(stdout, "Clock mode: %d HZ_RATE: %llu cycle_duration_ns: %llu \n", cpu->clock_mode, cpu->HZ_RATE, cpu->cycle_duration_ns);
-    fprintf(stdout, "Clock mode: %d HZ_RATE: %llu \n", cpu->clock_mode, cpu->HZ_RATE);
+
+    //fprintf(stdout, "Clock mode: %d HZ_RATE: %llu \n", cpu->clock_mode, cpu->HZ_RATE);
 }
 
 clock_mode_info_t *get_clock_line(cpu_state *cpu) {

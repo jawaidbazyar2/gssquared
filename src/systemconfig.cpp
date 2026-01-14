@@ -121,8 +121,8 @@ DeviceMap_t DeviceMap_IIGS[] = {
     {DEVICE_ID_RTC_PRAM, SLOT_NONE}, // after display, because we call back to it for border color changes.
     {DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
-    /* {DEVICE_ID_PD_BLOCK2, SLOT_5},
-    {DEVICE_ID_DISK_II, SLOT_6}, */
+    {DEVICE_ID_PD_BLOCK2, SLOT_5},
+/*     {DEVICE_ID_DISK_II, SLOT_6}, */
     {DEVICE_ID_END, SLOT_NONE}
 };
 

@@ -8137,4 +8137,27 @@ Awesome!! Passed Test 4, moving on to Test 5: 05010200
 That is "Speed test: Speed stuck fast". Well, it sure is cowboy.
 
 This test relies on two things.
-1) the 
+1. the video counters C02E/C02F
+1. speed control register.
+
+After implementing 1 above (see VideoScanner.md), we now crash with 05012400.
+
+I need to figure out how to implement speed control. We can't use the generic speed control because that is only made to kick in at end of frames, and that's not good enough here.
+
+This one is challenging. I think it's basically:
+
+Emulator speed levels of 1.0, 2.8, 7.1, etc. need to be constrained. Don't have a 1.0.
+And then, the VM speed control - which is a combination of the speed control reg and -syncing to the mega ii-, has to be done in the clock routine. Let's examine that:
+
+That main execute loop is now only checking 14M's. So we can actually speed shift, I think, in the middle of a frame. The video is also timed on 14Ms. Yep, just call set_clock_mode.
+
+See, correct architecture gives you stuff for free!
+
+(Well, hold up till you see if it actually works cowboy, ha ha guffaw).
+
+So the speed register $C036 is all speed control except for bit 5 which is "shadow all banks". *rolls eyes*. So where should $C036 live practically speaking? Speed stuff requires CPU, and, mmu_gs does not have a pointer to the cpu. Well. I could always just inject the cpu into mmugs. 
+
+Eventually, have a clock construct independent of cpu. then that would be responsible for setting speed, speed changes, etc.
+
+It works!! Sorta. The audio is fonky and is out of sync. well, we are in debug. let's try recompiling. Oh, yeah, that's much better. Well it's possible I will pass self-test 5 now.. nope, still croaks at 05012400. Well, need to do some "real" work for now, will come back to this later.. Arekkusu says this routine is very timing sensitive and depends on the RAM refresh stuff as well.
+

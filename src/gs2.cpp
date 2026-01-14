@@ -706,6 +706,8 @@ int main(int argc, char *argv[]) {
     computer->video_system->update_display(); // check for events 60 times per second.
 
     if (platform->mmu_type == MMU_MMU_IIGS) {
+        mmu_iigs->set_cpu(computer->cpu);
+        
         computer->debug_window->set_open();
         computer->cpu->execution_mode = EXEC_STEP_INTO;
         
