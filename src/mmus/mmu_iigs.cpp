@@ -689,6 +689,8 @@ void MMU_IIgs::init_map() {
 
     set_ram_shadow_banks();
 
+    megaii->set_slot_rom(SLOT_3, main_rom + 0x1'C300, "GS INT");
+
     init_c0xx_handlers();
     map_initialized = true;
 }
