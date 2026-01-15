@@ -36,7 +36,7 @@
 #include "devices/cassette/cassette.hpp"
 #include "devices/vidhd/vidhd.hpp"
 #include "devices/rtc/rtc_pram.hpp"
-#include "devices/adb/keygloo.hpp"
+#include "devices/adb/KeyGloo.hpp"
 #include "devices/iigsmemory/iigsmemory.hpp"
 
 Device_t NoDevice = {

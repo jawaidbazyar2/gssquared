@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include <cstdio>
 
 #include "ADB_Host.hpp"
 #include "ADB_Keyboard.hpp"
