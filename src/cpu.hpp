@@ -277,6 +277,7 @@ struct cpu_state {
     void reset();
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
+    uint64_t fast_refresh = 9;
 
     inline void slow_incr_cycles() {
         cycles++; 

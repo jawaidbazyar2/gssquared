@@ -709,7 +709,7 @@ int main(int argc, char *argv[]) {
         mmu_iigs->set_cpu(computer->cpu);
         
         computer->debug_window->set_open();
-        computer->cpu->execution_mode = EXEC_STEP_INTO;
+        //computer->cpu->execution_mode = EXEC_STEP_INTO;
         
         computer->register_debug_display_handler(
             "mmugs",

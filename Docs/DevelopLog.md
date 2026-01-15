@@ -8170,3 +8170,51 @@ in 80 column mode, we are often flipping between page1 and page2.
 [ ] 80store/page1 stuff isn't working right. i.e. with 80store on, page2 is changing to page2 instead of forcing page1.
 [ ] ^G in 80 column mode causes a page out of range assertion and hard crash.  
 
+Aside from the above, there must be something wrong with language card mapping, because ProDOS ain't workin right.
+
+This is a great writeup on Apple IIgs timing complexity:
+2011-krue-fpi.pdf
+(in Apple II Documentation folder)
+
+there are 
+
+Great googley moogely. There is a "volume control register". $C03C. Shared with some DOC flags. We'll have to have an event queue and record volume changes, and make available to both speaker and ensoniq code. It's not good enough to record volume at time of speaker event, it needs to be a separate thing. Should be pretty straightforward.
+
+In a NORMAL FAST cycle, PH2 is running at its fastest rate. This cycle is used for accesses to fast RAM and ROM, when the system speed is set to FAST. When accessing ROM, the fast RAM can also be refreshed during this cycle, incurring no speed loss.
+
+In a FAST REFRESH cycle, the high phase of PH2 is extended by 5 ticks. A RAM refresh is performed in the first 5 ticks, followed by the normal access in the second 5 ticks. This cycle is used for accesses to fast RAM, when the system speed is set to FAST. When running completely from fast RAM, every 9th PH2 cycle is a FAST REFRESH cycle.
+
+In a SYNC cycle, the high phase of PH2 is extended by as many ticks as are necessary to align with a full cycle of PH0. If the falling edge of PH2 coincides with the falling edge of PH0, then "only" 9 ticks must be added (11 ticks for a STRETCH cycle). If the falling edges do not align, then an additional 1 to 13 ticks are added to wait for PH0. Fast RAM can also be refreshed during this cycle, incurring no
+
+So we're doing "normal fast" cycles right now, basically.
+The FAST REFRESH, says "every 9th PH2 is a FAST REFRESH". So in the incr_cycle, we'd add 5 more 14Ms. This would be before the video_cycle check.
+
+```
+uint64_t fast_refresh = 9;
+
+    inline void slow_incr_cycles() {
+        uint64_t this_14m_per_cpu_cycle = c_14M_per_cpu_cycle;
+        cycles++; 
+        if (--fast_refresh == 0) { this_14m_per_cpu_cycle += 5; fast_refresh = 9; }
+        c_14M += this_14m_per_cpu_cycle;
+        
+        if (video_scanner) {
+            video_cycle_14M_count += this_14m_per_cpu_cycle;
+            scanline_14M_count += this_14m_per_cpu_cycle;
+
+            if (video_cycle_14M_count >= 14) {
+                video_cycle_14M_count -= 14;
+                video_scanner->video_cycle();
+            }
+            if (scanline_14M_count >= 910) {  // end of scanline
+                c_14M += extra_per_scanline;
+                scanline_14M_count = 0;
+            }
+        }
+    }
+```
+this code is causing a video crash, so we're doing something very wrong..
+
+not sure. Have to do some real work now. This area of code is so sensitive to bugs. I should put in some checks so if it's wrong we won't crash. I'm unclear what's happening here, is it overrunning or underrunning the buffer? I inserted 14Ms.. 
+Is the main loop timing on CPU 14Ms, or video system 14Ms? (CPU) Because it should time on video system 14Ms, if there is any difference between these two. I'm also unclear on the effect of the video_14m = 0 instead of video_14m -= 912. What if it's 915 instead of 912? Then we're going to be out of sync.
+

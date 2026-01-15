@@ -293,16 +293,22 @@ void debug_window_t::render_pane_monitor() {
 
     int x = pane_area[DEBUG_PANEL_MONITOR].x;
     int y = pane_area[DEBUG_PANEL_MONITOR].y;
-    int base_line = 0;
-    if (is_pane_first(DEBUG_PANEL_MONITOR)) {
-        base_line = 3;
-    }
-    int buf_area_lines = num_lines_in_pane(DEBUG_PANEL_MONITOR) - 3;
+    int base_line, buf_area_lines;
     
-    separator_line(DEBUG_PANEL_MONITOR, buf_area_lines);
+    int textarea_pos = (window_height / font_line_height) - 1;
+    if (is_pane_first(DEBUG_PANEL_MONITOR)) { // make room for buttons at the top
+        base_line = 3;
+        buf_area_lines = textarea_pos - 3; 
+    } else {
+        base_line = 0;
+        buf_area_lines = textarea_pos;
+    }
+    //int buf_area_lines = num_lines_in_pane(DEBUG_PANEL_MONITOR) - 3;
+    
+    separator_line(DEBUG_PANEL_MONITOR, textarea_pos);
     char buffer[256] = {' '};
-    draw_text(DEBUG_PANEL_MONITOR, x, buf_area_lines, ">");
-    mon_textinput->set_tile_position(x + 20, (buf_area_lines * font_line_height));
+    draw_text(DEBUG_PANEL_MONITOR, x, textarea_pos, ">");
+    mon_textinput->set_tile_position(x + 20, (textarea_pos * font_line_height));
     mon_textinput->render(renderer);
 
     // get number of lines in mon_display_buffer
