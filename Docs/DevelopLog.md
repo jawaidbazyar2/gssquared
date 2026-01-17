@@ -8287,13 +8287,6 @@ More urgently, the OSD needs to be able to figure out what slots the drives are 
 Now that I've cleaned that up, and can have DiskII/PDBlock in slots other than 5/6, I can boot DOS3.3 on a floppy on the GS!!!!! (slot 7) YEEEHAW!!!
 ok fine let's try choplifter. YES!!!! YES!!
 
-[x] ProDOS 8 crashes during boot, likely due to some MMU problem.  
-[ ] Apple Panic is not clearing c010?? that is some wacky stuff.  
-[x] TAXMAN loads switches to text page 2 and I got no other display..  hit reset, and then it starts working.. ?  ctrl-c switches back to text page 2. huh..  WE'RE NOT SHADOWING PAGE 2, HA HA  
-[ ] Thexder hangs part way through boot. it uses AUX and LC heavily.  
-
-re Apple Panic: on a real GS, if we read C000 w/o clearing strobe, it does change as we type characters. in GS2, it does not, because I didn't write it that way. So what the hell does the GS do? ah ha!!! By default, GS has keyboard buffering DISABLED. When I ENABLE it, it behaves the same as GS2. So I need to respect the "buffer yes/no" bit and do the right thing.
-
 [ ] implement handling ctrl-oa-del to "flush keyboard buffer"  
 
 ok, prodos 1.1.1 booting crashes to BRK at 2141. The sequence right before is:
@@ -8400,8 +8393,7 @@ ah, this needs to be qualified like so:
 YES. ProDOS boots now!! Take that, MF!
 
 
-[ ] Merlin-16 crashes after displaying MERLIN-16 splash screen  
-[ ] AppleWorks 4.x crashes  
-[ ] ProDOS 2.4 crashes at FF/2028.  
+[ ] speaker gets out of sync doing a lot of speed shifting? Or is it just debug mode again.. 
 
-AppleWorks 1.3 works.
+[ ] in step mode, the shr screen goes away.  
+[ ] shr should clear on a reset?  
