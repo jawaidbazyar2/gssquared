@@ -657,13 +657,16 @@ int main(int argc, char *argv[]) {
     computer->cpu->cpun = createCPU(platform->cpu_type);
     computer->cpu->core = computer->cpu->cpun.get(); // set the core. Probably need a better set cpu for cpu_state.
 
-    computer->mounts = new Mounts(computer->cpu);
+
+    // Initialize the slot manager.
+    //SlotManager_t *slot_manager = new SlotManager_t();
+
+    // Create Mounts object
+    //computer->mounts = new Mounts(computer->cpu, computer->slot_manager);
 
     //init_display_font(rd);
 
     //SystemConfig_t *system_config = get_system_config(platform_id);
-
-    SlotManager_t *slot_manager = new SlotManager_t();
 
     for (int i = 0; system_config->device_map[i].id != DEVICE_ID_END; i++) {
         DeviceMap_t dm = system_config->device_map[i];
@@ -675,7 +678,7 @@ int main(int argc, char *argv[]) {
         } 
         device->power_on(computer, dm.slot);
         if (dm.slot != SLOT_NONE) {
-            slot_manager->register_slot(device, dm.slot);
+            computer->slot_manager->register_slot(device, dm.slot);
         }
     }
 
@@ -694,7 +697,7 @@ int main(int argc, char *argv[]) {
     }
 
     //video_system_t *vs = computer->video_system;
-    osd = new OSD(computer, computer->cpu, vs->renderer, vs->window, slot_manager, 1120, 768, aa);
+    osd = new OSD(computer, computer->cpu, vs->renderer, vs->window, computer->slot_manager, 1120, 768, aa);
     // TODO: this should be handled differently. have osd save/restore?
     int error = SDL_SetRenderTarget(vs->renderer, nullptr);
     if (!error) {
