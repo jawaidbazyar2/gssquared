@@ -8,8 +8,8 @@
 struct rtc_pram_state_t {
     RTC *rtc = nullptr;
 
-    write_handler_t display_wr_handler = { nullptr, nullptr };
-    read_handler_t display_rd_handler = { nullptr, nullptr };
+    /* write_handler_t display_wr_handler = { nullptr, nullptr };
+    read_handler_t display_rd_handler = { nullptr, nullptr }; */
 
 };
 
