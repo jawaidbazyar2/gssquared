@@ -8277,7 +8277,17 @@ in C1xx memory. So, missing more ROM. This is where I need to properly handle c1
 I enabled the slot ROM for C1-C6. (the default GS slot mapping for internal / your card).
 
 There was a long standing bug in pdblock2 where it only allocates structs for 7 slots (0-6) so trying to put it in slot 7 was triggering all sorts of weirdness. That's fixed now.
-But I should probably change it so it's like diskii where I don't have a single static array.
+
+[ ] Should change pdblock2, so it's like diskii where I don't have a single static array.
+
 Also, pdblock is more realistically a "generic hard drive" device, not a 3.5. for GS stuff I'm going to need a hard drive device anyway, of potentially very large size, and support having a partition table in it. 
 So maybe make a version of it that is in slot 7 and has different status/mount icon etc.
 More urgently, the OSD needs to be able to figure out what slots the drives are in and do the appropriate display, use the right keys, etc.
+
+Now that I've cleaned that up, and can have DiskII/PDBlock in slots other than 5/6, I can boot DOS3.3 on a floppy on the GS!!!!! (slot 7) YEEEHAW!!!
+ok fine let's try choplifter. YES!!!! YES!!
+
+[ ] ProDOS 8 crashes during boot, likely due to some MMU problem.  
+[ ] Apple Panic is not clearing c010?? that is some wacky stuff.  
+[x] TAXMAN loads switches to text page 2 and I got no other display..  hit reset, and then it starts working.. ?  ctrl-c switches back to text page 2. huh..  WE'RE NOT SHADOWING PAGE 2, HA HA  
+[ ] Thexder hangs part way through boot. it uses AUX and LC heavily.  
