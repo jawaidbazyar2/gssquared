@@ -33,7 +33,8 @@ computer_t::computer_t() {
 
     event_timer = new EventTimer(cpu);
 
-    mounts = new Mounts(cpu);
+    slot_manager = new SlotManager_t();
+    mounts = new Mounts(cpu, slot_manager);
 
     video_system = new video_system_t(this);
     debug_window = new debug_window_t(this);

@@ -14,6 +14,8 @@
 #include "util/Metrics.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
 
+class SlotManager_t; // forward declare.
+
 struct cpu_state;
 struct debug_window_t; // don't bring in debugwindow.hpp, it would create a depedence on SDL.
 struct video_system_t; // same.
@@ -38,6 +40,8 @@ struct computer_t {
     //VideoScannerII *video_scanner = nullptr;
     platform_info *platform = nullptr;
     MessageBus *mbus = nullptr;
+
+    SlotManager_t *slot_manager = nullptr;
 
     // handle speed shift requests (between frames)
     bool speed_shift = false;
