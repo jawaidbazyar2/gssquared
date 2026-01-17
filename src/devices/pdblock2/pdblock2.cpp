@@ -272,7 +272,7 @@ void init_pdblock2(computer_t *computer, SlotType_t slot)
     if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Initializing ProDOS Block2 slot " << slot << std::endl;
     pdblock2_data * pdblock_d = new pdblock2_data;
     pdblock_d->id = DEVICE_ID_PD_BLOCK2;
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 2; j++) {
             pdblock_d->prodosblockdevices[i][j].file = nullptr;
             pdblock_d->prodosblockdevices[i][j].media = nullptr;
@@ -299,6 +299,11 @@ void init_pdblock2(computer_t *computer, SlotType_t slot)
     /* for (int i = 0; i < 256; i++) {
         raw_memory_write(cpu, 0xC000 + (slot * 0x0100) + i, rom_data[i]);
     } */
+
+    // register drives with mounts for status reporting
+    uint64_t key = (slot << 8) | 0;
+    computer->mounts->register_drive(DRIVE_TYPE_PRODOS_BLOCK, key);
+    computer->mounts->register_drive(DRIVE_TYPE_PRODOS_BLOCK, key + 1);
 
     // register.. uh, registers.
     computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_RESET, { pdblock2_write_C0x0, cpu });

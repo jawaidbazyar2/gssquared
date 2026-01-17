@@ -31,7 +31,7 @@ typedef struct media_t {
     uint16_t block_count;
  */} media_t;
 
-media_t prodosblockdevices[7][2];
+media_t prodosblockdevices[8][2];
 
 void pv_return(cpu_state *cpu) {
     // pop two bytes off the stack.
