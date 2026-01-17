@@ -8287,7 +8287,121 @@ More urgently, the OSD needs to be able to figure out what slots the drives are 
 Now that I've cleaned that up, and can have DiskII/PDBlock in slots other than 5/6, I can boot DOS3.3 on a floppy on the GS!!!!! (slot 7) YEEEHAW!!!
 ok fine let's try choplifter. YES!!!! YES!!
 
-[ ] ProDOS 8 crashes during boot, likely due to some MMU problem.  
+[x] ProDOS 8 crashes during boot, likely due to some MMU problem.  
 [ ] Apple Panic is not clearing c010?? that is some wacky stuff.  
 [x] TAXMAN loads switches to text page 2 and I got no other display..  hit reset, and then it starts working.. ?  ctrl-c switches back to text page 2. huh..  WE'RE NOT SHADOWING PAGE 2, HA HA  
 [ ] Thexder hangs part way through boot. it uses AUX and LC heavily.  
+
+re Apple Panic: on a real GS, if we read C000 w/o clearing strobe, it does change as we type characters. in GS2, it does not, because I didn't write it that way. So what the hell does the GS do? ah ha!!! By default, GS has keyboard buffering DISABLED. When I ENABLE it, it behaves the same as GS2. So I need to respect the "buffer yes/no" bit and do the right thing.
+
+[ ] implement handling ctrl-oa-del to "flush keyboard buffer"  
+
+ok, prodos 1.1.1 booting crashes to BRK at 2141. The sequence right before is:
+```
+sta c00a - c3romoff
+sta c001 - 80store on
+sta c055 - page 2
+```
+hires:0 but hires is being switched out.
+So, hires should switch to aux ONLY on 80store and page2 and hires on.
+
+[ ] if we're in STEP, stop sound effects from playing.  
+
+doing BP on c080.c08f, on iie (working) ProDOS does this:
+```
+LDA C082
+
+LDA C08B
+LDA C08B
+
+D0: lc_bank1 r/w
+E0: LC_RAM r/w
+
+LDA C082
+D0,E0: ROM r/o
+
+LDA C08B
+LDA C08B
+
+D0: lc_bank1 r/w
+E0: LC_RAM r/w
+
+LDA C083
+LDA C083
+
+D0: lc_bank2 r/w
+E0: LC_RAM r/w
+
+LDA C08B
+LDA C08B
+
+D0: lc_bank1 r/w
+E0: LC_RAM r/w
+
+LDA C081
+D0: rom rd, write lc_bank2
+E0: rom rd, write LC
+
+LDA C08B
+LDA C08B
+
+D0: lc_bank1 r/w
+E0: LC_RAM r/w
+
+LDA C08B
+LDA C08B
+
+D0: lc_bank1 r/w
+E0: LC_RAM r/w
+
+LDA C08B
+LDA C08B
+
+D0: lc_bank1 r/w
+E0: LC_RAM r/w
+
+LDA C08B
+LDA C08B
+
+D0: lc_bank1 r/w
+E0: LC_RAM r/w
+
+.. bunch of the same ..
+
+then 
+
+LDA C082
+D0, E0: RD ROM, no write
+```
+
+well it's crashed before here, so let's see what's wrong here in gsmmu..
+
+the LDA C083 pair gets us mapped as:
+
+D0 LC_BANK2 LC BANK2
+E0 LC_RAM LC_RAM
+
+that's correct. Everything up to the crashy point is right, but the debug output here is from megaii. 
+So where in mmugs does it map the LC memory..
+hmmm, actually, I think I'm overwriting my ROM image, hurr durr. no.. close. 
+Even when _WRITE_ENABLE=1 (i.e., rom, no writes) we are writing into the LC RAM. These should be ignored.
+
+ah, ok here is a broken test:
+
+c083
+c083
+fded:dd
+c08b
+fded => dd
+
+that's broken. the write is correct because the value is read back when I'm in c083. so let's look at read..
+ah, this needs to be qualified like so:
+                if (page >= 0xD0 && page <= 0xDF) address -= 0x1000; // only this area.
+YES. ProDOS boots now!! Take that, MF!
+
+
+[ ] Merlin-16 crashes after displaying MERLIN-16 splash screen  
+[ ] AppleWorks 4.x crashes  
+[ ] ProDOS 2.4 crashes at FF/2028.  
+
+AppleWorks 1.3 works.

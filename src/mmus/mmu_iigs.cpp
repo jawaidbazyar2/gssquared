@@ -97,10 +97,10 @@ inline void MMU_IIgs::write_c0xx(uint16_t address, uint8_t value) {
             megaii->f_slotc3rom = true;
             megaii->compose_c1cf();
             break;
-        case 0xC054: g_page2 = false; /* Call Display; */ break;
-        case 0xC055: g_page2 = true; /* Call Display; */ break;
-        case 0xC056: g_hires = false; /* Call Display; */ break;
-        case 0xC057: g_hires = true; /* Call Display; */ break;
+        case 0xC054: g_page2 = false;  break;
+        case 0xC055: g_page2 = true;  break;
+        case 0xC056: g_hires = false;  break;
+        case 0xC057: g_hires = true;  break;
         default:
             assert(false && "MMU_IIgs: Unhandled C0XX write");
     }
@@ -521,7 +521,7 @@ IIe Memory Mapping for Main/AUX:
 uint32_t MMU_IIgs::calc_aux_write(uint32_t address) {
     uint32_t page = (address & 0xFF00) >> 8;
     if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramwrt))) return 0x1'0000;
-    if ((page >= 0x20 && page <= 0x5F) && ((g_80store && g_page2) || (!g_80store && g_ramwrt && g_hires))) return 0x1'0000;
+    if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramwrt))) return 0x1'0000;
     if (((page >= 0x00 && page <= 0x01) || (page >= 0xD0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
     if ((page >= 0x02 && page <= 0xBF) && (g_ramwrt)) return 0x1'0000;
     return 0x0'0000;
@@ -530,7 +530,7 @@ uint32_t MMU_IIgs::calc_aux_write(uint32_t address) {
 uint32_t MMU_IIgs::calc_aux_read(uint32_t address) {
     uint32_t page = (address & 0xFF00) >> 8;
     if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramrd))) return 0x1'0000;
-    if ((page >= 0x20 && page <= 0x5F) && ((g_80store && g_page2) || (!g_80store && g_ramrd && g_hires))) return 0x1'0000;
+    if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramrd ))) return 0x1'0000;
     //if (((page >= 0x00 && page <= 0x01) || (page >= 0xD0 && page <= 0xFF)) && (g_altzp || g_lcbnk2)) return 0x1'0000;
     if (((page >= 0x00 && page <= 0x01) || (page >= 0xD0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
     //if (g_ramrd) return 0x1'0000;
@@ -554,10 +554,10 @@ uint8_t bank_shadow_read(void *context, uint32_t address) {
         
         if (mmu_iigs->is_lc_read_enable()) { // ram
             if (mmu_iigs->is_lc_bank1()) {
-                address -= 0x1000;
+                if (page >= 0xD0 && page <= 0xDF) address -= 0x1000; // only this area.
             }
         } else {
-            uint8_t *addr;
+            //uint8_t *addr;
             // rom
             if (DEBUG(DEBUG_MMUGS)) printf("Read: ROM Effective address: %06X\n", address);
             return mmu_iigs->get_rom_base()[0x1'0000 + (address & 0xFFFF)]; // TODO: this is only for ROM01. ROM03 has more ROM needs different offset. Have a routine to calculate.
@@ -586,10 +586,11 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
         
         if (mmu_iigs->is_lc_write_enable()) { // is LC RAM writable?
             if (mmu_iigs->is_lc_bank1()) {
-                address -= 0x1000;
+                if (page >= 0xD0 && page <= 0xDF) address -= 0x1000; // only this area.
             }
         } else {
             // ROM - do nothing, just fall through to here.
+            return; // do not write to either LC RAM since _WRITE_ENABLE=1
         }
     }
 
@@ -758,6 +759,8 @@ void MMU_IIgs::debug_dump(DebugFormatter *df) {
     df->addLine("Speed: %02X", reg_speed);
     debug_output_page(df, 0x00);
     debug_output_page(df, 0x02);
+    megaii->debug_output_page(df, 0xD0);
+    megaii->debug_output_page(df, 0xE0);
     megaii->debug_output_page(df, 0xFF);
 }
 
