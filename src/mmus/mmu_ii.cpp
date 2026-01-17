@@ -286,7 +286,7 @@ void MMU_II::set_C0XX_write_handler(uint16_t address, write_handler_t handler) {
 }
 
 // TODO: these will go away once we're done migrating to double-handlers
-void MMU_II::get_C0XX_read_handler(uint16_t address, read_handler_t &handler) {
+/* void MMU_II::get_C0XX_read_handler(uint16_t address, read_handler_t &handler) {
     if (address < C0X0_BASE || address >= C0X0_BASE + C0X0_SIZE) {
         return;
     }
@@ -298,7 +298,7 @@ void MMU_II::get_C0XX_write_handler(uint16_t address, write_handler_t &handler) 
         return;
     }
     handler = C0xx_memory_write_handlers[address - C0X0_BASE].hs[0];
-}
+} */
 
 uint8_t *MMU_II::get_rom_base() {
     return main_rom_D0;

@@ -101,6 +101,8 @@ inline void MMU_IIgs::write_c0xx(uint16_t address, uint8_t value) {
         case 0xC055: g_page2 = true; /* Call Display; */ break;
         case 0xC056: g_hires = false; /* Call Display; */ break;
         case 0xC057: g_hires = true; /* Call Display; */ break;
+        default:
+            assert(false && "MMU_IIgs: Unhandled C0XX write");
     }
     megaii_compose_map();
     if (DEBUG(DEBUG_MMUGS)) printf("Reg Write: %04X: %02X\n", address, value);
@@ -109,11 +111,13 @@ inline void MMU_IIgs::write_c0xx(uint16_t address, uint8_t value) {
 inline uint8_t MMU_IIgs::read_c0xx(uint16_t address) {
     uint8_t retval = 0xEE;
     switch (address) {
-        case 0xC054: g_page2 = false; /* Call Display; */;
-        case 0xC055: g_page2 = true; /* Call Display; */;
-        case 0xC056: g_hires = false; /* Call Display; */;
-        case 0xC057: g_hires = true; /* Call Display; */;
+        case 0xC054: g_page2 = false; /* Call Display; */; break;
+        case 0xC055: g_page2 = true; /* Call Display; */; break;
+        case 0xC056: g_hires = false; /* Call Display; */; break;
+        case 0xC057: g_hires = true; /* Call Display; */; break;
         case 0xC029: retval = reg_new_video; break;
+        default:
+            assert(false && "MMU_IIgs: Unhandled C0XX read");
     }
     megaii_compose_map();
     return retval;
@@ -689,7 +693,12 @@ void MMU_IIgs::init_map() {
 
     set_ram_shadow_banks();
 
+    megaii->set_slot_rom(SLOT_1, main_rom + 0x1'C100, "GS INT");
+    megaii->set_slot_rom(SLOT_2, main_rom + 0x1'C200, "GS INT");
     megaii->set_slot_rom(SLOT_3, main_rom + 0x1'C300, "GS INT");
+    megaii->set_slot_rom(SLOT_4, main_rom + 0x1'C400, "GS INT");
+    megaii->set_slot_rom(SLOT_5, main_rom + 0x1'C500, "GS INT");
+    megaii->set_slot_rom(SLOT_6, main_rom + 0x1'C600, "GS INT");
 
     init_c0xx_handlers();
     map_initialized = true;

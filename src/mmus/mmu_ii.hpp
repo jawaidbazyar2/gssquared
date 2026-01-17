@@ -38,8 +38,8 @@ class MMU_II : public MMU {
         virtual void set_C8xx_handler(SlotType_t slot, void (*handler)(void *context, SlotType_t slot), void *context);
         virtual void set_C0XX_read_handler(uint16_t address, read_handler_t handler);
         virtual void set_C0XX_write_handler(uint16_t address, write_handler_t handler);
-        virtual void get_C0XX_read_handler(uint16_t address, read_handler_t &handler);
-        virtual void get_C0XX_write_handler(uint16_t address, write_handler_t &handler);
+/*         virtual void get_C0XX_read_handler(uint16_t address, read_handler_t &handler);
+        virtual void get_C0XX_write_handler(uint16_t address, write_handler_t &handler); */
         
         virtual void call_C8xx_handler(SlotType_t slot);
         virtual uint8_t *get_rom_base();
