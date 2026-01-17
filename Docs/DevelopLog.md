@@ -8221,7 +8221,7 @@ this code is causing a video crash, so we're doing something very wrong..
 not sure. Have to do some real work now. This area of code is so sensitive to bugs. I should put in some checks so if it's wrong we won't crash. I'm unclear what's happening here, is it overrunning or underrunning the buffer? I inserted 14Ms.. 
 Is the main loop timing on CPU 14Ms, or video system 14Ms? (CPU) Because it should time on video system 14Ms, if there is any difference between these two. I'm also unclear on the effect of the video_14m = 0 instead of video_14m -= 912. What if it's 915 instead of 912? Then we're going to be out of sync.
 
-[ ] I think I'm going to implement a C0XX bus concept where multiple routines can register handler.
+[x] I think I'm going to implement a C0XX bus concept where multiple routines can register handler.
 
 This ought to greatly simplify a lot of wacky code - instead of daisy chaining things like PAGE2, there are just two routines, one from iiememory or gsmmu, and one from display.
 
@@ -8252,6 +8252,7 @@ these both need to be replaced with the new scheme.
 other things that have weird couplings that this solves:
 * display + anc3 <- double hires mode.
 * pull memory management behavior from iiememory into mmu_iie. since it doesn't matter now what order c0xx handlers are registered.
+* Videx monitor ancX
 
 if we do the thing where we pass reference to read / retval to the read handlers, we can also solve:
 iiekeyboard + display/mmu status switches which need to return the low 7 bits of C000 keyboard register.
@@ -8260,3 +8261,23 @@ the read and write handlers could be exactly the same signature, if we set up bo
 Then we could just have up to 4 read or write handlers per address, in any combination.
 this is a case where more abstract == more work and lower performance maybe?
 
+ok, so now back to IIGS!
+
+with 80store on, page2/page1 works the way I expect for display. however, 80 col isn't working. Also, mmugs page2 is '1' all the time. Let's see.. ah, now that it is super-extra-clear what is going on, I found that read_c0xx switch was missing break after each case. Duh. and now pr#3 80 columns works!!!
+
+Rerunning the diags for fun. nah, still crashing with roughly this:
+```
+3     0
+        0
+          0
+```
+
+in C1xx memory. So, missing more ROM. This is where I need to properly handle c1_cf_compose, because I'm betting since the switches are still there, this wacky 80-col ROM is still all over that space too.
+
+I enabled the slot ROM for C1-C6. (the default GS slot mapping for internal / your card).
+
+There was a long standing bug in pdblock2 where it only allocates structs for 7 slots (0-6) so trying to put it in slot 7 was triggering all sorts of weirdness. That's fixed now.
+But I should probably change it so it's like diskii where I don't have a single static array.
+Also, pdblock is more realistically a "generic hard drive" device, not a 3.5. for GS stuff I'm going to need a hard drive device anyway, of potentially very large size, and support having a partition table in it. 
+So maybe make a version of it that is in slot 7 and has different status/mount icon etc.
+More urgently, the OSD needs to be able to figure out what slots the drives are in and do the appropriate display, use the right keys, etc.
