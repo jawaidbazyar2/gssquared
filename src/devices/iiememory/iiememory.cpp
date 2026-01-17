@@ -241,16 +241,6 @@ uint8_t bsr_read_C012(void *context, uint32_t address) {
  */
 
 
-
-void update_display_flags(iiememory_state_t *iiememory_d) {
-    display_state_t *ds = (display_state_t *)iiememory_d->computer->get_module_state(MODULE_DISPLAY);
-    iiememory_d->s_text = ds->display_mode == TEXT_MODE;
-    iiememory_d->s_hires = ds->display_graphics_mode == HIRES_MODE;
-    // if 80STORE is off, get page2 from display; otherwise just keep our local version, as display version is always set to page 1.
-    // TODO: if (!iiememory_d->f_80store) iiememory_d->s_page2 = ds->display_page_num == DISPLAY_PAGE_2;
-    iiememory_d->s_mixed = ds->display_split_mode == SPLIT_SCREEN;
-}
-
 void iiememory_debug(iiememory_state_t *iiememory_d) {
     // CX debug
     iiememory_d->mmu->dump_page_table(0xC2, 0xC3);
@@ -261,9 +251,7 @@ void iiememory_debug(iiememory_state_t *iiememory_d) {
 void iiememory_compose_map(iiememory_state_t *iiememory_d) {
     const char *TAG_MAIN = "MAIN";
     const char *TAG_ALT = "ALT";
-    
-    update_display_flags(iiememory_d);
-    
+        
     bool n_zp; 
     bool n_text1_r;
     bool n_text1_w;
@@ -371,28 +359,18 @@ void iiememory_compose_map(iiememory_state_t *iiememory_d) {
     iiememory_d->m_hires1_w = n_hires1_w;
     iiememory_d->m_all_r = n_all_r;
     iiememory_d->m_all_w = n_all_w;
-
-    //iiememory_debug(iiememory_d);
 }
 
 void iiememory_write_C00X(void *context, uint32_t address, uint8_t data) {
     iiememory_state_t *iiememory_d = (iiememory_state_t *)context;
-    uint8_t *main_rom = iiememory_d->mmu->get_rom_base();
-    display_state_t *ds = (display_state_t *)iiememory_d->computer->get_module_state(MODULE_DISPLAY);
 
     switch (address) {
 
         case 0xC000: // 80STOREOFF
             iiememory_d->f_80store = false;
-            // TODO: force display mode to be recalculated
-            ds->video_scanner->set_80store(false);
-            ds->a2_display->set_80store(false);
             break;
         case 0xC001: // 80STOREON
             iiememory_d->f_80store = true;
-            // TODO: force display mode to be recalculated
-            ds->video_scanner->set_80store(true);
-            ds->a2_display->set_80store(true);
             break;
         case 0xC002: // RAMRDOFF
             iiememory_d->f_ramrd = false;
@@ -406,7 +384,6 @@ void iiememory_write_C00X(void *context, uint32_t address, uint8_t data) {
         case 0xC005: // RAMWRTON
             iiememory_d->f_ramwrt = true;
             break;
-      
         case 0xC008: // ALTZPOFF
             iiememory_d->f_altzp = false;
             break;
@@ -420,7 +397,7 @@ void iiememory_write_C00X(void *context, uint32_t address, uint8_t data) {
 
 uint8_t iiememory_read_C01X(void *context, uint32_t address) {
     iiememory_state_t *iiememory_d = (iiememory_state_t *)context;
-    update_display_flags(iiememory_d);
+
     uint8_t fl = 0x00;
     MMU_IIe *mmu = (MMU_IIe *)iiememory_d->mmu;
 
@@ -449,21 +426,9 @@ uint8_t iiememory_read_C01X(void *context, uint32_t address) {
         case 0xC018: // 80STORE
             fl =  (iiememory_d->f_80store) ? 0x80 : 0x00;
             break;
-        case 0xC01A: // TEXT
-            fl =  (iiememory_d->s_text) ? 0x80 : 0x00;
-            break;
-        case 0xC01B: // MIXED
-            fl =  (iiememory_d->s_mixed) ? 0x80 : 0x00;
-            break;
-        case 0xC01C: // PAGE2
-            fl =  (iiememory_d->s_page2) ? 0x80 : 0x00;
-            break;
-        case 0xC01D:  // HIRES
-            fl =  (iiememory_d->s_hires) ? 0x80 : 0x00;
-            break;
-        // C01E and C01F are handled by display. (altcharset and 80col)
         default:
-            fl =  0x00;
+            assert(false && "iiememory: Unhandled C01X read");
+            //fl =  0x00;
     }
     KeyboardMessage *keymsg = (KeyboardMessage *)iiememory_d->mbus->read(MESSAGE_TYPE_KEYBOARD);
     uint8_t kbv = (keymsg ? keymsg->mk->last_key_val : 0xEE) & 0x7F;
@@ -473,37 +438,35 @@ uint8_t iiememory_read_C01X(void *context, uint32_t address) {
 
 uint8_t iiememory_read_display(void *context, uint32_t address) {
     iiememory_state_t *iiememory_d = (iiememory_state_t *)context;
-    display_state_t *ds = (display_state_t *)iiememory_d->computer->get_module_state(MODULE_DISPLAY);
 
-    // call down to the old display device handlers for these..
     uint8_t retval = 0x00;
     switch (address) {
         case 0xC050: // TEXTOFF
-            retval = txt_bus_read_C050(ds, address);
+            iiememory_d->s_text = false;
             break;
         case 0xC051: // TEXTON
-            retval = txt_bus_read_C051(ds, address);
+            iiememory_d->s_text = true;
             break;
         case 0xC052: // MIXEDOFF
-            retval = txt_bus_read_C052(ds, address);
+            iiememory_d->s_mixed = false;
             break;
         case 0xC053: // MIXEDON
-            retval = txt_bus_read_C053(ds, address);
+            iiememory_d->s_mixed = true;
             break;
         case 0xC054: // PAGE2OFF
-            /* if (!iiememory_d->f_80store)  */retval = txt_bus_read_C054(ds, address);
-            /* else */ iiememory_d->s_page2 = false;
+            iiememory_d->s_page2 = false;
             break;
         case 0xC055: // PAGE2ON
-            /* if (!iiememory_d->f_80store)  */retval = txt_bus_read_C055(ds, address);
-            /* else */ iiememory_d->s_page2 = true;
+            iiememory_d->s_page2 = true;
             break;
         case 0xC056: // HIRESOFF
-            retval = txt_bus_read_C056(ds, address);
+            iiememory_d->s_hires = false;
             break;
         case 0xC057: // HIRESON
-            retval = txt_bus_read_C057(ds, address);
+            iiememory_d->s_hires = true;
             break;
+        default:
+            assert(false && "iiememory: Unhandled display read");
     }
     // recompose the memory map
     iiememory_compose_map(iiememory_d);
@@ -523,12 +486,10 @@ DebugFormatter *debug_iiememory(iiememory_state_t *iiememory_d) {
     // dump the page table
     f->addLine("80ST: %1d RAMR: %1d RAMW: %1d ALTZP: %1d SLOTC3: %1d",
         iiememory_d->f_80store, iiememory_d->f_ramrd, iiememory_d->f_ramwrt, iiememory_d->f_altzp, mmu->f_slotc3rom);
-
     f->addLine("INTCX: %1d LC [ BNK1: %1d READ: %1d WRT: %1d ]",
         mmu->f_intcxrom, iiememory_d->FF_BANK_1, iiememory_d->FF_READ_ENABLE, !iiememory_d->_FF_WRITE_ENABLE);
-    
-   /*  ds->f_altcharset  => to debug "display"
-    ds->f_80col */
+    f->addLine("TEXT: %1d MIXED: %1d PAGE2: %1d HIRES: %1d",
+        iiememory_d->s_text, iiememory_d->s_mixed, iiememory_d->s_page2, iiememory_d->s_hires);
 
     iiememory_d->mmu->debug_output_page(f, 0x00, true);
     iiememory_d->mmu->debug_output_page(f, 0x02);
@@ -562,7 +523,9 @@ void reset_iiememory(iiememory_state_t *lc) {
     lc->f_80store = false;
     lc->f_ramrd = false;
     lc->f_ramwrt = false;
-    lc->f_altzp = false;    
+    lc->f_altzp = false;
+
+    // TODO: what about the display flags? I don't think these are reset on RESET, but give some consideration.
 
     bsr_map_memory(lc);
     iiememory_compose_map(lc);
@@ -585,13 +548,13 @@ void init_iiememory(computer_t *computer, SlotType_t slot) {
         computer->mmu->set_C0XX_write_handler(i, { iiememory_write_C00X, iiememory_d });
     }
 
-    for (uint16_t i = 0xC011; i <= 0xC01D; i++) {
+    /* C019 - C01F are handled by display */
+    for (uint16_t i = 0xC011; i <= 0xC018; i++) {
         //if (i == 0xC015) continue; // INTCXROM is handled by the MMU.
-        if (i == 0xC019) continue; // VBL is handled by the display device.
         computer->mmu->set_C0XX_read_handler(i, { iiememory_read_C01X, iiememory_d });
     }
 
-    // Override the display device handlers for these..
+    // We also need these for tracking memory mapping.
     for (uint16_t i = 0xC050; i <= 0xC057; i++) {
         computer->mmu->set_C0XX_read_handler(i, { iiememory_read_display, iiememory_d });
         computer->mmu->set_C0XX_write_handler(i, { iiememory_write_display, iiememory_d });

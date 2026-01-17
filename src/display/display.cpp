@@ -732,12 +732,22 @@ void txt_bus_write_C057(void *context, uint32_t address, uint8_t value) {
 void ds_bus_write_C00X(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     switch (address) {
+        case 0xC000:
+            ds->video_scanner->set_80store(false);
+            ds->a2_display->set_80store(false);
+            return;
+        case 0xC001:
+            ds->video_scanner->set_80store(true);
+            ds->a2_display->set_80store(true);
+            return;
         case 0xC00C:
             ds->f_80col = false;
             break;
         case 0xC00D:
             ds->f_80col = true;
             break;
+        default:
+            assert(false && "ds_bus_write_C00X: Unhandled C00X write");
     }
     if (!ds->framebased) ds->video_scanner->set_80col_f(ds->f_80col);
     update_line_mode(ds);
@@ -925,7 +935,38 @@ void display_write_C034(void *context, uint32_t address, uint8_t value) {
  * IIe
  */
 
-uint8_t display_read_C01E(void *context, uint32_t address) {
+uint8_t display_read_C01AF(void *context, uint32_t address) {
+    display_state_t *ds = (display_state_t *)context;
+    uint8_t fl = 0x00;
+
+    switch (address) {
+        case 0xC01A: // TEXT
+            fl =  (ds->display_mode == TEXT_MODE) ? 0x80 : 0x00;
+            break;
+        case 0xC01B: // MIXED
+            fl =  (ds->display_split_mode == SPLIT_SCREEN) ? 0x80 : 0x00;
+            break;
+        case 0xC01C: // PAGE2
+            fl =  (ds->display_page_num == DISPLAY_PAGE_2) ? 0x80 : 0x00;
+            break;
+        case 0xC01D:  // HIRES
+            fl =  (ds->display_graphics_mode == HIRES_MODE) ? 0x80 : 0x00;
+            break;
+        case 0xC01E: // ALTCHARSET
+            fl =  (ds->f_altcharset) ? 0x80 : 0x00;
+            break;
+        case 0xC01F: // 80COL
+            fl =  (ds->f_80col) ? 0x80 : 0x00;
+            break;
+        default:
+            assert(false && "display_read_C01AF: Unhandled C01A-F read");
+    }
+    KeyboardMessage *keymsg = (KeyboardMessage *)ds->mbus->read(MESSAGE_TYPE_KEYBOARD);
+    uint8_t kbv = (keymsg ? keymsg->mk->last_key_val : ds->mmu->floating_bus_read()) & 0x7F;
+    return kbv | fl;
+}
+
+/* uint8_t display_read_C01E(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     uint8_t fl = (ds->f_altcharset) ? 0x80 : 0x00;
     
@@ -941,7 +982,7 @@ uint8_t display_read_C01F(void *context, uint32_t address) {
     KeyboardMessage *keymsg = (KeyboardMessage *)ds->mbus->read(MESSAGE_TYPE_KEYBOARD);
     uint8_t kbv = (keymsg ? keymsg->mk->last_key_val : ds->mmu->floating_bus_read()) & 0x7F;
     return kbv | fl;
-}
+} */
 
 uint8_t display_read_C05EF(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
@@ -1137,12 +1178,20 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     || computer->platform->id == PLATFORM_APPLE_IIE_65816 || computer->platform->id == PLATFORM_APPLE_IIGS) {
         ds->f_altcharset = false;
         ds->a2_display->set_char_set(ds->f_altcharset);
+        mmu->set_C0XX_write_handler(0xC000, { ds_bus_write_C00X, ds });
+        mmu->set_C0XX_write_handler(0xC001, { ds_bus_write_C00X, ds });
         mmu->set_C0XX_write_handler(0xC00C, { ds_bus_write_C00X, ds });
         mmu->set_C0XX_write_handler(0xC00D, { ds_bus_write_C00X, ds });
         mmu->set_C0XX_write_handler(0xC00E, { display_write_switches, ds });
         mmu->set_C0XX_write_handler(0xC00F, { display_write_switches, ds });
-        mmu->set_C0XX_read_handler(0xC01E, { display_read_C01E, ds });
-        mmu->set_C0XX_read_handler(0xC01F, { display_read_C01F, ds });
+        
+        mmu->set_C0XX_read_handler(0xC01A, { display_read_C01AF, ds });
+        mmu->set_C0XX_read_handler(0xC01B, { display_read_C01AF, ds });
+        mmu->set_C0XX_read_handler(0xC01C, { display_read_C01AF, ds });
+        mmu->set_C0XX_read_handler(0xC01D, { display_read_C01AF, ds });
+        mmu->set_C0XX_read_handler(0xC01E, { display_read_C01AF, ds });
+        mmu->set_C0XX_read_handler(0xC01F, { display_read_C01AF, ds });
+        
         mmu->set_C0XX_read_handler(0xC05E, { display_read_C05EF, ds });
         mmu->set_C0XX_write_handler(0xC05E, { display_write_C05EF, ds });
         mmu->set_C0XX_read_handler(0xC05F, { display_read_C05EF, ds });

@@ -8213,8 +8213,50 @@ uint64_t fast_refresh = 9;
         }
     }
 ```
+
 this code is causing a video crash, so we're doing something very wrong..
+
+[ ] put in some assert checks on the VideoScanGenerator to ensure we won't crash.  
 
 not sure. Have to do some real work now. This area of code is so sensitive to bugs. I should put in some checks so if it's wrong we won't crash. I'm unclear what's happening here, is it overrunning or underrunning the buffer? I inserted 14Ms.. 
 Is the main loop timing on CPU 14Ms, or video system 14Ms? (CPU) Because it should time on video system 14Ms, if there is any difference between these two. I'm also unclear on the effect of the video_14m = 0 instead of video_14m -= 912. What if it's 915 instead of 912? Then we're going to be out of sync.
+
+[ ] I think I'm going to implement a C0XX bus concept where multiple routines can register handler.
+
+This ought to greatly simplify a lot of wacky code - instead of daisy chaining things like PAGE2, there are just two routines, one from iiememory or gsmmu, and one from display.
+
+How do we resolve who returns a value .. hmm.. have to look at some sample situations.
+Could OR all the results, and if one handler doesn't have any input, just return 0x00? So it won't affect result?
+
+iigsmemory: C050-C057 would work fine this way.
+display/rtc: C034 sharing would be fine this way.
+iiememory: writes to C000-C00F for various switches then call things in display. This could be refactored to reduce cross-dependency and improve code readability.
+
+only question is do we need more than 2. In theory you could have any number of things.. well it's easily extensible.
+what if these routines returned their data -and- a mask. then the algo could be:
+start with cur = floating bus value
+apply mask (cur &= ~mask), and new data (cur |= newdata)
+apply (cur &= mask) mask and new data (cur |= newdata)
+This would entail changing all those functions to return 16-bit values (mask and data).
+or on read we call them with an "input value" and they modify it and return an output value.. or can pass a reference to the output and similarly modify it.
+
+OK, I modified the C0XX_handlers stuff. and it built. I am expecting some things to fail because .
+I should have some asserts in here..
+
+iiememory has been doing two different ways of sneaking a peek at state variables.
+1. copying them periodically from display.
+2. replacing display's c0xx handler with its own, then calling back into display.
+
+these both need to be replaced with the new scheme.
+
+other things that have weird couplings that this solves:
+* display + anc3 <- double hires mode.
+* pull memory management behavior from iiememory into mmu_iie. since it doesn't matter now what order c0xx handlers are registered.
+
+if we do the thing where we pass reference to read / retval to the read handlers, we can also solve:
+iiekeyboard + display/mmu status switches which need to return the low 7 bits of C000 keyboard register.
+A thought:
+the read and write handlers could be exactly the same signature, if we set up both to pass bus val by reference, and a read or write flag per call also. or I could register the r/w flag and skip the wrong type on any particular thing.
+Then we could just have up to 4 read or write handlers per address, in any combination.
+this is a case where more abstract == more work and lower performance maybe?
 
