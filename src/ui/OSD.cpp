@@ -21,6 +21,7 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3_image/SDL_image.h>
 
+#include "Device_ID.hpp"
 #include "cpu.hpp"
 #include "computer.hpp"
 #include "DiskII_Button.hpp"
@@ -294,48 +295,66 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     containers.push_back(drive_container);
 
     // TODO: create buttons based on what is in slots.
+
+    int diskii_slot = -1;
+    int unidisk_slot = -1;
+    for (int i = 0; i < NUM_SLOTS; i++) {
+        Device_t *device = slot_manager->get_device(static_cast<SlotType_t>(i));
+        if (device->id == DEVICE_ID_DISK_II) {
+            diskii_slot = i;
+        } else if (device->id == DEVICE_ID_PD_BLOCK2) {
+            unidisk_slot = i;
+        }
+    }
+
     // Create the buttons
-    diskii_button1 = new DiskII_Button_t(aa, DiskII_Open, DS); // this needs to have our disk key . or alternately use a different callback.
-    diskii_button1->set_key(0x600);
-    diskii_button1->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, 0x600});
+    int tile_id = 0;
+    if (diskii_slot != -1) {
+        uint64_t key = (uint64_t)diskii_slot << 8 | 0;
+        diskii_button1 = new DiskII_Button_t(aa, DiskII_Open, DS); // this needs to have our disk key . or alternately use a different callback.
+        diskii_button1->set_key(key);
+        diskii_button1->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, key});
 
-    diskii_button2 = new DiskII_Button_t(aa, DiskII_Closed, DS);
-    diskii_button2->set_key(0x601);
-    diskii_button2->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, 0x601});
+        diskii_button2 = new DiskII_Button_t(aa, DiskII_Closed, DS);
+        diskii_button2->set_key(key | 1);
+        diskii_button2->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, key | 1});
 
-    unidisk_button1 = new Unidisk_Button_t(aa, Unidisk_Face, DS); // this needs to have our disk key . or alternately use a different callback.
-    unidisk_button1->set_key(0x500);
-    unidisk_button1->set_click_callback(unidisk_button_click, new diskii_callback_data_t{this, 0x500});
+        drive_container->add_tile(diskii_button1, tile_id++);
+        drive_container->add_tile(diskii_button2, tile_id++);  
+        
+        // pop-up drive container when drives are spinning
+        Container_t *dc2 = new Container_t(renderer, 10, HUD);  // Increased to 5 to accommodate the mouse position tile
+        dc2->set_position(340, 800);
+        dc2->set_tile_size(420, 120);
+        hud_diskii_1 = new DiskII_Button_t(aa, DiskII_Open, HUD); // this needs to have our disk key . or alternately use a different callback.
+        hud_diskii_1->set_key(0x600);
+        hud_diskii_1->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, 0x600});
 
-    unidisk_button2 = new Unidisk_Button_t(aa, Unidisk_Face, DS); // this needs to have our disk key . or alternately use a different callback.
-    unidisk_button2->set_key(0x501);
-    unidisk_button2->set_click_callback(unidisk_button_click, new diskii_callback_data_t{this, 0x501});
+        hud_diskii_2 = new DiskII_Button_t(aa, DiskII_Closed, HUD);
+        hud_diskii_2->set_key(0x601);
+        hud_diskii_2->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, 0x601});
 
-    // Add buttons to container
-    drive_container->add_tile(diskii_button1, 0);
-    drive_container->add_tile(diskii_button2, 1);
-    drive_container->add_tile(unidisk_button1, 2);
-    drive_container->add_tile(unidisk_button2, 3);
+        dc2->add_tile(hud_diskii_1, 0);
+        dc2->add_tile(hud_diskii_2, 1);
+        dc2->layout();
+        hud_drive_container = dc2;
+    }
+    if (unidisk_slot != -1) {
+        uint64_t key = (uint64_t)unidisk_slot << 8 | 0;
+        unidisk_button1 = new Unidisk_Button_t(aa, Unidisk_Face, DS); // this needs to have our disk key . or alternately use a different callback.
+        unidisk_button1->set_key(key);
+        unidisk_button1->set_click_callback(unidisk_button_click, new diskii_callback_data_t{this, key | 0});
 
-    // Initial layout
+        unidisk_button2 = new Unidisk_Button_t(aa, Unidisk_Face, DS); // this needs to have our disk key . or alternately use a different callback.
+        unidisk_button2->set_key(key | 1);
+        unidisk_button2->set_click_callback(unidisk_button_click, new diskii_callback_data_t{this, key | 1});
+
+        drive_container->add_tile(unidisk_button1, tile_id++);
+        drive_container->add_tile(unidisk_button2, tile_id++);
+    }
+
+    // Initial layout for drive container
     drive_container->layout();
-
-    // pop-up drive container when drives are spinning
-    Container_t *dc2 = new Container_t(renderer, 10, HUD);  // Increased to 5 to accommodate the mouse position tile
-    dc2->set_position(340, 800);
-    dc2->set_tile_size(420, 120);
-    hud_diskii_1 = new DiskII_Button_t(aa, DiskII_Open, HUD); // this needs to have our disk key . or alternately use a different callback.
-    hud_diskii_1->set_key(0x600);
-    hud_diskii_1->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, 0x600});
-
-    hud_diskii_2 = new DiskII_Button_t(aa, DiskII_Closed, HUD);
-    hud_diskii_2->set_key(0x601);
-    hud_diskii_2->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, 0x601});
-
-    dc2->add_tile(hud_diskii_1, 0);
-    dc2->add_tile(hud_diskii_2, 1);
-    dc2->layout();
-    hud_drive_container = dc2;
 
     // Create another container, this one for slots.
     Container_t *slot_container = new Container_t(renderer, 8, SC);  // Container for 8 slot buttons
@@ -534,12 +553,20 @@ void OSD::update() {
 
     // TODO: iterate over all drives based on what's in slots.
     // update disk status
-    diskii_button1->set_disk_status(computer->mounts->media_status(0x600));
-    diskii_button2->set_disk_status(computer->mounts->media_status(0x601));
-    hud_diskii_1->set_disk_status(computer->mounts->media_status(0x600));
-    hud_diskii_2->set_disk_status(computer->mounts->media_status(0x601));
-    unidisk_button1->set_disk_status(computer->mounts->media_status(0x500));
-    unidisk_button2->set_disk_status(computer->mounts->media_status(0x501));
+    if (diskii_button1) {
+        uint64_t key1 = diskii_button1->get_key();
+        uint64_t key2 = diskii_button2->get_key();
+        diskii_button1->set_disk_status(computer->mounts->media_status(key1));
+        diskii_button2->set_disk_status(computer->mounts->media_status(key2));
+        hud_diskii_1->set_disk_status(computer->mounts->media_status(key1));
+        hud_diskii_2->set_disk_status(computer->mounts->media_status(key2));
+    }
+    if (unidisk_button1) {
+        uint64_t key1 = unidisk_button1->get_key();
+        uint64_t key2 = unidisk_button2->get_key();
+        unidisk_button1->set_disk_status(computer->mounts->media_status(key1));
+        unidisk_button2->set_disk_status(computer->mounts->media_status(key2));
+    }
 
     // background color update based on clock speed to highlight current button.
     speed_btn_10->set_background_color(0x000000FF);
@@ -626,8 +653,6 @@ void OSD::render() {
     } 
     if (currentSlideStatus == SLIDE_OUT) {
 
-        drive_status_t ds1 = diskii_button1->get_disk_status();
-        drive_status_t ds2 = diskii_button2->get_disk_status();
 
         // Get the current window size to properly position HUD elements
         int window_width, window_height;
@@ -648,18 +673,23 @@ void OSD::render() {
 
         open_btn->render(renderer); // this now takes care of its own fade-out.
 
-        if (ds1.motor_on || ds2.motor_on) {
+        if (diskii_button1) {
+            drive_status_t ds1 = diskii_button1->get_disk_status();
+            drive_status_t ds2 = diskii_button2->get_disk_status();
 
-            // Update HUD drive container position based on window size
-            // Position it at the bottom of the screen with some padding
-            hud_drive_container->set_position(((float)window_width - 420) / 2, window_height - 125 );
+            if (ds1.motor_on || ds2.motor_on) {
 
-            // display running disk drives at the bottom of the screen.
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+                // Update HUD drive container position based on window size
+                // Position it at the bottom of the screen with some padding
+                hud_drive_container->set_position(((float)window_width - 420) / 2, window_height - 125 );
 
-            hud_drive_container->render();
+                // display running disk drives at the bottom of the screen.
+                SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+                hud_drive_container->render();
+            }
         }
-
+        
         // display the MHz at the bottom of the screen.
         { // we are currently at A2 display scale.
             char hud_str[150];
