@@ -15,8 +15,9 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cassert>
+
 #include "gs2.hpp"
-#include "systemconfig.hpp"
 #include "slots.hpp"
 
 
@@ -41,9 +42,7 @@ SlotManager_t::~SlotManager_t() {
  * @param slot_number The slot number to register the device in.
  */
 void SlotManager_t::register_slot(Device_t *device, SlotType_t slot_number) {
-    if (slot_number >= NUM_SLOTS) {
-        return;
-    }
+    assert(slot_number < NUM_SLOTS && "Slot number out of range");
     Slots[slot_number].card = device;
 }
 
@@ -52,9 +51,7 @@ void SlotManager_t::register_slot(Device_t *device, SlotType_t slot_number) {
  * @param slot_number The slot number to unregister the device from.
  */
 void SlotManager_t::unregister_slot(SlotType_t slot_number) {
-    if (slot_number >= NUM_SLOTS) {
-        return;
-    }
+    assert(slot_number < NUM_SLOTS && "Slot number out of range");
     Slots[slot_number].card = NULL;
 }
 
@@ -64,9 +61,8 @@ void SlotManager_t::unregister_slot(SlotType_t slot_number) {
  * @return The device in the slot.
  */
 Device_t *SlotManager_t::get_device(SlotType_t slot_number) {  
-    if (slot_number >= NUM_SLOTS) {
-        return NULL;
-    }
+    assert(slot_number < NUM_SLOTS && "Slot number out of range");
+
     if (Slots[slot_number].card == NULL) {
         return &NoDevice;
     }
