@@ -10,9 +10,9 @@ struct iigsmemory_state_t {
     computer_t *computer;
     //MMU_II *mmu; // megaii
     MMU_IIgs *mmu_iigs; // iigs
-    display_state_t *display_state;
+    /* display_state_t *display_state; */
 
-    read_handler_t c050_rh = { nullptr, nullptr };
+    /* read_handler_t c050_rh = { nullptr, nullptr };
     write_handler_t c050_wh = { nullptr, nullptr };
     read_handler_t c051_rh = { nullptr, nullptr };
     write_handler_t c051_wh = { nullptr, nullptr };
@@ -27,7 +27,7 @@ struct iigsmemory_state_t {
     read_handler_t c056_rh = { nullptr, nullptr };
     write_handler_t c056_wh = { nullptr, nullptr };
     read_handler_t c057_rh = { nullptr, nullptr };
-    write_handler_t c057_wh = { nullptr, nullptr };
+    write_handler_t c057_wh = { nullptr, nullptr }; */
 };
 
 void init_iigsmemory(computer_t *computer, SlotType_t slot);
