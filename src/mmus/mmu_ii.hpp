@@ -17,8 +17,8 @@ class MMU_II : public MMU {
         //uint8_t *main_io_4 = nullptr;
         uint8_t *main_rom_D0 = nullptr;
 
-        read_handler_t C0xx_memory_read_handlers[C0X0_SIZE] = { nullptr };          // Table of memory read handlers
-        write_handler_t C0xx_memory_write_handlers[C0X0_SIZE] = { nullptr };        // Table of memory write handlers
+        read_handler_pair_t C0xx_memory_read_handlers[C0X0_SIZE] = { {nullptr, nullptr}, {nullptr, nullptr} };          // Table of memory read handlers
+        write_handler_pair_t C0xx_memory_write_handlers[C0X0_SIZE] = { {nullptr, nullptr}, {nullptr, nullptr} };        // Table of memory write handlers
 
         int8_t C8xx_slot;
         C8XX_handler_t C8xx_handlers[8] = {nullptr};

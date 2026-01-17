@@ -28,9 +28,17 @@ struct read_handler_t {
     void *context;
 };
 
+struct read_handler_pair_t {
+    read_handler_t hs[2];
+};
+
 struct write_handler_t {
     memory_write_func write;
     void *context;
+};
+
+struct write_handler_pair_t {
+    write_handler_t hs[2];
 };
 
 struct page_table_entry_t {

@@ -175,13 +175,25 @@ uint8_t MMU_II::read(uint32_t address) {
         printf("MMU_II::read: address %06X is out of bounds\n", address);
     }
 
+    // TODO: we may have to check all the handlers to make sure they're returning correct values (i.e., just the bits they're responsible for)
     if (bank == 0xC) {
         if (page == 0xC0) {
-            read_handler_t funcptr =  C0xx_memory_read_handlers[eaddress & 0xFF];
+            uint16_t subaddr = eaddress & 0xFF;
+            read_handler_t funcptr =  C0xx_memory_read_handlers[subaddr].hs[0];
+            uint8_t retval = 0x00;
             if (funcptr.read != nullptr) {
-                return (*funcptr.read)(funcptr.context, eaddress);
+                retval |= (*funcptr.read)(funcptr.context, eaddress);
             }
-            return floating_bus_read();
+            read_handler_t funcptr2 = C0xx_memory_read_handlers[subaddr].hs[1];
+            if (funcptr2.read != nullptr) {
+                retval |= (*funcptr2.read)(funcptr2.context, eaddress);
+            }
+            // if neither was called then get floating bus here.
+            //retval |= floating_bus_read();
+            if (funcptr.read == nullptr && funcptr2.read == nullptr) {
+                retval |= floating_bus_read();
+            }
+            return retval;
         }
 
         /**
@@ -213,7 +225,12 @@ void MMU_II::write(uint32_t address, uint8_t value) {
 
     if (bank == 0xC) {
         if (page == 0xC0) {
-            write_handler_t funcptr =  C0xx_memory_write_handlers[eaddress & 0xFF];
+            uint16_t subaddr = eaddress & 0xFF;
+            write_handler_t funcptr =  C0xx_memory_write_handlers[subaddr].hs[0];
+            if (funcptr.write != nullptr) {
+                (*funcptr.write)(funcptr.context, eaddress, value);
+            }
+            funcptr = C0xx_memory_write_handlers[subaddr].hs[1];
             if (funcptr.write != nullptr) {
                 (*funcptr.write)(funcptr.context, eaddress, value);
             }
@@ -222,7 +239,7 @@ void MMU_II::write(uint32_t address, uint8_t value) {
 
         /** Handle the C800-CFFF mapping  */
         if (page < 0xC8) { // it's not C0, and less than C8 - Slot-card firmware area.
-            uint8_t slot = (eaddress / 0x100) & 0x7;
+            uint8_t slot = (eaddress / 0x100) & 0x7; // TODO: use a bit shift instead
             if (C8xx_slot != slot) call_C8xx_handler((SlotType_t)slot);            
         } else if (eaddress == 0xCFFF) set_default_C8xx_map();
     }
@@ -237,31 +254,50 @@ void MMU_II::write(uint32_t address, uint8_t value) {
 }
 
 void MMU_II::set_C0XX_read_handler(uint16_t address, read_handler_t handler) {
-    if (address < C0X0_BASE || address >= C0X0_BASE + C0X0_SIZE) {
-        return;
+    assert(address >= C0X0_BASE && address < C0X0_BASE + C0X0_SIZE);
+/*     if (address < C0X0_BASE || address >= C0X0_BASE + C0X0_SIZE) {
+        assert(false);
+    } */
+    uint16_t base = address & 0xFF;
+    if (C0xx_memory_read_handlers[base].hs[0].read == nullptr) {
+        C0xx_memory_read_handlers[base].hs[0] = handler;
+    } else if (C0xx_memory_read_handlers[base].hs[1].read == nullptr) {
+        C0xx_memory_read_handlers[base].hs[1] = handler;
+    } else {
+        assert(false); // Bug out if out of handler slots
     }
-    C0xx_memory_read_handlers[address - C0X0_BASE] = handler;
+    //C0xx_memory_read_handlers[address - C0X0_BASE] = handler;
 }
 
 void MMU_II::set_C0XX_write_handler(uint16_t address, write_handler_t handler) {
-    if (address < C0X0_BASE || address >= C0X0_BASE + C0X0_SIZE) {
-        return;
+    assert(address >= C0X0_BASE && address < C0X0_BASE + C0X0_SIZE);
+/*     if (address < C0X0_BASE || address >= C0X0_BASE + C0X0_SIZE) {
+        assert(false);
+    } */
+    uint16_t base = address & 0xFF;
+    if (C0xx_memory_write_handlers[base].hs[0].write == nullptr) {
+        C0xx_memory_write_handlers[base].hs[0] = handler;
+    } else if (C0xx_memory_write_handlers[base].hs[1].write == nullptr) {
+        C0xx_memory_write_handlers[base].hs[1] = handler;
+    } else {
+        assert(false); // Bug out if out of handler slots
     }
-    C0xx_memory_write_handlers[address - C0X0_BASE] = handler;
+    //C0xx_memory_write_handlers[address - C0X0_BASE] = handler;
 }
 
+// TODO: these will go away once we're done migrating to double-handlers
 void MMU_II::get_C0XX_read_handler(uint16_t address, read_handler_t &handler) {
     if (address < C0X0_BASE || address >= C0X0_BASE + C0X0_SIZE) {
         return;
     }
-    handler = C0xx_memory_read_handlers[address - C0X0_BASE];
+    handler = C0xx_memory_read_handlers[address - C0X0_BASE].hs[0];
 }
 
 void MMU_II::get_C0XX_write_handler(uint16_t address, write_handler_t &handler) {
     if (address < C0X0_BASE || address >= C0X0_BASE + C0X0_SIZE) {
         return;
     }
-    handler = C0xx_memory_write_handlers[address - C0X0_BASE];
+    handler = C0xx_memory_write_handlers[address - C0X0_BASE].hs[0];
 }
 
 uint8_t *MMU_II::get_rom_base() {
@@ -276,8 +312,12 @@ void MMU_II::reset() {
 void MMU_II::dump_C0XX_handlers() {
     printf("C0XX handlers:\n");
     for (int i = 0; i < C0X0_SIZE; i++) {
-        if (C0xx_memory_read_handlers[i].read != nullptr) {
-            printf("C0%02X: %p\n", i, C0xx_memory_read_handlers[i].read);
+        if (C0xx_memory_read_handlers[i].hs[0].read != nullptr) {
+            printf("C0%02X: %p\n", i, C0xx_memory_read_handlers[i].hs[0].read);
         }
+        // TODO: display the 2nd also? instead of the address maybe put in a string name?
+        /* if (C0xx_memory_read_handlers[i].hs[1].read != nullptr) {
+            printf("C0%02X: %p\n", i, C0xx_memory_read_handlers[i].hs[1].read);
+        } */
     }
 }
