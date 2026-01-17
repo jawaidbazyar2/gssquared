@@ -24,6 +24,6 @@ typedef enum device_id {
     DEVICE_ID_VIDHD,
     DEVICE_ID_RTC_PRAM,
     DEVICE_ID_KEYGLOO,
-    DEVICE_ID_IIGS_MEMORY,
+    //DEVICE_ID_IIGS_MEMORY,
     NUM_DEVICE_IDS
 } device_id;

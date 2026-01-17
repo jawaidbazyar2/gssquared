@@ -37,7 +37,7 @@
 #include "devices/vidhd/vidhd.hpp"
 #include "devices/rtc/rtc_pram.hpp"
 #include "devices/adb/keygloo.hpp"
-#include "devices/iigsmemory/iigsmemory.hpp"
+//#include "devices/iigsmemory/iigsmemory.hpp"
 
 Device_t NoDevice = {
         DEVICE_ID_END,
@@ -202,13 +202,13 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         init_slot_keygloo,
         NULL
     },
-    {
+    /* {
         DEVICE_ID_IIGS_MEMORY,
         "IIGS Memory",
         false,
         init_iigsmemory,
         NULL
-    }
+    } */
 };
 
 Device_t *get_device(device_id id) {
