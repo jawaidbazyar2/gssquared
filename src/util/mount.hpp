@@ -17,11 +17,13 @@
 
 #pragma once
 
+#include <string>
+
 #include <unordered_map>
 
 #include "cpu.hpp"
 #include "media.hpp"
-#include <string>
+#include "slots.hpp"
 
 typedef struct {
     int slot;
@@ -58,11 +60,12 @@ enum unmount_action_t {
 class Mounts {
 protected:
     cpu_state *cpu;
+    SlotManager_t *slot_manager;
 
     std::unordered_map<uint64_t, drive_media_t> mounted_media;
 
 public:
-    Mounts(cpu_state *cpux) : cpu(cpux) {}
+    Mounts(cpu_state *cpux, SlotManager_t *slot_managerx) : cpu(cpux), slot_manager(slot_managerx) {}
     int mount_media(disk_mount_t disk_mount);
     int unmount_media(uint64_t key, unmount_action_t action);
     drive_status_t media_status(uint64_t key);
