@@ -789,7 +789,9 @@ void init_slot_diskII(computer_t *computer, SlotType_t slot) {
         [diskII_d,cpu]() {
             //diskii_frame_event(diskII_d, cpu);
             bool diskii_run = any_diskii_motor_on(cpu);
-            soundeffects_update(diskii_run, diskii_tracknumber_on(cpu));
+            if (cpu->execution_mode == EXEC_NORMAL) {
+                soundeffects_update(diskii_run, diskii_tracknumber_on(cpu));
+            }
             return true;
         });
 
