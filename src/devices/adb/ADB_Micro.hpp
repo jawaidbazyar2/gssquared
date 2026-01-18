@@ -8,6 +8,7 @@
 #include "ADB_Mouse.hpp"
 #include "ADB_ASCII.hpp"
 #include "SDL3/SDL_events.h"
+#include "util/DebugFormatter.hpp"
 
 #define BUFSIZE 0x10
 
@@ -161,6 +162,12 @@ class KeyGloo
             cmd_bytes = 1;
             response_index = 0;
             response_bytes = 0;
+            vars.inpt = 0;
+            vars.outpt = 0;
+            key_latch = {0,0};
+        }
+
+        void flush_buffer() {
             vars.inpt = 0;
             vars.outpt = 0;
             key_latch = {0,0};
@@ -607,9 +614,9 @@ class KeyGloo
                             break;
                         default:           
                             // TODO: Map the keycode here through a mapper based on the language setting.
-                            // TODO: do we get a key in C000 on key down, key up, or ... ?
-                                      
-                            if (keyupdown) store_key_to_buffer(map_us(keycode, vars.currmod), vars.currmod.value); // TODO: update modifiers.
+                            // Send key to C000 on key up
+                            if ((keycode == ADB_DELETE) && vars.currmod.ctrl && vars.currmod.open) flush_buffer();
+                            else if (keyupdown) store_key_to_buffer(map_us(keycode, vars.currmod), vars.currmod.value); // TODO: update modifiers.
                             break;
                     }
                 }
@@ -639,4 +646,27 @@ class KeyGloo
 
             return status;
         }
-};
+
+        void debug_display(DebugFormatter *df) {
+            df->addLine("currmod: %02X, prevmod: %02X", vars.currmod.value, vars.prevmod.value);
+            // show key codes and mods buffer
+            char key_codes_str[64] = "";
+            char temp[4];
+            uint8_t indx = vars.inpt;
+            while (indx != vars.outpt) {
+                snprintf(temp, sizeof(temp), "%02X ", key_codes[indx]);
+                strncat(key_codes_str, temp, sizeof(key_codes_str) - strlen(key_codes_str) - 1);
+                indx = (indx + 1) % 16;
+            }
+            df->addLine("keys: %s", key_codes_str);
+            
+            char key_mods_str[64] = "";
+            indx = vars.inpt;
+            while (indx != vars.outpt) {
+                snprintf(temp, sizeof(temp), "%02X ", key_mods[indx]);
+                strncat(key_mods_str, temp, sizeof(key_mods_str) - strlen(key_mods_str) - 1);
+                indx = (indx + 1) % 16;
+            }
+            df->addLine("mods: %s", key_mods_str);
+        }
+    };
