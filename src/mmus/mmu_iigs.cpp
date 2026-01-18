@@ -621,10 +621,10 @@ void MMU_IIgs::init_c0xx_handlers() {
         megaii->set_C0XX_read_handler(i, {gs_bsr_read_C01x, this});
     }
 
-    megaii->set_C0XX_read_handler(0xC01A, {gs_bsr_read_C01x, this});
-    megaii->set_C0XX_read_handler(0xC01B, {gs_bsr_read_C01x, this});
-    megaii->set_C0XX_read_handler(0xC01C, {gs_bsr_read_C01x, this});
-    megaii->set_C0XX_read_handler(0xC01D, {gs_bsr_read_C01x, this});
+    //megaii->set_C0XX_read_handler(0xC01A, {gs_bsr_read_C01x, this});
+    //megaii->set_C0XX_read_handler(0xC01B, {gs_bsr_read_C01x, this});
+    //megaii->set_C0XX_read_handler(0xC01C, {gs_bsr_read_C01x, this});
+    //megaii->set_C0XX_read_handler(0xC01D, {gs_bsr_read_C01x, this});
 
     for (uint32_t i = 0xC054; i <= 0xC057; i++) {
         megaii->set_C0XX_write_handler(i, {megaii_c0xx_write, this});
