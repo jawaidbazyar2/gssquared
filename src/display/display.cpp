@@ -892,7 +892,7 @@ void display_write_C029(void *context, uint32_t address, uint8_t value) {
     ds->new_video = value;
     if (ds->new_video & 0x80) {
         ds->video_scanner->set_shr();
-        // TODO: ds->a2_display->set_shr();
+        // TODO:ds->a2_display->set_shr(true);
     } else {
         ds->video_scanner->reset_shr();
         // TODO: ds->a2_display->reset_shr();
@@ -1206,6 +1206,10 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
             ds->video_scanner->reset_dblres();
             ds->a2_display->set_char_set(ds->f_altcharset);
             ds->a2_display->set_80store(false); // TODO: check this, but it makes sense.
+            // TODO: this is the cleanest way to do it for now, but it feels a little hacky, as if
+            // reset handler in mmu and here should each be responsible for clearing their own bits.
+            ds->mmu->write(0xC029, ds->new_video&0x1);
+
             update_line_mode(ds);
             return true;
         });
