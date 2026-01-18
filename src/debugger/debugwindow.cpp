@@ -184,6 +184,18 @@ int debug_window_t::num_lines_in_pane(debug_panel_t pane) {
     return (window_height - (pane_is_first ? control_area_height : 0)) / font_line_height;
 }
 
+/*
+view_size - how big is the view area
+disasm_lines - how many lines of forward disassembly to show
+
+data_size =    
+    number of trace buffer lines
+    plus
+    10 (for forward disassembly)
+
+
+
+*/
 void debug_window_t::render_pane_trace() {
     char buffer[256];
     int x = 0;
@@ -191,33 +203,58 @@ void debug_window_t::render_pane_trace() {
 
     bool single_step = cpu->execution_mode == EXEC_STEP_INTO;
 
-    int numlines = (window_height - control_area_height) / font_line_height;
-    size_t head = cpu->trace_buffer->head;
-    size_t size = cpu->trace_buffer->size;
+    int view_size = (window_height - control_area_height) / font_line_height;
+    size_t trace_head = cpu->trace_buffer->head;
+    size_t trace_size = cpu->trace_buffer->size;
     
     // if we're single-stepping, we need to leave room for 10 lines of disassembly
-    if (single_step) {
-        numlines -= 10; // leave room for 10 lines of disassembly
-    }
+    constexpr size_t disasm_line_count = 10;
+    size_t data_size = trace_size + disasm_line_count;
+    size_t start_idx;
 
+    size_t disasm_displayed;
+    size_t trace_displayed;
+    // TODO: In the HOME handler we need to add another 10 lines to make this line up right, it works as is but won't ever show the first 10 lines of trace.
+    if (single_step) {
+        // THIS WORKS but is complex.
+        if (view_position < disasm_line_count) {
+            disasm_displayed = disasm_line_count - view_position;
+            trace_displayed = view_size - disasm_displayed;
+            start_idx = (trace_head - trace_displayed ) % trace_size;
+    
+        } else {
+            disasm_displayed = 0;
+            trace_displayed = view_size - disasm_displayed;
+            start_idx = (trace_head - view_size - view_position + disasm_line_count) % trace_size;
+        }
+    } else {
+        disasm_displayed = 0;
+        trace_displayed = view_size;
+        start_idx = (trace_head - view_position) % trace_size;
+    }
+    
     // Calculate the starting index to show the last numlines entries
     // We need to handle wrapping around the circular buffer
-    size_t start_idx = (head + size - numlines - view_position) % size;
-    
+
+    // convert position (0 being at the very end of data) to index into trace buffer.
+    // if position = 0, then it's data_size + disasm_lines - view_size
+    // position = 1, then it's data_size + disasm_lines - view_size + 1   
+    // when the idx gets to trace_head, then we need to switch to show forward disassembly.
     // do numlines minus 10, to leave room for 10 lines of prospective disassembly
 
-    for (int i = 0; i < numlines; i++) {
-        size_t idx = (start_idx + i) % size;
+    for (int i = 0; i < trace_displayed; i++) {
+        size_t idx = (start_idx + i) % trace_size;
         char *line = cpu->trace_buffer->decode_trace_entry(&cpu->trace_buffer->entries[idx]);
         draw_text(DEBUG_PANEL_TRACE, x, 8 + i, line);
     }
-    if (single_step) {
+    if (disasm_displayed) {
         step_disasm->setLinePrepend(cpu->cpu_type == PROCESSOR_65816 ? 35 : 34);
         step_disasm->setAddress(cpu->full_pc);
-        std::vector<std::string> disasm_lines = step_disasm->disassemble(10);
+        std::vector<std::string> disasm_lines = step_disasm->disassemble(disasm_displayed);
         text_renderer->set_color(0, 255, 255, 255);
         for (int i = 0; i < disasm_lines.size(); i++) {
-            draw_text(DEBUG_PANEL_TRACE, x, 8 + numlines + i, disasm_lines[i].c_str());
+            draw_text(DEBUG_PANEL_TRACE, x, 8 + trace_displayed + i, disasm_lines[i].c_str());
+            printf("disasm_lines[%d] = %s\n", i, disasm_lines[i].c_str());
         }
     }
     text_renderer->set_color(255, 255, 255, 255);
