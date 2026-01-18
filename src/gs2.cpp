@@ -252,10 +252,10 @@ void run_cpus(computer_t *computer) {
                 speaker_state_t *ss = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
                 speaker_reset(ss);
             } */
-             if (cpu->clock_mode == CLOCK_FREE_RUN) {
+            if (cpu->clock_mode == CLOCK_FREE_RUN) {
                 speaker_state_t *ss = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
                 ss->sp->reset(start_frame_c14m);
-             }
+            }
             set_clock_mode(cpu, computer->speed_new);
             computer->set_clock(&system_clock_mode_info[computer->speed_new]);
             display_update_video_scanner(ds, cpu);
