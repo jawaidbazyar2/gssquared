@@ -590,7 +590,7 @@ inline uint32_t address_long_x (cpu_state *cpu, T &index) {
     uint32_t base = fetch_pc(cpu);
     base |= fetch_pc(cpu) << 8;
     base |= fetch_pc(cpu) << 16;
-    uint32_t eaddr = base + index;
+    uint32_t eaddr = (base + index) & 0xFFFFFF; 
 
     TRACE(cpu->trace_entry.operand = base; cpu->trace_entry.f_op_sz = 3;)
     return eaddr;
