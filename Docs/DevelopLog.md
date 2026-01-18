@@ -7954,8 +7954,8 @@ WAHOO!!!! I am now at the "Apple IIgs" boot screen.
 the watch command and display only supports 16-bit addresses. Fix this..
 [x] MVN isn't setting the effective memory address. 
 [ ] enable click-to-move-scrollbar-point  
-[ ] add monitor command to display stack  
-[ ] page up/down in trace listing isn't displaying the right chunk - it's not getting rid of the proforma trace when you page up. And it's miscalculating the display range.
+[ ] add monitor command to display stack (and/or have a debug or special watch)  
+[x] page up/down in trace listing isn't displaying the right chunk - it's not getting rid of the proforma trace when you page up. And it's miscalculating the display range.
 [x] "l" disasm with a 24-bit address crashes.  
 [ ] debugger disassembler needs to let you set flags for A and X width to disassemble correctly. And it might have to trace direct rep / sep. no way to track other modifications to P.  
 [ ] address parser should support /  
@@ -8167,8 +8167,8 @@ In iie that rom starts at C000, so that + 300 is correct. But in mmu_iigs I set 
 Ah, I set to C000, and there is some improvement! The c300 rom is in the right place.
 in 80 column mode, we are often flipping between page1 and page2.
 
-[ ] 80store/page1 stuff isn't working right. i.e. with 80store on, page2 is changing to page2 instead of forcing page1.
-[ ] ^G in 80 column mode causes a page out of range assertion and hard crash.  
+[x] 80store/page1 stuff isn't working right. i.e. with 80store on, page2 is changing to page2 instead of forcing page1.
+[x] ^G in 80 column mode causes a page out of range assertion and hard crash.  
 
 Aside from the above, there must be something wrong with language card mapping, because ProDOS ain't workin right.
 
@@ -8287,7 +8287,7 @@ More urgently, the OSD needs to be able to figure out what slots the drives are 
 Now that I've cleaned that up, and can have DiskII/PDBlock in slots other than 5/6, I can boot DOS3.3 on a floppy on the GS!!!!! (slot 7) YEEEHAW!!!
 ok fine let's try choplifter. YES!!!! YES!!
 
-[ ] implement handling ctrl-oa-del to "flush keyboard buffer"  
+[x] implement handling ctrl-oa-del to "flush keyboard buffer"  
 
 ok, prodos 1.1.1 booting crashes to BRK at 2141. The sequence right before is:
 ```
@@ -8298,7 +8298,7 @@ sta c055 - page 2
 hires:0 but hires is being switched out.
 So, hires should switch to aux ONLY on 80store and page2 and hires on.
 
-[ ] if we're in STEP, stop sound effects from playing.  
+[x] if we're in STEP, stop sound effects from playing.  (handled in diskii device frame update, checks cpu->execution_mode) 
 
 doing BP on c080.c08f, on iie (working) ProDOS does this:
 ```
@@ -8393,7 +8393,25 @@ ah, this needs to be qualified like so:
 YES. ProDOS boots now!! Take that, MF!
 
 
-[ ] speaker gets out of sync doing a lot of speed shifting? Or is it just debug mode again.. 
+[x] in step mode, the shr screen goes away. (never wired it in in display)  
+[x] shr should clear on a reset? (clear bits 1-7 in newvideo)
 
-[ ] in step mode, the shr screen goes away.  
-[ ] shr should clear on a reset?  
+ok the ^G in 80-col mode crashing the emulator is twofold:
+
+1. we were generating an address > 0xFF_FF_FF - causing buffer overrun in address_long_x. I patched the CPU there, but, feel like maybe it ought to be handled somewhere else more general.
+2. the thing is executing code in CAAx and then does an 0C => C068, and then the code disappears out from under it. So we were in a C800 area, and write to C068 caused C800 to get unmapped.
+
+[ ] first pixel of hgr row disappears in Ludicrous Speed  
+
+[x] On a speed change, we're calling speaker config reset. We are NOT. But we are printing a bunch of debug info. Emit less cruft.   
+
+[ ] investigate whether there is a key map conflict between adb and gamecontroller. (i.e., how am I treating alt + win in both places) (YES, there is)
+
+Failed on this self-test:
+03 00 1A
+C01A-D were doubled up in video + gsmmu. Remove from gsmmu.
+cool, we're back to 05012400
+
+## Jan 18, 2026
+
+ok so I have a mapping inconsistency for the OA- and CA- keys. 
