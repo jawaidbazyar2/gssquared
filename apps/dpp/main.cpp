@@ -194,26 +194,26 @@ int main(int argc, char **argv) {
         printf("Failed to create renderer\n");
         return 1;
     }
-    SDL_Texture *texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, II_SCREEN_TEXTURE_WIDTH, II_SCREEN_TEXTURE_HEIGHT);
+    /* SDL_Texture *texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, II_SCREEN_TEXTURE_WIDTH, II_SCREEN_TEXTURE_HEIGHT);
     if (!texture) {
         printf("Failed to create texture\n");
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
-    }
-    SDL_Texture *shrtexture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 640, 200);
+    } */
+    /* SDL_Texture *shrtexture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 640, 200);
     if (!texture) {
         printf("Failed to create shrtexture\n");
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
-    }
-    SDL_Texture *scale_txt = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 2320, 1920);
+    } */
+/*     SDL_Texture *scale_txt = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 2320, 1920);
     if (!scale_txt) {
         printf("Failed to create shrtexture\n");
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
     }
     SDL_SetTextureScaleMode(scale_txt, SDL_SCALEMODE_LINEAR);
-
+ */
     if (!SDL_SetRenderVSync(renderer, SDL_RENDERER_VSYNC_DISABLED)) {
         printf("Failed to set render vsync\n");
         printf("SDL Error: %s\n", SDL_GetError());
@@ -224,12 +224,6 @@ int main(int argc, char **argv) {
     printf("Renderer: %s\n", rname);
     //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
     SDL_SetRenderScale(renderer, 2.0f, 4.0f);
-
-    SDL_SetTextureScaleMode(texture,  scales[0] /* SDL_SCALEMODE_LINEAR */);
-    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE); 
-
-    SDL_SetTextureScaleMode(shrtexture,  scales[0] /* SDL_SCALEMODE_LINEAR */);
-    SDL_SetTextureBlendMode(shrtexture, SDL_BLENDMODE_NONE); 
 
     int error = SDL_SetRenderTarget(renderer, nullptr);
 
@@ -320,9 +314,19 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    Frame560RGBA *frame_rgba = new(std::align_val_t(64)) Frame560RGBA(567, f_h);
-    Frame640 *frame640_byte = new(std::align_val_t(64)) Frame640(640, 200);
+    Frame560RGBA *frame_rgba = new(std::align_val_t(64)) Frame560RGBA(567, f_h, renderer, PIXEL_FORMAT);
+    Frame640 *frame_shr = new(std::align_val_t(64)) Frame640(640, 200, renderer, PIXEL_FORMAT);
     
+    SDL_Texture *rgba_texture = frame_rgba->get_texture();
+    //SDL_Texture *border_texture = fr_border->get_texture();
+    SDL_Texture *shrtexture = frame_shr->get_texture();
+
+    SDL_SetTextureScaleMode(rgba_texture,  scales[0] /* SDL_SCALEMODE_LINEAR */);
+    SDL_SetTextureBlendMode(rgba_texture, SDL_BLENDMODE_NONE); 
+
+    SDL_SetTextureScaleMode(shrtexture,  scales[0] /* SDL_SCALEMODE_LINEAR */);
+    SDL_SetTextureBlendMode(shrtexture, SDL_BLENDMODE_NONE); 
+
     Monochrome560 monochrome;
     NTSC560 ntsc_render;
     GSRGB560 rgb_render;
@@ -426,7 +430,7 @@ int main(int argc, char **argv) {
                         break;
                     case SDLK_P:
                         sharpness = (sharpness + 1) % 3;
-                        SDL_SetTextureScaleMode(texture, scales[sharpness]);
+                        SDL_SetTextureScaleMode(rgba_texture, scales[sharpness]);
                         SDL_SetTextureScaleMode(shrtexture, scales[sharpness]);
                         printf("Sharpness: %d\n", sharpness);
                         break;
@@ -460,18 +464,21 @@ int main(int argc, char **argv) {
             display_iie.set_flash_state(flash_state);
         }
 
+        /* Generate */
         if (generate_mode >= 7) {
-            display_iie.generate_shr((SHR *)(generate_mode == 7 ? testshrpic : testshrpic2), frame640_byte);
-            SDL_LockTexture(shrtexture, NULL, &pixels, &pitch);
-            std::memcpy(pixels, frame640_byte->data(), 640 * 200 * sizeof(RGBA_t));
-            SDL_UnlockTexture(shrtexture);
+            frame_shr->open();
+            display_iie.generate_shr((SHR *)(generate_mode == 7 ? testshrpic : testshrpic2), frame_shr);
+            frame_shr->close();
+
+            /* SDL_LockTexture(shrtexture, NULL, &pixels, &pitch);
+            std::memcpy(pixels, frame_shr->data(), 640 * 200 * sizeof(RGBA_t));
+            SDL_UnlockTexture(shrtexture); */
 
             SDL_RenderClear(renderer);
 
             SDL_FRect source_rect = { 0.0, 0.0, sources[generate_mode].w, sources[generate_mode].h };
             SDL_RenderTexture(renderer, shrtexture, &source_rect, &source_rect);       
         } else {
-            //for (int l = 0; l < 24; l++) {
             switch (generate_mode) {
                 case 1:
                     for (int l = 0; l < 24; l++) 
@@ -502,6 +509,9 @@ int main(int argc, char **argv) {
                     phaseoffset = 1;
                     break;
             }
+            
+            /* Render */
+            frame_rgba->open();
             switch (render_mode) {
                 case 1:
                     monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
@@ -514,17 +524,18 @@ int main(int argc, char **argv) {
                     else  */rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) /* , phaseoffset */);
                     break;
             }
+            frame_rgba->close();
 
             // update the texture 
-            SDL_LockTexture(texture, NULL, &pixels, &pitch);
+            /* SDL_LockTexture(rgba_texture, NULL, &pixels, &pitch);
             std::memcpy(pixels, frame_rgba->data(), II_SCREEN_TEXTURE_WIDTH * II_SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
-            SDL_UnlockTexture(texture);
+            SDL_UnlockTexture(rgba_texture); */
 #if 1            
             // update widnow
             SDL_RenderClear(renderer);
 
             SDL_FRect source_rect = { 0.0, 0.0, sources[generate_mode].w, sources[generate_mode].h };
-            SDL_RenderTexture(renderer, texture, &source_rect,  &source_rect);       
+            SDL_RenderTexture(renderer, rgba_texture, &source_rect,  &source_rect);       
 #else
             SDL_SetRenderTarget(renderer, scale_txt);
             SDL_RenderTexture(renderer, texture, nullptr, nullptr);
