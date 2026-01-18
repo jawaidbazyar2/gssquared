@@ -32,6 +32,8 @@
 #include "devices/game/mousewheel.hpp"
 #include "devices/annunciator/annunciator.hpp"
 #include "util/applekeys.hpp"
+#include "util/DebugHandlerIDs.hpp"
+#include "util/DebugFormatter.hpp"
 
 /**
  * this is a relatively naive implementation of game controller,
@@ -53,15 +55,6 @@
  */
 
 #define GAME_INPUT_DECAY_TIME 2805
-
-/**
- * @struct JoystickValues
- * @brief Structure to hold joystick coordinate values
- */
-struct JoystickValues {
-    int x;
-    int y;
-};
 
 /**
  * @brief Converts modern circular joystick values to Apple II square joystick range
@@ -143,6 +136,7 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
         int32_t axis1 = SDL_GetGamepadAxis(ds->gps[0].gamepad, SDL_GAMEPAD_AXIS_LEFTY);
 
         JoystickValues jv = convertJoystickValues(axis0, axis1);
+        ds->last_jv = jv;
         uint64_t x_trigger =  cpu->cycles + ((GAME_INPUT_DECAY_TIME * jv.x) / 255);
         uint64_t y_trigger = cpu->cycles + ((GAME_INPUT_DECAY_TIME * jv.y) / 255);
 
@@ -387,12 +381,16 @@ void set_joystick_mode(gamec_state_t *gp_d, joystick_mode_t mode) {
     gp_d->joystick_mode = mode;
 }
 
-void toggle_joystick_mode(gamec_state_t *gp_d) {
+const char *get_mode_name(joystick_mode_t mode) {
     const char *mode_names[] = {
         "Apple Joystick (Gamepad)",
         "Apple Joystick (Mouse)",
         "Atari Joysticks (Joyport)"
     };
+    return mode_names[mode];
+}
+
+void toggle_joystick_mode(gamec_state_t *gp_d) {
     
     int new_mode = gp_d->joystick_mode + 1;
     if (new_mode >= NUM_JOYSTICK_MODES) {
@@ -401,8 +399,34 @@ void toggle_joystick_mode(gamec_state_t *gp_d) {
     gp_d->joystick_mode = (joystick_mode_t)new_mode;
 
     static char buffer[256];
-    snprintf(buffer, sizeof(buffer), "Joystick mode set to %s", mode_names[gp_d->joystick_mode]);
+    snprintf(buffer, sizeof(buffer), "Joystick mode set to %s", get_mode_name(gp_d->joystick_mode));
     gp_d->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, buffer));
+}
+
+DebugFormatter *debug_gamecontroller(gamec_state_t *ds) {
+    DebugFormatter *df = new DebugFormatter();
+    df->addLine("Joystick mode: %s", get_mode_name(ds->joystick_mode));
+    df->addLine("Last Read");
+    df->addLine("  Button 0: %d  Button 1: %d  Button 2: %d", ds->game_switch_0, ds->game_switch_1, ds->game_switch_2);
+    df->addLine("  Values  : %d, %d", ds->last_jv.x, ds->last_jv.y);
+    df->addLine("OpenApple: %d  ClosedApple: %d", (SDL_GetModState() & KEYMOD_OPENAPPLE) != 0, (SDL_GetModState() & KEYMOD_CLOSEDAPPLE) != 0);
+     
+    for (int i = 0; i < MAX_GAMEPAD_COUNT; i++) {
+        if (ds->gps[i].id == -1) {
+            df->addLine("GamePad %d (Disconnected)", i);
+            continue;
+        }
+        const char *name = SDL_GetGamepadNameForID(ds->gps[i].id);
+        df->addLine("GamePad %d (%s)", i, name);
+
+        int32_t axis0 = SDL_GetGamepadAxis(ds->gps[0].gamepad, SDL_GAMEPAD_AXIS_LEFTX);
+        int32_t axis1 = SDL_GetGamepadAxis(ds->gps[0].gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+        df->addLine("  Axis LX: %d  Axis LY: %d", axis0, axis1);
+        int b0 = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
+        int b1 = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_SOUTH);
+        df->addLine("  Button N: %d  Button W: %d", b0, b1);
+    }
+    return df;
 }
 
 void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
@@ -473,6 +497,14 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
         }
         return false;
     });
+
+    computer->register_debug_display_handler(
+        "game",
+        DH_GAMECONTROLLER, // unique ID for this, need to have in a header.
+        [ds]() -> DebugFormatter * {
+            return debug_gamecontroller(ds);
+        }
+    );
 
     computer->register_reset_handler(
         [ds,cpu]() {

@@ -51,6 +51,16 @@ typedef struct gamepad_state {
     SDL_Gamepad *gamepad;    
 } gamepad_state_t;
 
+
+/**
+ * @struct JoystickValues
+ * @brief Structure to hold joystick coordinate values
+ */
+ struct JoystickValues {
+    int x;
+    int y;
+};
+
 typedef enum joystick_mode {
     JOYSTICK_APPLE_GAMEPAD = 0,
     JOYSTICK_APPLE_MOUSE,
@@ -80,6 +90,8 @@ typedef struct gamec_state_t {
 
     EventQueue *event_queue;
     MMU_II *mmu;
+
+    JoystickValues last_jv = {0, 0};
 } gamec_state_t;
 
 void init_mb_game_controller(computer_t *computer, SlotType_t slot);
