@@ -3,7 +3,8 @@
 #include "computer.hpp"
 
 #include "devices/adb/keygloo.hpp"
-
+#include "util/DebugHandlerIDs.hpp"
+#include "debug.hpp"
 
 uint8_t keygloo_read_C000(void *context, uint32_t address) {
     keygloo_state_t *kb_state = (keygloo_state_t *)context;
@@ -60,6 +61,12 @@ bool keygloo_process_event(keygloo_state_t *kb_state, const SDL_Event &event) {
     return true;
 }
 
+DebugFormatter *debug_keygloo(keygloo_state_t *kb_state) {
+    DebugFormatter *df = new DebugFormatter();
+    kb_state->kg->debug_display(df);
+    return df;
+}
+
 void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
 
     keygloo_state_t *kb_state = new keygloo_state_t;
@@ -85,4 +92,12 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
     computer->mmu->set_C0XX_read_handler(0xC026, { keygloo_read_C026, kb_state });
     computer->mmu->set_C0XX_write_handler(0xC026, { keygloo_write_C026, kb_state });
     computer->mmu->set_C0XX_read_handler(0xC027, { keygloo_read_C027, kb_state });
+
+    computer->register_debug_display_handler(
+        "adb",
+        DH_ADB, // unique ID for this, need to have in a header.
+        [kb_state]() -> DebugFormatter * {
+            return debug_keygloo(kb_state);
+        }
+    );
 }
