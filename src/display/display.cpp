@@ -299,10 +299,38 @@ bool update_display_apple2(cpu_state *cpu) {
         hgr_page      = ram + 0x4000;
         alt_hgr_page  = ram + 0x14000;
     }
+    uint8_t *shr_page = ram + 0x12000;
 
     int updated = 0;
-    for (uint16_t line = 0; line < 24; line++) {
-        //if (vs->force_full_frame_redraw || ds->dirty_line[line]) {
+
+
+    if (ds->video_scanner_type == Scanner_AppleIIgs) {
+        // draw borders using rectangles.
+        RGBA_t border_color = gs_text_colors[ds->border_color];
+        SDL_SetRenderDrawColor(vs->renderer, border_color.r, border_color.g, border_color.b, border_color.a);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_LT].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_CEN].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_RT].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_CEN][B_LT].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_CEN][B_RT].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_LT].dst);
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_CEN].dst); // TODO: this is wrong. 
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_RT].dst);
+    }
+
+    if (ds->new_video & 0x80) {
+        ds->fr_shr->open();
+        ds->a2_display->generate_shr((SHR *)shr_page, ds->fr_shr);
+        ds->fr_shr->close();
+        ds->video_system->clear();
+
+        //SDL_FRect source_rect = { 0.0, 0.0, 640, 200 };
+        ds->video_system->render_frame(ds->fr_shr->get_texture(), 
+        &ds->shr_borders[B_CEN][B_CEN].src, 
+        &ds->shr_borders[B_CEN][B_CEN].dst);
+    } else {
+
+        for (uint16_t line = 0; line < 24; line++) {
             switch (ds->line_mode[line]) {
                 case LM_TEXT_MODE:
                     ds->a2_display->generate_text40(text_page, ds->frame_bits, line);
@@ -327,58 +355,36 @@ bool update_display_apple2(cpu_state *cpu) {
                     break;
             }
             ds->dirty_line[line] = 0;
-            updated = 1;
-       // }
-    }
+            //updated = 1;
+        }
 
-    if (updated) { // only reload texture if we updated any lines.
-        RGBA_t mono_color_value = vs->get_mono_color();
-        ds->frame_rgba->open();
-        // do a switch on display engine later..
-        switch (vs->display_color_engine) {
-            case DM_ENGINE_NTSC:
-                if (ds->display_mode == TEXT_MODE) {
-                    ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
-                } else {
-                    ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
-                }
-                break;
-            case DM_ENGINE_RGB:
-                ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
-                break;
-            case DM_ENGINE_MONO:
-                ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, mono_color_value);
-                break;
-            default:
-                break; // never happens
-        }
-        ds->frame_rgba->close();
-        /* void* pixels;
-        int pitch;
-        if (!SDL_LockTexture(ds->screenTexture, NULL, &pixels, &pitch)) {
-            fprintf(stderr, "Failed to lock texture: %s\n", SDL_GetError());
-            return true;
-        }
-        memcpy(pixels, ds->frame_rgba->data(), (BASE_WIDTH+20) * BASE_HEIGHT * sizeof(RGBA_t)); // load all buffer into texture
-        SDL_UnlockTexture(ds->screenTexture); */
+        //if (updated) { // only reload texture if we updated any lines.
+            RGBA_t mono_color_value = vs->get_mono_color();
+            ds->frame_rgba->open();
+            // do a switch on display engine later..
+            switch (vs->display_color_engine) {
+                case DM_ENGINE_NTSC:
+                    if (ds->display_mode == TEXT_MODE) {
+                        ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
+                    } else {
+                        ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
+                    }
+                    break;
+                case DM_ENGINE_RGB:
+                    ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
+                    break;
+                case DM_ENGINE_MONO:
+                    ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, mono_color_value);
+                    break;
+                default:
+                    break; // never happens
+            }
+            ds->frame_rgba->close();
+            vs->render_frame(ds->screenTexture, &ds->ii_borders[B_CEN][B_CEN].src, &ds->ii_borders[B_CEN][B_CEN].dst);
+        //}
     }
     vs->force_full_frame_redraw = false;
 
-    if (ds->video_scanner_type == Scanner_AppleIIgs) {
-        // draw borders using rectangles.
-        RGBA_t border_color = gs_text_colors[ds->border_color];
-        SDL_SetRenderDrawColor(vs->renderer, border_color.r, border_color.g, border_color.b, border_color.a);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_LT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_CEN].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_RT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_CEN][B_LT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_CEN][B_RT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_LT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_CEN].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_RT].dst);
-    }
-
-    vs->render_frame(ds->screenTexture, &ds->ii_borders[B_CEN][B_CEN].src, &ds->ii_borders[B_CEN][B_CEN].dst);
     return true;
 }
 
