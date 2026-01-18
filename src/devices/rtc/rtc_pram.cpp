@@ -19,24 +19,18 @@ uint8_t rtc_pram_read_C033(void *context, uint32_t address) {
 }
 
 void rtc_pram_write_C034(void *context, uint32_t address, uint8_t value) {
-    if (DEBUG(DEBUG_RTC)) printf("write_c034: %02X\n", value);
-
     rtc_pram_state_t *st = (rtc_pram_state_t *)context;
-    if (value & 0x0F) {
-        printf("write_c034: border color %02X\n", value & 0x0F);
-    }
-    //if (st->display_wr_handler.write) st->display_wr_handler.write(st->display_wr_handler.context, address, value & 0x0F);
+    if (DEBUG(DEBUG_RTC)) printf("rtc_pram_write_c034: %02X border color: %02X\n", value, value & 0x0F);
+
     st->rtc->write_control_reg(value >> 5);
 }
 
 uint8_t rtc_pram_read_C034(void *context, uint32_t address) {
     rtc_pram_state_t *st = (rtc_pram_state_t *)context;
-    //uint8_t dispval;
-    //if (st->display_rd_handler.read) dispval = st->display_rd_handler.read(st->display_rd_handler.context, address);
+
     uint8_t rtcval = st->rtc->read_control_reg();
     if (DEBUG(DEBUG_RTC)) printf("read_c034: %02X\n", (rtcval << 5));
 
-    //return dispval | (rtcval << 5);
     return (rtcval << 5);
 }
 

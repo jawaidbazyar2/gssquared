@@ -169,7 +169,7 @@ public:
                     break;
             }
             transaction_step_count = 2; // TODO: implement counter to simulate a delay. Measure typical delay on real hw. could vary depending on register and command.
-            printf("\n");
+            if (DEBUG(DEBUG_RTC)) printf("\n");
         }
         ctl_reg_byte = cmd;
     };
