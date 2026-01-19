@@ -229,7 +229,7 @@ Register 3 is Talk: status, and device address handler; Listen: status.
   * Bit 6-0: Keycode 1
 
 * Mouse Register 0
-  * Bit 15: Button Pressed
+  * Bit 15: Button Pressed (1 = button up, 0 = button down)
   * Bit 14: Moved Up
   * Bit 13-8: Y move value
   * Bit 7: always 1

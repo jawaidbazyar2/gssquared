@@ -15,6 +15,7 @@
 class ADB_Mouse : public ADB_Device
 {
     private:
+        static constexpr float MOUSE_MOTION_SCALE = 0.125f;
         uint8_t button_down = 0x00;
         bool has_data = false;
 
@@ -65,12 +66,12 @@ class ADB_Mouse : public ADB_Device
            So this works out. Since this is implicit, I have an uncharacteristic comment here.
         */
         if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-            button_down = 0x80;
+            button_down = 0x00;
             has_data = true;
             update_button_down();
             status = true;
         } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-            button_down = 0x00;
+            button_down = 0x80;
             has_data = true;
             update_button_down();
             status = true;
@@ -80,32 +81,49 @@ class ADB_Mouse : public ADB_Device
             // it's also possible we need to accumulate motion values 
             // until the register is actually read.
             // alternatively, to buffer them.
-            int xrel = (int)event.motion.xrel;
-            int yrel = (int)event.motion.yrel;
             
-            /* if (xrel == 0 && yrel == 0) {
-                status = false;
-            } else { */
-                //printf("MS> Mouse motion: x: %d, y: %d\n", xrel, yrel);
-                bool moved_right = false;
-                bool moved_up = false;
+            int xrel = (int)(event.motion.xrel * MOUSE_MOTION_SCALE);
+            int yrel = (int)(event.motion.yrel * MOUSE_MOTION_SCALE);
+            
+            // if there was any motion,minimum motion is 1.
+            /* if (xrel == 0 && event.motion.xrel > 0) xrel = 1;
+            if (xrel == 0 && event.motion.xrel < 0) xrel = -1;
+            if (yrel == 0 && event.motion.yrel > 0) yrel = 1;
+            if (yrel == 0 && event.motion.yrel < 0) yrel = -1; */
 
-                // set motion bits, and make positive if negative
-                if (xrel > 0) moved_right = 1;
-                else xrel = -xrel;
-                if (yrel < 0) { moved_up = 1; yrel = -yrel; }
+            //printf("MS> Mouse motion: x: %d, y: %d\n", xrel, yrel);
+            bool moved_right, moved_up;
 
-                // clamp to 0 .. 63
-                if (xrel > 63) xrel = 63;
-                if (yrel > 63) yrel = 63;
+            if (xrel < 0) {
+                moved_right = true;
+            } else {
+                moved_right = false;
+            }
 
-                registers[0].size = 2;
-                registers[0].data[0] = ((uint8_t)xrel & 0x3F) | (moved_right ? 0x40 : 0x00);
-                registers[0].data[1] = ((uint8_t)yrel & 0x3F) | (moved_up ? 0x40 : 0x00);
-                update_button_down();
-                has_data = true;
-                status = true;
-            /* } */
+            if (yrel < 0) {
+                moved_up = true;
+            } else {
+                moved_up = false;
+            }
+
+            // set motion bits, and make positive if negative
+            /* if (xrel > 0) moved_right = 1;
+            else xrel = -xrel;
+            if (yrel < 0) { moved_up = 1; yrel = -yrel; } */
+
+            // clamp to 0 .. 63
+            if (xrel > 63) xrel = 63;
+            if (yrel > 63) yrel = 63;
+
+            // negative values are 2's complement.
+            registers[0].size = 2;
+            registers[0].data[0] = (uint8_t)(xrel & 0x3F) | (moved_right ? 0x40 : 0x00);
+            registers[0].data[1] = (uint8_t)(yrel & 0x3F) | (moved_up ? 0x40 : 0x00);
+            update_button_down();
+            has_data = true;
+            status = true;
+
+            printf("MS> Mouse motion: x: %f, y: %f, xrel_abs: %d, yrel_abs: %d, moved_right: %d, moved_up: %d data0: %02X, data1: %02X\n", event.motion.x, event.motion.y, xrel, yrel, moved_right, moved_up, registers[0].data[0], registers[0].data[1]);
         }
         if (status) print_registers();
         return status;

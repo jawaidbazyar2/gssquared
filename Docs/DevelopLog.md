@@ -8417,3 +8417,4 @@ cool, we're back to 05012400
 ok so I have a mapping inconsistency for the OA- and CA- keys. 
 
 Found "Apple IIgs Diagnostic v2.2". 800k disk, ProDOS 8. Sweet!
+

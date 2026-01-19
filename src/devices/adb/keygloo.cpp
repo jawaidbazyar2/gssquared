@@ -83,6 +83,15 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
     computer->dispatch->registerHandler(SDL_EVENT_KEY_UP, [kb_state](const SDL_Event &event) {
         return keygloo_process_event(kb_state, event);
     });
+    computer->dispatch->registerHandler(SDL_EVENT_MOUSE_MOTION, [kb_state](const SDL_Event &event) {
+        return keygloo_process_event(kb_state, event);
+    });
+    computer->dispatch->registerHandler(SDL_EVENT_MOUSE_BUTTON_DOWN, [kb_state](const SDL_Event &event) {
+        return keygloo_process_event(kb_state, event);
+    });
+    computer->dispatch->registerHandler(SDL_EVENT_MOUSE_BUTTON_UP, [kb_state](const SDL_Event &event) {
+        return keygloo_process_event(kb_state, event);
+    });
 
     computer->mmu->set_C0XX_read_handler(0xC000, { keygloo_read_C000, kb_state });
     computer->mmu->set_C0XX_read_handler(0xC010, { keygloo_read_C010, kb_state });

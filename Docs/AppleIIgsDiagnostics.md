@@ -29,3 +29,12 @@ So, if !(c000&80) return currmod.
 
 OK, I got this going along with the keypad.
 
+Mouse!
+
+Cortland docs are backwards from IIgs hw ref in respect to "mouse x available" bit in c027 . 0 means "x coord is avail", 1 means "y coord is avail".
+my X is backwards. The button sense is backwards.
+
+OK. So mouse motion down seems scaled reasonably.
+However, when I move up a fraction, it jumps to the top of the screen. i.e., it's whackadoodle. I think the field is NOT 2's complement.
+ok, I have the polarity right now.. but the negative motion still is definitely wrong..
+oh, it IS two's complement.

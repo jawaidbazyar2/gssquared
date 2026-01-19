@@ -581,16 +581,15 @@ class KeyGloo
                 (kb_interrupt_enabled && kb_register_full);
         }
 
-       
-
         // toggle between returning the X data, and the Y data.
         uint8_t read_mouse_data() {
             if (mouse_next_read == MOUSE_X) {
                 mouse_next_read = MOUSE_Y;
+                mouse_x_available = true; // means Y is available. Cortland doc contradicts IIgs HW Ref. (x=0, y=1)
                 return mouse_data[0];
             } else {
                 mouse_next_read = MOUSE_X;
-                mouse_data_full = true;
+                mouse_data_full = false;
                 update_interrupt_status();
                 return mouse_data[1];
             }
@@ -665,8 +664,9 @@ class KeyGloo
                 uint8_t mouse_y = (reg.data[1] & 0x7F);
                 mouse_data[0] = mouse_x | mouse_status;
                 mouse_data[1] = mouse_y | mouse_status;
-                print_mouse();
                 mouse_data_full = true;
+                mouse_x_available = false;
+                print_mouse();
                 update_interrupt_status();
             }
 
@@ -695,5 +695,7 @@ class KeyGloo
                 indx = (indx + 1) % 16;
             }
             df->addLine("mods: %s", key_mods_str);
+
+            df->addLine("MouseData: (%d) X=%02X, Y=%02X", mouse_data_full, mouse_data[0], mouse_data[1]);
         }
     };
