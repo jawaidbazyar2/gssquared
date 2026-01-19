@@ -70,4 +70,34 @@ const uint8_t adb_ascii_us[256] = {
     0x15, //ADB_RIGHT_ARROW = 0x3C,
     0x0A, //ADB_DOWN_ARROW = 0x3D,
     0x0B, //ADB_UP_ARROW = 0x3E,
+    0xFF, // 0x3F unused
+    0xFF, // 0x40 unused
+    '.', // ADB_KEYPAD_PERIOD = 0x41,
+    0xFF, // 0x42 unused
+    '*', //ADB_KEYPAD_MULTIPLY = 0x43,
+    0xFF, // 0x44
+    '+', // ADB_KEYPAD_PLUS = 0x45,
+    0xFF, // 0x46
+    0xFF, // 0x47
+    0xFF, // 0x48
+    0xFF, // 0x49
+    0xFF, // 0x4A,
+    '/', // ADB_KEYPAD_DIVIDE = 0x4B,
+    0x0D, // ADB_KEYPAD_ENTER = 0x4C,
+    0xFF, // 0x4D
+    '-', // ADB_KEYPAD_MINUS = 0x4E,
+    0xFF, // 0x4F
+    0xFF, // 0x50
+    '=', // ADB_KEYPAD_EQUAL = 0x51,
+    '0', // ADB_KEYPAD_0 = 0x52,
+    '1', // ADB_KEYPAD_1 = 0x53,
+    '2', // ADB_KEYPAD_2 = 0x54,
+    '3', // ADB_KEYPAD_3 = 0x55,
+    '4', // ADB_KEYPAD_4 = 0x56,
+    '5', // ADB_KEYPAD_5 = 0x57,
+    '6', // ADB_KEYPAD_6 = 0x58,
+    '7', // ADB_KEYPAD_7 = 0x59,
+    0xFF, // 0x5A
+    '8', // ADB_KEYPAD_8 = 0x5B,
+    '9', // ADB_KEYPAD_9 = 0x5C,    
 };

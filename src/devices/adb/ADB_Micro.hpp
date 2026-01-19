@@ -121,6 +121,8 @@ class KeyGloo
             uint8_t status;
         };
 
+        int keysdown = 0;
+
     public:
         KeyGloo() {
             // "power on" the RAM here should be all 0's.
@@ -148,6 +150,8 @@ class KeyGloo
 
             vars.currmod.value = 0;
             vars.prevmod.value = 0;
+
+            keysdown = 0;
         }
 
         void abort() {
@@ -165,12 +169,15 @@ class KeyGloo
             vars.inpt = 0;
             vars.outpt = 0;
             key_latch = {0,0};
+
+            keysdown = 0;
         }
 
         void flush_buffer() {
             vars.inpt = 0;
             vars.outpt = 0;
             key_latch = {0,0};
+            keysdown = 0;
         }
 
         void set_vals_from_configuration() {
@@ -193,7 +200,8 @@ class KeyGloo
         // unlike the //e and //+ conversion where we mostly rely on SDL, here we have to fully
         // map our scancode to ascii, taking account of modifiers.
         uint8_t map_us(uint8_t code, adb_mod_key_t mods) {
-            if (code >= 0x40) return code;
+            //if (code >= 0x40) return code;
+
             uint8_t ascii = adb_ascii_us[code];
             if (mods.ctrl) {
                 if (ascii >= 'a' && ascii <= 'z') ascii = ascii - 'a' + 1; // convert to ASCII control code
@@ -417,12 +425,14 @@ class KeyGloo
         }
 
         uint8_t read_mod_latch() {  // c025
+            if (!(key_latch.keycode & 0x80)) return vars.currmod.value; // if no key in latch, return current "live" modifiers.
             return key_latch.keymods.value;
         }
 
         uint8_t read_key_strobe() { // c010
             key_latch.keycode &= 0x7F; // clear the strobe bit.
-            
+            uint8_t retval = key_latch.keycode;
+
             // clear interrupt status
             kb_register_full = false;
             update_interrupt_status();
@@ -430,7 +440,7 @@ class KeyGloo
             // potentially load a new key from buffer.
             load_key_from_buffer();
             
-            return 0xEE; // TODO: return floating bus value.
+            return (keysdown > 0 ? 0x80 : 0x00) | retval; // TODO: detect AKD and set hi bit if needed.
         }
 
         void write_key_strobe(uint8_t value) { // c010
@@ -587,11 +597,17 @@ class KeyGloo
         }
 
         bool process_event(SDL_Event &event) {
+            // TODO: need to track which keys are down in this function.
             // TODO: after processing event, check keyboard register for new key event and read it here.
             bool status = adb_host->process_event(event);
             if (status && (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP)) {
                 ADB_Register reg;
+                bool auto_repeat = false;
                 adb_host->talk(0x02, 0b11, 0, reg);
+
+                // Discard auto-repeat events.
+                if (event.type == SDL_EVENT_KEY_DOWN && event.key.repeat) auto_repeat = true;
+
                 // for each key event in returned reg, process and update modifiers.
                 // and keycode.
                 // process from LSB to MSB. (i.e., byte 0 (low) first then byte 1 (high))
@@ -613,10 +629,20 @@ class KeyGloo
                             }
                             break;
                         default:           
-                            // TODO: Map the keycode here through a mapper based on the language setting.
                             // Send key to C000 on key up
+                            if (!auto_repeat) { // don't look at auto-repeat events for keysdown counter
+                                if (keyupdown) keysdown++;
+                                else keysdown--;
+                            }
+
+                            // TODO: Map the keycode here through a mapper based on the language setting.
                             if ((keycode == ADB_DELETE) && vars.currmod.ctrl && vars.currmod.open) flush_buffer();
-                            else if (keyupdown) store_key_to_buffer(map_us(keycode, vars.currmod), vars.currmod.value); // TODO: update modifiers.
+                            else {
+                                uint8_t kpflag = 0;
+                                // TODO: this also needs to update currmod.keypad if a keypad key is being held down?
+                                if (keycode >= 0x43 && keycode <= 0x5C) kpflag = 0x10;
+                                if (keyupdown) store_key_to_buffer(map_us(keycode, vars.currmod), vars.currmod.value | kpflag); // TODO: update modifiers.
+                            }
                             break;
                     }
                 }
@@ -649,6 +675,7 @@ class KeyGloo
 
         void debug_display(DebugFormatter *df) {
             df->addLine("currmod: %02X, prevmod: %02X", vars.currmod.value, vars.prevmod.value);
+            df->addLine("keysdown: %d", keysdown);
             // show key codes and mods buffer
             char key_codes_str[64] = "";
             char temp[4];
