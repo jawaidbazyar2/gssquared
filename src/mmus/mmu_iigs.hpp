@@ -20,12 +20,12 @@ class MMU_IIgs : public MMU {
             struct {
                 uint8_t g_intcxrom : 1;
                 uint8_t g_rombank : 1;
-                uint8_t g_lcbnk2 : 1;
+                uint8_t g_lcbnk2 : 1; // 1 = LC Bank 2 Selected; 0 = LC Bank 1 Selected
                 uint8_t g_rdrom : 1;
                 uint8_t g_ramwrt : 1;
                 uint8_t g_ramrd : 1;
                 uint8_t g_page2 : 1;
-                uint8_t g_altzp : 1;
+                uint8_t g_altzp : 1; // 1 = ZP, Stack, LC are in Aux; 0 = in Main
             };
         };
         uint8_t g_80store;
@@ -139,7 +139,7 @@ class MMU_IIgs : public MMU {
         void set_ram_shadow_banks();
         //void shadow_register(uint16_t address, bool rw); // track accesses to softswitches the FPI also tracks.
         inline bool is_lc_bank1() { return FF_BANK_1 == 1; }
-        inline void set_lc_bank1(bool value) { FF_BANK_1 = value; g_lcbnk2 = value; }
+        inline void set_lc_bank1(bool value) { FF_BANK_1 = value; g_lcbnk2 = !value; }
         inline bool is_lc_read_enable() { return FF_READ_ENABLE == 1; }
         inline void set_lc_read_enable(bool value) { FF_READ_ENABLE = value; g_rdrom = !value; }
         inline bool is_lc_pre_write() { return FF_PRE_WRITE == 1; }
@@ -154,6 +154,8 @@ class MMU_IIgs : public MMU {
         inline void set_text(bool value) { g_text = value; }
         inline bool is_mixed() { return g_mixed; }
         inline void set_mixed(bool value) { g_mixed = value; }
+        inline bool is_altzp() { return g_altzp; }
+        inline void set_altzp(bool value) { g_altzp = value; }
         
         inline bool is_80store() { return g_80store ? true : false; }
         inline bool is_slotc3rom() { return megaii->f_slotc3rom ? true : false; }

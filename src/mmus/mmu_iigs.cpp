@@ -129,16 +129,15 @@ uint8_t read_c068(void *context, uint32_t address) {
 }
 
 /* 
-   TODO: GuS optimized this by checking bits old vs new and only calling 
-   remapper functions if necessary.
+   TODO: GuS optimized this by checking bits old vs new and only calling remapper functions if necessary.
 */
 void write_c068(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_state_register(value);
-    mmu_iigs->set_intcxrom((value & 0x01) == 1 ? true : false);
-    mmu_iigs->set_lc_bank1((value & 0x04) >> 2); // "if this bit is 1, lc ram bank 1 is selected"
-    //mmu_iigs->set_lc_read_enable((value & 0x08) == 1 ? false : true); // If bit 3 is set, we need to update the LC read enable flag also.
-    
+    mmu_iigs->set_intcxrom((value & 0x01) ? true : false);
+    mmu_iigs->set_lc_bank1(((value & 0x04) != 0) ? false : true); // "if this bit is 1, lc ram bank 2 is selected" inverting sense (GS hw Ref is backwards)
+    mmu_iigs->set_lc_read_enable((value & 0x08) ? false : true); // If bit 3 is set, we need to update the LC read enable flag also.
+    mmu_iigs->set_altzp((value & 0x80) ? true : false);
     mmu_iigs->megaii_compose_map();
     mmu_iigs->bsr_map_memory();
     
