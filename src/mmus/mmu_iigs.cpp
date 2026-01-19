@@ -522,7 +522,8 @@ uint32_t MMU_IIgs::calc_aux_write(uint32_t address) {
     uint32_t page = (address & 0xFF00) >> 8;
     if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramwrt))) return 0x1'0000;
     if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramwrt))) return 0x1'0000;
-    if (((page >= 0x00 && page <= 0x01) || (page >= 0xD0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
+    // we know at this point we were not originally C0 IO space. so.. 
+    if (((page >= 0x00 && page <= 0x01) || (page >= 0xC0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
     if ((page >= 0x02 && page <= 0xBF) && (g_ramwrt)) return 0x1'0000;
     return 0x0'0000;
 }
@@ -532,7 +533,8 @@ uint32_t MMU_IIgs::calc_aux_read(uint32_t address) {
     if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramrd))) return 0x1'0000;
     if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramrd ))) return 0x1'0000;
     //if (((page >= 0x00 && page <= 0x01) || (page >= 0xD0 && page <= 0xFF)) && (g_altzp || g_lcbnk2)) return 0x1'0000;
-    if (((page >= 0x00 && page <= 0x01) || (page >= 0xD0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
+    // we know at this point we were not originally C0 IO space. so.. 
+    if (((page >= 0x00 && page <= 0x01) || (page >= 0xC0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
     //if (g_ramrd) return 0x1'0000;
     if ((page >= 0x02 && page <= 0xBF) && (g_ramrd)) return 0x1'0000;
     return 0x0'0000;
@@ -563,7 +565,8 @@ uint8_t bank_shadow_read(void *context, uint32_t address) {
             return mmu_iigs->get_rom_base()[0x1'0000 + (address & 0xFFFF)]; // TODO: this is only for ROM01. ROM03 has more ROM needs different offset. Have a routine to calculate.
         }
     }
-    
+    // we know at this point we were not originally C0 IO space. so.. 
+
     address += mmu_iigs->calc_aux_read(address);    // handle RAMRD, 80STORE, ALTZP, PAGE2, HIRES (cuz we can have this AND LC at same time)
     if (DEBUG(DEBUG_MMUGS)) printf("Read: Effective address: %06X\n", address);
     return mmu_iigs->get_memory_base()[address];
