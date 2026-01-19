@@ -793,8 +793,8 @@ display_state_t::~display_state_t() {
 bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
     SDL_Keymod mod = event.key.mod;
     SDL_Keycode key = event.key.key;
-
-    if ((key == SDLK_KP_PLUS || key == SDLK_KP_MINUS)) {
+   
+    if ( (mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT)) && (key == SDLK_KP_PLUS || key == SDLK_KP_MINUS)) {
         printf("key: %x, mod: %x\n", key, mod);
         if (mod & SDL_KMOD_ALT) { // ALT == hue (windows key on my mac)
             config.videoHue += ((key == SDLK_KP_PLUS) ? 0.025f : -0.025f);
