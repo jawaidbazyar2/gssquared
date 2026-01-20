@@ -54,6 +54,7 @@ inline void MMU_IIgs::set_intcxrom(bool value) {
         g_intcxrom = true;
         megaii->compose_c1cf();
     } else {
+        // TODO: this isn't taking into account that C8xx might be active for slot 3 (i.e., what sather calls INTC8ROM). (but test on real GS seems to behave differently?)
         // enable slot ROM in pages $C1 - $CF
         megaii->f_intcxrom = false;
         g_intcxrom = false;
@@ -73,7 +74,7 @@ inline void MMU_IIgs::write_c0xx(uint16_t address, uint8_t value) {
         case 0xC005: g_ramwrt = true; break;
         case 0xC008: g_altzp = false; break;
         case 0xC009: g_altzp = true; break;
-        case 0xC029: reg_new_video = value; /* Call Display; */ break;
+        case 0xC029: reg_new_video = value; break;
         case 0xC006: // INTCXROMOFF
             set_intcxrom(false);
             /* // enable slot ROM in pages $C1 - $CF
@@ -137,7 +138,6 @@ void write_c068(void *context, uint32_t address, uint8_t value) {
     mmu_iigs->set_intcxrom((value & 0x01) ? true : false);
     mmu_iigs->set_lc_bank1(((value & 0x04) != 0) ? false : true); // "if this bit is 1, lc ram bank 2 is selected" inverting sense (GS hw Ref is backwards)
     mmu_iigs->set_lc_read_enable((value & 0x08) ? false : true); // If bit 3 is set, we need to update the LC read enable flag also.
-    mmu_iigs->set_altzp((value & 0x80) ? true : false);
     mmu_iigs->megaii_compose_map();
     mmu_iigs->bsr_map_memory();
     
@@ -149,6 +149,12 @@ void write_c068(void *context, uint32_t address, uint8_t value) {
         mmu_iigs->megaii->write(0xC054, 0x00);
         mmu_iigs->set_page2(false);
     }
+   /*  if (value & 0x80) { // ALTZP - not needed, megaii_compose_map() does this for us.
+        mmu_iigs->megaii->write(0xC009,0x01);
+    } else {
+        mmu_iigs->megaii->write(0xC008,0x00);
+    } */
+
 }
 
 // read/write handlers for C0XX registers as handed to the MegaII.
