@@ -37,6 +37,9 @@
 #include "devices/vidhd/vidhd.hpp"
 #include "devices/rtc/rtc_pram.hpp"
 #include "devices/adb/keygloo.hpp"
+#include "devices/es5503/ensoniq.hpp"
+#include "devices/scc8530/scc8530.hpp"
+
 //#include "devices/iigsmemory/iigsmemory.hpp"
 
 Device_t NoDevice = {
@@ -202,13 +205,20 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         init_slot_keygloo,
         NULL
     },
-    /* {
-        DEVICE_ID_IIGS_MEMORY,
-        "IIGS Memory",
+    {
+        DEVICE_ID_ENSONIQ,
+        "Ensoniq",
         false,
-        init_iigsmemory,
+        init_ensoniq_slot,
         NULL
-    } */
+    },
+    {
+        DEVICE_ID_SCC8530,
+        "SCC8530",
+        false,
+        init_scc8530_slot,
+        NULL
+    },
 };
 
 Device_t *get_device(device_id id) {

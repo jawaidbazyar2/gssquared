@@ -239,6 +239,10 @@ add_library(gs2_devices_mouse     src/devices/applemouseii/mouse.cpp )
 
 add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
 
+add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp)
+
+add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
+
 #add_library(gs2_devices_iigsmemory src/devices/iigsmemory/iigsmemory.cpp)
 
 add_library(gs2_devices_cassette     src/devices/cassette/cassette.cpp )
@@ -340,6 +344,8 @@ target_link_libraries(GSSquared
     gs2_devices_annunciator
     gs2_devices_iiememory
     #gs2_devices_iigsmemory
+    gs2_devices_ensoniq
+    gs2_devices_scc8530
     gs2_debugger
     gs2_trace
     gs2_util

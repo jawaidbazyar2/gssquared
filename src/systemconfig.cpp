@@ -121,8 +121,10 @@ DeviceMap_t DeviceMap_IIGS[] = {
     {DEVICE_ID_RTC_PRAM, SLOT_NONE},
     {DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
-    /* {DEVICE_ID_PD_BLOCK2, SLOT_7}, */
-    {DEVICE_ID_DISK_II, SLOT_7},
+    {DEVICE_ID_ENSONIQ, SLOT_NONE},
+    {DEVICE_ID_SCC8530, SLOT_NONE},
+    {DEVICE_ID_PD_BLOCK2, SLOT_7},
+    /* {DEVICE_ID_DISK_II, SLOT_7}, */
     {DEVICE_ID_END, SLOT_NONE}
 };
 
@@ -211,7 +213,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         "Apple IIgs",
         PLATFORM_APPLE_IIGS,
         DeviceMap_IIGS,
-        Badge_IIEEnh,
+        Badge_IIGS,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIgs,
