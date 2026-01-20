@@ -254,7 +254,7 @@ void debug_window_t::render_pane_trace() {
         text_renderer->set_color(0, 255, 255, 255);
         for (int i = 0; i < disasm_lines.size(); i++) {
             draw_text(DEBUG_PANEL_TRACE, x, 8 + trace_displayed + i, disasm_lines[i].c_str());
-            printf("disasm_lines[%d] = %s\n", i, disasm_lines[i].c_str());
+            //printf("disasm_lines[%d] = %s\n", i, disasm_lines[i].c_str());
         }
     }
     text_renderer->set_color(255, 255, 255, 255);
