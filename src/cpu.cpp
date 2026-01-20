@@ -120,6 +120,14 @@ void set_slot_irq(cpu_state *cpu, uint8_t slot, bool irq) {
     }
 }
 
+void set_device_irq(cpu_state *cpu, device_irq_id devid, bool irq) {
+    if (irq) {
+        cpu->irq_asserted |= (1 << devid);
+    } else {
+        cpu->irq_asserted &= ~(1 << devid);
+    }
+}
+
 cpu_state::cpu_state(processor_type cpu_type) {
     full_db = 0;
     full_pc = 0; // was 0x400 from original tests, ha!
