@@ -97,12 +97,12 @@ inline word_t word(uint8_t lo, uint8_t hi) { return lo | (hi << 8); }
  So bake those two things here together.
 */
 inline uint8_t bus_read(cpu_state *cpu, uint32_t addr) {
-    uint8_t data = cpu->mmu->read(addr);
+    uint8_t data = cpu->mmu->read(addr & 0xFFFFFF);
     cpu->incr_cycles();
     return data;
 }
 inline void bus_write(cpu_state *cpu, uint32_t addr, uint8_t data) {
-    cpu->mmu->write(addr, data);
+    cpu->mmu->write(addr & 0xFFFFFF, data);
     cpu->incr_cycles();
 }
 
@@ -590,7 +590,7 @@ inline uint32_t address_long_x (cpu_state *cpu, T &index) {
     uint32_t base = fetch_pc(cpu);
     base |= fetch_pc(cpu) << 8;
     base |= fetch_pc(cpu) << 16;
-    uint32_t eaddr = (base + index) & 0xFFFFFF; 
+    uint32_t eaddr = (base + index); 
 
     TRACE(cpu->trace_entry.operand = base; cpu->trace_entry.f_op_sz = 3;)
     return eaddr;
@@ -2093,15 +2093,31 @@ int execute_next(cpu_state *cpu) override {
     )
 
     if (cpu->skip_next_irq_check == 0 && !cpu->I && cpu->irq_asserted) { // if IRQ is not disabled, and IRQ is asserted, handle it.
-        push_word(cpu, cpu->pc); // push current PC
-        push_byte(cpu, cpu->p | FLAG_UNUSED); // break flag and Unused bit set to 1.
-        cpu->I = 1; // interrupt disable flag set to 1.
-        if constexpr (CPUTraits::has_65c02_ops) {
+        if constexpr ((CPUTraits::has_65816_ops)) {
+            if constexpr (!CPUTraits::e_mode) push_byte(cpu, cpu->pb);
+            push_word(cpu, cpu->pc); // push current PC
+            
+            // only set UNUSED FLAG IN EMULATION MODE.
+            if constexpr (CPUTraits::e_mode) push_byte(cpu, cpu->p | FLAG_UNUSED); // break flag and Unused bit set to 1.
+            else push_byte(cpu, cpu->p);
+
+            cpu->I = 1; // interrupt disable flag set to 1.
             cpu->D = 0; // turn off decimal mode on brk and interrupts
+            if constexpr (!CPUTraits::e_mode) cpu->pc = read_word_bank0(cpu,N_IRQ_VECTOR);
+            else cpu->pc = read_word_bank0(cpu,IRQ_VECTOR);
+            cpu->pb = 0x00;
+            cpu->incr_cycles();
+        } else {
+            push_word(cpu, cpu->pc); // push current PC
+            push_byte(cpu, cpu->p | FLAG_UNUSED); // break flag and Unused bit set to 1.
+            cpu->I = 1; // interrupt disable flag set to 1.
+            if constexpr (CPUTraits::has_65c02_ops) {
+                cpu->D = 0; // turn off decimal mode on brk and interrupts
+            }
+            cpu->pc = read_word_bank0(cpu,IRQ_VECTOR);
+            cpu->incr_cycles();
+            //cpu->incr_cycles(); // todo might be one too many, we're at 8, refs say it's 7. push_byte takes an extra cycle now?
         }
-        cpu->pc = read_word_bank0(cpu,IRQ_VECTOR);
-        cpu->incr_cycles();
-        //cpu->incr_cycles(); // todo might be one too many, we're at 8, refs say it's 7. push_byte takes an extra cycle now?
         TRACE ( tb->eaddr = cpu->pc; tb->f_irq = 1;);
         TRACE(if (cpu->trace) cpu->trace_buffer->add_entry(cpu->trace_entry);)
         return 0;
