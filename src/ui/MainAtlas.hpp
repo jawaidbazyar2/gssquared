@@ -42,6 +42,7 @@ enum MainAtlas {
     Badge_II,
     Badge_IIE,
     Badge_IIEEnh,
+    Badge_IIGS,
     MainAtlas_count
 };
 
