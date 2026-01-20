@@ -121,6 +121,8 @@ public:
     bool flash_state;
     int flash_counter;
     bool f_double_graphics = true;
+    uint8_t f_INTEN = 0x00; // interrupt enable flag
+    uint8_t f_VGCINT = 0x00; // VGC interrupt status flag
 
     uint32_t dirty_line[24];
     line_mode_t line_mode[24] = {LM_TEXT_MODE}; // 0 = TEXT, 1 = LO RES GRAPHICS, 2 = HI RES GRAPHICS

@@ -6,6 +6,7 @@
 #include "frame/Frames.hpp"
 #include "gs2.hpp"
 #include "ScanBuffer.hpp"
+#include "device_irq_id.hpp"
 
 class MMU_II;
 struct display_state_t;
@@ -134,6 +135,9 @@ protected:
 
     MMU_II * mmu = nullptr;
 
+    device_irq_handler_s irq_handler = {nullptr, nullptr};
+    bool vbl_interrupt_enabled = false;
+
     mode_table_t calc_video_mode_x(uint8_t vmode);
     virtual void init_mode_table();
 
@@ -214,6 +218,9 @@ uint32_t  hcount;       // use separate hcount and vcount in order
     inline void set_text_bg(uint16_t bg) { text_bg = bg; text_color = text_fg << 4 | text_bg; }
     inline void set_text_fg(uint16_t fg) { text_fg = fg; text_color = text_fg << 4 | text_bg; }
     inline void set_border_color(uint16_t color) { border_color = color; }
+
+    inline virtual void set_vbl_interrupt_enabled(bool enabled) { vbl_interrupt_enabled = enabled; }
+    inline virtual void set_irq_handler(device_irq_handler_s irq_handler) { this->irq_handler = irq_handler; }
 
     ScanBuffer *get_frame_scan();
 };

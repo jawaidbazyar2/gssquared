@@ -3,6 +3,7 @@
 #include "VideoScannerII.hpp"
 #include "ScanBuffer.hpp"
 #include "mmus/mmu_ii.hpp"
+#include "device_irq_id.hpp"
 
 void VideoScannerIIgs::init_video_addresses()
 {
@@ -165,6 +166,10 @@ void VideoScannerIIgs::video_cycle()
         scan.mainbyte = 0;
         scan.flags = mode_flags;
         frame_scan->push(scan);
+    }
+
+    if (vbl_interrupt_enabled && irq_handler.handler && (scan_index == 12480)) { // start of VBL area.
+        irq_handler.handler(irq_handler.context);
     }
 
     if (++scan_index == 17030) {

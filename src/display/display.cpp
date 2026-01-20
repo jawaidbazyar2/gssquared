@@ -1007,15 +1007,67 @@ void display_write_C05EF(void *context, uint32_t address, uint8_t value) {
     ds->video_system->set_full_frame_redraw();
 }
 
+/* VBL and Mouse Interrupt Handling Section - IIgs specific registers */
+
+void display_write_c023(void *context, uint32_t address, uint8_t value) {
+    display_state_t *ds = (display_state_t *)context;
+    ds->f_VGCINT = value;
+}
+
+uint8_t display_read_c023(void *context, uint32_t address) {
+    display_state_t *ds = (display_state_t *)context;
+    return ds->f_VGCINT;
+}
+
+void display_write_c041(void *context, uint32_t address, uint8_t value) {
+    display_state_t *ds = (display_state_t *)context;
+    ds->f_INTEN = value;
+    if (value & 0x08) {
+        ds->video_scanner->set_vbl_interrupt_enabled(true);    
+    } else {
+        ds->video_scanner->set_vbl_interrupt_enabled(false);
+        set_device_irq(ds->computer->cpu, IRQ_ID_VGC, false); // deassert the interrupt
+    }
+    // TODO: 0.25 Sec interrupt too.
+}
+
+uint8_t display_read_C041(void *context, uint32_t address) {
+    display_state_t *ds = (display_state_t *)context;
+    return ds->f_INTEN;
+}
+
+/* C047 - CLRVBLINT - Clear VBL interrupt */
+// TODO: it's unclear if I have to write zero (example is STZ CLRVBLINT) or any value.
+uint8_t display_read_c047(void *context, uint32_t address) {
+    display_state_t *ds = (display_state_t *)context;
+    set_device_irq(ds->computer->cpu, IRQ_ID_VGC, false);
+    // TODO: 0.25 Sec interrupt too.
+    return 0;
+}
+
+void display_write_c047(void *context, uint32_t address, uint8_t value) {
+    display_state_t *ds = (display_state_t *)context;
+    set_device_irq(ds->computer->cpu, IRQ_ID_VGC, false);
+    // TODO: 0.25 Sec interrupt too.
+}
+
 /*
- * AN3 returned in bit 5.
+ * C046 - INTFLAG 
  * the selftest / reset code checks bit 7, if 1, it jumps into selftest
- */
-uint8_t display_read_an3(void *context, uint32_t address) {
+
+ * 7 = 1 if mouse button currently down 
+ * 6 = 1 if mouse was down on last read
+ * 5 = AN3 returned in bit 5.
+*/
+
+uint8_t display_read_C046(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     uint8_t an3val = ds->f_double_graphics ? 0x20 : 0x00;
-    return an3val;
+    uint8_t vbl_int_status = ds->computer->cpu->irq_asserted & (1 << IRQ_ID_VGC) ? 0x08 : 0x00;
+    return an3val | vbl_int_status;
 }
+
+/* End VBL Interrupt Handling Section */
 
 uint8_t display_read_vbl(void *context, uint32_t address) {
     // This is enough to get basic VBL working. Total Replay boots anyway.
@@ -1064,6 +1116,11 @@ void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
     }
 }
 
+void scanner_iigs_vbl_irq(void *context) {
+    cpu_state *cpu = (cpu_state *)context;
+    set_device_irq(cpu, IRQ_ID_VGC, true);
+}
+
 void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool cycleaccurate) {
     cpu_state *cpu = computer->cpu;
     
@@ -1107,6 +1164,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         case Scanner_AppleIIgs:
             ds->video_scanner = new VideoScannerIIgs(mmu);
             ds->video_scanner->initialize();
+            ds->video_scanner->set_irq_handler({scanner_iigs_vbl_irq, cpu});
             break;
         case Scanner_AppleIIePAL:
             ds->video_scanner = new VideoScannerIIePAL(mmu);
@@ -1204,6 +1262,9 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         mmu->set_C0XX_write_handler(0xC05F, { display_write_C05EF, ds });
         mmu->set_C0XX_read_handler(0xC019, { display_read_vbl, ds });
         computer->register_reset_handler([ds]() {
+            if (ds->computer->platform->id == PLATFORM_APPLE_IIGS) {
+                display_write_c041(ds, 0xC041, 0x00);
+            }
             ds->f_80col = false;
             ds->f_double_graphics = true;
             ds->f_altcharset = false;
@@ -1221,7 +1282,12 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         });
     }
     if (computer->platform->id == PLATFORM_APPLE_IIGS) {
-        mmu->set_C0XX_read_handler(0xC046, { display_read_an3, ds });
+        mmu->set_C0XX_write_handler(0xC023, { display_write_c023, ds });
+        mmu->set_C0XX_read_handler(0xC023, { display_read_c023, ds });
+        mmu->set_C0XX_write_handler(0xC041, { display_write_c041, ds });
+        mmu->set_C0XX_read_handler(0xC041, { display_read_C041, ds });
+        mmu->set_C0XX_read_handler(0xC046, { display_read_C046, ds });
+        mmu->set_C0XX_write_handler(0xC047, { display_write_c047, ds });
     }
 
     switch (ds->video_scanner_type) {
