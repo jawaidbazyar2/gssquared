@@ -42,8 +42,8 @@ void MMU_IIe::set_default_C8xx_map() {
 
 void MMU_IIe::compose_c1cf() {
     if (!f_intcxrom) {
-        for (int i = 0; i < 15; i++) {
-            page_table[0xC1 + i] = slot_rom_ptable[i];
+        for (int i = 1; i < 16; i++) { // rework this to be clearer which page w're dealing with..
+            page_table[0xC0 + i] = slot_rom_ptable[i-1];
         }
         if (!f_slotc3rom) { // this has effect in A2Ts only if intcxrom is off.
             //page_table[0xC3] = slot_rom_ptable[2];
