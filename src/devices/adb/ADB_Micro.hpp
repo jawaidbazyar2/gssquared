@@ -674,6 +674,7 @@ class KeyGloo
         }
 
         void debug_display(DebugFormatter *df) {
+            df->addLine("C027 Status: %02X", status);
             df->addLine("currmod: %02X, prevmod: %02X", vars.currmod.value, vars.prevmod.value);
             df->addLine("keysdown: %d", keysdown);
             // show key codes and mods buffer
