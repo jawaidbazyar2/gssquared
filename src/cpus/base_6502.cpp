@@ -2098,7 +2098,8 @@ int execute_next(cpu_state *cpu) override {
             push_word(cpu, cpu->pc); // push current PC
             
             // only set UNUSED FLAG IN EMULATION MODE.
-            if constexpr (CPUTraits::e_mode) push_byte(cpu, cpu->p | FLAG_UNUSED); // break flag and Unused bit set to 1.
+            //assert((cpu->p & FLAG_B) == 0);
+            if constexpr (CPUTraits::e_mode) push_byte(cpu, (cpu->p & ~FLAG_B) | FLAG_UNUSED); // break flag and Unused bit set to 1.
             else push_byte(cpu, cpu->p);
 
             cpu->I = 1; // interrupt disable flag set to 1.
@@ -2109,7 +2110,7 @@ int execute_next(cpu_state *cpu) override {
             cpu->incr_cycles();
         } else {
             push_word(cpu, cpu->pc); // push current PC
-            push_byte(cpu, cpu->p | FLAG_UNUSED); // break flag and Unused bit set to 1.
+            push_byte(cpu, (cpu->p & ~FLAG_B) | FLAG_UNUSED); // break flag = 0, Unused bit set to 1.
             cpu->I = 1; // interrupt disable flag set to 1.
             if constexpr (CPUTraits::has_65c02_ops) {
                 cpu->D = 0; // turn off decimal mode on brk and interrupts
@@ -3209,6 +3210,7 @@ int execute_next(cpu_state *cpu) override {
                     stack_pull(cpu, cpu->p);
                     // TODO: perform x/m mode switch check here.
                 } else if constexpr (CPUTraits::has_65816_ops && CPUTraits::e_mode) {
+                    // when e flag=1, m/x are forced to 1, so after plp, both flags will still be 1 no matter what is pulled from stack.
                     stack_pull(cpu, cpu->p);
                     cpu->_M = 1;
                     cpu->_X = 1;
