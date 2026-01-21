@@ -17,6 +17,7 @@
 
 #include <SDL3/SDL.h>
 
+#include "SDL3/SDL_render.h"
 #include "cpu.hpp"
 #include "gs2.hpp"
 #include "debug.hpp"
@@ -187,7 +188,7 @@ border texture is laid out based on the hc/vc positions. i.e
 void calculate_border_rects(display_state_t *ds, bool shift_enabled) {
     float shift_offset = shift_enabled ? 7.0f : 0.0f;
     float width = shift_enabled ? 567.0f : 560.0f;
-
+    
     constexpr float ii_height = 192.0f;
 
     constexpr float b_l_x = 7.0f;
@@ -210,8 +211,10 @@ void calculate_border_rects(display_state_t *ds, bool shift_enabled) {
     ds->ii_borders[B_CEN][B_LT].src = {b_l_x, 0.0, b_l_w, ii_height};
     ds->ii_borders[B_CEN][B_LT].dst = {0, 19.0, 42.0, ii_height};
 
-    ds->ii_borders[B_CEN][B_CEN].src = {0.0, 0.0, width, (float)ii_height}; // not from border texture
-    ds->ii_borders[B_CEN][B_CEN].dst = {42.0f-shift_offset, 19.0, width, ii_height}; // not from border texture
+    // TODO: these 0.25 adjustments are a dirty hack. sample clamp does not seem to be working.
+    // ask the SDL3 guys about this. one option would be to copy the outer edge of pixels but that's what clamp should be doing.
+    ds->ii_borders[B_CEN][B_CEN].src = {0.0+0.25f, 0.0+0.25, width-0.5f, (float)ii_height-0.5f}; // not from border texture
+    ds->ii_borders[B_CEN][B_CEN].dst = {42.0f-shift_offset, 19.0, width, ii_height-0.25}; // not from border texture
 
     ds->ii_borders[B_CEN][B_RT].src = {0.0, 0.0, b_r_w, ii_height};
     ds->ii_borders[B_CEN][B_RT].dst = {42.0f+560.0f-shift_offset, 19.0, 56.0, ii_height};
@@ -221,7 +224,7 @@ void calculate_border_rects(display_state_t *ds, bool shift_enabled) {
     ds->ii_borders[B_BOT][B_LT].dst = {0.0, 19+ii_height, 42.0, 21};
 
     ds->ii_borders[B_BOT][B_CEN].src = {13.0, 192.0, 40, 21};
-    ds->ii_borders[B_BOT][B_CEN].dst = {42, 19+ii_height, 560, 21};
+    ds->ii_borders[B_BOT][B_CEN].dst = {42, 19+ii_height-0.5f, 560, 21+0.5f}; // TODO: also a hack here.
 
     ds->ii_borders[B_BOT][B_RT].src = {0, 192.0, b_r_w, 21};
     ds->ii_borders[B_BOT][B_RT].dst = {42.0f+560.0f-shift_offset, 19+ii_height, 56.0, 21};
@@ -314,7 +317,7 @@ bool update_display_apple2(cpu_state *cpu) {
         SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_CEN][B_LT].dst);
         SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_CEN][B_RT].dst);
         SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_LT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_CEN].dst); // TODO: this is wrong. 
+        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_CEN].dst); 
         SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_RT].dst);
     }
 

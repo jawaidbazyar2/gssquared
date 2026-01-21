@@ -8,6 +8,7 @@
 
 //#include "devices/displaypp/frame/frame_bit.hpp"
 #include "SDL3/SDL_rect.h"
+#include "SDL3/SDL_render.h"
 #include "devices/displaypp/frame/Frames.hpp"
 #include "devices/displaypp/VideoScannerII.hpp"
 #include "devices/displaypp/VideoScannerIIe.hpp"
@@ -150,7 +151,7 @@ void calculate_border_rects(bool shift_enabled) {
     ii_borders[B_CEN][B_LT].src = {b_l_x, 0.0, b_l_w, SCREEN_TEXTURE_HEIGHT};
     ii_borders[B_CEN][B_LT].dst = {0, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
 
-    ii_borders[B_CEN][B_CEN].src = {0.0, 0.0, width, (float)SCREEN_TEXTURE_HEIGHT}; // not from border texture
+    ii_borders[B_CEN][B_CEN].src = {0.0+0.25f, 0.0, width-0.5f, (float)SCREEN_TEXTURE_HEIGHT}; // not from border texture
     ii_borders[B_CEN][B_CEN].dst = {42.0f-shift_offset, 19.0, width, SCREEN_TEXTURE_HEIGHT}; // not from border texture
 
     ii_borders[B_CEN][B_RT].src = {0.0, 0.0, b_r_w, SCREEN_TEXTURE_HEIGHT};
