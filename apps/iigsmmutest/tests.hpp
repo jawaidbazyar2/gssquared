@@ -420,6 +420,7 @@ inline const std::vector<Test> ALL_TESTS = {
     // Test: when bit 3 in State is changed, LC RAM READ ENABLE tracks.
     // Test: ramwrt does not affect ZP/Stack
     // Test: altzp affects ZP/Stack
+    // Test: LC Bank 1/2 and LCBNK2 sense are in sync and select correct RAM
 
     Test{
         0x99,
