@@ -250,7 +250,7 @@ void iiememory_debug(iiememory_state_t *iiememory_d) {
 
 void iiememory_compose_map(iiememory_state_t *iiememory_d) {
     const char *TAG_MAIN = "MAIN";
-    const char *TAG_ALT = "ALT";
+    const char *TAG_ALT = "AUX";
         
     bool n_zp; 
     bool n_text1_r;
@@ -307,7 +307,7 @@ void iiememory_compose_map(iiememory_state_t *iiememory_d) {
         // change $04 - $07
         uint32_t altoffset = n_text1_w ? 0x1'0000 : 0x0'0000;
         for (int i = 0x04; i <= 0x07; i++) {
-            iiememory_d->mmu->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_text1_r ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_text1_w ? TAG_ALT : TAG_MAIN);
         }
     }
     if (n_hires1_r != iiememory_d->m_hires1_r) {
@@ -321,7 +321,7 @@ void iiememory_compose_map(iiememory_state_t *iiememory_d) {
         // change $20 - $3F
         uint32_t altoffset = n_hires1_w ? 0x1'0000 : 0x0'0000;
         for (int i = 0x20; i <= 0x3F; i++) {
-            iiememory_d->mmu->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_hires1_r ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_hires1_w ? TAG_ALT : TAG_MAIN);
         }
     }
     if (n_all_r != iiememory_d->m_all_r) {  
