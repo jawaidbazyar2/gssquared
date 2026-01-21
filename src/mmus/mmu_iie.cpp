@@ -41,20 +41,25 @@ void MMU_IIe::set_default_C8xx_map() {
 }
 
 void MMU_IIe::compose_c1cf() {
-    if (!f_intcxrom) {
+    if (!f_intcxrom) { // INTCXROM off - C1-CF is for cards, with possible exception for C3 if SLOTC3ROM is on.
         for (int i = 1; i < 16; i++) { // rework this to be clearer which page w're dealing with..
             page_table[0xC0 + i] = slot_rom_ptable[i-1];
         }
+        /* if (C8xx_slot == -1) {
+            for (int i = 1; i < 8; i++) { // rework this to be clearer which page w're dealing with..
+                page_table[0xC0 + i] = slot_rom_ptable[i-1];
+            }
+        } */ 
         if (!f_slotc3rom) { // this has effect in A2Ts only if intcxrom is off.
-            //page_table[0xC3] = slot_rom_ptable[2];
             map_page_read_only(0xC3, main_rom_D0 + 0x0300, "SYS_ROM");
         }
-    } else {
+    } else { // INTCXROM is on - C1-CF is all ROM.
         for (int i = 1; i < 16; i++) {
             map_page_read_only(0xC0 + i, main_rom_D0 + i * GS2_PAGE_SIZE, "SYS_ROM");
         }
     }
 }
+
 /*
  * When you initiate a reset, hardware in the Apple IIe sets the memory-controlling soft switches to normal: 
  * main board RAM and ROM are enabled; if there is an 80 column card in the aux slot, expansion slot 3 is allocated 
@@ -75,7 +80,7 @@ void iie_mmu_handle_C00X_write(void *context, uint32_t address, uint8_t value) {
             // enable slot ROM in pages $C1 - $CF
             mmu->f_intcxrom = false;
             mmu->compose_c1cf();
-            mmu->set_default_C8xx_map(); // TODO: is this right?  https://zellyn.com/a2audit/v0/#e000b
+            //mmu->set_default_C8xx_map(); // TODO: is this right?  https://zellyn.com/a2audit/v0/#e000b
             //printf("IIe Memory: INTCXROMOFF\n");
             break;
         case 0xC007: // INTCXROMON
@@ -236,6 +241,10 @@ void MMU_IIe::dump_C0XX_handlers() {
 
 void iie_map_rom_slot3(void *context, SlotType_t slot) {
     MMU_IIe *mmu = (MMU_IIe *)context;
+
+    // Sather UtA2E 5-28: "The C800-CFFF range is assigned to motherboard ROM any time SlotC3 ROM is reset and an 
+    // access is made to $C3XX.
+    if (mmu->f_slotc3rom) return; // SLOTC3ROM is -set- so this does not apply.
 
     uint8_t *rom = mmu->get_rom_base();
 

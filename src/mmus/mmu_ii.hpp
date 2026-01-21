@@ -47,6 +47,7 @@ class MMU_II : public MMU {
         virtual void init_map();
         virtual void set_default_C8xx_map();
         virtual void set_slot_rom(SlotType_t slot, uint8_t *rom, const char *name);
+        virtual int get_C8xx_slot() { return C8xx_slot; };
         virtual void reset() override;
         virtual void dump_C0XX_handlers();
         /* Handlers for "Slot ROM" area C1 - CF */

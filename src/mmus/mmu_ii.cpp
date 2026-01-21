@@ -120,7 +120,7 @@ void MMU_II::map_c1cf_page_write_h(page_t page, write_handler_t handler, const c
  * Called with location CFFF hit, or, on reset.
  */
 void MMU_II::set_default_C8xx_map() {
-    C8xx_slot = 0xFF;
+    C8xx_slot = -1;
     for (uint8_t page = 0; page < 8; page++) {
         //map_page_both(page + 0xC8, nullptr, "NONE");
         map_c1cf_page_both(page + 0xC8, nullptr, "NONE");

@@ -59,7 +59,7 @@ inline void MMU_IIgs::set_intcxrom(bool value) {
         megaii->f_intcxrom = false;
         g_intcxrom = false;
         megaii->compose_c1cf();
-        megaii->set_default_C8xx_map(); // TODO: is this right?  https://zellyn.com/a2audit/v0/#e000b
+        //megaii->set_default_C8xx_map(); // TODO: is this right?  https://zellyn.com/a2audit/v0/#e000b
     }    
 }
 
@@ -767,6 +767,12 @@ void MMU_IIgs::debug_dump(DebugFormatter *df) {
     df->addLine("Speed: %02X", reg_speed);
     debug_output_page(df, 0x00);
     debug_output_page(df, 0x02);
+    df->addLine("Mega II");
+    df->addLine("C8xx_slot: %d", megaii->get_C8xx_slot());
+    megaii->debug_output_page(df, 0x00);
+    megaii->debug_output_page(df, 0x20);
+    megaii->debug_output_page(df, 0xC3);
+    megaii->debug_output_page(df, 0xC8);
     megaii->debug_output_page(df, 0xD0);
     megaii->debug_output_page(df, 0xE0);
     megaii->debug_output_page(df, 0xFF);
