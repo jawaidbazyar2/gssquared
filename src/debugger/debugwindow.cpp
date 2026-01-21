@@ -266,22 +266,22 @@ void debug_window_t::render_pane_trace() {
 
     // TODO: do this better by using functions to emit items into a buffer tracking 'cursor'
     if (cpu->cpu_type == PROCESSOR_65816) {
-        draw_text(DEBUG_PANEL_TRACE, x, 4, "PB/PC   DB     A    X    Y  SP    N V M XB D I Z C  e  IRQ");
+        draw_text(DEBUG_PANEL_TRACE, x, 4, "PB/PC   DB DP      A    X    Y  SP    N V M XB D I Z C  e  IRQ");
         if ((cpu->_M == 1) && (cpu->_X == 1)) {
-            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X    %02X   %02X   %02X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
-                cpu->pb, cpu->pc, cpu->db, cpu->a & 0xFF, cpu->x & 0xFF, cpu->y & 0xFF, cpu->sp, 
+            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X %04X   %02X   %02X   %02X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
+                cpu->pb, cpu->pc, cpu->db, cpu->d, cpu->a & 0xFF, cpu->x & 0xFF, cpu->y & 0xFF, cpu->sp, 
                 cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
         } else if ((cpu->_M == 1) && (cpu->_X == 0)) {
-            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X    %02X %04X %04X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
-                cpu->pb, cpu->pc, cpu->db, cpu->a & 0xFF, cpu->x, cpu->y, cpu->sp, 
+            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X %04X   %02X %04X %04X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
+                cpu->pb, cpu->pc, cpu->db, cpu->d, cpu->a & 0xFF, cpu->x, cpu->y, cpu->sp, 
                 cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
         } else if ((cpu->_M == 0) && (cpu->_X == 1)) {
-            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X  %04X   %02X   %02X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
-                cpu->pb, cpu->pc, cpu->db, cpu->a, cpu->x & 0xFF, cpu->y & 0xFF, cpu->sp, 
+            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X %04X %04X   %02X   %02X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
+                cpu->pb, cpu->pc, cpu->db, cpu->d, cpu->a, cpu->x & 0xFF, cpu->y & 0xFF, cpu->sp, 
                 cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
         } else {
-            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X  %04X %04X %04X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
-                cpu->pb, cpu->pc, cpu->db, cpu->a, cpu->x, cpu->y, cpu->sp, 
+            snprintf(buffer, sizeof(buffer), "%02X/%04X %02X %04X %04X %04X %04X %04X   %d %d %d  %d %d %d %d %d  %d  %d", 
+                cpu->pb, cpu->pc, cpu->db, cpu->d, cpu->a, cpu->x, cpu->y, cpu->sp, 
                 cpu->N, cpu->V, cpu->_M, cpu->_X, cpu->D, cpu->I, cpu->Z, cpu->C, cpu->E, cpu->irq_asserted!=0);
         }
     } else {
