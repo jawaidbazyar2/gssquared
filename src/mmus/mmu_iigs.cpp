@@ -171,7 +171,7 @@ inline void megaii_c0xx_write(void *context, uint32_t address, uint8_t value) {
 
 void MMU_IIgs::megaii_compose_map() {
     const char *TAG_MAIN = "MAIN";
-    const char *TAG_ALT = "ALT";
+    const char *TAG_ALT = "AUX";
     
     //update_display_flags(iiememory_d);
     
@@ -230,7 +230,7 @@ void MMU_IIgs::megaii_compose_map() {
         // change $04 - $07
         uint32_t altoffset = n_text1_w ? 0x1'0000 : 0x0'0000;
         for (int i = 0x04; i <= 0x07; i++) {
-            megaii->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_text1_r ? TAG_ALT : TAG_MAIN);
+            megaii->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_text1_w ? TAG_ALT : TAG_MAIN);
         }
     }
     if (n_hires1_r != m_hires1_r) {
@@ -244,7 +244,7 @@ void MMU_IIgs::megaii_compose_map() {
         // change $20 - $3F
         uint32_t altoffset = n_hires1_w ? 0x1'0000 : 0x0'0000;
         for (int i = 0x20; i <= 0x3F; i++) {
-            megaii->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_hires1_r ? TAG_ALT : TAG_MAIN);
+            megaii->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_hires1_w ? TAG_ALT : TAG_MAIN);
         }
     }
     if (n_all_r != m_all_r) {  
@@ -523,7 +523,7 @@ IIe Memory Mapping for Main/AUX:
     |   | 80STORE | 1 = 80-store is active (PAGE2 controls Main vs Aux) |
 */
 
-uint32_t MMU_IIgs::calc_aux_write(uint32_t address) {
+/* uint32_t MMU_IIgs::calc_aux_write(uint32_t address) {
     uint32_t page = (address & 0xFF00) >> 8;
     if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramwrt))) return 0x1'0000;
     if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramwrt))) return 0x1'0000;
@@ -541,6 +541,42 @@ uint32_t MMU_IIgs::calc_aux_read(uint32_t address) {
     // we know at this point we were not originally C0 IO space. so.. 
     if (((page >= 0x00 && page <= 0x01) || (page >= 0xC0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
     //if (g_ramrd) return 0x1'0000;
+    if ((page >= 0x02 && page <= 0xBF) && (g_ramrd)) return 0x1'0000;
+    return 0x0'0000;
+} */
+
+uint32_t MMU_IIgs::calc_aux_write(uint32_t address) {
+    uint32_t page = (address & 0xFF00) >> 8;
+    //if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramwrt))) return 0x1'0000;
+    //if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramwrt))) return 0x1'0000;
+    if (g_80store && (page >= 0x04 && page <= 0x07) ) {
+        if (g_page2) return 0x1'0000;
+        else return 0x0'0000;
+    }
+    if (g_80store && g_hires && (page >= 0x20 && page <= 0x3F) ) {
+        if (g_page2) return 0x1'0000;
+        else return 0x0'0000;
+    }
+    // we know at this point we were not originally C0 IO space. so.. 
+    if (((page >= 0x00 && page <= 0x01) || (page >= 0xC0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
+    if ((page >= 0x02 && page <= 0xBF) && (g_ramwrt)) return 0x1'0000;
+    return 0x0'0000;
+}
+
+uint32_t MMU_IIgs::calc_aux_read(uint32_t address) {
+    uint32_t page = (address & 0xFF00) >> 8;
+    //if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramrd))) return 0x1'0000;
+    //if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramrd ))) return 0x1'0000;
+    if (g_80store && (page >= 0x04 && page <= 0x07) ) {
+        if (g_page2) return 0x1'0000;
+        else return 0x0'0000;
+    }
+    if (g_80store && g_hires && (page >= 0x20 && page <= 0x3F) ) {
+        if (g_page2) return 0x1'0000;
+        else return 0x0'0000;
+    }
+    // we know at this point we were not originally C0 IO space. so.. 
+    if (((page >= 0x00 && page <= 0x01) || (page >= 0xC0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
     if ((page >= 0x02 && page <= 0xBF) && (g_ramrd)) return 0x1'0000;
     return 0x0'0000;
 }
@@ -771,6 +807,8 @@ void MMU_IIgs::debug_dump(DebugFormatter *df) {
     df->addLine("C8xx_slot: %d", megaii->get_C8xx_slot());
     megaii->debug_output_page(df, 0x00);
     megaii->debug_output_page(df, 0x20);
+    megaii->debug_output_page(df, 0x40);
+    megaii->debug_output_page(df, 0x60);
     megaii->debug_output_page(df, 0xC3);
     megaii->debug_output_page(df, 0xC8);
     megaii->debug_output_page(df, 0xD0);
