@@ -8418,3 +8418,191 @@ ok so I have a mapping inconsistency for the OA- and CA- keys.
 
 Found "Apple IIgs Diagnostic v2.2". 800k disk, ProDOS 8. Sweet!
 
+[ ] need to apply "joyport workaround" to IIgs mode.  
+
+ProDOS 8 & 8-bit software is working pretty well now!! Total Replay is working very well except Airheart which TROUBLES ME.
+
+I can't run Audit, it won't run on IIgs. Why? 
+
+Arkanoid Crashes during boot.
+It's executing from E0/D100 page, does 00 => C068, and then the code disappears out from under it and hits a BRK.
+Indeed, the code they're expecting is switched in if I hit c08b c08b. and 0 => C068 definitely turns OFF LC Bank 1. 
+Is there even supposed to be a LC in banks E0/E1 ? The IIgs HW Ref strongly suggests there is. Says: "I/O and LC in banks e0/e1 are not affectd by this bit (shadow register iolc inhibit), this space is always enabled"
+Yeah, and my testing indicates there is. For sure.
+What if I have bank 1 / bank 2 reversed? 
+
+Yes, that's exactly what happened. GS Hw Ref described State C068 bit 2 (LCBNK2) backwards. Add a test to the test suite for this. (Tech Note 30 corrects the manual).
+
+HOLY CRAP! ARKANOID BOOTS AND PLAYS!!!!!
+
+Let's give some thought as to next steps. Missing hardware is responsible for several of these issues - for instance, a bunch of s/w is trying to access C0E0/IWM all the time and failing.
+Options are IWM and Ensoniq. The IWM would open up more titles to test; the Ensoniq would be more immediately fun, e.g. sound in 
+
+MAME's source for the Ensoniq is quite compact, under 500 lines. 
+
+[ ] Test behavior of INTCXROM and SLOTC3ROM in GS  
+
+the HW Ref shows 3 variations on I/O memory map. Peripheral expansion ROM (c800), internal rom and peripheral rom, and "internal rom". 
+Seems okay.. 
+
+VCG interrupt. Decide where these registers should live, and insert them as dummies.
+As weird as it sounds, I think it belongs in the video. 
+so:
+when we instantiate VideoScannerIIgs, pass it an interrupt_handler_t and a context. The context will be the cpu. Alternatively could we pass it a closure? By default VSGS will store a null handler which will do nothing on a vbl.
+We can just add a 
+```
+if (scan_index == cycle_to_trigger_vbl) {
+   *handler(context);
+}
+
+enum device_irq_id {
+  IRQ_ID_SOUNDGLU = 8,
+  IRQ_ID_KEYGLU = 9,
+  IRQ_ID_VGC = 10,
+};
+
+void handler(void *context) {
+  set_device_irq((cpu_struct *) context, device_id, true);
+}
+```
+at the bottom before the last bit. Thi
+assign device IDs to the onboard devices: SOUNDGLU, KEYGLU, VGC.
+
+ok, various things C047 read and write both clear the interrupt; fixed that (cribbed from KEGS). when booting GS/OS, I am getting Unclaimed Sound Interrupt 08FF.
+I'm gonna guess that the interrupt handler somewhere is reading SOUNDGLU regs; sees interrupt flags; but there isn't a handler for them; it ticks a counter and after so many of them it throws this error.
+
+FF/B7CC - main interrupt handler
+
+ok, this gets around to checking C03C, D, and E, and calls JSL irq_sound (a vector). By default it's set to do unclaimed sound interrupt. So this is all just because the bits are floating. GR!
+
+ok I have now thrown in dummy ensoniq and scc devices, it's still blowing up. 
+Need to add C023 (VGC interrupt status), yeah, it's checking that with a lda bpl. 
+ok it's still croaking on the ensoniq, albeit, not a 8FF, but one w/o a code. it's sending a command 5 and then reading data..
+B8FE
+yes, it's still thinking it's a sound irq. the sound check is a bmi.
+So I'm returning 0x80 in ensoniq data and..
+it's booting farther, with a progress bar this time! (because vbl is on)
+Now it crashing on a 08 => C068, and the code is disappearing out from under the C8xx space.
+when I reset from this thing with the interrupts on, I think I need to be resetting c041 to 0 on a reset. I added that..
+back to C068..
+We were executing in C300 space. So, is there a c8xx there that's supposed to be latched in until a CFFF, that sticks even if we turn off INTCXROM ?
+
+[x] mmugs should add output of status of page C8.  
+
+in KEGS, if I do in debugger:
+c300
+c800l (80-col f/w)
+c068:4
+c800l (STILL 80-col f/w)
+
+in GS2
+c300
+c800l (80-col f/w)
+c068:4
+c800l (80-col f/w is gone gone)
+
+having been in c300 previously should make it sticky and appear there EVEN IF I disable INTCXROM.
+ok, this feels like the following:
+call megaii->set_C8xx_handler to set a handler for slot 3
+
+// the handlers must only use functions in this area, to set slot-parameters.
+void MMU_II::set_C8xx_handler(SlotType_t slot, void (*handler)(void *context, SlotType_t slot), void *context) {
+    C8xx_handlers[slot].handler = handler;
+    C8xx_handlers[slot].context = context;
+}
+
+the handler will set C8 to the same as we do now for INTCXROM, except just C8? 
+and in compose_c1_cf if C8xx_slot is set we need to take that into account.
+"For more details, see Understanding the Apple IIe, by James Fielding Sather, Pg 5-28."
+I'm wondering if I have this wrong in the //e also. Let's see.
+Sather refers to "INTC8ROM" as a "unreadable soft switch, set by access to $C3XX with SLOTC3ROM reset, and reset by access to $CFFF or an MMU reset"
+Joint control of the C8 range is an OR function if INTernal is true and SLOT false;
+"the INTC8ROM follows protocol for a Slot 3 peripheral card that responds to I/O select and I/o strobe; consistent with IIe philosophy of emulating An Apple II with 80-col card installed in Slot 3."
+So, INTC8ROM is as if there was a slot card in slot 3 and it makes its ROM appear in C8 when C3 is accessed.
+
+I think the //e may be wrong also?
+for //e testing, do:
+```
+c300
+c800l (80-col f/w)
+c006:0
+c800l (what is result?)
+
+!
+800:lda cfff
+ sta c007
+ lda c800
+ sta 1000
+ lda c300
+ sta c006
+ lda c800
+ sta 1001
+ rts
+```
+Real //e: 4C 4C
+Mariani: 4C 4C
+Virtual II: 4C C2
+kegs: 4C 4C
+Clemens: 4C 4C
+
+GS2 //e: 4C A0 *womp womp*
+Real GS: 4C XX ???
+
+is it possible the GS behavior should be: if INTCXROM isn't changing, leave it be?
+
+I have gotten very confused over how this C1-CF stuff works. Diagram and review it.
+
+## Jan 20, 2026
+
+OK, let's do some cleanup of this C1CF code. It's confusing and gunked up.
+
+First, slot_rom_ptable - the ONLY thing that should ever manipulate this is cards registering their roms.
+This includes CX, and C8-CF for whatever card C8xx_Slot is set to.
+
+There are four routines:
+map_c1cf_page_both(uint8_t page, uint8_t *data, const char *read_d);
+map_c1cf_page_read_only(page_t page, uint8_t *data, const char *read_d);
+map_c1cf_page_read_h(page_t page, read_handler_t handler, const char *read_d);
+map_c1cf_page_write_h(page_t page, write_handler_t handler, const char *write_d);
+set_default_C8xx_map is special - don't need to run it all the time. it's intended for: CFFF, and Reset().
+
+Let's make sure there are no other uses of these. Used in:
+Videx: setting C8-CF. uses set_slot_rom for its own slot, which calls map_c1cf.
+mmu_ii: set_default_C8xx_map. sets C8-CF to nulls.
+
+II+: compose_c1cf simply copies slot_rom_ptable.
+IIe: compose_c1cf takes into account the values of the following registers:
+  INTCXROM, SLOTC3ROM, INTC8ROM (C8xx_Slot==3) to compose C1-C7.
+  IF INTCXROM || INTC8ROM, compose C8-CF.
+IIgs: ??? (don't worry about it yet, is identical to //e but with the additional GS onboard devices/roms)
+
+
+
+Regression tests:
+    [x] Ctrl-OA-CA-Reset (built in self test)
+    [x] audit.dsk
+
+Manual Tests:
+    [x] my little program above  
+
+set intcxrom
+
+
+activate memcard rom
+set intcxrom
+reset intcxrom
+memcard rom should still be in c800
+
+[ ] Later change: make slot_rom_ptable 16 entries to make loops look more sensible.
+
+ok, well that was likely a red herring. I have modified the IIe code to work correctly now, and it behaves like other GS emulators but not the same as my real GS. 
+
+tracing the GS/OS boot after enabling interrupts. So far, so good..
+
+[ ] forward disasm is not correctly disassembling MVN/MVP: it thinks it's a 2-byte instruction, when it's a 3-byte.
+
+OK!
+the P register being pushed to the stack on IRQs in emulation mode, has B bit set. 
+FIXED. Oh man, that was a super duper wild goose chase.
+the test suite checked for B set, but had no way to test IRQ so it did not check for B *cleared* in E-mode.
+

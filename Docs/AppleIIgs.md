@@ -269,32 +269,85 @@ This should involve cleanup/refactor of the trace, disasm, and monitor module mo
 
 ### Trace
 
-1. all this to make room for decoding addresses -> symbols, as well as 16-bit widths for: A, X, Y, SP, PC.  That's two more characters for each of those.
+1. [x] all this to make room for decoding addresses -> symbols, as well as 16-bit widths for: A, X, Y, SP, PC.  That's two more characters for each of those.
 1. have debugger BP -before- instruction execute. i.e. if the PC is going to be XXXX, then BP before it executes. And highlight that instruction in the display.
-1. [ ] instead of showing whole cycle, what if we just display last say 6 digits of cycle. That would be enough to show differences while not taking up too much screen.
+1. [x] instead of showing whole cycle, what if we just display last say 6 digits of cycle. That would be enough to show differences while not taking up too much screen.
 1. [x] make generation of the lines much easier by having a line class that tracks a horizontal 'cursor' inside the line.
 1. pack opcode and operand into a single 32-bit value, instead of 32-bit plus 8-bit.
 1. the other fields in the trace record are otherwise the right size.
 1. have a trace decoder base class plus two (maybe 3?) derived classes: 6502, 65c02, 65816. 
 1. Same for disassembler.
 1. in 6502/65c02 mode, show SP as just a byte, to free up room.
-1. [ ] use p flags e/m/x to determine trace formatting in 65816 class.
+1. [x] use p flags e/m/x to determine trace formatting in 65816 class.
 
 ## Display Parameters
 
 on my GS RGB SHR is 7.75 inches across and regular hires is 7.75 inches across. So they are the same horizontal beam scan path, but the SHR just clocks the pixels out a bit faster. We'll have to hope the scaling doesn't look too bad. I think the Videx is ok (640 pixels). But, this may be where the aspect ratio stuff comes in. This is an interesting question actually.. 
 
+## Interrupts
+
+### VGC
+
+* C023
+7. VGC Interrupt Status
+6. One-second interrupt status
+5. scanline interrupt status
+4. external interrupt status
+3. unused set to 0
+2. one-second interrupt enable
+1. scanline interrupt enable
+0. external interrupt enable
+
+7 is the OR of 4-6.
+
+* C032
+7. not used, set to 0
+6. Clear bit for one-second interrupt
+5. clear bit for scanline interrupt
+4-0. unused set to 0
+
+Write a 0 into bit 6 or bit 5 to clear that interrupt. Writing a 1 has no effect.
+Reading the video counters will also clear the ScanLine interrupt status bit!
+
+To implement the one-second interrupt, we need a timer that works sort of like the Scheduler except is based on the 14M clock. (or is this based on 60 frames? i.e. is it ACTUALLY 1 second?).
+
+To implement the scanline interrupt, VideoScannerIIgs will have to set the interrupt when it reads the scanline control byte. If the bit in SCB is 1, throw an interrupt. That seems easy enough.
+
+### MegaII Mouse
+
+* C041 - Int Enable
+7. 0
+6. 0
+5. 0
+4. Enable 1/4 sec ints
+3. Enable VBL ints
+2. Enable switch ints
+1. enable move ints
+0. enable mouse
+
+So I don't think the GS uses anything here except bits 3-4: vbl and quarter-second.
+
+Again, the ideal place to insert the VBL interrupt is in VideoScannerIIgs.
+
+
+
 # Development Roadmap
 
 We can implement in this order.
 
-1. 65816 [initial version done]
-1. text mode enhancements (colored text / border)
-1. mmu
-1. ADB
-1. SHR
-1. IWM
-1. Ensoniq
+[x] 65816 [initial version done]
+[x] text mode enhancements (colored text / border)
+[x] mmu (done-ish but might still be bugs)
+[x] RTC / BRAM
+[x] ADB
+  [x] Keyboard
+  [x] Mouse
+[x] SHR
+[x] Game controller 
+[ ] IWM
+[ ] Ensoniq
+[ ] Zilog SCC 8530
+[ ] Interrupts
 
 65816 emulation mode - the key element here is going to be to switch all the functions to use auto to allow us to switch from 8-bit to 16-bit more easily. By using auto, the compiler will .. uh, automatically.. pick the right data types based on calling parameters, stuff like that. CPU done.
 

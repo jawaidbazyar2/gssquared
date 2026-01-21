@@ -294,3 +294,5 @@ looks like it's trying to in#4 to read mouse.
 ## AirHeart
 
 crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff.
+
+The -regular- version of Airheart works fine.

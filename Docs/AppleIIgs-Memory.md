@@ -188,7 +188,7 @@ The State Register duplicates in the FPI certain memory management bits that can
 | 5 | RAMRD | 1 = Aux RAM is read-enabled |
 | 4 | RAMWRT | 1 = aux RAM is write-enabled |
 | 3 | RDROM | 1 = ROM is read enabled in LC area; 0 = RAM read enabled in LC area |
-| 2 | LCBNK2 | 1 = LC Bank 1 Selected |
+| 2 | LCBNK2 | 1 = LC Bank 2 Selected |
 | 1 | ROMBANK | Must always be 0 |
 | 0 | INTCXROM | 1 = internal ROM at $Cx00 is selected; 0 = peripheral-card ROM |
 
@@ -196,6 +196,8 @@ This is a read-write register - intention being to dramatically speed up interru
 
 Here is an interesting question - is this -all- the softswitches that control IIe memory mapping in Main / Even Banks? NO.
 It's missing: 80STORE; but that's the only one I think.
+
+LCBNK2 here: the GS HW Reference has this bit's description backwards. HW Ref says "1 means Bank 1 selected". In fact, 1 means Bank 2 selected, just like the name says.
 
 ## Memory Translation
 
@@ -396,4 +398,20 @@ Have an init func create a LUT based on every possible shadow bit (256 indices) 
 "shadow enabled / disabled"
 
 Either banks $00/$01, or, ALL ram banks, may be set to shadow to $E0 and $E1, based on the shadow map above. (There are 3 or 4 basic methods each for read and write, for these options).
+
+# Test behavior of INTCXROM and SLOTC3ROM in GS  
+
+the HW Ref shows 3 variations on I/O memory map. Peripheral expansion ROM (c800), internal rom and peripheral rom, and "internal rom". 
+
+in KEGS:
+
+intcxromoff
+c800:floating bus
+
+intcxromon
+c800:"internal" memory
+
+ok, and I tested that this is the same in GS2.
+
+Speaking generally, since there is unlimited ROM in the IIgs there would be no reason for the GS builtin peripherals to each have their own C800 space. But, that space should behave like on IIe if you have a slot card in and the slot register set to "your card".
 
