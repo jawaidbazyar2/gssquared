@@ -19,10 +19,12 @@ private:
 
     bool display_shift_enabled = true;
 
+    bool mono_mode = false;
+
 public:
     VideoScanGenerator(CharRom *charrom, bool border_enabled = false);
 
     void generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte, FrameBorder *border = nullptr, Frame640 *frame_shr = nullptr);
     void set_display_shift(bool enable) { display_shift_enabled = enable; }
-    
+    void set_mono_mode(bool mono) { mono_mode = mono; }
 };

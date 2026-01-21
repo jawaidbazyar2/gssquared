@@ -906,6 +906,11 @@ void display_write_C029(void *context, uint32_t address, uint8_t value) {
         ds->video_scanner->reset_shr();
         // TODO: ds->a2_display->reset_shr();
     }
+    if (ds->new_video & 0x20) {
+        ds->vsg->set_mono_mode(true);
+    } else {
+        ds->vsg->set_mono_mode(false);
+    }
 }
 
 /**

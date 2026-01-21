@@ -52,7 +52,7 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
         flash_counter = 0;
     }
 
-    SHRMode mode = { .p = 0 };    // TODO: shrPage->modes[line]; (hard code 320 palette 0 for now, need to process Palette entries from ScanBuffer
+    SHRMode mode = { .p = 0 }; 
     Palette palette = { .colors = {0} };
 
     uint32_t hcount = 0;
@@ -308,17 +308,20 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     if (hcount == 0) {
                         // dhgr starts at horz offset 0
                         color_mode_t cmode = {1,0, 1};
+                        // TODO: this is where we insert colorburst off to implement the IIgs monochrome modes.
+                        if (mono_mode) cmode.colorburst = 0; // this is sufficient for NTSC. but rgb.. 
                         frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
                     }
+                    uint8_t oncolor = (mono_mode) ? 0xF1 : 1; // 0xF0 is mono mode - with no colorburst we have to provide the color...
                         
                     uint8_t byteM = scan.mainbyte;
                     uint8_t byteA = scan.auxbyte;
                     for (size_t i = 0; i < 7; i++ ) {
-                        frame_byte->push((byteA & 0x01) ? 1 : 0);
+                        frame_byte->push((byteA & 0x01) ? oncolor : 0);
                         byteA >>= 1;
                     }
                     for (size_t i = 0; i < 7; i++ ) {
-                        frame_byte->push((byteM & 0x01) ? 1 : 0);
+                        frame_byte->push((byteM & 0x01) ? oncolor : 0);
                         byteM >>= 1;
                     }
                 }
