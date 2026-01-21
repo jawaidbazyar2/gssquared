@@ -85,11 +85,11 @@ class ADB_Mouse : public ADB_Device
             int xrel = (int)(event.motion.xrel * MOUSE_MOTION_SCALE);
             int yrel = (int)(event.motion.yrel * MOUSE_MOTION_SCALE);
             
-            // if there was any motion,minimum motion is 1.
-            /* if (xrel == 0 && event.motion.xrel > 0) xrel = 1;
+            // if there was any motion, minimum motion after scale is 1.
+            if (xrel == 0 && event.motion.xrel > 0) xrel = 1;
             if (xrel == 0 && event.motion.xrel < 0) xrel = -1;
             if (yrel == 0 && event.motion.yrel > 0) yrel = 1;
-            if (yrel == 0 && event.motion.yrel < 0) yrel = -1; */
+            if (yrel == 0 && event.motion.yrel < 0) yrel = -1;
 
             //printf("MS> Mouse motion: x: %d, y: %d\n", xrel, yrel);
             bool moved_right, moved_up;
