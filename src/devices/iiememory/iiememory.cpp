@@ -499,6 +499,8 @@ DebugFormatter *debug_iiememory(iiememory_state_t *iiememory_d) {
     iiememory_d->mmu->debug_output_page(f, 0x40);
     iiememory_d->mmu->debug_output_page(f, 0xC1);
     iiememory_d->mmu->debug_output_page(f, 0xC3);
+    iiememory_d->mmu->debug_output_page(f, 0xC6);
+    f->addLine("C8xx_slot: %d", iiememory_d->mmu->get_C8xx_slot());
     iiememory_d->mmu->debug_output_page(f, 0xC8);
     iiememory_d->mmu->debug_output_page(f, 0xD0);
     iiememory_d->mmu->debug_output_page(f, 0xE0);
