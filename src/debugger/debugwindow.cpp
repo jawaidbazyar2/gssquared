@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "debugwindow.hpp"
+#include "SDL3/SDL_keycode.h"
 #include "cpu.hpp"
 #include "debugger/trace.hpp"
 #include "platforms.hpp"
@@ -114,15 +115,34 @@ debug_window_t::~debug_window_t() {
     if (step_disasm) delete step_disasm;
 }
 
-bool debug_window_t::check_breakpoint(system_trace_entry_t *entry) {
+bool debug_window_t::check_pre_breakpoint(cpu_state *cpu) {
+    // Check if current instruction is the "stepover" breakpoint.
+    // this actually executed the next instruction 
+    uint32_t fullpc = cpu->full_pc;
+    if (stepover_bp && (fullpc == stepover_bp)) {
+        stepover_bp = 0; // clear it.
+        return true;
+    }
+    // check if the current instruction is a breakpoint.
     for (MemoryWatch::iterator watch = breaks.begin(); watch != breaks.end(); ++watch) {
-        uint16_t pc16 = entry->pc & 0xFFFF;
-        uint16_t eaddr16 = entry->eaddr & 0xFFFF;
-        if ((pc16 >= watch->start && pc16 <= watch->end) ||
-            (eaddr16 >= watch->start && eaddr16 <= watch->end)) {
+        uint16_t pc16 = fullpc & 0xFFFF;
+        if (pc16 >= watch->start && pc16 <= watch->end) {
             return true;
         }
     }
+    return false;
+}
+
+bool debug_window_t::check_post_breakpoint(system_trace_entry_t *entry) {
+    // check if the current instruction is a breakpoint.
+    for (MemoryWatch::iterator watch = breaks.begin(); watch != breaks.end(); ++watch) {
+        uint16_t pc16 = entry->pc & 0xFFFF;
+        uint16_t eaddr16 = entry->eaddr & 0xFFFF;
+        if ((pc16 >= watch->start && pc16 <= watch->end)) {
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -206,10 +226,11 @@ void debug_window_t::render_pane_trace() {
     int view_size = (window_height - control_area_height) / font_line_height;
     size_t trace_head = cpu->trace_buffer->head;
     size_t trace_size = cpu->trace_buffer->size;
+    size_t trace_count = cpu->trace_buffer->count;
     
     // if we're single-stepping, we need to leave room for 10 lines of disassembly
     constexpr size_t disasm_line_count = 10;
-    size_t data_size = trace_size + disasm_line_count;
+    //size_t data_size = trace_size + disasm_line_count;
     size_t start_idx;
 
     size_t disasm_displayed;
@@ -217,11 +238,14 @@ void debug_window_t::render_pane_trace() {
     // TODO: In the HOME handler we need to add another 10 lines to make this line up right, it works as is but won't ever show the first 10 lines of trace.
     if (single_step) {
         // THIS WORKS but is complex.
-        if (view_position < disasm_line_count) {
+        if (trace_count < view_size-disasm_line_count) {
+            trace_displayed = trace_count;
+            start_idx = cpu->trace_buffer->tail;
+            disasm_displayed = disasm_line_count;
+        } else if (view_position < disasm_line_count) {
             disasm_displayed = disasm_line_count - view_position;
             trace_displayed = view_size - disasm_displayed;
             start_idx = (trace_head - trace_displayed ) % trace_size;
-    
         } else {
             disasm_displayed = 0;
             trace_displayed = view_size - disasm_displayed;
@@ -251,6 +275,10 @@ void debug_window_t::render_pane_trace() {
         step_disasm->setLinePrepend(cpu->cpu_type == PROCESSOR_65816 ? 35 : 34);
         step_disasm->setAddress(cpu->full_pc);
         std::vector<std::string> disasm_lines = step_disasm->disassemble(disasm_displayed);
+        // first line of disassembly is current unexecuted instruction. highlight the background. in white.
+        SDL_SetRenderDrawColor(renderer, 0x60, 0x60, 0x60, 0xFF);
+        SDL_FRect hl_rect = {0, (float)(8 + trace_displayed)*font_line_height, 750, (float)font_line_height};
+        SDL_RenderFillRect(renderer, &hl_rect);
         text_renderer->set_color(0, 255, 255, 255);
         for (int i = 0; i < disasm_lines.size(); i++) {
             draw_text(DEBUG_PANEL_TRACE, x, 8 + trace_displayed + i, disasm_lines[i].c_str());
@@ -558,11 +586,27 @@ bool debug_window_t::handle_event(SDL_Event &event) {
                 if (event.key.key == SDLK_SPACE) {
                     cpu->execution_mode = EXEC_STEP_INTO;
                     cpu->instructions_left = 1;
+                    stepover_bp = 0; // clear for good measure
                 }
                 if (event.key.key == SDLK_RETURN) {
                     cpu->execution_mode = EXEC_NORMAL;
                     cpu->instructions_left = 0;
                     view_position = 0;
+                    stepover_bp = 0; // clear for good measure
+                }
+                // TODO: add Step over MLI call here for Joshua Bell
+                // check jsr target to see if it's MLI. MGTK (etc) use the same calling convention but a different entry point so... a key is great, or configurable list.
+                if (event.key.key == SDLK_O) {
+                    if (cpu->execution_mode != EXEC_STEP_INTO) break; // if not in step ignore
+                    stepover_bp = (cpu->pb << 16) | cpu->pc;
+                    // trace has not happened yet!
+                    uint8_t opcode = mmu->read(stepover_bp);
+                    if ((opcode == 0x20) || (opcode == 0xFC)) {
+                        stepover_bp += 3;
+                    } else if (opcode == 0x22) {
+                        stepover_bp += 4;
+                    }
+                    cpu->execution_mode = EXEC_NORMAL;
                 }
                 if (event.key.key == SDLK_RETURN && event.key.mod & SDL_KMOD_CTRL) {
                     if (window_open) {

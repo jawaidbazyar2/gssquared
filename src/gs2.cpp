@@ -322,19 +322,28 @@ void run_cpus(computer_t *computer) {
                     if (computer->event_timer->isEventPassed(cpu->cycles)) {
                         computer->event_timer->processEvents(cpu->cycles);
                     }
-                    (cpu->cpun->execute_next)(cpu);
-                    if (computer->debug_window->window_open) {
-                        if (computer->debug_window->check_breakpoint(&cpu->trace_entry)) {
-                            cpu->execution_mode = EXEC_STEP_INTO;
-                            cpu->instructions_left = 0;
-                            break;
-                        }
-                        if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
-                            cpu->execution_mode = EXEC_STEP_INTO;
-                            cpu->instructions_left = 0;
-                            break;
-                        }
+
+                    // do the pre check.
+                    if (computer->debug_window->check_pre_breakpoint(cpu)) {
+                        cpu->execution_mode = EXEC_STEP_INTO;
+                        cpu->instructions_left = 0;
+                        break;
                     }
+
+                    (cpu->cpun->execute_next)(cpu);
+                    
+                    // Do the post check.
+                    if (computer->debug_window->check_post_breakpoint(&cpu->trace_entry)) {
+                        cpu->execution_mode = EXEC_STEP_INTO;
+                        cpu->instructions_left = 0;
+                        break;
+                    }
+                    if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
+                        cpu->execution_mode = EXEC_STEP_INTO;
+                        cpu->instructions_left = 0;
+                        break;
+                    }
+                
                 }
             } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
                 while (cpu->c_14M < end_frame_c14M) { // 1/60th second.
@@ -410,19 +419,25 @@ void run_cpus(computer_t *computer) {
                     if (computer->event_timer->isEventPassed(cpu->cycles)) {
                         computer->event_timer->processEvents(cpu->cycles);
                     }
-                    (cpu->cpun->execute_next)(cpu);
-                    if (computer->debug_window->window_open) {
-                        if (computer->debug_window->check_breakpoint(&cpu->trace_entry)) {
-                            cpu->execution_mode = EXEC_STEP_INTO;
-                            cpu->instructions_left = 0;
-                            break;
-                        }
-                        if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
-                            cpu->execution_mode = EXEC_STEP_INTO;
-                            cpu->instructions_left = 0;
-                            break;
-                        }
+                    if (computer->debug_window->check_pre_breakpoint(cpu)) {
+                        cpu->execution_mode = EXEC_STEP_INTO;
+                        cpu->instructions_left = 0;
+                        break;
                     }
+
+                    (cpu->cpun->execute_next)(cpu);
+                    
+                    if (computer->debug_window->check_post_breakpoint(&cpu->trace_entry)) {
+                        cpu->execution_mode = EXEC_STEP_INTO;
+                        cpu->instructions_left = 0;
+                        break;
+                    }
+                    if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
+                        cpu->execution_mode = EXEC_STEP_INTO;
+                        cpu->instructions_left = 0;
+                        break;
+                    }
+                
                 }
             } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
                 while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
@@ -712,7 +727,7 @@ int main(int argc, char *argv[]) {
         mmu_iigs->set_cpu(computer->cpu);
         
         computer->debug_window->set_open();
-        //computer->cpu->execution_mode = EXEC_STEP_INTO;
+        computer->cpu->execution_mode = EXEC_STEP_INTO;
         
         computer->register_debug_display_handler(
             "mmugs",

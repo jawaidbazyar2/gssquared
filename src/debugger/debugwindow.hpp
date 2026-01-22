@@ -42,6 +42,7 @@ struct debug_window_t {
     Container_t *tab_container;
     MemoryWatch memory_watches;
     MemoryWatch breaks;
+    uint32_t stepover_bp = 0;
     Disassembler *disasm = nullptr;
     Disassembler *step_disasm = nullptr;
     std::vector<std::string> debug_displays;
@@ -78,7 +79,8 @@ struct debug_window_t {
     int num_lines_in_pane(debug_panel_t pane);
     void event_pane_monitor(SDL_Event &event);
     bool handle_pane_event_monitor(SDL_Event &event);
-    bool check_breakpoint(system_trace_entry_t *entry);
+    bool check_pre_breakpoint(cpu_state *cpu);
+    bool check_post_breakpoint(system_trace_entry_t *entry);
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
 
 protected:
