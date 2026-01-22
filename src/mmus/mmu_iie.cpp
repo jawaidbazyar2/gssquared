@@ -46,13 +46,13 @@ void MMU_IIe::compose_c1cf() {
         for (int i = 8; i < 16; i++) {
             page_table[0xC0 + i] = slot_rom_ptable[i-1];
         }
-        page_table[0xC1] = reg_slot & 0x01 ? slot_rom_ptable[0] : int_rom_ptable[0];
-        page_table[0xC2] = reg_slot & 0x02 ? slot_rom_ptable[1] : int_rom_ptable[1];
+        page_table[0xC1] = reg_slot & 0x02 ? slot_rom_ptable[0] : int_rom_ptable[0];
+        page_table[0xC2] = reg_slot & 0x04 ? slot_rom_ptable[1] : int_rom_ptable[1];
         page_table[0xC3] = (f_slotc3rom) ? slot_rom_ptable[2] : int_rom_ptable[2]; // different flag here.
-        page_table[0xC4] = reg_slot & 0x08 ? slot_rom_ptable[3] : int_rom_ptable[3];
-        page_table[0xC5] = reg_slot & 0x10 ? slot_rom_ptable[4] : int_rom_ptable[4];
-        page_table[0xC6] = reg_slot & 0x20 ? slot_rom_ptable[5] : int_rom_ptable[5];
-        page_table[0xC7] = reg_slot & 0x40 ? slot_rom_ptable[6] : int_rom_ptable[6];
+        page_table[0xC4] = reg_slot & 0x10 ? slot_rom_ptable[3] : int_rom_ptable[3];
+        page_table[0xC5] = reg_slot & 0x20 ? slot_rom_ptable[4] : int_rom_ptable[4];
+        page_table[0xC6] = reg_slot & 0x40 ? slot_rom_ptable[5] : int_rom_ptable[5];
+        page_table[0xC7] = reg_slot & 0x80 ? slot_rom_ptable[6] : int_rom_ptable[6];
         
         /* if (!f_slotc3rom) { // this has effect in A2Ts only if intcxrom is off.
             map_page_read_only(0xC3, main_rom_D0 + 0x0300, "SYS_ROM");
@@ -246,10 +246,8 @@ void MMU_IIe::dump_C0XX_handlers() {
 
 void MMU_IIe::map_c1cf_internal_rom(page_t page, uint8_t *data, const char *read_d) {
     assert(page >= 0xC1 && page <= 0xCF);
-/*     if (page < 0xC1 || page > 0xCF) {
-        return;
-    }
- */    page_table_entry_t *pte = &int_rom_ptable[page - 0xC1];
+
+    page_table_entry_t *pte = &int_rom_ptable[page - 0xC1];
 
     pte->read_p = data;
     pte->write_p = nullptr;
