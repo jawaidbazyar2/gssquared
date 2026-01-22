@@ -1,5 +1,6 @@
 #include <cstring>
 #include <fstream>
+#include <sstream>
 
 #include "util/HexDecode.hpp"
 #include "debugger/trace.hpp"
@@ -65,6 +66,68 @@
         return &entries[index];
     }
 
+    void system_trace_buffer::load_labels_from_file(const std::string &filename) {
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            fprintf(stderr, "Warning: Could not open label file: %s\n", filename.c_str());
+            return;
+        }
+
+        std::string line;
+        int line_count = 0;
+        while (std::getline(file, line)) {
+            line_count++;
+            
+            // Skip empty lines and comments
+            if (line.empty() || line[0] == '#' || line[0] == ';') {
+                continue;
+            }
+
+            std::istringstream iss(line);
+            std::string prefix;
+            std::string addr_str;
+            std::string label;
+
+            // Parse: "al <hex_addr> <label>"
+            if (!(iss >> prefix >> addr_str >> label)) {
+                continue; // Skip malformed lines
+            }
+
+            // Only process "al" (address label) lines
+            if (prefix != "al") {
+                continue;
+            }
+
+            // Parse hex address
+            uint32_t address = 0;
+            try {
+                address = std::stoul(addr_str, nullptr, 16);
+            } catch (...) {
+                fprintf(stderr, "Warning: Invalid address '%s' on line %d\n", addr_str.c_str(), line_count);
+                continue;
+            }
+
+            // Remove leading dot from label if present
+            if (!label.empty() && label[0] == '.') {
+                label = label.substr(1);
+            }
+
+            // Store label (will overwrite if duplicate address)
+            labels[address] = label;
+        }
+
+        file.close();
+        printf("Loaded %zu labels from %s\n", labels.size(), filename.c_str());
+    }
+
+    const char *system_trace_buffer::get_label(uint32_t address) {
+        auto it = labels.find(address);
+        if (it != labels.end()) {
+            return it->second.c_str();
+        }
+        return nullptr;
+    }
+
 
 #define TB_A 16
 #define TB_X 19
@@ -124,6 +187,13 @@ char *system_trace_buffer::decode_trace_entry(system_trace_entry_t *entry) {
         } else {
             buffer.pos(34);
             buffer.put((uint16_t) entry->pc);
+            
+            // Add label if available
+            const char *label = get_label(entry->pc);
+            if (label) {
+                buffer.put(' ');
+                buffer.put((char *)label);
+            }
             buffer.put(": ");
 
             buffer.put((uint8_t) entry->opcode);
@@ -183,11 +253,20 @@ char *system_trace_buffer::decode_trace_entry(system_trace_entry_t *entry) {
                 case ABS_IND_LONG:
                     buffer.put("XXX");
                     break;
-                case REL:
+                case REL: {
                     uint16_t btarget = (entry->pc+2) + (int8_t)entry->operand;
                     buffer.put("$");
                     buffer.put((uint16_t) btarget);
+                    
+                    // Add label for branch target if available
+                    const char *target_label = get_label(btarget);
+                    if (target_label) {
+                        buffer.put(" (");
+                        buffer.put((char *)target_label);
+                        buffer.put(")");
+                    }
                     break;
+                }
             }
         }
 
@@ -271,6 +350,14 @@ char *system_trace_buffer::decode_trace_entry(system_trace_entry_t *entry) {
             buffer.put(entry->pb);
             buffer.put('/');
             buffer.put(entry->pc);
+            
+            // Add label if available for 24-bit address
+            uint32_t full_addr = (entry->pb << 16) | entry->pc;
+            const char *label = get_label(full_addr);
+            if (label) {
+                buffer.put(' ');
+                buffer.put((char *)label);
+            }
             buffer.put(": ");
 
             buffer.put((uint8_t) entry->opcode);
@@ -332,12 +419,30 @@ char *system_trace_buffer::decode_trace_entry(system_trace_entry_t *entry) {
                         uint16_t btarget = (entry->pc+2) + (int8_t)entry->operand;
                         buffer.put("$");
                         buffer.put((uint16_t) btarget);
+                        
+                        // Add label for branch target if available
+                        uint32_t target_addr = (entry->pb << 16) | btarget;
+                        const char *target_label = get_label(target_addr);
+                        if (target_label) {
+                            buffer.put(" (");
+                            buffer.put((char *)target_label);
+                            buffer.put(")");
+                        }
                     }
                     break;
                 case REL_L: {
                         uint16_t btargetl = (entry->pc+3) + (int16_t)entry->operand;
                         buffer.put("$");
                         buffer.put((uint16_t) btargetl);
+                        
+                        // Add label for long branch target if available
+                        uint32_t target_addr = (entry->pb << 16) | btargetl;
+                        const char *target_label = get_label(target_addr);
+                        if (target_label) {
+                            buffer.put(" (");
+                            buffer.put((char *)target_label);
+                            buffer.put(")");
+                        }
                     }
                     break;
                 case MOVE:  

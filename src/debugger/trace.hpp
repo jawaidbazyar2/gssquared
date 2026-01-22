@@ -2,6 +2,8 @@
 
 #include <cstring>
 #include <fstream>
+#include <unordered_map>
+#include <string>
 
 #include "gs2.hpp"
 #include "cpus/processor_type.hpp"
@@ -51,6 +53,7 @@ struct system_trace_buffer {
     size_t count;
     processor_type cpu_type;
     int16_t cpu_mask;
+    std::unordered_map<uint32_t, std::string> labels;
 
     system_trace_buffer(size_t capacity, processor_type cpu_type);
     ~system_trace_buffer();
@@ -65,6 +68,8 @@ struct system_trace_buffer {
 
     char *decode_trace_entry(system_trace_entry_t *entry);
 
+    void load_labels_from_file(const std::string &filename);
+
     void set_cpu_type(processor_type cpu_type) { 
         this->cpu_type = cpu_type;
         if (cpu_type == PROCESSOR_65816) cpu_mask = CPU_65816;
@@ -75,6 +80,7 @@ struct system_trace_buffer {
 private:
     char *decode_trace_entry_6502(system_trace_entry_t *entry);
     char *decode_trace_entry_65816(system_trace_entry_t *entry);
+    const char *get_label(uint32_t address);
 };
 
 
