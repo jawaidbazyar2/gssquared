@@ -15,7 +15,7 @@ uint8_t iwm_read_C0xx(void *context, uint32_t address) {
         case 0xC0EB:
             return 0 /* st->data_a */;
         default:
-            return random++;
+            return 0; // random++;
     }
 }
 
