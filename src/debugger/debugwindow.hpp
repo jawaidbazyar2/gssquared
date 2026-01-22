@@ -43,6 +43,8 @@ struct debug_window_t {
     MemoryWatch memory_watches;
     MemoryWatch breaks;
     uint32_t stepover_bp = 0;
+    bool step_out = false;
+    
     Disassembler *disasm = nullptr;
     Disassembler *step_disasm = nullptr;
     std::vector<std::string> debug_displays;

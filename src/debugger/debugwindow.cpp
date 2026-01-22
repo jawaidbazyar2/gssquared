@@ -135,6 +135,12 @@ bool debug_window_t::check_pre_breakpoint(cpu_state *cpu) {
 
 bool debug_window_t::check_post_breakpoint(system_trace_entry_t *entry) {
     // check if the current instruction is a breakpoint.
+    if (step_out) {
+        if ((entry->opcode == 0x60) || (entry->opcode == 0x6B)) {
+            step_out = false;
+            return true;
+        }
+    }
     for (MemoryWatch::iterator watch = breaks.begin(); watch != breaks.end(); ++watch) {
         uint16_t pc16 = entry->pc & 0xFFFF;
         uint16_t eaddr16 = entry->eaddr & 0xFFFF;
@@ -608,6 +614,13 @@ bool debug_window_t::handle_event(SDL_Event &event) {
                     }
                     cpu->execution_mode = EXEC_NORMAL;
                 }
+                // Step Up / Out - run until an RTS or RTL has executed. (R for 'Return')
+                if (event.key.key == SDLK_R) {
+                    if (cpu->execution_mode != EXEC_STEP_INTO) break; // if not in step ignore
+                    step_out = true;
+                    cpu->execution_mode = EXEC_NORMAL;
+                }
+
                 if (event.key.key == SDLK_RETURN && event.key.mod & SDL_KMOD_CTRL) {
                     if (window_open) {
                         set_closed();
