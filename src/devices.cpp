@@ -39,6 +39,7 @@
 #include "devices/adb/keygloo.hpp"
 #include "devices/es5503/ensoniq.hpp"
 #include "devices/scc8530/scc8530.hpp"
+#include "devices/iwm/iwm.hpp"
 
 //#include "devices/iigsmemory/iigsmemory.hpp"
 
@@ -217,6 +218,13 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         "SCC8530",
         false,
         init_scc8530_slot,
+        NULL
+    },
+    {
+        DEVICE_ID_IWM,
+        "IWM",
+        false,
+        init_iwm_slot,
         NULL
     },
 };

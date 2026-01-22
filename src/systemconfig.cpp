@@ -123,8 +123,25 @@ DeviceMap_t DeviceMap_IIGS[] = {
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
     {DEVICE_ID_ENSONIQ, SLOT_NONE},
     {DEVICE_ID_SCC8530, SLOT_NONE},
+    {DEVICE_ID_IWM, SLOT_NONE},
     {DEVICE_ID_PD_BLOCK2, SLOT_7},
     /* {DEVICE_ID_DISK_II, SLOT_7}, */
+    {DEVICE_ID_END, SLOT_NONE}
+};
+
+DeviceMap_t DeviceMap_IIGS_Disk2[] = {
+    {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
+    {DEVICE_ID_DISPLAY, SLOT_NONE}, 
+    {DEVICE_ID_KEYGLOO, SLOT_NONE}, // Keyboard should be before IIGS_MEMORY
+    //{DEVICE_ID_IIGS_MEMORY, SLOT_NONE},
+    {DEVICE_ID_RTC_PRAM, SLOT_NONE},
+    {DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
+    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
+    {DEVICE_ID_ENSONIQ, SLOT_NONE},
+    {DEVICE_ID_SCC8530, SLOT_NONE},
+    {DEVICE_ID_IWM, SLOT_NONE},
+    /* {DEVICE_ID_PD_BLOCK2, SLOT_7}, */
+    {DEVICE_ID_DISK_II, SLOT_7},
     {DEVICE_ID_END, SLOT_NONE}
 };
 
@@ -218,6 +235,16 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         CLOCK_SET_US,
         Scanner_AppleIIgs,
         "Apple IIgs 8MB RAM"
+    },
+    {
+        "Apple IIgs / Disk II",
+        PLATFORM_APPLE_IIGS,
+        DeviceMap_IIGS_Disk2,
+        Badge_IIGS,
+        true,
+        CLOCK_SET_US,
+        Scanner_AppleIIgs,
+        "Apple IIgs 8MB RAM, Disk II in slot 7"
     },
 /*     {
         "Apple IIc",
