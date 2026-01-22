@@ -42,20 +42,25 @@ void MMU_IIe::set_default_C8xx_map() {
 
 void MMU_IIe::compose_c1cf() {
     if (!f_intcxrom) { // INTCXROM off - C1-CF is for cards, with possible exception for C3 if SLOTC3ROM is on.
-        for (int i = 1; i < 16; i++) { // rework this to be clearer which page w're dealing with..
+        // the C8 routines put this here. this is correct.
+        for (int i = 8; i < 16; i++) {
             page_table[0xC0 + i] = slot_rom_ptable[i-1];
         }
-        /* if (C8xx_slot == -1) {
-            for (int i = 1; i < 8; i++) { // rework this to be clearer which page w're dealing with..
-                page_table[0xC0 + i] = slot_rom_ptable[i-1];
-            }
-        } */ 
-        if (!f_slotc3rom) { // this has effect in A2Ts only if intcxrom is off.
+        page_table[0xC1] = reg_slot & 0x01 ? slot_rom_ptable[0] : int_rom_ptable[0];
+        page_table[0xC2] = reg_slot & 0x02 ? slot_rom_ptable[1] : int_rom_ptable[1];
+        page_table[0xC3] = (f_slotc3rom) ? slot_rom_ptable[2] : int_rom_ptable[2]; // different flag here.
+        page_table[0xC4] = reg_slot & 0x08 ? slot_rom_ptable[3] : int_rom_ptable[3];
+        page_table[0xC5] = reg_slot & 0x10 ? slot_rom_ptable[4] : int_rom_ptable[4];
+        page_table[0xC6] = reg_slot & 0x20 ? slot_rom_ptable[5] : int_rom_ptable[5];
+        page_table[0xC7] = reg_slot & 0x40 ? slot_rom_ptable[6] : int_rom_ptable[6];
+        
+        /* if (!f_slotc3rom) { // this has effect in A2Ts only if intcxrom is off.
             map_page_read_only(0xC3, main_rom_D0 + 0x0300, "SYS_ROM");
-        }
+        } */
     } else { // INTCXROM is on - C1-CF is all ROM.
         for (int i = 1; i < 16; i++) {
-            map_page_read_only(0xC0 + i, main_rom_D0 + i * GS2_PAGE_SIZE, "SYS_ROM");
+            page_table[0xC0 + i] = int_rom_ptable[i-1];
+            //map_page_read_only(0xC0 + i, main_rom_D0 + i * GS2_PAGE_SIZE, "SYS_ROM");
         }
     }
 }
@@ -239,6 +244,19 @@ void MMU_IIe::dump_C0XX_handlers() {
 }
 #endif
 
+void MMU_IIe::map_c1cf_internal_rom(page_t page, uint8_t *data, const char *read_d) {
+    assert(page >= 0xC1 && page <= 0xCF);
+/*     if (page < 0xC1 || page > 0xCF) {
+        return;
+    }
+ */    page_table_entry_t *pte = &int_rom_ptable[page - 0xC1];
+
+    pte->read_p = data;
+    pte->write_p = nullptr;
+    pte->read_d = read_d;
+    pte->write_d = nullptr;
+}
+
 void iie_map_rom_slot3(void *context, SlotType_t slot) {
     MMU_IIe *mmu = (MMU_IIe *)context;
 
@@ -254,7 +272,6 @@ void iie_map_rom_slot3(void *context, SlotType_t slot) {
     }
 }
 
-
 MMU_IIe::MMU_IIe(int page_table_size, int ram_amount, uint8_t *rom_pointer) : MMU_II(page_table_size, ram_amount, rom_pointer) {
     //main_rom_D0 = rom_pointer + 0x1000;
     MMU_IIe::init_map();
@@ -266,6 +283,11 @@ MMU_IIe::MMU_IIe(int page_table_size, int ram_amount, uint8_t *rom_pointer) : MM
     set_C0XX_write_handler(0xC00B, {iie_mmu_handle_C00X_write, this});
 
     set_C8xx_handler(SLOT_3, iie_map_rom_slot3, this );
+
+    // set up map table for the internal C1-CF ROM.
+    for (int i = 1; i < 16; i++) {
+        map_c1cf_internal_rom(0xC0 + i, main_rom_D0 + i * GS2_PAGE_SIZE, "SYS_ROM");
+    }
 }
 
 MMU_IIe::~MMU_IIe() {
