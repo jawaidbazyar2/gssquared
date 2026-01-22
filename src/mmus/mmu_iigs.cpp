@@ -48,7 +48,11 @@ inline void bank_e1_write(void *context, uint32_t address, uint8_t value) {
 }
 
 inline void MMU_IIgs::set_intcxrom(bool value) {
-    if (value) {
+    megaii->f_intcxrom = value;
+    g_intcxrom = value;
+    megaii->compose_c1cf();
+
+/*     if (value) {
         // enable main ROM in pages $C1 - $CF
         megaii->f_intcxrom = true;
         g_intcxrom = true;
@@ -60,7 +64,7 @@ inline void MMU_IIgs::set_intcxrom(bool value) {
         g_intcxrom = false;
         megaii->compose_c1cf();
         //megaii->set_default_C8xx_map(); // TODO: is this right?  https://zellyn.com/a2audit/v0/#e000b
-    }    
+    }     */
 }
 
 inline void MMU_IIgs::write_c0xx(uint16_t address, uint8_t value) {
@@ -155,6 +159,25 @@ void write_c068(void *context, uint32_t address, uint8_t value) {
         mmu_iigs->megaii->write(0xC008,0x00);
     } */
 
+}
+
+void MMU_IIgs::set_slot_register(uint8_t value) {
+    // store here
+    reg_slot = value;
+    printf("setting slot register: %02X\n", value);
+    // also update the megaii slot register.
+    megaii->set_slot_register(value);
+    //megaii->compose_c1cf(); // redundant since megaii->set_slot_register() does this.
+}
+
+void write_c02d(void *context, uint32_t address, uint8_t value) {
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_slot_register(value);
+}
+
+uint8_t read_c02d(void *context, uint32_t address) {
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    return mmu_iigs->get_slot_register();
 }
 
 // read/write handlers for C0XX registers as handed to the MegaII.
@@ -670,6 +693,9 @@ void MMU_IIgs::init_c0xx_handlers() {
     //megaii->set_C0XX_read_handler(0xC01C, {gs_bsr_read_C01x, this});
     //megaii->set_C0XX_read_handler(0xC01D, {gs_bsr_read_C01x, this});
 
+    megaii->set_C0XX_write_handler(0xC02D, {write_c02d, this});
+    megaii->set_C0XX_read_handler(0xC02D, {read_c02d, this});
+
     for (uint32_t i = 0xC054; i <= 0xC057; i++) {
         megaii->set_C0XX_write_handler(i, {megaii_c0xx_write, this});
         megaii->set_C0XX_read_handler(i, {megaii_c0xx_read, this});
@@ -738,12 +764,17 @@ void MMU_IIgs::init_map() {
 
     set_ram_shadow_banks();
 
-    megaii->set_slot_rom(SLOT_1, main_rom + 0x1'C100, "GS INT");
+    // use new routine.
+    for (int i = 1; i < 16; i++) {
+        megaii->map_c1cf_internal_rom(0xC0 + i, main_rom + 0x1'C000 + i * GS2_PAGE_SIZE, "GS INT");
+    }
+
+    /* megaii->set_slot_rom(SLOT_1, main_rom + 0x1'C100, "GS INT");
     megaii->set_slot_rom(SLOT_2, main_rom + 0x1'C200, "GS INT");
     megaii->set_slot_rom(SLOT_3, main_rom + 0x1'C300, "GS INT");
     megaii->set_slot_rom(SLOT_4, main_rom + 0x1'C400, "GS INT");
     megaii->set_slot_rom(SLOT_5, main_rom + 0x1'C500, "GS INT");
-    megaii->set_slot_rom(SLOT_6, main_rom + 0x1'C600, "GS INT");
+    megaii->set_slot_rom(SLOT_6, main_rom + 0x1'C600, "GS INT"); */
 
     init_c0xx_handlers();
     map_initialized = true;
@@ -759,13 +790,14 @@ void MMU_IIgs::reset() {
     g_mixed = false;
 
     // on RESET, set:
+    set_slot_register(0x00);
     reg_speed = 0x80;
     reg_shadow = 0x08;
-    set_state_register(0x0D); // KEGS does 0x0D - enable ROM RD, 
+    set_state_register(0x0C); // KEGS does 0x0D - enable ROM RD, 
+    set_intcxrom(g_intcxrom); // this is needed to set the C1-CF map correctly.
 
     if (map_initialized) {
         set_ram_shadow_banks();
-
         // Stolen from c068 handler - consolidate somewhere
         megaii_compose_map();
         bsr_map_memory();
@@ -785,7 +817,7 @@ void MMU_IIgs::debug_dump(DebugFormatter *df) {
         (reg_shadow & SHADOW_INH_HGR2) != 0,
         (reg_shadow & SHADOW_INH_HGR1) != 0,
         (reg_shadow & SHADOW_INH_TEXT1) != 0);
-
+    df->addLine("SlotReg: %02X", reg_slot);
     df->addLine("State: %02X: INTCXROM: %d ROMBANK: %d LCBNK2: %d RDROM: %d",         
         reg_state,
         g_intcxrom,
@@ -810,6 +842,7 @@ void MMU_IIgs::debug_dump(DebugFormatter *df) {
     megaii->debug_output_page(df, 0x40);
     megaii->debug_output_page(df, 0x60);
     megaii->debug_output_page(df, 0xC3);
+    megaii->debug_output_page(df, 0xC7);
     megaii->debug_output_page(df, 0xC8);
     megaii->debug_output_page(df, 0xD0);
     megaii->debug_output_page(df, 0xE0);

@@ -13,6 +13,7 @@ class MMU_IIgs : public MMU {
         uint8_t *main_rom = nullptr;
         constexpr static uint32_t BANK_SIZE = 65536;
 
+        uint8_t reg_slot = 0;
         uint8_t reg_shadow = 0;
         uint8_t reg_speed = 0x08;
         union {
@@ -160,6 +161,10 @@ class MMU_IIgs : public MMU {
         inline bool is_80store() { return g_80store ? true : false; }
         inline bool is_slotc3rom() { return megaii->f_slotc3rom ? true : false; }
         inline void set_intcxrom(bool value);
+        
+        inline void set_slot_register(uint8_t value);
+        
+        inline uint8_t get_slot_register() { return reg_slot; }
 
         void bsr_map_memory();
         virtual uint8_t vp_read(uint32_t address) override;
