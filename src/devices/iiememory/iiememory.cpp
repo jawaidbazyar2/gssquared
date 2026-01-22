@@ -490,7 +490,7 @@ DebugFormatter *debug_iiememory(iiememory_state_t *iiememory_d) {
         mmu->f_intcxrom, iiememory_d->FF_BANK_1, iiememory_d->FF_READ_ENABLE, !iiememory_d->_FF_WRITE_ENABLE);
     f->addLine("TEXT: %1d MIXED: %1d PAGE2: %1d HIRES: %1d",
         iiememory_d->s_text, iiememory_d->s_mixed, iiememory_d->s_page2, iiememory_d->s_hires);
-
+    f->addLine("SlotReg: %02X", mmu->get_slot_register());
     iiememory_d->mmu->debug_output_page(f, 0x00, true);
     iiememory_d->mmu->debug_output_page(f, 0x02);
     iiememory_d->mmu->debug_output_page(f, 0x04);
