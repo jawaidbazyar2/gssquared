@@ -5,15 +5,17 @@
 #include <vector>
 #include <iomanip>
 #include "debugger/MemoryWatch.hpp"
+#include "debugger/trace.hpp"
 #include <algorithm>
 
-ExecuteCommand::ExecuteCommand(MMU *mmu, MonitorCommand *cmd, MemoryWatch *watches, MemoryWatch *breaks, Disassembler *disasm, std::vector<std::string> *debug_displays) {
+ExecuteCommand::ExecuteCommand(MMU *mmu, MonitorCommand *cmd, MemoryWatch *watches, MemoryWatch *breaks, Disassembler *disasm, std::vector<std::string> *debug_displays, system_trace_buffer *trace_buffer) {
     this->mmu = mmu;
     this->cmd = cmd;
     this->memory_watches = watches;
     this->breaks = breaks;
     this->disasm = disasm;
     this->debug_displays = debug_displays;
+    this->trace_buffer = trace_buffer;
 }
 
 ExecuteCommand::~ExecuteCommand() {
@@ -263,6 +265,38 @@ void ExecuteCommand::execute() {
                 addFormattedOutput("Error: could not open file: %s", filename.c_str());
             }
         }
+    }
+    if ((node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_SLOAD)) {
+        // load symbol table from file
+        if (trace_buffer == nullptr) {
+            addOutput("Error: trace buffer not set");
+            return;
+        }
+        auto &node1 = cmd->nodes[1];
+        if (node1.type != MON_NODE_TYPE_STRING) {
+            addOutput("Error: expected string 'filename' as first argument");
+            return;
+        }
+        std::string filename = node1.val_string;
+        if (!trace_buffer->load_labels_from_file(filename)) {
+            addFormattedOutput("Error: could not load symbol table from file: %s", filename.c_str());
+            return;
+        }
+        addFormattedOutput("Loaded symbol table from %s", filename.c_str());
+    }
+    if ((node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_SLOOKUP)) {
+        // lookup symbol by address
+        auto &node1 = cmd->nodes[1];
+        if (node1.type != MON_NODE_TYPE_NUMBER) {
+            addOutput("Error: expected number as first argument");
+            return;
+        }
+        addFormattedOutput("%06X: %s", node1.val_number, trace_buffer->get_label(node1.val_number));
+    }
+    if ((node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_SCLEAR)) {
+        // clear symbol table
+        trace_buffer->clear_labels();
+        addFormattedOutput("Cleared symbol table");
     }
     if ((node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_MAP)) {
         // display memory map

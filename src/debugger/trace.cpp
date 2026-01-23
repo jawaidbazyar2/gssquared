@@ -66,11 +66,11 @@
         return &entries[index];
     }
 
-    void system_trace_buffer::load_labels_from_file(const std::string &filename) {
+    bool system_trace_buffer::load_labels_from_file(const std::string &filename) {
         std::ifstream file(filename);
         if (!file.is_open()) {
             fprintf(stderr, "Warning: Could not open label file: %s\n", filename.c_str());
-            return;
+            return false;
         }
 
         std::string line;
@@ -111,13 +111,23 @@
             if (!label.empty() && label[0] == '.') {
                 label = label.substr(1);
             }
+            // Remove _XXXXXX six hex digits from the end of label if present.
+            size_t pos = label.find("_0");
+            if (pos != std::string::npos) {
+                label = label.substr(0, pos);
+            }
 
             // Store label (will overwrite if duplicate address)
             labels[address] = label;
+            // Also store label if it's in ROM that is mapped to bank 0.
+            if ((address >= 0xFF'C000) && (address < 0xFF'FFFF)) {
+                labels[address & 0xFFFF] = label;
+            }
         }
 
         file.close();
         printf("Loaded %zu labels from %s\n", labels.size(), filename.c_str());
+        return true;
     }
 
     const char *system_trace_buffer::get_label(uint32_t address) {
@@ -128,6 +138,9 @@
         return nullptr;
     }
 
+    void system_trace_buffer::clear_labels() {
+        labels.clear();
+    }
 
 #define TB_A 16
 #define TB_X 19
@@ -461,6 +474,9 @@ char *system_trace_buffer::decode_trace_entry(system_trace_entry_t *entry) {
             default:
                 buffer.pos(TB_EADDR);
                 buffer.put((uint32_t) entry->eaddr);
+                buffer.pos(TB_EADDR+14);
+                const char *label = get_label(entry->eaddr);
+                if (label) buffer.put(label);
                 break;
         }
 

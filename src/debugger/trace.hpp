@@ -68,7 +68,9 @@ struct system_trace_buffer {
 
     char *decode_trace_entry(system_trace_entry_t *entry);
 
-    void load_labels_from_file(const std::string &filename);
+    bool load_labels_from_file(const std::string &filename);
+
+    void clear_labels();
 
     void set_cpu_type(processor_type cpu_type) { 
         this->cpu_type = cpu_type;
@@ -76,11 +78,11 @@ struct system_trace_buffer {
         if (cpu_type == PROCESSOR_65C02) cpu_mask = CPU_65C02;
         if (cpu_type == PROCESSOR_6502) cpu_mask = CPU_6502;
     }
+    const char *get_label(uint32_t address);
 
 private:
     char *decode_trace_entry_6502(system_trace_entry_t *entry);
     char *decode_trace_entry_65816(system_trace_entry_t *entry);
-    const char *get_label(uint32_t address);
 };
 
 
