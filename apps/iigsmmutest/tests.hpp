@@ -421,6 +421,7 @@ inline const std::vector<Test> ALL_TESTS = {
     // Test: ramwrt does not affect ZP/Stack
     // Test: altzp affects ZP/Stack
     // Test: LC Bank 1/2 and LCBNK2 sense are in sync and select correct RAM
+    // Test: RAMWRT + 80STORE + PAGE1 - should reference main memory.
 
     Test{
         0x99,
