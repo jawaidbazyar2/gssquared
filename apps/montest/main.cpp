@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
         MonitorCommand *cmd = new MonitorCommand(command);
         cmd->print();
         
-        ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, nullptr, nullptr, disasm, &debug_displays);
+        ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, nullptr, nullptr, disasm, &debug_displays, nullptr);
         exec->execute();
         
         // Print the output buffer to stdout (you can remove this or redirect as needed)
