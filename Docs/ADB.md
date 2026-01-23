@@ -140,7 +140,7 @@ Subsequent reads will pass data bytes per bits 2-0.
 | Bit | Name | Modifier Key Pressed |
 |-|-|-|
 | 7 | Mouse Data Reg Full | =1, Mouse Data register at $C024 is full |
-| 6 | Mouse int ena/dis | = 1, mouse interrupt is enabled, int generated when mouse register contains valid data |
+| 6 | Mouse int ena/dis | = 1, mouse interrupt is enabled, int generated when mouse register contains valid data and in vbl period |
 | 5 | Data register full | =1, command/data register contains valid data |
 | 4 | Data interrupt ena/dis | =1, generate interrupt when command/data reg contains valid data |
 | 3 | Keybd data register is full | =1, kbd data ($C000) has valid data. =0, kbd register empty. is cleared when kbd data reg is read, or adb status is read |

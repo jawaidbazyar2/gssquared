@@ -39,7 +39,7 @@
 #include "devices/adb/keygloo.hpp"
 #include "devices/es5503/ensoniq.hpp"
 #include "devices/scc8530/scc8530.hpp"
-#include "devices/iwm/iwm.hpp"
+#include "devices/iwm/iwm_device.hpp"
 
 //#include "devices/iigsmemory/iigsmemory.hpp"
 

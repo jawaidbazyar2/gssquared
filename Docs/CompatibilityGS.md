@@ -67,6 +67,8 @@ bank_shadow_read first checks LC - and subtracts 0x1000. Then that modified addr
 
 Oddly, double hires seems to not be working correctly. I only get every other byte-column on the screen. Other double hires stuff is working (Arkanoid, skull island splash). 
 
+Now supports C029 mono mode in rgb (and composite) rendering.
+
 ## Arkanoid
 
 Crashes during boot.
@@ -109,6 +111,11 @@ Boots - however joystick won't go right or down, only up or left. I believe the 
 
 This now boots to the installer! (there may be that "doesn't boot on a first load" issue?)
 
+## Airheart (standalone SANS Crack)
+
+so, this  but then crashes after trying to calculate a slot offset from $2B. $2B in some docs says "boot slot * 16". we lsr that four times. ok fine.
+Except when this code runs $2B just contains 7. 7 is right slot but in wrong place. 
+Well, funnily enough, this is a 143K disk, not an 800K disk. So I bet its bootloader is just doing the wrong thing because it's expecting a 5.25.
 
 
 ## Total Replay

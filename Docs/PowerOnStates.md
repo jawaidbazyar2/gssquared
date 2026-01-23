@@ -12,3 +12,5 @@
 | C036 | Speed | 00 | ?? | I have a comment that this is set to 00 on powerup/reset |
 | C029 | New Video | 00 | ?? | reading the bits, it would make sense for these to all be 0 to force back into emulated state  (bit 0 =1 maybe?) |
 | C022 | Text Color | F0 | ?? | holding ctrl-reset the text goes to white on black background |
+| | INTCXROM | Off | noted by xot on Slack 1/22/26 |
+| | SLOTC3ROM | Off | noted by xot on Slack 1/22/26 |

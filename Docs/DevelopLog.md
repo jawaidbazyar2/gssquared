@@ -8606,3 +8606,172 @@ the P register being pushed to the stack on IRQs in emulation mode, has B bit se
 FIXED. Oh man, that was a super duper wild goose chase.
 the test suite checked for B set, but had no way to test IRQ so it did not check for B *cleared* in E-mode.
 
+## Jan 21, 2026
+
+troubleshooting a2desktop. It is only writing to aux memory. Currently it's clearing the menu bar area to all white, writing 7Fs. ALTZP=1, 80STORE=1, PAGE2=0. but, ramwrt/ramrd are both on. The Mega II memory tag is "MAIN". ok, debug display of banks is wrong, fixing that.. PC = 4BFF. 
+Think about RAMRD/RAMWRT AND 80STORE being active at the same time. (Remember, this works in IIe mode).
+So, this should be writing to main memory in the hires region. but I think it's writing to aux.. 
+bps on 2000 and 4bff
+testing in another instance, manually setting these flags. with PAGE2=0, 2000:3f I get E12000=3f. is it possible I'm not passing a needed flag setting down into megaii? no, because we don't use the megaii's flags here, we compose its memory map in MMU_IIgs.
+direct access to E02000: byte goes into the right place. ok, so that leads me to think the issue is is calc_aux_write.
+let's trace that..
+ah, yeah, here's the problem:
+```
+    if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramwrt))) return 0x1'0000;
+    if ((page >= 0x02 && page <= 0xBF) && (g_ramwrt)) return 0x1'0000;
+```
+if 80store is on, and hires is on, and page2 is off, it falls through to the second statement, which inappropriately switches to AUX because ramwrt is on.
+SO. This should look more like the IF statements in the megaii_compose stuff.. well, I'm going to proceed as-is.
+
+```
+// 80store overrides any other settings, for text page 1 and hires page 1 areas.
+    if ((page >= 0x04 && page <= 0x07) && g_80store) {
+      if (g_page2) return 0x1'0000;
+      else return 0x0'0000;
+    }
+    if ((page >= 0x20 && page <= 0x3F) && g_80store && g_hires) {
+      if (g_page2) return 0x1'0000;
+      else return 0x0'0000;
+    }
+```
+
+[ ] in full screen mode GSRGB, we're not accounting for or drawing the side borders.  
+
+Okay I have some new memory mapping weirdness (maybe). in the ROM at FF/2E52 we're loading state reg, pulling something off the stack, replacing with c068, and RTS to the middle of bogus code. Whaaaa.
+Only if we boot straight from a RESET. Weeeeird. It's pretty consistent. Track this down later.. 
+
+[x] Display DP register in trace  
+
+It would be superduper helpful to have gstrace be able to decode the address labels. I could have a labels on/off mode. Will need a wider display for that.
+What would actually also be super-cool, 
+
+[ ] would be to have a cursor in the trace display. whatever record the cursor is on, we display the PC, registers, P bit decode, etc from that moment.  
+
+OK the problem seems to be: C700 rom can be my pdblock card, or it can be internal rom - which would be the appletalk boot code. 
+
+
+Slot Cards register their fw into slot_map.
+Internal ROM registers its fw into int_map. (simpler, single api call, since it's R/O by definition).
+
+SlotReg.
+
+if INTCXROM is 0,
+
+If SlotReg Bit 7 = 1, slot card ROM is selected, else internal.
+etc.
+It SLOTC3ROM = 1, slot card ROM for slot 3 is selected, else internal. (same logic, but check different bit).
+
+if INTCXROM is 1,
+All C1-CF 
+
+mmu_iigs updates the slot_map. 
+but how does it get the original address the slot cards registered? Save the entire table after startup?
+or mmu_iie can save two entries, and it can store the SlotReg, but always have value 0xFF. (all slot rom).
+
+is SLOTC3ROM like what bit 3 slotreg would be ?
+
+then storing the Internal ROM offset locations becomes something done once at setup, not every compose.
+
+Now this is a little ick because the //e does not have a SlotRom register. But, mmu_iigs does not directly inherit megaii, so it cannot override the method.
+
+ok, let's do this, and see if we can not break the //e first.
+I think that's working.. but the GS is not.
+
+trying to boot slot 7 is borked - I did a C700. a bunch of shit happens, then FF/BA9F does a JML $00C072. which is a RTI in bank 0.
+the RTI goes to C700. WEIRD. but then that pretty quickly exits at C736 and dies. BUT this is the appletalk code, this is not my code.
+So I need clean trace from between the C700G to hitting C700.
+let's dump and see what happens.. it booted fine, wtf, with media.
+w/o media, it dies on an RTS at FF/2E58 (goes to bum return location)
+
+ok, clean start.
+boots to basic prompt.
+insert media.
+pr#7
+boots.
+now ctrl-alt-reset.
+still works..
+exit to selector
+run apple iigs again..
+pr#7
+still works?
+run again..
+from basic prompt, insert media
+ctrl-oa-reset
+CRASH
+
+ok ok ok.
+going to BASIC, that is not right. I need to see what these block devices are supposed to do.
+but if I try to boot from ctrl-reset with media already in the drive (or from power-on with media in the drive) I get this crash from FF/2E58.
+if I bounce to BASIC and then pr#7, it will boot all day long.
+
+and then it making a liar out of me. Now I'm only just powering on, and getting a crash. there are BEBE in $0036 a vector. wth.
+something is very inconsistent from run to run. So I'm not initializing something? buffer overrun?
+oh, what did I set to return random number.. IWM. hm. 
+
+## Jan 22, 2026
+
+added label display to gstrace. the format is bad, but seeing labels is already immediately helpful.
+in my crash trace from last night, when the trace starts we're in SEND80 - might be disk code? Ah, no, it's AppleTalk.
+why am I trying to boot via appletalk? the wrong ROM is in place. oh, no, no it IS disk.
+let's take out the random number thing.
+ok now it's trying to boot, infinite sit and spin. it won't boot slot 7. plain ctrl-reset forces reboot.
+
+it's checking slot 7 for ID bytes. c705=3, c703=0, c701=20, c7ff = 60
+then it skips to slot 6
+it's in FF/FA05
+
+Well duh, is this how auto boot works? Is the "control panel" set to auto, so it's scanning for a bootable disk?
+
+I'm tracing from a reset. Get to FAA6, which is JSR NEWRESET2
+and we're not returning from that?
+
+gah I need a step over:
+so if JSR or JSL, that is:
+1. set bp of following instruction.
+1. When we hit it, automatically stop and clear it.
+1. special location, not a "regular" breakpoint?
+step out:
+set BP type that will break if last instruction is RTS or RTL or RTI.
+well that was easy. WHY DIDN'T I DO THAT 6 MONTHS AGO.
+
+then it feels like maybe we need to track "instruction at current PC" uniquely. so it's highlighted as "we haven't executed this yet but the next step/debugger instruction will apply to it."
+
+0249 F8FF A0 9D                 LDY   #$9D                     ;Do some more coldstart stuff
+0250 F901 20 9C F8              JSR   GOTOBANKFF               ;Go to bank FF
+
+this routine is: A23E: RAMVCTRS. 
+
+it's never returning from here. This is after it's done the D2D check.
+
+that ends up at B255
+
+ff/a29d: jsr LFF6540 - this never returns.
+FF/6540 does a jmp 706f "@reset"
+"this routine is used to setup the smartbus driver and reset the smartbus devices, assign their ids, and assign ids by making init calls to the appledisk 3.5 driver routine"
+eventually calls SETIWMODE which does inifinite loop until set the mode byte only when it's not what we want, and if it's not we stay here until see that it is what we want".
+
+So, short version: I think I'm beyond 
+
+It's a little odd that we can't reset to BASIC here, but, it is what it is. 3F2 is the softev vector. We could do: 3f2: 00 e0 e0^A5
+Nope, it calls ATSReset Soft Reset, then softhandler, but some vector isn't set up so we crash at E1/1010.
+ok no biggie.
+
+HM. The Slot Register is not -just- the rom space, it must also be the I/O switches. It's unclear if turning off slot5/6 rom would cause the rom to skip this loop.
+so, it must be the case that this just wasn't working before (maybe the rom wasn't being properly switched in / activated?).
+
+Well I guess I have to implement an IWM, and that gives me the next thing to do. 
+for demo purposes I can try turning off slots 5 and 6 in "control panel".  Nope. I'd have to recalculate the checksum, and it detected bad checksum and reset the ram to defaults! Tricksy GSSes!
+
+## Jan 23, 2026
+
+ok, I implemented enough real IWM logic that the ROM now lets me boot again. man what a PITA!
+
+Observations: I had done a bunch of memory mapping fixes prior to the IWM issues, and, 
+
+[ ] on a ctrl-reset sometimes we're getting an extra 0x7F (backspace). I suspect what is meant is an 0xFF, like a clear or something.
+
+[ ] Can't boot the nucleus demo - it immediately dumps into BASIC implying unrecognized boot block or ... ? (but, not always).
+
+[ ] Have an "system idle" measurement that tells us what % of realtime is idle vs emulating.
+
+How does the fake dma work 

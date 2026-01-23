@@ -123,6 +123,8 @@ bool debug_window_t::check_pre_breakpoint(cpu_state *cpu) {
         stepover_bp = 0; // clear it.
         return true;
     }
+    
+    // TODO: if we're on a set breakpoint, and we try to STEP OVER a jsr, we are catching here again. We need to ignore current PC in that case.
     // check if the current instruction is a breakpoint.
     for (MemoryWatch::iterator watch = breaks.begin(); watch != breaks.end(); ++watch) {
         uint16_t pc16 = fullpc & 0xFFFF;
@@ -142,9 +144,8 @@ bool debug_window_t::check_post_breakpoint(system_trace_entry_t *entry) {
         }
     }
     for (MemoryWatch::iterator watch = breaks.begin(); watch != breaks.end(); ++watch) {
-        uint16_t pc16 = entry->pc & 0xFFFF;
         uint16_t eaddr16 = entry->eaddr & 0xFFFF;
-        if ((pc16 >= watch->start && pc16 <= watch->end)) {
+        if ((eaddr16 >= watch->start && eaddr16 <= watch->end)) {
             return true;
         }
     }
@@ -157,7 +158,8 @@ void debug_window_t::execute_command(const std::string& command) {
     cmd->print();
 
     int num_mem_watches = memory_watches.size();
-    ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, &memory_watches, &breaks, disasm, &debug_displays);
+    int num_debug_displays = debug_displays.size();
+    ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, &memory_watches, &breaks, disasm, &debug_displays, cpu->trace_buffer);
     exec->execute();
     
     mon_history.push_back(command); // put into the scrollback
@@ -181,6 +183,12 @@ void debug_window_t::execute_command(const std::string& command) {
     if (num_mem_watches != memory_watches.size()) {
         // memory watch list changed, so we need to re-render the memory pane
         if (memory_watches.size() > 0) {
+            set_panel_visible(DEBUG_PANEL_MEMORY, true);
+        }
+    }
+    if (num_debug_displays != debug_displays.size()) {
+        // debug display list changed, so we need to re-render the debug pane
+        if (debug_displays.size() > 0) {
             set_panel_visible(DEBUG_PANEL_MEMORY, true);
         }
     }
@@ -612,6 +620,7 @@ bool debug_window_t::handle_event(SDL_Event &event) {
                     } else if (opcode == 0x22) {
                         stepover_bp += 4;
                     }
+                    printf("Step over BP: %06X\n", stepover_bp);
                     cpu->execution_mode = EXEC_NORMAL;
                 }
                 // Step Up / Out - run until an RTS or RTL has executed. (R for 'Return')
