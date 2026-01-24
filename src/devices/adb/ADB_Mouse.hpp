@@ -68,11 +68,16 @@ class ADB_Mouse : public ADB_Device
         if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
             button_down = 0x00;
             has_data = true;
+            registers[0].data[0] = 0;
+            registers[0].data[1] = 0;
             update_button_down();
             status = true;
+            
         } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
             button_down = 0x80;
             has_data = true;
+            registers[0].data[0] = 0;
+            registers[0].data[1] = 0;
             update_button_down();
             status = true;
         }

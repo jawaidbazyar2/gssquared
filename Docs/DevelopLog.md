@@ -8831,7 +8831,7 @@ Splash screens of "The Tinies" game is a 3200 pic, looks correct.
 
 ## Jan 24, 2026
 
-[ ] mouse - if you have moved, but then do ONLY a click, we're getting an event that still has movement components from last event. probably need to clear/ignore that.
+[x] mouse - if you have moved, but then do ONLY a click, we're getting an event that still has movement components from last event. probably need to clear/ignore that.
 [ ] mouse - should only interrupt max 60 times per second during vbl
 
 KEGS does this thing where it doesn't capture, it somehow syncs the GS mouse location with the real OS mouse location. how the heck does it do that? (I'm not sure I like that, and it seems it would be prone to problems / weird interactions).
@@ -8844,5 +8844,11 @@ You can verify this visually; i.e. spin on the SCB status bit (not using an IRQ 
 [ ] make sure the SCB status bit sets/resets regardless of whether interrupts are enabled.  
 [ ] "interrupt enabled" doesn't belong in the video scanner. The scanner should simply provide the info. Decision to assert int lives in VGC area.
 
-[ ] Do a test of page-flipping on the hcounter
+[x] Do a test of page-flipping on the hcounter (horzpage2flip2).
+
+I changed Gamecontroller to use 14M clock instead of 1M clock, which wasn't appropriate in fast mode. now, we're not slowing the system down when accessing c064/c065, so the Gaultnet joystick detection code at 00/B2CE isn't working. Its "key mouse" with up/down detection is working great tho.
+Basically this routine fails and likely marks no joystick, and so it's not using JS later.
+JS still works in other GS stuff and in IIe mode. 
+
+[ ] when in mouse capture mode, the "real" mouse is still moving around (but hidden), and can sometimes click on the OSD slideout control  
 

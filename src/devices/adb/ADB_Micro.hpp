@@ -670,11 +670,13 @@ class KeyGloo
                     * Bit 6: Moved right
                     * Bit 5-0: X move value
                 */
-                uint8_t mouse_status = (reg.data[1] & 0x80);
+                /* uint8_t mouse_status = (reg.data[1] & 0x80);
                 uint8_t mouse_x = (reg.data[0] & 0x7F);
                 uint8_t mouse_y = (reg.data[1] & 0x7F);
                 mouse_data[0] = mouse_y | mouse_status;
-                mouse_data[1] = mouse_x | mouse_status;
+                mouse_data[1] = mouse_x | mouse_status; */
+                mouse_data[0] = reg.data[1];
+                mouse_data[1] = reg.data[0];
                 mouse_data_full = true;
                 mouse_x_available = MOUSE_X;
                 print_mouse();
