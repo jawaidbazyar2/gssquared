@@ -54,7 +54,8 @@
  * 3ms = 2800 cycles.
  */
 
-#define GAME_INPUT_DECAY_TIME 2805
+// and scaled for 14M cycles
+#define GAME_INPUT_DECAY_TIME (2805*14)
 
 /**
  * @brief Converts modern circular joystick values to Apple II square joystick range
@@ -116,14 +117,14 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
         float mouse_x, mouse_y;
         SDL_GetMouseState(&mouse_x, &mouse_y);
         if (ds->paddle_flip_01) {
-            uint64_t x_trigger =  cpu->cycles + (GAME_INPUT_DECAY_TIME * (1.0f - (float(mouse_x) / WINDOW_WIDTH)));
-            uint64_t y_trigger = cpu->cycles + (GAME_INPUT_DECAY_TIME * (1.0f - (float(mouse_y) / WINDOW_HEIGHT)));
+            uint64_t x_trigger =  cpu->c_14M + (GAME_INPUT_DECAY_TIME * (1.0f - (float(mouse_x) / WINDOW_WIDTH)));
+            uint64_t y_trigger = cpu->c_14M + (GAME_INPUT_DECAY_TIME * (1.0f - (float(mouse_y) / WINDOW_HEIGHT)));
 
             ds->game_input_trigger_0 = y_trigger;
             ds->game_input_trigger_1 =x_trigger;   
         } else {
-            uint64_t x_trigger =  cpu->cycles + (GAME_INPUT_DECAY_TIME * (float(mouse_x) / WINDOW_WIDTH));
-            uint64_t y_trigger = cpu->cycles + (GAME_INPUT_DECAY_TIME * (float(mouse_y) / WINDOW_HEIGHT));
+            uint64_t x_trigger =  cpu->c_14M + (GAME_INPUT_DECAY_TIME * (float(mouse_x) / WINDOW_WIDTH));
+            uint64_t y_trigger = cpu->c_14M + (GAME_INPUT_DECAY_TIME * (float(mouse_y) / WINDOW_HEIGHT));
 
             ds->game_input_trigger_0 = x_trigger;
             ds->game_input_trigger_1 = y_trigger;
@@ -137,8 +138,8 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
 
         JoystickValues jv = convertJoystickValues(axis0, axis1);
         ds->last_jv = jv;
-        uint64_t x_trigger =  cpu->cycles + ((GAME_INPUT_DECAY_TIME * jv.x) / 255);
-        uint64_t y_trigger = cpu->cycles + ((GAME_INPUT_DECAY_TIME * jv.y) / 255);
+        uint64_t x_trigger =  cpu->c_14M + ((GAME_INPUT_DECAY_TIME * jv.x) / 255);
+        uint64_t y_trigger = cpu->c_14M + ((GAME_INPUT_DECAY_TIME * jv.y) / 255);
 
         ds->game_input_trigger_0 = x_trigger;
         ds->game_input_trigger_1 = y_trigger;
@@ -154,7 +155,7 @@ uint8_t read_game_input_0(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     uint8_t val;
-    if (ds->game_input_trigger_0 > cpu->cycles) {
+    if (ds->game_input_trigger_0 > cpu->c_14M) {
         val = 0x80;
     } else {
         val = 0x00;
@@ -167,7 +168,7 @@ uint8_t read_game_input_1(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     
     uint8_t val;
-    if (ds->game_input_trigger_1 > cpu->cycles) {   
+    if (ds->game_input_trigger_1 > cpu->c_14M) {   
         val = 0x80;
     } else {
         val = 0x00;
@@ -180,7 +181,7 @@ uint8_t read_game_input_2(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
 
     uint8_t val;
-    if (ds->game_input_trigger_2 > cpu->cycles) {
+    if (ds->game_input_trigger_2 > cpu->c_14M) {
         val = 0x80;
     } else {
         val = 0x00;
@@ -193,7 +194,7 @@ uint8_t read_game_input_3(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     
     uint8_t val;
-    if (ds->game_input_trigger_3 > cpu->cycles) {
+    if (ds->game_input_trigger_3 > cpu->c_14M) {
         val = 0x80;
     } else {
         val = 0x00;
@@ -507,6 +508,7 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     );
 
     computer->register_reset_handler(
+        // might need to be longer for GS, since GS may take longer to get around to check buttons on reset.
         [ds,cpu]() {
             ds->joyport_activate = cpu->cycles + 100000; // 100ms
             return true;
