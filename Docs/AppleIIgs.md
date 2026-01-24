@@ -344,11 +344,13 @@ We can implement in this order.
   [x] Mouse
 [x] SHR
 [x] Game controller 
+[ ] Interrupts
 [ ] IWM
 [ ] Ensoniq
 [ ] Zilog SCC 8530
-[ ] Interrupts
+[ ] ROM03  
 
 65816 emulation mode - the key element here is going to be to switch all the functions to use auto to allow us to switch from 8-bit to 16-bit more easily. By using auto, the compiler will .. uh, automatically.. pick the right data types based on calling parameters, stuff like that. CPU done.
 
 So I jumped ahead and did SHR stuff. Got it in the dpp framework, now need to implement it in vpp (VideoScanner). Then go back to text/borders.
+

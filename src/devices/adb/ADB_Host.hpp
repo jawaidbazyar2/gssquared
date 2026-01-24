@@ -75,5 +75,11 @@ class ADB_Host
         return false;
     }
 
+    void debug_display(DebugFormatter *df) {
+        for (auto &device : devices) {
+            device->debug_display(df);
+        }
+    }
+
 };
 

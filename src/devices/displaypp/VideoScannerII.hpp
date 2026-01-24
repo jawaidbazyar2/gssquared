@@ -141,6 +141,11 @@ protected:
     mode_table_t calc_video_mode_x(uint8_t vmode);
     virtual void init_mode_table();
 
+    uint8_t current_scb = 0;
+    uint16_t h_counter = 0;
+    bool scanline_interrupt_enabled = false;
+    device_irq_handler_s scanline_irq_handler = {nullptr, nullptr};
+
 public:
 uint32_t  hcount;       // use separate hcount and vcount in order
 //uint32_t  vcount;       // to simplify IIgs scanline interrupts
@@ -157,10 +162,10 @@ uint32_t  hcount;       // use separate hcount and vcount in order
     virtual void video_cycle();
     virtual void init_video_addresses();
 
-    //inline bool is_hbl()     { return hcount < 25;   }
     inline bool is_hbl()     { return (scan_index % 65) < 25;   }
     inline bool is_vbl()     { return scan_index >= (192*65); }
     inline uint16_t get_vcount() { return scan_index / 65; }
+    inline uint16_t get_hcount() { return scan_index % 65; }
 
     inline uint16_t get_hcounter() {
         uint16_t hcounter;
@@ -221,6 +226,8 @@ uint32_t  hcount;       // use separate hcount and vcount in order
 
     inline virtual void set_vbl_interrupt_enabled(bool enabled) { vbl_interrupt_enabled = enabled; }
     inline virtual void set_irq_handler(device_irq_handler_s irq_handler) { this->irq_handler = irq_handler; }
+    virtual void set_scanline_interrupt_enabled(bool enabled) { scanline_interrupt_enabled = enabled; }
+    virtual void set_scanline_irq_handler(device_irq_handler_s irq_handler) { scanline_irq_handler = irq_handler; }
 
     ScanBuffer *get_frame_scan();
 };

@@ -4354,7 +4354,7 @@ in the trace Pane, we need to eventually make room for 24 bit addresses and 16-b
 [x] Can also bring the EFF left another few characters to save room.  
 [x] Shorten Cycle some more
 
-[ ] Develop a "line output" class that hides some of the complexity of generating this text line output. e.g. line->putc() stores char and automatically increments.  
+[x] Develop a "line output" class that hides some of the complexity of generating this text line output. e.g. line->putc() stores char and automatically increments.  
 [ ] Develop a "scrollable text widget" that will allow display of lines from a generalized text buffer.
 
 ok, I think we want to move (or replicate) the following controls from the osd control panel, to hover controls (like the pull-out tab):
@@ -4588,7 +4588,7 @@ Debugger uses 440-450uS when trace is open. That's a lot lower. the unneeded OSD
 
 Well, how hard could it be to do a shutdown thing with F12 now?
 
-[ ] all the text buttons need padding respected again.  
+[x] all the text buttons need padding respected again.  
 [ ] Work from the linux build machine, to clean up memory allocation on VM shutdown.  
 [ ] pull sdl init / deinit out of the loop. that can't be good. but the screen textures are probably taking up a lot of space.
 
@@ -5054,7 +5054,7 @@ btw I'm still seeing the "window doesn't update right when we're close to screen
 
 I've got double lo-res in and tested now. Now I need to test double hi-res. What to do it with.. 
 
-[ ] I think I am missing a memory management soft-switch to reset on a RESET, esp with stuff that wants to do 80-col, dlgr, dhgr.  
+[x] I think I am missing a memory management soft-switch to reset on a RESET, esp with stuff that wants to do 80-col, dlgr, dhgr.  
 [x] need vbl c019 support  
 [x] open-apple and closed-apple  
 
@@ -6068,7 +6068,7 @@ this means, display and iiememory BOTH need to track these. More specifically, i
 
 ## Sep 25, 2025
 
-[ ] Mouse Reset tends to cause emulator to lock up by sending an infinite series of new scheduleEvent for current cpu cycle. Do it by launching Skull Island, wait for MB to start, then hit reset a few times. should probably also disable interrupts?    
+[x] Mouse Reset tends to cause emulator to lock up by sending an infinite series of new scheduleEvent for current cpu cycle. Do it by launching Skull Island, wait for MB to start, then hit reset a few times. should probably also disable interrupts? (added a check to scheduler to prevent request before current time, a hack..)
 
 [ ] Chiptunes stuff (skull island, crazy cycles 2) generate unending streams of: 
 [Current Time:   101.782942] Event timestamp is in the past:   101.777735
@@ -6209,7 +6209,7 @@ MMU work:
 
 [x] I put a bounds check into MMU_II read() and write() functions. It throws a warning to stdout when it detects an out of bounds address and also normalizes to 0xFFFF.
 [ ] Switch the MMUs to use a Struct-of-Arrays approach instead of an Array-of-Structs. Compare performance. This could be a video subject.
-[ ] Implement as templates so that these values can be static: num_pages, page_size, debug.
+[x] Implement as templates so that these values can be static: num_pages, page_size, debug.
 [ ] Allocate the page table statically and use alignas(64). 
 [ ] Statically define an address mask to apply to all addresses passed into read() or write().
 [ ] in debug mode we'll also have a separate out of bounds check, that will log a warning.
@@ -6512,7 +6512,7 @@ So the actual border texture then is 65 x 262, 17030 entries of RGBA_t.
 
 So it's a very small texture, and we rely on the video hardware to expand it to 84 wide or 42 wide or *any border scale* we want, while not losing any information. Can have setting, Border Scale: Small, Medium, Large.
 
-[ ] I also have a potential optimization for the Frame stuff. Use a single linear array:
+[x] I also have a potential optimization for the Frame stuff. Use a single linear array:
 ```
 now:
     alignas(64) bs_t stream[HEIGHT][WIDTH];
@@ -6530,7 +6530,7 @@ And we don't even have to call setline, if we are careful with our pixel emissio
 
 Swank.
 
-[ ] and another optimization: the final stage, Render, can be made to render directly into the LockTexture buffer. Right now we are double-buffering and have an excess copy of a half megabyte. That's not trivial.
+[x] and another optimization: the final stage, Render, can be made to render directly into the LockTexture buffer. Right now we are double-buffering and have an excess copy of a half megabyte. That's not trivial.
 
 
 One thing my overall approach will not handle, is rapid switching between super hires and legacy modes in the way the Apple II demos do. Each frame is one or the other. I'm not aware of any though that doesn't mean there aren't any - but handling the 7/8 scaling issue on a per-cycle basis would be very difficult. This prompted a big discussion on Slack and there are in fact a few programs that do this.  when GS switches from legacy (14mhz) to shr (16mhz) the screen is distorted for what looks like 6-8 scanlines while the PLL in the monitor catches up, gradually changing frequency.
@@ -6930,7 +6930,7 @@ Well ok then! That wasn't so awful. And it's done, and looks great!
 not done of course. 
 
 [x] in SHR, we're drawing 7 pixels too wide. (fix in calc_rects)
-[ ] the right border is not quite right its offset - because the color goes down a line at right border, but then goes back up for last cycle. and it should be 
+[x] the right border is not quite right its offset - because the color goes down a line at right border, but then goes back up for last cycle. and it should be 
 
 So this latter, let's discuss. In the video scanner, Hcount 0 to 39 is data; then we do right border, then hsync, then left border. Basing it on the 17030 cycle count, hsync is at hc = 11. I think these are off because the scanner is emitting the hsync at the wrong place. I can -sort- of patch over this by grabbing different pieces of texture, but that's a dirty dirty hack. 
 
@@ -7014,8 +7014,8 @@ Roadmap:
 [x] register distinct iigs frame processor callback  
 [x] see if pixelart obviates need to draw Videx twice for brightness (no it did not)  
 [ ] The PrntScrn button is referencing illegal memory. the pointer from LockTexture is not valid after unlock.  
-[ ] calculate_rects needs to center display in window esp in fullscreen mode  
-[ ] implement border color for Apple2_Display  
+[x] calculate_rects needs to center display in window esp in fullscreen mode  
+[x] implement border color for Apple2_Display  
 
 Currently Frame uses a static array defined in the template as opposed to allocated memory. First we need to figure out how to use regular array semantics. Then test performance difference if we malloc vs static. Claude suggests no difference in optimized code. So:
 1. change to malloc'd memory. Test. very slow.
@@ -7207,16 +7207,16 @@ let's see what something like a2desktop looks like. the mouse on the very right 
 
 oh my pal scanner is crashing because I'm not iterating enough cycles in the main gs2 loop.
 ok well "first draft" PAL is in and sort of working. Things that remain to be done:
-[ ] refactor the speaker for hopefully the last time.  
+[x] refactor the speaker for hopefully the last time.  
 [ ] fix mockingboard to use new cpu clock construct  
 [ ] fix mouse to work properly at variable clock rates  
-[ ] make cpu clock construct a class so it's less junky  
+[ ] make cpu clock construct a class so it's less janky  
 
 The speaker is getting ever so slightly out of sync in PAL. Let's double check ntsc.   
 
 Speaker enhancements required:
-[ ] refactor to use 100% fixed point using large uint like I did in new synth test code  
-[ ] examine the "two close clicks cancel each other out" phenom which implies going not from 1 to -1, but from 1 to 0.  
+[x] refactor to use 100% fixed point using large uint like I did in new synth test code  
+[x] examine the "two close clicks cancel each other out" phenom which implies going not from 1 to -1, but from 1 to 0.  
 
 ## Nov 18, 2025
 
@@ -7747,10 +7747,10 @@ we're passing a bunch of tests, but there is a bunch of stuff we're not testing.
 
 [x] Test 2 ROM bytes mapped into LC area;
 [x] test same bytes accessed directly via FF/xxxx  
-[ ] need to bring in C006/7 and C00A/B switches
-[ ] Implement Slot Register ($C02D)
-[ ] save handlers set by display for page2, hires, whatever else, and call them.  (maybe just copy the whole thing?)
-[ ] bring in C01X status read switches (part done, did C013 - C018) 
+[x] need to bring in C006/7 and C00A/B switches
+[x] Implement Slot Register ($C02D)
+[x] save handlers set by display for page2, hires, whatever else, and call them.  (maybe just copy the whole thing?)
+[x] bring in C01X status read switches (part done, did C013 - C018) 
 [x] create a debug display handler  
 
 the first ROM I got had the FE/FF banks reversed. Weird. Using ROM01 for now.
@@ -7860,7 +7860,7 @@ Hanging on $C034:7 to go to 0. But we're reading EE, so that never works. Ah, th
 C035 and C036 reads aren't working because they're connected to the Speaker and I get inappropriate clicks. So this is coming back to my notes above, that other motherboard devices may be overwriting the MMU stuff.
 But why is is 0xEE? the scanner value isn't getting set, or is getting set in the wrong mmu.
 
-[ ] if the screen isn't just the right size, you can see scaling artifacts between the border and main display area.
+[x] if the screen isn't just the right size, you can see scaling artifacts between the border and main display area. tweaked/hacked around. 
 
 ## Dec 17, 2025
 
@@ -8418,7 +8418,7 @@ ok so I have a mapping inconsistency for the OA- and CA- keys.
 
 Found "Apple IIgs Diagnostic v2.2". 800k disk, ProDOS 8. Sweet!
 
-[ ] need to apply "joyport workaround" to IIgs mode.  
+[ ] need to apply "joyport workaround" to IIgs mode.  It does. could be the mismatch between the modifier keys above.  
 
 ProDOS 8 & 8-bit software is working pretty well now!! Total Replay is working very well except Airheart which TROUBLES ME.
 
@@ -8440,7 +8440,7 @@ Options are IWM and Ensoniq. The IWM would open up more titles to test; the Enso
 
 MAME's source for the Ensoniq is quite compact, under 500 lines. 
 
-[ ] Test behavior of INTCXROM and SLOTC3ROM in GS  
+[x] Test behavior of INTCXROM and SLOTC3ROM in GS  
 
 the HW Ref shows 3 variations on I/O memory map. Peripheral expansion ROM (c800), internal rom and peripheral rom, and "internal rom". 
 Seems okay.. 
@@ -8599,7 +8599,7 @@ ok, well that was likely a red herring. I have modified the IIe code to work cor
 
 tracing the GS/OS boot after enabling interrupts. So far, so good..
 
-[ ] forward disasm is not correctly disassembling MVN/MVP: it thinks it's a 2-byte instruction, when it's a 3-byte.
+[ ] forward disasm is not correctly disassembling MVN/MVP: it thinks it's a 2-byte instruction, when it's a 3-byte. This is a more general broader problem too.  
 
 OK!
 the P register being pushed to the stack on IRQs in emulation mode, has B bit set. 
@@ -8774,4 +8774,75 @@ Observations: I had done a bunch of memory mapping fixes prior to the IWM issues
 
 [ ] Have an "system idle" measurement that tells us what % of realtime is idle vs emulating.
 
-How does the fake dma work 
+
+ok so I thought I had figured out where mouse interrupts come from, but no! KEGS says it's the ADB "mode". says it's mode & 0x2. 
+that is:
+| 1 | Disable auto-poll of fdb mouse |
+
+OH. So if you turn off auto-poll it turns ON interrupts?
+but that bit isn't being set in GS/OS.
+let's see if anyone is hitting the mouse reg at all..
+nope.
+What if GS/OS polls the mouse itself?
+KEGS clearly has this:
+if(g_c027_val & ADB_C027_MOUSE_INT) {
+} that value is 0x40, so it's ..
+
+yeah. I did not have a routine to actually write c027. c027 is a mix of read-only status bits, and r/w config bits, including 0x40 which is mouse interrupt enable.
+KEGS does have a red herring in there somewhere.. checking adb_mode 2.. oh, perhaps he disables interrupts when mode&2 is set for "disable automatic polling". Makes sense.
+
+ok, I was crashing into monitor on boot..
+      //(data_interrupt_enabled && data_register_full) ||
+I commented this out. the "data interrupt enable" was set to 1. and "data reg full". Is there some general "no interrupts" thing? Hmm. or I could be triggering it inappropriately.
+Well, let's proceed..
+
+ok GS/OS is using a ROM01 routine GETMDATA FF/C4D2. 
+1. if bit 7 = 0, return error. (no data available)
+1. put bit 2 into carry flag
+1. load c024, put into x
+1. if carry is set, return error. (bit 1 = 1, meant "y register data available" but we just read x). We have now read X out, and exit, meaning the next read should be a Y.
+1. load c027 again, and if bit 1 = 0, return error. (we are about to read y, but it still says x)
+1. read c024 into y
+1. return with C clear
+
+We got there from an IRQ - FF/B7CC
+checks C027 - if bit 6 is on, and if bit 7 is on, then dispatch to..
+FE/C5C8 - Mouse
+
+ok I think I have the ADB mouse interrupt and status and x/y indicator thing working the way the ROM expects. I still have no mouse movement.. curses!
+or, uncursors!
+
+OK, so I -have- made progress here. the GS is processing mouse interrupts. it is just not acting on the data it's reading tho.. 
+
+The interrupt handler on the GS is very inefficient. No wonder I wrote my own interrupt-driven serial handler and put it at the top of the chain!
+
+OHHHHH
+
+it's working but the mouse CURSOR isn't drawing at the new location! like I can move the mouse and click and get menus to pull down and stuff.
+WTH. 
+
+Cursor draw is handled by the SCANLINE interrupts!
+
+with scanline interrupts I should now be able to do 3200 color pics.. that will tell me if I'm throwing the interrupt in the right location.
+
+I am getting double events - i.e. if I click, it's like I get two clicks one after the other. Better check into that "last mouse button status" field.
+
+Splash screens of "The Tinies" game is a 3200 pic, looks correct.
+
+## Jan 24, 2026
+
+[ ] mouse - if you have moved, but then do ONLY a click, we're getting an event that still has movement components from last event. probably need to clear/ignore that.
+[ ] mouse - should only interrupt max 60 times per second during vbl
+
+KEGS does this thing where it doesn't capture, it somehow syncs the GS mouse location with the real OS mouse location. how the heck does it do that? (I'm not sure I like that, and it seems it would be prone to problems / weird interactions).
+
+arekkusu writes:
+
+Re timing: I have been looking at this exact area ^_^; Remember that the MegaII performs "memory refresh" for the first five cycles of HBL  .:  the SCB value can not possibly be known any earlier than cycle six into the right-hand border.  Now here, it looks like my implementation and testing notes are currently out of sync, so the IRQ actually fires either on cycle six or cycle eight of HBL, I'll have to go re-verify this.  Please confirm with your own investigations!
+You can verify this visually; i.e. spin on the SCB status bit (not using an IRQ handler) and toggle the border color after some known phase delay to observe the result on screen.  But you can also verify it analytically, counting cycles until that SCB status bit flips, relative to another timing source, i.e. C019.  If you do it that way, you also need to be aware of the subtle detail that the entire MegaII appears to be delayed one cycle relative to the VGC.
+
+[ ] make sure the SCB status bit sets/resets regardless of whether interrupts are enabled.  
+[ ] "interrupt enabled" doesn't belong in the video scanner. The scanner should simply provide the info. Decision to assert int lives in VGC area.
+
+[ ] Do a test of page-flipping on the hcounter
+

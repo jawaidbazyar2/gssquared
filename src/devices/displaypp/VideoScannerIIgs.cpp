@@ -140,6 +140,7 @@ void VideoScannerIIgs::video_cycle()
         scan.flags = mode_flags;
         frame_scan->push(scan);
         palette_index = (scan.mainbyte & 0x0F); // store palette index to control next palette read
+        current_scb = scan.mainbyte;
     } else if (sa.flags & SA_FLAG_PALETTE) {
         scan.mode = (uint8_t)VM_SHR_PALETTE;
         uint32_t eaddr = address + (palette_index * 32) + 0x1'0000;
@@ -168,12 +169,20 @@ void VideoScannerIIgs::video_cycle()
         frame_scan->push(scan);
     }
 
+    // if in shr and this is cycle 64 of a scanline, and the SCB has bit 6 (interrupt) enabled, then assert scanline interrupt.
+    if (shr && scanline_irq_handler.handler && (h_counter == 64) && (current_scb & 0x40)) {
+        scanline_irq_handler.handler(scanline_irq_handler.context);
+    }
+
     if (vbl_interrupt_enabled && irq_handler.handler && (scan_index == 12480)) { // start of VBL area.
         irq_handler.handler(irq_handler.context);
     }
 
     if (++scan_index == 17030) {
         scan_index = 0;
+    }
+    if (++h_counter == 65) {
+        h_counter = 0;
     }
 }
 

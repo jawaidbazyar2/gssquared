@@ -37,14 +37,15 @@
 #include "devices/displaypp/VideoScanGenerator.hpp"
 #include "mbus/MessageBus.hpp"
 #include "mbus/KeyboardMessage.hpp"
-#include "devices/displaypp/VideoScanGenerator.cpp"
 
+#include "devices/displaypp/VideoScanGenerator.cpp"
 #include "devices/displaypp/VideoScannerIIgs.hpp"
 #include "devices/displaypp/VideoScannerIIe.hpp"
 #include "devices/displaypp/VideoScannerIIePAL.hpp"
 #include "devices/displaypp/VideoScannerII.hpp"
-
 #include "devices/displaypp/AppleIIgsColors.hpp"
+
+#include "util/DebugHandlerIDs.hpp"
 
 static constexpr const RGBA_t (&gs_text_colors)[16] = AppleIIgs::TEXT_COLORS;
 
@@ -1020,6 +1021,12 @@ void display_write_C05EF(void *context, uint32_t address, uint8_t value) {
 void display_write_c023(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     ds->f_VGCINT = value;
+    if (value & 0x02) {
+        ds->video_scanner->set_scanline_interrupt_enabled(true);
+    } else {
+        ds->video_scanner->set_scanline_interrupt_enabled(false);
+    }
+    update_vgc_interrupt(ds);
 }
 
 uint8_t display_read_c023(void *context, uint32_t address) {
@@ -1087,6 +1094,17 @@ uint8_t display_read_vbl(void *context, uint32_t address) {
     return kbv | fl;
 }
 
+void update_vgc_interrupt(display_state_t *ds) {
+    uint8_t vgc_asserted = 0;
+    if (ds->f_scanline_enable && ds->f_scanline_asserted) vgc_asserted = 1;
+    if (ds->f_onesec_enable && ds->f_onesec_asserted) vgc_asserted = 1;
+    ds->f_vgcint_asserted = vgc_asserted;
+    if (vgc_asserted) {
+        set_device_irq(ds->computer->cpu, IRQ_ID_VGC, true);
+    } else {
+        set_device_irq(ds->computer->cpu, IRQ_ID_VGC, false);
+    }
+}
 
 /* 
 Calculate the video counters (as they would exist in the real video scanner), compose them as they are 
@@ -1094,6 +1112,10 @@ in the IIgs, and return whichever one was asked-for.
 */
 uint8_t display_read_C02EF(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
+
+    ds->f_scanline_asserted = false;
+    update_vgc_interrupt(ds);
+
     uint16_t vcounter = ds->video_scanner->get_vcounter() & 0x1FF;
     uint16_t hcounter = ds->video_scanner->get_hcounter() & 0x7F;
     uint8_t c02e = (vcounter >> 1);
@@ -1127,6 +1149,53 @@ void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
 void scanner_iigs_vbl_irq(void *context) {
     cpu_state *cpu = (cpu_state *)context;
     set_device_irq(cpu, IRQ_ID_VGC, true);
+}
+
+void scanner_iigs_scanline_irq(void *context) {
+    display_state_t *ds = (display_state_t *)context;
+    ds->f_scanline_asserted = true;
+    update_vgc_interrupt(ds);
+}
+
+void display_write_c032(void *context, uint32_t address, uint8_t value) {
+    display_state_t *ds = (display_state_t *)context;
+    if ((value & 0x40) == 0) ds->f_onesec_asserted = false;
+    if ((value & 0x20) == 0) ds->f_scanline_asserted = false;
+    update_vgc_interrupt(ds);
+}
+
+const char *scanner_to_string(video_scanner_t scanner_type) {
+    switch (scanner_type) {
+        case Scanner_AppleII: return "Apple II";
+        case Scanner_AppleIIe: return "Apple IIe";
+        case Scanner_AppleIIePAL: return "Apple IIe PAL";
+        case Scanner_AppleIIgs: return "Apple IIgs";
+    }
+    return "Unknown";
+}
+
+DebugFormatter *display_debug(display_state_t *ds) {
+    DebugFormatter *df = new DebugFormatter();
+    df->addLine("Display State:");
+    df->addLine("  Framebased: %d", ds->framebased);
+    df->addLine("  Video Scanner: (%d) %s", ds->video_scanner_type, scanner_to_string(ds->video_scanner_type));
+    df->addLine("  Mode: %s %s %s %s %s %s %s", 
+        ds->display_graphics_mode == LORES_MODE ? "LORES" : "HIRES",
+        ds->display_mode == TEXT_MODE ? "TEXT" : "GRAPHICS",
+        ds->display_split_mode == SPLIT_SCREEN ? "SPLIT" : "FULL",
+        ds->display_page_num == DISPLAY_PAGE_1 ? "PAGE1" : "PAGE2",
+        ds->f_80col ? "80COL" : "40COL",
+        ds->f_double_graphics ? "DBL" : "SNG",
+        ds->f_altcharset ? "ALTCHARSET" : "NORMAL");
+    df->addLine("  SHR: %s", ds->new_video & 0x80 ? "ON" : "OFF");
+
+    uint32_t hcount = ds->video_scanner->get_hcount();
+    uint32_t vcount = ds->video_scanner->get_vcount();
+    bool is_hbl = ds->video_scanner->is_hbl();
+    bool is_vbl = ds->video_scanner->is_vbl();
+    df->addLine(" Beam position: H %3d V %3d Is_HBL %d Is_VBL %d", hcount, vcount, is_hbl, is_vbl);
+    df->addLine(" INTEN C041: %02X VGCINT C023: %02X", ds->f_INTEN, ds->f_VGCINT);
+    return df;
 }
 
 void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool cycleaccurate) {
@@ -1173,6 +1242,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
             ds->video_scanner = new VideoScannerIIgs(mmu);
             ds->video_scanner->initialize();
             ds->video_scanner->set_irq_handler({scanner_iigs_vbl_irq, cpu});
+            ds->video_scanner->set_scanline_irq_handler({scanner_iigs_scanline_irq, ds});
             break;
         case Scanner_AppleIIePAL:
             ds->video_scanner = new VideoScannerIIePAL(mmu);
@@ -1296,6 +1366,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         mmu->set_C0XX_read_handler(0xC041, { display_read_C041, ds });
         mmu->set_C0XX_read_handler(0xC046, { display_read_C046, ds });
         mmu->set_C0XX_write_handler(0xC047, { display_write_c047, ds });
+        mmu->set_C0XX_write_handler(0xC032, { display_write_c032, ds });
     }
 
     switch (ds->video_scanner_type) {
@@ -1361,8 +1432,14 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
             }
             return ret;
         });
-
     }
+    computer->register_debug_display_handler(
+        "display",
+        DH_DISPLAY, // unique ID for this, need to have in a header.
+        [ds]() -> DebugFormatter * {
+            return display_debug(ds);
+        }
+    );
 }
 
 void init_mb_device_display(computer_t *computer, SlotType_t slot) {

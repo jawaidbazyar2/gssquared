@@ -276,6 +276,22 @@ Apparently you send commands to the uC in a format different from the ADB bus it
 
 See Page 13 on in the v3_10_FDBERS document.
 
+## Microcontroller Mode and Configuration
+
+The MODES byte is:
+
+| Bit | Function |
+|-|-|
+| 7 | Reset on RESET key only (control not needed) |
+| 6 | Set XOR LOCK-SHIFT mode |
+| 5 | Change FDB Keyboard Layout to //e Layout |
+| 4 | Buffer Keyboard Mode |
+| 3 | 4x Repeat Enabled; instead of dual (2x) repeat |
+| 2 | Include Spacebar, Delete key on Dual Repeat |
+| 1 | Disable auto-poll of fdb mouse |
+| 0 | Disable auto-poll of fdb keyboard |
+
+
 # KeyGloo Dev notes
 
 Even though today I only have two devices, and am unsure about ever supporting any other devices (graphics tablets? radio tuners? security keys?)
@@ -336,6 +352,22 @@ if there's data, it goes in high byte, and 0xFF in low byte.
 Great convo on this on the slack: https://apple2infinitum.slack.com/archives/CPSGNGE05/p1767030235302959
 
 I am motivated to run this PACMAN GAME on my emulated GS!!
+
+## Mouse
+
+This doc goes into great detail on the Mouse on the GS.
+
+https://www.brutaldeluxe.fr/documentation/cortland/v3/Mouse%20ERS%20-%20Fern%20Bachman%20-%20v00.10%20-%2019850715.pdf
+
+key takeaways so far:
+
+[ ] the mouse interrupts in sync with vbl, only 60 times per second. How does that work? Does ADB Micro get fed the vbl signal? yes, it and the keygloo do.
+[ ] +/- 63 counts max movement, is 0.8 inches of travel.
+[ ] there IS a button 1. 
+[ ] At RESET, interrupts must be disabled  
+[ ] mouse data - 1st read gets X data and button 1 data; 2nd read gets Y and button 0
+
+
 
 ## Test Suite
 
@@ -510,7 +542,6 @@ I am now dumping the complete ADB Command and Response messages.
 
 ok, SO: The bits 2-0 being number of valid bytes thing, this ONLY applies to C026 "during interrupt time". I'm guessing, an IRQ is triggered, this value is set.
 If there is no interrupt then it's normal response.
-
 
 
 ## Debugging

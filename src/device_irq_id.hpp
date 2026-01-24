@@ -2,7 +2,7 @@
 
 enum device_irq_id {
     IRQ_ID_SOUNDGLU = 8,
-    IRQ_ID_KEYGLU = 9,
+    IRQ_ID_KEYGLOO = 9,
     IRQ_ID_VGC = 10,   
 };
 

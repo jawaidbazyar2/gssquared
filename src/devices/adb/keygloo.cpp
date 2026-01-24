@@ -6,6 +6,16 @@
 #include "util/DebugHandlerIDs.hpp"
 #include "debug.hpp"
 
+
+void keygloo_update_interrupt_status(keygloo_state_t *kb_state, KeyGloo *kg ) {
+    // TODO: check if mouse interrupt is enabled, and if so, assert it.
+    if (kg->interrupt_status()) {
+        set_device_irq(kb_state->computer->cpu, IRQ_ID_KEYGLOO, true);
+    } else {
+        set_device_irq(kb_state->computer->cpu, IRQ_ID_KEYGLOO, false);
+    }
+}
+
 uint8_t keygloo_read_C000(void *context, uint32_t address) {
     keygloo_state_t *kb_state = (keygloo_state_t *)context;
     KeyGloo *kg = kb_state->kg;
@@ -33,7 +43,9 @@ uint8_t keygloo_read_C025(void *context, uint32_t address) {
 uint8_t keygloo_read_C024(void *context, uint32_t address) {
     keygloo_state_t *kb_state = (keygloo_state_t *)context;
     KeyGloo *kg = kb_state->kg;
-    return kg->read_mouse_data();
+    uint8_t data = kg->read_mouse_data();
+    keygloo_update_interrupt_status(kb_state, kg); // could have IRQ after event..
+    return data;
 }
 
 uint8_t keygloo_read_C026(void *context, uint32_t address) {
@@ -54,10 +66,18 @@ uint8_t keygloo_read_C027(void *context, uint32_t address) {
     return kg->read_status_register();
 }
 
+void keygloo_write_C027(void *context, uint32_t address, uint8_t value) {
+    keygloo_state_t *kb_state = (keygloo_state_t *)context;
+    KeyGloo *kg = kb_state->kg;
+    kg->write_status_register(value);
+    keygloo_update_interrupt_status(kb_state, kg); // could have IRQ after event..
+}
+
 bool keygloo_process_event(keygloo_state_t *kb_state, const SDL_Event &event) {
     KeyGloo *kg = kb_state->kg;
     SDL_Event event_copy = event;
     kg->process_event(event_copy);
+    keygloo_update_interrupt_status(kb_state, kg); // could have IRQ after event..
     return true;
 }
 
@@ -72,8 +92,9 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
     keygloo_state_t *kb_state = new keygloo_state_t;
     computer->set_module_state(MODULE_KEYGLOO, kb_state);
 
+    kb_state->computer = computer;
     kb_state->mmu = computer->mmu;
-
+    
     KeyGloo *kg = new KeyGloo();
     kb_state->kg = kg;
 
@@ -101,6 +122,7 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
     computer->mmu->set_C0XX_read_handler(0xC026, { keygloo_read_C026, kb_state });
     computer->mmu->set_C0XX_write_handler(0xC026, { keygloo_write_C026, kb_state });
     computer->mmu->set_C0XX_read_handler(0xC027, { keygloo_read_C027, kb_state });
+    computer->mmu->set_C0XX_write_handler(0xC027, { keygloo_write_C027, kb_state });
 
     computer->register_debug_display_handler(
         "adb",
@@ -109,4 +131,10 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
             return debug_keygloo(kb_state);
         }
     );
+
+    computer->register_reset_handler([kb_state]() {
+        kb_state->kg->reset();
+        return true;
+    });
+
 }

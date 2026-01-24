@@ -122,7 +122,20 @@ public:
     int flash_counter;
     bool f_double_graphics = true;
     uint8_t f_INTEN = 0x00; // interrupt enable flag
-    uint8_t f_VGCINT = 0x00; // VGC interrupt status flag
+
+    union {
+        struct {
+            uint8_t f_extint_enable : 1;
+            uint8_t f_scanline_enable : 1;
+            uint8_t f_onesec_enable : 1;
+            uint8_t f_reserved : 1;
+            uint8_t f_extint_asserted : 1;
+            uint8_t f_scanline_asserted : 1;
+            uint8_t f_onesec_asserted : 1;
+            uint8_t f_vgcint_asserted : 1;
+        };
+        uint8_t f_VGCINT = 0x00; // VGC interrupt status flag
+    };
 
     uint32_t dirty_line[24];
     line_mode_t line_mode[24] = {LM_TEXT_MODE}; // 0 = TEXT, 1 = LO RES GRAPHICS, 2 = HI RES GRAPHICS
@@ -175,3 +188,5 @@ uint8_t txt_bus_read_C054(void *context, uint32_t address);
 uint8_t txt_bus_read_C055(void *context, uint32_t address);
 uint8_t txt_bus_read_C056(void *context, uint32_t address);
 uint8_t txt_bus_read_C057(void *context, uint32_t address);
+
+void update_vgc_interrupt(display_state_t *ds);

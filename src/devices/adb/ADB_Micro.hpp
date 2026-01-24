@@ -12,12 +12,14 @@
 
 #define BUFSIZE 0x10
 
+constexpr bool MOUSE_X = false;
+constexpr bool MOUSE_Y = true;
 
-enum mouse_next_t {
+/* enum mouse_next_t {
     MOUSE_X,
     MOUSE_Y,
 };
-
+ */
 struct uc_vars_t {
     uint8_t permlang; // char set in high nibble
     uint8_t dlyrpt; // delay-to-repeat & repeat-rate values
@@ -99,7 +101,7 @@ class KeyGloo
 
         const uint8_t adb_version = 0x06;
 
-        mouse_next_t mouse_next_read = MOUSE_X;
+        //mouse_next_t mouse_next_read = MOUSE_Y;
         uint8_t mouse_data[2] = {0};
 
         bool interrupt_asserted = false;
@@ -111,8 +113,8 @@ class KeyGloo
             struct {
                 bool command_register_full : 1;
                 bool mouse_x_available : 1;
-                bool kb_interrupt_enabled : 1;
-                bool kb_register_full : 1;
+                bool kb_interrupt_enabled : 1; // GS FW Ref says "never use, won't work"
+                bool kb_register_full : 1;     // GS FW Ref says "never use, won't work"
                 bool data_interrupt_enabled : 1;
                 bool data_register_full : 1;
                 bool mouse_interrupt_enabled : 1;               
@@ -132,7 +134,7 @@ class KeyGloo
             adb_host = new ADB_Host();
             adb_host->add_device(0x02, new ADB_Keyboard());
             adb_host->add_device(0x03, new ADB_Mouse());
-            status = 0;
+            //status = 0;
 
             reset();
 
@@ -150,8 +152,9 @@ class KeyGloo
 
             vars.currmod.value = 0;
             vars.prevmod.value = 0;
-
+            mouse_x_available = MOUSE_X;
             keysdown = 0;
+            status = 0;
         }
 
         void abort() {
@@ -484,7 +487,12 @@ class KeyGloo
         uint8_t read_status_register() {
             return status;
         }
-
+        void write_status_register(uint8_t value) {
+            constexpr uint8_t readonly_flags = 0b10101011;
+            uint8_t cur_value = status & readonly_flags; // these flags are readonly.
+            status = cur_value | (value & ~readonly_flags);
+            update_interrupt_status();
+        }
         
         /*
 | Bit | Name | Description |
@@ -577,19 +585,22 @@ class KeyGloo
         void update_interrupt_status() {
             interrupt_asserted = 
                 (mouse_interrupt_enabled && mouse_data_full) ||
-                (data_interrupt_enabled && data_register_full) ||
+                //(data_interrupt_enabled && data_register_full) ||
                 (kb_interrupt_enabled && kb_register_full);
+            if (interrupt_asserted) {
+                assert(true);
+            }
         }
 
         // toggle between returning the X data, and the Y data.
         uint8_t read_mouse_data() {
-            if (mouse_next_read == MOUSE_X) {
-                mouse_next_read = MOUSE_Y;
-                mouse_x_available = true; // means Y is available. Cortland doc contradicts IIgs HW Ref. (x=0, y=1)
-                return mouse_data[0];
-            } else {
-                mouse_next_read = MOUSE_X;
+            if (mouse_x_available == MOUSE_Y) {
                 mouse_data_full = false;
+                mouse_x_available = MOUSE_X; // means X is now available. Cortland doc contradicts IIgs HW Ref. (x=0, y=1)
+                update_interrupt_status();
+                return mouse_data[0];
+            } else { // mouse_x_available == MOUSE_X}
+                mouse_x_available = MOUSE_Y; // true means Y is now avail (switching back to Y)
                 update_interrupt_status();
                 return mouse_data[1];
             }
@@ -662,10 +673,10 @@ class KeyGloo
                 uint8_t mouse_status = (reg.data[1] & 0x80);
                 uint8_t mouse_x = (reg.data[0] & 0x7F);
                 uint8_t mouse_y = (reg.data[1] & 0x7F);
-                mouse_data[0] = mouse_x | mouse_status;
-                mouse_data[1] = mouse_y | mouse_status;
+                mouse_data[0] = mouse_y | mouse_status;
+                mouse_data[1] = mouse_x | mouse_status;
                 mouse_data_full = true;
-                mouse_x_available = false;
+                mouse_x_available = MOUSE_X;
                 print_mouse();
                 update_interrupt_status();
             }
@@ -674,9 +685,12 @@ class KeyGloo
         }
 
         void debug_display(DebugFormatter *df) {
+            df->addLine("uC Mode: %02X", modes_byte);
             df->addLine("C027 Status: %02X", status);
-            df->addLine("currmod: %02X, prevmod: %02X", vars.currmod.value, vars.prevmod.value);
-            df->addLine("keysdown: %d", keysdown);
+
+            df->addLine("Keyboard: currmod: %02X, prevmod: %02X", vars.currmod.value, vars.prevmod.value);
+            df->addLine("  keysdown: %d", keysdown);
+
             // show key codes and mods buffer
             char key_codes_str[64] = "";
             char temp[4];
@@ -686,7 +700,7 @@ class KeyGloo
                 strncat(key_codes_str, temp, sizeof(key_codes_str) - strlen(key_codes_str) - 1);
                 indx = (indx + 1) % 16;
             }
-            df->addLine("keys: %s", key_codes_str);
+            df->addLine("  keys: %s", key_codes_str);
             
             char key_mods_str[64] = "";
             indx = vars.inpt;
@@ -695,8 +709,10 @@ class KeyGloo
                 strncat(key_mods_str, temp, sizeof(key_mods_str) - strlen(key_mods_str) - 1);
                 indx = (indx + 1) % 16;
             }
-            df->addLine("mods: %s", key_mods_str);
-
+            df->addLine("  mods: %s", key_mods_str);
             df->addLine("MouseData: (%d) X=%02X, Y=%02X", mouse_data_full, mouse_data[0], mouse_data[1]);
+
+            adb_host->debug_display(df);
+
         }
     };
