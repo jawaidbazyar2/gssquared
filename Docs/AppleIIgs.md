@@ -306,6 +306,9 @@ on my GS RGB SHR is 7.75 inches across and regular hires is 7.75 inches across. 
 5. clear bit for scanline interrupt
 4-0. unused set to 0
 
+* Other ADB
+?? how does ctrl-oa-esc work?
+
 Write a 0 into bit 6 or bit 5 to clear that interrupt. Writing a 1 has no effect.
 Reading the video counters will also clear the ScanLine interrupt status bit!
 
@@ -354,3 +357,119 @@ We can implement in this order.
 
 So I jumped ahead and did SHR stuff. Got it in the dpp framework, now need to implement it in vpp (VideoScanner). Then go back to text/borders.
 
+
+
+## Source code that reads the character rom out of a IIgs
+
+from Ian Brumby:
+
+For those following the thread on comp.sys.apple2, we now have some documentation on four previously unknown softswitches: $C02C, $C06D, $C06E, $C06F. And it turns out it was on my hard drive the whole time. Doh!
+	
+```
+  lda #0
+buildloop	anop
+	sta thechar
+	tax
+	lda packbuffer,x
+	and #$00FF
+	bne isachar
+	brl nextchar
+
+isachar	anop
+	lda thechar
+	xba
+	ora thechar
+	ldx #$76
+fillscreen anop
+	sta $E00400,x
+	sta $E00480,x
+	sta $E00500,x
+	sta $E00580,x
+	sta $E00600,x
+	sta $E00680,x
+	sta $E00700,x
+	sta $E00780,x
+	dex
+	dex
+	bpl fillscreen
+
+	lda thechar
+	asl a
+	asl a
+	asl a
+	ora #$8000
+	tay		;offset into buffptr+$8000
+
+	shortm
+	sta $E0C00C	;40COL
+	sta $E0C00F	;ALTCHARSET
+
+offset	equ $A1D5
+	ldx #offset
+	lda #0
+	sta thevline
+	phb
+	lda #$E0
+	pha
+	plb
+	bra readROM
+
+tryagain	anop 	;missed our data: wait and retry
+	lda #0	;turn off test mode while waiting to...
+	sta $C06D-offset,x	;...minimize chance of a reset...
+	sta $C06E-offset,x	;...happening while it's enabled.
+	plp		;give interrupts a chance
+	phx		;waste time
+	plx
+	phx
+	plx
+	phx
+	plx
+	phx
+	plx
+readROM	anop
+	php		;disable interrupts while in test mode
+	sei
+	lda #$DA	;password byte 1
+	sta $C06F-offset,x
+	lda #$61	;password byte 2
+	sta $C06F-offset,x
+	lda #$40	;enable test mode $40
+	sta $C06D-offset,x
+tryonce	anop
+	lda $C02F	;horizontal count
+	asl a	;low bit of vcount now in carry
+	and #%11100000
+	eor #%10100000	;want hcounts +/-8usec from left edge
+	bne tryonce
+	lda $C02E	;vcount
+	rol a	;roll in low bit from hcount
+	bcc tryagain	;want top 192 visible lines only
+	bmi tryagain
+	eor >thevline	;compare to desired v position
+	and #$07	;...only care about low 3 bits
+	bne tryagain
+	lda $C02C-offset,x          ;read CHARROM finally
+	sta [<buffptr],y
+	lda #0	;turn off test mode
+	sta $C06D-offset,x
+	sta $C06E-offset,x
+	plp		;reenable interrupts
+	iny
+
+	lda >thevline
+	inc a
+	sta >thevline
+	cmp #8
+	blt readROM
+	plb
+	longm
+nextchar	anop
+	lda thechar
+	inc a
+	cmp #$100
+	bge lastchar
+	brl buildloop
+
+lastchar	anop
+```

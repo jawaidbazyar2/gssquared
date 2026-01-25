@@ -296,9 +296,9 @@ The MODES byte is:
 
 Even though today I only have two devices, and am unsure about ever supporting any other devices (graphics tablets? radio tuners? security keys?)
 
-[ ] Patch in event handling for keyboard.
-[ ] Patch in event handling for Mouse.
-[ ] test harness  
+[x] Patch in event handling for keyboard.
+[x] Patch in event handling for Mouse.
+[x] test harness  
 
 Apparently the CDA panel is handled by the firmware during VBL interrupts.
 

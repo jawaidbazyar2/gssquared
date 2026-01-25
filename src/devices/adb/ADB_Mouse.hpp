@@ -15,10 +15,12 @@
 class ADB_Mouse : public ADB_Device
 {
     private:
-        static constexpr float MOUSE_MOTION_SCALE = 0.200f;
+        static constexpr float MOUSE_MOTION_SCALE_SLOW = 0.200f;
+        static constexpr float MOUSE_MOTION_SCALE_FAST = 0.400f;
         uint8_t button_0_down = 0x80; // default to button up
         uint8_t button_1_down = 0x80;
         bool has_data = false;
+        uint8_t handler = 1; // default to low resolution mouse
 
     public:
     ADB_Mouse(uint8_t id = 0x03) : ADB_Device(id) {
@@ -30,17 +32,20 @@ class ADB_Mouse : public ADB_Device
     void reset(uint8_t cmd, uint8_t reg) override { }
     void flush(uint8_t cmd, uint8_t reg) override { }
     void listen(uint8_t command, uint8_t reg, ADB_Register &msg) override {
+        printf("MS> Listen: command: %02X, reg: %02X, msg: %02X %02X\n", command, reg, msg.data[0], msg.data[1]);
         if (reg == 3) { // 
             /** Register 3
-             * Bit 15: reserved, must be 0.
+             * Bit 15: reserved, must be 0. (byte 0)
              * Bit 14: exceptional event.
              * Bit 13: SR enable
              * Bit 12: Reserved, must be 0.
              * Bit 11-8: Device address.
-             * Bit 7-0: Device handler.
+             * Bit 7-0: Device handler. (byte 1)
              */
             registers[3] = msg;
-            id = msg.data[1] & 0x0F; // change device address
+            id = msg.data[0] & 0x0F; // change device address
+            handler = msg.data[1] & 0x0F;  // (1= lo res mouse vs 2= hi res mouse)
+            printf("MS> New address: %02X, handler: %02X\n", id, handler);
         }
     }
     ADB_Register talk(uint8_t command, uint8_t reg) override {
@@ -97,9 +102,9 @@ class ADB_Mouse : public ADB_Device
             // it's also possible we need to accumulate motion values 
             // until the register is actually read.
             // alternatively, to buffer them.
-            
-            int xrel = (int)(event.motion.xrel * MOUSE_MOTION_SCALE);
-            int yrel = (int)(event.motion.yrel * MOUSE_MOTION_SCALE);
+            float scale = handler == 1 ? MOUSE_MOTION_SCALE_SLOW : MOUSE_MOTION_SCALE_FAST;
+            int xrel = (int)(event.motion.xrel * scale);
+            int yrel = (int)(event.motion.yrel * scale);
             
             // if there was any motion, minimum motion after scale is 1.
             if (xrel == 0 && event.motion.xrel > 0) xrel = 1;

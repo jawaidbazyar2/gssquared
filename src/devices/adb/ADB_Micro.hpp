@@ -51,7 +51,7 @@ struct uc_vars_t {
     uint8_t fdbdata[8]; // in reverse order, is a stack.
     uint8_t fdbbuf2;
     uint8_t fdbbuf1;
-    uint8_t fdbadr; // address of auto poll fdb devices
+    uint8_t fdbadr; // address of auto poll fdb devices (hi nib = 3 (mouse) low nib = 2 (kb))
     uint8_t lang;
     uint8_t matrixcd; // indirect jump vector
     uint8_t code;
@@ -189,6 +189,7 @@ class KeyGloo
             vars.lang = configuration_bytes[1] & 0b1111;
             // DLYRPT: 
             vars.dlyrpt = configuration_bytes[2] & 0b1111;
+            vars.fdbadr = configuration_bytes[0]; // set kb / mouse addresses
         }
 
         void synch_set_defaults() {
@@ -266,7 +267,8 @@ class KeyGloo
                     } else if (value == 0x02) { // RESET uC
                         reset();
                     } else if (value == 0x03) { // FLUSH COMMAND
-                        printf("FLUSH COMMAND - unimplemented\n");
+                        //printf("FLUSH COMMAND - unimplemented\n");
+                        flush();
                     } else if (value == 0x04) { // set modes
                         modes_byte = value | cmd[1];
                     } else if (value == 0x05) { // clr modes
@@ -275,15 +277,17 @@ class KeyGloo
                         configuration_bytes[0] = cmd[1];
                         configuration_bytes[1] = cmd[2];
                         configuration_bytes[2] = cmd[3];
+                        set_vals_from_configuration();
                     } else if (value == 0x07) { // SYNCH
                         // this takes arguments for both the modes_byte and the configuration_bytes.
                         // set modes byte followed by configuration bytes.
                         // on boot/reset there should be mode that accepts only synch command, and after that we're good.
+                        reset();
                         modes_byte = cmd[1];
                         configuration_bytes[0] = cmd[2];
                         configuration_bytes[1] = cmd[3];
                         configuration_bytes[2] = cmd[4];
-                        reset();
+                        set_vals_from_configuration();
                         //response_bytes = 1;
                         //response_bytes_reported = 1;
                     } else if (value == 0x08) { // WRITE uC MEMORY
@@ -348,6 +352,13 @@ class KeyGloo
                         // response bytes set after cmd execution
                     } else if ((value & 0b11111000) == 0b01001'000) { // TRANSMIT NUM BYTES
                         printf("TRANSMIT NUM BYTES - unimplemented\n");
+                        /*
+                         * command, w/address, is in 2nd byte.
+                         * system starts by sending this command followed by between 2 to 8 data bytes (num+1).
+                         * which are to be transmitted over FDB. the command sent will be transmitted
+                         * directly as the FDB Command byte, which is the first byte received after the transmit num bytes command.
+                         */
+
                         //adb_host->listen( addr,  cmd,  reg);                       
                     } else if ((value & 0b1111'0000) == 0b0101'0000) { // ENABLE SRQ ON DEVICE
                         printf("ENABLE SRQ ON DEVICE - unimplemented\n");
@@ -357,9 +368,19 @@ class KeyGloo
                         printf("DISABLE SRQ ON DEVICE - unimplemented\n");
                     }
                     break;
-                case 0b10'000000:
-                    //if ((value & 0b11'000000) == 0b10'000000) { // TRANSMIT 2 BYTES
-                    printf("TRANSMIT 2 BYTES - unimplemented\n");
+                case 0b10'000000: {
+                        //if ((value & 0b11'000000) == 0b10'000000) { // TRANSMIT 2 BYTES
+                        /* Assumes a two-byte transfer of data using the FDB listen command */
+                        printf("TRANSMIT 2 BYTES: %02X: %02X %02X\n", cmd[0], cmd[1], cmd[2]);
+                        uint8_t reg = (value & 0b0011'0000) >> 4;
+                        uint8_t addr = value & 0x0F;
+                        ADB_Register xmit_reg = {0};
+                        xmit_reg.size = 2;
+                        xmit_reg.data[0] = cmd[1];
+                        xmit_reg.data[1] = cmd[2];
+                        adb_host->listen(addr, 0b10, reg, xmit_reg);
+                        printf("adb->listen addr: %02X, cmd: %02X, reg: %02X, msg: %02X %02X\n", addr, 0b10, reg, xmit_reg.data[0], xmit_reg.data[1]);
+                    }
                     break;
                 case 0b11'000000:
                     //if ((value & 0b11'000000) == 0b11'000000) { // POLL FDB DEVICE
@@ -559,6 +580,7 @@ class KeyGloo
                         break;
                     case 0b10'000000:
                         //if ((value & 0b11'000000) == 0b10'000000) { // TRANSMIT 2 BYTES
+                        cmd_bytes = 2;
                         break;
                     case 0b11'000000:
                         //if ((value & 0b11'000000) == 0b11'000000) { // POLL FDB DEVICE

@@ -8842,7 +8842,7 @@ Re timing: I have been looking at this exact area ^_^; Remember that the MegaII 
 You can verify this visually; i.e. spin on the SCB status bit (not using an IRQ handler) and toggle the border color after some known phase delay to observe the result on screen.  But you can also verify it analytically, counting cycles until that SCB status bit flips, relative to another timing source, i.e. C019.  If you do it that way, you also need to be aware of the subtle detail that the entire MegaII appears to be delayed one cycle relative to the VGC.
 
 [ ] make sure the SCB status bit sets/resets regardless of whether interrupts are enabled.  
-[ ] "interrupt enabled" doesn't belong in the video scanner. The scanner should simply provide the info. Decision to assert int lives in VGC area.
+[x] "interrupt enabled" doesn't belong in the video scanner. The scanner should simply provide the info. Decision to assert int lives in VGC area.
 
 [x] Do a test of page-flipping on the hcounter (horzpage2flip2).
 
@@ -8867,3 +8867,63 @@ So really these are variations of the vbl.
 Instead of passing a bunch of state in to the VideoScanner and having it make these decisions about when to fire an interrupt, I was thinking it should simply call a single callback in display, with an event type, and then display can decide what to do with it given state flags.
 I.e., VS will simply, on -every- scanline with the interrupt bit set, call display's "update interrupt". And on -every- vbl time, do the same. Then that's it. Yes, THIS IS THE WAY.
 
+experimenting with having "fast speed" be 7mhz. It's pretty smooooooth. 
+
+Since we now have important system interrupts depending on the VideoScanner, ludicrous speed video mode is not going to have those interrupts thrown. We're going to need a concept where the cpu cycles is dissociated from the 14m clock, but the 14m clock continues as normal.
+
+Now we could have a super fast speed, even 28mhz. multiples of 14m would be easy to keep in sync and use the same basic routine as now. but when the system speed is completely asynchronous (unclocked) that's where we run into problems.
+
+If we DID have a ludicrous speed with a defined clock number, that could be user-selectable based on their hardware. Or we could estimate and pick one based on .. system idle measurement? i.e. inch upward in 14M increments until we get to a certain idle %, like, down to 20% idle or something. that gives us some buffer.
+
+And the important part here is then we'd get rid of the special separate gs2 execute loop, and, get rid of Apple2_Display. We'd rely solely on the videoscanner. 
+
+Alternatively we could try to dynamically measure and estimate when frames have ended. but scanline interrupts just aren't gonna work unless we're tracking a scanline! i.e. doing videoscanner.
+
+
+[ ] A systemconfig option needs to be "gs system speed". Then the speed selector switch will toggle between 1mhz and the system speed.
+
+This can be 2.8 (normal), 7.1 (basic ZIP) 14.3 (ZipGS Supra). Maybe we should put the ZipGS control registers, I think they're pretty simple.
+
+We aren't doing any cycle sync/slowdowns at the moment of course. But when we do, I wonder how that interplays with the 7/14/ludicrous speeds.
+
+I fixed when Scanline interrupt triggers (when SCB is read) but the iigs pointer still disappears moving upward at 7mhz. Moving downward is fine.
+At 2.8mhz it's fine. This may just be a thing that happens "accelerated"? does it assume it is going to take a while to get to the handler and if it happens too fast then it 
+
+the guys confirm that's normal on an accelerated GS, and that system 6 has a setting "smooth cursor" or something. It's the "Smoother mouise cursor" in Monitor CDEV.
+
+[x] Setting Mouse Speed Fast in control panel causes a hang.  (is is trying to send a adb message to mouse which we don't support yet?) This could change the scaler we use in the mouse code. (now works!)
+
+yeah, it sure is:
+ADB_Micro> Executing command: B3 
+TRANSMIT 2 BYTES - unimplemented
+
+It's either looping waiting for a response that isn't coming, or just otherwise confused.
+
+ok, in the rabbit hole of : transmit 2 bytes.
+apparently ADB listen packets, the data bytes for the register are sent MSB first. i.e. in reverse. 
+```
+0268 80A5 A9 B3                 LDA   #$B3                     ;LISTEN R3 ADRS 3 (MOUSE ID)
+0269 80A7 20 72 81              JSR   CMDSEND                  ;SEND COMMAND
+0270 80AA A9 03                 LDA   #$03                     ;SEND NEW HANDLER - ADDRESS 3
+0271 80AC 20 72 81              JSR   SENDDATA                 ; & DISABLE SRQ
+0272 80AF AD F9 02              LDA   |USERHMR                 ;GET MOUSE TICK RESOLUTION
+0273 80B2 C9 02                 CMP   #$02                     ;>=2 then ask mouse to change resolution
+0274 80B4 B0 04                 BCS   HISPEED                  ;Bra for high resolution 
+0275 80B6 A9 01                 LDA   #$01                     ;Else set mouse handler ID=1, low res
+0276 80B8 80 02                 BRA   SENDID
+0277 80BA              HISPEED  EQU   *
+0278 80BA A9 02                 LDA   #$02                     ;Mouse handler ID=2 for high resolution
+0279 80BC              SENDID   EQU   *
+0280 80BC 20 72 81              JSR   SENDDATA                 ;SEND HANDLER 2 (LOW RES) OR 3 (HI RES)
+0281 80BF
+```
+this is from ROM03. It's sending cmd B3; followed by 3 - mouse is address 3 - followed by the handler.
+ADB_Micro> Executing command: B3 03 01
+This is most significant byte first.
+So in the Mouse routine that listens, I need to interpret them in the register backwards or should I copy them out backwards?
+the first byte sent is the device ID, high byte of the 15-bit register value.
+I should make sure to rationalize all the ADB Messages this way, for consistency. Bits 15-8 first, then bits 7-0. 
+Remember, it's this:
+https://www.lopaciuk.eu/2021/03/26/apple-adb-protocol.html
+
+SO. Setting Mouse Handler=2 means "high resolution" -i.e. we're changing the mouse scaling. woot!

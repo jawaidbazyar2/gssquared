@@ -32,6 +32,7 @@ class ADB_Host
     }
 
     bool listen(uint8_t addr, uint8_t cmd, uint8_t reg, ADB_Register &msg) {
+        //printf("LISTEN: addr: %02X, cmd: %02X, reg: %02X, msg: %02X %02X\n", addr, cmd, reg, msg.data[0], msg.data[1]);
         for (auto &device : devices) {
             if (device->get_id() == addr) {
                 device->listen(cmd, reg, msg);

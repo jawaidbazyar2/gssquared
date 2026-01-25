@@ -420,6 +420,7 @@ class ADB_Keyboard : public ADB_Device
     void flush(uint8_t cmd, uint8_t reg) override { }
 
     void listen(uint8_t command, uint8_t reg, ADB_Register &msg) override { 
+        //printf("KB> Listen: command: %02X, reg: %02X, msg: %02X %02X\n", command, reg, msg.data[0], msg.data[1]);
         if (reg == 3) {
             registers[3] = msg;
             id = msg.data[1] & 0x0F; // change device address
