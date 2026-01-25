@@ -174,11 +174,42 @@ public:
     };
 
     void update_seconds() {
-        // read unix epoch seconds
-        uint32_t unix_epoch_seconds = time(nullptr);
-        // convert to epoch starting Jan 1 1904.
+        // Get current UTC time
+        time_t now;
+        time(&now);
+        
+        // Get local time to access timezone offset
+        struct tm *local_tm = localtime(&now);
+        
+        // Get timezone offset in seconds
+        long timezone_offset = 0;
+#if defined(__unix__) || defined(__APPLE__) || defined(__linux__)
+        // POSIX systems have tm_gmtoff which includes DST
+        timezone_offset = local_tm->tm_gmtoff;
+#elif defined(_WIN32) || defined(_WIN64)
+        // Windows: use _timezone and adjust for DST
+        long tz_seconds;
+        _get_timezone(&tz_seconds);
+        timezone_offset = -tz_seconds;  // _timezone is seconds west of UTC, we want east
+        if (local_tm->tm_isdst > 0) {
+            long dstbias;
+            _get_dstbias(&dstbias);
+            timezone_offset += dstbias;  // Add DST offset
+        }
+#else
+        // Fallback: calculate offset by comparing local and UTC
+        struct tm utc_tm = *gmtime(&now);
+        time_t utc_as_local = mktime(&utc_tm);
+        timezone_offset = difftime(now, utc_as_local);
+#endif
+        
+        // Apply timezone offset to get local time
+        uint32_t unix_epoch_seconds = now + timezone_offset;
+        
+        // Convert to epoch starting Jan 1 1904
         uint32_t epoch_seconds = unix_epoch_seconds + UNIX_EPOCH_DELTA;
-        // store in seconds register
+        
+        // Store in seconds register
         seconds = epoch_seconds;
     }
 
