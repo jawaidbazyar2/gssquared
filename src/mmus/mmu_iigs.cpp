@@ -1,4 +1,5 @@
 #include "mmu_iigs.hpp"
+#include "clock.hpp"
 #include "devices/languagecard/languagecard.hpp"
 #include "mmus/mmu.hpp"
 
@@ -164,7 +165,7 @@ void write_c068(void *context, uint32_t address, uint8_t value) {
 void MMU_IIgs::set_slot_register(uint8_t value) {
     // store here
     reg_slot = value;
-    printf("setting slot register: %02X\n", value);
+    if (DEBUG(DEBUG_MMUGS)) printf("setting slot register: %02X\n", value);
     // also update the megaii slot register.
     megaii->set_slot_register(value);
     //megaii->compose_c1cf(); // redundant since megaii->set_slot_register() does this.
@@ -530,7 +531,7 @@ void c036_write(void *context, uint32_t address, uint8_t value) {
     uint8_t current_speed_reg = mmu_iigs->speed_register();
     if ((current_speed_reg ^ value) & 0x80) {
         // speed change.
-        if (value & 0x80) set_clock_mode(mmu_iigs->get_cpu(), CLOCK_2_8MHZ);
+        if (value & 0x80) set_clock_mode(mmu_iigs->get_cpu(), CLOCK_4MHZ);
         else set_clock_mode(mmu_iigs->get_cpu(), CLOCK_1_024MHZ);
     }
     mmu_iigs->set_speed_register(value);
