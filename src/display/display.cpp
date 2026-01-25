@@ -1086,6 +1086,9 @@ uint8_t display_read_vbl(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
 
     uint8_t fl = (ds->video_scanner->is_vbl()) ? 0x00 : 0x80;
+    if (ds->video_scanner_type == Scanner_AppleIIgs) { // inverted sense on IIgs.
+        fl ^= 0x80;
+    }
     KeyboardMessage *keymsg = (KeyboardMessage *)ds->mbus->read(MESSAGE_TYPE_KEYBOARD);
     uint8_t kbv = (keymsg ? keymsg->mk->last_key_val :  ds->mmu->floating_bus_read()) & 0x7F;
     return kbv | fl;
@@ -1097,7 +1100,8 @@ void update_vgc_interrupt(display_state_t *ds) {
         (ds->f_scanline_enable && ds->f_scanline_asserted)  || 
         (ds->f_onesec_enable && ds->f_onesec_asserted)  || 
         (ds->f_quartersec_enable && ds->f_quartersec_asserted) ||
-        (ds->f_vbl_enable && ds->f_vblint_asserted)) vgc_asserted = 1;
+        (ds->f_vbl_enable && ds->f_vblint_asserted)
+    ) vgc_asserted = 1;
     ds->f_vgcint_asserted = vgc_asserted;
     if (vgc_asserted) {
         set_device_irq(ds->computer->cpu, IRQ_ID_VGC, true);
@@ -1146,6 +1150,7 @@ void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
     }
 }
 
+/* accepts a VideoScannerEvent and updates the display interrupts accordingly */
 void scanner_iigs_handler(void *context, VideoScannerEvent event) {
     display_state_t *ds = (display_state_t *)context;
 
