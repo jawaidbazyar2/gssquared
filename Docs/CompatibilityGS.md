@@ -18,6 +18,7 @@ ah ha! Works now after I fixed the issue with ALTZP not switching in LC Bank 1.
 
 Thexder hangs part way through boot. it uses AUX and LC heavily.  
 Thexder on Total Replay loads and runs.
+It seems to want to run only out of slot 6.
 
 ## ProDOS 8 1.1.1
 
@@ -40,7 +41,10 @@ So this works, according to ROM01 where text page 2 doesn't work.
 
 ## System 6.0.3
 
-System 6.0.3 Install disk crashes into monitor after doing a bunch of stuff. BUT it does throw up the GS/OS boot shr screen! 
+System 6.0.3 Install disk crashes into monitor after doing a bunch of stuff. BUT it does throw up the GS/OS boot shr screen!
+
+Booting pretty reliably now.
+
 
 ## AppleWorks 1.3
 
@@ -68,6 +72,8 @@ bank_shadow_read first checks LC - and subtracts 0x1000. Then that modified addr
 Oddly, double hires seems to not be working correctly. I only get every other byte-column on the screen. Other double hires stuff is working (Arkanoid, skull island splash). 
 
 Now supports C029 mono mode in rgb (and composite) rendering.
+
+WORKING SUPER DUPER PERFECTO
 
 ## Arkanoid
 
