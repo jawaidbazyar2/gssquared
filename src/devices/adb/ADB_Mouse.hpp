@@ -16,7 +16,8 @@ class ADB_Mouse : public ADB_Device
 {
     private:
         static constexpr float MOUSE_MOTION_SCALE = 0.200f;
-        uint8_t button_down = 0x00;
+        uint8_t button_0_down = 0x80; // default to button up
+        uint8_t button_1_down = 0x80;
         bool has_data = false;
 
     public:
@@ -53,8 +54,8 @@ class ADB_Mouse : public ADB_Device
     }
 
     void update_button_down() {
-        registers[0].data[0] = 0x80 | (registers[0].data[0] & 0x7F);
-        registers[0].data[1] = button_down | (registers[0].data[1] & 0x7F);
+        registers[0].data[0] = button_1_down | (registers[0].data[0] & 0x7F);
+        registers[0].data[1] = button_0_down | (registers[0].data[1] & 0x7F);
     }
 
     bool process_event(SDL_Event &event) override {
@@ -66,7 +67,12 @@ class ADB_Mouse : public ADB_Device
            So this works out. Since this is implicit, I have an uncharacteristic comment here.
         */
         if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-            button_down = 0x00;
+            if (event.button.button == SDL_BUTTON_LEFT) {
+                button_0_down = 0x00;
+            } else if (event.button.button == SDL_BUTTON_RIGHT) {
+                button_1_down = 0x00;
+            }
+            //button_0_down = 0x00;
             has_data = true;
             registers[0].data[0] = 0;
             registers[0].data[1] = 0;
@@ -74,7 +80,12 @@ class ADB_Mouse : public ADB_Device
             status = true;
             
         } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
-            button_down = 0x80;
+            if (event.button.button == SDL_BUTTON_LEFT) {
+                button_0_down = 0x80;
+            } else if (event.button.button == SDL_BUTTON_RIGHT) {
+                button_1_down = 0x80;
+            }
+            //button_0_down = 0x80;
             has_data = true;
             registers[0].data[0] = 0;
             registers[0].data[1] = 0;
