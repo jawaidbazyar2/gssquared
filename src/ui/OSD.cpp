@@ -732,6 +732,13 @@ void OSD::render() {
 }
 
 bool OSD::event(const SDL_Event &event) {
+    //if mouse is captured we ignore events here.
+    if (SDL_GetWindowRelativeMouseMode(window)) {
+        if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            return(false);
+        }
+    }
+
     bool active = (currentSlideStatus == SLIDE_IN);
     if (active) {
         if (activeModal) {
