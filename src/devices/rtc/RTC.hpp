@@ -25,8 +25,7 @@
 #define RTC_RD_BRAM            0b10111000
 #define RTC_WR_BRAM            0b00111000
 
-
-#define UNIX_EPOCH_DELTA       2082844800
+#define UNIX_EPOCH_DELTA       2'082'844'800
 
 struct RTC_Control_Reg {
     bool clock_enable_assert : 1;
@@ -178,7 +177,7 @@ public:
         // read unix epoch seconds
         uint32_t unix_epoch_seconds = time(nullptr);
         // convert to epoch starting Jan 1 1904.
-        uint32_t epoch_seconds = unix_epoch_seconds - UNIX_EPOCH_DELTA;
+        uint32_t epoch_seconds = unix_epoch_seconds + UNIX_EPOCH_DELTA;
         // store in seconds register
         seconds = epoch_seconds;
     }
