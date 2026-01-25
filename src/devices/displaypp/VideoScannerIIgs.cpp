@@ -170,14 +170,15 @@ void VideoScannerIIgs::video_cycle()
     }
 
     // if in shr and this is cycle 64 of a scanline, and the SCB has bit 6 (interrupt) enabled, then assert scanline interrupt.
-    if (shr && scanline_irq_handler.handler && (h_counter == 64) && (current_scb & 0x40)) {
-        scanline_irq_handler.handler(scanline_irq_handler.context);
-    }
+    if (irq_handler.handler) {
+        if (shr && (h_counter == 64) && (current_scb & 0x40)) {
+            irq_handler.handler(irq_handler.context, VS_EVENT_SCB_INTERRUPT);
+        }
 
-    if (vbl_interrupt_enabled && irq_handler.handler && (scan_index == 12480)) { // start of VBL area.
-        irq_handler.handler(irq_handler.context);
+        if (scan_index == 12480) { // start of VBL area.
+            irq_handler.handler(irq_handler.context, VS_EVENT_VBL);
+        }
     }
-
     if (++scan_index == 17030) {
         scan_index = 0;
     }

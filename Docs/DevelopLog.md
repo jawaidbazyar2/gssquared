@@ -8850,5 +8850,20 @@ I changed Gamecontroller to use 14M clock instead of 1M clock, which wasn't appr
 Basically this routine fails and likely marks no joystick, and so it's not using JS later.
 JS still works in other GS stuff and in IIe mode. 
 
-[ ] when in mouse capture mode, the "real" mouse is still moving around (but hidden), and can sometimes click on the OSD slideout control  
+[x] when in mouse capture mode, the "real" mouse is still moving around (but hidden), and can sometimes click on the OSD slideout control  
+
+## Jan 25, 2026
+
+So there are FOUR interrupts that depend on the Video Scanner: 
+* scanline interrupt
+* vbl interrupt
+* quarter-second interrupt
+* one-second interrupt
+
+the 1/4 sec interrupt is defined as: 16 frames. the 1 sec is defined as: 60 frames.
+
+So really these are variations of the vbl.
+
+Instead of passing a bunch of state in to the VideoScanner and having it make these decisions about when to fire an interrupt, I was thinking it should simply call a single callback in display, with an event type, and then display can decide what to do with it given state flags.
+I.e., VS will simply, on -every- scanline with the interrupt bit set, call display's "update interrupt". And on -every- vbl time, do the same. Then that's it. Yes, THIS IS THE WAY.
 

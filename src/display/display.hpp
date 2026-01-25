@@ -121,7 +121,18 @@ public:
     bool flash_state;
     int flash_counter;
     bool f_double_graphics = true;
-    uint8_t f_INTEN = 0x00; // interrupt enable flag
+
+    union {
+        struct {
+            uint8_t f_enable_mouse : 1;
+            uint8_t f_enable_move : 1;
+            uint8_t f_enable_switch : 1;
+            uint8_t f_vbl_enable : 1;
+            uint8_t f_quartersec_enable : 1;
+            uint8_t f_inten_reserved : 3;
+        };
+        uint8_t f_INTEN = 0x00; // interrupt enable flag
+    };
 
     union {
         struct {
@@ -136,6 +147,23 @@ public:
         };
         uint8_t f_VGCINT = 0x00; // VGC interrupt status flag
     };
+
+    union {
+        struct {
+            uint8_t f_system_irq_asserted : 1;
+            uint8_t f_megaii_move_asserted : 1;
+            uint8_t f_megaii_switch_asserted : 1;
+            uint8_t f_vblint_asserted : 1;
+            uint8_t f_quartersec_asserted : 1;
+            uint8_t f_an3_status : 1;
+            uint8_t f_btn_last_status : 1;
+            uint8_t f_btn_down : 1;
+        };
+        uint8_t f_INTFLAG = 0x00;
+    };
+
+    uint8_t onesec_counter = 0;
+    uint8_t quartersec_counter = 0;
 
     uint32_t dirty_line[24];
     line_mode_t line_mode[24] = {LM_TEXT_MODE}; // 0 = TEXT, 1 = LO RES GRAPHICS, 2 = HI RES GRAPHICS

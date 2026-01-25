@@ -1016,16 +1016,12 @@ void display_write_C05EF(void *context, uint32_t address, uint8_t value) {
     ds->video_system->set_full_frame_redraw();
 }
 
-/* VBL and Mouse Interrupt Handling Section - IIgs specific registers */
+/* VBL, Mouse, 1 sec, 1/4 sec Interrupt Handling Section - IIgs specific registers */
 
 void display_write_c023(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     ds->f_VGCINT = value;
-    if (value & 0x02) {
-        ds->video_scanner->set_scanline_interrupt_enabled(true);
-    } else {
-        ds->video_scanner->set_scanline_interrupt_enabled(false);
-    }
+
     update_vgc_interrupt(ds);
 }
 
@@ -1036,14 +1032,10 @@ uint8_t display_read_c023(void *context, uint32_t address) {
 
 void display_write_c041(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
+    value &= 0x1F; // bits 7-5 "must be 0"
     ds->f_INTEN = value;
-    if (value & 0x08) {
-        ds->video_scanner->set_vbl_interrupt_enabled(true);    
-    } else {
-        ds->video_scanner->set_vbl_interrupt_enabled(false);
-        set_device_irq(ds->computer->cpu, IRQ_ID_VGC, false); // deassert the interrupt
-    }
-    // TODO: 0.25 Sec interrupt too.
+
+    update_vgc_interrupt(ds);
 }
 
 uint8_t display_read_C041(void *context, uint32_t address) {
@@ -1055,15 +1047,19 @@ uint8_t display_read_C041(void *context, uint32_t address) {
 // TODO: it's unclear if I have to write zero (example is STZ CLRVBLINT) or any value.
 uint8_t display_read_c047(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
-    set_device_irq(ds->computer->cpu, IRQ_ID_VGC, false);
-    // TODO: 0.25 Sec interrupt too.
+    ds->f_vblint_asserted = false;
+    ds->f_quartersec_asserted = false;
+
+    update_vgc_interrupt(ds);
     return 0;
 }
 
 void display_write_c047(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
-    set_device_irq(ds->computer->cpu, IRQ_ID_VGC, false);
-    // TODO: 0.25 Sec interrupt too.
+    ds->f_vblint_asserted = false;
+    ds->f_quartersec_asserted = false;
+
+    update_vgc_interrupt(ds);
 }
 
 /*
@@ -1077,9 +1073,10 @@ void display_write_c047(void *context, uint32_t address, uint8_t value) {
 
 uint8_t display_read_C046(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
-    uint8_t an3val = ds->f_double_graphics ? 0x20 : 0x00;
-    uint8_t vbl_int_status = ds->computer->cpu->irq_asserted & (1 << IRQ_ID_VGC) ? 0x08 : 0x00;
-    return an3val | vbl_int_status;
+    // update an3 value in the register..
+    ds->f_an3_status = ds->f_double_graphics ? true : false;
+
+    return ds->f_INTFLAG;
 }
 
 /* End VBL Interrupt Handling Section */
@@ -1096,8 +1093,11 @@ uint8_t display_read_vbl(void *context, uint32_t address) {
 
 void update_vgc_interrupt(display_state_t *ds) {
     uint8_t vgc_asserted = 0;
-    if (ds->f_scanline_enable && ds->f_scanline_asserted) vgc_asserted = 1;
-    if (ds->f_onesec_enable && ds->f_onesec_asserted) vgc_asserted = 1;
+    if (
+        (ds->f_scanline_enable && ds->f_scanline_asserted)  || 
+        (ds->f_onesec_enable && ds->f_onesec_asserted)  || 
+        (ds->f_quartersec_enable && ds->f_quartersec_asserted) ||
+        (ds->f_vbl_enable && ds->f_vblint_asserted)) vgc_asserted = 1;
     ds->f_vgcint_asserted = vgc_asserted;
     if (vgc_asserted) {
         set_device_irq(ds->computer->cpu, IRQ_ID_VGC, true);
@@ -1146,15 +1146,30 @@ void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
     }
 }
 
-void scanner_iigs_vbl_irq(void *context) {
-    cpu_state *cpu = (cpu_state *)context;
-    set_device_irq(cpu, IRQ_ID_VGC, true);
-}
-
-void scanner_iigs_scanline_irq(void *context) {
+void scanner_iigs_handler(void *context, VideoScannerEvent event) {
     display_state_t *ds = (display_state_t *)context;
-    ds->f_scanline_asserted = true;
+
+    switch (event) {
+        case VS_EVENT_SCB_INTERRUPT:
+            ds->f_scanline_asserted = true;
+            break;
+        case VS_EVENT_VBL:
+            ds->f_vblint_asserted = true;
+            // every 60 frames, also assert 1 sec
+            if (++ds->onesec_counter == 60) {
+                ds->f_onesec_asserted = true;
+            }
+            // every 16 frames, also assert 0.25 sec
+            if (++ds->quartersec_counter == 16) {
+                ds->f_quartersec_asserted = true;
+            }
+            break;
+        default:
+            break;
+    }
+
     update_vgc_interrupt(ds);
+
 }
 
 void display_write_c032(void *context, uint32_t address, uint8_t value) {
@@ -1241,8 +1256,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         case Scanner_AppleIIgs:
             ds->video_scanner = new VideoScannerIIgs(mmu);
             ds->video_scanner->initialize();
-            ds->video_scanner->set_irq_handler({scanner_iigs_vbl_irq, cpu});
-            ds->video_scanner->set_scanline_irq_handler({scanner_iigs_scanline_irq, ds});
+            ds->video_scanner->set_irq_handler({scanner_iigs_handler, ds});
             break;
         case Scanner_AppleIIePAL:
             ds->video_scanner = new VideoScannerIIePAL(mmu);
