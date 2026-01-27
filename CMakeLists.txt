@@ -239,7 +239,7 @@ add_library(gs2_devices_mouse     src/devices/applemouseii/mouse.cpp )
 
 add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
 
-add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp)
+add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp src/devices/es5503/soundglu.cpp)
 
 add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
 
@@ -396,6 +396,8 @@ add_subdirectory(apps/iieromcsum)
 add_subdirectory(apps/ui)
 
 add_subdirectory(apps/rtctest)
+
+add_subdirectory(apps/doc)
 
 ################################################################################
 #### Packaging targets per platform

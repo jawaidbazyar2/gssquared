@@ -8927,3 +8927,58 @@ Remember, it's this:
 https://www.lopaciuk.eu/2021/03/26/apple-adb-protocol.html
 
 SO. Setting Mouse Handler=2 means "high resolution" -i.e. we're changing the mouse scaling. woot!
+
+## Jan 26, 2026
+
+According to John Brooks I'm right, Bit 7 of 5503 register E0 is active LOW. 
+C03D double-read is because the sound GLU has a read pipeline. Each read returns the state of the 5503
+at the cycle <after> the last read access
+If you want the 'current value' you need to read twice
+so you do the double read for basically any read from the 5503?
+Whenever you change the DOC register being read, or if it has been awhile since the last read and you need the latest value.
+Yes, the 5503 runs slow at 895KHz
+57 cycles per scanline
+
+the Rastan interrupt handler code is:
+```
+   LDA #E0
+   sta c03e
+   lda c03d
+   lda c03d
+   bmi :notasoundirq
+```
+this mirrors the rom code in irq_sound. 
+```
+stale read of current FIFO contents
+read from 5503 triggered
+whenever that completes, the FIFo is updated
+while waiting for 5503 read, C03c[7] will be 1 (busy)
+```
+
+ok, so one way to model this is for soundglu to NOT call the 5503 every time. Ah, I could clock it with the 14m.
+
+use C03C[7] busy flag.
+
+one 895000 cycle is 16 14M's.
+
+if c14m < doc_read_complete_time
+    return current stored value
+    doc_read_complete_time = c14m + 16 ; // or whatever appropriate (subtract some for current cycle?)
+    set c03c[7] = 1
+if c14m >= doc_read_complete_time:
+    call 5503 and return that value
+    set c03c[7] = 0
+
+the update logic has to be on c03c reads also to -just- turn off the busy bit. but let's say most s/w doesn't care about this.
+
+got it!! it's working pretty well.
+
+Noisetracker is hanging on C03C:7 waiting to go to 0. it's never going un-busy. what if I comment out the bmi..
+
+oops! at 7MHz apparently 16 14M's is too much to get snagged in the next read. figure out what the # should be... (should probably be something small like 2? difference between 14 and 16?)
+try to reason it out .. it's a 1MHz read. We start the read, it will be 2 cycles slow at 1MHz.
+oh, no 16 14Ms isn't the right math. 
+128 nanoseconds
+a 14M is 70ns..
+so if we make the delay 2 or 4 that should get it done. IT DID.
+

@@ -37,7 +37,7 @@
 #include "devices/vidhd/vidhd.hpp"
 #include "devices/rtc/rtc_pram.hpp"
 #include "devices/adb/keygloo.hpp"
-#include "devices/es5503/ensoniq.hpp"
+#include "devices/es5503/soundglu.hpp"
 #include "devices/scc8530/scc8530.hpp"
 #include "devices/iwm/iwm_device.hpp"
 
