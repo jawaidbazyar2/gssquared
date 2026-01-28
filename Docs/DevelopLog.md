@@ -8982,3 +8982,20 @@ oh, no 16 14Ms isn't the right math.
 a 14M is 70ns..
 so if we make the delay 2 or 4 that should get it done. IT DID.
 
+[ ] Qix audio is playing at a fraction of the rate it should. like 1/8.  
+
+
+## Jan 27, 2026
+
+ok well it's time to think about this dumb-arse speaker sync issue again. Let's think this through.
+
+Leaving emu overnight results in skew, and several seconds delay. I should have checked the stats. But I bet it wasn't queued audio. It was probably mismatch between the cycles counter inside Speaker, and c14m counter. meaning Speaker's generation of samples is behind. This is a pretty simple check. if at end of audio Speaker counter is different from c14m, then do an assert or a true-up.
+
+GS bonk doesn't have artifacts ever, really. Is this because we're starting in debugger and we have given the audio system enough time to start up? Maybe we should just delay processing to give audio time to sync up? i.e. do a sleep or delay instead of padding the queue? we know SDL will fill its own buffer when needed. and this has to be driven outside the event loop, couldn't work any other way..
+Well, I have a little hack in the code right now that checks if we're out of sync, and it then resets. Sometimes when the IIe starts up this goes crazy. It -never does- on the GS.. OR on the iie with 816.
+Ah ha, so there is some RESET condition not being cleared properly on a 6502 causing this?!
+Eeenteresting. Come back to this later..
+
+Well Claude fixed my speaker malfunction - when we reset the cycle counter in SpeakerFX, we were creating a situation where there were stale events in the event queue, causing essentially an infinite blowup.
+I've tested the modest fixes by moving windows around, hiding the GS2 windows, etc., and these events DO create skew, which sp->reset now fixes without then exploding the module.
+
