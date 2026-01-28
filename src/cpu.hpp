@@ -56,19 +56,7 @@
 enum execution_modes_t {
     EXEC_NORMAL = 0,
     EXEC_STEP_INTO,
-    EXEC_STEP_OVER
-};
-
-// TODO: deal with endianness here.
-
-struct addr_t {
-    union {
-        struct {
-            uint8_t al;
-            uint8_t ah;
-        };
-        uint16_t a;
-    };
+    //EXEC_STEP_OVER // no longer used?
 };
 
 // a couple forward declarations
