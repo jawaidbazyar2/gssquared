@@ -157,7 +157,16 @@ class SpeakerFX {
                     if (rect_remain == 0) { // if there is nothing left in current rect, get next event and calc new rectangle.
                         if (event_buffer->peek_oldest(event_time)) {
                             event_buffer->pop();
-                            // if this is a very large span of time (exceeding blah) then we overflow. instead of returning huge number, we need to somehow track this.
+                            // Claude added from here---
+                            // Stale event: we've jumped forward (e.g. after reset) and this event is in the past. Skip it
+                            // so we don't underflow (event_time - last_event_time) or move last_event_time backward.
+                            if (event_time <= last_event_time) {
+                                polarity_impulse = (polarity_impulse == 0) ? 1 : 0;
+                                polarity = (polarity_impulse << FRACTION_BITS);
+                                hold_counter = hold_counter_value;
+                                continue;
+                            }
+                            // Claude added to here---
                             rect_remain = (event_time - last_event_time) << FRACTION_BITS;
                             if (last_event_fake == 0) {
                                 polarity_impulse = (polarity_impulse == 0) ? 1 : 0; // if GS, use 2 instead of 1 here.. and apply DC offset of -1 to contrib when we generate the sample.

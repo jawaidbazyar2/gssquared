@@ -311,8 +311,6 @@ void run_cpus(computer_t *computer) {
             uint64_t wakeup_time = last_cycle_time + 16667000;
             SDL_DelayPrecise(wakeup_time - SDL_GetTicksNS());
             
-        } else if (cpu->execution_mode == EXEC_STEP_OVER) {
-
         } else if ((cpu->execution_mode == EXEC_NORMAL) && (cpu->clock_mode != CLOCK_FREE_RUN)) {
 
             computer->set_frame_start_cycle();
@@ -711,6 +709,7 @@ int main(int argc, char *argv[]) {
         computer->mounts->mount_media(disk_mount);
     }
 
+    // TODO: this shouldn't go here, this should be in videosystem.
     //video_system_t *vs = computer->video_system;
     osd = new OSD(computer, computer->cpu, vs->renderer, vs->window, computer->slot_manager, 1120, 768, aa);
     // TODO: this should be handled differently. have osd save/restore?
@@ -720,14 +719,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     computer->video_system->set_window_title(system_config->name);
-    //computer->mmu->dump_page_table(0x00, 0x0f);
+    
     computer->video_system->update_display(); // check for events 60 times per second.
 
     if (platform->mmu_type == MMU_MMU_IIGS) {
         mmu_iigs->set_cpu(computer->cpu);
         
-        computer->debug_window->set_open();
-        computer->cpu->execution_mode = EXEC_STEP_INTO;
+        //computer->debug_window->set_open();
+        //computer->cpu->execution_mode = EXEC_STEP_INTO;
         
         computer->register_debug_display_handler(
             "mmugs",

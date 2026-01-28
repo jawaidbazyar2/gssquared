@@ -54,6 +54,13 @@ uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end
         speaker_state->sp->start();
     }
 
+    if ((end_frame_c14M - speaker_state->sp->last_event_time) > (computer->clock->c14M_per_frame * 3)) {
+        printf("Speaker skew: 14m: %16llu %13llu %13llu\n", cpu->c_14M, end_frame_c14M - speaker_state->sp->last_event_time, computer->clock->c14M_per_frame);
+        // Resync to start of current frame so generate_and_queue can advance to end_frame_c14M.
+        // Reset must pair with generate_samples skipping stale events (event_time <= last_event_time).
+        speaker_state->sp->reset(end_frame_c14M - computer->clock->c14M_per_frame);
+    }
+
     // This really doesn't do much of anything now. C14m (frame rate) calc is always the same. cpu_rate changes but we don't use it
     // except for display.
     if (speaker_state->last_clock_mode != cpu->clock_mode) { // this will always trigger the 1st time through.
@@ -187,7 +194,8 @@ DebugFormatter * debug_speaker(speaker_state_t *ds) {
         samplesum += samplecounts[i];
     }
     uint32_t samplesavg = samplesum / 60;
-
+    uint64_t skew = ds->computer->cpu->c_14M - ds->sp->last_event_time;
+    df->addLine("  Skew: %13llu", skew);
     df->addLine("  Samples: ---------+---------+---------+---------+---------+", samples);
     df->addLine("  %6d : %.*s|            ", samples, frame_index, "                                                  ");
     df->addLine("  Samples Avg: %6d %12.6f", samplesavg, (double)ds->samples_added / (double)ds->sample_frames);
@@ -278,7 +286,6 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     );
 
     speaker_state->sp->start();
-
 }
 
 
