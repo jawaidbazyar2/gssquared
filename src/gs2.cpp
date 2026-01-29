@@ -25,6 +25,7 @@
 
 #include "gs2.hpp"
 #include "Module_ID.hpp"
+#include "device_irq_id.hpp"
 #include "paths.hpp"
 #include "cpu.hpp"
 #include "clock.hpp"
@@ -215,6 +216,15 @@ DebugFormatter *debug_mmu_iigs(MMU_IIgs *mmu_iigs) {
     return f;
 }
 
+DebugFormatter *debug_irq(cpu_state *cpu) {
+    DebugFormatter *f = new DebugFormatter();
+    f->addLine("IRQ: %08llX", cpu->irq_asserted);
+    if (cpu->irq_asserted & (1<<IRQ_ID_ADB_DATAREG)) f->addLine(" |- ADB Data Reg");
+    if (cpu->irq_asserted & (1<<IRQ_ID_KEYGLOO)) f->addLine(" |- KeyGloo");
+    if (cpu->irq_asserted & (1<<IRQ_ID_VGC)) f->addLine(" |- VGC");
+    if (cpu->irq_asserted & (1<<IRQ_ID_SOUNDGLU)) f->addLine(" |- SoundGlu");
+    return f;
+}
 
 /*
 main emulation loop.
@@ -735,6 +745,15 @@ int main(int argc, char *argv[]) {
                 return debug_mmu_iigs(mmu_iigs);
             }
         );
+
+        computer->register_debug_display_handler(
+            "irq",
+            DH_IRQ, // unique ID for this, need to have in a header.
+            [computer]() -> DebugFormatter * {
+                return debug_irq(computer->cpu);
+            }
+        );
+
         computer->cpu->trace_buffer->set_cpu_type(PROCESSOR_65816);
         computer->video_system->set_display_engine(DM_ENGINE_RGB);
 
