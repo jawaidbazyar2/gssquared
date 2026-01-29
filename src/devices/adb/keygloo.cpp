@@ -14,6 +14,11 @@ void keygloo_update_interrupt_status(keygloo_state_t *kb_state, KeyGloo *kg ) {
     } else {
         set_device_irq(kb_state->computer->cpu, IRQ_ID_KEYGLOO, false);
     }
+    if (kg->data_interrupt_status()) {
+        set_device_irq(kb_state->computer->cpu, IRQ_ID_ADB_DATAREG, true);
+    } else {
+        set_device_irq(kb_state->computer->cpu, IRQ_ID_ADB_DATAREG, false);
+    }
 }
 
 uint8_t keygloo_read_C000(void *context, uint32_t address) {
@@ -51,13 +56,16 @@ uint8_t keygloo_read_C024(void *context, uint32_t address) {
 uint8_t keygloo_read_C026(void *context, uint32_t address) {
     keygloo_state_t *kb_state = (keygloo_state_t *)context;
     KeyGloo *kg = kb_state->kg;
-    return kg->read_data_register();
+    uint8_t data = kg->read_data_register();
+    keygloo_update_interrupt_status(kb_state, kg); // could have IRQ after event..
+    return data;
 }
 
 void keygloo_write_C026(void *context, uint32_t address, uint8_t value) {
     keygloo_state_t *kb_state = (keygloo_state_t *)context;
     KeyGloo *kg = kb_state->kg;
     kg->write_cmd_register(value);
+    keygloo_update_interrupt_status(kb_state, kg); // could have IRQ after event..
 }
 
 uint8_t keygloo_read_C027(void *context, uint32_t address) {

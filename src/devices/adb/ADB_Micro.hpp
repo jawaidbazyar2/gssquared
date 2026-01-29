@@ -105,6 +105,8 @@ class KeyGloo
         uint8_t mouse_data[2] = {0};
 
         bool interrupt_asserted = false;
+        bool data_interrupt_asserted = false;
+        bool send_data_register = false;
 
         /* bool mouse_interrupt_asserted = false;
         bool kb_interrupt_asserted = false; */
@@ -121,6 +123,18 @@ class KeyGloo
                 bool mouse_data_full : 1;
             };
             uint8_t status;
+        };
+
+        union {
+            struct {
+                bool num_response_bytes : 3;
+                bool service_request_valid : 1;
+                bool buffer_flush_sequence : 1;
+                bool desktop_manager_key_sequence : 1;
+                bool abort_valid : 1;
+                bool response_byte : 1;
+            };
+            uint8_t datareg;
         };
 
         int keysdown = 0;
@@ -155,6 +169,10 @@ class KeyGloo
             mouse_x_available = MOUSE_X;
             keysdown = 0;
             status = 0;
+
+            datareg = 0;
+            data_register_full = false;
+
         }
 
         void abort() {
@@ -162,6 +180,8 @@ class KeyGloo
             cmd_bytes = 1;
             response_index = 0;
             response_bytes = 0;
+            data_register_full = false;
+
         }
 
         void flush() {
@@ -174,6 +194,8 @@ class KeyGloo
             key_latch = {0,0};
 
             keysdown = 0;
+            data_register_full = false;
+
         }
 
         void flush_buffer() {
@@ -251,8 +273,8 @@ class KeyGloo
         void execute_command() {
             uint8_t value = cmd[0];
             response_bytes = 0; // by default
-            //uint8_t response_bytes_reported = 1;
-            //response_index = 0; // TODO: on a new command, reset the response index. we may have the wrong # of response bytes on one of our commands. or GS might not be reading them all.
+            response_index = 0;
+            // TODO: on a new command, reset the response index. we may have the wrong # of response bytes on one of our commands. or GS might not be reading them all.
 
             printf("ADB_Micro> Executing command: ");
             for (int i = 0; i < cmd_index; i++) {
@@ -264,11 +286,14 @@ class KeyGloo
                 case 0b00'000000:
                     if (value == 0x01) { // ABORT COMMAND
                         abort();
+                        update_interrupt_status();
                     } else if (value == 0x02) { // RESET uC
                         reset();
+                        update_interrupt_status();
                     } else if (value == 0x03) { // FLUSH COMMAND
                         //printf("FLUSH COMMAND - unimplemented\n");
                         flush();
+                        update_interrupt_status();
                     } else if (value == 0x04) { // set modes
                         modes_byte = value | cmd[1];
                     } else if (value == 0x05) { // clr modes
@@ -478,6 +503,10 @@ class KeyGloo
             load_key_from_buffer();
         }
 
+        void update_data_register_full() {
+            data_register_full = send_data_register || (response_bytes > 0);
+        }
+
         uint8_t read_data_register() {
             // at interrupt time we need to return this.
             /* response[0] = (response_bytes > 0 ? 0x80 : 0x00) |
@@ -486,9 +515,19 @@ class KeyGloo
             ( false ? 0x10 : 0x00) | // buffer_flush_sequence
             ( false ? 0x08 : 0x00) | // service_request_valid
             ((response_bytes_reported-1) & 0x07); */
+            if (send_data_register) {
+//            if ((data_register_full) && (data_interrupt_enabled)) {
+                uint8_t retval = datareg; // value before we modify it..
+                send_data_register = false;
+                update_data_register_full();
+                desktop_manager_key_sequence = false; // deassert this also
+                update_interrupt_status();
+                return retval;
+            }
 
             uint8_t retval = 0;
 
+            data_register_full = false; // clear it
             if (response_bytes > 0) {
                 response_bytes--;
                 
@@ -497,6 +536,8 @@ class KeyGloo
                 response_index = 0;
                 data_register_full = false;
             }
+
+            update_data_register_full();
 
             // clear interrupt status
             // TODO: should we clear the first byte read, or the last byte?
@@ -562,7 +603,9 @@ class KeyGloo
                         } else if (value == 0x10) { // RESET SYSTEM
                         } else if (value == 0x11) { // SEND FDB KEYCODE
                             cmd_bytes = 1;
-                        } 
+                        } else {
+                            printf("ADB_Micro> Unimplemented command: %02X\n", value);
+                        }
     
                         break;
                     case 0b01'000000:
@@ -576,6 +619,8 @@ class KeyGloo
                         } else if ((value & 0b1111'0000) == 0b0101'0000) { // ENABLE SRQ ON DEVICE
                         } else if ((value & 0b1111'0000) == 0b0110'0000) { // FLUSH BUFFER ON DEVICE
                         } else if ((value & 0b1111'0000) == 0b0111'0000) { // DISABLE SRQ ON DEVICE
+                        } else {
+                            printf("ADB_Micro> Unimplemented command: %02X\n", value);
                         }
                         break;
                     case 0b10'000000:
@@ -604,12 +649,20 @@ class KeyGloo
         bool interrupt_status() {
             return interrupt_asserted;
         }
+        bool data_interrupt_status() {
+            return data_interrupt_asserted;
+        }
+
         void update_interrupt_status() {
             interrupt_asserted = 
                 (mouse_interrupt_enabled && mouse_data_full) ||
                 //(data_interrupt_enabled && data_register_full) ||
                 (kb_interrupt_enabled && kb_register_full);
             if (interrupt_asserted) {
+                assert(true);
+            }
+            data_interrupt_asserted = data_interrupt_enabled && data_register_full;
+            if (data_interrupt_asserted) {
                 assert(true);
             }
         }
@@ -669,6 +722,14 @@ class KeyGloo
 
                             // TODO: Map the keycode here through a mapper based on the language setting.
                             if ((keycode == ADB_DELETE) && vars.currmod.ctrl && vars.currmod.open) flush_buffer();
+                            else if ((keycode == ADB_ESCAPE) && vars.currmod.ctrl && vars.currmod.open) {
+                                if (!keyupdown) { // only assert on key down.
+                                    desktop_manager_key_sequence = 1;
+                                    send_data_register = true;
+                                    data_register_full = 1;
+                                    update_interrupt_status();
+                                }
+                            }
                             else {
                                 uint8_t kpflag = 0;
                                 // TODO: this also needs to update currmod.keypad if a keypad key is being held down?
@@ -678,7 +739,7 @@ class KeyGloo
                             break;
                     }
                 }
-                print_keyboard();
+                //print_keyboard();
 
             } else if (status && (event.type == SDL_EVENT_MOUSE_MOTION || event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_UP)) {
                 ADB_Register reg;
@@ -701,7 +762,7 @@ class KeyGloo
                 mouse_data[1] = reg.data[0];
                 mouse_data_full = true;
                 mouse_x_available = MOUSE_X;
-                print_mouse();
+                //print_mouse();
                 update_interrupt_status();
             }
 
@@ -710,7 +771,26 @@ class KeyGloo
 
         void debug_display(DebugFormatter *df) {
             df->addLine("uC Mode: %02X", modes_byte);
-            df->addLine("C027 Status: %02X", status);
+            df->addLine("C027 Status: %02X DataReg: %02X", status, datareg);
+
+            df->addLine("MS/KB Int: %d Data Int: %d", interrupt_asserted, data_interrupt_asserted);
+
+            char rbuf[256] = {0};
+            char cbuf[256] = {0};
+            char buf[4];
+
+            for (int i = 0; i < cmd_index; i++) {
+                snprintf(buf, sizeof(buf), "%02X ", response[i]);
+                strncat(rbuf, buf, 250);
+            }
+            df->addLine("Command Buf [%d/%d]: %s", cmd_index, cmd_bytes, rbuf);
+
+            for (int i = response_index; i < response_index +response_bytes; i++) {
+                snprintf(buf, sizeof(buf), "%02X ", response[i]);
+                strncat(rbuf, buf, 250);
+            }
+            df->addLine("Response Buf [%d/%d]: %s", response_index, response_bytes, rbuf);
+
 
             df->addLine("Keyboard: currmod: %02X, prevmod: %02X", vars.currmod.value, vars.prevmod.value);
             df->addLine("  keysdown: %d", keysdown);

@@ -468,7 +468,7 @@ class ADB_Keyboard : public ADB_Device
             uint8_t code = ((key.status == KEY_STATUS_UP) ? 0x80 : 0x00) | key.keycode;
             registers[0].data[1] = code;
         }
-        if (status) print_registers();
+        //if (status) print_registers();
 
         return status;
     }

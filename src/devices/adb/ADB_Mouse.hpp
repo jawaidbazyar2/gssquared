@@ -145,7 +145,7 @@ class ADB_Mouse : public ADB_Device
 
             //printf("MS> Mouse motion: x: %f, y: %f, xrel_abs: %d, yrel_abs: %d, moved_right: %d, moved_up: %d data0: %02X, data1: %02X\n", event.motion.x, event.motion.y, xrel, yrel, moved_right, moved_up, registers[0].data[0], registers[0].data[1]);
         }
-        if (status) print_registers();
+        //if (status) print_registers();
         return status;
     }
 };
