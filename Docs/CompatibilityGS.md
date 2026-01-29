@@ -45,7 +45,6 @@ System 6.0.3 Install disk crashes into monitor after doing a bunch of stuff. BUT
 
 Booting pretty reliably now.
 
-
 ## AppleWorks 1.3
 
 works.
@@ -75,6 +74,8 @@ Now supports C029 mono mode in rgb (and composite) rendering.
 
 WORKING SUPER DUPER PERFECTO
 
+The text editor/viewer crashes, there is likely some issue with AUX/MAIN bank switching still.
+
 ## Arkanoid
 
 Crashes during boot.
@@ -83,8 +84,9 @@ It's executing from E0/D100 page, does 00 => C068, and then the code disappears 
 Indeed, the code they're expecting is switched in if I hit c08b c08b. and 0 => C068 definitely turns OFF LC Bank 1. 
 Is there even supposed to be a LC in banks E0/E1 ?
 
-It now boots and plays (without sound!!) IT IS HAPPENING
+It now boots and plays (without sound!!) IT IS HAPPENING!!
 
+IT NOW PLAYS WITH SOUND!!!!! IT HAS HAPPENED!!
 
 ## Airball
 
@@ -97,6 +99,8 @@ The mouse isn't moving, probably because interrupts are not hooked up yet.
 
 boots past a "loading" screen, but then is looping doing ??
 
+Working now.
+
 ## Apple IIgs Dealer Demo
 
 boots to "Demo Configuration";
@@ -108,6 +112,8 @@ tries to load stuff off slot 6 for a while then crashes.
 sometimes we have a crash booting GS/OS, and then a reboot, and it works.
 This feels like there is a s/s not being set correctly on powerup or reset.
 At splash screen hangs in tight loop waiting for 1D00 to be non-zero. It's waiting for an interrupt handler to set a variable.
+it's just slow. The music is playing like 8 times too slow. Weeeird.
+
 
 ## Gauntlet
 
@@ -123,6 +129,9 @@ so, this  but then crashes after trying to calculate a slot offset from $2B. $2B
 Except when this code runs $2B just contains 7. 7 is right slot but in wrong place. 
 Well, funnily enough, this is a 143K disk, not an 800K disk. So I bet its bootloader is just doing the wrong thing because it's expecting a 5.25.
 
+## Donkey Kong
+
+Plays very well with keyboard. Joystick auto-detect not working.
 
 ## Total Replay
 

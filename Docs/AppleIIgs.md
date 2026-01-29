@@ -13,8 +13,33 @@ Test Suite for Emulators generally:
 http://krue.net/truegs/
 
 
+# Development Roadmap
 
-### 65816 Processor
+We can implement in this order.
+
+[x] 65816 [initial version done]  
+[ ] Accurate Cycle Timing (FPI / Mega II / Fast-Slow)  
+[x] mmu (done-ish but might still be bugs)  
+[x] RTC / BRAM  
+[x] ADB  
+  [x] Keyboard  
+  [x] Mouse  
+[x] New Display Modes
+  [x] SHR  
+  [x] text mode enhancements (colored text / border)  
+[x] Game controller   
+[ ] Interrupts  
+[ ] IWM  
+[ ] Ensoniq  
+[ ] Zilog SCC 8530  
+[ ] ROM03    
+
+65816 emulation mode - the key element here is going to be to switch all the functions to use auto to allow us to switch from 8-bit to 16-bit more easily. By using auto, the compiler will .. uh, automatically.. pick the right data types based on calling parameters, stuff like that. CPU done.
+
+So I jumped ahead and did SHR stuff. Got it in the dpp framework, now need to implement it in vpp (VideoScanner). Then go back to text/borders.
+
+
+## 65816 Processor
 
 This looks like an excellent resource:
 
@@ -27,6 +52,7 @@ https://forums.nesdev.org/viewtopic.php?t=24940
 First one to start using:
 https://github.com/gilyon/snes-tests
 
+## Accurate Cycle Timing
 
 The CPU code will need to distinguish, for incr_cycles() purposes, between:
 * internal cycles
@@ -35,13 +61,17 @@ The CPU code will need to distinguish, for incr_cycles() purposes, between:
 Hm, ARE there any purely "internal" cycles? Every CPU cycle hits the memory bus. 
 
 
-### Ensoniq 5503 DOC
+## Ensoniq 5503 DOC
 
 See Ensoniq.md. Accessed via new $C0xx registers.
 
-### Super Hi-Res Video Modes
+## New Display Modes
+
+### SHR - Super Hi-Res Video Modes
 
 Pretty straightforward. Linear video buffer, pixel values look up 4096 colors (12-bit color value) in a palette table.
+
+[ ] Implement Fill Mode  
 
 ### Standard Apple II text with Color
 
@@ -49,9 +79,12 @@ Text modes have a foreground and background color applied from a choice of 16 co
 
 ### RGB output even for 8-bit II modes
 
-RGB output. (Partially implemented now, I think).
+Exact Apple IIgs style RGB display for the Apple II video modes is done for hires, double hires.
 
-### ADB (Apple Desktop Bus)
+[ ] Implement special case for crisp Lo-Res and Double Lo-Res in RGB mode  
+
+
+## ADB (Apple Desktop Bus)
 
 A shared serial bus (precursor of the USB concept) for keyboard, mouse, potentially other devices.
 
@@ -68,7 +101,7 @@ Have an ADBGLU class, that acts as a middleman between the devices and the "moth
 The Keyboard is ADB but there is a simulation of the $C000/$C010 scheme. The ADB GLU is where those switches live in a GS.
 
 
-### Memory Map
+## Memory Map
 
 The IIgs has a 16MB (24-bit) address space. All I/O is done in the legacy $C000 space.
 
@@ -85,13 +118,16 @@ I'll need something to return the speed and sync of a r/w. Maybe just a simple f
 * any shadowed write in 00/01
 * any read or write in E0/E1
 
-So computer will have the RegMMU, but also FastMMU. RegMMU is injected into FastMMU.
-The CPU calls FastMMU. Everything else is injected with RegMMU.
-FastMMU is controlled by device iigsmemory, which exposes registers:
-* shadow register
-* New-Video register.
+So computer has a MegaII MMU, but also MMU_IIGS - the FPI. MMU_IIGS allocates its own Mega II MMU internally.
 
-iigsmemory will also replicate the language card functionality, and have those registers, because that bank switching exists in banks 00/01.
+The CPU calls MMU_IIGS. Everything else is injected with RegMMU.
+Unlike the IIe implementation, MMU_IIGS is a class that manages all its own softswitches etc., which exposes registers including:
+
+* Shadow register
+* New-Video register
+* State register
+
+MMU_IIgs also replicates the language card functionality, and have those registers, because that bank switching exists in banks 00/01.
 
 New-Video, controls linearity or interleave of some memory in bank 1. Also, controls whether ALL even/odd banks are shadowed?
 
@@ -104,18 +140,17 @@ Fast ROM is banks $F0 to $FF. (1MB total).
 The $C000 - $FFFF space in E0/E1 is controlled by the LC. The Shadow register bit 6 just controls whether a WINDOW in those locations in banks0/1 is present or not.
 LC memory writes are NOT shadowed to E0/E1.
 
-The ROM01 file is 256KB exactly, and would map to banks $FC $FD $FE $FF. It looks like $FF/C000 is various slot card firmware, including at $C800-$CFFF (I forget, did the IIe have stuff here too?)
+The ROM01 file is 128KB exactly, and maps to banks $FE $FF. ROM03 is 256KB and maps to banks FC-FF. It looks like $FF/C000 is various slot card firmware, including at $C800-$CFFF (I forget, did the IIe have stuff here too?)
 $FF/D000 is AppleSoft etc. $F800 should be monitor ROM.. yep. All largely unmodified. So mapping this should be straightforward. Of course the reset/etc vectors are different.
 
-Weirdly, there is ROM data at $C06E-$C0FF. For example, $C06E is a JMP 9D36. what? 
+Weirdly, there is ROM data at $C071-$C07F. The IRQ/BRK vector is 74 C0 ($C074). At that location in the ROM is this:
 
-The IRQ/BRK vector is 74 C0 ($C074). At that location in the ROM is this:
 B8 5C 10 00 E1
 
 which is CLV then JML $E1/0010. What? E1/0010 etc are interrupt vectors. What about apple II software that uses page 0? Ah, that is not shadowed.
 
 JBrooks: "$C07x ROM is active in bank 0 & 1 when I/O shadowing is enabled, or after the CPU does a vector pull (interrupt) via $FFEx/FFFx"
-We determined that we think C07x ROM is controlled purely by the I/O shadowing flag.
+We determined that we think C07x ROM is controlled purely by the I/O shadowing flag. 
 
 
 Shadowing: not all the regions in $00/$01 are shadowed:
@@ -184,7 +219,36 @@ Fundamentally, you need to implement 3 clocks - a fast clock, a slow clock with 
 There's even some code of clocking implementation from CrossRunner.
 
 
-### IWM (SmartPort)
+
+## Game I/O
+
+The same as the Apple II. Can use the gamecontroller module as-is.
+
+## Realtime Clock
+
+$C033 and $C034 work together to provide access to the IIgs Realtime clock.
+
+Bits 7-4 of $C034 manage a protocol to communicate with the clock; bits 3-0 control the Border Color on the IIgs display.
+Page 169 of the hardware reference.
+
+The RTC also holds the more general purpose "battery ram". There are a total of 256 bytes of information present in this. These values will need to be stored to a data file on host disk whenever they're modified. This is a detailed description of the battery ram and its contents:
+
+https://groups.google.com/g/comp.sys.apple2/c/FmncxrjEVlw
+
+- Excellent deep dive into IWM
+https://llx.com/Neil/a2/disk
+
+
+## 2 built-in serial ports via Zilog SCC chip 
+
+Zilog SCC chip supports 2 built-in serial ports. The registers for this chip are: $C038 -9 (scc command channel B and A), and $C03A-B (scc data channel b and a).
+
+
+### AppleTalk / LocalTalk networking (via Zilog chip)
+
+This is likely just driven by firmware. If we wanted to support AppleTalk, we'd need to decode packets and convert to ethernet or something like that.
+
+## IWM (SmartPort) - Built-in 5.25/3.5 Controller
 
 IWM/SmartPort can control both 5.25" disk II drives as well as 3.5" drives. 
 
@@ -208,42 +272,11 @@ Zone 	Tracks	Sectors/Track	Bytes/Track
 5	64–79	8	4,096
 ```
 
-Now, we -could- cheat and act like we have slot 5 mapped to our own card which is our dummy pdblock drive. That would be the fastest way to get an 800k drive working here. But we'd need the above to eventually deal with copy-protected .WOZ images of 3.5's.
+Now, we -could- cheat and act like we have slot 5 mapped to our own card which is our dummy pdblock drive. That would be the fastest way to get an 800k drive working here. But we'd need the above to eventually deal with copy-protected .WOZ images of 3.5's. (Turns out there are a fair number of titles that see GS floppy and just assume slot 6 and crash booting)
 
 The IWM registers look just like Disk II registers and sit in $C0E0-C0EF; plus a couple other control registers elsewhere.
 
 Start with pdblock2 + disk ii, and then implement the iwm fully as a Phase 2. This might be where we implement .WOZ support fully also.
-
-
-### Game I/O
-
-The same as the Apple II. Can use the gamecontroller module as-is.
-
-### Realtime Clock
-
-$C033 and $C034 work together to provide access to the IIgs Realtime clock.
-
-Bits 7-4 of $C034 manage a protocol to communicate with the clock; bits 3-0 control the Border Color on the IIgs display.
-Page 169 of the hardware reference.
-
-The RTC also holds the more general purpose "battery ram". There are a total of 256 bytes of information present in this. These values will need to be stored to a data file on host disk whenever they're modified. This is a detailed description of the battery ram and its contents:
-
-https://groups.google.com/g/comp.sys.apple2/c/FmncxrjEVlw
-
-- Excellent deep dive into IWM
-https://llx.com/Neil/a2/disk
-
-
-### 2 built-in serial ports via Zilog SCC chip 
-
-Zilog SCC chip supports 2 built-in serial ports. The registers for this chip are: $C038 -9 (scc command channel B and A), and $C03A-B (scc data channel b and a).
-
-
-### AppleTalk / LocalTalk networking (via Zilog chip)
-
-This is likely just driven by firmware. If we wanted to support AppleTalk, we'd need to decode packets and convert to ethernet or something like that.
-
-### Built-in 5.25/3.5 Controller
 
 Has the IWM chip - Integrated Woz Machine. Looks like a Disk II in Slot 6, but how is the 3.5 drive handled? What is that protocol?
 
@@ -288,26 +321,27 @@ on my GS RGB SHR is 7.75 inches across and regular hires is 7.75 inches across. 
 
 ### VGC
 
-* C023
-7. VGC Interrupt Status
-6. One-second interrupt status
-5. scanline interrupt status
-4. external interrupt status
-3. unused set to 0
-2. one-second interrupt enable
-1. scanline interrupt enable
-0. external interrupt enable
+| Register | Description |
+|-|-|
+| C023[7] | VGC Interrupt Status |
+| C023[6] | One-second interrupt status |
+| C023[5] | scanline interrupt status |
+| C023[4] | external interrupt status |
+| C023[3] | unused set to 0 |
+| C023[2] | one-second interrupt enable |
+| C023[1] | scanline interrupt enable |
+| C023[0] | external interrupt enable |
 
 7 is the OR of 4-6.
 
-* C032
-7. not used, set to 0
-6. Clear bit for one-second interrupt
-5. clear bit for scanline interrupt
-4-0. unused set to 0
+This is one of the clearer interrupt setups. 
 
-* Other ADB
-?? how does ctrl-oa-esc work?
+| Register | Description |
+|-|-|
+| C032[7] | not used, set to 0 |
+| C032[6] | Clear bit for one-second interrupt |
+| C032[5] | clear bit for scanline interrupt |
+| C032[4-0] | unused set to 0 |
 
 Write a 0 into bit 6 or bit 5 to clear that interrupt. Writing a 1 has no effect.
 Reading the video counters will also clear the ScanLine interrupt status bit!
@@ -316,47 +350,77 @@ To implement the one-second interrupt, we need a timer that works sort of like t
 
 To implement the scanline interrupt, VideoScannerIIgs will have to set the interrupt when it reads the scanline control byte. If the bit in SCB is 1, throw an interrupt. That seems easy enough.
 
+* Other ADB
+
+| Register | Description |
+|-|-|
+| C027[5] | data interrupt full |
+| C027[4] | data interrupt enable |
+
+This was unusually difficult because it's hard to find test examples that don't immediately crash and/or require tons of code tracing. but, it might be working?
+
 ### MegaII Mouse
 
-* C041 - Int Enable
-7. 0
-6. 0
-5. 0
-4. Enable 1/4 sec ints
-3. Enable VBL ints
-2. Enable switch ints
-1. enable move ints
-0. enable mouse
+* C041 - Int Enable - INTEN
+
+| Register | Description |
+|-|-|
+| C041[7] | 0 |
+| C041[6] | 0 |
+| C041[5] | 0 |
+| C041[4] | Enable 1/4 sec ints |
+| C041[3] | Enable VBL ints |
+| C041[2] | Enable Mega II mouse switch ints |
+| C041[1] | enable Mega II mouse move ints |
+| C041[0] | enable Mega II mouse operation |
 
 So I don't think the GS uses anything here except bits 3-4: vbl and quarter-second.
 
-Again, the ideal place to insert the VBL interrupt is in VideoScannerIIgs.
+Again, the ideal place to insert the VBL interrupt is in VideoScannerIIgs. (done)
 
 
+## ROM03
 
-# Development Roadmap
+There are a few relatively minor differences between ROM01 and ROM03.
 
-We can implement in this order.
+1. ROM03 supports shadowing Text Page 2.
 
-[x] 65816 [initial version done]
-[x] text mode enhancements (colored text / border)
-[x] mmu (done-ish but might still be bugs)
-[x] RTC / BRAM
-[x] ADB
-  [x] Keyboard
-  [x] Mouse
-[x] SHR
-[x] Game controller 
-[ ] Interrupts
-[ ] IWM
-[ ] Ensoniq
-[ ] Zilog SCC 8530
-[ ] ROM03  
+This is easily supported by checking the ROM type in shadow_bank_read/write.
 
-65816 emulation mode - the key element here is going to be to switch all the functions to use auto to allow us to switch from 8-bit to 16-bit more easily. By using auto, the compiler will .. uh, automatically.. pick the right data types based on calling parameters, stuff like that. CPU done.
+1. It has more memory by default. This won't really matter for us.
 
-So I jumped ahead and did SHR stuff. Got it in the dpp framework, now need to implement it in vpp (VideoScanner). Then go back to text/borders.
+This is irrelevant given our design (all fast RAM is one contiguous stretch)
 
+1. It has an updated ADB Micro, that supports stickey keys
+
+
+## Unique Peripheral Cards to Consider Implementing
+
+There were a variety of unique/useful cards that really took advantage of the Apple IIgs capabilities. With any of these give consideration to utility - truly want to enable a broader software ecosystem that would really use this stuff.
+
+### VoC - Video Overlay Card
+
+Offered video overlay of IIgs graphics on an external video source, but also allowed a 320x400 and 640x400 mode using interlacing on the IIgs monitor. 
+
+### SecondSight
+
+Well, we know all about this. It added VGA graphics to the Apple IIgs, and had some cool JPEG, TIF etc picture viewer written by a guy named Jawaid. 
+
+### VidHD and/or other upcoming cards
+
+VidHD had some interesting and useful features. and the long-awaited AppleTini card promises a variety of very interesting video modes.
+
+What if I implemented my thoughts for a video system, with a frame buffer living in fast ram and having video acceleration features like a "gpu" that implements quickdraw calls in paravirtualization.
+
+### Virtual Memory - Memory Protection
+
+Ahhh the holy grail. This deserves its own long writeup. But short version: memory protection integrated with GS/OS and GNO, and perhaps memory virtualization to allow combinations of apps > 16MB address space. (Could have much more physical ram behind the virtual window). But memory protection would be a huge win. 
+
+### RAMfast SCSI
+
+this was the fastest disk interface then (or now for that matter) since it supported DMA to any IIgs memory bank. Since we don't have a real bus, trying to implement this would be really for nostalgia sake. However, having a Smartport-compliant "Hard Disk" card option that makes it very easy to manage lots of large disk partitions is something I need. The current pdblock2 has been fine but the 2-drive limit and no removability support makes it awkward to use on a GS.
+
+This would need a nice clean UI. Drag and drop for sure. More generally, the ability to save disk mounts in config so they persist across sessions. 
 
 
 ## Source code that reads the character rom out of a IIgs

@@ -8999,3 +8999,96 @@ Eeenteresting. Come back to this later..
 Well Claude fixed my speaker malfunction - when we reset the cycle counter in SpeakerFX, we were creating a situation where there were stale events in the event queue, causing essentially an infinite blowup.
 I've tested the modest fixes by moving windows around, hiding the GS2 windows, etc., and these events DO create skew, which sp->reset now fixes without then exploding the module.
 
+If we get rid of the Apple2_Display from normal emulator usage, it still has a purpose: to render screens thumbnail size in the debug window. in fact, that will be superduper cool - and it's well-suited to it, except we might alter the API to make it easier to select the video mode we want it to render.
+
+ok I want the dumb CDA control panel to work! How..
+
+look at the ROM03 interrupt handling code in ADB.md.
+
+## Jan 28, 2026
+
+ok, making some progress with control panel ctrl-oa-esc
+
+DoCDAMenu (FE/ADF1) is calling tool 0B05, and therein we get a Fatal System Error 0911.
+This is in the interrupt handler for 0x20. 0B05 is SaveAll "save all variables that DM preserves when the CDA menu is activated". Sets display to text mode. 
+C027=B0, C026=20 (datareg). Shouldn't the IRQ clear on reading C026?
+
+b9a9
+FE/AFCB is the tool call 0B05. 
+ok in that routine, at fe/b076, it is doing JSL E1/0094 to "init the 80 column firmware". That's where we're dying. uh, E1/0094 is "TOBRAMSETUP" set up system o bram parameters routine.
+in additionif called with carry set it does NOT set up slot config (internal vs external). (there's sec right before call).
+
+ok now we're at FF/B6F4, in tobramsetup. Usersetup. 
+
+Uh, why is the IRQ asserted and DataReg[5] set again? 
+
+ok, so at FF/B769 there is a jsr PANELFDB (FF/85CB) which is going to send an abort to the ADB . ok, that's what is breaking..
+continue to drill down..
+ah ha
+
+```
+0249 808B F4 01 00              PEA   $0001                    ;ABORT command
+0250 808E 4B                    PHK                            ;Dummy address
+0251 808F 62 04 00              PER   @1-1                     ;Return address
+0252 8092 22 14 00 FE           JSL   >ADBSENDTL               ;Direct ADB tool call for sending a cmd
+0256 8097 E2 30                 SEP   #$30                     ;8 bit m/x
+0257 8099 90 07                 BCC   @3                       ;BRA if successful send
+0258 809B 68                    PLA                            ;Get back retry counts
+0259 809C 3A                    DEC   A                        ;
+0260 809D 10 E8                 BPL   @0                       ;RETRY !!!!
+0261 809F 4C B1 81              JMP   ADBERR                   ;Display $911 error
+0262 80A2              @3       EQU   *
+0263 80A2 C2 10                 REP   #$10                     ;8/16 BIT m/x
+0264 80A4                       LONGA OFF
+0265 80A4                       LONGI ON
+0266 80A4 68                    PLA                            ;Clean stack
+```
+
+ok, we're expecting a response from the ABORT uC command. 
+huh, KEGS doesn't implement abort at all.
+
+the rom01 code is quite different here, but should be doing the same thing. 
+
+we have sent the abort already, so this should be reading the response..
+```
+LDA #0F  <= this is "send an adb command"
+FF/85E2: JSR 83A2
+JSR 83D6 - read response byte from Micro with timeout
+LDA C027
+ROR A
+TXA
+BCS 83ED - carry was low
+STA C026 => 0F    ; what is this? read layouts? no, doesn't make sense.
+LDA C027 <= B0
+ROR A   <= checking bit 0 = 1
+bcs loop 
+rts     <= so it IS sending a 0F layouts command and waiting for command to be accepted.
+bcs..
+AND #10   <= actually checking 20 since we did a ROR
+beq 83b1 <= if nothing in data reg..
+LDA C026 <= 00    but we didn't put anything into data reg
+TSB 0FD7 <= 00   so it's testing, and setting nothing
+RTS
+BCS 8657  <= adberr skipped this.. so no err here..
+
+LDY #0
+JSR 8442       ; RCV Data, this loops waiting for C027[5] to go high, which it won't
+```
+
+adb debug should show detail status on command buffer and response buffer.
+I should write an ADB Test routine. Alternately, is there a way to trigger the ROM's ADB self test?
+
+ok the issue here is we are returning a 00 every time before we return other data. because of the test we added in read_data_register.
+
+whoa what just happened. I booted a floppy, hit ctrl-reset, and got the CDA panel.
+IRQ=0 too.
+but it took a reset?
+
+## Jan 29, 2026
+
+[ ] need to call Ensoniq reset on a reset  
+
+[ ] F1 should also capture, in addition to mouse click  
+
+[ ] Add a 14MHz mode between 7MHz and Ludicrous Speed  
+[ ] Properly rename 4MHz to 7_1MHz everywhere, including in OSD  

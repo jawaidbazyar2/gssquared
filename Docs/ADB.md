@@ -300,7 +300,7 @@ Even though today I only have two devices, and am unsure about ever supporting a
 [x] Patch in event handling for Mouse.
 [x] test harness  
 
-Apparently the CDA panel is handled by the firmware during VBL interrupts.
+Apparently the CDA panel is handled by the firmware during VBL interrupts. (NO)
 
 Event handling. Put it into this object?
 Or, handle it at the device level and decouple the KeyGloo object from: timing, SDL, etc?
@@ -368,6 +368,90 @@ key takeaways so far:
 [ ] mouse data - 1st read gets X data and button 1 data; 2nd read gets Y and button 0
 
 
+## Control Panel (CDA) Ctrl-OA-ESC
+
+hello! I’m struggling to figure out exactly which IRQ source is triggered on a control-openapple-ESC to open the CDA panel.
+
+First, this seems to be signaled in the ADB Command/Status Register (“at interrupt time”) in bit 5. Cortland doc labels this “Desktop Manager Key Sequence.” but then contradicts itself halfway down the page calling it the “reset key sequence” indicator.  But the FW Ref also calls it “Desktop Manager Key Sequence”. 
+
+KEGS has routines to set and clear C026[3]. This is "SRQ Valid If Set". That's Service Request. And C026[5] is "Desktop manager key sequence" pressed.
+
+So when Bit 3 here is set we assert an ADB_SRQ interrupt to the cpu. 
+After the 3 keys are hit, it sets the IRQ, but goes ahead and processes the data as a normal keypress.
+
+But what clears it exactly?
+
+in KEGS, the function adb_kbd_talk_reg0. And this is called only by uC commands 0xC0-0xCF. "Talk Dev x Reg 0" to the keyboard. And when the response data from that has been stored, we clear the IRQ. This doesn't feel right? That would clear it in time for then C026 to read the data from this request..
+
+So when SRQ bit is set, and C026 is read, we present this status register. 
+
+Hmmm. Another possibility is that the keyboard is generating an ADB SRQ? and then the uC polls it to see which device did it. perhaps the uC expects the host to poll for the SRQ initiator, and KEGS just triggers it on the KB. This is mysterious.
+
+this hinges on the "Data Register", which "at interrupt time" is .. 
+
+ok. If c027[54] = 11, then we are in "interrupt time". and reading the datareg C026 and/or the full response (based on number bytes noted in C026[2:0]).
+
+we want an IRQ_ADB_DATAREG
+
+```
+c027[4] = data int enable; c027[5] = data reg full
+1108 BE5A              @66      EQU   *
+1109 BE5A AF C5 00 E1           LDA   >IRQ_KMSTATUS            ;Test for data register interrupts    -- C027 was copied here.
+1110 BE5E 29 30                 AND   #$30                     ;Bits 4,5 are status/enable
+1111 BE60 0A                    ASL   A                        ;Bit 5 to 'c'/bit 4 to bit 7
+1112 BE61 0A                    ASL   A                        ;
+1113 BE62 0A                    ASL   A                        ;
+1114 BE63 10 61                 BPL   @55                      ;+ then not enabled                   -- data int not enabled
+1115 BE65 90 5F                 BCC   @55                      ;'c'=0 then not data reg int          -- data int enabled, but this is not a data interrupt
+1116 BE67
+1117 BE67 AD 26 C0              LDA   DATAREG                  ;Pick up DATAREG for testing now and later
+1118 BE6A 8F C4 00 E1           STA   >IRQ_DATAREG             ;Save for later
+1119 BE6E 10 07                 BPL   @66_1                    ;Not response byte interrupt          -- c026[7] "response byte if set, otherwise status byte". response from what?
+1120 BE70 22 40 00 E1           JSL   >IRQ_RESPONSE            ;Go do interrupt if possible          -- this is a "response byte". 
+1121 BE74 20 83 BF              JSR   TSTSETFLG                ;Check 'c' and maybe set flag
+1122 BE77
+1123 BE77              @66_1    EQU   *
+1124 BE77 AF C4 00 E1           LDA   >IRQ_DATAREG             ;Recall status byte
+1125 BE7B 29 08                 AND   #$08                     ; and test for SRQ interrupt
+1126 BE7D F0 07                 BEQ   @66_2                    ;=0 then not an SRQ
+1127 BE7F 22 44 00 E1           JSL   >IRQ_SRQ                 ;Go do interrupt if possible
+1128 BE83 20 83 BF              JSR   TSTSETFLG                ;Check 'c' and maybe set flag
+1129 BE86
+1130 BE86              @66_2    EQU   *
+1131 BE86 AF C4 00 E1           LDA   >IRQ_DATAREG             ;Recall status byte
+1132 BE8A 29 20                 AND   #$20                     ; and test for desktop mgr interrupt
+1133 BE8C F0 13                 BEQ   @66_3                    ;=0 then not an desktop mgr interrupt
+1134 BE8E AD 25 C0              LDA   KEYMODREG                ;Is Shift key pressed also ?
+1135 BE91 6A                    ROR   A                        ;Rotate bit0 (shift) to 'c'
+1136 BE92 90 06                 BCC   @66_2_1                  ;BRA if not pressed with Shift key
+1137 BE94 22 08 00 FE           JSL   >TODESKMGR               ;Else use private vector to jmp to
+1138 BE98 80 04                 BRA   @66_2_3                  ;Continue on  
+1139 BE9A              @66_2_1  EQU   *
+1140 BE9A 22 48 00 E1           JSL   >IRQ_DSKACC              ;Go do interrupt if possible
+1141 BE9E              @66_2_3  EQU   *
+1142 BE9E 20 83 BF              JSR   TSTSETFLG                ;Check 'c' and maybe set flag
+1143 BEA1
+1144 BEA1              @66_3    EQU   *
+1145 BEA1 AF C4 00 E1           LDA   >IRQ_DATAREG             ;Recall status byte
+1146 BEA5 29 50                 AND   #$50                     ; and test for flush buffer interrupt  -- OH, this is actually handled this way.
+1147 BEA7 0A                    ASL   A                        ;Shift bit 6 to carry
+1148 BEA8 0A                    ASL   A                        ;
+1149 BEA9 F0 09                 BEQ   @66_4                    ;=0 then not flush buffer interrupt
+1150 BEAB 90 03                 BCC   @66_2_2                  ;'c' clear then don't clear KBDSTRB
+1151 BEAD 8D 10 C0              STA   KBDSTRB                  ;Remove key in buffer
+1152 BEB0              @66_2_2  EQU   *
+1153 BEB0 22 4C 00 E1           JSL   >IRQ_FLUSH               ;Go do interrupt if possible
+1154 BEB4
+1155 BEB4              @66_4    EQU   *
+1156 BEB4 AF C4 00 E1           LDA   >IRQ_DATAREG             ;Recall status byte
+1157 BEB8 C9 40                 CMP   #$40                     ; and test for keyboard micro interrupt
+1158 BEBA D0 07                 BNE   @66_8                    ;= then abort interrupt                 -- probably never happen for us
+1159 BEBC 22 50 00 E1           JSL   >IRQ_MICRO               ;Go do interrupt if possible
+1160 BEC0              @66_6    EQU   *
+1161 BEC0 20 83 BF              JSR   TSTSETFLG                ;Check 'c' and maybe set flag
+1162 BEC3              @66_8    EQU   *
+1163 BEC3 4C 8F BF              JMP   IRQDONE1_1               ;See if we exit or go to OS int handler
+```
 
 ## Test Suite
 
@@ -545,3 +629,38 @@ If there is no interrupt then it's normal response.
 
 
 ## Debugging
+
+ok this is a routine from the rom03.
+This reads  1 byte. This seems to indicate KMSTATUS[5] = 1, the "data register full" bit, means a byte has been placed in the data register.
+It -waits- for KMSTATUS[5] to go high, then does the read.
+meaning, it expects it to take some time for data bytes to get there.
+
+```
+1474 DB22                       entry RCVDATA
+1475 DB22              RCVDATA                                 ;
+1476 DB22
+1477 DB22                       longa off
+1478 DB22                       longi on
+1479 DB22
+1480 DB22 18                    clc   
+1481 DB23 A2 4C 1D              ldx   #7500                    ;TIMEOUT 7500*(2+2+4+2+3)/3 = 30 MS.
+1482 DB26                       entry REGOK
+1483 DB26 CA           REGOK    dex   
+1484 DB27 F0 0B                 beq   FDBTIMEOUT
+1485 DB29 AD 27 C0              lda   |KMSTATUS                ;GET DATA REG FULL BIT -> BIT 5
+1486 DB2C 29 20                 and   #DATAFULL                ;AND TEST
+1487 DB2E F0 F6                 beq   REGOK                    ;CLR IF EMPTY (READ)
+1488 DB30              *  ;SET IF FULL (DON'T READ)
+1489 DB30              *
+1490 DB30 AD 26 C0              lda   |DATAREG
+1491 DB33 60                    rts   
+1492 DB34              *
+1493 DB34                       entry FDBTIMEOUT
+1494 DB34 38           FDBTIMEOUT sec   
+1495 DB35 60                    rts   
+```
+
+another routine READRSPNS uses that - it reads 1 byte - if it's a status byte [7]=1, it stores it and loops to the top.
+else, it's a "response byte". clear hi bit, save in status.
+get the low 3 bits, that tells us how many bytes.
+
