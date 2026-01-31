@@ -1269,11 +1269,11 @@ test_record test_records[] = {
 
 int test_records_count = sizeof(test_records) / sizeof(test_records[0]);
 
-bool test_instruction(std::unique_ptr<BaseCPU> &cpux, cpu_state *cpu, test_record *testrec) {
-    uint64_t start_cycles = cpu->cycles;
+bool test_instruction(std::unique_ptr<BaseCPU> &cpux, cpu_state *cpu, test_record *testrec, NClock *clock) {
+    uint64_t start_cycles = clock->get_cycles();
 
     (cpux->execute_next)(cpu);
-    uint64_t elapsed = cpu->cycles - start_cycles;
+    uint64_t elapsed = clock->get_cycles() - start_cycles;
     //printf("Instruction %04X took %llu cycles\n", testrec->operation.op[0], elapsed);
     uint64_t expected_cycles = testrec->expected_cycles;
     if (elapsed != expected_cycles) {
@@ -1362,7 +1362,8 @@ int main(int argc, char **argv) {
         mmu->write(0x0000, 0x00);
         mmu->write(0x0001, 0x00);
         
-        cpu->cycles = 0;
+        NClock *clock = new NClock();
+        //cpu->cycles = 0;
         cpu->pc = 0x1000;
         cpu->a = test_records[i].a_in;
         cpu->x = test_records[i].x_in;
@@ -1372,14 +1373,14 @@ int main(int argc, char **argv) {
         mmu->write(0x1001, test_records[i].operation.op[1]);
         mmu->write(0x1002, test_records[i].operation.op[2]);
 
-        bool result = test_instruction(cpu->cpun, cpu, &test_records[i]);
+        bool result = test_instruction(cpu->cpun, cpu, &test_records[i], clock);
         char * trace_entry = cpu->trace_buffer->decode_trace_entry(&cpu->trace_entry);
         // trim the start (cycles always 0 is not informative)
         trace_entry[90] = '\0';
         printf("%-30s [%1llu] %s ", test_records[i].description.c_str(), test_records[i].expected_cycles, trace_entry + 20);
 
         if (!result) {
-            printf("FAILED [%llu != %llu]", cpu->cycles, test_records[i].expected_cycles);
+            printf("FAILED [%llu != %llu]", clock->get_cycles(), test_records[i].expected_cycles);
             failedtests++;
         }
         printf("\n");
