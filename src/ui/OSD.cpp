@@ -172,6 +172,7 @@ void set_white_display(void *data) {
     ds->video_system->set_display_engine(DM_ENGINE_MONO);
 }
 
+#if 0
 void set_mhz_1_0(void *data) {
     printf("set_mhz_1_0 %p\n", data);
     cpu_state *cpu = (cpu_state *)data;
@@ -184,10 +185,16 @@ void set_mhz_2_8(void *data) {
     set_clock_mode(cpu, CLOCK_2_8MHZ);
 }
 
-void set_mhz_4_0(void *data) {
-    printf("set_mhz_4_0 %p\n", data);
+void set_mhz_7_1(void *data) {
+    printf("set_mhz_7_1 %p\n", data);
     cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_4MHZ);
+    set_clock_mode(cpu, CLOCK_7_159MHZ);
+}
+
+void set_mhz_14_3(void *data) {
+    printf("set_mhz_14_3 %p\n", data);
+    cpu_state *cpu = (cpu_state *)data;
+    set_clock_mode(cpu, CLOCK_7_159MHZ);
 }
 
 void set_mhz_infinity(void *data) {
@@ -195,6 +202,7 @@ void set_mhz_infinity(void *data) {
     cpu_state *cpu = (cpu_state *)data;
     set_clock_mode(cpu, CLOCK_FREE_RUN);
 }
+#endif
 
 void click_reset_cpu(void *data) {
     printf("click_reset_cpu %p\n", data);
@@ -400,40 +408,49 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     mon_color_con->add_tile(mc5, 4);
     mon_color_con->layout();
 
-    Container_t *speed_con = new Container_t(renderer, 4, SC);
+    Container_t *speed_con = new Container_t(renderer, 6, SC);
     speed_con->set_position(100, 450);
-    speed_con->set_tile_size(260, 65);
+    speed_con->set_tile_size(320, 65);
     containers.push_back(speed_con);
 
-    Button_t *sp1 = new Button_t(aa, MHz1_0Button, CB);
-    Button_t *sp2 = new Button_t(aa, MHz2_8Button, CB);
-    Button_t *sp3 = new Button_t(aa, MHz4_0Button, CB);
-    Button_t *sp4 = new Button_t(aa, MHzInfinityButton, CB);
-    sp1->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
+    speed_btn_10 = new Button_t(aa, MHz1_0Button, CB);
+    speed_btn_28 = new Button_t(aa, MHz2_8Button, CB);
+    speed_btn_71 = new Button_t(aa, MHz7_159Button, CB);
+    speed_btn_14 = new Button_t(aa, MHz14_318Button, CB);
+    speed_btn_8 = new Button_t(aa, MHzInfinityButton, CB);
+    
+    speed_btn_10->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
         set_clock_mode(cpu, CLOCK_1_024MHZ);
         return true;
     });
-    sp2->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
+    speed_btn_28->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
         set_clock_mode(cpu, CLOCK_2_8MHZ);
         return true;
     });
-    sp3->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
-        set_clock_mode(cpu, CLOCK_4MHZ);
+    speed_btn_71->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
+        set_clock_mode(cpu, CLOCK_7_159MHZ);
         return true;
     });
-    sp4->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
+    speed_btn_14->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
+        set_clock_mode(cpu, CLOCK_14_3MHZ);
+        return true;
+    });
+    speed_btn_8->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
         set_clock_mode(cpu, CLOCK_FREE_RUN);
         return true;
     });
-    speed_con->add_tile(sp1, 0);
-    speed_con->add_tile(sp2, 1);
-    speed_con->add_tile(sp3, 2);
-    speed_con->add_tile(sp4, 3);
+    speed_con->add_tile(speed_btn_10, 0);
+    speed_con->add_tile(speed_btn_28, 1);
+    speed_con->add_tile(speed_btn_71, 2);
+    speed_con->add_tile(speed_btn_14, 3);
+    speed_con->add_tile(speed_btn_8, 4);
+    
     speed_con->layout();
-    speed_btn_10 = sp1;
+    /* speed_btn_10 = sp1;
     speed_btn_28 = sp2;
-    speed_btn_40 = sp3;
+    speed_btn_71 = sp3;
     speed_btn_8 = sp4;
+    speed_btn_14 = sp5; */
 
     Container_t *gen_con = new Container_t(renderer, 10, SC);
     gen_con->set_position(5, 100);
@@ -571,14 +588,17 @@ void OSD::update() {
     // background color update based on clock speed to highlight current button.
     speed_btn_10->set_background_color(0x000000FF);
     speed_btn_28->set_background_color(0x000000FF);
-    speed_btn_40->set_background_color(0x000000FF);
+    speed_btn_71->set_background_color(0x000000FF);
     speed_btn_8->set_background_color(0x000000FF);
+    speed_btn_14->set_background_color(0x000000FF);
     if (cpu->clock_mode == CLOCK_1_024MHZ) {
         speed_btn_10->set_background_color(0x00FF00FF);
     } else if (cpu->clock_mode == CLOCK_2_8MHZ) {
         speed_btn_28->set_background_color(0x00FF00FF);
-    } else if (cpu->clock_mode == CLOCK_4MHZ) {
-        speed_btn_40->set_background_color(0x00FF00FF);
+    } else if (cpu->clock_mode == CLOCK_7_159MHZ) {
+        speed_btn_71->set_background_color(0x00FF00FF);
+    } else if (cpu->clock_mode == CLOCK_14_3MHZ) {
+        speed_btn_14->set_background_color(0x00FF00FF);
     } else if (cpu->clock_mode == CLOCK_FREE_RUN) {
         speed_btn_8->set_background_color(0x00FF00FF);
     }

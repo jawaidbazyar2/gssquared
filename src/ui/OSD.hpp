@@ -67,8 +67,9 @@ protected:
     Unidisk_Button_t *unidisk_button2 = nullptr;
     Button_t *speed_btn_10 = nullptr;
     Button_t *speed_btn_28 = nullptr;
-    Button_t *speed_btn_40 = nullptr;
+    Button_t *speed_btn_71 = nullptr;
     Button_t *speed_btn_8 = nullptr;
+    Button_t *speed_btn_14 = nullptr;
 
     Button_t *save_btn = nullptr;
     Button_t *save_as_btn = nullptr;
