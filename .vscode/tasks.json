@@ -11,6 +11,15 @@
             }
         },
         {
+            "label": "build-gs2-debug",
+            "type": "shell",
+            "command": "cmake -DDEV_MODE=ON -DCMAKE_BUILD_TYPE=Debug -S . -B build && cmake --build build --parallel --target GSSquared",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
             "label": "build-release",
             "type": "shell",
             "command": "cmake -DDEV_MODE=ON -DCMAKE_BUILD_TYPE=Release -S . -B build && cmake --build build --parallel",

@@ -7,9 +7,9 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/GSSquared",
-            "args": [], //["-ds5d1=/Users/bazyar/src/gssquared/disk_images/AppleIISystem800k.hdv"],
+            "args": /* [], */ ["-ds7d1=/Users/bazyar/src/gssquared/testdev/adbtest/adbtest.po"],
             "cwd": "${workspaceFolder}",
-            "preLaunchTask": "build-debug"
+            "preLaunchTask": "build-gs2-debug"
         },
         {
             "name": "Debug mmutest",
@@ -97,7 +97,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/iigsmmutest",
-            "args": ["-l","20"],
+            "args": ["-l","24"],
             "cwd": "${workspaceFolder}/testdev/gsmmu/",
             "preLaunchTask": "build-debug"
         },
