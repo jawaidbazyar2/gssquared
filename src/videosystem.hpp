@@ -91,6 +91,7 @@ struct video_system_t {
     void clear();
     void present();
     bool display_capture_mouse(bool capture);
+    bool is_mouse_captured();
     void raise();
     void raise(SDL_Window *window);
     void hide(SDL_Window *window);

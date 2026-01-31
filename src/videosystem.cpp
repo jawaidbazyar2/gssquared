@@ -88,8 +88,12 @@ video_system_t::video_system_t(computer_t *computer) {
             toggle_fullscreen();
             return true;
         }
-        if (key == SDLK_F1) {
-            display_capture_mouse(false);
+        if (key == SDLK_F1) { // release or capture mouse
+            bool newstate = ! is_mouse_captured();
+            bool result = display_capture_mouse(newstate);
+            if (newstate && result) {
+                event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
+            }
             return true;
         }
         if (key == SDLK_F5) {
@@ -228,6 +232,10 @@ void video_system_t::sync_window() {
 void video_system_t::toggle_fullscreen() {
     display_fullscreen_mode = (display_fullscreen_mode_t)((display_fullscreen_mode + 1) % NUM_FULLSCREEN_MODES);
     set_window_fullscreen(display_fullscreen_mode);
+}
+
+bool video_system_t::is_mouse_captured() {
+    return SDL_GetWindowRelativeMouseMode(window);
 }
 
 bool video_system_t::display_capture_mouse(bool capture) {
