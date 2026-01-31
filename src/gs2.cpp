@@ -409,6 +409,9 @@ void run_cpus(computer_t *computer) {
             /* if (speaker_state->sp->get_queued_samples() > 5000) {
                 frame_length_ns += 2500;
             } */
+            uint64_t time_to_sleep = frame_length_ns - (SDL_GetTicksNS() - last_cycle_time);
+            cpu->idle_percent = ((float)time_to_sleep / (float)frame_length_ns) * 100.0f;
+
             frame_sleep(computer, cpu, last_cycle_time, frame_length_ns);
             last_cycle_time = SDL_GetTicksNS(); 
 
@@ -455,13 +458,9 @@ void run_cpus(computer_t *computer) {
                     (cpu->cpun->execute_next)(cpu);
                 }
             }
+            
             // this was roughly one video frame so let's pretend we went that many.
             cpu->c_14M += c14M_per_frame; // fake increment this so it doesn't get wildly out of sync.
-            //cpu->current_frame_start_14M = cpu->next_frame_start_14M;
-            //cpu->next_frame_start_14M += 238944;
-
-            //cpu->frame_count++;
-            // TODO: either push current cpu count into Speaker here or have Speaker sync up when we leave ludicrous speed.
 
             uint64_t current_time = SDL_GetTicksNS();
 
@@ -513,10 +512,7 @@ void run_cpus(computer_t *computer) {
     }
 
     // save cpu trace buffer, then exit.
-    // TODO: do we even really need this any more?
-    //computer->video_system->update_display(); // update one last time to show the last state.
-
-    //cpu->trace_buffer->save_to_file(gs2_app_values.pref_path + "trace.bin");
+    // TODO: move this to the trace buffer destructor.
     std::string tracepath;
     Paths::calc_docs(tracepath, "trace.bin");
     cpu->trace_buffer->save_to_file(tracepath);
@@ -528,8 +524,8 @@ gs2_app_t gs2_app_values;
 int main(int argc, char *argv[]) {
     std::cout << "Booting GSSquared!" << std::endl;
 
-    SDL_SetAppMetadata("GSSquared", VERSION_STRING, "Copyright 2025 by Jawaid Bazyar");
-    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_COPYRIGHT_STRING, "Copyright 2025 by Jawaid Bazyar");
+    SDL_SetAppMetadata("GSSquared", VERSION_STRING, "Copyright 2025-2026 by Jawaid Bazyar");
+    SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_COPYRIGHT_STRING, "Copyright 2025-2026 by Jawaid Bazyar");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_CREATOR_STRING, "Jawaid Bazyar");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/jawaidbazyar/gssquared");
     

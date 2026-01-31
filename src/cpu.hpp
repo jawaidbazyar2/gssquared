@@ -241,6 +241,8 @@ struct cpu_state {
     uint64_t cycles_per_frame = 0;
     uint64_t video_cycle_14M_count = 0;
 
+    float idle_percent = 0.0f;
+    
     //execute_next_fn execute_next;
     std::unique_ptr<BaseCPU> cpun; // CPU instance.
     BaseCPU *core = nullptr;

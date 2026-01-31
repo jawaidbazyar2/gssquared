@@ -713,7 +713,7 @@ void OSD::render() {
         // display the MHz at the bottom of the screen.
         { // we are currently at A2 display scale.
             char hud_str[150];
-            snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f", cpu->e_mhz, cpu->fps);
+            snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f / Idle: %5.1f%%", cpu->e_mhz, cpu->fps, cpu->idle_percent);
             SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderDebugText(renderer, 20, window_height - 30, hud_str);
 
@@ -723,22 +723,7 @@ void OSD::render() {
             }
             
             uint64_t etime, esecs, emsecs;
-/*             uint64_t etime = cpu->etime_ns_56_8 >> 8; // remove the fractional part
-            uint64_t esecs = etime / 1000000000;
-            uint64_t emsecs = etime % 1000000000;
-            snprintf(hud_str, sizeof(hud_str), "Elapsed time: %lld.%09lld", esecs, emsecs);
-            SDL_RenderDebugText(renderer, 20, window_height - 70, hud_str);
-             uint64_t realtime = SDL_GetTicksNS();
-            esecs = realtime / 1000000000;
-            emsecs = realtime % 1000000000;
-            snprintf(hud_str, sizeof(hud_str), "Realtime: %lld.%09lld", esecs, emsecs);
-            SDL_RenderDebugText(renderer, 20, window_height - 80, hud_str);
-            uint64_t skew = realtime - etime;
-            esecs = skew / 1000000000;
-            emsecs = skew % 1000000000;
-            snprintf(hud_str, sizeof(hud_str), "Skew: %lld.%09lld", esecs, emsecs);
-            SDL_RenderDebugText(renderer, 250, window_height - 70, hud_str);
-            */
+
 #if 0
             snprintf(hud_str, sizeof(hud_str), "Cycles          PC   A  X  Y  P  (N V B D I Z C)");
             SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);
