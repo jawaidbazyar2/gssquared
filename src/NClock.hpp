@@ -15,9 +15,12 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
- #pragma once
+#pragma once
 
- #include <cstdint>
+#include <cstdint>
+#include "ui/MainAtlas.hpp" 
+#include "devices/displaypp/VideoScannerII.hpp"
+#include "platforms.hpp"
 
 typedef enum {
     CLOCK_FREE_RUN = 0,
@@ -49,24 +52,23 @@ protected:
         uint64_t c14M_per_frame;            // either 238944 (US) or 284544 (PAL)
         uint64_t us_per_frame_even;         // microseconds per frame for even frames
         uint64_t us_per_frame_odd;          // microseconds per frame for odd frames
-        uint64_t eff_cpu_rate;              // effective CPU clock rate. was used in speaker, but speaker does not seem to use it any more. should be calculable from the other values anyway.
 
     } clock_mode_info_t;
 
     clock_mode_info_t us_clock_mode_info[NUM_CLOCK_MODES] = {
-        { 14'318'180, 14318180, 238420, 1, 0, 912, 238944, 16688154, 16688155, 1020484 }, // cycle times here are fake.
-        { 1'020'484, 14318180, 17030, 14, 2, 65, 238944, 16688154, 16688155, 1020484 },
-        { 2'857'370, 14318180,  47684, 5, 2, 182, 238944, 16688154, 16688155, 2857356 },
-        { 7'143'390, 14318180, 119210, 2, 2, 455, 238944, 16688154, 16688155, 7143390 },
-        { 14'286'780, 14318180, 238420, 1, 2, 912, 238944, 16688154, 16688155, 14286780 }
+        { 14'318'180, 14318180, 238420, 1, 0, 912, 238944, 16688154, 16688155 }, // cycle times here are fake.
+        { 1'020'484, 14318180, 17030, 14, 2, 65, 238944, 16688154, 16688155  },
+        { 2'857'370, 14318180,  47684, 5, 2, 182, 238944, 16688154, 16688155 },
+        { 7'143'390, 14318180, 119210, 2, 2, 455, 238944, 16688154, 16688155 },
+        { 14'286'780, 14318180, 238420, 1, 2, 912, 238944, 16688154, 16688155 }
     };
     
     clock_mode_info_t pal_clock_mode_info[NUM_CLOCK_MODES] = {
-        { 14'250'450, 14250450, 283920, 1, 0, 912, 284544, 19967369, 19967370, 1'015'657 }, // cycle times here are fake.
-        { 1'015'657, 14250450,  20280, 14, 2, 65, 284544, 19967369, 19967370, 1'015'657 },
-        { 2'857'370, 14250450,  56784, 5, 2, 182, 284544, 19967369, 19967370, 2'843'839 },
-        { 7'143'390,14250450,  141960, 2, 2, 455, 284544, 19967369, 19967370, 7'109'599 },
-        { 14'250'450, 14250450, 283920, 1, 2, 910, 284544, 19967369, 19967370, 14'219'199 }
+        { 14'250'450, 14250450, 283920, 1, 0, 912, 284544, 19967369, 19967370 }, // cycle times here are fake.
+        { 1'015'657, 14250450,  20280, 14, 2, 65, 284544, 19967369, 19967370  },
+        { 2'857'370, 14250450,  56784, 5, 2, 182, 284544, 19967369, 19967370 },
+        { 7'143'390,14250450,  141960, 2, 2, 455, 284544, 19967369, 19967370 },
+        { 14'250'450, 14250450, 283920, 1, 2, 910, 284544, 19967369, 19967370 }
         //     { 14'250'450,14250450,  284232, 1, 0, 912, 284544, 19967369, 19967370, 14'219'199 } // it was this which didn't work..
     };
     const char *clock_mode_names[NUM_CLOCK_MODES] = {
@@ -86,6 +88,7 @@ protected:
     };
 
     clock_mode_info_t *system_clock_mode_info = us_clock_mode_info;
+    clock_mode_info_t current = us_clock_mode_info[CLOCK_1_024MHZ];
 
     clock_mode_t clock_mode = INVALID_CLOCK_MODE;
 
@@ -111,7 +114,6 @@ public:
     inline uint64_t get_c14m_per_frame() { return current.c14M_per_frame; }
     inline uint64_t get_us_per_frame_even() { return current.us_per_frame_even; }
     inline uint64_t get_us_per_frame_odd() { return current.us_per_frame_odd; }
-    inline uint64_t get_eff_cpu_rate() { return current.eff_cpu_rate; }
     inline const char *get_clock_mode_name() { return clock_mode_names[clock_mode]; }
     inline uint32_t get_clock_mode_asset_id(clock_mode_t mode) { return clock_mode_asset_ids[mode]; }
     inline uint32_t get_current_mode_asset_id() { return clock_mode_asset_ids[clock_mode]; }
@@ -135,12 +137,12 @@ public:
 
     void set_clock_mode(clock_mode_t mode) {
         clock_mode = mode;
-        current = &system_clock_mode_info[mode];
+        current = system_clock_mode_info[mode];
     }
 
     // I forget who uses this.
     inline clock_mode_info_t *get_clock_line() {
-        return current;
+        return &current;
     }
 
     clock_mode_t toggle(int direction) {
@@ -194,7 +196,7 @@ class NClockII : public NClock {
 
 class NClockFactory {
     public:
-    static NClock *create_clock(platform_type_t platform, clock_set_t clock_set) {
+    static NClock *create_clock(PlatformId_t platform, clock_set_t clock_set) {
         if (platform == PLATFORM_APPLE_II) {
             return new NClockII(clock_set);
         } else if (platform == PLATFORM_APPLE_II_PLUS) {
