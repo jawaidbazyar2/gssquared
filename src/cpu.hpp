@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2025 Jawaid Bazyar
+ *   Copyright (c) 2025-2026 Jawaid Bazyar
 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -242,7 +242,7 @@ struct cpu_state {
     uint64_t video_cycle_14M_count = 0;
 
     float idle_percent = 0.0f;
-    
+
     //execute_next_fn execute_next;
     std::unique_ptr<BaseCPU> cpun; // CPU instance.
     BaseCPU *core = nullptr;
