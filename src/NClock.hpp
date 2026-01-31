@@ -137,7 +137,7 @@ public:
 
     void set_clock_mode(clock_mode_t mode) {
         clock_mode = mode;
-        current = system_clock_mode_info[mode];
+        current = system_clock_mode_info[mode]; // copy the whole struct, avoids another pointer dereference.
     }
 
     // I forget who uses this.

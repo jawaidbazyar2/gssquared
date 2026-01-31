@@ -41,7 +41,6 @@ typedef enum {
 
 typedef struct {
     uint64_t hz_rate;
-    //uint64_t cycle_duration_ns;
     uint64_t c14M_per_second;
     uint64_t cycles_per_frame;
     uint64_t c_14M_per_cpu_cycle;
@@ -51,7 +50,6 @@ typedef struct {
     uint64_t c14M_per_frame;       // either 238944 (US) or 284544 (PAL)
     uint64_t us_per_frame_even;
     uint64_t us_per_frame_odd;
-    uint64_t eff_cpu_rate;
 
 } clock_mode_info_t;
 

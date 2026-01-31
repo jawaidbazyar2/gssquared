@@ -61,17 +61,14 @@ uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end
         speaker_state->sp->reset(end_frame_c14M - computer->clock->c14M_per_frame);
     }
 
-    // This really doesn't do much of anything now. C14m (frame rate) calc is always the same. cpu_rate changes but we don't use it
-    // except for display.
+    // This really doesn't do much of anything now. C14m (frame rate) calc is always the same.
     if (speaker_state->last_clock_mode != cpu->clock_mode) { // this will always trigger the 1st time through.
         if (DEBUG(DEBUG_SPEAKER)) printf("Old clock mode: %d, New clock mode: %d\n", speaker_state->last_clock_mode, cpu->clock_mode);
         //if (speaker_state->last_clock_mode == CLOCK_FREE_RUN) speaker_state->sp->reset(end_frame_c14M - computer->clock->c14M_per_frame); // coming out of LS.
         
         speaker_state->last_clock_mode = cpu->clock_mode;
         double frame_rate = (double)computer->clock->c14M_per_second / (double)computer->clock->c14M_per_frame;
-        double cpu_rate = (double)computer->clock->eff_cpu_rate;
     
-        /* speaker_state->sp->configure( cpu_rate); */
         if (DEBUG(DEBUG_SPEAKER)) speaker_state->sp->print();
     }
 
@@ -231,7 +228,6 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     speaker_state_t *speaker_state = new speaker_state_t;
 
     double frame_rate = (double)computer->clock->c14M_per_second / (double)computer->clock->c14M_per_frame;
-    double cpu_rate = (double)computer->clock->eff_cpu_rate;
 
     speaker_state->sp = new SpeakerFX(computer->clock->c14M_per_second, 44100, 128*1024, 4096);
     speaker_state->event_buffer = speaker_state->sp->event_buffer;
