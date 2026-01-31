@@ -73,6 +73,7 @@ void ES5503::reset() {
         osc.accumulator = 0;
         osc.irqpend = 0;
     }
+    update_sdl_stream_rate();
 }
 
 uint8_t ES5503::read_wave_byte(uint32_t address) {

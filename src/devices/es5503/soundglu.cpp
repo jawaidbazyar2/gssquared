@@ -254,4 +254,10 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
             return debug_ensoniq(st);
         }
     );
+
+    computer->register_reset_handler([st]() {
+        // this caused the audio to get badly delayed / out of sync. added calculate_output_rate() to reset() to fix.
+        st->chip->reset();
+        return true;
+    });
 }
