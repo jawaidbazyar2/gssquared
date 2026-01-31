@@ -9086,9 +9086,71 @@ but it took a reset?
 
 ## Jan 29, 2026
 
-[ ] need to call Ensoniq reset on a reset  
+[x] need to call Ensoniq reset on a reset  
 
-[ ] F1 should also capture, in addition to mouse click  
+[x] F1 should also capture, in addition to mouse click  
 
-[ ] Add a 14MHz mode between 7MHz and Ludicrous Speed  
-[ ] Properly rename 4MHz to 7_1MHz everywhere, including in OSD  
+[x] Add a 14MHz mode between 7MHz and Ludicrous Speed  
+[x] Properly rename 4MHz to 7_1MHz everywhere, including in OSD  
+
+ah, I think I can resolve my border/content scaling problems by doing this:
+1. Render the individual components first into a target texture using 1:1 (no scaling).
+1. scale that all at once to target size
+
+This will also work better for testing out the postprocessing from rikkles.
+
+an idea for rendering 640 mode dithering: instead of scaling pixels A-B-A-B pixels like this:
+A-A-B-B-A-A-B-B
+do it like this:
+A-B-A-B-A-B-A-B
+
+so there would be pre-scale this way first, getting us 1120 pixels, then scale accordingly into the target window. 
+
+## Jan 31, 2026
+
+So the issue with QIX audio playing slowly is likely a result of this:
+we are only generating a frame every 1/60th second. that means any interrupts that ought to have been generated during the frame are delayed triggering until frame time. 
+
+I also need to check to make sure we leave the oscillator ID in the register after we clear the interrupt.
+
+There are some possible approaches.
+
+1. interleave ensoniq "cycle update" as we do the cycle-accurate video.
+1. have the code calculate and scheduleEvent to throw interrupts during code execution.
+1. have the ensoniq run in its own thread.
+
+Gemini summarized MAME's architecture and it looks like pretty much what I'm doing, with the exception that some devices I'm trying to make frame-based, might be better off being "cycle accurate" - i.e., leveraged into the incr_cycle architecture.
+
+https://gemini.google.com/app/43a03be14e7bd935
+
+1. The "Next Event" CalculationInstead of just waiting for an update call, your 5503 model should look at its active oscillators and calculate the Time to Next IRQ ($T_{irq}$).Since the 5503 knows its current sample pointer, the frequency (step size), and the loop end point, you can calculate exactly how many cycles remain until a wrap-around or a halt occurs:
+2. Registering a MAME timer
+ok, that's basically what I do in the Mockingboard code also - keep track of important event times in the future and set a schedulerEvent to callback so we can handle it.
+3. Force Update on Register Writes. 
+this is something claude has noted, which is, when registers change, we need to generate audio up to that point and then change the register. But by itself that wouldn't be enough.
+
+OK I think all of this is probably not that heavy a lift.
+If we did it cycle by cycle, we'd have to track fractions because 14M and 875KHz are not even multiples.
+
+
+
+Probably the next thing I should do is figure out and implement the Apple IIgs RAM/ROM/MegaII cycle timing.
+
+Rather than putting in increasingly more complex logic into incr_cycle, I should probably do this:
+
+incr_cycle() is a very simple that just does this:
+
+inline void Clock::incr_cycle() {
+  if (cycle_handler) (*cycle_handler)();
+}
+
+Then we can stuff different cycle handlers into it, e.g. switching in the LS handler when we want, having different handlers for IIe/IIgs. The inline and this being a very small routine, should make this inlinable throughout the CPU code.
+
+What does a new clock abstraction look like?
+
+Set the cpu clock speed.
+interrogate information about the clock.
+It's allocated separately, injected where needed.
+Track clock ticks for the CPU. 
+
+Having the handler like that is icky, what I should do is use, you know, proper class stuff. Have a abstract base class that does nothing, then have a variety of clock subclasses that do increasingly useful stuff.
