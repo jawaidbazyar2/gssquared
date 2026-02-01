@@ -21,6 +21,15 @@
             "preLaunchTask": "build-debug"
         },
         {
+            "name": "Debug cycletest",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/cycletest",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build-cycletest-debug"
+        },
+        {
             "name": "Debug cpu816test",
             "type": "lldb",
             "request": "launch",
