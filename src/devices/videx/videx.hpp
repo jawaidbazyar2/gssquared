@@ -88,10 +88,13 @@ const videx_char_set_file_t videx_char_roms[VIDEX_CHAR_SET_COUNT] = {
     { "Inverse", "roms/cards/videx/videx-inverse.bin" }
 };
 
+class NClockII;
+
 typedef struct videx_data: public SlotData {
     video_system_t *video_system = nullptr;
     MMU_II *mmu = nullptr;
     cpu_state *cpu = nullptr;
+    NClockII *clock = nullptr;
     
     SDL_Texture *videx_texture = nullptr;
     uint8_t *buffer = nullptr; // 640x216x4

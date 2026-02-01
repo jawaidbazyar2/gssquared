@@ -24,13 +24,8 @@
 
 #include <SDL3/SDL.h>
 
-#include "devices/displaypp/VideoScannerIIe.hpp"
-#include "memoryspecs.hpp"
-#include "clock.hpp"
-#include "devices.hpp"
 #include "SlotData.hpp"
 #include "debugger/trace.hpp"
-#include "mmus/mmu_ii.hpp"
 #include "Module_ID.hpp"
 #include "cpus/processor_type.hpp"
 #include "cpus/cpu_traits.hpp"
@@ -64,24 +59,6 @@ struct cpu_state;
 class Mounts;
 struct debug_window_t;
 
-typedef int (*execute_next_fn)(cpu_state *cpu);
-
-//class BaseCPU; // pre-declare this.
-
-struct processor_model {
-    const char* name;
-    //execute_next_fn execute_next;
-    std::unique_ptr<BaseCPU> cpun;
-};
-
-//extern processor_model processor_models[NUM_PROCESSOR_TYPES];
-
-namespace cpu_6502 {
-    extern int execute_next(cpu_state *cpu);
-}
-namespace cpu_65c02 {
-    extern int execute_next(cpu_state *cpu);
-}
 
 struct cpu_state {
     union {
@@ -216,7 +193,7 @@ struct cpu_state {
     uint8_t E : 1;  /* Emulation Flag */
 
     uint8_t halt = 0; /* == 1 is HLT instruction halt; == 2 is user halt */
-    uint64_t cycles; /* Number of cpu cycles since poweron */
+    //uint64_t cycles; /* Number of cpu cycles since poweron */
 
     uint64_t irq_asserted = 0; /** bits 0-7 correspond to slot IRQ lines slots 0-7. */
     uint8_t skip_next_irq_check = 0; /* if set, skip the next IRQ check */
@@ -225,22 +202,10 @@ struct cpu_state {
     
     processor_type cpu_type = PROCESSOR_6502;
 
-    // clocking
+    // TODO: these are sort of clock related but more about metrics. Should go somewhere else, maybe computer?
     uint64_t clock_slip = 0;
-    //uint64_t cycle_duration_ns;
-    uint64_t HZ_RATE;
-    clock_mode_t clock_mode = INVALID_CLOCK_MODE;
     double e_mhz = 0;
     double fps = 0;
-    
-    uint64_t c_14M = 0;
-    uint64_t c_14M_per_cpu_cycle = 0;
-    uint64_t scanline_14M_count = 0;
-    uint64_t cycles_per_scanline = 0;
-    uint64_t extra_per_scanline = 0;
-    uint64_t cycles_per_frame = 0;
-    uint64_t video_cycle_14M_count = 0;
-
     float idle_percent = 0.0f;
 
     //execute_next_fn execute_next;
@@ -258,8 +223,6 @@ struct cpu_state {
     execution_modes_t execution_mode = EXEC_NORMAL;
     uint64_t instructions_left = 0;
 
-    VideoScannerII *video_scanner = nullptr;
-
     //void init();
     cpu_state(processor_type cpu_type);
     ~cpu_state();
@@ -269,30 +232,6 @@ struct cpu_state {
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
     uint64_t fast_refresh = 9;
-
-    inline void slow_incr_cycles() {
-        cycles++; 
-        c_14M += c_14M_per_cpu_cycle;
-        
-        if (video_scanner) {
-            video_cycle_14M_count += c_14M_per_cpu_cycle;
-            scanline_14M_count += c_14M_per_cpu_cycle;
-
-            if (video_cycle_14M_count >= 14) {
-                video_cycle_14M_count -= 14;
-                video_scanner->video_cycle();
-            }
-            if (scanline_14M_count >= 910) {  // end of scanline
-                c_14M += extra_per_scanline;
-                scanline_14M_count = 0;
-            }
-        }
-    }
-
-    inline void incr_cycles() {
-        if (clock_mode == CLOCK_FREE_RUN) cycles++;
-        else slow_incr_cycles();
-    }
 
 };
 
@@ -309,11 +248,6 @@ struct cpu_state {
 #define FLAG_N        0b10000000 /* 0x80 */
 
 extern struct cpu_state *CPUs[MAX_CPUS];
-
-clock_mode_t toggle_clock_mode(cpu_state *cpu, int direction);
-
-void set_clock_mode(cpu_state *cpu, clock_mode_t mode);
-void select_system_clock(clock_set_t clock_set);
 
 const char* processor_get_name(int processor_type);
 

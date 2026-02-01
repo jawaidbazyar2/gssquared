@@ -19,19 +19,10 @@
 
 #include <cstdint>
 #include <stddef.h>
-#include "clock.hpp"
 #include "util/ResourceFile.hpp"
 #include "cpus/processor_type.hpp"
-
-typedef enum PlatformId_t {
-    PLATFORM_APPLE_II = 0,
-    PLATFORM_APPLE_II_PLUS,
-    PLATFORM_APPLE_IIE,
-    PLATFORM_APPLE_IIE_ENHANCED,
-    PLATFORM_APPLE_IIE_65816,
-    PLATFORM_APPLE_IIGS,
-    PLATFORM_END
-} PlatformId_t;
+#include "PlatformIDs.hpp"
+#include "NClock.hpp"
 
 typedef enum MMU_Type_t {
     MMU_MMU_II,

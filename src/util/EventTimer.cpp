@@ -3,7 +3,7 @@
 #include <limits>
 #include <iostream>
 #include "debug.hpp"
-#include "cpu.hpp"
+//#include "cpu.hpp"
 
 // Constructor implementation
 /* EventTimer::EventTimer(cpu_state *cpu) : cpu(cpu) {
@@ -20,7 +20,7 @@ inline void EventTimer::updateNextEventCycle() {
 // Add a new event to the queue
 void EventTimer::scheduleEvent(uint64_t triggerCycles, void (*callback)(uint64_t, void*), uint64_t instanceID, void* userData) {
     if (DEBUG(DEBUG_EVENT_TIMER)) std::cout << "scheduleEvent: " << triggerCycles << " InstanceID: " << instanceID << std::endl;
-    if (cpu && triggerCycles < cpu->cycles) {
+    if (clock && triggerCycles < clock->get_cycles()) {
         std::cout << "scheduleEvent: Event in the past, skipping" << std::endl;
         return;
     }

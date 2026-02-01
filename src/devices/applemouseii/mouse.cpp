@@ -220,12 +220,12 @@ void mouse_vbl_interrupt(uint64_t instanceID, void *user_data) {
     //ds->vbl_cycle = ds->computer->get_frame_start_cycle() + (ds->computer->cpu->cycles_per_scanline * 192);
     // current frame - plus cycle per frame (next frame) at scanline 192.
     // going from ludicrous (or likely any higher speed to a lower speed). 
-    ds->vbl_cycle = ds->computer->get_frame_start_cycle() + ds->computer->cpu->cycles_per_frame  + ds->computer->cpu->cycles_per_scanline * 192;
+    ds->vbl_cycle = ds->computer->get_frame_start_cycle() + ds->clock->get_cycles_per_frame()  + ds->clock->get_cycles_per_scanline() * 192;
     
     ds->status.int_vbl = 1;
     mouse_propagate_interrupt(ds);
-    if (ds->vbl_cycle <= ds->computer->cpu->cycles) {
-        fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", ds->vbl_cycle, ds->computer->cpu->cycles);
+    if (ds->vbl_cycle <= ds->clock->get_cycles()) {
+        fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", ds->vbl_cycle, ds->clock->get_cycles());
         return;
     }
     ds->event_timer->scheduleEvent(ds->vbl_cycle, mouse_vbl_interrupt, instanceID, ds);
@@ -251,10 +251,11 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     mouse_state_t *ds = new mouse_state_t;
     ds->id = DEVICE_ID_MOUSE;
     ds->computer = computer;
+    ds->clock = computer->clock;
     ds->event_timer = computer->event_timer;
     mouse_reset(ds);
     //ds->vbl_cycle = 12480;
-    ds->vbl_cycle = (ds->computer->cpu->cycles_per_scanline * 192);
+    ds->vbl_cycle = (ds->clock->get_cycles_per_scanline() * 192);
     ds->vbl_offset = ds->vbl_cycle;
 
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE,"1");

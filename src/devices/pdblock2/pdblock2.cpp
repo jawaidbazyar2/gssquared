@@ -50,11 +50,7 @@ drive_status_t pdblock2_osd_status(cpu_state *cpu, uint64_t key) {
     if (curtime - seldrive.last_block_access_time < 1000000000) {
         motor = true;
     }
-    /* if (seldrive.motor == 1 && seldrive.mark_cycles_turnoff != 0 && ((cpu->cycles > seldrive.mark_cycles_turnoff))) {
-        if (DEBUG(DEBUG_DISKII)) printf("motor off: %llu %llu cycles\n", cpu->cycles, seldrive.mark_cycles_turnoff);
-        seldrive.motor = 0;
-        seldrive.mark_cycles_turnoff = 0;
-    } */
+    // 3.5 drives turn off immediately.
     const char *fname = nullptr;
     bool mounted = false;
     if (seldrive.media) {

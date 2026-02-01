@@ -20,7 +20,7 @@
 #include <cstdint>
 #include "ui/MainAtlas.hpp" 
 #include "devices/displaypp/VideoScannerII.hpp"
-#include "platforms.hpp"
+#include "PlatformIDs.hpp"
 
 typedef enum {
     CLOCK_FREE_RUN = 0,
@@ -106,11 +106,18 @@ public:
     
     NClock(clock_set_t clock_set = CLOCK_SET_US, clock_mode_t clock_mode = CLOCK_1_024MHZ) {
         select_system_clock(clock_set);
+        set_clock_mode(clock_mode);
+        cycles = 0;
+        c_14M = 0;
+        video_cycle_14M_count = 0;
+        scanline_14M_count = 0;
     }
 
     inline uint64_t get_cycles() { return cycles; } // this should make accessing cycles fast still.
     inline uint64_t get_c14m() { return c_14M; }
+    inline uint64_t get_hz_rate() { return current.hz_rate; }
     inline uint64_t get_c14m_per_cpu_cycle() { return current.c_14M_per_cpu_cycle; }
+    inline uint64_t get_c14m_per_second() { return current.c14M_per_second; }
     inline uint64_t get_c14m_per_frame() { return current.c14M_per_frame; }
     inline uint64_t get_us_per_frame_even() { return current.us_per_frame_even; }
     inline uint64_t get_us_per_frame_odd() { return current.us_per_frame_odd; }
@@ -119,7 +126,10 @@ public:
     inline uint32_t get_current_mode_asset_id() { return clock_mode_asset_ids[clock_mode]; }
     inline uint64_t get_video_cycle_14M_count() { return video_cycle_14M_count; }
     inline uint64_t get_scanline_14M_count() { return scanline_14M_count; }
+    inline uint64_t get_cycles_per_scanline() { return current.cycles_per_scanline; }
+    inline uint64_t get_cycles_per_frame() { return current.cycles_per_frame; }
     inline VideoScannerII *get_video_scanner() { return video_scanner; }
+    inline void adjust_c14m(uint64_t amount) { c_14M += amount; }
 
     void set_video_scanner(VideoScannerII *video_scanner) {
         this->video_scanner = video_scanner;
@@ -196,17 +206,23 @@ class NClockII : public NClock {
 
 class NClockFactory {
     public:
-    static NClock *create_clock(PlatformId_t platform, clock_set_t clock_set) {
-        if (platform == PLATFORM_APPLE_II) {
-            return new NClockII(clock_set);
-        } else if (platform == PLATFORM_APPLE_II_PLUS) {
-            return new NClockII(clock_set);
-        } else if (platform == PLATFORM_APPLE_IIE) {
-            return new NClockII(clock_set);
-        } else if (platform == PLATFORM_APPLE_IIGS) {
-            return new NClockII(clock_set);
-        } else {
-            return new NClock(clock_set);
+    static NClockII *create_clock(PlatformId_t platform, clock_set_t clock_set) {
+        switch (platform) {
+            case PLATFORM_APPLE_II:
+                return new NClockII(clock_set);
+            case PLATFORM_APPLE_II_PLUS:
+                return new NClockII(clock_set);
+            case PLATFORM_APPLE_IIE:
+                return new NClockII(clock_set);
+            case PLATFORM_APPLE_IIE_ENHANCED:
+                return new NClockII(clock_set);
+            case PLATFORM_APPLE_IIE_65816:
+                return new NClockII(clock_set);
+            case PLATFORM_APPLE_IIGS:
+                return new NClockII(clock_set);
+            default:
+                assert(false && "Unknown platform in NClockFactory::create_clock");    
+                break;
         }
     }
 };

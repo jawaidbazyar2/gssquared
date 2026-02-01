@@ -21,6 +21,7 @@
 
 #include "cpu.hpp"
 
+#if 0
 clock_mode_info_t us_clock_mode_info[NUM_CLOCK_MODES] = {
     { 14'318'180, 14318180, 238420, 1, 0, 912, 238944, 16688154, 16688155/* , 1020484 */ }, // cycle times here are fake.
     { 1'020'484, 14318180, 17030, 14, 2, 65, 238944, 16688154, 16688155/* , 1020484 */ },
@@ -78,6 +79,7 @@ clock_mode_t toggle_clock_mode(cpu_state *cpu, int direction) {
     fprintf(stdout, "Clock mode: %d\n", new_mode);
     return (clock_mode_t)new_mode;
 }
+#endif 
 
 /** State storage for non-slot devices. */
 void *get_module_state(cpu_state *cpu, module_id_t module_id) {
@@ -140,13 +142,12 @@ cpu_state::cpu_state(processor_type cpu_type) {
     y = 0;
     p = 0;
     d = 0;
-    cycles = 0;
-    //last_tick = 0;
+    /* cycles = 0; */ // moved to clock.
     
     trace = true;
     trace_buffer = new system_trace_buffer(100000, cpu_type);
 
-    set_clock_mode(this, CLOCK_1_024MHZ);
+    /* set_clock_mode(this, CLOCK_1_024MHZ); */
 
     // initialize these things
     for (int i = 0; i < NUM_SLOTS; i++) {

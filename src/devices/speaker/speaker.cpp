@@ -17,16 +17,13 @@
 
 #include <cstdio>
 #include <SDL3/SDL.h>
-#include <cmath>
-
 
 #include "gs2.hpp"
 #include "debug.hpp"
 #include "devices/speaker/speaker.hpp"
-#include "devices/speaker/LowPass.hpp"
 #include "devices/speaker/SpeakerFX.hpp"
 #include "util/DebugHandlerIDs.hpp"
-
+#include "NClock.hpp"
 
 // Utility function to round up to the next power of 2
 inline uint32_t next_power_of_2(uint32_t value) {
@@ -47,6 +44,7 @@ inline uint32_t next_power_of_2(uint32_t value) {
 uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end_frame_c14M ) {
 
     speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
+    NClock *clock = speaker_state->clock;
 
     //static uint64_t last_hz_rate = 0;
     // start speaker playback after we've loaded this first frame of samples.
@@ -54,20 +52,20 @@ uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end
         speaker_state->sp->start();
     }
 
-    if ((end_frame_c14M - speaker_state->sp->last_event_time) > (computer->clock->c14M_per_frame * 3)) {
-        printf("Speaker skew: 14m: %16llu %13llu %13llu\n", cpu->c_14M, end_frame_c14M - speaker_state->sp->last_event_time, computer->clock->c14M_per_frame);
+    if ((end_frame_c14M - speaker_state->sp->last_event_time) > (clock->get_c14m_per_frame() * 3)) {
+        printf("Speaker skew: 14m: %16llu %13llu %13llu\n", clock->get_c14m(), end_frame_c14M - speaker_state->sp->last_event_time, clock->get_c14m_per_frame());
         // Resync to start of current frame so generate_and_queue can advance to end_frame_c14M.
         // Reset must pair with generate_samples skipping stale events (event_time <= last_event_time).
-        speaker_state->sp->reset(end_frame_c14M - computer->clock->c14M_per_frame);
+        speaker_state->sp->reset(end_frame_c14M - clock->get_c14m_per_frame());
     }
 
     // This really doesn't do much of anything now. C14m (frame rate) calc is always the same.
-    if (speaker_state->last_clock_mode != cpu->clock_mode) { // this will always trigger the 1st time through.
-        if (DEBUG(DEBUG_SPEAKER)) printf("Old clock mode: %d, New clock mode: %d\n", speaker_state->last_clock_mode, cpu->clock_mode);
+    if (speaker_state->last_clock_mode != clock->get_clock_mode()) { // this will always trigger the 1st time through.
+        if (DEBUG(DEBUG_SPEAKER)) printf("Old clock mode: %d, New clock mode: %d\n", speaker_state->last_clock_mode, clock->get_clock_mode());
         //if (speaker_state->last_clock_mode == CLOCK_FREE_RUN) speaker_state->sp->reset(end_frame_c14M - computer->clock->c14M_per_frame); // coming out of LS.
         
-        speaker_state->last_clock_mode = cpu->clock_mode;
-        double frame_rate = (double)computer->clock->c14M_per_second / (double)computer->clock->c14M_per_frame;
+        speaker_state->last_clock_mode = clock->get_clock_mode();
+        double frame_rate = (double)clock->get_c14m_per_second() / (double)clock->get_c14m_per_frame();
     
         if (DEBUG(DEBUG_SPEAKER)) speaker_state->sp->print();
     }
@@ -114,11 +112,10 @@ uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end
 inline void log_speaker_blip(cpu_state *cpu) {
     speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
 
-    //speaker_state->sp->event_buffer->add_event(cpu->cycles);
-    speaker_state->sp->event_buffer->add_event(cpu->c_14M);
+    speaker_state->sp->event_buffer->add_event(speaker_state->clock->get_c14m());
 
     if (speaker_state->speaker_recording) {
-        fprintf(speaker_state->speaker_recording, "%llu\n", cpu->cycles);
+        fprintf(speaker_state->speaker_recording, "%llu\n", speaker_state->clock->get_cycles());
     }
 }
 
@@ -172,7 +169,7 @@ void speaker_stop(cpu_state *cpu) {
 void speaker_reset(speaker_state_t *speaker_state) {
     // TODO: What should this do.
     // should set last_event_time to end of this frame.
-    speaker_state->sp->reset(speaker_state->computer->cpu->cycles);
+    speaker_state->sp->reset(speaker_state->clock->get_cycles());
 }
 
 DebugFormatter * debug_speaker(speaker_state_t *ds) {
@@ -191,7 +188,7 @@ DebugFormatter * debug_speaker(speaker_state_t *ds) {
         samplesum += samplecounts[i];
     }
     uint32_t samplesavg = samplesum / 60;
-    uint64_t skew = ds->computer->cpu->c_14M - ds->sp->last_event_time;
+    uint64_t skew = ds->clock->get_c14m() - ds->sp->last_event_time;
     df->addLine("  Skew: %13llu", skew);
     df->addLine("  Samples: ---------+---------+---------+---------+---------+", samples);
     df->addLine("  %6d : %.*s|            ", samples, frame_index, "                                                  ");
@@ -203,7 +200,6 @@ DebugFormatter * debug_speaker(speaker_state_t *ds) {
     df->addLine("  Accumulated: %12.8f", ds->samples_accumulated);
     df->addLine("  Device Started: %6d", ds->sp->started() ? 1 : 0);
     // TODO: what else should this display here?
-    //df->addLine("  Cycle Index: %13llu SampleInd: %9llu CpuCycles: %13llu", ds->sp->cycle_index, ds->sp->sample_index, ds->computer->cpu->cycles);
     return df;
 }
 
@@ -227,12 +223,14 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 
     speaker_state_t *speaker_state = new speaker_state_t;
 
-    double frame_rate = (double)computer->clock->c14M_per_second / (double)computer->clock->c14M_per_frame;
-
-    speaker_state->sp = new SpeakerFX(computer->clock->c14M_per_second, 44100, 128*1024, 4096);
-    speaker_state->event_buffer = speaker_state->sp->event_buffer;
-
     speaker_state->computer = computer;
+    speaker_state->clock = computer->clock;
+
+
+    double frame_rate = (double)speaker_state->clock->get_c14m_per_second() / (double)speaker_state->clock->get_c14m_per_frame();
+
+    speaker_state->sp = new SpeakerFX(speaker_state->clock->get_c14m_per_second(), 44100, 128*1024, 4096);
+    speaker_state->event_buffer = speaker_state->sp->event_buffer;
     
     //speaker_state->cpu = cpu;
     speaker_state->speaker_recording = nullptr;

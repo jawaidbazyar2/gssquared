@@ -20,10 +20,11 @@
  #include <memory>
 
 class CPU65C02 : public CPU6502Core<CPU65C02Traits> {
-    // 65C02-specific overrides if needed
+public:
+    CPU65C02(NClock *clock) : CPU6502Core<CPU65C02Traits>(clock) {}
 };
 
 // Factory function for creating 65C02 instances
-std::unique_ptr<BaseCPU> create65C02() {
-    return std::make_unique<CPU65C02>();
+std::unique_ptr<BaseCPU> create65C02(NClock *clock) {
+    return std::make_unique<CPU65C02>(clock);
 } 

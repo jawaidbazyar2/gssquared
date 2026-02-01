@@ -7907,8 +7907,8 @@ Ah, so the issue with the debugger breakpoints early in boot:
 In fact this would be any breakpoint hitting at a point in a frame before enough data has been emitted.
 We need to skip the other end-of-frame stuff too. Or rethink how we handle stepwise.
 
-[ ] with 8 bit A, we're printing too big a value in the register status line.  
-[ ] register status line, registers are wrong width, and not enough space given for them.
+[x] with 8 bit A, we're printing too big a value in the register status line.  
+[x] register status line, registers are wrong width, and not enough space given for them.
 
 ## Jan 10, 2026
 
@@ -8418,7 +8418,7 @@ ok so I have a mapping inconsistency for the OA- and CA- keys.
 
 Found "Apple IIgs Diagnostic v2.2". 800k disk, ProDOS 8. Sweet!
 
-[ ] need to apply "joyport workaround" to IIgs mode.  It does. could be the mismatch between the modifier keys above.  
+[ ] need to apply "joyport workaround" to IIgs mode.  It does. could be the mismatch between the modifier keys above, or just not long enough for a GS reset.  
 
 ProDOS 8 & 8-bit software is working pretty well now!! Total Replay is working very well except Airheart which TROUBLES ME.
 
@@ -8599,7 +8599,7 @@ ok, well that was likely a red herring. I have modified the IIe code to work cor
 
 tracing the GS/OS boot after enabling interrupts. So far, so good..
 
-[ ] forward disasm is not correctly disassembling MVN/MVP: it thinks it's a 2-byte instruction, when it's a 3-byte. This is a more general broader problem too.  
+[x] forward disasm is not correctly disassembling MVN/MVP: it thinks it's a 2-byte instruction, when it's a 3-byte. This is a more general broader problem too.  
 
 OK!
 the P register being pushed to the stack on IRQs in emulation mode, has B bit set. 
@@ -8643,7 +8643,7 @@ Only if we boot straight from a RESET. Weeeeird. It's pretty consistent. Track t
 [x] Display DP register in trace  
 
 It would be superduper helpful to have gstrace be able to decode the address labels. I could have a labels on/off mode. Will need a wider display for that.
-What would actually also be super-cool, 
+What would actually also be super-cool, is have different display modes. having labels, probably have to redesign the display.
 
 [ ] would be to have a cursor in the trace display. whatever record the cursor is on, we display the PC, registers, P bit decode, etc from that moment.  
 
@@ -8772,7 +8772,7 @@ Observations: I had done a bunch of memory mapping fixes prior to the IWM issues
 
 [ ] Can't boot the nucleus demo - it immediately dumps into BASIC implying unrecognized boot block or ... ? (but, not always).
 
-[ ] Have an "system idle" measurement that tells us what % of realtime is idle vs emulating.
+[x] Have an "system idle" measurement that tells us what % of realtime is idle vs emulating.
 
 
 ok so I thought I had figured out where mouse interrupts come from, but no! KEGS says it's the ADB "mode". says it's mode & 0x2. 
@@ -8880,7 +8880,9 @@ And the important part here is then we'd get rid of the special separate gs2 exe
 Alternatively we could try to dynamically measure and estimate when frames have ended. but scanline interrupts just aren't gonna work unless we're tracking a scanline! i.e. doing videoscanner.
 
 
-[ ] A systemconfig option needs to be "gs system speed". Then the speed selector switch will toggle between 1mhz and the system speed.
+[ ] Clock speed setting in GUI should be "advisory" 
+
+i.e. a GS might be forced from emu into 1MHz mode. so need "accelerator speed" but that might not set the actual clock speed at a given moment. ie have "user selected speed" and "actual speed". GS can select between "fast" and "slow" speeds, and clock module will select the correct thing.
 
 This can be 2.8 (normal), 7.1 (basic ZIP) 14.3 (ZipGS Supra). Maybe we should put the ZipGS control registers, I think they're pretty simple.
 
@@ -9132,25 +9134,12 @@ this is something claude has noted, which is, when registers change, we need to 
 OK I think all of this is probably not that heavy a lift.
 If we did it cycle by cycle, we'd have to track fractions because 14M and 875KHz are not even multiples.
 
+See Clock.md for info on what's needed for clock abstraction.
 
+So I think do the clock class and get GS speed/slow timing working, and then cut release 0.7.
+that should at least get us past the system speed self test (5) and get moving on to other self tests.
 
-Probably the next thing I should do is figure out and implement the Apple IIgs RAM/ROM/MegaII cycle timing.
+First, new clock abstraction.
+Second, implement the GS cycle timing.
 
-Rather than putting in increasingly more complex logic into incr_cycle, I should probably do this:
-
-incr_cycle() is a very simple that just does this:
-
-inline void Clock::incr_cycle() {
-  if (cycle_handler) (*cycle_handler)();
-}
-
-Then we can stuff different cycle handlers into it, e.g. switching in the LS handler when we want, having different handlers for IIe/IIgs. The inline and this being a very small routine, should make this inlinable throughout the CPU code.
-
-What does a new clock abstraction look like?
-
-Set the cpu clock speed.
-interrogate information about the clock.
-It's allocated separately, injected where needed.
-Track clock ticks for the CPU. 
-
-Having the handler like that is icky, what I should do is use, you know, proper class stuff. Have a abstract base class that does nothing, then have a variety of clock subclasses that do increasingly useful stuff.
+It may be that the way to go for Ludicrous Speed is to have it as a platform setting, to avoid all kinds of contortions I go through now. There are so many things that just aren't gonna work right in LS.

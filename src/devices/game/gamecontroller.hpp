@@ -90,6 +90,7 @@ typedef struct gamec_state_t {
 
     EventQueue *event_queue;
     MMU_II *mmu;
+    NClock *clock;
 
     JoystickValues last_jv = {0, 0};
 } gamec_state_t;

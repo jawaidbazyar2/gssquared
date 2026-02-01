@@ -28,7 +28,6 @@
 #include "device_irq_id.hpp"
 #include "paths.hpp"
 #include "cpu.hpp"
-#include "clock.hpp"
 #include "display/display.hpp"
 #include "event_poll.hpp"
 #include "devices/speaker/speaker.hpp"
@@ -192,7 +191,7 @@ void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time,
 
 DebugFormatter *debug_clock(computer_t *computer) {
     DebugFormatter *f = new DebugFormatter();
-    f->addLine("CPU Expected Rate: %d", computer->clock->hz_rate);
+    f->addLine("CPU Expected Rate: %d", computer->clock->get_hz_rate());
     f->addLine("CPU eMHZ: %12.8f, FPS: %12.8f", computer->cpu->e_mhz, computer->cpu->fps);
     return f;
 }
@@ -236,7 +235,8 @@ execution of device frame handlers, including video frame output and audio frame
 void run_cpus(computer_t *computer) {
     cpu_state *cpu = computer->cpu;
     
-    computer->set_clock(&system_clock_mode_info[computer->speed_new]);
+    //computer->set_clock(&system_clock_mode_info[computer->speed_new]);
+    NClock *clock = computer->clock;
 
     uint64_t last_cycle_time = SDL_GetTicksNS();
 
@@ -244,13 +244,13 @@ void run_cpus(computer_t *computer) {
 
     uint64_t start_frame_c14m = 0;
     uint64_t last_start_frame_c14m = 0;
-    uint64_t end_frame_c14M = start_frame_c14m + computer->clock->c14M_per_frame; // init outside the loop
+    uint64_t end_frame_c14M = start_frame_c14m + clock->get_c14m_per_frame(); // init outside the loop
 
     speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
 
     while (cpu->halt != HLT_USER) { // top of frame.
 
-        uint64_t c14M_per_frame = computer->clock->c14M_per_frame;
+        uint64_t c14M_per_frame = clock->get_c14m_per_frame();
 
         if (computer->speed_shift) {
             display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
@@ -262,12 +262,15 @@ void run_cpus(computer_t *computer) {
                 speaker_state_t *ss = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
                 speaker_reset(ss);
             } */
-            if (cpu->clock_mode == CLOCK_FREE_RUN) {
+            if (clock->get_clock_mode() == CLOCK_FREE_RUN) {
                 speaker_state_t *ss = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
                 ss->sp->reset(start_frame_c14m);
             }
-            set_clock_mode(cpu, computer->speed_new);
-            computer->set_clock(&system_clock_mode_info[computer->speed_new]);
+            //set_clock_mode(cpu, computer->speed_new);
+            clock->set_clock_mode(computer->speed_new);
+            
+            //computer->set_clock(&system_clock_mode_info[computer->speed_new]);
+            
             display_update_video_scanner(ds, cpu);
             // cpu->video_scanner might be null here.
             int x = ds->video_scanner->get_frame_scan()->get_count();
@@ -280,8 +283,8 @@ void run_cpus(computer_t *computer) {
 
             /* This will run about 60fps, primarily waiting on user input in the debugger window. */
             while (cpu->instructions_left) {
-                if (computer->event_timer->isEventPassed(cpu->cycles)) {
-                    computer->event_timer->processEvents(cpu->cycles);
+                if (computer->event_timer->isEventPassed(clock->get_cycles())) {
+                    computer->event_timer->processEvents(clock->get_cycles());
                 }
                 (cpu->cpun->execute_next)(cpu);
                 cpu->instructions_left--;
@@ -304,8 +307,8 @@ void run_cpus(computer_t *computer) {
             MEASURE(computer->display_times, frame_video_update(computer, cpu, true));
     
             // if we're in stepwise mode, we should increment these only if we got to end of frame.
-            if (cpu->c_14M >= end_frame_c14M) {
-                if (cpu->video_scanner != nullptr) {
+            if (clock->get_c14m() >= end_frame_c14M) {
+                if (clock->get_video_scanner() != nullptr) {
                     computer->video_system->update_display(false); // set flag to false to draw with cycle based, and, gobble up frame data.
                 }
 
@@ -321,14 +324,14 @@ void run_cpus(computer_t *computer) {
             uint64_t wakeup_time = last_cycle_time + 16667000;
             SDL_DelayPrecise(wakeup_time - SDL_GetTicksNS());
             
-        } else if ((cpu->execution_mode == EXEC_NORMAL) && (cpu->clock_mode != CLOCK_FREE_RUN)) {
+        } else if ((cpu->execution_mode == EXEC_NORMAL) && (clock->get_clock_mode() != CLOCK_FREE_RUN)) {
 
             computer->set_frame_start_cycle();
 
             if (computer->debug_window->window_open) {
-                while (cpu->c_14M < end_frame_c14M) { // 1/60th second.
-                    if (computer->event_timer->isEventPassed(cpu->cycles)) {
-                        computer->event_timer->processEvents(cpu->cycles);
+                while (clock->get_c14m() < end_frame_c14M) { // 1/60th second.
+                    if (computer->event_timer->isEventPassed(clock->get_cycles())) {
+                        computer->event_timer->processEvents(clock->get_cycles());
                     }
 
                     // do the pre check.
@@ -354,9 +357,9 @@ void run_cpus(computer_t *computer) {
                 
                 }
             } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
-                while (cpu->c_14M < end_frame_c14M) { // 1/60th second.
-                    if (computer->event_timer->isEventPassed(cpu->cycles)) {
-                        computer->event_timer->processEvents(cpu->cycles);
+                while (clock->get_c14m() < end_frame_c14M) { // 1/60th second.
+                    if (computer->event_timer->isEventPassed(clock->get_cycles())) {
+                        computer->event_timer->processEvents(clock->get_cycles());
                     }
                     (cpu->cpun->execute_next)(cpu);
                 }
@@ -383,7 +386,7 @@ void run_cpus(computer_t *computer) {
     
             // calculate what sleep-until time should be.
             //uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
-            uint64_t frame_length_ns = (frame_count & 1) ? computer->clock->us_per_frame_odd : computer->clock->us_per_frame_even;
+            uint64_t frame_length_ns = (frame_count & 1) ? clock->get_us_per_frame_odd() : clock->get_us_per_frame_even();
             // sleep out the rest of this frame.
             //frame_sleep(computer, cpu, last_cycle_time, frame_length_ns);
 
@@ -399,7 +402,7 @@ void run_cpus(computer_t *computer) {
 
             // if we completed a full frame, update the frame counters. otherwise we were interrupted by breakpoint etc 
             // 
-            if (cpu->c_14M >= end_frame_c14M) {
+            if (clock->get_c14m() >= end_frame_c14M) {
                 start_frame_c14m += c14M_per_frame;
                 end_frame_c14M = start_frame_c14m + c14M_per_frame;
                 frame_count++;
@@ -418,7 +421,7 @@ void run_cpus(computer_t *computer) {
         } else { // Ludicrous Speed!
             // TODO: how to handle VBL timing here. estimate it based on realtime?
             computer->set_frame_start_cycle(); // todo: unsure if this is right..
-            uint64_t frame_length_ns = (frame_count & 1) ? computer->clock->us_per_frame_odd : computer->clock->us_per_frame_even;
+            uint64_t frame_length_ns = (frame_count & 1) ? clock->get_us_per_frame_odd() : clock->get_us_per_frame_even();
             uint64_t next_frame_time = last_cycle_time + frame_length_ns; // even frames have 16688154, odd frames have 16688154 + 1
 
             uint64_t frdiff = start_frame_c14m - last_start_frame_c14m; // this is just a check.
@@ -427,8 +430,8 @@ void run_cpus(computer_t *computer) {
             
             if (computer->debug_window->window_open) {
                 while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
-                    if (computer->event_timer->isEventPassed(cpu->cycles)) {
-                        computer->event_timer->processEvents(cpu->cycles);
+                    if (computer->event_timer->isEventPassed(clock->get_cycles())) {
+                        computer->event_timer->processEvents(clock->get_cycles());
                     }
                     if (computer->debug_window->check_pre_breakpoint(cpu)) {
                         cpu->execution_mode = EXEC_STEP_INTO;
@@ -452,15 +455,15 @@ void run_cpus(computer_t *computer) {
                 }
             } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
                 while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
-                    if (computer->event_timer->isEventPassed(cpu->cycles)) {
-                        computer->event_timer->processEvents(cpu->cycles);
+                    if (computer->event_timer->isEventPassed(clock->get_cycles())) {
+                        computer->event_timer->processEvents(clock->get_cycles());
                     }
                     (cpu->cpun->execute_next)(cpu);
                 }
             }
             
             // this was roughly one video frame so let's pretend we went that many.
-            cpu->c_14M += c14M_per_frame; // fake increment this so it doesn't get wildly out of sync.
+            clock->adjust_c14m(c14M_per_frame); // fake increment this so it doesn't get wildly out of sync.
 
             uint64_t current_time = SDL_GetTicksNS();
 
@@ -595,7 +598,7 @@ int main(int argc, char *argv[]) {
 
     while (1) {
 
-    computer_t *computer = new computer_t();
+    computer_t *computer = new computer_t(nullptr); // We'll set the clock later.
 
     video_system_t *vs = computer->video_system;
 
@@ -618,12 +621,14 @@ int main(int argc, char *argv[]) {
 
     // TODO: This is a little disjointed. the clock abstraction should probably program all the things that need the clock.
     // the initial setting here is 1MHz, except for platform which has the right starting clock?
-    select_system_clock(system_config->clock_set);
-    computer->set_clock(&system_clock_mode_info[computer->speed_new]);
-    set_clock_mode(computer->cpu, platform->default_clock_mode);
+    //select_system_clock(system_config->clock_set);
+    //computer->set_clock(&system_clock_mode_info[computer->speed_new]);
+    //set_clock_mode(computer->cpu, platform->default_clock_mode);
 
     computer->cpu->set_processor(platform->cpu_type);
-
+    // important to do this before setting up the rest of the computer.
+    NClockII *nclock = NClockFactory::create_clock(platform->id, system_config->clock_set);
+    computer->set_clock(nclock);
 
     //computer->set_cpu(new cpu_state(platform->cpu_type));
 
@@ -665,17 +670,19 @@ int main(int argc, char *argv[]) {
             computer->cpu->set_mmu(mmu_iigs); // cpu gets FPI
             computer->set_mmu(mmu_iie); // everything else gets the Mega II
             computer->debug_window->set_mmu(mmu_iigs);
+            mmu_iigs->set_clock((NClockII *)nclock);
+
             break;
         default:
             printf("Unknown MMU type: %d\n", platform->mmu_type);
             break;
     }
-
     // need to tell the MMU about our ROM somehow.
     // need a function in MMU to "reset page to default".
-    computer->cpu->cpun = createCPU(platform->cpu_type);
-    computer->cpu->core = computer->cpu->cpun.get(); // set the core. Probably need a better set cpu for cpu_state.
+    computer->cpu->cpun = createCPU(platform->cpu_type, (NClock *)nclock);
 
+    computer->cpu->core = computer->cpu->cpun.get(); // set the core. Probably need a better set cpu for cpu_state.
+    //computer->cpu->core->set_clock(nclock);
 
     // Initialize the slot manager.
     //SlotManager_t *slot_manager = new SlotManager_t();
@@ -718,6 +725,8 @@ int main(int argc, char *argv[]) {
     // TODO: this shouldn't go here, this should be in videosystem.
     //video_system_t *vs = computer->video_system;
     osd = new OSD(computer, computer->cpu, vs->renderer, vs->window, computer->slot_manager, 1120, 768, aa);
+    osd->set_clock(computer->clock);
+
     // TODO: this should be handled differently. have osd save/restore?
     int error = SDL_SetRenderTarget(vs->renderer, nullptr);
     if (!error) {
@@ -729,7 +738,7 @@ int main(int argc, char *argv[]) {
     computer->video_system->update_display(); // check for events 60 times per second.
 
     if (platform->mmu_type == MMU_MMU_IIGS) {
-        mmu_iigs->set_cpu(computer->cpu);
+        //mmu_iigs->set_cpu(computer->cpu); // not needed any more, clock handles it.
         
         //computer->debug_window->set_open();
         //computer->cpu->execution_mode = EXEC_STEP_INTO;

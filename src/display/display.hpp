@@ -19,7 +19,6 @@
 
 #include "gs2.hpp"
 #include "cpu.hpp"
-#include "platforms.hpp"
 #include "videosystem.hpp"
 
 #define SCALE_X 2
@@ -173,6 +172,8 @@ public:
     video_system_t *video_system;
     MMU_II *mmu;
     computer_t *computer;
+    NClockII *clock = nullptr;
+
     video_scanner_t video_scanner_type = Scanner_AppleII;
     VideoScannerII *video_scanner = nullptr; // if set, use this instead of default video generation.
     VideoScanGenerator *vsg = nullptr;

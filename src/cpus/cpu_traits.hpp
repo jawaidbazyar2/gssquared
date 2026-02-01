@@ -1,17 +1,24 @@
 #pragma once
 
+#include "NClock.hpp"
+
 struct cpu_state;
 
 // Base interface for all CPU implementations
 class BaseCPU {
 private:
     const char *name = nullptr;
+protected:
+    NClock *clock = nullptr;
+    inline void incr_cycles() { this->clock->incr_cycles(); }
 
 public:
+    BaseCPU(NClock *clock) { this->clock = clock; }
     virtual ~BaseCPU() = default;
     virtual int execute_next(cpu_state *cpu) = 0;
     virtual void reset(cpu_state *cpu) = 0;
     virtual const char *get_name() = 0;
+    virtual void set_clock(NClock *clock) { this->clock = clock; }
 };
 
 // cpu_traits.hpp

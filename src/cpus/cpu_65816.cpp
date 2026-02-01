@@ -57,12 +57,12 @@ private:
     }
 
 public:
-    CPU65816() {
-        emulation_core = std::make_unique<CPU6502Core<CPU65816_E_8_8_Traits>>();
-        native_8_8_core = std::make_unique<CPU6502Core<CPU65816_N_8_8_Traits>>();
-        native_16_8_core = std::make_unique<CPU6502Core<CPU65816_N_16_8_Traits>>();
-        native_8_16_core = std::make_unique<CPU6502Core<CPU65816_N_8_16_Traits>>();
-        native_16_16_core = std::make_unique<CPU6502Core<CPU65816_N_16_16_Traits>>();
+    CPU65816(NClock *clock) : BaseCPU(clock) {
+        emulation_core = std::make_unique<CPU6502Core<CPU65816_E_8_8_Traits>>(clock);
+        native_8_8_core = std::make_unique<CPU6502Core<CPU65816_N_8_8_Traits>>(clock);
+        native_16_8_core = std::make_unique<CPU6502Core<CPU65816_N_16_8_Traits>>(clock);
+        native_8_16_core = std::make_unique<CPU6502Core<CPU65816_N_8_16_Traits>>(clock);
+        native_16_16_core = std::make_unique<CPU6502Core<CPU65816_N_16_16_Traits>>(clock);
         
         current_core = emulation_core.get(); // Start in emulation mode
     }
@@ -82,7 +82,7 @@ public:
 
 
 // Factory function for creating 65816 instances
-std::unique_ptr<BaseCPU> create65816() {
-    return std::make_unique<CPU65816>();
+std::unique_ptr<BaseCPU> create65816(NClock *clock) {
+    return std::make_unique<CPU65816>(clock);
 }
 

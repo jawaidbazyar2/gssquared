@@ -4,6 +4,7 @@
 #include "mmu_iie.hpp"
 #include "iigs_shadow_flags.hpp"
 #include "debug.hpp"
+#include "NClock.hpp"
 
 class MMU_IIgs : public MMU {
     protected:
@@ -66,8 +67,9 @@ class MMU_IIgs : public MMU {
 
         bool is_rom03 = false;
 
-        cpu_state *cpu = nullptr;
-        
+        //cpu_state *cpu = nullptr;
+        NClock *clock = nullptr;
+
     public:
         MMU_IIe *megaii = nullptr;
 
@@ -181,8 +183,6 @@ class MMU_IIgs : public MMU {
         virtual void reset() override;
         void debug_dump(DebugFormatter *df);
 
-        void set_cpu(cpu_state *cpux) { this->cpu = cpux; }
-        cpu_state *get_cpu() { return this->cpu; }
-
-        
+        inline void set_clock(NClockII *clock) { this->clock = clock; }
+        inline void set_clock_mode(clock_mode_t mode) { clock->set_clock_mode(mode); }
 };

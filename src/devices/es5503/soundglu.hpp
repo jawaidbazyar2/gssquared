@@ -3,6 +3,8 @@
 #include <cstdint>
 #include "ensoniq.hpp"
 
+class NClockII;
+
 // Legacy structure for compatibility
 struct ensoniq_state_t {
     ES5503 *chip = nullptr;
@@ -17,6 +19,7 @@ struct ensoniq_state_t {
     float samples_per_frame = 0.0f;
     float samples_accumulated = 0.0f;
     computer_t *computer = nullptr;  // For IRQ handling
+    NClockII *clock = nullptr;
     uint64_t doc_read_complete_time = 0;
 };
 

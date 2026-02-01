@@ -9,6 +9,7 @@
 #include "util/DebugHandlerIDs.hpp"
 #include "device_irq_id.hpp"
 #include "cpu.hpp"
+#include "NClock.hpp"
 
 //==============================================================================
 // Apple IIgs Interface (C03C-C03F)
@@ -19,7 +20,7 @@
 void ensoniq_doc_data_read(ensoniq_state_t *st) {
     // if never done before, or we have not reached the completion time, don't change data yet.
     if (st->soundctl & 0x80) { // waiting for prior transaction to complete
-        if (st->computer->cpu->c_14M >= st->doc_read_complete_time) {
+        if (st->clock->get_c14m() >= st->doc_read_complete_time) {
             st->soundctl &= ~0x80; // clear busy bit
     
             if (st->soundctl & 0x40) {     // RAM mode - use full 16-bit address
@@ -33,7 +34,7 @@ void ensoniq_doc_data_read(ensoniq_state_t *st) {
         }
     } else {  // trigger new transaction
         st->soundctl |= 0x80; // set busy bit
-        st->doc_read_complete_time = st->computer->cpu->c_14M + 4; // the diff between 1MHz and 895KHz.. it's actually gonna vary around a bunch.        
+        st->doc_read_complete_time = st->clock->get_c14m() + 4; // the diff between 1MHz and 895KHz.. it's actually gonna vary around a bunch.        
         return; // don't change data yet.
     }
     /* if ((st->doc_read_complete_time == 0) || (st->computer->cpu->c_14M < st->doc_read_complete_time)) {
@@ -198,6 +199,7 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     st->chip->init(7159090, 48000, 1);  // Apple IIgs clock rate, 48kHz stereo
     st->chip->set_wave_memory(st->doc_ram);
     st->computer = computer;
+    st->clock = computer->clock;
     
     // Set up IRQ callback to propagate interrupts to CPU
     st->chip->set_irq_callback([st](bool state) {
@@ -216,7 +218,7 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     int dev_id = speaker_d->device_id;
 
     // Calculate frame rate
-    st->frame_rate = (double)computer->clock->c14M_per_second / (double)computer->clock->c14M_per_frame;
+    st->frame_rate = (double)computer->clock->get_c14m_per_second() / (double)computer->clock->get_c14m_per_frame();
     
     // Calculate ES5503 output rate and set up SDL stream
     uint32_t es5503_output_rate = st->chip->calculate_output_rate();

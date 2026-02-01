@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include "debug.hpp"
+#include "memoryspecs.hpp"
 
 #include "iiememory.hpp"
 #include "Module_ID.hpp"

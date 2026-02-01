@@ -17,10 +17,11 @@
 
 #pragma once
 
-#include <cstdint>
+//#include <cstdint>
 
 //#include "cpu.hpp"
 
+#if 0
 struct cpu_state; // forward declaration
 
 enum clock_set_t {
@@ -56,3 +57,4 @@ typedef struct {
 //extern clock_mode_info_t clock_mode_info[NUM_CLOCK_MODES];
 extern clock_mode_info_t *system_clock_mode_info;
 clock_mode_info_t *get_clock_line(cpu_state *cpu);
+#endif

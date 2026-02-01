@@ -36,7 +36,6 @@
 #include "util/mount.hpp"
 #include "util/soundeffects.hpp"
 #include "ModalContainer.hpp"
-#include "util/strndup.h"
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
 // comes back later, we know which drive this was for.
@@ -419,24 +418,24 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     speed_btn_14 = new Button_t(aa, MHz14_318Button, CB);
     speed_btn_8 = new Button_t(aa, MHzInfinityButton, CB);
     
-    speed_btn_10->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
-        set_clock_mode(cpu, CLOCK_1_024MHZ);
+    speed_btn_10->set_click_callback([this](const SDL_Event& event) -> bool {
+        this->clock->set_clock_mode(CLOCK_1_024MHZ);
         return true;
     });
-    speed_btn_28->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
-        set_clock_mode(cpu, CLOCK_2_8MHZ);
+    speed_btn_28->set_click_callback([this](const SDL_Event& event) -> bool {
+        this->clock->set_clock_mode(CLOCK_2_8MHZ);
         return true;
     });
-    speed_btn_71->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
-        set_clock_mode(cpu, CLOCK_7_159MHZ);
+    speed_btn_71->set_click_callback([this](const SDL_Event& event) -> bool {
+        this->clock->set_clock_mode(CLOCK_7_159MHZ);
         return true;
     });
-    speed_btn_14->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
-        set_clock_mode(cpu, CLOCK_14_3MHZ);
+    speed_btn_14->set_click_callback([this](const SDL_Event& event) -> bool {
+        this->clock->set_clock_mode(CLOCK_14_3MHZ);
         return true;
     });
-    speed_btn_8->set_click_callback([this,cpu](const SDL_Event& event) -> bool {
-        set_clock_mode(cpu, CLOCK_FREE_RUN);
+    speed_btn_8->set_click_callback([this](const SDL_Event& event) -> bool {
+        this->clock->set_clock_mode(CLOCK_FREE_RUN);
         return true;
     });
     speed_con->add_tile(speed_btn_10, 0);
@@ -565,7 +564,7 @@ void OSD::update() {
     static int updCount=0;
     if (updCount++ > 60) {
         updCount = 0;
-        computer->mounts->dump();
+        // computer->mounts->dump(); // TODO: this is crashing for unknown reason.
     }
 
     // TODO: iterate over all drives based on what's in slots.
@@ -591,16 +590,24 @@ void OSD::update() {
     speed_btn_71->set_background_color(0x000000FF);
     speed_btn_8->set_background_color(0x000000FF);
     speed_btn_14->set_background_color(0x000000FF);
-    if (cpu->clock_mode == CLOCK_1_024MHZ) {
-        speed_btn_10->set_background_color(0x00FF00FF);
-    } else if (cpu->clock_mode == CLOCK_2_8MHZ) {
-        speed_btn_28->set_background_color(0x00FF00FF);
-    } else if (cpu->clock_mode == CLOCK_7_159MHZ) {
-        speed_btn_71->set_background_color(0x00FF00FF);
-    } else if (cpu->clock_mode == CLOCK_14_3MHZ) {
-        speed_btn_14->set_background_color(0x00FF00FF);
-    } else if (cpu->clock_mode == CLOCK_FREE_RUN) {
-        speed_btn_8->set_background_color(0x00FF00FF);
+    switch (this->clock->get_clock_mode()) {
+        case CLOCK_1_024MHZ:
+            speed_btn_10->set_background_color(0x00FF00FF);
+            break;
+        case CLOCK_2_8MHZ:
+            speed_btn_28->set_background_color(0x00FF00FF);
+            break;
+        case CLOCK_7_159MHZ:
+            speed_btn_71->set_background_color(0x00FF00FF);
+            break;
+        case CLOCK_14_3MHZ:
+            speed_btn_14->set_background_color(0x00FF00FF);
+            break;
+        case CLOCK_FREE_RUN:
+            speed_btn_8->set_background_color(0x00FF00FF);
+            break;
+        default:
+            break; // should never happen..
     }
 
     if (activeModal) {
@@ -717,19 +724,12 @@ void OSD::render() {
             SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderDebugText(renderer, 20, window_height - 30, hud_str);
 
-            if (cpu->video_scanner) {
-                snprintf(hud_str, sizeof(hud_str), "H: %3d V: %3d c: %6d", cpu->video_scanner->hcount, cpu->video_scanner->get_vcount(), cpu->video_scanner->get_frame_scan()->get_count());
+            if (clock->get_video_scanner()) {
+                snprintf(hud_str, sizeof(hud_str), "H: %3d V: %3d c: %6d", clock->get_video_scanner()->hcount, clock->get_video_scanner()->get_vcount(), clock->get_video_scanner()->get_frame_scan()->get_count());
                 SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);
             }
             
             uint64_t etime, esecs, emsecs;
-
-#if 0
-            snprintf(hud_str, sizeof(hud_str), "Cycles          PC   A  X  Y  P  (N V B D I Z C)");
-            SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);
-            snprintf(hud_str, sizeof(hud_str), "%-15lld %04X %02X %02X %02X %02X (%1d %1d %1d %1d %1d %1d %1d)", cpu->cycles, cpu->pc, cpu->a, cpu->x, cpu->y, cpu->p, cpu->N, cpu->V, cpu->B, cpu->D, cpu->I, cpu->Z, cpu->C);
-            SDL_RenderDebugText(renderer, 20, window_height - 40, hud_str);
-#endif
         }
         SDL_SetRenderScale(renderer, ox,oy);
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);

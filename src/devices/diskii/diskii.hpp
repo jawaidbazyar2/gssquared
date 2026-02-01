@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include "devices.hpp"
-#include "slots.hpp"
+//#include "slots.hpp"
 #include "computer.hpp"
+#include "NClock.hpp"
 #include "devices/diskii/diskii_fmt.hpp"
 #include "util/media.hpp"
 #include "util/mount.hpp"
@@ -71,6 +71,7 @@ struct diskII {
 
 struct diskII_controller : public SlotData {
     computer_t *computer;
+    NClock *clock;
     diskII drive[2];
     uint8_t drive_select;
     bool motor;

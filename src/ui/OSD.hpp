@@ -76,6 +76,8 @@ protected:
     Button_t *discard_btn = nullptr;
     Button_t *cancel_btn = nullptr;
 
+    NClock *clock = nullptr;
+
     //int controlOpacity = 0;
     Button_t *close_btn = nullptr;
     FadeButton_t *open_btn = nullptr;
@@ -144,4 +146,6 @@ public:
 
     void open_panel();
     void close_panel();
+
+    void set_clock(NClock *clock) { this->clock = clock; }
 };

@@ -3,7 +3,7 @@
 #include "SDL3/SDL_keycode.h"
 #include "gs2.hpp"
 #include "cpu.hpp"
-
+#include "NClock.hpp"
 #include "computer.hpp"
 #include "debugger/debugwindow.hpp"
 #include "util/EventDispatcher.hpp"
@@ -15,7 +15,9 @@
 #include "util/DebugFormatter.hpp"
 #include "util/applekeys.hpp"
 
-computer_t::computer_t() {
+computer_t::computer_t(NClockII *clock) {
+    this->clock = clock;
+
     // lots of stuff is going to need this.
     event_queue = new EventQueue();
     if (!event_queue) {
@@ -31,7 +33,7 @@ computer_t::computer_t() {
 
     cpu = new cpu_state(PROCESSOR_6502); // default to 6502, then we will override later.
 
-    event_timer = new EventTimer(cpu);
+    event_timer = new EventTimer(clock); // TODO: clock needs to be set before here?
 
     slot_manager = new SlotManager_t();
     mounts = new Mounts(cpu, slot_manager);
@@ -53,9 +55,9 @@ computer_t::computer_t() {
         if (key == SDLK_F9) { 
             this->speed_shift = true;
             if (mod & SDL_KMOD_SHIFT) {
-                this->speed_new = toggle_clock_mode(cpu, -1);
+                this->speed_new = this->clock->toggle(-1);
             } else {
-                this->speed_new = toggle_clock_mode(cpu, 1);
+                this->speed_new = this->clock->toggle(1);
             }
             send_clock_mode_message();
             return true; 
@@ -84,7 +86,7 @@ computer_t::~computer_t() {
 }
 
 void computer_t::set_frame_start_cycle() {
-    frame_start_cycle = cpu->cycles;
+    frame_start_cycle = clock->get_cycles();
 }
 
 void computer_t::register_reset_handler(ResetHandler handler) {
@@ -130,6 +132,10 @@ void computer_t::reset(bool cold_start) {
     }
 }
 
+void computer_t::set_clock(NClockII *clock) {
+    this->clock = clock;
+    event_timer->set_clock(clock);
+}
 
 /* void computer_t::registerHandler(EventHandler handler) {
     handlers.push_back(handler);
@@ -218,16 +224,16 @@ void computer_t::frame_status_update() {
         frame_count = 0;
 
         // TODO: maybe should update this every second instead of every 5 seconds.
-        uint64_t delta = cpu->cycles - last_5sec_cycles;
+        uint64_t delta = clock->get_cycles() - last_5sec_cycles;
         cpu->e_mhz = 1000 * (double)delta / ((double)(this_frame_end_time - last_5sec_update));
 
         status_count++;
         if (status_count == 5) {
-            last_5sec_cycles = cpu->cycles;
+            last_5sec_cycles = clock->get_cycles();
             last_5sec_update = this_frame_end_time;
     
             fprintf(stdout, "%llu delta %llu cycles clock-mode: %d CPS: %12.8f MHz [ slips: %llu]\n", 
-                delta, cpu->cycles, cpu->clock_mode, cpu->e_mhz, cpu->clock_slip);
+                delta, clock->get_cycles(), clock->get_clock_mode(), cpu->e_mhz, cpu->clock_slip);
             uint64_t et = event_times.getAverage();
             uint64_t at = audio_times.getAverage();
             uint64_t dt = display_times.getAverage();

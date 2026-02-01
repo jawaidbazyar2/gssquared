@@ -35,6 +35,9 @@ struct computer_t {
         DebugDisplayHandler handler;
     };
 
+    computer_t(NClockII *clock);
+    ~computer_t();
+
     cpu_state *cpu = nullptr;
     MMU_II *mmu = nullptr;
     //VideoScannerII *video_scanner = nullptr;
@@ -76,11 +79,11 @@ struct computer_t {
     uint64_t frame_start_cycle = 0;
 
     video_scanner_t video_scanner = Scanner_AppleII;
-    clock_mode_info_t *clock = nullptr;
+    //clock_mode_info_t *clock = nullptr;
+    NClockII *clock = nullptr;
 
-    computer_t();
-    ~computer_t();
-    void set_clock(clock_mode_info_t *clock) { this->clock = clock; }
+    void set_clock(NClockII *clock); 
+    
     void set_mmu(MMU_II *mmu) { this->mmu = mmu; }
     void set_cpu(cpu_state *cpu) { this->cpu = cpu; }
     void set_platform(platform_info *platform) { this->platform = platform; }

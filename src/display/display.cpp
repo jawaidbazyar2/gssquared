@@ -24,7 +24,7 @@
 
 #include "display.hpp"
 #include "text_40x24.hpp"
-#include "hgr_280x192.hpp"
+//#include "hgr_280x192.hpp"
 #include "platforms.hpp"
 #include "event_poll.hpp"
 
@@ -1129,9 +1129,9 @@ uint8_t display_read_C02EF(void *context, uint32_t address) {
 }
 
 void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
-    if (cpu->clock_mode == CLOCK_FREE_RUN) {
+    if (ds->clock->get_clock_mode() == CLOCK_FREE_RUN) {
         ds->framebased = true;
-        cpu->video_scanner = nullptr;
+        ds->clock->set_video_scanner(nullptr);
         /* for (int i = 0x04; i <= 0x0B; i++) {
             ds->mmu->set_page_shadow(i, { txt_memory_write, cpu });
         }
@@ -1140,7 +1140,7 @@ void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
         } */
     } else {
         ds->framebased = false;
-        cpu->video_scanner = ds->video_scanner;
+        ds->clock->set_video_scanner(ds->video_scanner);
         for (int i = 0x04; i <= 0x0B; i++) {
             ds->mmu->set_page_shadow(i, { nullptr, cpu });
         }
@@ -1230,6 +1230,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     ds->video_system = vs;
     ds->event_queue = computer->event_queue;
     ds->computer = computer;
+    ds->clock = computer->clock;
     MMU_II *mmu = computer->mmu;
     ds->mmu = mmu;
 

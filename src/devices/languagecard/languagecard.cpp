@@ -15,7 +15,8 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
+#include <cstdio>
+#include "memoryspecs.hpp"
 #include "debug.hpp"
 
 #include "devices/languagecard/languagecard.hpp"

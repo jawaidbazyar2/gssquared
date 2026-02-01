@@ -159,7 +159,6 @@ In DOS at $B800 lives the "prenibble routine" . I could perhaps steal that. hehe
 #include <stdlib.h>
 #include <cstring>
 
-#include "util/strndup.h"
 #include "cpu.hpp"
 #include "diskii.hpp"
 #include "util/Event.hpp"
@@ -372,8 +371,8 @@ drive_status_t diskii_status(cpu_state *cpu, uint64_t key) {
     diskII_controller *diskII_d = (diskII_controller *)get_slot_state(cpu, (SlotType_t)slot);
     diskII &seldrive = diskII_d->drive[drive];
 
-    if (diskII_d->motor == 1 && diskII_d->mark_cycles_turnoff != 0 && ((cpu->cycles > diskII_d->mark_cycles_turnoff))) {
-        if (DEBUG(DEBUG_DISKII)) printf("motor off: %llu %llu cycles\n", cpu->cycles, diskII_d->mark_cycles_turnoff);
+    if (diskII_d->motor == 1 && diskII_d->mark_cycles_turnoff != 0 && ((diskII_d->clock->get_cycles() > diskII_d->mark_cycles_turnoff))) {
+        if (DEBUG(DEBUG_DISKII)) printf("motor off: %llu %llu cycles\n", diskII_d->clock->get_cycles(), diskII_d->mark_cycles_turnoff);
         diskII_d->motor = 0;
         diskII_d->mark_cycles_turnoff = 0;
     }
@@ -450,8 +449,8 @@ uint8_t diskII_read_C0xx(void *context, uint32_t address) {
 
     diskII &seldrive = thisSlot->drive[drive];
 
-    if (thisSlot->motor == 1 && thisSlot->mark_cycles_turnoff != 0 && ((cpu->cycles > thisSlot->mark_cycles_turnoff))) {
-        if (DEBUG(DEBUG_DISKII)) printf("motor off: %llu %llu cycles\n", cpu->cycles, thisSlot->mark_cycles_turnoff);
+    if (thisSlot->motor == 1 && thisSlot->mark_cycles_turnoff != 0 && ((thisSlot->clock->get_cycles() > thisSlot->mark_cycles_turnoff))) {
+        if (DEBUG(DEBUG_DISKII)) printf("motor off: %llu %llu cycles\n", thisSlot->clock->get_cycles(), thisSlot->mark_cycles_turnoff);
         thisSlot->motor = 0;
         thisSlot->mark_cycles_turnoff = 0;
     }
@@ -467,7 +466,7 @@ uint8_t diskII_read_C0xx(void *context, uint32_t address) {
         seldrive.bit_position = 0;
         seldrive.head_position = (seldrive.head_position +  ((cpu->cycles - seldrive.last_read_cycle) / 32) ) % 0x1A00;
     } */
-    seldrive.last_read_cycle = cpu->cycles; // always update this.
+    seldrive.last_read_cycle = thisSlot->clock->get_cycles(); // always update this.
 
     switch (reg) {
         case DiskII_Ph0_Off:    
@@ -530,8 +529,8 @@ uint8_t diskII_read_C0xx(void *context, uint32_t address) {
             //if (DEBUG(DEBUG_DISKII)) DEBUG_MOT(slot, drive, 0);
             // if motor already off, do nothing. otherwise schedule a motor off.
             if (thisSlot->motor == 1) {
-                thisSlot->mark_cycles_turnoff = cpu->cycles + 1000000;
-                if (DEBUG(DEBUG_DISKII)) printf("schedule motor off at %llu (is now %llu)\n", thisSlot->mark_cycles_turnoff, cpu->cycles);
+                thisSlot->mark_cycles_turnoff = thisSlot->clock->get_cycles() + 1000000;
+                if (DEBUG(DEBUG_DISKII)) printf("schedule motor off at %llu (is now %llu)\n", thisSlot->mark_cycles_turnoff, thisSlot->clock->get_cycles());
             }
             break;
         case DiskII_Motor_On: // only one drive at a time is motorized.
@@ -623,8 +622,8 @@ void diskII_write_C0xx(void *context, uint32_t address, uint8_t value) {
             if (DEBUG(DEBUG_DISKII)) DEBUG_MOT(slot, drive, 0);
             // if motor already off, do nothing. otherwise schedule a motor off.
             if (diskII_d->motor == 1) {
-                diskII_d->mark_cycles_turnoff = cpu->cycles + 1000000;
-                if (DEBUG(DEBUG_DISKII)) printf("schedule motor off at %llu (is now %llu)\n", diskII_d->mark_cycles_turnoff, cpu->cycles);
+                diskII_d->mark_cycles_turnoff = diskII_d->clock->get_cycles() + 1000000;
+                if (DEBUG(DEBUG_DISKII)) printf("schedule motor off at %llu (is now %llu)\n", diskII_d->mark_cycles_turnoff, diskII_d->clock->get_cycles());
             }
             break;
         case DiskII_Motor_On: // only one drive at a time is motorized.
@@ -724,6 +723,7 @@ void init_slot_diskII(computer_t *computer, SlotType_t slot) {
     
     diskII_controller *diskII_d = new diskII_controller();
     diskII_d->computer = computer;
+    diskII_d->clock = computer->clock;
 
     // set in CPU so we can reference later
     diskII_d->id = DEVICE_ID_DISK_II;

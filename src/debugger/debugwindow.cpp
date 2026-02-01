@@ -335,7 +335,8 @@ void debug_window_t::render_pane_trace() {
 
     draw_text(DEBUG_PANEL_TRACE, x, 5, buffer);
 
-    snprintf(buffer, sizeof(buffer), "Cycles: %18llu    MHz: %10.5f", cpu->cycles, cpu->e_mhz);
+    // Todo: Replace this? nah..
+    //snprintf(buffer, sizeof(buffer), "Cycles: %18llu    MHz: %10.5f", cpu->cycles, cpu->e_mhz);
     draw_text(DEBUG_PANEL_TRACE, x, 6, buffer);
 
     separator_line(DEBUG_PANEL_TRACE, 7);

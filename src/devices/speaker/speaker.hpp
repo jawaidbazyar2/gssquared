@@ -18,7 +18,7 @@
 #pragma once
 
 #include "cpu.hpp"
-#include "slots.hpp"
+//#include "slots.hpp"
 #include "LowPass.hpp"
 #include "EventBuffer.hpp"
 #include "SpeakerFX.hpp"
@@ -104,6 +104,7 @@ typedef struct speaker_state_t {
     EventBufferBase *event_buffer;
     SpeakerFX *sp;
     computer_t *computer;
+    NClock *clock;
 
     double frame_rate;
     double samples_per_frame;

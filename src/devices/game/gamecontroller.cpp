@@ -117,14 +117,14 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
         float mouse_x, mouse_y;
         SDL_GetMouseState(&mouse_x, &mouse_y);
         if (ds->paddle_flip_01) {
-            uint64_t x_trigger =  cpu->c_14M + (GAME_INPUT_DECAY_TIME * (1.0f - (float(mouse_x) / WINDOW_WIDTH)));
-            uint64_t y_trigger = cpu->c_14M + (GAME_INPUT_DECAY_TIME * (1.0f - (float(mouse_y) / WINDOW_HEIGHT)));
+            uint64_t x_trigger =  ds->clock->get_c14m() + (GAME_INPUT_DECAY_TIME * (1.0f - (float(mouse_x) / WINDOW_WIDTH)));
+            uint64_t y_trigger = ds->clock->get_c14m() + (GAME_INPUT_DECAY_TIME * (1.0f - (float(mouse_y) / WINDOW_HEIGHT)));
 
             ds->game_input_trigger_0 = y_trigger;
             ds->game_input_trigger_1 =x_trigger;   
         } else {
-            uint64_t x_trigger =  cpu->c_14M + (GAME_INPUT_DECAY_TIME * (float(mouse_x) / WINDOW_WIDTH));
-            uint64_t y_trigger = cpu->c_14M + (GAME_INPUT_DECAY_TIME * (float(mouse_y) / WINDOW_HEIGHT));
+            uint64_t x_trigger =  ds->clock->get_c14m() + (GAME_INPUT_DECAY_TIME * (float(mouse_x) / WINDOW_WIDTH));
+            uint64_t y_trigger = ds->clock->get_c14m() + (GAME_INPUT_DECAY_TIME * (float(mouse_y) / WINDOW_HEIGHT));
 
             ds->game_input_trigger_0 = x_trigger;
             ds->game_input_trigger_1 = y_trigger;
@@ -138,8 +138,8 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
 
         JoystickValues jv = convertJoystickValues(axis0, axis1);
         ds->last_jv = jv;
-        uint64_t x_trigger =  cpu->c_14M + ((GAME_INPUT_DECAY_TIME * jv.x) / 255);
-        uint64_t y_trigger = cpu->c_14M + ((GAME_INPUT_DECAY_TIME * jv.y) / 255);
+        uint64_t x_trigger = ds->clock->get_c14m() + ((GAME_INPUT_DECAY_TIME * jv.x) / 255);
+        uint64_t y_trigger = ds->clock->get_c14m() + ((GAME_INPUT_DECAY_TIME * jv.y) / 255);
 
         ds->game_input_trigger_0 = x_trigger;
         ds->game_input_trigger_1 = y_trigger;
@@ -155,7 +155,7 @@ uint8_t read_game_input_0(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     uint8_t val;
-    if (ds->game_input_trigger_0 > cpu->c_14M) {
+    if (ds->game_input_trigger_0 > ds->clock->get_c14m()) {
         val = 0x80;
     } else {
         val = 0x00;
@@ -168,7 +168,7 @@ uint8_t read_game_input_1(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     
     uint8_t val;
-    if (ds->game_input_trigger_1 > cpu->c_14M) {   
+    if (ds->game_input_trigger_1 > ds->clock->get_c14m()) {   
         val = 0x80;
     } else {
         val = 0x00;
@@ -181,7 +181,7 @@ uint8_t read_game_input_2(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
 
     uint8_t val;
-    if (ds->game_input_trigger_2 > cpu->c_14M) {
+    if (ds->game_input_trigger_2 > ds->clock->get_c14m()) {
         val = 0x80;
     } else {
         val = 0x00;
@@ -194,7 +194,7 @@ uint8_t read_game_input_3(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     
     uint8_t val;
-    if (ds->game_input_trigger_3 > cpu->c_14M) {
+    if (ds->game_input_trigger_3 > ds->clock->get_c14m()) {
         val = 0x80;
     } else {
         val = 0x00;
@@ -206,7 +206,7 @@ uint8_t read_game_switch_0(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
     
-    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (cpu->cycles > ds->joyport_activate)) { // reverse polarity for atari
+    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->joyport_activate)) { // reverse polarity for atari
         bool val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
         return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);    
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
@@ -237,7 +237,7 @@ uint8_t read_game_switch_1(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
 
-    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (cpu->cycles > ds->joyport_activate)) {
+    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->joyport_activate)) {
         bool val = false;
 
         annunciator_state_t *anc_d = (annunciator_state_t *)get_module_state(cpu, MODULE_ANNUNCIATOR);
@@ -278,7 +278,7 @@ uint8_t read_game_switch_2(void *context, uint32_t address) {
     cpu_state *cpu = (cpu_state *)context;
     gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
 
-    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (cpu->cycles > ds->joyport_activate)) {
+    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->joyport_activate)) {
         bool val = false;
 
         annunciator_state_t *anc_d = (annunciator_state_t *)get_module_state(cpu, MODULE_ANNUNCIATOR);
@@ -438,7 +438,8 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     gamec_state_t *ds = new gamec_state_t;
     ds->event_queue = computer->event_queue;
     ds->mmu = computer->mmu;
-    
+    ds->clock = computer->clock;
+
     ds->joystick_mode = JOYSTICK_APPLE_GAMEPAD;
     ds->game_switch_0 = 0;
     ds->game_switch_1 = 0;
@@ -510,7 +511,7 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     computer->register_reset_handler(
         // might need to be longer for GS, since GS may take longer to get around to check buttons on reset.
         [ds,cpu]() {
-            ds->joyport_activate = cpu->cycles + 100000; // 100ms
+            ds->joyport_activate = ds->clock->get_cycles() + 100000; // 100ms
             return true;
         });
 }

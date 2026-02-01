@@ -173,6 +173,7 @@ void init_slot_videx(computer_t *computer, SlotType_t slot) {
     videx_d->video_system = vs;
     videx_d->mmu = computer->mmu;
     videx_d->cpu = cpu;
+    videx_d->clock = computer->clock;
 
     videx_d->id = DEVICE_ID_VIDEX;
     // set in CPU so we can reference later
@@ -264,7 +265,7 @@ void init_slot_videx(computer_t *computer, SlotType_t slot) {
         bool ret = videx_frame(videx_d);
         if (ret) {
             // TODO: clear the main video scan buffer. this is sort of ugly to have here.. big dependency.
-            videx_d->cpu->video_scanner->get_frame_scan()->clear();
+            videx_d->clock->get_video_scanner()->get_frame_scan()->clear();
         }
         return ret;
     });

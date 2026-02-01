@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <assert.h>
 
-#include "memoryspecs.hpp"
 #include "util/DebugFormatter.hpp"
+#include "memoryspecs.hpp"      // not used here but used by lots of stuff that includes this.
 
 #define C0X0_BASE 0xC000
 #define C0X0_SIZE 0x100
@@ -64,8 +64,7 @@ class MMU {
 
         /* static constexpr uint32_t PAGE_SIZE_BITS = __builtin_ctz(PAGE_SIZE);
         static constexpr uint32_t PAGE_MASK = PAGE_SIZE - 1; */
-    
-
+            
 /**
  * MMU provides the memory management interface for the CPU.
  * 

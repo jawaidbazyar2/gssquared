@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "computer.hpp"
+#include "NClock.hpp"
 #include "util/EventTimer.hpp"
 
 #define R_POS_XL        0xC080
@@ -66,6 +67,7 @@ typedef struct {
 struct mouse_state_t: public SlotData {
     uint8_t *rom;
     computer_t *computer;
+    NClock *clock;
     EventTimer *event_timer;
 
     m_i16 x_pos;
