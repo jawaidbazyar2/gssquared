@@ -142,7 +142,8 @@ int main(int argc, char **argv) {
         mmu->write(i, rom_data[i]);
     }
 
-    std::unique_ptr<BaseCPU> cpux = createCPU(cputype);
+    NClock *clock = new NClock();
+    std::unique_ptr<BaseCPU> cpux = createCPU(cputype, clock);
     if (!cpux) {
         printf("XXX Failed to create CPU\n");
         return 1;
@@ -175,8 +176,8 @@ int main(int argc, char **argv) {
 
     uint64_t duration = end_time - start_time;
     printf("   Test took %12llu ns\n", duration);
-    printf("   Average 'cycle' time: %f ns\n", (double)duration / (double) cpu->cycles);
-    printf("   Effective MHz: %f\n", 1'000'000'000 / ((double)duration / (double) cpu->cycles) / 1000000);
+    printf("   Average 'cycle' time: %f ns\n", (double)duration / (double) clock->get_cycles());
+    printf("   Effective MHz: %f\n", 1'000'000'000 / ((double)duration / (double) clock->get_cycles()) / 1000000);
 
     if (cpu->pc == 0x3469 || cpu->pc == 0x23BC) {
         printf("+++ Test passed!\n");

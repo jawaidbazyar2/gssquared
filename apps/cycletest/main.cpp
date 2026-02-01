@@ -22,10 +22,12 @@
  */
 #include <SDL3/SDL.h>
 
+#include "clock.hpp"
 #include "gs2.hpp"
 //#include "cpu.hpp"
 #include "cpus/cpu_implementations.cpp"
 #include "mmus/mmu.hpp"
+#include "NClock.hpp"
 
 gs2_app_t gs2_app_inues;
 
@@ -1341,7 +1343,8 @@ int main(int argc, char **argv) {
 
     cpu_state *cpu = new cpu_state(cputype);
     //cpu->set_processor(PROCESSOR_6502);
-    cpu->cpun = createCPU(cputype);
+    NClock *clock = new NClock(CLOCK_SET_US, CLOCK_FREE_RUN);
+    cpu->cpun = createCPU(cputype, clock);
     cpu->core = cpu->cpun.get();
 
     //cpu->init();
@@ -1362,7 +1365,6 @@ int main(int argc, char **argv) {
         mmu->write(0x0000, 0x00);
         mmu->write(0x0001, 0x00);
         
-        NClock *clock = new NClock();
         //cpu->cycles = 0;
         cpu->pc = 0x1000;
         cpu->a = test_records[i].a_in;
