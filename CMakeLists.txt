@@ -223,7 +223,7 @@ add_library(gs2_devices_languagecard     src/devices/languagecard/languagecard.c
 
 add_library(gs2_devices_keyboard     src/devices/keyboard/keyboard.cpp )
 
-add_library(gs2_devices_speaker     src/devices/speaker/speaker.cpp  src/devices/speaker/EventBuffer.cpp )
+add_library(gs2_devices_speaker     src/devices/speaker/speaker.cpp )
 
 add_library(gs2_devices_memexp     src/devices/memoryexpansion/memexp.cpp )
 
