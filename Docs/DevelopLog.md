@@ -8880,7 +8880,7 @@ And the important part here is then we'd get rid of the special separate gs2 exe
 Alternatively we could try to dynamically measure and estimate when frames have ended. but scanline interrupts just aren't gonna work unless we're tracking a scanline! i.e. doing videoscanner.
 
 
-[ ] Clock speed setting in GUI should be "advisory" 
+[x] Clock speed setting in GUI should be "advisory" (fixed differently)
 
 i.e. a GS might be forced from emu into 1MHz mode. so need "accelerator speed" but that might not set the actual clock speed at a given moment. ie have "user selected speed" and "actual speed". GS can select between "fast" and "slow" speeds, and clock module will select the correct thing.
 
@@ -9167,7 +9167,21 @@ clocktest / NClock now both need to track the refresh differently when in an acc
 
 But I have 2.57MHz sitting in basic (or in anything right now). Have to add "sync cycle" detection as well as "rom cycle" detection. 
 
-[ ] Add Sync Cycle and ROM Cycle detection. (the MMU will periodically flag to NClock what kind of cycle it's doing.). And slow_incr_cycles should always default back to "Fast Normal".
+[x] Add Sync Cycle and ROM Cycle detection. (the MMU will periodically flag to NClock what kind of cycle it's doing.). And slow_incr_cycles should always default back to "Fast Normal".
 
 I also want to rename some of these variables like I did in clocktest, because the new names make a lot more sense now.
 I'll either need to typecast clock to NClockIIgs, or move set_next_cycle_type to the base class. Having it in the base class would allow me to more easily model a //c+ later if I decide to do that. This latest code iteration has pretty well decoupled the video update stuff from cpu updates. While that was always a thing in Apple IIs through the IIgs, accelerators break that. I've cheated by building my fast speeds as if they were intended by Apple, and running that fast on the mobo. But now, we are free!
+
+## Feb 2, 2026
+
+After a little work this AM putting in cycle type sets, WE NOW PASS SELFTEST 5!! W00T!
+
+I had to override read() and write(), in order to get access to NON-shadow bank reads/writes, in order to check for ROM to set that flag.
+The default in the system is FAST_NORMAL (fast RAM), and there are now places where I set SYNC.
+
+I am contemplating that GS SLOW mode should simply set SYNC for every cycle, instead of changing the clock rate. This would be a different way to handle accelerated <-> 
+[x] refresh should be based on 14M ticks instead of counting CPU cycles, because CPU cycles are not invariant.  
+
+that definitely helped the speed.
+
+Also implemented the better idea re speed control, where "slow" means "every cycle is SYNC". That gets around the previous issue where going between slow/fast would change the user speed setting. Now if they pick 14MHz it stays there even after going back/forth between slow and fast mode.

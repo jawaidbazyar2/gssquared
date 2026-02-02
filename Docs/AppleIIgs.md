@@ -28,7 +28,7 @@ We can implement in this order.
   [x] SHR  
   [x] text mode enhancements (colored text / border)  
 [x] Game controller   
-[ ] Interrupts  
+[x] Interrupts  
 [ ] IWM  
 [ ] Ensoniq  
 [ ] Zilog SCC 8530  

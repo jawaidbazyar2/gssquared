@@ -214,9 +214,9 @@ class NClockII : public NClock {
 class NClockIIgs : public NClockII {
 protected:
     uint64_t ram_refresh_cycles = 0;
-    //uint32_t cycle_type = 0; // type of cycle to clock (Fast, MegaII)
     uint64_t vidlinecycles = 0;
     uint64_t video_c14m = 0;
+    bool slow_mode = false;
 
     public:
     NClockIIgs(clock_set_t clock_set = CLOCK_SET_US, clock_mode_t clock_mode = CLOCK_2_8MHZ) : NClockII(clock_set, clock_mode) {
@@ -226,14 +226,15 @@ protected:
     cycle_type_t cycle_type = CYCLE_TYPE_FAST;
 
     /* set the next cycle type. This is called by the MMU when it knows what kind of cycle it's doing. */
-    inline void set_next_cycle_type(cycle_type_t type) {
-        cycle_type = type;
-    }
+    inline void set_next_cycle_type(cycle_type_t type) { cycle_type = type; }
+
+    inline void set_slow_mode(bool value) { slow_mode = value; }
 
     // IIgs
     inline void slow_incr_cycles()  {
         cycles++; 
-    
+        if (slow_mode) cycle_type = CYCLE_TYPE_SYNC;
+        
         uint64_t c14m_this_cycle;
         if (cycle_type == CYCLE_TYPE_SYNC) {
     
@@ -251,9 +252,9 @@ protected:
         } else {  // regular "fast" cycle
             
             c14m_this_cycle = current.c_14M_per_cpu_cycle;
-            ram_refresh_cycles ++;
-            if (ram_refresh_cycles == 9) {
-                ram_refresh_cycles = 0;
+            ram_refresh_cycles += current.c_14M_per_cpu_cycle;
+            if (ram_refresh_cycles >= 45) {
+                ram_refresh_cycles -= 45;
                 c14m_this_cycle += 5; // a refresh cycle is 10 14M's long total.
             } 
         } 
