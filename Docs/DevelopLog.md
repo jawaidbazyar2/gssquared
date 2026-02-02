@@ -8184,7 +8184,7 @@ In a NORMAL FAST cycle, PH2 is running at its fastest rate. This cycle is used f
 
 In a FAST REFRESH cycle, the high phase of PH2 is extended by 5 ticks. A RAM refresh is performed in the first 5 ticks, followed by the normal access in the second 5 ticks. This cycle is used for accesses to fast RAM, when the system speed is set to FAST. When running completely from fast RAM, every 9th PH2 cycle is a FAST REFRESH cycle.
 
-In a SYNC cycle, the high phase of PH2 is extended by as many ticks as are necessary to align with a full cycle of PH0. If the falling edge of PH2 coincides with the falling edge of PH0, then "only" 9 ticks must be added (11 ticks for a STRETCH cycle). If the falling edges do not align, then an additional 1 to 13 ticks are added to wait for PH0. Fast RAM can also be refreshed during this cycle, incurring no
+In a SYNC cycle, the high phase of PH2 is extended by as many ticks as are necessary to align with a full cycle of PH0. If the falling edge of PH2 coincides with the falling edge of PH0, then "only" 9 ticks must be added (11 ticks for a STRETCH cycle). If the falling edges do not align, then an additional 1 to 13 ticks are added to wait for PH0. Fast RAM can also be refreshed during this cycle, incurring no additional penalty.
 
 So we're doing "normal fast" cycles right now, basically.
 The FAST REFRESH, says "every 9th PH2 is a FAST REFRESH". So in the incr_cycle, we'd add 5 more 14Ms. This would be before the video_cycle check.
@@ -9143,3 +9143,31 @@ First, new clock abstraction.
 Second, implement the GS cycle timing.
 
 It may be that the way to go for Ludicrous Speed is to have it as a platform setting, to avoid all kinds of contortions I go through now. There are so many things that just aren't gonna work right in LS.
+
+ok, working on the ram refresh timing (first important part of the timing sync up).
+VideoScanGenerator is crashing, because we're only getting 12965 ScanBuffer entries when we need 12982.
+What if we have underrun detection, i.e., at some point we're going to run out of ScanBuffer and that should flag some kind of assert.
+Perhaps an automatic end of frame processing but not a crash?
+well how many cycles is that off. 17 video cycles, 85 14m's. 
+maybe need to track end of frame based on unadulterated 14m's. i.e., the video scanner is not waiting around for the cpu on a memory refresh. 
+So, I need to count a video 14M counter; (this could be reset each frame); it's sole function is for the main loop to determine when the frame is over.
+because we're adding some delays to the cpu, its counter is going faster.. so we exit the loop faster. yeah, that could be the problem..
+
+## Feb 1, 2026
+
+ok I need to go back to fundamentals on this clock / timing thing.
+
+cpu_clock: CPU runs, and ticks a cpu_cycle. (that translates to (assume 2.8MHz) 5 14M's.)
+rf_clock: ram refresh clock. if we hit the ram RF cycle, CPU is delayed 4 14M's.
+vid_clock: 
+
+skipping ahead - I broke this out into two test programs. The first is clockgen, which iterates 1 14M at a time, tracking the other cycles. It led me to a faulty assumption I'd made in the main code, so I built clocktest, which is one cpu-cycle-at-a-time.
+
+clocktest / NClock now both need to track the refresh differently when in an accelerated mode. I am going to have to go back to counting 45 N14's to add the refresh, because of course a cpu cycle is no longer reliably 5 14M's. So 7_1 MHz mode is running much more slowly than it should.
+
+But I have 2.57MHz sitting in basic (or in anything right now). Have to add "sync cycle" detection as well as "rom cycle" detection. 
+
+[ ] Add Sync Cycle and ROM Cycle detection. (the MMU will periodically flag to NClock what kind of cycle it's doing.). And slow_incr_cycles should always default back to "Fast Normal".
+
+I also want to rename some of these variables like I did in clocktest, because the new names make a lot more sense now.
+I'll either need to typecast clock to NClockIIgs, or move set_next_cycle_type to the base class. Having it in the base class would allow me to more easily model a //c+ later if I decide to do that. This latest code iteration has pretty well decoupled the video update stuff from cpu updates. While that was always a thing in Apple IIs through the IIgs, accelerators break that. I've cheated by building my fast speeds as if they were intended by Apple, and running that fast on the mobo. But now, we are free!

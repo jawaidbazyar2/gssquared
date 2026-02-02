@@ -204,6 +204,93 @@ class NClockII : public NClock {
     }
 };
 
+class NClockIIgs : public NClockII {
+protected:
+    uint64_t ram_refresh_cycles = 0;
+    //uint32_t cycle_type = 0; // type of cycle to clock (Fast, MegaII)
+    uint64_t vidlinecycles = 0;
+    uint64_t video_c14m = 0;
+
+    public:
+    NClockIIgs(clock_set_t clock_set = CLOCK_SET_US, clock_mode_t clock_mode = CLOCK_2_8MHZ) : NClockII(clock_set, clock_mode) {
+        clock_mode = CLOCK_2_8MHZ;
+    }
+
+    enum cycle_type_t {
+        CYCLE_TYPE_SYNC = 0,
+        CYCLE_TYPE_FAST_ROM = 1,
+        CYCLE_TYPE_FAST = 2,
+        CYCLE_TYPE_REFRESH = 3,
+    };
+    
+    cycle_type_t cycle_type = CYCLE_TYPE_FAST;
+
+    /* set the next cycle type. This is called by the MMU when it knows what kind of cycle it's doing. */
+    void set_next_cycle_type(cycle_type_t type) {
+        cycle_type = type;
+    }
+
+    // IIgs
+    inline void slow_incr_cycles()  {
+        cycles++; 
+    
+        uint64_t c14m_this_cycle;
+        if (cycle_type == CYCLE_TYPE_SYNC) {
+    
+            c14m_this_cycle = 14;                                   // if PH2 start lines up with PH0 start.. 
+            if (video_cycle_14M_count) c14m_this_cycle += (14 - video_cycle_14M_count); // otherwise wait until end of next PH0, then 14 more C14s.
+            ram_refresh_cycles = 0;                                 // our refresh needs are satisfied for a bit.
+    
+        } else if (cycle_type == CYCLE_TYPE_FAST_ROM) {
+    
+            c14m_this_cycle = current.c_14M_per_cpu_cycle;
+            ram_refresh_cycles ++;
+            if (ram_refresh_cycles == 9)  ram_refresh_cycles = 0;   // fast ROM cycle - free refresh, no extra 14Ms.        
+    
+        } else {  // regular "fast" cycle
+            
+            c14m_this_cycle = current.c_14M_per_cpu_cycle;
+            ram_refresh_cycles ++;
+            if (ram_refresh_cycles == 9) {
+                ram_refresh_cycles = 0;
+                c14m_this_cycle += 5; // a refresh cycle is 10 14M's long total.
+            } 
+        } 
+        c_14M += c14m_this_cycle;
+    
+        // if a slow cycle we can use 14-video_accum (or, 16-video_accum for h=64) to get the number of 14Ms to add to
+        // c_14M to sync.
+    
+        if (video_scanner) {
+            // Here we need to update the video clock to match with the CPU clock.
+            // the previous video clock is video_c14m.
+    
+            // delta between previous video clock and current CPU clock.
+            uint64_t delta = c_14M - video_c14m;
+            video_cycle_14M_count += delta;
+            //scanline_14M += delta;
+    
+            video_c14m = c_14M; // this is now caught up
+    
+            while (video_cycle_14M_count >= 14) {
+                video_cycle_14M_count -= 14;
+                // Do-video-cycle here
+                
+                video_scanner->video_cycle();
+                
+                vidlinecycles++;
+            }
+            if (vidlinecycles >= 65) {  // end of scanline
+                vidlinecycles -= 65;
+                c_14M += current.extra_per_scanline;
+                video_c14m += current.extra_per_scanline;
+            }
+        }
+        cycle_type = CYCLE_TYPE_FAST; // reset here so MMU doesn't have to set for all possible addresses
+    }
+
+};
+
 class NClockFactory {
     public:
     static NClockII *create_clock(PlatformId_t platform, clock_set_t clock_set) {
@@ -219,7 +306,7 @@ class NClockFactory {
             case PLATFORM_APPLE_IIE_65816:
                 return new NClockII(clock_set);
             case PLATFORM_APPLE_IIGS:
-                return new NClockII(clock_set);
+                return new NClockIIgs(clock_set);
             default:
                 assert(false && "Unknown platform in NClockFactory::create_clock");    
                 break;

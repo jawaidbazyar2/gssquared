@@ -42,3 +42,7 @@ So how this works overall is:
 In theory we ought to be able to get to a point where we can also simulate accelerators on IIe, and arbitrary CPU Clock speeds, by carefully calculating the values automatically in the clock table.
 
 Should we inject Clock into every device? Or let a device grab it from Computer if it wants? Let's do latter, many but not all devices access 
+
+OK, done! That wasn't that bad actually.
+
+Now I need to do the IIgs-specific stuff.
