@@ -3184,9 +3184,6 @@ int execute_next(cpu_state *cpu) override {
                     uint8_t temp_p = (cpu->p | (FLAG_B | FLAG_UNUSED)); // break flag and Unused bit set to 1.
                     stack_push(cpu, temp_p);
                 }
-                /* uint8_t temp_p = (cpu->p | (FLAG_B | FLAG_UNUSED)); // break flag and Unused bit set to 1.
-                stack_push(cpu, temp_p); */
-                /* push_byte(cpu, (cpu->p | (FLAG_B | FLAG_UNUSED)));  */
             }
             break;
 
