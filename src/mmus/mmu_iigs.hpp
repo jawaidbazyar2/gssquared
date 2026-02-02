@@ -82,7 +82,19 @@ class MMU_IIgs : public MMU {
             reset();
         };
         virtual ~MMU_IIgs() { delete main_ram; delete main_rom; };
-        
+
+        virtual uint8_t read(uint32_t address) override {
+            if (address >= 0xFC0000) set_next_cycle_type(CYCLE_TYPE_FAST_ROM); // rom access is fast.
+
+            return MMU::read(address);
+        }
+
+        virtual void write(uint32_t address, uint8_t value) override {
+            if (address >= 0xFC0000) set_next_cycle_type(CYCLE_TYPE_FAST_ROM); // rom access is fast.
+
+            MMU::write(address, value);
+        }
+
         inline bool shadow_is_enabled(uint32_t address) {
             uint32_t address_16 = address & 0xFFFF;
             uint32_t address_17 = address & 0x1FFFF;
@@ -185,4 +197,5 @@ class MMU_IIgs : public MMU {
 
         inline void set_clock(NClockII *clock) { this->clock = clock; }
         inline void set_clock_mode(clock_mode_t mode) { clock->set_clock_mode(mode); }
+        inline void set_next_cycle_type(cycle_type_t type) { ((NClockIIgs *)clock)->set_next_cycle_type(type); }
 };

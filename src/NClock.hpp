@@ -38,6 +38,13 @@ enum clock_set_t {
     NUM_CLOCK_SETS
 };
 
+enum cycle_type_t {
+    CYCLE_TYPE_SYNC = 0,
+    CYCLE_TYPE_FAST_ROM = 1,
+    CYCLE_TYPE_FAST = 2,
+    CYCLE_TYPE_REFRESH = 3,
+};
+
 class NClock {
  
 protected:
@@ -216,17 +223,10 @@ protected:
         clock_mode = CLOCK_2_8MHZ;
     }
 
-    enum cycle_type_t {
-        CYCLE_TYPE_SYNC = 0,
-        CYCLE_TYPE_FAST_ROM = 1,
-        CYCLE_TYPE_FAST = 2,
-        CYCLE_TYPE_REFRESH = 3,
-    };
-    
     cycle_type_t cycle_type = CYCLE_TYPE_FAST;
 
     /* set the next cycle type. This is called by the MMU when it knows what kind of cycle it's doing. */
-    void set_next_cycle_type(cycle_type_t type) {
+    inline void set_next_cycle_type(cycle_type_t type) {
         cycle_type = type;
     }
 
@@ -244,8 +244,9 @@ protected:
         } else if (cycle_type == CYCLE_TYPE_FAST_ROM) {
     
             c14m_this_cycle = current.c_14M_per_cpu_cycle;
-            ram_refresh_cycles ++;
-            if (ram_refresh_cycles == 9)  ram_refresh_cycles = 0;   // fast ROM cycle - free refresh, no extra 14Ms.        
+            ram_refresh_cycles = 0;
+            //ram_refresh_cycles ++;
+            //if (ram_refresh_cycles == 9)  ram_refresh_cycles = 0;   // fast ROM cycle - free refresh, no extra 14Ms.        
     
         } else {  // regular "fast" cycle
             

@@ -1,4 +1,5 @@
 #include "mmu_iigs.hpp"
+#include "NClock.hpp"
 #include "devices/languagecard/languagecard.hpp"
 #include "mmus/mmu.hpp"
 #include "memoryspecs.hpp"
@@ -10,12 +11,16 @@ uint8_t float_area_read(void *context, uint32_t address) {
 
 inline uint8_t bank_e0_read(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
+
     //if ((address & 0xFF00) == 0xC000) return mmu_iigs->read_c0xx(address); // MegaII will call back to us
     return mmu_iigs->megaii->read(address & 0xFFFF);
 }
 
 inline void bank_e0_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
+
     //if ((address & 0xFF00) == 0xC000) {mmu_iigs->write_c0xx(address, value); return;} // MegaII will call back to us
     mmu_iigs->megaii->write(address & 0xFFFF, value);
 }
@@ -24,6 +29,8 @@ inline void bank_e0_write(void *context, uint32_t address, uint8_t value) {
 
 inline uint8_t bank_e1_read(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
+
     if ((address & 0xFF00) == 0xC000) return mmu_iigs->megaii->read(address & 0xFFFF);  // return mmu_iigs->read_c0xx(address);
     
     if (!mmu_iigs->is_bank_latch()) {
@@ -37,6 +44,8 @@ inline uint8_t bank_e1_read(void *context, uint32_t address) {
 
 inline void bank_e1_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
+
     if ((address & 0xFF00) == 0xC000) mmu_iigs->megaii->write(address & 0xFFFF, value); // mmu_iigs->write_c0xx(address, value);
 
     if (!mmu_iigs->is_bank_latch()) {
@@ -533,7 +542,7 @@ void c036_write(void *context, uint32_t address, uint8_t value) {
         // speed change.
         /* if (value & 0x80) set_clock_mode(mmu_iigs->get_cpu(), CLOCK_7_159MHZ);
         else set_clock_mode(mmu_iigs->get_cpu(), CLOCK_1_024MHZ); */
-        if (value & 0x80) mmu_iigs->set_clock_mode(CLOCK_7_159MHZ);
+        if (value & 0x80) mmu_iigs->set_clock_mode(CLOCK_2_8MHZ);
         else mmu_iigs->set_clock_mode(CLOCK_1_024MHZ);
     }
     mmu_iigs->set_speed_register(value);
@@ -615,6 +624,7 @@ uint8_t bank_shadow_read(void *context, uint32_t address) {
 
     // if IOLC is "shadowed" and it's an I/O location, send write down to Megaii.
     if ( mmu_iigs->is_iolc_shadowed() && (page >= 0xC0 && page <= 0xCF)) {
+        mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
         return mmu_iigs->megaiiRead(address & 0x1'FFFF);
     }
     
@@ -628,6 +638,7 @@ uint8_t bank_shadow_read(void *context, uint32_t address) {
         } else {
             //uint8_t *addr;
             // rom
+            mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM); // even though it's in "LC" area it's ROM. 
             if (DEBUG(DEBUG_MMUGS)) printf("Read: ROM Effective address: %06X\n", address);
             return mmu_iigs->get_rom_base()[0x1'0000 + (address & 0xFFFF)]; // TODO: this is only for ROM01. ROM03 has more ROM needs different offset. Have a routine to calculate.
         }
