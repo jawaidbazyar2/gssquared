@@ -62,7 +62,9 @@ struct video_system_t {
     float scale_y = 4.0f;
     int window_width = 0;
     int window_height = 0;
-    
+
+    float fullscreen_x_shift = 0.0f;
+
     EventQueue *event_queue = nullptr;
 
     bool force_full_frame_redraw = false;
@@ -88,6 +90,7 @@ struct video_system_t {
     display_fullscreen_mode_t get_window_fullscreen();
     void sync_window();
     void render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_FRect *dstrect , bool respect_mode = true  /* , float offset */);
+    void render_frame_simple(SDL_Texture *texture, SDL_FRect *srcrect);
     void clear();
     void present();
     bool display_capture_mouse(bool capture);

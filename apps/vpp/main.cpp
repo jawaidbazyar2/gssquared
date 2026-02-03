@@ -9,6 +9,7 @@
 //#include "devices/displaypp/frame/frame_bit.hpp"
 #include "SDL3/SDL_rect.h"
 #include "SDL3/SDL_render.h"
+#include "SDL3/SDL_surface.h"
 #include "devices/displaypp/frame/Frames.hpp"
 #include "devices/displaypp/VideoScannerII.hpp"
 #include "devices/displaypp/VideoScannerIIe.hpp"
@@ -110,8 +111,10 @@ struct border_rect_t {
     SDL_FRect dst;
 };
 
-border_rect_t ii_borders[3][3]; // [y][x]
-border_rect_t shr_borders[3][3]; // [y][x]
+typedef border_rect_t border_rect_array_t[3][3];
+
+border_rect_array_t ii_borders; // [y][x]
+border_rect_array_t shr_borders; // [y][x]
 
 #define B_TOP 0
 #define B_CEN 1
@@ -126,6 +129,8 @@ border texture is laid out based on the hc/vc positions. i.e
    13-52: top/bottom border center content
 
 */ 
+
+// these are now going to control drawing into the stage2 texture.
 
 void calculate_border_rects(bool shift_enabled) {
     float shift_offset = shift_enabled ? 7.0f : 0.0f;
@@ -145,38 +150,59 @@ void calculate_border_rects(bool shift_enabled) {
     ii_borders[B_TOP][B_CEN].dst = {42, 0.0, 560, 19};
 
     ii_borders[B_TOP][B_RT].src = {0, 243.0, b_r_w, 19};
-    ii_borders[B_TOP][B_RT].dst = {42.0f+560.0f-shift_offset, 0.0, 56.0, 19};
+    ii_borders[B_TOP][B_RT].dst = {42.0f+560.0f-shift_offset, 0.0, 49.0, 19};
 
     // center
-    ii_borders[B_CEN][B_LT].src = {b_l_x, 0.0, b_l_w, SCREEN_TEXTURE_HEIGHT};
-    ii_borders[B_CEN][B_LT].dst = {0, 19.0, 42.0, SCREEN_TEXTURE_HEIGHT};
+    ii_borders[B_CEN][B_LT].src = {b_l_x, 0.0, b_l_w, 192};
+    ii_borders[B_CEN][B_LT].dst = {0, 19.0, 42.0, 192};
 
-    ii_borders[B_CEN][B_CEN].src = {0.0+0.25f, 0.0, width-0.5f, (float)SCREEN_TEXTURE_HEIGHT}; // not from border texture
-    ii_borders[B_CEN][B_CEN].dst = {42.0f-shift_offset, 19.0, width, SCREEN_TEXTURE_HEIGHT}; // not from border texture
+    ii_borders[B_CEN][B_CEN].src = {0.0, 0.0, width, (float)192}; // not from border texture
+    ii_borders[B_CEN][B_CEN].dst = {42.0f-shift_offset, 19.0, width, 192}; // not from border texture
 
-    ii_borders[B_CEN][B_RT].src = {0.0, 0.0, b_r_w, SCREEN_TEXTURE_HEIGHT};
-    ii_borders[B_CEN][B_RT].dst = {42.0f+560.0f-shift_offset, 19.0, 56.0, SCREEN_TEXTURE_HEIGHT};
+    ii_borders[B_CEN][B_RT].src = {0.0, 0.0, b_r_w, 192};
+    ii_borders[B_CEN][B_RT].dst = {42.0f+560.0f-shift_offset, 19.0, 49.0, 192};
 
     // bottom
     ii_borders[B_BOT][B_LT].src = {b_l_x, 192.0, b_l_w, 21};
-    ii_borders[B_BOT][B_LT].dst = {0.0, 19+SCREEN_TEXTURE_HEIGHT, 42.0, 21};
+    ii_borders[B_BOT][B_LT].dst = {0.0, 19+192, 42.0, 21};
 
     ii_borders[B_BOT][B_CEN].src = {13.0, 192.0, 40, 21};
-    ii_borders[B_BOT][B_CEN].dst = {42, 19+SCREEN_TEXTURE_HEIGHT, 560, 21};
+    ii_borders[B_BOT][B_CEN].dst = {42, 19+192, 560, 21};
 
     ii_borders[B_BOT][B_RT].src = {0, 192.0, b_r_w, 21};
-    ii_borders[B_BOT][B_RT].dst = {42.0f+560.0f-shift_offset, 19+SCREEN_TEXTURE_HEIGHT, 56.0, 21};
+    ii_borders[B_BOT][B_RT].dst = {42.0f+560.0f-shift_offset, 19+192, 49.0, 21};
 
-    // SHR
+    // SHR mode - in shr mode one cycle = 8 pixels. So we have to scale the borders out accordingly.
 
-    shr_borders[B_CEN][B_LT].src = {0.0, 0.0, b_l_w, SCREEN_TEXTURE_HEIGHT};
-    shr_borders[B_CEN][B_LT].dst = {0.0, 19.0, 42.0, 200};
+    // top
+    shr_borders[B_TOP][B_LT].src = {b_l_x, 243.0, b_l_w, 19};
+    shr_borders[B_TOP][B_LT].dst = {0.0, 0.0, 48.0, 19};
 
-    shr_borders[B_CEN][B_CEN].src = {0.0, 0.0, 640, 200};
-    shr_borders[B_CEN][B_CEN].dst = {42.0, 19.0, width, 200};
+    shr_borders[B_TOP][B_CEN].src = {13, 243.0, 40, 19};
+    shr_borders[B_TOP][B_CEN].dst = {48, 0.0, 640, 19};
 
-    shr_borders[B_CEN][B_RT].src = {0.0, 1.0, b_r_w, SCREEN_TEXTURE_HEIGHT};
-    shr_borders[B_CEN][B_RT].dst = {42+560, 19.0, 42.0, 200};
+    shr_borders[B_TOP][B_RT].src = {0, 243.0, b_r_w, 19};
+    shr_borders[B_TOP][B_RT].dst = {48.0f+640.0f, 0.0, 56.0, 19};
+    
+    // center
+    shr_borders[B_CEN][B_LT].src = {0.0, 0.0, b_l_w, 192};
+    shr_borders[B_CEN][B_LT].dst = {0.0, 19.0, 48.0, 200};
+
+    shr_borders[B_CEN][B_CEN].src = {0.0f, 0.0f, 640.0f, 200.0f};
+    shr_borders[B_CEN][B_CEN].dst = {48.0f, 19.0f, 640.0f, 200.0f};
+
+    shr_borders[B_CEN][B_RT].src = {0.0, 0.0, b_r_w, 192};
+    shr_borders[B_CEN][B_RT].dst = {48+640, 19.0, 56.0, 200}; 
+
+    // bottom
+    shr_borders[B_BOT][B_LT].src = {b_l_x, 192.0, b_l_w, 21};
+    shr_borders[B_BOT][B_LT].dst = {0.0, 19+192, 48.0, 21};
+
+    shr_borders[B_BOT][B_CEN].src = {13.0, 192.0, 40, 21};
+    shr_borders[B_BOT][B_CEN].dst = {48, 19+192, 640, 21};
+
+    shr_borders[B_BOT][B_RT].src = {0, 192.0, b_r_w, 21};
+    shr_borders[B_BOT][B_RT].dst = {48.0f+640.0f, 19+192, 56.0, 21};   
 }
 
 void print_rect(const char *name, border_rect_t &r) {
@@ -257,7 +283,8 @@ void copyToMMU(MMU_IIe *mmu, uint8_t *data, uint32_t addr, uint32_t size) {
 }
 
 int main(int argc, char **argv) {
-    SDL_ScaleMode scales[3] = { SDL_SCALEMODE_PIXELART, SDL_SCALEMODE_LINEAR, SDL_SCALEMODE_NEAREST };
+    SDL_ScaleMode scales[3] = {SDL_SCALEMODE_LINEAR, SDL_SCALEMODE_NEAREST, SDL_SCALEMODE_PIXELART,  };
+    border_rect_array_t *modes_rects[2] = { &ii_borders, &shr_borders };
 
     uint64_t start = 0, end = 0;
 
@@ -307,18 +334,26 @@ int main(int argc, char **argv) {
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
     } */
-    /* SDL_Texture *border_texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 53, 263);
-    if (!border_texture) {
+    /* SDL_Texture *txt_border = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 53, 263);
+    if (!txt_border) {
         printf("Failed to create texture\n");
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
     } */
-    /* SDL_Texture *shrtexture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 640, 200);
-    if (!shrtexture) {
-        printf("Failed to create shrtexture\n");
+    /* SDL_Texture *txt_shr = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, 640, 200);
+    if (!txt_shr) {
+        printf("Failed to create txt_shr\n");
         printf("SDL Error: %s\n", SDL_GetError());
         return 1;
     } */
+
+    SDL_Texture *stage2 = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, 768, 256);
+    if (!stage2) {
+        printf("Failed to create txt_shr\n");
+        printf("SDL Error: %s\n", SDL_GetError());
+        return 1;
+    }
+
     if (!SDL_SetRenderVSync(renderer, SDL_RENDERER_VSYNC_DISABLED)) {
         printf("Failed to set render vsync\n");
         printf("SDL Error: %s\n", SDL_GetError());
@@ -387,18 +422,18 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    Frame560RGBA *frame_rgba = new(std::align_val_t(64)) Frame560RGBA(567, II_SCREEN_TEXTURE_HEIGHT, renderer, PIXEL_FORMAT);
+    Frame560RGBA *fr_apple2 = new(std::align_val_t(64)) Frame560RGBA(567, II_SCREEN_TEXTURE_HEIGHT, renderer, PIXEL_FORMAT);
+    Frame640 *fr_shr = new(std::align_val_t(64)) Frame640(640, 200, renderer, PIXEL_FORMAT);
     FrameBorder *fr_border = new(std::align_val_t(64)) FrameBorder(53, 263, renderer, PIXEL_FORMAT);
-    Frame640 *frame_shr = new(std::align_val_t(64)) Frame640(640, 200, renderer, PIXEL_FORMAT);
 
-    SDL_Texture *rgba_texture = frame_rgba->get_texture();
-    SDL_Texture *border_texture = fr_border->get_texture();
-    SDL_Texture *shrtexture = frame_shr->get_texture();
+    SDL_Texture *txt_apple2 = fr_apple2->get_texture();
+    SDL_Texture *txt_border = fr_border->get_texture();
+    SDL_Texture *txt_shr = fr_shr->get_texture();
 
-    SDL_SetTextureScaleMode(rgba_texture, SDL_SCALEMODE_LINEAR);
-    SDL_SetTextureBlendMode(rgba_texture, SDL_BLENDMODE_BLEND);
-    SDL_SetTextureScaleMode(border_texture, SDL_SCALEMODE_PIXELART);
-
+    SDL_SetTextureScaleMode(txt_shr, SDL_SCALEMODE_NEAREST);
+    SDL_SetTextureScaleMode(txt_apple2, SDL_SCALEMODE_NEAREST);
+    SDL_SetTextureBlendMode(txt_apple2, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureScaleMode(txt_border, SDL_SCALEMODE_NEAREST);
 
     Monochrome560 monochrome;
     NTSC560 ntsc_render;
@@ -449,6 +484,8 @@ int main(int argc, char **argv) {
     int canvas_mode = 0;
     int fg = 0x0F;
     int bg = 0x00;
+
+    SDL_SetTextureScaleMode(stage2, scales[sharpness]);
 
     while (++framecnt && !exiting)  {
         VideoScannerII *scanner;
@@ -582,8 +619,8 @@ int main(int argc, char **argv) {
                     
                     case SDLK_P:
                         sharpness = (sharpness + 1) % 3;
-                        SDL_SetTextureScaleMode(frame_rgba->get_texture(), scales[sharpness]);
-                        SDL_SetTextureScaleMode(shrtexture, scales[sharpness]);
+                        SDL_SetTextureScaleMode(stage2, scales[sharpness]);
+                        //SDL_SetTextureScaleMode(txt_shr, scales[sharpness]);
                         printf("Sharpness: %d\n", sharpness);
                         break;
                     
@@ -703,132 +740,98 @@ int main(int argc, char **argv) {
                     nullptr
                 );
                 //frame_byte->print();
-                frame_rgba->open();
+                fr_apple2->open();
                 switch (render_mode) {
                     case 1:
-                        monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
+                        monochrome.render(frame_byte, fr_apple2, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
                         break;
                     case 2:
-                        ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) ); // no-color color is white.
+                        ntsc_render.render(frame_byte, fr_apple2, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) ); // no-color color is white.
                         break;
                     case 3:
-                        rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF)  );
+                        rgb_render.render(frame_byte, fr_apple2, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF)  );
                         break;
                 }
-                frame_rgba->close();
+                fr_apple2->close();
             }
         } else {
             fr_border->open();
-            frame_shr->open();
+            fr_shr->open();
             vsg->generate_frame(
                 frame_scan, 
                 frame_byte, 
                 fr_border,
-                frame_shr
+                fr_shr
             );
             if (generate_mode < 7) {
-                frame_rgba->open();
+                fr_apple2->open();
                 switch (render_mode) {
                     case 1:
-                        monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
+                        monochrome.render(frame_byte, fr_apple2, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
                         break;
                     case 2:
-                        ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) ); // no-color color is white.
+                        ntsc_render.render(frame_byte, fr_apple2, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) ); // no-color color is white.
                         break;
                     case 3:
-                        rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF)  );
+                        rgb_render.render(frame_byte, fr_apple2, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF)  );
                         break;
                 }
-                frame_rgba->close();
+                fr_apple2->close();
             }
 
-            frame_shr->close();
+            fr_shr->close();
             fr_border->close();
 
         }
     
-#if 0
-        if (generate_mode < 7) {
-            if (scanner_choice == SCANNER_IIGS) {
-                fr_border->open();
-                frame_shr->open();
-            }
-            vsg->generate_frame(
-                frame_scan, 
-                frame_byte, 
-                (scanner_choice == SCANNER_IIGS) ? fr_border : nullptr,
-                (scanner_choice == SCANNER_IIGS) ? frame_shr : nullptr
-            );
-            if (scanner_choice == SCANNER_IIGS) {
-                fr_border->close();
-                frame_shr->close();
-            }
-            frame_rgba->open();
-            switch (render_mode) {
-                case 1:
-                    monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
-                    break;
-                case 2:
-                    ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) ); // no-color color is white.
-                    break;
-                case 3:
-                    rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF)  );
-                    break;
-            }
-            frame_rgba->close();
-
-            // update the legacy II texture
-            /* SDL_LockTexture(texture, NULL, &pixels, &pitch);
-            memcpy(pixels, frame_rgba->data(), II_SCREEN_TEXTURE_WIDTH * II_SCREEN_TEXTURE_HEIGHT * sizeof(RGBA_t));
-            SDL_UnlockTexture(texture); */
-        } else {
-            frame_rgba->open();
-            frame_shr->open();
-            fr_border->open();
-            vsg->generate_frame(
-                frame_scan, 
-                frame_byte, 
-                (scanner_choice == SCANNER_IIGS) ? fr_border : nullptr,
-                (scanner_choice == SCANNER_IIGS) ? frame_shr : nullptr
-            );
-            frame_shr->close();
-            fr_border->close();
-            frame_rgba->close();
-            // update the shr texture
-            /* SDL_LockTexture(shrtexture, NULL, &pixels, &pitch);
-            memcpy(pixels, frame_shr->data(), 640 * 200 * sizeof(RGBA_t));
-            SDL_UnlockTexture(shrtexture); */
-        }
-
-        /* if (old_scanner_choice == SCANNER_IIGS) {
-            SDL_LockTexture(border_texture, NULL, &pixels, &pitch);
-            memcpy(pixels, fr_border->data(), 53 * 263 * sizeof(RGBA_t));
-            SDL_UnlockTexture(border_texture);
-        } */
-#endif
         // clear backbuffer
         SDL_RenderClear(renderer);
 
+        constexpr SDL_FRect ii_frame_src = { 0.0, 0.0, 560.0f+42+49, 232.0 };
+        constexpr SDL_FRect gs_ii_frame_src = { 0.0, 0.0, 651.0, 232.0}; // dst is null - "scale to whatever" 651 is weird but that's the number.. 
+        constexpr SDL_FRect gs_shr_frame_src = { 0.0, 0.0, 744.0, 232.0}; // dst is null - "scale to whatever"
+
         // draw some border
         if (scanner_choice == SCANNER_IIGS) {
-            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_TOP][B_LT].src, &ii_borders[B_TOP][B_LT].dst); // top left
-            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_TOP][B_CEN].src, &ii_borders[B_TOP][B_CEN].dst); // top
-            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_TOP][B_RT].src, &ii_borders[B_TOP][B_RT].dst); // top right
+            bool video_mode_is_shr = (generate_mode >= 7);
+            border_rect_array_t &modes_rects = (video_mode_is_shr) ? shr_borders : ii_borders;
 
-            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_CEN][B_LT].src, &ii_borders[B_CEN][B_LT].dst); // left
-            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_CEN][B_RT].src, &ii_borders[B_CEN][B_RT].dst); // right
+            // compose at 1:1 scale to a stage2 texture.
+            SDL_SetRenderTarget(renderer, stage2);
+            SDL_RenderClear(renderer);
+
+            SDL_RenderTexture(renderer, txt_border, &modes_rects[B_TOP][B_LT].src, &modes_rects[B_TOP][B_LT].dst); // top left
+            SDL_RenderTexture(renderer, txt_border, &modes_rects[B_TOP][B_CEN].src, &modes_rects[B_TOP][B_CEN].dst); // top
+            SDL_RenderTexture(renderer, txt_border, &modes_rects[B_TOP][B_RT].src, &modes_rects[B_TOP][B_RT].dst); // top right
+
+            SDL_RenderTexture(renderer, txt_border, &modes_rects[B_CEN][B_LT].src, &modes_rects[B_CEN][B_LT].dst); // left
+            SDL_RenderTexture(renderer, txt_border, &modes_rects[B_CEN][B_RT].src, &modes_rects[B_CEN][B_RT].dst); // right
         
-            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_BOT][B_LT].src, &ii_borders[B_BOT][B_LT].dst); // bottom left
-            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_BOT][B_CEN].src, &ii_borders[B_BOT][B_CEN].dst); // bottom
-            SDL_RenderTexture(renderer, border_texture, &ii_borders[B_BOT][B_RT].src, &ii_borders[B_BOT][B_RT].dst); // bottom right
-        }
+            SDL_RenderTexture(renderer, txt_border, &modes_rects[B_BOT][B_LT].src, &modes_rects[B_BOT][B_LT].dst); // bottom left
+            SDL_RenderTexture(renderer, txt_border, &modes_rects[B_BOT][B_CEN].src, &modes_rects[B_BOT][B_CEN].dst); // bottom
+            SDL_RenderTexture(renderer, txt_border, &modes_rects[B_BOT][B_RT].src, &modes_rects[B_BOT][B_RT].dst); // bottom right
+            
+            // Copy the content texture in
+            if (video_mode_is_shr) {
+                SDL_RenderTexture(renderer, txt_shr, &modes_rects[B_CEN][B_CEN].src, &modes_rects[B_CEN][B_CEN].dst);
+            } else {
+                // draw over border but shiftable portions need to be alpha'd with border color.
+                SDL_RenderTexture(renderer, txt_apple2, &modes_rects[B_CEN][B_CEN].src, &modes_rects[B_CEN][B_CEN].dst);                
+            }
+            SDL_SetRenderTarget(renderer, nullptr);
 
-        // Draw the screen texture.
-        if (generate_mode < 7) {
-            // draw over border but shiftable portions need to be alpha'd with border color.
-            SDL_RenderTexture(renderer, frame_rgba->get_texture(), &ii_borders[B_CEN][B_CEN].src, &ii_borders[B_CEN][B_CEN].dst); 
+            SDL_ScaleMode scale_mode;
+            SDL_GetTextureScaleMode(stage2, &scale_mode);
+            assert(true);
+            SDL_RenderTexture(renderer, stage2, (video_mode_is_shr) ? &gs_shr_frame_src : &gs_ii_frame_src, nullptr);
+
         } else {
-            SDL_RenderTexture(renderer, shrtexture, &shr_borders[B_CEN][B_CEN].src, &shr_borders[B_CEN][B_CEN].dst);
+            // maybe stage2 this also? 
+            SDL_SetRenderTarget(renderer, stage2);
+            SDL_RenderClear(renderer);
+            SDL_RenderTexture(renderer, txt_apple2, &ii_borders[B_CEN][B_CEN].src, &ii_borders[B_CEN][B_CEN].dst); 
+            SDL_SetRenderTarget(renderer, nullptr);
+            SDL_RenderTexture(renderer, stage2, &ii_frame_src, nullptr);
         }
 
         // Emit!

@@ -9179,9 +9179,41 @@ After a little work this AM putting in cycle type sets, WE NOW PASS SELFTEST 5!!
 I had to override read() and write(), in order to get access to NON-shadow bank reads/writes, in order to check for ROM to set that flag.
 The default in the system is FAST_NORMAL (fast RAM), and there are now places where I set SYNC.
 
-I am contemplating that GS SLOW mode should simply set SYNC for every cycle, instead of changing the clock rate. This would be a different way to handle accelerated <-> 
+I am contemplating that GS SLOW mode should simply set SYNC for every cycle, instead of changing the clock rate. This would be a different way to handle accelerated/slow. (Works very well). 
+
 [x] refresh should be based on 14M ticks instead of counting CPU cycles, because CPU cycles are not invariant.  
 
 that definitely helped the speed.
 
 Also implemented the better idea re speed control, where "slow" means "every cycle is SYNC". That gets around the previous issue where going between slow/fast would change the user speed setting. Now if they pick 14MHz it stays there even after going back/forth between slow and fast mode.
+
+Might be worth exploring how to support the semantics of a ZIP GSX:
+https://github.com/fadden/6502bench/blob/ba95a06155ca4b845627e429bb9794866075dfb1/SourceGen/Examples/A2-Zippy/ZIPPY.S.txt#L1109
+
+particularly, the thing that changes the speeds. 16 speed increments from "regular GS speed" to "full ZIP speed".
+
+[x] I need to fix the GS video, it just looks awful on windows and linux.
+
+This is gonna take some doing. Do I want to wait to release until fixed, or send out now..
+
+Let's say I compose first to a texture, so when I get and scale the border / content area the correct pixel colors will be adjacent so the scaling will work right in both directions; (i.e. border will have some content next to it); I still do the individual border area draws. I'd like to not have to do them again.. 
+I can't just compose then do one draw because the content is different-sized.. what if I just grab a sliver of the content area to make adjacent to the border areas. would it be enough to copy 1 pixel width into the border buffers to fix this?
+
+We use different rectangles if we're in shr vs legacy mode.
+in shr, the border needs to be pre-scaled horizontally from 1 pixel to 8 pixels (8 pixels per cycle).
+in II, border is pre-scaled horizontally from 1 pixel to 7 pixels.
+shr mode:
+  H:  640 + (6 * 8) + (7 * 8) = 744
+  V:  200 + (19) + (21-8)     = 232
+ii  mode:
+  H:  560 + (6 * 7) + (7 * 7) = 651   (maybe round down to 648 to make it even..)
+  V:  192 + (19) + (21)       = 232
+
+then we just pop this whole thing directly into the window, scaled linear or block. 
+
+working!
+
+[x] in GS mode, full-screen does the wrong aspect ratio. too wide.  
+
+ok then. calculating the aspect ratio is wrong with the borders on it, it's too wide.
+All our displays are at the end: 651 pixels wide x 232 high. So that's our dstrect width/height target. 

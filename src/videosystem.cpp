@@ -6,8 +6,6 @@
 
 video_system_t::video_system_t(computer_t *computer) {
 
-    //SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-    //SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1");
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "Error initializing SDL: %s\n", SDL_GetError());
     }
@@ -21,8 +19,8 @@ video_system_t::video_system_t(computer_t *computer) {
     display_fullscreen_mode = DISPLAY_WINDOWED_MODE;
     event_queue = computer->event_queue;
 
-    /* int */ window_width = (BASE_WIDTH + border_width*2) * SCALE_X;
-    /* int */ window_height = (BASE_HEIGHT + border_height*2) * SCALE_Y;
+    window_width = (BASE_WIDTH + border_width*2) * SCALE_X;
+    window_height = (BASE_HEIGHT + border_height*2) * SCALE_Y;
     aspect_ratio = (float)window_width / (float)window_height;
 
     window = SDL_CreateWindow(
@@ -59,7 +57,6 @@ video_system_t::video_system_t(computer_t *computer) {
     printf("Renderer: %s\n", rname);
 
     // Set scaling quality to nearest neighbor for sharp pixels
-    /* SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0"); */
     SDL_SetRenderScale(renderer, SCALE_X, SCALE_Y);
 
     // Clear the texture to black
@@ -77,7 +74,6 @@ video_system_t::video_system_t(computer_t *computer) {
     computer->dispatch->registerHandler(SDL_EVENT_MOUSE_BUTTON_DOWN, [this](const SDL_Event &event) {
         if (display_capture_mouse(true)) {
             event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
-            //return true;
             return false;
         }
         return false;
@@ -138,11 +134,8 @@ void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_
         }
     }
     SDL_FRect dstrect_shifted = *dstrect;
-    if (display_fullscreen_mode) {
-        // shift the coords to center the image.
-        float x_shift = (((float)window_width / scale_x) - ((dstrect->x * 2.0f) + dstrect->w)) / 2.0f;
-        dstrect_shifted.x += x_shift;
-    }
+    dstrect_shifted.x += fullscreen_x_shift; // center in fullscreen.
+
     SDL_RenderTexture(renderer, texture, srcrect, &dstrect_shifted);
 }
 
@@ -193,6 +186,10 @@ void video_system_t::window_resize(const SDL_Event &event) {
     scale_y = new_scale_y;
     window_width = new_w;
     window_height = new_h;
+
+    if (display_fullscreen_mode) { // shift the coords to center the image.        
+        fullscreen_x_shift = (((float)window_width / scale_x) - (42+49+560)) / 2.0f;
+    } else fullscreen_x_shift = 0.0f;
 }
 
 display_fullscreen_mode_t video_system_t::get_window_fullscreen() {
@@ -286,7 +283,7 @@ void video_system_t::flip_display_scale_mode() {
 
     if (display_pixel_mode == DM_PIXEL_FUZZ) {
         display_pixel_mode = DM_PIXEL_SQUARE;
-        scale_mode = SDL_SCALEMODE_NEAREST;
+        scale_mode = SDL_SCALEMODE_PIXELART;
     } else {
         display_pixel_mode = DM_PIXEL_FUZZ;
         scale_mode = SDL_SCALEMODE_LINEAR;

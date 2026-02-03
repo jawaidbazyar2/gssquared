@@ -185,7 +185,81 @@ border texture is laid out based on the hc/vc positions. i.e
    13-52: top/bottom border center content
 
 */ 
+void calculate_border_rects(display_state_t *ds, bool shift_enabled) {
+    float shift_offset = shift_enabled ? 7.0f : 0.0f;
+    float width = shift_enabled ? 567.0f : 560.0f;
 
+    constexpr float b_l_x = 7.0f;
+    constexpr float b_l_w = 6.0f;
+
+    constexpr float b_r_x = 0.0f;
+    constexpr float b_r_w = 7.0f;
+
+    border_rect_array_t &ii_borders = ds->ii_borders;
+    // top
+    ii_borders[B_TOP][B_LT].src = {b_l_x, 243.0, b_l_w, 19};
+    ii_borders[B_TOP][B_LT].dst = {0.0, 0.0, 42.0, 19};
+
+    ii_borders[B_TOP][B_CEN].src = {13, 243.0, 40, 19};
+    ii_borders[B_TOP][B_CEN].dst = {42, 0.0, 560, 19};
+
+    ii_borders[B_TOP][B_RT].src = {0, 243.0, b_r_w, 19};
+    ii_borders[B_TOP][B_RT].dst = {42.0f+560.0f-shift_offset, 0.0, 49.0, 19};
+
+    // center
+    ii_borders[B_CEN][B_LT].src = {b_l_x, 0.0, b_l_w, 192};
+    ii_borders[B_CEN][B_LT].dst = {0, 19.0, 42.0, 192};
+
+    ii_borders[B_CEN][B_CEN].src = {0.0, 0.0, width, (float)192}; // not from border texture
+    ii_borders[B_CEN][B_CEN].dst = {42.0f-shift_offset, 19.0, width, 192}; // not from border texture
+
+    ii_borders[B_CEN][B_RT].src = {0.0, 0.0, b_r_w, 192};
+    ii_borders[B_CEN][B_RT].dst = {42.0f+560.0f-shift_offset, 19.0, 49.0, 192};
+
+    // bottom
+    ii_borders[B_BOT][B_LT].src = {b_l_x, 192.0, b_l_w, 21};
+    ii_borders[B_BOT][B_LT].dst = {0.0, 19+192, 42.0, 21};
+
+    ii_borders[B_BOT][B_CEN].src = {13.0, 192.0, 40, 21};
+    ii_borders[B_BOT][B_CEN].dst = {42, 19+192, 560, 21};
+
+    ii_borders[B_BOT][B_RT].src = {0, 192.0, b_r_w, 21};
+    ii_borders[B_BOT][B_RT].dst = {42.0f+560.0f-shift_offset, 19+192, 49.0, 21};
+
+    // SHR mode - in shr mode one cycle = 8 pixels. So we have to scale the borders out accordingly.
+    border_rect_array_t &shr_borders = ds->shr_borders;
+    // top
+    shr_borders[B_TOP][B_LT].src = {b_l_x, 243.0, b_l_w, 19};
+    shr_borders[B_TOP][B_LT].dst = {0.0, 0.0, 48.0, 19};
+
+    shr_borders[B_TOP][B_CEN].src = {13, 243.0, 40, 19};
+    shr_borders[B_TOP][B_CEN].dst = {48, 0.0, 640, 19};
+
+    shr_borders[B_TOP][B_RT].src = {0, 243.0, b_r_w, 19};
+    shr_borders[B_TOP][B_RT].dst = {48.0f+640.0f, 0.0, 56.0, 19};
+    
+    // center
+    shr_borders[B_CEN][B_LT].src = {0.0, 0.0, b_l_w, 192};
+    shr_borders[B_CEN][B_LT].dst = {0.0, 19.0, 48.0, 200};
+
+    shr_borders[B_CEN][B_CEN].src = {0.0f, 0.0f, 640.0f, 200.0f};
+    shr_borders[B_CEN][B_CEN].dst = {48.0f, 19.0f, 640.0f, 200.0f};
+
+    shr_borders[B_CEN][B_RT].src = {0.0, 0.0, b_r_w, 192};
+    shr_borders[B_CEN][B_RT].dst = {48+640, 19.0, 56.0, 200}; 
+
+    // bottom
+    shr_borders[B_BOT][B_LT].src = {b_l_x, 192.0, b_l_w, 21};
+    shr_borders[B_BOT][B_LT].dst = {0.0, 19+192, 48.0, 21};
+
+    shr_borders[B_BOT][B_CEN].src = {13.0, 192.0, 40, 21};
+    shr_borders[B_BOT][B_CEN].dst = {48, 19+192, 640, 21};
+
+    shr_borders[B_BOT][B_RT].src = {0, 192.0, b_r_w, 21};
+    shr_borders[B_BOT][B_RT].dst = {48.0f+640.0f, 19+192, 56.0, 21};   
+}
+
+#if 0
 void calculate_border_rects(display_state_t *ds, bool shift_enabled) {
     float shift_offset = shift_enabled ? 7.0f : 0.0f;
     float width = shift_enabled ? 567.0f : 560.0f;
@@ -241,6 +315,7 @@ void calculate_border_rects(display_state_t *ds, bool shift_enabled) {
     ds->shr_borders[B_CEN][B_RT].src = {0.0, 1.0, b_r_w, ii_height};
     ds->shr_borders[B_CEN][B_RT].dst = {42+560, 19.0, 42.0, 200};
 }
+#endif
 
 void print_rect(const char *name, border_rect_t &r) {
     printf("%s: SRC: (%f, %f, %f, %f)\n", name, r.src.x, r.src.y, r.src.w, r.src.h);
@@ -458,25 +533,40 @@ bool update_display_apple2gs_cycle(cpu_state *cpu) {
         }
         ds->frame_rgba->close();
     }
+
     // TODO: vs->render_frame(.. )  with the border
 
-    SDL_Texture *frborder = ds->fr_border->get_texture();
-    vs->render_frame(frborder, &ds->ii_borders[B_TOP][B_LT].src, &ds->ii_borders[B_TOP][B_LT].dst, false); // top left
-    vs->render_frame(frborder, &ds->ii_borders[B_TOP][B_CEN].src, &ds->ii_borders[B_TOP][B_CEN].dst, false); // top
-    vs->render_frame(frborder, &ds->ii_borders[B_TOP][B_RT].src, &ds->ii_borders[B_TOP][B_RT].dst, false); // top right
+    SDL_Renderer *renderer = vs->renderer;
+    SDL_Texture *stage2 = ds->stage2;
+    SDL_Texture *txt_border = ds->fr_border->get_texture();
+    SDL_Texture *txt_shr = ds->fr_shr->get_texture();
+    SDL_Texture *txt_apple2 = ds->screenTexture;
 
-    vs->render_frame(frborder, &ds->ii_borders[B_CEN][B_LT].src, &ds->ii_borders[B_CEN][B_LT].dst, false); // left
-    vs->render_frame(frborder, &ds->ii_borders[B_CEN][B_RT].src, &ds->ii_borders[B_CEN][B_RT].dst, false); // right
+    bool video_mode_is_shr = (ds->new_video & 0x80) != 0;
+    SDL_SetRenderTarget(renderer, stage2);
+    SDL_RenderClear(renderer);
+    border_rect_array_t &modes_rects = (video_mode_is_shr) ? ds->shr_borders : ds->ii_borders;
 
-    vs->render_frame(frborder, &ds->ii_borders[B_BOT][B_LT].src, &ds->ii_borders[B_BOT][B_LT].dst, false); // bottom left
-    vs->render_frame(frborder, &ds->ii_borders[B_BOT][B_CEN].src, &ds->ii_borders[B_BOT][B_CEN].dst, false); // bottom
-    vs->render_frame(frborder, &ds->ii_borders[B_BOT][B_RT].src, &ds->ii_borders[B_BOT][B_RT].dst, false); // bottom right
+    SDL_RenderTexture(renderer, txt_border, &modes_rects[B_TOP][B_LT].src, &modes_rects[B_TOP][B_LT].dst); // top left
+    SDL_RenderTexture(renderer, txt_border, &modes_rects[B_TOP][B_CEN].src, &modes_rects[B_TOP][B_CEN].dst); // top
+    SDL_RenderTexture(renderer, txt_border, &modes_rects[B_TOP][B_RT].src, &modes_rects[B_TOP][B_RT].dst); // top right
 
-    if (ds->new_video & 0x80) {
-        vs->render_frame(ds->fr_shr->get_texture(), &ds->shr_borders[B_CEN][B_CEN].src, &ds->shr_borders[B_CEN][B_CEN].dst);
+    SDL_RenderTexture(renderer, txt_border, &modes_rects[B_CEN][B_LT].src, &modes_rects[B_CEN][B_LT].dst); // left
+    SDL_RenderTexture(renderer, txt_border, &modes_rects[B_CEN][B_RT].src, &modes_rects[B_CEN][B_RT].dst); // right
+
+    SDL_RenderTexture(renderer, txt_border, &modes_rects[B_BOT][B_LT].src, &modes_rects[B_BOT][B_LT].dst); // bottom left
+    SDL_RenderTexture(renderer, txt_border, &modes_rects[B_BOT][B_CEN].src, &modes_rects[B_BOT][B_CEN].dst); // bottom
+    SDL_RenderTexture(renderer, txt_border, &modes_rects[B_BOT][B_RT].src, &modes_rects[B_BOT][B_RT].dst); // bottom right
+    // Copy the content texture in
+    if (video_mode_is_shr) {
+        SDL_RenderTexture(renderer, txt_shr, &modes_rects[B_CEN][B_CEN].src, &modes_rects[B_CEN][B_CEN].dst);
     } else {
-        vs->render_frame(ds->screenTexture, &ds->ii_borders[B_CEN][B_CEN].src, &ds->ii_borders[B_CEN][B_CEN].dst);
+        // draw over border but shiftable portions need to be alpha'd with border color.
+        SDL_RenderTexture(renderer, txt_apple2, &modes_rects[B_CEN][B_CEN].src, &modes_rects[B_CEN][B_CEN].dst);                
     }
+    SDL_SetRenderTarget(renderer, nullptr);
+    vs->render_frame(stage2, (video_mode_is_shr) ? &ds->gs_shr_frame_src : &ds->gs_ii_frame_src, &ds->frame_dst);
+
     return true;
 }
 
@@ -1297,6 +1387,13 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     ds->frame_bits = new(std::align_val_t(64)) Frame560(560, f_h);
     //ds->frame_rgba->clear(RGBA_t::make(0, 0, 0, 0)); // clear the frame buffers at startup.
     //ds->frame_bits->clear(0);
+
+    ds->stage2 = SDL_CreateTexture(vs->renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, 768, 256);
+    if (!ds->stage2) {
+        printf("Failed to create txt_shr\n");
+        printf("SDL Error: %s\n", SDL_GetError());
+        system_failure("Failed to create stage2 texture");
+    }
 
     // LINEAR gets us appropriately blurred pixels, NEAREST gets us sharp pixels, PIXELART is sharper pixels that are more accurate
     SDL_SetTextureBlendMode(ds->screenTexture, SDL_BLENDMODE_NONE); /* GRRRRRRR. This was defaulting to SDL_BLENDMODE_BLEND. */

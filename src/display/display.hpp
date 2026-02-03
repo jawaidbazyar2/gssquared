@@ -100,6 +100,7 @@ struct border_rect_t {
     SDL_FRect src;
     SDL_FRect dst;
 };
+typedef border_rect_t border_rect_array_t[3][3];
 
 typedef class display_state_t {
 
@@ -187,6 +188,7 @@ public:
     NTSC560 mon_ntsc;
     GSRGB560 mon_rgb;
     MessageBus *mbus;
+    SDL_Texture *stage2 = nullptr;
 
     // IIGS specific
     FrameBorder *fr_border = nullptr;
@@ -194,9 +196,16 @@ public:
     uint8_t new_video = 0x01;
     uint8_t text_color = 0x0F0;
     uint8_t border_color = 0x00;
-    border_rect_t ii_borders[3][3]; // [y][x]
-    border_rect_t shr_borders[3][3]; // [y][x]
-    
+    /* border_rect_t ii_borders[3][3]; // [y][x]
+    border_rect_t shr_borders[3][3]; // [y][x] */
+    border_rect_array_t ii_borders; // [y][x]
+    border_rect_array_t shr_borders; // [y][x]
+
+    // these are pretty much static.
+    SDL_FRect ii_frame_src = { 0.0, 0.0, 560.0f+42+49, 232.0 };
+    SDL_FRect gs_ii_frame_src = { 0.0, 0.0, 651.0, 232.0}; // dst is null - "scale to whatever" 651 is weird but that's the number.. 
+    SDL_FRect gs_shr_frame_src = { 0.0, 0.0, 744.0, 232.0}; // dst is null - "scale to whatever"
+    SDL_FRect frame_dst = { 0.0, 0.0, 651.0, 232.0};
 } display_state_t;
 
 void txt_memory_write(uint16_t , uint8_t );
