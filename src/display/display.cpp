@@ -18,6 +18,7 @@
 #include <SDL3/SDL.h>
 
 #include "SDL3/SDL_render.h"
+#include "SDL3/SDL_surface.h"
 #include "cpu.hpp"
 #include "gs2.hpp"
 #include "debug.hpp"
@@ -1397,7 +1398,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
 
     // LINEAR gets us appropriately blurred pixels, NEAREST gets us sharp pixels, PIXELART is sharper pixels that are more accurate
     SDL_SetTextureBlendMode(ds->screenTexture, SDL_BLENDMODE_NONE); /* GRRRRRRR. This was defaulting to SDL_BLENDMODE_BLEND. */
-    SDL_SetTextureScaleMode(ds->screenTexture, SDL_SCALEMODE_LINEAR);
+    SDL_SetTextureScaleMode(ds->screenTexture, SDL_SCALEMODE_NEAREST);
 
     // set in CPU so we can reference later
     set_module_state(cpu, MODULE_DISPLAY, ds);
@@ -1504,7 +1505,9 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         // allocate border and shr frame buffers.
         ds->fr_border = new(std::align_val_t(64)) FrameBorder(53, 263, vs->renderer, PIXEL_FORMAT);
         ds->fr_shr = new(std::align_val_t(64)) Frame640(640, 200, vs->renderer, PIXEL_FORMAT);
-        SDL_SetTextureScaleMode(ds->fr_border->get_texture(), SDL_SCALEMODE_PIXELART);
+        SDL_SetTextureScaleMode(ds->fr_border->get_texture(), SDL_SCALEMODE_NEAREST);
+        SDL_SetTextureScaleMode(ds->fr_shr->get_texture(), SDL_SCALEMODE_NEAREST);
+
 
         mmu->set_C0XX_read_handler(0xC02E, { display_read_C02EF, ds });
         mmu->set_C0XX_read_handler(0xC02F, { display_read_C02EF, ds });
