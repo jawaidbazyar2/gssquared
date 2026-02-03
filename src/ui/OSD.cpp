@@ -35,6 +35,7 @@
 #include "display/display.hpp"
 #include "util/mount.hpp"
 #include "util/soundeffects.hpp"
+#include "util/strndup.h"
 #include "ModalContainer.hpp"
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
