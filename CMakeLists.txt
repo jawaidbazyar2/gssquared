@@ -794,7 +794,11 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             # Run linuxdeploy to create AppImage
             # linuxdeploy will automatically find and bundle dependencies
             # Use PNG icon (256x256) for better file manager support
-            COMMAND ${LINUXDEPLOY_EXECUTABLE}
+            # LD_LIBRARY_PATH must include build lib dir and AppDir lib dir so linuxdeploy
+            # can resolve vendored SDL3 dependencies (libSDL3_ttf -> libSDL3) when running ldd
+            COMMAND ${CMAKE_COMMAND} -E env
+                    LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:${APPIMAGE_APPDIR}/usr/${CMAKE_INSTALL_LIBDIR}:$ENV{LD_LIBRARY_PATH}
+                    ${LINUXDEPLOY_EXECUTABLE}
                     --appdir ${APPIMAGE_APPDIR}
                     --executable ${APPIMAGE_APPDIR}/usr/bin/GSSquared
                     --desktop-file ${APPIMAGE_APPDIR}/usr/share/applications/GSSquared.desktop
