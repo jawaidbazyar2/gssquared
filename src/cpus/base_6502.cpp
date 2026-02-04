@@ -637,7 +637,7 @@ inline uint32_t address_abs_x(cpu_state *cpu, uint32_t index) {
 
         if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) {
             if ((base & 0xFF00) != (eaddr & 0xFF00)) { // if we crossed page boundary
-                phantom_read(cpu, (eaddr & 0xFFFF00) | ((base + index) & 0xFF) );
+                phantom_read(cpu, (base & 0xFFFF00) | ((base + index) & 0xFF) );
             }
         } else {
             phantom_read(cpu, eaddr); // TODO: not sure this is the correct phantom read.
@@ -646,7 +646,7 @@ inline uint32_t address_abs_x(cpu_state *cpu, uint32_t index) {
         base = address_abs(cpu);
         eaddr = (uint16_t)(base + index);          // force to 16-bit address space.
         if ((base & 0xFF00) != (eaddr & 0xFF00)) { // if we crossed page boundary
-            phantom_read(cpu, (eaddr & 0xFF00) | ((base + index) & 0xFF) );
+            phantom_read(cpu, (base & 0xFF00) | ((base + index) & 0xFF) );
         }
     }
     return eaddr;
@@ -663,14 +663,14 @@ inline uint32_t address_abs_x_write(cpu_state *cpu, uint32_t index) {
         eaddr = base + index;
 
         if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) {
-            phantom_read(cpu, (eaddr & 0xFFFF00) | ((base + index) & 0xFF) );
+            phantom_read(cpu, (base & 0xFFFF00) | ((base + index) & 0xFF) );
         } else {
             phantom_read(cpu, eaddr); // TODO: not sure this is the correct phantom read.
         }
     } else {
         base = address_abs(cpu);
         eaddr = (uint16_t)(base + index);          // force to 16-bit address space.
-        phantom_read(cpu, (eaddr & 0xFF00) | ((base + index) & 0xFF) );
+        phantom_read(cpu, (base & 0xFF00) | ((base + index) & 0xFF) );
     }
     return eaddr;
 }
@@ -703,14 +703,14 @@ inline uint32_t address_rmw_abs_x(cpu_state *cpu, uint32_t index) {
         eaddr = base + index;
 
         if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) {
-            phantom_read(cpu, (eaddr & 0xFFFF00) | ((base + index) & 0xFF) );
+            phantom_read(cpu, (base & 0xFFFF00) | ((base + index) & 0xFF) );
         } else {
             phantom_read(cpu, eaddr); // TODO: not sure this is the correct phantom read.
         }
     } else {
         base = address_abs(cpu);
         eaddr = (uint16_t)(base + index);          // force to 16-bit address space.
-        phantom_read(cpu, (eaddr & 0xFF00) | ((base + index) & 0xFF) );
+        phantom_read(cpu, (base & 0xFF00) | ((base + index) & 0xFF) );
     }
     return eaddr;
 }
@@ -995,7 +995,7 @@ inline void read_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
 
         if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) { // (c)
             if ((eaddr & 0xFF00) != (base & 0xFF00)) {
-                phantom_read(cpu, (eaddr & 0xFFFF00) | ((eaddr + index) & 0xFF));
+                phantom_read(cpu, (base & 0xFFFF00) | ((eaddr + index) & 0xFF));
             }
         } else {  // (b)
             phantom_read(cpu, eaddr);
@@ -1006,7 +1006,7 @@ inline void read_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
         eaddr = (uint16_t)(base + index); // calculate effective address
 
         if ((eaddr & 0xFF00) != (base & 0xFF00)) {
-            phantom_read(cpu, (eaddr & 0x00FF00) | ((eaddr + index) & 0xFF));
+            phantom_read(cpu, (base & 0x00FF00) | ((eaddr + index) & 0xFF));
         }
         read_data(cpu, (uint16_t)eaddr, reg);
     }
@@ -1029,7 +1029,7 @@ inline void write_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
         eaddr = base + index; // calculate effective address
 
         if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) { // (c)
-            phantom_read(cpu, (eaddr & 0xFFFF00) | ((eaddr + index) & 0xFF));
+            phantom_read(cpu, (base & 0xFFFF00) | ((eaddr + index) & 0xFF));
         } else {  // (b)
             phantom_read(cpu, eaddr);
         }
@@ -1038,7 +1038,7 @@ inline void write_direct_ind_x(cpu_state *cpu, T &reg, U &index ) {
         base = eaddr_16;
         eaddr = (uint16_t)(base + index); // calculate effective address
 
-        phantom_read(cpu, (eaddr & 0x00FF00) | ((eaddr + index) & 0xFF));
+        phantom_read(cpu, (base & 0x00FF00) | ((eaddr + index) & 0xFF));
         write_data(cpu, (uint16_t)eaddr, reg);
     }
 
