@@ -337,7 +337,7 @@ void debug_window_t::render_pane_trace() {
 
     // Todo: Replace this? nah..
     //snprintf(buffer, sizeof(buffer), "Cycles: %18llu    MHz: %10.5f", cpu->cycles, cpu->e_mhz);
-    draw_text(DEBUG_PANEL_TRACE, x, 6, buffer);
+    //draw_text(DEBUG_PANEL_TRACE, x, 6, buffer);
 
     separator_line(DEBUG_PANEL_TRACE, 7);
     if (cpu->cpu_type == PROCESSOR_65816) {
