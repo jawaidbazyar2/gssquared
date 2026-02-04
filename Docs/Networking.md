@@ -42,3 +42,28 @@ Now this sounds like you can use a real FujiNet device over ethernet using NetSI
 So in theory what could be done here is: implement SmartPort devices that talk the NetSIO protocol to a collocated instance of FujiNet-PC (or, to one you run separately on your computer). I like the collocated idea tho. This could be a lot of bang for the buck.
 
 [ ] Control-Shift-2 and Control-Shift-6 don't seem to do the right stuff - should create an ASCII 0x00 and ??? needed for Lode Runner cheat.
+
+## SMB FST
+
+There is a new SMB FST released in the last 2 years. With an Uthernet, you can connect directly to SMB servers on Mac, Windows, Linux.
+
+This is likely the way to go, because this is what most people actually use in their homes today.
+
+## AppleTalk
+
+I have been having a serious think about how to access networks from an emulated GS.
+
+Of course, the first layer is a modem.
+
+The second layer would be direct ethernet, simulating an Uthernet II card (seems to be the most popular). You could then use the SMB FST with this.
+
+A third approach could be, simulate connection to an AppleTalk network. There were two methods for this:
+* EtherTalk - appletalk directly over Ethernet network
+* AppleTalk-in-IP (IPTalk) - appletalk packets encapsulated in IP packets, allowing routing across internetworks.
+
+Linux Netatalk server can work over either.
+
+"For modern MacOS connectivity, Netatalk is typically used over TCP/IP rather than pure EtherTalk." Huh.
+
+Honestly, the model that makes the most sense is the SMB FST (see above).
+

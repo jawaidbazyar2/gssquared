@@ -44,12 +44,12 @@
 
 ## Release 0.7
 
-[ ] put common controls in hover-over on main page - reset, restart, power-off, open debugger  
-[ ] Can make custom hw config. (Click "+ Custom").
-[ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  
-[ ] put "modified" indicator of some kind on the disk icons.  
+[x] First Apple IIgs release  
 
 ## Release 0.8
 
-[ ] First Apple IIgs release  
+[ ] put common controls in hover-over on main page - reset, restart, power-off, open debugger  
 [ ] Refactor MB to use new synth, and pass Shuttleworth tests  
+[ ] Can make custom hw config. (Click "+ Custom").
+[ ] put "modified" indicator of some kind on the disk icons.  
+[ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  
