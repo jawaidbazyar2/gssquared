@@ -455,7 +455,7 @@ void ES5503::write(uint8_t offset, uint8_t data) {
 
             case 0xe1:  // Oscillator enable
                 m_rege1 = data;
-                m_oscsenabled = ((data >> 1) & 0x3f) /* + 1 */;
+                m_oscsenabled = ((data >> 1) & 0x3f) + 1 ; // without the +1 we're ignoring the top oscillator?
                 // Update SDL stream rate when oscillators change
                 update_sdl_stream_rate();
                 break;
