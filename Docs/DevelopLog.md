@@ -9216,4 +9216,41 @@ working!
 [x] in GS mode, full-screen does the wrong aspect ratio. too wide.  
 
 ok then. calculating the aspect ratio is wrong with the borders on it, it's too wide.
-All our displays are at the end: 651 pixels wide x 232 high. So that's our dstrect width/height target. 
+All our displays are at the end: 651 pixels wide x 232 high. So that's our dstrect width/height target. Well that was easy..
+
+## Feb 4, 2026
+
+
+```
+LDY #3C
+LDA #C
+STA BFFD,Y
+LDA #A0
+STA BFFD,Y
+RTS
+=>
+SCC: READ register 0: Ch 0
+SCC: READ register: Ch 0 / Reg 0 = 2C
+SCC: Register Select Ch: 0 -> New Reg 2
+SCC: READ register 2: Ch 0
+SCC: READ register: Ch 0 / Reg 2 = 00
+SCC: Register Select Ch: 0 -> New Reg 0
+```
+
+well, this is wrong.
+```
+        if constexpr ((CPUTraits::e_mode) || (!CPUTraits::x_16)) {
+            phantom_read(cpu, (eaddr & 0xFFFF00) | ((base + index) & 0xFF) );
+```
+base is BFFD; eaddr is C039, correct. But we're calculating the address here as:
+  00C0 | 39 = same.
+when it should be 
+  00BF | 39.
+
+This is the correct code:
+```
+            phantom_read(cpu, (base & 0xFFFF00) | ((base + index) & 0xFF) );
+```
+
+SO. There were six instances of that. I wonder what this would have affected. I suppose I could instrument these locations and just do a printf if in C000-C0FF, and see what pops up..
+
