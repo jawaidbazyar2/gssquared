@@ -276,11 +276,11 @@ class KeyGloo
             response_index = 0;
             // TODO: on a new command, reset the response index. we may have the wrong # of response bytes on one of our commands. or GS might not be reading them all.
 
-            printf("ADB_Micro> Executing command: ");
+            /* printf("ADB_Micro> Executing command: ");
             for (int i = 0; i < cmd_index; i++) {
                 printf("%02X ", cmd[i]);
             }
-            printf("\n");
+            printf("\n"); */
 
             switch (value & 0b11'000000) {
                 case 0b00'000000:
@@ -414,11 +414,11 @@ class KeyGloo
             }
 
             data_register_full = true;
-            printf("ADB_Micro> Response (%d bytes/ %d): ", response_bytes, response_index);
+            /* printf("ADB_Micro> Response (%d bytes/ %d): ", response_bytes, response_index);
             for (int i = 0; i < response_bytes; i++) { 
                 printf("%02X ", response[i]);
             }
-            printf("\n");
+            printf("\n"); */
         }
 
         void load_key_from_buffer() {

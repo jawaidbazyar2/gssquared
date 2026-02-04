@@ -391,7 +391,7 @@ class ADB_Keyboard : public ADB_Device
         keyqueue[index_in] = key;
         index_in = (index_in + 1) % 16;
         count++;
-        print_key_buffer();
+        //print_key_buffer();
     }
 
     void dequeue_key(key_event_t *key) {
@@ -446,7 +446,7 @@ class ADB_Keyboard : public ADB_Device
 
         if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
             const char *updown = (event.type == SDL_EVENT_KEY_DOWN) ? "down" : "up";    
-            printf("02::Key %s: %08X\n", updown, event.key.key);
+            //printf("02::Key %s: %08X\n", updown, event.key.key);
             k1_released = 0;
             map_sdl_to_adb_key_enqueue(event);
             status = true;

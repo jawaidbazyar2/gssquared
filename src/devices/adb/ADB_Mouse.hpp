@@ -32,7 +32,7 @@ class ADB_Mouse : public ADB_Device
     void reset(uint8_t cmd, uint8_t reg) override { }
     void flush(uint8_t cmd, uint8_t reg) override { }
     void listen(uint8_t command, uint8_t reg, ADB_Register &msg) override {
-        printf("MS> Listen: command: %02X, reg: %02X, msg: %02X %02X\n", command, reg, msg.data[0], msg.data[1]);
+        //printf("MS> Listen: command: %02X, reg: %02X, msg: %02X %02X\n", command, reg, msg.data[0], msg.data[1]);
         if (reg == 3) { // 
             /** Register 3
              * Bit 15: reserved, must be 0. (byte 0)
@@ -45,7 +45,7 @@ class ADB_Mouse : public ADB_Device
             registers[3] = msg;
             id = msg.data[0] & 0x0F; // change device address
             handler = msg.data[1] & 0x0F;  // (1= lo res mouse vs 2= hi res mouse)
-            printf("MS> New address: %02X, handler: %02X\n", id, handler);
+            //printf("MS> New address: %02X, handler: %02X\n", id, handler);
         }
     }
     ADB_Register talk(uint8_t command, uint8_t reg) override {
