@@ -260,79 +260,13 @@ void calculate_border_rects(display_state_t *ds, bool shift_enabled) {
     shr_borders[B_BOT][B_RT].dst = {48.0f+640.0f, 19+192, 56.0, 21};   
 }
 
-#if 0
-void calculate_border_rects(display_state_t *ds, bool shift_enabled) {
-    float shift_offset = shift_enabled ? 7.0f : 0.0f;
-    float width = shift_enabled ? 567.0f : 560.0f;
-    
-    constexpr float ii_height = 192.0f;
-
-    constexpr float b_l_x = 7.0f;
-    constexpr float b_l_w = 6.0f;
-
-    constexpr float b_r_x = 0.0f;
-    constexpr float b_r_w = 7.0f;
-
-    // top
-    ds->ii_borders[B_TOP][B_LT].src = {b_l_x, 243.0, b_l_w, 19};
-    ds->ii_borders[B_TOP][B_LT].dst = {0.0, 0.0, 42.0, 19};
-
-    ds->ii_borders[B_TOP][B_CEN].src = {13, 243.0, 40, 19};
-    ds->ii_borders[B_TOP][B_CEN].dst = {42, 0.0, 560, 19};
-
-    ds->ii_borders[B_TOP][B_RT].src = {0, 243.0, b_r_w, 19};
-    ds->ii_borders[B_TOP][B_RT].dst = {42.0f+560.0f-shift_offset, 0.0, 56.0, 19};
-
-    // center
-    ds->ii_borders[B_CEN][B_LT].src = {b_l_x, 0.0, b_l_w, ii_height};
-    ds->ii_borders[B_CEN][B_LT].dst = {0, 19.0, 42.0, ii_height};
-
-    // TODO: these 0.25 adjustments are a dirty hack. sample clamp does not seem to be working.
-    // ask the SDL3 guys about this. one option would be to copy the outer edge of pixels but that's what clamp should be doing.
-    ds->ii_borders[B_CEN][B_CEN].src = {0.0+0.25f, 0.0+0.25, width-0.5f, (float)ii_height-0.5f}; // not from border texture
-    ds->ii_borders[B_CEN][B_CEN].dst = {42.0f-shift_offset, 19.0, width, ii_height-0.25}; // not from border texture
-
-    ds->ii_borders[B_CEN][B_RT].src = {0.0, 0.0, b_r_w, ii_height};
-    ds->ii_borders[B_CEN][B_RT].dst = {42.0f+560.0f-shift_offset, 19.0, 56.0, ii_height};
-
-    // bottom
-    ds->ii_borders[B_BOT][B_LT].src = {b_l_x, 192.0, b_l_w, 21};
-    ds->ii_borders[B_BOT][B_LT].dst = {0.0, 19+ii_height, 42.0, 21};
-
-    ds->ii_borders[B_BOT][B_CEN].src = {13.0, 192.0, 40, 21};
-    ds->ii_borders[B_BOT][B_CEN].dst = {42, 19+ii_height-0.5f, 560, 21+0.5f}; // TODO: also a hack here.
-
-    ds->ii_borders[B_BOT][B_RT].src = {0, 192.0, b_r_w, 21};
-    ds->ii_borders[B_BOT][B_RT].dst = {42.0f+560.0f-shift_offset, 19+ii_height, 56.0, 21};
-
-    // SHR
-
-    ds->shr_borders[B_CEN][B_LT].src = {0.0, 0.0, b_l_w, ii_height};
-    ds->shr_borders[B_CEN][B_LT].dst = {0.0, 19.0, 42.0, 200};
-
-    ds->shr_borders[B_CEN][B_CEN].src = {0.0, 0.0, 640, 200};
-    ds->shr_borders[B_CEN][B_CEN].dst = {42.0, 19.0, width, 200};
-
-    ds->shr_borders[B_CEN][B_RT].src = {0.0, 1.0, b_r_w, ii_height};
-    ds->shr_borders[B_CEN][B_RT].dst = {42+560, 19.0, 42.0, 200};
-}
-#endif
-
 void print_rect(const char *name, border_rect_t &r) {
     printf("%s: SRC: (%f, %f, %f, %f)\n", name, r.src.x, r.src.y, r.src.w, r.src.h);
     printf("%s: DST: (%f, %f, %f, %f)\n", name, r.dst.x, r.dst.y, r.dst.w, r.dst.h);
 }
 
 void print_border_rects(display_state_t *ds) {
-    /* print_rect("ii_borders[B_TOP][B_LT]", ii_borders[B_TOP][B_LT]);
-    print_rect("ii_borders[B_TOP][B_CEN]", ii_borders[B_TOP][B_CEN]);
-    print_rect("ii_borders[B_TOP][B_RT]", ii_borders[B_TOP][B_RT]);
-    print_rect("ii_borders[B_CEN][B_LT]", ii_borders[B_CEN][B_LT]); */
     print_rect("ii_borders[B_CEN][B_CEN]", ds->ii_borders[B_CEN][B_CEN]);
-    /* print_rect("ii_borders[B_CEN][B_RT]", ii_borders[B_CEN][B_RT]);
-    print_rect("ii_borders[B_BOT][B_LT]", ii_borders[B_BOT][B_LT]);
-    print_rect("ii_borders[B_BOT][B_CEN]", ii_borders[B_BOT][B_CEN]);
-    print_rect("ii_borders[B_BOT][B_RT]", ii_borders[B_BOT][B_RT]); */
 }
 
 // TODO: These should be set from an array of parameters.
@@ -383,31 +317,40 @@ bool update_display_apple2(cpu_state *cpu) {
 
     int updated = 0;
 
+    SDL_Texture *stage2 = ds->stage2;
+    SDL_Renderer *renderer = vs->renderer;
 
+    bool video_mode_is_shr = (ds->new_video & 0x80) != 0;
+    border_rect_array_t &modes_rects = (video_mode_is_shr) ? ds->shr_borders : ds->ii_borders;
+
+    SDL_SetRenderTarget(renderer, stage2);
+    SDL_RenderClear(renderer);
+    
+    // first check - borders or no.
     if (ds->video_scanner_type == Scanner_AppleIIgs) {
         // draw borders using rectangles.
         RGBA_t border_color = gs_text_colors[ds->border_color];
         SDL_SetRenderDrawColor(vs->renderer, border_color.r, border_color.g, border_color.b, border_color.a);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_LT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_CEN].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_TOP][B_RT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_CEN][B_LT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_CEN][B_RT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_LT].dst);
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_CEN].dst); 
-        SDL_RenderFillRect(vs->renderer, &ds->ii_borders[B_BOT][B_RT].dst);
+        SDL_RenderFillRect(vs->renderer, &modes_rects[B_TOP][B_LT].dst);
+        SDL_RenderFillRect(vs->renderer, &modes_rects[B_TOP][B_CEN].dst);
+        SDL_RenderFillRect(vs->renderer, &modes_rects[B_TOP][B_RT].dst);
+        SDL_RenderFillRect(vs->renderer, &modes_rects[B_CEN][B_LT].dst);
+        SDL_RenderFillRect(vs->renderer, &modes_rects[B_CEN][B_RT].dst);
+        SDL_RenderFillRect(vs->renderer, &modes_rects[B_BOT][B_LT].dst);
+        SDL_RenderFillRect(vs->renderer, &modes_rects[B_BOT][B_CEN].dst); 
+        SDL_RenderFillRect(vs->renderer, &modes_rects[B_BOT][B_RT].dst);
     }
+
+    // second check - SHR vs II
+    // we are still just creating the texture
 
     if (ds->new_video & 0x80) {
         ds->fr_shr->open();
         ds->a2_display->generate_shr((SHR *)shr_page, ds->fr_shr);
         ds->fr_shr->close();
         ds->video_system->clear();
-
-        //SDL_FRect source_rect = { 0.0, 0.0, 640, 200 };
-        ds->video_system->render_frame(ds->fr_shr->get_texture(), 
-        &ds->shr_borders[B_CEN][B_CEN].src, 
-        &ds->shr_borders[B_CEN][B_CEN].dst);
+        // copy it into the stage2 texture
+        SDL_RenderTexture(renderer, ds->fr_shr->get_texture(), &modes_rects[B_CEN][B_CEN].src, &modes_rects[B_CEN][B_CEN].dst);
     } else {
 
         for (uint16_t line = 0; line < 24; line++) {
@@ -435,34 +378,37 @@ bool update_display_apple2(cpu_state *cpu) {
                     break;
             }
             ds->dirty_line[line] = 0;
-            //updated = 1;
         }
 
-        //if (updated) { // only reload texture if we updated any lines.
-            RGBA_t mono_color_value = vs->get_mono_color();
-            ds->frame_rgba->open();
-            // do a switch on display engine later..
-            switch (vs->display_color_engine) {
-                case DM_ENGINE_NTSC:
-                    if (ds->display_mode == TEXT_MODE) {
-                        ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
-                    } else {
-                        ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
-                    }
-                    break;
-                case DM_ENGINE_RGB:
-                    ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
-                    break;
-                case DM_ENGINE_MONO:
-                    ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, mono_color_value);
-                    break;
-                default:
-                    break; // never happens
-            }
-            ds->frame_rgba->close();
-            vs->render_frame(ds->screenTexture, &ds->ii_borders[B_CEN][B_CEN].src, &ds->ii_borders[B_CEN][B_CEN].dst);
-        //}
+        RGBA_t mono_color_value = vs->get_mono_color();
+        ds->frame_rgba->open();
+        // do a switch on display engine later..
+        switch (vs->display_color_engine) {
+            case DM_ENGINE_NTSC:
+                if (ds->display_mode == TEXT_MODE) {
+                    ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
+                } else {
+                    ds->mon_ntsc.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
+                }
+                break;
+            case DM_ENGINE_RGB:
+                ds->mon_rgb.render(ds->frame_bits, ds->frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF) /* , 1 */);
+                break;
+            case DM_ENGINE_MONO:
+                ds->mon_mono.render(ds->frame_bits, ds->frame_rgba, mono_color_value);
+                break;
+            default:
+                break; // never happens
+        }
+        ds->frame_rgba->close();
+        
+        // copy it into the stage2 texture.
+        SDL_RenderTexture(renderer, ds->screenTexture, &modes_rects[B_CEN][B_CEN].src, &modes_rects[B_CEN][B_CEN].dst);
     }
+    // back to main renderer.
+    SDL_SetRenderTarget(renderer, nullptr);
+    // and emit.
+    vs->render_frame(stage2, (video_mode_is_shr) ? &ds->gs_shr_frame_src : &ds->gs_ii_frame_src, &ds->frame_dst);
     vs->force_full_frame_redraw = false;
 
     return true;
@@ -490,18 +436,11 @@ bool update_display_apple2_cycle(cpu_state *cpu) {
             break;
     }
     ds->frame_rgba->close();
-
-/*     // update the texture
-    void* pixels;
-    int pitch;
-    SDL_LockTexture(ds->screenTexture, NULL, &pixels, &pitch);
-    std::memcpy(pixels, ds->frame_rgba->data(), (567) * BASE_HEIGHT * sizeof(RGBA_t));
-    SDL_UnlockTexture(ds->screenTexture);
-     */
-    // update widnow
-    //SDL_RenderClear(renderer);
-    //SDL_RenderTexture(renderer, texture, &srcrect, &dstrect);     
-    vs->render_frame(ds->screenTexture, &ds->ii_borders[B_CEN][B_CEN].src, &ds->ii_borders[B_CEN][B_CEN].dst);
+     
+    vs->render_frame(ds->screenTexture, 
+        &ds->ii_borders[B_CEN][B_CEN].src, 
+        &ds->ii_borders[B_CEN][B_CEN].dst
+    );
 
     return true;
 }
@@ -647,72 +586,6 @@ void set_graphics_mode(display_state_t *ds, display_graphics_mode_t mode) {
     ds->display_graphics_mode = mode;
     update_line_mode(ds);
 }
-
-// anything we lock we have to completely replace.
-#if 0
-void render_line_ntsc(cpu_state *cpu, int y) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
-    video_system_t *vs = ds->video_system;
-    // this writes into texture - do not put border stuff here.
-
-    void* pixels = ds->buffer + (y * 8 * BASE_WIDTH * sizeof(RGBA_t));
-    int pitch = BASE_WIDTH * sizeof(RGBA_t);
-
-    line_mode_t mode = ds->line_mode[y];
-
-    if (mode == LM_LORES_MODE) render_lgrng_scanline(cpu, y);
-    else if (mode == LM_HIRES_MODE) render_hgrng_scanline(cpu, y, (uint8_t *)pixels);
-    else render_text_scanline_ng(cpu, y);
-
-    RGBA_t mono_color_value = RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF); // override mono color to white when we're in color mode
-
-    if (ds->display_mode == TEXT_MODE) {
-        processAppleIIFrame_Mono(frameBuffer + (y * 8 * BASE_WIDTH), (RGBA_t *)pixels, y * 8, (y + 1) * 8, mono_color_value);
-    } else {
-        processAppleIIFrame_LUT(frameBuffer + (y * 8 * BASE_WIDTH), (RGBA_t *)pixels, y * 8, (y + 1) * 8);
-    }
-
-}
-#endif
-
-#if 0
-void render_line_rgb(cpu_state *cpu, int y) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
-    video_system_t *vs = ds->video_system;
-
-    void* pixels = ds->buffer + (y * 8 * BASE_WIDTH * sizeof(RGBA_t));
-    int pitch = BASE_WIDTH * sizeof(RGBA_t);
-
-    line_mode_t mode = ds->line_mode[y];
-
-    if (mode == LM_LORES_MODE) render_lores_scanline(cpu, y, pixels, pitch);
-    else if (mode == LM_HIRES_MODE) render_hgr_scanline(cpu, y, pixels, pitch);
-    else render_text_scanline(cpu, y, pixels, pitch);
-
-}
-#endif
-
-#if 0
-void render_line_mono(cpu_state *cpu, int y) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
-    video_system_t *vs = ds->video_system;
-
-    RGBA_t mono_color_value ;
-
-    void* pixels = ds->buffer + (y * 8 * BASE_WIDTH * sizeof(RGBA_t));
-    int pitch = BASE_WIDTH * sizeof(RGBA_t);
-
-    line_mode_t mode = ds->line_mode[y];
-
-    if (mode == LM_LORES_MODE) render_lgrng_scanline(cpu, y);
-    else if (mode == LM_HIRES_MODE) render_hgrng_scanline(cpu, y, (uint8_t *)pixels);
-    else render_text_scanline_ng(cpu, y);
-
-    mono_color_value = vs->get_mono_color();
-
-    processAppleIIFrame_Mono(frameBuffer + (y * 8 * BASE_WIDTH), (RGBA_t *)pixels, y * 8, (y + 1) * 8, mono_color_value);
-}
-#endif
 
 uint8_t txt_bus_read_C050(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
