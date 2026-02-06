@@ -9254,3 +9254,74 @@ This is the correct code:
 
 SO. There were six instances of that. I wonder what this would have affected. I suppose I could instrument these locations and just do a printf if in C000-C0FF, and see what pops up..
 
+[ ] Scrutinize the complete list of all address modes with this behavior and make sure it's right across 6502, 65c02, 65816.
+[ ] also check for differences between 65c02 and N6502.  
+
+[ ] "CRT" shaders
+
+https://github.com/hasseily/AppleWin/blob/pp/source/frontends/sdl/pp/shaders/a2video_postprocess.glsl
+
+[ ] Sather 3.10B doesn't run on GS even in 1mhz mode, and mhz is 1.0045, not 1.0205.
+
+Must not be handling the refresh, or maybe the sync, quite right.. in 1MHz mode every cycle should be a sync cycle. Ah, when the *GS* sets 1mhz mode, via the slow_mode flag, this results in 1.0205, and is correct. So, if I have the cpu speed set to 1mhz, I should either: not let them do that; implement that by setting slow_mode; have another check that forces sync mode on a GS.
+
+[ ] Platform should specify allowed CPU speed settings in OSD  
+
+Is there a way to tell if we're operating inside an interrupt handler? ok, so there's been an IRQ, but no corresponding RTI .. ? 
+
+it's right after StretchWindow loads - it dies coming out of the ROM interrupt handler. A bunch of memory has been overwritten including the stack with the pattern F5 EA F5 EA. Ah, something is doing a recursive JSR, and the return address is EAF5.
+It's either StretcvhWindow, or what tries to load right after that..
+
+we're in the ROM, FF/84E6. An IRQ occurs. 
+eventually does JSL E1/0030, VBL handler..
+JML 04/A8CB
+sta C047 <- clear the VBL interrupt
+the code in bank 4 is doing JSL E1/01B2 a couple times, but that is purely an RTL, returns immediately
+monkeys with stack, we're now executing at 02/A509.
+its looking for something at A1AA,X, decrementing X, X is small (8-bit regs)
+we're back at 04/A935
+ok that exits back to ROM interrupt handler..
+FF/Ba5E: there's a BIT CFFF to turn off slot C8 rom..
+then it touches C700 to enable Slot 7 expanded ROM? What?
+it tags some LC switches, restores the state register.. eventually does RTI.
+We're back to FF/84E7.
+let's BP on 09/EB03
+
+could just be that stretchwindows is the last thing.. yeah it's still crashing.
+
+first page of things loaded, there's nothing out of the ordinary.
+bram checker..
+caps lock init
+editmenuitems
+IR
+keyboard extender
+system icons
+hard pressed
+hierarchic
+TransProg III
+StdFileIcons
+Iie Aoi by EDS
+
+turned all those off, still crashes. Hrm! This is going to be a PITA, there are --so-many-- things on here.
+let's deal with this later..
+"I think the EasyAccess init is causing the behavior. If that is disabled then I can boot without locking up. However, I have noticed another issue which is that after booting when double clicking a text file to read it the characters “88” are added to the start of the file as if typed at the keyboard. This does not happen in Clemens or Sweet16. Maybe double-clicking is somehow sending characters?"
+
+
+* TOO MANY DISPLAY OPTIONS TO TEST UGH
+
+apple2
+   for all ludicrous speed
+   ii_scanner: no borders
+   gs_scanner: borders
+
+   ii_mode:
+   shr_mode: 
+
+apple2_cycle
+   working, leave alone
+
+apple2gs_cycle
+   working, leave alone
+
+[x] FISHED!
+

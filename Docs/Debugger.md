@@ -56,7 +56,7 @@ It would also be nice if the tabs you proposed were tear away tabs, so that you 
 
 I had a UI idea: when the mouse is moving over the window, show some controls. One of them will be a triangle that opens the OSD. That same tab also closes the OSD. It will be on the upper right corner sticking out, so it will always be clear what's up with it.
 
-[ ] implement the "temporary message at bottom of screen" idea I had; use it for mouse capture.   
+[x] implement the "temporary message at bottom of screen" idea I had; use it for mouse capture.   
 [ ] use general mono_color_table for rendering videx too. Probably bring those variables out and centralize them somewhere.  
 
 Mike sugggested the "save machine state". We would need to save:
@@ -96,9 +96,10 @@ break C000
 -break 3FE.3FF   - remove breakpoint 3FE.3FF
 break    - by itself, list breakpoints
 list / L 2000    (disassemble; L by itself, continue disassembly from last dis PC)
-mon 2000  (memory monitor set)
--mon 2000.2010  (memory monitor cancel)
-mon     - list memory monitors
+watch 2000  (memory monitor set)
+nowatch 2000.2010  (memory monitor cancel)
+watch     - list memory monitors
+sload "label/file/path.lbl" - load a labels file
 ```
 
 you would enter commands in a SDL "textedit" thing I just read about. and we can keep a small history with arrow key to get to them.
@@ -112,7 +113,6 @@ Step over: single step, but if a JSR, run until RTS;
 OK, so that's one approach. The other is more of a full GUI approach. That would be a lot of work. maybe there is a widget library I can lean on.
 RmlUI is pretty sophisticated. Might do most of the things we want? Looks pretty snazzy too. ImGui looks more like stuff from 20 years ago. Square and blocky.
 
-[ ] when we hit a breakpoint, make a beepy sound.  
 
 Instead of tabs, what if in the window we have panes, that the user can enable and disable by clicking buttons. Most screens today are very wide, so add panes horizontally. We can automatically increase/decrease the window width as they open/close.
 
@@ -137,28 +137,32 @@ so the monitor section, we need a text input widget.
 
 TextInputLine: Tile_t : Define a rectangular area. if you click inside the area, key down events start to be processed by that. If you click outside the area, key down events stop being processed. It can be a derivative of Tile like everything else. on Enter, a callback you set is called (just like we have done with click callbacks). need to handle delete and backspace. Track a cursor position. I don't think the SDL Text Input is needed here. that's primarily useful for mobile, which I don't care bout. Just do it by hand.
 
-# Devices Pane
+# Watch Pane
 
-this pane contains a number of selectable diagnostic displays. First to implement, is the memory map status.
+this pane contains a number of selectable diagnostic displays, that automatically update each frame. First to implement.
 
-$00
-$01
-$02 - $03
-$04 - $07
-$08 - $1F
-$20 - $3F
-$40 - $BF
-$C0
-$C1
-$C2
-$C3
-$C4
-$C5
-$C6
-$C7
-$C8 - $CF
-$D0 - $DF
-$E0 - $FF
+| watch name | Description | II | IIe | IIgs |
+|-|-|-|-|-|
+| mmugs | Apple IIgs Memory Map | ❌ | ❌ | ✅ |
+| iiememory | Apple IIe Memory Map | ❌ | ✅ | ❌ |
+| display | various display information | ✅ | ✅ | ✅ |
+| scc8530 | IIgs Zilog Serial Chip | ❌ | ❌ | ✅ |
 
 Maybe the thing to do here is, when we are mapping memory, we pass along a string to set the memory map description. Then we can just read the whole thing straight out of the MMU page table. That seems good.
 Alternatively, can we just construct this from the softswitches? That requires info about system type. I kind of like just having 
+
+
+# Debugger Feature Roadmap
+
+[ ] Implement Memory Explorer that lets you jump to, and page through, memory, like looking for text and stuff  
+
+[ ] Also, some way to put in a memory location and have it tell you which application it belongs to  
+
+[ ] "save trace right now to file name" command  
+
+[ ] change "debug" to "watch", keying on the string argument vs number argument.  
+
+[ ] allow end a watch by clicking on an '[x]' in the upper right corner of that watch's area.
+
+[ ] when we hit a breakpoint, make a beepy sound. This should be easy to do with a soundeffect.  
+

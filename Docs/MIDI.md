@@ -19,3 +19,7 @@ ECHO II (or Echo Plus which was basically speed + mockingboard). Uses TMS5220 ch
 Any other sound cards for the Apple II?
 
 Too bad there isn't likely to be that much software for it. Well there will be some things. There's Ultima V. PassPort's own software.
+
+This is an interesting library I saw Ian working with:
+
+https://github.com/munt/munt

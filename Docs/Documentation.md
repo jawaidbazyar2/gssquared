@@ -28,7 +28,7 @@ The ambition for this project is large - and it will take a while to get it done
 | Apple IIe (enh) | ❌ |
 | Apple IIc | ❌ |
 | Apple IIc+ | ❌ |
-| Apple IIgs | ❌ |
+| Apple IIgs | ✅ |
 
 
 ## Supported Video Modes
@@ -44,6 +44,7 @@ We currently have the following implemented:
 | HGR           | ✅        | ✅  | ✅         |
 | DLGR          | ✅        |     | ✅         |
 | DHGR          | ✅        | ✅  | ✅         |
+| SHR 320       |           | ✅  |            |
 
 By "Composite" we mean DisplayNG, to accurately render composite artifacts.
 
@@ -52,8 +53,8 @@ By "Composite" we mean DisplayNG, to accurately render composite artifacts.
 | CPU Type | Status |
 |----------|--------|
 | NMOS 6502 | ✅ |
-| CMOS 6502 | ❌ |
-| 65c816 | ❌ |
+| CMOS 6502 | ✅ |
+| 65c816 | ✅ |
 
 ## Keyboard
 
@@ -62,7 +63,7 @@ By "Composite" we mean DisplayNG, to accurately render composite artifacts.
 | Apple II+ | ✅ |
 | Apple IIe | ✅ |
 | Apple IIc | ❌ |
-| Apple IIgs | ❌ |
+| Apple IIgs | ✅ |
 
 
 ## Memory Expansion
@@ -82,6 +83,7 @@ By "Composite" we mean DisplayNG, to accurately render composite artifacts.
 | SmartPort / ProDOS Block-Device Interface | Not started |
 | RAMfast SCSI Interface | Not started |
 | Pascal Storage Device | Not started (Same as generic ProDOS-compatible?) |
+| IWM - Integrated Woz Machine | Not started |
 
 Additional notes: Disk II does not support quarter or half tracks.
 
@@ -100,7 +102,7 @@ Additional notes: Disk II does not support quarter or half tracks.
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Basic Speaker | ✅ Complete |  |
-| Ensoniq | Not started |
+| Ensoniq | In progress |
 
 ## I/O Devices
 
@@ -111,7 +113,7 @@ Additional notes: Disk II does not support quarter or half tracks.
 | Modem / serial port | Not started | Intend to emulate SSC and Hayes-compatible modem to telnet |
 | ImageWriter printer emulation | Not started | |
 | Joystick / paddles | ✅ Complete | Mouse emulation of Joystick; Gamepads;  |
-| Sirius JoyPort (Atari) | Partial | Implemented Single Joystick - enable mode with F6 |
+| Sirius JoyPort (Atari) | ✅ | Implemented Single Joystick - enable mode with F6 |
 | Shift-key mod and Lowercase Character Generator | Not started | |
 
 ## Clocks
@@ -120,6 +122,7 @@ Additional notes: Disk II does not support quarter or half tracks.
 |------|--------|-------|
 | Thunderclock | Partial | Read of time implemented. Interrupts, writing clock - not implemented. Needs testing. |
 | Generic ProDOS-compatible Clock | Complete | Read-only. |
+| IIgs Realtime Clock | ✅ | syncs to host clock using local time zone |
 
 # More Detailed Notes on Status
 

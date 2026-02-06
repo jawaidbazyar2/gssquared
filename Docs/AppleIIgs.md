@@ -18,7 +18,7 @@ http://krue.net/truegs/
 We can implement in this order.
 
 [x] 65816 [initial version done]  
-[ ] Accurate Cycle Timing (FPI / Mega II / Fast-Slow)  
+[x] Accurate Cycle Timing (FPI / Mega II / Fast-Slow)  
 [x] mmu (done-ish but might still be bugs)  
 [x] RTC / BRAM  
 [x] ADB  
@@ -30,7 +30,7 @@ We can implement in this order.
 [x] Game controller   
 [x] Interrupts  
 [ ] IWM  
-[ ] Ensoniq  
+[1/2] Ensoniq  
 [ ] Zilog SCC 8530  
 [ ] ROM03    
 
