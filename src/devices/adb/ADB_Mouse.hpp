@@ -15,8 +15,8 @@
 class ADB_Mouse : public ADB_Device
 {
     private:
-        static constexpr float MOUSE_MOTION_SCALE_SLOW = 0.200f;
-        static constexpr float MOUSE_MOTION_SCALE_FAST = 0.400f;
+        static constexpr float MOUSE_MOTION_SCALE_SLOW = 0.300f;
+        static constexpr float MOUSE_MOTION_SCALE_FAST = 0.600f;
         uint8_t button_0_down = 0x80; // default to button up
         uint8_t button_1_down = 0x80;
         bool has_data = false;
