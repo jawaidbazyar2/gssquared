@@ -308,7 +308,6 @@ add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp
     src/display/text_40x24.cpp src/display/hgr_280x192.cpp src/display/display.cpp
     src/devices/diskii/diskii.cpp
     src/platforms.cpp
-    src/event_poll.cpp
     src/devices.cpp src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
     ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns
