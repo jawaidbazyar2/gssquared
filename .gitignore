@@ -32,3 +32,6 @@ packages/*
 cfg/
 cfg/*
 *.AppImage
+src/devices/es5503/es5503.hpp
+src/devices/es5503/mame5503.cpp
+src/devices/es5503/comparison_report.md
