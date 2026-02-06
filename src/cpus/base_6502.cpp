@@ -1348,6 +1348,7 @@ inline void add_and_set_flags(cpu_state *cpu, word_t N) {
 }
 
 inline void add_bcd_8_set_flags(cpu_state *cpu, uint8_t &a, uint8_t b) {
+    int16_t binary_sum=a+b;
 
     uint16_t AL = (a & 0x0F) + (b & 0x0F) + cpu->C;
 
@@ -1364,7 +1365,9 @@ inline void add_bcd_8_set_flags(cpu_state *cpu, uint8_t &a, uint8_t b) {
     
     a = UA & 0xFF;
     cpu->C = (UA >= 0x100);
-    cpu->Z = (a == 0);
+    if constexpr (CPUTraits::has_65c02_ops==false) {
+        cpu->Z = ((binary_sum & 0xFF) == 0); // NMOS 6502 
+    } else cpu->Z = (a == 0);
     cpu->V = (SA < -128 || SA > 127);
     cpu->N = (UA & 0x80) != 0;
     //printf("P: %02X C: %d  Z: %d  V: %d N: %d\n", cpu.P, cpu.c, cpu.z, cpu.v, cpu.n);
@@ -1383,14 +1386,15 @@ inline void add_bcd_16_set_flags(cpu_state *cpu, word_t b) {
 }
 
 inline void sub_bcd_8_set_flags( cpu_state *cpu, uint8_t &a, uint8_t b) {
-    
+    int16_t binary_sum=a-b+cpu->C;
+
     uint8_t N1 = b ^ 0xFF;
 
     int16_t AL = (a & 0x0F) - (b & 0x0F) + cpu->C - 1;
 
     if (AL < 0) AL = ((AL - 0x06) & 0x0F) - 0x10;
 
-    int16_t UA = (a & 0xF0) - (b & 0xF0) + AL;
+    int16_t UA = (a & 0xF0) - (b & 0xF0) + AL;   
     
     // set based on intermediate result before final correction?
     cpu->V = !((a ^ N1) & 0x80) && ((a ^ UA) & 0x80);
@@ -1404,7 +1408,9 @@ inline void sub_bcd_8_set_flags( cpu_state *cpu, uint8_t &a, uint8_t b) {
     a = UA & 0xFF;
     
     cpu->C = !(UA < 0);
-    cpu->Z = (a == 0);
+    if constexpr (CPUTraits::has_65c02_ops==false) {
+        cpu->Z = ((binary_sum & 0xFF) == 0); // NMOS 6502 
+    } else cpu->Z = (a == 0);
     
     cpu->N = (UA & 0x80) != 0;
     //printf("P: %02X C: %d  Z: %d  V: %d N: %d\n", cpu.P, cpu.c, cpu.z, cpu.v, cpu.n);

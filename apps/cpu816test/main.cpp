@@ -30,6 +30,7 @@
 #include "mmus/mmu.hpp"
 #include "mmus/mmu_iigs.hpp"
 #include "util/ResourceFile.hpp"
+#include "NClock.hpp"
 
 gs2_app_t gs2_app_values;
 
@@ -131,7 +132,7 @@ int main(int argc, char **argv) {
     gs2_app_values.console_mode = false;
 
 // create MMU, map all pages to our "ram"
-    MMU *mmu = new MMU(16384*1024/256);
+    MMU *mmu = new MMU(16384*1024/256, 256);
     for (int i = 0; i < 16384*1024/256; i++) {
         mmu->map_page_both(i, &memory[i*256], "TEST RAM");
     }
@@ -163,7 +164,8 @@ int main(int argc, char **argv) {
     cpu_state *cpu = new cpu_state(cputype);
 
     //std::unique_ptr<BaseCPU> cpux = createCPU(cputype);
-    cpu->cpun = createCPU(cputype);
+    NClock *clock = new NClock();
+    cpu->cpun = createCPU(cputype, clock);
     if (!cpu->cpun) {
         printf("Failed to create CPU\n");
         return 1;
@@ -235,8 +237,8 @@ int main(int argc, char **argv) {
 
     uint64_t duration = end_time - start_time;
     printf("Test took %llu ns\n", duration);
-    printf("Average 'cycle' time: %f ns\n", (double)duration / (double) cpu->cycles);
-    printf("Effective MHz: %f\n", 1'000'000'000 / ((double)duration / (double) cpu->cycles) / 1000000);
+    printf("Average 'cycle' time: %f ns\n", (double)duration / (double) clock->get_cycles());
+    printf("Effective MHz: %f\n", 1'000'000'000 / ((double)duration / (double) clock->get_cycles()) / 1000000);
 
     if (!failed) {
         printf("Test passed!\n");

@@ -123,13 +123,14 @@ int main(int argc, char **argv) {
 
 
     ResourceFile *rom;
-    
+    uint16_t load_address = 0x0000;
     if (testsuite == 0) {
         rom = new ResourceFile("6502_functional_test.bin", READ_ONLY);
     } else if (testsuite == 1) {
         rom = new ResourceFile("65C02_extended_opcodes_test.bin", READ_ONLY);
     } else if (testsuite == 2) {
         rom = new ResourceFile("6502_decimal_test.bin", READ_ONLY);
+        load_address = 0x0400;
     } else {
         printf("Invalid CPU type\n");
         return 1;
@@ -139,7 +140,7 @@ int main(int argc, char **argv) {
     int rom_size = rom->size();
     printf("   ROM size: %d\n", rom_size);
     for (int i = 0; i < rom_size; i++) {
-        mmu->write(i, rom_data[i]);
+        mmu->write(load_address + i, rom_data[i]);
     }
 
     NClock *clock = new NClock();
@@ -179,7 +180,7 @@ int main(int argc, char **argv) {
     printf("   Average 'cycle' time: %f ns\n", (double)duration / (double) clock->get_cycles());
     printf("   Effective MHz: %f\n", 1'000'000'000 / ((double)duration / (double) clock->get_cycles()) / 1000000);
 
-    if (cpu->pc == 0x3469 || cpu->pc == 0x23BC) {
+    if (cpu->pc == 0x3469 || cpu->pc == 0x23BC || cpu->pc == 0x044B) {
         printf("+++ Test passed!\n");
     } else {
         printf("--- Test failed at PC = 0x%04X!\n", cpu->pc);
