@@ -323,7 +323,7 @@ if(WIN32)
     # This is more reliable and easier to manage
 endif()
 target_link_libraries(GSSquared 
-    PUBLIC gs2_cpu 
+    PUBLIC
     gs2_cpu_new
     gs2_computer
     gs2_mmu
@@ -344,12 +344,10 @@ target_link_libraries(GSSquared
     gs2_devices_mockingboard
     gs2_devices_annunciator
     gs2_devices_iiememory
-    #gs2_devices_iigsmemory
     gs2_devices_ensoniq
     gs2_devices_scc8530
     gs2_devices_iwm
     gs2_debugger
-    gs2_trace
     gs2_util
     gs2_util_audio
     gs2_ui
