@@ -953,7 +953,7 @@ void mb_t1_timer_callback(uint64_t instanceID, void *user_data) {
             next_counter = 65536;
         }
         tc->t1_triggered_cycles += next_counter; // TODO: testing.
-        mb_d->event_timer->scheduleEvent(mb_d->clock->get_cycles() + next_counter, mb_t1_timer_callback, instanceID , mb_d);
+        mb_d->event_timer->scheduleEvent(mb_d->clock->get_c14m() + (next_counter * 14), mb_t1_timer_callback, instanceID , mb_d);
     } else {         // one-shot mode
         // if a T1 oneshot was pending, set interrupt status.
         if (tc->t1_oneshot_pending) {
@@ -988,7 +988,7 @@ void mb_t2_timer_callback(uint64_t instanceID, void *user_data) {
             counter = 65536;
         }
         
-        mb_d->event_timer->scheduleEvent(mb_d->clock->get_cycles() + counter, mb_t2_timer_callback, instanceID , mb_d);
+        mb_d->event_timer->scheduleEvent(mb_d->clock->get_c14m() + (counter * 14), mb_t2_timer_callback, instanceID , mb_d);
     }
     if (1) { // one-shot mode
         // TODO: "after timing out, the counter will continue to decrement."
@@ -1010,7 +1010,7 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
 
     if (DEBUG(DEBUG_MOCKINGBOARD)) printf("mb_write_Cx00: %02d %d %02x %02x\n", slot, chip, alow, data);
     mb_6522_regs *tc = &mb_d->d_6522[chip]; // which 6522 chip this is.
-    uint64_t cpu_cycles = mb_d->clock->get_cycles();
+    //uint64_t cpu_cycles = mb_d->clock->get_cycles();
     uint64_t cpu_14m_cycles = mb_d->clock->get_c14m();
 
     switch (alow) {
@@ -1079,7 +1079,7 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             tc->t1_counter = tc->t1_latch /* ? tc->t1_latch : 65535 */;
             uint32_t next_counter = tc->t1_counter ? tc->t1_counter : 65536;
             
-            tc->t1_triggered_cycles = cpu_cycles + next_counter + 1; // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
+            tc->t1_triggered_cycles = cpu_14m_cycles + ((next_counter+1) * 14); // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
             tc->t1_oneshot_pending = 1;
             //if (tc->ier.bits.timer1) {
                 mb_d->event_timer->scheduleEvent(tc->t1_triggered_cycles, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);
@@ -1098,10 +1098,10 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             uint32_t next_counter2 = tc->t2_counter ? tc->t2_counter : 65536;
             tc->ifr.bits.timer2 = 0;
             mb_6522_propagate_interrupt(mb_d);
-            tc->t2_triggered_cycles = cpu_cycles;
+            tc->t2_triggered_cycles = cpu_14m_cycles;
             tc->t2_oneshot_pending = 1;
             //if (tc->ier.bits.timer2) {
-                mb_d->event_timer->scheduleEvent(cpu_cycles + next_counter2, mb_t2_timer_callback, 0x10010000 | (slot << 8) | chip , mb_d);
+                mb_d->event_timer->scheduleEvent(cpu_14m_cycles + (next_counter2 * 14), mb_t2_timer_callback, 0x10010000 | (slot << 8) | chip , mb_d);
             /* } else {
                 mb_d->event_timer->cancelEvents(0x10010000 | (slot << 8) | chip);
             } */
@@ -1143,23 +1143,23 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
                     mb_d->event_timer->cancelEvents(instanceID);
                 } else */ 
                 // if we set the counter/latch BEFORE we enable interrupts.
-                uint64_t cycle_base = tc->t1_triggered_cycles == 0 ? mb_d->clock->get_cycles() : tc->t1_triggered_cycles;
+                uint64_t cycle_base = tc->t1_triggered_cycles == 0 ? mb_d->clock->get_c14m() : tc->t1_triggered_cycles;
                 uint32_t counter = tc->t1_counter;
                 if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
                     counter = 65536;
                 }
-                mb_d->event_timer->scheduleEvent(cycle_base + counter, mb_t1_timer_callback, instanceID , mb_d);
+                mb_d->event_timer->scheduleEvent(cycle_base + (counter * 14), mb_t1_timer_callback, instanceID , mb_d);
                                 
                 instanceID = 0x10010000 | (slot << 8) | chip;
                 /* if (!tc->ier.bits.timer2) {
                     mb_d->event_timer->cancelEvents(instanceID);
                 } else */ { // if we set the counter/latch BEFORE we enable interrupts.
-                    uint64_t cycle_base = tc->t2_triggered_cycles == 0 ? mb_d->clock->get_cycles() : tc->t2_triggered_cycles;
+                    uint64_t cycle_base = tc->t2_triggered_cycles == 0 ? mb_d->clock->get_c14m() : tc->t2_triggered_cycles;
                     uint32_t counter = tc->t2_counter;
                     if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
                         counter = 65536;
                     }
-                    mb_d->event_timer->scheduleEvent(cycle_base + counter, mb_t2_timer_callback, instanceID , mb_d);
+                    mb_d->event_timer->scheduleEvent(cycle_base + (counter * 14), mb_t2_timer_callback, instanceID , mb_d);
                 }
             }
             break;
@@ -1478,8 +1478,8 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
 
     insert_empty_mockingboard_frame(mb_d);
 
-    mb_d->event_timer->scheduleEvent(mb_d->clock->get_cycles() + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 0 , mb_d);
-    mb_d->event_timer->scheduleEvent(mb_d->clock->get_cycles() + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 1 , mb_d);
+    mb_d->event_timer->scheduleEvent(mb_d->clock->get_c14m() + (65536 * 14), mb_t1_timer_callback, 0x10000000 | (slot << 8) | 0 , mb_d);
+    mb_d->event_timer->scheduleEvent(mb_d->clock->get_c14m() + (65536 * 14), mb_t1_timer_callback, 0x10000000 | (slot << 8) | 1 , mb_d);
 
 
     // set up a reset handler to reset the chips on mockingboard

@@ -9325,3 +9325,31 @@ apple2gs_cycle
 
 [x] FISHED!
 
+well that InterruptController concept is a smashing success. That's how the disk mount system needs to work, instead of that mailbox approach.
+
+Disk Mount & Disk Operation Status:
+  drives install themselves (with key) to the Class; define: media type; appearance ID (is it a DiskII button, AppleDisk 5.25, )
+  drives update their status with the class.
+  drives also install a callback for mount requests- based on key and media type.
+
+  OSD can call class to:
+    iterate registered disks.
+    get disk status (by key): to get track, head, block, spinning / not spinning.
+    send a mount media request to a drive by its key
+The current stuff is "close" but isn't quite generic enough.
+
+We are also gonna need a 14M eventTimer; the existing CPU-based eventTimer is more or less useless on a GS, so other eventTimer users should be switched over to the 14M also. Mockingboard is the biggie; it would be interesting if it continued to clock at 1MHz (because that's PH0 on the bus) but timing by the 14M. Then Ultima music would operate at the right speed regardless of CPU speed. That's how it would work in a GS, I think.
+
+## Feb 6, 2026
+
+ok, EventTimer -> 14M. It's used by Mouse, and MB. I don't think the module itself cares what the timer resolution is - it just takes int64's.
+so the loop in gs2 where we send clock->cycles needs to be clock->get_c14m. 
+oh I should get rid of this stuff that tweaks the vbl offset in mouse. that's just hinky
+ok in mouse, there is all this fairly complex stuff. GS2 periodically does set_frame_start_cycle. this sets frame_start_cycle to the current cpu cycles. however, as we know that may not be perfectly synchronized with frames. And the only user is mouse. There is lots of other stuff that wants to know the start and end 14m's of the current frame. step 1: keep current thing but set it with c14m. step 2: put a general frame-start-end counter mechanism into NClock.
+
+ok, the mockingboard math is done in several spots. cycles()+65536 as one example. in my original conception, this is 1.0205.. so, this should just be c14m+(65536*14) ? Yeah. MB is always 1MHz (slot clock) so don't make any adjustments for cpu speed.
+ok, super scary! The MB code is complex. Will it works? What's the over/under?
+
+skyfox hangs when running in 2.8mode. presumably an interrupt doesn't come back when it thinks it should. that means it would likely fail on a //e with a ZipChip too. 
+
+so far so good! The MB and Mouse vbl/interrupts seem to be working ok. It's actually cool in Ultima IV, the game can run fast but the music stays at the same tempo. 

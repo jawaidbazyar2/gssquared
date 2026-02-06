@@ -271,8 +271,8 @@ void run_cpus(computer_t *computer) {
 
             /* This will run about 60fps, primarily waiting on user input in the debugger window. */
             while (cpu->instructions_left) {
-                if (computer->event_timer->isEventPassed(clock->get_cycles())) {
-                    computer->event_timer->processEvents(clock->get_cycles());
+                if (computer->event_timer->isEventPassed(clock->get_c14m())) {
+                    computer->event_timer->processEvents(clock->get_c14m());
                 }
                 (cpu->cpun->execute_next)(cpu);
                 cpu->instructions_left--;
@@ -318,8 +318,8 @@ void run_cpus(computer_t *computer) {
 
             if (computer->debug_window->window_open) {
                 while (clock->get_c14m() < end_frame_c14M) { // 1/60th second.
-                    if (computer->event_timer->isEventPassed(clock->get_cycles())) {
-                        computer->event_timer->processEvents(clock->get_cycles());
+                    if (computer->event_timer->isEventPassed(clock->get_c14m())) {
+                        computer->event_timer->processEvents(clock->get_c14m());
                     }
 
                     // do the pre check.
@@ -346,8 +346,8 @@ void run_cpus(computer_t *computer) {
                 }
             } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
                 while (clock->get_c14m() < end_frame_c14M) { // 1/60th second.
-                    if (computer->event_timer->isEventPassed(clock->get_cycles())) {
-                        computer->event_timer->processEvents(clock->get_cycles());
+                    if (computer->event_timer->isEventPassed(clock->get_c14m())) {
+                        computer->event_timer->processEvents(clock->get_c14m());
                     }
                     (cpu->cpun->execute_next)(cpu);
                 }
@@ -418,8 +418,8 @@ void run_cpus(computer_t *computer) {
             
             if (computer->debug_window->window_open) {
                 while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
-                    if (computer->event_timer->isEventPassed(clock->get_cycles())) {
-                        computer->event_timer->processEvents(clock->get_cycles());
+                    if (computer->event_timer->isEventPassed(clock->get_c14m())) {
+                        computer->event_timer->processEvents(clock->get_c14m());
                     }
                     if (computer->debug_window->check_pre_breakpoint(cpu)) {
                         cpu->execution_mode = EXEC_STEP_INTO;
@@ -443,8 +443,8 @@ void run_cpus(computer_t *computer) {
                 }
             } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
                 while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
-                    if (computer->event_timer->isEventPassed(clock->get_cycles())) {
-                        computer->event_timer->processEvents(clock->get_cycles());
+                    if (computer->event_timer->isEventPassed(clock->get_c14m())) {
+                        computer->event_timer->processEvents(clock->get_c14m());
                     }
                     (cpu->cpun->execute_next)(cpu);
                 }

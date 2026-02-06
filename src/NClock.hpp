@@ -126,6 +126,7 @@ public:
     inline uint64_t get_c14m_per_cpu_cycle() { return current.c_14M_per_cpu_cycle; }
     inline uint64_t get_c14m_per_second() { return current.c14M_per_second; }
     inline uint64_t get_c14m_per_frame() { return current.c14M_per_frame; }
+    inline uint64_t get_c14m_per_scanline() { return 912; } // hardcoded, all modes are the same.
     inline uint64_t get_us_per_frame_even() { return current.us_per_frame_even; }
     inline uint64_t get_us_per_frame_odd() { return current.us_per_frame_odd; }
     inline const char *get_clock_mode_name() { return clock_mode_names[clock_mode]; }

@@ -220,12 +220,12 @@ void mouse_vbl_interrupt(uint64_t instanceID, void *user_data) {
     //ds->vbl_cycle = ds->computer->get_frame_start_cycle() + (ds->computer->cpu->cycles_per_scanline * 192);
     // current frame - plus cycle per frame (next frame) at scanline 192.
     // going from ludicrous (or likely any higher speed to a lower speed). 
-    ds->vbl_cycle = ds->computer->get_frame_start_cycle() + ds->clock->get_cycles_per_frame()  + ds->clock->get_cycles_per_scanline() * 192;
+    ds->vbl_cycle = ds->computer->get_frame_start_cycle() + ds->clock->get_c14m_per_frame()  + ds->clock->get_c14m_per_scanline() * 192;
     
     ds->status.int_vbl = 1;
     mouse_propagate_interrupt(ds);
-    if (ds->vbl_cycle <= ds->clock->get_cycles()) {
-        fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", ds->vbl_cycle, ds->clock->get_cycles());
+    if (ds->vbl_cycle <= ds->clock->get_c14m()) {
+        fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", ds->vbl_cycle, ds->clock->get_c14m());
         return;
     }
     ds->event_timer->scheduleEvent(ds->vbl_cycle, mouse_vbl_interrupt, instanceID, ds);
@@ -240,7 +240,7 @@ DebugFormatter * debug_mouse(mouse_state_t *ds) {
     df->addLine("  Y Clamp Low: %6d Y Clamp High: %6d", ds->y_clamp_low.value, ds->y_clamp_high.value);
     df->addLine("  Status: %02X", ds->status.value);
     df->addLine("  Mode: %02X", ds->mode.value);
-    df->addLine("  VBL Offset %6d", ds->vbl_offset);
+    /* df->addLine("  VBL Offset %6d", ds->vbl_offset); */
     df->addLine("  Motion X: %6d  Y: %6d", ds->motion_x, ds->motion_y);
     return df;
 }
@@ -257,8 +257,8 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
 
     mouse_reset(ds);
     //ds->vbl_cycle = 12480;
-    ds->vbl_cycle = (ds->clock->get_cycles_per_scanline() * 192);
-    ds->vbl_offset = ds->vbl_cycle;
+    ds->vbl_cycle = (ds->clock->get_c14m_per_scanline() * 192);
+    /* ds->vbl_offset = ds->vbl_cycle; */
 
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE,"1");
 
@@ -308,7 +308,7 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
             mouse_updown(ds, event);
             return true;
         });
-    computer->dispatch->registerHandler(SDL_EVENT_KEY_DOWN,
+    /* computer->dispatch->registerHandler(SDL_EVENT_KEY_DOWN,
         [ds](const SDL_Event &event) {
             if (event.key.key == SDLK_KP_DIVIDE) {
                 if (ds->vbl_offset >= 500) {
@@ -324,7 +324,7 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
             }
             return true;
         }
-    );
+    ); */
 
     computer->register_debug_display_handler(
         "mouse",
@@ -336,7 +336,7 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     
     // schedule timer for vbl to start during vbl of next frame.
     //ds->event_timer->scheduleEvent(ds->vbl_cycle + 17030, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
-    ds->event_timer->scheduleEvent(computer->get_frame_start_cycle() + ds->vbl_offset, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
+    ds->event_timer->scheduleEvent(computer->get_frame_start_cycle() /* + ds->vbl_offset */, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
 
 
     if (DEBUG(DEBUG_MOUSE)) fprintf(stdout, "Mouse initialized\n");

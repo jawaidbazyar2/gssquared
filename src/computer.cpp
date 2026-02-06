@@ -102,7 +102,7 @@ computer_t::~computer_t() {
 }
 
 void computer_t::set_frame_start_cycle() {
-    frame_start_cycle = clock->get_cycles();
+    frame_start_cycle = clock->get_c14m();
 }
 
 void computer_t::register_reset_handler(ResetHandler handler) {
