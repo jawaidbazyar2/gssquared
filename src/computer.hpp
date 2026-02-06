@@ -14,6 +14,7 @@
 #include "util/Metrics.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
 #include "util/InterruptController.hpp"
+#include "util/AudioSystem.hpp"
 
 class SlotManager_t; // forward declare.
 
@@ -57,6 +58,8 @@ struct computer_t {
 
     video_system_t *video_system = nullptr;
     debug_window_t *debug_window = nullptr;
+
+    AudioSystem *audio_system = nullptr;
 
     EventTimer *event_timer = nullptr;
 

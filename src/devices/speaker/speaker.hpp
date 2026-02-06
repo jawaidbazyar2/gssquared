@@ -87,7 +87,7 @@ struct EventBuffer {
 
 typedef struct speaker_state_t {
     FILE *speaker_recording = NULL;
-    SDL_AudioDeviceID device_id = 0;
+    //SDL_AudioDeviceID device_id = 0;
     //SDL_AudioStream *stream = NULL;
 
     bool first_time = true;
@@ -105,6 +105,7 @@ typedef struct speaker_state_t {
     SpeakerFX *sp;
     computer_t *computer;
     NClock *clock;
+    AudioSystem *audio_system;
 
     double frame_rate;
     double samples_per_frame;

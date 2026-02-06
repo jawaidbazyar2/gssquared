@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "util/AudioSystem.hpp"
 #include "ensoniq.hpp"
 #include "util/InterruptController.hpp"
 
@@ -15,6 +16,7 @@ struct ensoniq_state_t {
     uint8_t soundadrl = 0;  // DOC register address (only low byte used)
     uint8_t soundadrh = 0;  // High byte (stored but not used for DOC addressing)
     int16_t *audio_buffer = nullptr;
+    AudioSystem *audio_system = nullptr;
     SDL_AudioStream *stream = nullptr;
     double frame_rate = 59.9227;  // Apple II frame rate
     float samples_per_frame = 0.0f;

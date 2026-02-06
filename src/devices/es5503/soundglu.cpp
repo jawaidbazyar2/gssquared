@@ -95,6 +95,8 @@ void ensoniq_write_C0xx(void *context, uint32_t address, uint8_t data) {
     switch (address) {
         case 0xC03C:  // Sound Control
             st->soundctl = data;
+            // TODO: handle volume changes here.
+            st->audio_system->set_volume((data & 0x0F) / 15.0f);
             break;
             
         case 0xC03D: { // Sound Data
@@ -190,6 +192,8 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     st->doc_ram = new uint8_t[0x10000];
     std::memset(st->doc_ram, 0, 0x10000);
 
+    st->audio_system = computer->audio_system;
+
     // Allocate buffer large enough for maximum samples per frame
     // Max rate ~298kHz at 59.92 fps = ~4972 samples, add some headroom
     st->audio_buffer = new int16_t[16384];
@@ -216,7 +220,7 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     }
 
     speaker_state_t *speaker_d = (speaker_state_t *)get_module_state(computer->cpu, MODULE_SPEAKER);
-    int dev_id = speaker_d->device_id;
+    //int dev_id = speaker_d->device_id;
 
     // Calculate frame rate
     st->frame_rate = (double)computer->clock->get_c14m_per_second() / (double)computer->clock->get_c14m_per_frame();
@@ -227,7 +231,11 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     // Calculate initial samples per frame
     st->samples_per_frame = (float)es5503_output_rate / st->frame_rate;
     st->samples_accumulated = 0.0f;
-    
+    st->stream = st->audio_system->create_stream(es5503_output_rate, 1, SDL_AUDIO_S16LE, true);
+    // Set the stream pointer in the chip so it can update the rate when oscillators change
+    st->chip->set_sdl_stream(st->stream);
+
+#if 0
     SDL_AudioSpec spec;
     spec.freq = es5503_output_rate;
     spec.format = SDL_AUDIO_S16LE;
@@ -240,9 +248,9 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
         printf("Failed to bind stream to device: %s", SDL_GetError());
     }
     st->stream = stream;
-    
     // Set the stream pointer in the chip so it can update the rate when oscillators change
     st->chip->set_sdl_stream(stream);
+#endif
 
     // register a frame processor for the mockingboard.
     computer->device_frame_dispatcher->registerHandler([st]() {

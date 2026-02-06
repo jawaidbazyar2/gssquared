@@ -16,6 +16,7 @@
 #include "util/applekeys.hpp"
 #include "util/InterruptController.hpp"
 #include "util/DebugHandlerIDs.hpp"
+#include "util/AudioSystem.hpp"
 
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
@@ -42,6 +43,8 @@ computer_t::computer_t(NClockII *clock) {
             return irq_control->debug_irq();
         }
     );
+
+    audio_system = new AudioSystem();
 
     sys_event = new EventDispatcher(); // different queue for "system" events that get processed first.
     dispatch = new EventDispatcher(); // has to be very first thing, devices etc are going to immediately register handlers.

@@ -1,7 +1,9 @@
 #pragma once
 
-#include "devices/speaker/EventBuffer.hpp"
 #include <SDL3/SDL.h>
+
+#include "devices/speaker/EventBuffer.hpp"
+#include "util/AudioSystem.hpp"
 
 typedef uint64_t speaker_t;
 #define FRACTION_BITS 20
@@ -23,6 +25,7 @@ class SpeakerFX {
         uint64_t last_event = 0;
         //constexpr static speaker_t decay_coeff = (uint64_t)(0.9990f * (1 << FRACTION_BITS));
         constexpr static speaker_t volume_scale = 5120ULL;
+        constexpr static uint32_t polarity_flipper = 1;
         speaker_t decay_coeff = static_cast<speaker_t>(0.9990f * (1ULL << FRACTION_BITS));
 
     public:
@@ -50,8 +53,10 @@ class SpeakerFX {
         uint32_t last_event_fake = 1;
 
         FILE *speaker_recording = nullptr;
+        AudioSystem *audio_system;
 
-        SpeakerFX(uint32_t input_rate, uint32_t output_rate, uint64_t min_event_buffer_size, uint32_t min_sample_buffer_size) {
+        SpeakerFX(AudioSystem *audio_system, uint32_t input_rate, uint32_t output_rate, uint64_t min_event_buffer_size, uint32_t min_sample_buffer_size) {
+            this->audio_system = audio_system;
             this->event_buffer = new EventBufferRing(next_power_of_2(min_event_buffer_size));
 
             this->output_rate = (speaker_t)output_rate;
@@ -66,21 +71,15 @@ class SpeakerFX {
             // make sure we allocate plenty of room for extra samples for catchup in generate.
             working_buffer = new int16_t[min_sample_buffer_size];
         
-            // Initialize SDL audio - is this right, to do this again here?
-            SDL_Init(SDL_INIT_AUDIO);
             
-            SDL_AudioSpec desired = {};
-            //desired.freq = SAMPLE_RATE;
+/*             SDL_AudioSpec desired = {};
             desired.freq = output_rate;
             desired.format = SDL_AUDIO_S16LE;
-            desired.channels = 1;
-        
-            device_id = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
-            if (device_id == 0) {
-                SDL_Log("Couldn't open audio device: %s", SDL_GetError());
-                return;
-            }
+            desired.channels = 1; */
             
+            stream = audio_system->create_stream(output_rate, 1, SDL_AUDIO_S16LE, false);
+            audio_system->pause(); // leave this in here for now - we need to handle this better (pause system startup when starting //e?)
+#if 0
             stream = SDL_CreateAudioStream(&desired, NULL);
             if (!stream) {
                 SDL_Log("Couldn't create audio stream: %s", SDL_GetError());
@@ -90,13 +89,15 @@ class SpeakerFX {
                 return;
             }
         
-            SDL_PauseAudioDevice(device_id);        
+            SDL_PauseAudioDevice(device_id);      // todo  
+#endif
        
         }
 
         ~SpeakerFX() {
-            SDL_DestroyAudioStream(stream);
-            SDL_CloseAudioDevice(device_id);
+            audio_system->destroy_stream(stream);
+            /* SDL_DestroyAudioStream(stream);
+            SDL_CloseAudioDevice(device_id); */
             delete[] working_buffer;
             delete event_buffer;
         }
@@ -119,15 +120,16 @@ class SpeakerFX {
             
             // Start audio playback
         
-            if (!SDL_ResumeAudioDevice(device_id)) {
+            /* if (!SDL_ResumeAudioDevice(device_id)) {
                 std::cerr << "Error resuming audio device: " << SDL_GetError() << std::endl;
-            }
-        
+            } */
+            audio_system->resume();
             device_started = 1;
         }
 
         void stop() {
-            SDL_PauseAudioDevice(device_id);  // 1 means pause
+           /*  SDL_PauseAudioDevice(device_id);  */ // 1 means pause
+            audio_system->pause();
             device_started = 0;
         }
 
@@ -161,7 +163,8 @@ class SpeakerFX {
                             // Stale event: we've jumped forward (e.g. after reset) and this event is in the past. Skip it
                             // so we don't underflow (event_time - last_event_time) or move last_event_time backward.
                             if (event_time <= last_event_time) {
-                                polarity_impulse = (polarity_impulse == 0) ? 1 : 0;
+                                //polarity_impulse = (polarity_impulse == 0) ? 1 : 0;
+                                polarity_impulse = polarity_impulse ^ polarity_flipper;
                                 polarity = (polarity_impulse << FRACTION_BITS);
                                 hold_counter = hold_counter_value;
                                 continue;
@@ -169,7 +172,8 @@ class SpeakerFX {
                             // Claude added to here---
                             rect_remain = (event_time - last_event_time) << FRACTION_BITS;
                             if (last_event_fake == 0) {
-                                polarity_impulse = (polarity_impulse == 0) ? 1 : 0; // if GS, use 2 instead of 1 here.. and apply DC offset of -1 to contrib when we generate the sample.
+                                //polarity_impulse = (polarity_impulse == 0) ? 1 : 0; // if GS, use 2 instead of 1 here.. and apply DC offset of -1 to contrib when we generate the sample.
+                                polarity_impulse = polarity_impulse ^ polarity_flipper;
                                 polarity = ( polarity_impulse << FRACTION_BITS);
                                 hold_counter = hold_counter_value;
                             }
@@ -179,7 +183,8 @@ class SpeakerFX {
                             event_time = frame_next_cycle_start;
                             rect_remain = (event_time - last_event_time) << FRACTION_BITS;
                             if (last_event_fake == 0) {
-                                polarity_impulse = (polarity_impulse == 0) ? 1 : 0; // if GS, use 2 instead of 1 here.. and apply DC offset of -1 to contrib when we generate the sample.
+                                //polarity_impulse = (polarity_impulse == 0) ? 1 : 0; // if GS, use 2 instead of 1 here.. and apply DC offset of -1 to contrib when we generate the sample.
+                                polarity_impulse = polarity_impulse ^ polarity_flipper;
                                 polarity = ( polarity_impulse << FRACTION_BITS);
                                 hold_counter = hold_counter_value;
                             }
@@ -234,11 +239,13 @@ class SpeakerFX {
 
         void prebuffer() {
             int16_t prebuffer[4410] = {0};
-            SDL_PutAudioStreamData(stream, prebuffer, 1470 * sizeof(int16_t)); // 2 frames
+            //SDL_PutAudioStreamData(stream, prebuffer, 1470 * sizeof(int16_t)); // 2 frames
+            audio_system->put_stream_data(stream, prebuffer, 1470 * sizeof(int16_t));
         }
 
         int get_queued_samples() {
-            int samp = SDL_GetAudioStreamAvailable(stream) / sizeof(int16_t);
+            /* int samp = SDL_GetAudioStreamAvailable(stream) / sizeof(int16_t); */
+            int samp = audio_system->get_stream_available(stream) / sizeof(int16_t);
             return samp;
         }
 
@@ -246,7 +253,8 @@ class SpeakerFX {
 
             int samples_generated = generate_samples(working_buffer, num_samples, frame_next_cycle_start);
         
-            SDL_PutAudioStreamData(stream, working_buffer, samples_generated * sizeof(int16_t));
+            /* SDL_PutAudioStreamData(stream, working_buffer, samples_generated * sizeof(int16_t)); */
+            audio_system->put_stream_data(stream, working_buffer, samples_generated * sizeof(int16_t));
             
             return samples_generated;
         }
@@ -292,6 +300,6 @@ class SpeakerFX {
         void fast_forward(uint64_t cycles) {
             last_event_time += cycles;
         }
-        SDL_AudioDeviceID get_device_id() { return device_id; }
+        /* SDL_AudioDeviceID get_device_id() { return device_id; } */
         bool started() { return (device_started == 1); }
 };

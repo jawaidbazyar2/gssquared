@@ -310,6 +310,7 @@ add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp
     src/platforms.cpp
     src/devices.cpp src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
+    src/util/AudioSystem.cpp
     ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns
     )
 

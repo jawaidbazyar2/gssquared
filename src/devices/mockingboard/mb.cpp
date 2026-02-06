@@ -1419,6 +1419,7 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     mb_cpu_data *mb_d = new mb_cpu_data;
     mb_d->computer = computer;
     mb_d->clock = computer->clock;
+    mb_d->audio_system = computer->audio_system;
     mb_d->irq_control = computer->irq_control;
 
     mb_d->id = DEVICE_ID_MOCKINGBOARD;
@@ -1449,7 +1450,7 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
 
 // TODO: create an "audiosystem" module and move this stuff to it like we did videosystem.
     speaker_state_t *speaker_d = (speaker_state_t *)get_module_state(computer->cpu, MODULE_SPEAKER);
-    int dev_id = speaker_d->device_id;
+    //int dev_id = speaker_d->device_id;
 
     mb_d->frame_rate = (double)mb_d->clock->get_c14m_per_second() / (double)mb_d->clock->get_c14m_per_frame();
     mb_d->samples_per_frame = (float)OUTPUT_SAMPLE_RATE_INT / mb_d->frame_rate;
@@ -1457,7 +1458,8 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     mb_d->samples_per_frame_remainder = mb_d->samples_per_frame - mb_d->samples_per_frame_int;
 
     mb_d->c14m_rate = mb_d->clock->get_c14m_per_second();
-
+    mb_d->stream = mb_d->audio_system->create_stream(OUTPUT_SAMPLE_RATE_INT, 2, SDL_AUDIO_F32LE, false);
+#if 0
 /** Init audio stream for the mockingboard device */
     SDL_AudioSpec spec;
     spec.freq = OUTPUT_SAMPLE_RATE_INT;
@@ -1471,6 +1473,7 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
         printf("Failed to bind stream to device: %s", SDL_GetError());
     }
     mb_d->stream = stream;
+#endif
 
     set_slot_state(computer->cpu, slot, mb_d);
     computer->mmu->map_c1cf_page_write_h(0xC0 + slot, { mb_write_Cx00, mb_d }, "MB_IO");
@@ -1495,8 +1498,9 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
         return true;
     });
 
-    computer->register_shutdown_handler([mb_d, dev_id]() {
-        SDL_DestroyAudioStream(mb_d->stream);
+    computer->register_shutdown_handler([mb_d]() {
+        mb_d->audio_system->destroy_stream(mb_d->stream);
+        //SDL_DestroyAudioStream(mb_d->stream);
         delete mb_d;
         return true;
     });

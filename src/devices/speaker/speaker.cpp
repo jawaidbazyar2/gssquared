@@ -130,48 +130,6 @@ void speaker_memory_write(void *context, uint32_t address, uint8_t value) {
     log_speaker_blip((cpu_state *)context);
 }
 
-#if 0
-void speaker_start(cpu_state *cpu) {
-    speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
-    speaker_config_t *sc = speaker_state->sp->config;
-    
-    int x = SDL_GetAudioStreamQueued(speaker_state->stream);
-
-    // Start audio playback
-    // put a frame of blank audio into the buffer to prime the pump.
-    memset(speaker_state->working_buffer, 0, sc->samples_per_frame * sizeof(int16_t));
-    bool ret = SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
-    ret = SDL_PutAudioStreamData(speaker_state->stream, speaker_state->working_buffer, sc->samples_per_frame*sizeof(int16_t));
-
-    x = SDL_GetAudioStreamQueued(speaker_state->stream);
-
-    if (!SDL_ResumeAudioDevice(speaker_state->device_id)) {
-        std::cerr << "Error resuming audio device: " << SDL_GetError() << std::endl;
-    }
-
-    speaker_state->device_started = 1;
-}
-
-void speaker_stop(cpu_state *cpu) {
-    speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
-    speaker_config_t *sc = speaker_state->sp->config;
-    int16_t *working_buffer = speaker_state->working_buffer;
-
-    // Stop audio playback
-    memset(working_buffer, 0, sc->samples_per_frame * sizeof(int16_t));
-    SDL_PutAudioStreamData(speaker_state->stream, working_buffer, sc->samples_per_frame*sizeof(int16_t));
-
-    SDL_PauseAudioDevice(speaker_state->device_id);  // 1 means pause
-    speaker_state->device_started = 0;
-}
-#endif
-
-void speaker_reset(speaker_state_t *speaker_state) {
-    // TODO: What should this do.
-    // should set last_event_time to end of this frame.
-    speaker_state->sp->reset(speaker_state->clock->get_cycles());
-}
-
 DebugFormatter * debug_speaker(speaker_state_t *ds) {
     static uint32_t counter = 0;
     static uint16_t samplecounts[60] = {0};
@@ -205,31 +163,17 @@ DebugFormatter * debug_speaker(speaker_state_t *ds) {
 
 void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 
-	// Initialize SDL audio - is this right, to do this again here?
-	SDL_Init(SDL_INIT_AUDIO);
-    
-    // for info purposes, print out the available devices and their formats.
-    int num_devices = 0;
-    SDL_AudioDeviceID *devices = SDL_GetAudioPlaybackDevices(&num_devices);
-    for (int i = 0; i < num_devices; i++) {
-        SDL_AudioSpec spec;
-        SDL_GetAudioDeviceFormat(devices[i], &spec, NULL);
-        printf("AudioDevice %d: %s %d\n", i, SDL_GetAudioDeviceName(devices[i]), spec.freq);
-
-    }
-    SDL_free(devices);
-
     cpu_state *cpu = computer->cpu;
 
     speaker_state_t *speaker_state = new speaker_state_t;
 
     speaker_state->computer = computer;
     speaker_state->clock = computer->clock;
-
+    speaker_state->audio_system = computer->audio_system;
 
     double frame_rate = (double)speaker_state->clock->get_c14m_per_second() / (double)speaker_state->clock->get_c14m_per_frame();
 
-    speaker_state->sp = new SpeakerFX(speaker_state->clock->get_c14m_per_second(), 44100, 128*1024, 4096);
+    speaker_state->sp = new SpeakerFX(speaker_state->audio_system, speaker_state->clock->get_c14m_per_second(), 44100, 128*1024, 4096);
     speaker_state->event_buffer = speaker_state->sp->event_buffer;
     
     //speaker_state->cpu = cpu;
@@ -237,7 +181,7 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 
     set_module_state(cpu, MODULE_SPEAKER, speaker_state);
 	
-    speaker_state->device_id = speaker_state->sp->get_device_id();
+    //speaker_state->device_id = speaker_state->sp->get_device_id();
 
     printf("frame rate: %f\n", frame_rate);
     speaker_state->frame_rate = frame_rate;

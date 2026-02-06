@@ -24,6 +24,9 @@
 #include "cpu.hpp"
 #include "devices/speaker/speaker.hpp"
 #include "soundeffects.hpp"
+#include "util/AudioSystem.hpp"
+
+
 
 /* things that are playing sound (the audiostream itself, plus the original data, so we can refill to loop. */
 typedef struct SoundEffect {
@@ -75,12 +78,12 @@ static bool load_soundeffect(SDL_AudioDeviceID audio_device, const char *fname, 
 /* This function runs once at startup. */
 bool soundeffects_init(computer_t *computer)
 {
-    speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(computer->cpu, MODULE_SPEAKER);
+    //speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(computer->cpu, MODULE_SPEAKER);
 
     SDL_SetAppMetadata("Example Audio Multiple Streams", "1.0", "com.example.audio-multiple-streams");
 
     for (int i = 0; i < SDL_arraysize(sounds_to_load); i++) {
-        if (!load_soundeffect(speaker_state->device_id, sounds_to_load[i], &soundeffects[i])) {
+        if (!load_soundeffect(computer->audio_system->get_audio_device_id(), sounds_to_load[i], &soundeffects[i])) {
             printf("Failed to load sound effect: %s\n", sounds_to_load[i]);
             return false;
         }
