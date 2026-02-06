@@ -537,14 +537,6 @@ uint8_t c036_read(void *context, uint32_t address) {
 // set speed register
 void c036_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
-    uint8_t current_speed_reg = mmu_iigs->speed_register();
-    if ((current_speed_reg ^ value) & 0x80) {
-        // speed change.
-        /* if (value & 0x80) mmu_iigs->set_clock_mode(CLOCK_2_8MHZ);
-        else mmu_iigs->set_clock_mode(CLOCK_1_024MHZ); */
-        if (value & 0x80) mmu_iigs->set_slow_mode(false);
-        else mmu_iigs->set_slow_mode(true);
-    }
     mmu_iigs->set_speed_register(value);
     mmu_iigs->set_ram_shadow_banks();
 }
@@ -805,7 +797,7 @@ void MMU_IIgs::reset() {
 
     // on RESET, set:
     set_slot_register(0x00);
-    reg_speed = 0x80;
+    set_speed_register(0x80); // so this can set nclock correctly.
     reg_shadow = 0x08;
     set_state_register(0x0C); // KEGS does 0x0D - enable ROM RD, 
     set_intcxrom(g_intcxrom); // this is needed to set the C1-CF map correctly.

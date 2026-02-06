@@ -141,7 +141,11 @@ class MMU_IIgs : public MMU {
         inline bool is_bank_latch() { return g_bank_latch; }
 
         inline void set_shadow_register(uint8_t value) { if (DEBUG(DEBUG_MMUGS)) printf("setting shadow register: %02X\n", value); reg_shadow = value; }
-        inline void set_speed_register(uint8_t value) { if (DEBUG(DEBUG_MMUGS)) printf("setting speed register: %02X\n", value); reg_speed = value; }
+        inline void set_speed_register(uint8_t value) { 
+            if (DEBUG(DEBUG_MMUGS)) printf("setting speed register: %02X\n", value); 
+            reg_speed = value;
+            if (clock) ((NClockIIgs *)clock)->set_slow_mode(value & 0x80 ? false : true);
+        }
         inline void set_state_register(uint8_t value) { 
             if (DEBUG(DEBUG_MMUGS)) printf("setting state register: %02X\n", value); 
             reg_state = value; 
