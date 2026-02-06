@@ -80,7 +80,7 @@ debug_window_t::debug_window_t(computer_t *computer) {
     });
     tab_container->add_tile(s2,1);
 
-    Button_t* s3 = new Button_t("Memory", text_renderer, SS);
+    Button_t* s3 = new Button_t("Watch", text_renderer, SS);
     s3->set_tile_size(70, 22);
     //s3->set_text_renderer(text_renderer); // set text renderer for the button
     s3->set_click_callback([this](const SDL_Event& event) -> bool {
