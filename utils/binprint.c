@@ -1,18 +1,35 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char *argv[]) {
     FILE *fp;
     unsigned char buffer[16];
     size_t bytes_read;
     long offset = 0;
+    int apple_mode = 0;
+    const char *filename = NULL;
 
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
+    // Parse command line arguments
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-a") == 0) {
+            apple_mode = 1;
+        } else if (filename == NULL) {
+            filename = argv[i];
+        } else {
+            fprintf(stderr, "Usage: %s [-a] <filename>\n", argv[0]);
+            fprintf(stderr, "  -a  Strip high bit (mask with 0x7F) for Apple II characters\n");
+            return 1;
+        }
+    }
+
+    if (filename == NULL) {
+        fprintf(stderr, "Usage: %s [-a] <filename>\n", argv[0]);
+        fprintf(stderr, "  -a  Strip high bit (mask with 0x7F) for Apple II characters\n");
         return 1;
     }
 
-    fp = fopen(argv[1], "rb");
+    fp = fopen(filename, "rb");
     if (!fp) {
         perror("Error opening file");
         return 1;
@@ -41,8 +58,12 @@ int main(int argc, char *argv[]) {
 
         // Print ASCII representation
         for (size_t i = 0; i < bytes_read; i++) {
-            if (buffer[i] >= 32 && buffer[i] <= 126) {
-                printf("%c ", buffer[i]);
+            unsigned char c = buffer[i];
+            if (apple_mode) {
+                c &= 0x7F;  // Strip high bit for Apple II characters
+            }
+            if (c >= 32 && c <= 126) {
+                printf("%c ", c);
             } else {
                 printf(". ");
             }
