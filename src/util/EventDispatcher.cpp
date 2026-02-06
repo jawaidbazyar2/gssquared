@@ -5,7 +5,6 @@
 
 #include "EventDispatcher.hpp"
 #include "debug.hpp"
-#include "event_poll.hpp"
 
 void EventDispatcher::registerHandler(Uint32 eventType, EventHandler handler) {
     handlers[eventType].push_back(std::move(handler));

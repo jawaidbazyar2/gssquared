@@ -25,11 +25,9 @@
 
 #include "gs2.hpp"
 #include "Module_ID.hpp"
-#include "device_irq_id.hpp"
 #include "paths.hpp"
 #include "cpu.hpp"
 #include "display/display.hpp"
-#include "event_poll.hpp"
 #include "devices/speaker/speaker.hpp"
 #include "platforms.hpp"
 #include "util/dialog.hpp"

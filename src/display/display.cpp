@@ -27,7 +27,6 @@
 #include "text_40x24.hpp"
 //#include "hgr_280x192.hpp"
 #include "platforms.hpp"
-#include "event_poll.hpp"
 
 #include "util/dialog.hpp"
 
