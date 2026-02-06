@@ -243,21 +243,13 @@ void run_cpus(computer_t *computer) {
         if (computer->speed_shift) {
             display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
             computer->speed_shift = false;
-            /* if (cpu->clock_mode == CLOCK_FREE_RUN) {
-                ds->video_scanner->reset(); // going from ludicrous to regular speed have to reset scanner.
-            } */
-            /* if (cpu->clock_mode == CLOCK_FREE_RUN) {
-                speaker_state_t *ss = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
-                speaker_reset(ss);
-            } */
+
             if (clock->get_clock_mode() == CLOCK_FREE_RUN) {
                 speaker_state_t *ss = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
                 ss->sp->reset(start_frame_c14m);
             }
-            //set_clock_mode(cpu, computer->speed_new);
+
             clock->set_clock_mode(computer->speed_new);
-            
-            //computer->set_clock(&system_clock_mode_info[computer->speed_new]);
             
             display_update_video_scanner(ds, cpu);
             // cpu->video_scanner might be null here.
