@@ -5,7 +5,6 @@
 #include "SDL3/SDL_keycode.h"
 #include "cpu.hpp"
 #include "debugger/trace.hpp"
-#include "platforms.hpp"
 #include "util/TextRenderer.hpp"
 #include "util/HexDecode.hpp"
 #include "computer.hpp"
@@ -16,9 +15,6 @@
 #include "debugger/ExecuteCommand.hpp"
 #include "debugger/MonitorCommand.hpp"
 #include "debugger/disasm.hpp"
-#include "devices/iiememory/iiememory.hpp"
-#include "mmus/mmu_iie.hpp"
-#include "devices/mockingboard/mb.hpp"
 
 debug_window_t::debug_window_t(computer_t *computer) {
     this->computer = computer;
