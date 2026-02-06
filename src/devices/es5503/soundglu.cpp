@@ -200,11 +200,12 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     st->chip->set_wave_memory(st->doc_ram);
     st->computer = computer;
     st->clock = computer->clock;
-    
+    st->irq_control = computer->irq_control;
+
     // Set up IRQ callback to propagate interrupts to CPU
     st->chip->set_irq_callback([st](bool state) {
-        if (st->computer && st->computer->cpu) {
-            set_device_irq(st->computer->cpu, IRQ_ID_SOUNDGLU, state);
+        if (st->irq_control && st->computer && st->computer->cpu) {
+            st->irq_control->set_irq(IRQ_ID_SOUNDGLU, state);
         }
     });
     

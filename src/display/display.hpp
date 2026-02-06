@@ -174,6 +174,7 @@ public:
     MMU_II *mmu;
     computer_t *computer;
     NClockII *clock = nullptr;
+    InterruptController *irq_control = nullptr;
 
     video_scanner_t video_scanner_type = Scanner_AppleII;
     VideoScannerII *video_scanner = nullptr; // if set, use this instead of default video generation.

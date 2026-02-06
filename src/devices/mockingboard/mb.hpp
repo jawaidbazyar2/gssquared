@@ -20,6 +20,7 @@
 #include "gs2.hpp"
 #include "cpu.hpp"
 #include "computer.hpp"
+#include "util/InterruptController.hpp"
 #include "util/DebugFormatter.hpp"
 
 #define MB_6522_DDRA 0x03
@@ -114,6 +115,7 @@ struct mb_cpu_data: public SlotData {
     uint64_t last_cycle;
     uint8_t slot;
     EventTimer *event_timer;
+    InterruptController *irq_control = nullptr;
 
     float samples_accumulated = 0.0f;
     float frame_rate;

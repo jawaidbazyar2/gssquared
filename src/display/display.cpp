@@ -1068,9 +1068,9 @@ void update_vgc_interrupt(display_state_t *ds) {
     ) vgc_asserted = 1;
     ds->f_vgcint_asserted = vgc_asserted;
     if (vgc_asserted) {
-        set_device_irq(ds->computer->cpu, IRQ_ID_VGC, true);
+        ds->irq_control->assert_irq(IRQ_ID_VGC);
     } else {
-        set_device_irq(ds->computer->cpu, IRQ_ID_VGC, false);
+        ds->irq_control->deassert_irq(IRQ_ID_VGC);
     }
 }
 
@@ -1191,6 +1191,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
 
     ds->framebased = false;
     ds->mbus = computer->mbus;
+    ds->irq_control = computer->irq_control;
     ds->video_system = vs;
     ds->event_queue = computer->event_queue;
     ds->computer = computer;

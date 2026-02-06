@@ -10,14 +10,14 @@
 void keygloo_update_interrupt_status(keygloo_state_t *kb_state, KeyGloo *kg ) {
     // TODO: check if mouse interrupt is enabled, and if so, assert it.
     if (kg->interrupt_status()) {
-        set_device_irq(kb_state->computer->cpu, IRQ_ID_KEYGLOO, true);
+        kb_state->irq_control->set_irq(IRQ_ID_KEYGLOO, true);
     } else {
-        set_device_irq(kb_state->computer->cpu, IRQ_ID_KEYGLOO, false);
+        kb_state->irq_control->set_irq(IRQ_ID_KEYGLOO, false);
     }
     if (kg->data_interrupt_status()) {
-        set_device_irq(kb_state->computer->cpu, IRQ_ID_ADB_DATAREG, true);
+        kb_state->irq_control->set_irq(IRQ_ID_ADB_DATAREG, true);
     } else {
-        set_device_irq(kb_state->computer->cpu, IRQ_ID_ADB_DATAREG, false);
+        kb_state->irq_control->set_irq(IRQ_ID_ADB_DATAREG, false);
     }
 }
 
@@ -101,6 +101,7 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
     computer->set_module_state(MODULE_KEYGLOO, kb_state);
 
     kb_state->computer = computer;
+    kb_state->irq_control = computer->irq_control;
     kb_state->mmu = computer->mmu;
     
     KeyGloo *kg = new KeyGloo();

@@ -14,6 +14,8 @@
 #include "mbus/MessageBus.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/applekeys.hpp"
+#include "util/InterruptController.hpp"
+#include "util/DebugHandlerIDs.hpp"
 
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
@@ -26,6 +28,20 @@ computer_t::computer_t(NClockII *clock) {
     }
 
     mbus = new MessageBus();
+
+    // allocate IRQ controller
+    irq_control = new InterruptController();
+    // On update, force change in CPU.
+    irq_control->register_irq_receiver([this](bool irq_asserted) {
+        cpu->irq_asserted = irq_asserted;
+    });
+    register_debug_display_handler(
+        "irq",
+        DH_IRQ, // unique ID for this, need to have in a header.
+        [this]() -> DebugFormatter * {
+            return irq_control->debug_irq();
+        }
+    );
 
     sys_event = new EventDispatcher(); // different queue for "system" events that get processed first.
     dispatch = new EventDispatcher(); // has to be very first thing, devices etc are going to immediately register handlers.
@@ -181,14 +197,6 @@ SlotData *computer_t::get_slot_state_by_id(device_id id) {
 void computer_t::set_slot_state( SlotType_t slot, /* void */ SlotData *state) {
     state->_slot = slot;
     cpu->slot_store[slot] = state;
-}
-
-void computer_t::set_slot_irq(uint8_t slot, bool irq) {
-    if (irq) {
-        cpu->irq_asserted |= (1 << slot);
-    } else {
-        cpu->irq_asserted &= ~(1 << slot);
-    }
 }
 
 // TODO: should live inside a reconstituted clock class.

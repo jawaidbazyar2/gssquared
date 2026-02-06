@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "ensoniq.hpp"
+#include "util/InterruptController.hpp"
 
 class NClockII;
 
@@ -19,6 +20,7 @@ struct ensoniq_state_t {
     float samples_per_frame = 0.0f;
     float samples_accumulated = 0.0f;
     computer_t *computer = nullptr;  // For IRQ handling
+    InterruptController *irq_control = nullptr;
     NClockII *clock = nullptr;
     uint64_t doc_read_complete_time = 0;
 };

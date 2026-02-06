@@ -14,7 +14,7 @@ void mouse_propagate_interrupt(mouse_state_t *ds) {
     bool irq_to_slot = (irqmodes != 0);
 
     //printf("irq_to_slot: %d %d\n", mb_d->slot, irq_to_slot);
-    ds->computer->set_slot_irq(ds->_slot, irq_to_slot);
+    ds->irq_control->set_irq((device_irq_id)ds->_slot, irq_to_slot);
 }
 
 void mouse_reset(mouse_state_t *ds) {
@@ -251,8 +251,10 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     mouse_state_t *ds = new mouse_state_t;
     ds->id = DEVICE_ID_MOUSE;
     ds->computer = computer;
+    ds->irq_control = computer->irq_control;
     ds->clock = computer->clock;
     ds->event_timer = computer->event_timer;
+
     mouse_reset(ds);
     //ds->vbl_cycle = 12480;
     ds->vbl_cycle = (ds->clock->get_cycles_per_scanline() * 192);

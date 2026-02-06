@@ -13,6 +13,7 @@
 #include "util/DebugFormatter.hpp"
 #include "util/Metrics.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
+#include "util/InterruptController.hpp"
 
 class SlotManager_t; // forward declare.
 
@@ -45,6 +46,7 @@ struct computer_t {
     MessageBus *mbus = nullptr;
 
     SlotManager_t *slot_manager = nullptr;
+    InterruptController *irq_control = nullptr;
 
     // handle speed shift requests (between frames)
     bool speed_shift = false;
@@ -105,7 +107,7 @@ struct computer_t {
     SlotData *get_slot_state_by_id(device_id id);
     void set_slot_state( SlotType_t slot, SlotData *state);
 
-    void set_slot_irq( uint8_t slot, bool irq);
+    /* void set_slot_irq( uint8_t slot, bool irq); */
 
     void send_clock_mode_message();
     void frame_status_update();

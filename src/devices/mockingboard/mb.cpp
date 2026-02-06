@@ -928,7 +928,7 @@ void mb_6522_propagate_interrupt(mb_cpu_data *mb_d) {
     }
     bool irq_to_slot = (mb_d->d_6522[0].ifr.value & mb_d->d_6522[0].ier.value & 0x7F) || (mb_d->d_6522[1].ifr.value & mb_d->d_6522[1].ier.value & 0x7F);
     //printf("irq_to_slot: %d %d\n", mb_d->slot, irq_to_slot);
-    mb_d->computer->set_slot_irq(mb_d->slot, irq_to_slot);
+    mb_d->irq_control->set_irq((device_irq_id)mb_d->slot, irq_to_slot);
 }
 
 void mb_t1_timer_callback(uint64_t instanceID, void *user_data) {
@@ -1419,6 +1419,8 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     mb_cpu_data *mb_d = new mb_cpu_data;
     mb_d->computer = computer;
     mb_d->clock = computer->clock;
+    mb_d->irq_control = computer->irq_control;
+
     mb_d->id = DEVICE_ID_MOCKINGBOARD;
     mb_d->mockingboard = new MockingboardEmulator(&mb_d->audio_buffer);
     mb_d->last_cycle = 0;

@@ -69,6 +69,7 @@ struct mouse_state_t: public SlotData {
     computer_t *computer;
     NClock *clock;
     EventTimer *event_timer;
+    InterruptController *irq_control = nullptr;
 
     m_i16 x_pos;
     m_i16 y_pos;

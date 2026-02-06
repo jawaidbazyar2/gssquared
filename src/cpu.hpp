@@ -29,7 +29,6 @@
 #include "Module_ID.hpp"
 #include "cpus/processor_type.hpp"
 #include "cpus/cpu_traits.hpp"
-#include "device_irq_id.hpp"
 
 #define MAX_CPUS 1
 
@@ -257,6 +256,3 @@ void set_module_state(cpu_state *cpu, module_id_t module_id, void *state);
 SlotData *get_slot_state(cpu_state *cpu, SlotType_t slot);
 SlotData *get_slot_state_by_id(cpu_state *cpu, device_id id);
 void set_slot_state(cpu_state *cpu, SlotType_t slot, SlotData *state);
-
-void set_slot_irq(cpu_state *cpu, uint8_t slot, bool irq);
-void set_device_irq(cpu_state *cpu, device_irq_id id, bool irq);
