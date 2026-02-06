@@ -370,7 +370,7 @@ class ADB_Keyboard : public ADB_Device
         ADB_LEFT_SHIFT, // SDL_SCANCODE_LSHIFT = 225,
         ADB_COMMAND, // SDL_SCANCODE_LGUI = 226,
         ADB_OPTION, // SDL_SCANCODE_LALT = 227,
-        0xFF,
+        ADB_CONTROL, // SDL_SCANCODE_RCTRL = 228,
         ADB_LEFT_SHIFT, // SDL_SCANCODE_RSHIFT = 229,
         ADB_COMMAND, // SDL_SCANCODE_RGUI = 230,
         ADB_OPTION, // SDL_SCANCODE_RALT = 231,
@@ -446,7 +446,7 @@ class ADB_Keyboard : public ADB_Device
 
         if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) {
             const char *updown = (event.type == SDL_EVENT_KEY_DOWN) ? "down" : "up";    
-            //printf("02::Key %s: %08X\n", updown, event.key.key);
+            printf("02::Key %s: %08X\n", updown, event.key.key);
             k1_released = 0;
             map_sdl_to_adb_key_enqueue(event);
             status = true;
