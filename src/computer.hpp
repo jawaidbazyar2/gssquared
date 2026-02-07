@@ -15,6 +15,7 @@
 #include "devices/displaypp/VideoScanner.hpp"
 #include "util/InterruptController.hpp"
 #include "util/AudioSystem.hpp"
+#include "util/SoundEffect.hpp"
 
 class SlotManager_t; // forward declare.
 
@@ -60,7 +61,8 @@ struct computer_t {
     debug_window_t *debug_window = nullptr;
 
     AudioSystem *audio_system = nullptr;
-
+    SoundEffect *sound_effect = nullptr;
+    
     EventTimer *event_timer = nullptr;
 
     EventQueue *event_queue = nullptr;

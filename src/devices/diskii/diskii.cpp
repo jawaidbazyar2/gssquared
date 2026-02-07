@@ -158,6 +158,7 @@ In DOS at $B800 lives the "prenibble routine" . I could perhaps steal that. hehe
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
+#include "util/SoundEffectKeys.hpp"
 #include "util/strndup.h"
 #include "cpu.hpp"
 #include "diskii.hpp"
@@ -167,7 +168,7 @@ In DOS at $B800 lives the "prenibble routine" . I could perhaps steal that. hehe
 #include "devices/diskii/diskii_fmt.hpp"
 #include "debug.hpp"
 #include "util/mount.hpp"
-#include "util/soundeffects.hpp"
+#include "util/SoundEffect.hpp"
 
 /* uint8_t diskII_firmware[256] = {
  0xA2,  0x20,  0xA0,  0x00,   0xA2,  0x03,  0x86,  0x3C,   0x8A,  0x0A,  0x24,  0x3C,   0xF0,  0x10,  0x05,  0x3C,  
@@ -330,6 +331,7 @@ void mount_diskII(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descriptor 
     diskII_d->drive[drive].is_mounted = true;
     diskII_d->drive[drive].media_d = media;
     diskII_d->drive[drive].modified = false;
+    diskII_d->sound_effect->play(SE_SHUGART_CLOSE); 
 }
 
 void writeback_diskII_image(cpu_state *cpu, uint8_t slot, uint8_t drive) {
@@ -363,6 +365,8 @@ void unmount_diskII(cpu_state *cpu, uint8_t slot, uint8_t drive) {
     diskII_d->drive[drive].is_mounted = false;
     diskII_d->drive[drive].media_d = nullptr;
     diskII_d->drive[drive].modified = false;
+
+    diskII_d->sound_effect->play(SE_SHUGART_OPEN); // so much easier here.
 }
 
 drive_status_t diskii_status(cpu_state *cpu, uint64_t key) {
@@ -717,6 +721,65 @@ void diskii_reset(diskII_controller *diskII_d) {
     //}
 }
 
+/* This function runs once per frame, and is the heart of the program. */
+void diskii_soundeffects_update(diskII_controller *diskII_d, bool diskii_running, int tracknumber)
+{
+    SoundEffect *sound_effect = diskII_d->sound_effect;
+
+    static bool diskii_running_last = false;
+    static int tracknumber_last = 0;
+
+    //printf("diskii_running: %d, tracknumber: %d / %d\n", diskii_running, tracknumber, tracknumber_last);
+
+    /* If less than a full copy of the audio is queued for playback, put another copy in there.
+        This is overkill, but easy when lots of RAM is cheap. One could be more careful and
+        queue less at a time, as long as the stream doesn't run dry.  */
+
+    /* If sound state changed, reset the stream */
+    if (diskii_running_last && !diskii_running) {
+        diskii_running_last = false;
+        /* Clear the audio stream when transitioning to disabled state */
+        sound_effect->flush(SE_SHUGART_DRIVE);
+//        SDL_FlushAudioStream(soundeffects[SE_SHUGART_DRIVE].stream);
+    }
+    
+    /* Only queue audio data if sound is enabled */
+    static int running_chunknumber = 0;
+    if (diskii_running) {
+        int dl = (int) diskII_d->sounds[SE_SHUGART_DRIVE].si->wav_data_len / 10;
+        if (SDL_GetAudioStreamQueued(diskII_d->sounds[SE_SHUGART_DRIVE].si->stream) < dl) {
+            SDL_PutAudioStreamData(diskII_d->sounds[SE_SHUGART_DRIVE].si->stream, diskII_d->sounds[SE_SHUGART_DRIVE].si->wav_data + dl * running_chunknumber, dl);
+            running_chunknumber++;
+            if (running_chunknumber > 8) {
+                running_chunknumber = 0;
+            }
+        }
+    }
+    // minimum track movement is 2. We're called every 1/60th. That's 735 samples.
+    static int start_track_movement = -1;
+    if (tracknumber >= 0 && (tracknumber_last != tracknumber)) {
+        // if we have a track movement, play the head movement sound
+        // head can move 16.7 / 2.5 tracks per second, about 7.
+        int ind = 200 * 2 * std::abs(start_track_movement-tracknumber);
+
+        int len = ((int) (200 * 2) * std::abs(tracknumber_last-tracknumber));
+        if (ind + len > diskII_d->sounds[SE_SHUGART_HEAD].si->wav_data_len) {
+            len = diskII_d->sounds[SE_SHUGART_HEAD].si->wav_data_len - ind;
+        }
+        sound_effect->play_specific(SE_SHUGART_HEAD, ind, len);
+/*         SDL_PutAudioStreamData(
+            diskII_d->sounds[SE_SHUGART_HEAD].si->stream, 
+            diskII_d->sounds[SE_SHUGART_HEAD].si->wav_data + ind,
+            len
+        ); */
+        if (start_track_movement == -1) start_track_movement = tracknumber_last;
+        tracknumber_last = tracknumber;
+    } else {
+        // if head did not move on this update, reset the start_track_movement
+        start_track_movement = -1;
+    }
+
+}
 
 void init_slot_diskII(computer_t *computer, SlotType_t slot) {
     cpu_state *cpu = computer->cpu;
@@ -785,12 +848,29 @@ void init_slot_diskII(computer_t *computer, SlotType_t slot) {
             return true;
         });
 
+
+    /* Load our sound effects */
+    const char *sound_files[5] = {
+         "sounds/shugart-drive.wav",
+         "sounds/shugart-stop.wav",
+         "sounds/shugart-head.wav",
+         "sounds/shugart-open.wav",
+         "sounds/shugart-close.wav",
+    };
+    
+    SoundEffect *sound_effect = computer->sound_effect;
+    diskII_d->sound_effect = sound_effect;
+    for (int i = 0; i < SDL_arraysize(diskII_d->sounds); i++) {
+        diskII_d->sounds[i].fname = sound_files[i];
+        diskII_d->sounds[i].si = sound_effect->load(sound_files[i], SE_SHUGART_DRIVE + i);
+    }
+
     computer->device_frame_dispatcher->registerHandler(
         [diskII_d,cpu]() {
             //diskii_frame_event(diskII_d, cpu);
             bool diskii_run = any_diskii_motor_on(cpu);
             if (cpu->execution_mode == EXEC_NORMAL) {
-                soundeffects_update(diskii_run, diskii_tracknumber_on(cpu));
+                diskii_soundeffects_update(diskII_d, diskii_run, diskii_tracknumber_on(cpu));
             }
             return true;
         });

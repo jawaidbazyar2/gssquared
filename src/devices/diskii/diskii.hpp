@@ -24,6 +24,7 @@
 #include "devices/diskii/diskii_fmt.hpp"
 #include "util/media.hpp"
 #include "util/mount.hpp"
+#include "util/SoundEffectKeys.hpp"
 
 #define DiskII_Ph0_Off 0x00
 #define DiskII_Ph0_On 0x01
@@ -71,6 +72,8 @@ struct diskII {
 
 struct diskII_controller : public SlotData {
     computer_t *computer;
+    SoundEffect *sound_effect;
+    SoundEffectContainer_t sounds[5];
     NClock *clock;
     diskII drive[2];
     uint8_t drive_select;

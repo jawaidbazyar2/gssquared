@@ -33,6 +33,7 @@ public:
 
     void pause();
     void resume();
+    void flush_stream(SDL_AudioStream *stream) { SDL_FlushAudioStream(stream); }
 
     SDL_AudioDeviceID get_audio_device_id();
 

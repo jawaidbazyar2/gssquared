@@ -1459,21 +1459,6 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
 
     mb_d->c14m_rate = mb_d->clock->get_c14m_per_second();
     mb_d->stream = mb_d->audio_system->create_stream(OUTPUT_SAMPLE_RATE_INT, 2, SDL_AUDIO_F32LE, false);
-#if 0
-/** Init audio stream for the mockingboard device */
-    SDL_AudioSpec spec;
-    spec.freq = OUTPUT_SAMPLE_RATE_INT;
-    spec.format = SDL_AUDIO_F32LE;
-    spec.channels = 2;
-
-    SDL_AudioStream *stream = SDL_CreateAudioStream(&spec, NULL);
-    if (!stream) {
-        printf("Couldn't create audio stream: %s", SDL_GetError());
-    } else if (!SDL_BindAudioStream(dev_id, stream)) {  /* once bound, it'll start playing when there is data available! */
-        printf("Failed to bind stream to device: %s", SDL_GetError());
-    }
-    mb_d->stream = stream;
-#endif
 
     set_slot_state(computer->cpu, slot, mb_d);
     computer->mmu->map_c1cf_page_write_h(0xC0 + slot, { mb_write_Cx00, mb_d }, "MB_IO");

@@ -35,7 +35,6 @@
 #include "ui/OSD.hpp"
 #include "systemconfig.hpp"
 #include "slots.hpp"
-#include "util/soundeffects.hpp"
 #include "videosystem.hpp"
 #include "debugger/debugwindow.hpp"
 #include "computer.hpp"
@@ -49,6 +48,7 @@
 #include "version.h"
 #include "util/Metrics.hpp"
 #include "util/DebugHandlerIDs.hpp"
+#include "util/SoundEffectKeys.hpp"
 
 /**
  * References: 
@@ -113,7 +113,7 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
     if (event) {
         switch (event->getEventType()) {
             case EVENT_PLAY_SOUNDEFFECT:
-                soundeffects_play(event->getEventData());
+                computer->sound_effect->play(event->getEventData());
                 break;
             case EVENT_REFOCUS:
                 computer->video_system->raise();
@@ -129,13 +129,11 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
                     if (data == 1) {
                         // save and unmount.
                         computer->mounts->unmount_media(key, SAVE_AND_UNMOUNT);
-                        osd->event_queue->addEvent(new Event(EVENT_PLAY_SOUNDEFFECT, 0, SE_SHUGART_OPEN));
                     } else if (data == 2) {
                         // save as - need to open file dialog, get new filename, change media filename, then unmount.
                     } else if (data == 3) {
                         // discard
                         computer->mounts->unmount_media(key, DISCARD);
-                        osd->event_queue->addEvent(new Event(EVENT_PLAY_SOUNDEFFECT, 0, SE_SHUGART_OPEN));
                     } else if (data == 4) {
                         // cancel
                         // Do nothing!
@@ -687,8 +685,6 @@ int main(int argc, char *argv[]) {
             computer->slot_manager->register_slot(device, dm.slot);
         }
     }
-
-    bool result = soundeffects_init(computer);
 
     register_clock_debug(computer);
 

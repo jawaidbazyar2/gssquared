@@ -34,9 +34,11 @@
 #include "OSD.hpp"
 #include "display/display.hpp"
 #include "util/mount.hpp"
-#include "util/soundeffects.hpp"
+#include "util/SoundEffect.hpp"
+#include "util/SoundEffectKeys.hpp"
 #include "util/strndup.h"
 #include "ModalContainer.hpp"
+
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
 // comes back later, we know which drive this was for.
@@ -80,7 +82,6 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     dm.slot = data->key >> 8;
     dm.drive = data->key & 0xFF;   
     osd->computer->mounts->mount_media(dm);
-    osd->event_queue->addEvent(new Event(EVENT_PLAY_SOUNDEFFECT, 0, SE_SHUGART_CLOSE));
 }
 
 void diskii_button_click(void *userdata) {
@@ -92,9 +93,7 @@ void diskii_button_click(void *userdata) {
         if (osd->computer->mounts->media_status(data->key).is_modified) {
             osd->show_diskii_modal(data->key, 0);
         } else {
-            //disk_mount_t dm;    
             osd->computer->mounts->unmount_media(data->key, DISCARD);
-            osd->event_queue->addEvent(new Event(EVENT_PLAY_SOUNDEFFECT, 0, SE_SHUGART_OPEN));
         }
         return;
     }

@@ -17,6 +17,7 @@
 #include "util/InterruptController.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/AudioSystem.hpp"
+#include "util/SoundEffect.hpp"
 
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
@@ -45,6 +46,7 @@ computer_t::computer_t(NClockII *clock) {
     );
 
     audio_system = new AudioSystem();
+    sound_effect = new SoundEffect(audio_system);
 
     sys_event = new EventDispatcher(); // different queue for "system" events that get processed first.
     dispatch = new EventDispatcher(); // has to be very first thing, devices etc are going to immediately register handlers.
@@ -96,6 +98,9 @@ computer_t::~computer_t() {
         handler();
     }
     delete cpu;
+    delete sound_effect;
+    delete audio_system;
+    delete irq_control;
     delete video_system;
     delete debug_window;
     delete event_timer;

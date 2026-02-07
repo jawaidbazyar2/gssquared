@@ -90,34 +90,15 @@ class SpeakerFX {
 
             // make sure we allocate plenty of room for extra samples for catchup in generate.
             working_buffer = new int16_t[min_sample_buffer_size];
-        
-            
-/*             SDL_AudioSpec desired = {};
-            desired.freq = output_rate;
-            desired.format = SDL_AUDIO_S16LE;
-            desired.channels = 1; */
-            
+                    
             stream = audio_system->create_stream(output_rate, 1, SDL_AUDIO_S16LE, false);
             audio_system->pause(); // leave this in here for now - we need to handle this better (pause system startup when starting //e?)
-#if 0
-            stream = SDL_CreateAudioStream(&desired, NULL);
-            if (!stream) {
-                SDL_Log("Couldn't create audio stream: %s", SDL_GetError());
-                return;
-            } else if (!SDL_BindAudioStream(device_id, stream)) {  /* once bound, it'll start playing when there is data available! */
-                SDL_Log("Failed to bind speaker stream to device: %s", SDL_GetError());
-                return;
-            }
-        
-            SDL_PauseAudioDevice(device_id);      // todo  
-#endif
-       
+
         }
 
         ~SpeakerFX() {
             audio_system->destroy_stream(stream);
-            /* SDL_DestroyAudioStream(stream);
-            SDL_CloseAudioDevice(device_id); */
+
             delete[] working_buffer;
             delete event_buffer;
         }
@@ -139,10 +120,7 @@ class SpeakerFX {
         void start() {
             
             // Start audio playback
-        
-            /* if (!SDL_ResumeAudioDevice(device_id)) {
-                std::cerr << "Error resuming audio device: " << SDL_GetError() << std::endl;
-            } */
+
             audio_system->resume();
             device_started = 1;
         }
@@ -266,12 +244,10 @@ class SpeakerFX {
 
         void prebuffer() {
             int16_t prebuffer[4410] = {0};
-            //SDL_PutAudioStreamData(stream, prebuffer, 1470 * sizeof(int16_t)); // 2 frames
             audio_system->put_stream_data(stream, prebuffer, 1470 * sizeof(int16_t));
         }
 
         int get_queued_samples() {
-            /* int samp = SDL_GetAudioStreamAvailable(stream) / sizeof(int16_t); */
             int samp = audio_system->get_stream_available(stream) / sizeof(int16_t);
             return samp;
         }
@@ -280,7 +256,6 @@ class SpeakerFX {
 
             int samples_generated = generate_samples(working_buffer, num_samples, frame_next_cycle_start);
         
-            /* SDL_PutAudioStreamData(stream, working_buffer, samples_generated * sizeof(int16_t)); */
             audio_system->put_stream_data(stream, working_buffer, samples_generated * sizeof(int16_t));
             
             return samples_generated;
@@ -327,6 +302,5 @@ class SpeakerFX {
         void fast_forward(uint64_t cycles) {
             last_event_time += cycles;
         }
-        /* SDL_AudioDeviceID get_device_id() { return device_id; } */
         bool started() { return (device_started == 1); }
 };

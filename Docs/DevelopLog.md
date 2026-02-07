@@ -9378,8 +9378,9 @@ a whole nother buffer is a lot of memory.. on the other hand, it doesn't HAVE TO
 Another option is to do the thing MAME suggests, which is to do a partial sound render up to that moment, then change the value.
 separate won't do it, because IT still needs a time -and- a datum. OK, so add datum it is.
 
-This conversation with Claude discussing appropriate volume levels:
+This conversation with Claude and Gemini discussing appropriate volume levels:
 https://claude.ai/chat/8de95786-ec6a-4b71-b528-b1f4846871d2
+https://gemini.google.com/app/a19daa378413cbd7
 
 the output of that controls a LM3340/MC3340, which is an “electronic attenuator”
 the output of that controls an amplifier, and that connects to the headphone jack, speaker.
@@ -9387,3 +9388,15 @@ or rather, the combined audio signals are attenuated. data sheet says attenuatio
 
 My measurements of speaker through the case are a roughly 30dB difference from quiet to loudest levels. So let's call it 2db per level.
 
+## Feb 7, 2026
+
+Let's redo the soundeffect module as a class, and distribute setup. E.g., only DiskII needs to know about the DiskII sounds. Etc.
+
+these refactors are like pulling weeds out that have deep roots. whee! OSD has intimate knowledge of DiskII stuff.
+
+DiskII (and 3.5 and AppleDisk and hard disk) are going to want control of their OSD presentations too, maybe?
+
+There is a HUGE amount of garbage related to playing the open and close disk II sounds.
+Practically speaking, the DiskII code should play those sounds itself, upon a mount or unmount. OSD does the mount/unmount, which finds its way to the DiskII.
+DiskII knows its devices, its sounds, etc. THIS IS THE WAY.
+(This gets rid of a bunch of use of events and rigamarole).
