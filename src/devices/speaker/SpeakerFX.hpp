@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL.h>
 
-#include "devices/speaker/EventBuffer.hpp"
+#include "devices/speaker/NEventBuffer.hpp"
 #include "util/AudioSystem.hpp"
 
 typedef uint64_t speaker_t;
@@ -25,6 +25,26 @@ class SpeakerFX {
         uint64_t last_event = 0;
         //constexpr static speaker_t decay_coeff = (uint64_t)(0.9990f * (1 << FRACTION_BITS));
         constexpr static speaker_t volume_scale = 5120ULL;
+        // Evenly scaled from 0 to 15, with 15 == 5120ULL
+        uint16_t volume = 6;
+        constexpr static uint64_t volume_table[16] = {
+            0,
+            1304,
+            1642,
+            2067,
+            2603,
+            3277,
+            4125,
+            5193,
+            6538,
+            8231,
+            10362,
+            13045,
+            16422,
+            20675,
+            26028,
+            32767,
+        };
         constexpr static uint32_t polarity_flipper = 1;
         speaker_t decay_coeff = static_cast<speaker_t>(0.9990f * (1ULL << FRACTION_BITS));
 
@@ -33,7 +53,7 @@ class SpeakerFX {
         //uint64_t sample_index = 0;
         //uint64_t event_index = 0;
         int16_t *working_buffer;
-        EventBufferBase *event_buffer;
+        EventBufferBase<event_wdata_t> *event_buffer;
 
         double frame_rate;
         speaker_t input_rate = 1020484;
@@ -153,16 +173,23 @@ class SpeakerFX {
             for (uint64_t i = 0; i < num_samples; i++) {
                 sample_remain = cycles_per_sample;
                 speaker_t contrib = 0;
-        
-                uint64_t event_time;
+
+                //uint64_t event_time;
+                event_wdata_t event_time;
                 while (sample_remain > 0) {
+                    uint32_t oldvolume = volume;
+
                     if (rect_remain == 0) { // if there is nothing left in current rect, get next event and calc new rectangle.
                         if (event_buffer->peek_oldest(event_time)) {
+                            if (oldvolume != event_time.data) { // detect volume change and update sample_scale.
+                                volume = (uint16_t)event_time.data;
+                                sample_scale = (volume_table[volume] << (FRACTION_BITS)) / cycles_per_sample;
+                            }
                             event_buffer->pop();
                             // Claude added from here---
                             // Stale event: we've jumped forward (e.g. after reset) and this event is in the past. Skip it
                             // so we don't underflow (event_time - last_event_time) or move last_event_time backward.
-                            if (event_time <= last_event_time) {
+                            if (event_time.cycle <= last_event_time) {
                                 //polarity_impulse = (polarity_impulse == 0) ? 1 : 0;
                                 polarity_impulse = polarity_impulse ^ polarity_flipper;
                                 polarity = (polarity_impulse << FRACTION_BITS);
@@ -170,25 +197,25 @@ class SpeakerFX {
                                 continue;
                             }
                             // Claude added to here---
-                            rect_remain = (event_time - last_event_time) << FRACTION_BITS;
+                            rect_remain = (event_time.cycle - last_event_time) << FRACTION_BITS;
                             if (last_event_fake == 0) {
                                 //polarity_impulse = (polarity_impulse == 0) ? 1 : 0; // if GS, use 2 instead of 1 here.. and apply DC offset of -1 to contrib when we generate the sample.
                                 polarity_impulse = polarity_impulse ^ polarity_flipper;
                                 polarity = ( polarity_impulse << FRACTION_BITS);
                                 hold_counter = hold_counter_value;
                             }
-                            last_event_time = event_time;
+                            last_event_time = event_time.cycle;
                             last_event_fake = 0;
                         } else {
-                            event_time = frame_next_cycle_start;
-                            rect_remain = (event_time - last_event_time) << FRACTION_BITS;
+                            event_time.cycle = frame_next_cycle_start;
+                            rect_remain = (event_time.cycle - last_event_time) << FRACTION_BITS;
                             if (last_event_fake == 0) {
                                 //polarity_impulse = (polarity_impulse == 0) ? 1 : 0; // if GS, use 2 instead of 1 here.. and apply DC offset of -1 to contrib when we generate the sample.
                                 polarity_impulse = polarity_impulse ^ polarity_flipper;
                                 polarity = ( polarity_impulse << FRACTION_BITS);
                                 hold_counter = hold_counter_value;
                             }
-                            last_event_time = event_time;
+                            last_event_time = event_time.cycle;
                             last_event_fake = 1;
                         }
                     }
@@ -218,7 +245,8 @@ class SpeakerFX {
         void configure(uint64_t input_rate) {
             this->input_rate = input_rate;
             cycles_per_sample = (input_rate << FRACTION_BITS) / output_rate;
-            sample_scale = (volume_scale << (FRACTION_BITS)) / cycles_per_sample;
+            //sample_scale = (volume_scale << (FRACTION_BITS)) / cycles_per_sample;
+            sample_scale = (volume_table[volume] << (FRACTION_BITS)) / cycles_per_sample;
             hold_counter_value = (0.030f / (1.0f / output_rate));
         }
         
@@ -278,7 +306,7 @@ class SpeakerFX {
             // skip any long silence, start playback / reconstruction at first event.
         
             while (fscanf(recording, "%llu", &event) != EOF) {
-                if (!event_buffer->add_event(event)) {
+                if (!event_buffer->add_event({event, 6})) {
                     std::cerr << "Error: Event buffer full\n";
                     fclose(recording);
                     return false;

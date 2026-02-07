@@ -9347,9 +9347,43 @@ so the loop in gs2 where we send clock->cycles needs to be clock->get_c14m.
 oh I should get rid of this stuff that tweaks the vbl offset in mouse. that's just hinky
 ok in mouse, there is all this fairly complex stuff. GS2 periodically does set_frame_start_cycle. this sets frame_start_cycle to the current cpu cycles. however, as we know that may not be perfectly synchronized with frames. And the only user is mouse. There is lots of other stuff that wants to know the start and end 14m's of the current frame. step 1: keep current thing but set it with c14m. step 2: put a general frame-start-end counter mechanism into NClock.
 
-ok, the mockingboard math is done in several spots. cycles()+65536 as one example. in my original conception, this is 1.0205.. so, this should just be c14m+(65536*14) ? Yeah. MB is always 1MHz (slot clock) so don't make any adjustments for cpu speed.
+ok, the mockingboard math is done in several spots. cycles()+65536 as one example. in my original conception, this is 1.0205.. so, this should just be c14m+(65536*14) ? Yeah. MB is always 1MHz (slot clock) so don't make any adjustments for cpu speed. and no need to make any changes for video timing.
 ok, super scary! The MB code is complex. Will it works? What's the over/under?
 
-skyfox hangs when running in 2.8mode. presumably an interrupt doesn't come back when it thinks it should. that means it would likely fail on a //e with a ZipChip too. 
+skyfox hangs when running in 2.8mode. presumably an interrupt doesn't come back when it thinks it should. that means it would likely fail on a //e with a ZipChip too. (yes, someone else has seen this behavior). Mockingboard demo also crashes during high speed, and in fact it leaves interrupts on while trying to read from the disk. That's not good..
 
-so far so good! The MB and Mouse vbl/interrupts seem to be working ok. It's actually cool in Ultima IV, the game can run fast but the music stays at the same tempo. 
+so far so good! The MB and Mouse vbl/interrupts seem to be working ok. It's actually cool in Ultima IV, the game can run fast but the music stays at the same tempo.
+
+So, NClock tracking frames. I think this is as simple as clock->next_frame() to adjust the pointers; and then some getters. nclock already knows the c14_per_frame. 
+
+looking at the map caps->control bug. SDL is giving us a right control. Weird. I didn't have that mapped. But this brings up the point, if ADB does not have a way to distinguish between right control and left control, then I need to track whether either right or left is pressed and make sure we're doing the right thing there. if you press lctrl and hold while pressing rctrl, code will get two "control key down". when you release, you'll get two control key up events. control will be deemed to have been released even though one is still being pressed.
+
+Ahh, changing volume. It's C03C[3-0]. I had previously contemplated an AudioSystem abstraction similar to videosystem, to "hide" the SDL stuff a bit. But I need a way to have a volume control concept, some place to store it, and, some way to get it over to Speaker. Now. Speaker doesn't need to know it directly, if it shoves its audio to AudioSystem and audiosystem can manage the streams all in one place.
+
+SpeakerFX has this:
+            SDL_PauseAudioDevice(device_id);        
+this halts the DEVICE, not the stream. I wonder if that is what is causing our blurpy burps at startup. Come back to this once we're done setting up the AudioSystem.
+right now I'm returning SDL_AudioStream *, but honestly, this should return a streamr pointer.
+
+Currently, SpeakerFX is directly calling SDL. It feels like it ought to be speaker.cpp that calls SDL, and that SpeakerFX should be more generic. For the moment, keep it as it is, but, let's probably pull that down into speaker. Then only speaker needs to know about AudioSystem.
+well so far so good on this..
+
+ok, so it's NOT good enough to change the volume on a frame by frame basis. We need to change it on a sample by sample basis. Whoo doggie.
+Lunch, then real work.. it sort of works but then there is a glitch as the last of the beep goes back to "normal" not faded volume, it plays the entire frame's worth of data.
+Yeah, we're going to have to log the 14m of the volume change and new volume, and only apply it at that time. Then the question is do we have a separate event queue for those? or somehow bake it into the current event queue? And, do we want to disable it (have a template) when it's on a platform that doesn't have volume control?
+
+ok, in the SpeakerFX code - volume_scale is a constant 5120ULL. sample_scale is derived from this by bit-shift. So what we want to do, to change volume, is convert the 16-level volume to a new volume_scale/sample_scale.
+Currently, events are just the event time. But when an event is posted, can we record the volume at that moment? That seems reasonable.. how much will that hurt..
+a whole nother buffer is a lot of memory.. on the other hand, it doesn't HAVE TO be a lot of memory. I could allocate a buffer of small size, like 1024. it is also possible to change the data type to include both the time stamp and an "additional data field", then we just record the volume in it.
+Another option is to do the thing MAME suggests, which is to do a partial sound render up to that moment, then change the value.
+separate won't do it, because IT still needs a time -and- a datum. OK, so add datum it is.
+
+This conversation with Claude discussing appropriate volume levels:
+https://claude.ai/chat/8de95786-ec6a-4b71-b528-b1f4846871d2
+
+the output of that controls a LM3340/MC3340, which is an “electronic attenuator”
+the output of that controls an amplifier, and that connects to the headphone jack, speaker.
+or rather, the combined audio signals are attenuated. data sheet says attenuation is linear-by-dB.
+
+My measurements of speaker through the case are a roughly 30dB difference from quiet to loudest levels. So let's call it 2db per level.
+

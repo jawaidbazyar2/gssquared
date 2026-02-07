@@ -96,7 +96,7 @@ void ensoniq_write_C0xx(void *context, uint32_t address, uint8_t data) {
         case 0xC03C:  // Sound Control
             st->soundctl = data;
             // TODO: handle volume changes here.
-            st->audio_system->set_volume((data & 0x0F) / 15.0f);
+            st->audio_system->set_volume(data & 0x0F);
             break;
             
         case 0xC03D: { // Sound Data

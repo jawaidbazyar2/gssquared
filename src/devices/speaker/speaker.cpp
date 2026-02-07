@@ -112,7 +112,7 @@ uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end
 inline void log_speaker_blip(cpu_state *cpu) {
     speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
 
-    speaker_state->sp->event_buffer->add_event(speaker_state->clock->get_c14m());
+    speaker_state->sp->event_buffer->add_event({speaker_state->clock->get_c14m(), (uint64_t)(speaker_state->audio_system->get_volume())});
 
     if (speaker_state->speaker_recording) {
         fprintf(speaker_state->speaker_recording, "%llu\n", speaker_state->clock->get_cycles());

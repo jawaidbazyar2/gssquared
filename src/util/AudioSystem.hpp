@@ -19,6 +19,7 @@ private:
     // List to track allocated audio streams
     std::vector<audio_stream_t> allocated_streams;
     SDL_AudioDeviceID device_id;
+    uint16_t volume_setting = 6;
     float gain = 1.0f;
     
 public:
@@ -40,10 +41,11 @@ public:
     inline bool put_stream_data(SDL_AudioStream *stream, const void *data, uint32_t len) {
         return SDL_PutAudioStreamData(stream, data, len);
     }
-    void set_volume(float volume); // Apply volume to all streams marked "apply_volume=true"
-    float get_volume();
+    void set_volume(uint16_t volume); // Apply volume to all streams marked "apply_volume=true"
+    inline float get_gain() { return gain; }
+    inline uint16_t get_volume() { return volume_setting; }
 
-/*     void set_mute(bool mute); // TODO: leave here for ideas.
+    /*     void set_mute(bool mute); // TODO: leave here for ideas.
     bool get_mute();
     void set_balance(float balance);
     float get_balance();

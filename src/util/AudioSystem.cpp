@@ -22,6 +22,8 @@ AudioSystem::AudioSystem() {
         SDL_Log("Couldn't open audio device: %s", SDL_GetError());
         return;
     }
+
+    gain = 1.0f * 6.0f / 16.0f;
     
 }
 
@@ -104,17 +106,12 @@ void AudioSystem::resume() {
     SDL_ResumeAudioDevice(device_id);
 }
 
-void AudioSystem::set_volume(float volume) {
-    if (volume < 0.0f) volume = 0.0f;
-    if (volume > 1.0f) volume = 1.0f;
-    gain = volume * 100.0f;
+void AudioSystem::set_volume(uint16_t volume) {
+    if (volume > 15) volume = 15;
+    gain = (float)volume / 16.0f;
     for (auto &streamr : allocated_streams) {
         if (streamr.apply_volume) {
-            SDL_SetAudioStreamGain(streamr.stream, volume);
+            SDL_SetAudioStreamGain(streamr.stream, gain);
         }
     }
-}
-
-float AudioSystem::get_volume() {
-    return (gain / 100.0f);
 }

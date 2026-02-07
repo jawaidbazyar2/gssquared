@@ -20,7 +20,7 @@
 #include "cpu.hpp"
 //#include "slots.hpp"
 #include "LowPass.hpp"
-#include "EventBuffer.hpp"
+#include "NEventBuffer.hpp"
 #include "SpeakerFX.hpp"
 
 #include "computer.hpp"
@@ -101,7 +101,7 @@ typedef struct speaker_state_t {
     LowPassFilter *postFilter;
 
     int16_t *working_buffer;
-    EventBufferBase *event_buffer;
+    EventBufferBase<event_wdata_t> *event_buffer;
     SpeakerFX *sp;
     computer_t *computer;
     NClock *clock;
