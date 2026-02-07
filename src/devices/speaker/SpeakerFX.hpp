@@ -177,11 +177,10 @@ class SpeakerFX {
                 //uint64_t event_time;
                 event_wdata_t event_time;
                 while (sample_remain > 0) {
-                    uint32_t oldvolume = volume;
 
                     if (rect_remain == 0) { // if there is nothing left in current rect, get next event and calc new rectangle.
                         if (event_buffer->peek_oldest(event_time)) {
-                            if (oldvolume != event_time.data) { // detect volume change and update sample_scale.
+                            if (volume != (uint16_t)event_time.data) { // detect volume change and update sample_scale.
                                 volume = (uint16_t)event_time.data;
                                 sample_scale = (volume_table[volume] << (FRACTION_BITS)) / cycles_per_sample;
                             }
