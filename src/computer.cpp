@@ -239,7 +239,7 @@ void computer_t::frame_status_update() {
         cpu->e_mhz = 1000 * (double)delta / ((double)(this_frame_end_time - last_5sec_update));
 
         status_count++;
-        if (status_count == 5) {
+        if (status_count == 2) {
             last_5sec_cycles = clock->get_cycles();
             last_5sec_update = this_frame_end_time;
     
