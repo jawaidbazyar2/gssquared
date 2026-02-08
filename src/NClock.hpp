@@ -59,23 +59,25 @@ protected:
         uint64_t c14M_per_frame;            // either 238944 (US) or 284544 (PAL)
         uint64_t us_per_frame_even;         // microseconds per frame for even frames
         uint64_t us_per_frame_odd;          // microseconds per frame for odd frames
+        uint64_t vid_cycles_per_frame;      // number of video cycles per frame.
+        uint64_t vid_cycles_per_second;     // number of video cycles per second.
 
     } clock_mode_info_t;
 
     clock_mode_info_t us_clock_mode_info[NUM_CLOCK_MODES] = {
-        { 14'318'180, 14318180, 238420, 1, 0, 912, 238944, 16688154, 16688155 }, // cycle times here are fake.
-        { 1'020'484, 14318180, 17030, 14, 2, 65, 238944, 16688154, 16688155  },
-        { 2'857'370, 14318180,  47684, 5, 2, 182, 238944, 16688154, 16688155 },
-        { 7'143'390, 14318180, 119210, 2, 2, 455, 238944, 16688154, 16688155 },
-        { 14'286'780, 14318180, 238420, 1, 2, 912, 238944, 16688154, 16688155 }
+        { 14'318'180, 14318180, 238420, 1, 0, 912, 238944, 16688154, 16688155, 17030, 1020484 }, // cycle times here are fake.
+        { 1'020'484, 14318180, 17030, 14, 2, 65, 238944, 16688154, 16688155, 17030, 1020484 },
+        { 2'857'370, 14318180,  47684, 5, 2, 182, 238944, 16688154, 16688155, 17030, 1020484 },
+        { 7'143'390, 14318180, 119210, 2, 2, 455, 238944, 16688154, 16688155, 17030, 1020484 },
+        { 14'286'780, 14318180, 238420, 1, 2, 912, 238944, 16688154, 16688155, 17030, 1020484 }
     };
     
     clock_mode_info_t pal_clock_mode_info[NUM_CLOCK_MODES] = {
-        { 14'250'450, 14250450, 283920, 1, 0, 912, 284544, 19967369, 19967370 }, // cycle times here are fake.
-        { 1'015'657, 14250450,  20280, 14, 2, 65, 284544, 19967369, 19967370  },
-        { 2'857'370, 14250450,  56784, 5, 2, 182, 284544, 19967369, 19967370 },
-        { 7'143'390,14250450,  141960, 2, 2, 455, 284544, 19967369, 19967370 },
-        { 14'250'450, 14250450, 283920, 1, 2, 910, 284544, 19967369, 19967370 }
+        { 14'250'450, 14250450, 283920, 1, 0, 912, 284544, 19967369, 19967370, 20280, 1015657 }, // cycle times here are fake.
+        { 1'015'657, 14250450,  20280, 14, 2, 65, 284544, 19967369, 19967370, 20280, 1015657 },
+        { 2'857'370, 14250450,  56784, 5, 2, 182, 284544, 19967369, 19967370, 20280, 1015657 },
+        { 7'143'390,14250450,  141960, 2, 2, 455, 284544, 19967369, 19967370, 20280, 1015657 },
+        { 14'250'450, 14250450, 283920, 1, 2, 910, 284544, 19967369, 19967370, 20280, 1015657 }
         //     { 14'250'450,14250450,  284232, 1, 0, 912, 284544, 19967369, 19967370, 14'219'199 } // it was this which didn't work..
     };
     const char *clock_mode_names[NUM_CLOCK_MODES] = {
@@ -102,6 +104,7 @@ protected:
     // don't let anyone else touch these.
     uint64_t cycles;                // CPU cycle count
     uint64_t c_14M = 0;             // 14MHz cycles count
+    uint64_t video_cycles = 0;      // video cycle count
 
     // tight integration aka cross-dependency here.
     uint64_t video_cycle_14M_count = 0;  // 14MHz cycles since last video cycle
@@ -116,12 +119,14 @@ public:
         set_clock_mode(clock_mode);
         cycles = 0;
         c_14M = 0;
+        video_cycles = 0;
         video_cycle_14M_count = 0;
         scanline_14M_count = 0;
     }
 
     inline uint64_t get_cycles() { return cycles; } // this should make accessing cycles fast still.
     inline uint64_t get_c14m() { return c_14M; }
+    inline uint64_t get_vid_cycles() { return video_cycles; }
     inline uint64_t get_hz_rate() { return current.hz_rate; }
     inline uint64_t get_c14m_per_cpu_cycle() { return current.c_14M_per_cpu_cycle; }
     inline uint64_t get_c14m_per_second() { return current.c14M_per_second; }
@@ -136,6 +141,8 @@ public:
     inline uint64_t get_scanline_14M_count() { return scanline_14M_count; }
     inline uint64_t get_cycles_per_scanline() { return current.cycles_per_scanline; }
     inline uint64_t get_cycles_per_frame() { return current.cycles_per_frame; }
+    inline uint64_t get_vid_cycles_per_frame() { return current.vid_cycles_per_frame; }
+    inline uint64_t get_vid_cycles_per_second() { return current.vid_cycles_per_second; }
     inline VideoScannerII *get_video_scanner() { return video_scanner; }
     inline void adjust_c14m(uint64_t amount) { c_14M += amount; }
 
@@ -203,6 +210,7 @@ class NClockII : public NClock {
             if (video_cycle_14M_count >= 14) {
                 video_cycle_14M_count -= 14;
                 video_scanner->video_cycle();
+                video_cycles++;
             }
             if (scanline_14M_count >= 910) {  // end of scanline
                 c_14M += current.extra_per_scanline;
@@ -280,6 +288,7 @@ protected:
                 // Do-video-cycle here
                 
                 video_scanner->video_cycle();
+                video_cycles++;
                 
                 vidlinecycles++;
             }

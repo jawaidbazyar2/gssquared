@@ -55,6 +55,7 @@ computer_t::computer_t(NClockII *clock) {
     cpu = new cpu_state(PROCESSOR_6502); // default to 6502, then we will override later.
 
     event_timer = new EventTimer(clock); // TODO: clock needs to be set before here?
+    vid_event_timer = new EventTimer(clock); 
 
     slot_manager = new SlotManager_t();
     mounts = new Mounts(cpu, slot_manager);

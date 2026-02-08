@@ -189,6 +189,10 @@ DebugFormatter *debug_clock(computer_t *computer) {
     DebugFormatter *f = new DebugFormatter();
     f->addLine("CPU Expected Rate: %d", computer->clock->get_hz_rate());
     f->addLine("CPU eMHZ: %12.8f, FPS: %12.8f", computer->cpu->e_mhz, computer->cpu->fps);
+    f->addLine("CPU Cycle: %12llu", computer->clock->get_cycles());
+    f->addLine("Vid Cycle: %12llu", computer->clock->get_vid_cycles());
+    f->addLine("14M Cycle: %12llu", computer->clock->get_c14m());
+
     return f;
 }
 
@@ -264,6 +268,9 @@ void run_cpus(computer_t *computer) {
                 if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                     computer->event_timer->processEvents(clock->get_c14m());
                 }
+                if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
+                    computer->vid_event_timer->processEvents(clock->get_vid_cycles());
+                }
                 (cpu->cpun->execute_next)(cpu);
                 cpu->instructions_left--;
             }
@@ -311,7 +318,9 @@ void run_cpus(computer_t *computer) {
                     if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                         computer->event_timer->processEvents(clock->get_c14m());
                     }
-
+                    if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
+                        computer->vid_event_timer->processEvents(clock->get_vid_cycles());
+                    }
                     // do the pre check.
                     if (computer->debug_window->check_pre_breakpoint(cpu)) {
                         cpu->execution_mode = EXEC_STEP_INTO;
@@ -338,6 +347,9 @@ void run_cpus(computer_t *computer) {
                 while (clock->get_c14m() < end_frame_c14M) { // 1/60th second.
                     if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                         computer->event_timer->processEvents(clock->get_c14m());
+                    }
+                    if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
+                        computer->vid_event_timer->processEvents(clock->get_vid_cycles());
                     }
                     (cpu->cpun->execute_next)(cpu);
                 }
@@ -411,6 +423,9 @@ void run_cpus(computer_t *computer) {
                     if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                         computer->event_timer->processEvents(clock->get_c14m());
                     }
+                    if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
+                        computer->vid_event_timer->processEvents(clock->get_vid_cycles());
+                    }
                     if (computer->debug_window->check_pre_breakpoint(cpu)) {
                         cpu->execution_mode = EXEC_STEP_INTO;
                         cpu->instructions_left = 0;
@@ -435,6 +450,9 @@ void run_cpus(computer_t *computer) {
                 while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
                     if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                         computer->event_timer->processEvents(clock->get_c14m());
+                    }
+                    if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
+                        computer->vid_event_timer->processEvents(clock->get_vid_cycles());
                     }
                     (cpu->cpun->execute_next)(cpu);
                 }
@@ -698,8 +716,6 @@ int main(int argc, char *argv[]) {
         computer->mounts->mount_media(disk_mount);
     }
 
-    // TODO: this shouldn't go here, this should be in videosystem.
-    //video_system_t *vs = computer->video_system;
     osd = new OSD(computer, computer->cpu, vs->renderer, vs->window, computer->slot_manager, 1120, 768, aa);
     osd->set_clock(computer->clock);
 

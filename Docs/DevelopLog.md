@@ -9394,9 +9394,63 @@ Let's redo the soundeffect module as a class, and distribute setup. E.g., only D
 
 these refactors are like pulling weeds out that have deep roots. whee! OSD has intimate knowledge of DiskII stuff.
 
-DiskII (and 3.5 and AppleDisk and hard disk) are going to want control of their OSD presentations too, maybe?
-
+DiskII (and 3.5 and AppleDisk and hard disk) are going to want control of their OSD presentations too, maybe? Will be a lot easier for OSD to just request from Mount "hey, show this disk's image here: x,y" and then the drive's object will handle that (through a callback). This will imply having all "storage devices" have a common base class structure, so the "callback" can be simplified. For the GS IWM stuff, we're going to need to further refactor DiskII to: use different sounds and graphics, and, driven from a somewhat different "glue" layer anyway.
 There is a HUGE amount of garbage related to playing the open and close disk II sounds.
 Practically speaking, the DiskII code should play those sounds itself, upon a mount or unmount. OSD does the mount/unmount, which finds its way to the DiskII.
 DiskII knows its devices, its sounds, etc. THIS IS THE WAY.
 (This gets rid of a bunch of use of events and rigamarole).
+Done, YAY.
+
+I am not super-happy with the way the soundeffect code iterates through an array to find the matching soundeffect by ID.
+
+I am still liking my idea of when we power on a machine, have the amazing color Apple Logo right there in the screen for 15 frames and then fading out or something. Just a reminder.
+
+Alright, let's get back to serial stuff already.
+
+## Feb 8, 2026
+
+Feeling cute, discovered a bug in the ensoniq handling. Short version: we weren't tracking when the ensoniq was properly busy or not. The very basic routine worked, but, noisetracker was looping on "wait until ensoniq isn't busy" and that itself wasn't updating the transaction state. So now all reads will update transact state. But also, we were allowing caller to overwrite busy flag on STA C03C, which I can't imagine was right, so now bit C03C[7] is treated as readonly. 
+
+That got noisetracker further along, and started playing some music!
+
+But it is crashing into a BRK, after this sequence:
+```
+01/1047: LDA #$30
+  ORA E1C068
+  STA E1C068
+  ORA [A9],Y <- start of garbage
+  BRK 
+```
+#$30 turns on RAMRD and RAMWRT. BUT this code is already running in bank 1. What I see is that the contents of bank 1/1050 are the same as bank *2*/1050. So we are inappropriately adding the RAMRD/RAMWRT + $1'0000 adjustment even when we're writing into the odd bank.
+
+Let's review my tests here.. added one for this case. Still passes the others. Hope it's right! Only documentation I have discusses the E0/E1 behavior, not 0/1.
+
+looking at issue #94. I think I introduced a bug in counter / timer stuff switching to 14M. I used to use cpu cycles. I now use 14M's. However! I am treating these somewhat inconsistently.
+1. I don't convert back to cpu cycles for display (and probably some other related issues)
+1. with just a *14 I am not accounting for stretch cycles.
+1. what we -really- want to be tracking here for the counters, is *video* cycles - i.e. cycles that operate at real 1mhz
+
+Which means: I need a different event queue that operates on video cycles. Also need to count video cycles separately from cpu cycles.
+Thinking about this a bit: I don't think there is a way to combine these. The current EventTimer code seems like it ought to be relatively efficient, however, it really probably isn't.. 
+
+1. implement 2nd queue. test LS results. 268.8 eMHz. So it's 1% slower.
+1. reimplement queue structure per below, test LS results.
+
+Maintain a sorted array like so:
+
+array of 256 or however many seems appropriate, each element is:
+[ time index, instance ID, callback, callback data ]
+we keep it sorted, so when we insert a new index, we move elements "down" to make room.
+when we delete, we move elements "up".
+We do these operations relatively infrequently - the thing we do non-stop is check the front to see if it's time. So that needs to be hyper-efficient.
+
+Now we should give some consideration to where we want to check these. currently we check every instruction. We -could- put the checks into NClock which would let us check both at the end of CPU cycles and also after every video cycle. And the queues are then owned by NClock, which devices already have, rather than the sort of weird place they are in right now in gs2...
+
+Nap and other work, then come back to this.
+
+ok, so far so good. Got MB switched over to eventuate on video cycles. mockingboard1 still crashes when at accelerated speed. I suppose we could have it be optional, mockingboard clocked with CPU, or with video/slot bus. Would have to be a boot time option. I think as it is is fine, it's more accurate to a real machine. Like I noted above, the MB program would crash in a real accelerated computer, and Ultima works fine.
+
+[x] opps, I'm going to have to tweak the video clock to return the correct numbers in PAL mode.
+
+Testing the Apple II MegaDemo, the mockingboard works both better and worse. I have the beatbox stuff clearly, but there is no melody volume at all. let's reboot for fun. crazy amount of "event timestamp in the past", probably why.
+

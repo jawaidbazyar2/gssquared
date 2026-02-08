@@ -64,6 +64,7 @@ struct computer_t {
     SoundEffect *sound_effect = nullptr;
     
     EventTimer *event_timer = nullptr;
+    EventTimer *vid_event_timer = nullptr;
 
     EventQueue *event_queue = nullptr;
 

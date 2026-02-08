@@ -953,7 +953,7 @@ void mb_t1_timer_callback(uint64_t instanceID, void *user_data) {
             next_counter = 65536;
         }
         tc->t1_triggered_cycles += next_counter; // TODO: testing.
-        mb_d->event_timer->scheduleEvent(mb_d->clock->get_c14m() + (next_counter * 14), mb_t1_timer_callback, instanceID , mb_d);
+        mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + next_counter, mb_t1_timer_callback, instanceID , mb_d);
     } else {         // one-shot mode
         // if a T1 oneshot was pending, set interrupt status.
         if (tc->t1_oneshot_pending) {
@@ -988,7 +988,7 @@ void mb_t2_timer_callback(uint64_t instanceID, void *user_data) {
             counter = 65536;
         }
         
-        mb_d->event_timer->scheduleEvent(mb_d->clock->get_c14m() + (counter * 14), mb_t2_timer_callback, instanceID , mb_d);
+        mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + counter, mb_t2_timer_callback, instanceID , mb_d);
     }
     if (1) { // one-shot mode
         // TODO: "after timing out, the counter will continue to decrement."
@@ -1011,7 +1011,7 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
     if (DEBUG(DEBUG_MOCKINGBOARD)) printf("mb_write_Cx00: %02d %d %02x %02x\n", slot, chip, alow, data);
     mb_6522_regs *tc = &mb_d->d_6522[chip]; // which 6522 chip this is.
     //uint64_t cpu_cycles = mb_d->clock->get_cycles();
-    uint64_t cpu_14m_cycles = mb_d->clock->get_c14m();
+    uint64_t vid_cycles = mb_d->clock->get_vid_cycles();
 
     switch (alow) {
 
@@ -1033,7 +1033,7 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
                 for (int i = 0; i < 16; i++) {
                     // TODO: is there a better way to get this?
                     //double time = cpu_cycles / 1020500.0;
-                    double time = (double)cpu_14m_cycles / mb_d->c14m_rate;
+                    double time = (double)vid_cycles / mb_d->vid_cycles_rate;
                     mb_d->mockingboard->queueRegisterChange(time, chip, i, 0);
                 }
             } else if ((data & 0b111) == 7) { // this is the register number.
@@ -1042,7 +1042,7 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             } else if ((data & 0b111) == 6) { // write to the specified register
                 // TODO: need to mask with ddrb
                 //double time = cpu_cycles / 1020500.0;
-                double time = (double)cpu_14m_cycles / mb_d->c14m_rate;
+                double time = (double)vid_cycles / mb_d->vid_cycles_rate;
                 mb_d->mockingboard->queueRegisterChange(time, chip, tc->reg_num, tc->ora);
                 if (DEBUG(DEBUG_MOCKINGBOARD)) printf("queueRegisterChange: [%lf] chip: %d reg: %02x val: %02x\n", time, chip, tc->reg_num, tc->ora);
             } else if ((data & 0b111) == 5) { // read from the specified register
@@ -1079,7 +1079,7 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             tc->t1_counter = tc->t1_latch /* ? tc->t1_latch : 65535 */;
             uint32_t next_counter = tc->t1_counter ? tc->t1_counter : 65536;
             
-            tc->t1_triggered_cycles = cpu_14m_cycles + ((next_counter+1) * 14); // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
+            tc->t1_triggered_cycles = vid_cycles + next_counter+1; // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
             tc->t1_oneshot_pending = 1;
             //if (tc->ier.bits.timer1) {
                 mb_d->event_timer->scheduleEvent(tc->t1_triggered_cycles, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);
@@ -1098,10 +1098,10 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             uint32_t next_counter2 = tc->t2_counter ? tc->t2_counter : 65536;
             tc->ifr.bits.timer2 = 0;
             mb_6522_propagate_interrupt(mb_d);
-            tc->t2_triggered_cycles = cpu_14m_cycles;
+            tc->t2_triggered_cycles = vid_cycles;
             tc->t2_oneshot_pending = 1;
             //if (tc->ier.bits.timer2) {
-                mb_d->event_timer->scheduleEvent(cpu_14m_cycles + (next_counter2 * 14), mb_t2_timer_callback, 0x10010000 | (slot << 8) | chip , mb_d);
+                mb_d->event_timer->scheduleEvent(vid_cycles + next_counter2, mb_t2_timer_callback, 0x10010000 | (slot << 8) | chip , mb_d);
             /* } else {
                 mb_d->event_timer->cancelEvents(0x10010000 | (slot << 8) | chip);
             } */
@@ -1143,23 +1143,23 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
                     mb_d->event_timer->cancelEvents(instanceID);
                 } else */ 
                 // if we set the counter/latch BEFORE we enable interrupts.
-                uint64_t cycle_base = tc->t1_triggered_cycles == 0 ? mb_d->clock->get_c14m() : tc->t1_triggered_cycles;
+                uint64_t cycle_base = tc->t1_triggered_cycles == 0 ? mb_d->clock->get_vid_cycles() : tc->t1_triggered_cycles;
                 uint32_t counter = tc->t1_counter;
                 if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
                     counter = 65536;
                 }
-                mb_d->event_timer->scheduleEvent(cycle_base + (counter * 14), mb_t1_timer_callback, instanceID , mb_d);
+                mb_d->event_timer->scheduleEvent(cycle_base + counter, mb_t1_timer_callback, instanceID , mb_d);
                                 
                 instanceID = 0x10010000 | (slot << 8) | chip;
                 /* if (!tc->ier.bits.timer2) {
                     mb_d->event_timer->cancelEvents(instanceID);
                 } else */ { // if we set the counter/latch BEFORE we enable interrupts.
-                    uint64_t cycle_base = tc->t2_triggered_cycles == 0 ? mb_d->clock->get_c14m() : tc->t2_triggered_cycles;
+                    uint64_t cycle_base = tc->t2_triggered_cycles == 0 ? mb_d->clock->get_vid_cycles() : tc->t2_triggered_cycles;
                     uint32_t counter = tc->t2_counter;
                     if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
                         counter = 65536;
                     }
-                    mb_d->event_timer->scheduleEvent(cycle_base + (counter * 14), mb_t2_timer_callback, instanceID , mb_d);
+                    mb_d->event_timer->scheduleEvent(cycle_base + counter, mb_t2_timer_callback, instanceID , mb_d);
                 }
             }
             break;
@@ -1240,7 +1240,7 @@ uint8_t mb_read_Cx00(void *context, uint32_t addr) {
         case MB_6522_T1C_L:  {  // IFR Timer 1 flag cleared by read T1 counter low. pg 2-42
             mb_d->d_6522[chip].ifr.bits.timer1 = 0;
             mb_6522_propagate_interrupt(mb_d);
-            uint64_t cycle_diff = calc_cycle_diff_t1(&mb_d->d_6522[chip], mb_d->clock->get_cycles());
+            uint64_t cycle_diff = calc_cycle_diff_t1(&mb_d->d_6522[chip], mb_d->clock->get_vid_cycles());
             retval = cycle_diff & 0xFF;
             break;
         }
@@ -1248,7 +1248,7 @@ uint8_t mb_read_Cx00(void *context, uint32_t addr) {
             // read of t1 counter high DOES NOT clear interrupt; write does.
             //mb_d->d_6522[chip].ifr.bits.timer1 = 0;
             //mb_6522_propagate_interrupt(cpu, mb_d);
-            uint64_t cycle_diff = calc_cycle_diff_t1(&mb_d->d_6522[chip], mb_d->clock->get_cycles());
+            uint64_t cycle_diff = calc_cycle_diff_t1(&mb_d->d_6522[chip], mb_d->clock->get_vid_cycles());
             retval = (cycle_diff >> 8) & 0xFF;
             break;
         }
@@ -1256,12 +1256,12 @@ uint8_t mb_read_Cx00(void *context, uint32_t addr) {
             mb_d->d_6522[chip].ifr.bits.timer2 = 0;
             mb_6522_propagate_interrupt(mb_d);
 
-            uint64_t cycle_diff = calc_cycle_diff_t2(&mb_d->d_6522[chip], mb_d->clock->get_cycles());
+            uint64_t cycle_diff = calc_cycle_diff_t2(&mb_d->d_6522[chip], mb_d->clock->get_vid_cycles());
             retval = (cycle_diff) & 0xFF;
             break;
         }
         case MB_6522_T2C_H: { /* 8 bits from T2 high order counter transferred to mpu */
-            uint64_t cycle_diff = calc_cycle_diff_t2(&mb_d->d_6522[chip], mb_d->clock->get_cycles());
+            uint64_t cycle_diff = calc_cycle_diff_t2(&mb_d->d_6522[chip], mb_d->clock->get_vid_cycles());
             retval = (cycle_diff >> 8) & 0xFF;            
             break;
         }
@@ -1316,7 +1316,7 @@ void generate_mockingboard_frame(mb_cpu_data *mb_d) {
     //uint64_t cycle_diff = mb_d->computer->cpu->cycles - mb_d->last_cycle;
     ////const int samples_per_frame = ((cycle_diff * 44100) / 1020500.0);
 
-    mb_d->last_cycle = mb_d->clock->get_cycles();
+    mb_d->last_cycle = mb_d->clock->get_vid_cycles();
 
     mb_d->mockingboard->generateSamples(samples_this_frame);
 
@@ -1369,10 +1369,10 @@ void mb_reset(mb_cpu_data *mb_d) {
 DebugFormatter *debug_registers_6522(mb_cpu_data *mb_d) {
     DebugFormatter *df = new DebugFormatter();
     cpu_state *cpu = mb_d->computer->cpu;
-    uint64_t m1_t1_diff = calc_cycle_diff_t1(&mb_d->d_6522[1], mb_d->clock->get_cycles());
-    uint64_t m1_t2_diff = calc_cycle_diff_t2(&mb_d->d_6522[1], mb_d->clock->get_cycles());
-    uint64_t m2_t1_diff = calc_cycle_diff_t1(&mb_d->d_6522[0], mb_d->clock->get_cycles());
-    uint64_t m2_t2_diff = calc_cycle_diff_t2(&mb_d->d_6522[0], mb_d->clock->get_cycles());
+    uint64_t m1_t1_diff = calc_cycle_diff_t1(&mb_d->d_6522[1], mb_d->clock->get_vid_cycles());
+    uint64_t m1_t2_diff = calc_cycle_diff_t2(&mb_d->d_6522[1], mb_d->clock->get_vid_cycles());
+    uint64_t m2_t1_diff = calc_cycle_diff_t1(&mb_d->d_6522[0], mb_d->clock->get_vid_cycles());
+    uint64_t m2_t2_diff = calc_cycle_diff_t2(&mb_d->d_6522[0], mb_d->clock->get_vid_cycles());
 
     df->addLine("   6522 #2 (0x00)          |   6522 #1 (0x80)");
     df->addLine("-------------------------- | ---------------------------");
@@ -1446,18 +1446,19 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
         mb_d->d_6522[i].t1_triggered_cycles = 0;
         mb_d->d_6522[i].t2_triggered_cycles = 0;
     }
-    mb_d->event_timer = computer->event_timer;
+    
+    mb_d->event_timer = computer->vid_event_timer;
 
 // TODO: create an "audiosystem" module and move this stuff to it like we did videosystem.
     speaker_state_t *speaker_d = (speaker_state_t *)get_module_state(computer->cpu, MODULE_SPEAKER);
     //int dev_id = speaker_d->device_id;
 
-    mb_d->frame_rate = (double)mb_d->clock->get_c14m_per_second() / (double)mb_d->clock->get_c14m_per_frame();
+    mb_d->frame_rate = (double)mb_d->clock->get_vid_cycles_per_second() / (double)mb_d->clock->get_vid_cycles_per_frame();
     mb_d->samples_per_frame = (float)OUTPUT_SAMPLE_RATE_INT / mb_d->frame_rate;
     mb_d->samples_per_frame_int = (int32_t)mb_d->samples_per_frame;
     mb_d->samples_per_frame_remainder = mb_d->samples_per_frame - mb_d->samples_per_frame_int;
 
-    mb_d->c14m_rate = mb_d->clock->get_c14m_per_second();
+    mb_d->vid_cycles_rate = mb_d->clock->get_vid_cycles_per_second();
     mb_d->stream = mb_d->audio_system->create_stream(OUTPUT_SAMPLE_RATE_INT, 2, SDL_AUDIO_F32LE, false);
 
     set_slot_state(computer->cpu, slot, mb_d);
@@ -1466,8 +1467,8 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
 
     insert_empty_mockingboard_frame(mb_d);
 
-    mb_d->event_timer->scheduleEvent(mb_d->clock->get_c14m() + (65536 * 14), mb_t1_timer_callback, 0x10000000 | (slot << 8) | 0 , mb_d);
-    mb_d->event_timer->scheduleEvent(mb_d->clock->get_c14m() + (65536 * 14), mb_t1_timer_callback, 0x10000000 | (slot << 8) | 1 , mb_d);
+    mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 0 , mb_d);
+    mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 1 , mb_d);
 
 
     // set up a reset handler to reset the chips on mockingboard

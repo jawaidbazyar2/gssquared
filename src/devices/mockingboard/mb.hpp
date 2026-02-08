@@ -123,7 +123,7 @@ struct mb_cpu_data: public SlotData {
     float samples_per_frame;
     uint32_t samples_per_frame_int;
     float samples_per_frame_remainder;
-    uint64_t c14m_rate;
+    uint64_t vid_cycles_rate;
 };
 
 void init_slot_mockingboard(computer_t *computer, SlotType_t slot);
