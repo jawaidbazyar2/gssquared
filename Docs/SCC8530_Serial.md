@@ -395,20 +395,6 @@ Slot 2 = Modem = B
 Slot 1 = Printer = A
 
 
-## Feb 3, 2026
-
-just doing a pr#1, we're hanging. It's reading C039 (sccareg), and checking bits. ok, reg 0 returning:
-DCD=1, CTS=1, Tx Buffer Empty=1, and we're working! (with pr#1 and pr#2 from basic).
-
-in GS/OS, we're in different code. FF/5100, FF/B84C
-
-2400 baud is reg12=2E. 
-
-At one point the firmware was setting baud rate etc but now it's not after I added some r/w for another register. In fact there's a lot of reading Reg 0 and then a fat lot of nothing. Let the fun begin!
-
-Key functions involved: WRITESCC (X is register, A is value, Y is channel). Literally all that does is:
-3C - channel A, 3B - channel B. Load from BFFD,y. Now why would they do that. OY. It's to avoid the PHANTOM LORD (air guitar solo), er, I mean, the phantom read.
-
 # External Devices
 
 We need to model these various external devices. Each of these devices is a separate thread.
@@ -439,6 +425,10 @@ For simple testing, just try opening a socket to port 23 on 192.168.0.96 now.
 
 Somehow, print to a network printer. Somehow select the printer. Then it's really just telnet to the printer.
 
+## Echo
+
+This is for my initial testing. Once the interrupts etc are tested ok, move the echo functionality to a newly created SerialDevice class, which will run in a separate thread (or will it?)
+
 ## SSL Socket
 
 An SSL encrypted socket - or, do we have to go full ssh?
@@ -454,8 +444,69 @@ Since this is a serial emulator, I guess there would not need to be many. Basica
 
 SDL3 AsyncIOQueue construct may be exactly what we're looking for here. the thread side could sleep. the main side could poll.
 
+### BREAK
 
-## ProTerm
+to send a brk, set Reg5[4] = 1 and hold it for some time. Proterm apple-B does this.
+So we should have BREAK:ON and BREAK:OFF messages.
+
+### RATE
+
+sets the effective data rate for the link. So all devices automatically follow the baud rate setting.
+
+## Code Structure
+
+base class: SerialDevice
+
+the constructor will fire off 
+we'll have basic routines:
+  host_read, host_write, host_message
+  device_read, device_write, device_message
+These will use the various message queues.
+
+these are for the host to read, write; and for the (threaded) device code to read.
+destructor will:
+  send shutdown message to the device
+  wait for the device thread to end
+  
+Timing: timing can be handled by the base class, on the host side. That way:
+1. devices can just run at full speed and be limited by queue backpressure
+1. also keeps device code simpler
+1. it's all managed by the host side
+1. but the same code is used in one place, in the base class.
+1. will be in main thread with cpu as timer callbacks will get called regularly.
+1. however, if a device wants to and it makes sense (e.g., printers) it can disregard the base class event scheduling stuff and just cram data out as fast as possible.
+
+baud rate / (data bits + start + stop + parity bits) = "word size" we use for timing.
+e.g. 38400 baud / (8 + 1) = 4266 bytes per second, or, each 3356 14M's.
+2400 baud / (8+1) = 266 bytes/sec = each 54000 14M's.
+
+This is pretty interrupty. it could be a lot of context switches. We could back off on this somewhat and let data buffer in the queue. then we are not context switching all that often.
+
+Can call less often, but process 2x chars at a time? Just thinking of ways to reduce "interrupt" overhead. 
+
+
+
+
+## Feb 3, 2026
+
+just doing a pr#1, we're hanging. It's reading C039 (sccareg), and checking bits. ok, reg 0 returning:
+DCD=1, CTS=1, Tx Buffer Empty=1, and we're working! (with pr#1 and pr#2 from basic).
+
+in GS/OS, we're in different code. FF/5100, FF/B84C
+
+2400 baud is reg12=2E. 
+
+At one point the firmware was setting baud rate etc but now it's not after I added some r/w for another register. In fact there's a lot of reading Reg 0 and then a fat lot of nothing. Let the fun begin!
+
+Key functions involved: WRITESCC (X is register, A is value, Y is channel). Literally all that does is:
+3C - channel A, 3B - channel B. Load from BFFD,y. Now why would they do that. OY. It's to avoid the PHANTOM LORD (air guitar solo), er, I mean, the phantom read.
+
+## Feb 7, 2026
+
+got a few programs doing basic send/receive now and not barfing. That's a good start.
+
+
+# Compatibility / Testing
 
 ProTerm wants interrupts, according to the Interwebs.
 
@@ -469,6 +520,23 @@ SCC: WRITE register 0: Ch 0 = 03
 
 Teleworks also uses interrupts. Bit 3 of Reg9 is set. Well I Guess I can just enable interrupt support.
 
-because interrupts can happen any time, we need to provide the class a callback, that will update the interrupt status. It's that or pass in the CPU.
+because interrupts can happen any time, we need to provide the class a callback, that will update the interrupt status. It's that or pass in the CPU which is icky icky poo poo.
 
 Practically speaking, we should separate the IRQ management details from the cpu, so there will be an InterruptController. It's the only thing that will talk to the CPU (a single IRQ line to pull down). And all other devices that use IRQs go there. And it will live in computer, so devices can snatch it out of computer when they start.
+
+This is also gonna need a 14M eventTimer; the existing CPU-based eventTimer is more or less useless on a GS, so other eventTimer users should be switched over to the 14M also. Mockingboard is the biggie; it would be interesting if it continued to clock at 1MHz (because that's PH0 on the bus) but timing by the 14M. Then Ultima music would operate at the right speed regardless of CPU speed. That's how it would work in a GS, I think.
+
+pr#1 is hanging because when we write a char to it, it is never trying to read (why would it) and thus never clears the echo'd character. So be wary of that for now.
+You should run GS2 with the mount disk options bro.
+
+Ah ha!! once I fixed RR3 (only exists in Ch A) I can echo characters at my leisure in Teleworks.
+
+oddly, ProTERM is still giving me back garbage characters. I can see that it's reading the correct characters back. Let's try another program.
+
+ANSITerm Demo also works, tho there are two places I have to manually read the read Reg to get it to clear the interrupt and continue.
+
+Another possibility is that the interrupt comes back -too fast- for the code to do anything. This may be helped by implementing correct send and receive timing. that will be easier with the separate device.
+
+Telcom pretty much immediately blows up with a BRK. What the hell is that guy doing lolz. Does it require installing a custom serial driver?
+
+FreeTerm also working. 

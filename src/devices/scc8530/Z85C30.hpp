@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cassert>
 #include "util/DebugFormatter.hpp"
+#include "util/InterruptController.hpp"
 
 /**
  * this code is LITTLE-ENDIAN SPECIFIC.
@@ -54,8 +55,12 @@ enum scc_register_t {
 };
 
 class Z85C30 {
+    InterruptController *irq_control = nullptr;
 
     FILE *data_files[SCC_CHANNEL_COUNT] = { NULL, NULL };
+    inline char ch_name(scc_channel_t channel) {
+        return (uint8_t) channel + 'A';
+    }
 
     struct scc_channel_state_t {
         uint8_t char_rx;
@@ -239,133 +244,169 @@ class Z85C30 {
             printf("SCC: Ch %d: Clock Mode: %d, Time Constant: %d, Baud Rate: %08.2f\n", channel, new_mode, time_constant, baud_rate);
         }
 
+        inline void update_interrupts(scc_channel_t channel) {
+            // TODO: implement
+            bool interrupt_pending = false;
+            if (registers[channel].r1_tx_int_enable && registers[channel].r0_tx_buffer_empty) interrupt_pending = true;
+            //if (registers[channel].r1_rx_int_mode == 0b01 && registers[channel].r0_rx_char_available) interrupt_pending = true;
+            if (registers[channel].r1_rx_int_mode == 0b10 && registers[channel].r0_rx_char_available) interrupt_pending = true;
+            
+            irq_control->set_irq(IRQ_ID_SCC, interrupt_pending);
+        }
+
+        inline void print_read_register(scc_channel_t channel, uint8_t reg_num, uint8_t retval) {
+            printf("SCC: READ  %c :: %2d <== %02X\n", ch_name(channel), reg_num, retval);
+        }
+
+        inline void print_write_register(scc_channel_t channel, uint8_t reg_num, uint8_t data) {
+            printf("SCC: WRITE %c :: %2d ==> %02X\n", ch_name(channel), reg_num, data);
+        }
+
+
         /* Writes */
 
         inline void write_register_0(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 0: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR0, data);
             {
                 registers[channel].w_regs[WR0] = data;
                 uint16_t new_register = registers[channel].r0_reg_num;
+                // TODO: need to process the various commands here. (resetting interrupts, etc.)
                 if (registers[channel].r0_cmd == 0b001) new_register += 8;
+                else if (registers[channel].r0_cmd != 0) {
+                    printf("SCC: Unimplemented WRITE %c r0_cmd: Reg %d = %02X\n", ch_name(channel), new_register, registers[channel].r0_cmd);
+                }
+                if (registers[channel].r0_reset_cmd != 0) {
+                    printf("SCC: Unimplemented WRITE %c r0_reset_cmd command: Reg %d = %02X\n", ch_name(channel), new_register, registers[channel].r0_reset_cmd);
+                }
                 reg_select[channel] = new_register;
-                printf("SCC: Register Select Ch: %d -> New Reg %d\n", channel, new_register);
+                printf("SCC: Register Select %c -> New Reg %d\n", ch_name(channel), new_register);
             }
+            update_interrupts(channel); // might have changed interrupt status
         }
 
         inline void write_register_1(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 1: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR1, data);
             registers[channel].w_regs[WR1] = data;
+            update_interrupts(channel); // might have changed interrupt enables
         }
 
         inline void write_register_2(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 2: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR2, data);
             registers[channel].w_regs[WR2] = data;
         }
 
         inline void write_register_3(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 3: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR3, data);
             registers[channel].w_regs[WR3] = data;
         }
 
         inline void write_register_4(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 4: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR4, data);
             registers[channel].w_regs[WR4] = data;
             update_timing_sources(channel);
         }
 
         inline void write_register_5(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 5: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR5, data);
             registers[channel].w_regs[WR5] = data;
         }
 
         inline void write_register_6(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 6: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR6, data);
             registers[channel].w_regs[WR6] = data;
         }
 
         inline void write_register_7(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 7: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR7, data);
             registers[channel].w_regs[WR7] = data;
         }
 
         inline void write_register_9(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 9: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR9, data);
             registers[channel].w_regs[WR9] = data;
         }
 
         inline void write_register_10(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 10: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR10, data);
             registers[channel].w_regs[WR10] = data;
         }
 
         inline void write_register_11(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 11: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR11, data);
             registers[channel].w_regs[WR11] = data;
             update_timing_sources(channel);
         }
         inline void write_register_12(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 12: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR12, data);
             registers[channel].w_regs[WR12] = data;
             update_timing_sources(channel);
         }
         inline void write_register_13(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 13: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR13, data);
             registers[channel].w_regs[WR13] = data;
             update_timing_sources(channel);
         }
         inline void write_register_14(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 14: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR14, data);
             registers[channel].w_regs[WR14] = data;
         }
         inline void write_register_15(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE register 15: Ch %d = %02X\n", channel, data);
+            print_write_register(channel, WR15, data);
             registers[channel].w_regs[WR15] = data;
         }
 
         /* Reads */
         inline uint8_t read_register_0(scc_channel_t channel) {
-            printf("SCC: READ register 0: Ch %d\n", channel);
+            //printf("SCC: READ  register 0: Ch %d\n", channel);
             registers[channel].r0_tx_buffer_empty = 1;
             registers[channel].r0_dcd = 1;
             registers[channel].r0_cts = 1;
-            return registers[channel].r_reg_0; // TODO: fix. for now fake CTS=1, DCD=1, Tx Buffer Empty=1
+            uint8_t retval = registers[channel].r_reg_0;
+            print_read_register(channel, RR0, retval);
+            return retval; // TODO: fix. for now fake CTS=1, DCD=1, Tx Buffer Empty=1
         }
 
         inline uint8_t read_register_1(scc_channel_t channel) {
-            printf("SCC: READ register 1: Ch %d\n", channel);
-            return registers[channel].r_reg_1; // TODO: this is reasonable, we won't have errors.. what is residue code?
+            uint8_t retval = registers[channel].r_reg_1;
+            print_read_register(channel, RR1, retval);
+            return retval; // TODO: this is reasonable, we won't have errors.. what is residue code?
         }
         inline uint8_t read_register_2(scc_channel_t channel) {
-            printf("SCC: READ register 2: Ch %d\n", channel);
-            return registers[channel].r_reg_2; // TODO: need to return the actual interrupt vector;
+            uint8_t retval = registers[channel].r_reg_2; // TODO: need to return the actual interrupt vector;
+            print_read_register(channel, RR2, retval);
+            return retval;
         }
-
         inline uint8_t read_register_3(scc_channel_t channel) {
-            printf("SCC: READ register 3: Ch %d\n", channel);
+            uint8_t retval = 0x00;
             if (channel == SCC_CHANNEL_A) {
-                return registers[SCC_CHANNEL_A].r_reg_3; 
+                retval = registers[SCC_CHANNEL_A].r_reg_3; 
             }
-            return 0x00; // B is always 0
+            print_read_register(channel, RR3, retval);
+            return retval; // B is always 0
         }
         inline uint8_t read_register_10(scc_channel_t channel) {
-            printf("SCC: READ register 10: Ch %d\n", channel);
-            return registers[channel].r_reg_10; // TODO: need to return the actual miscellaneous status;
+            uint8_t retval = registers[channel].r_reg_10; // TODO: need to return the actual miscellaneous status;
+            print_read_register(channel, RR10, retval);
+            return retval;
         }
         inline uint8_t read_register_12(scc_channel_t channel) {
-            printf("SCC: READ register 12: Ch %d\n", channel);
-            return registers[channel].w_regs[RR12];
+            uint8_t retval = registers[channel].w_regs[RR12];
+            print_read_register(channel, RR12, retval);
+            return retval;
         }
         inline uint8_t read_register_13(scc_channel_t channel) {
-            printf("SCC: READ register 13: Ch %d\n", channel);
-            return registers[channel].w_regs[RR13];
+            uint8_t retval = registers[channel].w_regs[RR13];
+            print_read_register(channel, RR13, retval);
+            return retval;
         }
         inline uint8_t read_register_15(scc_channel_t channel) {
-            printf("SCC: READ register 15: Ch %d\n", channel);
-            return registers[channel].w_regs[RR15] & 0b1111'1010; // two bits always 0
+            uint8_t retval = registers[channel].w_regs[RR15] & 0b1111'1010; // two bits always 0
+            print_read_register(channel, RR15, retval);
+            return retval;
         }
 
     public:
-        Z85C30() {
+        Z85C30(InterruptController *irq_control) : irq_control(irq_control) {
             reset();
         };
 
@@ -418,11 +459,11 @@ class Z85C30 {
                 case WR14: write_register_14(channel, data);  reg_select[channel] = 0; break;
                 case WR15: write_register_15(channel, data);  reg_select[channel] = 0; break;
                 default:
-                    printf("SCC: Unimplemented WRITE register: Ch %d / Reg %d = %02X\n", channel, current_reg_select, data);
+                    printf("SCC: Unimplemented WRITE %c register: Reg %d = %02X\n", ch_name(channel), current_reg_select, data);
                     reg_select[channel] = 0;
                     break;
             }
-            printf("SCC: WRITE register: Ch %d / Reg %d = %02X\n", channel, current_reg_select, data);
+            // redundant: printf("SCC: WRITE register: Ch %d / Reg %d = %02X\n", channel, current_reg_select, data);
              // after any other write, reset the register select
         }
 
@@ -435,7 +476,7 @@ class Z85C30 {
                 when the timer is called, clear that flag.
         */
         void writeData(scc_channel_t channel, uint8_t data) {
-            printf("SCC: WRITE DATA Ch: %d = %02X\n", channel, data);
+            printf("SCC: WRITE %c DATA = %02X\n", ch_name(channel), data);
 /*             if (data_files[channel] == NULL) {
                 return;
             }
@@ -461,6 +502,7 @@ class Z85C30 {
                 registers[channel].r0_tx_buffer_empty = 1;
                 registers[SCC_CHANNEL_A].r3_a_tx_pending = 0;
             }
+            update_interrupts(channel);
         }
 
         uint8_t readCmd(scc_channel_t channel) {
@@ -477,9 +519,9 @@ class Z85C30 {
                 case RR9: case RR13: retval = read_register_13(channel); break;
                 case RR11: case RR15: retval = read_register_15(channel); break;
                 default:
-                    printf("SCC: Unimplemented READ register: Ch %d / Reg %d\n", channel, current_reg_select);
+                    printf("SCC: Unimplemented READ %c register: Reg %d\n", ch_name(channel), current_reg_select);
             }
-            printf("SCC: READ register: Ch %d / Reg %d = %02X\n", channel, current_reg_select, retval);
+            //printf("SCC: READ  %c register: Reg %d = %02X\n", ch_name(channel), current_reg_select, retval);
             reg_select[channel] = 0;
             return retval;
         }
@@ -492,12 +534,13 @@ class Z85C30 {
                 // signal the rx buffer is empty
                 registers[channel].r0_rx_char_available = 0;
                 if (channel == SCC_CHANNEL_A) {
-                    registers[channel].r3_a_rx_pending = 0;
+                    registers[SCC_CHANNEL_A].r3_a_rx_pending = 0;
                 } else {
-                    registers[channel].r3_b_rx_pending = 0;
+                    registers[SCC_CHANNEL_A].r3_b_rx_pending = 0;
                 }
             }
-            printf("SCC: READ DATA Ch: %d = %02X\n", channel, retval);
+            printf("SCC: READ  %c DATA = %02X\n", ch_name(channel), retval);
+            update_interrupts(channel);
             return retval;
         }
 
