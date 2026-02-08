@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
     const char *label_filename = nullptr;
     
     if (argc < 3) {
-        printf("usage: gstrace [options] 6502|65c02|65816e tracefilename.bin\n");
+        printf("usage: gstrace [options] 6502|65c02|65816 tracefilename.bin\n");
         printf("options:\n");
         printf("  -l labelfile    VICE label file\n");
         return 1;
@@ -31,11 +31,11 @@ int main(int argc, char **argv) {
         } else if (strcmp(argv[i], "65c02") == 0) {
             cputype = PROCESSOR_65C02;
             i++;
-        } else if (strcmp(argv[i], "65816e") == 0) {
+        } else if (strcmp(argv[i], "65816") == 0) {
             cputype = PROCESSOR_65816;
             i++;
         } else {
-            printf("usage: gstrace [options] 6502|65c02|65816e tracefilename.bin\n");
+            printf("usage: gstrace [options] 6502|65c02|65816 tracefilename.bin\n");
             printf("options:\n");
             printf("  -l labelfile    VICE label file\n");
             return 1;
