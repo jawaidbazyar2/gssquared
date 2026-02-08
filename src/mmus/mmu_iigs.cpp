@@ -573,6 +573,7 @@ uint32_t MMU_IIgs::calc_aux_read(uint32_t address) {
 } */
 
 uint32_t MMU_IIgs::calc_aux_write(uint32_t address) {
+    if (address & 0x1'0000) return 0x0'0000;
     uint32_t page = (address & 0xFF00) >> 8;
     //if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramwrt))) return 0x1'0000;
     //if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramwrt))) return 0x1'0000;
@@ -591,6 +592,7 @@ uint32_t MMU_IIgs::calc_aux_write(uint32_t address) {
 }
 
 uint32_t MMU_IIgs::calc_aux_read(uint32_t address) {
+    if (address & 0x1'0000) return 0x0'0000;
     uint32_t page = (address & 0xFF00) >> 8;
     //if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramrd))) return 0x1'0000;
     //if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramrd ))) return 0x1'0000;

@@ -201,6 +201,6 @@ class MMU_IIgs : public MMU {
 
         inline void set_clock(NClockII *clock) { this->clock = clock; }
         inline void set_clock_mode(clock_mode_t mode) { clock->set_clock_mode(mode); }
-        inline void set_next_cycle_type(cycle_type_t type) { ((NClockIIgs *)clock)->set_next_cycle_type(type); }
+        inline void set_next_cycle_type(cycle_type_t type) { if (clock) ((NClockIIgs *)clock)->set_next_cycle_type(type); }
         inline void set_slow_mode(bool value) { ((NClockIIgs *)clock)->set_slow_mode(value); }
 };

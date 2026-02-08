@@ -352,6 +352,8 @@ inline const std::vector<Test> ALL_TESTS = {
             ReadOp{0xE0'C082, 0x00},   // disable ram r/w again. (for later)         
         }
     },
+    /* This used to do C068:68 then C068:28, but that includes ROM3 "inhibit text page 2 shadow". 
+       Have separate test for shadow and ROM03 */
     Test{
         20,
         "main LC bank $00 (LC Bank 1) write $D000, disable IOLC shadow, readable at $C000",
@@ -360,9 +362,9 @@ inline const std::vector<Test> ALL_TESTS = {
             ReadOp(0xE0'C08B,0x00), // make LC bank 1 ram r/w
             WriteOp(0x00'D000,0x12), // write to LC bank 1 ram
             ReadOp(0xE0'C08A,0x00), // set back to ROM
-            WriteOp(0xE0'C035,0x68), // inhibit IOLC shadow
+            WriteOp(0xE0'C035,0x48), // inhibit IOLC shadow
             AssertOp(0x00'C000,0x12), // read from flat bank 0 ram
-            WriteOp(0xE0'C035,0x28), // re-enable IOLC shadow
+            WriteOp(0xE0'C035,0x08), // re-enable IOLC shadow
         }
     },
     Test{
@@ -414,6 +416,21 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
 
+    // Test: RAMWRT + Bank 1 Write - should write to bank 1, not bank 2.
+    Test{
+        26, 
+        "RAMWRT + Bank 1 Write - should write to bank  still, not bank 2.",
+        {
+            WriteOp(0x01'1666, {0xEA, 0xEA}),
+            WriteOp(0x02'1666, {0xEA, 0xEA}),
+            WriteOp{0xE0'C068, 0x1C},
+            WriteOp(0x01'1666, {0x12, 0x34}),
+            WriteOp{0xE0'C068, 0x0C},
+            AssertOp{0x01'1666, {0x12, 0x34}}, // test this changed
+            AssertOp{0x02'1666, {0xEA, 0xEA}}, // and this didn't.
+        }
+    },
+
     // Test: when IOLC not inhibited, interrupt vector pull reads from ROM.
     // Test: when IOLC inhibited, interrupt vector pull reads from RAM.
     // Test: when LC RAM READ enabled, bit 3 in State tracks.
@@ -422,7 +439,7 @@ inline const std::vector<Test> ALL_TESTS = {
     // Test: altzp affects ZP/Stack
     // Test: LC Bank 1/2 and LCBNK2 sense are in sync and select correct RAM
     // Test: RAMWRT + 80STORE + PAGE1 - should reference main memory.
-
+    
     Test{
         0x99,
         "floating bus behavior: ram bank higher than real RAM data reads as the bank number",
@@ -431,6 +448,11 @@ inline const std::vector<Test> ALL_TESTS = {
             AssertOp{0x82'0000, 0x82},
         }
     },
+
+    // not a test: just set memory state registers back to known good values.
+    // C068: 0C
+    // C035: ??
+
     // TODO: verify C000 operates in bank E1
     // TODO: verify C011-C01F "read switch status" works
     // TODO: test C068 State Register
