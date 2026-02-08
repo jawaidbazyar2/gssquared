@@ -949,11 +949,11 @@ void mb_t1_timer_callback(uint64_t instanceID, void *user_data) {
 
         tc->t1_counter = tc->t1_latch;
         uint32_t next_counter = tc->t1_counter;
-        if (next_counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
+        /* if (next_counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
             next_counter = 65536;
-        }
+        } */
         tc->t1_triggered_cycles += next_counter; // TODO: testing.
-        mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + next_counter, mb_t1_timer_callback, instanceID , mb_d);
+        mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + next_counter+1, mb_t1_timer_callback, instanceID , mb_d);
     } else {         // one-shot mode
         // if a T1 oneshot was pending, set interrupt status.
         if (tc->t1_oneshot_pending) {
@@ -984,11 +984,11 @@ void mb_t2_timer_callback(uint64_t instanceID, void *user_data) {
         tc->t2_counter = tc->t2_latch;
         
         uint32_t counter = tc->t2_counter;
-        if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
+        /* if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
             counter = 65536;
-        }
+        } */
         
-        mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + counter, mb_t2_timer_callback, instanceID , mb_d);
+        mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + counter + 1, mb_t2_timer_callback, instanceID , mb_d);
     }
     if (1) { // one-shot mode
         // TODO: "after timing out, the counter will continue to decrement."
@@ -1076,8 +1076,8 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             tc->ifr.bits.timer1 = 0;
             mb_6522_propagate_interrupt(mb_d);
             tc->t1_latch = (tc->t1_latch & 0x00FF) | (data << 8);
-            tc->t1_counter = tc->t1_latch /* ? tc->t1_latch : 65535 */;
-            uint32_t next_counter = tc->t1_counter ? tc->t1_counter : 65536;
+            tc->t1_counter = tc->t1_latch;
+            uint32_t next_counter = tc->t1_counter/*  ? tc->t1_counter : 65536 */;
             
             tc->t1_triggered_cycles = vid_cycles + next_counter+1; // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
             tc->t1_oneshot_pending = 1;
@@ -1094,8 +1094,8 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             break;
         case MB_6522_T2C_H: {
             tc->t2_latch = (tc->t2_latch & 0x00FF) | (data << 8);
-            tc->t2_counter = tc->t2_latch /* ? tc->t2_latch : 65535 */;
-            uint32_t next_counter2 = tc->t2_counter ? tc->t2_counter : 65536;
+            tc->t2_counter = tc->t2_latch;
+            uint32_t next_counter2 = tc->t2_counter /* ? tc->t2_counter : 65536 */;
             tc->ifr.bits.timer2 = 0;
             mb_6522_propagate_interrupt(mb_d);
             tc->t2_triggered_cycles = vid_cycles;
@@ -1145,10 +1145,10 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
                 // if we set the counter/latch BEFORE we enable interrupts.
                 uint64_t cycle_base = tc->t1_triggered_cycles == 0 ? mb_d->clock->get_vid_cycles() : tc->t1_triggered_cycles;
                 uint32_t counter = tc->t1_counter;
-                if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
+                /* if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
                     counter = 65536;
-                }
-                mb_d->event_timer->scheduleEvent(cycle_base + counter, mb_t1_timer_callback, instanceID , mb_d);
+                } */
+                mb_d->event_timer->scheduleEvent(cycle_base + counter+1, mb_t1_timer_callback, instanceID , mb_d);
                                 
                 instanceID = 0x10010000 | (slot << 8) | chip;
                 /* if (!tc->ier.bits.timer2) {
@@ -1156,10 +1156,10 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
                 } else */ { // if we set the counter/latch BEFORE we enable interrupts.
                     uint64_t cycle_base = tc->t2_triggered_cycles == 0 ? mb_d->clock->get_vid_cycles() : tc->t2_triggered_cycles;
                     uint32_t counter = tc->t2_counter;
-                    if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
+                    /* if (counter == 0) { // if they enable interrupts before setting the counter (and it's zero) set it to 65535 to avoid infinite loop.
                         counter = 65536;
-                    }
-                    mb_d->event_timer->scheduleEvent(cycle_base + counter, mb_t2_timer_callback, instanceID , mb_d);
+                    } */
+                    mb_d->event_timer->scheduleEvent(cycle_base + counter+1, mb_t2_timer_callback, instanceID , mb_d);
                 }
             }
             break;
@@ -1169,9 +1169,9 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
 inline uint64_t calc_cycle_diff_t1(mb_6522_regs *tc, uint64_t cycles) {
     // treat latch of 0 as 65535.
     uint32_t latchval = tc->t1_latch;
-    if (latchval == 0) {
+    /* if (latchval == 0) {
         latchval = 65536;
-    }
+    } */
     // we have to handle the two modes - one-shot (which will continue counting from 0 to FFFF, FFFE, etc.) and continuous 
     // which will reset the counter to the latch value.
 #if 0
@@ -1183,7 +1183,7 @@ inline uint64_t calc_cycle_diff_t1(mb_6522_regs *tc, uint64_t cycles) {
         if (cycles < tc->t1_triggered_cycles) {
             return (tc->t1_triggered_cycles- cycles) & 0xFFFF;
         } else { // in continuous mode, use modulus of the latch value.
-            return (latchval - ((cycles - tc->t1_triggered_cycles) % latchval)) & 0xFFFF;
+            return (latchval - ((cycles - tc->t1_triggered_cycles) % (latchval+1))) & 0xFFFF;
         }
     }
 #endif
@@ -1193,10 +1193,10 @@ inline uint64_t calc_cycle_diff_t1(mb_6522_regs *tc, uint64_t cycles) {
 inline uint64_t calc_cycle_diff_t2(mb_6522_regs *tc, uint64_t cycles) {
     // treat latch of 0 as 65535.
     uint32_t latchval = tc->t2_latch;
-    if (latchval == 0) {
+    /* if (latchval == 0) {
         latchval = 65536;
-    }
-    return latchval - ((cycles - tc->t2_triggered_cycles) % latchval);
+    } */
+    return (latchval - ((cycles - tc->t2_triggered_cycles) % (latchval+1))) & 0xFFFF;
 }
 
 uint8_t mb_read_Cx00(void *context, uint32_t addr) {

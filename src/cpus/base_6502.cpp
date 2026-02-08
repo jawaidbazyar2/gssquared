@@ -75,6 +75,8 @@ public:
             cpu->_M = 1; // 8 bit M and X
             cpu->_X = 1;
             cpu->D = 0; // disable decimal mode
+            cpu->ICHANGE = false;
+            cpu->EFFI = 0;
             printf("stack init: %04X\n", cpu->sp);
         }
 
@@ -2102,7 +2104,7 @@ int execute_next(cpu_state *cpu) override {
     }
     )
 
-    if (cpu->skip_next_irq_check == 0 && !cpu->I && cpu->irq_asserted) { // if IRQ is not disabled, and IRQ is asserted, handle it.
+    if (!cpu->EFFI && cpu->irq_asserted) { // if IRQ is not disabled, and IRQ is asserted, handle it.
         if constexpr ((CPUTraits::has_65816_ops)) {
             if constexpr (!CPUTraits::e_mode) push_byte(cpu, cpu->pb);
             push_word(cpu, cpu->pc); // push current PC
@@ -2129,13 +2131,22 @@ int execute_next(cpu_state *cpu) override {
             incr_cycles();
             //incr_cycles(); // todo might be one too many, we're at 8, refs say it's 7. push_byte takes an extra cycle now?
         }
+
+        cpu->ICHANGE = false;
+        cpu->EFFI = cpu->I;
+
         TRACE ( tb->eaddr = cpu->pc; tb->f_irq = 1;);
         TRACE(if (cpu->trace) cpu->trace_buffer->add_entry(cpu->trace_entry);)
         return 0;
-    } 
-    if (cpu->skip_next_irq_check > 0) {
-        cpu->skip_next_irq_check--;
     }
+
+    // we're into the next instruction, so catch this up now.
+        cpu->ICHANGE = false;
+        cpu->EFFI = cpu->I;
+    
+    /* if (cpu->skip_next_irq_check > 0) {
+        cpu->skip_next_irq_check--;
+    } */
 
     //opcode_t opcode = read_byte_from_pc(cpu);
     opcode_t opcode = fetch_pc(cpu);
@@ -3213,6 +3224,8 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_PLP_IMP: /* PLP Implied */
             {
+                cpu->ICHANGE = true;
+                cpu->EFFI = cpu->I;
                 if constexpr (CPUTraits::has_65816_ops && !CPUTraits::e_mode) {
                     stack_pull(cpu, cpu->p);
                     // TODO: perform x/m mode switch check here.
@@ -3769,7 +3782,9 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_CLI_IMP: /* CLI Implied */
             {
-                if (cpu->I) cpu->skip_next_irq_check = 1; // TODO: this can be cpu->skip_next_irq_check = cpu->I; test after change.
+                cpu->ICHANGE = true;
+                cpu->EFFI = cpu->I;
+                //if (cpu->I) cpu->skip_next_irq_check = 1; // TODO: this can be cpu->skip_next_irq_check = cpu->I; test after change.
                 cpu->I = 0;
                 phantom_read_ign(cpu, make_pc_long(cpu, cpu->pc));
             }
@@ -3791,6 +3806,8 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_SEI_IMP: /* SEI Implied */
             {
+                cpu->ICHANGE = true;
+                cpu->EFFI = cpu->I;
                 cpu->I = 1;
                 phantom_read_ign(cpu, make_pc_long(cpu, cpu->pc));
             }
