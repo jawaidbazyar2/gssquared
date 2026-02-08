@@ -15,11 +15,8 @@
 // Apple IIgs Interface (C03C-C03F)
 //==============================================================================
 
-/* updates the soundglu data register from the DOC RAM or the ES5503,
-   taking into account that reads from GLU are slower than one apple II cycle */
-void ensoniq_doc_data_read(ensoniq_state_t *st) {
-    // if never done before, or we have not reached the completion time, don't change data yet.
-    if (st->soundctl & 0x80) { // waiting for prior transaction to complete
+void ensoniq_update_transaction(ensoniq_state_t *st) {
+    if (st->soundctl & 0x80) { // if waiting for prior transaction to complete
         if (st->clock->get_c14m() >= st->doc_read_complete_time) {
             st->soundctl &= ~0x80; // clear busy bit
     
@@ -29,20 +26,21 @@ void ensoniq_doc_data_read(ensoniq_state_t *st) {
             } else {                       // Register mode - use only low byte
                 st->sounddata = st->chip->read(st->soundadrl);
             }        
-        } else {
-            return; // don't change data yet.
         }
+    }
+}
+
+/* updates the soundglu data register from the DOC RAM or the ES5503,
+   taking into account that reads from GLU are slower than one apple II cycle */
+void ensoniq_doc_data_read(ensoniq_state_t *st) {
+    // if never done before, or we have not reached the completion time, don't change data yet.
+    if (st->soundctl & 0x80) { // waiting for prior transaction to complete
+        ensoniq_update_transaction(st);
     } else {  // trigger new transaction
         st->soundctl |= 0x80; // set busy bit
         st->doc_read_complete_time = st->clock->get_c14m() + 4; // the diff between 1MHz and 895KHz.. it's actually gonna vary around a bunch.        
         return; // don't change data yet.
     }
-    /* if ((st->doc_read_complete_time == 0) || (st->computer->cpu->c_14M < st->doc_read_complete_time)) {
-        st->soundctl |= 0x80; // set busy bit
-        // TODO: if busy is already set, don't redo this
-        st->doc_read_complete_time = st->computer->cpu->c_14M + 16; // or whatever appropriate (subtract some for current cycle?)        
-        return; // don't change data yet.
-    } */
 }
 
 uint8_t ensoniq_read_C0xx(void *context, uint32_t address) {
@@ -51,6 +49,7 @@ uint8_t ensoniq_read_C0xx(void *context, uint32_t address) {
     
     switch (address) {
         case 0xC03C:  // Sound Control
+            ensoniq_update_transaction(st); // update on every soundglu access
             return st->soundctl;
             
         case 0xC03D: { // Sound Data
@@ -77,9 +76,11 @@ uint8_t ensoniq_read_C0xx(void *context, uint32_t address) {
         }
             
         case 0xC03E:  // Sound Address Low
+            ensoniq_update_transaction(st); // update on every soundglu access
             return st->soundadrl;
             
         case 0xC03F:  // Sound Address High
+            ensoniq_update_transaction(st); // update on every soundglu access
             return st->soundadrh;
             
         default:
@@ -94,12 +95,15 @@ void ensoniq_write_C0xx(void *context, uint32_t address, uint8_t data) {
     
     switch (address) {
         case 0xC03C:  // Sound Control
-            st->soundctl = data;
+            // bit 7 (busy bit) is readonly
+            st->soundctl = (data & 0x7F) | (st->soundctl & 0x80);
+            //st->soundctl = data;
             // TODO: handle volume changes here.
             st->audio_system->set_volume(data & 0x0F);
             break;
             
         case 0xC03D: { // Sound Data
+            // TODO: what should this do if the busy is already set?
             st->sounddata = data;
             uint16_t full_address = (st->soundadrh << 8) | st->soundadrl;
             
