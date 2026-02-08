@@ -115,7 +115,7 @@ const disasm_entry disasm_table[256] = {
     { "EOR", INDEX_INDIR, MIN_6502 }, /* 41 */
     { "WDM",  IMP, MIN_65816 }, /* 42 */
     { "EOR",  REL_S, MIN_65816 }, /* 43 */
-    { NULL,  NONE, MIN_6502 }, /* 44 */
+    { "MVP",  MOVE, MIN_65816 }, /* 44 */
     { "EOR", ZP, MIN_6502 }, /* 45 */
     { "LSR", ZP, MIN_6502 }, /* 46 */
     { "EOR", IND_LONG, MIN_65816 }, /* 47 */
