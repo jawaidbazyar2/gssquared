@@ -23,6 +23,7 @@
 #include "mount.hpp"
 #include "devices/diskii/diskii.hpp"
 #include "devices/pdblock2/pdblock2.hpp"
+#include "util/printf_helper.hpp"
 
 /**
  * Media Key
@@ -113,6 +114,6 @@ drive_status_t Mounts::media_status(uint64_t key) {
 void Mounts::dump() {
     for (auto it = mounted_media.begin(); it != mounted_media.end(); it++) {
         drive_status_t status = media_status(it->first);
-        fprintf(stdout, "Mounted media: %llu typ: %d mnt: %d mot:%d pos: %d\n", it->first, it->second.drive_type, status.is_mounted, status.motor_on, status.position);
+        fprintf(stdout, "Mounted media: %llu typ: %d mnt: %d mot:%d pos: %d\n", u64_t(it->first), it->second.drive_type, status.is_mounted, status.motor_on, status.position);
     }
 }

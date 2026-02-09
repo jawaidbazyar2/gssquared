@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdio>
 #include <iostream>
+#include "util/printf_helper.hpp"
 
 #define NUM_EVENTS 2'000'000
 #define LAST_SAMPLE 999999999999999999
@@ -72,7 +73,7 @@ class EventBufferBase {
         }
 
         void print_event_metadata(void) {
-            printf("first_event: %llu, last_event: %llu\n", first_event, last_event);
+            printf("first_event: %llu, last_event: %llu\n", u64_t(first_event), u64_t(last_event));
         }
     };
     
@@ -99,7 +100,7 @@ class EventBuffer : public EventBufferBase<event_wdata_t> {
                 return false;
             }
             for (uint64_t i = 0; i < write_pos; i++) {
-                fprintf(file, "%llu %llu\n", events[i].cycle, events[i].data);
+                fprintf(file, "%llu %llu\n", u64_t(events[i].cycle), u64_t(events[i].data));
             }
             fclose(file);
             return true;
@@ -132,7 +133,7 @@ class EventBuffer : public EventBufferBase<event_wdata_t> {
         }
         void dump_event_data(void) override {
             for (uint64_t i = 0; i < write_pos; i++) {
-                printf("%llu ", events[i].cycle);
+                printf("%llu ", u64_t(events[i].cycle));
                 if (events[i].cycle == LAST_SAMPLE) {
                     break;
                 }
@@ -169,7 +170,7 @@ class EventBuffer : public EventBufferBase<event_wdata_t> {
             }
             uint64_t i = read_pos;
             while (i != write_pos) {
-                fprintf(file, "%llu %llu\n", events[i].cycle, events[i].data);
+                fprintf(file, "%llu %llu\n", u64_t(events[i].cycle), u64_t(events[i].data));
                 i = (i + 1) % size;
             }
             fclose(file);

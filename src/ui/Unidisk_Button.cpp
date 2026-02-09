@@ -20,6 +20,7 @@
 #include "Button.hpp"
 #include "Unidisk_Button.hpp"
 #include "MainAtlas.hpp"
+#include "util/printf_helper.hpp"
 
 /**
  * @brief A specialized button class for Unidisk drive interface.
@@ -60,7 +61,7 @@ void Unidisk_Button_t::render(SDL_Renderer* renderer) {
 
     SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
     char text[32];
-    snprintf(text, sizeof(text), "Slot %llu", (key >> 8));
+    snprintf(text, sizeof(text), "Slot %llu", u64_t(key >> 8));
     SDL_RenderDebugText(renderer, tp.x + cp.x + 62, tp.y + cp.y + 75, text);
     
     if (is_hovering && status.filename) {

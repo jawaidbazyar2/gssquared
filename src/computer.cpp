@@ -18,6 +18,7 @@
 #include "util/DebugHandlerIDs.hpp"
 #include "util/AudioSystem.hpp"
 #include "util/SoundEffect.hpp"
+#include "util/printf_helper.hpp"
 
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
@@ -250,14 +251,14 @@ void computer_t::frame_status_update() {
             last_5sec_update = this_frame_end_time;
     
             fprintf(stdout, "%llu delta %llu cycles clock-mode: %d CPS: %12.8f MHz [ slips: %llu]\n", 
-                delta, clock->get_cycles(), clock->get_clock_mode(), cpu->e_mhz, cpu->clock_slip);
+                u64_t(delta), u64_t(clock->get_cycles()), clock->get_clock_mode(), cpu->e_mhz, u64_t(cpu->clock_slip));
             uint64_t et = event_times.getAverage();
             uint64_t at = audio_times.getAverage();
             uint64_t dt = display_times.getAverage();
             uint64_t aet = app_event_times.getAverage();
             uint64_t total = et + at + dt + aet;
             fprintf(stdout, "event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", 
-                et, at, dt, aet, total);
+                u64_t(et), u64_t(at), u64_t(dt), u64_t(aet), u64_t(total));
             fprintf(stdout, "PC: %04X, A: %02X, X: %02X, Y: %02X, P: %02X\n", 
                 cpu->pc, cpu->a, cpu->x, cpu->y, cpu->p);        
             status_count = 0;

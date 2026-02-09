@@ -13,6 +13,7 @@
 #include "devices/displaypp/render/NTSC560.hpp"
 #include "devices/displaypp/render/GSRGB560.hpp"
 #include "devices/displaypp/CharRom.hpp"
+#include "util/printf_helper.hpp"
 
 /* math is hard, yo 
 
@@ -246,7 +247,7 @@ int main(int argc, char **argv) {
         }
     }
     end = SDL_GetTicksNS();
-    printf("Write Time taken: %llu ns per frame\n", (end - start) / testiterations);
+    printf("Write Time taken: %llu ns per frame\n", u64_t(end - start) / testiterations);
 
     start = SDL_GetTicksNS();
     int c = 0;
@@ -260,7 +261,7 @@ int main(int argc, char **argv) {
         }
     }
     end = SDL_GetTicksNS();
-    printf("read Time taken: %llu ns per frame\n", (end - start) / testiterations);
+    printf("read Time taken: %llu ns per frame\n", u64_t(end - start) / testiterations);
     //printf("Size of bytestream entries: %zu bytes\n", sizeof(bs_t));
     printf("c: %d\n", c);
     //frame_byte->print();
@@ -346,7 +347,7 @@ int main(int argc, char **argv) {
     }
 
     end = SDL_GetTicksNS();
-    printf("text Time taken: %llu ns per frame\n", (end - start) / testiterations);
+    printf("text Time taken: %llu ns per frame\n", u64_t((end - start) / testiterations));
 #endif
 
     int pitch;
@@ -552,7 +553,7 @@ int main(int argc, char **argv) {
         
         if (framecnt == 300) {
             times[framecnt] = (end-start);
-            printf("Render Time taken:%llu  %llu ns per frame\n", cumulative, cumulative / 300);
+            printf("Render Time taken:%llu  %llu ns per frame\n", u64_t(cumulative), u64_t(cumulative / 300));
             cumulative = 0;
             framecnt = 0;
         }
@@ -562,9 +563,9 @@ int main(int argc, char **argv) {
         //SDL_Delay(16);
     }
     
-    printf("Render Time taken:%llu  %llu ns per frame\n", cumulative, cumulative / 900);
+    printf("Render Time taken:%llu  %llu ns per frame\n", u64_t(cumulative), u64_t(cumulative / 900));
     for (int i = 0; i < (framecnt > 300 ? 300 : framecnt); i++) {
-        printf("%llu ", times[i]);
+        printf("%llu ", u64_t(times[i]));
     }
     printf("\n");
     

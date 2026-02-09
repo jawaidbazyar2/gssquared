@@ -24,6 +24,7 @@
 #include "devices/speaker/SpeakerFX.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "NClock.hpp"
+#include "util/printf_helper.hpp"
 
 // Utility function to round up to the next power of 2
 inline uint32_t next_power_of_2(uint32_t value) {
@@ -53,7 +54,7 @@ uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end
     }
 
     if ((end_frame_c14M - speaker_state->sp->last_event_time) > (clock->get_c14m_per_frame() * 3)) {
-        printf("Speaker skew: 14m: %16llu %13llu %13llu\n", clock->get_c14m(), end_frame_c14M - speaker_state->sp->last_event_time, clock->get_c14m_per_frame());
+        printf("Speaker skew: 14m: %16llu %13llu %13llu\n", u64_t(clock->get_c14m()), u64_t(end_frame_c14M - speaker_state->sp->last_event_time), u64_t(clock->get_c14m_per_frame()));
         // Resync to start of current frame so generate_and_queue can advance to end_frame_c14M.
         // Reset must pair with generate_samples skipping stale events (event_time <= last_event_time).
         speaker_state->sp->reset(end_frame_c14M - clock->get_c14m_per_frame());
@@ -115,7 +116,7 @@ inline void log_speaker_blip(cpu_state *cpu) {
     speaker_state->sp->event_buffer->add_event({speaker_state->clock->get_c14m(), (uint64_t)(speaker_state->audio_system->get_volume())});
 
     if (speaker_state->speaker_recording) {
-        fprintf(speaker_state->speaker_recording, "%llu\n", speaker_state->clock->get_cycles());
+        fprintf(speaker_state->speaker_recording, "%llu\n", u64_t(speaker_state->clock->get_cycles()));
     }
 }
 
@@ -154,7 +155,7 @@ DebugFormatter * debug_speaker(speaker_state_t *ds) {
     df->addLine("  Polarity: %10llu / %10llu", ds->sp->polarity, ds->sp->polarity_impulse);
     df->addLine("  last_event: %13llu Rect_Rem: %13llu::%13llu", ds->sp->last_event_time, ds->sp->rect_remain>>FRACTION_BITS, ds->sp->rect_remain & FRACTION_MASK);
 
-    df->addLine("  Fr Rate: %12.8f   Samp/Fr: %12.7f   Cycle/Samp: %llu::%llu", ds->frame_rate, ds->samples_per_frame, ds->sp->cycles_per_sample>>FRACTION_BITS, ds->sp->cycles_per_sample & FRACTION_MASK);
+    df->addLine("  Fr Rate: %12.8f   Samp/Fr: %12.7f   Cycle/Samp: %llu::%llu", ds->frame_rate, ds->samples_per_frame, u64_t(ds->sp->cycles_per_sample>>FRACTION_BITS), u64_t(ds->sp->cycles_per_sample & FRACTION_MASK));
     df->addLine("  Accumulated: %12.8f", ds->samples_accumulated);
     df->addLine("  Device Started: %6d", ds->sp->started() ? 1 : 0);
     // TODO: what else should this display here?

@@ -17,10 +17,10 @@
 
 #include <time.h>
 #include <cstdint>
-#include <stdio.h>
+#include <cstdio>
 
 #include "debug.hpp"
-
+#include "util/printf_helper.hpp"
 #include "cpu.hpp"
 
 #include "thunderclockplus.hpp"
@@ -111,7 +111,7 @@ void thunderclock_write_register(void *context, uint32_t address, uint8_t value)
         // read the command register.
         if ((value & TCP_CMD) == TCP_CMD_READ_TIME) {
             thunderclock_time_register = get_thunderclock_time();
-            fprintf(stderr, "Thunderclock Plus read time: %llX\n", thunderclock_time_register);
+            fprintf(stderr, "Thunderclock Plus read time: %llX\n", u64_t(thunderclock_time_register));
         }
     }
     if ((thunderclock_command_register & TCP_CLK) && ((value & TCP_CLK) == 0)) {

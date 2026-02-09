@@ -38,6 +38,7 @@
 #include "util/SoundEffectKeys.hpp"
 #include "util/strndup.h"
 #include "ModalContainer.hpp"
+#include "util/printf_helper.hpp"
 
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
@@ -224,7 +225,7 @@ void open_btn_click(void *data) {
 
 void modal_diskii_click(void *data) {
     diskii_modal_callback_data_t *d = (diskii_modal_callback_data_t *)data;
-    printf("modal_diskii_click %p %lld\n", data, d->key);
+    printf("modal_diskii_click %p %llu\n", data, u64_t(d->key));
     OSD *osd = d->osd;
     cpu_state *cpu = osd->cpu;
     ModalContainer_t *container = d->container;

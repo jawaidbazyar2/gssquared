@@ -7,6 +7,7 @@
 #include "VideoScannerII.hpp"
 #include "VideoScanGenerator.hpp"
 #include "generate/AppleIIgs.hpp"
+#include "util/printf_helper.hpp"
 
 // Alias to the shared Apple IIgs color table for text rendering
 static const RGBA_t (&gs_text_palette)[16] = AppleIIgs::TEXT_COLORS;
@@ -334,7 +335,7 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
 
     fcnt = frame_scan->get_count();
     if (fcnt > 100) {
-        printf("Warning: %lld elements left in ScanBuffer at end of generate_frame\n", fcnt);
+        printf("Warning: %llu elements left in ScanBuffer at end of generate_frame\n", u64_t(fcnt));
     }
 }
 

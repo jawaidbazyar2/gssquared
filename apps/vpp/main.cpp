@@ -20,9 +20,8 @@
 #include "devices/displaypp/render/GSRGB560.hpp"
 #include "devices/displaypp/CharRom.hpp"
 #include "devices/displaypp/ScanBuffer.hpp"
-
 #include "mmus/mmu_iie.hpp"
-
+#include "util/printf_helper.hpp"
 
 #define ASPECT_RATIO (1.28f)
 #define SCALE_X 2
@@ -841,7 +840,7 @@ int main(int argc, char **argv) {
         cumulative += (end-start);
         if (framecnt == 300) {
             times[framecnt] = (end-start);
-            printf("Render Time taken:%llu  %llu ns per frame\n", cumulative, cumulative / 300);
+            printf("Render Time taken:%llu  %llu ns per frame\n", u64_t(cumulative), u64_t(cumulative / 300));
             cumulative = 0;
             framecnt = 0;
         }
@@ -850,7 +849,7 @@ int main(int argc, char **argv) {
 
     }
     
-    printf("Render Time taken:%llu  %llu ns per frame\n", cumulative, cumulative / 900);
+    printf("Render Time taken:%llu  %llu ns per frame\n", u64_t(cumulative), u64_t(cumulative / 900));
     for (int i = 0; i < (framecnt > 300 ? 300 : framecnt); i++) {
         printf("%llu ", times[i]);
     }

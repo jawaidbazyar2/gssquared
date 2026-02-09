@@ -96,14 +96,14 @@ class SpeakerFX {
         void print() {
             printf("===== SpeakerFX Configuration =====\n");
             printf("frame_rate: %f\n", frame_rate);
-            printf("input_rate: %llu\n", input_rate);
-            printf("output_rate: %llu\n", output_rate);
-            printf("cycles_per_sample: %llu::%02llu\n", cycles_per_sample >> FRACTION_BITS, cycles_per_sample & FRACTION_MASK);
-            printf("sample_scale: %llu::%02llu\n", sample_scale >> FRACTION_BITS, sample_scale & FRACTION_MASK);
+            printf("input_rate: %llu\n", u64_t(input_rate));
+            printf("output_rate: %llu\n", u64_t(output_rate));
+            printf("cycles_per_sample: %llu::%02llu\n", u64_t(cycles_per_sample >> FRACTION_BITS), u64_t(cycles_per_sample & FRACTION_MASK));
+            printf("sample_scale: %llu::%02llu\n", u64_t(sample_scale >> FRACTION_BITS), u64_t(sample_scale & FRACTION_MASK));
 
             printf("samples_per_frame: %d\n", samples_per_frame);
 
-            printf("first_event: %llu last_event: %llu\n", first_event, last_event);
+            printf("first_event: %llu last_event: %llu\n", u64_t(first_event), u64_t(last_event));
             printf("========================================\n");
         }
 

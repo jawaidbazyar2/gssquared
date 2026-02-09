@@ -2,6 +2,7 @@
 
 #include "mmus/mmu.hpp"
 #include "mmus/mmu_ii.hpp"
+#include "util/printf_helper.hpp"
 
 /* With optimizations on, this test takes about 1ns per byte read/written from emulated memory */
 
@@ -130,9 +131,9 @@ int main(int argc, char **argv) {
     uint8_t *hgrbase = mmu.get_page_base_address(0x20);
     printf("HGR base address: %p\n", hgrbase);
 
-    printf("Time taken: %llu ns\n", (end_time - start_time));
+    printf("Time taken: %llu ns\n", u64_t(end_time - start_time));
 
-    printf("total bytes read/written: %llu\n", totalbytes);
+    printf("total bytes read/written: %llu\n", u64_t(totalbytes));
 
     float ns_per_byte = (float)(end_time - start_time) / totalbytes;    
     printf("ns per byte read/written avg: %f\n", ns_per_byte);
@@ -175,9 +176,9 @@ int main2(int argc, char **argv) {
     uint8_t *hgrbase = mmu.get_page_base_address(0x20);
     printf("HGR base address: %p\n", hgrbase);
 
-    printf("Time taken: %llu ns\n", (end_time - start_time));
+    printf("Time taken: %llu ns\n", u64_t(end_time - start_time));
 
-    printf("total bytes read/written: %llu\n", totalbytes);
+    printf("total bytes read/written: %llu\n", u64_t(totalbytes));
 
     float ns_per_byte = (float)(end_time - start_time) / totalbytes;    
     printf("ns per byte read/written avg: %f\n", ns_per_byte);

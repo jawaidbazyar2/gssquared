@@ -169,6 +169,7 @@ In DOS at $B800 lives the "prenibble routine" . I could perhaps steal that. hehe
 #include "debug.hpp"
 #include "util/mount.hpp"
 #include "util/SoundEffect.hpp"
+#include "util/printf_helper.hpp"
 
 /* uint8_t diskII_firmware[256] = {
  0xA2,  0x20,  0xA0,  0x00,   0xA2,  0x03,  0x86,  0x3C,   0x8A,  0x0A,  0x24,  0x3C,   0xF0,  0x10,  0x05,  0x3C,  
@@ -376,7 +377,7 @@ drive_status_t diskii_status(cpu_state *cpu, uint64_t key) {
     diskII &seldrive = diskII_d->drive[drive];
 
     if (diskII_d->motor == 1 && diskII_d->mark_cycles_turnoff != 0 && ((diskII_d->clock->get_cycles() > diskII_d->mark_cycles_turnoff))) {
-        if (DEBUG(DEBUG_DISKII)) printf("motor off: %llu %llu cycles\n", diskII_d->clock->get_cycles(), diskII_d->mark_cycles_turnoff);
+        if (DEBUG(DEBUG_DISKII)) printf("motor off: %llu %llu cycles\n", u64_t(diskII_d->clock->get_cycles()), u64_t(diskII_d->mark_cycles_turnoff));
         diskII_d->motor = 0;
         diskII_d->mark_cycles_turnoff = 0;
     }
@@ -454,7 +455,7 @@ uint8_t diskII_read_C0xx(void *context, uint32_t address) {
     diskII &seldrive = thisSlot->drive[drive];
 
     if (thisSlot->motor == 1 && thisSlot->mark_cycles_turnoff != 0 && ((thisSlot->clock->get_cycles() > thisSlot->mark_cycles_turnoff))) {
-        if (DEBUG(DEBUG_DISKII)) printf("motor off: %llu %llu cycles\n", thisSlot->clock->get_cycles(), thisSlot->mark_cycles_turnoff);
+        if (DEBUG(DEBUG_DISKII)) printf("motor off: %llu %llu cycles\n", u64_t(thisSlot->clock->get_cycles()), u64_t(thisSlot->mark_cycles_turnoff));
         thisSlot->motor = 0;
         thisSlot->mark_cycles_turnoff = 0;
     }
@@ -534,7 +535,7 @@ uint8_t diskII_read_C0xx(void *context, uint32_t address) {
             // if motor already off, do nothing. otherwise schedule a motor off.
             if (thisSlot->motor == 1) {
                 thisSlot->mark_cycles_turnoff = thisSlot->clock->get_cycles() + 1000000;
-                if (DEBUG(DEBUG_DISKII)) printf("schedule motor off at %llu (is now %llu)\n", thisSlot->mark_cycles_turnoff, thisSlot->clock->get_cycles());
+                if (DEBUG(DEBUG_DISKII)) printf("schedule motor off at %llu (is now %llu)\n", u64_t(thisSlot->mark_cycles_turnoff), u64_t(thisSlot->clock->get_cycles()));
             }
             break;
         case DiskII_Motor_On: // only one drive at a time is motorized.
@@ -627,7 +628,7 @@ void diskII_write_C0xx(void *context, uint32_t address, uint8_t value) {
             // if motor already off, do nothing. otherwise schedule a motor off.
             if (diskII_d->motor == 1) {
                 diskII_d->mark_cycles_turnoff = diskII_d->clock->get_cycles() + 1000000;
-                if (DEBUG(DEBUG_DISKII)) printf("schedule motor off at %llu (is now %llu)\n", diskII_d->mark_cycles_turnoff, diskII_d->clock->get_cycles());
+                if (DEBUG(DEBUG_DISKII)) printf("schedule motor off at %llu (is now %llu)\n", u64_t(diskII_d->mark_cycles_turnoff), u64_t(diskII_d->clock->get_cycles()));
             }
             break;
         case DiskII_Motor_On: // only one drive at a time is motorized.

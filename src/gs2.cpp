@@ -49,6 +49,7 @@
 #include "util/Metrics.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/SoundEffectKeys.hpp"
+#include "util/printf_helper.hpp"
 
 /**
  * References: 
@@ -125,7 +126,7 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
                 {
                     uint64_t key = event->getEventKey();
                     uint64_t data = event->getEventData();
-                    printf("EVENT_MODAL_CLICK: %llu %llu\n", key, data);
+                    printf("EVENT_MODAL_CLICK: %llu %llu\n", u64_t(key), u64_t(data));
                     if (data == 1) {
                         // save and unmount.
                         computer->mounts->unmount_media(key, SAVE_AND_UNMOUNT);

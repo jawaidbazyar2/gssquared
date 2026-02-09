@@ -6,7 +6,7 @@
 #include "computer.hpp"
 #include "debug.hpp"
 #include "util/DebugHandlerIDs.hpp"
-
+#include "util/printf_helper.hpp"
 
 void mouse_propagate_interrupt(mouse_state_t *ds) {
     // for each chip, calculate the IFR bit 7.
@@ -225,7 +225,7 @@ void mouse_vbl_interrupt(uint64_t instanceID, void *user_data) {
     ds->status.int_vbl = 1;
     mouse_propagate_interrupt(ds);
     if (ds->vbl_cycle <= ds->clock->get_c14m()) {
-        fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", ds->vbl_cycle, ds->clock->get_c14m());
+        fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", u64_t(ds->vbl_cycle), u64_t(ds->clock->get_c14m()));
         return;
     }
     ds->event_timer->scheduleEvent(ds->vbl_cycle, mouse_vbl_interrupt, instanceID, ds);

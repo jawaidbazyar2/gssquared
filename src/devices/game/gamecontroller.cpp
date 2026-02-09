@@ -34,6 +34,7 @@
 #include "util/applekeys.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/DebugFormatter.hpp"
+#include "util/printf_helper.hpp"
 
 /**
  * this is a relatively naive implementation of game controller,
@@ -129,7 +130,7 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
             ds->game_input_trigger_0 = x_trigger;
             ds->game_input_trigger_1 = y_trigger;
         }
-        if (DEBUG(DEBUG_GAME)) fprintf(stdout, "Strobe game inputs: %f, %f: %llu, %llu\n", mouse_x, mouse_y, ds->game_input_trigger_0, ds->game_input_trigger_1);
+        if (DEBUG(DEBUG_GAME)) fprintf(stdout, "Strobe game inputs: %f, %f: %llu, %llu\n", mouse_x, mouse_y, u64_t(ds->game_input_trigger_0), u64_t(ds->game_input_trigger_1));
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD /* ds->gps[0].game_type == GAME_INPUT_TYPE_GAMEPAD */) {
         // Scale the axes larger, to get the corners to full extent
         
