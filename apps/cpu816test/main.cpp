@@ -20,6 +20,7 @@
  * on a test failure, the suite will execute an instruction that jumps to itself. Our main loop tests for this
  * condition and exits with the PC of the failed test.
  */
+#include <cinttypes>
 #include <SDL3/SDL.h>
 
 #include "cpu.hpp"
@@ -236,7 +237,7 @@ int main(int argc, char **argv) {
     if (display) update_display(msgbuf);
 
     uint64_t duration = end_time - start_time;
-    printf("Test took %llu ns\n", duration);
+    printf("Test took %" PRIu64 " ns\n", duration);
     printf("Average 'cycle' time: %f ns\n", (double)duration / (double) clock->get_cycles());
     printf("Effective MHz: %f\n", 1'000'000'000 / ((double)duration / (double) clock->get_cycles()) / 1000000);
 
