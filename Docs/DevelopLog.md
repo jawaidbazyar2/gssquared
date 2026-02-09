@@ -9454,3 +9454,49 @@ ok, so far so good. Got MB switched over to eventuate on video cycles. mockingbo
 
 Testing the Apple II MegaDemo, the mockingboard works both better and worse. I have the beatbox stuff clearly, but there is no melody volume at all. let's reboot for fun. crazy amount of "event timestamp in the past", probably why.
 
+Back to the 6522 issue.
+Let's assume that programming 0 in the counter means we'll get an interrupt the very next cycle. (not the -current- cycle), when the counter ticks from 0 to FFFF. (wraps).
+the counter will be set on the last cycle of the STA. we set the trigger for current cycle + 1 because we do the increment after the memory access. 
+    STA XXXX
+    1  opcode
+    2  AAL
+    3  AAH
+    4  DATA LOW  <- the 0 goes into the counter
+
+    5  next inst
+    5  CLI   <- after 5, interrupt sampled - is asserted, set "ICHANGE=true,EFFI=true" (what was I before change)
+    6    I=0
+    7 IRQPOLL=true, BUT ICHANGE also true.
+    7  SEI   <- IRQ is still asserted. set iCHANGE=true,EFFI=false.
+    8    I=1 <- but before this. 
+    9  something
+
+at end of IRQ routine, EFFI=I, ICHANGE=false.
+We need to set ICHANGE=true,EFFI=<OLDVALUE> at CLI, SEI, PLP instructions.
+and IRQ routine checks EFFI, instead of I.
+
+We don't have any way to check the IRQ status ("poll it") actually at the last instruction; we'd have to hand-code that into all the address mode/instruction handlers. ughy. But an interrupt once asserted should never go away on its own.
+ok, let's try it!
+
+
+Currently we are doing this:
+            uint32_t next_counter = tc->t1_counter ? tc->t1_counter : 65536;
+where we have been assuming that 0 meant "wait until next time around".
+but I think the truth is 0 means "1" (to account for going from 0 to FFFF). So, DO add the +1, but do not treat 0 as 65536.
+Now, we may actually need this to be +2, because the latch will occur at the end of this cycle. Then at end of next cycle it will tick to FFFf?
+
+OK. we CLI and an IRQ is already asserted. So we are going to check the IRQ status "at the end of the CLI". then potentially interrupt the next instruction.
+So if it's already asserted, perhaps we do NOT skip the next instruction?
+Right now we're doing a "skip the next instruction", but really, we should be doing "delay the effect of I *change* until after next instruction".
+
+That makes ticket #94 guy's test program work, but now the MB Audit 1.58 fails utterly with "no mockingboard detected" at all! Well, we'll see about that!
+
+Uh, in init we trigger t1 TWICE. 
+    mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 0 , mb_d);
+    mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 1 , mb_d);
+This bug appears to go back to the very beginning of this code.
+
+So I fixed that, T2C is still not counting down. That makes sense though because the Latch is 0, and this means we're doing % 1.
+But %1 
+t1_triggered_cycles is the base where the latch was last changed, so that is valid here. T1 is working because there's a flag to indicate whether we've ever written it?
+

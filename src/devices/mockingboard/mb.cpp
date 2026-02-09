@@ -976,11 +976,10 @@ void mb_t2_timer_callback(uint64_t instanceID, void *user_data) {
 
     if (DEBUG(DEBUG_MOCKINGBOARD)) std::cout << "MB 6522 Timer callback " << slot << " " << chip << std::endl;
 
-
     // TODO: there are two chips; track each IRQ individually and update card IRQ line from that.
     mb_6522_regs *tc = &mb_d->d_6522[chip];
     
-    if (0) {
+#if 0
         tc->t2_counter = tc->t2_latch;
         
         uint32_t counter = tc->t2_counter;
@@ -989,8 +988,8 @@ void mb_t2_timer_callback(uint64_t instanceID, void *user_data) {
         } */
         
         mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + counter + 1, mb_t2_timer_callback, instanceID , mb_d);
-    }
-    if (1) { // one-shot mode
+#endif
+    if (1) { // one-shot mode (T2 only has one-shot mode?)
         // TODO: "after timing out, the counter will continue to decrement."
         // so do NOT reset the counter to the latch.
         // processor must rewrite T2C-H to enable setting of the interrupt flag.
@@ -1079,7 +1078,7 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             tc->t1_counter = tc->t1_latch;
             uint32_t next_counter = tc->t1_counter/*  ? tc->t1_counter : 65536 */;
             
-            tc->t1_triggered_cycles = vid_cycles + next_counter+1; // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
+            tc->t1_triggered_cycles = vid_cycles + next_counter + 1; // TODO: testing. this is icky. This might be 6502 cycle timing plus 6522 counter timing.
             tc->t1_oneshot_pending = 1;
             //if (tc->ier.bits.timer1) {
                 mb_d->event_timer->scheduleEvent(tc->t1_triggered_cycles, mb_t1_timer_callback, 0x10000000 | (slot << 8) | chip , mb_d);
@@ -1088,7 +1087,7 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             } */
             }
             break;
-        // TODO: T2C_L and T2C_H are not implemented.
+
         case MB_6522_T2C_L:
             tc->t2_latch = (tc->t2_latch & 0xFF00) | data;
             break;
@@ -1098,10 +1097,10 @@ void mb_write_Cx00(void *context, uint32_t addr, uint8_t data) {
             uint32_t next_counter2 = tc->t2_counter /* ? tc->t2_counter : 65536 */;
             tc->ifr.bits.timer2 = 0;
             mb_6522_propagate_interrupt(mb_d);
-            tc->t2_triggered_cycles = vid_cycles;
+            tc->t2_triggered_cycles = vid_cycles + next_counter2 + 1;
             tc->t2_oneshot_pending = 1;
             //if (tc->ier.bits.timer2) {
-                mb_d->event_timer->scheduleEvent(vid_cycles + next_counter2, mb_t2_timer_callback, 0x10010000 | (slot << 8) | chip , mb_d);
+                mb_d->event_timer->scheduleEvent(tc->t2_triggered_cycles, mb_t2_timer_callback, 0x10010000 | (slot << 8) | chip , mb_d);
             /* } else {
                 mb_d->event_timer->cancelEvents(0x10010000 | (slot << 8) | chip);
             } */
@@ -1196,6 +1195,7 @@ inline uint64_t calc_cycle_diff_t2(mb_6522_regs *tc, uint64_t cycles) {
     /* if (latchval == 0) {
         latchval = 65536;
     } */
+    if (tc->t2_triggered_cycles == 0) return ( 0 - cycles) & 0xFFFF; // never triggered, so the "tick" is the current cycle.
     return (latchval - ((cycles - tc->t2_triggered_cycles) % (latchval+1))) & 0xFFFF;
 }
 
@@ -1467,8 +1467,12 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
 
     insert_empty_mockingboard_frame(mb_d);
 
+    // Set up Timer T1 on both chips
     mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 0 , mb_d);
     mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 1 , mb_d);
+    // Set up Timer T2 on both chips
+    mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + 65536, mb_t2_timer_callback, 0x10010000 | (slot << 8) | 0 , mb_d);
+    mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + 65536, mb_t2_timer_callback, 0x10010000 | (slot << 8) | 1 , mb_d);
 
 
     // set up a reset handler to reset the chips on mockingboard
