@@ -1380,7 +1380,7 @@ int main(int argc, char **argv) {
         char * trace_entry = cpu->trace_buffer->decode_trace_entry(&cpu->trace_entry);
         // trim the start (cycles always 0 is not informative)
         trace_entry[90] = '\0';
-        printf("%-30s [%1llu] %s ", test_records[i].description.c_str(), test_records[i].expected_cycles, trace_entry + 20);
+        printf("%-30s [%1llu] %s ", test_records[i].description.c_str(), u64_t(test_records[i].expected_cycles), trace_entry + 20);
 
         if (!result) {
             printf("FAILED [%llu != %llu]", u64_t(clock->get_cycles()), u64_t(test_records[i].expected_cycles));
