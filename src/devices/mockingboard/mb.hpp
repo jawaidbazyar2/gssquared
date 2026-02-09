@@ -45,7 +45,6 @@
 #define MB_6522_1 0x00
 #define MB_6522_2 0x80
 
-#define AY_8913_REGISTER_COUNT 16
 
 union ifr_t {
     uint8_t value;
