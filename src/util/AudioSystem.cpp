@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <SDL3/SDL.h>
 
 #include "AudioSystem.hpp"
@@ -42,9 +43,9 @@ SDL_AudioDeviceID AudioSystem::get_audio_device_id() {
 /* returns true if successful, false if not */
 SDL_AudioStream *AudioSystem::create_stream(int sample_rate, int channels, SDL_AudioFormat sample_format, bool apply_volume) {
     SDL_AudioSpec spec = {
-        .freq = sample_rate,
-        .format = sample_format,
-        .channels = channels
+        sample_format,
+        channels,
+        sample_rate
     };
     SDL_AudioStream *stream = SDL_CreateAudioStream(&spec, nullptr);
     if (!stream) {
@@ -56,11 +57,11 @@ SDL_AudioStream *AudioSystem::create_stream(int sample_rate, int channels, SDL_A
         return nullptr;
     }
     audio_stream_t streamr = {
-        .stream = stream,
-        .sample_rate = sample_rate,
-        .channels = channels,
-        .sample_format = sample_format,
-        .apply_volume = apply_volume
+        stream,
+        sample_rate,
+        channels,
+        sample_format,
+        apply_volume
     };
     allocated_streams.push_back(streamr);
     return stream;
@@ -74,9 +75,9 @@ void AudioSystem::update_stream(SDL_AudioStream *stream, int sample_rate, int ch
             streamr.sample_format = sample_format;
             streamr.apply_volume = apply_volume;
             SDL_AudioSpec spec = {
-                .freq = sample_rate,
-                .format = sample_format,
-                .channels = channels
+                sample_format,
+                channels,
+                sample_rate
             };
             SDL_SetAudioStreamFormat(stream, &spec, nullptr);
             return;
