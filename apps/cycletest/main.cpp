@@ -28,6 +28,7 @@
 #include "cpus/cpu_implementations.cpp"
 #include "mmus/mmu.hpp"
 #include "NClock.hpp"
+#include "util/printf_helper.hpp"
 
 gs2_app_t gs2_app_inues;
 
@@ -1382,7 +1383,7 @@ int main(int argc, char **argv) {
         printf("%-30s [%1llu] %s ", test_records[i].description.c_str(), test_records[i].expected_cycles, trace_entry + 20);
 
         if (!result) {
-            printf("FAILED [%llu != %llu]", clock->get_cycles(), test_records[i].expected_cycles);
+            printf("FAILED [%llu != %llu]", u64_t(clock->get_cycles()), u64_t(test_records[i].expected_cycles));
             failedtests++;
         }
         printf("\n");

@@ -7,3 +7,6 @@
 [submodule "vendored/SDL_ttf"]
 	path = vendored/SDL_ttf
 	url = https://github.com/libsdl-org/SDL_ttf.git
+[submodule "vendored/fmt"]
+	path = vendored/fmt
+	url = https://github.com/fmtlib/fmt.git
