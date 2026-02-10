@@ -50,6 +50,29 @@ struct RegisterEvent {
     }
 };
 
+#if 0
+// Add a static array for the normalized volume levels
+static const float normalized_levels[16] = {
+    0.00000,
+    0.00795,
+    0.01123,
+    0.01586,
+    0.02241,
+    0.03165,
+    0.04470,
+    0.06313,
+    0.08917,
+    0.12595,
+    0.17790,
+    0.25127,
+    0.35489,
+    0.50126,
+    0.70800,
+    1.00000,
+};
+#endif
+
+#if 1
 // Add a static array for the normalized volume levels
 static const float normalized_levels[16] = {
     0x0000 / 65535.0f * 0.25f, 0x0385 / 65535.0f * 0.25f, 0x053D / 65535.0f * 0.25f, 0x0770 / 65535.0f * 0.25f,
@@ -66,6 +89,7 @@ static const float normalized_levels[16] = {
     0x9204 / 65535.0f, 0xAFF1 / 65535.0f, 0xD921 / 65535.0f, 0xFFFF / 65535.0f
 };
  */
+#endif
 
  class MockingboardEmulator {
     private:
@@ -76,6 +100,10 @@ static const float normalized_levels[16] = {
         static constexpr int ENVELOPE_CLOCK_DIVIDER = 256;  // First stage divider for envelope
         static constexpr float FILTER_CUTOFF = 0.3f; // Filter coefficient (0-1) (lower is more aggressive)
         
+        float get_volume(uint8_t volsetting) {
+            return normalized_levels[volsetting]; /*  * 0.25f */;
+        }
+
     public:
         MockingboardEmulator(std::vector<float>* buffer = nullptr) 
             : current_time(0.0), time_accumulator(0.0), envelope_time_accumulator(0.0), audio_buffer(buffer) {
@@ -90,6 +118,7 @@ static const float normalized_levels[16] = {
                 // Initialize tone channels
                 for (int i = 0; i < 3; i++) {
                     chips[c].tone_channels[i].period = 0;
+                    //chips[c].tone_channels[i].counter = 0; // TODO: was 1, for testing claude suggestion.
                     chips[c].tone_channels[i].counter = 1;
                     chips[c].tone_channels[i].output = false;
                     chips[c].tone_channels[i].volume = 0;
@@ -175,6 +204,22 @@ static const float normalized_levels[16] = {
             
             // Update internal state based on register change
             switch (event.register_num) {
+                case A_Tone_Low:
+                case A_Tone_High:
+                    chip.tone_channels[0].period = ((chip.registers[A_Tone_High] & 0x0F) << 8) | chip.registers[A_Tone_Low];
+                    setChannelAlpha(event.chip_index, 0);
+                    break;
+                case B_Tone_Low:
+                case B_Tone_High:
+                    chip.tone_channels[1].period = ((chip.registers[B_Tone_High] & 0x0F) << 8) | chip.registers[B_Tone_Low];
+                    setChannelAlpha(event.chip_index, 1);
+                    break;
+                case C_Tone_Low:
+                case C_Tone_High:
+                    chip.tone_channels[2].period = ((chip.registers[C_Tone_High] & 0x0F) << 8) | chip.registers[C_Tone_Low];
+                    setChannelAlpha(event.chip_index, 2);
+                    break;
+#if 0
                 case A_Tone_Low: // Tone period low bits for channel A
                 case B_Tone_Low: // Tone period low bits for channel B
                 case C_Tone_Low: // Tone period low bits for channel C
@@ -207,7 +252,7 @@ static const float normalized_levels[16] = {
                         setChannelAlpha(event.chip_index, channel);
                     }
                     break;
-                    
+#endif
                 case Noise_Period: // Noise period
                     chip.noise_period = event.value & 0x1F;
                     if (chip.noise_period == 0) {
@@ -236,7 +281,7 @@ static const float normalized_levels[16] = {
                     chip.envelope_attack = (chip.envelope_shape & 0x04) != 0;
                     // Set initial output value based on attack/decay
                     chip.envelope_output = chip.envelope_attack ? 0 : 15;
-                    chip.target_envelope_level = normalized_levels[chip.envelope_output];
+                    chip.target_envelope_level = get_volume(chip.envelope_output);
                     break;
                     
                 case Ampl_A: // Channel A volume
@@ -244,7 +289,14 @@ static const float normalized_levels[16] = {
                 case Ampl_C: // Channel C volume
                     {
                         int channel = event.register_num - Ampl_A;
+                        uint16_t volsetting = event.value & 0x0F;
                         // Check if envelope is enabled (bit 4)
+#if 0
+                        chip.tone_channels[channel].use_envelope = (event.value & 0x10) != 0;
+                        chip.tone_channels[channel].volume = normalized_levels[volsetting];
+                        //printf("%12.4f|chip %d channel %d use_envelope %d volume %d/%f\n", event.timestamp, event.chip_index, channel, chip.tone_channels[channel].use_envelope, volsetting, chip.tone_channels[channel].volume);
+#endif
+#if 1
                         if (event.value & 0x10) {
                             chip.tone_channels[channel].use_envelope = true;
                             // Set initial volume from current envelope output, normalized to 0-1
@@ -254,6 +306,7 @@ static const float normalized_levels[16] = {
                             // Convert direct volume to 0-1 range
                             chip.tone_channels[channel].volume = normalized_levels[event.value & 0x0F];
                         }
+#endif
                     }
                     break;
             }
@@ -270,7 +323,7 @@ static const float normalized_levels[16] = {
             // Process both chips
             for (int c = 0; c < 2; c++) {
                 AY3_8910& chip = chips[c];
-                
+#if 1                
                 // Process tone generators
                 for (int i = 0; i < 3; i++) {
                     ToneChannel& channel = chip.tone_channels[i];
@@ -287,7 +340,17 @@ static const float normalized_levels[16] = {
                         channel.output = !channel.output;
                     }
                 }
-                
+#endif            
+#if 0    
+                for (int i = 0; i < 3; i++) {
+                    ToneChannel& ch = chip.tone_channels[i];
+                    ch.counter++;
+                    if (ch.counter >= ch.period/2) {
+                        ch.counter = 0;
+                        ch.output = !ch.output;
+                    }
+                }
+#endif
                 // Process noise generator (simplified)
                 chip.noise_counter--;
                 if (chip.noise_counter <= 0) {
@@ -331,14 +394,14 @@ static const float normalized_levels[16] = {
                             if (chip.envelope_output < 15) {
                                 // Still rising
                                 chip.envelope_output++;
-                                chip.target_envelope_level = normalized_levels[chip.envelope_output];
+                                chip.target_envelope_level = get_volume(chip.envelope_output);
                             } else {
                                 // Reached peak, determine next state
                                 // If continue and hold are both set, determine held value by (attack XOR alternate)
                                 if (cont && hold) {
                                     bool held_at_15 = attack != alternate; // XOR operation
                                     chip.envelope_output = held_at_15 ? 15 : 0;
-                                    chip.target_envelope_level = normalized_levels[chip.envelope_output];
+                                    chip.target_envelope_level = get_volume(chip.envelope_output);
                                     chip.envelope_hold = true;
                                 }
                                 // Regular processing for other cases
@@ -353,7 +416,7 @@ static const float normalized_levels[16] = {
                                 } else {
                                     // Reset to start of phase
                                     chip.envelope_output = attack ? 0 : 15;
-                                    chip.target_envelope_level = normalized_levels[chip.envelope_output];
+                                    chip.target_envelope_level = get_volume(chip.envelope_output);
                                 }
                             }
                         } else {
@@ -361,14 +424,14 @@ static const float normalized_levels[16] = {
                             if (chip.envelope_output > 0) {
                                 // Still falling
                                 chip.envelope_output--;
-                                chip.target_envelope_level = normalized_levels[chip.envelope_output];
+                                chip.target_envelope_level = get_volume(chip.envelope_output);
                             } else {
                                 // Reached zero, determine next state
                                 // If continue and hold are both set, determine held value by (attack XOR alternate)
                                 if (cont && hold) {
                                     bool held_at_15 = attack != alternate; // XOR operation
                                     chip.envelope_output = held_at_15 ? 15 : 0;
-                                    chip.target_envelope_level = normalized_levels[chip.envelope_output];
+                                    chip.target_envelope_level = get_volume(chip.envelope_output);
                                     chip.envelope_hold = true;
                                 }
                                 // Regular processing for other cases
@@ -381,7 +444,7 @@ static const float normalized_levels[16] = {
                                 } else {
                                     // Reset to start of phase
                                     chip.envelope_output = attack ? 0 : 15;
-                                    chip.target_envelope_level = normalized_levels[chip.envelope_output];
+                                    chip.target_envelope_level = get_volume(chip.envelope_output);
                                 }
                             }
                         }
@@ -461,6 +524,7 @@ static const float normalized_levels[16] = {
                 for (int c = 0; c < 2; c++) {
     
                     const AY3_8910& chip = chips[c];
+#if 0
                     for (int channel = 0; channel < 3; channel++) {
                         const ToneChannel& tone = chip.tone_channels[channel];
                         bool tone_dis  = (chip.mixer_control >> channel) & 1;       // 1 = disabled
@@ -474,7 +538,8 @@ static const float normalized_levels[16] = {
                         float channel_output = gate ? tone.volume : 0.0f;
                         mixed_output[c] += channel_output;
                     }
-#if 0
+#endif
+#if 1
                     for (int channel = 0; channel < 3; channel++) {
                         const ToneChannel& tone = chip.tone_channels[channel];
                         bool tone_enabled = !(chip.mixer_control & (1 << channel));
