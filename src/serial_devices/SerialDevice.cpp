@@ -14,5 +14,12 @@ SerialDevice::SerialDevice(const char *name) {
     this->name = name;
 
     // start the thread, and call it
-    SDL_CreateThread(SerialDeviceThreadHandler, name, (void *) this);
+    this->thread = SDL_CreateThread(SerialDeviceThreadHandler, name, (void *) this);
+}
+
+SerialDevice::~SerialDevice() {
+    SDL_Log("SerialDevice: %s shutting down", name);
+    SerialMessage msg = {MESSAGE_SHUTDOWN, 0};
+    q_host.send(msg);
+    SDL_WaitThread(thread, NULL);
 }

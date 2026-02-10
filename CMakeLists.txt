@@ -157,6 +157,7 @@ function(configure_sdl_builds)
     add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL)
     add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_image)
     add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_ttf)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_net)
     set(BUILD_SHARED_LIBS OFF)
 endfunction()
 
@@ -202,7 +203,7 @@ target_include_directories(gs2_headers
 )
 
 # all following targets will link to SDL3
-link_libraries(gs2_headers SDL3::SDL3-shared)
+link_libraries(gs2_headers SDL3::SDL3-shared SDL3_net::SDL3_net-shared)
 
 add_library(gs2_devices_game src/devices/game/gamecontroller.cpp src/devices/game/mousewheel.cpp )
 
@@ -270,6 +271,8 @@ add_library(gs2_computer src/computer.cpp )
 
 add_library(gs2_event_dispatcher src/util/EventDispatcher.cpp )
 
+add_library(gs2_serial_devices src/serial_devices/SerialDevice.cpp
+)
 add_library(gs2_util src/util/media.cpp src/util/ResourceFile.cpp src/util/dialog.cpp src/util/mount.cpp 
     #src/util/soundeffects.cpp 
     src/util/SoundEffect.cpp
@@ -320,6 +323,7 @@ add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp
 target_link_libraries(GSSquared PRIVATE 
     SDL3::SDL3-shared
     SDL3_image::SDL3_image-shared
+    SDL3_net::SDL3_net-shared
 )
 if(WIN32)
     # We'll bundle the MinGW runtime DLLs instead of static linking
@@ -350,6 +354,7 @@ target_link_libraries(GSSquared
     gs2_devices_ensoniq
     gs2_devices_scc8530
     gs2_devices_iwm
+    gs2_serial_devices
     gs2_debugger
     gs2_util
     gs2_util_audio
@@ -466,6 +471,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             SDL3-shared 
             SDL3_image-shared 
             SDL3_ttf-shared
+            SDL3_net-shared
             LIBRARY DESTINATION "GSSquared.app/Contents/Frameworks"
             COMPONENT Runtime
         )
@@ -498,6 +504,7 @@ if(WIN32)
             ${CMAKE_BINARY_DIR}/SDL3.dll
             ${CMAKE_BINARY_DIR}/SDL3_image.dll
             ${CMAKE_BINARY_DIR}/SDL3_ttf.dll
+            ${CMAKE_BINARY_DIR}/SDL3_net.dll
             DESTINATION bin
             COMPONENT Runtime
         )
@@ -515,6 +522,7 @@ if(WIN32)
             ${CMAKE_BINARY_DIR}/lib/libSDL3.dll.a
             ${CMAKE_BINARY_DIR}/lib/libSDL3_image.dll.a
             ${CMAKE_BINARY_DIR}/lib/libSDL3_ttf.dll.a
+            ${CMAKE_BINARY_DIR}/lib/libSDL3_net.dll.a
             DESTINATION lib
             COMPONENT Runtime
         )
@@ -534,6 +542,7 @@ if(WIN32)
             ${CMAKE_BINARY_DIR}/SDL3.dll
             ${CMAKE_BINARY_DIR}/SDL3_image.dll
             ${CMAKE_BINARY_DIR}/SDL3_ttf.dll
+            ${CMAKE_BINARY_DIR}/SDL3_net.dll
             DESTINATION .
             COMPONENT Runtime
         )
@@ -550,6 +559,7 @@ if(WIN32)
             ${CMAKE_BINARY_DIR}/lib/libSDL3.dll.a
             ${CMAKE_BINARY_DIR}/lib/libSDL3_image.dll.a
             ${CMAKE_BINARY_DIR}/lib/libSDL3_ttf.dll.a
+            ${CMAKE_BINARY_DIR}/lib/libSDL3_net.dll.a
             DESTINATION lib
             COMPONENT Runtime
         )
@@ -596,6 +606,7 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             SDL3-shared 
             SDL3_image-shared 
             SDL3_ttf-shared
+            SDL3_net-shared
             LIBRARY DESTINATION lib
             COMPONENT Runtime
         )
@@ -645,6 +656,7 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
                 SDL3-shared 
                 SDL3_image-shared 
                 SDL3_ttf-shared
+                SDL3_net-shared
                 TYPE LIBRARY
                 COMPONENT Runtime
             )

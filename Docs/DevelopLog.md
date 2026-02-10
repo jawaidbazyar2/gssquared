@@ -9494,9 +9494,49 @@ That makes ticket #94 guy's test program work, but now the MB Audit 1.58 fails u
 Uh, in init we trigger t1 TWICE. 
     mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 0 , mb_d);
     mb_d->event_timer->scheduleEvent(mb_d->clock->get_vid_cycles() + 65536, mb_t1_timer_callback, 0x10000000 | (slot << 8) | 1 , mb_d);
-This bug appears to go back to the very beginning of this code.
+This bug appears to go back to the very beginning of this code. (nah it's confusing but it's actually just T1 on each chip)
 
 So I fixed that, T2C is still not counting down. That makes sense though because the Latch is 0, and this means we're doing % 1.
 But %1 
 t1_triggered_cycles is the base where the latch was last changed, so that is valid here. T1 is working because there's a flag to indicate whether we've ever written it?
 
+I seem to have resolved the posting events into the before time issue. Maybe. However the Deater demos volume issues remain.
+They're creating complex envelopes with the per channel Ampl. Because the regular envelope thing applies to all the tones at once. So.. are we processing volume changes at the wrong time?
+
+Could be an error here:
+            case Ampl_C: // Channel C volume
+                    if (event.value & 0x10) {
+ahhhh no!
+   filter_index = 1 + channel + chip_index * 2
+this is wrong. it should be chip_index * 3. This was causing two of the filters to overlap/override each other. That would cause problems. 
+MegaDemo still has issues where the volume changes radically. I checked, and the individual channel filters were each set to 14KHz. so the filter -alpha- being wrong wouldn't have mattered.. but the filter accumulator was quite wrong. It may sound like there's less noise now. The filters are out entirely now and stuff doesn't sound any different.
+it's so weird! Well, in some ways it's improved. So, take the win.
+
+Alright, tried a lot of things with the AI and the mockingboard code - Mariani emulator has the same volume fading in and out artifacts that monster splash / etc has on gs2. Maybe it's the demo.
+
+Started going through mb-audit again, and we fail 6522 test (component 11) test 4 - "Test all the insn's that can write to T1C_h & T2C_h (excluding RMW: DEC,INC,ASL,LSR,ROL,ROR & 65C02/65816: TR
+B,TSB)". Expected F1 Actual F0, likely this line:
+```
+  1391  31e5 9e00c1             @7      stz             CARD_BASE,x                     ; set to 0 and start counting down here.
+  1392  31e8 20f831                     jsr             @readT1C                        ; subTest #9
+  1408                          @readT1C                                                ; 6cy -> T1|2C=$FFFA
+  1409  31f8 a4fc                       ldy             zpTmp2                          ; 3cy -> T1|2C=$FFF7
+  1410  31fa 88                         dey                                             ; 2cy -> T1|2C=$FFF5 / y=SY6522_TIMER1|2L_COUNTER
+  1411  31fb b900c1             @8      lda             CARD_BASE,y                     ; 4cy -> T1|2C=$FFF1
+```
+so when the stz finishes, the counter should be 0. i.e., on the cycle we write it, it won't have changed. 
+
+## Feb 10, 2026
+
+Well Claude/Cursor made quick work of a simulated hayes modem and telnet, based on my EchoDevice design. Works pretty well actually. A couple notes:
+
+1) it "feels" slow. is that real? Or is it reality vs being used to infinitely fast terminals lately? hehe. but it's possible "check every 10ms for up to 128 bytes" puts an upper limit on it.. yes, 128 x 100 (times per second) is 12,800 bytes / sec. or like 128Kbps. Well that's pretty fast.
+2) there is no "baud timing" anywhere in the code right now, so everything is the same speed.
+
+The telnet handling should be broken out into its own class - and, with a base class structure. This way we could do different transport types. Particularly, I am thinking about ssh, but we might have others. could do ATDS (instead of T), where s is ssh.
+
+The network handling also needs to be pulled into a NetworkSystem, because if we want to emulate an ethernet card, we're going to need a centralized layer to init, deinit, and allocate/deallocate resources. That layer would need to be thread-safe, so something to think about (might need some mutex in there).
+
+zmodem is not working with captain's quarters for some reason. checksum failure. however, 1K YModem Batch is working, now that I negotiate binary mode on the telnet session, and handle escaping the telnet 0xFF command code. (you do 0xFF, 0xFF)
+ZModem from CLI sort of works, but I get CRC errors every so often.
+ProTerm is working now, which is weird, with both Echo and Modem devices.

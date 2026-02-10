@@ -4,6 +4,9 @@
 
 #include "util/DebugHandlerIDs.hpp"
 #include "util/DebugFormatter.hpp"
+#include "serial_devices/SerialDevice.hpp"
+#include "serial_devices/echo/EchoDevice.hpp"
+#include "serial_devices/modem/ModemDevice.hpp"
 
 constexpr uint32_t SCCBREG = 0xC038;
 constexpr uint32_t SCCAREG = 0xC039;
@@ -86,5 +89,18 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
             return df;
         }
     );
+
+    st->channel_a_device = new EchoDevice();
+    st->scc->set_device_channel(SCC_CHANNEL_A, st->channel_a_device);
+    st->channel_b_device = new ModemDevice();
+    st->scc->set_device_channel(SCC_CHANNEL_B, st->channel_b_device);
+
+    computer->register_shutdown_handler([st]() {
+        delete st->channel_a_device;
+        delete st->channel_b_device;
+        delete st->scc;
+        delete st;
+        return true;
+    });
 
 }

@@ -4,6 +4,9 @@
 #include <cassert>
 #include "util/DebugFormatter.hpp"
 #include "util/InterruptController.hpp"
+#include "serial_devices/SerialDevice.hpp"
+
+constexpr bool SCDEBUG = 0;
 
 /**
  * this code is LITTLE-ENDIAN SPECIFIC.
@@ -61,6 +64,8 @@ class Z85C30 {
     inline char ch_name(scc_channel_t channel) {
         return (uint8_t) channel + 'A';
     }
+    
+    SerialDevice *serial_devices[SCC_CHANNEL_COUNT] = { nullptr, nullptr };
 
     struct scc_channel_state_t {
         uint8_t char_rx;
@@ -255,11 +260,11 @@ class Z85C30 {
         }
 
         inline void print_read_register(scc_channel_t channel, uint8_t reg_num, uint8_t retval) {
-            printf("SCC: READ  %c :: %2d <== %02X\n", ch_name(channel), reg_num, retval);
+            if (SCDEBUG) printf("SCC: READ  %c :: %2d <== %02X\n", ch_name(channel), reg_num, retval);
         }
 
         inline void print_write_register(scc_channel_t channel, uint8_t reg_num, uint8_t data) {
-            printf("SCC: WRITE %c :: %2d ==> %02X\n", ch_name(channel), reg_num, data);
+            if (SCDEBUG) printf("SCC: WRITE %c :: %2d ==> %02X\n", ch_name(channel), reg_num, data);
         }
 
 
@@ -279,7 +284,7 @@ class Z85C30 {
                     printf("SCC: Unimplemented WRITE %c r0_reset_cmd command: Reg %d = %02X\n", ch_name(channel), new_register, registers[channel].r0_reset_cmd);
                 }
                 reg_select[channel] = new_register;
-                printf("SCC: Register Select %c -> New Reg %d\n", ch_name(channel), new_register);
+                if (SCDEBUG) printf("SCC: Register Select %c -> New Reg %d\n", ch_name(channel), new_register);
             }
             update_interrupts(channel); // might have changed interrupt status
         }
@@ -410,7 +415,7 @@ class Z85C30 {
             reset();
         };
 
-        ~Z85C30();
+        ~Z85C30() {}
 
         void set_data_file(scc_channel_t channel, FILE *data_file) {
             this->data_files[channel] = data_file;
@@ -440,6 +445,8 @@ class Z85C30 {
         
         void writeCmd(scc_channel_t channel, uint8_t data) {
             // current reg_select for channel
+            update_queues();
+
             uint16_t current_reg_select = reg_select[channel];
             switch (current_reg_select) {
                 case WR0: write_register_0(channel, data); break;
@@ -477,23 +484,15 @@ class Z85C30 {
         */
         void writeData(scc_channel_t channel, uint8_t data) {
             printf("SCC: WRITE %c DATA = %02X\n", ch_name(channel), data);
-/*             if (data_files[channel] == NULL) {
-                return;
-            }
-            fputc(data, data_files[channel]);
- */
+
+            update_queues();
+
             // as a test, just echo data back to the read.
             registers[channel].char_tx = data;
-
-            registers[channel].char_rx = data;
-            
-            // signal the rx buffer is full
-            registers[channel].r0_rx_char_available = 1;
-            if (channel == SCC_CHANNEL_A) {
-                registers[SCC_CHANNEL_A].r3_a_rx_pending = 1;
-            } else {
-                registers[SCC_CHANNEL_A].r3_b_rx_pending = 1;
+            if (serial_devices[channel] != nullptr) {
+                serial_devices[channel]->q_host.send(SerialMessage{MESSAGE_DATA, data});
             }
+            
             // signal the tx buffer is empty (instant send for now)
             if (channel == SCC_CHANNEL_A) {
                 registers[channel].r0_tx_buffer_empty = 1;
@@ -506,6 +505,9 @@ class Z85C30 {
         }
 
         uint8_t readCmd(scc_channel_t channel) {
+            
+            update_queues();
+
             uint8_t retval = 0x00;
             uint16_t current_reg_select = reg_select[channel];
             switch (current_reg_select) {
@@ -526,8 +528,35 @@ class Z85C30 {
             return retval;
         }
 
+        // this should be called before reads or writes; and also based on baud timer.
+        void update_queues() {
+            for (int channel = 0; channel < SCC_CHANNEL_COUNT; channel++) {
+                if (serial_devices[channel] != nullptr) {
+                    if ((channel == SCC_CHANNEL_A) && (registers[SCC_CHANNEL_A].r3_a_rx_pending == 0)) {
+                        SerialMessage msg = serial_devices[channel]->q_dev.get();
+                        if (msg.type == MESSAGE_DATA) {
+                            registers[channel].char_rx = msg.data;
+                            registers[channel].r0_rx_char_available = 1;
+                            registers[SCC_CHANNEL_A].r3_a_rx_pending = 1;
+                        }
+                    }
+                    if ((channel == SCC_CHANNEL_B) && (registers[SCC_CHANNEL_A].r3_b_rx_pending == 0)) {
+                        SerialMessage msg = serial_devices[channel]->q_dev.get();
+                        if (msg.type == MESSAGE_DATA) {
+                            registers[channel].char_rx = msg.data;
+                            registers[channel].r0_rx_char_available = 1;                            
+                            registers[SCC_CHANNEL_A].r3_b_rx_pending = 1;
+                        }
+                    }
+                }
+            }
+        }
+
         uint8_t readData(scc_channel_t channel) { 
             uint8_t retval = 0x00;
+
+            update_queues();
+
             if (registers[channel].r0_rx_char_available) {
                 retval = registers[channel].char_rx;
 
@@ -544,6 +573,10 @@ class Z85C30 {
             return retval;
         }
 
+        void set_device_channel(scc_channel_t channel, SerialDevice *device) {
+            serial_devices[channel] = device;
+        }
+        
         void debug_output(DebugFormatter *df) {
             df->addLine("Reg Select A: %02X  B: %02X", reg_select[SCC_CHANNEL_A], reg_select[SCC_CHANNEL_B]);
             df->addLine("Clock Mode A: %dX   B: %dX", clock_mode[SCC_CHANNEL_A], clock_mode[SCC_CHANNEL_B]);
