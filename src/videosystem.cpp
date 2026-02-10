@@ -41,10 +41,10 @@ video_system_t::video_system_t(computer_t *computer) {
     // Set the window's aspect ratio to match the Apple II display (560:384)
     SDL_SetWindowAspectRatio(window, aspect_ratio, aspect_ratio);
 
-    for (int i = 0; i < SDL_GetNumRenderDrivers(); i++) {
+    /* for (int i = 0; i < SDL_GetNumRenderDrivers(); i++) {
         const char *name = SDL_GetRenderDriver(i);
         printf("Render driver %d: %s\n", i, name);
-    }
+    } */
 
     // Create renderer with nearest-neighbor scaling (sharp pixels)
     renderer = SDL_CreateRenderer(window, NULL );
