@@ -4495,13 +4495,17 @@ int execute_next(cpu_state *cpu) override {
             break;
 
         case OP_INOP_CB: /* INOP CB */
-            if constexpr (CPUTraits::has_65c02_ops) {
+            if constexpr (CPUTraits::has_65816_ops) {
+                assert(false && "WAI not implemented");
+            } else if constexpr (CPUTraits::has_65c02_ops) {
                 invalid_nop(cpu, 1, 1);
             } else invalid_opcode(cpu, opcode);
             break;
 
         case OP_INOP_DB: /* INOP DB */
-            if constexpr (CPUTraits::has_65c02_ops) {
+            if constexpr (CPUTraits::has_65816_ops) {
+                assert(false && "STP not implemented");
+            } else if constexpr (CPUTraits::has_65c02_ops) {
                 invalid_nop(cpu, 1, 1);
             } else invalid_opcode(cpu, opcode);
             break;
