@@ -26,6 +26,7 @@ class Paths {
     static std::string pref_path;
     static std::string docs_folder;
     static std::string home_folder;
+    static std::string last_file_dialog_dir;
 
     public:
         static void initialize(bool console_mode);
@@ -33,4 +34,6 @@ class Paths {
         static void calc_pref(std::string& return_path, std::string file) ;
         static void calc_docs(std::string& return_path, std::string file) ;
         static void calc_home(std::string& return_path, std::string file) ;
+        static const std::string& get_last_file_dialog_dir();
+        static void set_last_file_dialog_dir(const std::string& dir);
 };

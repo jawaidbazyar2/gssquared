@@ -28,6 +28,7 @@ std::string Paths::base_path;
 std::string Paths::pref_path;
 std::string Paths::home_folder;
 std::string Paths::docs_folder;
+std::string Paths::last_file_dialog_dir;
 
 /**
  * On a Mac, running as a bundle, the base path is BundlePath/Resources. 
@@ -108,4 +109,16 @@ void Paths::calc_home(std::string& return_path, std::string file) {
 
 void Paths::calc_docs(std::string& return_path, std::string file) {
     return_path = docs_folder + file;
+}
+
+const std::string& Paths::get_last_file_dialog_dir() {
+    // If never set, return documents folder as a reasonable default
+    if (last_file_dialog_dir.empty()) {
+        return docs_folder;
+    }
+    return last_file_dialog_dir;
+}
+
+void Paths::set_last_file_dialog_dir(const std::string& dir) {
+    last_file_dialog_dir = dir;
 }

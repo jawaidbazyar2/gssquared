@@ -39,6 +39,7 @@
 #include "util/strndup.h"
 #include "ModalContainer.hpp"
 #include "util/printf_helper.hpp"
+#include "paths.hpp"
 
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
@@ -69,6 +70,16 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     // returns callback: /Users/bazyar/src/AppleIIDisks/33master.dsk when selecting
     // a disk image file.
     printf("file_dialog_callback: %s\n", filelist[0]);
+    
+    // Extract and remember the directory for next time
+    // SDL3 returns paths with forward slashes on all platforms (Windows, Linux, macOS)
+    std::string filepath(filelist[0]);
+    size_t last_separator = filepath.find_last_of('/');
+    if (last_separator != std::string::npos) {
+        std::string directory = filepath.substr(0, last_separator);
+        Paths::set_last_file_dialog_dir(directory);
+    }
+    
     // 1. unmount current image (if present).
     // 2. mount new image.
     // TODO: this is never called here since we catch "mounted and want to unmount below in diskii_button_click"
@@ -105,12 +116,13 @@ void diskii_button_click(void *userdata) {
     };
 
     printf("diskii button clicked\n");
+    const std::string& last_dir = Paths::get_last_file_dialog_dir();
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
         filters,
         sizeof(filters)/sizeof(SDL_DialogFileFilter),
-        nullptr,
+        last_dir.c_str(),
         false);
 }
 
@@ -130,12 +142,13 @@ void unidisk_button_click(void *userdata) {
     };
 
     printf("unidisk button clicked\n");
+    const std::string& last_dir = Paths::get_last_file_dialog_dir();
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
         filters,
         sizeof(filters)/sizeof(SDL_DialogFileFilter),
-        nullptr,
+        last_dir.c_str(),
         false);
 }
 
