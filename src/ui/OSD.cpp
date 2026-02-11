@@ -71,9 +71,8 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     // a disk image file.
     printf("file_dialog_callback: %s\n", filelist[0]);
     
-    // Remember the full file path for next time - SDL3 may use it to determine initial directory
+    // Remember the full file path for next time - SDL3 uses it to determine initial directory
     std::string filepath(filelist[0]);
-    printf("Storing last selected file: %s\n", filepath.c_str());
     Paths::set_last_file_dialog_dir(filepath);
     
     // 1. unmount current image (if present).
@@ -113,7 +112,6 @@ void diskii_button_click(void *userdata) {
 
     printf("diskii button clicked\n");
     const std::string& last_path = Paths::get_last_file_dialog_dir();
-    printf("Opening file dialog with default path: %s\n", last_path.c_str());
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
@@ -140,7 +138,6 @@ void unidisk_button_click(void *userdata) {
 
     printf("unidisk button clicked\n");
     const std::string& last_path = Paths::get_last_file_dialog_dir();
-    printf("Opening file dialog with default path: %s\n", last_path.c_str());
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
