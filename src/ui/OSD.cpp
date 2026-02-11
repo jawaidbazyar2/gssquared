@@ -118,13 +118,18 @@ void diskii_button_click(void *userdata) {
 
     printf("diskii button clicked\n");
     const std::string& last_dir = Paths::get_last_file_dialog_dir();
-    printf("Opening file dialog with default directory: %s\n", last_dir.c_str());
+    // Add trailing slash for Linux file dialogs (some implementations require it)
+    std::string dir_with_slash = last_dir;
+    if (!dir_with_slash.empty() && dir_with_slash.back() != '/') {
+        dir_with_slash += '/';
+    }
+    printf("Opening file dialog with default directory: %s\n", dir_with_slash.c_str());
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
         filters,
         sizeof(filters)/sizeof(SDL_DialogFileFilter),
-        last_dir.c_str(),
+        dir_with_slash.c_str(),
         false);
 }
 
@@ -145,13 +150,18 @@ void unidisk_button_click(void *userdata) {
 
     printf("unidisk button clicked\n");
     const std::string& last_dir = Paths::get_last_file_dialog_dir();
-    printf("Opening file dialog with default directory: %s\n", last_dir.c_str());
+    // Add trailing slash for Linux file dialogs (some implementations require it)
+    std::string dir_with_slash = last_dir;
+    if (!dir_with_slash.empty() && dir_with_slash.back() != '/') {
+        dir_with_slash += '/';
+    }
+    printf("Opening file dialog with default directory: %s\n", dir_with_slash.c_str());
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
         filters,
         sizeof(filters)/sizeof(SDL_DialogFileFilter),
-        last_dir.c_str(),
+        dir_with_slash.c_str(),
         false);
 }
 
