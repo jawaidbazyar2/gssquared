@@ -71,15 +71,10 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     // a disk image file.
     printf("file_dialog_callback: %s\n", filelist[0]);
     
-    // Extract and remember the directory for next time
-    // SDL3 returns paths with forward slashes on all platforms (Windows, Linux, macOS)
+    // Remember the full file path for next time - SDL3 may use it to determine initial directory
     std::string filepath(filelist[0]);
-    size_t last_separator = filepath.find_last_of('/');
-    if (last_separator != std::string::npos) {
-        std::string directory = filepath.substr(0, last_separator);
-        printf("Storing directory: %s (from filepath: %s)\n", directory.c_str(), filepath.c_str());
-        Paths::set_last_file_dialog_dir(directory);
-    }
+    printf("Storing last selected file: %s\n", filepath.c_str());
+    Paths::set_last_file_dialog_dir(filepath);
     
     // 1. unmount current image (if present).
     // 2. mount new image.
@@ -117,19 +112,14 @@ void diskii_button_click(void *userdata) {
     };
 
     printf("diskii button clicked\n");
-    const std::string& last_dir = Paths::get_last_file_dialog_dir();
-    // Add trailing slash for Linux file dialogs (some implementations require it)
-    std::string dir_with_slash = last_dir;
-    if (!dir_with_slash.empty() && dir_with_slash.back() != '/') {
-        dir_with_slash += '/';
-    }
-    printf("Opening file dialog with default directory: %s\n", dir_with_slash.c_str());
+    const std::string& last_path = Paths::get_last_file_dialog_dir();
+    printf("Opening file dialog with default path: %s\n", last_path.c_str());
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
         filters,
         sizeof(filters)/sizeof(SDL_DialogFileFilter),
-        dir_with_slash.c_str(),
+        last_path.c_str(),
         false);
 }
 
@@ -149,19 +139,14 @@ void unidisk_button_click(void *userdata) {
     };
 
     printf("unidisk button clicked\n");
-    const std::string& last_dir = Paths::get_last_file_dialog_dir();
-    // Add trailing slash for Linux file dialogs (some implementations require it)
-    std::string dir_with_slash = last_dir;
-    if (!dir_with_slash.empty() && dir_with_slash.back() != '/') {
-        dir_with_slash += '/';
-    }
-    printf("Opening file dialog with default directory: %s\n", dir_with_slash.c_str());
+    const std::string& last_path = Paths::get_last_file_dialog_dir();
+    printf("Opening file dialog with default path: %s\n", last_path.c_str());
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
         filters,
         sizeof(filters)/sizeof(SDL_DialogFileFilter),
-        dir_with_slash.c_str(),
+        last_path.c_str(),
         false);
 }
 
