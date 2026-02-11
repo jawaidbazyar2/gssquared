@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <algorithm> // Required for remove_if
 
 #include "serial_devices/SerialDevice.hpp"
 #include "util/printf_helper.hpp"
