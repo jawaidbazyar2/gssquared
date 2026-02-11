@@ -77,6 +77,7 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     size_t last_separator = filepath.find_last_of('/');
     if (last_separator != std::string::npos) {
         std::string directory = filepath.substr(0, last_separator);
+        printf("Storing directory: %s (from filepath: %s)\n", directory.c_str(), filepath.c_str());
         Paths::set_last_file_dialog_dir(directory);
     }
     
@@ -117,6 +118,7 @@ void diskii_button_click(void *userdata) {
 
     printf("diskii button clicked\n");
     const std::string& last_dir = Paths::get_last_file_dialog_dir();
+    printf("Opening file dialog with default directory: %s\n", last_dir.c_str());
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
@@ -143,6 +145,7 @@ void unidisk_button_click(void *userdata) {
 
     printf("unidisk button clicked\n");
     const std::string& last_dir = Paths::get_last_file_dialog_dir();
+    printf("Opening file dialog with default directory: %s\n", last_dir.c_str());
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
