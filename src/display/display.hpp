@@ -162,8 +162,8 @@ public:
         uint8_t f_INTFLAG = 0x00;
     };
 
-    uint8_t onesec_counter = 0;
-    uint8_t quartersec_counter = 0;
+    uint16_t onesec_counter = 0;
+    uint16_t quartersec_counter = 0;
 
     uint32_t dirty_line[24];
     line_mode_t line_mode[24] = {LM_TEXT_MODE}; // 0 = TEXT, 1 = LO RES GRAPHICS, 2 = HI RES GRAPHICS

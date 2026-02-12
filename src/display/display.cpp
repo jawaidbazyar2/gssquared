@@ -1126,10 +1126,12 @@ void scanner_iigs_handler(void *context, VideoScannerEvent event) {
             // every 60 frames, also assert 1 sec
             if (++ds->onesec_counter == 60) {
                 ds->f_onesec_asserted = true;
+                ds->onesec_counter = 0; // kinda need to reset the counter bro.
             }
             // every 16 frames, also assert 0.25 sec
             if (++ds->quartersec_counter == 16) {
                 ds->f_quartersec_asserted = true;
+                ds->quartersec_counter = 0; // kinda need to reset the counter bro.
             }
             break;
         default:
