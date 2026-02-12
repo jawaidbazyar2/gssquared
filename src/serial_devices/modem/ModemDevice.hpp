@@ -72,6 +72,18 @@ class ModemDevice : public SerialDevice {
             }
         }
 
+        void send_ok_response() {
+            send_response("OK\r\n");
+        }
+
+        void send_error_response() {
+            send_response("ERROR\r\n");
+        }
+
+        void send_no_carrier_response() {
+            send_response("NO CARRIER\r\n");
+        }
+
         void process_command() {
             // Normalize command to uppercase
             std::string cmd = command_buffer;
@@ -88,7 +100,7 @@ class ModemDevice : public SerialDevice {
 
             if (cmd.empty()) {
                 // Just "AT" - acknowledge
-                send_response("OK\r\n");
+                send_ok_response();
             } else if (cmd[0] == 'D') {
                 // ATD - Dial command
                 std::string address = cmd.substr(1);
@@ -102,41 +114,41 @@ class ModemDevice : public SerialDevice {
                 address.erase(remove_if(address.begin(), address.end(), ::isspace), address.end());
                 
                 if (address.empty()) {
-                    send_response("ERROR\r\n");
+                    send_error_response();
                 } else {
                     dial(address);
                 }
             } else if (cmd[0] == 'H') {
                 // ATH - Hang up
                 hangup();
-                send_response("OK\r\n");
+                send_ok_response();
             } else if (cmd[0] == 'Z') {
                 // ATZ - Reset modem
                 hangup();
-                send_response("OK\r\n");
+                send_ok_response();
             } else if (cmd[0] == 'E') {
                 // ATE0/ATE1 - Echo off/on (just acknowledge)
                 if (cmd[1] == '0') {
                     // Echo off
                     command_echo = false;
-                    send_response("OK\r\n");
+                    send_ok_response();
                 } else if (cmd[1] == '1') {
                     // Echo on
                     command_echo = true;
-                    send_response("OK\r\n");
+                    send_ok_response();
                 } else {
-                    send_response("ERROR\r\n");
+                    send_error_response();
                 }
                 
             } else if (cmd[0] == 'V') {
                 // ATV0/ATV1 - Verbose off/on (just acknowledge)
-                send_response("OK\r\n");
+                send_ok_response();
             } else if (cmd[0] == 'Q') {
                 // ATQ0/ATQ1 - Result codes on/off (just acknowledge)
-                send_response("OK\r\n");
+                send_ok_response();
             } else {
                 // Unknown command
-                send_response("ERROR\r\n");
+                send_error_response();
             }
 
             command_buffer.clear();
@@ -161,7 +173,7 @@ class ModemDevice : public SerialDevice {
                 try {
                     remote_port = std::stoi(address.substr(colon_pos + 1));
                 } catch (...) {
-                    send_response("ERROR\r\n");
+                    send_error_response();
                     return;
                 }
             }
@@ -172,7 +184,7 @@ class ModemDevice : public SerialDevice {
             NET_Address *addr = NET_ResolveHostname(remote_host.c_str());
             if (!addr) {
                 printf("ModemDevice: Failed to start hostname resolution: %s\n", SDL_GetError());
-                send_response("NO CARRIER\r\n");
+                send_no_carrier_response();
                 return;
             }
 
@@ -181,7 +193,7 @@ class ModemDevice : public SerialDevice {
             if (resolve_status != NET_SUCCESS) {
                 printf("ModemDevice: Failed to resolve hostname: %s\n", SDL_GetError());
                 NET_UnrefAddress(addr);
-                send_response("NO CARRIER\r\n");
+                send_no_carrier_response();
                 return;
             }
 
@@ -191,7 +203,7 @@ class ModemDevice : public SerialDevice {
 
             if (!socket) {
                 printf("ModemDevice: Failed to create client: %s\n", SDL_GetError());
-                send_response("NO CARRIER\r\n");
+                send_no_carrier_response();
                 return;
             }
 
@@ -201,7 +213,7 @@ class ModemDevice : public SerialDevice {
                 printf("ModemDevice: Failed to connect: %s\n", SDL_GetError());
                 NET_DestroyStreamSocket(socket);
                 socket = nullptr;
-                send_response("NO CARRIER\r\n");
+                send_no_carrier_response();
                 return;
             }
 
@@ -232,7 +244,7 @@ class ModemDevice : public SerialDevice {
         void handle_escape_sequence() {
             printf("ModemDevice: Escape sequence detected, returning to command mode\n");
             state = STATE_COMMAND;
-            send_response("OK\r\n");
+            send_ok_response();
             escape_count = 0;
         }
 
