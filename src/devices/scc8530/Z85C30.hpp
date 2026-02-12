@@ -94,7 +94,7 @@ class Z85C30 {
                 uint8_t r1_end_of_frame: 1;
             };
         };
-        uint8_t r_reg_2;
+        //uint8_t r_reg_2;
         union {
             uint8_t r_reg_3;
             struct {
@@ -295,9 +295,10 @@ class Z85C30 {
             update_interrupts(channel); // might have changed interrupt enables
         }
 
+        // partially shared between channels. Write: identical. Read: different
         inline void write_register_2(scc_channel_t channel, uint8_t data) {
             print_write_register(channel, WR2, data);
-            registers[channel].w_regs[WR2] = data;
+            registers[SCC_CHANNEL_A].w_regs[WR2] = data;
         }
 
         inline void write_register_3(scc_channel_t channel, uint8_t data) {
@@ -328,7 +329,17 @@ class Z85C30 {
 
         inline void write_register_9(scc_channel_t channel, uint8_t data) {
             print_write_register(channel, WR9, data);
-            registers[channel].w_regs[WR9] = data;
+            registers[SCC_CHANNEL_A].w_regs[WR9] = data;
+            uint8_t reset_cmd = registers[SCC_CHANNEL_A].r9_reset;
+            if (reset_cmd == 0x01) { // Channel Reset B
+                reset_channel(SCC_CHANNEL_B);
+            }
+            if (reset_cmd == 0x02) { // Channel Reset A
+                reset_channel(SCC_CHANNEL_A);
+            }
+            if (reset_cmd == 0x03) { // Force HW Reset
+                reset();
+            }
         }
 
         inline void write_register_10(scc_channel_t channel, uint8_t data) {
@@ -372,12 +383,20 @@ class Z85C30 {
         }
 
         inline uint8_t read_register_1(scc_channel_t channel) {
+            registers[channel].r1_all_sent = registers[channel].r0_tx_buffer_empty; // this is basically always the case since our transmits are instant
             uint8_t retval = registers[channel].r_reg_1;
             print_read_register(channel, RR1, retval);
             return retval; // TODO: this is reasonable, we won't have errors.. what is residue code?
         }
         inline uint8_t read_register_2(scc_channel_t channel) {
-            uint8_t retval = registers[channel].r_reg_2; // TODO: need to return the actual interrupt vector;
+            // Channel A: return the interrupt vector exactly as-is.
+            // Channel B: return the "modified interrupt vector". 
+            uint8_t retval;
+            if (channel == SCC_CHANNEL_B) {
+                retval = registers[SCC_CHANNEL_A].w_regs[WR2];        // do what?
+            } else {
+                retval = registers[SCC_CHANNEL_A].w_regs[WR2];
+            }
             print_read_register(channel, RR2, retval);
             return retval;
         }
@@ -421,26 +440,25 @@ class Z85C30 {
             this->data_files[channel] = data_file;
         }
 
-        void reset() {
+        void reset_channel(scc_channel_t channel) {
             for (int i = 0; i < 16; i++) {
-                registers[SCC_CHANNEL_A].w_regs[i] = 0;
-                registers[SCC_CHANNEL_B].w_regs[i] = 0;
+                registers[channel].w_regs[i] = 0;
             }
-            for (int channel = 0; channel < SCC_CHANNEL_COUNT; channel++) {
-                registers[(scc_channel_t)channel].r_reg_0 = 0;
-                registers[(scc_channel_t)channel].r_reg_2 = 0;
-                registers[(scc_channel_t)channel].r_reg_1 = 0;
-                registers[(scc_channel_t)channel].r_reg_3 = 0;
-                registers[(scc_channel_t)channel].r_reg_10 = 0;
-            }
-            reg_select[SCC_CHANNEL_A] = 0;
-            reg_select[SCC_CHANNEL_B] = 0;
-            clock_mode[SCC_CHANNEL_A] = 1;
-            clock_mode[SCC_CHANNEL_B] = 1;
-            baud_rate[SCC_CHANNEL_A] = 0.0f;
-            baud_rate[SCC_CHANNEL_B] = 0.0f;
-            update_timing_sources(SCC_CHANNEL_A);
-            update_timing_sources(SCC_CHANNEL_B);
+            registers[channel].r_reg_0 = 0;
+            //registers[channel].r_reg_2 = 0;
+            registers[channel].r_reg_1 = 0;
+            registers[channel].r_reg_3 = 0;
+            registers[channel].r_reg_10 = 0;
+
+            reg_select[channel] = 0;
+            clock_mode[channel] = 1;
+            baud_rate[channel] = 0.0f;
+            update_timing_sources(channel);
+        }
+        
+        void reset() {
+            reset_channel(SCC_CHANNEL_A);
+            reset_channel(SCC_CHANNEL_B);
         }
         
         void writeCmd(scc_channel_t channel, uint8_t data) {
@@ -487,9 +505,14 @@ class Z85C30 {
 
             update_queues();
 
-            // as a test, just echo data back to the read.
+            // send byte to device (if one was assigned)
             registers[channel].char_tx = data;
-            if (serial_devices[channel] != nullptr) {
+            if (registers[SCC_CHANNEL_A].r14_local_loopback) { // Local Loopback enabled
+                // need to stuff this into read channel now.
+                registers[channel].char_rx = data;
+                registers[channel].r0_rx_char_available = 1;
+                registers[SCC_CHANNEL_A].r3_a_rx_pending = 1;
+            } else if (serial_devices[channel] != nullptr) {
                 serial_devices[channel]->q_host.send(SerialMessage{MESSAGE_DATA, data});
             }
             
@@ -584,7 +607,7 @@ class Z85C30 {
             df->addLine("Tx Data A: %02X  B: %02X", registers[SCC_CHANNEL_A].char_tx, registers[SCC_CHANNEL_B].char_tx);
             df->addLine("r_reg_0 A: %02X  B: %02X", registers[SCC_CHANNEL_A].r_reg_0, registers[SCC_CHANNEL_B].r_reg_0);
             df->addLine("r_reg_1 A: %02X  B: %02X", registers[SCC_CHANNEL_A].r_reg_1, registers[SCC_CHANNEL_B].r_reg_1);
-            df->addLine("r_reg_2 A: %02X  B: %02X", registers[SCC_CHANNEL_A].r_reg_2, registers[SCC_CHANNEL_B].r_reg_2);
+            //df->addLine("r_reg_2 A: %02X  B: %02X", registers[SCC_CHANNEL_A].r_reg_2, registers[SCC_CHANNEL_B].r_reg_2);
             df->addLine("r_reg_3 A: %02X  B: 00", registers[SCC_CHANNEL_A].r_reg_3) ;
             df->addLine("r_reg_10 A: %02X  B: %02X", registers[SCC_CHANNEL_A].r_reg_10, registers[SCC_CHANNEL_B].r_reg_10);
             df->addLine("Baud Rate A: %08.2f  B: %08.2f", baud_rate[SCC_CHANNEL_A], baud_rate[SCC_CHANNEL_B]);

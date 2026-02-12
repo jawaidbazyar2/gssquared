@@ -409,29 +409,39 @@ Create a queueing class to manage the in's and out's of communicating with these
 
 ## File
 
-The constructor is called with the file name. 
+The constructor is called with the file name. Append a unique ID (time stamp?) to the end of filename.
 On first instance, just store the info.
 On reset, or DSR/DTR (whatever the heck it is) close the file.
-
 If the file is closed, and a character is written, open the file.
 
-## Modem / Socket (clear)
+
+## Modem / Socket (clear) (done)
 
 A cleartext socket, e.g., telnet. Captain's Quarters is port 6800, and plain text telnet. 
 Also- a simple Hayes command set modem emulator.
 For simple testing, just try opening a socket to port 23 on 192.168.0.96 now.
 
+uses telnet protocol. Is that the right choice?
+
 ## Printer
 
-Somehow, print to a network printer. Somehow select the printer. Then it's really just telnet to the printer.
+Somehow, print to a network printer. Somehow select the printer. Then it's really just telnet to the printer. There is no easy cross-platform stuff for printing.
 
-## Echo
+Practically speaking, I think the thing to do is:
+1) emulate an ImageWriter II (and/or some other printer)
+2) generate a unique file name
+3) generate a PDF file based on that.
+4) call OS to open the PDF file with syd::system(command)
+
+print job completion detection: wait for a significant pause in the data output to signal end of the job. (5 seconds? 10 seconds?) Have to see how that works with various programs.
+
+## Echo (done)
 
 This is for my initial testing. Once the interrupts etc are tested ok, move the echo functionality to a newly created SerialDevice class, which will run in a separate thread (or will it?)
 
 ## SSL Socket
 
-An SSL encrypted socket - or, do we have to go full ssh?
+An SSL encrypted socket (just TLS) - or, do we have to go full ssh?
 
 ## Serial Port
 
@@ -537,6 +547,102 @@ ANSITerm Demo also works, tho there are two places I have to manually read the r
 
 Another possibility is that the interrupt comes back -too fast- for the code to do anything. This may be helped by implementing correct send and receive timing. that will be easier with the separate device.
 
-Telcom pretty much immediately blows up with a BRK. What the hell is that guy doing lolz. Does it require installing a custom serial driver?
+Telcom pretty much immediately blows up with a BRK. What the hell is that guy doing lolz. Does it require installing a custom serial driver? it's got the tools right in it, I think I load them manually..
 
 FreeTerm also working. 
+
+
+## Cross-platform snippet to open PDF file in viewer
+
+```
+#include <iostream>
+#include <string>
+#include <cstdlib> // Required for std::system
+
+void open_pdf_file(const std::string& filename) {
+#ifdef _WIN32
+    // Windows: Use ShellExecute or the 'start' command
+    std::string command = "start \"\" \"" + filename + "\"";
+    std::system(command.c_str());
+#elif __APPLE__
+    // macOS (OSX): Use the 'open' command
+    std::string command = "open \"" + filename + "\"";
+    std::system(command.c_str());
+#elif __linux__
+    // Linux: Use xdg-open (common on many distributions)
+    std::string command = "xdg-open \"" + filename + "\"";
+    std::system(command.c_str());
+#else
+    std::cerr << "Unsupported operating system for automatic PDF opening." << std::endl;
+#endif
+}
+
+int main() {
+    std::string pdf_file_path = "path/to/your/local_document.pdf"; // Replace with your file path
+    open_pdf_file(pdf_file_path);
+    return 0;
+}
+```
+
+## Going through Self Test 06
+
+first thing is SCCRegRW test, which calls ResetSCC. This does:
+```
+80C: initial data
+80D: Register number
+80E: Serial Mask (mask out non r/w bits)
+80F: Mask Data (data masked with mask)
+
+C039:09    // register 9
+C039:C0    // write C0
+
+then we do RwChA with 80C:00 02 FF, mask is ff but data 0 so we write a 0.
+save the masked value to 80F.
+C039:00   // reg 2 Ch a -> 0 , So this is setting the interrupt vector to 0.
+then we read reg 2, and compare the masked value to 80F.
+That's 0 in both cases. So this particular test passes.
+then we DEC 80C, and we're going to loop..
+They are testing that we have a clean 8 bits we can read and write to channel A. 
+
+0294 6934 AD 0D 08     REGRW    LDA   RegNo                    ;Actual R/W test
+0295 6937 99 FD BF              STA   SCCCmd,Y                 ;Point to the Wr reg
+0296 693A AD 0C 08              LDA   DATA                     ;Initially = 0
+0297 693D 2D 0E 08              AND   SerMask                  ;Mask out non R/W bits
+0298 6940 8D 0F 08              STA   MaskData                 ;Store for later comparison
+0299 6943 99 FD BF              STA   SCCCmd,Y                 ;Write the register
+0300 6946 AD 0D 08              LDA   RegNo
+0301 6949 99 FD BF              STA   SCCCmd,Y
+0302 694C B9 FD BF              LDA   SCCCmd,Y                 ;Read the register
+0303 694F CD 0F 08              CMP   MaskData                 ;Compare
+0304 6952 D0 07                 BNE   BadData
+0305 6954 CE 0C 08              DEC   DATA
+0306 6957 D0 DB                 BNE   RegRW                    ;Try $0-FF
+0307 6959 F0 D6                 BEQ   ZRTS
+0308 695B A9 80        BADDATA  LDA   #$80
+0309 695D 60                    RTS   
+```
+
+We are immediately failing when it tries to read back FF from ChA[02]. 
+
+ok got past that - now need to test channel B, register C (12, baud rate) the same way?
+then channel A, register 12.
+then register 13 (0d) on both channels..
+then register 15 (F) with a mask of 0xFA.
+
+We're clearing the register r/w test now, and likely failing on the Internal Loop test.
+looks like it's going to do it on both channels.. smert.
+
+So to do that, it sets up the registers like so:
+
+```
+0421 6A1C              TBL2     EQU   *
+0422 6A1C 09 00                 DC B:9,$00                     ;Disable interupts
+0423 6A1E 04 4C                 DC B:4,$4C                     ;X16 clk 2 Stp bits
+0424 6A20 0B D0                 DC B:11,$D0                    ;Xtal RTxC
+0425 6A22 0C 5E                 DC B:12,$5E                    ;Low Byte Time const
+0426 6A24 0D 00                 DC B:13,$00                    ;Hi Byte Time const
+0427 6A26 0E 13                 DC B:14,$13                    ;Loopback BR enable
+0428 6A28 03 C1                 DC B:3,$C1                     ;Rx 8bits
+0429 6A2A 05 6A                 DC B:5,$6A                     ;Tx 8bits Tx enable RTS
+```
+we're failing test 6, "all sent". 

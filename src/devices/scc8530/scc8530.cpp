@@ -103,4 +103,6 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
         return true;
     });
 
+    // register reset handler ?
+
 }
