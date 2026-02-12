@@ -307,6 +307,7 @@ target_link_libraries(gs2_util SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_computer SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_cpu gs2_trace)
 target_link_libraries(gs2_mmu gs2_trace gs2_cpu)
+target_link_libraries(gs2_devices_adb gs2_util)
 
 # Add the executable
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
