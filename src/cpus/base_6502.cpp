@@ -78,6 +78,7 @@ public:
             cpu->D = 0; // disable decimal mode
             cpu->ICHANGE = false;
             cpu->EFFI = 0;
+            cpu->rdy = false;
             printf("stack init: %04X\n", cpu->sp);
         }
 
@@ -2137,7 +2138,8 @@ int execute_next(cpu_state *cpu) override {
             incr_cycles();
             //incr_cycles(); // todo might be one too many, we're at 8, refs say it's 7. push_byte takes an extra cycle now?
         }
-
+        
+        cpu->rdy = false;
         cpu->ICHANGE = false;
         cpu->EFFI = cpu->I;
 
@@ -2146,9 +2148,14 @@ int execute_next(cpu_state *cpu) override {
         return 0;
     }
 
+    if (cpu->rdy) { // RDY test occurs after IRQ.
+        incr_cycles();
+        return 0;
+    }
+
     // we're into the next instruction, so catch this up now.
-        cpu->ICHANGE = false;
-        cpu->EFFI = cpu->I;
+    cpu->ICHANGE = false;
+    cpu->EFFI = cpu->I;
     
     /* if (cpu->skip_next_irq_check > 0) {
         cpu->skip_next_irq_check--;
@@ -4500,15 +4507,18 @@ int execute_next(cpu_state *cpu) override {
             } else invalid_opcode(cpu, opcode);
             break;
 
-        case OP_INOP_CB: /* INOP CB */
+        case OP_INOP_CB: /* INOP CB */ /* OP_WAI_IMP */
             if constexpr (CPUTraits::has_65816_ops) {
-                assert(false && "WAI not implemented");
+                printf("WAI\n"); // debug, see if anyone ever uses this.
+                cpu->rdy = true;
+                incr_cycles(); // ticks 2 cycles past the opcode.
+                incr_cycles();
             } else if constexpr (CPUTraits::has_65c02_ops) {
                 invalid_nop(cpu, 1, 1);
             } else invalid_opcode(cpu, opcode);
             break;
 
-        case OP_INOP_DB: /* INOP DB */
+        case OP_INOP_DB: /* INOP DB */ /* OP_STP_IMP */
             if constexpr (CPUTraits::has_65816_ops) {
                 //assert(false && "STP not implemented");
                 cpu->clock_stopped = true;
