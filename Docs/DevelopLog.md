@@ -9540,3 +9540,31 @@ The network handling also needs to be pulled into a NetworkSystem, because if we
 zmodem is not working with captain's quarters for some reason. checksum failure. however, 1K YModem Batch is working, now that I negotiate binary mode on the telnet session, and handle escaping the telnet 0xFF command code. (you do 0xFF, 0xFF)
 ZModem from CLI sort of works, but I get CRC errors every so often.
 ProTerm is working now, which is weird, with both Echo and Modem devices.
+
+## Feb 11, 2026
+
+Thinking about a good path forward for "advanced video". Perhaps the place to start, is a survey of the various options that have existed, and think about pro's and con's of each.
+
+TIL that when a IIgs self-test test fails, it executes a STP instruction.
+What the heck is this. Oh, well it actually seems to set a gate that stops the clock inside the cpu.
+So what does that mean. our whole video process blows up. When we're in the STOP clock mode, we need to let 14M's tick by without executing any instructions, or responding to any interrupts other than reset.
+that is basically just an if at the top: if stopped, we need to just tick incr_cycle(), so video will keep running.
+we won't even do any of the bit that pushes a trace into the buffer. ok, that's not hard..
+
+working on the RTC clock now. they do a test where they write to the seconds, and see if it's not changed. or if it's changed by one. The problem is I've been reading and setting the seconds every time.
+ok how about this for an algorithm.
+
+boot: curseconds = read time, seconds = curseconds, lastseconds = curseconds
+
+on a new read:
+newseconds = read time
+if newseconds > lastseconds, then add newseconds-lastseconds to seconds, set lastseconds = curseconds
+
+that works well enough to pass the test! Time is integral so it should keep up with realtime regardless too. I think that's just fine and dandoodely.
+
+some of these tests failing cause the adb data interrupt to get stuck on. simple "read c026" clears it, but, that's odd.. a ctrl-reset is causing it to come back on. might be related somehow to ctrl-alt-esc? How does that get cleared out anyhow?
+
+ok, need to implement the WAI instruction. very similar to STP except its effect is -after- the IRQ check. put in a printf to see when it might be occurring. it's not in ROM03 anyway. 
+
+## feb 12, 2026
+
