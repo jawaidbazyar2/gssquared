@@ -3,9 +3,13 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
+#include "gs2.hpp"
 #include "menu.h"
 
 #include "devices/adb/ADB_Micro.hpp"
+
+gs2_app_t gs2_app_values;
+
 
 struct MyAppState {
     KeyGloo *kg;
