@@ -89,6 +89,7 @@ void cpu_state::set_processor(processor_type new_cpu_type) {
 
 void cpu_state::reset() {
     halt = 0; // if we were STPed etc.
+    clock_stopped = false;
     I = 1; // set interrupt flag.
     //skip_next_irq_check = 0;
     ICHANGE = false;

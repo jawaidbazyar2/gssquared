@@ -190,6 +190,8 @@ struct cpu_state {
         uint8_t p;  /* Processor Status Register */
     };
     uint8_t E : 1;  /* Emulation Flag */
+    
+    bool clock_stopped = false; /* if set, the clock is stopped */
 
     uint8_t halt = 0; /* == 1 is HLT instruction halt; == 2 is user halt */
     //uint64_t cycles; /* Number of cpu cycles since poweron */

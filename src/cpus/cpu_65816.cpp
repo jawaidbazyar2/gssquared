@@ -73,6 +73,7 @@ public:
         return current_core->execute_next(cpu);
     }
     void reset(cpu_state* cpu) override {
+        cpu->clock_stopped = false;
         // fill in with register reset logic.
         current_core->reset(cpu);
     }

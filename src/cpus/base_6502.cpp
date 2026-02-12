@@ -64,6 +64,7 @@ public:
     }
 
     void reset(cpu_state* cpu) override {
+        cpu->clock_stopped = false;
         if constexpr (CPUTraits::has_65816_ops) {
             cpu->d = 0x0000;
             cpu->full_db = 0x00;
@@ -2084,6 +2085,11 @@ inline void invalid_nop(cpu_state *cpu, int bytes, int cycles) {
 public:
 
 int execute_next(cpu_state *cpu) override {
+
+    if (cpu->clock_stopped) { // clock stopped.
+        incr_cycles();
+        return 0;
+    }
 
     system_trace_entry_t *tb = &cpu->trace_entry;
     TRACE(
@@ -4504,7 +4510,10 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_INOP_DB: /* INOP DB */
             if constexpr (CPUTraits::has_65816_ops) {
-                assert(false && "STP not implemented");
+                //assert(false && "STP not implemented");
+                cpu->clock_stopped = true;
+                incr_cycles(); // ticks 2 cycles past the opcode.
+                incr_cycles();
             } else if constexpr (CPUTraits::has_65c02_ops) {
                 invalid_nop(cpu, 1, 1);
             } else invalid_opcode(cpu, opcode);
