@@ -60,7 +60,8 @@ enum scc_register_t {
 class Z85C30 {
     InterruptController *irq_control = nullptr;
 
-    FILE *data_files[SCC_CHANNEL_COUNT] = { NULL, NULL };
+    /* FILE *data_files[SCC_CHANNEL_COUNT] = { NULL, NULL }; */
+
     inline char ch_name(scc_channel_t channel) {
         return (uint8_t) channel + 'A';
     }
@@ -254,7 +255,7 @@ class Z85C30 {
             bool interrupt_pending = false;
             if (registers[channel].r1_tx_int_enable && registers[channel].r0_tx_buffer_empty) interrupt_pending = true;
             //if (registers[channel].r1_rx_int_mode == 0b01 && registers[channel].r0_rx_char_available) interrupt_pending = true;
-            if (registers[channel].r1_rx_int_mode == 0b10 && registers[channel].r0_rx_char_available) interrupt_pending = true;
+            if ((registers[channel].r1_rx_int_mode == 0b10) && registers[channel].r0_rx_char_available) interrupt_pending = true;
             
             irq_control->set_irq(IRQ_ID_SCC, interrupt_pending);
         }
@@ -374,7 +375,7 @@ class Z85C30 {
         /* Reads */
         inline uint8_t read_register_0(scc_channel_t channel) {
             //printf("SCC: READ  register 0: Ch %d\n", channel);
-            registers[channel].r0_tx_buffer_empty = 1;
+            //registers[channel].r0_tx_buffer_empty = 1; // duh, don't override this.
             registers[channel].r0_dcd = 1;
             registers[channel].r0_cts = 1;
             uint8_t retval = registers[channel].r_reg_0;
@@ -436,9 +437,9 @@ class Z85C30 {
 
         ~Z85C30() {}
 
-        void set_data_file(scc_channel_t channel, FILE *data_file) {
+       /*  void set_data_file(scc_channel_t channel, FILE *data_file) {
             this->data_files[channel] = data_file;
-        }
+        } */
 
         void reset_channel(scc_channel_t channel) {
             for (int i = 0; i < 16; i++) {
