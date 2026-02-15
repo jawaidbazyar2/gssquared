@@ -106,6 +106,7 @@ typedef struct speaker_state_t {
     computer_t *computer;
     NClock *clock;
     AudioSystem *audio_system;
+    MMU_II *mmu;
 
     double frame_rate;
     double samples_per_frame;
@@ -119,7 +120,7 @@ typedef struct speaker_state_t {
 } speaker_state_t;
 
 void init_mb_speaker(computer_t *computer, SlotType_t slot);
-void toggle_speaker_recording(cpu_state *cpu);
+/* void toggle_speaker_recording(cpu_state *cpu); */
 void dump_full_speaker_event_log();
 void dump_partial_speaker_event_log(uint64_t cycles_now);
 void speaker_start(cpu_state *cpu);
