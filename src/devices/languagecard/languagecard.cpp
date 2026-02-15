@@ -217,9 +217,9 @@ void init_slot_languagecard(computer_t *computer, SlotType_t slot) {
     lc->_FF_WRITE_ENABLE = 0;
     lc->ram_bank = new uint8_t[0x4000];
 
-    // TODO: This should only be for Apple IIe and IIgs.
-    lc->mmu->set_C0XX_read_handler(0xC011, { languagecard_read_C011, lc });
-    lc->mmu->set_C0XX_read_handler(0xC012, { languagecard_read_C012, lc });
+    // TODO: This should only be for Apple IIe and IIgs. removed, because they re-implement this stuff completely differently.
+    /* lc->mmu->set_C0XX_read_handler(0xC011, { languagecard_read_C011, lc });
+    lc->mmu->set_C0XX_read_handler(0xC012, { languagecard_read_C012, lc }); */
 
     for (uint16_t i = 0xC080; i <= 0xC08F; i++) {
         lc->mmu->set_C0XX_read_handler(i, { languagecard_read_C0xx, lc });
