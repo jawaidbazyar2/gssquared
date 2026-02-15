@@ -159,7 +159,7 @@ uint8_t bsr_read_C0xx(void *context, uint32_t address) {
      * */
 
     bsr_map_memory(lc);
-    return 0;
+    return lc->mmu->floating_bus_read();
 }
 
 

@@ -121,7 +121,7 @@ uint8_t languagecard_read_C0xx(void *context, uint32_t address) {
      * */
 
     set_memory_pages_based_on_flags(lc);
-    return 0;
+    return lc->mmu->floating_bus_read();
 }
 
 
