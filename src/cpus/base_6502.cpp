@@ -76,7 +76,6 @@ public:
             cpu->_M = 1; // 8 bit M and X
             cpu->_X = 1;
             cpu->D = 0; // disable decimal mode
-            cpu->ICHANGE = false;
             cpu->EFFI = 0;
             cpu->rdy = false;
             printf("stack init: %04X\n", cpu->sp);
@@ -2035,7 +2034,7 @@ inline void brk_cop(cpu_state *cpu, uint16_t vector) {
         }
         cpu->pc = read_word_bank0(cpu,vector);
     }
-
+    cpu->EFFI = cpu->I;
 }
 
 /* older stack routines */
@@ -2140,7 +2139,6 @@ int execute_next(cpu_state *cpu) override {
         }
         
         cpu->rdy = false;
-        cpu->ICHANGE = false;
         cpu->EFFI = cpu->I;
 
         TRACE ( tb->eaddr = cpu->pc; tb->f_irq = 1;);
@@ -2154,7 +2152,6 @@ int execute_next(cpu_state *cpu) override {
     }
 
     // we're into the next instruction, so catch this up now.
-    cpu->ICHANGE = false;
     cpu->EFFI = cpu->I;
     
     /* if (cpu->skip_next_irq_check > 0) {
@@ -3237,7 +3234,6 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_PLP_IMP: /* PLP Implied */
             {
-                cpu->ICHANGE = true;
                 cpu->EFFI = cpu->I;
                 if constexpr (CPUTraits::has_65816_ops && !CPUTraits::e_mode) {
                     stack_pull(cpu, cpu->p);
@@ -3251,6 +3247,9 @@ int execute_next(cpu_state *cpu) override {
                     stack_pull(cpu, cpu->p);
                     cpu->p &= ~FLAG_B; // break flag is cleared.
                 }               
+                if constexpr (CPUTraits::has_65816_ops) {
+                    cpu->EFFI = cpu->I;
+                }
             }
             break;
 
@@ -3746,6 +3745,7 @@ int execute_next(cpu_state *cpu) override {
                     incr_cycles();
                     TRACE(cpu->trace_entry.operand = cpu->pc;)
                 }
+                cpu->EFFI = cpu->I; // no delay on either nmos or on 816
             }
             break;
 
@@ -3795,11 +3795,13 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_CLI_IMP: /* CLI Implied */
             {
-                cpu->ICHANGE = true;
                 cpu->EFFI = cpu->I;
                 //if (cpu->I) cpu->skip_next_irq_check = 1; // TODO: this can be cpu->skip_next_irq_check = cpu->I; test after change.
                 cpu->I = 0;
                 phantom_read_ign(cpu, make_pc_long(cpu, cpu->pc));
+                if constexpr (CPUTraits::has_65816_ops) {
+                    cpu->EFFI = cpu->I;
+                }
             }
             break;
 
@@ -3819,10 +3821,12 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_SEI_IMP: /* SEI Implied */
             {
-                cpu->ICHANGE = true;
                 cpu->EFFI = cpu->I;
                 cpu->I = 1;
                 phantom_read_ign(cpu, make_pc_long(cpu, cpu->pc));
+                if constexpr (CPUTraits::has_65816_ops) {
+                    cpu->EFFI = cpu->I;
+                }
             }
             break;
 
