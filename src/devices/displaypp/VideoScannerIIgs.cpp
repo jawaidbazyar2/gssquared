@@ -179,8 +179,13 @@ void VideoScannerIIgs::video_cycle()
         if (shr && (sa.flags & SA_FLAG_SCB) && (current_scb & 0x40)) {
             irq_handler.handler(irq_handler.context, VS_EVENT_SCB_INTERRUPT);
         }
-        if (scan_index == 12480) { // start of VBL area. scanline 192 always, regardless of video mode.
+        // VBL IRQ triggers on scanline 192, always, regardless of video mode.
+        if (scan_index == (192*65)) {
             irq_handler.handler(irq_handler.context, VS_EVENT_VBL);
+        }
+        // quarter-second IRQ triggers on scanline 256.
+        if (scan_index == (256*65)) {
+            irq_handler.handler(irq_handler.context, VS_EVENT_QTR);
         }
     }
     if (++scan_index == 17030) {

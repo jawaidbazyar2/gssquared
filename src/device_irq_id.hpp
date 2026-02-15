@@ -16,6 +16,7 @@ enum device_irq_id {
     IRQ_ID_ADB_DATAREG = 10,  // ADB Micro 'data register full' interrupt
     IRQ_ID_VGC = 11, 
     IRQ_ID_SCC = 12,
+    IRQ_ID_MEGAII = 13,
 };
 
 typedef void (*device_irq_handler_t)(void *context, VideoScannerEvent event);
