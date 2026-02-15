@@ -109,10 +109,7 @@ uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end
     return samps; */
 }
 
-
-inline void log_speaker_blip(cpu_state *cpu) {
-    speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
-
+inline void log_speaker_blip(speaker_state_t *speaker_state) {
     speaker_state->sp->event_buffer->add_event({speaker_state->clock->get_c14m(), (uint64_t)(speaker_state->audio_system->get_volume())});
 
     if (speaker_state->speaker_recording) {
@@ -121,14 +118,15 @@ inline void log_speaker_blip(cpu_state *cpu) {
 }
 
 uint8_t speaker_memory_read(void *context, uint32_t address) {
-    log_speaker_blip((cpu_state *)context);
-    cpu_state *cpu = (cpu_state *)context;
+    speaker_state_t *speaker_state = (speaker_state_t *)context;
+    log_speaker_blip(speaker_state);
     
-    return (cpu->mmu->floating_bus_read());
+    return (speaker_state->mmu->floating_bus_read());
 }
 
 void speaker_memory_write(void *context, uint32_t address, uint8_t value) {
-    log_speaker_blip((cpu_state *)context);
+    speaker_state_t *speaker_state = (speaker_state_t *)context;
+    log_speaker_blip(speaker_state);
 }
 
 DebugFormatter * debug_speaker(speaker_state_t *ds) {
@@ -171,13 +169,13 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     speaker_state->computer = computer;
     speaker_state->clock = computer->clock;
     speaker_state->audio_system = computer->audio_system;
+    speaker_state->mmu = computer->mmu;
 
     double frame_rate = (double)speaker_state->clock->get_c14m_per_second() / (double)speaker_state->clock->get_c14m_per_frame();
 
     speaker_state->sp = new SpeakerFX(speaker_state->audio_system, speaker_state->clock->get_c14m_per_second(), 44100, 128*1024, 4096);
     speaker_state->event_buffer = speaker_state->sp->event_buffer;
     
-    //speaker_state->cpu = cpu;
     speaker_state->speaker_recording = nullptr;
 
     set_module_state(cpu, MODULE_SPEAKER, speaker_state);
@@ -199,8 +197,8 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     if (DEBUG(DEBUG_SPEAKER)) fprintf(stdout, "init_speaker\n");
     uint16_t speaker_addr_max = (computer->platform->id == PLATFORM_APPLE_IIGS) ? 0xC030 : 0xC03F; // IIGS, speaker is ONLY at C030
     for (uint16_t addr = 0xC030; addr <= speaker_addr_max; addr++) {
-        computer->mmu->set_C0XX_read_handler(addr, { speaker_memory_read, cpu });
-        computer->mmu->set_C0XX_write_handler(addr, { speaker_memory_write, cpu });
+        computer->mmu->set_C0XX_read_handler(addr, { speaker_memory_read, speaker_state });
+        computer->mmu->set_C0XX_write_handler(addr, { speaker_memory_write, speaker_state });
     }
 #if 0
     speaker_state->preFilter = new LowPassFilter();
@@ -209,7 +207,7 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     speaker_state->postFilter->setCoefficients(8000.0f, (double)SAMPLE_RATE);
 #endif
 
-    computer->register_shutdown_handler([speaker_state, cpu]() {
+    computer->register_shutdown_handler([speaker_state]() {
         speaker_state->sp->stop();
         delete speaker_state->sp;
         delete speaker_state;
@@ -228,6 +226,7 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 }
 
 
+#if 0
 /**
  * this is for debugging. This will write a log file with the following data:
  * the time in cycles of every 'speaker blip'.
@@ -244,4 +243,4 @@ void toggle_speaker_recording(cpu_state *cpu)
         speaker_state->speaker_recording = nullptr;
     }
 };
-
+#endif
