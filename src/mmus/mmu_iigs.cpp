@@ -124,7 +124,7 @@ inline void MMU_IIgs::write_c0xx(uint16_t address, uint8_t value) {
 }
 
 inline uint8_t MMU_IIgs::read_c0xx(uint16_t address) {
-    uint8_t retval = 0xEE;
+    uint8_t retval = megaii->floating_bus_read();
     switch (address) {
         case 0xC054: g_page2 = false; /* Call Display; */; break;
         case 0xC055: g_page2 = true; /* Call Display; */; break;
@@ -433,7 +433,7 @@ uint8_t g_bsr_read_C0xx(void *context, uint32_t address) {
      * */
 
     lc->bsr_map_memory();
-    return 0;
+    return lc->megaii->floating_bus_read();
 }
 
 
