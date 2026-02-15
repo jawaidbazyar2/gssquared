@@ -9568,3 +9568,157 @@ ok, need to implement the WAI instruction. very similar to STP except its effect
 
 ## feb 12, 2026
 
+ok, we're failing on self test 9, ADB rom checksum. Cuz we're not loading the ADB rom! ha. trying to load it in now.. 
+
+wow, we blasted past ADB , and A, and B. Die now with : 0C 00 00 02. Hunh, that is RAM address error. Weird.
+ok that's at 7d35.
+the routine that's throwing the failure is DOC_RAM, at 7DD9. This puts 60 into the control register. 
+it calls CLRRAM to zero out the memory. Uh, why did the WtSize etc change? maybe it was my imagination.
+ahh, when it reads C03D twice, and we're ending up at address 2.. that may be wrong. there is a transaction pending or was, when the 2nd read happened.
+So a couple notes:
+  we are incremending the address even if the first read was blocked due to being busy (where we should simply return the old value).
+  Write does not go through this logic at all.
+ok, so this clears all DOC RAM. uses X index of 1 (address). then it shifts left one bit, so X is 2. Then 4,8,16, etc. So they're testing each address line one at a time.
+So this is going to take a while to run, clearing doc ram 16 times.
+
+# Feb 13, 2026
+
+Arekkusu has a IRQ test:
+
+https://github.com/mamedev/mame/pull/14749
+
+I think maybe the SCC is not doing interrupt flags correctly, and is confusing the firmware into not clearing the VGC interrupts? (i.e., there is fake scc interrupt that is never cleared or something).
+
+it could be useful, in the debuger, to have a lot of "recent register changes" in a module. as opposed to all that stuff being in printfs that are often turned off.. 
+
+Should I work on the SCC, or on the arekkusu test? The latter would be easier to plow through, and then i'd know at least that stuff is right.
+
+There is a lot of stuff wrong here. first off, the vbl and 1/4 sec interrupts are MEGAII source, not VGC. They have nothing to do with VGC. That any of this worked previously is amazing.
+
+ProTerm (and other programs) are locking up on MegaII interrupts that won't clear.
+Derp. C047 had a read routine but I forgot to install it in the mmu. Not fixed, though I can ping c047 to get a one-vbl relief from this IRQ.
+theory: something in the SCC (tons of changes there this morning) is confusing firmware, so fw is not clearing the vbl when it should
+
+Fie! these are all mind-bending. Takin a break.
+
+looking at the other Arekkusu homework, the video scanner stuff. We are apparently filling video memory with hires bytes on scanlines 224-255, and 256-261 when it should be bytes from text. The mixed_p1 and p2 tables are correct. AHH. It's just the last 6 lines. I was also staring at the wrong image, which I apparently generated when I had taken OUT part of the condition. I needed to ADD MORE condition. DONE.
+
+looking at the recent IRQ changes I put in. They are definitely delaying recognition of IRQs after CLI, SEI, PLP on the 816, and probably shouldn't. ->ICHANGE is set all over but never used. So that is dumb.. let's rip those out.
+
+The logic I'm doing here is: using EFFI for the IRQ test, and setting EFFI to the -previous- value of I. for 65816 we can do a 816 (and maybe 65c02?) check and re-set EFFI to I -after-. So then it will be synced. and the optimizer will probably take it out.
+
+[x] retest the MB IRQ timing test  
+
+ok! I now have and understand my first actionable error: SCB 7@.
+"				BIT ZEE+1	    ; should not have fired immediately, only on next transition of IRQ"
+i.e., this IRQ is supposed to be EDGE-sensitive. We re-asserted the IRQ as soon as we enabled them. And that's not right.
+VGC, SCB.
+So what needs to happen here?
+When SCB IRQ is enabled, do NOT re-check right there. So update_vgc_interrupt should take a flag:
+bool assert_now
+
+ok, that gets me past scb 7@ and I'm now failing again at SCB A@EE. 
+ahhhh. on an RTI we were still suffering the delay. EVERY change to cpu->I must be paired with setting the EFFI accordingly. I wasn't setting it, so EFFI was the old value, i.e. delay. I need a better way to do this..
+
+But now pass the SCB IRQs test!!
+
+now, we fail on VBL 9@29. that's the same thing, the edge sensitivity. I gave it the same treatment as the update_vgc.
+
+now, quarter-sec IRQs, E@63. ok, that was triggering on the wrong scanline. 1/4 sec is supposed to trigger on scanline 256. (whereas VBL triggers on scanline 192).
+Got that past E@, however, fails now on H@, which is PAL-related, and we can't pass that right now.
+[ ] Implement PAL timing on GS, and re-run irqtest with that.  
+
+Now, the one-sec IRQs! one-sec is wrong. We have it based on 60 vbl, but that's utterly incorrect. It needs to time on exactly 1 second from the realtime clock. Gonna have to think hard about that one..
+
+In ProTerm, we are now getting infinite MegaII IRQ, and we're not even progressing in "slow mode" because we are now triggering next interrupt immediately on return from RTI.
+it has the mega ii vbl interrupt set..
+
+ok, the IRQ debug claims megaii is asserted. c041 is 8, C046 is 39. 1/4 sec and vbl. an3=1.
+so let's see what the irq handler does. Proterm is installing its own IRQ handler before the ROM's.
+
+```
+clv
+jml e10010
+jml 01081D  <- must be proterm 
+pha
+lda e0c038 check the scc ch b status, 0x6C. should be register 0. 
+lsr a  <- checking bit 0, rx char avail
+bcs 833   - if set, there is rx char for proterm.
+pla - restore a
+jml ffb7cc - assume this is the rom handler
+reads c035/6 and saves it, and masks off to 9F1e
+does some stuff
+sends cmd C039=3. (read reg 3, ch a)
+reads value = 4
+channel B Rx IP
+
+```
+wr9 is 4A- mie enabled
+wr15A is F8 - interrupt on all status except zero count;
+wr1b is 10 - int on all Rx, and nothing else.
+
+6C is tx underrun (?); CTS (ok); DCD ok); Tx buffer empty.
+
+this is occurring not when we scroll, but when there's a burst of data incoming. 
+
+ah, there is a problem: the interrupt status says "there is a Rx interrupt on channel B", but register 0 bit 0 was 0, meaning "no rx character available"
+and, the firmware is checking C039 against 0103 - which I'm guessing is "which interrupts do they care about". 0103 is 0. it's proterm that is looking for the Rx interrupts.
+ok that's it. Rx int status is set but proterm is looking at "rx char available".
+ok, the modified irq code was setting r3_a_rx_pending but the way it was written, never clearing it.. I need to reread that section of the manual.
+For now I am bumped that code outside the scope where it was so it's updated every "update_interrupts" call.
+ok, it's no longer hanging, but I'm unsure if it's right..
+yeah, so what I thought is exactly what happened.. the scc was confusing the interrupt scheme. It was always saying "interrupt pending", even while there was no data.
+otoh now it seems like it's never throwing SCC rx interrupts.
+well it has to be setting the IRQ.. 
+one note, it's buffering way too much, contrl c to stop stuff isn't happy..
+let's think about this.. it's only gonna check read queue and set intr on:
+read or write data, read or write command.
+so I really need some way to periodically check the read queue and flag a character. Ah, this is the missing baud gizmo?
+yes. but also, I think the ProTerm interrupt handler (gets triggered on other IRQs remember) is reading a register, which means we'll update queues every IRQ.
+however, other systems may not do that at all, and thus might only get new data when they write. IF they depend entirely on rom dispatch of an irq they might just sit there even if the other end sends them info (e.g., I do a "wall" on the host to send a msg).
+if I set up the baud gizmo, then I can remove all the "update_queues" everywhere, and then I should see the IRQ flipping on and off with regularity.
+
+printer still locking up. Too tarred to trace any more tonight..
+
+## Feb 15, 2026
+
+ok, so I really am liking the idea of refactoring the bus stuff to pass a reference to the "accumulated bus value", instead of passing a return value.
+So the read routines would look like this:
+```
+void c0xx_read_routine(uint16_t address, uint8_t &bus) {
+    uint8_t mask = 0x80;
+    bus = bus & (~mask) | (val & mask) // modify 
+}
+```
+then when mmu is going to handle c0xx, it first: puts floating bus value into the bus, then calls each routine in sequence. And bam.
+[ ] after finishing interrupt fixups, refactor floating bus support  
+
+using Arekkusu's "Switches Test" to show correct floating bus behavior in the C000-C08F area. Need to run this on the real GS to see what we expect.
+I fixed the language card on all 3 platforms (all reads should float 8 bits);
+
+II+:
+C011 not quite right (not supposed to implement c011/12 in II+ lolz) (fixed)
+C06x ?? 
+C08x (fixed)
+
+IIe:
+C060-6F don't provide same results. Some switches here should have all 8 bits floating? Some are only 7?
+
+GS:
+C054-C057 are returning EE instead of floating bus. Should return megaii.. (fixed)
+C00x should mirror C000 like //e; (fixed)
+c019-F should have no floating low bits; (in mmu_iigs..) (fixed)
+C02B should not float; (I don't think I implemented this yet);
+C030 should be floating; (it is?) (not an issue)
+Annunciators should be floating (they are?) (not an issue)
+
+```
+Docs for SWITCHES:
+
+(1) SWITCHES
+Informative.  Reads all softswitches from C000 to C08F: displays the current value, and indicates (via a second INVERSE value) if the switch reads the floating bus.  Should be deterministic on a ][+, but later Apples have a few softswitches which change dynamically (C019, C02E, etc), these will be FLASHING.
+
+And there are two type of INVERSE: if all the bits are floating then both hex digits.  If the low seven bits, then only the second digit.  So 007F means the actual state value was zero, the low seven bits float.
+This is "informative"-- an at-a-glance dashboard of all the I/O state; it doesn't self-test so requires human interpretation.  C06X is particularly troublesome; the state should vary depending if you have a joystick plugged in or not.  Also, if a joystick is not plugged in, then the state varies depending on the presence of pullup or pulldown resistors.  They don't exist on the ][+, some are added on the //e, and more on the //e Platinum.  Fun!
+and also for models where C060 is the cassette input, it apparently floats high. (set bit 7 to 0x80) (fixed)
+```
