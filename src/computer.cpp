@@ -35,7 +35,7 @@ computer_t::computer_t(NClockII *clock) {
     // allocate IRQ controller
     irq_control = new InterruptController();
     // On update, force change in CPU.
-    irq_control->register_irq_receiver([this](bool irq_asserted) {
+    irq_control->register_irq_receiver([this](uint64_t irq_asserted) {
         cpu->irq_asserted = irq_asserted;
     });
     register_debug_display_handler(
