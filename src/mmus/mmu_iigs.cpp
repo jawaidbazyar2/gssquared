@@ -150,8 +150,8 @@ void write_c068(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_state_register(value);
     mmu_iigs->set_intcxrom((value & 0x01) ? true : false);
-    mmu_iigs->set_lc_bank1(((value & 0x04) != 0) ? false : true); // "if this bit is 1, lc ram bank 2 is selected" inverting sense (GS hw Ref is backwards)
-    mmu_iigs->set_lc_read_enable((value & 0x08) ? false : true); // If bit 3 is set, we need to update the LC read enable flag also.
+    //mmu_iigs->set_lc_bank1(((value & 0x04) != 0) ? false : true); // "if this bit is 1, lc ram bank 2 is selected" inverting sense (GS hw Ref is backwards)
+    //mmu_iigs->set_lc_read_enable((value & 0x08) ? false : true); // If bit 3 is set, we need to update the LC read enable flag also.
     mmu_iigs->megaii_compose_map();
     mmu_iigs->bsr_map_memory();
     
@@ -380,6 +380,8 @@ uint8_t g_bsr_read_C0xx(void *context, uint32_t address) {
     //if (DEBUG(DEBUG_LANGCARD)) printf("languagecard read %04X ", address);
 
     lc->ll.read(address);
+    lc->set_lc_bank1(lc->ll.FF_BANK_1); // sync back to state reg
+    lc->set_lc_read_enable(lc->ll.FF_READ_ENABLE);
     lc->bsr_map_memory();
     return lc->megaii->floating_bus_read();
 }
@@ -391,6 +393,8 @@ void gs_bsr_write_C0xx(void *context, uint32_t address, uint8_t value) {
     //if (DEBUG(DEBUG_LANGCARD)) printf("languagecard write %04X value: %02X\n", address, value);
     
     lc->ll.write(address);
+    lc->set_lc_bank1(lc->ll.FF_BANK_1); // sync back to state reg
+    lc->set_lc_read_enable(lc->ll.FF_READ_ENABLE);
     lc->bsr_map_memory();
 
 }
@@ -715,8 +719,8 @@ void MMU_IIgs::reset() {
     reg_shadow = 0x08;
     set_state_register(0x0C); // KEGS does 0x0D - enable ROM RD, 
     set_intcxrom(g_intcxrom); // this is needed to set the C1-CF map correctly.
-    // TODO: uh should I reset the LC state here?
-
+    // TODO: uh should I reset the LC state here? (or am I doing it via the state register above?)
+    ll.reset();
     if (map_initialized) {
         set_ram_shadow_banks();
         // Stolen from c068 handler - consolidate somewhere

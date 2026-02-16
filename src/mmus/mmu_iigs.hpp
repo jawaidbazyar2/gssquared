@@ -146,7 +146,8 @@ class MMU_IIgs : public MMU {
         inline void set_state_register(uint8_t value) { 
             if (DEBUG(DEBUG_MMUGS)) printf("setting state register: %02X\n", value); 
             reg_state = value; 
-            ll.FF_READ_ENABLE = !g_rdrom;
+            ll.FF_READ_ENABLE = !g_rdrom; // sync LC state with state reg 
+            ll.FF_BANK_1 = !g_lcbnk2; // this was missing.. 
         }
         inline uint8_t shadow_register() { return reg_shadow; }
         inline uint8_t speed_register() { return reg_speed; }
