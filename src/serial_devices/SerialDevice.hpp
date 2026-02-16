@@ -54,13 +54,14 @@ class SerialQueue {
 class SerialDevice {
     protected:
         const char *name;
+        const char *port_id;
         SDL_Thread *thread;
 
     public:
         SerialQueue q_host; // host -> dev queue
         SerialQueue q_dev;  // dev -> host queue
 
-        SerialDevice(const char *name);
+        SerialDevice(const char *name, const char *port_id);
         virtual ~SerialDevice();
 
         /*

@@ -8,7 +8,7 @@
 
 class EchoDevice : public SerialDevice {
     public:
-        EchoDevice() : SerialDevice("EchoDevice") {
+        EchoDevice(const char *name, const char *port_id) : SerialDevice("EchoDevice", port_id) {
         }
 
         void device_loop() override {

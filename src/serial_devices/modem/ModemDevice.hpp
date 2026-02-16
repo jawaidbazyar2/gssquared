@@ -377,7 +377,7 @@ class ModemDevice : public SerialDevice {
         }
 
     public:
-        ModemDevice() : SerialDevice("ModemDevice"), 
+        ModemDevice(const char *name, const char *port_id) : SerialDevice("ModemDevice", port_id), 
                        state(STATE_COMMAND),
                        socket(nullptr),
                        remote_port(23),
@@ -393,6 +393,15 @@ class ModemDevice : public SerialDevice {
         }
 
         ~ModemDevice() {
+            // Ensure thread stops before our members are destroyed
+            if (thread) {
+                SDL_Log("SerialDevice: %s shutting down", this->name);
+                SerialMessage msg = {MESSAGE_SHUTDOWN, 0};
+                q_host.send(msg);
+                SDL_WaitThread(thread, NULL);
+                thread = nullptr;
+            }
+            
             if (socket) {
                 NET_DestroyStreamSocket(socket);
                 socket = nullptr;
