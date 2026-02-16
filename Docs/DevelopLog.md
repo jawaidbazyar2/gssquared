@@ -9782,3 +9782,10 @@ Anyway, this is a big hairy mess. Maybe I can do something less involved right n
 
 doing the speaker changes - we need to know the frame end in 14m's. So gs2 loop needs to keep this updated inside clock.
 ok, done! lots more cleaner.
+
+I don't think mmu_iigs is dealing with the language card correctly. First, on reset(), we set state which only sets *one* of the lc bits.
+Second, write_c068 doesn't do quite the same things reset() does, it sets bank1 and read enable.
+some of the confusion here is likely from the inverted sense of GS state register, where instead of FF_BANK_2 it's g_lcbnk1.
+I suspect I should reset the LC flags and then update the state reg.
+the previous version had been edited to update both the state reg and lc flags; obviously, in the read/write routine I had to add setting the state reg flags. I also put in a missing flag set in the set_state_register routine.
+So, set_state_register sets the LC flags, and vice-versa.
