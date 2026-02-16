@@ -112,6 +112,7 @@ void init_slot_languagecard(computer_t *computer, SlotType_t slot) {
  * the pre-write flip-flop is reset, and bank 2 is selected. 
  * the RESET .. has no effect on the RAM card configuration.
  */
+    //lc->ll._FF_WRITE_ENABLE = 0; // enabled for writing per Sather UtA2 Pg 5-29.
 
     lc->ram_bank = new uint8_t[0x4000];
 

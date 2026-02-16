@@ -144,7 +144,7 @@ public:
         FF_BANK_1 = 0;
         FF_READ_ENABLE = 0;
         FF_PRE_WRITE = 0;
-        _FF_WRITE_ENABLE = 0;
+        _FF_WRITE_ENABLE = 0; // UtA2 Pg 5-29, "enabled for writing". UtA2e Pg 5-23: "on reset, disabled for reading and enabled for writing".
     }
  
 };
