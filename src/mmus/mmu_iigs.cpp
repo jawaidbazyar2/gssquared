@@ -319,7 +319,7 @@ void MMU_IIgs::megaii_compose_map() {
 
 void MMU_IIgs::bsr_map_memory() {
 
-    uint32_t bankd0offset = (FF_BANK_1 == 1) ? 0xC000 : 0xD000;
+    uint32_t bankd0offset = (ll.FF_BANK_1 == 1) ? 0xC000 : 0xD000;
     uint32_t banke0offset = 0xE000;
     if (g_altzp) {
         bankd0offset += 0x1'0000; // alternate bank!
@@ -331,11 +331,11 @@ void MMU_IIgs::bsr_map_memory() {
     uint8_t *banke0 = megaii->get_memory_base() + banke0offset;
     uint8_t *rom = megaii->get_rom_base();
 
-    const char *bank_d = (FF_BANK_1 == 1) ? "LC_BANK1" : "LC_BANK2";
+    const char *bank_d = (ll.FF_BANK_1 == 1) ? "LC_BANK1" : "LC_BANK2";
 
     /* Map D0 - DF */
     for (int i = 0; i < 16; i++) {
-        if (FF_READ_ENABLE) {
+        if (ll.FF_READ_ENABLE) {
             megaii->map_page_read(i + 0xD0, bankd0 + (i*GS2_PAGE_SIZE), bank_d);
         } else { // reads == READ_ROM
         // TODO: this is wrong - needs to somehow know to return to ROM D0/etc wherever that may be.
@@ -343,7 +343,7 @@ void MMU_IIgs::bsr_map_memory() {
             megaii->map_page_read(i + 0xD0, rom + 0x1000 + (i*GS2_PAGE_SIZE), "SYS_ROM");
         }
 
-        if (!_FF_WRITE_ENABLE) {
+        if (!ll._FF_WRITE_ENABLE) {
             megaii->map_page_write(i+0xD0, bankd0 + (i*GS2_PAGE_SIZE), bank_d);
 
         } else { // writes == WRITE_NONE - set it to the ROM and can_write = 0
@@ -353,7 +353,7 @@ void MMU_IIgs::bsr_map_memory() {
 
     /* Map E0 - FF */
     for (int i = 0; i < 32; i++) {
-        if (FF_READ_ENABLE) {
+        if (ll.FF_READ_ENABLE) {
             megaii->map_page_read(i+0xE0, banke0 + (i * GS2_PAGE_SIZE), "LC RAM");
 
         } else { // reads == READ_ROM
@@ -361,7 +361,7 @@ void MMU_IIgs::bsr_map_memory() {
             megaii->map_page_read(i+0xE0, rom + 0x2000 + (i * GS2_PAGE_SIZE), "SYS_ROM");
         }
 
-        if (!_FF_WRITE_ENABLE) {
+        if (!ll._FF_WRITE_ENABLE) {
             megaii->map_page_write(i+0xE0, banke0 + (i * GS2_PAGE_SIZE), "LC RAM");
         } else { // writes == WRITE_NONE - set it to the ROM and can_write = 0
             megaii->map_page_write(i+0xE0, nullptr, "NONE"); // much simpler actually.. no write enable means null write pointer.
@@ -379,59 +379,7 @@ uint8_t g_bsr_read_C0xx(void *context, uint32_t address) {
 
     //if (DEBUG(DEBUG_LANGCARD)) printf("languagecard read %04X ", address);
 
-    /** Bank Select */    
-    
-    if (address & LANG_A3 ) {
-        // 1 = any access sets Bank_1
-        lc->set_lc_bank1(1);
-    } else {
-        // 0 = any access resets Bank_1
-        lc->set_lc_bank1(0);
-    }
-
-    /** Read Enable */
-    
-    if (((address & LANG_A0A1) == 0) || ((address & LANG_A0A1) == 3)) {
-        // 00, 11 - set READ_ENABLE
-        lc->set_lc_read_enable(1);
-    } else {
-        // 01, 10 - reset READ_ENABLE
-        lc->set_lc_read_enable(0);
-    }
-
-    int old_pre_write = lc->is_lc_pre_write();
-
-    /* PRE_WRITE */
-    if ((address & 0b00000001) == 1) {  // read 1 or 3
-        // 00000001 - set PRE_WRITE
-        lc->set_lc_pre_write(1);
-    } else {                            // read 0 or 2
-        // 00000000 - reset PRE_WRITE
-        lc->set_lc_pre_write(0);
-    }
-
-    /** Write Enable */
-    if ((old_pre_write == 1) && ((address & 0b00000001) == 1)) { // PRE_WRITE set, read 1 or 3
-        // 00000000 - reset WRITE_ENABLE'
-        lc->set_lc_write_enable(0);
-    }
-    if ((address & 0b00000001) == 0) { // read 0 or 2, set _WRITE_ENABLE
-        // 00000001 - set WRITE_ENABLE'
-        lc->set_lc_write_enable(1);
-    }
-
-    if (DEBUG(DEBUG_MMUGS)) printf("FF_BANK_1: %d, FF_READ_ENABLE: %d, FF_PRE_WRITE: %d, _FF_WRITE_ENABLE: %d\n", 
-        lc->is_lc_bank1(), lc->is_lc_read_enable(), lc->is_lc_pre_write(), lc->is_lc_write_enable());
-   
-    /**
-     * compose the memory map.
-     * in main_ram:
-     * 0x0000 - 0xBFFF - straight map.
-     * 0xC000 - 0xCFFF - bank 1 extra memory
-     * 0xD000 - 0xDFFF - bank 2 extra memory
-     * 0xE000 - 0xFFFF - rest of extra memory
-     * */
-
+    lc->ll.read(address);
     lc->bsr_map_memory();
     return lc->megaii->floating_bus_read();
 }
@@ -442,43 +390,7 @@ void gs_bsr_write_C0xx(void *context, uint32_t address, uint8_t value) {
 
     //if (DEBUG(DEBUG_LANGCARD)) printf("languagecard write %04X value: %02X\n", address, value);
     
-
-    /** Bank Select */
-
-    if (address & LANG_A3 ) {
-        // 1 = any access sets Bank_1 - read or write.
-        lc->set_lc_bank1(1);
-    } else {
-        // 0 = any access resets Bank_1
-        lc->set_lc_bank1(0);
-    }
-
-    /** READ_ENABLE  */
-    
-    if (((address & LANG_A0A1) == 0) || ((address & LANG_A0A1) == 3)) { // write 0 or 3
-        // 00, 11 - set READ_ENABLE
-        lc->set_lc_read_enable(1);
-    } else {
-        // 01, 10 - reset READ_ENABLE
-        lc->set_lc_read_enable(0);
-    }
-    
-    /** PRE_WRITE */ // any write, reests PRE_WRITE
-    lc->set_lc_pre_write(0);
-
-    /** WRITE_ENABLE */
-    if ((address & 0b00000001) == 0) { // write 0 or 2
-        lc->set_lc_write_enable(1);
-    }
-
-    /* This means there is a feature of RAM card control
-    not documented by Apple: write access to odd address in C08X
-    range controls the READ ENABLE flip-flip without affecting the WRITE enable' flip-flop.
-    STA $C081: no effect on write enable, disable read, bank 2 */
-
-    if (DEBUG(DEBUG_LANGCARD)) printf("FF_BANK_1: %d, FF_READ_ENABLE: %d, FF_PRE_WRITE: %d, _FF_WRITE_ENABLE: %d\n", 
-        lc->is_lc_bank1(), lc->is_lc_read_enable(), lc->is_lc_pre_write(), lc->is_lc_write_enable());   
-
+    lc->ll.write(address);
     lc->bsr_map_memory();
 
 }
@@ -803,6 +715,7 @@ void MMU_IIgs::reset() {
     reg_shadow = 0x08;
     set_state_register(0x0C); // KEGS does 0x0D - enable ROM RD, 
     set_intcxrom(g_intcxrom); // this is needed to set the C1-CF map correctly.
+    // TODO: uh should I reset the LC state here?
 
     if (map_initialized) {
         set_ram_shadow_banks();
@@ -815,7 +728,7 @@ void MMU_IIgs::reset() {
 }
 
 void MMU_IIgs::debug_dump(DebugFormatter *df) {
-    df->addLine("LC: BANK_1: %d, READ_ENABLE: %d, PRE_WRITE: %d, /WRITE_ENABLE: %d", FF_BANK_1, FF_READ_ENABLE, FF_PRE_WRITE, _FF_WRITE_ENABLE);
+    df->addLine("LC: BANK_1: %d, READ_ENABLE: %d, PRE_WRITE: %d, /WRITE_ENABLE: %d", ll.FF_BANK_1, ll.FF_READ_ENABLE, ll.FF_PRE_WRITE, ll._FF_WRITE_ENABLE);
     df->addLine("Shadow: %02X: ![IOLC: %d T2: %d AUXH: %d SHR: %d H2: %d H1: %d T1: %d]",
         reg_shadow,
         (reg_shadow & SHADOW_INH_IOLC) != 0,

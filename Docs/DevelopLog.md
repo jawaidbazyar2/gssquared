@@ -9691,7 +9691,6 @@ void c0xx_read_routine(uint16_t address, uint8_t &bus) {
 }
 ```
 then when mmu is going to handle c0xx, it first: puts floating bus value into the bus, then calls each routine in sequence. And bam.
-[ ] after finishing interrupt fixups, refactor floating bus support  
 
 using Arekkusu's "Switches Test" to show correct floating bus behavior in the C000-C08F area. Need to run this on the real GS to see what we expect.
 I fixed the language card on all 3 platforms (all reads should float 8 bits);
@@ -9722,3 +9721,64 @@ And there are two type of INVERSE: if all the bits are floating then both hex di
 This is "informative"-- an at-a-glance dashboard of all the I/O state; it doesn't self-test so requires human interpretation.  C06X is particularly troublesome; the state should vary depending if you have a joystick plugged in or not.  Also, if a joystick is not plugged in, then the state varies depending on the presence of pullup or pulldown resistors.  They don't exist on the ][+, some are added on the //e, and more on the //e Platinum.  Fun!
 and also for models where C060 is the cassette input, it apparently floats high. (set bit 7 to 0x80) (fixed)
 ```
+
+## Feb 16, 2026
+
+Summary of current development status:
+
+Primary issues with GS:
+
+1. correct lores/dlores rendering in RGB monitor
+1. unimplemented softswitches
+   1. C02B - langsel (put in something to read/write it on GS)
+   1. C02C - CHARROM (??? test to read char rom)
+   1. C02D - SLTROMSEL 
+   1. C036 - motor detect
+1. IWM
+1. Ensoniq issues (irqs not right, soundglu slow timing not quite right)
+1. SCC issues - printing in GS/OS freezes
+1. optimize the MMU operations with LUT.
+1. correct images and sounds for appledisk 5.25, 3.5 drives, and hard disk. (the AV feedback is kind of a big deal so you know if your emulated program is -doing something-)
+
+Should feel good about this, it's been a huge lift to get here! 
+
+More general:
+1. refactor diskii so the "mechanism" is in its own class, more like how I've been doing things lately. Then some of this can be shared with IWM.
+1. refactor floating bus with the new approach
+1. need a true SmartPort device and the UI to go with it  
+1. ImageWriter II (with color) printer emulation  
+1. Super Serial Card for IIe
+1. [x] break language card state machine out into its own class and re-use in II+, IIe, IIgs
+1. [x] speaker.cpp - should use general device_frame stuff so it can execute in context and we don't treat it specially from other such devices.
+
+btw I discovered that we can put inside classes a "static method", this should let us bundle callback handlers inside class namespace more sensibly.
+
+Ah, the lores/dlores rendering isn't going to be straightforward. I already had to do ugly hack for text colors, which involves passing surreptitious color data from VideoScanGenerator to the backend in a way that the other renderers ignore it. I would have to add a lores flag, say bit 3 in the value. The other renderers only look at bit 0. Also at issue, GSRGB processes an entire scanline at a time, so I'm going to have to change the loop so the graphics/text mode is done byte by byte. Not sure how mid-line mode changes will come out. This brings up the possibility that I need to rethink the pipeline here, and push gsrgb further up it.
+
+OK, so to reiterate, we have this structure..
+```
+VideoScanner --> VideoScanGenerator --> GSRGB       -> pixelbuf
+                                    |-> monochrome
+                                    |-> ntsc
+```
+The proposal here is:
+```
+VideoScanner --> VideoScanGeneratorNTSC |-> monochrome -> pixelbuf
+               |                        |-> ntsc
+               |->VideoScanGeneratorRGB --> pixelbuf
+```
+The proposed VSG_RGB would allow us to skip a buffer in the rendering, probably speed things up some. it will simplify VSGNTSC some also, and the mono/ntsc renderers. 
+
+I am unclear on what a mode change between lores and hires means for the hires scanner in RGB mode.. I guess we keep track of the text/lores bits as part of the hires bitstream even if we aren't rendering them? Mode changes must occur on 14 pixel boundaries.
+
+How we render each VideoScanner message:
+borders: What are the implications for borders? Could I render borders directly into the output 651x232 / 744x232 frame instead of using all those copies?
+shr/shr mode/palette: as is. We have to render the entire frame as 560 or 640 at the top of the loop.
+text40/text80: emit these as direct pixel colors as passed in shr_bytes.
+lores40/lores80: same as text, except there's only one color in any given byte emission.
+hires/dhires: we have been tracking the bit stream (keeping track of text and lores bits in the stream even tho we don't use them) so that on a switch we have the context for the LUT (and have maintained the right phase).
+
+Anyway, this is a big hairy mess. Maybe I can do something less involved right now, ha!
+
+doing the speaker changes - we need to know the frame end in 14m's. So gs2 loop needs to keep this updated inside clock.
+ok, done! lots more cleaner.
