@@ -445,12 +445,13 @@ int diskii_tracknumber_on(cpu_state *cpu) {
 uint8_t diskII_read_C0xx(void *context, uint32_t address) {
     //cpu_state *cpu = (cpu_state *)context;
     diskII_controller *thisSlot = (diskII_controller *)context;
-    cpu_state *cpu = thisSlot->computer->cpu;
+    //cpu_state *cpu = thisSlot->computer->cpu;
 
-    int reg = address & 0x0F;
-    uint8_t slot = (address >> 4) & 0x7;
+    uint16_t reg = address & 0x0F;
+    uint16_t slot = (address & 0x70) >> 4;
+
     //diskII_controller *thisSlot = (diskII_controller *)get_slot_state(cpu, (SlotType_t)slot);
-    int drive = thisSlot->drive_select;
+    uint16_t drive = thisSlot->drive_select;
 
     diskII &seldrive = thisSlot->drive[drive];
 
@@ -463,7 +464,6 @@ uint8_t diskII_read_C0xx(void *context, uint32_t address) {
     int8_t last_phase_on = seldrive.last_phase_on;
     int8_t cur_track = seldrive.track;
 
-    //uint8_t read_value = 0xEE;
     int8_t cur_phase = cur_track % 4;
 
     // if more than X cycles have elapsed since last read, set bit_position to 0 and move head X bytes forward.
@@ -611,13 +611,13 @@ uint8_t diskII_read_C0xx(void *context, uint32_t address) {
 void diskII_write_C0xx(void *context, uint32_t address, uint8_t value) {
     //cpu_state *cpu = (cpu_state *)context;
     diskII_controller *diskII_d = (diskII_controller *)context;
-    cpu_state *cpu = diskII_d->computer->cpu;
+    //cpu_state *cpu = diskII_d->computer->cpu;
     
-    uint16_t addr = address - 0xC080;
-    int reg = addr & 0x0F;
-    uint8_t slot = addr >> 4;
+    //uint16_t addr = address - 0xC080;
+    uint16_t reg = address & 0x0F;
+    uint16_t slot = (address & 0x70) >> 4;
     //diskII_controller *diskII_d = (diskII_controller *)get_slot_state(cpu, (SlotType_t)slot);
-    int drive = diskII_d->drive_select;
+    uint16_t drive = diskII_d->drive_select;
 
     diskII &seldrive = diskII_d->drive[drive];
 
