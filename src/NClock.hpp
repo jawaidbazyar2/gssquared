@@ -110,6 +110,10 @@ protected:
     uint64_t video_cycle_14M_count = 0;  // 14MHz cycles since last video cycle
     uint64_t scanline_14M_count = 0;  // 14MHz cycles since last scanline
 
+    uint64_t frame_start_c14M = 0;
+    uint64_t frame_end_c14M = 0;
+    uint64_t frame_count = 0;
+
     VideoScannerII *video_scanner = nullptr;
 
 public:
@@ -122,6 +126,11 @@ public:
         video_cycles = 0;
         video_cycle_14M_count = 0;
         scanline_14M_count = 0;
+
+        // initialize frame counters.
+        frame_start_c14M = 0;
+        frame_end_c14M = current.c14M_per_frame;
+        frame_count = 0;
     }
 
     inline uint64_t get_cycles() { return cycles; } // this should make accessing cycles fast still.
@@ -145,6 +154,13 @@ public:
     inline uint64_t get_vid_cycles_per_second() { return current.vid_cycles_per_second; }
     inline VideoScannerII *get_video_scanner() { return video_scanner; }
     inline void adjust_c14m(uint64_t amount) { c_14M += amount; }
+    inline uint64_t get_frame_start_c14M() { return frame_start_c14M; }
+    inline uint64_t get_frame_end_c14M() { return frame_end_c14M; }
+    inline void next_frame() {
+        frame_start_c14M = frame_end_c14M;
+        frame_end_c14M += current.c14M_per_frame;
+        frame_count++;
+    }
 
     void set_video_scanner(VideoScannerII *video_scanner) {
         this->video_scanner = video_scanner;

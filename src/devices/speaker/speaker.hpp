@@ -125,4 +125,5 @@ void dump_full_speaker_event_log();
 void dump_partial_speaker_event_log(uint64_t cycles_now);
 void speaker_start(cpu_state *cpu);
 void speaker_stop();
-uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end_frame_c14M );
+//uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end_frame_c14M );
+uint64_t audio_generate_frame(computer_t *computer, speaker_state_t *speaker_state, uint64_t end_frame_c14M );

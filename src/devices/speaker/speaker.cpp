@@ -42,12 +42,13 @@ inline uint32_t next_power_of_2(uint32_t value) {
     return value;
 }
 
-uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end_frame_c14M ) {
-
-    speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
+uint64_t audio_generate_frame(speaker_state_t *speaker_state) {
+    
     NClock *clock = speaker_state->clock;
 
-    //static uint64_t last_hz_rate = 0;
+    // TODO: this should be end of frame, which may not be the same as the current c14m. (or does it matter?)
+    uint64_t end_frame_c14M = clock->get_frame_end_c14M();
+
     // start speaker playback after we've loaded this first frame of samples.
     if (!speaker_state->sp->started()) {
         speaker_state->sp->start();
@@ -100,13 +101,6 @@ uint64_t audio_generate_frame(computer_t *computer, cpu_state *cpu, uint64_t end
         // Skip this frame's audio generation, queue is full enough
         return 0;
     }
-
-/*     // I need to know the actual end of the current frame in cycles; cpu->cycles is not right.
-    uint64_t samps = speaker_state->sp->generate_and_queue(samples_this_frame, end_frame_c14M);
-    speaker_state->samples_added += samps;
-    speaker_state->sample_frames ++;
-
-    return samps; */
 }
 
 inline void log_speaker_blip(speaker_state_t *speaker_state) {
@@ -134,7 +128,6 @@ DebugFormatter * debug_speaker(speaker_state_t *ds) {
     static uint16_t samplecounts[60] = {0};
     DebugFormatter *df = new DebugFormatter();
         
-    //df->addLine("   Speaker ");
     uint16_t samples = ds->sp->get_queued_samples();
 
     uint64_t frame_index = (samples * 10) / ds->samples_per_frame;
@@ -162,8 +155,6 @@ DebugFormatter * debug_speaker(speaker_state_t *ds) {
 
 void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
 
-    cpu_state *cpu = computer->cpu;
-
     speaker_state_t *speaker_state = new speaker_state_t;
 
     speaker_state->computer = computer;
@@ -178,10 +169,8 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     
     speaker_state->speaker_recording = nullptr;
 
-    set_module_state(cpu, MODULE_SPEAKER, speaker_state);
+    //set_module_state(cpu, MODULE_SPEAKER, speaker_state);
 	
-    //speaker_state->device_id = speaker_state->sp->get_device_id();
-
     printf("frame rate: %f\n", frame_rate);
     speaker_state->frame_rate = frame_rate;
     speaker_state->samples_per_frame = 44100.0f / frame_rate;
@@ -190,8 +179,6 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     speaker_state->samples_accumulated = 0.0f;
 
     // prime the pump with a few frames of silence - make sure we use the correct frame size so we pass the check in generate.
-    //memset(speaker_state->working_buffer, 0, speaker_state->sp->samples_per_frame * sizeof(int16_t));
-    //speaker_state->sp->generate_and_queue(4410, 0);
     speaker_state->sp->prebuffer();
 
     if (DEBUG(DEBUG_SPEAKER)) fprintf(stdout, "init_speaker\n");
@@ -206,6 +193,12 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     speaker_state->postFilter = new LowPassFilter();
     speaker_state->postFilter->setCoefficients(8000.0f, (double)SAMPLE_RATE);
 #endif
+
+    computer->device_frame_dispatcher->registerHandler([speaker_state]() {
+        audio_generate_frame(speaker_state);
+
+        return true;
+    });
 
     computer->register_shutdown_handler([speaker_state]() {
         speaker_state->sp->stop();
