@@ -1052,6 +1052,25 @@ uint8_t display_read_C046(void *context, uint32_t address) {
 
 /* End VBL Interrupt Handling Section */
 
+/* C02B - LANGSEL - IIgs specific */
+void display_write_C02B(void *context, uint32_t address, uint8_t value) {
+    display_state_t *ds = (display_state_t *)context;
+    ds->f_langsel = value & 0b1111'1000;
+    // TODO: set language for display.
+    // TODO: set video mode timing ntsc vs pal.
+    // TODO: implement LANGUAGE switch (if 0, use lang 0. Otherwise use whatever lang selected.)
+    /* The Apple IIgs Firmware Reference states that LANGSEL bit 3 is "0 if primary lang set selected", but this appears to be incorrect.
+     Bit 3 is set to 1 by BRAM restore during power-on (or booting GS/OS, or entering the Control Panel) and hardware testing shows that 
+     the language in bits 5-7 is ignored when bit 3 is 0.    */
+}
+
+uint8_t display_read_C02B(void *context, uint32_t address) {
+    display_state_t *ds = (display_state_t *)context;
+    return ds->f_langsel;
+}
+
+/* VBL Read */
+
 uint8_t display_read_vbl(void *context, uint32_t address) {
     // This is enough to get basic VBL working. Total Replay boots anyway.
     display_state_t *ds = (display_state_t *)context;
@@ -1394,6 +1413,8 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         mmu->set_C0XX_write_handler(0xC047, { display_write_c047, ds });
         mmu->set_C0XX_read_handler(0xC047, { display_read_c047, ds });
         mmu->set_C0XX_write_handler(0xC032, { display_write_c032, ds });
+        mmu->set_C0XX_write_handler(0xC02B, { display_write_C02B, ds });
+        mmu->set_C0XX_read_handler(0xC02B, { display_read_C02B, ds });
     }
 
     switch (ds->video_scanner_type) {
