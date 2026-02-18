@@ -13,6 +13,7 @@ class FileDevice : public SerialDevice {
 
     public:
         FileDevice(const char *name, const char *port_id) : SerialDevice("FileDevice", port_id) {
+            file = NULL;
         }
 
         ~FileDevice() {
