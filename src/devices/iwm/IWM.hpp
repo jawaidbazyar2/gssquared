@@ -1,102 +1,75 @@
 #pragma once
 
+#include "NClock.hpp"
 #include "computer.hpp"
 #include "SlotData.hpp"
+#include "devices/diskii/Floppy525.hpp"
+#include "util/SoundEffect.hpp"
+#include "debug.hpp"
 
-/* This file is little-endian dependent */
+#include "IWM_Drive.hpp"
+#include "IWM_525.hpp"
+#include "IWM_35.hpp"
 
-static const uint32_t IWM_SWITCH_COUNT = 8;
-static const uint32_t IWM_ADDRESS_MAX = IWM_SWITCH_COUNT * 2;
-
-enum iwm_switch_t {
-    IWM_CA0_OFF = 0,
-    IWM_CA0_ON = 1,
-    IWM_CA1_OFF = 2,
-    IWM_CA1_ON = 3,
-    IWM_CA2_OFF = 4,
-    IWM_CA2_ON = 5,
-    IWM_LSTRB_OFF = 6,
-    IWM_LSTRB_ON = 7,
-    IWM_ENABLE_OFF = 8,
-    IWM_ENABLE_ON = 9,
-    IWM_SELECT_OFF = 10,
-    IWM_SELECT_ON = 11,
-    IWM_Q6_OFF = 12,
-    IWM_Q6_ON = 13,
-    IWM_Q7_OFF = 14,
-    IWM_Q7_ON = 15,
-};
-
-class IWM_Drive {
-    protected:
-    bool enabled = false;
-    bool motor_on = false;
-    bool sense_input = false;
-    bool led_status = false;
-
-    public:
-    IWM_Drive() {
-        enabled = false;
-        motor_on = false;
-        sense_input = false;
-        led_status = false;
-    }
-    virtual ~IWM_Drive() {};
-    virtual void set_enable(bool enable) {};
-    bool get_enabled() { return enabled; }
-    bool get_motor_on() { return motor_on; }
-    bool get_sense_input() { return sense_input; }
-    bool get_led_status() { return led_status; }
-    virtual void write_data_register(uint8_t data) {};
-    virtual uint8_t read_data_register() { return 0; };
-};
-
-class IWM_Drive_525 : public IWM_Drive {
-    public:
-        IWM_Drive_525() {
-            enabled = false;
-        }
-        void set_enable(bool enable) override {
-            enabled = enable;
-            if (motor_on && !enable) {
-                // TODO: schedule a motor off for 1 second from now.
-                // could use a general purpose C++ or SDL timer instead of EventTimer.
-                // for now:
-                motor_on = enable;
-                led_status = enable;
-            } else {
-                motor_on = enable;
-                led_status = enable;
-            }
-            
-        }
-};
-
-class IWM_Drive_35 : public IWM_Drive {
-    public:
-        IWM_Drive_35() {
-            enabled = false;
-        }
-        void set_enable(bool enable) override {
-            enabled = enable;
-            led_status = enable;
-            // TODO: lock media in drive
-            // 3.5 enable does not determine motor_on
-        }
-};
-
+#include "util/SoundEffectKeys.hpp"
 
 class IWM {
+    protected:
+        NClockII *clock;
+
+        uint64_t mark_cycles_turnoff = 0; // when DRIVES OFF, set this to current cpu cycles. Then don't actually set motor=0 until one second (1M cycles) has passed. Then reset this to 0.
+        bool motor = false;
+        //int drive_select = 0;
+
+        SoundEffect *sound_effect;
+        SoundEffectContainer_t sounds[5];
+
+        /* Load our sound effects */
+        const char *sound_files[5] = {
+            "sounds/shugart-drive.wav",
+            "sounds/shugart-stop.wav",
+            "sounds/shugart-head.wav",
+            "sounds/shugart-open.wav",
+            "sounds/shugart-close.wav",
+        };
+
+        // schedule a motor off.
+        void request_motor_off() {
+            if (drive_selected < 2) { // is a 5.25 
+                mark_cycles_turnoff = clock->get_c14m() + 14318180;
+            } else { // 3.5, drive on/off handled differently.
+            }
+            //if (DEBUG(DEBUG_DISKII)) printf("request_motor_off: %llu\n", u64_t(mark_cycles_turnoff));
+        }
+
+        // motor on is always immediate.
+        void request_motor_on() {
+            if (drive_selected < 2) { // is a 5.25 
+                mark_cycles_turnoff = 0;
+                motor = 1;
+                drives[drive_selected]->set_enable(true);
+            }
+            //if (DEBUG(DEBUG_DISKII)) printf("request_motor_on: %llu\n", u64_t(mark_cycles_turnoff));
+        }
+
     public:
-        IWM() {
+        IWM(SoundEffect *sound_effect, NClockII *clock) {
             for (uint32_t i = 0; i < IWM_SWITCH_COUNT; i++) {
                 switches[i] = 0;
             }
-            drives[0] = new IWM_Drive_525();
-            drives[1] = new IWM_Drive_525();
-            drives[2] = new IWM_Drive_35();
-            drives[3] = new IWM_Drive_35();
+            drives[0] = new IWM_Drive_525(sound_effect, clock);
+            drives[1] = new IWM_Drive_525(sound_effect, clock);
+            drives[2] = new IWM_Drive_35(sound_effect, clock);
+            drives[3] = new IWM_Drive_35(sound_effect, clock);
             reset();
+
+            this->sound_effect = sound_effect;
+            this->clock = clock;
+
+            for (int i = 0; i < SDL_arraysize(sounds); i++) {
+                sounds[i].fname = sound_files[i];
+                sounds[i].si = sound_effect->load(sound_files[i], SE_SHUGART_DRIVE + i);
+            }
 /*             disk_register = 0;
             for (uint32_t i = 0; i < 4; i++) {
                 drives[i]->set_enable(false);
@@ -105,6 +78,14 @@ class IWM {
             reg_mode = 0;
             reg_handshake = 0; */
         };
+
+        IWM_Drive *get_drive(int index) {
+            return drives[index];
+        }
+        
+        void mount(media_descriptor *media) {
+            drives[0]->mount(0x600, media);  // key = slot 6, drive 0
+        }
 
         void reset() {
             disk_register = 0;
@@ -138,15 +119,20 @@ class IWM {
             // TODO: change any_drive_on and sense_input to query selected disk statuses later
             return (reg_mode & 0b000'11111) | any_drive_on << 5 | sense_input << 7;
         }
+
         inline void handle_switch(uint32_t address) {
             switch (address) {
                 case IWM_ENABLE_ON:
                     any_enabled = true;
-                    drives[drive_selected]->set_enable(true);
+                    if (drive_selected < 2) { // is a 5.25 
+                        request_motor_on();
+                    } else drives[drive_selected]->set_enable(true);
                     break;
                 case IWM_ENABLE_OFF:
                     any_enabled = false;
-                    drives[drive_selected]->set_enable(false);
+                    if (drive_selected < 2) { // is a 5.25 
+                        request_motor_off();
+                    } else drives[drive_selected]->set_enable(false);
                     break;
                 case IWM_SELECT_ON:
                     drives[drive_selected]->set_enable(false); // de-select     
@@ -167,7 +153,9 @@ class IWM {
             assert(address < IWM_ADDRESS_MAX && "IWM: read address out of bounds");
             access(address);
             
-            handle_switch(address);
+            drives[drive_selected]->read_cmd(address);
+
+            handle_switch(address);           
 
             /* Read Status Register 
             To access it, turn Q7 off and Q6 on, and read from any even-numbered address in the
@@ -198,8 +186,11 @@ class IWM {
             assert(address < IWM_ADDRESS_MAX && "IWM: write address out of bounds");
             access(address);
 
+            drives[drive_selected]->write_cmd(address, data);
+
             handle_switch(address);
 
+            
             /*
             Note that the drive may remain active for a second or two after the ENABLE
             access, and that the write to the mode register will fail unless the drive
@@ -242,6 +233,67 @@ class IWM {
                 drives[2]->get_led_status(), 
                 drives[3]->get_led_status());
         }
+
+        void check_motor_off_timer() {
+            if (mark_cycles_turnoff != 0 && (clock->get_c14m() > mark_cycles_turnoff)) {
+                drives[drive_selected]->set_enable(false);
+                motor = 0;
+                mark_cycles_turnoff = 0;
+            }
+        }
+        
+    bool diskii_running_last = false;
+    int tracknumber_last = 0;
+    void soundeffects_update() {
+        int tracknumber = 1; /* drives[drive_select].get_track() */;
+
+        //printf("diskii_running: %d, tracknumber: %d / %d\n", diskii_running, tracknumber, tracknumber_last);
+    
+        /* If less than a full copy of the audio is queued for playback, put another copy in there.
+            This is overkill, but easy when lots of RAM is cheap. One could be more careful and
+            queue less at a time, as long as the stream doesn't run dry.  */
+    
+        /* If sound state changed, reset the stream */
+        if (diskii_running_last && !motor) {
+            diskii_running_last = false;
+            /* Clear the audio stream when transitioning to disabled state */
+            sound_effect->flush(SE_SHUGART_DRIVE);
+        }
+        
+        /* Only queue audio data if sound is enabled */
+        static int running_chunknumber = 0;
+        if (motor) {
+            int dl = (int) sounds[SE_SHUGART_DRIVE].si->wav_data_len / 10;
+            if (SDL_GetAudioStreamQueued(sounds[SE_SHUGART_DRIVE].si->stream) < dl) {
+                SDL_PutAudioStreamData(sounds[SE_SHUGART_DRIVE].si->stream, sounds[SE_SHUGART_DRIVE].si->wav_data + dl * running_chunknumber, dl);
+                running_chunknumber++;
+                if (running_chunknumber > 8) {
+                    running_chunknumber = 0;
+                }
+            }
+        }
+        // minimum track movement is 2. We're called every 1/60th. That's 735 samples.
+        static int start_track_movement = -1;
+        if (tracknumber >= 0 && (tracknumber_last != tracknumber)) {
+            // if we have a track movement, play the head movement sound
+            // head can move 16.7 / 2.5 tracks per second, about 7.
+            int ind = 200 * 2 * std::abs(start_track_movement-tracknumber);
+    
+            int len = ((int) (200 * 2) * std::abs(tracknumber_last-tracknumber));
+            if (ind + len > sounds[SE_SHUGART_HEAD].si->wav_data_len) {
+                len = sounds[SE_SHUGART_HEAD].si->wav_data_len - ind;
+            }
+            sound_effect->play_specific(SE_SHUGART_HEAD, ind, len);
+
+            if (start_track_movement == -1) start_track_movement = tracknumber_last;
+            tracknumber_last = tracknumber;
+        } else {
+            // if head did not move on this update, reset the start_track_movement
+            start_track_movement = -1;
+        }
+    }
+
+    bool get_motor() { return motor; }
 
     private:
         /* You can access the switch states either by array index, or by individual switch name */
