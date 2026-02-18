@@ -47,6 +47,8 @@ enum MainAtlas {
     Badge_IIE,
     Badge_IIEEnh,
     Badge_IIGS,
+    AppleDisk_525_Open,
+    AppleDisk_525_Closed,
     MainAtlas_count
 };
 
