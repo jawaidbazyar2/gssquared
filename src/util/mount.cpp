@@ -17,12 +17,12 @@
 
 #include <unordered_map>
 #include <iostream>
+#include <algorithm>
 
 #include "cpu.hpp"
 #include "media.hpp"
 #include "mount.hpp"
-#include "devices/diskii/diskii.hpp"
-#include "devices/pdblock2/pdblock2.hpp"
+
 #include "util/printf_helper.hpp"
 
 /**
@@ -32,13 +32,16 @@
  * U = Unit (key & 0xFF)
  **/
 
+#if 0
 int Mounts::register_drive(drive_type_t drive_type, uint64_t key) {
     mounted_media[key].drive_type = drive_type;
     return 0;
 }
+#endif
 
 // TODO: this and umount should work on the basis of a disk device registering callbacks for mount, unmount, status, whatever else.
 
+#if 0
 int Mounts::mount_media(disk_mount_t disk_mount) {
 
     std::cout << "Mounting disk " << disk_mount.filename << " in slot " << disk_mount.slot << " drive " << disk_mount.drive << std::endl;
@@ -75,7 +78,36 @@ int Mounts::mount_media(disk_mount_t disk_mount) {
 
     return key;
 }
+#endif
 
+int Mounts::mount_media(disk_mount_t disk_mount) {
+    uint64_t key = (disk_mount.slot << 8) | disk_mount.drive;
+    
+    auto it = storage_devices.find(key);
+    if (it == storage_devices.end()) {
+        std::cerr << "No drive registered at " << key << std::endl;
+        return -1;
+    }
+    
+    // Identify media
+    media_descriptor *media = new media_descriptor();
+    media->filename = disk_mount.filename;
+    if (identify_media(*media) != 0) {
+        delete media;
+        return -1;
+    }
+    
+    // Call drive's mount method - polymorphic!
+    if (!it->second.device->mount(key, media)) {
+        delete media;
+        return -1;
+    }
+    
+    mounted_media[key] = media;
+    return key;
+}
+
+#if 0
 int Mounts::unmount_media(uint64_t key, unmount_action_t action) {
     // TODO: implement proper unmounting.
     auto it = mounted_media.find(key);
@@ -97,7 +129,31 @@ int Mounts::unmount_media(uint64_t key, unmount_action_t action) {
     }
     return false;
 }
+#endif
 
+int Mounts::unmount_media(uint64_t key, unmount_action_t action) {
+    auto it = storage_devices.find(key);
+    if (it == storage_devices.end()) {
+        return -1;
+    }
+    
+    if (action == SAVE_AND_UNMOUNT) {
+        it->second.device->writeback(key);
+    }
+    
+    it->second.device->unmount(key);
+    
+    // Clean up media descriptor
+    auto media_it = mounted_media.find(key);
+    if (media_it != mounted_media.end()) {
+        delete media_it->second;
+        mounted_media.erase(media_it);
+    }
+    
+    return 0;
+}
+
+#if 0
 drive_status_t Mounts::media_status(uint64_t key) {
     auto it = mounted_media.find(key);
     if (it == mounted_media.end()) {
@@ -110,10 +166,56 @@ drive_status_t Mounts::media_status(uint64_t key) {
     }
    return {false, nullptr, false, 0};
 }
+#endif
+
+drive_status_t Mounts::media_status(uint64_t key) {
+    auto it = storage_devices.find(key);
+    if (it == storage_devices.end()) {
+        return {false, nullptr, false, 0, false};
+    }
+    return it->second.device->status(key);
+}
+
 
 void Mounts::dump() {
     for (auto it = mounted_media.begin(); it != mounted_media.end(); it++) {
         drive_status_t status = media_status(it->first);
-        fprintf(stdout, "Mounted media: %llu typ: %d mnt: %d mot:%d pos: %d\n", u64_t(it->first), it->second.drive_type, status.is_mounted, status.motor_on, status.position);
+        //fprintf(stdout, "Mounted media: %llu typ: %d mnt: %d mot:%d pos: %d\n", u64_t(it->first), it->second.drive_type, status.is_mounted, status.motor_on, status.position);
+        fprintf(stdout, "Mounted media: %llu typ: %d mnt: %d mot:%d pos: %d\n", u64_t(it->first), 0xEE, /* it->second.drive_type, */ status.is_mounted, status.motor_on, status.position);
     }
+}
+
+int Mounts::register_storage_device(uint64_t key, StorageDevice *storage_device, drive_type_t drive_type) {
+    storage_devices[key] = {storage_device, drive_type};
+    return 0;
+}
+
+const std::vector<drive_info_t>& Mounts::get_all_drives() {
+    cached_drive_info.clear();  // doesn't deallocate capacity
+    cached_drive_info.reserve(storage_devices.size());
+    
+    for (const auto& [key, registration] : storage_devices) {
+        drive_info_t info;
+        info.key = key;
+        info.drive_type = registration.drive_type;
+        info.status = registration.device->status(key);
+        
+        cached_drive_info.push_back(info);
+    }
+    
+    // Sort by key: primary sort by slot (high byte) descending, secondary by drive (low byte) ascending
+    std::sort(cached_drive_info.begin(), cached_drive_info.end(),
+              [](const drive_info_t& a, const drive_info_t& b) {
+                  uint8_t slot_a = a.key >> 8;
+                  uint8_t slot_b = b.key >> 8;
+                  uint8_t drive_a = a.key & 0xFF;
+                  uint8_t drive_b = b.key & 0xFF;
+                  
+                  if (slot_a != slot_b) {
+                      return slot_a > slot_b;  // Higher slots first
+                  }
+                  return drive_a < drive_b;  // Lower drive numbers first within slot
+              });
+    
+    return cached_drive_info;
 }
