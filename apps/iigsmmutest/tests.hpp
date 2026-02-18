@@ -431,6 +431,18 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
 
+    // Test: when iOLC Shadow not inhibited, and bank latch enabled, I/O Space appears in all banks 00, 01, E0, E1
+    // E1: verifies I/O operation with bank latch enabled.
+    Test{
+        27,
+        "when iOLC not inhibited, I/O Space appears in all banks 00, 01, E0, E1",
+        {
+            AssertOp{0x00'C200, {0xE2, 0x40}},
+            AssertOp{0x01'C200, {0xE2, 0x40}},
+            AssertOp{0xE0'C200, {0xE2, 0x40}},
+            AssertOp{0xE1'C200, {0xE2, 0x40}},
+        }
+    },
     // Test: when IOLC not inhibited, interrupt vector pull reads from ROM.
     // Test: when IOLC inhibited, interrupt vector pull reads from RAM.
     // Test: when LC RAM READ enabled, bit 3 in State tracks.
