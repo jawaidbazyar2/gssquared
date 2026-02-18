@@ -9732,7 +9732,7 @@ Primary issues with GS:
 1. unimplemented softswitches
    1. C02B - langsel (put in something to read/write it on GS)
    1. C02C - CHARROM (??? test to read char rom)
-   1. C02D - SLTROMSEL 
+   1. C02D - SLTROMSEL (why did I say this was not implemented..?)
    1. C036 - motor detect
 1. IWM
 1. Ensoniq issues (irqs not right, soundglu slow timing not quite right)
@@ -9792,41 +9792,16 @@ So, set_state_register sets the LC flags, and vice-versa.
 
 Holy proliferation of source files, Batman! We have a cunning collection of classes!
 
-* iwm_device
-
-A C file to interface to C-ish MMU C0XX logic.
-
-* IWM
-
-The class that implements the IWM chip functionality.
-
-* IWM_Drive
-
-base class for IWM drives
-
-* IWM_525
-
-implements the IWM disk functionality for a 5.25 floppy, using Floppy525
-
-* IWM_35
-
-will implement IWM disk functions for 3.5 drive, using - Floppy35 (eventually, not yet written)
-
-* FloppyDrive
-base class for all Apple floppy drives that are driven off an IWM
-
+* iwm_device - A C file to interface to C-ish MMU C0XX logic.
+* IWM - The class that implements the IWM chip functionality.
+* IWM_Drive - base class for IWM drives
+* IWM_525 - implements the IWM disk functionality for a 5.25 floppy, using Floppy525
+* IWM_35 - will implement IWM disk functions for 3.5 drive, using - Floppy35 (eventually, not yet written)
+* FloppyDrive - base class for all Apple floppy drives that are driven off an IWM
 * Floppy525
-* Floppy35 (eventually)
-
-Implement the main functions of the 5.25 and 3.5 drives. Ultimately, DiskII will utilize Floppy525 also, for code sharing.
-
-* StorageDevice
-
-A generic interface providing mount, unmount, status, and writeback commands. The IWM_Drive and ultimately the DiskII_Drive use this interface, and register with mounts.
-
-* Mounts
-
-A nexus for storage devices to present their mount/unmount/etc interface, as well as information about drive types, assets to use in OSD, etc. And an interface for OSD to: query all devices on the system
+* Floppy35 (eventually) - Implement the main functions of the 5.25 and 3.5 drives. Ultimately, DiskII will utilize Floppy525 also, for code sharing.
+* StorageDevice - A generic interface providing mount, unmount, status, and writeback commands. The IWM_Drive and ultimately the DiskII_Drive use this interface, and register with mounts.
+* Mounts - A nexus for storage devices to present their mount/unmount/etc interface, as well as information about drive types, assets to use in OSD, etc. And an interface for OSD to: query all devices on the system
 
 Ultimately we'll have a hard drive interface also to allow user to attach tons of disk image aka partition files.
 
@@ -9844,11 +9819,11 @@ OSD probably needs to pull / update drive status from Mounts too, I forgot about
 OSD should be smarter about the on screen status (OSD closed, but disks active), so it can include whatever drives are running.
 
 on //e, the scheme is working well.
-the 5.25's are not quite right. crash on unmount/discard. Status maybe not returning all the needed info (dirty flag?)
+the 5.25's are not quite right. crash on unmount/discard. Status maybe not returning all the needed info (dirty flag?) (fixed)
 
-Also, on GS drive motors stay on improperly. I probably am missing something to always ensure only one drive is on, in IWM. A reset does clear that status.
+Also, on GS drive motors stay on improperly. I probably am missing something to always ensure only one drive is on, in IWM. A reset does clear that status. (This is now improved).
 
-The 5.25 drive is pretty slow. Not sure what's up with that. Definitely slower than the same media on the "Disk II". The GS speed isn't dropping to 1MHz, maybe the ROM disk II routines are bugging out due to that?
+The 5.25 drive is pretty slow. Not sure what's up with that. Definitely slower than the same media on the "Disk II". The GS speed isn't dropping to 1MHz, maybe the ROM disk II routines are bugging out due to that? (It's because the IWM was shutting the drive motor off instead of letting it spin for 1 sec.)
 
 ## Feb 17, 2026
 
@@ -9871,7 +9846,134 @@ For now, I put the soundeffects into the -controller-, not into the drive. That'
 
 Hmm, the 525 drive is still turning off instantly in the IWM, though the soundeffect persists, which means I am doing set_enable at the wrong time. yep!! I had to condition calling set_enable on the selected drive.. but I invented a whole nother one in IWM, which is wrong, we have drive_selected to index all 4 potential floppies.
 
+Still have some bugs. A2desktop tries to scan the (non-existent) 3.5's I think and freezes. And the audio keeps playing (probably a 'motor on' state that's inappropriate). 
+What about Finder.. my hard drive image may have the 5.25 driver disabled.. yes.. nice, I have some AppleDisk 5.25 icons! They don't, however, work..
+if you hit disk 1 when empty, it will eventually time out. disk 2 spins forever. if you put a disk in, it spins it up tho! I am guessing we are passing back something in the data channel that the driver doesn't like, when there is no media. I did an eject, and it took forever. it's switching back and forth between the first and 2nd drive, according to iwm debug. It did eventually stop. Is there some missing media sense? 
+
 One thing that I haven't put back yet, is the quick and dirty drag and drop handler I did. I'm going to leave that out for now, because that needs to be handled by OSD and do the following:
 1. as we hover over buttons, highlight them (might get this for free)
 1. when we release, it needs to identify the button and then try to 
 1. when that's working, display the OSD if not already enabled (and hide it if we then drag off-screen).
+1. additionally, if they drag and drop onto the screen generically (not on a button), or perhaps double-click a disk image, should we try to figure out what device to attach to? 143k, 800k are obvious, anything else to the HD?
+
+See Telcom 0.28 1991 BRK bug for something to look at for a potential MMU issue tomorrow.
+
+## Feb 18, 2026
+
+ok! When running TC2, something calls tool tool $2403 with target address $C2CC ($C2CB is RTS address pushed). Something in the modem firmware. But, that does a JMP ABS 4FC4 in a way it's clearly intended to be done with K=FF. 
+
+```
+FE/A0C5: the actual tool routine, label MonEntry. loads a,x,y from the stack frame, bra FE/9C5E
+
+save C036 and C068 on stack (was 84, and 0C)
+set State=08
+checks if tgt address is in C0-C7; its calculating slot page C2 from target address;
+reads C02D (SLOTROMSEL) is $80
+checking slotromsel for that slot enable
+TRB C036 (value 84, but A is 0, so no changes)
+push C015 to stack; (bit 7 = 1 RDCXROM if using internal ROM)
+read C036, set top bit to match E10137, store it back into C036 (this is the system speed bit)
+sta C006 (SETSLOTCXROM)
+
+rom03:
+3909 B522                       title 'FWEntry'
+3910 B522              ****************************************************************
+3911 B522              *
+3912 B522              * Full Native Dispatch to Firmware
+3913 B522              *
+3914 B522              * Input     Word  Entry point - 1
+3915 B522              *
+3916 B522              * This routine dispatches from full native mode to an emulation
+3917 B522              * mode entry point.   The 8 bit A,X and Y registers will be
+3918 B522              * passed through to the target routine.   A,X and Y will also
+3919 B522              * be returned to the application from the target routine.
+3920 B522              * If the dispatch is in the address range of $C0xx-$C7xx, then
+3921 B522              * the dispatcher must determine if the slot to be accessed is
+3922 B522              * internal or external.  If external, then the system speed is
+3923 B522              * kicked down to slow mode.
+3924 B522              *
+3925 B522              ****************************************************************
+3926 B522
+```
+
+So is the issue something with SLOTROMSEL ?
+
+BP 9C5E. Apparently this is called nearly nonstop in finder - ugh! how about when they disable shr mode.. 
+that's c029. ugh, that's hitting code at (somebank) c029. how about I click TC, then hit enter on bp 9c5e.. 
+the struggle is real.
+one diff between KEGS and GS2 is ROM3 vs ROM1. ROM3 uses a tool to manage the slots, instead of the hardcoded stuff in rom1. rom1 should still work, but perhaps I can try it in KEGS too. oh, no I have it on ROM01. 
+what if I'm running ROM00.. nope, md5 says I'm using same ROM in KEGS and GS2.
+ok.. tried it with no inits/DAs, no change.. trying this bp in kegs. if I'm doing this right, it is -not- calling these routines in kegs! Ah, so what, there is something different about the setup prior to this that is causing the problem.. it may not be me calling this tool directly. if I c2ccg it does crash out, of course it does, we know that routine can't be called.
+
+ok, so i am tracking the value C2CC backwards. CC felt odd. I am here, where it's setting up those variable values that begets C2CC. And lo and behold:
+```
+169441176324   00 C200 0000 37A8 A0  07/F8F6: BF 0D 00 E1 LDA  $E1000D,E1/C20D CC
+169441176329   CC C200 0000 37A8 A0  07/F8FA: 8D CB F8    STA  $F8CB   07/F8CB CC
+169441176333   CC C200 0000 37A8 A0  07/F8FD: BF 0E 00 E1 LDA  $E1000E,E1/C20E 00
+169441176338   00 C200 0000 37A8 22  07/F901: 8D CD F8    STA  $F8CD   07/F8CD 00
+169441176342   00 C200 0000 37A8 22  07/F904: BF 0F 00 E1 LDA  $E1000F,E1/C20F 00
+169441176347   00 C200 0000 37A8 22  07/F908: 8D CF F8    STA  $F8CF   07/F8CF 00
+169441176351   00 C200 0000 37A8 22  07/F90B: BF 10 00 E1 LDA  $E10010,E1/C210 CC
+169441176356   CC C200 0000 37A8 A0  07/F90F: 8D D1 F8    STA  $F8D1   07/F8D1 CC
+169441176360   CC C200 0000 37A8 A0  07/F912: BF 12 00 E1 LDA  $E10012,E1/C212 00
+169441176365   00 C200 0000 37A8 22  07/F916: 8D D3 F8    STA  $F8D3   07/F8D3 00
+```
+these are reading RAM instead of I/O space. Boojah. I imagine this is reading entry points from the C2 rom. Did I overlook making the slot rom stuff appear in bank E1?
+```
+inline uint8_t bank_e1_read(void *context, uint32_t address) {
+...
+    if ((address & 0xFF00) == 0xC000) return mmu_iigs->megaii->read(address & 0xFFFF);  // return mmu_iigs->read_c0xx(address);
+```
+Should this be address & 0xF000 = 0xC000 ?
+well, Telcom runs now. uh. So what other nonsense did this cause.
+note: I now see the C2CC code (it's not where Telcom is calling, but that's irrelevant), oh and we could BP on C20D/C20E.
+in E0, E1, 00. But not 01. I think missing from 01 may also be in error..
+
+[ ] need to write tests here, and thoroughly analyze the bank latch, and direct bank e1 access stuff.  
+[x] test: C200 ROM appears in all banks 00, 01, E0, E1
+
+when slot ROM mapped in, and shadow enabled, it should appear in banks 0, 1, E0, E1 ? Verify the E1 business.
+
+ok in bank shadow read, we have:
+```
+    if ( mmu_iigs->is_iolc_shadowed() && (page >= 0xC0 && page <= 0xCF)) {
+        mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
+        return mmu_iigs->megaiiRead(address & 0x1'FFFF);
+    }
+    inline uint8_t megaiiRead(uint32_t address) {
+      if ((address & 0x1'0000) && g_bank_latch) {
+          return megaii->get_memory_base()[address & 0x1'FFFF]; // does not currently have an interface for this
+      }
+      else return megaii->read(address & 0xFFFF);
+    }
+```
+So this is calling megaiiRead with a 17-bit address.. and if that's set, and the bank latch is set, then I/O is going to fail. this is in error (KEGS is correct). double check on realGS. This is the ONLY place that's calling megaiiRead.. 
+ok, these implementations of megaiiRead and megaiiWrite are clearly wrong. They are directly accessing megaii memory allocation without regard to any special mapping. 
+So there are two bugs here? 
+There is only the ONE use of megaiiRead, in bank_shadow_read, in the C0 space. So this is fixable by just calling megaii directly here?
+the bank latch clearly interacts with:
+direct access to Bank E1
+shadowed video writes to bank 01. So bank 01 (odd main banks) we -can- just write directly to mega II ram bank E1.
+I think this is right, but write the tests.
+
+oops, 
+```
+Thread 12 Crashed:: FileDevice
+0   libsystem_c.dylib             	       0x18569e594 fclose + 140
+1   GSSquared                     	       0x1043228b8 FileDevice::device_loop() + 164
+2   GSSquared                     	       0x1043278c4 SerialDeviceThreadHandler(void*) + 20
+3   libSDL3.0.dylib               	       0x10470bdb8 SDL_RunThread + 48
+4   libSDL3.0.dylib               	       0x1047c6a90 RunThread + 12
+5   libsystem_pthread.dylib       	       0x1857efbc8 _pthread_start + 136
+6   libsystem_pthread.dylib       	       0x1857eab80 thread_start + 8
+```
+Must be calling fclose with bad handle sometime. yep, never initialized it in constructor. Derp!
+
+A2Desktop 32M hard drive image is working fine with the floppy disk? Uh. Must have fixed something? Uh? Could it have been that bank e1 thing? Maybe. Who knows what in ROM might have used E1..
+
+The Floppy disk soundeffects should go into Floppy class.
+
+For Mouse Capture, maybe we can somehow detect when we're in GS/OS desktop with mouse on. and not capture but do the "mouse-matching" approach. Hmm.
+
+[ ] expand heads-up disk status to include whatever disks are active  
+

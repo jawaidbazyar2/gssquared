@@ -48,6 +48,8 @@ There is a 10 x 19 Status FIFO; a 3 byte Rec error FIFO, another 3 byte Rec erro
 [ ] Implement "file" serial device  
 [ ] implement ImageWriter II emulation    
 
+[ ] When a file has completed writing and closes, issue a gizmo at the top of the screen saying where the file is  
+
 [ ] Refactor "parallel" card to use threads and be connectable to file or imagewriter.  
 
 

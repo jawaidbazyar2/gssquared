@@ -53,6 +53,19 @@ works.
 
 seems to work all video modes
 
+## Bard's Tale II: Destiny Knight
+
+My recollection is this worked ok.
+
+## Christmas Music (Christmas.2mg)
+
+Error: 13 (from PlayMidiStartup).
+2/18/26: the midi tool is now starting, and playing a song.. way too slowly, just like QiX. Still, this is a big improvement over crashing.
+
+## FTA XMAS Demo (FTAXMAS)
+
+immediately hits BRK at 5300 after loading boot block. I read this loads stuff from disk while animations are occurring, so this may depend on directly manipulating the IWM.
+
 ## A2Desktop 1.5
 
 crashes with progress bar halfway
@@ -76,6 +89,8 @@ WORKING SUPER DUPER PERFECTO
 
 The text editor/viewer crashes, there is likely some issue with AUX/MAIN bank switching still.
 
+With Floppies enabled, hangs forever trying to read floppies.
+
 ## Arkanoid
 
 Crashes during boot.
@@ -95,6 +110,8 @@ After fixing State/C068/LCBNK2 was incorrect, we now boot to finder!
 
 The mouse isn't moving, probably because interrupts are not hooked up yet.
 
+you can select some things in the UI via keyboard, but joystick is not responding.
+
 ## Apple IIgs Tour
 
 boots past a "loading" screen, but then is looping doing ??
@@ -105,7 +122,7 @@ Working now.
 
 boots to "Demo Configuration";
 asks for volume; 
-tries to load stuff off slot 6 for a while then crashes.
+tries to load stuff off slot 6 for a while then crashes. is likely expecting IWM in slot 5.
 
 ## Qix
 
@@ -114,6 +131,10 @@ This feels like there is a s/s not being set correctly on powerup or reset.
 At splash screen hangs in tight loop waiting for 1D00 to be non-zero. It's waiting for an interrupt handler to set a variable.
 it's just slow. The music is playing like 8 times too slow. Weeeird.
 
+## Rastan
+
+gets a little further now, you can start the game, but the game screen draws as the guy falls on the left, eventually screen blacks and audio keeps repeating in a loop. Getting closer!
+Likely a Ensoniq issue.
 
 ## Gauntlet
 
@@ -133,9 +154,31 @@ Well, funnily enough, this is a 143K disk, not an 800K disk. So I bet its bootlo
 
 Plays very well with keyboard. Joystick auto-detect not working.
 
+## NoiseTracker
+
+there was a MMU bug involving RAMRD/RAMWRT and direct access to bank 1. (we were adding an extra 0x1'0000 erroneously).
+It now starts but then hits a BRK; it plays music for a while; then dies with a "RESTART SYSTEM". Could be Ensoniq IRQ or another memory issue.
+2/18/26: gets a little further now before crashing, it displays a 3d Ball pyramid.
+
+## Senseiplay
+
+similar to noisetracker, now starts and plays a song for a couple seconds, then fails with a "RESTART SYSTEM-$01".
+
+## Telcom 0.28 (1991)
+
+my baby!
+
+this crashes to a BRK on GS2. It does NOT crash on Kegs. Something is doing a tool call 2403 to call 00/C2CC in emulation mode. (Why?) This routine exits with a JMP $4xxx, meaning, it's expecting the program bank to be FF, not 00. So something in that stretch between 14/6360 (can't guarantee it's always here, but, it's the JSL $E10000 before the BRK).
+
+^^ This likely points to an MMU bug?
+
+YES. See DevelopLog.md Feb 18 2026. 
+
+Telcom now runs. (Issue was IO space wasn't being mapped into bank E1 correctly).
+
 ## Total Replay
 
 ### Airheart
 
-crashes after displaying splash screen
+crashes after displaying splash screen (same as on IIe)
 
