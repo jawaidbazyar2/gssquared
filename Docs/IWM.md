@@ -16,3 +16,15 @@ https://www.brutaldeluxe.fr/documentation/iwm/apple2_IWM_Spec_Rev19_1982.pdf
 Nick Parker's 3.5-focused treatment - but should give a good idea of how both operate (since 5.25 is just 'default mode')
 https://www.applefritter.com/files/2025/03/02/IWM-Controlling%20the%203.5%20Drive%20Hardware%20on%20the%20Apple%20IIGS_alt.pdf
 
+
+## Refactoring Disk II
+
+see DiskII.md for details.
+
+Initially, just implement 5.25 support on IWM. Then we'll start to add in 3.5 and see if we need a different abstraction layer.
+
+ok, I found the splice point - we need to pass the register read/writes down to the Floppy layer also. I pass them all, it can ignore the controller-level ones.
+
+This is quite the layer upon layer of classes, but these are all header implementations and they are honestly not that complex, so the compiler should be able to optimize pretty well.
+
+I'm now at the point where I need something to wire in the hooks to OSD/mount. I guess I can manually mount a floppy image for testing before I do that.

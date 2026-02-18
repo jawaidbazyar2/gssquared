@@ -9789,3 +9789,89 @@ some of the confusion here is likely from the inverted sense of GS state registe
 I suspect I should reset the LC flags and then update the state reg.
 the previous version had been edited to update both the state reg and lc flags; obviously, in the read/write routine I had to add setting the state reg flags. I also put in a missing flag set in the set_state_register routine.
 So, set_state_register sets the LC flags, and vice-versa.
+
+Holy proliferation of source files, Batman! We have a cunning collection of classes!
+
+* iwm_device
+
+A C file to interface to C-ish MMU C0XX logic.
+
+* IWM
+
+The class that implements the IWM chip functionality.
+
+* IWM_Drive
+
+base class for IWM drives
+
+* IWM_525
+
+implements the IWM disk functionality for a 5.25 floppy, using Floppy525
+
+* IWM_35
+
+will implement IWM disk functions for 3.5 drive, using - Floppy35 (eventually, not yet written)
+
+* FloppyDrive
+base class for all Apple floppy drives that are driven off an IWM
+
+* Floppy525
+* Floppy35 (eventually)
+
+Implement the main functions of the 5.25 and 3.5 drives. Ultimately, DiskII will utilize Floppy525 also, for code sharing.
+
+* StorageDevice
+
+A generic interface providing mount, unmount, status, and writeback commands. The IWM_Drive and ultimately the DiskII_Drive use this interface, and register with mounts.
+
+* Mounts
+
+A nexus for storage devices to present their mount/unmount/etc interface, as well as information about drive types, assets to use in OSD, etc. And an interface for OSD to: query all devices on the system
+
+Ultimately we'll have a hard drive interface also to allow user to attach tons of disk image aka partition files.
+
+Thinking about that somewhat.. maybe what we need is the concept of a unit and subunits. E.g., a Unit is two disk II drives in a slot; or two 3.5 drives in a slot; or a hard drive. Subunits: disk ii 1/2; or N number of images on a partition. Instead of just a button, we'll have a subclass of a Container that will then contain the buttons. This way the hard drive container can manage its (many) partitions in a unique fashion. OSD will need to be prepared 
+
+Mounts::register wants the following information:
+1. key;
+1. device type (defines which button to display);
+1. the interface pointer;
+
+ok, have a few issues, but made a ton of progress.
+
+OSD now dynamically builds the storage container from Mounts;
+OSD probably needs to pull / update drive status from Mounts too, I forgot about that..
+OSD should be smarter about the on screen status (OSD closed, but disks active), so it can include whatever drives are running.
+
+on //e, the scheme is working well.
+the 5.25's are not quite right. crash on unmount/discard. Status maybe not returning all the needed info (dirty flag?)
+
+Also, on GS drive motors stay on improperly. I probably am missing something to always ensure only one drive is on, in IWM. A reset does clear that status.
+
+The 5.25 drive is pretty slow. Not sure what's up with that. Definitely slower than the same media on the "Disk II". The GS speed isn't dropping to 1MHz, maybe the ROM disk II routines are bugging out due to that?
+
+## Feb 17, 2026
+
+ok, so the disk issue is when the drive is running and we just do a select, we're still doing the timed turnoff - but then the drive switched to does a shut off on timer.. basically if drive is on and we change due to select, turn off the drive immediately. Also, need to do delay turn-off on a timer. Need to fix this in DiskII first. the test will be in the Apple II Product Diagnostic where the drive stays on even when it should have been turned off.
+
+Let's go ahead and refactor DiskII to use the new Floppy525 class. I took a stab, got confused. I need a little more clarity on where certain switches live. Currently, Q6, Q7 etc all live in the drive abstraction. In IWM, we're tracking these both in the drive, and in the controller, because the controller gives different, or, additional meaning to the switches. in current DiskII, most of these switches also live in the drive, not the controller. But, the controller needs to know which drive is selected. 
+I'm partway through it, but I now have a conundrum, which is that IWM_Drive tracks Q6/Q7 and does read_nybble if needed. whereas in the diskii that piece isn't there. 
+
+ok, the slowness is almost certainly due to not implementing the motor-off timer.
+
+yeah, so I put that back, but of course being down there in the disk it may never be getting called. C0EA, C0E9 - turns on disk, but C0e8 then doesn't. if you do it again, it does, because we checked the reg.
+
+this means the drive either needs access to the 14m timer, or, utilize its own separate timer mechanism. well maybe it's not the drive, maybe it's the controller. ok let's proceed with that assumption.. this means the drive should have enable (true/false). this immediately turns the motor on or off.
+
+I WAS WRONG. I can just check if I need to turn the motor off during device frame time. ha ha ha. Hilarious. At the same time we're doing the audio update. Ah, all sorts of stuff can be done better now.
+
+Whew! ok I think I've got everything hooked back up. It might even work. 
+
+For now, I put the soundeffects into the -controller-, not into the drive. That's basically how it's been done before now. However, that code will have to be replicated over in the IWM.
+
+Hmm, the 525 drive is still turning off instantly in the IWM, though the soundeffect persists, which means I am doing set_enable at the wrong time. yep!! I had to condition calling set_enable on the selected drive.. but I invented a whole nother one in IWM, which is wrong, we have drive_selected to index all 4 potential floppies.
+
+One thing that I haven't put back yet, is the quick and dirty drag and drop handler I did. I'm going to leave that out for now, because that needs to be handled by OSD and do the following:
+1. as we hover over buttons, highlight them (might get this for free)
+1. when we release, it needs to identify the button and then try to 
+1. when that's working, display the OSD if not already enabled (and hide it if we then drag off-screen).
