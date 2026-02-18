@@ -25,6 +25,7 @@
 #include "util/media.hpp"
 #include "util/mount.hpp"
 #include "util/SoundEffectKeys.hpp"
+#include "devices/diskii/Floppy525.hpp"
 
 #define DiskII_Ph0_Off 0x00
 #define DiskII_Ph0_On 0x01
@@ -83,11 +84,32 @@ struct diskII_controller : public SlotData {
 
 
 void init_slot_diskII(computer_t *computer, SlotType_t slot);
-void mount_diskII(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descriptor *media);
-void unmount_diskII(cpu_state *cpu, uint8_t slot, uint8_t drive);
-void writeback_diskII_image(cpu_state *cpu, uint8_t slot, uint8_t drive);
-drive_status_t diskii_status(cpu_state *cpu, uint64_t key);
+bool mount_diskII(diskII_controller *diskII_d, uint8_t slot, uint8_t drive, media_descriptor *media);
+bool unmount_diskII(diskII_controller *diskII_d, uint8_t slot, uint8_t drive);
+bool writeback_diskII_image(diskII_controller *diskII_d, uint8_t slot, uint8_t drive);
+drive_status_t diskii_status(diskII_controller *diskII_d, uint64_t key);
 void diskii_reset(cpu_state *cpu);
 void debug_dump_disk_images(cpu_state *cpu);
 bool any_diskii_motor_on(cpu_state *cpu);
 int diskii_tracknumber_on(cpu_state *cpu);
+
+
+class DiskIIThunk : public StorageDevice {
+    diskII_controller *diskII_d;
+    
+    public:
+        DiskIIThunk(diskII_controller *diskII_d) : StorageDevice(), diskII_d(diskII_d) {}
+        bool mount(uint64_t key, media_descriptor *media) override {
+            return mount_diskII(diskII_d, key >> 8, key & 0xFF, media);
+        }
+        bool unmount(uint64_t key) override {
+            return unmount_diskII(diskII_d, key >> 8, key & 0xFF);
+        }
+        bool writeback(uint64_t key) override {
+            return writeback_diskII_image(diskII_d, key >> 8, key & 0xFF);
+        }
+        drive_status_t status(uint64_t key) override {
+            return diskii_status(diskII_d, key);
+        }
+    };
+
