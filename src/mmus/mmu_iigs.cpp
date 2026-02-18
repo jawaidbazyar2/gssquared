@@ -31,7 +31,7 @@ inline uint8_t bank_e1_read(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
 
-    if ((address & 0xFF00) == 0xC000) return mmu_iigs->megaii->read(address & 0xFFFF);  // return mmu_iigs->read_c0xx(address);
+    if ((address & 0xF000) == 0xC000) return mmu_iigs->megaii->read(address & 0xFFFF);  // return mmu_iigs->read_c0xx(address);
     
     if (!mmu_iigs->is_bank_latch()) {
         return mmu_iigs->megaii->read(address & 0xFFFF);
@@ -46,7 +46,7 @@ inline void bank_e1_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
 
-    if ((address & 0xFF00) == 0xC000) mmu_iigs->megaii->write(address & 0xFFFF, value); // mmu_iigs->write_c0xx(address, value);
+    if ((address & 0xF000) == 0xC000) mmu_iigs->megaii->write(address & 0xFFFF, value); // mmu_iigs->write_c0xx(address, value);
 
     if (!mmu_iigs->is_bank_latch()) {
         mmu_iigs->megaii->write(address & 0xFFFF, value);
@@ -535,7 +535,8 @@ uint8_t bank_shadow_read(void *context, uint32_t address) {
     // if IOLC is "shadowed" and it's an I/O location, send write down to Megaii.
     if ( mmu_iigs->is_iolc_shadowed() && (page >= 0xC0 && page <= 0xCF)) {
         mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
-        return mmu_iigs->megaiiRead(address & 0x1'FFFF);
+        //return mmu_iigs->megaiiRead(address & 0x1'FFFF);
+        return mmu_iigs->megaii->read(address & 0xFFFF);
     }
     
     // if IOLC is "shadowed" (enabled) and it's a language card location, map the address.
@@ -568,7 +569,8 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
 
     // if IOLC is "shadowed" and it's an I/O location, send write down to Megaii.
     if ( (mmu_iigs->is_iolc_shadowed()) && (page >= 0xC0 && page <= 0xCF) ) {
-        mmu_iigs->megaiiWrite(address & 0x1'FFFF, value);
+        //mmu_iigs->megaiiWrite(address & 0x1'FFFF, value);
+        mmu_iigs->megaii->write(address & 0xFFFF, value);
         return; // we delegated this to the MegaII
     }
     
@@ -589,7 +591,7 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
 
     if ( mmu_iigs->shadow_is_enabled(address)) {
         // Shadowed
-        mmu_iigs->megaiiWrite(address & 0x1'FFFF, value);
+        mmu_iigs->megaiiWrite(address & 0x1'FFFF, value); // this will cover case of writing to bank 01 -> shadow to E1
     }
     if (DEBUG(DEBUG_MMUGS)) printf("Write: Effective address: %06X\n", address);
     // goes to RAM
@@ -759,6 +761,7 @@ void MMU_IIgs::debug_dump(DebugFormatter *df) {
     
     df->addLine("Speed: %02X", reg_speed);
     debug_output_page(df, 0x00);
+    debug_output_page(df, 0x01);
     debug_output_page(df, 0x02);
     df->addLine("Mega II");
     df->addLine("C8xx_slot: %d", megaii->get_C8xx_slot());

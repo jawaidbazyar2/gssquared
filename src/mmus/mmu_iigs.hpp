@@ -119,12 +119,13 @@ class MMU_IIgs : public MMU {
             return false;
         }
 
-        inline uint8_t megaiiRead(uint32_t address) {
+        // TODO: remove, not used anywhere any more. bank_e1_read handles bank latch directly.
+        /* inline uint8_t megaiiRead(uint32_t address) {
             if ((address & 0x1'0000) && g_bank_latch) {
                 return megaii->get_memory_base()[address & 0x1'FFFF]; // does not currently have an interface for this
             }
             else return megaii->read(address & 0xFFFF);
-        }
+        } */
 
         inline void megaiiWrite(uint32_t address, uint8_t value) { 
             if ((address & 0x1'0000) && g_bank_latch)
