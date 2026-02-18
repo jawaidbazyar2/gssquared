@@ -65,14 +65,14 @@ void DiskII_Button_t::render(SDL_Renderer* renderer) {
     snprintf(text, sizeof(text), "Slot %llu", u64_t(key >> 8));
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_RenderDebugText(renderer, tp.x + cp.x + 62, tp.y + cp.y + 84, text);
-    if (is_hovering && status.filename) {
-        float text_width = (float)(strlen(status.filename) * 8);
+    if (is_hovering && !status.filename.empty()) {
+        float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
         SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 36, text_width+10, 16};
         SDL_SetRenderDrawColor(renderer, 0x80, 0x80, 0xFF, 0x80);
         SDL_RenderFillRect(renderer, &rect);
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDebugText(renderer, tp.x + cp.x + text_x, tp.y + cp.y + 40, status.filename);
+        SDL_RenderDebugText(renderer, tp.x + cp.x + text_x, tp.y + cp.y + 40, status.filename.c_str());
     }
     if (status.is_mounted && status.motor_on) {
         // if mounted and hovering, show the track number over the drive

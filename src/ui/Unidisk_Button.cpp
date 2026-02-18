@@ -64,14 +64,14 @@ void Unidisk_Button_t::render(SDL_Renderer* renderer) {
     snprintf(text, sizeof(text), "Slot %llu", u64_t(key >> 8));
     SDL_RenderDebugText(renderer, tp.x + cp.x + 62, tp.y + cp.y + 75, text);
     
-    if (is_hovering && status.filename) {
-        float text_width = (float)(strlen(status.filename) * 8);
+    if (is_hovering && !status.filename.empty()) {
+        float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
         SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 40, text_width+10, 16};
         SDL_SetRenderDrawColor(renderer, 0x80, 0x80, 0xFF, 0x80);
         SDL_RenderFillRect(renderer, &rect);
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDebugText(renderer, tp.x + cp.x + text_x, tp.y + cp.y + 44, status.filename);
+        SDL_RenderDebugText(renderer, tp.x + cp.x + text_x, tp.y + cp.y + 44, status.filename.c_str());
     }
     // TODO: if mounted and hovering, show the disk image name over the drive
 }
