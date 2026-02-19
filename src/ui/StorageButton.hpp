@@ -18,8 +18,8 @@ class StorageButton : public Button_t {
         virtual int get_disk_slot() const;
         virtual void set_disk_number(int num);
         virtual int get_disk_number() const; */
-        virtual void set_disk_status(drive_status_t status) { this->status = status; };
-        virtual drive_status_t get_disk_status() const { return status; };
-        virtual void set_key(uint64_t k) { key = k; };
-        virtual uint64_t get_key() const { return key; };
+        inline virtual void set_disk_status(drive_status_t status) { this->status = status; };
+        inline virtual drive_status_t get_disk_status() const { return status; };
+        inline virtual void set_key(uint64_t k) { key = k; };
+        inline virtual uint64_t get_key() const { return key; };
 };
