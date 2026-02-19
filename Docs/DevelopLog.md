@@ -9975,5 +9975,37 @@ The Floppy disk soundeffects should go into Floppy class.
 
 For Mouse Capture, maybe we can somehow detect when we're in GS/OS desktop with mouse on. and not capture but do the "mouse-matching" approach. Hmm.
 
-[ ] expand heads-up disk status to include whatever disks are active  
+[x] expand heads-up disk status to include whatever disks are active  
 
+## Feb 19, 2026
+
+For the GS, I am wondering about the accelerated speeds. They seem slower than they should. I mean, that might just be how it is on a GS. Though I am still doing the 5 out of 50 "refresh cycles" stuff. I could tone that down, leave more time for CPU POWER.
+
+Don't have a border on the AppleDisk icons.. ah, that's nice.
+
+Let's think about Roadmap here.
+
+Hardware Issues Yet to Resolve
+
+* 3.5" IWM
+* SmartPort hard disk
+* SCC does not support AppleTalk (Do we care at this point?)
+* Ensoniq timing bugs (Qix 4x slow etc) and some related interrupt bugs, does not pass system self-test
+* Mockingboard does not pass mb-audit tests (but seems to work well otherwise?)
+* Uthernet II + Marinetti
+* Host FST
+* Some remaining GS items (e.g., slotmaker needs to manage I/O locations; disk register; 3.5")
+* GSMMU Optimization - switch to LUTs
+
+-> See UserInterface.md for the extensive UI design doc
+
+Code Cleanup
+
+* Consider Classying up some of the code (e.g., devices interface). Some of the code becomes a lot cleaner and more readable if we use closures for example instead of C-grade callbacks; static method callbacks where we can't (SDL).
+* Move timers to clock ?
+
+A whole later generation could add: (could this be the freemium addons?)
+
+* CRT shaders
+* Save State (would be helped greatly by having devices be classes, yah?)
+* Tight integration with disk archive via metadata searches (have as separate window, separate thread, can drag and drop from that into emu)
