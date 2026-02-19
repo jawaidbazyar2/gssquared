@@ -19,6 +19,7 @@
 
  #include <SDL3/SDL.h>
  #include "Button.hpp"
+ #include "StorageButton.hpp"
  #include "util/mount.hpp"
  
  /**
@@ -28,24 +29,10 @@
   * disk drive controls, including disk mounting state and drive activity
   * indicators.
   */
- class AppleDisk_525_Button_t : public Button_t {
- protected:
-     uint64_t key;
-     drive_status_t status;
- 
+ class AppleDisk_525_Button_t : public StorageButton {
  public:
      // Inherit constructors from Button_t
-     using Button_t::Button_t;
- 
-     // Disk state setters and getters
-     void set_disk_slot(int slot);
-     int get_disk_slot() const;
-     void set_disk_number(int num);
-     int get_disk_number() const;
-     void set_disk_status(drive_status_t status);
-     drive_status_t get_disk_status() const;
-     void set_key(uint64_t k);
-     uint64_t get_key() const;
+     using StorageButton::StorageButton;
  
      // Override render to add disk-specific rendering
      void render(SDL_Renderer* renderer) override;

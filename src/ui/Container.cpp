@@ -261,3 +261,12 @@ Tile_t* Container_t::get_tile(size_t index) const {
     }
     return nullptr;
 }
+
+void Container_t::remove_all_tiles() {
+    for (size_t i = 0; i < tile_count; i++) {
+        if (tiles[i]) {
+            tiles[i] = nullptr;
+        }
+    }
+    tile_count = 0;
+}

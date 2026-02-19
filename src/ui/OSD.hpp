@@ -60,6 +60,8 @@ protected:
     int slidePositionDelta = slidePositionDeltaMax;
     SlotManager_t *slot_manager = nullptr;
     
+    Container_t *drive_container = nullptr;
+
     DiskII_Button_t *diskii_button1 = nullptr;
     DiskII_Button_t *diskii_button2 = nullptr;
     AppleDisk_525_Button_t *adisk_525_button1 = nullptr;

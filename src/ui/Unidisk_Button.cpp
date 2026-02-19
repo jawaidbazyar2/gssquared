@@ -30,13 +30,6 @@
  * and additional visual elements can be drawn on top.
  */
 
-void Unidisk_Button_t::set_key(uint64_t k) { key = k; }
-uint64_t Unidisk_Button_t::get_key() const { return key; }
-
-void Unidisk_Button_t::set_disk_status(drive_status_t statusx) {
-    status = statusx;
-}
-
 /**
  * @brief Renders the Unidisk button with additional drive-specific elements.
  * @param renderer The SDL renderer to use.
@@ -73,5 +66,4 @@ void Unidisk_Button_t::render(SDL_Renderer* renderer) {
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
         SDL_RenderDebugText(renderer, tp.x + cp.x + text_x, tp.y + cp.y + 44, status.filename.c_str());
     }
-    // TODO: if mounted and hovering, show the disk image name over the drive
 }

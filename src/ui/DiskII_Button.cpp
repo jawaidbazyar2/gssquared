@@ -30,7 +30,7 @@
  * and additional visual elements can be drawn on top.
  */
 
-void DiskII_Button_t::set_key(uint64_t k) { key = k; }
+/* void DiskII_Button_t::set_key(uint64_t k) { key = k; }
 uint64_t DiskII_Button_t::get_key() const { return key; }
 
 void DiskII_Button_t::set_disk_status(drive_status_t statusx) {
@@ -38,7 +38,7 @@ void DiskII_Button_t::set_disk_status(drive_status_t statusx) {
 }
 
 drive_status_t DiskII_Button_t::get_disk_status() const { return status; }
-
+ */
 /**
  * @brief Renders the DiskII button with additional drive-specific elements.
  * @param renderer The SDL renderer to use.

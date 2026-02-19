@@ -305,7 +305,7 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     HUD.border_width = 0;
 
     // Create a container for our drive buttons
-    Container_t *drive_container = new Container_t(renderer, 10, CS);  // Increased to 5 to accommodate the mouse position tile
+    drive_container = new Container_t(renderer, 10, CS);  // Increased to 5 to accommodate the mouse position tile
     drive_container->set_position(600, 70);
     drive_container->set_tile_size(415, 600);
     containers.push_back(drive_container);
@@ -382,72 +382,35 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     for (const auto& drive : drives) {
         uint8_t slot = drive.key >> 8;
         uint8_t drive_num = drive.key & 0xFF;
-        
+        StorageButton *button;
+
         // Create the appropriate button type based on drive_type
         if (drive.drive_type == DRIVE_TYPE_DISKII) {
-            DiskII_Button_t *button = new DiskII_Button_t(aa, DiskII_Open, DS);
-            button->set_key(drive.key);
+            button = new DiskII_Button_t(aa, DiskII_Open, DS);
             button->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, drive.key});
-            drive_container->add_tile(button, tile_id++);
-            
-            // Store first two DiskII buttons for legacy member access
-            if (drive_num == 0) {
-                diskii_button1 = button;
-            } else if (drive_num == 1) {
-                diskii_button2 = button;
-            }
         } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_525) {
-            AppleDisk_525_Button_t *button = new AppleDisk_525_Button_t(aa, AppleDisk_525_Open, DS);
-            button->set_key(drive.key);
+            button = new AppleDisk_525_Button_t(aa, AppleDisk_525_Open, DS);
             button->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, drive.key});
-            drive_container->add_tile(button, tile_id++);
-            
-            // Store first two DiskII buttons for legacy member access
-            if (drive_num == 0) {
-                adisk_525_button1 = button;
-            } else if (drive_num == 1) {
-                adisk_525_button2 = button;
-            }
         } else if (drive.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-            Unidisk_Button_t *button = new Unidisk_Button_t(aa, Unidisk_Face, DS);
-            button->set_key(drive.key);
+            button = new Unidisk_Button_t(aa, Unidisk_Face, DS);
             button->set_click_callback(unidisk_button_click, new diskii_callback_data_t{this, drive.key});
-            drive_container->add_tile(button, tile_id++);
-            
-            // Store first two Unidisk buttons for legacy member access
-            if (drive_num == 0) {
-                unidisk_button1 = button;
-            } else if (drive_num == 1) {
-                unidisk_button2 = button;
-            }
         }
-
-        // TODO: perhaps instead of creating whole new buttons, we can insert the same buttons?
-        // this needs to be dynamic, based on which slot is active at any given time.
-        // Create HUD drive container for first DiskII slot found
-            if (!has_hud_drives && slot == 6) {
-            Container_t *dc2 = new Container_t(renderer, 10, HUD);
-            dc2->set_position(340, 800);
-            dc2->set_tile_size(420, 120);
-            
-            hud_diskii_1 = new DiskII_Button_t(aa, DiskII_Open, HUD);
-            hud_diskii_1->set_key(static_cast<uint64_t>(slot << 8) | 0);
-            hud_diskii_1->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, static_cast<uint64_t>((slot << 8) | 0)});
-            
-            hud_diskii_2 = new DiskII_Button_t(aa, DiskII_Closed, HUD);
-            hud_diskii_2->set_key(static_cast<uint64_t>(slot << 8) | 1);
-            hud_diskii_2->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, static_cast<uint64_t>((slot << 8) | 1)});
-            
-            dc2->add_tile(hud_diskii_1, 0);
-            dc2->add_tile(hud_diskii_2, 1);
-            dc2->layout();
-            hud_drive_container = dc2;
-            has_hud_drives = true;
-        }
+        button->set_key(drive.key);
+        button->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, drive.key});
+        drive_container->add_tile(button, tile_id++);
     }
-
     // Initial layout for drive container
     drive_container->layout();
+
+    /*
+     creating whole new buttons, we insert the same buttons into this container.
+     this needs to be dynamic, based on which slot is active at any given time.
+     Create HUD drive container for first DiskII slot found 
+    */
+    hud_drive_container = new Container_t(renderer, 10, HUD);
+    hud_drive_container->set_position(340, 800);
+    hud_drive_container->set_tile_size(420, 120);
+    hud_drive_container->layout();
 
     // Create another container, this one for slots.
     Container_t *slot_container = new Container_t(renderer, 8, SC);  // Container for 8 slot buttons
@@ -653,27 +616,38 @@ void OSD::update() {
         // computer->mounts->dump(); // TODO: this is crashing for unknown reason.
     }
 
-    // TODO: iterate over all drives based on what's in slots.
-    // update disk status
-    if (diskii_button1) {
-        uint64_t key1 = diskii_button1->get_key();
-        uint64_t key2 = diskii_button2->get_key();
-        diskii_button1->set_disk_status(computer->mounts->media_status(key1));
-        diskii_button2->set_disk_status(computer->mounts->media_status(key2));
-        hud_diskii_1->set_disk_status(computer->mounts->media_status(key1));
-        hud_diskii_2->set_disk_status(computer->mounts->media_status(key2));
+    // update disk status - iterate over all drives based on what's in slots
+    uint64_t key_mask = 0;
+
+    // two pass. First, update buttons and calculate the key mask. (the lit drive could have been the previous one, hence 2-pass.)
+    for (int i = 0; i < drive_container->get_tile_count(); i++) {
+        Tile_t *tile = drive_container->get_tile(i);
+        if (tile) {
+            StorageButton *button = dynamic_cast<StorageButton *>(tile);
+            uint64_t key = button->get_key();
+            drive_status_t ds = computer->mounts->media_status(key);
+            button->set_disk_status(ds);
+            if (ds.motor_on) {
+                key_mask |= key & 0xFFFFFF00;
+            }            
+        }
     }
-    if (adisk_525_button1) {
-        uint64_t key1 = adisk_525_button1->get_key();
-        uint64_t key2 = adisk_525_button2->get_key();
-        adisk_525_button1->set_disk_status(computer->mounts->media_status(key1));
-        adisk_525_button2->set_disk_status(computer->mounts->media_status(key2));
-    }
-    if (unidisk_button1) {
-        uint64_t key1 = unidisk_button1->get_key();
-        uint64_t key2 = unidisk_button2->get_key();
-        unidisk_button1->set_disk_status(computer->mounts->media_status(key1));
-        unidisk_button2->set_disk_status(computer->mounts->media_status(key2));
+
+    hud_drive_container->remove_all_tiles();
+    if (key_mask) {
+        // second pass, update the hud container with items matching the key mask.
+        uint32_t hud_index = 0;
+        for (int i = 0; i < drive_container->get_tile_count(); i++) {
+            Tile_t *tile = drive_container->get_tile(i);
+            if (tile) {
+                StorageButton *button = dynamic_cast<StorageButton *>(tile);
+                uint64_t key = button->get_key();
+                drive_status_t ds = button->get_disk_status();
+                if ((key & 0xFFFFFF00) == key_mask) {
+                    hud_drive_container->add_tile(button, hud_index++);
+                }
+            }            
+        }
     }
 
     // background color update based on clock speed to highlight current button.
@@ -754,6 +728,9 @@ void OSD::render() {
 
         close_btn->render(renderer);
 
+        // re-lay this out since the hud might have changed the buttons.
+        drive_container->layout();
+
         // Render the container and its buttons into the cpTexture
         SDL_SetRenderTarget(renderer, cpTexture);
         for (Container_t* container : containers) {
@@ -792,7 +769,17 @@ void OSD::render() {
 
         open_btn->render(renderer); // this now takes care of its own fade-out.
 
-        if (diskii_button1) {
+        if (hud_drive_container->get_tile_count() > 0) {
+            hud_drive_container->layout();
+            hud_drive_container->set_position(((float)window_width - 420) / 2, window_height - 125 );
+
+            // display running disk drives at the bottom of the screen.
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+            hud_drive_container->render();
+        }
+        
+/*         if (diskii_button1) {
             drive_status_t ds1 = diskii_button1->get_disk_status();
             drive_status_t ds2 = diskii_button2->get_disk_status();
 
@@ -808,7 +795,7 @@ void OSD::render() {
                 hud_drive_container->render();
             }
         }
-        
+ */        
         // display the MHz at the bottom of the screen.
         { // we are currently at A2 display scale.
             char hud_str[150];

@@ -29,16 +29,7 @@
   * specific to DiskII drive visualization. The base button rendering is preserved,
   * and additional visual elements can be drawn on top.
   */
- 
- void AppleDisk_525_Button_t::set_key(uint64_t k) { key = k; }
- uint64_t AppleDisk_525_Button_t::get_key() const { return key; }
- 
- void AppleDisk_525_Button_t::set_disk_status(drive_status_t statusx) {
-     status = statusx;
- }
- 
- drive_status_t AppleDisk_525_Button_t::get_disk_status() const { return status; }
- 
+
  /**
   * @brief Renders the DiskII button with additional drive-specific elements.
   * @param renderer The SDL renderer to use.
