@@ -83,7 +83,7 @@ CharRom::CharRom(const char *filename) {
             }
 
         }
-        // TODO: don't invert GS. I need to invert the rom file bits
+        // TODO: I need to invert the GS rom file bits then not invert here.
         for (int i = 0; i < size; i++) {
             data[i] = invert_bits(data[i]);
         }
