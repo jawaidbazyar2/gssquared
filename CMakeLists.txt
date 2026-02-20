@@ -414,10 +414,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         message(STATUS "Building as PROGRAM FILES: Bare executable and files in one directory")
 
         # Set RPATH for dev mode to look in build/lib
+        # Build tree: executable in build/, libs in build/lib/
+        # Install: same layout (program files stay together)
         set_target_properties(GSSquared PROPERTIES
             OUTPUT_NAME "GSSquared"
+            BUILD_RPATH "@executable_path/lib"
             INSTALL_RPATH "@executable_path/lib"
-            BUILD_WITH_INSTALL_RPATH TRUE
             INSTALL_RPATH_USE_LINK_PATH TRUE
         )
 
@@ -618,9 +620,11 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         )
 
         # Fix RPATH for the executable
+        # Build tree: executable and libs both in build/ -> look in lib/ subdir
+        # Install: executable in bin/, libs in lib/ -> look in ../lib
         set_target_properties(GSSquared PROPERTIES
+            BUILD_RPATH "$ORIGIN/lib"
             INSTALL_RPATH "\$ORIGIN/../lib"
-            BUILD_WITH_INSTALL_RPATH TRUE
         )
 
         include(CPack)
@@ -660,14 +664,19 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
                 TYPE LIBRARY
                 COMPONENT Runtime
             )
+            # Build tree: executable in build/, libs in build/lib/ -> look in lib/ subdir
+            # Install: executable in bin/, libs in lib/ -> look in ../lib
             set_target_properties(GSSquared PROPERTIES
+                BUILD_RPATH "$ORIGIN/lib"
                 INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
-                BUILD_WITH_INSTALL_RPATH TRUE
                 INSTALL_RPATH_USE_LINK_PATH TRUE
             )
         else()
+            # When not bundling libs, executable and libs stay in build tree layout
+            # Build tree: executable in build/, libs in build/lib/ -> look in lib/ subdir
             set_target_properties(GSSquared PROPERTIES
-                INSTALL_RPATH "${CMAKE_BINARY_DIR}/lib"
+                BUILD_RPATH "$ORIGIN/lib"
+                INSTALL_RPATH "${CMAKE_INSTALL_LIBDIR}"
             )
         endif()
         install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/roms"
