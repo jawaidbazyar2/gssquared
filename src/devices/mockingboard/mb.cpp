@@ -17,6 +17,8 @@
 
 #include <iostream>
 #include <vector>
+#include <deque>
+#include <cmath>
 
 #include <cstdint>
 #include <SDL3/SDL.h>
