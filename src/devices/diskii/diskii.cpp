@@ -285,22 +285,21 @@ void write_nybble(diskII& disk) { // cause a shift.
     return;
 }
 
-void mount_diskII(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descriptor *media) {
-    diskII_controller *diskII_d = (diskII_controller *)get_slot_state(cpu, (SlotType_t)slot);
+bool mount_diskII(diskII_controller *diskII_d, uint8_t slot, uint8_t drive, media_descriptor *media) {
 
     if (media->data_size != 560 * 256) {
         fprintf(stderr, "Disk image is not 140K\n");
-        return;
+        return false;
     }
 
     if (diskII_d->drive[drive].is_mounted) {
         fprintf(stderr, "A disk already mounted, unmounting it.\n");
-        unmount_diskII(cpu, slot, drive);
+        unmount_diskII(diskII_d, slot, drive);
     }
 
     if (media->data_size != 140 * 1024) {
         fprintf(stderr, "Disk image is not 140K\n");
-        return;
+        return false;
     }
 
     // Detect DOS 3.3 or ProDOS and set the interleave accordingly done by identify_media
@@ -333,10 +332,10 @@ void mount_diskII(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descriptor 
     diskII_d->drive[drive].media_d = media;
     diskII_d->drive[drive].modified = false;
     diskII_d->sound_effect->play(SE_SHUGART_CLOSE); 
+    return true;
 }
 
-void writeback_diskII_image(cpu_state *cpu, uint8_t slot, uint8_t drive) {
-    diskII_controller *diskII_d = (diskII_controller *)get_slot_state(cpu, (SlotType_t)slot);
+bool writeback_diskII_image(diskII_controller *diskII_d, uint8_t slot, uint8_t drive) {
     diskII &disk = diskII_d->drive[drive];
 
     if (disk.media_d->media_type == MEDIA_PRENYBBLE) {
@@ -350,11 +349,10 @@ void writeback_diskII_image(cpu_state *cpu, uint8_t slot, uint8_t drive) {
         write_disk_image_po_do(disk.media_d, new_disk_image);
     }
     disk.modified = false;
+    return true;
 }
 
-void unmount_diskII(cpu_state *cpu, uint8_t slot, uint8_t drive) {
-    diskII_controller *diskII_d = (diskII_controller *)get_slot_state(cpu, (SlotType_t)slot);
-
+bool unmount_diskII(diskII_controller *diskII_d, uint8_t slot, uint8_t drive) {
     // we used to write disk image here, but, moved to mount.cpp
 
     // reset all the track parameters to default to prepare for loading a new image.
@@ -368,12 +366,13 @@ void unmount_diskII(cpu_state *cpu, uint8_t slot, uint8_t drive) {
     diskII_d->drive[drive].modified = false;
 
     diskII_d->sound_effect->play(SE_SHUGART_OPEN); // so much easier here.
+    return true;
 }
 
-drive_status_t diskii_status(cpu_state *cpu, uint64_t key) {
+drive_status_t diskii_status(diskII_controller *diskII_d, uint64_t key) {
     uint8_t slot = key >> 8;
     uint8_t drive = key & 0xFF;
-    diskII_controller *diskII_d = (diskII_controller *)get_slot_state(cpu, (SlotType_t)slot);
+
     diskII &seldrive = diskII_d->drive[drive];
 
     if (diskII_d->motor == 1 && diskII_d->mark_cycles_turnoff != 0 && ((diskII_d->clock->get_cycles() > diskII_d->mark_cycles_turnoff))) {
@@ -381,10 +380,10 @@ drive_status_t diskii_status(cpu_state *cpu, uint64_t key) {
         diskII_d->motor = 0;
         diskII_d->mark_cycles_turnoff = 0;
     }
-    const char *fname = nullptr;
+    std::string fname;
     if (seldrive.media_d) {
-        fname = seldrive.media_d->filestub.c_str(); // TODO: this could be a string_view instead of this hack.
-        /* printf("diskii_status: %s\n", fname); */
+        fname = seldrive.media_d->filestub;
+        /* printf("diskii_status: %s\n", fname.c_str()); */
     }
     bool motor = (diskII_d->drive_select == drive) ? diskII_d->motor : false;
 
@@ -443,14 +442,13 @@ int diskii_tracknumber_on(cpu_state *cpu) {
  */
 
 uint8_t diskII_read_C0xx(void *context, uint32_t address) {
-    //cpu_state *cpu = (cpu_state *)context;
     diskII_controller *thisSlot = (diskII_controller *)context;
-    cpu_state *cpu = thisSlot->computer->cpu;
 
-    int reg = address & 0x0F;
-    uint8_t slot = (address >> 4) & 0x7;
+    uint16_t reg = address & 0x0F;
+    uint16_t slot = (address & 0x70) >> 4;
+
     //diskII_controller *thisSlot = (diskII_controller *)get_slot_state(cpu, (SlotType_t)slot);
-    int drive = thisSlot->drive_select;
+    uint16_t drive = thisSlot->drive_select;
 
     diskII &seldrive = thisSlot->drive[drive];
 
@@ -463,7 +461,6 @@ uint8_t diskII_read_C0xx(void *context, uint32_t address) {
     int8_t last_phase_on = seldrive.last_phase_on;
     int8_t cur_track = seldrive.track;
 
-    //uint8_t read_value = 0xEE;
     int8_t cur_phase = cur_track % 4;
 
     // if more than X cycles have elapsed since last read, set bit_position to 0 and move head X bytes forward.
@@ -609,15 +606,12 @@ uint8_t diskII_read_C0xx(void *context, uint32_t address) {
 }
 
 void diskII_write_C0xx(void *context, uint32_t address, uint8_t value) {
-    //cpu_state *cpu = (cpu_state *)context;
     diskII_controller *diskII_d = (diskII_controller *)context;
-    cpu_state *cpu = diskII_d->computer->cpu;
     
-    uint16_t addr = address - 0xC080;
-    int reg = addr & 0x0F;
-    uint8_t slot = addr >> 4;
-    //diskII_controller *diskII_d = (diskII_controller *)get_slot_state(cpu, (SlotType_t)slot);
-    int drive = diskII_d->drive_select;
+    uint16_t reg = address & 0x0F;
+    uint16_t slot = (address & 0x70) >> 4;
+
+    uint16_t drive = diskII_d->drive_select;
 
     diskII &seldrive = diskII_d->drive[drive];
 
@@ -660,7 +654,6 @@ void diskII_write_C0xx(void *context, uint32_t address, uint8_t value) {
 
 void diskII_init(diskII_controller * diskII_d, SlotType_t slot) {
     // clear out and reset all potential slots etc to sane states.
-    //diskII_controller * diskII_d = (diskII_controller *)get_slot_state(cpu, slot);
 
     for (int j = 0; j < 2; j++) {
         diskII_d->drive[j].track = 0;
@@ -789,6 +782,8 @@ void init_slot_diskII(computer_t *computer, SlotType_t slot) {
     diskII_d->computer = computer;
     diskII_d->clock = computer->clock;
 
+    //diskII_d->drive[0] = new Floppy525(computer->sound_effect, computer->clock);
+
     // set in CPU so we can reference later
     diskII_d->id = DEVICE_ID_DISK_II;
     set_slot_state(cpu, slot, diskII_d); // lots of stuff is still dependent on this (for now). this is where MessageBus comes in..
@@ -810,7 +805,14 @@ void init_slot_diskII(computer_t *computer, SlotType_t slot) {
 
     uint16_t slot_base = 0xC080 + (slot * 0x10);
 
-    computer->mmu->set_C0XX_read_handler(slot_base + DiskII_Ph0_Off, { diskII_read_C0xx, diskII_d });
+    for (uint16_t i = 0; i < 16; i++) {
+        computer->mmu->set_C0XX_read_handler(slot_base + i, { diskII_read_C0xx, diskII_d });
+    }
+    for (uint16_t i = 8; i < 16; i++) {
+        computer->mmu->set_C0XX_write_handler(slot_base + i, { diskII_write_C0xx, diskII_d });
+    }
+
+    /* computer->mmu->set_C0XX_read_handler(slot_base + DiskII_Ph0_Off, { diskII_read_C0xx, diskII_d });
     computer->mmu->set_C0XX_read_handler(slot_base + DiskII_Ph0_On, { diskII_read_C0xx, diskII_d });
     computer->mmu->set_C0XX_read_handler(slot_base + DiskII_Ph1_Off, { diskII_read_C0xx, diskII_d });
     computer->mmu->set_C0XX_read_handler(slot_base + DiskII_Ph1_On, { diskII_read_C0xx, diskII_d });
@@ -825,23 +827,29 @@ void init_slot_diskII(computer_t *computer, SlotType_t slot) {
     computer->mmu->set_C0XX_read_handler(slot_base + DiskII_Q6L, { diskII_read_C0xx, diskII_d });
     computer->mmu->set_C0XX_read_handler(slot_base + DiskII_Q6H, { diskII_read_C0xx, diskII_d });
     computer->mmu->set_C0XX_read_handler(slot_base + DiskII_Q7L, { diskII_read_C0xx, diskII_d });
-    computer->mmu->set_C0XX_read_handler(slot_base + DiskII_Q7H, { diskII_read_C0xx, diskII_d });
+    computer->mmu->set_C0XX_read_handler(slot_base + DiskII_Q7H, { diskII_read_C0xx, diskII_d }); */
 
-    computer->mmu->set_C0XX_write_handler(slot_base + DiskII_Motor_Off, { diskII_write_C0xx, diskII_d });
+    /* computer->mmu->set_C0XX_write_handler(slot_base + DiskII_Motor_Off, { diskII_write_C0xx, diskII_d });
     computer->mmu->set_C0XX_write_handler(slot_base + DiskII_Motor_On, { diskII_write_C0xx, diskII_d });
     computer->mmu->set_C0XX_write_handler(slot_base + DiskII_Drive1_Select, { diskII_write_C0xx, diskII_d });
     computer->mmu->set_C0XX_write_handler(slot_base + DiskII_Drive2_Select, { diskII_write_C0xx, diskII_d });
     computer->mmu->set_C0XX_write_handler(slot_base + DiskII_Q6L, { diskII_write_C0xx, diskII_d });
     computer->mmu->set_C0XX_write_handler(slot_base + DiskII_Q6H, { diskII_write_C0xx, diskII_d });
     computer->mmu->set_C0XX_write_handler(slot_base + DiskII_Q7L, { diskII_write_C0xx, diskII_d });
-    computer->mmu->set_C0XX_write_handler(slot_base + DiskII_Q7H, { diskII_write_C0xx, diskII_d });
+    computer->mmu->set_C0XX_write_handler(slot_base + DiskII_Q7H, { diskII_write_C0xx, diskII_d }); */
 
     computer->mmu->set_slot_rom(slot, rom_data, "DISK2_ROM");
 
     // register drives with mounts for status reporting
     uint64_t key = (slot << 8) | 0;
+    // TODO: FIX
+#if 0
     computer->mounts->register_drive(DRIVE_TYPE_DISKII, key);
     computer->mounts->register_drive(DRIVE_TYPE_DISKII, key + 1);
+#endif
+    DiskIIThunk *thunk = new DiskIIThunk(diskII_d);
+    computer->mounts->register_storage_device(key, thunk, DRIVE_TYPE_DISKII);
+    computer->mounts->register_storage_device(key + 1, thunk, DRIVE_TYPE_DISKII);
 
     computer->register_reset_handler(
         [diskII_d,cpu]() {

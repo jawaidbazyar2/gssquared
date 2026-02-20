@@ -20,6 +20,11 @@ For the Mac, you will need to tell MacOS the software is A-OK even though it's f
 % xattr -d com.apple.quarantine gssquared.dmg 
 ```
 
+or
+```
+xattr -d com.apple.quarantine /Applications/gssquared.app
+```
+
 
 
 # Building

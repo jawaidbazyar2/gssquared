@@ -64,6 +64,7 @@ public:
     }
 
     void reset(cpu_state* cpu) override {
+        cpu->clock_stopped = false;
         if constexpr (CPUTraits::has_65816_ops) {
             cpu->d = 0x0000;
             cpu->full_db = 0x00;
@@ -75,8 +76,8 @@ public:
             cpu->_M = 1; // 8 bit M and X
             cpu->_X = 1;
             cpu->D = 0; // disable decimal mode
-            cpu->ICHANGE = false;
             cpu->EFFI = 0;
+            cpu->rdy = false;
             printf("stack init: %04X\n", cpu->sp);
         }
 
@@ -2033,7 +2034,7 @@ inline void brk_cop(cpu_state *cpu, uint16_t vector) {
         }
         cpu->pc = read_word_bank0(cpu,vector);
     }
-
+    cpu->EFFI = cpu->I;
 }
 
 /* older stack routines */
@@ -2085,6 +2086,11 @@ public:
 
 int execute_next(cpu_state *cpu) override {
 
+    if (cpu->clock_stopped) { // clock stopped.
+        incr_cycles();
+        return 0;
+    }
+
     system_trace_entry_t *tb = &cpu->trace_entry;
     TRACE(
     if (cpu->trace) {
@@ -2131,8 +2137,8 @@ int execute_next(cpu_state *cpu) override {
             incr_cycles();
             //incr_cycles(); // todo might be one too many, we're at 8, refs say it's 7. push_byte takes an extra cycle now?
         }
-
-        cpu->ICHANGE = false;
+        
+        cpu->rdy = false;
         cpu->EFFI = cpu->I;
 
         TRACE ( tb->eaddr = cpu->pc; tb->f_irq = 1;);
@@ -2140,9 +2146,13 @@ int execute_next(cpu_state *cpu) override {
         return 0;
     }
 
+    if (cpu->rdy) { // RDY test occurs after IRQ.
+        incr_cycles();
+        return 0;
+    }
+
     // we're into the next instruction, so catch this up now.
-        cpu->ICHANGE = false;
-        cpu->EFFI = cpu->I;
+    cpu->EFFI = cpu->I;
     
     /* if (cpu->skip_next_irq_check > 0) {
         cpu->skip_next_irq_check--;
@@ -3224,7 +3234,6 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_PLP_IMP: /* PLP Implied */
             {
-                cpu->ICHANGE = true;
                 cpu->EFFI = cpu->I;
                 if constexpr (CPUTraits::has_65816_ops && !CPUTraits::e_mode) {
                     stack_pull(cpu, cpu->p);
@@ -3238,6 +3247,9 @@ int execute_next(cpu_state *cpu) override {
                     stack_pull(cpu, cpu->p);
                     cpu->p &= ~FLAG_B; // break flag is cleared.
                 }               
+                if constexpr (CPUTraits::has_65816_ops) {
+                    cpu->EFFI = cpu->I;
+                }
             }
             break;
 
@@ -3733,6 +3745,7 @@ int execute_next(cpu_state *cpu) override {
                     incr_cycles();
                     TRACE(cpu->trace_entry.operand = cpu->pc;)
                 }
+                cpu->EFFI = cpu->I; // no delay on either nmos or on 816
             }
             break;
 
@@ -3782,11 +3795,13 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_CLI_IMP: /* CLI Implied */
             {
-                cpu->ICHANGE = true;
                 cpu->EFFI = cpu->I;
                 //if (cpu->I) cpu->skip_next_irq_check = 1; // TODO: this can be cpu->skip_next_irq_check = cpu->I; test after change.
                 cpu->I = 0;
                 phantom_read_ign(cpu, make_pc_long(cpu, cpu->pc));
+                if constexpr (CPUTraits::has_65816_ops) {
+                    cpu->EFFI = cpu->I;
+                }
             }
             break;
 
@@ -3806,10 +3821,12 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_SEI_IMP: /* SEI Implied */
             {
-                cpu->ICHANGE = true;
                 cpu->EFFI = cpu->I;
                 cpu->I = 1;
                 phantom_read_ign(cpu, make_pc_long(cpu, cpu->pc));
+                if constexpr (CPUTraits::has_65816_ops) {
+                    cpu->EFFI = cpu->I;
+                }
             }
             break;
 
@@ -4494,17 +4511,23 @@ int execute_next(cpu_state *cpu) override {
             } else invalid_opcode(cpu, opcode);
             break;
 
-        case OP_INOP_CB: /* INOP CB */
+        case OP_INOP_CB: /* INOP CB */ /* OP_WAI_IMP */
             if constexpr (CPUTraits::has_65816_ops) {
-                assert(false && "WAI not implemented");
+                printf("WAI\n"); // debug, see if anyone ever uses this.
+                cpu->rdy = true;
+                incr_cycles(); // ticks 2 cycles past the opcode.
+                incr_cycles();
             } else if constexpr (CPUTraits::has_65c02_ops) {
                 invalid_nop(cpu, 1, 1);
             } else invalid_opcode(cpu, opcode);
             break;
 
-        case OP_INOP_DB: /* INOP DB */
+        case OP_INOP_DB: /* INOP DB */ /* OP_STP_IMP */
             if constexpr (CPUTraits::has_65816_ops) {
-                assert(false && "STP not implemented");
+                //assert(false && "STP not implemented");
+                cpu->clock_stopped = true;
+                incr_cycles(); // ticks 2 cycles past the opcode.
+                incr_cycles();
             } else if constexpr (CPUTraits::has_65c02_ops) {
                 invalid_nop(cpu, 1, 1);
             } else invalid_opcode(cpu, opcode);

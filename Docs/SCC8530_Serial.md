@@ -40,6 +40,19 @@ The SCC "contains facilities for modem controls" this will be things like hangup
 
 There is a 10 x 19 Status FIFO; a 3 byte Rec error FIFO, another 3 byte Rec error FIFO;
 
+## Action Items / Roadmap
+
+[ ] simulate the various serial control signals with messages to the serial device, such as CTS, RTS, DSR/DTR, etc. In theory you can hangup a modem that way.  
+[ ] clear out the various queues on a reset?  
+
+[ ] Implement "file" serial device  
+[ ] implement ImageWriter II emulation    
+
+[ ] When a file has completed writing and closes, issue a gizmo at the top of the screen saying where the file is  
+
+[ ] Refactor "parallel" card to use threads and be connectable to file or imagewriter.  
+
+
 ## Registers
 
 There are 16 write registers, and 8 read registers.
@@ -409,29 +422,42 @@ Create a queueing class to manage the in's and out's of communicating with these
 
 ## File
 
-The constructor is called with the file name. 
+The constructor is called with the file name. Append a unique ID (time stamp?) to the end of filename.
 On first instance, just store the info.
 On reset, or DSR/DTR (whatever the heck it is) close the file.
-
 If the file is closed, and a character is written, open the file.
 
-## Modem / Socket (clear)
+
+## Modem / Socket (clear) (done)
 
 A cleartext socket, e.g., telnet. Captain's Quarters is port 6800, and plain text telnet. 
 Also- a simple Hayes command set modem emulator.
 For simple testing, just try opening a socket to port 23 on 192.168.0.96 now.
 
+uses telnet protocol. Is that the right choice?
+
 ## Printer
 
-Somehow, print to a network printer. Somehow select the printer. Then it's really just telnet to the printer.
+Somehow, print to a network printer. Somehow select the printer. Then it's really just telnet to the printer. There is no easy cross-platform stuff for printing.
 
-## Echo
+Practically speaking, I think the thing to do is:
+1) emulate an ImageWriter II (and/or some other printer)
+2) generate a unique file name
+3) generate a PDF file based on that.
+4) call OS to open the PDF file with syd::system(command)
+
+print job completion detection: wait for a significant pause in the data output to signal end of the job. (5 seconds? 10 seconds?) Have to see how that works with various programs.
+
+To generate postscript output, have to use this modified version with DC Printer control panel.
+http://www.apple2works.com/directconnectpostscriptdriver/
+
+## Echo (done)
 
 This is for my initial testing. Once the interrupts etc are tested ok, move the echo functionality to a newly created SerialDevice class, which will run in a separate thread (or will it?)
 
 ## SSL Socket
 
-An SSL encrypted socket - or, do we have to go full ssh?
+An SSL encrypted socket (just TLS) - or, do we have to go full ssh?
 
 ## Serial Port
 
@@ -537,6 +563,243 @@ ANSITerm Demo also works, tho there are two places I have to manually read the r
 
 Another possibility is that the interrupt comes back -too fast- for the code to do anything. This may be helped by implementing correct send and receive timing. that will be easier with the separate device.
 
-Telcom pretty much immediately blows up with a BRK. What the hell is that guy doing lolz. Does it require installing a custom serial driver?
+Telcom pretty much immediately blows up with a BRK. What the hell is that guy doing lolz. Does it require installing a custom serial driver? it's got the tools right in it, I think I load them manually..
 
 FreeTerm also working. 
+
+
+## Cross-platform snippet to open PDF file in viewer
+
+```
+#include <iostream>
+#include <string>
+#include <cstdlib> // Required for std::system
+
+void open_pdf_file(const std::string& filename) {
+#ifdef _WIN32
+    // Windows: Use ShellExecute or the 'start' command
+    std::string command = "start \"\" \"" + filename + "\"";
+    std::system(command.c_str());
+#elif __APPLE__
+    // macOS (OSX): Use the 'open' command
+    std::string command = "open \"" + filename + "\"";
+    std::system(command.c_str());
+#elif __linux__
+    // Linux: Use xdg-open (common on many distributions)
+    std::string command = "xdg-open \"" + filename + "\"";
+    std::system(command.c_str());
+#else
+    std::cerr << "Unsupported operating system for automatic PDF opening." << std::endl;
+#endif
+}
+
+int main() {
+    std::string pdf_file_path = "path/to/your/local_document.pdf"; // Replace with your file path
+    open_pdf_file(pdf_file_path);
+    return 0;
+}
+```
+
+## Going through Self Test 06
+
+first thing is SCCRegRW test, which calls ResetSCC. This does:
+```
+80C: initial data
+80D: Register number
+80E: Serial Mask (mask out non r/w bits)
+80F: Mask Data (data masked with mask)
+
+C039:09    // register 9
+C039:C0    // write C0
+
+then we do RwChA with 80C:00 02 FF, mask is ff but data 0 so we write a 0.
+save the masked value to 80F.
+C039:00   // reg 2 Ch a -> 0 , So this is setting the interrupt vector to 0.
+then we read reg 2, and compare the masked value to 80F.
+That's 0 in both cases. So this particular test passes.
+then we DEC 80C, and we're going to loop..
+They are testing that we have a clean 8 bits we can read and write to channel A. 
+
+0294 6934 AD 0D 08     REGRW    LDA   RegNo                    ;Actual R/W test
+0295 6937 99 FD BF              STA   SCCCmd,Y                 ;Point to the Wr reg
+0296 693A AD 0C 08              LDA   DATA                     ;Initially = 0
+0297 693D 2D 0E 08              AND   SerMask                  ;Mask out non R/W bits
+0298 6940 8D 0F 08              STA   MaskData                 ;Store for later comparison
+0299 6943 99 FD BF              STA   SCCCmd,Y                 ;Write the register
+0300 6946 AD 0D 08              LDA   RegNo
+0301 6949 99 FD BF              STA   SCCCmd,Y
+0302 694C B9 FD BF              LDA   SCCCmd,Y                 ;Read the register
+0303 694F CD 0F 08              CMP   MaskData                 ;Compare
+0304 6952 D0 07                 BNE   BadData
+0305 6954 CE 0C 08              DEC   DATA
+0306 6957 D0 DB                 BNE   RegRW                    ;Try $0-FF
+0307 6959 F0 D6                 BEQ   ZRTS
+0308 695B A9 80        BADDATA  LDA   #$80
+0309 695D 60                    RTS   
+```
+
+We are immediately failing when it tries to read back FF from ChA[02]. 
+
+ok got past that - now need to test channel B, register C (12, baud rate) the same way?
+then channel A, register 12.
+then register 13 (0d) on both channels..
+then register 15 (F) with a mask of 0xFA.
+
+We're clearing the register r/w test now, and likely failing on the Internal Loop test.
+looks like it's going to do it on both channels.. smert.
+
+So to do that, it sets up the registers like so:
+
+```
+0421 6A1C              TBL2     EQU   *
+0422 6A1C 09 00                 DC B:9,$00                     ;Disable interupts
+0423 6A1E 04 4C                 DC B:4,$4C                     ;X16 clk 2 Stp bits
+0424 6A20 0B D0                 DC B:11,$D0                    ;Xtal RTxC
+0425 6A22 0C 5E                 DC B:12,$5E                    ;Low Byte Time const
+0426 6A24 0D 00                 DC B:13,$00                    ;Hi Byte Time const
+0427 6A26 0E 13                 DC B:14,$13                    ;Loopback BR enable
+0428 6A28 03 C1                 DC B:3,$C1                     ;Rx 8bits
+0429 6A2A 05 6A                 DC B:5,$6A                     ;Tx 8bits Tx enable RTS
+```
+we're failing test 6, "all sent". 
+
+We now pass the self-test. However, see above for remaining action items.
+
+## more bugs
+
+"Each of the six sources of interrupts in the SCC (Transmit, Receive, and External/Status
+interrupts in both channels) has three bits associated with the interrupt source.
+Interrupt Pending (IP), Interrupt Under Service (IUS), and Interrupt Enable (IE)."
+
+"In the SCC, if the IE bit is not set by enabling interrupts, then the IP for that source is
+never set."
+
+"Also if the MIE Enable bit in WR9 is reset, no interrupts can be requested."
+
+OHHHH. My 8530 manual is way more complete than the one I've been using. For instance, page 3-9 shows the exact bits on reset of each channel's registers. Well duhhhh. I'm going to have to over the registers again in detail using the book.
+
+some notes:
+
+forgot to implement MIE (master interrupt control)
+tx interrupt is not merely the same s tx buf empty. It's the -transition- from tx buf non empty, to empty. So some of these are edge sensitive, not level sensitive. i.e.
+if !tx_buf_empty then tx_buf_empt=true; tx_interrupt=true
+need to implement the vector register
+apparently it will only flag interrupts according to a priority hierarchy:
+the register map is more complex than I implemented perhaps..
+
+let's start with the reset. The chip is reset by pulling r and w low at same time and holding a bit. there's logic on the mobo for this, mixing reset and the normal r/w signal.
+So ctrl-reset definitely resets. ok, I think we're good. Key elements:
+hw reset a little different than soft reset. Soft reset 3 is same as hw reset. Reminder than WR9 is the same register, accessed through either channel.
+
+next: verify the register map.
+ah, it may be ok - the table 3-3 lists A/B as one of the bits, which is just channel select.
+Let's modify the routines so it's a little clearer what happens with the shared registers (i.e., don't have ch as arg on those).
+ok, WR2 and WR9 are shared and we will always store these values in channel A's array.
+ok, these look right. For the read registers that are shadowed:
+11 (shadow) = 15 (real)
+14 (shadow0) = 10 (real)
+9 (shadow) = 13 (real)
+
+Interrupts
+
+transmit: 
+polling. disable transmit interrupts and poll transmit buffer empty bit in RR0. (So that bit is always active).
+Another way of polling is to enable transmit interrupt, then reset MIE bit. then cpu may poll the IP bits in RR3A to determine when transmit buffer is empty.
+the Tx Int Req has only one source. It can only be set when the transmit buffer goes from full to empty. This means the transmit interrupt will not be set until after the first character is written to the SCC.
+
+reset:
+    tx_irq_condition = false
+
+in transmit character:
+    do the transmit
+    if (tx_buf_empty) tx_irq_condition = true // this covers case if buffer is non-empty and they overwrite it anyway
+    update_interrupts()
+
+update:
+    if tx_irq_condition and tx_ie then tx_ip = true
+
+    if MIE and any IPs then assert interrupt to cpu.
+    tx_irq_condition = false
+
+the Rx Interrupt request caused by a receive char available; or a special condition.
+The Rx Char Avail interrupt is generated when a character is loaded into the FIFO and is ready to be read. (there's a 3-byte FIFO).
+special conditions are: receive FIFO overrun; CRC/framing error; end of frame; parity.
+Parity condition may be included or not based on WR1[2].
+
+The external/status interrupts have several sources which are individually enabled in WR15. They are:
+zero count; DCD; Sync/hunt; CTS; transmitter underrun/eom; break/abort.
+
+Each source of interrupt in SCC has 3 control status bits: IE (interrupt enable), IP (interrupt pending), IUS (interrupt under service).
+If the IE bit is set, that source may cause an interrupt request.
+if the IE bit is reset, no interrupt request will be generated by that source.
+the IP bit for a source may be set by the presence of an interrupt condition in the SCC and is reset directly by the processor,
+or indirectly by some action the processor may take.
+If the corresponding IE bit is not set, the IP for that source will never be set.
+
+Interrupt status flowchart
+
+The flowchart can be simplified somewhat, because the GS has /INTACK pulled high. But the first box, "interrupt condition exists".
+I think IUS bits are primarily used with this /INTACK logic.
+We may need some flags that are separate from the IP bits to indicate "interrupt condition exists". because setting IP may be masked by IE not being set.
+seems to imply if an interrupt condition exists and we then enable an IE, we'll get an IP.
+
+So far, the only one of these may be the Tx buffer empty since it's edge sensitive.
+
+ok, I have moved the logic for updating the IP bits to update_interrupts (and a couple helper routines). 
+
+
+Interrupt Source Priority (highest to lowest)
+
+| source | channel | Vector Value |
+|-|-|
+| Rx | A | 
+| Tx | A | 
+| Ext/Status | A | 
+| Rx | B | 
+| Tx | B | 
+| Ext/Status | B | 
+
+the internal daisy chain links the six sources of interrupt in a fixed order. chaining the ius bits for each source.
+while an ius bit is set, all lower-priority interrupt requests are masked off. during an intack cycle (not relevant).
+when MIE is set, has same effect as pulling IEI pin low, disabling all IRQ. But the above says you can disable MIE and poll IP bits. OK, so the IP
+bits still follow interrupt status.
+
+one thing that is still unclear:
+are the IP bits masked based on priority? I.e. if there is a Ch A IP set, are Ch B IPs suppressed?
+(or is that only when using the INTACK scheme?)
+
+vectors
+
+| bit 1 | bit 2 | bit 3 | description |
+|-|-|-|-|
+| V3 | V2 | V1 | Status High/Status Low = 0 |
+| V4 | V5 | V6 | Status High/Status Low = 1 |
+| 0 | 0 | 0 | Ch B Transmit Buffer Empty |
+| 0 | 0 | 1 | Ch B Ext/Status Change |
+| 0 | 1 | 0 | Ch B Receive Char Avail |
+| 0 | 1 | 1 | Ch B Special Receive Condition |
+| 1 | 0 | 0 | Ch A Transmit Buffer Empty |
+| 1 | 0 | 1 | Ch A Ext/Status Change |
+| 1 | 1 | 0 | Ch A Receive Char Avail |
+| 1 | 1 | 1 | Ch A Special Receive Condition |
+
+Q: why is this a write register?
+ah, because the CPU can tell the chip which vector it is. i.e., assume it's using this intack procedure. Whichever device is asserting, that vector number is put on the data bus.
+So say you have 5 chips, you give each a distinct vector number.
+
+Note: 321 is reverse bit order from 456!
+WR9[4] is status high /status low.
+WR9[0] is VIS bit - if set, vector returned from reading WR2 is modified depending on highest priority IP. This bit is ignored if the NV (WR9[1]) bit is set.
+NV primarily tri-states the bus, but also affects vector read.
+
+I think I am probably failing to deal properly with some SCC interrupts, confusing the firmware into not clearing VBL interrupts? Is that possible?
+
+Some updates and improvements..
+
+ah ok, there was a mistake, I had a bool for the tx_ip pending flag inside a union instead of separate! I saw that error several times and ignored it assuming it was the audio thing, turns out to have been a real problem.
+
+I had claude integrate the eventtimer stuff. Seems to be actually working.. 
+
+But print jobs are still hanging.
+
+After all these changes to the SCC code, some things are improved, however, I am failing self test 06070000. This is "rx char available". 

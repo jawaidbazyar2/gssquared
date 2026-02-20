@@ -155,7 +155,7 @@ When 1, double hires display is black and white.
 When 1, data on alternate-data-bus bit 1 is latched as bank address bit 0.
 When the bit is 0, data is not latched.
 
-When the bank address is latched, the Main/Aux hierarchy is as follows: if bank address is 1, Aux memory is always addressed. If bank address is 0, soft switches determine which bank is accessed. (RAMRD/RAMWRT).
+When the bank address is latched, the Main/Aux hierarchy is as follows: if bank address is 1, Aux memory is always addressed. If bank address is 0, soft switches determine which bank is accessed. (RAMRD/RAMWRT). ** however, the I/O space and the LC arrangement must still be respected in the odd bank/bank 1!
 
 * When the bank latch is enabled, A17 is passed to the Mega II, so you can
 access E1/xxxx directly. If the bank latch is disabled, all accesses to

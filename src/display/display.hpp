@@ -148,22 +148,25 @@ public:
         uint8_t f_VGCINT = 0x00; // VGC interrupt status flag
     };
 
+    /* MegaII interrupt status flags */
     union {
         struct {
             uint8_t f_system_irq_asserted : 1;
-            uint8_t f_megaii_move_asserted : 1;
-            uint8_t f_megaii_switch_asserted : 1;
+            uint8_t f_megaii_move_asserted : 1;    // unused 
+            uint8_t f_megaii_switch_asserted : 1;  // unused
             uint8_t f_vblint_asserted : 1;
             uint8_t f_quartersec_asserted : 1;
             uint8_t f_an3_status : 1;
-            uint8_t f_btn_last_status : 1;
-            uint8_t f_btn_down : 1;
+            uint8_t f_btn_last_status : 1;   // unused
+            uint8_t f_btn_down : 1;          // unused
         };
         uint8_t f_INTFLAG = 0x00;
     };
 
-    uint8_t onesec_counter = 0;
-    uint8_t quartersec_counter = 0;
+    uint16_t onesec_counter = 0;
+    uint16_t quartersec_counter = 0;
+    
+    uint8_t f_langsel = 0x00;
 
     uint32_t dirty_line[24];
     line_mode_t line_mode[24] = {LM_TEXT_MODE}; // 0 = TEXT, 1 = LO RES GRAPHICS, 2 = HI RES GRAPHICS
@@ -228,4 +231,5 @@ uint8_t txt_bus_read_C055(void *context, uint32_t address);
 uint8_t txt_bus_read_C056(void *context, uint32_t address);
 uint8_t txt_bus_read_C057(void *context, uint32_t address);
 
-void update_vgc_interrupt(display_state_t *ds);
+void update_vgc_interrupt(display_state_t *ds, bool assert_now);
+void update_megaii_interrupt(display_state_t *ds, bool assert_now);

@@ -123,7 +123,10 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
         return keygloo_process_event(kb_state, event);
     });
 
-    computer->mmu->set_C0XX_read_handler(0xC000, { keygloo_read_C000, kb_state });
+    for (int i = 0xC000; i <= 0xC00F; i++) { // should mirror C000 like //e
+        computer->mmu->set_C0XX_read_handler(i, { keygloo_read_C000, kb_state });
+    }
+    //computer->mmu->set_C0XX_read_handler(0xC000, { keygloo_read_C000, kb_state });
     computer->mmu->set_C0XX_read_handler(0xC010, { keygloo_read_C010, kb_state });
     computer->mmu->set_C0XX_write_handler(0xC010, { keygloo_write_C010, kb_state });
     computer->mmu->set_C0XX_read_handler(0xC025, { keygloo_read_C025, kb_state });

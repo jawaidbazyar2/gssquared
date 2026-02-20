@@ -38,7 +38,7 @@ void VideoScannerIIgs::init_video_addresses()
         uint32_t lores_address = A2toA0 | A6toA3 | A9toA7 | LoresA15toA10;
         uint32_t hires_address = A2toA0 | A6toA3 | A9toA7 | HiresA15toA10;
 
-        bool mixed_mode_text = (vcount >= 0x1A0 && vcount < 0x1C0) || (vcount >= 0x1E0);
+        bool mixed_mode_text = (vcount >= 0x1A0 && vcount < 0x1C0) || (vcount >= 0x1E0) || (vcount < 0x100);
 
         lores_p1[idx].addr = lores_address;
         lores_p2[idx].addr = lores_address + 0x400;
@@ -179,8 +179,13 @@ void VideoScannerIIgs::video_cycle()
         if (shr && (sa.flags & SA_FLAG_SCB) && (current_scb & 0x40)) {
             irq_handler.handler(irq_handler.context, VS_EVENT_SCB_INTERRUPT);
         }
-        if (scan_index == 12480) { // start of VBL area. scanline 192 always, regardless of video mode.
+        // VBL IRQ triggers on scanline 192, always, regardless of video mode.
+        if (scan_index == (192*65)) {
             irq_handler.handler(irq_handler.context, VS_EVENT_VBL);
+        }
+        // quarter-second IRQ triggers on scanline 256.
+        if (scan_index == (256*65)) {
+            irq_handler.handler(irq_handler.context, VS_EVENT_QTR);
         }
     }
     if (++scan_index == 17030) {

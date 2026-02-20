@@ -226,16 +226,13 @@ execution of device frame handlers, including video frame output and audio frame
 void run_cpus(computer_t *computer) {
     cpu_state *cpu = computer->cpu;
     
-    //computer->set_clock(&system_clock_mode_info[computer->speed_new]);
     NClock *clock = computer->clock;
 
     uint64_t last_cycle_time = SDL_GetTicksNS();
 
     uint64_t frame_count = 0;     // used to add an extra bit of time to frame sleep
 
-    uint64_t start_frame_c14m = 0;
     uint64_t last_start_frame_c14m = 0;
-    uint64_t end_frame_c14M = start_frame_c14m + clock->get_c14m_per_frame(); // init outside the loop
 
     speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
 
@@ -249,7 +246,7 @@ void run_cpus(computer_t *computer) {
 
             if (clock->get_clock_mode() == CLOCK_FREE_RUN) {
                 speaker_state_t *ss = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
-                ss->sp->reset(start_frame_c14m);
+                ss->sp->reset(clock->get_frame_start_c14M());
             }
 
             clock->set_clock_mode(computer->speed_new);
@@ -280,8 +277,7 @@ void run_cpus(computer_t *computer) {
     
             /* Emit Audio Frame */
             // disable audio in step mode.
-            //MEASURE(computer->audio_times, audio_generate_frame(cpu /* , last_cycle_window_start, cycle_window_start */));
-    
+            
             /* Process Internal Event Queue */
             MEASURE(computer->app_event_times, frame_appevent(computer, cpu));
     
@@ -293,15 +289,13 @@ void run_cpus(computer_t *computer) {
             MEASURE(computer->display_times, frame_video_update(computer, cpu, true));
     
             // if we're in stepwise mode, we should increment these only if we got to end of frame.
-            if (clock->get_c14m() >= end_frame_c14M) {
+            if (clock->get_c14m() >= clock->get_frame_end_c14M()) {
                 if (clock->get_video_scanner() != nullptr) {
                     computer->video_system->update_display(false); // set flag to false to draw with cycle based, and, gobble up frame data.
                 }
 
-                // update frame window counters.
-                start_frame_c14m += c14M_per_frame;
-                end_frame_c14M = start_frame_c14m + c14M_per_frame;
-                frame_count++;
+                // update frame counters.
+                clock->next_frame(); // TODO: now redundant to above.
                 // set next frame cycle time (used for mouse) is at top of frame.
                 computer->set_frame_start_cycle();
             }
@@ -315,7 +309,7 @@ void run_cpus(computer_t *computer) {
             computer->set_frame_start_cycle();
 
             if (computer->debug_window->window_open) {
-                while (clock->get_c14m() < end_frame_c14M) { // 1/60th second.
+                while (clock->get_c14m() < clock->get_frame_end_c14M()) { // 1/60th second.
                     if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                         computer->event_timer->processEvents(clock->get_c14m());
                     }
@@ -345,7 +339,7 @@ void run_cpus(computer_t *computer) {
                 
                 }
             } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
-                while (clock->get_c14m() < end_frame_c14M) { // 1/60th second.
+                while (clock->get_c14m() < clock->get_frame_end_c14M()) { // 1/60th second.
                     if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                         computer->event_timer->processEvents(clock->get_c14m());
                     }
@@ -361,9 +355,6 @@ void run_cpus(computer_t *computer) {
             /* Process Events */
             MEASURE(computer->event_times, frame_event(computer, cpu));
     
-            /* Emit Audio Frame */
-            MEASURE(computer->audio_times, audio_generate_frame(computer, cpu, end_frame_c14M ));
-    
             /* Process Internal Event Queue */
             MEASURE(computer->app_event_times, frame_appevent(computer, cpu));
     
@@ -376,33 +367,19 @@ void run_cpus(computer_t *computer) {
             }
     
             // calculate what sleep-until time should be.
-            //uint64_t wakeup_time = last_cycle_time + 16688154 + (frame_count & 1); // even frames have 16688154, odd frames have 16688154 + 1
             uint64_t frame_length_ns = (frame_count & 1) ? clock->get_us_per_frame_odd() : clock->get_us_per_frame_even();
-            // sleep out the rest of this frame.
-            //frame_sleep(computer, cpu, last_cycle_time, frame_length_ns);
-
-            /*
-            should this be last_cycle_time = wakeup_time? Then we don't lose some ns on the function return etc..
-            discussion: in the event of a clock slip, we get all confused if we only stay synced to wakeup_time.
-            as long as there are no slips, we're good.
-            */
-            //last_cycle_time = SDL_GetTicksNS(); 
             
             // update frame status; calculate stats; move these variables into computer;
             computer->frame_status_update();
 
             // if we completed a full frame, update the frame counters. otherwise we were interrupted by breakpoint etc 
-            // 
-            if (clock->get_c14m() >= end_frame_c14M) {
-                start_frame_c14m += c14M_per_frame;
-                end_frame_c14M = start_frame_c14m + c14M_per_frame;
-                frame_count++;
-                last_start_frame_c14m = start_frame_c14m;
+            
+            if (clock->get_c14m() >= clock->get_frame_end_c14M()) {
+                clock->next_frame();
+
+                last_start_frame_c14m = clock->get_frame_start_c14M();
             }
-            // claude suggested - to keep the audio queue in sync, gently slow down the frame rate if we are getting too far ahead.
-            /* if (speaker_state->sp->get_queued_samples() > 5000) {
-                frame_length_ns += 2500;
-            } */
+
             uint64_t time_to_sleep = frame_length_ns - (SDL_GetTicksNS() - last_cycle_time);
             cpu->idle_percent = ((float)time_to_sleep / (float)frame_length_ns) * 100.0f;
 
@@ -415,9 +392,8 @@ void run_cpus(computer_t *computer) {
             uint64_t frame_length_ns = (frame_count & 1) ? clock->get_us_per_frame_odd() : clock->get_us_per_frame_even();
             uint64_t next_frame_time = last_cycle_time + frame_length_ns; // even frames have 16688154, odd frames have 16688154 + 1
 
-            uint64_t frdiff = start_frame_c14m - last_start_frame_c14m; // this is just a check.
-            last_start_frame_c14m = start_frame_c14m;
-            //uint64_t end_frame_c14M = start_frame_c14m;
+            uint64_t frdiff = clock->get_frame_start_c14M() - last_start_frame_c14m; // this is just a check.
+            last_start_frame_c14m = clock->get_frame_start_c14M();
             
             if (computer->debug_window->window_open) {
                 while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
@@ -470,8 +446,8 @@ void run_cpus(computer_t *computer) {
                 MEASURE(computer->event_times, frame_event(computer, cpu));
         
                 /* Emit Audio Frame */
-                //MEASURE(computer->audio_times, audio_generate_frame(cpu /* , last_cycle_window_start, cycle_window_start */));
-        
+                // TODO: reevaluate disable audio output in ludicrous speed.
+
                 /* Process Internal Event Queue */
                 MEASURE(computer->app_event_times, frame_appevent(computer, cpu));
         
@@ -491,24 +467,11 @@ void run_cpus(computer_t *computer) {
             
             // update frame status; calculate stats; move these variables into computer;
             computer->frame_status_update();
-            start_frame_c14m += c14M_per_frame;
-            end_frame_c14M = start_frame_c14m + c14M_per_frame; // we had forgotten this one...
-            frame_count++;
-            last_start_frame_c14m = start_frame_c14m;
+
+            clock->next_frame(); // TODO: now redundant to above.
+            last_start_frame_c14m = clock->get_frame_start_c14M();
         }
         
-        /*
-         should this be last_cycle_time = wakeup_time? Then we don't lose some ns on the function return etc..
-         discussion: in the event of a clock slip, we get all confused if we only stay synced to wakeup_time.
-         as long as there are no slips, we're good.
-         */
-        /* last_cycle_time = SDL_GetTicksNS(); 
-        
-        // update frame status; calculate stats; move these variables into computer;
-        computer->frame_status_update();
-
-        frame_count++;
-        last_start_frame_c14m = start_frame_c14m; */
     }
 
     // save cpu trace buffer, then exit.

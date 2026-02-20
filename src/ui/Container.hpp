@@ -76,6 +76,16 @@ public:
     ~Container_t();
 
     /**
+     remove all tiles from the container */
+    void remove_all_tiles();
+    
+    /**
+     * @brief Removes a tile from the container.
+     * @param index Position in the container where to remove the tile
+     */
+    void remove_tile(size_t index);
+
+    /**
      * @brief Applies a new style to the container.
      * @param new_style The style to apply
      */
@@ -143,4 +153,16 @@ public:
      * @return The tile at the specified index
      */
     Tile_t* get_tile(size_t index) const;
+
+    /**
+     * @brief Gets the number of tiles in the container.
+     * @return The number of tiles in the container
+     */
+    size_t get_tile_count() const { return tile_count; };
+
+    /**
+     * @brief Gets the tiles in the container.
+     * @return The tiles in the container
+     */
+    Tile_t** get_tiles() const { return tiles; };
 }; 

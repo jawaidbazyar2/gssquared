@@ -37,7 +37,7 @@ void VideoScannerIIe::init_video_addresses()
         uint32_t lores_address = A2toA0 | A6toA3 | A9toA7 | LoresA15toA10;
         uint32_t hires_address = A2toA0 | A6toA3 | A9toA7 | HiresA15toA10;
 
-        bool mixed_mode_text = (vcount >= 0x1A0 && vcount < 0x1C0) || (vcount >= 0x1E0);
+        bool mixed_mode_text = (vcount >= 0x1A0 && vcount < 0x1C0) || (vcount >= 0x1E0) || (vcount < 0x100);
 
         lores_p1[idx].addr = lores_address;
         lores_p2[idx].addr = lores_address + 0x400;

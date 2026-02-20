@@ -244,7 +244,7 @@ add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp src/devices/es550
 
 add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
 
-add_library(gs2_devices_iwm src/devices/iwm/iwm_device.cpp)
+add_library(gs2_devices_iwm src/devices/iwm/iwm_device.cpp src/devices/iwm/IWM_Drive.cpp src/devices/diskii/Floppy525.cpp)
 
 #add_library(gs2_devices_iigsmemory src/devices/iigsmemory/iigsmemory.cpp)
 
@@ -279,7 +279,7 @@ add_library(gs2_util src/util/media.cpp src/util/ResourceFile.cpp src/util/dialo
     src/util/EventQueue.cpp src/util/Event.cpp src/util/EventTimer.cpp src/util/TextRenderer.cpp
     src/util/HexDecode.cpp src/util/DeviceFrameDispatcher.cpp src/util/Metrics.cpp)
 
-add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Button.cpp src/ui/Unidisk_Button.cpp 
+add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Button.cpp src/ui/AppleDisk_525_Button.cpp src/ui/Unidisk_Button.cpp 
     src/ui/MousePositionTile.cpp src/ui/OSD.cpp src/ui/Tile.cpp src/ui/Button.cpp src/ui/MainAtlas.cpp src/ui/ModalContainer.cpp
     src/ui/FadeButton.cpp src/ui/Clipboard.cpp src/ui/TextInput.cpp src/ui/SelectSystem.cpp src/ui/SystemButton.cpp
 )
@@ -287,6 +287,8 @@ add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Butt
 add_library(gs2_displaypp src/devices/displaypp/frame/frame_bit.cpp src/devices/displaypp/frame/frame_byte.cpp src/devices/displaypp/CharRom.cpp src/devices/displaypp/AppleIIgsColors.cpp)
 
 add_library(gs2_ntsc src/display/ntsc.cpp src/display/Matrix3x3.cpp src/display/OEVector.cpp src/display/filters.cpp )
+
+add_library(gs2_diskii src/devices/diskii/ndiskii.cpp)
 
 add_library(gs2_message_bus src/mbus/MessageBus.cpp)
 
@@ -307,11 +309,12 @@ target_link_libraries(gs2_util SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_computer SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_cpu gs2_trace)
 target_link_libraries(gs2_mmu gs2_trace gs2_cpu)
+target_link_libraries(gs2_devices_adb gs2_util)
 
 # Add the executable
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
     src/display/text_40x24.cpp src/display/hgr_280x192.cpp src/display/display.cpp
-    src/devices/diskii/diskii.cpp
+    #src/devices/diskii/diskii.cpp
     src/platforms.cpp
     src/devices.cpp src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
@@ -367,6 +370,7 @@ target_link_libraries(GSSquared
     gs2_devices_mouse
     gs2_devices_rtc_pram
     gs2_devices_adb
+    gs2_diskii
 )
 
 add_subdirectory(apps/adbtest)

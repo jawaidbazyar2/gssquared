@@ -33,14 +33,9 @@ void pdblock2_print_cmdbuffer(pdblock_cmd_buffer *pdb) {
     std::cout << std::endl;
 }
 
-drive_status_t pdblock2_osd_status(cpu_state *cpu, uint64_t key) {
+drive_status_t pdblock2_osd_status(pdblock2_data *pdblock_d, uint64_t key) {
     uint8_t slot = key >> 8;
     uint8_t drive = key & 0xFF;
-    pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, (SlotType_t)slot);
-    if (pdblock_d == nullptr) { // TODO: this will stop being a problem with OSD scans MessageBus instead of hardcode calling here.
-        //std::cerr << "pdblock2_osd_status: pdblock_d is nullptr" << std::endl;
-        return {false, nullptr, false, 0};
-    }
 
     media_t seldrive = pdblock_d->prodosblockdevices[slot][drive];
 
@@ -51,10 +46,10 @@ drive_status_t pdblock2_osd_status(cpu_state *cpu, uint64_t key) {
         motor = true;
     }
     // 3.5 drives turn off immediately.
-    const char *fname = nullptr;
+    std::string fname;
     bool mounted = false;
     if (seldrive.media) {
-        fname = seldrive.media->filestub.c_str(); // TODO: this could be a string_view instead of this hack.
+        fname = seldrive.media->filestub;
         mounted = true;
     }
 
@@ -188,8 +183,9 @@ void pdblock2_execute(cpu_state *cpu, pdblock2_data *pdblock_d) {
     }
 }
 
-bool mount_pdblock2(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descriptor *media) {
-    pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, (SlotType_t)slot);
+//bool mount_pdblock2(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descriptor *media) {
+bool mount_pdblock2(pdblock2_data *pdblock_d, uint8_t slot, uint8_t drive, media_descriptor *media) {
+    //pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, (SlotType_t)slot);
     if (pdblock_d == nullptr) {
         //std::cerr << "pdblock2_mount: pdblock_d is nullptr" << std::endl; 
         return false;
@@ -208,15 +204,16 @@ bool mount_pdblock2(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descripto
     return true;
 }
 
-void unmount_pdblock2(cpu_state *cpu, uint64_t key) {
+bool unmount_pdblock2(pdblock2_data *pdblock_d, uint64_t key) {
     uint8_t slot = key >> 8;
     uint8_t drive = key & 0xFF;
-    pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, (SlotType_t)slot);
+    //pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, (SlotType_t)slot);
     if (pdblock_d->prodosblockdevices[slot][drive].file) {
         fclose(pdblock_d->prodosblockdevices[slot][drive].file);
         pdblock_d->prodosblockdevices[slot][drive].file = nullptr;
         pdblock_d->prodosblockdevices[slot][drive].media = nullptr;
     }
+    return true;
 }
 
 void pdblock2_write_C0x0(void *context, uint32_t addr, uint8_t data) {
@@ -274,7 +271,7 @@ void init_pdblock2(computer_t *computer, SlotType_t slot)
             pdblock_d->prodosblockdevices[i][j].media = nullptr;
         }
     }
-    
+
     // set in CPU so we can reference later
     set_slot_state(cpu, slot, pdblock_d);
 
@@ -298,8 +295,14 @@ void init_pdblock2(computer_t *computer, SlotType_t slot)
 
     // register drives with mounts for status reporting
     uint64_t key = (slot << 8) | 0;
+    // TODO: FIX
+#if 0
     computer->mounts->register_drive(DRIVE_TYPE_PRODOS_BLOCK, key);
     computer->mounts->register_drive(DRIVE_TYPE_PRODOS_BLOCK, key + 1);
+#endif
+    PDBlockThunk *thunk = new PDBlockThunk(pdblock_d);
+    computer->mounts->register_storage_device(key, thunk, DRIVE_TYPE_PRODOS_BLOCK);
+    computer->mounts->register_storage_device(key + 1, thunk, DRIVE_TYPE_PRODOS_BLOCK);
 
     // register.. uh, registers.
     computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_RESET, { pdblock2_write_C0x0, cpu });

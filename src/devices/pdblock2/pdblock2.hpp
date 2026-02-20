@@ -23,6 +23,7 @@
 #include "util/mount.hpp"
 #include "slots.hpp"
 #include "computer.hpp"
+#include "util/StorageDevice.hpp"
 
 #define MAX_PD_BUFFER_SIZE 16
 #define PD_CMD_RESET 0xC080
@@ -31,6 +32,7 @@
 #define PD_ERROR_GET 0xC083
 #define PD_STATUS1_GET 0xC084
 #define PD_STATUS2_GET 0xC085
+
 
 typedef struct media_t {
     FILE *file;
@@ -87,6 +89,27 @@ enum pdblock_cmd {
 
 void pdblock2_execute(cpu_state *cpu, pdblock2_data *pdblock_d);
 void init_pdblock2(computer_t *computer, SlotType_t slot);
-bool mount_pdblock2(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descriptor *media);
-void unmount_pdblock2(cpu_state *cpu, uint64_t key);
-drive_status_t pdblock2_osd_status(cpu_state *cpu, uint64_t key);
+bool mount_pdblock2(pdblock2_data *pdblock_d, uint8_t slot, uint8_t drive, media_descriptor *media);
+bool unmount_pdblock2(pdblock2_data *pdblock_d, uint64_t key);
+drive_status_t pdblock2_osd_status(pdblock2_data *pdblock_d, uint64_t key);
+
+
+class PDBlockThunk : public StorageDevice {
+    pdblock2_data *pdblock_d;
+    
+    public:
+        PDBlockThunk(pdblock2_data *pdblock_d) : StorageDevice(), pdblock_d(pdblock_d) {}
+        bool mount(uint64_t key, media_descriptor *media) override {
+            return mount_pdblock2(pdblock_d, key >> 8, key & 0xFF, media);
+        }
+        bool unmount(uint64_t key) override {
+            return unmount_pdblock2(pdblock_d, key);
+        }
+        bool writeback(uint64_t key) override {
+            return true;
+        }
+        drive_status_t status(uint64_t key) override {
+            return pdblock2_osd_status(pdblock_d, key);
+        }
+    };
+

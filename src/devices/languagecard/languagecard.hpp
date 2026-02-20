@@ -50,13 +50,10 @@
 #include "gs2.hpp"
 #include "cpu.hpp"
 #include "computer.hpp"
+#include "LanguageCardLogic.hpp"
 
-#define LANG_A3             0b00001000
-#define LANG_A0A1           0b00000011
-
-#define LANG_RAM_BANK_MASK  0b01000
-#define LANG_RAM_BANK1      0b01000
-#define LANG_RAM_BANK2      0b00000
+/* #define LANG_A3             0b00001000
+#define LANG_A0A1           0b00000011 */
 
 #define LANG_UNUSED_BIT     0b00100
 
@@ -68,11 +65,13 @@
 struct languagecard_state_t {
     MMU_II *mmu;  // we need to know II-plus specific stuff like restoring the ROM
     cpu_state *cpu;
-    
-    uint32_t FF_BANK_1;
+
+    LanguageCardLogic ll;
+
+   /*  uint32_t FF_BANK_1;
     uint32_t FF_READ_ENABLE;
     uint32_t FF_PRE_WRITE;
-    uint32_t _FF_WRITE_ENABLE;
+    uint32_t _FF_WRITE_ENABLE; */
 
     uint8_t *ram_bank;
 };

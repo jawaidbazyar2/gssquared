@@ -23,7 +23,7 @@
 #include "devices/game/gamecontroller.hpp"
 #include "devices/languagecard/languagecard.hpp"
 #include "devices/prodos_clock/prodos_clock.hpp"
-#include "devices/diskii/diskii.hpp"
+#include "devices/diskii/ndiskii.hpp"
 #include "devices/memoryexpansion/memexp.hpp"
 #include "devices/thunderclock_plus/thunderclockplus.hpp"
 #include "devices/pdblock2/pdblock2.hpp"
@@ -112,7 +112,7 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_DISK_II,
         "Disk II Controller",
         true,
-        init_slot_diskII,
+        init_slot_ndiskII,
         NULL
     },
     {

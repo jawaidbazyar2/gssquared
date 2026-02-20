@@ -913,6 +913,7 @@ void display_write_C034(void *context, uint32_t address, uint8_t value) {
  * IIe
  */
 
+ // TODO: in a GS, should not mix in the floating bus with keyboard state. It should just be 0.
 uint8_t display_read_C01AF(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     uint8_t fl = 0x00;
@@ -939,8 +940,10 @@ uint8_t display_read_C01AF(void *context, uint32_t address) {
         default:
             assert(false && "display_read_C01AF: Unhandled C01A-F read");
     }
+    // TODO: fix this mess with the new bus concept.  
     KeyboardMessage *keymsg = (KeyboardMessage *)ds->mbus->read(MESSAGE_TYPE_KEYBOARD);
-    uint8_t kbv = (keymsg ? keymsg->mk->last_key_val : ds->mmu->floating_bus_read()) & 0x7F;
+    //uint8_t kbv = (keymsg ? keymsg->mk->last_key_val : ds->mmu->floating_bus_read()) & 0x7F;
+    uint8_t kbv = (keymsg ? keymsg->mk->last_key_val : 0x00) & 0x7F; // cover case of IIgs returning zero instead of floating here. II+/IIe will always have a keymsg.
     return kbv | fl;
 }
 
@@ -968,7 +971,7 @@ uint8_t display_read_C05EF(void *context, uint32_t address) {
     ds->video_scanner->set_dblres_f(!ds->f_double_graphics);
     update_line_mode(ds);
     ds->video_system->set_full_frame_redraw();
-    return 0;
+    return ds->mmu->floating_bus_read();
 }
 
 void display_write_C05EF(void *context, uint32_t address, uint8_t value) {
@@ -983,9 +986,12 @@ void display_write_C05EF(void *context, uint32_t address, uint8_t value) {
 
 void display_write_c023(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
-    ds->f_VGCINT = value;
+    
+    ds->f_VGCINT = (ds->f_VGCINT & 0b1111'1000) | (value & 0b0000'0111);
 
-    update_vgc_interrupt(ds);
+    //ds->f_VGCINT = value;
+
+    update_vgc_interrupt(ds, false);
 }
 
 uint8_t display_read_c023(void *context, uint32_t address) {
@@ -998,7 +1004,7 @@ void display_write_c041(void *context, uint32_t address, uint8_t value) {
     value &= 0x1F; // bits 7-5 "must be 0"
     ds->f_INTEN = value;
 
-    update_vgc_interrupt(ds);
+    update_megaii_interrupt(ds, false);
 }
 
 uint8_t display_read_C041(void *context, uint32_t address) {
@@ -1007,14 +1013,14 @@ uint8_t display_read_C041(void *context, uint32_t address) {
 }
 
 /* C047 - CLRVBLINT - Clear VBL interrupt */
-// TODO: it's unclear if I have to write zero (example is STZ CLRVBLINT) or any value.
+// Write of any value  (example is STZ CLRVBLINT) to clear these interrupts.
 uint8_t display_read_c047(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     ds->f_vblint_asserted = false;
     ds->f_quartersec_asserted = false;
 
-    update_vgc_interrupt(ds);
-    return 0;
+    update_megaii_interrupt(ds, true);
+    return ds->mmu->floating_bus_read(); // returns floating bus read per irqtest.s (Arekkusu)
 }
 
 void display_write_c047(void *context, uint32_t address, uint8_t value) {
@@ -1022,13 +1028,13 @@ void display_write_c047(void *context, uint32_t address, uint8_t value) {
     ds->f_vblint_asserted = false;
     ds->f_quartersec_asserted = false;
 
-    update_vgc_interrupt(ds);
+    update_megaii_interrupt(ds, true);
 }
 
 /*
  * C046 - INTFLAG 
  * the selftest / reset code checks bit 7, if 1, it jumps into selftest
-
+  the mouse related bits in here are not used in IIgs.
  * 7 = 1 if mouse button currently down 
  * 6 = 1 if mouse was down on last read
  * 5 = AN3 returned in bit 5.
@@ -1038,11 +1044,32 @@ uint8_t display_read_C046(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     // update an3 value in the register..
     ds->f_an3_status = ds->f_double_graphics ? true : false;
-
+    
+    // this is identical to CPU irq_asserted.
+    ds->f_system_irq_asserted = ds->irq_control->any_irq_asserted();
     return ds->f_INTFLAG;
 }
 
 /* End VBL Interrupt Handling Section */
+
+/* C02B - LANGSEL - IIgs specific */
+void display_write_C02B(void *context, uint32_t address, uint8_t value) {
+    display_state_t *ds = (display_state_t *)context;
+    ds->f_langsel = value & 0b1111'1000;
+    // TODO: set language for display.
+    // TODO: set video mode timing ntsc vs pal.
+    // TODO: implement LANGUAGE switch (if 0, use lang 0. Otherwise use whatever lang selected.)
+    /* The Apple IIgs Firmware Reference states that LANGSEL bit 3 is "0 if primary lang set selected", but this appears to be incorrect.
+     Bit 3 is set to 1 by BRAM restore during power-on (or booting GS/OS, or entering the Control Panel) and hardware testing shows that 
+     the language in bits 5-7 is ignored when bit 3 is 0.    */
+}
+
+uint8_t display_read_C02B(void *context, uint32_t address) {
+    display_state_t *ds = (display_state_t *)context;
+    return ds->f_langsel;
+}
+
+/* VBL Read */
 
 uint8_t display_read_vbl(void *context, uint32_t address) {
     // This is enough to get basic VBL working. Total Replay boots anyway.
@@ -1052,24 +1079,41 @@ uint8_t display_read_vbl(void *context, uint32_t address) {
     if (ds->video_scanner_type == Scanner_AppleIIgs) { // inverted sense on IIgs.
         fl ^= 0x80;
     }
+    // TODO: fix this mess with the new bus concept.  
     KeyboardMessage *keymsg = (KeyboardMessage *)ds->mbus->read(MESSAGE_TYPE_KEYBOARD);
-    uint8_t kbv = (keymsg ? keymsg->mk->last_key_val :  ds->mmu->floating_bus_read()) & 0x7F;
+    //uint8_t kbv = (keymsg ? keymsg->mk->last_key_val :  ds->mmu->floating_bus_read()) & 0x7F;
+    // same fix as above for IIgs returning zero instead of floating here.
+    uint8_t kbv = (keymsg ? keymsg->mk->last_key_val :  0x00) & 0x7F;
     return kbv | fl;
 }
 
-void update_vgc_interrupt(display_state_t *ds) {
+void update_vgc_interrupt(display_state_t *ds, bool assert_now) {
     uint8_t vgc_asserted = 0;
     if (
         (ds->f_scanline_enable && ds->f_scanline_asserted)  || 
-        (ds->f_onesec_enable && ds->f_onesec_asserted)  || 
+        (ds->f_onesec_enable && ds->f_onesec_asserted) /*  || 
         (ds->f_quartersec_enable && ds->f_quartersec_asserted) ||
-        (ds->f_vbl_enable && ds->f_vblint_asserted)
+        (ds->f_vbl_enable && ds->f_vblint_asserted) */
     ) vgc_asserted = 1;
     ds->f_vgcint_asserted = vgc_asserted;
-    if (vgc_asserted) {
+    if (assert_now && vgc_asserted) {
         ds->irq_control->assert_irq(IRQ_ID_VGC);
     } else {
         ds->irq_control->deassert_irq(IRQ_ID_VGC);
+    }
+}
+
+void update_megaii_interrupt(display_state_t *ds, bool assert_now) {
+    uint8_t megaii_asserted = 0;
+    if (
+        (ds->f_quartersec_enable && ds->f_quartersec_asserted) ||
+        (ds->f_vbl_enable && ds->f_vblint_asserted)
+    ) megaii_asserted = 1;
+    //ds->f_system_irq_asserted = megaii_asserted;
+    if (assert_now && megaii_asserted) {
+        ds->irq_control->assert_irq(IRQ_ID_MEGAII);
+    } else {
+        ds->irq_control->deassert_irq(IRQ_ID_MEGAII);
     }
 }
 
@@ -1081,7 +1125,7 @@ uint8_t display_read_C02EF(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
 
     ds->f_scanline_asserted = false;
-    update_vgc_interrupt(ds);
+    update_vgc_interrupt(ds, true); // should clear flag and deassert IRQ
 
     uint16_t vcounter = ds->video_scanner->get_vcounter() & 0x1FF;
     uint16_t hcounter = ds->video_scanner->get_hcounter() & 0x7F;
@@ -1120,23 +1164,32 @@ void scanner_iigs_handler(void *context, VideoScannerEvent event) {
     switch (event) {
         case VS_EVENT_SCB_INTERRUPT:
             ds->f_scanline_asserted = true;
+            update_vgc_interrupt(ds, true);
             break;
         case VS_EVENT_VBL:
             ds->f_vblint_asserted = true;
+            update_megaii_interrupt(ds, true);
+            
             // every 60 frames, also assert 1 sec
             if (++ds->onesec_counter == 60) {
-                ds->f_onesec_asserted = true;
-            }
-            // every 16 frames, also assert 0.25 sec
-            if (++ds->quartersec_counter == 16) {
-                ds->f_quartersec_asserted = true;
+                ds->f_onesec_asserted = true; // only assert if enabled.
+                ds->onesec_counter = 0; // kinda need to reset the counter bro.
+                update_vgc_interrupt(ds, true);
             }
             break;
+        case VS_EVENT_QTR:
+            // every 16 frames, also assert 0.25 sec
+            if (++ds->quartersec_counter == 16) {
+                ds->f_quartersec_asserted = true; // only assert if enabled.
+                ds->quartersec_counter = 0; // kinda need to reset the counter bro.
+            }
+            update_megaii_interrupt(ds, true);
+            break;
         default:
+            assert(false && "Unhandled VideoScannerEvent in scanner_iigs_handler");
             break;
     }
 
-    update_vgc_interrupt(ds);
 
 }
 
@@ -1144,7 +1197,7 @@ void display_write_c032(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     if ((value & 0x40) == 0) ds->f_onesec_asserted = false;
     if ((value & 0x20) == 0) ds->f_scanline_asserted = false;
-    update_vgc_interrupt(ds);
+    update_vgc_interrupt(ds, true);
 }
 
 const char *scanner_to_string(video_scanner_t scanner_type) {
@@ -1177,7 +1230,8 @@ DebugFormatter *display_debug(display_state_t *ds) {
     bool is_hbl = ds->video_scanner->is_hbl();
     bool is_vbl = ds->video_scanner->is_vbl();
     df->addLine(" Beam position: H %3d V %3d Is_HBL %d Is_VBL %d", hcount, vcount, is_hbl, is_vbl);
-    df->addLine(" INTEN C041: %02X VGCINT C023: %02X", ds->f_INTEN, ds->f_VGCINT);
+    df->addLine(" INTEN C041: %02X VGCINT C023: %02X INTFLAG C046: %02X", ds->f_INTEN, ds->f_VGCINT, ds->f_INTFLAG);
+    df->addLine("    sl en: %d as: %d - 1sec en: %d as: %d", ds->f_scanline_enable, ds->f_scanline_asserted, ds->f_onesec_enable, ds->f_onesec_asserted);
     return df;
 }
 
@@ -1357,7 +1411,10 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         mmu->set_C0XX_read_handler(0xC041, { display_read_C041, ds });
         mmu->set_C0XX_read_handler(0xC046, { display_read_C046, ds });
         mmu->set_C0XX_write_handler(0xC047, { display_write_c047, ds });
+        mmu->set_C0XX_read_handler(0xC047, { display_read_c047, ds });
         mmu->set_C0XX_write_handler(0xC032, { display_write_c032, ds });
+        mmu->set_C0XX_write_handler(0xC02B, { display_write_C02B, ds });
+        mmu->set_C0XX_read_handler(0xC02B, { display_read_C02B, ds });
     }
 
     switch (ds->video_scanner_type) {

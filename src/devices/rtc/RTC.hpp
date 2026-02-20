@@ -48,7 +48,12 @@ class RTC {
     uint8_t command_reg[2] = {0};
     uint8_t data_reg;
 
-    uint32_t seconds = 0; // seconds since 1904
+    union {
+        uint32_t seconds = 0; // seconds since 1904
+        uint8_t seconds_bytes[4];
+    };
+    uint32_t last_seconds = 0;
+    
     uint8_t test_reg = 0;
     uint8_t bram[256] = {0};
 
@@ -63,6 +68,9 @@ public:
             bram[i] = i;
         }
         load_bram_from_file(bram_filename);
+        last_seconds = 0; // initialize. First time through update_seconds, will set last_seconds and time to current time, same value
+        seconds = 0;
+        update_seconds();
     };
     ~RTC() {
         save_bram_to_file(bram_filename);
@@ -209,40 +217,49 @@ public:
         // Convert to epoch starting Jan 1 1904
         uint32_t epoch_seconds = unix_epoch_seconds + UNIX_EPOCH_DELTA;
         
-        // Store in seconds register
-        seconds = epoch_seconds;
+        // Calculate time differential.
+        uint32_t new_seconds = epoch_seconds;
+        uint32_t time_differential = new_seconds - last_seconds;
+        last_seconds = new_seconds;
+
+        seconds += time_differential; // update time
     }
 
     void execute_command() {
         uint8_t cmd = command_reg[0];
+        update_seconds();
 
         if ((cmd & 0b0'1111111) == 0b0'0000001) { // 000'0001 = seconds register lo
             if (DEBUG(DEBUG_RTC)) printf("   : seconds lo ");
             if (cmd & 0b1000'0000) {  // 1 = read, 0 = write
                 if (DEBUG(DEBUG_RTC)) printf("read\n");
-                update_seconds();
-                data_reg =  seconds & 0xFF;
-            } ; // ignore writes for now
+                data_reg =  seconds_bytes[0];
+            } else { // ignore writes for now
+                seconds_bytes[0] = data_reg;
+            }; 
         } else if ((cmd & 0b0'1111111) == 0b0'0000101) { // 000'0101 = seconds register next-to-lo
             if (DEBUG(DEBUG_RTC)) printf("   : seconds next-to-lo ");
             if (cmd & 0b1000'0000) {  // 1 = read, 0 = write
                 if (DEBUG(DEBUG_RTC)) printf("read\n");
-                update_seconds();
-                data_reg = (seconds >> 8) & 0xFF;
+                data_reg = seconds_bytes[1];
+            } else {
+                seconds_bytes[1] = data_reg;
             }
         } else if ((cmd & 0b0'1111111) == 0b0'0001001) { // 000'1001 = seconds register next-to-hi
             if (DEBUG(DEBUG_RTC)) printf("   : seconds next-to-hi ");
             if (cmd & 0b1000'0000) {  // 1 = read, 0 = write
                 if (DEBUG(DEBUG_RTC)) printf("read\n");
-                update_seconds();
-                data_reg = (seconds >> 16) & 0xFF;
+                data_reg = seconds_bytes[2];
+            } else {
+                seconds_bytes[2] = data_reg;
             }
         } else if ((cmd & 0b0'1111111) == 0b0'0001101) { // 000'1101 = seconds register hi
             if (DEBUG(DEBUG_RTC)) printf("   : seconds hi ");
             if (cmd & 0b1000'0000) {  // 1 = read, 0 = write
                 if (DEBUG(DEBUG_RTC)) printf("read\n");
-                update_seconds();
-                data_reg = (seconds >> 24) & 0xFF;
+                data_reg = seconds_bytes[3];
+            } else {
+                seconds_bytes[3] = data_reg;
             }
         } else if ((cmd & 0b0'111'00'11) == 0b0'010'00'01) { // 4 RAM addresses - z010ab01
             if (DEBUG(DEBUG_RTC)) printf("   : ram cmd0: %02X, cmd1: %02X\n", command_reg[0], command_reg[1]);
@@ -327,7 +344,7 @@ public:
     }
 
     DebugFormatter *debug_display() {
-        update_seconds();
+        //update_seconds();
         DebugFormatter *df = new DebugFormatter();
         df->addLine("state: %s cmd0: %02X cmd1: %02X ", state_to_string(state), command_reg[0], command_reg[1]);
         df->addLine("ctl_reg C034 (7-5): %02X data_reg C033: %02X", ctl_reg_byte, data_reg);

@@ -5,6 +5,7 @@
 #include "iigs_shadow_flags.hpp"
 #include "debug.hpp"
 #include "NClock.hpp"
+#include "devices/languagecard/LanguageCardLogic.hpp"
 
 class MMU_IIgs : public MMU {
     protected:
@@ -58,11 +59,6 @@ class MMU_IIgs : public MMU {
         bool m_all_r = false; // 
         bool m_all_w = false; //
 
-        bool FF_BANK_1 = 0;
-        bool FF_READ_ENABLE = 0;
-        bool FF_PRE_WRITE = 0;
-        bool _FF_WRITE_ENABLE = 1;
-
         bool map_initialized = false;
 
         bool is_rom03 = false;
@@ -72,6 +68,7 @@ class MMU_IIgs : public MMU {
 
     public:
         MMU_IIe *megaii = nullptr;
+        LanguageCardLogic ll;
 
         MMU_IIgs(size_t num_banks, int ram_size, uint32_t rom_size, uint8_t *rom, MMU_IIe *mmu_iie) : MMU(num_banks, BANK_SIZE), megaii(mmu_iie) {
             ram_banks = ram_size / BANK_SIZE;
@@ -122,12 +119,13 @@ class MMU_IIgs : public MMU {
             return false;
         }
 
-        inline uint8_t megaiiRead(uint32_t address) {
+        // TODO: remove, not used anywhere any more. bank_e1_read handles bank latch directly.
+        /* inline uint8_t megaiiRead(uint32_t address) {
             if ((address & 0x1'0000) && g_bank_latch) {
                 return megaii->get_memory_base()[address & 0x1'FFFF]; // does not currently have an interface for this
             }
             else return megaii->read(address & 0xFFFF);
-        }
+        } */
 
         inline void megaiiWrite(uint32_t address, uint8_t value) { 
             if ((address & 0x1'0000) && g_bank_latch)
@@ -149,7 +147,8 @@ class MMU_IIgs : public MMU {
         inline void set_state_register(uint8_t value) { 
             if (DEBUG(DEBUG_MMUGS)) printf("setting state register: %02X\n", value); 
             reg_state = value; 
-            FF_READ_ENABLE = !g_rdrom;
+            ll.FF_READ_ENABLE = !g_rdrom; // sync LC state with state reg 
+            ll.FF_BANK_1 = !g_lcbnk2; // this was missing.. 
         }
         inline uint8_t shadow_register() { return reg_shadow; }
         inline uint8_t speed_register() { return reg_speed; }
@@ -157,14 +156,14 @@ class MMU_IIgs : public MMU {
 
         void set_ram_shadow_banks();
         //void shadow_register(uint16_t address, bool rw); // track accesses to softswitches the FPI also tracks.
-        inline bool is_lc_bank1() { return FF_BANK_1 == 1; }
-        inline void set_lc_bank1(bool value) { FF_BANK_1 = value; g_lcbnk2 = !value; }
-        inline bool is_lc_read_enable() { return FF_READ_ENABLE == 1; }
-        inline void set_lc_read_enable(bool value) { FF_READ_ENABLE = value; g_rdrom = !value; }
-        inline bool is_lc_pre_write() { return FF_PRE_WRITE == 1; }
-        inline void set_lc_pre_write(bool value) { FF_PRE_WRITE = value; }
-        inline bool is_lc_write_enable() { return _FF_WRITE_ENABLE == 0; } // reverse sense since this is active low
-        inline void set_lc_write_enable(bool value) { _FF_WRITE_ENABLE = value; }
+        inline bool is_lc_bank1() { return ll.FF_BANK_1 == 1; }
+        inline void set_lc_bank1(bool value) { ll.FF_BANK_1 = value; g_lcbnk2 = !value; }
+        inline bool is_lc_read_enable() { return ll.FF_READ_ENABLE == 1; }
+        inline void set_lc_read_enable(bool value) { ll.FF_READ_ENABLE = value; g_rdrom = !value; }
+        inline bool is_lc_pre_write() { return ll.FF_PRE_WRITE == 1; }
+        inline void set_lc_pre_write(bool value) { ll.FF_PRE_WRITE = value; }
+        inline bool is_lc_write_enable() { return ll._FF_WRITE_ENABLE == 0; } // reverse sense since this is active low
+        inline void set_lc_write_enable(bool value) { ll._FF_WRITE_ENABLE = value; }
         inline bool is_page2() { return g_page2; }
         inline void set_page2(bool value) { g_page2 = value; }
         inline bool is_hires() { return g_hires; }

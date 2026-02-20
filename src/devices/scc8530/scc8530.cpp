@@ -7,6 +7,7 @@
 #include "serial_devices/SerialDevice.hpp"
 #include "serial_devices/echo/EchoDevice.hpp"
 #include "serial_devices/modem/ModemDevice.hpp"
+#include "serial_devices/file/FileDevice.hpp"
 
 constexpr uint32_t SCCBREG = 0xC038;
 constexpr uint32_t SCCAREG = 0xC039;
@@ -56,7 +57,7 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
     scc8530_state_t *st = new scc8530_state_t();
     st->irq_control = computer->irq_control;
 
-    Z85C30 *scc = new Z85C30(st->irq_control);
+    Z85C30 *scc = new Z85C30(st->irq_control, computer->event_timer, computer->clock);
     st->scc = scc;
 
     for (uint32_t i = 0xC038; i <= 0xC03B; i++) {
@@ -64,7 +65,7 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
         computer->mmu->set_C0XX_read_handler(i, { scc8530_read_C0xx, st });
     }
 
-    const char *data_filename = "scc8530-a.data";
+/*     const char *data_filename = "scc8530-a.data";
     st->data_file_a = fopen(data_filename, "wb");
     if (st->data_file_a == NULL) {
         fprintf(stderr, "Failed to open data file %s\n", data_filename);
@@ -78,7 +79,7 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
         fprintf(stderr, "Failed to open data file %s\n", data_filename);
         return;
     }
-    scc->set_data_file(SCC_CHANNEL_B, st->data_file_b);
+    scc->set_data_file(SCC_CHANNEL_B, st->data_file_b); */
     
     computer->register_debug_display_handler(
         "scc8530",
@@ -90,9 +91,10 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
         }
     );
 
-    st->channel_a_device = new EchoDevice();
+    // let the devices name themselves mostly. But we can, too if we like..
+    st->channel_a_device = new FileDevice(nullptr, "A");
     st->scc->set_device_channel(SCC_CHANNEL_A, st->channel_a_device);
-    st->channel_b_device = new ModemDevice();
+    st->channel_b_device = new ModemDevice(nullptr, "B");
     st->scc->set_device_channel(SCC_CHANNEL_B, st->channel_b_device);
 
     computer->register_shutdown_handler([st]() {
@@ -102,5 +104,13 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
         delete st;
         return true;
     });
+
+    // chip reset by pulling r and w low at same time and holding a bit. there's logic on the mobo for this, mixing reset and the normal r/w signal.
+    computer->register_reset_handler([st]() {
+        st->scc->reset();
+        return true;
+    });
+
+    // register reset handler ?
 
 }

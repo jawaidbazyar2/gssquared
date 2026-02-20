@@ -25,6 +25,7 @@
 
 #include "DiskII_Button.hpp"
 #include "Unidisk_Button.hpp"
+#include "AppleDisk_525_Button.hpp"
 #include "Container.hpp"
 #include "ModalContainer.hpp"
 #include "MousePositionTile.hpp"
@@ -59,8 +60,12 @@ protected:
     int slidePositionDelta = slidePositionDeltaMax;
     SlotManager_t *slot_manager = nullptr;
     
+    Container_t *drive_container = nullptr;
+
     DiskII_Button_t *diskii_button1 = nullptr;
     DiskII_Button_t *diskii_button2 = nullptr;
+    AppleDisk_525_Button_t *adisk_525_button1 = nullptr;
+    AppleDisk_525_Button_t *adisk_525_button2 = nullptr;
     DiskII_Button_t *hud_diskii_1 = nullptr;
     DiskII_Button_t *hud_diskii_2 = nullptr;
     Unidisk_Button_t *unidisk_button1 = nullptr;

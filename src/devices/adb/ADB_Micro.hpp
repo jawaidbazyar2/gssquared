@@ -3,6 +3,8 @@
 #include <SDL3/SDL.h>
 #include <cstdio>
 
+#include "util/ResourceFile.hpp"
+
 #include "ADB_Host.hpp"
 #include "ADB_Keyboard.hpp"
 #include "ADB_Mouse.hpp"
@@ -141,6 +143,18 @@ class KeyGloo
 
     public:
         KeyGloo() {
+            const char *rom_filename = (true /* is rom 01 */) ? "roms/cards/keyglu/rom01-adb-341s0345.bin" : "roms/cards/keyglu/rom03-adb-341s0632-2.bin";
+
+            ResourceFile *rom = new ResourceFile(rom_filename, READ_ONLY);
+            if (rom == nullptr) {
+                fprintf(stderr, "Failed to load keyglu/%s\n", rom_filename);
+                return;
+            }
+            rom->load();
+            uint8_t *rom_data = (uint8_t *)(rom->get_data());
+            memcpy(this->rom, rom_data, 3072);
+            delete rom;
+
             // "power on" the RAM here should be all 0's.
             for (int i = 0; i < sizeof(ram); i++) {
                 ram[i] = 0;

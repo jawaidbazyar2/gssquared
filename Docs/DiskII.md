@@ -88,3 +88,63 @@ Works, but could use some tidying up.
 
 
 
+## Prep work for IWM , refactoring DiskII
+
+DiskII needs to be split into routines to manage 5.25" drive stuff that are independent of the DiskII legacy code itself.
+
+```
+class FloppyDrive  {
+
+    int track_num;
+    int side;
+
+    head_move();
+
+    virtual mount_image();
+    virtual unmount();
+    virtual writeback_image();
+    virtual nibblize();
+    virtual status();
+    virtual reset();
+}
+
+class Floppy525: FloppyDrive {
+    trackdata[6656*35]
+
+    void motor(bool);
+    void track(int);
+
+    write_nybble();
+    read_nybble();
+
+    virtual mount_image();
+    virtual unmount();
+    virtual writeback_image() override;
+    virtual nibblize() override;
+    virtual status() override;
+    virtual reset() override;
+}
+
+class FloppyController {
+    Floppy525 drives[2];
+    FloppyController();
+    ~FloppyController();
+
+    read();
+    write();
+    status();
+    reset();
+    soundeffects
+}
+
+init_diskii {
+    allocate a Floppycontroller;
+    init it;
+}
+```
+
+[ ] return floating bus on reads instead of 0xEE  
+[ ] use timer to schedule actual motor off; right now it's not turning off in a few cases where it ought because there is no followup r/w after the motor off.  
+
+Some of the softswitches are controller level. Some are drive level. 
+

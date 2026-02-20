@@ -113,9 +113,11 @@ void Paths::calc_docs(std::string& return_path, std::string file) {
 
 const std::string& Paths::get_last_file_dialog_dir() {
     // If never set, return documents folder as a reasonable default
+#if defined(__linux__)
     if (last_file_dialog_dir.empty()) {
         return docs_folder;
     }
+#endif
     return last_file_dialog_dir;
 }
 

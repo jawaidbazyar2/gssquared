@@ -191,6 +191,8 @@ struct cpu_state {
     };
     uint8_t E : 1;  /* Emulation Flag */
 
+    bool clock_stopped = false; /* if set, the clock is stopped */
+
     uint8_t halt = 0; /* == 1 is HLT instruction halt; == 2 is user halt */
     //uint64_t cycles; /* Number of cpu cycles since poweron */
 
@@ -198,6 +200,7 @@ struct cpu_state {
     //uint8_t skip_next_irq_check = 0; /* if set, skip the next IRQ check */
     bool ICHANGE = false; /* if set, the I flag has changed */
     bool EFFI = 0; /* if set, the E flag has changed */
+    bool rdy = false; /* if set, the RDY signal is asserted */
 
     MMU *mmu = nullptr; // cpu only needs to know about base interface with read() and write().
     

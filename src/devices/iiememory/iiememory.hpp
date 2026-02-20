@@ -5,6 +5,7 @@
 #include "computer.hpp"
 #include "display/display.hpp"
 #include "mbus/KeyboardMessage.hpp"
+#include "devices/languagecard/LanguageCardLogic.hpp"
 
 struct iiememory_state_t {
     //uint8_t switch_state;
@@ -34,10 +35,11 @@ struct iiememory_state_t {
     bool s_text = false;
     bool s_mixed = false;
 
-    bool FF_BANK_1;
+    LanguageCardLogic ll;
+   /*  bool FF_BANK_1;
     bool FF_READ_ENABLE;
     bool FF_PRE_WRITE;
-    bool _FF_WRITE_ENABLE;
+    bool _FF_WRITE_ENABLE; */
     
     // BSRBANK2 == !FF_BANK_1
     // BSRREADRAM == FF_READ_ENABLE
