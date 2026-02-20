@@ -9987,6 +9987,8 @@ Let's think about Roadmap here.
 
 Hardware Issues Yet to Resolve
 
+* appledisk 5.25 not playing track movement sounds, also, should use Alps noises
+* shr fill mode
 * 3.5" IWM
 * SmartPort hard disk
 * SCC does not support AppleTalk (Do we care at this point?)
@@ -10009,3 +10011,12 @@ A whole later generation could add: (could this be the freemium addons?)
 * CRT shaders
 * Save State (would be helped greatly by having devices be classes, yah?)
 * Tight integration with disk archive via metadata searches (have as separate window, separate thread, can drag and drop from that into emu)
+
+I think I'll cut a 0.7.1 release with a bunch of the recent fixes, there are a ton of improvements.
+
+## Feb 20, 2026
+
+Did a catchup on linux and windows builds. Wasn't too bad, missing headers. there was one instance of initializers in wrong order. I don't understand why c++ has so much trouble with that kind of stuff.
+
+hm on GS/IWM with dos33master something is inappropriately writing to the disk, causing it to become corrupt and throw an I/O error. Just booting dos33master should do -no- writes to the disk.
+
