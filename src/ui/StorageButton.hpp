@@ -8,7 +8,7 @@
 class StorageButton : public Button_t {
     protected:
         uint64_t key;
-        drive_status_t status = { .is_mounted = false, .motor_on = false, .position = 0, .filename = "" };
+        drive_status_t status = { .is_mounted = false,  .filename = "", .motor_on = false, .position = 0, .is_modified = false};
     public:
     // use same constructors as Button_t.
         using Button_t::Button_t;

@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 #include <cstdio>
+#include <ctime>
 
 #include "serial_devices/SerialDevice.hpp"
 #include "util/printf_helper.hpp"
