@@ -15,7 +15,8 @@ class AppleII_Display {
 private: 
     CharRom *char_rom;
     bool flash_state = false;
-    bool alt_char_set = false;
+    uint16_t char_set = 0;
+    bool normal_alt = false;
     bool f_80store = false;
     uint8_t hires40Font[2 * CHAR_NUM * CHAR_WIDTH];
     uint8_t text_fg = 0x0F;
@@ -84,11 +85,19 @@ private:
 
 public:
     AppleII_Display(CharRom *char_rom) : char_rom(char_rom) { 
+        char_set = 0;
+        normal_alt = false;
         buildHires40Font(true);
      }
 
-    void set_char_set(bool alt_char_set) {
-        char_rom->set_char_set(alt_char_set);
+    void set_char_set(uint16_t char_set) {
+        this->char_set = char_set;
+        char_rom->set_char_set(char_set, normal_alt);
+    }
+
+    void set_normal_alt(bool normal_alt) {
+        this->normal_alt = normal_alt;
+        char_rom->set_char_set(char_set, normal_alt);
     }
 
     void set_flash_state(bool flash_state) {

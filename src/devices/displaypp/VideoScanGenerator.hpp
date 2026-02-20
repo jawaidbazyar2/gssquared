@@ -14,6 +14,7 @@ private:
     uint8_t hires40Font[2 * CHAR_NUM * CHAR_WIDTH];
     void build_hires40Font(bool delayEnabled);
     CharRom *char_rom = nullptr;
+    uint16_t char_set = 0;
     bool flash_state = false;
     uint32_t flash_counter = 0;
 
@@ -27,4 +28,5 @@ public:
     void generate_frame(ScanBuffer *frame_scan, Frame560 *frame_byte, FrameBorder *border = nullptr, Frame640 *frame_shr = nullptr);
     void set_display_shift(bool enable) { display_shift_enabled = enable; }
     void set_mono_mode(bool mono) { mono_mode = mono; }
+    void set_char_set(uint16_t char_set) { this->char_set = char_set; }
 };

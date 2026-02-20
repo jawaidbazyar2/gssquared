@@ -167,7 +167,8 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                         frame_byte->set_color_mode(vcount, cmode);
                     }
                     
-                    char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
+                    //char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
+                    char_rom->set_char_set(char_set, scan.flags & VS_FL_ALTCHARSET);
 
                     uint8_t tchar = scan.mainbyte;
                     uint8_t invert;
@@ -199,7 +200,8 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     uint8_t invert;
 
                     uint8_t tchar = scan.auxbyte;
-                    char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
+                    //char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
+                    char_rom->set_char_set(char_set, scan.flags & VS_FL_ALTCHARSET);
                     uint8_t cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
     
                     if (char_rom->is_flash(tchar)) {
