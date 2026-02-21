@@ -1057,8 +1057,8 @@ void display_write_C02B(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     ds->f_langsel = value & 0b1111'1000;
     // TODO: set language for display. Only values 0-7 are valid.
-    ds->a2_display->set_char_set((ds->f_langsel & 0x70) >> 4); // set LS scanner.
-    ds->vsg->set_char_set((ds->f_langsel & 0x70) >> 4); // set LS scanner.
+    ds->a2_display->set_char_set((ds->f_langsel & 0xE0) >> 5); // set LS scanner.
+    ds->vsg->set_char_set((ds->f_langsel & 0xE0) >> 5); // set LS scanner.
     // TODO: set video mode timing ntsc vs pal.
     // TODO: implement LANGUAGE switch (if 0, use lang 0. Otherwise use whatever lang selected.)
     /* The Apple IIgs Firmware Reference states that LANGSEL bit 3 is "0 if primary lang set selected", but this appears to be incorrect.

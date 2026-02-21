@@ -186,7 +186,6 @@ class KeyGloo
 
             datareg = 0;
             data_register_full = false;
-
         }
 
         void abort() {
@@ -361,19 +360,19 @@ class KeyGloo
                         response[0] = adb_version; // Version ?
                         response_bytes = 1;
                         //response_bytes_reported = 2;
-                    } else if (value == 0x0E) { // READ CHAR SETS AVAILABLE
-                        response[0] = 0x08; // TODO: unsure about bytes returned value here, need to read the docs again.
+                    } else if (value == 0x0E) { // READ CHAR SETS AVAILABLE (8 char sets, 0-7) should match mega ii
+                        response[0] = 8; // TODO: unsure about bytes returned value here, need to read the docs again.
                         for (int i = 0; i < 8; i++) {
                             response[i+1] = i;
                         }
                         response_bytes = 9;
                         //response_bytes_reported = 2;
-                    } else if (value == 0x0F) { // READ LAYOUTS AVAILABLE
-                        response[0] = 0x08;
-                        for (int i = 0; i < 8; i++) {
+                    } else if (value == 0x0F) { // READ LAYOUTS AVAILABLE (10 layouts, 0-9)
+                        response[0] = 10;
+                        for (int i = 0; i < 10; i++) {
                             response[i+1] = i;
                         }
-                        response_bytes = 9;
+                        response_bytes = 11;
                         //response_bytes_reported = 2;
                     } else if (value == 0x10) { // RESET SYSTEM
                         reset();
@@ -427,7 +426,9 @@ class KeyGloo
                     break;
             }
 
-            data_register_full = true;
+            if (response_bytes > 0) data_register_full = true;
+            update_interrupt_status();
+            if (data_interrupt_asserted) send_data_register = true;
             /* printf("ADB_Micro> Response (%d bytes/ %d): ", response_bytes, response_index);
             for (int i = 0; i < response_bytes; i++) { 
                 printf("%02X ", response[i]);

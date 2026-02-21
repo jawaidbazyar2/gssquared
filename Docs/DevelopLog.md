@@ -10020,3 +10020,50 @@ Did a catchup on linux and windows builds. Wasn't too bad, missing headers. ther
 
 hm on GS/IWM with dos33master something is inappropriately writing to the disk, causing it to become corrupt and throw an I/O error. Just booting dos33master should do -no- writes to the disk.
 
+I'm implementing the full IIgs character rom (8 language character sets). I am cheating a bit, putting langsel into VSG, when it should go into VideoScanner. So the language selection won't be "cycle accurate".
+
+Ahh, the control panel is not showing the other languages, there is something wrong with keygloo's reporting of the languages!
+
+Rabbit hole! my adbtest program fails on crossrunner, on the read ram command. I'm reading address 0016 (i.e. ram, not rom) and expecting one byte back. crossrunner is hanging waiting for bytes, so, returning no bytes back? Unclear, I get very different replies on the real GS. So don't just trust CR here.
+the ROM01 routine PANELFDB reads the keymicro for the values of these things. In memory, they are at E1/02F8-0300; and E1/0301-stuff.
+on default bram the values are correct; however, 02F8 in memory is **0**. This is set by PANELFDB (FF/85CB), so I need to debug that and see why we're getting the wrong values back there. but if I enter control panel first, then set E1/02F8=8, it does display the correct options. (So PANELFDB is set upon entering the control panel CDA).
+
+The ROM03 doesn't read the languages from the adbmicro! see monitor_keymicro.cp.reset.asm 8065. it just manually creates the entries in the bram area. Wackadoodle.
+
+I'm tracing this routine. interrupts disabled because we're IN the IRQ handler from hitting ctrl-oa-esc, we threw an adb interrupt "data reg".
+but it seems like we must have cleared that and triggered another one with our command here.. 
+Checks C027[0] before writing command to ensure not already busy.. then writes command, and waits for for c027[0] to go to 0.
+Then it reads from C026, and does TSB E1/0FD7. So right now we have an '0A' as that first byte of response, HOWEVER, because an IRQ was triggered, it seems like this value should have been something it's reasonable to TSB against. 
+then it calls RCVDATA. this waits for C027[5] to go high, then reads from DATAREG
+it's doing this in a loop with Y set to 0.
+this index is compared to $E1/0301 (which on first iteration is supposed to be the number of bytes. It is NOT, however, because we definitely should have read the "interrupt status byte" two steps back.)
+
+OK, so let's examine more about what this "at interrupt time" means. Reading.. reading.. reading.. rawhide!
+ach I need to trace this again. ok. entering panelfdb. int disabled, but, no interrupt asserted. ok.
+um, so the data reg int was asserted when we read the $0A from data register. 
+1. it should have been asserted when the command buffer was filled and there was data;
+1. when asserted, it should have set the "read_data_reg" flag so we got that status thing.
+So should it be:
+if a command has return data, data reg is full, and set that read_data_reg flag?
+
+I tried that, and self-test loops on:
+```
+DISABLE SRQ ON DEVICE - unimplemented
+TRANSMIT 2 BYTES: B3: 03 01
+adb->listen addr: 03, cmd: 02, reg: 03, msg: 03 01
+```
+are these supposed to have any response? Don't remember reading one..
+trying -just- "if response bytes > 0 data_reg_full". self-test passes, my tests pass, though status is 30 instead of B0 .  .. maybe I need to do that and update irq.. 
+I am having a sensation that C026[2-0] "if all bits clear, no fdb data valid; otherwise bits indicate number of valid bytes received minus 1" refers ONLY to talk commands. kind of makes sense that would also trigger an irq. And I'm thinking we trigger IRQ only on:
+    talk packet arrived;
+    other command data there e.g. ("language options")
+    etc.
+```
+            if (response_bytes > 0) data_register_full = true;
+            update_interrupt_status();
+            if (data_interrupt_asserted) send_data_register = true;
+```
+this has the control panel working! but self test? yes! PASSED, BEOTCHES!
+my adbtest code does not behave the same way now, of course, I should do something about that.
+
+usa - 08; uk - 28. no, that's not right. Hrm. oh, ha, it's just the top 3 bits. so, 28 IS correct for UK.
