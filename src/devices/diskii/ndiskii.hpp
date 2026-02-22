@@ -54,6 +54,10 @@ class DiskII_Controller : public StorageDevice {
     uint8_t drive_select;
     bool motor;
     uint64_t mark_cycles_turnoff = 0; // when DRIVES OFF, set this to current cpu cycles. Then don't actually set motor=0 until one second (1M cycles) has passed. Then reset this to 0.
+    
+    // for audio simulation
+    int running_chunknumber = 0;
+    int start_track_movement = -1;
 
     /* Load our sound effects */
     const char *sound_files[5] = {
@@ -123,7 +127,7 @@ class DiskII_Controller : public StorageDevice {
         }
         
         /* Only queue audio data if sound is enabled */
-        static int running_chunknumber = 0;
+        //static int running_chunknumber = 0;
         if (motor) {
             int dl = (int) sounds[SE_SHUGART_DRIVE].si->wav_data_len / 10;
             if (SDL_GetAudioStreamQueued(sounds[SE_SHUGART_DRIVE].si->stream) < dl) {
@@ -135,7 +139,7 @@ class DiskII_Controller : public StorageDevice {
             }
         }
         // minimum track movement is 2. We're called every 1/60th. That's 735 samples.
-        static int start_track_movement = -1;
+        //static int start_track_movement = -1;
         if (tracknumber >= 0 && (tracknumber_last != tracknumber)) {
             // if we have a track movement, play the head movement sound
             // head can move 16.7 / 2.5 tracks per second, about 7.

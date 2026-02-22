@@ -145,13 +145,14 @@ public:
 
     void position_content(ContentPosition_t pos_h, ContentPosition_t pos_v);
     void print();
-    
-protected:
+
     /**
      * @brief Called when hover state changes.
      * @param hovering True if mouse is hovering, false otherwise
      */
-    virtual void on_hover_changed(bool hovering);
+     virtual void on_hover_changed(bool hovering);
+
+protected:
 
     /**
      * @brief Called when tile is clicked.

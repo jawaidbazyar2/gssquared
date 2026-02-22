@@ -849,7 +849,7 @@ void display_write_switches(void *context, uint32_t address, uint8_t value) {
             break;
     }
     ds->video_scanner->set_altchrset_f(ds->f_altcharset);
-    ds->a2_display->set_char_set(ds->f_altcharset);
+    ds->a2_display->set_normal_alt(ds->f_altcharset);
 }
 
 /**
@@ -1056,7 +1056,9 @@ uint8_t display_read_C046(void *context, uint32_t address) {
 void display_write_C02B(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
     ds->f_langsel = value & 0b1111'1000;
-    // TODO: set language for display.
+    // TODO: set language for display. Only values 0-7 are valid.
+    ds->a2_display->set_char_set((ds->f_langsel & 0xE0) >> 5); // set LS scanner.
+    ds->vsg->set_char_set((ds->f_langsel & 0xE0) >> 5); // set LS scanner.
     // TODO: set video mode timing ntsc vs pal.
     // TODO: implement LANGUAGE switch (if 0, use lang 0. Otherwise use whatever lang selected.)
     /* The Apple IIgs Firmware Reference states that LANGSEL bit 3 is "0 if primary lang set selected", but this appears to be incorrect.
@@ -1253,6 +1255,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     ds->mmu = mmu;
 
     // Grab appropriate Character ROM and load it.
+    // TODO: this is a hack, platforms selects ROMs directory and we should reference that.
     CharRom *charrom = nullptr;
     switch (computer->platform->id) {
         case PLATFORM_APPLE_IIE:
@@ -1260,8 +1263,10 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
             break;
         case PLATFORM_APPLE_IIE_ENHANCED:
         case PLATFORM_APPLE_IIE_65816:
-        case PLATFORM_APPLE_IIGS:
             charrom = new CharRom("roms/apple2e_enh/char.rom");
+            break;
+        case PLATFORM_APPLE_IIGS:
+            charrom = new CharRom("roms/apple2gs/char.rom");
             break;
         case PLATFORM_APPLE_II_PLUS:
             charrom = new CharRom("roms/apple2_plus/char.rom");

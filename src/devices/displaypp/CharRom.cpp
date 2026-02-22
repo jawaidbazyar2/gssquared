@@ -7,7 +7,7 @@
 
 
 CharRom::CharRom(const char *filename) {
-    data = new(std::align_val_t(64)) uint8_t[8192]; // max char rom size
+    data = new(std::align_val_t(64)) uint8_t[16386]; // max char rom size
 
     std::string fullfilename;
     fullfilename.assign(get_base_path(false));
@@ -21,9 +21,9 @@ CharRom::CharRom(const char *filename) {
         return;
     }
 
-    size = fread(data, 1, 8192, f);
+    size = fread(data, 1, 16384, f);
     fclose(f);
-    if (size != 2048 && size != 4096 && size != 8192) {
+    if (size != 2048 && size != 4096 && size != 8192 && size != 16384) {
         printf("Invalid char rom file: %s\n", filename);
         valid = false;
         ::operator delete[](data, std::align_val_t(64));
@@ -51,32 +51,39 @@ CharRom::CharRom(const char *filename) {
             }
         }
     } else { // iie and on roms, we need to invert the bits
-        // iie - 0-255 are normal char set, 256-511 are graphics, then 512-767 are alt char set.
+        // iie - 0-255 are alt char set, 256-511 are graphics, normal char set is constructed from subset of alt.
         // need to create two character sets.
-        for (uint16_t i = 0; i < 256; i++) {
-            char_mode_t cmode;
+        uint16_t num_char_sets = 1;
+        if (size == 16384) num_char_sets = 16;
+        else num_char_sets = 2;
+        for (uint16_t char_set = 0; char_set < num_char_sets; char_set+=2) {
+            for (uint16_t i = 0; i < 256; i++) {
+                char_mode_t cmode;
+                uint16_t char_index = i + ((char_set/2) * 256);
 
-            num_char_sets=2; // TODO: international ROMs may have more than 1.
-            char_sets[0].set[i].screen_code = i;
-            char_sets[1].set[i].screen_code = i;
+                char_sets[char_set].set[i].screen_code = char_index;
+                char_sets[char_set+1].set[i].screen_code = char_index;
 
-            // Normal character set
-            if ((i & 0xC0) == 0x40) cmode = CHAR_MODE_FLASH;
-            else if (i < 0x80) cmode = CHAR_MODE_INVERSE;
-            else cmode = CHAR_MODE_NORMAL;
-            if (cmode == CHAR_MODE_FLASH) {
-                char_sets[0].set[i].pos = (i - 0x40) * 8; // put flash down there.
-            } else {
-                char_sets[0].set[i].pos = i * 8;
+                // Normal character set
+                if ((i & 0xC0) == 0x40) cmode = CHAR_MODE_FLASH;
+                else if (i < 0x80) cmode = CHAR_MODE_INVERSE;
+                else cmode = CHAR_MODE_NORMAL;
+                if (cmode == CHAR_MODE_FLASH) {
+                    char_sets[char_set].set[i].pos = (char_index - 0x40) * 8; // put flash down there.
+                } else {
+                    char_sets[char_set].set[i].pos = char_index * 8;
+                }
+                char_sets[char_set].set[i].mode = cmode;
+
+                // Alternate character set
+                if (i & 0x80) cmode = CHAR_MODE_NORMAL;
+                else cmode = CHAR_MODE_INVERSE;
+                char_sets[char_set+1].set[i].pos = char_index * 8;
+                char_sets[char_set+1].set[i].mode = cmode;
             }
-            char_sets[0].set[i].mode = cmode;
 
-            // Alternate character set
-            if (i & 0x80) cmode = CHAR_MODE_NORMAL;
-            else cmode = CHAR_MODE_INVERSE;
-            char_sets[1].set[i].pos = i * 8;
-            char_sets[1].set[i].mode = cmode;
         }
+        // TODO: I need to invert the GS rom file bits then not invert here.
         for (int i = 0; i < size; i++) {
             data[i] = invert_bits(data[i]);
         }

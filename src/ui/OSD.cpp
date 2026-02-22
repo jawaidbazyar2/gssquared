@@ -280,9 +280,15 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     CS.background_color = 0xFFFFFFFF;
     CS.border_color = 0x008000E0;
     CS.hover_color = 0x008080FF;
+    Style_t DC;
+    DC.background_color = 0x00000040;
+    DC.border_color = 0xFFFFFF80;
+    DC.hover_color = 0x008080FF;
+    DC.padding = 4;
+    DC.border_width = 2;
     Style_t DS;
     DS.background_color = 0x00000000;
-    DS.border_color = 0xFFFFFFFF;
+    DS.border_color = 0x00000000;
     DS.hover_color = 0x008080FF;
     DS.padding = 5;
     DS.border_width = 2;
@@ -305,7 +311,7 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     HUD.border_width = 0;
 
     // Create a container for our drive buttons
-    drive_container = new Container_t(renderer, 10, CS);  // Increased to 5 to accommodate the mouse position tile
+    drive_container = new Container_t(renderer, 10, DC);
     drive_container->set_position(600, 70);
     drive_container->set_tile_size(415, 600);
     containers.push_back(drive_container);
@@ -403,7 +409,7 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     drive_container->layout();
 
     /*
-     creating whole new buttons, we insert the same buttons into this container.
+     instead of creating whole new buttons, we insert the same buttons into this container.
      this needs to be dynamic, based on which slot is active at any given time.
      Create HUD drive container for first DiskII slot found 
     */
@@ -633,9 +639,11 @@ void OSD::update() {
         }
     }
 
-    hud_drive_container->remove_all_tiles();
-    if (key_mask) {
+    // update the HUD container.
+    hud_drive_container->remove_all_tiles(); // always clear.. 
+    if ((currentSlideStatus == SLIDE_OUT)  && (key_mask)) {
         // second pass, update the hud container with items matching the key mask.
+        // and set their hover status to false.
         uint32_t hud_index = 0;
         for (int i = 0; i < drive_container->get_tile_count(); i++) {
             Tile_t *tile = drive_container->get_tile(i);
@@ -645,6 +653,7 @@ void OSD::update() {
                 drive_status_t ds = button->get_disk_status();
                 if ((key & 0xFFFFFF00) == key_mask) {
                     hud_drive_container->add_tile(button, hud_index++);
+                    button->on_hover_changed(false);
                 }
             }            
         }

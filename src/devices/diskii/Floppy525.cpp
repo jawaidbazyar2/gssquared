@@ -54,7 +54,11 @@ uint8_t Floppy525::read_nybble() {
     if (bit_position == 0) {
         // get next value from head_position to read_shift_register, increment head position.
         if (track <= 68) { // 68 is the last legal track on a normal 35 track disk
-            read_shift_register = nibblized.tracks[track/2].data[head_position];
+            // if nothing mounted, return quasi-random data from 32-bit register.
+            if (!is_mounted) {
+                read_shift_register = 0x5FC4;
+                bit_position = 32;
+            } else read_shift_register = nibblized.tracks[track/2].data[head_position];
 
             // "spin" the virtual diskette a little more
             head_position++;
@@ -191,7 +195,7 @@ bool Floppy525::writeback() {
     return true;
 }
 
-void Floppy525::nibblize() {}
+//void Floppy525::nibblize() {}
 
 drive_status_t Floppy525::status() {
     if (is_mounted) return {is_mounted, media_d->filestub, enable, track, modified};

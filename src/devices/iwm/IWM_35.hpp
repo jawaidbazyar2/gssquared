@@ -11,7 +11,9 @@ class IWM_Drive_35 : public IWM_Drive {
         IWM_Drive_35(SoundEffect *sound_effect, NClockII *clock) : IWM_Drive(sound_effect, clock) {
             enabled = false;
         }
-        
+
+        int get_track() override { return 0; } // TODO: implement 3.5" get_track
+
         void set_enable(bool enable) override {
             enabled = enable;
             led_status = enable;

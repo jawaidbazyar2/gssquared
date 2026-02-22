@@ -60,7 +60,7 @@ class Floppy525: public FloppyDrive {
     // The controller only lets one drive be on at a time, and that must be managed by the controller.
     //virtual void motor(bool onoff) override ;
     virtual void set_track(int track_num) override;
-    virtual int get_track() { return track; }
+    virtual int get_track() override { return track; } ;
     virtual void move_head(int direction) override;
 
     virtual void write_nybble(uint8_t nybble) override;
@@ -69,11 +69,11 @@ class Floppy525: public FloppyDrive {
     virtual bool mount(uint64_t key, media_descriptor *media) override;
     virtual bool unmount(uint64_t key) override;
     virtual bool writeback() override;
-    virtual void nibblize() override;
+    //virtual void nibblize() override;
     virtual drive_status_t status() override;
     virtual void reset() override;
 
-    virtual bool get_enable() { return enable; }
+    virtual bool get_enable() override { return enable; }
     virtual void set_enable(bool enable) override { this->enable = enable; }
 
     virtual uint8_t read_cmd(uint16_t address) override;

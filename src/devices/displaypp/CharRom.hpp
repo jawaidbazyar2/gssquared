@@ -1,12 +1,15 @@
 #pragma once
 
 #include <cstdint>
+#include <cassert>
 
 enum char_mode_t {
     CHAR_MODE_NORMAL,
     CHAR_MODE_INVERSE,
     CHAR_MODE_FLASH,
 };
+
+#define MAX_CHAR_SETS 8
 
 struct CharCode {
     uint8_t screen_code;
@@ -30,8 +33,12 @@ class CharRom {
 
         ~CharRom();
 
-        inline void set_char_set(uint16_t char_set) {
-            selected_char_set = char_set;
+        // 0 = "main"; 1 = "Alt"; for II+ / IIe.
+        // 2,3 - UK
+        // 4,5 - etc.
+        inline void set_char_set(uint16_t char_set, uint16_t normal_alt) {
+            assert(char_set < MAX_CHAR_SETS);
+            selected_char_set = (char_set * 2) + normal_alt;
         }
 
         inline uint8_t get_char_scanline(uint16_t tchar, uint8_t y) {
@@ -61,7 +68,7 @@ class CharRom {
         bool valid = false;
         uint16_t num_char_sets = 1;
         uint16_t selected_char_set = 0;
-        CharSet char_sets[8];
+        CharSet char_sets[2 * MAX_CHAR_SETS]; // up to 8 for Apple IIgs (maybe also later for Apple IIe intl sets)
 
         inline uint8_t invert_bits(uint8_t b) {
             return ~b;

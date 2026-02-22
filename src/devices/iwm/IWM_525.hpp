@@ -14,6 +14,9 @@ class IWM_Drive_525 : public IWM_Drive {
         IWM_Drive_525(SoundEffect *sound_effect, NClockII *clock) : IWM_Drive(sound_effect, clock), dr(sound_effect, clock) {
             enabled = false;
         }
+
+        int get_track() override { return dr.get_track(); }
+        
         void set_enable(bool enable) override {
             enabled = enable;
             if (motor_on && !enable) {
