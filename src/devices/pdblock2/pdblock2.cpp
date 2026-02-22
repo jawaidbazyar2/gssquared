@@ -56,7 +56,7 @@ drive_status_t pdblock2_osd_status(pdblock2_data *pdblock_d, uint64_t key) {
     return {mounted, fname, motor, seldrive.last_block_accessed};
 }
 
-uint8_t pdblock2_status(cpu_state *cpu, pdblock2_data *pdblock_d, uint8_t drive) {
+uint8_t pdblock2_status(pdblock2_data *pdblock_d, uint8_t drive) {
     
     if (pdblock_d->drives[drive].file == nullptr) {
         return 0x01; // device not ready
@@ -67,39 +67,44 @@ uint8_t pdblock2_status(cpu_state *cpu, pdblock2_data *pdblock_d, uint8_t drive)
 /**
  * These two routines read and write a block to the media.
  * They take into account the media descriptor and the data offset.
- * They read and write memory to the cpu using the memory functions
+ * They read and write memory to the MMU using the MMU functions
  * that take into account the memory map, so, we can write data into
  * any bank selected as the CPU (or a 'DMA' device like us) would see it.
  * slot and drive here might be virtual as one physical slot can map drives
  * to a different virtual slot.
  */
-void pdblock2_read_block(cpu_state *cpu, pdblock2_data *pdblock_d, uint8_t drive, uint16_t block, uint16_t addr) {
+void pdblock2_read_block(pdblock2_data *pdblock_d, uint8_t drive, uint16_t block, uint16_t addr) {
 
     // TODO: read the block into the address.
-    static uint8_t block_buffer[512];
+    /* static */ uint8_t block_buffer[512]; // uhh, no!
     FILE *fp = pdblock_d->drives[drive].file;
     
     media_descriptor *media = pdblock_d->drives[drive].media;
 
-    fseek(fp, media->data_offset + (block * media->block_size), SEEK_SET);
-    fread(block_buffer, 1, media->block_size, fp);
+    if (fseek(fp, media->data_offset + (block * media->block_size), SEEK_SET) < 0) {
+        pdblock_d->cmd_buffer.error = PD_ERROR_IO;
+    }
+    size_t bytes_read = fread(block_buffer, 1, media->block_size, fp);
+    if (bytes_read != media->block_size) {
+        pdblock_d->cmd_buffer.error = PD_ERROR_IO;
+    }
     for (int i = 0; i < media->block_size; i++) {
         // TODO: for dma we want to simulate the memory map but do not want to burn cycles.
         // the CPU would halt during a DMA and not tick cycles even though the rest of the bus
         // is following the system clock.
         // TODO: So we need a dma_write_memory and dma_read_memory set of routines that do that.
         //write_memory(cpu, addr + i, block_buffer[i]); 
-        cpu->mmu->write(addr + i, block_buffer[i]); 
+        // oops, this is writing into the megaii.
+        pdblock_d->mmu->write(addr + i, block_buffer[i]); 
     }
     pdblock_d->drives[drive].last_block_accessed = block;
     pdblock_d->drives[drive].last_block_access_time = SDL_GetTicksNS();
-    //debug_dump_memory(cpu, addr, addr + media[slot][drive].block_size);
 }
 
-void pdblock2_write_block(cpu_state *cpu, pdblock2_data *pdblock_d, uint8_t drive, uint16_t block, uint16_t addr) {
+void pdblock2_write_block(pdblock2_data *pdblock_d, uint8_t drive, uint16_t block, uint16_t addr) {
 
     // TODO: read the block into the address.
-    static uint8_t block_buffer[512];
+    /* static */ uint8_t block_buffer[512];
     FILE *fp = pdblock_d->drives[drive].file;
     media_descriptor *media = pdblock_d->drives[drive].media;
 
@@ -111,7 +116,7 @@ void pdblock2_write_block(cpu_state *cpu, pdblock2_data *pdblock_d, uint8_t driv
     for (int i = 0; i < media->block_size; i++) {
         // TODO: for dma we want to simulate the memory map but do not want to burn cycles.
         //block_buffer[i] = read_memory(cpu, addr + i); 
-        block_buffer[i] = cpu->mmu->read(addr + i); 
+        block_buffer[i] = pdblock_d->mmu->read(addr + i); 
     }
     fseek(fp, media->data_offset + (block * media->block_size), SEEK_SET);
     fwrite(block_buffer, 1, media->block_size, fp);
@@ -119,7 +124,7 @@ void pdblock2_write_block(cpu_state *cpu, pdblock2_data *pdblock_d, uint8_t driv
     pdblock_d->drives[drive].last_block_access_time = SDL_GetTicksNS();
 }
 
-void pdblock2_execute(cpu_state *cpu, pdblock2_data *pdblock_d) {
+void pdblock2_execute(pdblock2_data *pdblock_d) {
     uint8_t cmd, dev, unit, slot, drive;
     uint16_t block, addr;
 
@@ -154,7 +159,7 @@ void pdblock2_execute(cpu_state *cpu, pdblock2_data *pdblock_d) {
         return;
     }
 
-    if (slot != pdblock_d->_slot) {
+    if (slot != (uint8_t)pdblock_d->_slot) {
         pdblock_d->cmd_buffer.error = PD_ERROR_IO;
         return;
     }
@@ -163,7 +168,7 @@ void pdblock2_execute(cpu_state *cpu, pdblock2_data *pdblock_d) {
         << ", Block: " << std::hex << (int)block << ", Addr: " << std::hex << (int)addr << ", CMD: " 
         << std::hex << (int)cmd << std::endl;
 
-    uint8_t st = pdblock2_status(cpu, pdblock_d, drive);
+    uint8_t st = pdblock2_status(pdblock_d, drive);
     if (st) {
         pdblock_d->cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE;
         return;
@@ -174,12 +179,12 @@ void pdblock2_execute(cpu_state *cpu, pdblock2_data *pdblock_d) {
         pdblock_d->cmd_buffer.status1 = media->block_count & 0xFF;
         pdblock_d->cmd_buffer.status2 = (media->block_count >> 8) & 0xFF;
     } else if (cmd == 0x01) {
-        pdblock2_read_block(cpu, pdblock_d, drive, block, addr);
+        pdblock2_read_block(pdblock_d, drive, block, addr);
         pdblock_d->cmd_buffer.error = 0x00;
         pdblock_d->cmd_buffer.status1 = 0x00;
         pdblock_d->cmd_buffer.status2 = 0x00;
     } else if (cmd == 0x02) {
-        pdblock2_write_block(cpu, pdblock_d, drive, block, addr);
+        pdblock2_write_block(pdblock_d, drive, block, addr);
         pdblock_d->cmd_buffer.error = 0x00;
         pdblock_d->cmd_buffer.status1 = 0x00;
         pdblock_d->cmd_buffer.status2 = 0x00;
@@ -188,15 +193,13 @@ void pdblock2_execute(cpu_state *cpu, pdblock2_data *pdblock_d) {
     }
 }
 
-//bool mount_pdblock2(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descriptor *media) {
-bool mount_pdblock2(pdblock2_data *pdblock_d, uint8_t slot, uint8_t drive, media_descriptor *media) {
-    //pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, (SlotType_t)slot);
+bool mount_pdblock2(pdblock2_data *pdblock_d, uint8_t drive, media_descriptor *media) {
     if (pdblock_d == nullptr) {
         //std::cerr << "pdblock2_mount: pdblock_d is nullptr" << std::endl; 
         return false;
     }
     //if (DEBUG(DEBUG_PD_BLOCK)) printf("Mounting ProDOS block device %s slot %d drive %d\n", media->filename, slot, drive);
-    if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Mounting ProDOS block device " << media->filename << " slot " << slot << " drive " << drive << std::endl;
+    if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Mounting ProDOS block device " << media->filename << " slot: " << pdblock_d->_slot << " drive " << drive << std::endl;
 
     FILE *fp = fopen(media->filename.c_str(), "r+b");
     if (fp == nullptr) {
@@ -212,7 +215,7 @@ bool mount_pdblock2(pdblock2_data *pdblock_d, uint8_t slot, uint8_t drive, media
 bool unmount_pdblock2(pdblock2_data *pdblock_d, uint64_t key) {
     uint8_t slot = key >> 8;
     uint8_t drive = key & 0xFF;
-    //pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, (SlotType_t)slot);
+
     if (pdblock_d->drives[drive].file) {
         fclose(pdblock_d->drives[drive].file);
         pdblock_d->drives[drive].file = nullptr;
@@ -222,9 +225,7 @@ bool unmount_pdblock2(pdblock2_data *pdblock_d, uint64_t key) {
 }
 
 void pdblock2_write_C0x0(void *context, uint32_t addr, uint8_t data) {
-    cpu_state *cpu = (cpu_state *)context;
-    SlotType_t slot = (SlotType_t)((addr - 0xC080) / 0x10);
-    pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, slot);
+    pdblock2_data * pdblock_d = (pdblock2_data *)context;
 
     if ((addr & 0xF) == 0x00) {
         if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "PD_CMD_RESET: " << std::hex << (int)data << std::endl;
@@ -237,15 +238,13 @@ void pdblock2_write_C0x0(void *context, uint32_t addr, uint8_t data) {
         }
     } else if ((addr & 0xF) == 0x02) {
         if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "PD_CMD_EXECUTE: " << std::hex << (int)data << std::endl;
-        pdblock2_execute(cpu, pdblock_d);
+        pdblock2_execute(pdblock_d);
         pdblock_d->cmd_buffer.index = 0;
     } 
 }
 
 uint8_t pdblock2_read_C0x0(void *context, uint32_t addr) {
-    cpu_state *cpu = (cpu_state *)context;
-    SlotType_t slot = (SlotType_t)((addr - 0xC080) / 0x10);
-    pdblock2_data * pdblock_d = (pdblock2_data *)get_slot_state(cpu, slot);
+    pdblock2_data * pdblock_d = (pdblock2_data *)context;
     uint8_t val;
 
     if ((addr & 0xF) == 0x03) {
@@ -265,20 +264,19 @@ uint8_t pdblock2_read_C0x0(void *context, uint32_t addr) {
 
 void init_pdblock2(computer_t *computer, SlotType_t slot)
 {
-    cpu_state *cpu = computer->cpu;
-    
     if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Initializing ProDOS Block2 slot " << slot << std::endl;
     pdblock2_data * pdblock_d = new pdblock2_data;
     pdblock_d->id = DEVICE_ID_PD_BLOCK2;
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 2; j++) {
-            pdblock_d->drives[j].file = nullptr;
-            pdblock_d->drives[j].media = nullptr;
-        }
+    for (int j = 0; j < 2; j++) {
+        pdblock_d->drives[j].file = nullptr;
+        pdblock_d->drives[j].media = nullptr;
     }
-
-    // set in CPU so we can reference later
-    set_slot_state(cpu, slot, pdblock_d);
+    pdblock_d->cmd_buffer.index = 0;
+    pdblock_d->cmd_buffer.error = 0x00;
+    pdblock_d->cmd_buffer.status1 = 0x00;
+    pdblock_d->cmd_buffer.status2 = 0x00;
+    pdblock_d->mmu = computer->cpu->mmu;
+    pdblock_d->_slot = slot;
 
     ResourceFile *rom = new ResourceFile("roms/cards/pdblock2/pdblock2.rom", READ_ONLY);
     if (rom == nullptr) {
@@ -302,17 +300,10 @@ void init_pdblock2(computer_t *computer, SlotType_t slot)
     computer->mounts->register_storage_device(key + 1, thunk, DRIVE_TYPE_PRODOS_BLOCK);
 
     // register.. uh, registers.
-    computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_RESET, { pdblock2_write_C0x0, cpu });
-    computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_PUT, { pdblock2_write_C0x0, cpu });
-    computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_EXECUTE, { pdblock2_write_C0x0, cpu });
-    computer->mmu->set_C0XX_read_handler((slot * 0x10) + PD_ERROR_GET, { pdblock2_read_C0x0, cpu });
-    computer->mmu->set_C0XX_read_handler((slot * 0x10) + PD_STATUS1_GET, { pdblock2_read_C0x0, cpu });
-    computer->mmu->set_C0XX_read_handler((slot * 0x10) + PD_STATUS2_GET, { pdblock2_read_C0x0, cpu });
-
-/* register_C0xx_memory_write_handler((slot * 0x10) + PD_CMD_RESET, pdblock2_write_C0x0);
-    register_C0xx_memory_write_handler((slot * 0x10) + PD_CMD_PUT, pdblock2_write_C0x0);
-    register_C0xx_memory_write_handler((slot * 0x10) + PD_CMD_EXECUTE, pdblock2_write_C0x0);
-    register_C0xx_memory_read_handler((slot * 0x10) + PD_ERROR_GET, pdblock2_read_C0x0);
-    register_C0xx_memory_read_handler((slot * 0x10) + PD_STATUS1_GET, pdblock2_read_C0x0);
-    register_C0xx_memory_read_handler((slot * 0x10) + PD_STATUS2_GET, pdblock2_read_C0x0); */
+    computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_RESET, { pdblock2_write_C0x0, pdblock_d });
+    computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_PUT, { pdblock2_write_C0x0, pdblock_d });
+    computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_EXECUTE, { pdblock2_write_C0x0, pdblock_d });
+    computer->mmu->set_C0XX_read_handler((slot * 0x10) + PD_ERROR_GET, { pdblock2_read_C0x0, pdblock_d });
+    computer->mmu->set_C0XX_read_handler((slot * 0x10) + PD_STATUS1_GET, { pdblock2_read_C0x0, pdblock_d });
+    computer->mmu->set_C0XX_read_handler((slot * 0x10) + PD_STATUS2_GET, { pdblock2_read_C0x0, pdblock_d });
 }
