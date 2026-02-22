@@ -588,6 +588,10 @@ bool debug_window_t::handle_event(SDL_Event &event) {
         }
         switch (event.type) {
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+                if (computer->execution_mode == EXEC_STEP_INTO) { // turn off step mode if they close the window.
+                    computer->execution_mode = EXEC_NORMAL;
+                    computer->instructions_left = 0;
+                }
                 set_closed();
                 break;
             case SDL_EVENT_WINDOW_RESIZED:
