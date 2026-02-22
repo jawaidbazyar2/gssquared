@@ -49,6 +49,7 @@ class IWM_Drive : public StorageDevice {
         led_status = false;
     }
     virtual ~IWM_Drive() {};
+    virtual int get_track() = 0;
     virtual void set_enable(bool enable) {};
     bool get_enabled() { return enabled; }
     bool get_motor_on() { return motor_on; }

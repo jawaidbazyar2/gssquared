@@ -29,7 +29,7 @@ protected:
     virtual bool mount(uint64_t key, media_descriptor *media) = 0;
     virtual bool unmount(uint64_t key) = 0;
     virtual bool writeback() = 0;
-    virtual void nibblize() = 0;
+    //virtual void nibblize() = 0;
     virtual drive_status_t status() = 0;
     virtual void reset() = 0;
 

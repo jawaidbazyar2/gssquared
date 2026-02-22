@@ -23,6 +23,8 @@ class IWM {
 
         SoundEffect *sound_effect;
         SoundEffectContainer_t sounds[5];
+        int running_chunknumber = 0;
+        int start_track_movement = -1;
 
         /* Load our sound effects */
         const char *sound_files[5] = {
@@ -46,7 +48,7 @@ class IWM {
         void request_motor_on() {
             if (drive_selected < 2) { // is a 5.25 
                 mark_cycles_turnoff = 0;
-                motor = 1;
+                motor = true;
                 drives[drive_selected]->set_enable(true);
             }
             //if (DEBUG(DEBUG_DISKII)) printf("request_motor_on: %llu\n", u64_t(mark_cycles_turnoff));
@@ -79,6 +81,14 @@ class IWM {
             reg_handshake = 0; */
         };
 
+        void check_motor_off_timer() {
+            if (mark_cycles_turnoff != 0 && (clock->get_c14m() > mark_cycles_turnoff)) {
+                drives[drive_selected]->set_enable(false);
+                motor = false;
+                mark_cycles_turnoff = 0;
+            }
+        }
+      
         IWM_Drive *get_drive(int index) {
             return drives[index];
         }
@@ -92,9 +102,11 @@ class IWM {
             for (uint32_t i = 0; i < 4; i++) {
                 drives[i]->set_enable(false);
             }
+            mark_cycles_turnoff = 0;
             drive_selected = 0;
             reg_mode = 0;
             reg_handshake = 0;
+            motor = false;
         }
 
         // utility functions
@@ -204,9 +216,10 @@ class IWM {
             }
             /* To write it, turn Q6 and Q7 on and write to any odd-numbered
             address in the $C0E0...$C0EF range. */
-            if (address_odd(address) && iwm_q6 && iwm_q7) {
+            // TODO: I'm disabling this to, I think, make 5.25" floppy work, but unsure how this will interact with 3.5" drive.
+/*             if (address_odd(address) && iwm_q6 && iwm_q7) {
                 drives[drive_selected]->write_data_register(data);
-            }
+            } */
         }
 
         void debug_output(DebugFormatter *df) {
@@ -232,20 +245,17 @@ class IWM {
                 drives[1]->get_led_status(), 
                 drives[2]->get_led_status(), 
                 drives[3]->get_led_status());
+            df->addLine("  Track / Side:  %d          %d          %d          %d      ", drives[0]->get_track(),
+                drives[1]->get_track(),
+                drives[2]->get_track(),
+                drives[3]->get_track());
         }
 
-        void check_motor_off_timer() {
-            if (mark_cycles_turnoff != 0 && (clock->get_c14m() > mark_cycles_turnoff)) {
-                drives[drive_selected]->set_enable(false);
-                motor = 0;
-                mark_cycles_turnoff = 0;
-            }
-        }
-        
+  
     bool diskii_running_last = false;
     int tracknumber_last = 0;
     void soundeffects_update() {
-        int tracknumber = 1; /* drives[drive_select].get_track() */;
+        int tracknumber = drives[drive_selected]->get_track(); /* drives[drive_select].get_track() */;
 
         //printf("diskii_running: %d, tracknumber: %d / %d\n", diskii_running, tracknumber, tracknumber_last);
     
@@ -261,7 +271,7 @@ class IWM {
         }
         
         /* Only queue audio data if sound is enabled */
-        static int running_chunknumber = 0;
+        //static int running_chunknumber = 0;
         if (motor) {
             int dl = (int) sounds[SE_SHUGART_DRIVE].si->wav_data_len / 10;
             if (SDL_GetAudioStreamQueued(sounds[SE_SHUGART_DRIVE].si->stream) < dl) {
@@ -273,7 +283,7 @@ class IWM {
             }
         }
         // minimum track movement is 2. We're called every 1/60th. That's 735 samples.
-        static int start_track_movement = -1;
+        //static int start_track_movement = -1;
         if (tracknumber >= 0 && (tracknumber_last != tracknumber)) {
             // if we have a track movement, play the head movement sound
             // head can move 16.7 / 2.5 tracks per second, about 7.

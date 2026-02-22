@@ -10067,3 +10067,51 @@ this has the control panel working! but self test? yes! PASSED, BEOTCHES!
 my adbtest code does not behave the same way now, of course, I should do something about that.
 
 usa - 08; uk - 28. no, that's not right. Hrm. oh, ha, it's just the top 3 bits. so, 28 IS correct for UK.
+
+## Feb 21, 2026
+
+the topic of input lag in emulators, and latency in emulators generally, came up reading some stuff. This is a topic I have previously considered. Unlike a real Apple II, for instance, we are (generally) only checking for events once in each frame, that's tied in with our overall "videogame" approach. Fine. But I have wondered, does this cause problems with responsiveness to controls in games? Also, when a keypress or mouse movement is "registered" is always exactly in the same place in respect to video, i.e., basically at the very end of a video frame.
+60fps for inputs is generally fine, but, what if we checked for controller inputs 2 or 3 times per frame? A frame could be broken into subframes, and between subframes all we do is process events. Then, key and mouse events could "show up" at various times during code execution, not just always after vbl is over.
+
+(Separately: probably going to need asynchronous disk I/O for hard disk stuff. Floppies we preload into RAM so that's not the same issue).
+
+Also discussed was that double buffering can add latency, and VSYNC adds latency. We generally have vsync off, but some systems might force it, and of course on macOS we've seen weird behavior where the sync gets weird and video updates start taking a large amount of time, probably because of some interaction with the display hardware queing or syncing.
+
+So checking events more frequently would not introduce too much complexity into the main loop. Worth a shot to see if it impacts responsiveness in like Arkanoid.
+
+What are the primary events we're talking about? Keyboard, mouse, game controller. 
+
+Another thing related to this is the discontinuity between input event realtime, and how fast CPU execution occurs. A whole frame of CPU is executed in 4% of the overall frame time. You're just not going to have much overlap between events and the cpu execution for the above to work. What if you enqueue the events and "play" them during CPU execution timed to coincide with relative timing in frame? This would tend to add input latency, as we would be delaying processing the inputs a little more. And the inputs show up to the cpu execution a frame late.
+The only way to fully interleave this is to delay between each cpu instruction execution, oy vey we do not want to go back to that mess!
+Arkanoid could be a different issue, mouse events come in at whatever speed - is it possible we're overwriting (losing) mouse events inside the vm? Give that some thought.
+What if we did say 4 sub-frames, and did a cpu delay *only* for events between subframes, and, timed-delayed each subframe. So then our "events" resolution goes from 60 per second to 240 per second, with some occurring inside the cpu execution.
+
+Claude suggests we might run into some issues with any faster polling. Also suggests we might get away with polling for events every emulated scanline. Holy frijole that seems like a lot. But, 4x per frame is every 65 scanlines or so already. Perhaps that is a reasonable compromise. (Can always crank this up).
+
+
+Need to get the GS 5.25 floppy write stuff fixed. Shouldn't be that hard to unravel. We're clearly generating writes when we don't mean to. (maybe not) That's just going to be around the write_nybble call in iwm.
+
+ok, I have been doing bits of testing here. First thing I did, is get rid of the static variables in the Floppy, diskii and iwm classes. that's just wrong. also not our problem? since just involved in sound effects.
+
+I am a little closer to understanding the failure of floppy on GS. When I try to save a file, the head is slamming against track 0. So something is confused as to where it is. Then after that, load fails, catalog fails, boot fails. If we then unmount (discard) the image and re-mount, we're working again.
+
+Observation: after boot, the ROM has left the floppies on half-track 3 (i.e., track 1.5). that might be meaningful.. 
+CATALOG,D2, starts D2 spinning (and hangs, never get I/O error). ctrl-reset causes head motion sounds, but the spinning sound does not stop. (fixed, had to set 'motor'). 
+[x] on both iie and GS, CATALOG,D2 with no disk in the drive should fail relatively quickly with I/O ERROR. We spin forever.  injecting 32-bit made up number works.
+
+[ ] keygloo - on reset, we lose track of the caps lock status. we should not change that on reset.  
+[x] on GS, sometimes appledisk background is clear, sometimes it's green (hover). need to reset (or ignore) hover status depending on drawing context.  
+
+So we're damaging the media? let's add a debug command to save the current nibblized image so we can examine it with applesauce. Actually, it could be great to add buttons to the "debug" containers. Hmm. For now, I can just use a nibble image and let it write back to the nibble image! Hurdur. 
+
+What seems to be happening is we're getting extra bytes written:
+D5 D5 AA AA AD AD
+that's pretty not correct. 
+Yeah so that whole sector has all the bytes doubled. We're triggering the write-byte twice. 
+yeah, I disabled this in iwm:
+```
+/*  if (address_odd(address) && iwm_q6 && iwm_q7) {
+          drives[drive_selected]->write_data_register(data);
+    } */
+```
+and that fixed it. however, I don't know how that will interact with the 3.5 stuff.
