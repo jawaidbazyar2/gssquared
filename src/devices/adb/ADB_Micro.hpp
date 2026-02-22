@@ -178,7 +178,7 @@ class KeyGloo
             response_index = 0;
             response_bytes = 0;
 
-            vars.currmod.value = 0;
+            vars.currmod.value &= 0b0100; // clear everything except caps lock
             vars.prevmod.value = 0;
             mouse_x_available = MOUSE_X;
             keysdown = 0;
