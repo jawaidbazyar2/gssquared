@@ -639,9 +639,11 @@ void OSD::update() {
         }
     }
 
-    hud_drive_container->remove_all_tiles();
-    if (key_mask) {
+    // update the HUD container.
+    hud_drive_container->remove_all_tiles(); // always clear.. 
+    if ((currentSlideStatus == SLIDE_OUT)  && (key_mask)) {
         // second pass, update the hud container with items matching the key mask.
+        // and set their hover status to false.
         uint32_t hud_index = 0;
         for (int i = 0; i < drive_container->get_tile_count(); i++) {
             Tile_t *tile = drive_container->get_tile(i);
@@ -651,6 +653,7 @@ void OSD::update() {
                 drive_status_t ds = button->get_disk_status();
                 if ((key & 0xFFFFFF00) == key_mask) {
                     hud_drive_container->add_tile(button, hud_index++);
+                    button->on_hover_changed(false);
                 }
             }            
         }

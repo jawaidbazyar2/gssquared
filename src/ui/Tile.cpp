@@ -195,7 +195,7 @@ void Tile_t::set_click_callback(EventHandler handler) {
 }
 
 /**
- * @brief Called when the hover state changes.
+ * @brief Called to change hover status.
  * @param hovering True if the mouse is now hovering, false otherwise.
  */
 void Tile_t::on_hover_changed(bool hovering) {
