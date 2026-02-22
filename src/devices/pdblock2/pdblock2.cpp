@@ -291,12 +291,8 @@ void init_pdblock2(computer_t *computer, SlotType_t slot)
     // memory-map the page. Refactor to have a method to get and set memory map.
     uint8_t *rom_data = (uint8_t *)(rom->get_data());
 
+    // register slot ROM
     computer->mmu->set_slot_rom(slot, rom_data, "PDBLK_ROM");
-
-    // load the firmware into the slot memory -- refactor this
-    /* for (int i = 0; i < 256; i++) {
-        raw_memory_write(cpu, 0xC000 + (slot * 0x0100) + i, rom_data[i]);
-    } */
 
     // register drives with mounts for status reporting
     uint64_t key = (slot << 8) | 0;
