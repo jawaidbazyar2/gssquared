@@ -144,7 +144,7 @@ void generate_ensoniq_frame(ensoniq_state_t *st) {
         return;
     }
     // TODO: is there a way to only generate an audio frame samples when we have actually finished a video frame?
-    if (st->computer->cpu->execution_mode != EXEC_NORMAL) {
+    if (st->computer->execution_mode != EXEC_NORMAL) {
         return;
     }
     // Calculate samples per frame based on ES5503 output rate and frame rate

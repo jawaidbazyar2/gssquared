@@ -10099,7 +10099,7 @@ Observation: after boot, the ROM has left the floppies on half-track 3 (i.e., tr
 CATALOG,D2, starts D2 spinning (and hangs, never get I/O error). ctrl-reset causes head motion sounds, but the spinning sound does not stop. (fixed, had to set 'motor'). 
 [x] on both iie and GS, CATALOG,D2 with no disk in the drive should fail relatively quickly with I/O ERROR. We spin forever.  injecting 32-bit made up number works.
 
-[ ] keygloo - on reset, we lose track of the caps lock status. we should not change that on reset.  
+[x] keygloo - on reset, we lose track of the caps lock status. we should not change that on reset.  
 [x] on GS, sometimes appledisk background is clear, sometimes it's green (hover). need to reset (or ignore) hover status depending on drawing context.  
 
 So we're damaging the media? let's add a debug command to save the current nibblized image so we can examine it with applesauce. Actually, it could be great to add buttons to the "debug" containers. Hmm. For now, I can just use a nibble image and let it write back to the nibble image! Hurdur. 
@@ -10147,10 +10147,22 @@ uh, ok what's supposed to be 3 bytes past this entry point? Are they assuming sm
 smartport was iigs firmware ref, I think.. reading time.
 "Therefore, the SmartPort entry point is $Cn00 plus 3 plus the value found at $CnFF." --- GS FW Ref, pg 115
 Yeah, so it's assuming we're smartport, even though we don't have the smartport ID byte at $C507 == 00.
-it's clearly the airheart code doing this.
+it's clearly the airheart code (or TR) doing this.
 I think we're also perhaps stomping on our internal code when we pass in bogus values for device ID / slot whatever into pdblock2, hence that crash earlier in iiememory..
 let's go make sure we are ignoring bogus values there. yeah there are no checks. Need to flatten the data structure, make it track data for this slot only, then add checks to ensure the slot and drive and block number etc are rational.
 
-OK, did all that. NOTE: pdblock2 still queries computer->cpu, because it wants the **cpu's** mmu - i.e., NOT the megaii. computer->mmu is always either a regular apple ii, or the megaii. This is I think unique in . Note, this also always reads data into bank 0, then has to copy it to some other bank, when we're in GS/OS. It's impressive this actually works in GS/OS, I guess they covered this case. Total Replay/Airheart, however, did not!
+OK, did all that. NOTE: pdblock2 still queries computer->cpu, because it wants the **cpu's** mmu - i.e., NOT the megaii. computer->mmu is always either a regular apple ii, or the megaii. This is I think unique among the slot devices, because this is "DMA". Still should create a DMA interface in the code somewhere. Note, this also always reads data into bank 0, then has to copy it to some other bank, when we're in GS/OS. It's impressive this actually works in GS/OS, I guess they covered this case. Total Replay/Airheart, however, did not!
 
 Ultimately, the solution is to implement not a ProDOS Block device, but a SmartPort device, and deprecate the current pdblock2 code. But this carried us a long way!
+
+The Airheart floppy also fails on the GS, due to getting into a loop reading C0EC and getting nothing but FF. 
+But Airheart floppy works on IIe. So there is some subtle behavior difference between DiskII and IWM here. (or, maybe, in ProDOS. It is reading C0EC directly, not indexed..) (Er, it worked ok for me this time?)
+
+[ ] put back the thing that stops disk noise when in single-step  
+
+So this needs to know the execution mode. Currently, that's in cpu->. However, nothing in cpu itself actually uses this. Other options:
+clock; computer;
+
+Things that check execution_mode are: gs2 main loop; debug window of course; diskii/iwm; these already have access to computer, and, it is sort of part of the computer state. 
+
+[ ] if we're in single step mode and the debug window is closed, automatically switch back to EXEC_NORMAL.  

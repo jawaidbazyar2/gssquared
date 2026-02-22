@@ -26,6 +26,14 @@ class Mounts;
 class EventTimer;
 class VideoScannerII;
 
+
+enum execution_modes_t {
+    EXEC_NORMAL = 0,
+    EXEC_STEP_INTO,
+    //EXEC_STEP_OVER // no longer used?
+};
+
+
 struct computer_t {
 
     using ResetHandler = std::function<bool ()>;
@@ -89,6 +97,10 @@ struct computer_t {
     video_scanner_t video_scanner = Scanner_AppleII;
     //clock_mode_info_t *clock = nullptr;
     NClockII *clock = nullptr;
+
+    // controls for single-step
+    execution_modes_t execution_mode = EXEC_NORMAL;
+    uint64_t instructions_left = 0;
 
     void set_clock(NClockII *clock); 
     

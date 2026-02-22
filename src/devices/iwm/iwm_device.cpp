@@ -43,6 +43,7 @@ DebugFormatter *debug_iwm(iwm_state_t *st) {
 void init_iwm_slot(computer_t *computer, SlotType_t slot) {
 
     iwm_state_t *st = new iwm_state_t();
+    st->computer = computer;
     st->iwm = new IWM(computer->sound_effect, computer->clock);
 
     for (uint32_t i = 0xC0E0; i <= 0xC0EF; i++) {
@@ -81,9 +82,10 @@ void init_iwm_slot(computer_t *computer, SlotType_t slot) {
             // motor off timer check. WAY easier to do here than in the drive.
             st->iwm->check_motor_off_timer();
 
-            //if (cpu->execution_mode == EXEC_NORMAL) {
-            if (st->iwm->get_motor()) {
-                st->iwm->soundeffects_update();
+            if (st->computer->execution_mode == EXEC_NORMAL) {
+                if (st->iwm->get_motor()) {
+                    st->iwm->soundeffects_update();
+                }
             }
             return true;
         });

@@ -259,10 +259,10 @@ void run_cpus(computer_t *computer) {
             }
         }
 
-        if (cpu->execution_mode == EXEC_STEP_INTO) {
+        if (computer->execution_mode == EXEC_STEP_INTO) {
 
             /* This will run about 60fps, primarily waiting on user input in the debugger window. */
-            while (cpu->instructions_left) {
+            while (computer->instructions_left) {
                 if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                     computer->event_timer->processEvents(clock->get_c14m());
                 }
@@ -270,7 +270,7 @@ void run_cpus(computer_t *computer) {
                     computer->vid_event_timer->processEvents(clock->get_vid_cycles());
                 }
                 (cpu->cpun->execute_next)(cpu);
-                cpu->instructions_left--;
+                computer->instructions_left--;
             }
 
             MEASURE(computer->event_times, frame_event(computer, cpu));
@@ -304,7 +304,7 @@ void run_cpus(computer_t *computer) {
             uint64_t wakeup_time = last_cycle_time + 16667000;
             SDL_DelayPrecise(wakeup_time - SDL_GetTicksNS());
             
-        } else if ((cpu->execution_mode == EXEC_NORMAL) && (clock->get_clock_mode() != CLOCK_FREE_RUN)) {
+        } else if ((computer->execution_mode == EXEC_NORMAL) && (clock->get_clock_mode() != CLOCK_FREE_RUN)) {
 
             computer->set_frame_start_cycle();
 
@@ -318,8 +318,8 @@ void run_cpus(computer_t *computer) {
                     }
                     // do the pre check.
                     if (computer->debug_window->check_pre_breakpoint(cpu)) {
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
 
@@ -327,13 +327,13 @@ void run_cpus(computer_t *computer) {
                     
                     // Do the post check.
                     if (computer->debug_window->check_post_breakpoint(&cpu->trace_entry)) {
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
                     if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
                 
@@ -362,7 +362,7 @@ void run_cpus(computer_t *computer) {
             MEASURE(computer->device_times, computer->device_frame_dispatcher->dispatch());
     
             /* Emit Video Frame */
-            if (cpu->execution_mode != EXEC_STEP_INTO) {
+            if (computer->execution_mode != EXEC_STEP_INTO) {
                 MEASURE(computer->display_times, frame_video_update(computer, cpu));
             }
     
@@ -404,21 +404,21 @@ void run_cpus(computer_t *computer) {
                         computer->vid_event_timer->processEvents(clock->get_vid_cycles());
                     }
                     if (computer->debug_window->check_pre_breakpoint(cpu)) {
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
 
                     (cpu->cpun->execute_next)(cpu);
                     
                     if (computer->debug_window->check_post_breakpoint(&cpu->trace_entry)) {
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
                     if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
                 

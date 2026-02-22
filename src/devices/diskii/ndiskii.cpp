@@ -267,8 +267,9 @@ void init_slot_ndiskII(computer_t *computer, SlotType_t slot) {
             // motor off timer check. WAY easier to do here than in the drive.
             diskII_d->dc->check_motor_off_timer();
 
-            //if (cpu->execution_mode == EXEC_NORMAL) {
-            diskII_d->dc->soundeffects_update();
+            if (diskII_d->computer->execution_mode == EXEC_NORMAL) {
+                diskII_d->dc->soundeffects_update();
+            }
             return true;
         });
  

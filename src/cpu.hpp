@@ -47,12 +47,6 @@
 #define N_BRK_VECTOR    0xFFE6
 #define N_COP_VECTOR    0xFFE4
 
-enum execution_modes_t {
-    EXEC_NORMAL = 0,
-    EXEC_STEP_INTO,
-    //EXEC_STEP_OVER // no longer used?
-};
-
 // a couple forward declarations
 struct cpu_state;
 class Mounts;
@@ -224,8 +218,6 @@ struct cpu_state {
     bool trace = false;
     system_trace_buffer *trace_buffer = nullptr;
     system_trace_entry_t trace_entry;
-    execution_modes_t execution_mode = EXEC_NORMAL;
-    uint64_t instructions_left = 0;
 
     //void init();
     cpu_state(processor_type cpu_type);
