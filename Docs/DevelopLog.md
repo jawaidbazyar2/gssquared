@@ -10115,3 +10115,42 @@ yeah, I disabled this in iwm:
     } */
 ```
 and that fixed it. however, I don't know how that will interact with the 3.5 stuff.
+
+OK, well I should now do:
+
+[ ] implement Disk Speed register  
+
+## Feb 22, 2026
+
+looking at why Airheart bombs.
+
+It's actually crashing after code inside my prodos block device. Trying to write to registers except that X is 02, instead of being 50. Also, $C563 is not an expected entry point.
+So, is this trying to jump to some routine inside the IIe rom there? 
+ok, debug iiememory crashes.. and it doesn't running in debug mode. WEIRD. It was a printf inside the debug emitter.
+
+625D: JSR $0597
+0597: JSR $C563
+-- wrong code --
+this is constructed:
+6210: LDY BF11,Y (C5 - so far so good)
+CPX #C8
+bcc 623b
+sta 6243
+stx 0599
+6241: ldx c5ff <- this was modified by the stx preceding
+inx
+inx
+inx
+stx 598
+
+uh, ok what's supposed to be 3 bytes past this entry point? Are they assuming smartport and we're not smartport?
+smartport was iigs firmware ref, I think.. reading time.
+"Therefore, the SmartPort entry point is $Cn00 plus 3 plus the value found at $CnFF." --- GS FW Ref, pg 115
+Yeah, so it's assuming we're smartport, even though we don't have the smartport ID byte at $C507 == 00.
+it's clearly the airheart code doing this.
+I think we're also perhaps stomping on our internal code when we pass in bogus values for device ID / slot whatever into pdblock2, hence that crash earlier in iiememory..
+let's go make sure we are ignoring bogus values there. yeah there are no checks. Need to flatten the data structure, make it track data for this slot only, then add checks to ensure the slot and drive and block number etc are rational.
+
+OK, did all that. NOTE: pdblock2 still queries computer->cpu, because it wants the **cpu's** mmu - i.e., NOT the megaii. computer->mmu is always either a regular apple ii, or the megaii. This is I think unique in . Note, this also always reads data into bank 0, then has to copy it to some other bank, when we're in GS/OS. It's impressive this actually works in GS/OS, I guess they covered this case. Total Replay/Airheart, however, did not!
+
+Ultimately, the solution is to implement not a ProDOS Block device, but a SmartPort device, and deprecate the current pdblock2 code. But this carried us a long way!
