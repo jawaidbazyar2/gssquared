@@ -64,7 +64,7 @@ struct pdblock_cmd_buffer {
 struct pdblock2_data: public SlotData {
     uint8_t *rom;
     pdblock_cmd_buffer cmd_buffer;
-    media_t prodosblockdevices[8][2];
+    media_t drives[2];
 };
 
 enum pdblock_cmd {
