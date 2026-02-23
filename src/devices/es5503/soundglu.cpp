@@ -3,7 +3,7 @@
 #include <SDL3/SDL.h>
 #include "computer.hpp"
 #include "devices/es5503/ensoniq.hpp"
-#include "devices/speaker/speaker.hpp"
+//#include "devices/speaker/speaker.hpp"
 #include "soundglu.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/DebugHandlerIDs.hpp"
@@ -222,9 +222,6 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
         computer->mmu->set_C0XX_write_handler(i, { ensoniq_write_C0xx, st });
         computer->mmu->set_C0XX_read_handler(i, { ensoniq_read_C0xx, st });
     }
-
-    speaker_state_t *speaker_d = (speaker_state_t *)get_module_state(computer->cpu, MODULE_SPEAKER);
-    //int dev_id = speaker_d->device_id;
 
     // Calculate frame rate
     st->frame_rate = (double)computer->clock->get_c14m_per_second() / (double)computer->clock->get_c14m_per_frame();
