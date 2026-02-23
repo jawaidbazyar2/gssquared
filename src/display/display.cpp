@@ -1315,9 +1315,9 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     uint16_t f_w = BASE_WIDTH+20;
     uint16_t f_h = BASE_HEIGHT;
     //ds->frame_rgba = new(std::align_val_t(64)) Frame560RGBA(567, f_h, ds->screenTexture);
-    ds->frame_rgba = new(std::align_val_t(64)) Frame560RGBA(567, f_h, vs->renderer, PIXEL_FORMAT);
+    ds->frame_rgba = new Frame560RGBA(567, f_h, vs->renderer, PIXEL_FORMAT);
     ds->screenTexture = ds->frame_rgba->get_texture();
-    ds->frame_bits = new(std::align_val_t(64)) Frame560(560, f_h);
+    ds->frame_bits = new Frame560(560, f_h);
     //ds->frame_rgba->clear(RGBA_t::make(0, 0, 0, 0)); // clear the frame buffers at startup.
     //ds->frame_bits->clear(0);
 
