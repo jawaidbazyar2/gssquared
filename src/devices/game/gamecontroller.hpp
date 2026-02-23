@@ -88,8 +88,11 @@ typedef struct gamec_state_t {
 
     gamepad_state gps[MAX_GAMEPAD_COUNT];   
 
+    uint8_t annunciators[4] = {0, 0, 0, 0};
+
     EventQueue *event_queue;
     MMU_II *mmu;
+    cpu_state *cpu;
     NClock *clock;
 
     JoystickValues last_jv = {0, 0};
