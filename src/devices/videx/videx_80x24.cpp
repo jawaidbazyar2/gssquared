@@ -84,8 +84,6 @@ void render_videx_scanline_80x24(cpu_state *cpu, videx_data * videx_d, int y, vo
 }
 
 void videx_render_line(cpu_state *cpu, videx_data * videx_d, int y) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
-
     // the texture is our canvas. When we 'lock' it, we get a pointer to the pixels, and the pitch which is pixels per row
     // of the area. Since all our chars are the same we can just use the same pitch for all our chars.
 
@@ -147,21 +145,6 @@ void update_display_videx(cpu_state *cpu, /* SlotType_t slot */ videx_data * vid
     SDL_SetTextureBlendMode(videx_d->videx_texture, SDL_BLENDMODE_ADD); // double-draw this to increase brightness.
     vs->render_frame(videx_d->videx_texture, nullptr, &ds->ii_borders[B_CEN][B_CEN].dst);
     vs->render_frame(videx_d->videx_texture, nullptr, &ds->ii_borders[B_CEN][B_CEN].dst);
-}
-
-void videx_memory_write(cpu_state *cpu, SlotType_t slot, uint16_t address, uint8_t value) {
-    //videx_data * videx_d = (videx_data *)get_module_state(cpu, MODULE_VIDEX);
-    videx_data * videx_d = (videx_data *)get_slot_state(cpu, slot);
-    uint16_t faddr = (videx_d->selected_page * 2) * 0x100 + (address & 0x1FF);
-    videx_d->screen_memory[faddr] = value;
-    videx_set_line_dirty_by_addr(videx_d, faddr);
-}
-
-uint8_t videx_memory_read(cpu_state *cpu, SlotType_t slot, uint16_t address) {
-    //videx_data * videx_d = (videx_data *)get_module_state(cpu, MODULE_VIDEX);
-    videx_data * videx_d = (videx_data *)get_slot_state(cpu, slot);
-    uint16_t faddr = (videx_d->selected_page * 2) * 0x100 + (address & 0x1FF);
-    return videx_d->screen_memory[faddr];
 }
 
 void videx_memory_write2(void *context, uint32_t address, uint8_t value) {
