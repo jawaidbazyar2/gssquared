@@ -310,8 +310,7 @@ target_link_libraries(gs2_devices_iwm gs2_devices_diskii_fmt)
 
 # Add the executable
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
-    src/display/text_40x24.cpp src/display/hgr_280x192.cpp src/display/display.cpp
-    #src/devices/diskii/diskii.cpp
+    src/display/display.cpp
     src/platforms.cpp
     src/devices.cpp src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
