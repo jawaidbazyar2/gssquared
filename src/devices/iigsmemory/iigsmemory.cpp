@@ -27,8 +27,6 @@ void init_iigsmemory(computer_t *computer, SlotType_t slot) {
 
     gsm->mmu_iigs = (MMU_IIgs *)computer->cpu->mmu;
 
-    //gsm->display_state = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
-
     computer->set_module_state(MODULE_IIGSMEMORY, gsm);
     
     /* C050 read/write */
