@@ -235,18 +235,17 @@ void run_cpus(computer_t *computer) {
     uint64_t last_start_frame_c14m = 0;
 
     speaker_state_t *speaker_state = (speaker_state_t *)computer->get_module_state(MODULE_SPEAKER);
+    display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
 
     while (cpu->halt != HLT_USER) { // top of frame.
 
         uint64_t c14M_per_frame = clock->get_c14m_per_frame();
 
         if (computer->speed_shift) {
-            display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
             computer->speed_shift = false;
 
             if (clock->get_clock_mode() == CLOCK_FREE_RUN) {
-                speaker_state_t *ss = (speaker_state_t *)computer->get_module_state(MODULE_SPEAKER);
-                ss->sp->reset(clock->get_frame_start_c14M());
+                speaker_state->sp->reset(clock->get_frame_start_c14M());
             }
 
             clock->set_clock_mode(computer->speed_new);
