@@ -72,8 +72,10 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     printf("file_dialog_callback: %s\n", filelist[0]);
     
     // Remember the full file path for next time - SDL3 uses it to determine initial directory
-    std::string filepath(filelist[0]);
-    Paths::set_last_file_dialog_dir(filepath);
+    if (filelist[0] != nullptr) {
+        std::string filepath(filelist[0]);
+        Paths::set_last_file_dialog_dir(filepath);
+    }
     
     // 1. unmount current image (if present).
     // 2. mount new image.
