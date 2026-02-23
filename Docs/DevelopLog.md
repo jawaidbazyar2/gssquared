@@ -10158,11 +10158,50 @@ Ultimately, the solution is to implement not a ProDOS Block device, but a SmartP
 The Airheart floppy also fails on the GS, due to getting into a loop reading C0EC and getting nothing but FF. 
 But Airheart floppy works on IIe. So there is some subtle behavior difference between DiskII and IWM here. (or, maybe, in ProDOS. It is reading C0EC directly, not indexed..) (Er, it worked ok for me this time?)
 
-[ ] put back the thing that stops disk noise when in single-step  
+[x] put back the thing that stops disk noise when in single-step  
 
 So this needs to know the execution mode. Currently, that's in cpu->. However, nothing in cpu itself actually uses this. Other options:
 clock; computer;
 
 Things that check execution_mode are: gs2 main loop; debug window of course; diskii/iwm; these already have access to computer, and, it is sort of part of the computer state. 
 
-[ ] if we're in single step mode and the debug window is closed, automatically switch back to EXEC_NORMAL.  
+[x] if we're in single step mode and the debug window is closed, automatically switch back to EXEC_NORMAL.  
+
+I must be getting pretty close to eliminating the slot store and module store from the cpu struct, maybe eliminating them entirely.
+get_slot_state is still used in: memexp; parallel; prodos_clock; thunderclockplus; videx. All the oldest //e cards. module_state is still used by most of the motherboard based devices. but also memexp, ugh. Some of these may need data from other modules, but, we have better ways to do that.
+
+[ ] refactor to eliminate use of get/set_slot_state.
+[ ] refactor to eliminate use of get/set_module_state.
+
+Well should we go ahead and do a SmartPort HD now?
+
+What drives OSD behavior on a button click? OK, the semantics are built into OSD, which is probably not what we want.
+
+Today:
+click on disk.
+  if empty, allows to mount.
+  if full, unmounts.
+
+We could have a "click" handler, and it will pass back to OSD an instruction on what to do.
+  select image and mount, return key.
+  unmount(key)
+  ask if user wants to save changes (key)
+  writeback(key)
+or maybe we should add an eject icon (or many). This would be tied to a key.
+How do we display? Would need to iterate subunits to get names.  ok.. so let's say the button is variable size. Let's further say that we give the Buttons the ability to call Mounts and get their own status on update? Then the hard drive looks like. It's double-wide (is that possible in a container?):
+[                   ]
+[                   ]
+[ Item 1        [x] ]
+[ Item 2        [x] ]
+...
+each line has its own x. Each line has its own eject button area. 
+
+Can a button be itself but also have other buttons inside it? Why, yes, I believe so. 
+
+Is Container a fixed grid, or... it calculates largest tile size and bases the grid on that. That won't work here.
+
+Define a new type of Container, DriveContainer, where you specify the grid size, and the container size, and layout is specialized for what we need here for drives: a tile is 1 or 2 wide; and arbitrary height (based on each line's tile(s) heights).
+
+or for this release just do two smartport "drives". like we have now, but SmartPort protocol.
+
+[x] if a disk image open is cancelled, the "last file opened" is forgotten.

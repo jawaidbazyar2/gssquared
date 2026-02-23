@@ -293,6 +293,13 @@ looks like it's trying to in#4 to read mouse.
 
 ## AirHeart
 
-crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff.
+crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff. 
+This is due to something confusing our drive for a smartport, and jmp'ing to $Cx63 which is not a valid entry point in our code.
 
 The -regular- version of Airheart works fine.
+
+TR seems to be seeing our device, assuming it's a SmartPort, and calling a nonexistent routine.
+
+## Arkanoid
+
+This has same problem as Airheart.

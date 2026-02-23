@@ -55,7 +55,11 @@ seems to work all video modes
 
 ## Bard's Tale II: Destiny Knight
 
-My recollection is this worked ok.
+My recollection is this worked ok. Well something was working somewhere, because I walked around a town, however, it is decidedly not working now. It's doing weird disk stuff then going kablooey.
+
+## Bard's Tale I
+
+boots to "NO SMARTPORT" error. Doesn't like running off the hard disk.
 
 ## Christmas Music (Christmas.2mg)
 
@@ -111,6 +115,8 @@ After fixing State/C068/LCBNK2 was incorrect, we now boot to finder!
 The mouse isn't moving, probably because interrupts are not hooked up yet.
 
 you can select some things in the UI via keyboard, but joystick is not responding.
+
+WORKS NOW, joystick and keyboard controls. I wonder if this hits the joystick from E1. 
 
 ## Apple IIgs Tour
 
