@@ -128,8 +128,6 @@ void pdblock2_execute(pdblock2_data *pdblock_d) {
     uint8_t cmd, dev, unit, slot, drive;
     uint16_t block, addr;
 
-    //pdblock2_data * pdblock_d = (pdblock2_data *)get_module_state(cpu, MODULE_PD_BLOCK2);
-
     if (DEBUG(DEBUG_PD_BLOCK)) pdblock2_print_cmdbuffer(&pdblock_d->cmd_buffer);
 
     uint8_t cksum = 0;
