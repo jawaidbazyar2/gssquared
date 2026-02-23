@@ -284,8 +284,7 @@ void set_display_page2(display_state_t *ds) {
  * This is effectively a "redraw the entire screen each frame" method now.
  * With an optimization only update dirty lines.
  */
-bool update_display_apple2(cpu_state *cpu) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+bool update_display_apple2(display_state_t *ds) {
     video_system_t *vs = ds->video_system;
 
     // first push flash state into AppleII_Display
@@ -412,8 +411,7 @@ bool update_display_apple2(cpu_state *cpu) {
 }
 
 
-bool update_display_apple2_cycle(cpu_state *cpu) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+bool update_display_apple2_cycle(display_state_t *ds) {
     video_system_t *vs = ds->video_system;
 
     ScanBuffer *frame_scan = ds->video_scanner->get_frame_scan();
@@ -442,8 +440,7 @@ bool update_display_apple2_cycle(cpu_state *cpu) {
     return true;
 }
 
-bool update_display_apple2gs_cycle(cpu_state *cpu) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+bool update_display_apple2gs_cycle(display_state_t *ds) {
     video_system_t *vs = ds->video_system;
 
     ScanBuffer *frame_scan = ds->video_scanner->get_frame_scan();
@@ -795,8 +792,7 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
 }
 
 
-void update_flash_state(cpu_state *cpu) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+void update_flash_state(display_state_t *ds) {
     display_page_t *display_page = ds->display_page_table;
     uint16_t *TEXT_PAGE_TABLE = display_page->text_page_table;
     
@@ -1469,24 +1465,24 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     }
 
     if (ds->video_scanner_type == Scanner_AppleIIgs) {
-        vs->register_frame_processor(0, [ds, cpu](bool force_full_frame) -> bool {
+        vs->register_frame_processor(0, [ds](bool force_full_frame) -> bool {
             bool ret;
             if (ds->framebased || force_full_frame) {
-                update_flash_state(cpu);
-                ret = update_display_apple2(cpu);
+                update_flash_state(ds);
+                ret = update_display_apple2(ds);
             } else {
-                ret = update_display_apple2gs_cycle(cpu);
+                ret = update_display_apple2gs_cycle(ds);
             }
             return ret;
         });
     } else {
-        vs->register_frame_processor(0, [ds, cpu](bool force_full_frame) -> bool {
+        vs->register_frame_processor(0, [ds](bool force_full_frame) -> bool {
             bool ret;
             if (ds->framebased || force_full_frame) {
-                update_flash_state(cpu);
-                ret = update_display_apple2(cpu);
+                update_flash_state(ds);
+                ret = update_display_apple2(ds);
             } else {
-                ret = update_display_apple2_cycle(cpu);
+                ret = update_display_apple2_cycle(ds);
             }
             return ret;
         });
