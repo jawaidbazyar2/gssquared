@@ -18,15 +18,12 @@
 #pragma once
 
 #include <cstdint>
-#include <stddef.h>
 #include <cstdint>
 #include <memory>
 
 #include <SDL3/SDL.h>
 
-#include "SlotData.hpp"
 #include "debugger/trace.hpp"
-#include "Module_ID.hpp"
 #include "cpus/processor_type.hpp"
 #include "cpus/cpu_traits.hpp"
 
@@ -46,12 +43,6 @@
 #define N_ABORTB_VECTOR 0xFFE8
 #define N_BRK_VECTOR    0xFFE6
 #define N_COP_VECTOR    0xFFE4
-
-// a couple forward declarations
-struct cpu_state;
-class Mounts;
-struct debug_window_t;
-
 
 struct cpu_state {
     union {
@@ -188,10 +179,9 @@ struct cpu_state {
     bool clock_stopped = false; /* if set, the clock is stopped */
 
     uint8_t halt = 0; /* == 1 is HLT instruction halt; == 2 is user halt */
-    //uint64_t cycles; /* Number of cpu cycles since poweron */
 
     uint64_t irq_asserted = 0; /** bits 0-7 correspond to slot IRQ lines slots 0-7. */
-    //uint8_t skip_next_irq_check = 0; /* if set, skip the next IRQ check */
+
     bool ICHANGE = false; /* if set, the I flag has changed */
     bool EFFI = 0; /* if set, the E flag has changed */
     bool rdy = false; /* if set, the RDY signal is asserted */
@@ -206,11 +196,8 @@ struct cpu_state {
     double fps = 0;
     float idle_percent = 0.0f;
 
-    //execute_next_fn execute_next;
     std::unique_ptr<BaseCPU> cpun; // CPU instance.
     BaseCPU *core = nullptr;
-
-    void *module_store[MODULE_NUM_MODULES];
 
     /* Tracing & Debug */
     /* These are CPU controls, leave them here */
@@ -218,7 +205,6 @@ struct cpu_state {
     system_trace_buffer *trace_buffer = nullptr;
     system_trace_entry_t trace_entry;
 
-    //void init();
     cpu_state(processor_type cpu_type);
     ~cpu_state();
 
@@ -245,6 +231,3 @@ struct cpu_state {
 extern struct cpu_state *CPUs[MAX_CPUS];
 
 const char* processor_get_name(int processor_type);
-
-void *get_module_state(cpu_state *cpu, module_id_t module_id);
-void set_module_state(cpu_state *cpu, module_id_t module_id, void *state);

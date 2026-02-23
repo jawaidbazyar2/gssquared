@@ -149,7 +149,7 @@ void deinit_slot_videx(videx_data *videx_d) {
 
 bool videx_frame(videx_data *videx_d) {
     cpu_state *cpu = videx_d->cpu;
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+    display_state_t *ds = (display_state_t *)videx_d->computer->get_module_state(MODULE_DISPLAY);
 
     // the backbuffer must be cleared each frame. The docs state this clearly
     // but I didn't know what the backbuffer was. Also, I assumed doing it once
@@ -181,6 +181,7 @@ void init_slot_videx(computer_t *computer, SlotType_t slot) {
     videx_data * videx_d = new videx_data;
     videx_d->video_system = vs;
     videx_d->mmu = computer->mmu;
+    videx_d->computer = computer;
     videx_d->cpu = cpu;
     videx_d->clock = computer->clock;
 

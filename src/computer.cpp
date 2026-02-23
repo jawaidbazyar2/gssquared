@@ -23,6 +23,11 @@
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
 
+    // initialize module store to nullptr.
+    for (int i = 0; i < MODULE_NUM_MODULES; i++) {
+        module_store[i] = nullptr;
+    }
+
     // lots of stuff is going to need this.
     event_queue = new EventQueue();
     if (!event_queue) {
@@ -175,7 +180,7 @@ void DeviceFrameDispatcher::dispatch() {
 
 /** State storage for non-slot devices. */
 void *computer_t::get_module_state(module_id_t module_id) {
-    void *state = cpu->module_store[module_id];
+    void *state = module_store[module_id];
     if (state == nullptr) {
         fprintf(stderr, "Module %d not initialized\n", module_id);
     }
@@ -183,7 +188,7 @@ void *computer_t::get_module_state(module_id_t module_id) {
 }
 
 void computer_t::set_module_state(module_id_t module_id, void *state) {
-    cpu->module_store[module_id] = state;
+    module_store[module_id] = state;
 }
 
 // TODO: should live inside a reconstituted clock class.

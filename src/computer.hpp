@@ -94,7 +94,6 @@ struct computer_t {
     uint64_t frame_start_cycle = 0;
 
     video_scanner_t video_scanner = Scanner_AppleII;
-    //clock_mode_info_t *clock = nullptr;
     NClockII *clock = nullptr;
 
     // controls for single-step

@@ -93,6 +93,7 @@ class NClockII;
 typedef struct videx_data: public SlotData {
     video_system_t *video_system = nullptr;
     MMU_II *mmu = nullptr;
+    computer_t *computer = nullptr;
     cpu_state *cpu = nullptr;
     NClockII *clock = nullptr;
     

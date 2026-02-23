@@ -811,7 +811,7 @@ void update_flash_state(display_state_t *ds) {
  * doubles scanlines and returns 2* the "native" height. */
 
 void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *width, uint32_t *height) {
-    display_state_t *ds = (display_state_t *)get_module_state(computer->cpu, MODULE_DISPLAY);
+    display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
     // pass back the size.
     uint32_t w = BASE_WIDTH+7;
     *width = w;
@@ -1332,7 +1332,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     SDL_SetTextureScaleMode(ds->screenTexture, SDL_SCALEMODE_NEAREST);
 
     // set in CPU so we can reference later
-    set_module_state(cpu, MODULE_DISPLAY, ds);
+    computer->set_module_state(MODULE_DISPLAY, ds);
     
     mmu->set_C0XX_read_handler(0xC050, { txt_bus_read_C050, ds });
     mmu->set_C0XX_write_handler(0xC050, { txt_bus_write_C050, ds });

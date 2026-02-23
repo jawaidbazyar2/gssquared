@@ -21,19 +21,6 @@
 
 #include "cpu.hpp"
 
-/** State storage for non-slot devices. */
-void *get_module_state(cpu_state *cpu, module_id_t module_id) {
-    void *state = cpu->module_store[module_id];
-    if (state == nullptr) {
-        fprintf(stderr, "Module %d not initialized\n", module_id);
-    }
-    return state;
-}
-
-void set_module_state(cpu_state *cpu, module_id_t module_id, void *state) {
-    cpu->module_store[module_id] = state;
-}
-
 cpu_state::cpu_state(processor_type cpu_type) {
     full_db = 0;
     full_pc = 0; // was 0x400 from original tests, ha!
@@ -47,11 +34,6 @@ cpu_state::cpu_state(processor_type cpu_type) {
     
     trace = true;
     trace_buffer = new system_trace_buffer(100000, cpu_type);
-
-    // initialize these things
-    for (int i = 0; i < MODULE_NUM_MODULES; i++) {
-        module_store[i] = nullptr;
-    }
 }
 
 void cpu_state::set_processor(processor_type new_cpu_type) {

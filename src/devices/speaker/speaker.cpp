@@ -169,7 +169,7 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     
     speaker_state->speaker_recording = nullptr;
 
-    set_module_state(computer->cpu, MODULE_SPEAKER, speaker_state);
+    computer->set_module_state(MODULE_SPEAKER, speaker_state);
 	
     printf("frame rate: %f\n", frame_rate);
     speaker_state->frame_rate = frame_rate;

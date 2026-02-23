@@ -451,7 +451,7 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     Button_t *mc3 = new Button_t(aa, GreenDisplayButton, CB);
     Button_t *mc4 = new Button_t(aa, AmberDisplayButton, CB);
     Button_t *mc5 = new Button_t(aa, WhiteDisplayButton, CB);
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+    display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
     mc1->set_click_callback(set_color_display_ntsc, ds);
     mc2->set_click_callback(set_color_display_rgb, ds);
     mc3->set_click_callback(set_green_display, ds);
