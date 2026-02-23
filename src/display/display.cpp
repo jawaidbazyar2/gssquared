@@ -24,8 +24,6 @@
 #include "debug.hpp"
 
 #include "display.hpp"
-#include "text_40x24.hpp"
-//#include "hgr_280x192.hpp"
 #include "platforms.hpp"
 
 #include "util/dialog.hpp"
@@ -796,6 +794,23 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
     return false;
 }
 
+
+void update_flash_state(cpu_state *cpu) {
+    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+    display_page_t *display_page = ds->display_page_table;
+    uint16_t *TEXT_PAGE_TABLE = display_page->text_page_table;
+    
+       // 2 times per second (every 30 frames), the state of flashing characters (those matching 0b01xxxxxx) must be reversed.
+    // according to a web site it's every 27.5 frames. 
+    if (++(ds->flash_counter) < 14) {
+        return;
+    }
+    ds->flash_counter = 0;
+    ds->flash_state = !ds->flash_state;
+    ds->a2_display->set_flash_state(ds->flash_state);
+}
+
+
 /** Called by Clipboard to return current display buffer.
  * doubles scanlines and returns 2* the "native" height. */
 
@@ -1141,21 +1156,9 @@ void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
     if (ds->clock->get_clock_mode() == CLOCK_FREE_RUN) {
         ds->framebased = true;
         ds->clock->set_video_scanner(nullptr);
-        /* for (int i = 0x04; i <= 0x0B; i++) {
-            ds->mmu->set_page_shadow(i, { txt_memory_write, cpu });
-        }
-        for (int i = 0x20; i <= 0x5F; i++) {
-            ds->mmu->set_page_shadow(i, { hgr_memory_write, cpu });
-        } */
     } else {
         ds->framebased = false;
         ds->clock->set_video_scanner(ds->video_scanner);
-        for (int i = 0x04; i <= 0x0B; i++) {
-            ds->mmu->set_page_shadow(i, { nullptr, cpu });
-        }
-        for (int i = 0x20; i <= 0x5F; i++) {
-            ds->mmu->set_page_shadow(i, { nullptr, cpu });
-        }
     }
 }
 
