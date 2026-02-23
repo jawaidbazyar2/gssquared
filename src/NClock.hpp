@@ -143,7 +143,8 @@ public:
     inline uint64_t get_c14m_per_scanline() { return 912; } // hardcoded, all modes are the same.
     inline uint64_t get_us_per_frame_even() { return current.us_per_frame_even; }
     inline uint64_t get_us_per_frame_odd() { return current.us_per_frame_odd; }
-    inline const char *get_clock_mode_name() { return clock_mode_names[clock_mode]; }
+    inline const char *get_clock_mode_name() { return clock_mode_names[clock_mode]; } // return current mode name
+    inline const char *get_clock_mode_name(clock_mode_t cm) { return clock_mode_names[cm]; } // return specified mode name
     inline uint32_t get_clock_mode_asset_id(clock_mode_t mode) { return clock_mode_asset_ids[mode]; }
     inline uint32_t get_current_mode_asset_id() { return clock_mode_asset_ids[clock_mode]; }
     inline uint64_t get_video_cycle_14M_count() { return video_cycle_14M_count; }

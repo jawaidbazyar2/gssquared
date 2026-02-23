@@ -87,7 +87,7 @@ computer_t::computer_t(NClockII *clock) {
             } else {
                 this->speed_new = this->clock->toggle(1);
             }
-            send_clock_mode_message();
+            send_clock_mode_message(speed_new);
             return true; 
         }
         return false;
@@ -192,17 +192,10 @@ void computer_t::set_module_state(module_id_t module_id, void *state) {
 }
 
 // TODO: should live inside a reconstituted clock class.
-void computer_t::send_clock_mode_message() {
+void computer_t::send_clock_mode_message(clock_mode_t clock_mode) {
     static char buffer[256];
-    const char *clock_mode_names[] = {
-        "Ludicrous Speed",
-        "1.0205MHz",
-        "2.8 MHz",
-        "7.1435 MHz",
-        "14.318 MHz"
-    };
 
-    snprintf(buffer, sizeof(buffer), "Clock Mode Set to %s", clock_mode_names[this->speed_new]);
+    snprintf(buffer, sizeof(buffer), "Clock Mode Set to %s", clock->get_clock_mode_name(clock_mode)); // 
     event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, buffer));
 }
 

@@ -119,7 +119,7 @@ struct computer_t {
     void *get_module_state( module_id_t module_id);
     void set_module_state( module_id_t module_id, void *state);
 
-    void send_clock_mode_message();
+    void send_clock_mode_message(clock_mode_t clock_mode);
     void frame_status_update();
 
 };
