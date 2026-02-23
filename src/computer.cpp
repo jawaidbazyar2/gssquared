@@ -186,29 +186,6 @@ void computer_t::set_module_state(module_id_t module_id, void *state) {
     cpu->module_store[module_id] = state;
 }
 
-/** State storage for slot devices. */
-SlotData *computer_t::get_slot_state(SlotType_t slot) {
-    SlotData *state = cpu->slot_store[slot];
-    /* if (state == nullptr) {
-        fprintf(stderr, "Slot Data for slot %d not initialized\n", slot);
-    } */
-    return state;
-}
-
-SlotData *computer_t::get_slot_state_by_id(device_id id) {
-    for (int i = 0; i < 8; i++) {
-        if (cpu->slot_store[i] && cpu->slot_store[i]->id == id) {
-            return cpu->slot_store[i];
-        }
-    }
-    return nullptr;
-}
-
-void computer_t::set_slot_state( SlotType_t slot, /* void */ SlotData *state) {
-    state->_slot = slot;
-    cpu->slot_store[slot] = state;
-}
-
 // TODO: should live inside a reconstituted clock class.
 void computer_t::send_clock_mode_message() {
     static char buffer[256];

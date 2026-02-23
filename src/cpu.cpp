@@ -34,29 +34,6 @@ void set_module_state(cpu_state *cpu, module_id_t module_id, void *state) {
     cpu->module_store[module_id] = state;
 }
 
-/** State storage for slot devices. */
-SlotData *get_slot_state(cpu_state *cpu, SlotType_t slot) {
-    SlotData *state = cpu->slot_store[slot];
-    /* if (state == nullptr) {
-        fprintf(stderr, "Slot Data for slot %d not initialized\n", slot);
-    } */
-    return state;
-}
-
-SlotData *get_slot_state_by_id(cpu_state *cpu, device_id id) {
-    for (int i = 0; i < 8; i++) {
-        if (cpu->slot_store[i] && cpu->slot_store[i]->id == id) {
-            return cpu->slot_store[i];
-        }
-    }
-    return nullptr;
-}
-
-void set_slot_state(cpu_state *cpu, SlotType_t slot, /* void */ SlotData *state) {
-    state->_slot = slot;
-    cpu->slot_store[slot] = state;
-}
-
 cpu_state::cpu_state(processor_type cpu_type) {
     full_db = 0;
     full_pc = 0; // was 0x400 from original tests, ha!
@@ -71,12 +48,7 @@ cpu_state::cpu_state(processor_type cpu_type) {
     trace = true;
     trace_buffer = new system_trace_buffer(100000, cpu_type);
 
-    /* set_clock_mode(this, CLOCK_1_024MHZ); */
-
     // initialize these things
-    for (int i = 0; i < NUM_SLOTS; i++) {
-        slot_store[i] = nullptr;
-    }
     for (int i = 0; i < MODULE_NUM_MODULES; i++) {
         module_store[i] = nullptr;
     }

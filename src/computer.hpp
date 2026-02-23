@@ -85,7 +85,6 @@ struct computer_t {
     std::vector<DebugDisplayHandlerInfo> debug_display_handlers;
     
     void *module_store[MODULE_NUM_MODULES];
-    SlotData *slot_store[NUM_SLOTS];
 
     // Status, Statistics, etc.
     Metrics event_times, audio_times, app_event_times, display_times, device_times;
@@ -120,12 +119,6 @@ struct computer_t {
 
     void *get_module_state( module_id_t module_id);
     void set_module_state( module_id_t module_id, void *state);
-
-    SlotData *get_slot_state(SlotType_t slot);
-    SlotData *get_slot_state_by_id(device_id id);
-    void set_slot_state( SlotType_t slot, SlotData *state);
-
-    /* void set_slot_irq( uint8_t slot, bool irq); */
 
     void send_clock_mode_message();
     void frame_status_update();

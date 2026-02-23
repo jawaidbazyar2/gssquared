@@ -211,7 +211,6 @@ struct cpu_state {
     BaseCPU *core = nullptr;
 
     void *module_store[MODULE_NUM_MODULES];
-    SlotData *slot_store[NUM_SLOTS];
 
     /* Tracing & Debug */
     /* These are CPU controls, leave them here */
@@ -249,7 +248,3 @@ const char* processor_get_name(int processor_type);
 
 void *get_module_state(cpu_state *cpu, module_id_t module_id);
 void set_module_state(cpu_state *cpu, module_id_t module_id, void *state);
-
-SlotData *get_slot_state(cpu_state *cpu, SlotType_t slot);
-SlotData *get_slot_state_by_id(cpu_state *cpu, device_id id);
-void set_slot_state(cpu_state *cpu, SlotType_t slot, SlotData *state);

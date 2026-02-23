@@ -755,10 +755,6 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     
     mb_d->event_timer = computer->vid_event_timer;
 
-// TODO: create an "audiosystem" module and move this stuff to it like we did videosystem.
-    speaker_state_t *speaker_d = (speaker_state_t *)get_module_state(computer->cpu, MODULE_SPEAKER);
-    //int dev_id = speaker_d->device_id;
-
     mb_d->frame_rate = (double)mb_d->clock->get_vid_cycles_per_second() / (double)mb_d->clock->get_vid_cycles_per_frame();
     mb_d->samples_per_frame = (float)OUTPUT_SAMPLE_RATE_INT / mb_d->frame_rate;
     mb_d->samples_per_frame_int = (int32_t)mb_d->samples_per_frame;
@@ -767,7 +763,6 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     mb_d->vid_cycles_rate = mb_d->clock->get_vid_cycles_per_second();
     mb_d->stream = mb_d->audio_system->create_stream(OUTPUT_SAMPLE_RATE_INT, 2, SDL_AUDIO_F32LE, false);
 
-    set_slot_state(computer->cpu, slot, mb_d);
     computer->mmu->map_c1cf_page_write_h(0xC0 + slot, { mb_write_Cx00, mb_d }, "MB_IO");
     computer->mmu->map_c1cf_page_read_h(0xC0 + slot, { mb_read_Cx00, mb_d }, "MB_IO");
 
