@@ -234,8 +234,6 @@ add_library(gs2_devices_videx     src/devices/videx/videx.cpp src/devices/videx/
 
 add_library(gs2_devices_mockingboard     src/devices/mockingboard/mb.cpp )
 
-add_library(gs2_devices_annunciator     src/devices/annunciator/annunciator.cpp )
-
 add_library(gs2_devices_mouse     src/devices/applemouseii/mouse.cpp )
 
 add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
@@ -245,8 +243,6 @@ add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp src/devices/es550
 add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
 
 add_library(gs2_devices_iwm src/devices/iwm/iwm_device.cpp src/devices/iwm/IWM_Drive.cpp src/devices/diskii/Floppy525.cpp)
-
-#add_library(gs2_devices_iigsmemory src/devices/iigsmemory/iigsmemory.cpp)
 
 add_library(gs2_devices_cassette     src/devices/cassette/cassette.cpp )
 
@@ -353,7 +349,6 @@ target_link_libraries(GSSquared
     gs2_devices_videx
     gs2_devices_pdblock2
     gs2_devices_mockingboard
-    gs2_devices_annunciator
     gs2_devices_iiememory
     gs2_devices_ensoniq
     gs2_devices_scc8530
