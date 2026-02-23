@@ -112,6 +112,8 @@ typedef struct videx_data: public SlotData {
 
     bool line_dirty[24] = {false};
 
+    bool annunciator_0 = false;
+
     ResourceFile *rom;
     
     ResourceFile *char_sets[VIDEX_CHAR_SET_COUNT];
