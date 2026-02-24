@@ -27,6 +27,7 @@
 #include "devices/memoryexpansion/memexp.hpp"
 #include "devices/thunderclock_plus/thunderclockplus.hpp"
 #include "devices/pdblock2/pdblock2.hpp"
+#include "devices/pdblock3/pdblock3.hpp"
 #include "devices/parallel/parallel.hpp"
 #include "devices/videx/videx.hpp"
 #include "devices/mockingboard/mb.hpp"
@@ -224,6 +225,13 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         "IWM",
         false,
         init_iwm_slot,
+        NULL
+    },
+    {
+        DEVICE_ID_PD_BLOCK3,
+        "Generic ProDOS Block 3",
+        true,
+        init_pdblock3,
         NULL
     },
 };

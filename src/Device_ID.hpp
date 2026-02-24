@@ -17,7 +17,6 @@ typedef enum device_id {
     DEVICE_ID_PARALLEL,
     DEVICE_ID_VIDEX,
     DEVICE_ID_MOCKINGBOARD,
-    /* DEVICE_ID_ANNUNCIATOR, */
     DEVICE_ID_IIE_MEMORY,
     DEVICE_ID_MOUSE,
     DEVICE_ID_CASSETTE,
@@ -27,6 +26,6 @@ typedef enum device_id {
     DEVICE_ID_ENSONIQ,
     DEVICE_ID_SCC8530,
     DEVICE_ID_IWM,
-    //DEVICE_ID_IIGS_MEMORY,
+    DEVICE_ID_PD_BLOCK3,
     NUM_DEVICE_IDS
 } device_id;

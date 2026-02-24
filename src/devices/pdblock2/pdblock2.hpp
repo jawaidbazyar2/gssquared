@@ -24,6 +24,7 @@
 #include "slots.hpp"
 #include "computer.hpp"
 #include "util/StorageDevice.hpp"
+#include "devices/pdblock2/pdb_structures.hpp"
 
 #define MAX_PD_BUFFER_SIZE 16
 #define PD_CMD_RESET 0xC080
@@ -34,45 +35,11 @@
 #define PD_STATUS2_GET 0xC085
 
 
-typedef struct media_t {
-    FILE *file;
-    media_descriptor *media;
-    int last_block_accessed;
-    uint64_t last_block_access_time;
-} media_t;
-
-
-struct pdblock_cmd_v1 {
-    uint8_t version;
-    uint8_t cmd;
-    uint8_t dev;
-    uint8_t addr_lo;
-    uint8_t addr_hi;
-    uint8_t block_lo;
-    uint8_t block_hi;
-    uint8_t checksum;
-};
-
-struct pdblock_cmd_buffer {
-    uint8_t index;
-    uint8_t cmd[MAX_PD_BUFFER_SIZE];
-    uint8_t error;
-    uint8_t status1;
-    uint8_t status2;
-};
-
 struct pdblock2_data: public SlotData {
     uint8_t *rom;
     MMU *mmu;
     pdblock_cmd_buffer cmd_buffer;
     media_t drives[2];
-};
-
-enum pdblock_cmd {
-    PD_STATUS = 0x00,
-    PD_READ = 0x01,
-    PD_WRITE = 0x02,
-    PD_FORMAT = 0x03
 };
 
 #define PD_CMD        0x42
