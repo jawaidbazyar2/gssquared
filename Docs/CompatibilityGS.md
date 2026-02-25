@@ -182,9 +182,64 @@ YES. See DevelopLog.md Feb 18 2026.
 
 Telcom now runs. (Issue was IO space wasn't being mapped into bank E1 correctly).
 
+## DreamGrafx (from Golden Orchard)
+
+This appears to work nicely even in SBC 3200 mode (full 3200 colors while editing).
+
+However, the associated DreamVoir program crashes with a BRK 00/0000 after its splash screen.
+A different DreamVoir (from What Is the Apple IIgs?) loads up just fine.
+
 ## Total Replay
 
 ### Airheart
 
 crashes after displaying splash screen (same as on IIe)
 Now working. This is a known bug in TR. I updated pdblock2 to pdblock3 (which supports prodos and smartport standard) and it now works!!
+
+# What Is the Apple IIgs: Launcher
+
+The demos on here are great because they load under normal ProDOS and that gets around my lack of 3.5 ..
+
+## F: Demos
+
+### Happy Friday
+
+Seems to work fine. Has some border-based cycle-counting effecs that look correct. 
+
+### Kernkompetenz
+
+takes a bit to load up, but starts. Ran for a long while (prefers to be accelerated) but then eventually succumbed to RESTART SYSTEM 01.
+Uses fill mode, which we haven't implemented yet.
+OK fine, I implemented fill, only took 20 minutes, but this still crashes.
+
+### No Hard Feelings
+
+Also desperately wants fill mode. Also implemented.
+
+### Plasma
+
+crashes on start with sound interrupt stutter issue like Rastan has.
+
+### Lower Planes
+
+ok this is doing border effects, which are working correctly EXCEPT - the right border is offset, everything is too low. by 1 (maybe 2) scanlines.
+
+### Photonix
+
+it's slamming the disk drives trying to do direct 3.5" stuff. "Non bootable disk" over and over. Whack.
+
+### Megademo
+
+causes a segfault! Whoo, that's entertaining.
+
+### Modulae
+
+Causes a segfault also!
+
+### Nucleus
+
+interrupt issues. Also, after it spazzes out, even RESET isn't turning off some VGC interrupts.
+
+### Zavtra I / II
+
+these both worked

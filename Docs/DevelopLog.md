@@ -10330,3 +10330,13 @@ A2Desktop 1.6 runs a lot better, I was getting crashes trying to load text edito
 [ ] If mouse was captured, and we open OSD, when OSD closed, automatically recapture mouse, so we don't require yet another action when mounting disk. This will be less irksome with drag'n'drop, but still.
 
 I am thinking storage keys should be a nice struct. It's 64 bits right, so a packed struct of 4 16-bit values would work nicely. And make using keys much simpler throughout the code.
+
+## Feb 25, 2026
+
+DreamVoir crashes (DreamGrafx works fine apparently!)
+
+It's doing something really odd, which is: setting up a JSL at $00/9F17. but everything being written into it is zeros. This is done at around $00/EBAE.
+But it's also running in bank 0 with DB of 05? So when it does a JMP to 9F17, it's in the wrong bank.. AND, it's reading values to stuff into 9F18/9 from bank 80 (there is no ram there!)
+ok F8 is actually populated with: 7F/F508. Y register is 26A4, so it clearly wraps into bank 80. This feels program buggy.. but surely it works elsewhere..
+one oddity is that they have bank 0 wide open (state register is 0) BUT 80store is turned on? HIRES off. 
+It's doing some pointer artithmetic, this looks high level languagey. it's just calculating a bad pointer. 
