@@ -16,7 +16,6 @@
  */
 
 #include "gs2.hpp"
-#include "cpu.hpp"
 #include "util/ResourceFile.hpp"
 #include "SlotData.hpp"
 #include "computer.hpp"
