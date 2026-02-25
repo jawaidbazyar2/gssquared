@@ -199,9 +199,9 @@ bool mount_pdblock2(pdblock2_data *pdblock_d, uint8_t drive, media_descriptor *m
     //if (DEBUG(DEBUG_PD_BLOCK)) printf("Mounting ProDOS block device %s slot %d drive %d\n", media->filename, slot, drive);
     if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Mounting ProDOS block device " << media->filename << " slot: " << pdblock_d->_slot << " drive " << drive << std::endl;
 
-    FILE *fp = fopen(media->filename.c_str(), "r+b");
+    const char *mode = media->write_protected ? "rb" : "r+b";
+    FILE *fp = fopen(media->filename.c_str(), mode);
     if (fp == nullptr) {
-        //fprintf(stderr, "Could not open ProDOS block device file: %s\n", media->filename);
         std::cerr << "Could not open ProDOS block device file: " << media->filename << std::endl;
         return false;
     }

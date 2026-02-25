@@ -112,3 +112,7 @@ say what now?
 ah I'm copying from the wrong place into this thing.
 cmd 1 is indeed read.
 but that's then address 059E. I am missing an indirection.
+
+AirHeart and a few other titles were assuming a ProDOS block device was a SmartPort device (didn't check the 4th ID byte). So they were calling a non-existent handler!
+
+AirHeart now working.

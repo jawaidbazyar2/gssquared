@@ -158,7 +158,7 @@ Well, funnily enough, this is a 143K disk, not an 800K disk. So I bet its bootlo
 
 ## Donkey Kong
 
-Plays very well with keyboard. Joystick auto-detect not working.
+Plays very well with keyboard. (It does not support keyboard) Does support SNESMAX for gamepads, so look into adding this in the future.
 
 ## NoiseTracker
 
@@ -187,4 +187,4 @@ Telcom now runs. (Issue was IO space wasn't being mapped into bank E1 correctly)
 ### Airheart
 
 crashes after displaying splash screen (same as on IIe)
-
+Now working. This is a known bug in TR. I updated pdblock2 to pdblock3 (which supports prodos and smartport standard) and it now works!!

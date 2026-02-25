@@ -10170,8 +10170,50 @@ Things that check execution_mode are: gs2 main loop; debug window of course; dis
 I must be getting pretty close to eliminating the slot store and module store from the cpu struct, maybe eliminating them entirely.
 get_slot_state is still used in: memexp; parallel; prodos_clock; thunderclockplus; videx. All the oldest //e cards. module_state is still used by most of the motherboard based devices. but also memexp, ugh. Some of these may need data from other modules, but, we have better ways to do that.
 
-[ ] refactor to eliminate use of get/set_slot_state.
-[ ] refactor to eliminate use of get/set_module_state.
+[x] refactor to eliminate use of get/set_slot_state.
+[x] refactor to eliminate use of get/set_module_state. (not 100% gone, but enough gone I'm happy)
+
+
+[x] if a disk image open is cancelled, the "last file opened" is forgotten.
+
+## Feb 23, 2026
+
+successfully got rid of get/set slot state. However, in working on get/set module state, found some inter-dependencies.
+For instance, gamecontroller reads the annunciator state, using get_module_state (for the Joyport support). Thinking about this, the annunciators are PART OF the game controller connector. It would be reasonable to collapse them into the same device.  
+
+A variety of things also monitor the annunciator - videx on ii+, double hires on iie and iigs. but we can do the double device handlers now, that will likely work better and be more clear (i.e. these other devices will register, and separately track the annunciator status they're interested in).
+
+Remaining uses of get_module_state:
+gs2, for resetting speaker and forcing video module changes (apple2 , scanner)
+osd, for changing display states.
+videx, need to know text mode status; and the display content rectangles.
+hgr280x192- only related to old shadow thing that updated scanlines needing updates (done)
+text_40x24- same as above, plus "update flash state" also related to scanlines needing updates (done)
+display - uses in update_cycle_apple2 and 2gs; but it probably does not need to any more. call with display_state instead. (done)
+
+Remaining uses can go into computer->module state instead of cpu. Of all those above, it's just MODULE_DISPLAY and MODULE_SPEAKER. So, not bad at all!
+
+ok, well I got rid of most of that crap.  The display rectangles, that seems more related to videosystem. After a break, give some consideration to that. Also to moving that gs2 loop reset speaker logic into the speaker frame handler somehow. 
+
+As I keep going through these device interfaces, the shape of a device class is becoming clearer. I'm not going to do it now, but, at some point I should create:
+
+```
+class Device {
+  int multiple_allowed = false|true;
+  const char *name;
+
+  Device(computer *); 
+  ~Device();
+}
+class SlotDevice : public Device {
+  Slot_t slot;
+}
+```
+then systemconfig table more directly refers to devices, and the system composer can validate the multiple allowed stuff (this could be a static method we read in Slot Configurator in OSD to prevent for instance multiple videx.)
+
+In some respects, we just moved the "problem" of cross-dependencies to computer. But, on the other hand, cpu is a reusable, composable component, and should never have been where we put all that stuff. computer can be viewed as a "configuration object", we use to inject capabilities into things. Granted it puts all the cross-dependencies into that, and we have to include all those headers. But this seems manageable with all the forward declarations in computer. Maybe can do more of that to further reduce the load. This causes us to push implementation to the computer.cpp file, reducing opportunities for inlining. So make sure no hot paths here.
+
+I was reminded during testing all this that the GS won't run in Ludicrous Speed because videoscanner changes, and the new one doesn't provide the vbl or scanline interrupt sources. vbl we could fake, but scanline we couldn't. So! maybe the thing there is to support fixed multiplied speeds. i.e. we currently divide 14M to get a cpu speed. Instead, have 28M, 56M, etc. and use with the video scanner. Then we'd get the display interrupts "for free". Probably just have one ludicrous speed. (or we could define at runtime, based on measuring the hosts's performance in some way). We could operate in 14MHz steps; if we have a frame slip, back off. Or, start slow, and inch up until idle gets under 10%. Something like that. then it adjusts automagically for a given host.
 
 Well should we go ahead and do a SmartPort HD now?
 
@@ -10202,6 +10244,89 @@ Is Container a fixed grid, or... it calculates largest tile size and bases the g
 
 Define a new type of Container, DriveContainer, where you specify the grid size, and the container size, and layout is specialized for what we need here for drives: a tile is 1 or 2 wide; and arbitrary height (based on each line's tile(s) heights).
 
-or for this release just do two smartport "drives". like we have now, but SmartPort protocol.
+or for this release just do two smartport "drives". like we have now, but SmartPort protocol. This is low-hanging fruit, I think. Unsure if I have enough room in the code.. I have about 70 bytes. I suspect SmartPort devices -have to- also support the ProDOS device interface. I could always take advantage of C800. That would be easy enough.
 
-[x] if a disk image open is cancelled, the "last file opened" is forgotten.
+## Feb 24, 2026
+
+got a big lesson in programming slot card firmware! working on pdblock3
+
+relatively short version:
+
+we are position-independent code. I could have cheated and made 8 copies of the firmware, with it knowing where it was running. But figuring out the build would have been more annoying than figuring out the position-indpendent code.
+
+(This didn't matter before because all the firmware was in $Cs, nothing in C8.)
+
+Once you have C8 code, to be interrupt-safe, you have to set MSLOT ($07F8) to $Cs when you're running in $C8 code. the GS interrupt handler (and presumably IIe, IIc, etc.) use MSLOT to restore the correct C8 map on return from the handler.
+
+So, I have a routine FINDSLOT that lives in $C8 - so it has an absolute address. The meat is:
+
+```
+sp_entry                ; has to be exactly 3 bytes beyond the pddriver entry point
+        PHP             ; disable interrupts until we have MSLOT set
+        SEI
+        JSR FINDSLOT    ; sets MSLOT - don't have to disable IRQ because it will still be on the stack then
+        PLP
+        JSR sp_driver   ; has to be JSR so we can figure out what slot we're in.
+        rts
+
+; Only called from Cs00 space. The caller's Page # is on the stack,
+; we load it here into A.
+; by itself, not interrupt safe yet because we're up here in C800
+FINDSLOT
+        TSX
+        LDA $0101,X             ; get $Cn in A
+        STA MSLOT
+        RTS
+```
+
+It's an absolute address we know; with interrupts off (while still on $Cs) we guarantee no interference from an IRQ while looking at the slot (as we would have had we checked stack after return). So it checks all the boxes.
+
+So - WE HAVE WORKING AIRHEART AND ARKANOID IN TOTAL REPLAY!
+
+While this was technically a TR bug, it's entirely possible other code in the world also does not check correctly for a SmartPort, and might have called SmartPort code that wasn't there.
+
+pdblock3 also has predefined slots for 10 media; it's really arbitrary up to whatever limit the SmartPort definition has.
+
+Technically should clear CFFF on every call in where we're going to jump to C8 space. it doesn't matter for us, but it would matter on real hardware.
+
+a2desktop shows a trask can instead of a disk drive icon. whoopsie. Code in 1.6 at 77A8 builds a JSR to the dispatcher, and the JSR is at 77B1. CB is 7746. Status list pointer is 0800. Status code is 03. Return DIB Device Information Block.
+ok we get back:
+8088: E0 00 00 01 0A 2E 70 64 62 6C 6F 63 6B 33 61 20 20 20 20 20
+
+Status byte: E0
+00 00 01 <- block size
+0A: id string length
+ID string "PDBLOCK3A"
+Device type: 02
+subtype: 20
+version word: 00 03
+
+Joshua says FF FF is a special case that means "32MB". whuh. I remember that. So check if it's exactly 1'0000 and subtract one.
+78C6 is the next routine he mentioned, CreateVolumeIcon.
+
+If I still have trouble with A2D later joshua offered to screen-share debug. I turned to GS/OS, which was super spasming inserting/uninserting a disk many times per second. Apparently it wanted, if there is no media in a unit that we told it exists, to get a real response that has the "online" flag set to 0. I can actually now mount a disk in drive 2 and gs/os automagically detects it! And you can drag and drop to 'eject' and change it out. That's a big plus.
+
+A2D still not happy after that, hehe.
+This trace is from 1.5
+```
+GetDeviceTypeImpl
+    stax    dispatch
+    sty     status_params::unit_num
+77B3: jsr SELF_MODIFIED
+```
+
+DERP. I was restoring $06/$07 in the wrong order. Derpy derp. FIXED  (thanks Joshua!)
+
+Well I think it's working well enough now to try to implement the extended interface - and speed test again!
+
+Going from GS/OS to P8 is triggering the Device Control thing. Should look into that, the manual says they are entirely device specific? OK, it documents some for the apple 3.5; 
+Set the max devices back to 10.
+
+Just came across a few oddities in A2desktop.
+Run "Emergency" which drops to text mode to speak text using SAM. When it returns to desktop, the desktop is in single hires mode. did it again, no problem.. I had done a speed change with F9 during that time. hm. Can't reproduce. Darn.
+
+A2Desktop 1.6 runs a lot better, I was getting crashes trying to load text editor and such, no such issues now.
+
+[ ] If mouse was captured, and we open OSD, when OSD closed, automatically recapture mouse, so we don't require yet another action when mounting disk. This will be less irksome with drag'n'drop, but still.
+
+I am thinking storage keys should be a nice struct. It's 64 bits right, so a packed struct of 4 16-bit values would work nicely. And make using keys much simpler throughout the code.

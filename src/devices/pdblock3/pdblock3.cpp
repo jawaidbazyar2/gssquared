@@ -89,7 +89,10 @@ public:
         FILE *fp = drives[drive].file;
         
         media_descriptor *media = drives[drive].media;
-
+        if (media == nullptr) {
+            cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE;
+            return;
+        }
         if (fseek(fp, media->data_offset + (block * media->block_size), SEEK_SET) < 0) {
             cmd_buffer.error = PD_ERROR_IO;
         }
@@ -109,6 +112,11 @@ public:
         uint8_t block_buffer[512];
         FILE *fp = drives[drive].file;
         media_descriptor *media = drives[drive].media;
+
+        if (media == nullptr) {
+            cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE;
+            return;
+        }
 
         if (media->write_protected) {
             cmd_buffer.error = PD_ERROR_WRITE_PROTECTED;
@@ -153,20 +161,33 @@ public:
                         switch (cmdlist.status_code) {
                             case 0x00: { // Status 00 Statcode 00 pg 122
                                 if (cmdlist.unit == 0) { // SmartPort Driver Status (pg 125)
-                                    sp_cmd0_statcode_00_driver di;
-                                    di.num_devices = PDB3_MAX_UNITS;
-                                    write_to_memory(slptr, (uint8_t *)&di, sizeof(di));
-                                } else if (drives[cmdlist.unit-1].media == nullptr)  { // 
-                                    cmd_buffer.error = 0x2F; // device offline
-                                } else {
-                                    sp_cmd0_statcode_00 s;
-                                    // TODO: validate in what cases the "device offline" bit is set.
-                                    s.status = 0b1111'0000; // block device, wr all, rd all, device offline, no format, no wp, no interrupt, char dev not open
-                                    s.blk_count_0 = drives[cmdlist.unit-1].media->block_count & 0xFF;
-                                    s.blk_count_1 = (drives[cmdlist.unit-1].media->block_count >> 8) & 0xFF;
-                                    s.blk_count_2 = (drives[cmdlist.unit-1].media->block_count >> 16) & 0xFF;
-
+                                    sp_cmd0_statcode_00_driver s;
+                                    s.num_devices = PDB3_MAX_UNITS;
+                                    memset(s.reserved, 0x00, sizeof(s.reserved));
                                     write_to_memory(slptr, (uint8_t *)&s, sizeof(s));
+                                    cmd_buffer.status1 = sizeof(s);
+                                } else if (drives[cmdlist.unit-1].media == nullptr)  { // drive offline.
+                                    /* GS/OS wants the full response back, not just an error */
+                                    sp_cmd0_statcode_00 s;
+                                    s.status = 0b1110'0000; // device offline.
+                                    s.blk_count_0 = 0x00;
+                                    s.blk_count_1 = 0x00;
+                                    s.blk_count_2 = 0x00;
+                                    write_to_memory(slptr, (uint8_t *)&s, sizeof(s));
+                                    cmd_buffer.status1 = sizeof(s);
+                                } else { // drive online
+                                    sp_cmd0_statcode_00 s;
+                                    uint32_t blkcount = drives[cmdlist.unit-1].media->block_count;
+                                    if (blkcount == 0x1'0000) { // special case nonsense for 32MB drives
+                                        blkcount = 0xFFFF;
+                                    }
+                                    bool wp = drives[cmdlist.unit-1].media->write_protected;
+                                    s.status = wp ? 0b1011'0100 : 0b1111'0000;
+                                    s.blk_count_0 = blkcount & 0xFF;
+                                    s.blk_count_1 = (blkcount >> 8) & 0xFF;
+                                    s.blk_count_2 = (blkcount >> 16) & 0xFF;
+                                    write_to_memory(slptr, (uint8_t *)&s, sizeof(s));
+                                    cmd_buffer.status1 = sizeof(s);
                                 }
                                 break; //  return device status
                             }
@@ -175,24 +196,32 @@ public:
                             case 0x03: {
                                 assert(cmdlist.unit != 0);
                                 if (drives[cmdlist.unit-1].media == nullptr)  {
-                                    cmd_buffer.error = 0x2F; // device offline
+                                    cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE; // device offline
                                     return;
                                 }
                                 sp_cmd0_statcode_03 s;
-                                s.status = 0b1110'0000; // block device, wr all, rd all, device offline, no format, no wp, no interrupt, char dev not open
-                                s.blk_count_0 = drives[cmdlist.unit-1].media->block_count & 0xFF;
-                                s.blk_count_1 = (drives[cmdlist.unit-1].media->block_count >> 8) & 0xFF;
-                                s.blk_count_2 = (drives[cmdlist.unit-1].media->block_count >> 16) & 0xFF;
+                                uint32_t blkcount = drives[cmdlist.unit-1].media->block_count;
+                                if (blkcount == 0x1'0000) { // special case nonsense for 32MB drives
+                                    blkcount = 0xFFFF;
+                                }
+                                bool wp = drives[cmdlist.unit-1].media->write_protected;
+                                s.status = wp ? 0b1011'0100 : 0b1111'0000;
+                                s.blk_count_0 = blkcount & 0xFF;
+                                s.blk_count_1 = (blkcount >> 8) & 0xFF;
+                                s.blk_count_2 = (blkcount >> 16) & 0xFF;
+
                                 // id string is ".pdblock3" plus a letter corresponding to the unit (a-...)
-                                s.id_str_length = 10;
-                                memcpy(s.id_str, ".pdblock3       ", 16);
-                                s.id_str[9] = 'a' + cmdlist.unit - 1;
+                                s.id_str_length = 9;
+                                memcpy(s.id_str, "PDBLOCK3        ", 16);
+                                s.id_str[8] = 'A' + cmdlist.unit - 1;
                                 s.device_type = 0x02; // nonremovable hard disk
-                                s.device_subtype = 0b0010'0000; // supports extended smartport = no; no disk-switch errors; no removable media
+                                //s.device_subtype = 0b0010'0000; // supports extended smartport = no; no disk-switch errors; no removable media
+                                s.device_subtype = 0; // test to match virtualII 
                                 s.version_1 = 0x03; // version 3
                                 s.version_0 = 0x00; // .0
                                 
                                 write_to_memory(slptr, (uint8_t *)&s, sizeof(s));
+                                cmd_buffer.status1 = sizeof(s);
                                 break; // return device information block (DIB)
                             }
                             default: cmd_buffer.error = 0x21; break; // BADCTL Invalid Status Code
@@ -217,9 +246,11 @@ public:
                     break;
                 case 0x03:  // Format 
                     // TODO: format the drive. well basically just return "success".
+                    assert(false); // not implemented
                     break;
                 case 0x04: // Control
                     // TODO: control the drive. well basically just return "success".
+                    //assert(false); // not implemented GS/OS going to P8 triggers this.
                     break;
                 default: 
                     cmd_buffer.error = 0x21;
@@ -299,9 +330,9 @@ public:
         //if (DEBUG(DEBUG_PD_BLOCK)) printf("Mounting ProDOS block device %s slot %d drive %d\n", media->filename, slot, drive);
         if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Mounting PDB3 device " << media->filename << " slot: " << _slot << " drive " << drive << std::endl;
     
-        FILE *fp = fopen(media->filename.c_str(), "r+b");
+        const char *mode = media->write_protected ? "rb" : "r+b";
+        FILE *fp = fopen(media->filename.c_str(), mode);
         if (fp == nullptr) {
-            //fprintf(stderr, "Could not open ProDOS block device file: %s\n", media->filename);
             std::cerr << "Could not open PDB3 device file: " << media->filename << std::endl;
             return false;
         }

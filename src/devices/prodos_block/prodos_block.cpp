@@ -143,9 +143,9 @@ void mount_prodos_block(cpu_state *cpu, uint8_t slot, uint8_t drive, media_descr
     //printf("Mounting ProDOS block device %s slot %d drive %d\n", media->filename, slot, drive);
     //std::cout << std::format("Mounting ProDOS block device {} slot {} drive {}\n", media->filename, slot, drive) << std::endl;
     std::cout << "Mounting ProDOS block device " << media->filename << " slot " << slot << " drive " << drive << std::endl;
-    FILE *fp = fopen(media->filename.c_str(), "r+b");
+    const char *mode = media->write_protected ? "rb" : "r+b";
+    FILE *fp = fopen(media->filename.c_str(), mode);
     if (fp == nullptr) {
-        //fprintf(stderr, "Could not open ProDOS block device file: %s\n", media->filename);
         std::cerr << "Could not open ProDOS block device file: " << media->filename << std::endl;
         return;
     }
