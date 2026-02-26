@@ -48,7 +48,6 @@
 #include "version.h"
 #include "util/Metrics.hpp"
 #include "util/DebugHandlerIDs.hpp"
-#include "util/SoundEffectKeys.hpp"
 #include "util/printf_helper.hpp"
 
 /**
@@ -162,7 +161,7 @@ void frame_video_update(computer_t *computer, cpu_state *cpu, bool force_full_fr
     computer->video_system->present();
 }
 
-void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time, uint64_t ns_per_frame)
+void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per_frame)
     /* uint64_t frame_count) */ {
     uint64_t wakeup_time = last_cycle_time + ns_per_frame; /*  + (frame_count & 1); */ // even frames have 16688154, odd frames have 16688154 + 1
 
@@ -175,7 +174,7 @@ void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time,
         //printf("Clock slip: event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", event_time, audio_time, display_time, app_event_time, event_time + audio_time + display_time + app_event_time);
     } else {
         if (gs2_app_values.sleep_mode) { // sleep most of it, but more aggressively sneak up on target than SDL_DelayPrecise does itself
-            SDL_DelayPrecise((wakeup_time - SDL_GetTicksNS())*0.98);
+            SDL_DelayPrecise((wakeup_time - SDL_GetTicksNS())*0.95);
         }
         // busy wait sync cycle time
         do {
@@ -383,7 +382,7 @@ void run_cpus(computer_t *computer) {
             computer->set_idle_percent(((float)time_to_sleep / (float)frame_length_ns) * 100.0f);
             //cpu->idle_percent = ((float)time_to_sleep / (float)frame_length_ns) * 100.0f;
 
-            frame_sleep(computer, cpu, last_cycle_time, frame_length_ns);
+            frame_sleep(computer, last_cycle_time, frame_length_ns);
             last_cycle_time = SDL_GetTicksNS(); 
 
         } else { // Ludicrous Speed!

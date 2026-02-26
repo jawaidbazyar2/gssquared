@@ -41,8 +41,6 @@
 #include "devices/scc8530/scc8530.hpp"
 #include "devices/iwm/iwm_device.hpp"
 
-//#include "devices/iigsmemory/iigsmemory.hpp"
-
 Device_t NoDevice = {
         DEVICE_ID_END,
         "No Device",

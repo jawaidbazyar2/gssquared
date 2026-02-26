@@ -1,7 +1,7 @@
 #include <iostream>
+#include <cstdint>
 
 #include "SDL3/SDL_keycode.h"
-#include "gs2.hpp"
 #include "cpu.hpp"
 #include "NClock.hpp"
 #include "computer.hpp"

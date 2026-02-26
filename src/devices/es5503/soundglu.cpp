@@ -3,12 +3,12 @@
 #include <SDL3/SDL.h>
 #include "computer.hpp"
 #include "devices/es5503/ensoniq.hpp"
-//#include "devices/speaker/speaker.hpp"
+
 #include "soundglu.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "device_irq_id.hpp"
-#include "cpu.hpp"
+
 #include "NClock.hpp"
 
 //==============================================================================

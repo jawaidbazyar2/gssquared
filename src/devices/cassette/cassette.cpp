@@ -1,5 +1,4 @@
 #include "gs2.hpp"
-#include "cpu.hpp"
 #include "computer.hpp"
 #include "devices/cassette/cassette.hpp"
 
