@@ -260,8 +260,4 @@ public:
 };
 
 void init_slot_ndiskII(computer_t *computer, SlotType_t slot);
-//void ndiskii_reset(cpu_state *cpu);
 void debug_dump_disk_images(cpu_state *cpu);
-bool any_ndiskii_motor_on(cpu_state *cpu);
-int ndiskii_tracknumber_on(cpu_state *cpu);
- 
