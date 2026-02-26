@@ -72,7 +72,7 @@ See Ensoniq.md. Accessed via new $C0xx registers.
 
 Pretty straightforward. Linear video buffer, pixel values look up 4096 colors (12-bit color value) in a palette table.
 
-[ ] Implement Fill Mode  
+[x] Implement Fill Mode  
 
 ### Standard Apple II text with Color
 
@@ -236,10 +236,6 @@ The RTC also holds the more general purpose "battery ram". There are a total of 
 
 https://groups.google.com/g/comp.sys.apple2/c/FmncxrjEVlw
 
-- Excellent deep dive into IWM
-https://llx.com/Neil/a2/disk
-
-
 ## 2 built-in serial ports via Zilog SCC chip 
 
 Zilog SCC chip supports 2 built-in serial ports. The registers for this chip are: $C038 -9 (scc command channel B and A), and $C03A-B (scc data channel b and a).
@@ -283,13 +279,15 @@ Has the IWM chip - Integrated Woz Machine. Looks like a Disk II in Slot 6, but h
 
 Depends on the drive. UniDisk has a built-in CPU controller operating at 2mhz. AppleDisk 3.5 has no built-in controller.
 
-You can 'download' custom code to run on the UniDisk. With an AppleDisk this "runs in host memory" according to UniDisk 3.5 TechPub #5.
-
-UniDisk details are discussed in Apple IIgs Firmware Reference.
+You can 'download' custom code to run on the UniDisk. With an AppleDisk this "runs in host memory" according to UniDisk 3.5 TechPub #5. UniDisk details are discussed in Apple IIgs Firmware Reference. (I'm not going to support this).
 
 This discusses the registers in detail:
 
 https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/storage/disks/IWM-Controlling%20the%203.5%20Drive%20Hardware%20on%20the%20Apple%20IIGS.pdf
+
+- Excellent deep dive into IWM
+https://llx.com/Neil/a2/disk
+
 
 ### Debugger
 
@@ -394,6 +392,8 @@ This is irrelevant given our design (all fast RAM is one contiguous stretch)
 
 1. It has an updated ADB Micro, that supports stickey keys
 
+It's possible the Micro works differently in some cases and may require some tweaks to work with updated ROM.
+
 
 ## Unique Peripheral Cards to Consider Implementing
 
@@ -402,6 +402,8 @@ There were a variety of unique/useful cards that really took advantage of the Ap
 ### VoC - Video Overlay Card
 
 Offered video overlay of IIgs graphics on an external video source, but also allowed a 320x400 and 640x400 mode using interlacing on the IIgs monitor. 
+
+There is some interesting work occurring related to this, and use of two shr buffers to allow easier sprites.
 
 ### SecondSight
 
