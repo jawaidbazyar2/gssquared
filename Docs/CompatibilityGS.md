@@ -204,7 +204,7 @@ The demos on here are great because they load under normal ProDOS and that gets 
 
 ### Happy Friday
 
-Seems to work fine. Has some border-based cycle-counting effecs that look correct. 
+Seems to work fine. Has some border-based cycle-counting effecs that look (mostly) correct. 
 
 ### Kernkompetenz
 
@@ -218,7 +218,7 @@ Also desperately wants fill mode. Also implemented.
 
 ### Plasma
 
-crashes on start with sound interrupt stutter issue like Rastan has.
+crashes on start with sound interrupt stutter issue like Rastan has. Very similar to Plasmagoria. It's working this time though.. 
 
 ### Lower Planes
 
@@ -230,11 +230,12 @@ it's slamming the disk drives trying to do direct 3.5" stuff. "Non bootable disk
 
 ### Megademo
 
-causes a segfault! Whoo, that's entertaining.
+causes a segfault! Whoo, that's entertaining. The mask for "oscillators enabled" in ensoniq was 0x3F, when it should have been 0x1F. Boots up to the menu now but then is non-responsive.
 
 ### Modulae
 
-Causes a segfault also!
+Causes a segfault also! Same problem as above, now starts up.. plays music and rotates text. click button to get past the start screen.
+Seems to run pretty well now, though at one point when the 3D engine gets busy, the mouse maybe doesn't respond well? Not sure how many of those controls are supposed to work..
 
 ### Nucleus
 
@@ -243,3 +244,7 @@ interrupt issues. Also, after it spazzes out, even RESET isn't turning off some 
 ### Zavtra I / II
 
 these both worked
+
+### Wolfenstein 3D
+
+This crashes on startup. Why?
