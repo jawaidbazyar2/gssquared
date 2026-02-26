@@ -431,8 +431,15 @@ bool update_display_apple2_cycle(display_state_t *ds) {
             break;
     }
     ds->frame_rgba->close();
-     
-    vs->render_frame(ds->screenTexture, 
+
+    // render screenTexture to stage2
+    // this is double copying, but is the same process as the GS display code, and makes screen capture work.
+    SDL_SetRenderTarget(vs->renderer, ds->stage2);
+    SDL_RenderTexture(vs->renderer, ds->screenTexture, &ds->ii_borders[B_CEN][B_CEN].src, &ds->ii_borders[B_CEN][B_CEN].src);
+    SDL_SetRenderTarget(vs->renderer, nullptr);
+
+    // now render stage2.
+    vs->render_frame(ds->stage2, 
         &ds->ii_borders[B_CEN][B_CEN].src, 
         &ds->ii_borders[B_CEN][B_CEN].dst
     );
@@ -810,6 +817,7 @@ void update_flash_state(display_state_t *ds) {
 /** Called by Clipboard to return current display buffer.
  * doubles scanlines and returns 2* the "native" height. */
 
+#if 0
 void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *width, uint32_t *height) {
     display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
     // pass back the size.
@@ -848,6 +856,7 @@ void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *
     snprintf(msgbuf, sizeof(msgbuf), "Screen snapshot taken");
     computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
 }
+#endif
 
 void display_write_switches(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;

@@ -71,6 +71,9 @@ struct video_system_t {
 
     ClipboardImage *clip = nullptr;
 
+    SDL_Texture *last_texture = nullptr;
+    SDL_FRect last_srcrect = { 0.0f, 0.0f, 0.0f, 0.0f };
+
     RGBA_t mono_color_table[DM_NUM_MONO_MODES] = {
         {.a=0xFF, .b=0xFF, .g=0xFF, .r=0xFF }, // white
         {.a=0xFF, .b=0x4A, .g=0xFF, .r=0x00 }, // green (was 55) chosen from measuring @ 549nm and https://academo.org/demos/wavelength-to-colour-relationship/

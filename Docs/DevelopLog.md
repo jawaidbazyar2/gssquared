@@ -7008,8 +7008,8 @@ Roadmap:
 [x] render_frame modified to accept texture, src, and dst rectangles. 
 [ ] implement correct aspect ratio and new window size defaults  
 [ ] hot key to generate "ii-friendly" and "gs-friendly" window size toggles  
-[ ] function for border render  
-[ ] function for shr render  
+[x] function for border render  
+[x] function for shr render  
 [x] write update_display_iigs
 [x] register distinct iigs frame processor callback  
 [x] see if pixelart obviates need to draw Videx twice for brightness (no it did not)  
@@ -7208,9 +7208,9 @@ let's see what something like a2desktop looks like. the mouse on the very right 
 oh my pal scanner is crashing because I'm not iterating enough cycles in the main gs2 loop.
 ok well "first draft" PAL is in and sort of working. Things that remain to be done:
 [x] refactor the speaker for hopefully the last time.  
-[ ] fix mockingboard to use new cpu clock construct  
-[ ] fix mouse to work properly at variable clock rates  
-[ ] make cpu clock construct a class so it's less janky  
+[x] fix mockingboard to use new cpu clock construct  
+[x] fix mouse to work properly at variable clock rates (now uses 14m)  
+[x] make cpu clock construct a class so it's less janky  (works so good, come on baby make it work so good)
 
 The speaker is getting ever so slightly out of sync in PAL. Let's double check ntsc.   
 
@@ -7475,7 +7475,7 @@ I am also feeling like the frame rate and some of those other timing parameters 
 [x] samples_per_frame isn't correct. and we don't use it inside the module. Move it out for debug.    
 [ ] allow output rate to be configurable with a const in speaker.cpp  
 [x] fix reset() to resync audio after it being off for a while in LS.  
-[ ] Detect audio de-sync due to MacOS dumbness and flush queue and call reset() during frame handler  
+[x] Detect audio de-sync due to MacOS dumbness and flush queue and call reset() during frame handler (done, and it works!!)
 [x] change speaker to work based on 14M clock.  
 
 after LS last_event_time is reset, but stays frozen. is it because it's in the past or something? Hm. maybe just switch it now to 14M. Get some real work done first!
@@ -7553,10 +7553,10 @@ fixed the issue with speed changes. I had the speed-change-detect logic IN audio
 
 likely bug:
 
-[ ] iiememory does not manipulate LC memory mapping in Aux Memory.  
+[-] iiememory does not manipulate LC memory mapping in Aux Memory. (I'm not sure this was valid)
 
 I'm impressed as much stuff works as it does. Things that are broken that are likely due to this:
-Airheart on Total Replay
+Airheart on Total Replay (I was so wrong about that)
 
 ## Nov 29, 2025
 
@@ -8278,7 +8278,7 @@ I enabled the slot ROM for C1-C6. (the default GS slot mapping for internal / yo
 
 There was a long standing bug in pdblock2 where it only allocates structs for 7 slots (0-6) so trying to put it in slot 7 was triggering all sorts of weirdness. That's fixed now.
 
-[ ] Should change pdblock2, so it's like diskii where I don't have a single static array.
+[x] Should change pdblock2, so it's like diskii where I don't have a single static array. (did, also mooted by pdblock3)
 
 Also, pdblock is more realistically a "generic hard drive" device, not a 3.5. for GS stuff I'm going to need a hard drive device anyway, of potentially very large size, and support having a partition table in it. 
 So maybe make a version of it that is in slot 7 and has different status/mount icon etc.
@@ -8635,7 +8635,7 @@ SO. This should look more like the IF statements in the megaii_compose stuff.. w
     }
 ```
 
-[ ] in full screen mode GSRGB, we're not accounting for or drawing the side borders.  
+[x] in full screen mode GSRGB, we're not accounting for or drawing the side borders.  
 
 Okay I have some new memory mapping weirdness (maybe). in the ROM at FF/2E52 we're loading state reg, pulling something off the stack, replacing with c068, and RTS to the middle of bogus code. Whaaaa.
 Only if we boot straight from a RESET. Weeeeird. It's pretty consistent. Track this down later.. 
@@ -8770,7 +8770,7 @@ Observations: I had done a bunch of memory mapping fixes prior to the IWM issues
 
 [ ] on a ctrl-reset sometimes we're getting an extra 0x7F (backspace). I suspect what is meant is an 0xFF, like a clear or something.
 
-[ ] Can't boot the nucleus demo - it immediately dumps into BASIC implying unrecognized boot block or ... ? (but, not always).
+[x] Can't boot the nucleus demo - it immediately dumps into BASIC implying unrecognized boot block or ... ? (but, not always). (fixed bug with handling write-protected disk image)
 
 [x] Have an "system idle" measurement that tells us what % of realtime is idle vs emulating.
 
@@ -8841,7 +8841,7 @@ arekkusu writes:
 Re timing: I have been looking at this exact area ^_^; Remember that the MegaII performs "memory refresh" for the first five cycles of HBL  .:  the SCB value can not possibly be known any earlier than cycle six into the right-hand border.  Now here, it looks like my implementation and testing notes are currently out of sync, so the IRQ actually fires either on cycle six or cycle eight of HBL, I'll have to go re-verify this.  Please confirm with your own investigations!
 You can verify this visually; i.e. spin on the SCB status bit (not using an IRQ handler) and toggle the border color after some known phase delay to observe the result on screen.  But you can also verify it analytically, counting cycles until that SCB status bit flips, relative to another timing source, i.e. C019.  If you do it that way, you also need to be aware of the subtle detail that the entire MegaII appears to be delayed one cycle relative to the VGC.
 
-[ ] make sure the SCB status bit sets/resets regardless of whether interrupts are enabled.  
+[x] make sure the SCB status bit sets/resets regardless of whether interrupts are enabled.  (tested with arekkusu interrupt tester)
 [x] "interrupt enabled" doesn't belong in the video scanner. The scanner should simply provide the info. Decision to assert int lives in VGC area.
 
 [x] Do a test of page-flipping on the hcounter (horzpage2flip2).
@@ -9261,9 +9261,9 @@ SO. There were six instances of that. I wonder what this would have affected. I 
 
 https://github.com/hasseily/AppleWin/blob/pp/source/frontends/sdl/pp/shaders/a2video_postprocess.glsl
 
-[ ] Sather 3.10B doesn't run on GS even in 1mhz mode, and mhz is 1.0045, not 1.0205.
+[x] Sather 3.10B doesn't run on GS even in 1mhz mode, and mhz is 1.0045, not 1.0205.
 
-Must not be handling the refresh, or maybe the sync, quite right.. in 1MHz mode every cycle should be a sync cycle. Ah, when the *GS* sets 1mhz mode, via the slow_mode flag, this results in 1.0205, and is correct. So, if I have the cpu speed set to 1mhz, I should either: not let them do that; implement that by setting slow_mode; have another check that forces sync mode on a GS.
+Must not be handling the refresh, or maybe the sync, quite right.. in 1MHz mode every cycle should be a sync cycle. Ah, when the *GS* sets 1mhz mode, via the slow_mode flag, this results in 1.0205, and is correct. So, if I have the cpu speed set to 1mhz, I should either: not let them do that; implement that by setting slow_mode, or just make sure slow flag is set if clock is 1mhz also; have another check that forces sync mode on a GS.
 
 [ ] Platform should specify allowed CPU speed settings in OSD  
 
@@ -10340,3 +10340,6 @@ But it's also running in bank 0 with DB of 05? So when it does a JMP to 9F17, it
 ok F8 is actually populated with: 7F/F508. Y register is 26A4, so it clearly wraps into bank 80. This feels program buggy.. but surely it works elsewhere..
 one oddity is that they have bank 0 wide open (state register is 0) BUT 80store is turned on? HIRES off. 
 It's doing some pointer artithmetic, this looks high level languagey. it's just calculating a bad pointer. 
+(Version of it elsewhere works just fine..)
+
+I am refactoring the Screen Cap (PrntScrn) function, to read the image out of the last screen texture before rendering. This works great on the GS, but, the other systems use a texture that does not have the right mode/flag set. You need a texture to be a render_target texture. So probably need to change the IIe modes to render first to stage2 just like the GS does. Right now screen cap on II/IIe will return a black screen, which is better than crashing like it was before.

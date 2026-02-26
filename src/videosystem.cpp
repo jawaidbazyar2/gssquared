@@ -102,7 +102,18 @@ video_system_t::video_system_t(computer_t *computer) {
             return true;
         }
         if (key == SDLK_PRINTSCREEN) {
-            clip->Clip(computer);
+            // read texture pixels.
+            SDL_Rect irect = { 0, 0, (int)last_srcrect.w, (int)last_srcrect.h };
+
+            SDL_SetRenderTarget(renderer, last_texture);
+            
+            SDL_Surface *surface = SDL_RenderReadPixels(renderer, &irect);
+            
+            SDL_SetRenderTarget(renderer, nullptr);
+            
+            clip->Clip(surface);
+
+            SDL_DestroySurface(surface);
             printf("click!\n");
         }
         return false;
@@ -137,6 +148,8 @@ void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_
     dstrect_shifted.x += fullscreen_x_shift; // center in fullscreen.
 
     SDL_RenderTexture(renderer, texture, srcrect, &dstrect_shifted);
+    last_texture = texture;
+    last_srcrect = *srcrect;
 }
 
 void video_system_t::clear() {
