@@ -20,12 +20,8 @@
 
 #include <SDL3/SDL.h>
 
-#include "cpu.hpp"
 #include "slots.hpp"
 
-#include "DiskII_Button.hpp"
-#include "Unidisk_Button.hpp"
-#include "AppleDisk_525_Button.hpp"
 #include "Container.hpp"
 #include "ModalContainer.hpp"
 #include "MousePositionTile.hpp"

@@ -21,8 +21,6 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3_image/SDL_image.h>
 
-#include "Device_ID.hpp"
-
 #include "computer.hpp"
 #include "DiskII_Button.hpp"
 #include "Unidisk_Button.hpp"
@@ -34,8 +32,6 @@
 #include "OSD.hpp"
 #include "display/display.hpp"
 #include "util/mount.hpp"
-#include "util/SoundEffect.hpp"
-#include "util/SoundEffectKeys.hpp"
 #include "util/strndup.h"
 #include "ModalContainer.hpp"
 #include "util/printf_helper.hpp"
