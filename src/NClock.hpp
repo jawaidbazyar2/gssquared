@@ -260,6 +260,7 @@ protected:
     inline void slow_incr_cycles()  {
         cycles++; 
         if (slow_mode) cycle_type = CYCLE_TYPE_SYNC;
+        if (current.hz_rate == 1020484) cycle_type = CYCLE_TYPE_SYNC; // also get refresh for "free" here.
         
         uint64_t c14m_this_cycle;
         if (cycle_type == CYCLE_TYPE_SYNC) {
