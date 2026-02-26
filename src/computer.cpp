@@ -212,13 +212,13 @@ void computer_t::frame_status_update() {
         uint64_t this_frame_end_time = SDL_GetTicksNS();
         uint64_t frame_counter_delta = this_frame_end_time - last_frame_end_time;
 
-        cpu->fps = ((float)frame_count * 1000000000) / frame_counter_delta;
+        fps = ((float)frame_count * 1000000000) / frame_counter_delta;
         last_frame_end_time = this_frame_end_time;
         frame_count = 0;
 
         // TODO: maybe should update this every second instead of every 5 seconds.
         uint64_t delta = clock->get_cycles() - last_5sec_cycles;
-        cpu->e_mhz = 1000 * (double)delta / ((double)(this_frame_end_time - last_5sec_update));
+        e_mhz = 1000 * (double)delta / ((double)(this_frame_end_time - last_5sec_update));
 
         status_count++;
         if (status_count == 2) {
@@ -226,7 +226,7 @@ void computer_t::frame_status_update() {
             last_5sec_update = this_frame_end_time;
     
             fprintf(stdout, "%llu delta %llu cycles clock-mode: %d CPS: %12.8f MHz [ slips: %llu]\n", 
-                u64_t(delta), u64_t(clock->get_cycles()), clock->get_clock_mode(), cpu->e_mhz, u64_t(cpu->clock_slip));
+                u64_t(delta), u64_t(clock->get_cycles()), clock->get_clock_mode(), e_mhz, u64_t(clock_slip));
             uint64_t et = event_times.getAverage();
             uint64_t at = audio_times.getAverage();
             uint64_t dt = display_times.getAverage();

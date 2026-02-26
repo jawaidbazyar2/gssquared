@@ -170,7 +170,7 @@ void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time,
     uint64_t sleep_loops = 0;
     uint64_t current_time = SDL_GetTicksNS();
     if (current_time > wakeup_time) {
-        cpu->clock_slip++;
+        computer->clock_slip++;
         // TODO: log clock slip for later display.
         //printf("Clock slip: event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", event_time, audio_time, display_time, app_event_time, event_time + audio_time + display_time + app_event_time);
     } else {
@@ -189,7 +189,7 @@ void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time,
 DebugFormatter *debug_clock(computer_t *computer) {
     DebugFormatter *f = new DebugFormatter();
     f->addLine("CPU Expected Rate: %d", computer->clock->get_hz_rate());
-    f->addLine("CPU eMHZ: %12.8f, FPS: %12.8f", computer->cpu->e_mhz, computer->cpu->fps);
+    f->addLine("CPU eMHZ: %12.8f, FPS: %12.8f", computer->e_mhz, computer->fps);
     f->addLine("CPU Cycle: %12llu", computer->clock->get_cycles());
     f->addLine("Vid Cycle: %12llu", computer->clock->get_vid_cycles());
     f->addLine("14M Cycle: %12llu", computer->clock->get_c14m());
@@ -380,7 +380,8 @@ void run_cpus(computer_t *computer) {
             }
 
             uint64_t time_to_sleep = frame_length_ns - (SDL_GetTicksNS() - last_cycle_time);
-            cpu->idle_percent = ((float)time_to_sleep / (float)frame_length_ns) * 100.0f;
+            computer->set_idle_percent(((float)time_to_sleep / (float)frame_length_ns) * 100.0f);
+            //cpu->idle_percent = ((float)time_to_sleep / (float)frame_length_ns) * 100.0f;
 
             frame_sleep(computer, cpu, last_cycle_time, frame_length_ns);
             last_cycle_time = SDL_GetTicksNS(); 

@@ -810,7 +810,7 @@ void OSD::render() {
         // display the MHz at the bottom of the screen.
         { // we are currently at A2 display scale.
             char hud_str[150];
-            snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f / Idle: %5.1f%%", cpu->e_mhz, cpu->fps, cpu->idle_percent);
+            snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f / Idle: %5.1f%%", computer->e_mhz, computer->fps, computer->get_idle_percent());
             SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderDebugText(renderer, 20, window_height - 30, hud_str);
 

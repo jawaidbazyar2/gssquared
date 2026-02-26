@@ -99,9 +99,17 @@ struct computer_t {
     // controls for single-step
     execution_modes_t execution_mode = EXEC_NORMAL;
     uint64_t instructions_left = 0;
+    
+    // Statistics
+    float idle_percent = 0.0f;
+    double fps = 0;
+    double e_mhz = 0;
+    uint64_t clock_slip = 0;
 
     void set_clock(NClockII *clock); 
-    
+    inline void set_idle_percent(float idle_percent) { this->idle_percent = idle_percent; }
+    inline float get_idle_percent() { return this->idle_percent; }
+
     void set_mmu(MMU_II *mmu) { this->mmu = mmu; }
     void set_cpu(cpu_state *cpu) { this->cpu = cpu; }
     void set_platform(platform_info *platform) { this->platform = platform; }

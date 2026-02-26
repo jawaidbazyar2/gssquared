@@ -190,12 +190,6 @@ struct cpu_state {
     
     processor_type cpu_type = PROCESSOR_6502;
 
-    // TODO: these are sort of clock related but more about metrics. Should go somewhere else, maybe computer?
-    uint64_t clock_slip = 0;
-    double e_mhz = 0;
-    double fps = 0;
-    float idle_percent = 0.0f;
-
     std::unique_ptr<BaseCPU> cpun; // CPU instance.
     BaseCPU *core = nullptr;
 
@@ -212,8 +206,6 @@ struct cpu_state {
     void reset();
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
-    uint64_t fast_refresh = 9;
-
 };
 
 #define HLT_INSTRUCTION 1
