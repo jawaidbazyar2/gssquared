@@ -155,13 +155,6 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         init_slot_mockingboard,
         NULL
     },
-    /* {
-        DEVICE_ID_ANNUNCIATOR,
-        "Annunciator",
-        false,
-        init_annunciator,
-        NULL
-    }, */
     {
         DEVICE_ID_IIE_MEMORY,
         "IIe Memory",
