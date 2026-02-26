@@ -75,7 +75,7 @@ void ClipboardImage::Clip(SDL_Surface *surface) {
         for (int i = 0; i < width; i++) {
             RGBA_t *pix = (RGBA_t *)surface->pixels + (scanline * width + i);
             //RGBA_t pix = { .r = pixel[0], .g = pixel[1], .b = pixel[2], .a = pixel[3] };
-            *dst++ = pix->b;
+            *dst++ = pix->b;  // TODO: this order may be platform-dependent. Test on linux and windows.
             *dst++ = pix->g;
             *dst++ = pix->r;
         }
