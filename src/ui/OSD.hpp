@@ -98,9 +98,6 @@ protected:
     int headsUpMessageCount = 0;
 
 public:
-    //cpu_state *cpu = nullptr;
-    
-
     /**
      * @brief Constructs the OSD with the given renderer and window.
      * 
