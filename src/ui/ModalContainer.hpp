@@ -20,11 +20,12 @@
 #include <string>
 #include "Container.hpp"
 #include "util/TextRenderer.hpp"
+#include "util/StorageDevice.hpp"
 
 class ModalContainer_t : public Container_t {
 private:
     std::string msg_text;
-    uint64_t key;
+    storage_key_t key;
     uint64_t data;
     TextRenderer *text_render;
     
@@ -34,8 +35,8 @@ public:
     
     void layout() override;
     void render() override;
-    void set_key(uint64_t key);
-    uint64_t get_key() const;
+    void set_key(storage_key_t key);
+    storage_key_t get_key() const;
     void set_data(uint64_t data);
     uint64_t get_data() const;
 };

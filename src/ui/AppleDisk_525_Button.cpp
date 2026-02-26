@@ -58,7 +58,7 @@
      if (status.motor_on) aa->draw(DiskII_DriveLightOn, tp.x + cp.x + 150, tp.y + cp.y + 24);
  
      char text[32];
-     snprintf(text, sizeof(text), "Slot %llu", u64_t(key >> 8));
+     snprintf(text, sizeof(text), "Slot %u", key.slot);
      SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
      SDL_RenderDebugText(renderer, tp.x + cp.x + 65, tp.y + cp.y + 78, text);
      if (is_hovering && !status.filename.empty()) {

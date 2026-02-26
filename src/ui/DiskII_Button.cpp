@@ -62,7 +62,7 @@ void DiskII_Button_t::render(SDL_Renderer* renderer) {
     if (status.motor_on) aa->draw(DiskII_DriveLightOn, tp.x + cp.x + 30, tp.y + cp.y + 69);
 
     char text[32];
-    snprintf(text, sizeof(text), "Slot %llu", u64_t(key >> 8));
+    snprintf(text, sizeof(text), "Slot %u", key.slot);
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_RenderDebugText(renderer, tp.x + cp.x + 62, tp.y + cp.y + 84, text);
     if (is_hovering && !status.filename.empty()) {

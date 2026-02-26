@@ -31,6 +31,7 @@
 #include "MainAtlas.hpp"
 #include "OSD.hpp"
 #include "display/display.hpp"
+#include "util/StorageDevice.hpp"
 #include "util/mount.hpp"
 #include "util/strndup.h"
 #include "ModalContainer.hpp"
@@ -44,13 +45,13 @@
 
 struct diskii_callback_data_t {
     OSD *osd;
-    uint64_t key;
+    storage_key_t key;
 };
 
 struct diskii_modal_callback_data_t {
     OSD *osd;
     ModalContainer_t *container;
-    uint64_t key;
+    storage_key_t key;
 };
 
 /** handle file dialog callback */
@@ -78,8 +79,8 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
 
     disk_mount_t dm;
     dm.filename = strndup(filelist[0], 1024);
-    dm.slot = data->key >> 8;
-    dm.drive = data->key & 0xFF;   
+    dm.slot = data->key.slot;
+    dm.drive = data->key.drive;   
     osd->computer->mounts->mount_media(dm);
 }
 
@@ -197,7 +198,7 @@ void modal_diskii_click(void *data) {
     OSD *osd = d->osd;
 
     ModalContainer_t *container = d->container;
-    osd->event_queue->addEvent(new Event(EVENT_MODAL_CLICK, container->get_key(), d->key));
+    osd->event_queue->addEvent(new Event(EVENT_MODAL_CLICK, container->get_key().key, d->key.key));
     // I need to reference back to the button that was clicked and get its ID.
 }
 
@@ -346,8 +347,8 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     
     // Create buttons for each registered drive
     for (const auto& drive : drives) {
-        uint8_t slot = drive.key >> 8;
-        uint8_t drive_num = drive.key & 0xFF;
+        uint8_t slot = drive.key.slot;
+        uint8_t drive_num = drive.key.drive;
         StorageButton *button;
 
         // Create the appropriate button type based on drive_type
@@ -583,25 +584,25 @@ void OSD::update() {
     }
 
     // update disk status - iterate over all drives based on what's in slots
-    uint64_t key_mask = 0;
-
+    //uint64_t key_mask = 0;
+    uint16_t key_slot_match = 0;
     // two pass. First, update buttons and calculate the key mask. (the lit drive could have been the previous one, hence 2-pass.)
     for (int i = 0; i < drive_container->get_tile_count(); i++) {
         Tile_t *tile = drive_container->get_tile(i);
         if (tile) {
             StorageButton *button = dynamic_cast<StorageButton *>(tile);
-            uint64_t key = button->get_key();
+            storage_key_t key = button->get_key();
             drive_status_t ds = computer->mounts->media_status(key);
             button->set_disk_status(ds);
             if (ds.motor_on) {
-                key_mask |= key & 0xFFFFFF00;
+                key_slot_match = key.slot;
             }            
         }
     }
 
     // update the HUD container.
     hud_drive_container->remove_all_tiles(); // always clear.. 
-    if ((currentSlideStatus == SLIDE_OUT)  && (key_mask)) {
+    if ((currentSlideStatus == SLIDE_OUT)  && (key_slot_match)) {
         // second pass, update the hud container with items matching the key mask.
         // and set their hover status to false.
         uint32_t hud_index = 0;
@@ -609,9 +610,9 @@ void OSD::update() {
             Tile_t *tile = drive_container->get_tile(i);
             if (tile) {
                 StorageButton *button = dynamic_cast<StorageButton *>(tile);
-                uint64_t key = button->get_key();
+                storage_key_t key = button->get_key();
                 drive_status_t ds = button->get_disk_status();
-                if ((key & 0xFFFFFF00) == key_mask) {
+                if (key.slot == key_slot_match) {
                     hud_drive_container->add_tile(button, hud_index++);
                     button->on_hover_changed(false);
                 }
@@ -850,12 +851,12 @@ void OSD::close_panel() {
     slidePositionDelta = slidePositionDeltaMin;
 }
 
-void OSD::show_diskii_modal(uint64_t key, uint64_t data) {
+void OSD::show_diskii_modal(storage_key_t key, uint64_t data) {
     activeModal = diskii_save_con;
     diskii_save_con->set_key(key);
     diskii_save_con->set_data(data);
 }
 
-void OSD::close_diskii_modal(uint64_t key, uint64_t data) {
+void OSD::close_diskii_modal(storage_key_t key, uint64_t data) {
     activeModal = nullptr;
 }

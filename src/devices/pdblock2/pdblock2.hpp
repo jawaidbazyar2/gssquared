@@ -58,8 +58,8 @@ struct pdblock2_data: public SlotData {
 void pdblock2_execute(cpu_state *cpu, pdblock2_data *pdblock_d);
 void init_pdblock2(computer_t *computer, SlotType_t slot);
 bool mount_pdblock2(pdblock2_data *pdblock_d, uint8_t drive, media_descriptor *media);
-bool unmount_pdblock2(pdblock2_data *pdblock_d, uint64_t key);
-drive_status_t pdblock2_osd_status(pdblock2_data *pdblock_d, uint64_t key);
+bool unmount_pdblock2(pdblock2_data *pdblock_d, storage_key_t key);
+drive_status_t pdblock2_osd_status(pdblock2_data *pdblock_d, storage_key_t key);
 
 
 class PDBlockThunk : public StorageDevice {
@@ -67,16 +67,16 @@ class PDBlockThunk : public StorageDevice {
     
     public:
         PDBlockThunk(pdblock2_data *pdblock_d) : StorageDevice(), pdblock_d(pdblock_d) {}
-        bool mount(uint64_t key, media_descriptor *media) override {
-            return mount_pdblock2(pdblock_d, key & 0xFF, media);
+        bool mount(storage_key_t key, media_descriptor *media) override {
+            return mount_pdblock2(pdblock_d, key.drive, media);
         }
-        bool unmount(uint64_t key) override {
+        bool unmount(storage_key_t key) override {
             return unmount_pdblock2(pdblock_d, key);
         }
-        bool writeback(uint64_t key) override {
+        bool writeback(storage_key_t key) override {
             return true;
         }
-        drive_status_t status(uint64_t key) override {
+        drive_status_t status(storage_key_t key) override {
             return pdblock2_osd_status(pdblock_d, key);
         }
     };

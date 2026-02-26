@@ -18,6 +18,7 @@
 #include <SDL3/SDL.h>
 #include "ModalContainer.hpp"
 #include "util/TextRenderer.hpp"
+#include "util/StorageDevice.hpp"
 
 ModalContainer_t::ModalContainer_t(SDL_Renderer *rendererp, TextRenderer *text_render, size_t max_tiles, const char* msg_text, const Style_t& initial_style)
     : Container_t(rendererp, max_tiles, initial_style), msg_text(msg_text), text_render(text_render) {
@@ -68,7 +69,7 @@ void ModalContainer_t::render() {
     }
 }
 
-void ModalContainer_t::set_key(uint64_t key) {
+void ModalContainer_t::set_key(storage_key_t key) {
     this->key = key;
 }
 
@@ -76,7 +77,7 @@ void ModalContainer_t::set_data(uint64_t data) {
     this->data = data;
 }
 
-uint64_t ModalContainer_t::get_key() const {
+storage_key_t ModalContainer_t::get_key() const {
     return key;
 }
 

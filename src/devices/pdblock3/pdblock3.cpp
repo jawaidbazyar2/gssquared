@@ -323,12 +323,10 @@ public:
         
     /* Implementations of the StorageDevice interface */
 
-    bool mount(uint64_t key, media_descriptor *media) {
-        uint8_t slot = key >> 8;
-        uint8_t drive = key & 0xFF;
-        
+    bool mount(storage_key_t key, media_descriptor *media) {
+       
         //if (DEBUG(DEBUG_PD_BLOCK)) printf("Mounting ProDOS block device %s slot %d drive %d\n", media->filename, slot, drive);
-        if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Mounting PDB3 device " << media->filename << " slot: " << _slot << " drive " << drive << std::endl;
+        if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Mounting PDB3 device " << media->filename << " slot: " << _slot << " drive " << key.drive << std::endl;
     
         const char *mode = media->write_protected ? "rb" : "r+b";
         FILE *fp = fopen(media->filename.c_str(), mode);
@@ -336,32 +334,28 @@ public:
             std::cerr << "Could not open PDB3 device file: " << media->filename << std::endl;
             return false;
         }
-        drives[drive].file = fp;
-        drives[drive].media = media;
+        drives[key.drive].file = fp;
+        drives[key.drive].media = media;
         return true;
     }
     
-    bool unmount(uint64_t key) {
-        uint8_t slot = key >> 8;
-        uint8_t drive = key & 0xFF;
+    bool unmount(storage_key_t key) {
+        //uint8_t drive = key & 0xFF;
     
-        if (drives[drive].file) {
-            fclose(drives[drive].file);
-            drives[drive].file = nullptr;
-            drives[drive].media = nullptr;
+        if (drives[key.drive].file) {
+            fclose(drives[key.drive].file);
+            drives[key.drive].file = nullptr;
+            drives[key.drive].media = nullptr;
         }
         return true;
     }
 
-    bool writeback(uint64_t key) {
+    bool writeback(storage_key_t key) {
         return true;
     }
 
-    drive_status_t status(uint64_t key) {
-        uint8_t slot = key >> 8;
-        uint8_t drive = key & 0xFF;
-
-        media_t seldrive = drives[drive];
+    drive_status_t status(storage_key_t key) {
+        media_t seldrive = drives[key.drive];
 
         bool motor = false;
 
@@ -499,13 +493,18 @@ void init_pdblock3(computer_t *computer, SlotType_t slot)
     computer->mmu->set_slot_rom(slot, rom_data, "PDBLK_ROM");
 
     // register drives with mounts for status reporting
-    uint64_t key = (slot << 8) | 0;
-
     PDBlock3 *pd3 = new PDBlock3(slot, pdblock_d->mmu);
     pdblock_d->pdb = pd3;
 
+    storage_key_t key;
+    key.slot = (uint16_t)slot;
+    key.drive = 0;
+    key.partition = 0;
+    key.subunit = 0;
     computer->mounts->register_storage_device(key, pd3, DRIVE_TYPE_PRODOS_BLOCK);
-    computer->mounts->register_storage_device(key + 1, pd3, DRIVE_TYPE_PRODOS_BLOCK);
+
+    key.drive = 1;
+    computer->mounts->register_storage_device(key, pd3, DRIVE_TYPE_PRODOS_BLOCK);
 
     // register.. uh, registers.
     computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_RESET, { pdblock3_write_C0x0, pdblock_d });

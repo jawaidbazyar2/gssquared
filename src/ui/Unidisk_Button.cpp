@@ -54,7 +54,7 @@ void Unidisk_Button_t::render(SDL_Renderer* renderer) {
 
     SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
     char text[32];
-    snprintf(text, sizeof(text), "Slot %llu", u64_t(key >> 8));
+    snprintf(text, sizeof(text), "Slot %u", key.slot);
     SDL_RenderDebugText(renderer, tp.x + cp.x + 62, tp.y + cp.y + 75, text);
     
     if (is_hovering && !status.filename.empty()) {

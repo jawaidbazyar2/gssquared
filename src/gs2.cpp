@@ -123,7 +123,9 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
                 break;
             case EVENT_MODAL_CLICK:
                 {
-                    uint64_t key = event->getEventKey();
+                    storage_key_t key;
+                    key.key = event->getEventKey();
+
                     uint64_t data = event->getEventData();
                     printf("EVENT_MODAL_CLICK: %llu %llu\n", u64_t(key), u64_t(data));
                     if (data == 1) {
@@ -530,7 +532,7 @@ int main(int argc, char *argv[]) {
                             filename = matches[3];
                             //std::cout << std::format("Mounting disk {} in slot {} drive {}\n", filename, slot, drive) << std::endl;
                             std::cout << "Mounting disk " << filename << " in slot " << slot << " drive " << drive << std::endl;
-                            disks_to_mount.push_back({slot, drive, filename});
+                            disks_to_mount.push_back({ (uint16_t)slot, (uint16_t)drive, filename});
                         }
                     }
                     break;

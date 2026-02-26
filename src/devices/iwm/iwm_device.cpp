@@ -69,12 +69,14 @@ void init_iwm_slot(computer_t *computer, SlotType_t slot) {
         });
 
     // TODO: this might need to go into the Floppy525 constructor.
-    uint64_t key = (6 << 8) | 0;
+    storage_key_t key;
+    key.slot = 6;
+    key.drive = 0;
     computer->mounts->register_storage_device(key, st->iwm->get_drive(0), DRIVE_TYPE_APPLEDISK_525);
+    key.drive = 1;
     computer->mounts->register_storage_device(key + 1, st->iwm->get_drive(1), DRIVE_TYPE_APPLEDISK_525);
     
     // TODO: register the 3.5s here later
-
 
     // register frame handler for soundeffects etc.
     computer->device_frame_dispatcher->registerHandler(
@@ -90,13 +92,4 @@ void init_iwm_slot(computer_t *computer, SlotType_t slot) {
             return true;
         });
 
-    // create disk mount record.
-/*     media_descriptor md;
-    md.filename = "/Users/bazyar/src/AppleIIDisks/Prodos Various/ProDOS_2_4_3.po";
-    if (identify_media(md) != 0) {
-        std::cerr << "Failed to identify media " << md.filename << std::endl;
-        return;
-    }
-    display_media_descriptor(md);
-    st->iwm->mount(&md); */
 }

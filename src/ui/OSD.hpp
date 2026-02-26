@@ -129,8 +129,8 @@ public:
 
     void set_raise_window();
 
-    void show_diskii_modal(uint64_t key, uint64_t data);
-    void close_diskii_modal(uint64_t key, uint64_t data);
+    void show_diskii_modal(storage_key_t key, uint64_t data);
+    void close_diskii_modal(storage_key_t key, uint64_t data);
 
     void set_heads_up_message(const std::string &text, int count);
 

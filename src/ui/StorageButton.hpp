@@ -7,7 +7,7 @@
 
 class StorageButton : public Button_t {
     protected:
-        uint64_t key;
+        storage_key_t key;
         drive_status_t status = { .is_mounted = false,  .filename = "", .motor_on = false, .position = 0, .is_modified = false};
     public:
     // use same constructors as Button_t.
@@ -20,6 +20,6 @@ class StorageButton : public Button_t {
         virtual int get_disk_number() const; */
         inline virtual void set_disk_status(drive_status_t status) { this->status = status; };
         inline virtual drive_status_t get_disk_status() const { return status; };
-        inline virtual void set_key(uint64_t k) { key = k; };
-        inline virtual uint64_t get_key() const { return key; };
+        inline virtual void set_key(storage_key_t k) { key = k; };
+        inline virtual storage_key_t get_key() const { return key; };
 };

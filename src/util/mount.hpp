@@ -28,8 +28,8 @@
 #include "StorageDevice.hpp"
 
 typedef struct {
-    int slot;
-    int drive;
+    uint16_t slot;
+    uint16_t drive;
     std::string filename;
     media_descriptor *media;
 } disk_mount_t;
@@ -47,7 +47,7 @@ struct drive_media_t {
 };
 
 struct drive_info_t {
-    uint64_t key;              // slot/drive identifier
+    storage_key_t key;              // slot/drive identifier
     drive_type_t drive_type;   // for selecting button asset
     drive_status_t status;     // motor, track, mounted, etc.
 };
@@ -67,21 +67,17 @@ class Mounts {
 
     protected:
     SlotManager_t *slot_manager;
-    std::unordered_map<uint64_t, storage_device_registration_t> storage_devices;
-    std::unordered_map<uint64_t, media_descriptor*> mounted_media;
+    std::unordered_map<storage_key_t, storage_device_registration_t> storage_devices;
+    std::unordered_map<storage_key_t, media_descriptor*> mounted_media;
     mutable std::vector<drive_info_t> cached_drive_info;
-
-//    std::unordered_map<uint64_t, drive_media_t> mounted_media;
 
 public:
     Mounts(SlotManager_t *slot_managerx) : slot_manager(slot_managerx) {}
-    int mount_media(disk_mount_t disk_mount);
-    int unmount_media(uint64_t key, unmount_action_t action);
-    drive_status_t media_status(uint64_t key);
+    bool mount_media(disk_mount_t disk_mount);
+    bool unmount_media(storage_key_t key, unmount_action_t action);
+    drive_status_t media_status(storage_key_t key);
     const std::vector<drive_info_t>& get_all_drives();
     //int register_drive(drive_type_t drive_type, uint64_t key);
-    int register_storage_device(uint64_t key, StorageDevice *storage_device, drive_type_t drive_type);
+    int register_storage_device(storage_key_t key, StorageDevice *storage_device, drive_type_t drive_type);
     void dump();
 };
-
-
