@@ -64,7 +64,7 @@ computer_t::computer_t(NClockII *clock) {
     vid_event_timer = new EventTimer(clock); 
 
     slot_manager = new SlotManager_t();
-    mounts = new Mounts(cpu, slot_manager);
+    mounts = new Mounts(slot_manager);
 
     video_system = new video_system_t(this);
     debug_window = new debug_window_t(this);

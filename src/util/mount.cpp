@@ -19,7 +19,6 @@
 #include <iostream>
 #include <algorithm>
 
-#include "cpu.hpp"
 #include "media.hpp"
 #include "mount.hpp"
 
@@ -39,46 +38,7 @@ int Mounts::register_drive(drive_type_t drive_type, uint64_t key) {
 }
 #endif
 
-// TODO: this and umount should work on the basis of a disk device registering callbacks for mount, unmount, status, whatever else.
-
-#if 0
-int Mounts::mount_media(disk_mount_t disk_mount) {
-
-    std::cout << "Mounting disk " << disk_mount.filename << " in slot " << disk_mount.slot << " drive " << disk_mount.drive << std::endl;
-    media_descriptor * media = new media_descriptor();
-    media->filename = disk_mount.filename;
-    if (identify_media(*media) != 0) {
-        std::cerr << "Failed to identify media " << disk_mount.filename << std::endl;
-        return false;
-    }
-    display_media_descriptor(*media);
-
-    uint64_t key = (disk_mount.slot << 8) | disk_mount.drive;
-    mounted_media[key].media = media;
-    mounted_media[key].key = key;
-
-    // TODO: this should look up what type of disk device is in the slot
-    Device_t *device = slot_manager->get_device(static_cast<SlotType_t>(disk_mount.slot));
-
-    //if (disk_mount.slot == 6) { // TODO: instead of based on slot, should be based on the card type in the slot.
-    if (mounted_media[key].drive_type == DRIVE_TYPE_DISKII) {
-        mount_diskII(cpu, disk_mount.slot, disk_mount.drive, media);
-        //mounted_media[key].drive_type = DRIVE_TYPE_DISKII;
-    //} else if (disk_mount.slot == 5) {
-    } else if (mounted_media[key].drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-        bool status = mount_pdblock2(cpu, disk_mount.slot, disk_mount.drive, media);
-        //mounted_media[key].drive_type = DRIVE_TYPE_PRODOS_BLOCK;
-        if (!status) {
-            std::cerr << "Failed to mount ProDOS block device " << disk_mount.filename << std::endl;
-            return false;
-        }
-    } else {
-        std::cerr << "Invalid slot. Expected DISKII or PRODOS_BLOCK" << std::endl;
-    }
-
-    return key;
-}
-#endif
+// this and umount should work on the basis of a disk device registering callbacks for mount, unmount, status, whatever else.
 
 int Mounts::mount_media(disk_mount_t disk_mount) {
     uint64_t key = (disk_mount.slot << 8) | disk_mount.drive;
@@ -107,30 +67,6 @@ int Mounts::mount_media(disk_mount_t disk_mount) {
     return key;
 }
 
-#if 0
-int Mounts::unmount_media(uint64_t key, unmount_action_t action) {
-    // TODO: implement proper unmounting.
-    auto it = mounted_media.find(key);
-    if (it == mounted_media.end()) {
-        return false; // not mounted.
-    }
-    if (it->second.drive_type == DRIVE_TYPE_DISKII) {
-        uint8_t slot = key >> 8;
-        uint8_t drive = key & 0xFF;
-        if (action == SAVE_AND_UNMOUNT) {
-            // save and unmount.
-            writeback_diskII_image(cpu, slot, drive);
-        }
-        unmount_diskII(cpu, slot, drive);
-        return true;
-    } else if (it->second.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-        unmount_pdblock2(cpu, key);
-        return true;
-    }
-    return false;
-}
-#endif
-
 int Mounts::unmount_media(uint64_t key, unmount_action_t action) {
     auto it = storage_devices.find(key);
     if (it == storage_devices.end()) {
@@ -152,21 +88,6 @@ int Mounts::unmount_media(uint64_t key, unmount_action_t action) {
     
     return 0;
 }
-
-#if 0
-drive_status_t Mounts::media_status(uint64_t key) {
-    auto it = mounted_media.find(key);
-    if (it == mounted_media.end()) {
-        return {false, nullptr, false, 0};
-    }
-    if (it->second.drive_type == DRIVE_TYPE_DISKII) {
-        return diskii_status(cpu, key);
-    } else if (it->second.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-        return pdblock2_osd_status(cpu, key);
-    }
-   return {false, nullptr, false, 0};
-}
-#endif
 
 drive_status_t Mounts::media_status(uint64_t key) {
     auto it = storage_devices.find(key);

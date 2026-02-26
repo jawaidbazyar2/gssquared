@@ -58,7 +58,6 @@ enum unmount_action_t {
     DISCARD
 };
 
-
 class Mounts {
 
     struct storage_device_registration_t {
@@ -67,7 +66,6 @@ class Mounts {
     };   
 
     protected:
-    cpu_state *cpu;
     SlotManager_t *slot_manager;
     std::unordered_map<uint64_t, storage_device_registration_t> storage_devices;
     std::unordered_map<uint64_t, media_descriptor*> mounted_media;
@@ -76,7 +74,7 @@ class Mounts {
 //    std::unordered_map<uint64_t, drive_media_t> mounted_media;
 
 public:
-    Mounts(cpu_state *cpux, SlotManager_t *slot_managerx) : cpu(cpux), slot_manager(slot_managerx) {}
+    Mounts(SlotManager_t *slot_managerx) : slot_manager(slot_managerx) {}
     int mount_media(disk_mount_t disk_mount);
     int unmount_media(uint64_t key, unmount_action_t action);
     drive_status_t media_status(uint64_t key);
