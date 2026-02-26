@@ -680,7 +680,7 @@ int main(int argc, char *argv[]) {
         computer->mounts->mount_media(disk_mount);
     }
 
-    osd = new OSD(computer, computer->cpu, vs->renderer, vs->window, computer->slot_manager, 1120, 768, aa);
+    osd = new OSD(computer, vs->renderer, vs->window, computer->slot_manager, 1120, 768, aa);
     osd->set_clock(computer->clock);
 
     // TODO: this should be handled differently. have osd save/restore?

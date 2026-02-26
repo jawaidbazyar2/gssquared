@@ -98,7 +98,7 @@ protected:
     int headsUpMessageCount = 0;
 
 public:
-    cpu_state *cpu = nullptr;
+    //cpu_state *cpu = nullptr;
     
 
     /**
@@ -109,7 +109,7 @@ public:
      * @param window_width Width of the window
      * @param window_height Height of the window
      */
-    OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Window *windowp, SlotManager_t *slot_manager, int window_width, int window_height, AssetAtlas_t *aa);
+    OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, SlotManager_t *slot_manager, int window_width, int window_height, AssetAtlas_t *aa);
     ~OSD();
     
     /**

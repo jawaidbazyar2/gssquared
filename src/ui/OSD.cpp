@@ -22,7 +22,7 @@
 #include <SDL3_image/SDL_image.h>
 
 #include "Device_ID.hpp"
-#include "cpu.hpp"
+
 #include "computer.hpp"
 #include "DiskII_Button.hpp"
 #include "Unidisk_Button.hpp"
@@ -79,12 +79,6 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     
     // 1. unmount current image (if present).
     // 2. mount new image.
-    // TODO: this is never called here since we catch "mounted and want to unmount below in diskii_button_click"
-    /* drive_status_t ds = osd->cpu->mounts->media_status(data->key);
-    if (ds.is_mounted) {
-        osd->cpu->mounts->unmount_media(data->key);
-        // shouldn't need soundeffect here, we play it elsewhere.
-    } */
 
     disk_mount_t dm;
     dm.filename = strndup(filelist[0], 1024);
@@ -182,41 +176,9 @@ void set_white_display(void *data) {
     ds->video_system->set_display_engine(DM_ENGINE_MONO);
 }
 
-#if 0
-void set_mhz_1_0(void *data) {
-    printf("set_mhz_1_0 %p\n", data);
-    cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_1_024MHZ);
-}
-
-void set_mhz_2_8(void *data) {
-    printf("set_mhz_2_8 %p\n", data);
-    cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_2_8MHZ);
-}
-
-void set_mhz_7_1(void *data) {
-    printf("set_mhz_7_1 %p\n", data);
-    cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_7_159MHZ);
-}
-
-void set_mhz_14_3(void *data) {
-    printf("set_mhz_14_3 %p\n", data);
-    cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_7_159MHZ);
-}
-
-void set_mhz_infinity(void *data) {
-    printf("set_mhz_infinity %p\n", data);
-    cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_FREE_RUN);
-}
-#endif
-
 void click_reset_cpu(void *data) {
     printf("click_reset_cpu %p\n", data);
-    // TODO: fix this. OSD should tell computer() to reset. Or, pass an event to main loop.
+    
     computer_t *computer = (computer_t *)data;
     computer->reset(false);
 }
@@ -237,7 +199,7 @@ void modal_diskii_click(void *data) {
     diskii_modal_callback_data_t *d = (diskii_modal_callback_data_t *)data;
     printf("modal_diskii_click %p %llu\n", data, u64_t(d->key));
     OSD *osd = d->osd;
-    cpu_state *cpu = osd->cpu;
+
     ModalContainer_t *container = d->container;
     osd->event_queue->addEvent(new Event(EVENT_MODAL_CLICK, container->get_key(), d->key));
     // I need to reference back to the button that was clicked and get its ID.
@@ -254,8 +216,8 @@ void OSD::set_raise_window() {
     event_queue->addEvent(new Event(EVENT_REFOCUS, 0, (uint64_t)0));
 }
 
-OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Window *windowp, SlotManager_t *slot_manager, int window_width, int window_height, AssetAtlas_t *aa) 
-    : renderer(rendererp), window(windowp), window_w(window_width), window_h(window_height), computer(computer), cpu(cpu), slot_manager(slot_manager), aa(aa) {
+OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, SlotManager_t *slot_manager, int window_width, int window_height, AssetAtlas_t *aa) 
+    : renderer(rendererp), window(windowp), window_w(window_width), window_h(window_height), computer(computer), slot_manager(slot_manager), aa(aa) {
 
     event_queue = computer->event_queue;
 
