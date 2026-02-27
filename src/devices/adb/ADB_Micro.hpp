@@ -420,9 +420,21 @@ class KeyGloo
                         printf("adb->listen addr: %02X, cmd: %02X, reg: %02X, msg: %02X %02X\n", addr, 0b10, reg, xmit_reg.data[0], xmit_reg.data[1]);
                     }
                     break;
-                case 0b11'000000:
-                    //if ((value & 0b11'000000) == 0b11'000000) { // POLL FDB DEVICE
-                    printf("POLL FDB DEVICE - unimplemented\n");
+                case 0b11'000000:  {     // POLL FDB DEVICE
+                        // same as TALK; 
+                        // 11xyabcd
+                        // xy = register;
+                        // abcd = address
+                        uint8_t reg = (value & 0b1100'0000) >> 6;
+                        uint8_t addr = value & 0x0F;
+                        ADB_Register poll_reg;                        
+                        adb_host->talk(addr, 0b11, reg, poll_reg);
+                        response_bytes = 2;
+                        response_byte = 1;
+                        response[0] = poll_reg.data[0];
+                        response[1] = poll_reg.data[1];
+                        printf("adb->talk addr: %02X, cmd: %02X, reg: %02X, msg: %02X %02X\n", addr, 0b11, reg, poll_reg.data[0], poll_reg.data[1]);
+                    }
                     break;
             }
 
@@ -532,8 +544,10 @@ class KeyGloo
             ((response_bytes_reported-1) & 0x07); */
             if (send_data_register) {
 //            if ((data_register_full) && (data_interrupt_enabled)) {
+                num_response_bytes = (response_bytes > 0 ? response_bytes-1 : 0); // TODO: jb 2/26/26
                 uint8_t retval = datareg; // value before we modify it..
                 send_data_register = false;
+                response_byte = 0; // TODO: jb 2/26/26
                 update_data_register_full();
                 desktop_manager_key_sequence = false; // deassert this also
                 update_interrupt_status();
