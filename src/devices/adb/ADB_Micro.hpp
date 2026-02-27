@@ -378,7 +378,13 @@ class KeyGloo
                         reset();
                         //response_bytes = 1;
                     } else if (value == 0x11) { // SEND FDB KEYCODE
-                        store_key_to_buffer(cmd[1], 0);
+                        uint8_t keycode = cmd[1];
+                        uint8_t kpflag = 0;
+                        // TODO: this also needs to update currmod.keypad if a keypad key is being held down?
+                        if (keycode >= 0x43 && keycode <= 0x5C) kpflag = 0x10;
+                        store_key_to_buffer(map_us(keycode, (adb_mod_key_t){0}), kpflag); // TODO: update modifiers.
+
+                        //store_key_to_buffer(cmd[1], 0);
                     } 
 
                     break;
@@ -425,7 +431,7 @@ class KeyGloo
                         // 11xyabcd
                         // xy = register;
                         // abcd = address
-                        uint8_t reg = (value & 0b1100'0000) >> 6;
+                        uint8_t reg = (value & 0b0011'0000) >> 4; // oopsie this was wrong
                         uint8_t addr = value & 0x0F;
                         ADB_Register poll_reg;                        
                         adb_host->talk(addr, 0b11, reg, poll_reg);
@@ -550,6 +556,7 @@ class KeyGloo
                 response_byte = 0; // TODO: jb 2/26/26
                 update_data_register_full();
                 desktop_manager_key_sequence = false; // deassert this also
+                service_request_valid = false; // deassert this also // TODO: jb 2/27/26
                 update_interrupt_status();
                 return retval;
             }
@@ -711,16 +718,32 @@ class KeyGloo
         }
 
         bool process_event(SDL_Event &event) {
+            
+            // if modes_byte indicates no keyboard auto-poll, disregard repeated key events.
+            if ((modes_byte & 0x01) != 0 && (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) && event.key.repeat) return true;
+            
             // TODO: need to track which keys are down in this function.
             // TODO: after processing event, check keyboard register for new key event and read it here.
             bool status = adb_host->process_event(event);
+
             if (status && (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP)) {
+                if (modes_byte & 0x01) { // keyboard auto-poll is disabled...
+                    // assert SRQ ..
+                    service_request_valid = true;
+                    data_register_full = true;
+                    send_data_register = true;
+                    update_interrupt_status();
+                    return status;
+                }
+
                 ADB_Register reg;
                 bool auto_repeat = false;
                 adb_host->talk(0x02, 0b11, 0, reg);
 
                 // Discard auto-repeat events.
                 if (event.type == SDL_EVENT_KEY_DOWN && event.key.repeat) auto_repeat = true;
+
+                
 
                 // for each key event in returned reg, process and update modifiers.
                 // and keycode.
@@ -744,6 +767,8 @@ class KeyGloo
                             break;
                         default:           
                             // Send key to C000 on key up
+                            // TODO: we may need to ignore auto-repeat events and autorepeat keys ourselves,
+                            // for instance for the benefit of games that might control that.
                             if (!auto_repeat) { // don't look at auto-repeat events for keysdown counter
                                 if (keyupdown) keysdown++;
                                 else keysdown--;
