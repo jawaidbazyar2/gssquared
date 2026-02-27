@@ -27,6 +27,14 @@ class ADB_Mouse : public ADB_Device
         registers[0].size = 2;
         registers[0].data[0] = 0x00;
         registers[0].data[1] = 0x00;
+
+        registers[1].size = 2;
+        registers[1].data[0] = 0x00;
+        registers[1].data[1] = 0x00;
+        
+        registers[2].size = 2;
+        registers[2].data[0] = 0x00;
+        registers[2].data[1] = 0x00;
     }
 
     void reset(uint8_t cmd, uint8_t reg) override { }
