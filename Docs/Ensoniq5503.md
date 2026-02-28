@@ -55,4 +55,16 @@ https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/schema
 https://www.brutaldeluxe.fr/documentation/cortland/v4_13_EnsoniqDOC.pdf
 https://web.archive.org/web/20221112230915if_/http://archive.6502.org/datasheets/ensoniq_5503_digital_oscillator_chip.pdf
 
+# Testing
+
+ok, the ROM self test is failing. 
+
+it's failing in a way that it basically is incrementing the address twice when it expects to once. From the Cortland docs:
+
+Read operation
+The Sound RAM read operation is the same as the write operation with one
+exception-reading from the data register lags by one read cycle. For example, if you want
+to read 10 bytes from the sound RAM, select the RAM by setting the control register bit
+and enabling auto incrementing. Then set the address pointer to the starting address and
+read the data register eleven times, discarding the fIrst byte read.
 
