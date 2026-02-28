@@ -236,10 +236,27 @@ causes a segfault! Whoo, that's entertaining. The mask for "oscillators enabled"
 
 Causes a segfault also! Same problem as above, now starts up.. plays music and rotates text. click button to get past the start screen.
 Seems to run pretty well now, though at one point when the 3D engine gets busy, the mouse maybe doesn't respond well? Not sure how many of those controls are supposed to work..
+all the controls work, the mouse is just a little sluggish sometimes. 
 
 ### Nucleus
 
 interrupt issues. Also, after it spazzes out, even RESET isn't turning off some VGC interrupts.
+
+### Revenge of the Bobs
+
+Coredump! I didn't have the 2nd disk mounted, sadly did not replicate.
+Boots, starts to run, wants accelerated mode, but then dies with SYSTEM ERROR 01
+
+### Shoddy Demo
+
+starts to load, hits a BRK
+
+### Airforce Demo
+
+Doesn't do much, but what it does, works
+
+### GS Underground: Demo 2
+
 
 ### Zavtra I / II
 
@@ -248,3 +265,7 @@ these both worked
 ### Wolfenstein 3D
 
 This crashes on startup. Why?
+POLL FDB DEVICE - unimplemented
+interesting!
+WORKING!!! Implemented improvements to ADB emulation to support what w3d wanted.
+PLAYS LIKE A CHAMP.

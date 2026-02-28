@@ -743,8 +743,6 @@ class KeyGloo
                 // Discard auto-repeat events.
                 if (event.type == SDL_EVENT_KEY_DOWN && event.key.repeat) auto_repeat = true;
 
-                
-
                 // for each key event in returned reg, process and update modifiers.
                 // and keycode.
                 // process from LSB to MSB. (i.e., byte 0 (low) first then byte 1 (high))

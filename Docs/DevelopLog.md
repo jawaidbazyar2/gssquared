@@ -4144,7 +4144,7 @@ test 2: 550MHz -
 
 test with trace compiled out: 
 
-[ ] There is a slight issue here which is that the cpu has a member for MMU_II. This should be MMU. And then all the things that need to use it need to cast it to MMU_II. Or, provide some sort of middleware that converts to a minimal interface for the CPU that only provides read and write (and context to use).
+[x] There is a slight issue here which is that the cpu has a member for MMU_II. This should be MMU. And then all the things that need to use it need to cast it to MMU_II. Or, provide some sort of middleware that converts to a minimal interface for the CPU that only provides read and write (and context to use). (well I fixed this didn't I)
 
 [x] I had a thought about speed-shifting. Which is, changing speeds in the middle of a frame. Instead of only counting cycles, we will count virtual nanoseconds. We know how many nanoseconds per cycle there are. We can do it in the main loop. And then, instead of the main run loop waiting for about 17,000 cycles, it checks to see if exactly 16.6666667 milliseconds have elapsed, regardless of speed (60fps). We could also count the ns elapsed based on feedback from the MMU - this would be for the GS and other "accelerated" platforms where inside a single instruction the clock could be numerous different speeds. (right now, done by counting discrete whole 14Ms)
 
@@ -6848,7 +6848,7 @@ That's not right..
 I need to send the color (hi nibble) and the on/off (bit 0) so the receiver can read what it needs- bit 0 for mono/ntsc, bits 7-4 for rgb.
 ok then!
 
-[ ] Maybe instead of uint8_t I should have the bit-frame data type be a 1-byte struct to give it some readability and structure.
+[ ] Maybe instead of uint8_t I should have the bit-frame data type be a 1-byte struct to give it some readability and structure. (I may be unraveling this)
 
 | 7-4 | 3 | 2 | 1 | 0 |
 |-|-|-|-|-|
@@ -7013,7 +7013,7 @@ Roadmap:
 [x] write update_display_iigs
 [x] register distinct iigs frame processor callback  
 [x] see if pixelart obviates need to draw Videx twice for brightness (no it did not)  
-[ ] The PrntScrn button is referencing illegal memory. the pointer from LockTexture is not valid after unlock.  
+[x] The PrntScrn button is referencing illegal memory. the pointer from LockTexture is not valid after unlock.  
 [x] calculate_rects needs to center display in window esp in fullscreen mode  
 [x] implement border color for Apple2_Display  
 
@@ -10289,7 +10289,7 @@ pdblock3 also has predefined slots for 10 media; it's really arbitrary up to wha
 
 Technically should clear CFFF on every call in where we're going to jump to C8 space. it doesn't matter for us, but it would matter on real hardware.
 
-a2desktop shows a trask can instead of a disk drive icon. whoopsie. Code in 1.6 at 77A8 builds a JSR to the dispatcher, and the JSR is at 77B1. CB is 7746. Status list pointer is 0800. Status code is 03. Return DIB Device Information Block.
+a2desktop shows a trash can instead of a disk drive icon. whoopsie. Code in 1.6 at 77A8 builds a JSR to the dispatcher, and the JSR is at 77B1. CB is 7746. Status list pointer is 0800. Status code is 03. Return DIB Device Information Block.
 ok we get back:
 8088: E0 00 00 01 0A 2E 70 64 62 6C 6F 63 6B 33 61 20 20 20 20 20
 
@@ -10327,7 +10327,8 @@ Run "Emergency" which drops to text mode to speak text using SAM. When it return
 
 A2Desktop 1.6 runs a lot better, I was getting crashes trying to load text editor and such, no such issues now.
 
-[ ] If mouse was captured, and we open OSD, when OSD closed, automatically recapture mouse, so we don't require yet another action when mounting disk. This will be less irksome with drag'n'drop, but still.
+[ ] If mouse was captured, and we open OSD, when OSD closed, automatically recapture mouse, so we don't require yet another action when mounting disk. This will be less irksome with drag'n'drop, but still.  
+[ ] Consider having mouse capture require key or click a special button, not just click anywhere in the window  
 
 I am thinking storage keys should be a nice struct. It's 64 bits right, so a packed struct of 4 16-bit values would work nicely. And make using keys much simpler throughout the code.
 
@@ -10342,4 +10343,85 @@ one oddity is that they have bank 0 wide open (state register is 0) BUT 80store 
 It's doing some pointer artithmetic, this looks high level languagey. it's just calculating a bad pointer. 
 (Version of it elsewhere works just fine..)
 
-I am refactoring the Screen Cap (PrntScrn) function, to read the image out of the last screen texture before rendering. This works great on the GS, but, the other systems use a texture that does not have the right mode/flag set. You need a texture to be a render_target texture. So probably need to change the IIe modes to render first to stage2 just like the GS does. Right now screen cap on II/IIe will return a black screen, which is better than crashing like it was before.
+I am refactoring the Screen Cap (PrntScrn) function, to read the image out of the last screen texture before rendering. This works great on the GS, but, the other systems use a texture that does not have the right mode/flag set. You need a texture to be a render_target texture. So probably need to change the IIe modes to render first to stage2 just like the GS does. Right now screen cap on II/IIe will return a black screen, which is better than crashing like it was before. I went ahead and added the extra copy in apple2_cycle, it adds 10uS to the render time but I get copy and paste. I suppose I could experiment with making screenTexture also a render_target texture. not sure what impact that has. Can it be that and a streaming texture at the same time? Probably not. Ah, so once I have the Surface, I could ask SDL to scale it to the correct aspect ratio for me. I wonder how long that would take.. in main cpu memory, during frame time, probably not that bad. That's worth a shot.
+
+[ ] experiement with having SDL scale the surface for us before we hand off. Alternatively, we can just scanline double like we used to.  
+
+## Feb 26, 2026
+
+I removed the last of the cruft from cpu_state! It is now just cpu stuff.
+
+I still think it's weird that cpu_state has an independent life from the actual cpu class. There is all that passing around of cpu_state *. If I could come up with a better way of sharing the state between the 5 65816 "cores" I could collapse the registers and state in, and it would make the code a lot cleaner. Maybe for version 2.
+I wonder if the trace buffer stuff should even be in there. Creating the trace -record- yes, but what to do with that maybe belongs in the main loop. If we want to integrate with the Brutal Deluxe debugger, we're going to want to do something different with the trace record anyway. 
+
+Implemented the storage_key struct throughout the code. Definitely a lot cleaner without all the random bitshifts. Don't get me wrong, bitshifts are awesome, but when unnecessary they make things hard to read and understand.
+
+Wolfenstein 3D crashes trying to do this:
+POLL FDB DEVICE - unimplemented
+
+well I implemented that and it didn't fix anything, we crash in exactly the same place. Coming out of an ADB IRQ. 
+
+TRANSMIT 2 BYTES: B3: 03 01
+adb->listen addr: 03, cmd: 02, reg: 03, msg: 03 01
+adb->talk addr: 02, cmd: 03, reg: 03, msg: 00 22
+
+So it's setting the KB then reading the mouse.
+It's timing out on this talk command. It writes the command at FF/8112, checks C027 to make sure not busy.
+it gets 50, so not busy.
+Writes a C026=F2, which is our talk command above.
+Checks status C027=70, then reads C026=00. 
+"the uc waits until all data has been received then response back to the system with a status byte which indicates the number of bytes received, followed by the data. it returns the bytes in opposite order". that last bit means little-endian instead of big-endian, which we already account for. but we're not doing this status byte. I assumed that is the same as the interrupt byte. maybe not.. 
+ok, so C026 says "data at interrupt time in this register degined as follows:
+bit 7 = response byte if set, otherwise status byte.
+we got C026=0..
+ok, on a response from a talk, it wants the hi bit set in the status byte, and the number of bytes set!!! I got past it!
+The music is playing too slowly, like QIX. 
+The game works! ish. mouse control is working. Keyboard control is not. if it's doing TALK to read the keyboard, and SRQ, then I don't implement that yet. I shove all input to C000, and there is nothing there to be read when the user manually does the TALK. They're actually using toolbox routines, so that's good. Hooking in an SRQ handler.
+
+There is this awesome document by Sheppy talking about how they do the ADB stuff!
+https://www.kansasfest.org/wp-content/uploads/2004-sheppy-wolf3d.pdf
+ESC works for us to pause, they must be checking for that at C000?
+Check out the Toolbox reference volume 1 page 3-22 for table of the ADB Key Codes.
+
+ok, it must be doing something like this:
+1. set modes to disable auto-poll of FDB keyboard (yes, they are setting bit 0)
+1. enable SRQ on keyboard (is it normally set?)
+1. then whenever keys are pressed I need to drive them into an SRQ interrupt procedure
+
+ADB_Micro->process_event will have to do something different. right now it sends the event to the device; then immediately does a "talk" back to fetch it (that's the auto-poll). 
+so we throw SRQ.. do we do the talk, or does the ROM do the talk? check the Wolf3D doc again.  The ROM must do a talk. Let's read the ROM ADB interrupt routine and see where it checks for the SRQ bit. But I'm pretty sure it's going to issue a TALK. There's something about "go ahead and send key code to the uC" so certain keys they may send back into uC. They also handle reset manually. that's interesting, so disabling the auto poll also means the uC doesn't handle reset, or any other keys.
+
+The goal of all this is for the apple ii to get all the low-level keydown and keyup codes. ok, so this is definitely turning off that normal handling and normal processing of C000, except that we send some codes back into that to appear at C000?
+
+
+[ ] implement HOLD and RELEASE reset. 
+[ ] move RESET generation to ADB_Micro
+
+the HOLD AND RELEASE reset will assert reset soi long as the F10 and control are held down. When released, reset is de-asserted. when RESET is asserted, we do something very similar to the WAI, which is just spin a cycle (so video keeps working). And I think we call the device reset handlers. now that is very interesting. we call them, but then hold and spin without calling them?
+
+
+[ ] I need a way to breakpoint on something like "write certain value to address"
+
+## Feb 27, 2026
+
+KEGS seems to agree with my assessment above about SRQ. 
+
+ok, for some reason the ADB tool is called SKI in the ROM01 code. SKIFNCTBL is the jump table for the adb tool.
+SRQPL is SRQPoll to add a poll handler. 
+SRQTBL is the table of handlers.
+INTSRQ is the SRQ Interrupt Handler.
+this is stored into the irq_srq vector.
+
+ldal IRQ_DATAREG (contents of C027)
+and #08          ; the SRQ bit
+beq skipit
+jsl irq_srq
+jsr TSTSETFLG    ; not sure what this is
+
+ok that just rotates the C into E1/00C6 if carry is set. setting some mystery flag, ah, probably "someone handled an interrupt".
+Ah, ok, so this should set the data register.
+
+"if a command is already pending, then the SRQ is ignored". Ah, so if we have manually initiated a TALK already, then this is ignored? ok.
+Something caused the word "end" to be deleted from all the comments in this file.
+
+OK! I've got this thing working!! Mostly. Still have one issue, which is, auto-repeat confuses the game. I bet the game is also turning off autorepeat. Or, perhaps that is automatic when we're in the SRQ mode. let's try that.. 
