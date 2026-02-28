@@ -10425,3 +10425,23 @@ Ah, ok, so this should set the data register.
 Something caused the word "end" to be deleted from all the comments in this file.
 
 OK! I've got this thing working!! Mostly. Still have one issue, which is, auto-repeat confuses the game. I bet the game is also turning off autorepeat. Or, perhaps that is automatic when we're in the SRQ mode. let's try that.. 
+
+[ ] Write some ADB test cases covering recent learings.  
+
+## Feb 28, 2026
+
+ok, SynthLab (Midi Synth Toolset), also has the "music plays too slowly" syndrome. It seems to be spending a lot of time in the interrupt handler, but that could just be an artifact of end-of-frame, when I pause it is not necessarily in there.
+Channel 31 is the only one with interrupt enabled, and it's volume is 0. So they're using it as a timer. 
+
+32 OSC enabled. the Freq is 03E8, or 1000. Interesting choice.. 
+stepping through the code, the accumulator is not updating, and I suppose this is expected, because right now we only update it once every frame when we generate the audio. How often should this go through its wt.. 
+https://gemini.google.com/share/91b5a43a0452
+
+ok, so we know we are only triggering 60 times per second. So we're interrupting 6.6 times less frequently than it wants. I think this is the issue - the actual sound output frequency (the notes) seems correct to my ear (it's certainly not 6.6 times off!). So how do we get more interrupts. Similar to the mockingboard, we need to set a timer. we don't want to manage many timers - a programmer could theoretically put irqs on every osc. So have an interrupt update routine that scans the table and looks for the -next- interrupt, and updates one timer accordingly.
+now, what are they doing when an IRQ goes off? They're changing register settings. So also need to do that business where were generate samples outputs up to the current time point. What is the current time point?
+We can calculate where we are in the frame, divide by samples per frame, and ask it to generate that many (whole) samples.
+generate_ensoniq_frame will need to know if we generated samples pre-frame and how many, so it can request fewer than normal, which will catch up the generator as of the end of a frame.
+
+We keep running into things like this, and, there is a fair extra bit of complexity in the system due to it. I am closer to breaking down and interleaving more things into incr_cycle. It would make reasoning about the state machines a lot easier. Using a timer does sort of achieve the same effect, but, it's more complex to catch all the edge cases.
+
+working on release 0.7.1, have a sort of repeatable coredump on linux. (I also saw on Mac maybe). Load hd1b, and gs pacman into smartport drives. boot. When it gets to where it complains about appletalk, instead of getting that, it crashes. Serial port problem? Why diff on linux? unknown. there is also control-closedapple-reset.. of course in debug mode it doesn't reproduce. what.
