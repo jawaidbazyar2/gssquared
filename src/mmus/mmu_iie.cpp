@@ -251,6 +251,9 @@ void MMU_IIe::map_c1cf_internal_rom(page_t page, uint8_t *data, const char *read
 
     pte->read_p = data;
     pte->write_p = nullptr;
+    pte->read_h = {nullptr, nullptr};
+    pte->write_h = {nullptr, nullptr};
+    pte->shadow_h = {nullptr, nullptr};
     pte->read_d = read_d;
     pte->write_d = nullptr;
 }
@@ -271,6 +274,15 @@ void iie_map_rom_slot3(void *context, SlotType_t slot) {
 }
 
 MMU_IIe::MMU_IIe(int page_table_size, int ram_amount, uint8_t *rom_pointer) : MMU_II(page_table_size, ram_amount, rom_pointer) {
+    for (int i = 0; i < 15; i++) {
+        int_rom_ptable[i].read_p = nullptr;
+        int_rom_ptable[i].write_p = nullptr;
+        int_rom_ptable[i].read_h = {nullptr, nullptr};
+        int_rom_ptable[i].write_h = {nullptr, nullptr};
+        int_rom_ptable[i].shadow_h = {nullptr, nullptr};
+        int_rom_ptable[i].read_d = nullptr;
+        int_rom_ptable[i].write_d = nullptr;
+    }
     //main_rom_D0 = rom_pointer + 0x1000;
     MMU_IIe::init_map();
     power_on_randomize(main_ram, ram_amount);
