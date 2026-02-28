@@ -32,7 +32,7 @@
 #include "opcodes.hpp"
 #include "debug.hpp"
 #include "test.hpp"
-#include "display/text_40x24.hpp"
+//#include "display/text_40x24.hpp"
 #include "event_poll.hpp"
 #include "devices/keyboard/keyboard.hpp"
 #include "devices/speaker/speaker.hpp"

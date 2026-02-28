@@ -30,7 +30,6 @@
 #include "debug.hpp"
 #include "devices/game/gamecontroller.hpp"
 #include "devices/game/mousewheel.hpp"
-#include "devices/annunciator/annunciator.hpp"
 #include "util/applekeys.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/DebugFormatter.hpp"
@@ -111,8 +110,7 @@ JoystickValues convertJoystickValues(int32_t x, int32_t y) {
 }
 
 uint8_t strobe_game_inputs(void *context, uint32_t address) {
-    cpu_state *cpu = (cpu_state *)context;
-    gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+    gamec_state_t *ds = (gamec_state_t *)context;
 
     if (ds->joystick_mode == JOYSTICK_APPLE_MOUSE) {
         float mouse_x, mouse_y;
@@ -153,8 +151,7 @@ void strobe_game_inputs_w(void *context, uint32_t address, uint8_t value) {
 }
 
 uint8_t read_game_input_0(void *context, uint32_t address) {
-    cpu_state *cpu = (cpu_state *)context;
-    gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+    gamec_state_t *ds = (gamec_state_t *)context;
     uint8_t val;
     if (ds->game_input_trigger_0 > ds->clock->get_c14m()) {
         val = 0x80;
@@ -165,8 +162,7 @@ uint8_t read_game_input_0(void *context, uint32_t address) {
 }
 
 uint8_t read_game_input_1(void *context, uint32_t address) {
-    cpu_state *cpu = (cpu_state *)context;
-    gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+    gamec_state_t *ds = (gamec_state_t *)context;
     
     uint8_t val;
     if (ds->game_input_trigger_1 > ds->clock->get_c14m()) {   
@@ -178,8 +174,7 @@ uint8_t read_game_input_1(void *context, uint32_t address) {
 }
 
 uint8_t read_game_input_2(void *context, uint32_t address) {
-    cpu_state *cpu = (cpu_state *)context;
-    gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+    gamec_state_t *ds = (gamec_state_t *)context;
 
     uint8_t val;
     if (ds->game_input_trigger_2 > ds->clock->get_c14m()) {
@@ -191,8 +186,7 @@ uint8_t read_game_input_2(void *context, uint32_t address) {
 }
 
 uint8_t read_game_input_3(void *context, uint32_t address) {
-    cpu_state *cpu = (cpu_state *)context;
-    gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+    gamec_state_t *ds = (gamec_state_t *)context;
     
     uint8_t val;
     if (ds->game_input_trigger_3 > ds->clock->get_c14m()) {
@@ -204,8 +198,7 @@ uint8_t read_game_input_3(void *context, uint32_t address) {
 }
 
 uint8_t read_game_switch_0(void *context, uint32_t address) {
-    cpu_state *cpu = (cpu_state *)context;
-    gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+    gamec_state_t *ds = (gamec_state_t *)context;
     
     if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->joyport_activate)) { // reverse polarity for atari
         bool val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
@@ -235,14 +228,12 @@ uint8_t read_game_switch_0(void *context, uint32_t address) {
 }
 
 uint8_t read_game_switch_1(void *context, uint32_t address) {
-    cpu_state *cpu = (cpu_state *)context;
-    gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+    gamec_state_t *ds = (gamec_state_t *)context;
 
     if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->joyport_activate)) {
         bool val = false;
 
-        annunciator_state_t *anc_d = (annunciator_state_t *)get_module_state(cpu, MODULE_ANNUNCIATOR);
-        bool anc_1 = anc_d->annunciators[1];
+        bool anc_1 = ds->annunciators[1];
         if (anc_1) { // up-1 
             val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP);
         } else { // left-1
@@ -276,14 +267,12 @@ uint8_t read_game_switch_1(void *context, uint32_t address) {
 }
 
 uint8_t read_game_switch_2(void *context, uint32_t address) {
-    cpu_state *cpu = (cpu_state *)context;
-    gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+    gamec_state_t *ds = (gamec_state_t *)context;
 
     if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->joyport_activate)) {
         bool val = false;
 
-        annunciator_state_t *anc_d = (annunciator_state_t *)get_module_state(cpu, MODULE_ANNUNCIATOR);
-        bool anc_1 = anc_d->annunciators[1];
+        bool anc_1 = ds->annunciators[1];
         if (anc_1) { // down-1 
             val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
         } else { // right-1
@@ -431,6 +420,27 @@ DebugFormatter *debug_gamecontroller(gamec_state_t *ds) {
     return df;
 }
 
+
+uint8_t annunciator_read_C0xx_anc0(void *context, uint32_t addr) {
+    gamec_state_t *ds = (gamec_state_t *)context;
+    
+    uint8_t anc_id = (addr & 0x7) >> 1;
+    uint8_t anc_state = (addr & 0x1);
+    ds->annunciators[anc_id] = anc_state;
+    if (DEBUG(DEBUG_VIDEX)) fprintf(stdout, "videx_read_C0xx_anc0: %04X %d\n", addr, ds->annunciators[anc_id]);
+    return ds->mmu->floating_bus_read(); // TODO: return floating bus.
+}
+
+void annunciator_write_C0xx_anc0(void *context, uint32_t addr, uint8_t data) {
+    gamec_state_t *ds = (gamec_state_t *)context;
+    
+    uint8_t anc_id = (addr & 0x7) >> 1;
+    uint8_t anc_state = (addr & 0x1);
+    ds->annunciators[anc_id] = anc_state;
+    if (DEBUG(DEBUG_VIDEX)) fprintf(stdout, "videx_write_C0xx_anc0: %04X %d\n", addr, ds->annunciators[anc_id]);
+}
+
+
 void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     cpu_state *cpu = computer->cpu;
     
@@ -440,6 +450,7 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     ds->event_queue = computer->event_queue;
     ds->mmu = computer->mmu;
     ds->clock = computer->clock;
+    ds->cpu = cpu;
 
     ds->joystick_mode = JOYSTICK_APPLE_GAMEPAD;
     ds->game_switch_0 = 0;
@@ -456,25 +467,35 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     ds->gps[0].id = -1;
     ds->gps[1].id = -1;
 
-    // set in CPU so we can reference later
-    set_module_state(cpu, MODULE_GAMECONTROLLER, ds);
+    ds->annunciators[0] = 0;
+    ds->annunciators[1] = 0;
+    ds->annunciators[2] = 0;
+    ds->annunciators[3] = 0;
 
     if (DEBUG(DEBUG_GAME)) fprintf(stdout, "Initializing game controller\n");
 
     // register the I/O ports
     for (int i = 0; i <= 8; i+=8) { // in II+ and //e appears at C061 etc AND C069 etc.
-        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_0 + i, { read_game_input_0, cpu });
-        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_1 + i, { read_game_input_1, cpu });
-        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_2 + i, { read_game_input_2, cpu });
-        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_3 + i, { read_game_input_3, cpu });
-        computer->mmu->set_C0XX_read_handler(GAME_SWITCH_0 + i, { read_game_switch_0, cpu });
-        computer->mmu->set_C0XX_read_handler(GAME_SWITCH_1 + i, { read_game_switch_1, cpu });
-        computer->mmu->set_C0XX_read_handler(GAME_SWITCH_2 + i, { read_game_switch_2, cpu }); 
+        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_0 + i, { read_game_input_0, ds });
+        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_1 + i, { read_game_input_1, ds });
+        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_2 + i, { read_game_input_2, ds });
+        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_3 + i, { read_game_input_3, ds });
+        computer->mmu->set_C0XX_read_handler(GAME_SWITCH_0 + i, { read_game_switch_0, ds });
+        computer->mmu->set_C0XX_read_handler(GAME_SWITCH_1 + i, { read_game_switch_1, ds });
+        computer->mmu->set_C0XX_read_handler(GAME_SWITCH_2 + i, { read_game_switch_2, ds }); 
     }
     // the reset strobe apparently responds at 0xC070-7F.
     for (int i = 0x00; i <= (computer->platform->id == PLATFORM_APPLE_IIGS ? 0x00 : 0x0F); i++) { // GS only at $C070
-        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_RESET + i, { strobe_game_inputs, cpu });
-        computer->mmu->set_C0XX_write_handler(GAME_ANALOG_RESET + i, { strobe_game_inputs_w, cpu });
+        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_RESET + i, { strobe_game_inputs, ds });
+        computer->mmu->set_C0XX_write_handler(GAME_ANALOG_RESET + i, { strobe_game_inputs_w, ds });
+    }
+
+    // annunciators
+    for (int i = 0; i < 3; i++) { // we'll handle annunciators 0-2 here. display will handle 3.
+        computer->mmu->set_C0XX_read_handler(0xC058 + i*2, { annunciator_read_C0xx_anc0, ds });
+        computer->mmu->set_C0XX_read_handler(0xC058 + i*2 + 1, { annunciator_read_C0xx_anc0, ds });
+        computer->mmu->set_C0XX_write_handler(0xC058 + i*2, { annunciator_write_C0xx_anc0, ds });
+        computer->mmu->set_C0XX_write_handler(0xC058 + i*2 + 1, { annunciator_write_C0xx_anc0, ds });
     }
 
     // we need to compute on init! Otherwise we will only catch changes after boot.

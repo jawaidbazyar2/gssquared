@@ -93,23 +93,23 @@ void debug_dump_disk_images(cpu_state *cpu);
 bool any_diskii_motor_on(cpu_state *cpu);
 int diskii_tracknumber_on(cpu_state *cpu);
 
-
+#if 0
 class DiskIIThunk : public StorageDevice {
     diskII_controller *diskII_d;
     
     public:
         DiskIIThunk(diskII_controller *diskII_d) : StorageDevice(), diskII_d(diskII_d) {}
-        bool mount(uint64_t key, media_descriptor *media) override {
-            return mount_diskII(diskII_d, key >> 8, key & 0xFF, media);
+        bool mount(storage_key_t key, media_descriptor *media) override {
+            return mount_diskII(diskII_d, key.slot, key.drive, media);
         }
-        bool unmount(uint64_t key) override {
-            return unmount_diskII(diskII_d, key >> 8, key & 0xFF);
+        bool unmount(storage_key_t key) override {
+            return unmount_diskII(diskII_d, key.slot, key.drive);
         }
-        bool writeback(uint64_t key) override {
+        bool writeback(storage_key_t key) override {
             return writeback_diskII_image(diskII_d, key >> 8, key & 0xFF);
         }
-        drive_status_t status(uint64_t key) override {
+        drive_status_t status(storage_key_t key) override {
             return diskii_status(diskII_d, key);
         }
     };
-
+#endif

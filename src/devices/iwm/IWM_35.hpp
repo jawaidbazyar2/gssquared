@@ -22,22 +22,22 @@ class IWM_Drive_35 : public IWM_Drive {
         }
         
         // Implementations of the StorageDevice interface
-        bool mount(uint64_t key, media_descriptor *media) override {
+        bool mount(storage_key_t key, media_descriptor *media) override {
             // TODO: implement 3.5" mount
             return false;
         }
         
-        bool unmount(uint64_t key) override {
+        bool unmount(storage_key_t key) override {
             // TODO: implement 3.5" unmount
             return false;
         }
         
-        bool writeback(uint64_t key) override {
+        bool writeback(storage_key_t key) override {
             // TODO: implement 3.5" writeback
             return false;
         }
         
-        drive_status_t status(uint64_t key) override {
+        drive_status_t status(storage_key_t key) override {
             // TODO: implement 3.5" status
             return {false, nullptr, false, 0, false};
         }

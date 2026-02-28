@@ -55,7 +55,11 @@ seems to work all video modes
 
 ## Bard's Tale II: Destiny Knight
 
-My recollection is this worked ok.
+My recollection is this worked ok. Well something was working somewhere, because I walked around a town, however, it is decidedly not working now. It's doing weird disk stuff then going kablooey.
+
+## Bard's Tale I
+
+boots to "NO SMARTPORT" error. Doesn't like running off the hard disk.
 
 ## Christmas Music (Christmas.2mg)
 
@@ -112,6 +116,8 @@ The mouse isn't moving, probably because interrupts are not hooked up yet.
 
 you can select some things in the UI via keyboard, but joystick is not responding.
 
+WORKS NOW, joystick and keyboard controls. I wonder if this hits the joystick from E1. 
+
 ## Apple IIgs Tour
 
 boots past a "loading" screen, but then is looping doing ??
@@ -152,7 +158,7 @@ Well, funnily enough, this is a 143K disk, not an 800K disk. So I bet its bootlo
 
 ## Donkey Kong
 
-Plays very well with keyboard. Joystick auto-detect not working.
+Plays very well with keyboard. (It does not support keyboard) Does support SNESMAX for gamepads, so look into adding this in the future.
 
 ## NoiseTracker
 
@@ -176,9 +182,90 @@ YES. See DevelopLog.md Feb 18 2026.
 
 Telcom now runs. (Issue was IO space wasn't being mapped into bank E1 correctly).
 
+## DreamGrafx (from Golden Orchard)
+
+This appears to work nicely even in SBC 3200 mode (full 3200 colors while editing).
+
+However, the associated DreamVoir program crashes with a BRK 00/0000 after its splash screen.
+A different DreamVoir (from What Is the Apple IIgs?) loads up just fine.
+
 ## Total Replay
 
 ### Airheart
 
 crashes after displaying splash screen (same as on IIe)
+Now working. This is a known bug in TR. I updated pdblock2 to pdblock3 (which supports prodos and smartport standard) and it now works!!
 
+# What Is the Apple IIgs: Launcher
+
+The demos on here are great because they load under normal ProDOS and that gets around my lack of 3.5 ..
+
+## F: Demos
+
+### Happy Friday
+
+Seems to work fine. Has some border-based cycle-counting effecs that look (mostly) correct. 
+
+### Kernkompetenz
+
+takes a bit to load up, but starts. Ran for a long while (prefers to be accelerated) but then eventually succumbed to RESTART SYSTEM 01.
+Uses fill mode, which we haven't implemented yet.
+OK fine, I implemented fill, only took 20 minutes, but this still crashes.
+
+### No Hard Feelings
+
+Also desperately wants fill mode. Also implemented.
+
+### Plasma
+
+crashes on start with sound interrupt stutter issue like Rastan has. Very similar to Plasmagoria. It's working this time though.. 
+
+### Lower Planes
+
+ok this is doing border effects, which are working correctly EXCEPT - the right border is offset, everything is too low. by 1 (maybe 2) scanlines.
+
+### Photonix
+
+it's slamming the disk drives trying to do direct 3.5" stuff. "Non bootable disk" over and over. Whack.
+
+### Megademo
+
+causes a segfault! Whoo, that's entertaining. The mask for "oscillators enabled" in ensoniq was 0x3F, when it should have been 0x1F. Boots up to the menu now but then is non-responsive.
+
+### Modulae
+
+Causes a segfault also! Same problem as above, now starts up.. plays music and rotates text. click button to get past the start screen.
+Seems to run pretty well now, though at one point when the 3D engine gets busy, the mouse maybe doesn't respond well? Not sure how many of those controls are supposed to work..
+all the controls work, the mouse is just a little sluggish sometimes. 
+
+### Nucleus
+
+interrupt issues. Also, after it spazzes out, even RESET isn't turning off some VGC interrupts.
+
+### Revenge of the Bobs
+
+Coredump! I didn't have the 2nd disk mounted, sadly did not replicate.
+Boots, starts to run, wants accelerated mode, but then dies with SYSTEM ERROR 01
+
+### Shoddy Demo
+
+starts to load, hits a BRK
+
+### Airforce Demo
+
+Doesn't do much, but what it does, works
+
+### GS Underground: Demo 2
+
+
+### Zavtra I / II
+
+these both worked
+
+### Wolfenstein 3D
+
+This crashes on startup. Why?
+POLL FDB DEVICE - unimplemented
+interesting!
+WORKING!!! Implemented improvements to ADB emulation to support what w3d wanted.
+PLAYS LIKE A CHAMP.

@@ -33,9 +33,8 @@ void pdblock2_print_cmdbuffer(pdblock_cmd_buffer *pdb) {
     std::cout << std::endl;
 }
 
-drive_status_t pdblock2_osd_status(pdblock2_data *pdblock_d, uint64_t key) {
-    uint8_t slot = key >> 8;
-    uint8_t drive = key & 0xFF;
+drive_status_t pdblock2_osd_status(pdblock2_data *pdblock_d, storage_key_t key) {
+    uint8_t drive = key.drive;
 
     media_t seldrive = pdblock_d->drives[drive];
 
@@ -128,8 +127,6 @@ void pdblock2_execute(pdblock2_data *pdblock_d) {
     uint8_t cmd, dev, unit, slot, drive;
     uint16_t block, addr;
 
-    //pdblock2_data * pdblock_d = (pdblock2_data *)get_module_state(cpu, MODULE_PD_BLOCK2);
-
     if (DEBUG(DEBUG_PD_BLOCK)) pdblock2_print_cmdbuffer(&pdblock_d->cmd_buffer);
 
     uint8_t cksum = 0;
@@ -201,9 +198,9 @@ bool mount_pdblock2(pdblock2_data *pdblock_d, uint8_t drive, media_descriptor *m
     //if (DEBUG(DEBUG_PD_BLOCK)) printf("Mounting ProDOS block device %s slot %d drive %d\n", media->filename, slot, drive);
     if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Mounting ProDOS block device " << media->filename << " slot: " << pdblock_d->_slot << " drive " << drive << std::endl;
 
-    FILE *fp = fopen(media->filename.c_str(), "r+b");
+    const char *mode = media->write_protected ? "rb" : "r+b";
+    FILE *fp = fopen(media->filename.c_str(), mode);
     if (fp == nullptr) {
-        //fprintf(stderr, "Could not open ProDOS block device file: %s\n", media->filename);
         std::cerr << "Could not open ProDOS block device file: " << media->filename << std::endl;
         return false;
     }
@@ -212,9 +209,8 @@ bool mount_pdblock2(pdblock2_data *pdblock_d, uint8_t drive, media_descriptor *m
     return true;
 }
 
-bool unmount_pdblock2(pdblock2_data *pdblock_d, uint64_t key) {
-    uint8_t slot = key >> 8;
-    uint8_t drive = key & 0xFF;
+bool unmount_pdblock2(pdblock2_data *pdblock_d, storage_key_t key) {
+    uint8_t drive = key.drive;
 
     if (pdblock_d->drives[drive].file) {
         fclose(pdblock_d->drives[drive].file);
@@ -292,12 +288,15 @@ void init_pdblock2(computer_t *computer, SlotType_t slot)
     // register slot ROM
     computer->mmu->set_slot_rom(slot, rom_data, "PDBLK_ROM");
 
-    // register drives with mounts for status reporting
-    uint64_t key = (slot << 8) | 0;
-
     PDBlockThunk *thunk = new PDBlockThunk(pdblock_d);
+
+    // register drives with mounts for status reporting
+    storage_key_t key;
+    key.slot = slot;
+    key.drive = 0;
     computer->mounts->register_storage_device(key, thunk, DRIVE_TYPE_PRODOS_BLOCK);
-    computer->mounts->register_storage_device(key + 1, thunk, DRIVE_TYPE_PRODOS_BLOCK);
+    key.drive = 1;
+    computer->mounts->register_storage_device(key, thunk, DRIVE_TYPE_PRODOS_BLOCK);
 
     // register.. uh, registers.
     computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_RESET, { pdblock2_write_C0x0, pdblock_d });

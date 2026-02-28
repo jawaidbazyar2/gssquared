@@ -48,7 +48,6 @@
 #include "version.h"
 #include "util/Metrics.hpp"
 #include "util/DebugHandlerIDs.hpp"
-#include "util/SoundEffectKeys.hpp"
 #include "util/printf_helper.hpp"
 
 /**
@@ -124,7 +123,9 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
                 break;
             case EVENT_MODAL_CLICK:
                 {
-                    uint64_t key = event->getEventKey();
+                    storage_key_t key;
+                    key.key = event->getEventKey();
+
                     uint64_t data = event->getEventData();
                     printf("EVENT_MODAL_CLICK: %llu %llu\n", u64_t(key), u64_t(data));
                     if (data == 1) {
@@ -162,7 +163,7 @@ void frame_video_update(computer_t *computer, cpu_state *cpu, bool force_full_fr
     computer->video_system->present();
 }
 
-void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time, uint64_t ns_per_frame)
+void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per_frame)
     /* uint64_t frame_count) */ {
     uint64_t wakeup_time = last_cycle_time + ns_per_frame; /*  + (frame_count & 1); */ // even frames have 16688154, odd frames have 16688154 + 1
 
@@ -170,12 +171,12 @@ void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time,
     uint64_t sleep_loops = 0;
     uint64_t current_time = SDL_GetTicksNS();
     if (current_time > wakeup_time) {
-        cpu->clock_slip++;
+        computer->clock_slip++;
         // TODO: log clock slip for later display.
         //printf("Clock slip: event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", event_time, audio_time, display_time, app_event_time, event_time + audio_time + display_time + app_event_time);
     } else {
         if (gs2_app_values.sleep_mode) { // sleep most of it, but more aggressively sneak up on target than SDL_DelayPrecise does itself
-            SDL_DelayPrecise((wakeup_time - SDL_GetTicksNS())*0.98);
+            SDL_DelayPrecise((wakeup_time - SDL_GetTicksNS())*0.95);
         }
         // busy wait sync cycle time
         do {
@@ -189,7 +190,7 @@ void frame_sleep(computer_t *computer, cpu_state *cpu, uint64_t last_cycle_time,
 DebugFormatter *debug_clock(computer_t *computer) {
     DebugFormatter *f = new DebugFormatter();
     f->addLine("CPU Expected Rate: %d", computer->clock->get_hz_rate());
-    f->addLine("CPU eMHZ: %12.8f, FPS: %12.8f", computer->cpu->e_mhz, computer->cpu->fps);
+    f->addLine("CPU eMHZ: %12.8f, FPS: %12.8f", computer->e_mhz, computer->fps);
     f->addLine("CPU Cycle: %12llu", computer->clock->get_cycles());
     f->addLine("Vid Cycle: %12llu", computer->clock->get_vid_cycles());
     f->addLine("14M Cycle: %12llu", computer->clock->get_c14m());
@@ -234,19 +235,18 @@ void run_cpus(computer_t *computer) {
 
     uint64_t last_start_frame_c14m = 0;
 
-    speaker_state_t *speaker_state = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
+    speaker_state_t *speaker_state = (speaker_state_t *)computer->get_module_state(MODULE_SPEAKER);
+    display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
 
     while (cpu->halt != HLT_USER) { // top of frame.
 
         uint64_t c14M_per_frame = clock->get_c14m_per_frame();
 
         if (computer->speed_shift) {
-            display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
             computer->speed_shift = false;
 
             if (clock->get_clock_mode() == CLOCK_FREE_RUN) {
-                speaker_state_t *ss = (speaker_state_t *)get_module_state(cpu, MODULE_SPEAKER);
-                ss->sp->reset(clock->get_frame_start_c14M());
+                speaker_state->sp->reset(clock->get_frame_start_c14M());
             }
 
             clock->set_clock_mode(computer->speed_new);
@@ -259,10 +259,10 @@ void run_cpus(computer_t *computer) {
             }
         }
 
-        if (cpu->execution_mode == EXEC_STEP_INTO) {
+        if (computer->execution_mode == EXEC_STEP_INTO) {
 
             /* This will run about 60fps, primarily waiting on user input in the debugger window. */
-            while (cpu->instructions_left) {
+            while (computer->instructions_left) {
                 if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                     computer->event_timer->processEvents(clock->get_c14m());
                 }
@@ -270,7 +270,7 @@ void run_cpus(computer_t *computer) {
                     computer->vid_event_timer->processEvents(clock->get_vid_cycles());
                 }
                 (cpu->cpun->execute_next)(cpu);
-                cpu->instructions_left--;
+                computer->instructions_left--;
             }
 
             MEASURE(computer->event_times, frame_event(computer, cpu));
@@ -304,7 +304,7 @@ void run_cpus(computer_t *computer) {
             uint64_t wakeup_time = last_cycle_time + 16667000;
             SDL_DelayPrecise(wakeup_time - SDL_GetTicksNS());
             
-        } else if ((cpu->execution_mode == EXEC_NORMAL) && (clock->get_clock_mode() != CLOCK_FREE_RUN)) {
+        } else if ((computer->execution_mode == EXEC_NORMAL) && (clock->get_clock_mode() != CLOCK_FREE_RUN)) {
 
             computer->set_frame_start_cycle();
 
@@ -318,8 +318,8 @@ void run_cpus(computer_t *computer) {
                     }
                     // do the pre check.
                     if (computer->debug_window->check_pre_breakpoint(cpu)) {
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
 
@@ -327,13 +327,13 @@ void run_cpus(computer_t *computer) {
                     
                     // Do the post check.
                     if (computer->debug_window->check_post_breakpoint(&cpu->trace_entry)) {
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
                     if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
                 
@@ -362,7 +362,7 @@ void run_cpus(computer_t *computer) {
             MEASURE(computer->device_times, computer->device_frame_dispatcher->dispatch());
     
             /* Emit Video Frame */
-            if (cpu->execution_mode != EXEC_STEP_INTO) {
+            if (computer->execution_mode != EXEC_STEP_INTO) {
                 MEASURE(computer->display_times, frame_video_update(computer, cpu));
             }
     
@@ -381,9 +381,10 @@ void run_cpus(computer_t *computer) {
             }
 
             uint64_t time_to_sleep = frame_length_ns - (SDL_GetTicksNS() - last_cycle_time);
-            cpu->idle_percent = ((float)time_to_sleep / (float)frame_length_ns) * 100.0f;
+            computer->set_idle_percent(((float)time_to_sleep / (float)frame_length_ns) * 100.0f);
+            //cpu->idle_percent = ((float)time_to_sleep / (float)frame_length_ns) * 100.0f;
 
-            frame_sleep(computer, cpu, last_cycle_time, frame_length_ns);
+            frame_sleep(computer, last_cycle_time, frame_length_ns);
             last_cycle_time = SDL_GetTicksNS(); 
 
         } else { // Ludicrous Speed!
@@ -404,21 +405,21 @@ void run_cpus(computer_t *computer) {
                         computer->vid_event_timer->processEvents(clock->get_vid_cycles());
                     }
                     if (computer->debug_window->check_pre_breakpoint(cpu)) {
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
 
                     (cpu->cpun->execute_next)(cpu);
                     
                     if (computer->debug_window->check_post_breakpoint(&cpu->trace_entry)) {
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
                     if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
-                        cpu->execution_mode = EXEC_STEP_INTO;
-                        cpu->instructions_left = 0;
+                        computer->execution_mode = EXEC_STEP_INTO;
+                        computer->instructions_left = 0;
                         break;
                     }
                 
@@ -531,7 +532,7 @@ int main(int argc, char *argv[]) {
                             filename = matches[3];
                             //std::cout << std::format("Mounting disk {} in slot {} drive {}\n", filename, slot, drive) << std::endl;
                             std::cout << "Mounting disk " << filename << " in slot " << slot << " drive " << drive << std::endl;
-                            disks_to_mount.push_back({slot, drive, filename});
+                            disks_to_mount.push_back({ (uint16_t)slot, (uint16_t)drive, filename});
                         }
                     }
                     break;
@@ -680,7 +681,7 @@ int main(int argc, char *argv[]) {
         computer->mounts->mount_media(disk_mount);
     }
 
-    osd = new OSD(computer, computer->cpu, vs->renderer, vs->window, computer->slot_manager, 1120, 768, aa);
+    osd = new OSD(computer, vs->renderer, vs->window, computer->slot_manager, 1120, 768, aa);
     osd->set_clock(computer->clock);
 
     // TODO: this should be handled differently. have osd save/restore?

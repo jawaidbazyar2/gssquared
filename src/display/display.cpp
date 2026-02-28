@@ -24,8 +24,6 @@
 #include "debug.hpp"
 
 #include "display.hpp"
-#include "text_40x24.hpp"
-//#include "hgr_280x192.hpp"
 #include "platforms.hpp"
 
 #include "util/dialog.hpp"
@@ -286,8 +284,7 @@ void set_display_page2(display_state_t *ds) {
  * This is effectively a "redraw the entire screen each frame" method now.
  * With an optimization only update dirty lines.
  */
-bool update_display_apple2(cpu_state *cpu) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+bool update_display_apple2(display_state_t *ds) {
     video_system_t *vs = ds->video_system;
 
     // first push flash state into AppleII_Display
@@ -414,8 +411,7 @@ bool update_display_apple2(cpu_state *cpu) {
 }
 
 
-bool update_display_apple2_cycle(cpu_state *cpu) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+bool update_display_apple2_cycle(display_state_t *ds) {
     video_system_t *vs = ds->video_system;
 
     ScanBuffer *frame_scan = ds->video_scanner->get_frame_scan();
@@ -435,8 +431,15 @@ bool update_display_apple2_cycle(cpu_state *cpu) {
             break;
     }
     ds->frame_rgba->close();
-     
-    vs->render_frame(ds->screenTexture, 
+
+    // render screenTexture to stage2
+    // this is double copying, but is the same process as the GS display code, and makes screen capture work. Adds about 10uS to display_time.
+    SDL_SetRenderTarget(vs->renderer, ds->stage2);
+    SDL_RenderTexture(vs->renderer, ds->screenTexture, &ds->ii_borders[B_CEN][B_CEN].src, &ds->ii_borders[B_CEN][B_CEN].src);
+    SDL_SetRenderTarget(vs->renderer, nullptr);
+
+    // now render stage2.
+    vs->render_frame(ds->stage2, 
         &ds->ii_borders[B_CEN][B_CEN].src, 
         &ds->ii_borders[B_CEN][B_CEN].dst
     );
@@ -444,8 +447,7 @@ bool update_display_apple2_cycle(cpu_state *cpu) {
     return true;
 }
 
-bool update_display_apple2gs_cycle(cpu_state *cpu) {
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+bool update_display_apple2gs_cycle(display_state_t *ds) {
     video_system_t *vs = ds->video_system;
 
     ScanBuffer *frame_scan = ds->video_scanner->get_frame_scan();
@@ -796,11 +798,28 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
     return false;
 }
 
+
+void update_flash_state(display_state_t *ds) {
+    display_page_t *display_page = ds->display_page_table;
+    uint16_t *TEXT_PAGE_TABLE = display_page->text_page_table;
+    
+       // 2 times per second (every 30 frames), the state of flashing characters (those matching 0b01xxxxxx) must be reversed.
+    // according to a web site it's every 27.5 frames. 
+    if (++(ds->flash_counter) < 14) {
+        return;
+    }
+    ds->flash_counter = 0;
+    ds->flash_state = !ds->flash_state;
+    ds->a2_display->set_flash_state(ds->flash_state);
+}
+
+
 /** Called by Clipboard to return current display buffer.
  * doubles scanlines and returns 2* the "native" height. */
 
+#if 0
 void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *width, uint32_t *height) {
-    display_state_t *ds = (display_state_t *)get_module_state(computer->cpu, MODULE_DISPLAY);
+    display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
     // pass back the size.
     uint32_t w = BASE_WIDTH+7;
     *width = w;
@@ -837,6 +856,7 @@ void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *
     snprintf(msgbuf, sizeof(msgbuf), "Screen snapshot taken");
     computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
 }
+#endif
 
 void display_write_switches(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
@@ -1141,21 +1161,9 @@ void display_update_video_scanner(display_state_t *ds, cpu_state *cpu) {
     if (ds->clock->get_clock_mode() == CLOCK_FREE_RUN) {
         ds->framebased = true;
         ds->clock->set_video_scanner(nullptr);
-        /* for (int i = 0x04; i <= 0x0B; i++) {
-            ds->mmu->set_page_shadow(i, { txt_memory_write, cpu });
-        }
-        for (int i = 0x20; i <= 0x5F; i++) {
-            ds->mmu->set_page_shadow(i, { hgr_memory_write, cpu });
-        } */
     } else {
         ds->framebased = false;
         ds->clock->set_video_scanner(ds->video_scanner);
-        for (int i = 0x04; i <= 0x0B; i++) {
-            ds->mmu->set_page_shadow(i, { nullptr, cpu });
-        }
-        for (int i = 0x20; i <= 0x5F; i++) {
-            ds->mmu->set_page_shadow(i, { nullptr, cpu });
-        }
     }
 }
 
@@ -1315,9 +1323,9 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     uint16_t f_w = BASE_WIDTH+20;
     uint16_t f_h = BASE_HEIGHT;
     //ds->frame_rgba = new(std::align_val_t(64)) Frame560RGBA(567, f_h, ds->screenTexture);
-    ds->frame_rgba = new(std::align_val_t(64)) Frame560RGBA(567, f_h, vs->renderer, PIXEL_FORMAT);
+    ds->frame_rgba = new Frame560RGBA(567, f_h, vs->renderer, PIXEL_FORMAT);
     ds->screenTexture = ds->frame_rgba->get_texture();
-    ds->frame_bits = new(std::align_val_t(64)) Frame560(560, f_h);
+    ds->frame_bits = new Frame560(560, f_h);
     //ds->frame_rgba->clear(RGBA_t::make(0, 0, 0, 0)); // clear the frame buffers at startup.
     //ds->frame_bits->clear(0);
 
@@ -1333,7 +1341,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     SDL_SetTextureScaleMode(ds->screenTexture, SDL_SCALEMODE_NEAREST);
 
     // set in CPU so we can reference later
-    set_module_state(cpu, MODULE_DISPLAY, ds);
+    computer->set_module_state(MODULE_DISPLAY, ds);
     
     mmu->set_C0XX_read_handler(0xC050, { txt_bus_read_C050, ds });
     mmu->set_C0XX_write_handler(0xC050, { txt_bus_write_C050, ds });
@@ -1466,24 +1474,24 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     }
 
     if (ds->video_scanner_type == Scanner_AppleIIgs) {
-        vs->register_frame_processor(0, [ds, cpu](bool force_full_frame) -> bool {
+        vs->register_frame_processor(0, [ds](bool force_full_frame) -> bool {
             bool ret;
             if (ds->framebased || force_full_frame) {
-                update_flash_state(cpu);
-                ret = update_display_apple2(cpu);
+                update_flash_state(ds);
+                ret = update_display_apple2(ds);
             } else {
-                ret = update_display_apple2gs_cycle(cpu);
+                ret = update_display_apple2gs_cycle(ds);
             }
             return ret;
         });
     } else {
-        vs->register_frame_processor(0, [ds, cpu](bool force_full_frame) -> bool {
+        vs->register_frame_processor(0, [ds](bool force_full_frame) -> bool {
             bool ret;
             if (ds->framebased || force_full_frame) {
-                update_flash_state(cpu);
-                ret = update_display_apple2(cpu);
+                update_flash_state(ds);
+                ret = update_display_apple2(ds);
             } else {
-                ret = update_display_apple2_cycle(cpu);
+                ret = update_display_apple2_cycle(ds);
             }
             return ret;
         });

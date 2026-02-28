@@ -11,7 +11,9 @@ Apple II+.
 FIREWORKS.BAS works (it's just applesoft).
 
 hello + fireworks (B) does not work. It is apparently doing some crazy cycle-timed stuff, switching display modes using very tight timing.
-So this is "mixing video modes". This won't work with our emulation approach at all.
+So this is "mixing video modes".
+
+2/25/26: works as of mid-2025 with cycle-accurate-video implementation.
 
 ## Crazy Cycles.dsk
 
@@ -30,6 +32,8 @@ in 0.3x, we don't even ever get off track 0, like it's not booting correctly.
 
 This works now, though we're a few cycles off in the VideoScanner.
 
+2/25/26: this works perfectly now
+
 ## Mad Effects #2
 
 another french touch demo - this one synchronizes the mb timers to vbl (works on either ntsc or pal). It does not play right at all. So there must be something wrong with my handling of: when VBL takes effect, or MB timing specifics. I'm actually wondering about the vbl timing. Also, possible phantom read stuff.
@@ -37,6 +41,9 @@ another french touch demo - this one synchronizes the mb timers to vbl (works on
 the source code is at https://github.com/Fr3nchT0uch/Mad_Effect_2/blob/main/main.a 
 
 they do a lot of their cycle counting inside the interrupt handler, so this will be a doozy!
+
+This doesn't play right. This may rely on the very detailed specifics of mockingboard interrupt timing that we don't have quite correct right now.
+
 
 ## four_voice_music.dsk
 
@@ -80,9 +87,12 @@ It thinks the slinky card is a "PROFILE". (This is correct for Prodos 1.1.1).
 
 The issue with this could be that we are supposed to be reading floating bus values when c100-c1xx is read and there is no card in it. We should have a page table setting for "floating". And then pick a bit of display memory at random and return those values. ("At random" in other emulators would be based on where the display update virtual beam scan is. We don't do it that way. )
 
+Slot 1 is showing up as correctly "EMPTY" now, since (long-ago) work to implement floating bus behavior.
+
 ## ProDOS1.9.po
 
-This crashes on boot at address 0x0914 in both GS2 and OE, on both II+ and IIe modes. I think this disk image is bad.
+This crashes on boot at address 0x0914 in both GS2 and OE, on both II+ and IIe modes. I think this disk image is bad (or has a interleave problem).
+A different ProDOS 1.9 disk I found works correctly.
 
 ## ProDOS_2_4_3.po 
 
@@ -127,7 +137,7 @@ This works now after fixing the CarmenSandiego stack wrap problem.
 
 ## Clue
 
-boots and is working, but, disk drive continues running inappropriately. 
+boots and is working, but, disk drive continues running inappropriately. With recent ndiskii changes, works perfectly. (Drive turns off, lol).
 
 ## Classic Concentration
 
@@ -136,6 +146,8 @@ With current state of IIe, it now boots, loads, plays music. But it is a double 
 getting there, but still wrong. (was working)
 
 was working, however with cycle-accurate video, we are in some mode that is not causing the display to update. (did I break double hires?)
+
+2/25/26: (works fine now)
 
 ## Bouncing Kamungas
 
@@ -156,6 +168,7 @@ Ascii Express 3.46 loads. Of course, we don't have any serial ports on here righ
 ## Wizardry
 
 if there's a Videx, wizardry (aka Pascal) turns it on. Then all you see is the Videx screen. Huh. there's a whole video from Chris Torrance about this.
+Works fine on //e.
 
 ## Epyx Preview Disk
 
@@ -173,6 +186,7 @@ https://comp.sys.apple2.narkive.com/7TzX1OSL/rescue-raiders-v1-2-and-1-3-questio
 here's the manual for reference:
 https://archive.org/details/rescueraidersusersmanual/page/n17/mode/2up
 Requires speech synthesis support for Mockingboard.
+Alternately, might need to tweak something so it doesn't think we have a speech chip.
 
 ## Total Replay
 
@@ -189,6 +203,7 @@ seems to work. don't know how to play :)
 needs: Mouse; VBL; 
 gets past VBL check, but still dies on no mouse.
 Working with mouse-in-progress. Needs VBL. Also used hires-with-nodelay mode.
+Working quite well with all items addressed.
 
 ## Cybernoid Music Disk
 
@@ -203,7 +218,8 @@ Working now.
 
 ## Apple II Bejeweled
 
-looks like requires //e 80 column card.
+Requires //e 80 column card.
+Works well.
 
 ## Jumpman
 
@@ -293,6 +309,13 @@ looks like it's trying to in#4 to read mouse.
 
 ## AirHeart
 
-crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff.
+crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff. 
+This is due to something confusing our drive for a smartport, and jmp'ing to $Cx63 which is not a valid entry point in our code.
 
 The -regular- version of Airheart works fine.
+
+TR seems to be seeing our device, assuming it's a SmartPort, and calling a nonexistent routine. (FIXED)
+
+## Arkanoid
+
+This has same problem as Airheart. (FIXED)

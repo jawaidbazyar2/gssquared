@@ -25,8 +25,6 @@
 #define SCALE_Y 4
 #define BASE_WIDTH 560
 #define BASE_HEIGHT 192
-//#define BORDER_WIDTH 30
-//#define BORDER_HEIGHT 20
 
 #include "devices/displaypp/render/Monochrome560.hpp"
 #include "devices/displaypp/render/NTSC560.hpp"
@@ -81,14 +79,6 @@ typedef enum {
     DISPLAY_PAGE_2,
     NUM_DISPLAY_PAGES
 } display_page_number_t;
-
-/* typedef enum {
-    VS_II = 0,
-    VS_IIE,
-    VS_IIGS,
-    NUM_VIDEO_SCANNERS
-
-} video_scanner_t; */
 
 #define B_TOP 0
 #define B_CEN 1
@@ -200,8 +190,7 @@ public:
     uint8_t new_video = 0x01;
     uint8_t text_color = 0x0F0;
     uint8_t border_color = 0x00;
-    /* border_rect_t ii_borders[3][3]; // [y][x]
-    border_rect_t shr_borders[3][3]; // [y][x] */
+
     border_rect_array_t ii_borders; // [y][x]
     border_rect_array_t shr_borders; // [y][x]
 
@@ -212,14 +201,14 @@ public:
     SDL_FRect frame_dst = { 0.0, 0.0, 651.0, 232.0};
 } display_state_t;
 
-void txt_memory_write(uint16_t , uint8_t );
-void update_flash_state(cpu_state *cpu);
+//void txt_memory_write(uint16_t , uint8_t );
+//void update_flash_state(cpu_state *cpu);
 void init_mb_device_display(computer_t *computer, SlotType_t slot);
 
 void display_dump_hires_page(MMU_II *mmu, int page);
 void display_dump_text_page(MMU_II *mmu, int page);
 
-void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *width, uint32_t *height);
+//void display_engine_get_buffer(computer_t *computer, uint8_t *buffer, uint32_t *width, uint32_t *height);
 void display_update_video_scanner(display_state_t *ds, cpu_state *cpu);
 
 uint8_t txt_bus_read_C050(void *context, uint32_t address);

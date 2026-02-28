@@ -26,7 +26,7 @@
 
 void handle_mouse_wheel(gamec_state_t *ds, const SDL_Event &event) {
     int wheel_y = event.wheel.y;
-    //gamec_state_t *ds = (gamec_state_t *)get_module_state(cpu, MODULE_GAMECONTROLLER);
+
     int new_pos = ds->mouse_wheel_pos_0 + (wheel_y * 2); // sensitivity 2.
     if (new_pos < 0) new_pos = 0;
     if (new_pos > 255) new_pos = 255;

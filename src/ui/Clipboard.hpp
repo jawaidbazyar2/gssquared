@@ -74,6 +74,6 @@ struct ClipboardImage {
 
 
     ClipboardImage( );
-    void Clip(computer_t *computer);
+    void Clip(SDL_Surface *surface);
 };
 

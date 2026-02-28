@@ -254,16 +254,12 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     ds->irq_control = computer->irq_control;
     ds->clock = computer->clock;
     ds->event_timer = computer->event_timer;
-
+    ds->_slot = slot;
+    
     mouse_reset(ds);
-    //ds->vbl_cycle = 12480;
     ds->vbl_cycle = (ds->clock->get_c14m_per_scanline() * 192);
-    /* ds->vbl_offset = ds->vbl_cycle; */
 
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE,"1");
-
-    // set in CPU so we can reference later
-    set_slot_state(computer->cpu, slot, (SlotData *)ds);
 
     ResourceFile *rom = new ResourceFile("roms/cards/mouse/mouse.rom", READ_ONLY);
     if (rom == nullptr) {
@@ -275,7 +271,7 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     computer->mmu->set_slot_rom(slot, ds->rom, "MOUSE_ROM");
 
     uint16_t slot_address = 0xC080 + (slot * 0x10);
-    // set in CPU so we can reference later
+
     if (DEBUG(DEBUG_MOUSE)) fprintf(stdout, "Initializing mouse\n");
 
     // register the I/O ports
@@ -308,23 +304,6 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
             mouse_updown(ds, event);
             return true;
         });
-    /* computer->dispatch->registerHandler(SDL_EVENT_KEY_DOWN,
-        [ds](const SDL_Event &event) {
-            if (event.key.key == SDLK_KP_DIVIDE) {
-                if (ds->vbl_offset >= 500) {
-                    ds->vbl_cycle -= 500;
-                    ds->vbl_offset -= 500;
-                }
-                printf("vbl_cycle: %llu, vbl_offset: %llu\n", ds->vbl_cycle, ds->vbl_offset);
-            }
-            if (event.key.key == SDLK_KP_MULTIPLY) {
-                ds->vbl_cycle += 500;
-                ds->vbl_offset += 500;
-                printf("vbl_cycle: %llu, vbl_offset: %llu\n", ds->vbl_cycle, ds->vbl_offset);
-            }
-            return true;
-        }
-    ); */
 
     computer->register_debug_display_handler(
         "mouse",
@@ -335,7 +314,6 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     );
     
     // schedule timer for vbl to start during vbl of next frame.
-    //ds->event_timer->scheduleEvent(ds->vbl_cycle + 17030, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
     ds->event_timer->scheduleEvent(computer->get_frame_start_cycle() /* + ds->vbl_offset */, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
 
 

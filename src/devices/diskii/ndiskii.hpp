@@ -23,7 +23,6 @@
  #include "NClock.hpp"
  #include "devices/diskii/diskii_fmt.hpp"
  #include "util/media.hpp"
- #include "util/mount.hpp"
  #include "util/SoundEffectKeys.hpp"
  #include "devices/diskii/Floppy525.hpp"
  
@@ -234,21 +233,17 @@ class DiskII_Controller : public StorageDevice {
         }
         drives[drive_select].write_cmd(address, data);
     }
-    bool mount(uint64_t key, media_descriptor *media) {
-        uint32_t drivesel = key & 0x01;
-        return drives[drivesel].mount(key, media);
+    bool mount(storage_key_t key, media_descriptor *media) {
+        return drives[key.drive].mount(key, media);
     }
-    bool unmount(uint64_t key) {
-        uint32_t drivesel = key & 0x01;
-        return drives[drivesel].unmount(key);
+    bool unmount(storage_key_t key) {
+        return drives[key.drive].unmount(key);
     }
-    bool writeback(uint64_t key) {
-        uint32_t drivesel = key & 0x01;
-        return drives[drivesel].writeback();
+    bool writeback(storage_key_t key) {
+        return drives[key.drive].writeback();
     }
-    drive_status_t status(uint64_t key) {
-        uint32_t drivesel = key & 0x01;
-        return drives[drivesel].status();
+    drive_status_t status(storage_key_t key) {
+        return drives[key.drive].status();
     }
 };
 
@@ -260,8 +255,4 @@ public:
 };
 
 void init_slot_ndiskII(computer_t *computer, SlotType_t slot);
-//void ndiskii_reset(cpu_state *cpu);
 void debug_dump_disk_images(cpu_state *cpu);
-bool any_ndiskii_motor_on(cpu_state *cpu);
-int ndiskii_tracknumber_on(cpu_state *cpu);
- 

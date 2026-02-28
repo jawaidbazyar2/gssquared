@@ -20,7 +20,5 @@
 
 void render_videx_scanline_80x24(cpu_state *cpu, videx_data * videx_d, int y, void *pixels, int pitch);
 void update_display_videx(cpu_state *cpu, videx_data * videx_d);
-void videx_memory_write(cpu_state *cpu, SlotType_t slot, uint16_t address, uint8_t value);
-uint8_t videx_memory_read(cpu_state *cpu, SlotType_t slot, uint16_t address);
 void videx_memory_write2(void *context, uint32_t address, uint8_t value);
 uint8_t videx_memory_read2(void *context, uint32_t address);

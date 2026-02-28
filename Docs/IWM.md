@@ -28,3 +28,26 @@ ok, I found the splice point - we need to pass the register read/writes down to 
 This is quite the layer upon layer of classes, but these are all header implementations and they are honestly not that complex, so the compiler should be able to optimize pretty well.
 
 I'm now at the point where I need something to wire in the hooks to OSD/mount. I guess I can manually mount a floppy image for testing before I do that.
+
+We need to reference the DISKREG register to control whether we're accessing 5.25, or 3.5. This will control which drives we call in the code. Drives 0-1 are 5.25; 2-3 are 3.5. We generate the index by: C031[6]. 0=5.25, 1=3.5. So it's that bit, shifted left one, plus the drive select switch.
+
+ok, that's done. Now on to ...
+
+## AppleDrive 3.5 Support
+
+Key things here. Probably first thing to start with is, implement the interface to the 3.5 drive registers. There are 16 of them. They are selected by using CA0-CA2, plus SEL. You can read whether head is at track 0 or not; choose the disk head; read number of sides; detect if motor is on; detect motor speed; if a drive is even connected; if a diskette is inserted; if write protected; etc.
+
+There are also 7 control functions. Those registers are selected the same way, but then triggered by toggling LSTRB. The control functions move the disk head, set head direction, turn the motor on and off, eject the disk.
+
+The low level disk read/write stuff is mostly the same, though the 3.5 has variable sized tracks we need to account for. When we move the head to a different sized track we need to interpolate the head position (i.e. the index into the buffer) appropriately.
+
+
+
+
+## Notes on simulating delayed head movement
+
+We can use a frame time handler to simulate head movement latency. In the 5.25 world, the driver code is responsible for moving the head, then doing a busy wait for an appropriate length of time to let the head settle down. On the 3.5, that is handled in the drive and the OS is looking for a "head movement is done".
+
+So we can tick that state machine reasonably accurately during frame time. Basically, we want to wait for a whole frame to have elapsed. This will probably be ok. If it ends up being too slow, we can use a 14M cycle checkpoint and also nudge it forward during register accesses.
+
+Internet says 30ms track settling time for 3.5, 40ms for 5.25.

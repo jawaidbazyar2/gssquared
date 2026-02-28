@@ -26,6 +26,14 @@ class Mounts;
 class EventTimer;
 class VideoScannerII;
 
+
+enum execution_modes_t {
+    EXEC_NORMAL = 0,
+    EXEC_STEP_INTO,
+    //EXEC_STEP_OVER // no longer used?
+};
+
+
 struct computer_t {
 
     using ResetHandler = std::function<bool ()>;
@@ -77,7 +85,6 @@ struct computer_t {
     std::vector<DebugDisplayHandlerInfo> debug_display_handlers;
     
     void *module_store[MODULE_NUM_MODULES];
-    SlotData *slot_store[NUM_SLOTS];
 
     // Status, Statistics, etc.
     Metrics event_times, audio_times, app_event_times, display_times, device_times;
@@ -87,11 +94,22 @@ struct computer_t {
     uint64_t frame_start_cycle = 0;
 
     video_scanner_t video_scanner = Scanner_AppleII;
-    //clock_mode_info_t *clock = nullptr;
     NClockII *clock = nullptr;
 
-    void set_clock(NClockII *clock); 
+    // controls for single-step
+    execution_modes_t execution_mode = EXEC_NORMAL;
+    uint64_t instructions_left = 0;
     
+    // Statistics
+    float idle_percent = 0.0f;
+    double fps = 0;
+    double e_mhz = 0;
+    uint64_t clock_slip = 0;
+
+    void set_clock(NClockII *clock); 
+    inline void set_idle_percent(float idle_percent) { this->idle_percent = idle_percent; }
+    inline float get_idle_percent() { return this->idle_percent; }
+
     void set_mmu(MMU_II *mmu) { this->mmu = mmu; }
     void set_cpu(cpu_state *cpu) { this->cpu = cpu; }
     void set_platform(platform_info *platform) { this->platform = platform; }
@@ -109,13 +127,7 @@ struct computer_t {
     void *get_module_state( module_id_t module_id);
     void set_module_state( module_id_t module_id, void *state);
 
-    SlotData *get_slot_state(SlotType_t slot);
-    SlotData *get_slot_state_by_id(device_id id);
-    void set_slot_state( SlotType_t slot, SlotData *state);
-
-    /* void set_slot_irq( uint8_t slot, bool irq); */
-
-    void send_clock_mode_message();
+    void send_clock_mode_message(clock_mode_t clock_mode);
     void frame_status_update();
 
 };

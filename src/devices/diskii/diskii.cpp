@@ -878,7 +878,7 @@ void init_slot_diskII(computer_t *computer, SlotType_t slot) {
         [diskII_d,cpu]() {
             //diskii_frame_event(diskII_d, cpu);
             bool diskii_run = any_diskii_motor_on(cpu);
-            if (cpu->execution_mode == EXEC_NORMAL) {
+            if (diskII_d->computer->execution_mode == EXEC_NORMAL) {
                 diskii_soundeffects_update(diskII_d, diskii_run, diskii_tracknumber_on(cpu));
             }
             return true;

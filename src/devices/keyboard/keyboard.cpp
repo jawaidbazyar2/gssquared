@@ -93,11 +93,6 @@ void kb_write_C01X(void *context, uint32_t address, uint8_t value) {
     kb_clear_strobe(kb_state);
 }
 
-uint8_t iie_kb_read_strobe(computer_t *computer) {
-    keyboard_state_t *kb_state = (keyboard_state_t *)computer->get_module_state(MODULE_KEYBOARD);
-    return kb_state->kb_key_strobe & 0x7F;
-}
-
 void decode_key_mod(SDL_Keycode key, SDL_Keymod mod) {
     fprintf(stdout, "key: %08X mod: ", key);
     if (mod & SDL_KMOD_LSHIFT) {
@@ -133,7 +128,6 @@ void handle_paste(keyboard_state_t *kb_state, const SDL_Event &event) {
 
 //void handle_keydown_iiplus(cpu_state *cpu, const SDL_Event &event) {
 void handle_keydown_iiplus(const SDL_Event &event, keyboard_state_t *kb_state) {
-    //keyboard_state_t *kb_state = (keyboard_state_t *)get_module_state(cpu, MODULE_KEYBOARD);
 
     // Ignore if only shift is pressed
     SDL_Keymod mod = event.key.mod;
@@ -195,7 +189,6 @@ void init_mb_iiplus_keyboard(computer_t *computer, SlotType_t slot) {
 }
 
 void handle_keydown_iie(const SDL_Event &event, keyboard_state_t *kb_state) {
-    //keyboard_state_t *kb_state = (keyboard_state_t *)get_module_state(cpu, MODULE_KEYBOARD);
 
     // Ignore if only shift is pressed
     SDL_Keymod mod = event.key.mod;

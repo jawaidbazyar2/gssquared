@@ -20,12 +20,8 @@
 
 #include <SDL3/SDL.h>
 
-#include "cpu.hpp"
 #include "slots.hpp"
 
-#include "DiskII_Button.hpp"
-#include "Unidisk_Button.hpp"
-#include "AppleDisk_525_Button.hpp"
 #include "Container.hpp"
 #include "ModalContainer.hpp"
 #include "MousePositionTile.hpp"
@@ -98,9 +94,6 @@ protected:
     int headsUpMessageCount = 0;
 
 public:
-    cpu_state *cpu = nullptr;
-    
-
     /**
      * @brief Constructs the OSD with the given renderer and window.
      * 
@@ -109,7 +102,7 @@ public:
      * @param window_width Width of the window
      * @param window_height Height of the window
      */
-    OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Window *windowp, SlotManager_t *slot_manager, int window_width, int window_height, AssetAtlas_t *aa);
+    OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, SlotManager_t *slot_manager, int window_width, int window_height, AssetAtlas_t *aa);
     ~OSD();
     
     /**
@@ -136,8 +129,8 @@ public:
 
     void set_raise_window();
 
-    void show_diskii_modal(uint64_t key, uint64_t data);
-    void close_diskii_modal(uint64_t key, uint64_t data);
+    void show_diskii_modal(storage_key_t key, uint64_t data);
+    void close_diskii_modal(storage_key_t key, uint64_t data);
 
     void set_heads_up_message(const std::string &text, int count);
 

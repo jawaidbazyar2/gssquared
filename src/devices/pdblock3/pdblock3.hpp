@@ -15,26 +15,26 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include "iigsmemory.hpp"
-#include "Module_ID.hpp"
+#pragma once
 
+#include "gs2.hpp"
+#include "util/media.hpp"
+#include "util/mount.hpp"
+#include "computer.hpp"
+#include "util/StorageDevice.hpp"
 
-void init_iigsmemory(computer_t *computer, SlotType_t slot) {
-    
-    iigsmemory_state_t *gsm = new iigsmemory_state_t;
-    gsm->computer = computer;
+#define PDB3_MAX_UNITS 10
 
-    gsm->mmu_iigs = (MMU_IIgs *)computer->cpu->mmu;
+#define MAX_PD_BUFFER_SIZE 16
+#define PD_CMD_RESET 0xC080
+#define PD_CMD_PUT 0xC081
+#define PD_CMD_EXECUTE 0xC082
+#define PD_ERROR_GET 0xC083
+#define PD_STATUS1_GET 0xC084
+#define PD_STATUS2_GET 0xC085
+#define PD_SP_CMD_LO 0xC086
+#define PD_SP_CMD_HI 0xC087
 
-    //gsm->display_state = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
+#include "devices/pdblock2/pdb_structures.hpp"
 
-    computer->set_module_state(MODULE_IIGSMEMORY, gsm);
-    
-    /* C050 read/write */
-  /*   for (uint16_t i = 0xC050; i <= 0xC057; i++) {
-        computer->mmu->set_C0XX_write_handler(i, { iigsmemory_write_c0xx, gsm });
-        computer->mmu->set_C0XX_read_handler(i, { iigsmemory_read_c0xx, gsm });
-    } */
-
-}
+void init_pdblock3(computer_t *computer, SlotType_t slot);

@@ -75,35 +75,34 @@ foo:
 
  */
 
-void prodos_clock_getln_handler(cpu_state *cpu, char *buf) {
+void prodos_clock_getln_handler(prodos_clock_state *prodosclock_d) {
+    char *buf = prodosclock_d->buf;
+
     time_t now = time(nullptr);
     struct tm *tm = localtime(&now);
 
     snprintf(buf, 255, "%02d,%02d,%02d,%02d,%02d\r", tm->tm_mon + 1, tm->tm_wday, tm->tm_mday, tm->tm_hour, tm->tm_min);
     for (int i = 0; buf[i] != '\0'; i++) {
-        cpu->mmu->write_raw(0x200 + i, buf[i] | 0x80);
+        prodosclock_d->mmu->write_raw(0x200 + i, buf[i] | 0x80);
     }
     //printf("prodos_clock_getln_handler: %s\n", buf);
 }
 
 void prodos_clock_write_register(void *context, uint32_t address, uint8_t value) {
-    cpu_state *cpu = (cpu_state *)context;
-    uint8_t slot = (address - 0xC080) >> 4;
-    prodos_clock_state * prodosclock_d = (prodos_clock_state *)get_slot_state(cpu, (SlotType_t)slot);
+    prodos_clock_state * prodosclock_d = (prodos_clock_state *)context;
     fprintf(stderr, "prodos_clock_write_register: %04x %02x\n", address, value);
     if (value == PRODOS_CLOCK_GETLN_TRIGGER) {
-        prodos_clock_getln_handler(cpu, prodosclock_d->buf);
+        prodos_clock_getln_handler(prodosclock_d);
     }
 }
 
 void init_slot_prodosclock(computer_t *computer, SlotType_t slot) {
-    cpu_state *cpu = computer->cpu;
     
     fprintf(stderr, "ProDOS_Clock init at SLOT %d\n", slot);
 
     prodos_clock_state * prodosclock_d = new prodos_clock_state;
     prodosclock_d->id = DEVICE_ID_PRODOS_CLOCK;
-    set_slot_state(cpu, slot, prodosclock_d);
+    prodosclock_d->mmu = computer->mmu;
 
     // load the firmware into the slot memory
     uint8_t slx = 0x80 + (slot * 0x10) + PRODOS_CLOCK_PV_TRIGGER;
@@ -117,13 +116,11 @@ void init_slot_prodosclock(computer_t *computer, SlotType_t slot) {
     uint8_t *rom_data = new uint8_t[256];
     for (int i = 0; i < 24; i++) {
         rom_data[i] = pdfirm[i];
-        //raw_memory_write(cpu, 0xC000 + (slot * 0x0100) + i, pdfirm[i]);
     }
     for (int i = 24; i < 256; i++) {
         rom_data[i] = 0x60;
-        //raw_memory_write(cpu, 0xC000 + (slot * 0x0100) + i, 0x60);
     }
     computer->mmu->set_slot_rom(slot, rom_data, "PDCLK_ROM");
-    computer->mmu->set_C0XX_write_handler(0xC000 + slx, { prodos_clock_write_register, cpu });
+    computer->mmu->set_C0XX_write_handler(0xC000 + slx, { prodos_clock_write_register, prodosclock_d });
 
 }

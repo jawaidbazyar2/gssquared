@@ -24,6 +24,7 @@
 
 struct thunderclock_state: public SlotData {
     ResourceFile *rom;
+    MMU_II *mmu;
 };
 
 void init_slot_thunderclock(computer_t *computer, SlotType_t slot);

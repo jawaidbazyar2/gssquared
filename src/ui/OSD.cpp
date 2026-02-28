@@ -21,8 +21,6 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3_image/SDL_image.h>
 
-#include "Device_ID.hpp"
-#include "cpu.hpp"
 #include "computer.hpp"
 #include "DiskII_Button.hpp"
 #include "Unidisk_Button.hpp"
@@ -33,9 +31,8 @@
 #include "MainAtlas.hpp"
 #include "OSD.hpp"
 #include "display/display.hpp"
+#include "util/StorageDevice.hpp"
 #include "util/mount.hpp"
-#include "util/SoundEffect.hpp"
-#include "util/SoundEffectKeys.hpp"
 #include "util/strndup.h"
 #include "ModalContainer.hpp"
 #include "util/printf_helper.hpp"
@@ -48,13 +45,13 @@
 
 struct diskii_callback_data_t {
     OSD *osd;
-    uint64_t key;
+    storage_key_t key;
 };
 
 struct diskii_modal_callback_data_t {
     OSD *osd;
     ModalContainer_t *container;
-    uint64_t key;
+    storage_key_t key;
 };
 
 /** handle file dialog callback */
@@ -72,22 +69,18 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     printf("file_dialog_callback: %s\n", filelist[0]);
     
     // Remember the full file path for next time - SDL3 uses it to determine initial directory
-    std::string filepath(filelist[0]);
-    Paths::set_last_file_dialog_dir(filepath);
+    if (filelist[0] != nullptr) {
+        std::string filepath(filelist[0]);
+        Paths::set_last_file_dialog_dir(filepath);
+    }
     
     // 1. unmount current image (if present).
     // 2. mount new image.
-    // TODO: this is never called here since we catch "mounted and want to unmount below in diskii_button_click"
-    /* drive_status_t ds = osd->cpu->mounts->media_status(data->key);
-    if (ds.is_mounted) {
-        osd->cpu->mounts->unmount_media(data->key);
-        // shouldn't need soundeffect here, we play it elsewhere.
-    } */
 
     disk_mount_t dm;
     dm.filename = strndup(filelist[0], 1024);
-    dm.slot = data->key >> 8;
-    dm.drive = data->key & 0xFF;   
+    dm.slot = data->key.slot;
+    dm.drive = data->key.drive;   
     osd->computer->mounts->mount_media(dm);
 }
 
@@ -180,41 +173,9 @@ void set_white_display(void *data) {
     ds->video_system->set_display_engine(DM_ENGINE_MONO);
 }
 
-#if 0
-void set_mhz_1_0(void *data) {
-    printf("set_mhz_1_0 %p\n", data);
-    cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_1_024MHZ);
-}
-
-void set_mhz_2_8(void *data) {
-    printf("set_mhz_2_8 %p\n", data);
-    cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_2_8MHZ);
-}
-
-void set_mhz_7_1(void *data) {
-    printf("set_mhz_7_1 %p\n", data);
-    cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_7_159MHZ);
-}
-
-void set_mhz_14_3(void *data) {
-    printf("set_mhz_14_3 %p\n", data);
-    cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_7_159MHZ);
-}
-
-void set_mhz_infinity(void *data) {
-    printf("set_mhz_infinity %p\n", data);
-    cpu_state *cpu = (cpu_state *)data;
-    set_clock_mode(cpu, CLOCK_FREE_RUN);
-}
-#endif
-
 void click_reset_cpu(void *data) {
     printf("click_reset_cpu %p\n", data);
-    // TODO: fix this. OSD should tell computer() to reset. Or, pass an event to main loop.
+    
     computer_t *computer = (computer_t *)data;
     computer->reset(false);
 }
@@ -235,9 +196,9 @@ void modal_diskii_click(void *data) {
     diskii_modal_callback_data_t *d = (diskii_modal_callback_data_t *)data;
     printf("modal_diskii_click %p %llu\n", data, u64_t(d->key));
     OSD *osd = d->osd;
-    cpu_state *cpu = osd->cpu;
+
     ModalContainer_t *container = d->container;
-    osd->event_queue->addEvent(new Event(EVENT_MODAL_CLICK, container->get_key(), d->key));
+    osd->event_queue->addEvent(new Event(EVENT_MODAL_CLICK, container->get_key().key, d->key.key));
     // I need to reference back to the button that was clicked and get its ID.
 }
 
@@ -252,8 +213,8 @@ void OSD::set_raise_window() {
     event_queue->addEvent(new Event(EVENT_REFOCUS, 0, (uint64_t)0));
 }
 
-OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Window *windowp, SlotManager_t *slot_manager, int window_width, int window_height, AssetAtlas_t *aa) 
-    : renderer(rendererp), window(windowp), window_w(window_width), window_h(window_height), computer(computer), cpu(cpu), slot_manager(slot_manager), aa(aa) {
+OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, SlotManager_t *slot_manager, int window_width, int window_height, AssetAtlas_t *aa) 
+    : renderer(rendererp), window(windowp), window_w(window_width), window_h(window_height), computer(computer), slot_manager(slot_manager), aa(aa) {
 
     event_queue = computer->event_queue;
 
@@ -386,8 +347,8 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     
     // Create buttons for each registered drive
     for (const auto& drive : drives) {
-        uint8_t slot = drive.key >> 8;
-        uint8_t drive_num = drive.key & 0xFF;
+        uint8_t slot = drive.key.slot;
+        uint8_t drive_num = drive.key.drive;
         StorageButton *button;
 
         // Create the appropriate button type based on drive_type
@@ -449,7 +410,7 @@ OSD::OSD(computer_t *computer, cpu_state *cpu, SDL_Renderer *rendererp, SDL_Wind
     Button_t *mc3 = new Button_t(aa, GreenDisplayButton, CB);
     Button_t *mc4 = new Button_t(aa, AmberDisplayButton, CB);
     Button_t *mc5 = new Button_t(aa, WhiteDisplayButton, CB);
-    display_state_t *ds = (display_state_t *)get_module_state(cpu, MODULE_DISPLAY);
+    display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
     mc1->set_click_callback(set_color_display_ntsc, ds);
     mc2->set_click_callback(set_color_display_rgb, ds);
     mc3->set_click_callback(set_green_display, ds);
@@ -623,25 +584,25 @@ void OSD::update() {
     }
 
     // update disk status - iterate over all drives based on what's in slots
-    uint64_t key_mask = 0;
-
+    //uint64_t key_mask = 0;
+    uint16_t key_slot_match = 0;
     // two pass. First, update buttons and calculate the key mask. (the lit drive could have been the previous one, hence 2-pass.)
     for (int i = 0; i < drive_container->get_tile_count(); i++) {
         Tile_t *tile = drive_container->get_tile(i);
         if (tile) {
             StorageButton *button = dynamic_cast<StorageButton *>(tile);
-            uint64_t key = button->get_key();
+            storage_key_t key = button->get_key();
             drive_status_t ds = computer->mounts->media_status(key);
             button->set_disk_status(ds);
             if (ds.motor_on) {
-                key_mask |= key & 0xFFFFFF00;
+                key_slot_match = key.slot;
             }            
         }
     }
 
     // update the HUD container.
     hud_drive_container->remove_all_tiles(); // always clear.. 
-    if ((currentSlideStatus == SLIDE_OUT)  && (key_mask)) {
+    if ((currentSlideStatus == SLIDE_OUT)  && (key_slot_match)) {
         // second pass, update the hud container with items matching the key mask.
         // and set their hover status to false.
         uint32_t hud_index = 0;
@@ -649,9 +610,9 @@ void OSD::update() {
             Tile_t *tile = drive_container->get_tile(i);
             if (tile) {
                 StorageButton *button = dynamic_cast<StorageButton *>(tile);
-                uint64_t key = button->get_key();
+                storage_key_t key = button->get_key();
                 drive_status_t ds = button->get_disk_status();
-                if ((key & 0xFFFFFF00) == key_mask) {
+                if (key.slot == key_slot_match) {
                     hud_drive_container->add_tile(button, hud_index++);
                     button->on_hover_changed(false);
                 }
@@ -808,7 +769,7 @@ void OSD::render() {
         // display the MHz at the bottom of the screen.
         { // we are currently at A2 display scale.
             char hud_str[150];
-            snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f / Idle: %5.1f%%", cpu->e_mhz, cpu->fps, cpu->idle_percent);
+            snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f / Idle: %5.1f%%", computer->e_mhz, computer->fps, computer->get_idle_percent());
             SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderDebugText(renderer, 20, window_height - 30, hud_str);
 
@@ -890,12 +851,12 @@ void OSD::close_panel() {
     slidePositionDelta = slidePositionDeltaMin;
 }
 
-void OSD::show_diskii_modal(uint64_t key, uint64_t data) {
+void OSD::show_diskii_modal(storage_key_t key, uint64_t data) {
     activeModal = diskii_save_con;
     diskii_save_con->set_key(key);
     diskii_save_con->set_data(data);
 }
 
-void OSD::close_diskii_modal(uint64_t key, uint64_t data) {
+void OSD::close_diskii_modal(storage_key_t key, uint64_t data) {
     activeModal = nullptr;
 }

@@ -216,6 +216,8 @@ add_library(gs2_util_audio src/devices/speaker/LowPass.cpp src/devices/speaker/S
 
 add_library(gs2_devices_pdblock2 src/devices/pdblock2/pdblock2.cpp )
 
+add_library(gs2_devices_pdblock3 src/devices/pdblock3/pdblock3.cpp )
+
 add_library(gs2_devices_prodos_clock src/devices/prodos_clock/prodos_clock.cpp )
 
 add_library(gs2_devices_tcp    src/devices/thunderclock_plus/thunderclockplus.cpp )
@@ -234,8 +236,6 @@ add_library(gs2_devices_videx     src/devices/videx/videx.cpp src/devices/videx/
 
 add_library(gs2_devices_mockingboard     src/devices/mockingboard/mb.cpp )
 
-add_library(gs2_devices_annunciator     src/devices/annunciator/annunciator.cpp )
-
 add_library(gs2_devices_mouse     src/devices/applemouseii/mouse.cpp )
 
 add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
@@ -245,8 +245,6 @@ add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp src/devices/es550
 add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
 
 add_library(gs2_devices_iwm src/devices/iwm/iwm_device.cpp src/devices/iwm/IWM_Drive.cpp src/devices/diskii/Floppy525.cpp)
-
-#add_library(gs2_devices_iigsmemory src/devices/iigsmemory/iigsmemory.cpp)
 
 add_library(gs2_devices_cassette     src/devices/cassette/cassette.cpp )
 
@@ -314,8 +312,7 @@ target_link_libraries(gs2_devices_iwm gs2_devices_diskii_fmt)
 
 # Add the executable
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
-    src/display/text_40x24.cpp src/display/hgr_280x192.cpp src/display/display.cpp
-    #src/devices/diskii/diskii.cpp
+    src/display/display.cpp
     src/platforms.cpp
     src/devices.cpp src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
@@ -352,8 +349,8 @@ target_link_libraries(GSSquared
     gs2_devices_parallel
     gs2_devices_videx
     gs2_devices_pdblock2
+    gs2_devices_pdblock3
     gs2_devices_mockingboard
-    gs2_devices_annunciator
     gs2_devices_iiememory
     gs2_devices_ensoniq
     gs2_devices_scc8530

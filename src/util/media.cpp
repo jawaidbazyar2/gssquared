@@ -321,7 +321,7 @@ int identify_media(media_descriptor& md) {
         md.block_size = hdr.bytes_count / hdr.block_count;
         md.data_size = hdr.bytes_count;
         md.data_offset = hdr.header_size;
-        md.write_protected = (hdr.flag & FLAG_LOCKED) != 0; // use WP flag in .2mg file.
+        md.write_protected = md.write_protected || (hdr.flag & FLAG_LOCKED) != 0;
         md.dos33_volume = (hdr.flag & FLAG_DOS33) != 0 ? (hdr.flag & FLAG_DOS33_VOL_MASK) : 254; // if not set, then 254
 
     } else if (compare_suffix(md.filename, ".hdv")) {

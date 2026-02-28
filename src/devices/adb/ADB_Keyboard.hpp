@@ -406,6 +406,15 @@ class ADB_Keyboard : public ADB_Device
         registers[0].size = 2;
         registers[0].data[0] = 0xFF; // hi byte
         registers[0].data[1] = 0xFF; // lo byte
+        
+        registers[1].size = 2;
+        registers[1].data[0] = 0x00;
+        registers[1].data[1] = 0x00;
+        
+        registers[2].size = 2;
+        registers[2].data[0] = 0x00;
+        registers[2].data[1] = 0x00;
+
         /** Register 3
             * Bit 15: reserved, must be 0.
             * Bit 14: exceptional event.

@@ -247,18 +247,20 @@ void init_slot_ndiskII(computer_t *computer, SlotType_t slot) {
  
     computer->mmu->set_slot_rom(slot, rom_data, "DISK2_ROM");
  
-    // register drives with mounts for status reporting
-    uint64_t key = (slot << 8) | 0;
-
     DiskII_Controller *dc = new DiskII_Controller(computer->sound_effect, computer->clock);
     diskII_d->dc = dc;
 
+    // register drives with mounts for status reporting
+    storage_key_t key;
+    key.slot = slot;
+    key.drive = 0;   
     computer->mounts->register_storage_device(key, dc, DRIVE_TYPE_DISKII);
-    computer->mounts->register_storage_device(key + 1, dc, DRIVE_TYPE_DISKII);
+    key.drive = 1;
+    computer->mounts->register_storage_device(key, dc, DRIVE_TYPE_DISKII);
     
     computer->register_reset_handler(
         [diskII_d]() {
-            ndiskii_reset(diskII_d/* , cpu */);
+            ndiskii_reset(diskII_d);
             return true;
         });
  
@@ -267,8 +269,9 @@ void init_slot_ndiskII(computer_t *computer, SlotType_t slot) {
             // motor off timer check. WAY easier to do here than in the drive.
             diskII_d->dc->check_motor_off_timer();
 
-            //if (cpu->execution_mode == EXEC_NORMAL) {
-            diskII_d->dc->soundeffects_update();
+            if (diskII_d->computer->execution_mode == EXEC_NORMAL) {
+                diskII_d->dc->soundeffects_update();
+            }
             return true;
         });
  

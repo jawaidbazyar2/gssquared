@@ -39,4 +39,3 @@ void kb_key_pressed(keyboard_state_t *kb_state, uint8_t key);
 void handle_keydown_iiplus(cpu_state *cpu, const SDL_Event &event);
 void init_mb_iiplus_keyboard(computer_t *computer, SlotType_t slot);
 void init_mb_iie_keyboard(computer_t *computer, SlotType_t slot);
-uint8_t iie_kb_read_strobe(computer_t *computer);

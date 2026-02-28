@@ -346,7 +346,6 @@ uint8_t iiememory_read_C01X(void *context, uint32_t address) {
     KeyboardMessage *keymsg = (KeyboardMessage *)iiememory_d->mbus->read(MESSAGE_TYPE_KEYBOARD);
     uint8_t kbv = (keymsg ? keymsg->mk->last_key_val : 0xEE) & 0x7F;
     return kbv | fl;
-    //return iie_kb_read_strobe(iiememory_d->computer) | fl;
 }
 
 uint8_t iiememory_read_display(void *context, uint32_t address) {

@@ -89,9 +89,7 @@ uint64_t get_thunderclock_time() {
  * The first bit we fetch is the LSB of the seconds-units field. 
  */
 uint8_t thunderclock_read_register(void *context, uint32_t address) {
-    cpu_state *cpu = (cpu_state *)context;
-    uint8_t slot = (address - 0xC080) >> 4;
-    thunderclock_state * thunderclock_d = (thunderclock_state *)get_slot_state(cpu, (SlotType_t)slot);
+    thunderclock_state * thunderclock_d = (thunderclock_state *)context;
 
     fprintf(stderr, "Thunderclock Plus read register %04X => %02X\n", address, thunderclock_command_register);
     
@@ -102,9 +100,7 @@ uint8_t thunderclock_read_register(void *context, uint32_t address) {
 }
 
 void thunderclock_write_register(void *context, uint32_t address, uint8_t value) {
-    cpu_state *cpu = (cpu_state *)context;
-    uint8_t slot = (address - 0xC080) >> 4;
-    thunderclock_state * thunderclock_d = (thunderclock_state *)get_slot_state(cpu, (SlotType_t)slot);
+    thunderclock_state * thunderclock_d = (thunderclock_state *)context;
     fprintf(stderr, "Thunderclock Plus write register %X value %X\n", address, value);
     // check for strobe HI to LO transition. Then perform commmand.
     if ((thunderclock_command_register & TCP_STB) && ((value & TCP_STB) == 0)) {
@@ -126,11 +122,11 @@ void thunderclock_write_register(void *context, uint32_t address, uint8_t value)
 }
 
 void map_rom_thunderclock(void *context, SlotType_t slot) {
-    cpu_state *cpu = (cpu_state *)context;
-    thunderclock_state * thunderclock_d = (thunderclock_state *)get_slot_state(cpu, slot);
+    thunderclock_state * thunderclock_d = (thunderclock_state *)context;
+    
     uint8_t *dp = thunderclock_d->rom->get_data();
     for (uint8_t page = 0; page < 8; page++) {
-        cpu->mmu->map_page_read_only(page + 0xC8, dp + (page * 0x100), "TCP_ROM");
+        thunderclock_d->mmu->map_page_read_only(page + 0xC8, dp + (page * 0x100), "TCP_ROM");
     }
     if (DEBUG(DEBUG_THUNDERCLOCK)) {
         printf("mapped in thunderclock $C800-$CFFF\n");
@@ -138,14 +134,14 @@ void map_rom_thunderclock(void *context, SlotType_t slot) {
 }
 
 void init_slot_thunderclock(computer_t *computer, SlotType_t slot) {
-    cpu_state *cpu = computer->cpu;
+    //cpu_state *cpu = computer->cpu;
     
     uint16_t thunderclock_cmd_reg = THUNDERCLOCK_CMD_REG_BASE + (slot << 4);
     fprintf(stderr, "Thunderclock Plus init at SLOT %d address %X\n", slot, thunderclock_cmd_reg);
 
     thunderclock_state * thunderclock_d = new thunderclock_state;
     thunderclock_d->id = DEVICE_ID_THUNDER_CLOCK;
-    set_slot_state(cpu, slot, thunderclock_d);
+    thunderclock_d->mmu = computer->mmu;
 
     ResourceFile *rom = new ResourceFile("roms/cards/tcp/tcp.rom", READ_ONLY);
     if (rom == nullptr) {
@@ -155,23 +151,13 @@ void init_slot_thunderclock(computer_t *computer, SlotType_t slot) {
     rom->load();
     thunderclock_d->rom = rom;
 
-    // memory-map the page. Refactor to have a method to get and set memory map.
+    // load the firmware into the slot memory
     uint8_t *rom_data = thunderclock_d->rom->get_data();
-
-    // load the firmware into the slot memory -- refactor this
-    /* for (int i = 0; i < 256; i++) {
-        raw_memory_write(cpu, 0xC000 + (slot * 0x0100) + i, rom_data[i]);
-    } */
     computer->mmu->set_slot_rom(slot, rom_data, "TCP_ROM");
 
-    computer->mmu->set_C0XX_read_handler(thunderclock_cmd_reg, { thunderclock_read_register, cpu });
-    computer->mmu->set_C0XX_write_handler(thunderclock_cmd_reg, { thunderclock_write_register, cpu });
+    computer->mmu->set_C0XX_read_handler(thunderclock_cmd_reg, { thunderclock_read_register, thunderclock_d });
+    computer->mmu->set_C0XX_write_handler(thunderclock_cmd_reg, { thunderclock_write_register, thunderclock_d });
 
-    computer->mmu->set_C8xx_handler(slot, map_rom_thunderclock, cpu );
+    computer->mmu->set_C8xx_handler(slot, map_rom_thunderclock, thunderclock_d );
 
-
-    /* register_C0xx_memory_read_handler(thunderclock_cmd_reg, thunderclock_read_register);
-    register_C0xx_memory_write_handler(thunderclock_cmd_reg, thunderclock_write_register);
-
-    register_C8xx_handler(cpu, slot, map_rom_thunderclock); */
 }

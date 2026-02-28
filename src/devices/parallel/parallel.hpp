@@ -13,4 +13,4 @@ struct parallel_data: public SlotData {
 };
 
 void init_slot_parallel(computer_t *computer, SlotType_t slot);
-void parallel_reset(cpu_state *cpu);
+void parallel_reset(parallel_data *parallel_d);

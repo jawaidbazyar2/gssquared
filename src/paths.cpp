@@ -122,5 +122,8 @@ const std::string& Paths::get_last_file_dialog_dir() {
 }
 
 void Paths::set_last_file_dialog_dir(const std::string& dir) {
+    if (dir.empty()) {
+        return;
+    }
     last_file_dialog_dir = dir;
 }

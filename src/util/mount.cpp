@@ -19,74 +19,25 @@
 #include <iostream>
 #include <algorithm>
 
-#include "cpu.hpp"
 #include "media.hpp"
 #include "mount.hpp"
 
 #include "util/printf_helper.hpp"
 
-/**
- * Media Key
- * key = (hex) SSUU
- * S = Slot (key >> 8)
- * U = Unit (key & 0xFF)
- **/
+// this and umount should work on the basis of a disk device registering callbacks for mount, unmount, status, whatever else.
 
-#if 0
-int Mounts::register_drive(drive_type_t drive_type, uint64_t key) {
-    mounted_media[key].drive_type = drive_type;
-    return 0;
-}
-#endif
-
-// TODO: this and umount should work on the basis of a disk device registering callbacks for mount, unmount, status, whatever else.
-
-#if 0
-int Mounts::mount_media(disk_mount_t disk_mount) {
-
-    std::cout << "Mounting disk " << disk_mount.filename << " in slot " << disk_mount.slot << " drive " << disk_mount.drive << std::endl;
-    media_descriptor * media = new media_descriptor();
-    media->filename = disk_mount.filename;
-    if (identify_media(*media) != 0) {
-        std::cerr << "Failed to identify media " << disk_mount.filename << std::endl;
-        return false;
-    }
-    display_media_descriptor(*media);
-
-    uint64_t key = (disk_mount.slot << 8) | disk_mount.drive;
-    mounted_media[key].media = media;
-    mounted_media[key].key = key;
-
-    // TODO: this should look up what type of disk device is in the slot
-    Device_t *device = slot_manager->get_device(static_cast<SlotType_t>(disk_mount.slot));
-
-    //if (disk_mount.slot == 6) { // TODO: instead of based on slot, should be based on the card type in the slot.
-    if (mounted_media[key].drive_type == DRIVE_TYPE_DISKII) {
-        mount_diskII(cpu, disk_mount.slot, disk_mount.drive, media);
-        //mounted_media[key].drive_type = DRIVE_TYPE_DISKII;
-    //} else if (disk_mount.slot == 5) {
-    } else if (mounted_media[key].drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-        bool status = mount_pdblock2(cpu, disk_mount.slot, disk_mount.drive, media);
-        //mounted_media[key].drive_type = DRIVE_TYPE_PRODOS_BLOCK;
-        if (!status) {
-            std::cerr << "Failed to mount ProDOS block device " << disk_mount.filename << std::endl;
-            return false;
-        }
-    } else {
-        std::cerr << "Invalid slot. Expected DISKII or PRODOS_BLOCK" << std::endl;
-    }
-
-    return key;
-}
-#endif
-
-int Mounts::mount_media(disk_mount_t disk_mount) {
-    uint64_t key = (disk_mount.slot << 8) | disk_mount.drive;
+bool Mounts::mount_media(disk_mount_t disk_mount) {
+    //uint64_t key = (disk_mount.slot << 8) | disk_mount.drive;
+    storage_key_t key;
+    key.slot = disk_mount.slot;
+    key.drive = disk_mount.drive;
+    key.partition = 0;
+    key.subunit = 0;
     
     auto it = storage_devices.find(key);
     if (it == storage_devices.end()) {
         std::cerr << "No drive registered at " << key << std::endl;
-        return -1;
+        return false;
     }
     
     // Identify media
@@ -94,47 +45,23 @@ int Mounts::mount_media(disk_mount_t disk_mount) {
     media->filename = disk_mount.filename;
     if (identify_media(*media) != 0) {
         delete media;
-        return -1;
+        return false;
     }
     
     // Call drive's mount method - polymorphic!
     if (!it->second.device->mount(key, media)) {
         delete media;
-        return -1;
+        return false;
     }
     
     mounted_media[key] = media;
-    return key;
+    return true;
 }
 
-#if 0
-int Mounts::unmount_media(uint64_t key, unmount_action_t action) {
-    // TODO: implement proper unmounting.
-    auto it = mounted_media.find(key);
-    if (it == mounted_media.end()) {
-        return false; // not mounted.
-    }
-    if (it->second.drive_type == DRIVE_TYPE_DISKII) {
-        uint8_t slot = key >> 8;
-        uint8_t drive = key & 0xFF;
-        if (action == SAVE_AND_UNMOUNT) {
-            // save and unmount.
-            writeback_diskII_image(cpu, slot, drive);
-        }
-        unmount_diskII(cpu, slot, drive);
-        return true;
-    } else if (it->second.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-        unmount_pdblock2(cpu, key);
-        return true;
-    }
-    return false;
-}
-#endif
-
-int Mounts::unmount_media(uint64_t key, unmount_action_t action) {
+bool Mounts::unmount_media(storage_key_t key, unmount_action_t action) {
     auto it = storage_devices.find(key);
     if (it == storage_devices.end()) {
-        return -1;
+        return false;
     }
     
     if (action == SAVE_AND_UNMOUNT) {
@@ -150,25 +77,10 @@ int Mounts::unmount_media(uint64_t key, unmount_action_t action) {
         mounted_media.erase(media_it);
     }
     
-    return 0;
+    return true;
 }
 
-#if 0
-drive_status_t Mounts::media_status(uint64_t key) {
-    auto it = mounted_media.find(key);
-    if (it == mounted_media.end()) {
-        return {false, nullptr, false, 0};
-    }
-    if (it->second.drive_type == DRIVE_TYPE_DISKII) {
-        return diskii_status(cpu, key);
-    } else if (it->second.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-        return pdblock2_osd_status(cpu, key);
-    }
-   return {false, nullptr, false, 0};
-}
-#endif
-
-drive_status_t Mounts::media_status(uint64_t key) {
+drive_status_t Mounts::media_status(storage_key_t key) {
     auto it = storage_devices.find(key);
     if (it == storage_devices.end()) {
         return {false, nullptr, false, 0, false};
@@ -185,7 +97,7 @@ void Mounts::dump() {
     }
 }
 
-int Mounts::register_storage_device(uint64_t key, StorageDevice *storage_device, drive_type_t drive_type) {
+int Mounts::register_storage_device(storage_key_t key, StorageDevice *storage_device, drive_type_t drive_type) {
     storage_devices[key] = {storage_device, drive_type};
     return 0;
 }
@@ -206,10 +118,10 @@ const std::vector<drive_info_t>& Mounts::get_all_drives() {
     // Sort by key: primary sort by slot (high byte) descending, secondary by drive (low byte) ascending
     std::sort(cached_drive_info.begin(), cached_drive_info.end(),
               [](const drive_info_t& a, const drive_info_t& b) {
-                  uint8_t slot_a = a.key >> 8;
-                  uint8_t slot_b = b.key >> 8;
-                  uint8_t drive_a = a.key & 0xFF;
-                  uint8_t drive_b = b.key & 0xFF;
+                  uint8_t slot_a = a.key.slot;
+                  uint8_t slot_b = b.key.slot;
+                  uint8_t drive_a = a.key.drive;
+                  uint8_t drive_b = b.key.drive;
                   
                   if (slot_a != slot_b) {
                       return slot_a > slot_b;  // Higher slots first

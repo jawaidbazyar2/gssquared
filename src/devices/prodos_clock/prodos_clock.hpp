@@ -29,6 +29,7 @@
 
 struct prodos_clock_state: public SlotData {
     char buf[64];    
+    MMU_II *mmu;
 };
 
 void init_slot_prodosclock(computer_t *computer, SlotType_t slot);

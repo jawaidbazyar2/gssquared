@@ -27,10 +27,10 @@
 #include "devices/memoryexpansion/memexp.hpp"
 #include "devices/thunderclock_plus/thunderclockplus.hpp"
 #include "devices/pdblock2/pdblock2.hpp"
+#include "devices/pdblock3/pdblock3.hpp"
 #include "devices/parallel/parallel.hpp"
 #include "devices/videx/videx.hpp"
 #include "devices/mockingboard/mb.hpp"
-#include "devices/annunciator/annunciator.hpp"
 #include "devices/iiememory/iiememory.hpp"
 #include "devices/applemouseii/mouse.hpp"
 #include "devices/cassette/cassette.hpp"
@@ -40,8 +40,6 @@
 #include "devices/es5503/soundglu.hpp"
 #include "devices/scc8530/scc8530.hpp"
 #include "devices/iwm/iwm_device.hpp"
-
-//#include "devices/iigsmemory/iigsmemory.hpp"
 
 Device_t NoDevice = {
         DEVICE_ID_END,
@@ -158,13 +156,6 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         NULL
     },
     {
-        DEVICE_ID_ANNUNCIATOR,
-        "Annunciator",
-        false,
-        init_annunciator,
-        NULL
-    },
-    {
         DEVICE_ID_IIE_MEMORY,
         "IIe Memory",
         false,
@@ -225,6 +216,13 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         "IWM",
         false,
         init_iwm_slot,
+        NULL
+    },
+    {
+        DEVICE_ID_PD_BLOCK3,
+        "Generic ProDOS Block 3",
+        true,
+        init_pdblock3,
         NULL
     },
 };

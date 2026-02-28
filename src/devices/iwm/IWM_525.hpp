@@ -50,19 +50,19 @@ class IWM_Drive_525 : public IWM_Drive {
         }
 
         // Implementations of the StorageDevice interface
-        bool mount(uint64_t key, media_descriptor *media) override {
+        bool mount(storage_key_t key, media_descriptor *media) override {
             return dr.mount(key, media);
         }
         
-        bool unmount(uint64_t key) override {
+        bool unmount(storage_key_t key) override {
             return dr.unmount(key);
         }
         
-        bool writeback(uint64_t key) override {
+        bool writeback(storage_key_t key) override {
             return dr.writeback();
         }
         
-        drive_status_t status(uint64_t key) override {
+        drive_status_t status(storage_key_t key) override {
             return dr.status();
         }
 };

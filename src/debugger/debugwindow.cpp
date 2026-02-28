@@ -231,7 +231,7 @@ void debug_window_t::render_pane_trace() {
     int x = 0;
     int w = pane_area[DEBUG_PANEL_TRACE].w;
 
-    bool single_step = cpu->execution_mode == EXEC_STEP_INTO;
+    bool single_step = computer->execution_mode == EXEC_STEP_INTO;
 
     int view_size = (window_height - control_area_height) / font_line_height;
     size_t trace_head = cpu->trace_buffer->head;
@@ -588,6 +588,10 @@ bool debug_window_t::handle_event(SDL_Event &event) {
         }
         switch (event.type) {
             case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+                if (computer->execution_mode == EXEC_STEP_INTO) { // turn off step mode if they close the window.
+                    computer->execution_mode = EXEC_NORMAL;
+                    computer->instructions_left = 0;
+                }
                 set_closed();
                 break;
             case SDL_EVENT_WINDOW_RESIZED:
@@ -595,20 +599,20 @@ bool debug_window_t::handle_event(SDL_Event &event) {
                 break;
             case SDL_EVENT_KEY_DOWN:
                 if (event.key.key == SDLK_SPACE) {
-                    cpu->execution_mode = EXEC_STEP_INTO;
-                    cpu->instructions_left = 1;
+                    computer->execution_mode = EXEC_STEP_INTO;
+                    computer->instructions_left = 1;
                     stepover_bp = 0; // clear for good measure
                 }
                 if (event.key.key == SDLK_RETURN) {
-                    cpu->execution_mode = EXEC_NORMAL;
-                    cpu->instructions_left = 0;
+                    computer->execution_mode = EXEC_NORMAL;
+                    computer->instructions_left = 0;
                     view_position = 0;
                     stepover_bp = 0; // clear for good measure
                 }
                 // TODO: add Step over MLI call here for Joshua Bell
                 // check jsr target to see if it's MLI. MGTK (etc) use the same calling convention but a different entry point so... a key is great, or configurable list.
                 if (event.key.key == SDLK_O) {
-                    if (cpu->execution_mode != EXEC_STEP_INTO) break; // if not in step ignore
+                    if (computer->execution_mode != EXEC_STEP_INTO) break; // if not in step ignore
                     stepover_bp = (cpu->pb << 16) | cpu->pc;
                     // trace has not happened yet!
                     uint8_t opcode = mmu->read(stepover_bp);
@@ -618,13 +622,13 @@ bool debug_window_t::handle_event(SDL_Event &event) {
                         stepover_bp += 4;
                     }
                     printf("Step over BP: %06X\n", stepover_bp);
-                    cpu->execution_mode = EXEC_NORMAL;
+                    computer->execution_mode = EXEC_NORMAL;
                 }
                 // Step Up / Out - run until an RTS or RTL has executed. (R for 'Return')
                 if (event.key.key == SDLK_R) {
-                    if (cpu->execution_mode != EXEC_STEP_INTO) break; // if not in step ignore
+                    if (computer->execution_mode != EXEC_STEP_INTO) break; // if not in step ignore
                     step_out = true;
-                    cpu->execution_mode = EXEC_NORMAL;
+                    computer->execution_mode = EXEC_NORMAL;
                 }
 
                 if (event.key.key == SDLK_RETURN && event.key.mod & SDL_KMOD_CTRL) {

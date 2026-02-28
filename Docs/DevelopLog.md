@@ -4144,7 +4144,7 @@ test 2: 550MHz -
 
 test with trace compiled out: 
 
-[ ] There is a slight issue here which is that the cpu has a member for MMU_II. This should be MMU. And then all the things that need to use it need to cast it to MMU_II. Or, provide some sort of middleware that converts to a minimal interface for the CPU that only provides read and write (and context to use).
+[x] There is a slight issue here which is that the cpu has a member for MMU_II. This should be MMU. And then all the things that need to use it need to cast it to MMU_II. Or, provide some sort of middleware that converts to a minimal interface for the CPU that only provides read and write (and context to use). (well I fixed this didn't I)
 
 [x] I had a thought about speed-shifting. Which is, changing speeds in the middle of a frame. Instead of only counting cycles, we will count virtual nanoseconds. We know how many nanoseconds per cycle there are. We can do it in the main loop. And then, instead of the main run loop waiting for about 17,000 cycles, it checks to see if exactly 16.6666667 milliseconds have elapsed, regardless of speed (60fps). We could also count the ns elapsed based on feedback from the MMU - this would be for the GS and other "accelerated" platforms where inside a single instruction the clock could be numerous different speeds. (right now, done by counting discrete whole 14Ms)
 
@@ -6848,7 +6848,7 @@ That's not right..
 I need to send the color (hi nibble) and the on/off (bit 0) so the receiver can read what it needs- bit 0 for mono/ntsc, bits 7-4 for rgb.
 ok then!
 
-[ ] Maybe instead of uint8_t I should have the bit-frame data type be a 1-byte struct to give it some readability and structure.
+[ ] Maybe instead of uint8_t I should have the bit-frame data type be a 1-byte struct to give it some readability and structure. (I may be unraveling this)
 
 | 7-4 | 3 | 2 | 1 | 0 |
 |-|-|-|-|-|
@@ -7008,12 +7008,12 @@ Roadmap:
 [x] render_frame modified to accept texture, src, and dst rectangles. 
 [ ] implement correct aspect ratio and new window size defaults  
 [ ] hot key to generate "ii-friendly" and "gs-friendly" window size toggles  
-[ ] function for border render  
-[ ] function for shr render  
+[x] function for border render  
+[x] function for shr render  
 [x] write update_display_iigs
 [x] register distinct iigs frame processor callback  
 [x] see if pixelart obviates need to draw Videx twice for brightness (no it did not)  
-[ ] The PrntScrn button is referencing illegal memory. the pointer from LockTexture is not valid after unlock.  
+[x] The PrntScrn button is referencing illegal memory. the pointer from LockTexture is not valid after unlock.  
 [x] calculate_rects needs to center display in window esp in fullscreen mode  
 [x] implement border color for Apple2_Display  
 
@@ -7208,9 +7208,9 @@ let's see what something like a2desktop looks like. the mouse on the very right 
 oh my pal scanner is crashing because I'm not iterating enough cycles in the main gs2 loop.
 ok well "first draft" PAL is in and sort of working. Things that remain to be done:
 [x] refactor the speaker for hopefully the last time.  
-[ ] fix mockingboard to use new cpu clock construct  
-[ ] fix mouse to work properly at variable clock rates  
-[ ] make cpu clock construct a class so it's less janky  
+[x] fix mockingboard to use new cpu clock construct  
+[x] fix mouse to work properly at variable clock rates (now uses 14m)  
+[x] make cpu clock construct a class so it's less janky  (works so good, come on baby make it work so good)
 
 The speaker is getting ever so slightly out of sync in PAL. Let's double check ntsc.   
 
@@ -7475,7 +7475,7 @@ I am also feeling like the frame rate and some of those other timing parameters 
 [x] samples_per_frame isn't correct. and we don't use it inside the module. Move it out for debug.    
 [ ] allow output rate to be configurable with a const in speaker.cpp  
 [x] fix reset() to resync audio after it being off for a while in LS.  
-[ ] Detect audio de-sync due to MacOS dumbness and flush queue and call reset() during frame handler  
+[x] Detect audio de-sync due to MacOS dumbness and flush queue and call reset() during frame handler (done, and it works!!)
 [x] change speaker to work based on 14M clock.  
 
 after LS last_event_time is reset, but stays frozen. is it because it's in the past or something? Hm. maybe just switch it now to 14M. Get some real work done first!
@@ -7553,10 +7553,10 @@ fixed the issue with speed changes. I had the speed-change-detect logic IN audio
 
 likely bug:
 
-[ ] iiememory does not manipulate LC memory mapping in Aux Memory.  
+[-] iiememory does not manipulate LC memory mapping in Aux Memory. (I'm not sure this was valid)
 
 I'm impressed as much stuff works as it does. Things that are broken that are likely due to this:
-Airheart on Total Replay
+Airheart on Total Replay (I was so wrong about that)
 
 ## Nov 29, 2025
 
@@ -8278,7 +8278,7 @@ I enabled the slot ROM for C1-C6. (the default GS slot mapping for internal / yo
 
 There was a long standing bug in pdblock2 where it only allocates structs for 7 slots (0-6) so trying to put it in slot 7 was triggering all sorts of weirdness. That's fixed now.
 
-[ ] Should change pdblock2, so it's like diskii where I don't have a single static array.
+[x] Should change pdblock2, so it's like diskii where I don't have a single static array. (did, also mooted by pdblock3)
 
 Also, pdblock is more realistically a "generic hard drive" device, not a 3.5. for GS stuff I'm going to need a hard drive device anyway, of potentially very large size, and support having a partition table in it. 
 So maybe make a version of it that is in slot 7 and has different status/mount icon etc.
@@ -8635,7 +8635,7 @@ SO. This should look more like the IF statements in the megaii_compose stuff.. w
     }
 ```
 
-[ ] in full screen mode GSRGB, we're not accounting for or drawing the side borders.  
+[x] in full screen mode GSRGB, we're not accounting for or drawing the side borders.  
 
 Okay I have some new memory mapping weirdness (maybe). in the ROM at FF/2E52 we're loading state reg, pulling something off the stack, replacing with c068, and RTS to the middle of bogus code. Whaaaa.
 Only if we boot straight from a RESET. Weeeeird. It's pretty consistent. Track this down later.. 
@@ -8770,7 +8770,7 @@ Observations: I had done a bunch of memory mapping fixes prior to the IWM issues
 
 [ ] on a ctrl-reset sometimes we're getting an extra 0x7F (backspace). I suspect what is meant is an 0xFF, like a clear or something.
 
-[ ] Can't boot the nucleus demo - it immediately dumps into BASIC implying unrecognized boot block or ... ? (but, not always).
+[x] Can't boot the nucleus demo - it immediately dumps into BASIC implying unrecognized boot block or ... ? (but, not always). (fixed bug with handling write-protected disk image)
 
 [x] Have an "system idle" measurement that tells us what % of realtime is idle vs emulating.
 
@@ -8841,7 +8841,7 @@ arekkusu writes:
 Re timing: I have been looking at this exact area ^_^; Remember that the MegaII performs "memory refresh" for the first five cycles of HBL  .:  the SCB value can not possibly be known any earlier than cycle six into the right-hand border.  Now here, it looks like my implementation and testing notes are currently out of sync, so the IRQ actually fires either on cycle six or cycle eight of HBL, I'll have to go re-verify this.  Please confirm with your own investigations!
 You can verify this visually; i.e. spin on the SCB status bit (not using an IRQ handler) and toggle the border color after some known phase delay to observe the result on screen.  But you can also verify it analytically, counting cycles until that SCB status bit flips, relative to another timing source, i.e. C019.  If you do it that way, you also need to be aware of the subtle detail that the entire MegaII appears to be delayed one cycle relative to the VGC.
 
-[ ] make sure the SCB status bit sets/resets regardless of whether interrupts are enabled.  
+[x] make sure the SCB status bit sets/resets regardless of whether interrupts are enabled.  (tested with arekkusu interrupt tester)
 [x] "interrupt enabled" doesn't belong in the video scanner. The scanner should simply provide the info. Decision to assert int lives in VGC area.
 
 [x] Do a test of page-flipping on the hcounter (horzpage2flip2).
@@ -9261,9 +9261,9 @@ SO. There were six instances of that. I wonder what this would have affected. I 
 
 https://github.com/hasseily/AppleWin/blob/pp/source/frontends/sdl/pp/shaders/a2video_postprocess.glsl
 
-[ ] Sather 3.10B doesn't run on GS even in 1mhz mode, and mhz is 1.0045, not 1.0205.
+[x] Sather 3.10B doesn't run on GS even in 1mhz mode, and mhz is 1.0045, not 1.0205.
 
-Must not be handling the refresh, or maybe the sync, quite right.. in 1MHz mode every cycle should be a sync cycle. Ah, when the *GS* sets 1mhz mode, via the slow_mode flag, this results in 1.0205, and is correct. So, if I have the cpu speed set to 1mhz, I should either: not let them do that; implement that by setting slow_mode; have another check that forces sync mode on a GS.
+Must not be handling the refresh, or maybe the sync, quite right.. in 1MHz mode every cycle should be a sync cycle. Ah, when the *GS* sets 1mhz mode, via the slow_mode flag, this results in 1.0205, and is correct. So, if I have the cpu speed set to 1mhz, I should either: not let them do that; implement that by setting slow_mode, or just make sure slow flag is set if clock is 1mhz also; have another check that forces sync mode on a GS.
 
 [ ] Platform should specify allowed CPU speed settings in OSD  
 
@@ -10099,7 +10099,7 @@ Observation: after boot, the ROM has left the floppies on half-track 3 (i.e., tr
 CATALOG,D2, starts D2 spinning (and hangs, never get I/O error). ctrl-reset causes head motion sounds, but the spinning sound does not stop. (fixed, had to set 'motor'). 
 [x] on both iie and GS, CATALOG,D2 with no disk in the drive should fail relatively quickly with I/O ERROR. We spin forever.  injecting 32-bit made up number works.
 
-[ ] keygloo - on reset, we lose track of the caps lock status. we should not change that on reset.  
+[x] keygloo - on reset, we lose track of the caps lock status. we should not change that on reset.  
 [x] on GS, sometimes appledisk background is clear, sometimes it's green (hover). need to reset (or ignore) hover status depending on drawing context.  
 
 So we're damaging the media? let's add a debug command to save the current nibblized image so we can examine it with applesauce. Actually, it could be great to add buttons to the "debug" containers. Hmm. For now, I can just use a nibble image and let it write back to the nibble image! Hurdur. 
@@ -10147,10 +10147,281 @@ uh, ok what's supposed to be 3 bytes past this entry point? Are they assuming sm
 smartport was iigs firmware ref, I think.. reading time.
 "Therefore, the SmartPort entry point is $Cn00 plus 3 plus the value found at $CnFF." --- GS FW Ref, pg 115
 Yeah, so it's assuming we're smartport, even though we don't have the smartport ID byte at $C507 == 00.
-it's clearly the airheart code doing this.
+it's clearly the airheart code (or TR) doing this.
 I think we're also perhaps stomping on our internal code when we pass in bogus values for device ID / slot whatever into pdblock2, hence that crash earlier in iiememory..
 let's go make sure we are ignoring bogus values there. yeah there are no checks. Need to flatten the data structure, make it track data for this slot only, then add checks to ensure the slot and drive and block number etc are rational.
 
-OK, did all that. NOTE: pdblock2 still queries computer->cpu, because it wants the **cpu's** mmu - i.e., NOT the megaii. computer->mmu is always either a regular apple ii, or the megaii. This is I think unique in . Note, this also always reads data into bank 0, then has to copy it to some other bank, when we're in GS/OS. It's impressive this actually works in GS/OS, I guess they covered this case. Total Replay/Airheart, however, did not!
+OK, did all that. NOTE: pdblock2 still queries computer->cpu, because it wants the **cpu's** mmu - i.e., NOT the megaii. computer->mmu is always either a regular apple ii, or the megaii. This is I think unique among the slot devices, because this is "DMA". Still should create a DMA interface in the code somewhere. Note, this also always reads data into bank 0, then has to copy it to some other bank, when we're in GS/OS. It's impressive this actually works in GS/OS, I guess they covered this case. Total Replay/Airheart, however, did not!
 
 Ultimately, the solution is to implement not a ProDOS Block device, but a SmartPort device, and deprecate the current pdblock2 code. But this carried us a long way!
+
+The Airheart floppy also fails on the GS, due to getting into a loop reading C0EC and getting nothing but FF. 
+But Airheart floppy works on IIe. So there is some subtle behavior difference between DiskII and IWM here. (or, maybe, in ProDOS. It is reading C0EC directly, not indexed..) (Er, it worked ok for me this time?)
+
+[x] put back the thing that stops disk noise when in single-step  
+
+So this needs to know the execution mode. Currently, that's in cpu->. However, nothing in cpu itself actually uses this. Other options:
+clock; computer;
+
+Things that check execution_mode are: gs2 main loop; debug window of course; diskii/iwm; these already have access to computer, and, it is sort of part of the computer state. 
+
+[x] if we're in single step mode and the debug window is closed, automatically switch back to EXEC_NORMAL.  
+
+I must be getting pretty close to eliminating the slot store and module store from the cpu struct, maybe eliminating them entirely.
+get_slot_state is still used in: memexp; parallel; prodos_clock; thunderclockplus; videx. All the oldest //e cards. module_state is still used by most of the motherboard based devices. but also memexp, ugh. Some of these may need data from other modules, but, we have better ways to do that.
+
+[x] refactor to eliminate use of get/set_slot_state.
+[x] refactor to eliminate use of get/set_module_state. (not 100% gone, but enough gone I'm happy)
+
+
+[x] if a disk image open is cancelled, the "last file opened" is forgotten.
+
+## Feb 23, 2026
+
+successfully got rid of get/set slot state. However, in working on get/set module state, found some inter-dependencies.
+For instance, gamecontroller reads the annunciator state, using get_module_state (for the Joyport support). Thinking about this, the annunciators are PART OF the game controller connector. It would be reasonable to collapse them into the same device.  
+
+A variety of things also monitor the annunciator - videx on ii+, double hires on iie and iigs. but we can do the double device handlers now, that will likely work better and be more clear (i.e. these other devices will register, and separately track the annunciator status they're interested in).
+
+Remaining uses of get_module_state:
+gs2, for resetting speaker and forcing video module changes (apple2 , scanner)
+osd, for changing display states.
+videx, need to know text mode status; and the display content rectangles.
+hgr280x192- only related to old shadow thing that updated scanlines needing updates (done)
+text_40x24- same as above, plus "update flash state" also related to scanlines needing updates (done)
+display - uses in update_cycle_apple2 and 2gs; but it probably does not need to any more. call with display_state instead. (done)
+
+Remaining uses can go into computer->module state instead of cpu. Of all those above, it's just MODULE_DISPLAY and MODULE_SPEAKER. So, not bad at all!
+
+ok, well I got rid of most of that crap.  The display rectangles, that seems more related to videosystem. After a break, give some consideration to that. Also to moving that gs2 loop reset speaker logic into the speaker frame handler somehow. 
+
+As I keep going through these device interfaces, the shape of a device class is becoming clearer. I'm not going to do it now, but, at some point I should create:
+
+```
+class Device {
+  int multiple_allowed = false|true;
+  const char *name;
+
+  Device(computer *); 
+  ~Device();
+}
+class SlotDevice : public Device {
+  Slot_t slot;
+}
+```
+then systemconfig table more directly refers to devices, and the system composer can validate the multiple allowed stuff (this could be a static method we read in Slot Configurator in OSD to prevent for instance multiple videx.)
+
+In some respects, we just moved the "problem" of cross-dependencies to computer. But, on the other hand, cpu is a reusable, composable component, and should never have been where we put all that stuff. computer can be viewed as a "configuration object", we use to inject capabilities into things. Granted it puts all the cross-dependencies into that, and we have to include all those headers. But this seems manageable with all the forward declarations in computer. Maybe can do more of that to further reduce the load. This causes us to push implementation to the computer.cpp file, reducing opportunities for inlining. So make sure no hot paths here.
+
+I was reminded during testing all this that the GS won't run in Ludicrous Speed because videoscanner changes, and the new one doesn't provide the vbl or scanline interrupt sources. vbl we could fake, but scanline we couldn't. So! maybe the thing there is to support fixed multiplied speeds. i.e. we currently divide 14M to get a cpu speed. Instead, have 28M, 56M, etc. and use with the video scanner. Then we'd get the display interrupts "for free". Probably just have one ludicrous speed. (or we could define at runtime, based on measuring the hosts's performance in some way). We could operate in 14MHz steps; if we have a frame slip, back off. Or, start slow, and inch up until idle gets under 10%. Something like that. then it adjusts automagically for a given host.
+
+Well should we go ahead and do a SmartPort HD now?
+
+What drives OSD behavior on a button click? OK, the semantics are built into OSD, which is probably not what we want.
+
+Today:
+click on disk.
+  if empty, allows to mount.
+  if full, unmounts.
+
+We could have a "click" handler, and it will pass back to OSD an instruction on what to do.
+  select image and mount, return key.
+  unmount(key)
+  ask if user wants to save changes (key)
+  writeback(key)
+or maybe we should add an eject icon (or many). This would be tied to a key.
+How do we display? Would need to iterate subunits to get names.  ok.. so let's say the button is variable size. Let's further say that we give the Buttons the ability to call Mounts and get their own status on update? Then the hard drive looks like. It's double-wide (is that possible in a container?):
+[                   ]
+[                   ]
+[ Item 1        [x] ]
+[ Item 2        [x] ]
+...
+each line has its own x. Each line has its own eject button area. 
+
+Can a button be itself but also have other buttons inside it? Why, yes, I believe so. 
+
+Is Container a fixed grid, or... it calculates largest tile size and bases the grid on that. That won't work here.
+
+Define a new type of Container, DriveContainer, where you specify the grid size, and the container size, and layout is specialized for what we need here for drives: a tile is 1 or 2 wide; and arbitrary height (based on each line's tile(s) heights).
+
+or for this release just do two smartport "drives". like we have now, but SmartPort protocol. This is low-hanging fruit, I think. Unsure if I have enough room in the code.. I have about 70 bytes. I suspect SmartPort devices -have to- also support the ProDOS device interface. I could always take advantage of C800. That would be easy enough.
+
+## Feb 24, 2026
+
+got a big lesson in programming slot card firmware! working on pdblock3
+
+relatively short version:
+
+we are position-independent code. I could have cheated and made 8 copies of the firmware, with it knowing where it was running. But figuring out the build would have been more annoying than figuring out the position-indpendent code.
+
+(This didn't matter before because all the firmware was in $Cs, nothing in C8.)
+
+Once you have C8 code, to be interrupt-safe, you have to set MSLOT ($07F8) to $Cs when you're running in $C8 code. the GS interrupt handler (and presumably IIe, IIc, etc.) use MSLOT to restore the correct C8 map on return from the handler.
+
+So, I have a routine FINDSLOT that lives in $C8 - so it has an absolute address. The meat is:
+
+```
+sp_entry                ; has to be exactly 3 bytes beyond the pddriver entry point
+        PHP             ; disable interrupts until we have MSLOT set
+        SEI
+        JSR FINDSLOT    ; sets MSLOT - don't have to disable IRQ because it will still be on the stack then
+        PLP
+        JSR sp_driver   ; has to be JSR so we can figure out what slot we're in.
+        rts
+
+; Only called from Cs00 space. The caller's Page # is on the stack,
+; we load it here into A.
+; by itself, not interrupt safe yet because we're up here in C800
+FINDSLOT
+        TSX
+        LDA $0101,X             ; get $Cn in A
+        STA MSLOT
+        RTS
+```
+
+It's an absolute address we know; with interrupts off (while still on $Cs) we guarantee no interference from an IRQ while looking at the slot (as we would have had we checked stack after return). So it checks all the boxes.
+
+So - WE HAVE WORKING AIRHEART AND ARKANOID IN TOTAL REPLAY!
+
+While this was technically a TR bug, it's entirely possible other code in the world also does not check correctly for a SmartPort, and might have called SmartPort code that wasn't there.
+
+pdblock3 also has predefined slots for 10 media; it's really arbitrary up to whatever limit the SmartPort definition has.
+
+Technically should clear CFFF on every call in where we're going to jump to C8 space. it doesn't matter for us, but it would matter on real hardware.
+
+a2desktop shows a trash can instead of a disk drive icon. whoopsie. Code in 1.6 at 77A8 builds a JSR to the dispatcher, and the JSR is at 77B1. CB is 7746. Status list pointer is 0800. Status code is 03. Return DIB Device Information Block.
+ok we get back:
+8088: E0 00 00 01 0A 2E 70 64 62 6C 6F 63 6B 33 61 20 20 20 20 20
+
+Status byte: E0
+00 00 01 <- block size
+0A: id string length
+ID string "PDBLOCK3A"
+Device type: 02
+subtype: 20
+version word: 00 03
+
+Joshua says FF FF is a special case that means "32MB". whuh. I remember that. So check if it's exactly 1'0000 and subtract one.
+78C6 is the next routine he mentioned, CreateVolumeIcon.
+
+If I still have trouble with A2D later joshua offered to screen-share debug. I turned to GS/OS, which was super spasming inserting/uninserting a disk many times per second. Apparently it wanted, if there is no media in a unit that we told it exists, to get a real response that has the "online" flag set to 0. I can actually now mount a disk in drive 2 and gs/os automagically detects it! And you can drag and drop to 'eject' and change it out. That's a big plus.
+
+A2D still not happy after that, hehe.
+This trace is from 1.5
+```
+GetDeviceTypeImpl
+    stax    dispatch
+    sty     status_params::unit_num
+77B3: jsr SELF_MODIFIED
+```
+
+DERP. I was restoring $06/$07 in the wrong order. Derpy derp. FIXED  (thanks Joshua!)
+
+Well I think it's working well enough now to try to implement the extended interface - and speed test again!
+
+Going from GS/OS to P8 is triggering the Device Control thing. Should look into that, the manual says they are entirely device specific? OK, it documents some for the apple 3.5; 
+Set the max devices back to 10.
+
+Just came across a few oddities in A2desktop.
+Run "Emergency" which drops to text mode to speak text using SAM. When it returns to desktop, the desktop is in single hires mode. did it again, no problem.. I had done a speed change with F9 during that time. hm. Can't reproduce. Darn.
+
+A2Desktop 1.6 runs a lot better, I was getting crashes trying to load text editor and such, no such issues now.
+
+[ ] If mouse was captured, and we open OSD, when OSD closed, automatically recapture mouse, so we don't require yet another action when mounting disk. This will be less irksome with drag'n'drop, but still.  
+[ ] Consider having mouse capture require key or click a special button, not just click anywhere in the window  
+
+I am thinking storage keys should be a nice struct. It's 64 bits right, so a packed struct of 4 16-bit values would work nicely. And make using keys much simpler throughout the code.
+
+## Feb 25, 2026
+
+DreamVoir crashes (DreamGrafx works fine apparently!)
+
+It's doing something really odd, which is: setting up a JSL at $00/9F17. but everything being written into it is zeros. This is done at around $00/EBAE.
+But it's also running in bank 0 with DB of 05? So when it does a JMP to 9F17, it's in the wrong bank.. AND, it's reading values to stuff into 9F18/9 from bank 80 (there is no ram there!)
+ok F8 is actually populated with: 7F/F508. Y register is 26A4, so it clearly wraps into bank 80. This feels program buggy.. but surely it works elsewhere..
+one oddity is that they have bank 0 wide open (state register is 0) BUT 80store is turned on? HIRES off. 
+It's doing some pointer artithmetic, this looks high level languagey. it's just calculating a bad pointer. 
+(Version of it elsewhere works just fine..)
+
+I am refactoring the Screen Cap (PrntScrn) function, to read the image out of the last screen texture before rendering. This works great on the GS, but, the other systems use a texture that does not have the right mode/flag set. You need a texture to be a render_target texture. So probably need to change the IIe modes to render first to stage2 just like the GS does. Right now screen cap on II/IIe will return a black screen, which is better than crashing like it was before. I went ahead and added the extra copy in apple2_cycle, it adds 10uS to the render time but I get copy and paste. I suppose I could experiment with making screenTexture also a render_target texture. not sure what impact that has. Can it be that and a streaming texture at the same time? Probably not. Ah, so once I have the Surface, I could ask SDL to scale it to the correct aspect ratio for me. I wonder how long that would take.. in main cpu memory, during frame time, probably not that bad. That's worth a shot.
+
+[ ] experiement with having SDL scale the surface for us before we hand off. Alternatively, we can just scanline double like we used to.  
+
+## Feb 26, 2026
+
+I removed the last of the cruft from cpu_state! It is now just cpu stuff.
+
+I still think it's weird that cpu_state has an independent life from the actual cpu class. There is all that passing around of cpu_state *. If I could come up with a better way of sharing the state between the 5 65816 "cores" I could collapse the registers and state in, and it would make the code a lot cleaner. Maybe for version 2.
+I wonder if the trace buffer stuff should even be in there. Creating the trace -record- yes, but what to do with that maybe belongs in the main loop. If we want to integrate with the Brutal Deluxe debugger, we're going to want to do something different with the trace record anyway. 
+
+Implemented the storage_key struct throughout the code. Definitely a lot cleaner without all the random bitshifts. Don't get me wrong, bitshifts are awesome, but when unnecessary they make things hard to read and understand.
+
+Wolfenstein 3D crashes trying to do this:
+POLL FDB DEVICE - unimplemented
+
+well I implemented that and it didn't fix anything, we crash in exactly the same place. Coming out of an ADB IRQ. 
+
+TRANSMIT 2 BYTES: B3: 03 01
+adb->listen addr: 03, cmd: 02, reg: 03, msg: 03 01
+adb->talk addr: 02, cmd: 03, reg: 03, msg: 00 22
+
+So it's setting the KB then reading the mouse.
+It's timing out on this talk command. It writes the command at FF/8112, checks C027 to make sure not busy.
+it gets 50, so not busy.
+Writes a C026=F2, which is our talk command above.
+Checks status C027=70, then reads C026=00. 
+"the uc waits until all data has been received then response back to the system with a status byte which indicates the number of bytes received, followed by the data. it returns the bytes in opposite order". that last bit means little-endian instead of big-endian, which we already account for. but we're not doing this status byte. I assumed that is the same as the interrupt byte. maybe not.. 
+ok, so C026 says "data at interrupt time in this register degined as follows:
+bit 7 = response byte if set, otherwise status byte.
+we got C026=0..
+ok, on a response from a talk, it wants the hi bit set in the status byte, and the number of bytes set!!! I got past it!
+The music is playing too slowly, like QIX. 
+The game works! ish. mouse control is working. Keyboard control is not. if it's doing TALK to read the keyboard, and SRQ, then I don't implement that yet. I shove all input to C000, and there is nothing there to be read when the user manually does the TALK. They're actually using toolbox routines, so that's good. Hooking in an SRQ handler.
+
+There is this awesome document by Sheppy talking about how they do the ADB stuff!
+https://www.kansasfest.org/wp-content/uploads/2004-sheppy-wolf3d.pdf
+ESC works for us to pause, they must be checking for that at C000?
+Check out the Toolbox reference volume 1 page 3-22 for table of the ADB Key Codes.
+
+ok, it must be doing something like this:
+1. set modes to disable auto-poll of FDB keyboard (yes, they are setting bit 0)
+1. enable SRQ on keyboard (is it normally set?)
+1. then whenever keys are pressed I need to drive them into an SRQ interrupt procedure
+
+ADB_Micro->process_event will have to do something different. right now it sends the event to the device; then immediately does a "talk" back to fetch it (that's the auto-poll). 
+so we throw SRQ.. do we do the talk, or does the ROM do the talk? check the Wolf3D doc again.  The ROM must do a talk. Let's read the ROM ADB interrupt routine and see where it checks for the SRQ bit. But I'm pretty sure it's going to issue a TALK. There's something about "go ahead and send key code to the uC" so certain keys they may send back into uC. They also handle reset manually. that's interesting, so disabling the auto poll also means the uC doesn't handle reset, or any other keys.
+
+The goal of all this is for the apple ii to get all the low-level keydown and keyup codes. ok, so this is definitely turning off that normal handling and normal processing of C000, except that we send some codes back into that to appear at C000?
+
+
+[ ] implement HOLD and RELEASE reset. 
+[ ] move RESET generation to ADB_Micro
+
+the HOLD AND RELEASE reset will assert reset soi long as the F10 and control are held down. When released, reset is de-asserted. when RESET is asserted, we do something very similar to the WAI, which is just spin a cycle (so video keeps working). And I think we call the device reset handlers. now that is very interesting. we call them, but then hold and spin without calling them?
+
+
+[ ] I need a way to breakpoint on something like "write certain value to address"
+
+## Feb 27, 2026
+
+KEGS seems to agree with my assessment above about SRQ. 
+
+ok, for some reason the ADB tool is called SKI in the ROM01 code. SKIFNCTBL is the jump table for the adb tool.
+SRQPL is SRQPoll to add a poll handler. 
+SRQTBL is the table of handlers.
+INTSRQ is the SRQ Interrupt Handler.
+this is stored into the irq_srq vector.
+
+ldal IRQ_DATAREG (contents of C027)
+and #08          ; the SRQ bit
+beq skipit
+jsl irq_srq
+jsr TSTSETFLG    ; not sure what this is
+
+ok that just rotates the C into E1/00C6 if carry is set. setting some mystery flag, ah, probably "someone handled an interrupt".
+Ah, ok, so this should set the data register.
+
+"if a command is already pending, then the SRQ is ignored". Ah, so if we have manually initiated a TALK already, then this is ignored? ok.
+Something caused the word "end" to be deleted from all the comments in this file.
+
+OK! I've got this thing working!! Mostly. Still have one issue, which is, auto-repeat confuses the game. I bet the game is also turning off autorepeat. Or, perhaps that is automatic when we're in the SRQ mode. let's try that.. 

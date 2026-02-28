@@ -55,6 +55,7 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
 
     SHRMode mode = { .p = 0 }; 
     Palette palette = { .colors = {0} };
+    RGBA_t lastpixel = {0};
 
     uint32_t hcount = 0;
     uint32_t vcount = 0;
@@ -106,6 +107,17 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     if (frame_shr != nullptr) {
                         frame_shr->set_line(vcount);
                     }
+
+                    // from MAME
+                    // the low 5 bits of the SCB determine the initial fillmode color
+                    // for the scanline (hardware testing by John Brooks)
+                    static const uint32_t fillmode_init[32] =
+                    {
+                        2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+                        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+                    };
+                    /* Right now it seems to be consistently palette index #2 unless I use the magic undefined bit, and then it is consistently palette index #3. - Ian Brumby 4/17/2020 */
+                    lastpixel = convert12bitTo24bit(palette.colors[fillmode_init[vcount & 0x1F]]);
                 }
                 break;
             case VM_BORDER_COLOR: {
@@ -136,16 +148,24 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                             pind = palette.colors[pixel640<0>(pval) + 0x04];
                             frame_shr->push(convert12bitTo24bit(pind));
                         } else {
-                
-                            SHRColor pind = palette.colors[pixel320<1>(pval)];
-                            RGBA_t xx = convert12bitTo24bit(pind);
-                            frame_shr->push(xx);
-                            frame_shr->push(xx);
-            
-                            pind = palette.colors[pixel320<0>(pval)];
-                            xx = convert12bitTo24bit(pind);
-                            frame_shr->push(xx);
-                            frame_shr->push(xx);
+                            uint16_t pixel = pixel320<1>(pval);
+                            SHRColor pind;
+                           
+                            if (!mode.fill || (pixel != 0)) {
+                                pind = palette.colors[pixel];
+                                lastpixel = convert12bitTo24bit(pind);
+                            }
+                            frame_shr->push(lastpixel);
+                            frame_shr->push(lastpixel);
+
+                            pixel = pixel320<0>(pval);
+                           
+                            if (!mode.fill || (pixel != 0)) {
+                                pind = palette.colors[pixel];
+                                lastpixel = convert12bitTo24bit(pind);
+                            }
+                            frame_shr->push(lastpixel);
+                            frame_shr->push(lastpixel);
                         }
                     }
                 }

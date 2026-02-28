@@ -1,7 +1,7 @@
 #include <iostream>
+#include <cstdint>
 
 #include "SDL3/SDL_keycode.h"
-#include "gs2.hpp"
 #include "cpu.hpp"
 #include "NClock.hpp"
 #include "computer.hpp"
@@ -22,6 +22,11 @@
 
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
+
+    // initialize module store to nullptr.
+    for (int i = 0; i < MODULE_NUM_MODULES; i++) {
+        module_store[i] = nullptr;
+    }
 
     // lots of stuff is going to need this.
     event_queue = new EventQueue();
@@ -59,7 +64,7 @@ computer_t::computer_t(NClockII *clock) {
     vid_event_timer = new EventTimer(clock); 
 
     slot_manager = new SlotManager_t();
-    mounts = new Mounts(cpu, slot_manager);
+    mounts = new Mounts(slot_manager);
 
     video_system = new video_system_t(this);
     debug_window = new debug_window_t(this);
@@ -82,7 +87,7 @@ computer_t::computer_t(NClockII *clock) {
             } else {
                 this->speed_new = this->clock->toggle(1);
             }
-            send_clock_mode_message();
+            send_clock_mode_message(speed_new);
             return true; 
         }
         return false;
@@ -175,7 +180,7 @@ void DeviceFrameDispatcher::dispatch() {
 
 /** State storage for non-slot devices. */
 void *computer_t::get_module_state(module_id_t module_id) {
-    void *state = cpu->module_store[module_id];
+    void *state = module_store[module_id];
     if (state == nullptr) {
         fprintf(stderr, "Module %d not initialized\n", module_id);
     }
@@ -183,44 +188,14 @@ void *computer_t::get_module_state(module_id_t module_id) {
 }
 
 void computer_t::set_module_state(module_id_t module_id, void *state) {
-    cpu->module_store[module_id] = state;
-}
-
-/** State storage for slot devices. */
-SlotData *computer_t::get_slot_state(SlotType_t slot) {
-    SlotData *state = cpu->slot_store[slot];
-    /* if (state == nullptr) {
-        fprintf(stderr, "Slot Data for slot %d not initialized\n", slot);
-    } */
-    return state;
-}
-
-SlotData *computer_t::get_slot_state_by_id(device_id id) {
-    for (int i = 0; i < 8; i++) {
-        if (cpu->slot_store[i] && cpu->slot_store[i]->id == id) {
-            return cpu->slot_store[i];
-        }
-    }
-    return nullptr;
-}
-
-void computer_t::set_slot_state( SlotType_t slot, /* void */ SlotData *state) {
-    state->_slot = slot;
-    cpu->slot_store[slot] = state;
+    module_store[module_id] = state;
 }
 
 // TODO: should live inside a reconstituted clock class.
-void computer_t::send_clock_mode_message() {
+void computer_t::send_clock_mode_message(clock_mode_t clock_mode) {
     static char buffer[256];
-    const char *clock_mode_names[] = {
-        "Ludicrous Speed",
-        "1.0205MHz",
-        "2.8 MHz",
-        "7.1435 MHz",
-        "14.318 MHz"
-    };
 
-    snprintf(buffer, sizeof(buffer), "Clock Mode Set to %s", clock_mode_names[this->speed_new]);
+    snprintf(buffer, sizeof(buffer), "Clock Mode Set to %s", clock->get_clock_mode_name(clock_mode)); // 
     event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, buffer));
 }
 
@@ -237,13 +212,13 @@ void computer_t::frame_status_update() {
         uint64_t this_frame_end_time = SDL_GetTicksNS();
         uint64_t frame_counter_delta = this_frame_end_time - last_frame_end_time;
 
-        cpu->fps = ((float)frame_count * 1000000000) / frame_counter_delta;
+        fps = ((float)frame_count * 1000000000) / frame_counter_delta;
         last_frame_end_time = this_frame_end_time;
         frame_count = 0;
 
         // TODO: maybe should update this every second instead of every 5 seconds.
         uint64_t delta = clock->get_cycles() - last_5sec_cycles;
-        cpu->e_mhz = 1000 * (double)delta / ((double)(this_frame_end_time - last_5sec_update));
+        e_mhz = 1000 * (double)delta / ((double)(this_frame_end_time - last_5sec_update));
 
         status_count++;
         if (status_count == 2) {
@@ -251,7 +226,7 @@ void computer_t::frame_status_update() {
             last_5sec_update = this_frame_end_time;
     
             fprintf(stdout, "%llu delta %llu cycles clock-mode: %d CPS: %12.8f MHz [ slips: %llu]\n", 
-                u64_t(delta), u64_t(clock->get_cycles()), clock->get_clock_mode(), cpu->e_mhz, u64_t(cpu->clock_slip));
+                u64_t(delta), u64_t(clock->get_cycles()), clock->get_clock_mode(), e_mhz, u64_t(clock_slip));
             uint64_t et = event_times.getAverage();
             uint64_t at = audio_times.getAverage();
             uint64_t dt = display_times.getAverage();
