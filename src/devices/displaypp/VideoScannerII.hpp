@@ -147,7 +147,7 @@ uint32_t  hcount;       // use separate hcount and vcount in order
 //uint32_t  vcount;       // to simplify IIgs scanline interrupts
     
     VideoScannerII(MMU_II *mmu);
-    virtual ~VideoScannerII() = default;
+    virtual ~VideoScannerII();
 
     // Call this after construction to properly initialize video addresses
     virtual void initialize() { init_video_addresses(); }
