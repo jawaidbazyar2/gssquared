@@ -18,6 +18,14 @@ ClipboardImage::ClipboardImage( ) {
     header = nullptr;
 }
 
+ClipboardImage::~ClipboardImage() {
+    delete[] clip_buffer;
+    if (header != nullptr) {
+        delete header;
+        header = nullptr;
+    }
+}
+
 const void *clip_callback(void *userdata, const char *mime_type, size_t *size) {
     // TODO: for now just assume BMP only
     

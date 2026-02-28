@@ -81,6 +81,15 @@ class IWM {
             reg_handshake = 0; */
         };
 
+        ~IWM() {
+            for (uint32_t i = 0; i < 4; i++) {
+                if (drives[i] != nullptr) {
+                    delete drives[i];
+                    drives[i] = nullptr;
+                }
+            }
+        };
+
         void check_motor_off_timer() {
             if (mark_cycles_turnoff != 0 && (clock->get_c14m() > mark_cycles_turnoff)) {
                 drives[drive_selected]->set_enable(false);
@@ -114,7 +123,6 @@ class IWM {
         inline bool address_even(uint32_t address) { return (address & 0x01) == 0; }
         //uint32_t register_index() { }
 
-        ~IWM() {};
         void set_switch(uint32_t switch_index, bool onoff) { 
             assert(switch_index < IWM_SWITCH_COUNT && "IWM: switch index out of bounds");
             switches[switch_index] = onoff; 

@@ -73,7 +73,8 @@ struct ClipboardImage {
     uint8_t *clip_buffer = nullptr;
 
 
-    ClipboardImage( );
+    ClipboardImage();
+    ~ClipboardImage();
     void Clip(SDL_Surface *surface);
 };
 

@@ -300,6 +300,17 @@ VideoScannerII::VideoScannerII(MMU_II *mmu)
     */
 }
 
+VideoScannerII::~VideoScannerII() {
+    delete frame_scan;
+    if (lores_p1 != nullptr) delete[] lores_p1;
+    if (lores_p2 != nullptr) delete[] lores_p2;
+    if (hires_p1 != nullptr) delete[] hires_p1;
+    if (hires_p2 != nullptr) delete[] hires_p2;
+    if (mixed_p1 != nullptr) delete[] mixed_p1;
+    if (mixed_p2 != nullptr) delete[] mixed_p2;
+    if (shr_p1 != nullptr) delete[] shr_p1;
+}
+
 
 void VideoScannerII::allocate()
 {

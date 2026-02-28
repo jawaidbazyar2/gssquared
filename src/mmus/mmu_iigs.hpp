@@ -78,7 +78,7 @@ class MMU_IIgs : public MMU {
             map_initialized = false;
             reset();
         };
-        virtual ~MMU_IIgs() { delete main_ram; delete main_rom; };
+        virtual ~MMU_IIgs() { delete[] main_ram; /* main_rom is owned by caller */ }
 
         virtual uint8_t read(uint32_t address) override {
             if (address >= 0xFC0000) set_next_cycle_type(CYCLE_TYPE_FAST_ROM); // rom access is fast.

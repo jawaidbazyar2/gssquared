@@ -14,6 +14,16 @@
             "preLaunchTask": "build-gs2-debug"
         },
         {
+            "name": "Debug gs2 (windows)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/GSSquared.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "env": { "PATH": "C:/msys64/mingw64/bin;${env:PATH}" },
+            "preLaunchTask": "build-gs2-debug-win"
+        },
+        {
             "name": "Debug mmutest",
             "type": "lldb",
             "request": "launch",
