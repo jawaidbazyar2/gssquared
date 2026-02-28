@@ -67,7 +67,7 @@ public:
     }
 
     uint8_t internal_status(uint8_t drive) {
-    
+        if (drive >= PDB3_MAX_UNITS) return 0x01;
         if (drives[drive].file == nullptr) {
             return 0x01; // device not ready
         }
@@ -86,11 +86,22 @@ public:
     */
     void read_block(uint8_t drive, uint32_t block, uint32_t addr) {
         uint8_t block_buffer[512];
-        FILE *fp = drives[drive].file;
-        
-        media_descriptor *media = drives[drive].media;
-        if (media == nullptr) {
+        if (drive >= PDB3_MAX_UNITS) {
             cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE;
+            return;
+        }
+        FILE *fp = drives[drive].file;
+        media_descriptor *media = drives[drive].media;
+        if (fp == nullptr || media == nullptr) {
+            cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE;
+            return;
+        }
+        if (media->block_size == 0 || media->block_size > 512) {
+            cmd_buffer.error = PD_ERROR_IO;
+            return;
+        }
+        if (block >= media->block_count) {
+            cmd_buffer.error = PD_ERROR_IO;
             return;
         }
         if (fseek(fp, media->data_offset + (block * media->block_size), SEEK_SET) < 0) {
@@ -110,14 +121,26 @@ public:
     void write_block(uint8_t drive, uint32_t block, uint32_t addr) {
 
         uint8_t block_buffer[512];
-        FILE *fp = drives[drive].file;
-        media_descriptor *media = drives[drive].media;
-
-        if (media == nullptr) {
+        if (drive >= PDB3_MAX_UNITS) {
             cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE;
             return;
         }
+        FILE *fp = drives[drive].file;
+        media_descriptor *media = drives[drive].media;
 
+        if (fp == nullptr || media == nullptr) {
+            cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE;
+            return;
+        }
+        if (media->block_size == 0 || media->block_size > 512) {
+            cmd_buffer.error = PD_ERROR_IO;
+            return;
+        }
+
+        if (block >= media->block_count) {
+            cmd_buffer.error = PD_ERROR_IO;
+            return;
+        }
         if (media->write_protected) {
             cmd_buffer.error = PD_ERROR_WRITE_PROTECTED;
             return;
@@ -166,6 +189,9 @@ public:
                                     memset(s.reserved, 0x00, sizeof(s.reserved));
                                     write_to_memory(slptr, (uint8_t *)&s, sizeof(s));
                                     cmd_buffer.status1 = sizeof(s);
+                                } else if (cmdlist.unit > PDB3_MAX_UNITS) {
+                                    cmd_buffer.error = 0x21; // invalid unit
+                                    break;
                                 } else if (drives[cmdlist.unit-1].media == nullptr)  { // drive offline.
                                     /* GS/OS wants the full response back, not just an error */
                                     sp_cmd0_statcode_00 s;
@@ -194,7 +220,10 @@ public:
                             case 0x01: cmd_buffer.error = 0x21; break; //  return device control block
                             case 0x02: cmd_buffer.error = 0x21; break; // return newline status
                             case 0x03: {
-                                assert(cmdlist.unit != 0);
+                                if (cmdlist.unit == 0 || cmdlist.unit > PDB3_MAX_UNITS) {
+                                    cmd_buffer.error = 0x21; // invalid unit
+                                    break;
+                                }
                                 if (drives[cmdlist.unit-1].media == nullptr)  {
                                     cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE; // device offline
                                     return;
@@ -231,17 +260,25 @@ public:
                 case 0x01: { // ReadBlock
                         sp_cmd_rw_st cmdlist;
                         read_from_memory(clist_addr, (uint8_t *)&cmdlist, sizeof(cmdlist));
+                        if (cmdlist.unit == 0 || cmdlist.unit > PDB3_MAX_UNITS) {
+                            cmd_buffer.error = 0x21;
+                            break;
+                        }
                         uint32_t block = cmdlist.block_2 << 16 | cmdlist.block_1 << 8 | cmdlist.block_0;
                         uint16_t addr = cmdlist.addr_hi << 8 | cmdlist.addr_lo;
-                        read_block(cmdlist.unit-1, block, addr);
+                        read_block(cmdlist.unit - 1, block, addr);
                     }
                     break;
                 case 0x02: { // WriteBlock 
                         sp_cmd_rw_st cmdlist;
                         read_from_memory(clist_addr, (uint8_t *)&cmdlist, sizeof(cmdlist));
+                        if (cmdlist.unit == 0 || cmdlist.unit > PDB3_MAX_UNITS) {
+                            cmd_buffer.error = 0x21;
+                            break;
+                        }
                         uint32_t block = cmdlist.block_2 << 16 | cmdlist.block_1 << 8 | cmdlist.block_0;
                         uint16_t addr = cmdlist.addr_hi << 8 | cmdlist.addr_lo;
-                        write_block(cmdlist.unit-1, block, addr);
+                        write_block(cmdlist.unit - 1, block, addr);
                     }
                     break;
                 case 0x03:  // Format 
@@ -303,6 +340,10 @@ public:
         }
         if (cmd == 0x00) {
             media_descriptor *media = drives[drive].media;
+            if (media == nullptr) {
+                cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE;
+                return;
+            }
             cmd_buffer.error = 0x00;
             cmd_buffer.status1 = media->block_count & 0xFF;
             cmd_buffer.status2 = (media->block_count >> 8) & 0xFF;
@@ -324,7 +365,7 @@ public:
     /* Implementations of the StorageDevice interface */
 
     bool mount(storage_key_t key, media_descriptor *media) {
-       
+        if (key.drive >= PDB3_MAX_UNITS) return false;
         //if (DEBUG(DEBUG_PD_BLOCK)) printf("Mounting ProDOS block device %s slot %d drive %d\n", media->filename, slot, drive);
         if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Mounting PDB3 device " << media->filename << " slot: " << _slot << " drive " << key.drive << std::endl;
     
@@ -340,8 +381,7 @@ public:
     }
     
     bool unmount(storage_key_t key) {
-        //uint8_t drive = key & 0xFF;
-    
+        if (key.drive >= PDB3_MAX_UNITS) return true;
         if (drives[key.drive].file) {
             fclose(drives[key.drive].file);
             drives[key.drive].file = nullptr;
@@ -355,6 +395,7 @@ public:
     }
 
     drive_status_t status(storage_key_t key) {
+        if (key.drive >= PDB3_MAX_UNITS) return {false, "", false, 0, false};
         media_t seldrive = drives[key.drive];
 
         bool motor = false;
