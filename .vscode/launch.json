@@ -7,7 +7,9 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/GSSquared",
-            "args": /* [], */ ["-ds7d1=/Users/bazyar/src/gssquared/testdev/adbtest/adbtest.po"],
+            // "args": /* [], */
+            //"args": ["-ds7d1=/Users/bazyar/src/IIgsDisks/HD1B.PO","-ds7d2=/Users/bazyar/src/IIgsDisks/Communications.2mg"], 
+            "args": ["-ds7d1=/Users/bazyar/src/gssquared/testdev/selftests/test6/test.po"], 
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build-gs2-debug"
         },
@@ -106,7 +108,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/iigsmmutest",
-            "args": ["-l","24"],
+            "args": ["-l","26"],
             "cwd": "${workspaceFolder}/testdev/gsmmu/",
             "preLaunchTask": "build-debug"
         },
