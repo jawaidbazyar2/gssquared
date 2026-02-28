@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <deque>
 #include <vector>
+#include <cmath>
 #include "debug.hpp"
 
 enum AY_Registers {
