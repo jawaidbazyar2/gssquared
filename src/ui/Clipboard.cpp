@@ -80,17 +80,20 @@ void ClipboardImage::Clip(SDL_Surface *surface) {
     uint8_t *dst = clip_buffer + sizeof(BMPHeader); // start past BPHeader
 
     for (int scanline = height - 1; scanline >= 0; scanline--) {
-        for (int i = 0; i < width; i++) {
-            RGBA_t *pix = (RGBA_t *)surface->pixels + (scanline * width + i);
-            //RGBA_t pix = { .r = pixel[0], .g = pixel[1], .b = pixel[2], .a = pixel[3] };
-            *dst++ = pix->b;  // TODO: this order may be platform-dependent. Test on linux and windows.
-            *dst++ = pix->g;
-            *dst++ = pix->r;
+        for (int doub = 0; doub < 2; doub++) {
+            for (int i = 0; i < width; i++) {
+                RGBA_t *pix = (RGBA_t *)surface->pixels + (scanline * width + i);
+                //RGBA_t pix = { .r = pixel[0], .g = pixel[1], .b = pixel[2], .a = pixel[3] };
+                *dst++ = pix->b;  // TODO: this order may be platform-dependent. works on mac and windows so far..
+                *dst++ = pix->g;
+                *dst++ = pix->r;
+            }
+            // pad out to the next multiple of 4 bytes.
+            for (int i = 0; i < lineextra * 3; i++) {
+                *dst++ = 0;
+            }
         }
-        // pad out to the next multiple of 4 bytes.
-        for (int i = 0; i < lineextra * 3; i++) {
-            *dst++ = 0;
-        }
+        
     }
 
     const char *mime_types[] = { "image/bmp" };
@@ -99,7 +102,7 @@ void ClipboardImage::Clip(SDL_Surface *surface) {
         delete header;
         header = nullptr;
     }
-    header = new BMPHeader(width, height);
+    header = new BMPHeader(width, height*2);
     memcpy(clip_buffer, header, sizeof(BMPHeader));
     bool res = SDL_SetClipboardData(clip_callback, nullptr, (void *)this, mime_types, 1 );
     if (!res) {
