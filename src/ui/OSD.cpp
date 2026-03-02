@@ -498,7 +498,10 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
                 dm.filename = strndup(event.drop.data, 1024);
                 dm.slot = key.slot;
                 dm.drive = key.drive;   
-                computer->mounts->mount_media(dm);
+                bool result = computer->mounts->mount_media(dm);
+                if (!result) {
+                    computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Failed to mount media"));
+                }
             }
         }
         // Raise our window to the top. After a DD I would expect to be able to just go back to doing stuff in the app.
