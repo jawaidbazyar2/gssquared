@@ -501,6 +501,11 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
                 bool result = computer->mounts->mount_media(dm);
                 if (!result) {
                     computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Failed to mount media"));
+                } else {
+                    // this isn't displaying because the message was rendered into the local stack frame, duh.
+                    static char msg[160];
+                    snprintf(msg, sizeof(msg), "Mounted media %s", event.drop.data);
+                    computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msg));            
                 }
             }
         }
@@ -564,7 +569,6 @@ void OSD::update() {
     static int updCount=0;
     if (updCount++ > 60) {
         updCount = 0;
-        // computer->mounts->dump(); // TODO: this is crashing for unknown reason.
     }
 
     // update disk status - iterate over all drives based on what's in slots
@@ -643,11 +647,15 @@ void OSD::set_heads_up_message(const std::string &text, int count) {
 
 /** Draw the control panel (if visible) */
 void OSD::render() {
+    int window_width, window_height;
+    SDL_GetWindowSize(window, &window_width, &window_height);
+    float ox,oy;
+    SDL_GetRenderScale(renderer, &ox, &oy);
 
     /** if current Status is out, don't draw. If status is in transition or IN, draw. */
     if (currentSlideStatus == SLIDE_IN || (slideStatus && (currentSlideStatus != slideStatus))) {
-        float ox,oy;
-        SDL_GetRenderScale(renderer, &ox, &oy);
+/*         float ox,oy;
+        SDL_GetRenderScale(renderer, &ox, &oy); */
         SDL_SetRenderScale(renderer, 1.0,1.0); // TODO: calculate these based on window size
 
         /* ----- */
@@ -700,18 +708,27 @@ void OSD::render() {
         // now render the cpTexture into window
         SDL_RenderTexture(renderer, cpTexture, NULL, &cpTargetRect);
         SDL_SetRenderScale(renderer, ox,oy);
-    } 
+    }
+
+    // Display this regardless of OSD state.
+    SDL_SetRenderScale(renderer, 1,1); // TODO: calculate these based on window size
+    if (headsUpMessageCount) { // set it to 512 for instance to sit at full opacity for 4 seconds then fade out over 4ish seconds.    
+        SDL_SetRenderTarget(renderer, nullptr);
+        int opacity = headsUpMessageCount < 255 ? headsUpMessageCount : 255;
+        text_render->set_color(0xFF, 0xFF, 0xFF, opacity);
+        text_render->render(headsUpMessageText, window_width/2, 30, TEXT_ALIGN_CENTER);
+        
+        headsUpMessageCount -= 3;
+        if (headsUpMessageCount < 0) headsUpMessageCount = 0;
+    }
+    SDL_SetRenderScale(renderer, ox,oy);
+
     if (currentSlideStatus == SLIDE_OUT) {
+        SDL_SetRenderScale(renderer, 1,1);       // TODO: calculate these based on window size
 
+        //render_heads_up_message();
 
-        // Get the current window size to properly position HUD elements
-        int window_width, window_height;
-        SDL_GetWindowSize(window, &window_width, &window_height);
-        float ox,oy;
-        SDL_GetRenderScale(renderer, &ox, &oy);
-        SDL_SetRenderScale(renderer, 1,1); // TODO: calculate these based on window size
-
-        if (headsUpMessageCount) { // set it to 512 for instance to sit at full opacity for 4 seconds then fade out over 4ish seconds.
+       /*  if (headsUpMessageCount) { // set it to 512 for instance to sit at full opacity for 4 seconds then fade out over 4ish seconds.
             int opacity = headsUpMessageCount < 255 ? headsUpMessageCount : 255;
             //SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, opacity);
             text_render->set_color(0xFF, 0xFF, 0xFF, opacity);
@@ -719,7 +736,7 @@ void OSD::render() {
             
             headsUpMessageCount -= 3;
             if (headsUpMessageCount < 0) headsUpMessageCount = 0;
-        }
+        } */
 
         open_btn->render(renderer); // this now takes care of its own fade-out.
 
@@ -732,24 +749,7 @@ void OSD::render() {
 
             hud_drive_container->render();
         }
-        
-/*         if (diskii_button1) {
-            drive_status_t ds1 = diskii_button1->get_disk_status();
-            drive_status_t ds2 = diskii_button2->get_disk_status();
-
-            if (ds1.motor_on || ds2.motor_on) {
-
-                // Update HUD drive container position based on window size
-                // Position it at the bottom of the screen with some padding
-                hud_drive_container->set_position(((float)window_width - 420) / 2, window_height - 125 );
-
-                // display running disk drives at the bottom of the screen.
-                SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-                hud_drive_container->render();
-            }
-        }
- */        
+       
         // display the MHz at the bottom of the screen.
         { // we are currently at A2 display scale.
             char hud_str[150];
@@ -767,6 +767,7 @@ void OSD::render() {
         SDL_SetRenderScale(renderer, ox,oy);
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     }
+
 }
 
 bool OSD::event(const SDL_Event &event) {
