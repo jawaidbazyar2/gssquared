@@ -65,7 +65,7 @@ void DiskII_Button_t::render(SDL_Renderer* renderer) {
     snprintf(text, sizeof(text), "Slot %u", key.slot);
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_RenderDebugText(renderer, tp.x + cp.x + 62, tp.y + cp.y + 84, text);
-    if (is_hovering && !status.filename.empty()) {
+    if (/* is_hovering &&  */!status.filename.empty()) {
         float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
         SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 36, text_width+10, 16};
