@@ -21,6 +21,7 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3_image/SDL_image.h>
 
+#include "SDL3/SDL_events.h"
 #include "computer.hpp"
 #include "DiskII_Button.hpp"
 #include "Unidisk_Button.hpp"
@@ -277,67 +278,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     drive_container->set_tile_size(415, 600);
     containers.push_back(drive_container);
 
-    // TODO: create buttons based on what is in slots.
-
-#if 0  // Old slot-scanning code - replaced by Mounts interface
-    int diskii_slot = -1;
-    int unidisk_slot = -1;
-    for (int i = 0; i < NUM_SLOTS; i++) {
-        Device_t *device = slot_manager->get_device(static_cast<SlotType_t>(i));
-        if (device->id == DEVICE_ID_DISK_II) {
-            diskii_slot = i;
-        } else if (device->id == DEVICE_ID_PD_BLOCK2) {
-            unidisk_slot = i;
-        }
-    }
-
-    // Create the buttons
-    int tile_id = 0;
-    if (diskii_slot != -1) {
-        uint64_t key = (uint64_t)diskii_slot << 8 | 0;
-        diskii_button1 = new DiskII_Button_t(aa, DiskII_Open, DS); // this needs to have our disk key . or alternately use a different callback.
-        diskii_button1->set_key(key);
-        diskii_button1->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, key});
-
-        diskii_button2 = new DiskII_Button_t(aa, DiskII_Closed, DS);
-        diskii_button2->set_key(key | 1);
-        diskii_button2->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, key | 1});
-
-        drive_container->add_tile(diskii_button1, tile_id++);
-        drive_container->add_tile(diskii_button2, tile_id++);  
-        
-        // pop-up drive container when drives are spinning
-        Container_t *dc2 = new Container_t(renderer, 10, HUD);  // Increased to 5 to accommodate the mouse position tile
-        dc2->set_position(340, 800);
-        dc2->set_tile_size(420, 120);
-        hud_diskii_1 = new DiskII_Button_t(aa, DiskII_Open, HUD); // this needs to have our disk key . or alternately use a different callback.
-        hud_diskii_1->set_key(0x600);
-        hud_diskii_1->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, 0x600});
-
-        hud_diskii_2 = new DiskII_Button_t(aa, DiskII_Closed, HUD);
-        hud_diskii_2->set_key(0x601);
-        hud_diskii_2->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, 0x601});
-
-        dc2->add_tile(hud_diskii_1, 0);
-        dc2->add_tile(hud_diskii_2, 1);
-        dc2->layout();
-        hud_drive_container = dc2;
-    }
-    if (unidisk_slot != -1) {
-        uint64_t key = (uint64_t)unidisk_slot << 8 | 0;
-        unidisk_button1 = new Unidisk_Button_t(aa, Unidisk_Face, DS); // this needs to have our disk key . or alternately use a different callback.
-        unidisk_button1->set_key(key);
-        unidisk_button1->set_click_callback(unidisk_button_click, new diskii_callback_data_t{this, key | 0});
-
-        unidisk_button2 = new Unidisk_Button_t(aa, Unidisk_Face, DS); // this needs to have our disk key . or alternately use a different callback.
-        unidisk_button2->set_key(key | 1);
-        unidisk_button2->set_click_callback(unidisk_button_click, new diskii_callback_data_t{this, key | 1});
-
-        drive_container->add_tile(unidisk_button1, tile_id++);
-        drive_container->add_tile(unidisk_button2, tile_id++);
-    }
-#endif
-
     // New Mounts-based button creation
     // Get all registered drives from the Mounts system
     const std::vector<drive_info_t>& drives = computer->mounts->get_all_drives();
@@ -506,21 +446,17 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     save_as_btn->set_tile_size(100, 30);
     discard_btn->set_tile_size(100, 30);
     cancel_btn->set_tile_size(100, 30);
-    //save_btn->set_text_renderer(text_render);
-    ////save_as_btn->set_text_renderer(text_render);
-    //discard_btn->set_text_renderer(text_render);
-    //cancel_btn->set_text_renderer(text_render);
+
     save_btn->set_click_callback(modal_diskii_click, new diskii_modal_callback_data_t{this, diskii_save_con, 1});
-    //save_as_btn->set_click_callback(modal_diskii_click, new diskii_modal_callback_data_t{this, diskii_save_con, 2});
+
     discard_btn->set_click_callback(modal_diskii_click, new diskii_modal_callback_data_t{this, diskii_save_con, 3});
     cancel_btn->set_click_callback(modal_diskii_click, new diskii_modal_callback_data_t{this, diskii_save_con, 4});
     diskii_save_con->add_tile(save_btn, 0);
-    //diskii_save_con->add_tile(save_as_btn, 1);
+
     diskii_save_con->add_tile(discard_btn, 1);
     diskii_save_con->add_tile(cancel_btn, 2);
     diskii_save_con->layout();
-    //containers.push_back(diskii_save_con); // just for testing
-    
+
     close_btn = new Button_t("<", TextButtonCfg);
     close_btn->set_click_callback(close_btn_click, this);
     close_btn->set_tile_size(36, 36);
@@ -531,6 +467,51 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     open_btn->set_tile_size(36, 36);
     open_btn->set_tile_position(0, 50);
     open_btn->set_fade_frames(512, 4); // hold for one second, then fade out over next second. (roughly)
+
+    computer->sys_event->registerHandler(SDL_EVENT_DROP_BEGIN, [this](const SDL_Event &event) {
+        SDL_RaiseWindow(window);
+        slideStatusBeforeDrop = currentSlideStatus;
+        if (currentSlideStatus == SLIDE_OUT) {
+            open_panel();
+        }
+        return true;
+    });
+    computer->sys_event->registerHandler(SDL_EVENT_DROP_FILE, [this,computer](const SDL_Event &event) {
+        printf("SDL_EVENT_DROP_FILE: %s\n", event.drop.data);
+
+        // Identify the media type to help control what buttons we allow to highlight.
+        media_descriptor *media = new media_descriptor();
+        media->filename = event.drop.data;
+        if (identify_media(*media) != 0) { // if this is unrecognized media, don't allow it to be dropped.
+            delete media;
+            computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Unrecognized media type"));
+            return false;
+        }
+        delete media;
+        // after that, find button that was under the mouse. Scan Drive Container for button that is highlighted.
+        for (int i = 0; i < drive_container->get_tile_count(); i++) {
+            Tile_t *tile = drive_container->get_tile(i);
+            if (tile && tile->is_mouse_hovering()) {
+                StorageButton *button = dynamic_cast<StorageButton *>(tile);
+                storage_key_t key = button->get_key();
+                disk_mount_t dm;
+                dm.filename = strndup(event.drop.data, 1024);
+                dm.slot = key.slot;
+                dm.drive = key.drive;   
+                computer->mounts->mount_media(dm);
+            }
+        }
+        // Raise our window to the top. After a DD I would expect to be able to just go back to doing stuff in the app.
+        SDL_RaiseWindow(window);
+        return true;
+    });
+    computer->sys_event->registerHandler(SDL_EVENT_DROP_COMPLETE, [this](const SDL_Event &event) {
+        if (slideStatusBeforeDrop == SLIDE_OUT) {
+            close_panel();
+        }
+        return true;
+    });
+
 
 }
 
@@ -827,6 +808,13 @@ bool OSD::event(const SDL_Event &event) {
                 return(true);
             }
             break;
+        case SDL_EVENT_DROP_POSITION: {
+                // the specific buttons that can drag/drop need to handle this event.
+                for (Container_t* container : containers) {
+                    container->handle_mouse_event(event);
+                }
+            }
+            break;
         case SDL_EVENT_MOUSE_MOTION:
             if (!SDL_GetWindowRelativeMouseMode(window)) {
                 open_btn->reset_fade();
@@ -835,6 +823,7 @@ bool OSD::event(const SDL_Event &event) {
         case SDL_EVENT_WINDOW_RESIZED:
             return(false); // we don't handle this, have gs2 loop send it to video_system.
             break;
+        
     }    
     return(active);
 }

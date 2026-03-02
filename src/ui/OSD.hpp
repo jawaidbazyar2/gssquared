@@ -93,6 +93,8 @@ protected:
     std::string headsUpMessageText;
     int headsUpMessageCount = 0;
 
+    int slideStatusBeforeDrop = SLIDE_NONE;
+
 public:
     /**
      * @brief Constructs the OSD with the given renderer and window.

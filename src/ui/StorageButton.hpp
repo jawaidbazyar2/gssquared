@@ -12,6 +12,29 @@ class StorageButton : public Button_t {
     public:
     // use same constructors as Button_t.
         using Button_t::Button_t;
+
+        // Handle drop position events, which track the mouse pos over window during drag/drop.
+        // and update the hover state accordingly.
+        virtual bool handle_mouse_event(const SDL_Event& event) override {
+            if (!active || !visible) return(false);
+            if (event.type == SDL_EVENT_DROP_POSITION) {
+                float mouse_x = event.drop.x;
+                float mouse_y = event.drop.y;
+                
+                // Check if mouse is within tile bounds
+                bool is_inside = (mouse_x >= tp.x && mouse_x <= tp.x + tp.w &&
+                                mouse_y >= tp.y && mouse_y <= tp.y + tp.h);
+                
+                // If we were hovering but mouse is now outside, or
+                // we weren't hovering but mouse is now inside, trigger hover change
+                if (is_hovering != is_inside) {
+                    is_hovering = is_inside;
+                    on_hover_changed(is_hovering);
+                }
+                return true;
+                // others may care about same event
+            } else return Button_t::handle_mouse_event(event);           
+        }
     
         // Disk state setters and getters
         /* virtual void set_disk_slot(int slot);

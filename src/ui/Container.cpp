@@ -165,10 +165,18 @@ void Container_t::handle_mouse_event(const SDL_Event& event) {
 
     // Handle mouse motion and button events
     if (event.type == SDL_EVENT_MOUSE_MOTION ||
-        event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+        event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || 
+        event.type == SDL_EVENT_DROP_POSITION) {
         
-        float mouse_x = event.motion.x;
-        float mouse_y = event.motion.y;
+        float mouse_x;
+        float mouse_y;
+        if (event.type == SDL_EVENT_MOUSE_MOTION) {
+            mouse_x = event.motion.x;
+            mouse_y = event.motion.y;
+        } else if (event.type == SDL_EVENT_DROP_POSITION) {
+            mouse_x = event.drop.x;
+            mouse_y = event.drop.y;
+        }
         
         // Check if mouse is within container bounds
         bool is_inside = (mouse_x >= x && mouse_x <= x + w &&
