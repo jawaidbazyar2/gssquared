@@ -72,10 +72,20 @@ video_system_t::video_system_t(computer_t *computer) {
         return true;
     });
     computer->dispatch->registerHandler(SDL_EVENT_MOUSE_BUTTON_DOWN, [this](const SDL_Event &event) {
-        if (display_capture_mouse(true)) {
+        // if control is also down, toggle mouse capture.
+  /*       SDL_Keymod km = SDL_GetModState();
+        if (!(km & SDL_KMOD_CTRL)) return false;
+
+        bool newstate = ! is_mouse_captured();
+        bool result = display_capture_mouse(newstate);
+        if (newstate && result) {
+            event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
+        } */
+
+/*         if (display_capture_mouse(true)) {
             event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
             return false;
-        }
+        } */
         return false;
     });
     computer->sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [this, computer](const SDL_Event &event) {
