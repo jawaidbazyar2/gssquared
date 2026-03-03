@@ -108,8 +108,8 @@ Slow down the OSD open/close a bit, to make it whooshier.
     * Atari Joyport
     * the other options..
   * Modifier Keys
-    * Alt=OA (or, Command=OA)
-    * Win=OA (or, Option=OA)
+    * OA/Cmd = ALT; CA/Opt = Win
+    * OA/Cmd = WIN; CA/Opt = ALT
 * Display
   * Monitor
     * Composite
@@ -148,6 +148,28 @@ Avoid KEGS "Wall of dense technical information".
 Maybe we can have something interesting like Control-Click Capture/Uncapture, in addition to F1?
 
 SDL_WarpMouseInWindow(window, x, y): Warps the mouse pointer to a specific coordinate. This is essential when switching from relative mode back to absolute mode to place the mouse cursor exactly where the user expects it. <- worth a try here. IFF we're in GS/OS and we can read the GS/OS mouse cursor position, make this call. That's getting a little hinky!
+
+Getting confused when capture was on and we F4... need to restore the capture state after F4. Done (1-layer stack).
+Also, Alt-TAB takes us out of our window focus, releases capture, but SDL re-captures when focus returns to our window. So that all seems to work well.
+
+There is some edge case where the system stops respecting MouseCapture mode. it hides the mouse, but it doesn't protect against moving outside the window. I don't think it's my code. Ah, it might be: if the window is moved, mouse capture stops working. Yep.
+
+## Modifier Keys
+
+II+: has only control and shift, shift only used for special symbols.
+IIe: control, shift, open-apple, closed-apple. open apple is left of space, closed apple is right of space.
+IIgs: OA (cmd) and CA (option) are next to each other.
+
+Right now, applekeys.hpp assumes split (different behavior left/right). Which is a bug, since GS has them next to each other.
+
+There are three places that have this:
+gamecontroller (because OA/CA are also pushbuttons)
+ADB
+keyboard (iie)
+
+Ah we're back to my very original issue: PC keyboard on Mac, maps windows->cmd and alt->option by default. I have them reversed. So on my Mac, I'm just gonna have to get used to them being reversed. Which they -are-. They are then correct on every other platform, including laptop keyboards. Suck it up.
+
+So I'll be using the same keys I always have, except on the MacBook. Let's test that.
 
 ## Key Shortcuts Limitations per System
 
@@ -197,6 +219,8 @@ This can be an "event bus", that accepts events from multiple sources, and dispa
 
 So we need one thing to tie them all in together.
 
+The Bus messages will be a function ID: e.g., "set speed", "toggle speed", "open control panel", etc.
+
 # Drag and Drop
 
 ok, here are some interesting Factoids.
@@ -206,3 +230,9 @@ Right now I am iterating the Drives container looking for the highlighted one. B
 Except there's a bunch of injection we'd have to do, even in StorageButton. For the mount call.. well, the device will either accept multiple mounts or not.
 
 I'd like to support drop onto a drive with a disk already mounted - that is going to require unmounting, maybe doing the "unsaved changes" dialog, etc before actually doing the mount. Yeah, we could send a frame_appevent and have that handle the mount/unmount/blah state machine instead of trying to do it inside the OSD code.
+
+Maybe we can flash the hover on and off and pause for a half second after DROP_FILE ? Just to give a visual indication something happened? Of course they'll get the message up top..
+
+# Mouse Location
+
+If the mouse is outside the visible screen area (i.e., if it's in window, but also over borders) then make sure OSD eats mouse events, so clicking on things outside the screen area will never cause clicks to effect the VM.
