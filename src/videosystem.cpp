@@ -71,23 +71,18 @@ video_system_t::video_system_t(computer_t *computer) {
         window_resize(event);
         return true;
     });
-    computer->dispatch->registerHandler(SDL_EVENT_MOUSE_BUTTON_DOWN, [this](const SDL_Event &event) {
+    /* computer->dispatch->registerHandler(SDL_EVENT_MOUSE_BUTTON_DOWN, [this](const SDL_Event &event) {
         // if control is also down, toggle mouse capture.
-  /*       SDL_Keymod km = SDL_GetModState();
+        SDL_Keymod km = SDL_GetModState();
         if (!(km & SDL_KMOD_CTRL)) return false;
 
         bool newstate = ! is_mouse_captured();
         bool result = display_capture_mouse(newstate);
         if (newstate && result) {
             event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
-        } */
-
-/*         if (display_capture_mouse(true)) {
-            event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
-            return false;
-        } */
+        }
         return false;
-    });
+    }); */
     computer->sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [this, computer](const SDL_Event &event) {
         int key = event.key.key;
         if (key == SDLK_F3) {
@@ -256,6 +251,7 @@ void video_system_t::toggle_fullscreen() {
 }
 
 bool video_system_t::display_capture_mouse(bool capture) {
+    printf("display_capture_mouse: %d\n", capture);
     mouse_captured = capture;
     if (!SDL_SetWindowKeyboardGrab(window, capture)) {
         printf("SDL_SetWindowKeyboardGrab failed: %s\n", SDL_GetError());
@@ -263,8 +259,8 @@ bool video_system_t::display_capture_mouse(bool capture) {
     if (!SDL_SetWindowRelativeMouseMode(window, capture)) {
         printf("SDL_SetWindowRelativeMouseMode failed: %s\n", SDL_GetError());
     };
-    printf("display_capture_mouse: %d\n", mouse_captured);
-    printf("SDL_GetMouseGrab:%d\n", SDL_GetWindowMouseGrab(window));
+/*     printf("SDL_GetMouseGrab:%d\n", SDL_GetWindowMouseGrab(window));
+    SDL_SetWindowMouseGrab(window, capture); */
     return capture;
 }
 
