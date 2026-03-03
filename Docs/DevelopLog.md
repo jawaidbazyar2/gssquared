@@ -10445,3 +10445,37 @@ generate_ensoniq_frame will need to know if we generated samples pre-frame and h
 We keep running into things like this, and, there is a fair extra bit of complexity in the system due to it. I am closer to breaking down and interleaving more things into incr_cycle. It would make reasoning about the state machines a lot easier. Using a timer does sort of achieve the same effect, but, it's more complex to catch all the edge cases.
 
 working on release 0.7.1, have a sort of repeatable coredump on linux. (I also saw on Mac maybe). Load hd1b, and gs pacman into smartport drives. boot. When it gets to where it complains about appletalk, instead of getting that, it crashes. Serial port problem? Why diff on linux? unknown. there is also control-closedapple-reset.. of course in debug mode it doesn't reproduce. what.
+
+## Mar 1, 2026
+
+UI!!!
+
+Currently we have Containers, Tiles (and all the buttons that derive from them). But these are distinct. Maybe they should share an interface, so Containers can contain Containers, we can have lists of Containers and/or Tiles indiscriminately.. Something like 
+UI_Element
+  handle_event
+  render
+  layout
+etc..
+
+I should rename the various handle_mouse_event to just handle_event() or even event(). Since they're not "just" for mouse events.
+
+Well, the drag and drop file stuff is implemented, it wasn't that hard, and, it is working super-slick! 
+
+```
+  static char msg[160];
+  snprintf(msg, sizeof(msg), "Mounted media %s", event.drop.data);
+  computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msg));            
+```
+ok, so this is borked. I had to make this static, otherwise it was being printed to the stack and then of course deleted long before we tried to display it.
+I need to search the code for other instances of this, which could easily cause coredumps. DUH.
+Also, if I were to allocate this on the heap (not unreasonable here) I would need to delete once it's delivered back to OSD.
+Since I'm -already- in OSD, can I not just set the variables directly?
+Should I put a little more smarts into the message delivery, perhaps copying the whole message?
+
+## Mar 2, 2026
+
+have new src/platform_specific tree. The idea is we build a single platform_specific library, but, what code goes into its exported functions is compiled per platform. 
+
+ugh, got a problem with mouse capture. It's not working well on my desktop. Working fine on macbook? and linux. And seems to have been introduced only recently. I did change up all the mouse capture code. Hmm.. did I change the context in which the calls to SetMouseRelative operates?
+
+Pulling down a GS2 menu freezes the application. I wonder if this is related to the framework.. 
