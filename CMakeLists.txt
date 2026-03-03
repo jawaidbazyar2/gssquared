@@ -369,7 +369,7 @@ target_link_libraries(GSSquared
     gs2_devices_rtc_pram
     gs2_devices_adb
     gs2_diskii
-    platform_specific_macos
+    platform_specific
 )
 
 add_subdirectory(apps/adbtest)
@@ -413,13 +413,20 @@ add_subdirectory(apps/mousebugtest)
 #### Platform Specific Code
 ################################################################################
 if(APPLE)
-    add_library(platform_specific_macos src/platform-specific/macos/menu.mm)
+    add_library(platform_specific src/platform-specific/macos/menu.mm)
 
-    target_link_libraries(platform_specific_macos PRIVATE
+    target_link_libraries(platform_specific PRIVATE
         "-framework Cocoa"
     )
 endif()
 
+if(UNIX AND NOT APPLE)
+    add_library(platform_specific src/platform-specific/linux/menu.cpp)
+
+    target_link_libraries(platform_specific PRIVATE
+        SDL3::SDL3-shared
+    )
+endif()
 
 ################################################################################
 #### Packaging targets per platform

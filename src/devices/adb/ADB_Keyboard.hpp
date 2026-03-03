@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ADB_Device.hpp"
+#include "util/applekeys.hpp"
 
 struct adb_mod_key_t {
     union {
@@ -141,7 +142,7 @@ class ADB_Keyboard : public ADB_Device
     uint32_t index_out = 0;
     uint32_t count = 0;
 
-    const uint8_t sdl_to_adb_key_map[SDL_SCANCODE_COUNT] = {
+    uint8_t sdl_to_adb_key_map[SDL_SCANCODE_COUNT] = {
         0xFF,
         0xFF,
         0xFF,
@@ -422,6 +423,11 @@ class ADB_Keyboard : public ADB_Device
             * Bit 12: Reserved, must be 0.
             * Bit 11-8: Device address.
             * Bit 7-0: Device handler. */
+        sdl_to_adb_key_map[KEY_OPTION_L] = ADB_OPTION;
+        sdl_to_adb_key_map[KEY_OPTION_R] = ADB_OPTION;
+        sdl_to_adb_key_map[KEY_COMMAND_L] = ADB_COMMAND;
+        sdl_to_adb_key_map[KEY_COMMAND_R] = ADB_COMMAND;
+        
     }
 
     void reset(uint8_t cmd, uint8_t reg) override { }
