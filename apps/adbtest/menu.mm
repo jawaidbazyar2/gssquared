@@ -2,6 +2,42 @@
 #include <Foundation/Foundation.h>
 #include <SDL3/SDL.h>
 
+typedef SDL_AppResult (*MenuIterateCallback)(void *appstate);
+
+static MenuIterateCallback s_iterateCallback = NULL;
+static void *s_iterateAppState = NULL;
+static NSTimer *s_menuTrackingTimer = nil;
+
+@interface MenuTrackingHelper : NSObject
++ (void)menuDidBeginTracking:(NSNotification *)notification;
++ (void)menuDidEndTracking:(NSNotification *)notification;
++ (void)timerFired:(NSTimer *)timer;
+@end
+
+@implementation MenuTrackingHelper
++ (void)menuDidBeginTracking:(NSNotification *)notification {
+	if (s_iterateCallback && !s_menuTrackingTimer) {
+		s_menuTrackingTimer = [NSTimer timerWithTimeInterval:1.0/60.0
+		                                             target:self
+		                                           selector:@selector(timerFired:)
+		                                           userInfo:nil
+		                                            repeats:YES];
+		[[NSRunLoop mainRunLoop] addTimer:s_menuTrackingTimer forMode:NSRunLoopCommonModes];
+	}
+}
+
++ (void)menuDidEndTracking:(NSNotification *)notification {
+	[s_menuTrackingTimer invalidate];
+	s_menuTrackingTimer = nil;
+}
+
++ (void)timerFired:(NSTimer *)timer {
+	if (s_iterateCallback) {
+		s_iterateCallback(s_iterateAppState);
+	}
+}
+@end
+
 @interface MyDelegate : NSObject <NSWindowDelegate>
 {
 	id<NSWindowDelegate> _originalDelegate;
@@ -135,4 +171,18 @@ void initMenu(SDL_Window *window) {
 	// Save SDL's original delegate so we can forward calls to it
 	id<NSWindowDelegate> originalDelegate = [nswindow delegate];
 	[nswindow setDelegate:[[MyDelegate alloc] initWithOriginalDelegate:originalDelegate]];
+}
+
+void setMenuTrackingCallback(MenuIterateCallback callback, void *appstate) {
+	s_iterateCallback = callback;
+	s_iterateAppState = appstate;
+
+	[[NSNotificationCenter defaultCenter] addObserver:[MenuTrackingHelper class]
+	                                         selector:@selector(menuDidBeginTracking:)
+	                                             name:NSMenuDidBeginTrackingNotification
+	                                           object:nil];
+	[[NSNotificationCenter defaultCenter] addObserver:[MenuTrackingHelper class]
+	                                         selector:@selector(menuDidEndTracking:)
+	                                             name:NSMenuDidEndTrackingNotification
+	                                           object:nil];
 }
