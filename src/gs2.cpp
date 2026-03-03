@@ -24,6 +24,7 @@
 #include <SDL3/SDL_main.h>
 
 #include "gs2.hpp"
+#include "platform-specific/menu.h"
 #include "Module_ID.hpp"
 #include "paths.hpp"
 #include "cpu.hpp"
@@ -562,6 +563,8 @@ int main(int argc, char *argv[]) {
     computer_t *computer = new computer_t(nullptr); // We'll set the clock later.
 
     video_system_t *vs = computer->video_system;
+
+    initMenu(vs->window);
 
     AssetAtlas_t *aa = new AssetAtlas_t(vs->renderer, "img/atlas.png");
     aa->set_elements(MainAtlas_count, asset_rects);

@@ -800,7 +800,7 @@ bool OSD::event(const SDL_Event &event) {
         case SDL_EVENT_KEY_DOWN:
             //printf("osd key down: %d %d %d\n", event.key.key, slideStatus, currentSlideStatus);
             if (event.key.key == SDLK_F4) {
-                SDL_SetWindowRelativeMouseMode(window, false);
+                //SDL_SetWindowRelativeMouseMode(window, false);
                 // if we're already in motion, disregard this for now.
                 if (!slideStatus) {
                     if (currentSlideStatus == SLIDE_IN) { // we are in right now, slide it out
@@ -836,12 +836,14 @@ void OSD::open_panel() {
     slideStatus = SLIDE_IN; // slide it in right to the top
     slidePosition = -slidePositionMax;
     slidePositionDelta = slidePositionDeltaMax;
+    computer->video_system->push_mouse_capture(false);
 }
 
 void OSD::close_panel() {
     slideStatus = SLIDE_OUT;   
     slidePosition = 0;
     slidePositionDelta = slidePositionDeltaMin;
+    computer->video_system->pop_mouse_capture();
 }
 
 void OSD::show_diskii_modal(storage_key_t key, uint64_t data) {

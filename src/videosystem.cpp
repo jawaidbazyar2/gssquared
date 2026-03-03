@@ -95,9 +95,10 @@ video_system_t::video_system_t(computer_t *computer) {
             return true;
         }
         if (key == SDLK_F1) { // release or capture mouse
-            bool newstate = ! is_mouse_captured();
-            bool result = display_capture_mouse(newstate);
-            if (newstate && result) {
+            bool oldstate = mouse_captured;
+            bool result = display_capture_mouse(!oldstate);
+            printf("toggle mouse capture: %d, result: %d\n", !oldstate, result);
+            if (!oldstate) {
                 event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
             }
             return true;
@@ -254,17 +255,26 @@ void video_system_t::toggle_fullscreen() {
     set_window_fullscreen(display_fullscreen_mode);
 }
 
-bool video_system_t::is_mouse_captured() {
-    return SDL_GetWindowRelativeMouseMode(window);
+bool video_system_t::display_capture_mouse(bool capture) {
+    mouse_captured = capture;
+    if (!SDL_SetWindowKeyboardGrab(window, capture)) {
+        printf("SDL_SetWindowKeyboardGrab failed: %s\n", SDL_GetError());
+    }; // this doesn't seem to do much on MacOS.
+    if (!SDL_SetWindowRelativeMouseMode(window, capture)) {
+        printf("SDL_SetWindowRelativeMouseMode failed: %s\n", SDL_GetError());
+    };
+    printf("display_capture_mouse: %d\n", mouse_captured);
+    printf("SDL_GetMouseGrab:%d\n", SDL_GetWindowMouseGrab(window));
+    return capture;
 }
 
-bool video_system_t::display_capture_mouse(bool capture) {
-    if (capture && SDL_GetWindowRelativeMouseMode(window)) { // TODO: this was keyboard grab, which is wrong.
-        return false;
-    }
-    SDL_SetWindowKeyboardGrab(window, capture);
-    SDL_SetWindowRelativeMouseMode(window, capture);
-    return true;
+void video_system_t::push_mouse_capture(bool capture) {
+    old_mouse_captured = mouse_captured;
+    display_capture_mouse(capture);
+}
+
+void video_system_t::pop_mouse_capture() {
+    display_capture_mouse(old_mouse_captured);
 }
 
 void video_system_t::set_full_frame_redraw() {

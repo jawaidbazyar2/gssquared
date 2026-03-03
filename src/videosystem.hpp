@@ -71,6 +71,9 @@ struct video_system_t {
 
     ClipboardImage *clip = nullptr;
 
+    bool mouse_captured = false;
+    bool old_mouse_captured = false;
+    
     SDL_Texture *last_texture = nullptr;
     SDL_FRect last_srcrect = { 0.0f, 0.0f, 0.0f, 0.0f };
 
@@ -110,5 +113,7 @@ struct video_system_t {
     void flip_display_scale_mode();
     void register_frame_processor(int weight, FrameHandler handler);
     void update_display(bool force_full_frame = false);
+    void push_mouse_capture(bool capture);
+    void pop_mouse_capture();
     RGBA_t get_mono_color() { return mono_color_table[display_mono_color]; };
 };

@@ -369,6 +369,7 @@ target_link_libraries(GSSquared
     gs2_devices_rtc_pram
     gs2_devices_adb
     gs2_diskii
+    platform_specific_macos
 )
 
 add_subdirectory(apps/adbtest)
@@ -405,6 +406,20 @@ add_subdirectory(apps/ui)
 add_subdirectory(apps/rtctest)
 
 add_subdirectory(apps/doc)
+
+add_subdirectory(apps/mousebugtest)
+
+################################################################################
+#### Platform Specific Code
+################################################################################
+if(APPLE)
+    add_library(platform_specific_macos src/platform-specific/macos/menu.mm)
+
+    target_link_libraries(platform_specific_macos PRIVATE
+        "-framework Cocoa"
+    )
+endif()
+
 
 ################################################################################
 #### Packaging targets per platform
