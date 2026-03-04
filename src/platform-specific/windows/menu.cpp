@@ -1,4 +1,4 @@
-#ifdef __linux__
+#ifdef _WIN32
 
 #include <SDL3/SDL.h>
 #include "platform-specific/menu.h"

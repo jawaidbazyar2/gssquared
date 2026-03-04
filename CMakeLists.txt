@@ -429,6 +429,14 @@ if(UNIX AND NOT APPLE)
     )
 endif()
 
+if(WIN32)
+    add_library(platform_specific src/platform-specific/windows/menu.cpp)
+
+    target_link_libraries(platform_specific PRIVATE
+        SDL3::SDL3-shared
+    )
+endif()
+
 ################################################################################
 #### Packaging targets per platform
 ################################################################################
