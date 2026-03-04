@@ -517,6 +517,9 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
     computer_t *computer = state->computer;
     video_system_t *vs = computer->video_system;
 
+    // Emulation manages its own timing, so turn off vsync.
+    SDL_SetRenderVSync(vs->renderer, 0);
+
     SystemConfig_t *system_config = get_system_config(system_id);
     state->platform_id = system_config->platform_id;
 
@@ -718,6 +721,9 @@ void transition_to_shutdown(GS2AppState *state) {
     state->aa->set_elements(MainAtlas_count, asset_rects);
 
     state->select_system = new SelectSystem(vs, state->aa);
+
+    // Let vsync throttle the selection UI instead of spinning.
+    SDL_SetRenderVSync(vs->renderer, 1);
     state->phase = PHASE_SYSTEM_SELECT;
 }
 
@@ -810,6 +816,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     state->aa->set_elements(MainAtlas_count, asset_rects);
 
     state->select_system = new SelectSystem(vs, state->aa);
+
+    // Let vsync throttle the selection UI instead of spinning.
+    SDL_SetRenderVSync(vs->renderer, 1);
     state->phase = PHASE_SYSTEM_SELECT;
 
     *appstate = state;
