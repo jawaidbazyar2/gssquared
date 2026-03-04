@@ -106,6 +106,13 @@ struct computer_t {
     double e_mhz = 0;
     uint64_t clock_slip = 0;
 
+    // Frame-timing state used by the emulation loop (run_cpus / SDL_AppIterate).
+    // Moved here from run_cpus() locals so iterations can be driven externally.
+    uint64_t last_cycle_time = 0;
+    uint64_t last_start_frame_c14m = 0;
+    void *cached_speaker_state = nullptr;
+    void *cached_display_state = nullptr;
+
     void set_clock(NClockII *clock); 
     inline void set_idle_percent(float idle_percent) { this->idle_percent = idle_percent; }
     inline float get_idle_percent() { return this->idle_percent; }

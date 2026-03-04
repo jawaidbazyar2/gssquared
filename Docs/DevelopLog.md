@@ -10479,3 +10479,38 @@ have new src/platform_specific tree. The idea is we build a single platform_spec
 ugh, got a problem with mouse capture. It's not working well on my desktop. Working fine on macbook? and linux. And seems to have been introduced only recently. I did change up all the mouse capture code. Hmm.. did I change the context in which the calls to SetMouseRelative operates?
 
 Pulling down a GS2 menu freezes the application. I wonder if this is related to the framework.. 
+
+## Mar 3, 2026
+
+did some experiments with vsync etc. I turned vsync on for the selectsystem loop. that locks it in at 75hz (my monitor timing), and helps keep cpu time low without doing SDL_Delay. And of course that auto-adjusts to 60hz when the monitor is 60hz.
+I also tried moving the SDL_RenderPresent to the very -end- of the main loop frame time, essentially pushing it to after the delay. 
+I also tried leaving vsync on for the main loop.
+the vsync being on causes the window to be rendered in Composited mode. 
+vsync on definitely eliminated almost all that jitter. however, it pushed emulation speed a little higher to where 59.9226 was fighting for control with 59.95 and was likely on average running a little faster. Jason brought up on his monitor, Crossrunner drops frames because his monitor is locked to 60hz or something and can't take them slower?
+
+ok, the Learings proceed!
+
+VRR / Adaptive Sync is where the monitor takes its lead from the application, basically clocking off the SDL_RenderPresent call. So, we can time very accurately. 
+
+We can also choose, when entering fullscreen, a 60Hz mode from the list of selections? Thought nightmareci very vociferously suggests I'm an idiot for even thinking about doing that. ha ha.
+
+Another alternative, is to do frame interpolation:
+https://gemini.google.com/app/5881ec0420160c5e
+where every 775-776 frames we would inject an extra copy. For reference, that's an average of 1 every 13.9 seconds or something like that.
+
+Another alternative is to do frame resampling, where we literally interpolate the "display frame" based on some number of prior "emitted" frames. 
+
+ahhh, it turns out my LG monitors actually do support FreeSync, but it has to be turned on. And the ViewSonic also supports it.  Something about changes I've made has the screens feeling brighter, more punchy. But with the FreeSync on, the frame rate is definitely locked in better. I'm super dialed in at the bottom. the HUD says I'm 59.90, 59.89, .. let's tweak the renderpresent placement again.. Uh, it's jumping around quite a bit. That might require a little thinking. As we have it, the reported FPS from Mac HUD is 59.90 / 59.88. So a hair low. maybe it IS a hair low? And the "high" is 74.87. low 37.43. Of course, I have it set to "48-75 Variable". If I hard set back to 75, I get a reported fps of 59.98? That's odd. 
+ADBTest is using vsync, so of course we're locked in there at 74.87 with little to no variation. hehe oops the menu has that locking to 59.92, I guess that's to be expected.
+The present need to occur on a precise time interval. I must be missing that for some reason putting the present() outside the main loop parts.
+The FreeSync does provide a better overall feel, though it's hard to define exactly. I can recommend that in the docs.
+And, in the event FreeSync isn't an option, we could perhaps implement the periodic-frame-doubler idea. not the best but probably better than not doing it.
+
+The menus need to be able to get certain state from various places. I think it's probably cleaner to have a single class that can access current UI state information, as well as process state changes. it won't keep any of its own state; it will just know how to talk to other classes.
+Also, Claude's been sticking a bunch of crap into gs2_app_values which is really truly not the right place for this. That's fine, we'll refactor tomorrow and clean this up.
+
+I am thinking, the approach is, do all the menus on the Mac, in full, then ask Clod to make a Windows version. 
+
+## Mar 4, 2026
+
+I've done (well Clod did) what seems to be a successful refactor of (mostly) gs2 to make GSSquared have the AppCallbacks structure. It does not appear to affect any key functions in the negative. HOWEVER. 

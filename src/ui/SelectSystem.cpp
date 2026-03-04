@@ -34,7 +34,7 @@ Style_t CS;
     container->set_position((window_width - 1024) / 2, (window_height - 768) / 2);
 
     text_renderer = new TextRenderer(vs->renderer, "fonts/OpenSans-Regular.ttf", 24);
-    selected_system = -1;
+    selected_system = SELECT_PENDING;
 
     // add a text button for each system.
     for (int i = 0; i < num_configs; i++) {
@@ -63,11 +63,11 @@ SelectSystem::~SelectSystem() {
 
 bool SelectSystem::event(const SDL_Event &event) {
     if (event.type == SDL_EVENT_QUIT) {
-        selected_system = -1;
+        selected_system = SELECT_QUIT;
         return true;
     }
     container->handle_mouse_event(event);
-    return (selected_system != -1);
+    return (selected_system >= 0);
 }
 
 int SelectSystem::get_selected_system() {
@@ -90,28 +90,4 @@ void SelectSystem::render() {
         SDL_SetRenderScale(vs->renderer, scale_x, scale_y);
         //updated = false;
     }
-}
-
-int SelectSystem::select() {
-    // Switching to Vsync here means we avoid the manual SDL_Delay below.
-    //SDL_SetRenderVSync(vs->renderer, 1);
-    bool selected = false;
-    while (!selected) {
-        SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
-        vs->clear();
-
-        SDL_Event event;
-        while(SDL_PollEvent(&event)) {
-            if (this->event(event)) {
-                selected = true;
-            }
-        }
-        if (update()) {
-            render();
-            vs->present();
-        }
-        SDL_Delay(16);
-    }
-   // SDL_SetRenderVSync(vs->renderer, 0);
-    return selected_system;
 }

@@ -20,4 +20,7 @@ enum MenuEventCode {
 	MENU_MONITOR_MONO_WHITE,
 };
 
+typedef SDL_AppResult (*MenuIterateCallback)(void *appstate);
+
 void initMenu(SDL_Window* window);
+void setMenuTrackingCallback(MenuIterateCallback callback, void *appstate);

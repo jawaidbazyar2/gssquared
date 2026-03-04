@@ -1,5 +1,10 @@
 # Restructuring gs2.cpp to the SDL3 App Callbacks Paradigm
 
+**Status: COMPLETED** — All 7 phases implemented and tested. The emulator now
+uses SDL3 App Callbacks (`SDL_AppInit`, `SDL_AppEvent`, `SDL_AppIterate`,
+`SDL_AppQuit`) with macOS-specific NSTimer helpers for menu tracking and window
+resize. Emulation continues running during menu pulldown and window resize drag.
+
 ## Problem Statement
 
 GSSquared currently uses a traditional `main()` with nested `while` loops for its

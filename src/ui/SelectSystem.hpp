@@ -5,13 +5,16 @@
 #include "AssetAtlas.hpp"
 #include "videosystem.hpp"
 
+#define SELECT_PENDING -2
+#define SELECT_QUIT    -1
+
 class SelectSystem {
 protected:
     video_system_t *vs;
     Container_t *container;
     bool updated = false;
     TextRenderer *text_renderer;
-    int selected_system = 0;
+    int selected_system = SELECT_PENDING;
     int window_width, window_height;
     AssetAtlas_t *aa;
 
@@ -38,11 +41,6 @@ public:
      * @brief Renders the OSD and all its components.
      */
     void render();
-
-    /**
-     * @brief Selects a system from the list.
-     */
-    int select();
 
     /**
      * @brief Handles SDL events for the OSD.

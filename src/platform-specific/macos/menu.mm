@@ -5,6 +5,80 @@
 #include <SDL3/SDL.h>
 
 #include "util/MenuInterface.h"
+#include "platform-specific/menu.h"
+
+/* ========================================================================
+   Menu Tracking and Resize Tracking Helpers
+   
+   When macOS enters a modal tracking loop (menu pulldown or window resize),
+   the normal SDL event pump is blocked. These helpers fire an NSTimer at
+   60 Hz that calls SDL_AppIterate directly, keeping emulation running.
+   ======================================================================== */
+
+static MenuIterateCallback s_iterateCallback = NULL;
+static void *s_iterateAppState = NULL;
+static NSTimer *s_menuTrackingTimer = nil;
+static NSTimer *s_resizeTrackingTimer = nil;
+
+@interface MenuTrackingHelper : NSObject
++ (void)menuDidBeginTracking:(NSNotification *)notification;
++ (void)menuDidEndTracking:(NSNotification *)notification;
++ (void)timerFired:(NSTimer *)timer;
+@end
+
+@implementation MenuTrackingHelper
++ (void)menuDidBeginTracking:(NSNotification *)notification {
+	if (s_iterateCallback && !s_menuTrackingTimer) {
+		s_menuTrackingTimer = [NSTimer timerWithTimeInterval:1.0/59.9226
+		                                             target:self
+		                                           selector:@selector(timerFired:)
+		                                           userInfo:nil
+		                                            repeats:YES];
+		[[NSRunLoop mainRunLoop] addTimer:s_menuTrackingTimer forMode:NSRunLoopCommonModes];
+	}
+}
+
++ (void)menuDidEndTracking:(NSNotification *)notification {
+	[s_menuTrackingTimer invalidate];
+	s_menuTrackingTimer = nil;
+}
+
++ (void)timerFired:(NSTimer *)timer {
+	if (s_iterateCallback) {
+		s_iterateCallback(s_iterateAppState);
+	}
+}
+@end
+
+@interface ResizeTrackingHelper : NSObject
++ (void)windowWillStartLiveResize:(NSNotification *)notification;
++ (void)windowDidEndLiveResize:(NSNotification *)notification;
++ (void)timerFired:(NSTimer *)timer;
+@end
+
+@implementation ResizeTrackingHelper
++ (void)windowWillStartLiveResize:(NSNotification *)notification {
+	if (s_iterateCallback && !s_resizeTrackingTimer) {
+		s_resizeTrackingTimer = [NSTimer timerWithTimeInterval:1.0/60.0
+		                                               target:self
+		                                             selector:@selector(timerFired:)
+		                                             userInfo:nil
+		                                              repeats:YES];
+		[[NSRunLoop mainRunLoop] addTimer:s_resizeTrackingTimer forMode:NSRunLoopCommonModes];
+	}
+}
+
++ (void)windowDidEndLiveResize:(NSNotification *)notification {
+	[s_resizeTrackingTimer invalidate];
+	s_resizeTrackingTimer = nil;
+}
+
++ (void)timerFired:(NSTimer *)timer {
+	if (s_iterateCallback) {
+		s_iterateCallback(s_iterateAppState);
+	}
+}
+@end
 
 /*
 This is where Claude fixed Claude's bad code:
@@ -280,5 +354,30 @@ static void setupMenus(void) {
 void initMenu(SDL_Window *window) {
 	(void)window;
 	setupMenus();
+}
+
+void setMenuTrackingCallback(MenuIterateCallback callback, void *appstate) {
+	s_iterateCallback = callback;
+	s_iterateAppState = appstate;
+
+	// Menu tracking: fires SDL_AppIterate during menu pulldown
+	[[NSNotificationCenter defaultCenter] addObserver:[MenuTrackingHelper class]
+	                                         selector:@selector(menuDidBeginTracking:)
+	                                             name:NSMenuDidBeginTrackingNotification
+	                                           object:nil];
+	[[NSNotificationCenter defaultCenter] addObserver:[MenuTrackingHelper class]
+	                                         selector:@selector(menuDidEndTracking:)
+	                                             name:NSMenuDidEndTrackingNotification
+	                                           object:nil];
+
+	// Resize tracking: fires SDL_AppIterate during window resize drag
+	[[NSNotificationCenter defaultCenter] addObserver:[ResizeTrackingHelper class]
+	                                         selector:@selector(windowWillStartLiveResize:)
+	                                             name:NSWindowWillStartLiveResizeNotification
+	                                           object:nil];
+	[[NSNotificationCenter defaultCenter] addObserver:[ResizeTrackingHelper class]
+	                                         selector:@selector(windowDidEndLiveResize:)
+	                                             name:NSWindowDidEndLiveResizeNotification
+	                                           object:nil];
 }
 #endif
