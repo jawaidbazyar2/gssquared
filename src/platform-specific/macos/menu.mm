@@ -4,17 +4,7 @@
 #include <Foundation/Foundation.h>
 #include <SDL3/SDL.h>
 
-#include "gs2.hpp"
-#include "NClock.hpp"
-#include "videosystem.hpp"
-#include "platform-specific/menu.h"
-
-static void pushMenuEvent(Sint32 code) {
-	SDL_Event event = {};
-	event.type = gs2_app_values.menu_event_type;
-	event.user.code = code;
-	SDL_PushEvent(&event);
-}
+#include "util/MenuInterface.h"
 
 /*
 This is where Claude fixed Claude's bad code:
@@ -58,41 +48,23 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	(void)sender;
 }
 
-- (void)machineReset:(id)sender {
-	pushMenuEvent(MENU_MACHINE_RESET);
-	(void)sender;
-}
+- (void)machineReset:(id)sender       { getMenuInterface()->machineReset(); (void)sender; }
+- (void)machineRestart:(id)sender     { getMenuInterface()->machineRestart(); (void)sender; }
+- (void)machinePauseResume:(id)sender { getMenuInterface()->machinePauseResume(); (void)sender; }
+- (void)machineCaptureMouse:(id)sender{ getMenuInterface()->machineCaptureMouse(); (void)sender; }
 
-- (void)machineRestart:(id)sender {
-	pushMenuEvent(MENU_MACHINE_RESTART);
-	(void)sender;
-}
+- (void)speed1_0:(id)sender  { getMenuInterface()->setSpeed(SPEED_1_0); (void)sender; }
+- (void)speed2_8:(id)sender  { getMenuInterface()->setSpeed(SPEED_2_8); (void)sender; }
+- (void)speed7_1:(id)sender  { getMenuInterface()->setSpeed(SPEED_7_1); (void)sender; }
+- (void)speed14_3:(id)sender { getMenuInterface()->setSpeed(SPEED_14_3); (void)sender; }
 
-- (void)machinePauseResume:(id)sender {
-	pushMenuEvent(MENU_MACHINE_PAUSE_RESUME);
-	(void)sender;
-}
+- (void)toggleSleepMode:(id)sender { getMenuInterface()->toggleSleepMode(); (void)sender; }
 
-- (void)machineCaptureMouse:(id)sender {
-	pushMenuEvent(MENU_MACHINE_CAPTURE_MOUSE);
-	(void)sender;
-}
-
-- (void)speed1_0:(id)sender  { pushMenuEvent(MENU_SPEED_1_0); (void)sender; }
-- (void)speed2_8:(id)sender  { pushMenuEvent(MENU_SPEED_2_8); (void)sender; }
-- (void)speed7_1:(id)sender  { pushMenuEvent(MENU_SPEED_7_1); (void)sender; }
-- (void)speed14_3:(id)sender { pushMenuEvent(MENU_SPEED_14_3); (void)sender; }
-
-- (void)toggleSleepMode:(id)sender {
-	gs2_app_values.sleep_mode = !gs2_app_values.sleep_mode;
-	(void)sender;
-}
-
-- (void)monitorComposite:(id)sender  { pushMenuEvent(MENU_MONITOR_COMPOSITE); (void)sender; }
-- (void)monitorGSRGB:(id)sender      { pushMenuEvent(MENU_MONITOR_GS_RGB); (void)sender; }
-- (void)monitorMonoGreen:(id)sender   { pushMenuEvent(MENU_MONITOR_MONO_GREEN); (void)sender; }
-- (void)monitorMonoAmber:(id)sender   { pushMenuEvent(MENU_MONITOR_MONO_AMBER); (void)sender; }
-- (void)monitorMonoWhite:(id)sender   { pushMenuEvent(MENU_MONITOR_MONO_WHITE); (void)sender; }
+- (void)monitorComposite:(id)sender { getMenuInterface()->setMonitor(MONITOR_COMPOSITE); (void)sender; }
+- (void)monitorGSRGB:(id)sender     { getMenuInterface()->setMonitor(MONITOR_GS_RGB); (void)sender; }
+- (void)monitorMonoGreen:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_GREEN); (void)sender; }
+- (void)monitorMonoAmber:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_AMBER); (void)sender; }
+- (void)monitorMonoWhite:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_WHITE); (void)sender; }
 @end
 
 @interface SpeedMenuDelegate : NSObject <NSMenuDelegate>
@@ -100,7 +72,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 @implementation SpeedMenuDelegate
 - (void)menuNeedsUpdate:(NSMenu *)menu {
-	int currentMode = gs2_app_values.clock ? (int)gs2_app_values.clock->get_clock_mode() : -1;
+	int currentMode = getMenuInterface()->getCurrentSpeed();
 	for (NSMenuItem *item in [menu itemArray]) {
 		[item setState:([item tag] == currentMode) ? NSControlStateValueOn : NSControlStateValueOff];
 	}
@@ -116,7 +88,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)menuNeedsUpdate:(NSMenu *)menu {
 	for (NSMenuItem *item in [menu itemArray]) {
 		if ([item tag] == SETTINGS_TAG_SLEEP_MODE) {
-			[item setState:gs2_app_values.sleep_mode ? NSControlStateValueOn : NSControlStateValueOff];
+			[item setState:getMenuInterface()->getSleepMode() ? NSControlStateValueOn : NSControlStateValueOff];
 		}
 	}
 }
@@ -127,21 +99,8 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 @implementation MonitorMenuDelegate
 - (void)menuNeedsUpdate:(NSMenu *)menu {
-	video_system_t *vs = gs2_app_values.video_system;
-	if (!vs) return;
-
-	int activeTag;
-	if (vs->display_color_engine == DM_ENGINE_NTSC) {
-		activeTag = MENU_MONITOR_COMPOSITE;
-	} else if (vs->display_color_engine == DM_ENGINE_RGB) {
-		activeTag = MENU_MONITOR_GS_RGB;
-	} else {
-		switch (vs->display_mono_color) {
-			case DM_MONO_GREEN: activeTag = MENU_MONITOR_MONO_GREEN; break;
-			case DM_MONO_AMBER: activeTag = MENU_MONITOR_MONO_AMBER; break;
-			default:            activeTag = MENU_MONITOR_MONO_WHITE; break;
-		}
-	}
+	int activeTag = getMenuInterface()->getCurrentMonitor();
+	if (activeTag < 0) return;
 	for (NSMenuItem *item in [menu itemArray]) {
 		[item setState:([item tag] == activeTag) ? NSControlStateValueOn : NSControlStateValueOff];
 	}
@@ -294,11 +253,11 @@ static void setupMenus(void) {
 	[monitorMenu setDelegate:sMonitorMenuDelegate];
 
 	struct { NSString *title; SEL action; NSInteger tag; } monitorItems[] = {
-		{ @"Composite",          @selector(monitorComposite:),  MENU_MONITOR_COMPOSITE },
-		{ @"GS RGB",             @selector(monitorGSRGB:),      MENU_MONITOR_GS_RGB },
-		{ @"Monochrome - Green", @selector(monitorMonoGreen:),  MENU_MONITOR_MONO_GREEN },
-		{ @"Monochrome - Amber", @selector(monitorMonoAmber:),  MENU_MONITOR_MONO_AMBER },
-		{ @"Monochrome - White", @selector(monitorMonoWhite:),  MENU_MONITOR_MONO_WHITE },
+		{ @"Composite",          @selector(monitorComposite:),  MONITOR_COMPOSITE },
+		{ @"GS RGB",             @selector(monitorGSRGB:),      MONITOR_GS_RGB },
+		{ @"Monochrome - Green", @selector(monitorMonoGreen:),  MONITOR_MONO_GREEN },
+		{ @"Monochrome - Amber", @selector(monitorMonoAmber:),  MONITOR_MONO_AMBER },
+		{ @"Monochrome - White", @selector(monitorMonoWhite:),  MONITOR_MONO_WHITE },
 	};
 	for (auto &mi : monitorItems) {
 		NSMenuItem *item = [[[NSMenuItem alloc]
