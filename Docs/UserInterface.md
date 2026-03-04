@@ -95,6 +95,8 @@ Slow down the OSD open/close a bit, to make it whooshier.
   * Restart
   * Power Off/On
   * Pause / Resume
+  * ---
+  * Capture Mouse
 * Settings
   * System Speed
     * 1.0

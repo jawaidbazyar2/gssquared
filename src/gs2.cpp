@@ -251,7 +251,7 @@ void run_cpus(computer_t *computer) {
             }
 
             clock->set_clock_mode(computer->speed_new);
-            
+
             display_update_video_scanner(ds, cpu);
             // cpu->video_scanner might be null here.
             int x = ds->video_scanner->get_frame_scan()->get_count();
@@ -552,6 +552,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    gs2_app_values.menu_event_type = SDL_RegisterEvents(1);
+
     // Debug print mounted media
     std::cout << "Mounted Media (" << disks_to_mount.size() << " disks):" << std::endl;
     for (const auto& disk_mount : disks_to_mount) {
@@ -563,6 +565,7 @@ int main(int argc, char *argv[]) {
     computer_t *computer = new computer_t(nullptr); // We'll set the clock later.
 
     video_system_t *vs = computer->video_system;
+    gs2_app_values.video_system = vs;
 
     initMenu(vs->window);
 
@@ -593,6 +596,7 @@ int main(int argc, char *argv[]) {
     // important to do this before setting up the rest of the computer.
     NClockII *nclock = NClockFactory::create_clock(platform->id, system_config->clock_set);
     computer->set_clock(nclock);
+    gs2_app_values.clock = nclock;
 
     //computer->set_cpu(new cpu_state(platform->cpu_type));
 

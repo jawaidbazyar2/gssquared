@@ -14,6 +14,8 @@
 #include "mbus/MessageBus.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/applekeys.hpp"
+#include "gs2.hpp"
+#include "platform-specific/menu.h"
 #include "util/InterruptController.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/AudioSystem.hpp"
@@ -95,6 +97,55 @@ computer_t::computer_t(NClockII *clock) {
     sys_event->registerHandler(SDL_EVENT_QUIT, [this](const SDL_Event &event) {
         cpu->halt = HLT_USER;
         return true;
+    });
+    sys_event->registerHandler(gs2_app_values.menu_event_type, [this](const SDL_Event &event) {
+        switch (event.user.code) {
+            case MENU_MACHINE_RESET:
+                reset(false);
+                return true;
+            case MENU_MACHINE_RESTART:
+                return true;
+            case MENU_MACHINE_PAUSE_RESUME:
+                return true;
+            case MENU_MACHINE_CAPTURE_MOUSE:
+                video_system->display_capture_mouse_message(true);
+                return true;
+            case MENU_SPEED_1_0:
+                speed_new = CLOCK_1_024MHZ; speed_shift = true;
+                send_clock_mode_message(speed_new);
+                return true;
+            case MENU_SPEED_2_8:
+                speed_new = CLOCK_2_8MHZ; speed_shift = true;
+                send_clock_mode_message(speed_new);
+                return true;
+            case MENU_SPEED_7_1:
+                speed_new = CLOCK_7_159MHZ; speed_shift = true;
+                send_clock_mode_message(speed_new);
+                return true;
+            case MENU_SPEED_14_3:
+                speed_new = CLOCK_14_3MHZ; speed_shift = true;
+                send_clock_mode_message(speed_new);
+                return true;
+            case MENU_MONITOR_COMPOSITE:
+                video_system->set_display_engine(DM_ENGINE_NTSC);
+                return true;
+            case MENU_MONITOR_GS_RGB:
+                video_system->set_display_engine(DM_ENGINE_RGB);
+                return true;
+            case MENU_MONITOR_MONO_GREEN:
+                video_system->set_display_engine(DM_ENGINE_MONO);
+                video_system->set_display_mono_color(DM_MONO_GREEN);
+                return true;
+            case MENU_MONITOR_MONO_AMBER:
+                video_system->set_display_engine(DM_ENGINE_MONO);
+                video_system->set_display_mono_color(DM_MONO_AMBER);
+                return true;
+            case MENU_MONITOR_MONO_WHITE:
+                video_system->set_display_engine(DM_ENGINE_MONO);
+                video_system->set_display_mono_color(DM_MONO_WHITE);
+                return true;
+        }
+        return false;
     });
 
 }

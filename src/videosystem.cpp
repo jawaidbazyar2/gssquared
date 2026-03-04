@@ -90,12 +90,13 @@ video_system_t::video_system_t(computer_t *computer) {
             return true;
         }
         if (key == SDLK_F1) { // release or capture mouse
-            bool oldstate = mouse_captured;
+            /* bool oldstate = mouse_captured;
             bool result = display_capture_mouse(!oldstate);
             printf("toggle mouse capture: %d, result: %d\n", !oldstate, result);
             if (!oldstate) {
                 event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
-            }
+            } */
+            display_capture_mouse_message(!mouse_captured);
             return true;
         }
         if (key == SDLK_F5) {
@@ -253,15 +254,25 @@ void video_system_t::toggle_fullscreen() {
 bool video_system_t::display_capture_mouse(bool capture) {
     printf("display_capture_mouse: %d\n", capture);
     mouse_captured = capture;
-    if (!SDL_SetWindowKeyboardGrab(window, capture)) {
-        printf("SDL_SetWindowKeyboardGrab failed: %s\n", SDL_GetError());
-    }; // this doesn't seem to do much on MacOS.
     if (!SDL_SetWindowRelativeMouseMode(window, capture)) {
         printf("SDL_SetWindowRelativeMouseMode failed: %s\n", SDL_GetError());
-    };
-/*     printf("SDL_GetMouseGrab:%d\n", SDL_GetWindowMouseGrab(window));
-    SDL_SetWindowMouseGrab(window, capture); */
+    }
+    if (!SDL_SetWindowMouseGrab(window, capture)) {
+        printf("SDL_SetWindowMouseGrab failed: %s\n", SDL_GetError());
+    }
+    if (!SDL_SetWindowKeyboardGrab(window, capture)) {
+        printf("SDL_SetWindowKeyboardGrab failed: %s\n", SDL_GetError());
+    }
     return capture;
+}
+
+bool video_system_t::display_capture_mouse_message(bool capture) {
+    bool oldstate = mouse_captured;
+    bool result = display_capture_mouse(capture);
+    if (!oldstate) {
+        event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Mouse Captured, release with F1"));
+    }
+    return true;
 }
 
 void video_system_t::push_mouse_capture(bool capture) {

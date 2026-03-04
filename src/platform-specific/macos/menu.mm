@@ -4,44 +4,159 @@
 #include <Foundation/Foundation.h>
 #include <SDL3/SDL.h>
 
-@interface MyDelegate : NSObject <NSWindowDelegate>
-{
-	id<NSWindowDelegate> _originalDelegate;
+#include "gs2.hpp"
+#include "NClock.hpp"
+#include "videosystem.hpp"
+#include "platform-specific/menu.h"
+
+static void pushMenuEvent(Sint32 code) {
+	SDL_Event event = {};
+	event.type = gs2_app_values.menu_event_type;
+	event.user.code = code;
+	SDL_PushEvent(&event);
 }
-- (instancetype)initWithOriginalDelegate:(id<NSWindowDelegate>)originalDelegate;
-- (void)fileNew:(id)sender;
-- (void)fileOpen:(id)sender;
+
+/*
+This is where Claude fixed Claude's bad code:
+Here's a summary of both changes:
+The real bug — menu.mm replacing SDL's window delegate:
+SDL3's internal SDL3Window class has a sendEvent: override that, after a window move completes (mouse-up), clears the isMoving flag by calling [delegate windowDidFinishMoving]. But it first checks [delegate isKindOfClass:[SDL3Cocoa_WindowListener class]]. Your MyDelegate wrapping the original delegate fails this isKindOfClass: check, so windowDidFinishMoving is never called after a window drag. The isMoving flag stays YES permanently.
+This poisons both mouse grab mechanisms:
+Cocoa_SetRelativeMouseMode(true) early-returns without calling CGAssociateMouseAndMouseCursorPosition(NO)
+ShouldAdjustCoordinatesForGrab() returns false, so mouseConfinementRect is never set
+The fix removes the delegate replacement entirely. The menu items are added to [NSApp mainMenu], which is application-level and doesn't need a window delegate. The fileClose: action now targets a standalone MenuActionHandler object instead. SDL's original delegate stays intact, preserving all of its internal window management state tracking.
+The initMenu function signature is unchanged so no callers need updating. The window parameter is still accepted (for API stability) but is no longer used.
+--
+I don't know what all these words mean exactly. But I confirmed it does seem to be working correctly again.
+*/
+
+@interface MenuActionHandler : NSObject
 - (void)fileClose:(id)sender;
-- (bool)windowShouldClose:(NSWindow *)sender;
+- (void)machineReset:(id)sender;
+- (void)machineRestart:(id)sender;
+- (void)machinePauseResume:(id)sender;
+- (void)machineCaptureMouse:(id)sender;
+- (void)speed1_0:(id)sender;
+- (void)speed2_8:(id)sender;
+- (void)speed7_1:(id)sender;
+- (void)speed14_3:(id)sender;
+- (void)toggleSleepMode:(id)sender;
+- (void)monitorComposite:(id)sender;
+- (void)monitorGSRGB:(id)sender;
+- (void)monitorMonoGreen:(id)sender;
+- (void)monitorMonoAmber:(id)sender;
+- (void)monitorMonoWhite:(id)sender;
 @end
 
-@implementation MyDelegate
-- (void)fileNew:(id)sender {
-	NSLog(@"MainMenu/File/New");
-	(void)sender;
-}
-
-- (void)fileOpen:(id)sender {
-	NSLog(@"MainMenu/File/Open");
-	(void)sender;
-}
-
+@implementation MenuActionHandler
 - (void)fileClose:(id)sender {
 	if (SDL_EventEnabled(SDL_EVENT_QUIT)) {
 		SDL_Event event;
 		event.type = SDL_EVENT_QUIT;
 		SDL_PushEvent(&event);
 	}
-
 	(void)sender;
 }
 
-- (instancetype)initWithOriginalDelegate:(id<NSWindowDelegate>)originalDelegate {
-	self = [super init];
-	if (self) {
-		_originalDelegate = originalDelegate;
+- (void)machineReset:(id)sender {
+	pushMenuEvent(MENU_MACHINE_RESET);
+	(void)sender;
+}
+
+- (void)machineRestart:(id)sender {
+	pushMenuEvent(MENU_MACHINE_RESTART);
+	(void)sender;
+}
+
+- (void)machinePauseResume:(id)sender {
+	pushMenuEvent(MENU_MACHINE_PAUSE_RESUME);
+	(void)sender;
+}
+
+- (void)machineCaptureMouse:(id)sender {
+	pushMenuEvent(MENU_MACHINE_CAPTURE_MOUSE);
+	(void)sender;
+}
+
+- (void)speed1_0:(id)sender  { pushMenuEvent(MENU_SPEED_1_0); (void)sender; }
+- (void)speed2_8:(id)sender  { pushMenuEvent(MENU_SPEED_2_8); (void)sender; }
+- (void)speed7_1:(id)sender  { pushMenuEvent(MENU_SPEED_7_1); (void)sender; }
+- (void)speed14_3:(id)sender { pushMenuEvent(MENU_SPEED_14_3); (void)sender; }
+
+- (void)toggleSleepMode:(id)sender {
+	gs2_app_values.sleep_mode = !gs2_app_values.sleep_mode;
+	(void)sender;
+}
+
+- (void)monitorComposite:(id)sender  { pushMenuEvent(MENU_MONITOR_COMPOSITE); (void)sender; }
+- (void)monitorGSRGB:(id)sender      { pushMenuEvent(MENU_MONITOR_GS_RGB); (void)sender; }
+- (void)monitorMonoGreen:(id)sender   { pushMenuEvent(MENU_MONITOR_MONO_GREEN); (void)sender; }
+- (void)monitorMonoAmber:(id)sender   { pushMenuEvent(MENU_MONITOR_MONO_AMBER); (void)sender; }
+- (void)monitorMonoWhite:(id)sender   { pushMenuEvent(MENU_MONITOR_MONO_WHITE); (void)sender; }
+@end
+
+@interface SpeedMenuDelegate : NSObject <NSMenuDelegate>
+@end
+
+@implementation SpeedMenuDelegate
+- (void)menuNeedsUpdate:(NSMenu *)menu {
+	int currentMode = gs2_app_values.clock ? (int)gs2_app_values.clock->get_clock_mode() : -1;
+	for (NSMenuItem *item in [menu itemArray]) {
+		[item setState:([item tag] == currentMode) ? NSControlStateValueOn : NSControlStateValueOff];
 	}
-	// First menu, same name
+}
+@end
+
+#define SETTINGS_TAG_SLEEP_MODE 1
+
+@interface SettingsMenuDelegate : NSObject <NSMenuDelegate>
+@end
+
+@implementation SettingsMenuDelegate
+- (void)menuNeedsUpdate:(NSMenu *)menu {
+	for (NSMenuItem *item in [menu itemArray]) {
+		if ([item tag] == SETTINGS_TAG_SLEEP_MODE) {
+			[item setState:gs2_app_values.sleep_mode ? NSControlStateValueOn : NSControlStateValueOff];
+		}
+	}
+}
+@end
+
+@interface MonitorMenuDelegate : NSObject <NSMenuDelegate>
+@end
+
+@implementation MonitorMenuDelegate
+- (void)menuNeedsUpdate:(NSMenu *)menu {
+	video_system_t *vs = gs2_app_values.video_system;
+	if (!vs) return;
+
+	int activeTag;
+	if (vs->display_color_engine == DM_ENGINE_NTSC) {
+		activeTag = MENU_MONITOR_COMPOSITE;
+	} else if (vs->display_color_engine == DM_ENGINE_RGB) {
+		activeTag = MENU_MONITOR_GS_RGB;
+	} else {
+		switch (vs->display_mono_color) {
+			case DM_MONO_GREEN: activeTag = MENU_MONITOR_MONO_GREEN; break;
+			case DM_MONO_AMBER: activeTag = MENU_MONITOR_MONO_AMBER; break;
+			default:            activeTag = MENU_MONITOR_MONO_WHITE; break;
+		}
+	}
+	for (NSMenuItem *item in [menu itemArray]) {
+		[item setState:([item tag] == activeTag) ? NSControlStateValueOn : NSControlStateValueOff];
+	}
+}
+@end
+
+static MenuActionHandler *sMenuHandler = nil;
+static SpeedMenuDelegate *sSpeedMenuDelegate = nil;
+static SettingsMenuDelegate *sSettingsMenuDelegate = nil;
+static MonitorMenuDelegate *sMonitorMenuDelegate = nil;
+
+static void setupMenus(void) {
+	sMenuHandler = [[MenuActionHandler alloc] init];
+
+	// App menu (first menu, same name as process)
 	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
 	[[[NSApp mainMenu] itemArray][0]
 	    setSubmenu:[[[NSMenu alloc] initWithTitle:[[NSProcessInfo processInfo] processName]]
@@ -81,61 +196,130 @@
 	    setSubmenu:[[[NSMenu alloc] initWithTitle:NSLocalizedString(@"File", nil)]
 			   autorelease]];
 
-/* 	[[[[NSApp mainMenu] itemArray][1] submenu]
-	    addItem:[[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"New", nil)
-						action:@selector(fileNew:)
-					 keyEquivalent:@"n"] autorelease]];
+	NSMenuItem *closeItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Close", nil)
+		       action:@selector(fileClose:)
+		keyEquivalent:[NSString stringWithFormat:@"%C", (unichar)NSF12FunctionKey]] autorelease];
+	[closeItem setTarget:sMenuHandler];
+	[[[[NSApp mainMenu] itemArray][1] submenu] addItem:closeItem];
 
-	[[[[NSApp mainMenu] itemArray][1] submenu]
-	    addItem:[[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Open", nil)
-						action:@selector(fileOpen:)
-					 keyEquivalent:@"o"] autorelease]];
+	// Machine menu
+	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
+	[[[NSApp mainMenu] itemArray][2]
+	    setSubmenu:[[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Machine", nil)]
+			   autorelease]];
 
-	[[[[NSApp mainMenu] itemArray][1] submenu] addItem:[NSMenuItem separatorItem]];
- */
-	[[[[NSApp mainMenu] itemArray][1] submenu]
-	    addItem:[[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Close", nil)
-						action:@selector(fileClose:)
-					 keyEquivalent:[NSString stringWithFormat:@"%C", (unichar)NSF12FunctionKey]] autorelease]];
+	NSMenuItem *resetItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Reset", nil)
+		       action:@selector(machineReset:)
+		keyEquivalent:@""] autorelease];
+	[resetItem setTarget:sMenuHandler];
+	[[[[NSApp mainMenu] itemArray][2] submenu] addItem:resetItem];
 
-	return self;
-}
+	NSMenuItem *restartItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Restart", nil)
+		       action:@selector(machineRestart:)
+		keyEquivalent:@""] autorelease];
+	[restartItem setTarget:sMenuHandler];
+	[[[[NSApp mainMenu] itemArray][2] submenu] addItem:restartItem];
 
-- (bool)windowShouldClose:(NSWindow *)sender {
-	if (SDL_EventEnabled(SDL_EVENT_QUIT)) {
-		SDL_Event event;
-		event.type = SDL_EVENT_QUIT;
-		SDL_PushEvent(&event);
+	NSMenuItem *pauseItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Pause / Resume", nil)
+		       action:@selector(machinePauseResume:)
+		keyEquivalent:@""] autorelease];
+	[pauseItem setTarget:sMenuHandler];
+	[[[[NSApp mainMenu] itemArray][2] submenu] addItem:pauseItem];
+
+	[[[[NSApp mainMenu] itemArray][2] submenu] addItem:[NSMenuItem separatorItem]];
+
+	NSMenuItem *captureMouseItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Capture Mouse", nil)
+		       action:@selector(machineCaptureMouse:)
+		keyEquivalent:@""] autorelease];
+	[captureMouseItem setTarget:sMenuHandler];
+	[[[[NSApp mainMenu] itemArray][2] submenu] addItem:captureMouseItem];
+
+	// Settings menu
+	sSettingsMenuDelegate = [[SettingsMenuDelegate alloc] init];
+	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
+	NSMenu *settingsMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Settings", nil)] autorelease];
+	[settingsMenu setDelegate:sSettingsMenuDelegate];
+	[[[NSApp mainMenu] itemArray][3] setSubmenu:settingsMenu];
+
+	// Speed submenu
+	sSpeedMenuDelegate = [[SpeedMenuDelegate alloc] init];
+	NSMenu *speedMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Speed", nil)] autorelease];
+	[speedMenu setDelegate:sSpeedMenuDelegate];
+
+	struct { NSString *title; SEL action; NSInteger tag; } speedItems[] = {
+		{ @"1.0 MHz",  @selector(speed1_0:),  1 },
+		{ @"2.8 MHz",  @selector(speed2_8:),  2 },
+		{ @"7.1 MHz",  @selector(speed7_1:),  3 },
+		{ @"14.3 MHz", @selector(speed14_3:), 4 },
+	};
+	for (auto &si : speedItems) {
+		NSMenuItem *item = [[[NSMenuItem alloc]
+			initWithTitle:si.title
+			       action:si.action
+			keyEquivalent:@""] autorelease];
+		[item setTarget:sMenuHandler];
+		[item setTag:si.tag];
+		[speedMenu addItem:item];
 	}
 
-	return false;
-}
+	NSMenuItem *speedMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Speed", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[speedMenuItem setSubmenu:speedMenu];
+	[[[[NSApp mainMenu] itemArray][3] submenu] addItem:speedMenuItem];
 
-// Forward all unhandled delegate methods to SDL's original delegate
-- (BOOL)respondsToSelector:(SEL)aSelector {
-	return [super respondsToSelector:aSelector] || [_originalDelegate respondsToSelector:aSelector];
-}
+	NSMenuItem *sleepItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Sleep / Busy Wait", nil)
+		       action:@selector(toggleSleepMode:)
+		keyEquivalent:@""] autorelease];
+	[sleepItem setTarget:sMenuHandler];
+	[sleepItem setTag:SETTINGS_TAG_SLEEP_MODE];
+	[[[[NSApp mainMenu] itemArray][3] submenu] addItem:sleepItem];
 
-- (id)forwardingTargetForSelector:(SEL)aSelector {
-	if ([_originalDelegate respondsToSelector:aSelector]) {
-		return _originalDelegate;
+	// Display menu
+	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
+	[[[NSApp mainMenu] itemArray][4]
+	    setSubmenu:[[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Display", nil)]
+			   autorelease]];
+
+	// Monitor submenu
+	sMonitorMenuDelegate = [[MonitorMenuDelegate alloc] init];
+	NSMenu *monitorMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Monitor", nil)] autorelease];
+	[monitorMenu setDelegate:sMonitorMenuDelegate];
+
+	struct { NSString *title; SEL action; NSInteger tag; } monitorItems[] = {
+		{ @"Composite",          @selector(monitorComposite:),  MENU_MONITOR_COMPOSITE },
+		{ @"GS RGB",             @selector(monitorGSRGB:),      MENU_MONITOR_GS_RGB },
+		{ @"Monochrome - Green", @selector(monitorMonoGreen:),  MENU_MONITOR_MONO_GREEN },
+		{ @"Monochrome - Amber", @selector(monitorMonoAmber:),  MENU_MONITOR_MONO_AMBER },
+		{ @"Monochrome - White", @selector(monitorMonoWhite:),  MENU_MONITOR_MONO_WHITE },
+	};
+	for (auto &mi : monitorItems) {
+		NSMenuItem *item = [[[NSMenuItem alloc]
+			initWithTitle:mi.title
+			       action:mi.action
+			keyEquivalent:@""] autorelease];
+		[item setTarget:sMenuHandler];
+		[item setTag:mi.tag];
+		[monitorMenu addItem:item];
 	}
-	return [super forwardingTargetForSelector:aSelector];
-}
-@end
 
-// sdl sets its own delegate; we need to save it and forward all unhandled
-// delegate messages to it.
-// seems like we could handle the menu shortcuts based on whether we're "keyboard captured" or not..?
+	NSMenuItem *monitorMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Monitor", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[monitorMenuItem setSubmenu:monitorMenu];
+	[[[[NSApp mainMenu] itemArray][4] submenu] addItem:monitorMenuItem];
+}
 
 void initMenu(SDL_Window *window) {
-	NSWindow *nswindow = (__bridge NSWindow *)SDL_GetPointerProperty(
-	    SDL_GetWindowProperties(window), SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, NULL);
-	if (nswindow == NULL) {
-		return;
-	}
-	// Save SDL's original delegate so we can forward calls to it
-	id<NSWindowDelegate> originalDelegate = [nswindow delegate];
-	[nswindow setDelegate:[[MyDelegate alloc] initWithOriginalDelegate:originalDelegate]];
+	(void)window;
+	setupMenus();
 }
 #endif
