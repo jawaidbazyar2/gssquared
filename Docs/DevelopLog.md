@@ -10513,4 +10513,8 @@ I am thinking, the approach is, do all the menus on the Mac, in full, then ask C
 
 ## Mar 4, 2026
 
-I've done (well Clod did) what seems to be a successful refactor of (mostly) gs2 to make GSSquared have the AppCallbacks structure. It does not appear to affect any key functions in the negative. HOWEVER. 
+I've done (well Clod did) what seems to be a successful refactor of (mostly) gs2 to make GSSquared have the AppCallbacks structure. It does not appear to affect any key functions in the negative. HOWEVER. It will require lots of testing.
+
+On the one hand, I think my overall architecture has been pretty good, and we were close to this sort of framework anyway. On the other hand - well, large scale LLM changes are scary right?
+
+I don't see any noticeable changes. Though I don't see the same nice behavior I had yesterday with FreeSync even though it seems still on. 

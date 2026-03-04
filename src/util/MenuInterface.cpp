@@ -29,6 +29,10 @@ void MenuInterface::setMonitor(int monitor_id) {
 	pushMenuEvent(monitor_id);
 }
 
+void MenuInterface::displayFullScreen() { pushMenuEvent(MENU_DISPLAY_FULLSCREEN); }
+void MenuInterface::editCopyScreen()   { pushMenuEvent(MENU_EDIT_COPY_SCREEN); }
+void MenuInterface::editPasteText()    { pushMenuEvent(MENU_EDIT_PASTE_TEXT); }
+
 void MenuInterface::toggleSleepMode() {
 	gs2_app_values.sleep_mode = !gs2_app_values.sleep_mode;
 }

@@ -24,6 +24,9 @@ public:
 	void setSpeed(int speed_id);
 	void setMonitor(int monitor_id);
 	void toggleSleepMode();
+	void displayFullScreen();
+	void editCopyScreen();
+	void editPasteText();
 
 	int  getCurrentSpeed();
 	int  getCurrentMonitor();

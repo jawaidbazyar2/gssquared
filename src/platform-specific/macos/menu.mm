@@ -110,6 +110,9 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)monitorMonoGreen:(id)sender;
 - (void)monitorMonoAmber:(id)sender;
 - (void)monitorMonoWhite:(id)sender;
+- (void)displayFullScreen:(id)sender;
+- (void)editCopyScreen:(id)sender;
+- (void)editPasteText:(id)sender;
 @end
 
 @implementation MenuActionHandler
@@ -139,6 +142,9 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)monitorMonoGreen:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_GREEN); (void)sender; }
 - (void)monitorMonoAmber:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_AMBER); (void)sender; }
 - (void)monitorMonoWhite:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_WHITE); (void)sender; }
+- (void)displayFullScreen:(id)sender { getMenuInterface()->displayFullScreen(); (void)sender; }
+- (void)editCopyScreen:(id)sender    { getMenuInterface()->editCopyScreen(); (void)sender; }
+- (void)editPasteText:(id)sender     { getMenuInterface()->editPasteText(); (void)sender; }
 @end
 
 @interface SpeedMenuDelegate : NSObject <NSMenuDelegate>
@@ -186,98 +192,114 @@ static SpeedMenuDelegate *sSpeedMenuDelegate = nil;
 static SettingsMenuDelegate *sSettingsMenuDelegate = nil;
 static MonitorMenuDelegate *sMonitorMenuDelegate = nil;
 
+static NSMenu *addMenu(NSString *title) {
+	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
+	NSMenu *menu = [[[NSMenu alloc] initWithTitle:title] autorelease];
+	[[[NSApp mainMenu] itemArray].lastObject setSubmenu:menu];
+	return menu;
+}
+
 static void setupMenus(void) {
 	sMenuHandler = [[MenuActionHandler alloc] init];
 
+	// Remove SDL's default menus so we can replace them with our own
+	NSMenu *mainMenu = [NSApp mainMenu];
+	while ([mainMenu numberOfItems] > 0) {
+		[mainMenu removeItemAtIndex:0];
+	}
+
 	// App menu (first menu, same name as process)
-	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
-	[[[NSApp mainMenu] itemArray][0]
-	    setSubmenu:[[[NSMenu alloc] initWithTitle:[[NSProcessInfo processInfo] processName]]
-			   autorelease]];
-	[[[[NSApp mainMenu] itemArray][0] submenu]
-	    addItem:[[[NSMenuItem alloc]
-			initWithTitle:[NSString
-					  stringWithFormat:NSLocalizedString(@"About %@", nil),
-							   [[NSProcessInfo processInfo]
-							       processName]]
-			       action:@selector(orderFrontStandardAboutPanel:)
-			keyEquivalent:@""] autorelease]];
+	NSMenu *appMenu = addMenu([[NSProcessInfo processInfo] processName]);
+	[appMenu addItem:[[[NSMenuItem alloc]
+		initWithTitle:[NSString stringWithFormat:NSLocalizedString(@"About %@", nil),
+						[[NSProcessInfo processInfo] processName]]
+		       action:@selector(orderFrontStandardAboutPanel:)
+		keyEquivalent:@""] autorelease]];
 #if 0
-	[[[[NSApp mainMenu] itemArray][0] submenu] addItem:[NSMenuItem separatorItem]];
+	[appMenu addItem:[NSMenuItem separatorItem]];
 #ifdef __MAC_13_0
-	[[[[NSApp mainMenu] itemArray][0] submenu]
-	    addItem:[[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Settings...", nil)
-						action:@selector(settings)
-					 keyEquivalent:@","] autorelease]];
+	[appMenu addItem:[[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Settings...", nil)
+		       action:@selector(settings)
+		keyEquivalent:@","] autorelease]];
 #else
-	[[[[NSApp mainMenu] itemArray][0] submenu]
-	    addItem:[[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Preferences", nil)
-						action:@selector(settings:)
-					 keyEquivalent:@","] autorelease]];
+	[appMenu addItem:[[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Preferences", nil)
+		       action:@selector(settings:)
+		keyEquivalent:@","] autorelease]];
 #endif
-	[[[[NSApp mainMenu] itemArray][0] submenu] addItem:[NSMenuItem separatorItem]];
-	[[[[NSApp mainMenu] itemArray][0] submenu]
-	    addItem:[[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Show All", nil)
-						action:@selector(unhideAllApplications:)
-					 keyEquivalent:@""] autorelease]];
-	[[[[NSApp mainMenu] itemArray][0] submenu] addItem:[NSMenuItem separatorItem]];
+	[appMenu addItem:[NSMenuItem separatorItem]];
+	[appMenu addItem:[[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Show All", nil)
+		       action:@selector(unhideAllApplications:)
+		keyEquivalent:@""] autorelease]];
+	[appMenu addItem:[NSMenuItem separatorItem]];
 #endif
 
 	// File menu
-	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
-	[[[NSApp mainMenu] itemArray][1]
-	    setSubmenu:[[[NSMenu alloc] initWithTitle:NSLocalizedString(@"File", nil)]
-			   autorelease]];
+	NSMenu *fileMenu = addMenu(NSLocalizedString(@"File", nil));
 
 	NSMenuItem *closeItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Close", nil)
 		       action:@selector(fileClose:)
 		keyEquivalent:[NSString stringWithFormat:@"%C", (unichar)NSF12FunctionKey]] autorelease];
 	[closeItem setTarget:sMenuHandler];
-	[[[[NSApp mainMenu] itemArray][1] submenu] addItem:closeItem];
+	[fileMenu addItem:closeItem];
+
+	// Edit menu
+	NSMenu *editMenu = addMenu(NSLocalizedString(@"Edit", nil));
+
+	NSMenuItem *copyScreenItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Copy Screen", nil)
+		       action:@selector(editCopyScreen:)
+		keyEquivalent:@""] autorelease];
+	[copyScreenItem setTarget:sMenuHandler];
+	[editMenu addItem:copyScreenItem];
+
+	NSMenuItem *pasteTextItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Paste Text", nil)
+		       action:@selector(editPasteText:)
+		keyEquivalent:@""] autorelease];
+	[pasteTextItem setTarget:sMenuHandler];
+	[editMenu addItem:pasteTextItem];
 
 	// Machine menu
-	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
-	[[[NSApp mainMenu] itemArray][2]
-	    setSubmenu:[[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Machine", nil)]
-			   autorelease]];
+	NSMenu *machineMenu = addMenu(NSLocalizedString(@"Machine", nil));
 
 	NSMenuItem *resetItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Reset", nil)
 		       action:@selector(machineReset:)
 		keyEquivalent:@""] autorelease];
 	[resetItem setTarget:sMenuHandler];
-	[[[[NSApp mainMenu] itemArray][2] submenu] addItem:resetItem];
+	[machineMenu addItem:resetItem];
 
 	NSMenuItem *restartItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Restart", nil)
 		       action:@selector(machineRestart:)
 		keyEquivalent:@""] autorelease];
 	[restartItem setTarget:sMenuHandler];
-	[[[[NSApp mainMenu] itemArray][2] submenu] addItem:restartItem];
+	[machineMenu addItem:restartItem];
 
 	NSMenuItem *pauseItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Pause / Resume", nil)
 		       action:@selector(machinePauseResume:)
 		keyEquivalent:@""] autorelease];
 	[pauseItem setTarget:sMenuHandler];
-	[[[[NSApp mainMenu] itemArray][2] submenu] addItem:pauseItem];
+	[machineMenu addItem:pauseItem];
 
-	[[[[NSApp mainMenu] itemArray][2] submenu] addItem:[NSMenuItem separatorItem]];
+	[machineMenu addItem:[NSMenuItem separatorItem]];
 
 	NSMenuItem *captureMouseItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Capture Mouse", nil)
 		       action:@selector(machineCaptureMouse:)
 		keyEquivalent:@""] autorelease];
 	[captureMouseItem setTarget:sMenuHandler];
-	[[[[NSApp mainMenu] itemArray][2] submenu] addItem:captureMouseItem];
+	[machineMenu addItem:captureMouseItem];
 
 	// Settings menu
 	sSettingsMenuDelegate = [[SettingsMenuDelegate alloc] init];
-	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
-	NSMenu *settingsMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Settings", nil)] autorelease];
+	NSMenu *settingsMenu = addMenu(NSLocalizedString(@"Settings", nil));
 	[settingsMenu setDelegate:sSettingsMenuDelegate];
-	[[[NSApp mainMenu] itemArray][3] setSubmenu:settingsMenu];
 
 	// Speed submenu
 	sSpeedMenuDelegate = [[SpeedMenuDelegate alloc] init];
@@ -305,7 +327,7 @@ static void setupMenus(void) {
 		       action:nil
 		keyEquivalent:@""] autorelease];
 	[speedMenuItem setSubmenu:speedMenu];
-	[[[[NSApp mainMenu] itemArray][3] submenu] addItem:speedMenuItem];
+	[settingsMenu addItem:speedMenuItem];
 
 	NSMenuItem *sleepItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Sleep / Busy Wait", nil)
@@ -313,13 +335,10 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[sleepItem setTarget:sMenuHandler];
 	[sleepItem setTag:SETTINGS_TAG_SLEEP_MODE];
-	[[[[NSApp mainMenu] itemArray][3] submenu] addItem:sleepItem];
+	[settingsMenu addItem:sleepItem];
 
 	// Display menu
-	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
-	[[[NSApp mainMenu] itemArray][4]
-	    setSubmenu:[[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Display", nil)]
-			   autorelease]];
+	NSMenu *displayMenu = addMenu(NSLocalizedString(@"Display", nil));
 
 	// Monitor submenu
 	sMonitorMenuDelegate = [[MonitorMenuDelegate alloc] init];
@@ -348,7 +367,14 @@ static void setupMenus(void) {
 		       action:nil
 		keyEquivalent:@""] autorelease];
 	[monitorMenuItem setSubmenu:monitorMenu];
-	[[[[NSApp mainMenu] itemArray][4] submenu] addItem:monitorMenuItem];
+	[displayMenu addItem:monitorMenuItem];
+
+	NSMenuItem *fullScreenItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Full Screen", nil)
+		       action:@selector(displayFullScreen:)
+		keyEquivalent:@""] autorelease];
+	[fullScreenItem setTarget:sMenuHandler];
+	[displayMenu addItem:fullScreenItem];
 }
 
 void initMenu(SDL_Window *window) {

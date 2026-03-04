@@ -79,13 +79,18 @@ Slow down the OSD open/close a bit, to make it whooshier.
 ## System Menus
 
 * File
-  * New
+  * New Disk Image...
+    * 5.25 DOS 3.3
+    * 5.25 ProDOS
+    * 800K ProDOS
+    * 32M ProDOS
+  * Open Disk Image...
+    * Slot 6, Drive 1 - is xxxx
+    * Slot 6, Drive 2 - is xxxx
+    * etc.
   * Open System (only when machine is off)
   * Save System
   * Save As System
-  * Storage
-    * Slot 6, Drive 1 - is xxxx
-    * Slot 6, Drive 2 - is xxxx
 * Edit
   * Copy Text
   * Copy Screen

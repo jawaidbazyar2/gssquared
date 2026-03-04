@@ -109,19 +109,7 @@ video_system_t::video_system_t(computer_t *computer) {
             return true;
         }
         if (key == SDLK_PRINTSCREEN) {
-            // read texture pixels.
-            SDL_Rect irect = { 0, 0, (int)last_srcrect.w, (int)last_srcrect.h };
-
-            SDL_SetRenderTarget(renderer, last_texture);
-            
-            SDL_Surface *surface = SDL_RenderReadPixels(renderer, &irect);
-            
-            SDL_SetRenderTarget(renderer, nullptr);
-            
-            clip->Clip(surface);
-
-            SDL_DestroySurface(surface);
-            printf("click!\n");
+            copy_screen();
         }
         return false;
     });
@@ -329,6 +317,15 @@ void video_system_t::flip_display_scale_mode() {
         scale_mode = SDL_SCALEMODE_LINEAR;
     }
     set_full_frame_redraw();
+}
+
+void video_system_t::copy_screen() {
+    SDL_Rect irect = { 0, 0, (int)last_srcrect.w, (int)last_srcrect.h };
+    SDL_SetRenderTarget(renderer, last_texture);
+    SDL_Surface *surface = SDL_RenderReadPixels(renderer, &irect);
+    SDL_SetRenderTarget(renderer, nullptr);
+    clip->Clip(surface);
+    SDL_DestroySurface(surface);
 }
 
 void video_system_t::register_frame_processor(int weight, FrameHandler handler) {

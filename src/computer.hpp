@@ -137,4 +137,5 @@ struct computer_t {
     void send_clock_mode_message(clock_mode_t clock_mode);
     void frame_status_update();
 
+    void send_full_screen_message();
 };

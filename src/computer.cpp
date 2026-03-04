@@ -16,6 +16,7 @@
 #include "util/applekeys.hpp"
 #include "gs2.hpp"
 #include "platform-specific/menu.h"
+#include "devices/keyboard/keyboard.hpp"
 #include "util/InterruptController.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/AudioSystem.hpp"
@@ -144,6 +145,24 @@ computer_t::computer_t(NClockII *clock) {
                 video_system->set_display_engine(DM_ENGINE_MONO);
                 video_system->set_display_mono_color(DM_MONO_WHITE);
                 return true;
+            case MENU_DISPLAY_FULLSCREEN:
+                video_system->toggle_fullscreen();
+                send_full_screen_message();
+                return true;
+            case MENU_EDIT_COPY_SCREEN:
+                video_system->copy_screen();
+                return true;
+            case MENU_EDIT_PASTE_TEXT: {
+                keyboard_state_t *kb = (keyboard_state_t *)get_module_state(MODULE_KEYBOARD);
+                if (kb) {
+                    char *text = SDL_GetClipboardText();
+                    if (text) {
+                        kb->paste_buffer = std::string(text);
+                        SDL_free(text);
+                    }
+                }
+                return true;
+            }
         }
         return false;
     });
@@ -248,6 +267,10 @@ void computer_t::send_clock_mode_message(clock_mode_t clock_mode) {
 
     snprintf(buffer, sizeof(buffer), "Clock Mode Set to %s", clock->get_clock_mode_name(clock_mode)); // 
     event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, buffer));
+}
+
+void computer_t::send_full_screen_message() {
+    event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Entering Full Screen Mode. Press F3 to exit."));
 }
 
 /**

@@ -323,7 +323,7 @@ bool recompute_gamepads(gamec_state_t *gp_d) {
     if (gpcount > 0) {
         gp_d->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Gamepad connected"));
     } else {
-        gp_d->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "No gamepads connected, joystick emulation via mouse"));
+        gp_d->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "No gamepads connected"));
     }
 
     // if there is only one, connect to it.
