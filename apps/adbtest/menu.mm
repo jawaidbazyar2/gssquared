@@ -129,8 +129,8 @@ static NSTimer *s_menuTrackingTimer = nil;
  */
 	[[[[NSApp mainMenu] itemArray][1] submenu]
 	    addItem:[[[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Close", nil)
-						action:@selector(fileClose:)
-					 keyEquivalent:[NSString stringWithFormat:@"%C", (unichar)NSF12FunctionKey]] autorelease]];
+					action:@selector(fileClose:)
+				 keyEquivalent:[NSString stringWithFormat:@"%C", (unichar)NSF12FunctionKey]] autorelease]];
 
 	return self;
 }

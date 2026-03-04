@@ -74,7 +74,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     as->window = window;
     as->renderer = renderer;
 
-    SDL_SetRenderVSync(renderer, 1);
+    SDL_SetRenderVSync(renderer, 0);
 
     get_display_modes(SDL_GetDisplayForWindow(window));
 
