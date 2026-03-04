@@ -93,7 +93,8 @@ void SelectSystem::render() {
 }
 
 int SelectSystem::select() {
-
+    // Switching to Vsync here means we avoid the manual SDL_Delay below.
+    //SDL_SetRenderVSync(vs->renderer, 1);
     bool selected = false;
     while (!selected) {
         SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
@@ -111,5 +112,6 @@ int SelectSystem::select() {
         }
         SDL_Delay(16);
     }
+   // SDL_SetRenderVSync(vs->renderer, 0);
     return selected_system;
 }
