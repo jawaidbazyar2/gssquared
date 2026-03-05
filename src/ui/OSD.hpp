@@ -24,6 +24,7 @@
 
 #include "Container.hpp"
 #include "ModalContainer.hpp"
+#include "FadeContainer.hpp"
 #include "MousePositionTile.hpp"
 #include "AssetAtlas.hpp"
 #include "util/TextRenderer.hpp"
@@ -80,6 +81,8 @@ protected:
     ModalContainer_t *activeModal = nullptr;
     ModalContainer_t *diskii_save_con = nullptr;
 
+    FadeContainer_t *hover_controls_con = nullptr;
+
     MousePositionTile_t* mouse_pos = nullptr;
     AssetAtlas_t *aa = nullptr;
     SDL_Renderer *renderer = nullptr;
@@ -135,6 +138,8 @@ public:
     void close_diskii_modal(storage_key_t key, uint64_t data);
 
     void set_heads_up_message(const std::string &text, int count);
+
+    bool is_mouse_captured();
 
     void open_panel();
     void close_panel();

@@ -152,7 +152,7 @@ void Button_t::render(SDL_Renderer* renderer) {
             text_render->render(text, tp.x +cp.x, tp.y + cp.y, TEXT_ALIGN_LEFT);
         }
     } else if (buttonType == BT_Atlas) {
-        aa->draw(assetID, tp.x + cp.x, tp.y + cp.y);
+        aa->draw(assetID, tp.x + cp.x, tp.y + cp.y, opacity);
     }
 }
 

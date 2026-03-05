@@ -26,6 +26,7 @@
 #include "DiskII_Button.hpp"
 #include "Unidisk_Button.hpp"
 #include "AppleDisk_525_Button.hpp"
+#include "LabeledButton.hpp"
 #include "Container.hpp"
 #include "AssetAtlas.hpp"
 #include "Style.hpp"
@@ -38,6 +39,7 @@
 #include "ModalContainer.hpp"
 #include "util/printf_helper.hpp"
 #include "paths.hpp"
+#include "util/MenuInterface.h"
 
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
@@ -468,6 +470,38 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     open_btn->set_tile_position(0, 50);
     open_btn->set_fade_frames(512, 4); // hold for one second, then fade out over next second. (roughly)
 
+    hover_controls_con = new FadeContainer_t(renderer, 10, HUD, 512);
+    hover_controls_con->set_position(10, 85);
+    hover_controls_con->set_tile_size(65, 500);
+    {
+        LabeledButton *b1 = new LabeledButton(aa, ResetButton, "", text_render, 0);
+        b1->set_tile_size(60, 60);
+        b1->set_click_callback([this,computer](const SDL_Event& event) -> bool {
+            computer->reset(false);
+            return true;
+        });
+        hover_controls_con->add_tile(b1, 0);
+
+        LabeledButton *b3 = new LabeledButton(aa, GreenDisplayButton, "Capture", text_render, 0);
+        b3->set_tile_size(60, 60);
+        b3->set_click_callback([this,computer](const SDL_Event& event) -> bool {
+            getMenuInterface()->machineCaptureMouse();
+            return true;
+        });
+        hover_controls_con->add_tile(b3, 1);
+
+        LabeledButton *b2 = new LabeledButton(aa, GreenDisplayButton, "Debug", text_render, 0);
+        b2->set_tile_size(60, 60);
+        b2->set_click_callback([this,computer](const SDL_Event& event) -> bool {
+            getMenuInterface()->openDebugWindow();
+            return true;
+        });
+        hover_controls_con->add_tile(b2, 2);
+
+
+        hover_controls_con->layout();
+    }
+
     computer->sys_event->registerHandler(SDL_EVENT_DROP_BEGIN, [this](const SDL_Event &event) {
         SDL_RaiseWindow(window);
         slideStatusBeforeDrop = currentSlideStatus;
@@ -740,6 +774,8 @@ void OSD::render() {
 
         open_btn->render(renderer); // this now takes care of its own fade-out.
 
+        hover_controls_con->render();
+
         if (hud_drive_container->get_tile_count() > 0) {
             hud_drive_container->layout();
             hud_drive_container->set_position(((float)window_width - 420) / 2, window_height - 125 );
@@ -770,12 +806,17 @@ void OSD::render() {
 
 }
 
+bool OSD::is_mouse_captured() {
+    return SDL_GetWindowRelativeMouseMode(window);
+}
+
 bool OSD::event(const SDL_Event &event) {
     //if mouse is captured we ignore events here.
-    if (SDL_GetWindowRelativeMouseMode(window)) {
+    if (is_mouse_captured()) {
         if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
             return(false);
         }
+        hover_controls_con->reset();
     }
 
     bool active = (currentSlideStatus == SLIDE_IN);
@@ -792,6 +833,10 @@ bool OSD::event(const SDL_Event &event) {
     } else {
         if (open_btn->handle_mouse_event(event)) {
             return(true);
+        }
+        
+        if (! is_mouse_captured()) {
+            hover_controls_con->handle_mouse_event(event); // only handles if still visible.
         }
     }
 

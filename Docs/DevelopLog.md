@@ -10518,3 +10518,5 @@ I've done (well Clod did) what seems to be a successful refactor of (mostly) gs2
 On the one hand, I think my overall architecture has been pretty good, and we were close to this sort of framework anyway. On the other hand - well, large scale LLM changes are scary right?
 
 I don't see any noticeable changes. Though I don't see the same nice behavior I had yesterday with FreeSync even though it seems still on. 
+
+OK for the top buttons. Either they need to be quite a bit smaller, or, I need to reduce them vertically somewhat. They're just taking up too much room. Alternatively, I could run them down the left border. Hmm. Let's try that. That's interesting, because then when I click on one they can expand sideways for the options.. 

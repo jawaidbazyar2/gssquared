@@ -163,6 +163,9 @@ computer_t::computer_t(NClockII *clock) {
                 }
                 return true;
             }
+            case MENU_OPEN_DEBUG_WINDOW:
+                debug_window->set_open();
+                return true;
         }
         return false;
     });

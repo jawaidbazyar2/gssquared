@@ -78,6 +78,17 @@ void AssetAtlas_t::draw(int id, int dst_x, int dst_y) {
     SDL_RenderTexture(renderer, image, &srcrect, &dstrect);
 }
 
+void AssetAtlas_t::draw(int id, int dst_x, int dst_y, int opacity) {
+    if (id < 0 || id >= elementCount) {
+        throw std::runtime_error("Invalid asset ID");
+    }
+    SDL_FRect srcrect = {(float)elements[id].x, (float)elements[id].y, (float)elements[id].w, (float)elements[id].h};
+    SDL_FRect dstrect = {(float)dst_x, (float)dst_y, (float)elements[id].w, (float)elements[id].h};
+    SDL_SetTextureAlphaMod(image, opacity);
+    SDL_RenderTexture(renderer, image, &srcrect, &dstrect);
+    SDL_SetTextureAlphaMod(image, 255);
+}
+
 AssetAtlas_t::~AssetAtlas_t() {
     SDL_DestroyTexture(image);
 /*     if (elements) {

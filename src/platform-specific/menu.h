@@ -20,9 +20,12 @@ enum MenuEventCode {
 	MENU_MONITOR_MONO_WHITE,
 
 	MENU_DISPLAY_FULLSCREEN = 300,
-
+	
 	MENU_EDIT_COPY_SCREEN = 400,
 	MENU_EDIT_PASTE_TEXT,
+
+	MENU_OPEN_DEBUG_WINDOW = 501,
+
 };
 
 typedef SDL_AppResult (*MenuIterateCallback)(void *appstate);

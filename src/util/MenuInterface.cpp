@@ -3,6 +3,7 @@
 #include "NClock.hpp"
 #include "videosystem.hpp"
 #include "platform-specific/menu.h"
+#include "debugger/debugwindow.hpp"
 
 static void pushMenuEvent(Sint32 code) {
 	SDL_Event event = {};
@@ -28,6 +29,8 @@ void MenuInterface::setSpeed(int speed_id) {
 void MenuInterface::setMonitor(int monitor_id) {
 	pushMenuEvent(monitor_id);
 }
+
+void MenuInterface::openDebugWindow() { pushMenuEvent(MENU_OPEN_DEBUG_WINDOW); }
 
 void MenuInterface::displayFullScreen() { pushMenuEvent(MENU_DISPLAY_FULLSCREEN); }
 void MenuInterface::editCopyScreen()   { pushMenuEvent(MENU_EDIT_COPY_SCREEN); }

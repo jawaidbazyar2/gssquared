@@ -27,6 +27,7 @@ public:
 	void displayFullScreen();
 	void editCopyScreen();
 	void editPasteText();
+	void openDebugWindow();
 
 	int  getCurrentSpeed();
 	int  getCurrentMonitor();

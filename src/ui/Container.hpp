@@ -140,7 +140,7 @@ public:
      * @brief Handles mouse events for the container and its tiles.
      * @param event The SDL event to handle
      */
-    void handle_mouse_event(const SDL_Event& event);
+    virtual void handle_mouse_event(const SDL_Event& event);
 
     /**
      * @brief Renders the container and all its tiles.

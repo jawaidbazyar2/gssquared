@@ -99,7 +99,9 @@ public:
      * @param id The element ID to draw
      * @param dst_x X coordinate to draw at
      * @param dst_y Y coordinate to draw at
+     * @param opacity Opacity to draw at
      * @throws std::runtime_error if id is invalid
      */
     void draw(int id, int dst_x, int dst_y);
+    void draw(int id, int dst_x, int dst_y, int opacity);
 }; 
