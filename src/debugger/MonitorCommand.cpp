@@ -120,14 +120,24 @@ MonitorCommand::MonitorCommand(const std::string &command) : command(command) {
             std::string addr_str = t.substr(0, t.length() - 1);
             node.val_address = static_cast<uint32_t>(std::stoul(addr_str, nullptr, 16));
         }
-        // Check if it's a range (contains dot)
+        // Check if it's a range (contains dot with valid hex on both sides)
         else if (t.find('.') != std::string::npos) {
-            node.type = MON_NODE_TYPE_RANGE;
             size_t dot_pos = t.find('.');
             std::string lo_str = t.substr(0, dot_pos);
             std::string hi_str = t.substr(dot_pos + 1);
-            node.val_range.lo = static_cast<uint32_t>(std::stoul(lo_str, nullptr, 16));
-            node.val_range.hi = static_cast<uint32_t>(std::stoul(hi_str, nullptr, 16));
+            bool lo_valid = !lo_str.empty() && std::all_of(lo_str.begin(), lo_str.end(), [](char c) { return std::isxdigit(c); });
+            bool hi_valid = !hi_str.empty() && std::all_of(hi_str.begin(), hi_str.end(), [](char c) { return std::isxdigit(c); });
+            if (lo_valid && hi_valid) {
+                node.type = MON_NODE_TYPE_RANGE;
+                node.val_range.lo = static_cast<uint32_t>(std::stoul(lo_str, nullptr, 16));
+                node.val_range.hi = static_cast<uint32_t>(std::stoul(hi_str, nullptr, 16));
+            } else {
+                node.type = MON_NODE_TYPE_COMMAND;
+                std::string lower_t = t;
+                std::transform(lower_t.begin(), lower_t.end(), lower_t.begin(), ::tolower);
+                node.val_string = lower_t;
+                node.val_cmd = lookup_cmd(lower_t);
+            }
         }
         // Check if it's all hex digits (address or value)
         else if (std::all_of(t.begin(), t.end(), [](char c) { 
