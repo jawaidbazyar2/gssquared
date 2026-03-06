@@ -35,5 +35,5 @@
      using StorageButton::StorageButton;
  
      // Override render to add disk-specific rendering
-     void render(SDL_Renderer* renderer) override;
+     void render() override;
  }; 

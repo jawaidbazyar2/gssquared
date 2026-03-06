@@ -2,8 +2,9 @@
 
 #include "TextInput.hpp"
 #include "SDL3/SDL_events.h"
+#include "UIContext.hpp"
 
-TextInput_t::TextInput_t(const std::string& text, const Style_t& style) : Tile_t(style) {
+TextInput_t::TextInput_t(UIContext *ctx, const std::string& text, const Style_t& style) : Tile_t(ctx, style) {
     set_text(text);
     //set_cursor_position(text.length());
     set_cursor_position(0);
@@ -101,7 +102,7 @@ void TextInput_t::set_enter_handler(EventHandler handler) {
     enter_handler = handler;
 }
 
-void TextInput_t::render(SDL_Renderer* renderer) {
+void TextInput_t::render() {
     int text_line = 0;
     if (text_renderer == nullptr) {
         return;
@@ -126,9 +127,9 @@ void TextInput_t::render(SDL_Renderer* renderer) {
         b = b * 0.7;
         //a = a * 0.4;
     }
-    SDL_SetRenderDrawColor(renderer, r, g, b, a);
+    SDL_SetRenderDrawColor(ctx->renderer, r, g, b, a);
     SDL_FRect eb = {tp.x, tp.y, tp.w, tp.h};
-    SDL_RenderFillRect(renderer, &eb);
+    SDL_RenderFillRect(ctx->renderer, &eb);
 
     // first, render what is in the text input area.    
     text_renderer->render(text, eff_x, tp.y + style.padding);
@@ -136,9 +137,9 @@ void TextInput_t::render(SDL_Renderer* renderer) {
     // now, render the text input cursor.
     if (cursor_state < 30 && edit_active) {
         int cursor_x = eff_x + cursor_pixel_pos;
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_RenderLine(renderer, cursor_x, tp.y, cursor_x, tp.y + font_line_height);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_SetRenderDrawColor(ctx->renderer, 255, 255, 255, 255);
+        SDL_RenderLine(ctx->renderer, cursor_x, tp.y, cursor_x, tp.y + font_line_height);
+        SDL_SetRenderDrawColor(ctx->renderer, 0, 0, 0, 255);
     }
 }
 

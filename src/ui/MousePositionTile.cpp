@@ -25,18 +25,18 @@
  * It updates whenever mouse events are received.
  */
 
-MousePositionTile_t::MousePositionTile_t() {
+MousePositionTile_t::MousePositionTile_t(UIContext *ctx) : Tile_t(ctx) {
     // Initialize the position text
     snprintf(position_text, sizeof(position_text), "Mouse: %.0f,%.0f", mouse_x, mouse_y);
     // Set a default size that can accommodate the text
     set_tile_size(150, 30);
 }
 
-void MousePositionTile_t::render(SDL_Renderer* renderer) {
+void MousePositionTile_t::render() {
     if (!visible) return;
 
     // First render the base tile (background and border)
-    Tile_t::render(renderer);
+    Tile_t::render();
 
     // Update the position text
     snprintf(position_text, sizeof(position_text), "Mouse: %.0f,%.0f", mouse_x, mouse_y);
@@ -46,8 +46,8 @@ void MousePositionTile_t::render(SDL_Renderer* renderer) {
     //get_content_position(&content_x, &content_y);
 
     // Render the position text in the content area
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  // Black text
-    SDL_RenderDebugText(renderer, cp.x, cp.y, position_text);
+    SDL_SetRenderDrawColor(ctx->renderer, 0, 0, 0, 255);  // Black text
+    SDL_RenderDebugText(ctx->renderer, cp.x, cp.y, position_text);
 }
 
 bool MousePositionTile_t::handle_mouse_event(const SDL_Event& event) {

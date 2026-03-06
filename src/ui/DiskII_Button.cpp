@@ -43,12 +43,12 @@ drive_status_t DiskII_Button_t::get_disk_status() const { return status; }
  * @brief Renders the DiskII button with additional drive-specific elements.
  * @param renderer The SDL renderer to use.
  */
-void DiskII_Button_t::render(SDL_Renderer* renderer) {
+void DiskII_Button_t::render() {
     if (status.is_mounted) this->set_assetID(DiskII_Closed);
     else this->set_assetID(DiskII_Open);
 
     // First, perform the base button rendering
-    Button_t::render(renderer);
+    Button_t::render();
 
     // Get content area position for additional rendering
     //float content_x, content_y;
@@ -63,22 +63,22 @@ void DiskII_Button_t::render(SDL_Renderer* renderer) {
 
     char text[32];
     snprintf(text, sizeof(text), "Slot %u", key.slot);
-    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-    SDL_RenderDebugText(renderer, tp.x + cp.x + 62, tp.y + cp.y + 84, text);
+    SDL_SetRenderDrawColor(ctx->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + 62, tp.y + cp.y + 84, text);
     if (/* is_hovering &&  */!status.filename.empty()) {
         float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
         SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 36, text_width+10, 16};
-        SDL_SetRenderDrawColor(renderer, 0x80, 0x80, 0xFF, 0x80);
-        SDL_RenderFillRect(renderer, &rect);
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDebugText(renderer, tp.x + cp.x + text_x, tp.y + cp.y + 40, status.filename.c_str());
+        SDL_SetRenderDrawColor(ctx->renderer, 0x80, 0x80, 0xFF, 0x80);
+        SDL_RenderFillRect(ctx->renderer, &rect);
+        SDL_SetRenderDrawColor(ctx->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + text_x, tp.y + cp.y + 40, status.filename.c_str());
     }
     if (status.is_mounted && status.motor_on) {
         // if mounted and hovering, show the track number over the drive
         char text[32];
         snprintf(text, sizeof(text), "Tr %d", status.position / 2);
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDebugText(renderer, tp.x + cp.x + 68, tp.y + cp.y + 28, text);
+        SDL_SetRenderDrawColor(ctx->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + 68, tp.y + cp.y + 28, text);
     }
 }

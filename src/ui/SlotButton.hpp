@@ -8,7 +8,7 @@ class Device_t;
 class SlotButton : public Button_t {
     public:
         SlotButton(UIContext *ctx, int assetID, int group = 0, int slot_number = 0, SlotManager_t *slot_manager = nullptr);
-        void render(SDL_Renderer* renderer) override;
+        void render() override;
     private:
         SlotManager_t *slot_manager;
         Device_t *device;

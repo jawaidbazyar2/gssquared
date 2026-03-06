@@ -20,6 +20,7 @@
 #include <SDL3/SDL.h>
 #include <functional>
 
+#include "UIContext.hpp"
 #include "Style.hpp"
 #include "util/TextRenderer.hpp"
 
@@ -54,7 +55,7 @@ public:
      * @brief Constructs a tile with the given style.
      * @param initial_style The initial style settings for the tile
      */
-    Tile_t(const Style_t& initial_style = Style_t());
+    Tile_t(UIContext *ctx, const Style_t& initial_style = Style_t());
     
     /**
      * @brief Virtual destructor for proper cleanup of derived classes.
@@ -114,7 +115,7 @@ public:
      * @brief Renders the tile.
      * @param renderer The SDL renderer to use
      */
-    virtual void render(SDL_Renderer* renderer);
+    virtual void render();
 
     /**
      * @brief Handles mouse events for the tile.
@@ -139,9 +140,10 @@ public:
     //void on_click(click_callback_t callback, void* data = nullptr);
     void on_click(EventHandler handler);
 
-    void set_text_renderer(TextRenderer *text_render);
+    //void set_text_renderer(TextRenderer *text_render);
     void set_opacity(int o);
     int calc_opacity(uint32_t color);
+    uint32_t opaque(uint32_t color);
     void get_tile_position(float &x, float &y) const { x = tp.x; y = tp.y; }
 
     void position_content(ContentPosition_t pos_h, ContentPosition_t pos_v);
@@ -161,6 +163,8 @@ protected:
     virtual void do_click(const SDL_Event& event);
 
     void calc_content_position();
+
+    UIContext *ctx = nullptr;
 
 // should be private?
     Style_t style;
@@ -182,6 +186,6 @@ protected:
     click_callback_t click_callback = nullptr;
     EventHandler click_callback_h = nullptr;
     void* callback_data = nullptr;
-    TextRenderer *text_render = nullptr;
+    //TextRenderer *text_render = nullptr;
 
 }; 

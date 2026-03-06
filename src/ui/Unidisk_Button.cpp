@@ -34,13 +34,13 @@
  * @brief Renders the Unidisk button with additional drive-specific elements.
  * @param renderer The SDL renderer to use.
  */
-void Unidisk_Button_t::render(SDL_Renderer* renderer) {
+void Unidisk_Button_t::render() {
     this->set_assetID(Unidisk_Face);
 /*     if (status.is_mounted)    
     else this->set_assetID(Unidisk_Face);
  */
     // First, perform the base button rendering
-    Button_t::render(renderer);
+    Button_t::render();
 
     // Get content area position for additional rendering
     //float content_x, content_y;
@@ -52,18 +52,18 @@ void Unidisk_Button_t::render(SDL_Renderer* renderer) {
  
     if (status.motor_on) aa->draw(Unidisk_Light, tp.x + cp.x, tp.y + cp.y + 30);
 
-    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+    SDL_SetRenderDrawColor(ctx->renderer, 0x00, 0x00, 0x00, 0xFF);
     char text[32];
     snprintf(text, sizeof(text), "Slot %u", key.slot);
-    SDL_RenderDebugText(renderer, tp.x + cp.x + 62, tp.y + cp.y + 75, text);
+    SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + 62, tp.y + cp.y + 75, text);
     
     if (/* is_hovering &&  */!status.filename.empty()) {
         float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
         SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 40, text_width+10, 16};
-        SDL_SetRenderDrawColor(renderer, 0x80, 0x80, 0xFF, 0x80);
-        SDL_RenderFillRect(renderer, &rect);
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDebugText(renderer, tp.x + cp.x + text_x, tp.y + cp.y + 44, status.filename.c_str());
+        SDL_SetRenderDrawColor(ctx->renderer, 0x80, 0x80, 0xFF, 0x80);
+        SDL_RenderFillRect(ctx->renderer, &rect);
+        SDL_SetRenderDrawColor(ctx->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + text_x, tp.y + cp.y + 44, status.filename.c_str());
     }
 }

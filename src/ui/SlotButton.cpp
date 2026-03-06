@@ -22,15 +22,15 @@ SlotButton::SlotButton(UIContext *ctx, int assetID, int group, int slot_number, 
 }
 
 
-void SlotButton::render(SDL_Renderer* renderer) {
+void SlotButton::render() {
     
-    Button_t::render(renderer);
+    Button_t::render();
     
-    text_render->set_color(0x00, 0x00, 0x00, opacity);
-    text_render->render(slot_string, tp.x -15, tp.y + cp.y + (cp.h - text_render->get_font_line_height()), TEXT_ALIGN_LEFT);
+    ctx->text_render->set_color(0x00, 0x00, 0x00, opacity);
+    ctx->text_render->render(slot_string, tp.x -15, tp.y + cp.y + (cp.h - ctx->text_render->get_font_line_height()), TEXT_ALIGN_LEFT);
 
-    text_render->set_color(0xFF, 0xFF, 0xFF, opacity);
+    ctx->text_render->set_color(0xFF, 0xFF, 0xFF, opacity);
     if (slot_device_name.length() > 0) {
-        text_render->render(slot_device_name, tp.x + 20, tp.y + cp.y + (cp.h - text_render->get_font_line_height()), TEXT_ALIGN_LEFT);
+        ctx->text_render->render(slot_device_name, tp.x + 20, tp.y + cp.y + (cp.h - ctx->text_render->get_font_line_height()), TEXT_ALIGN_LEFT);
     }
 }

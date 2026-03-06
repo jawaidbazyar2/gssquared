@@ -68,7 +68,7 @@ public:
      * @param style The button's style settings
      * @param group The button group ID
      */
-    Button_t(const std::string& button_text, const Style_t& style = Style_t(), int group = 0);
+    Button_t(UIContext *ctx, const std::string& button_text, const Style_t& style = Style_t(), int group = 0);
     
     /**
      * @brief Constructs a text button with style using a rendering context.
@@ -77,7 +77,7 @@ public:
      * @param style The button's style settings
      * @param group The button group ID
      */
-    Button_t( UIContext *ctx, const std::string& button_text, const Style_t& style = Style_t(), int group = 0);
+    //Button_t(UIContext *ctx, const std::string& button_text, const Style_t& style = Style_t(), int group = 0);
 
     /**
      * @brief Constructs an image button with style using a rendering context.
@@ -93,7 +93,7 @@ public:
      * @param button_text The text to display
      * @param group The button group ID
      */
-    Button_t(const std::string& button_text, int group = 0);
+    Button_t(UIContext *ctx, const std::string& button_text, int group = 0);
 
     /**
      * @brief Sets the asset ID for image buttons.
@@ -117,7 +117,7 @@ public:
      * @brief Renders the button.
      * @param renderer The SDL renderer to use
      */
-    void render(SDL_Renderer* renderer) override;
+    void render() override;
 
 protected:
     /**

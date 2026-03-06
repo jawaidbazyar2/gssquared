@@ -10,7 +10,7 @@ class SystemButton : public Button_t {
             this->system_config = system_config;
         }
         ~SystemButton() { };
-        void render(SDL_Renderer *renderer) override;
+        void render() override;
 
     private:
         SystemConfig_t *system_config;

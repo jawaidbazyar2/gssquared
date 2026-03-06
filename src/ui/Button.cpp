@@ -40,33 +40,33 @@ void Button_t::set_content_size_from_tile() {
     cp.w = tp.w; cp.h = tp.h;
 }
 
-Button_t::Button_t(const std::string& button_text, const Style_t& style, int group)
-    : Tile_t(style), text(button_text), group_id(group), buttonType(BT_Text) {
+Button_t::Button_t(UIContext *ctx, const std::string& button_text, const Style_t& style, int group)
+    : Tile_t(ctx, style), text(button_text), group_id(group), buttonType(BT_Text) {
         //set_content_size_from_tile();
         set_content_size_from_text();
         position_content(CP_CENTER, CP_CENTER);
     }
     
-Button_t::Button_t(UIContext *ctx, const std::string& button_text, const Style_t& style, int group)
-    : Tile_t(style), text(button_text), group_id(group), buttonType(BT_Text) {
+/* Button_t::Button_t(UIContext *ctx, const std::string& button_text, const Style_t& style, int group)
+    : Tile_t(ctx, style), text(button_text), group_id(group), buttonType(BT_Text) {
         set_text_renderer(ctx->text_render);
         set_content_size_from_text();
         position_content(CP_CENTER, CP_CENTER);
-    }
+    } */
    
 void Button_t::set_content_size_from_text() {
-    if (text_render == nullptr) {
+    if (ctx->text_render == nullptr) {
         cp.w = (strlen(text.c_str()) * SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE);
         cp.h = SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE;
     } else {
-        cp.w = text_render->string_width(text);
-        cp.h = text_render->get_font_line_height();
+        cp.w = ctx->text_render->string_width(text);
+        cp.h = ctx->text_render->get_font_line_height();
     }
 }
 
 Button_t::Button_t(UIContext *ctx, int assetID, const Style_t& style, int group)
-    : Tile_t(style), aa(ctx->asset_atlas), assetID(assetID), group_id(group), buttonType(BT_Atlas) {
-        set_text_renderer(ctx->text_render);
+    : Tile_t(ctx, style), aa(ctx->asset_atlas), assetID(assetID), group_id(group), buttonType(BT_Atlas) {
+        //set_text_renderer(ctx->text_render);
         set_size_from_asset();
         position_content(CP_CENTER, CP_CENTER);
     }
@@ -76,8 +76,8 @@ Button_t::Button_t(UIContext *ctx, int assetID, const Style_t& style, int group)
  * @param button_text The text to display on the button.
  * @param group The button group ID (default 0).
  */
-Button_t::Button_t(const std::string& button_text, int group) 
-    : text(button_text), group_id(group), buttonType(BT_Text) {}
+Button_t::Button_t(UIContext *ctx, const std::string& button_text, int group) 
+    : Tile_t(ctx, Style_t()), text(button_text), group_id(group), buttonType(BT_Text) {}
 
 
 void Button_t::set_assetID(int id) { 
@@ -101,7 +101,7 @@ int Button_t::get_group_id() const { return group_id; }
  * @brief Renders the button to the screen.
  * @param renderer The SDL renderer to use.
  */
-void Button_t::render(SDL_Renderer* renderer) {
+void Button_t::render() {
     if (!visible) return;
 
     // Store current background color and temporarily set it based on hover state
@@ -111,7 +111,7 @@ void Button_t::render(SDL_Renderer* renderer) {
     }
 
     // Call parent class render to draw background and border
-    Tile_t::render(renderer);
+    Tile_t::render();
 
     // Restore original background color
     style.background_color = original_bg_color;
@@ -122,8 +122,8 @@ void Button_t::render(SDL_Renderer* renderer) {
 
     // Draw button-specific content (text or image)
     if (buttonType == BT_Text) {
-        if (text_render == nullptr) {
-            SDL_SetRenderDrawColor(renderer,
+        if (ctx->text_render == nullptr) {
+            SDL_SetRenderDrawColor(ctx->renderer,
                 (style.text_color >> 24) & 0xFF,
                 (style.text_color >> 16) & 0xFF,
                 (style.text_color >> 8) & 0xFF,
@@ -132,16 +132,16 @@ void Button_t::render(SDL_Renderer* renderer) {
             /* int wid = (strlen(text.c_str()) * SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE);
             int hei = SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE; */
             //SDL_RenderDebugText(renderer, tp.x + cp.x + (tp.w - wid) / 2, tp.y + cp.y + (tp.h - hei) / 2, text.c_str());
-            SDL_RenderDebugText(renderer, tp.x + cp.x, tp.y + cp.y, text.c_str());
+            SDL_RenderDebugText(ctx->renderer, tp.x + cp.x, tp.y + cp.y, text.c_str());
         } else {
             /* if (cp.w == -1) {
                 cp.w = 
                 cp.h = 
             } */
 
-            text_render->set_color((style.text_color >> 24) & 0xFF, (style.text_color >> 16) & 0xFF, (style.text_color >> 8) & 0xFF, calc_opacity(style.text_color)); 
+            ctx->text_render->set_color((style.text_color >> 24) & 0xFF, (style.text_color >> 16) & 0xFF, (style.text_color >> 8) & 0xFF, calc_opacity(style.text_color)); 
             //text_render->render(text, tp.x +cp.x + (cp.w /2), tp.y + cp.y, TEXT_ALIGN_CENTER);
-            text_render->render(text, tp.x +cp.x, tp.y + cp.y, TEXT_ALIGN_LEFT);
+            ctx->text_render->render(text, tp.x +cp.x, tp.y + cp.y, TEXT_ALIGN_LEFT);
         }
     } else if (buttonType == BT_Atlas) {
         aa->draw(assetID, tp.x + cp.x, tp.y + cp.y, opacity);

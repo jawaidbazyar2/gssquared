@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     // TODO: feel like changing these names.
     // set_position; set_size
     // Create a Tile and render it.
-    Tile_t tile(style);
+    Tile_t tile(&ui_ctx, style);
     tile.set_tile_position(100, 100);
     tile.set_tile_size(100, 50);
 
@@ -79,9 +79,9 @@ int main(int argc, char **argv) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
         SDL_RenderClear(renderer);
 
-        tile.render(renderer);
-        button.render(renderer);
-        button2.render(renderer);
+        tile.render();
+        button.render();
+        button2.render();
 
         SDL_RenderPresent(renderer);
         SDL_Delay(16);

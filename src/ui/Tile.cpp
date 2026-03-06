@@ -17,7 +17,7 @@
 
 #include "Tile.hpp"
 
-Tile_t::Tile_t(const Style_t& initial_style) : style(initial_style) {
+Tile_t::Tile_t(UIContext *ctx, const Style_t& initial_style) : ctx(ctx), style(initial_style) {
     calc_content_position();
 }
 
@@ -70,38 +70,45 @@ int Tile_t::calc_opacity(uint32_t color) {
     return(opc);
 }
 
+uint32_t Tile_t::opaque(uint32_t color) {
+    int opc = opacity < (color & 0xFF) ? opacity : (color & 0xFF);
+    return(color & 0xFFFFFF00 | (opc));
+}
 
-void Tile_t::render(SDL_Renderer* renderer) {
+void Tile_t::render() {
     if (!visible) return;
 
     uint32_t bcolor = (is_hovering) ? style.hover_color : style.border_color;
 
     // Draw background (includes padding area)
-    SDL_SetRenderDrawColor(renderer, 
+   /*  SDL_SetRenderDrawColor(renderer, 
         (style.background_color >> 24) & 0xFF,
         (style.background_color >> 16) & 0xFF,
         (style.background_color >> 8) & 0xFF,
         calc_opacity(style.background_color)
-    );
+    ); */
     
-    SDL_FRect tile_rect = {tp.x, tp.y, tp.w, tp.h};
-    SDL_RenderFillRect(renderer, &tile_rect);
+    /* SDL_FRect tile_rect = {tp.x, tp.y, tp.w, tp.h};
+    SDL_RenderFillRect(renderer, &tile_rect); */
+    ctx->fill_rect({tp.x, tp.y, tp.w, tp.h}, opaque(style.background_color));
 
     // Draw border if needed
     if (style.border_width > 0) {
         //printf("tile_t:render:hover: %d, draw border: %08X width: %d\n", (int)is_hovering,  bcolor, style.border_width);
-        SDL_SetRenderDrawColor(renderer,
+        uint32_t color = opaque(bcolor);
+/*         SDL_SetRenderDrawColor(ctx->renderer,
             (bcolor >> 24) & 0xFF,
             (bcolor >> 16) & 0xFF,
             (bcolor >> 8) & 0xFF,
             calc_opacity(bcolor)
-        );
+        ); */
         for (uint32_t i = 0; i < style.border_width; i++) {
             SDL_FRect border_rect = {
                 tp.x + i, tp.y + i,
                 tp.w - 2 * i, tp.h - 2 * i
             };
-            SDL_RenderRect(renderer, &border_rect);
+            ctx->draw_rect(border_rect, color);
+            //SDL_RenderRect(ctx->renderer, &border_rect);
         }
     }
 }
@@ -216,9 +223,9 @@ void Tile_t::do_click(const SDL_Event& event) {
     }
 }
 
-void Tile_t::set_text_renderer(TextRenderer *text_render) {
+/* void Tile_t::set_text_renderer(TextRenderer *text_render) {
     this->text_render = text_render;
-}
+} */
 
 void Tile_t::set_opacity(int o) {
     opacity = o;

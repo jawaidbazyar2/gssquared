@@ -34,4 +34,20 @@ struct UIContext {
     TextRenderer *text_render   = nullptr;
     TextRenderer *title_trender = nullptr;
     AssetAtlas_t *asset_atlas   = nullptr;
+
+    // In UIContext (or a companion DrawCtx helper)
+    void fill_rect(SDL_FRect rect, uint32_t rgba) {
+        SDL_SetRenderDrawColor(renderer,
+            (rgba >> 24) & 0xFF, (rgba >> 16) & 0xFF,
+            (rgba >> 8)  & 0xFF,  rgba & 0xFF);
+        SDL_RenderFillRect(renderer, &rect);
+    }
+
+    void draw_rect(SDL_FRect rect, uint32_t rgba) {
+        SDL_SetRenderDrawColor(renderer,
+            (rgba >> 24) & 0xFF, (rgba >> 16) & 0xFF,
+            (rgba >> 8)  & 0xFF,  rgba & 0xFF);
+        SDL_RenderRect(renderer, &rect);
+    }
+
 };

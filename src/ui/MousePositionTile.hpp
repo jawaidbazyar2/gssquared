@@ -20,7 +20,7 @@
 #include <string>
 #include <SDL3/SDL.h>
 #include "Tile.hpp"
-
+#include "UIContext.hpp"
 /**
  * @brief A tile that displays the current mouse position.
  * 
@@ -41,7 +41,7 @@ public:
      * Initializes the position text and sets a default size
      * that can accommodate the coordinate display.
      */
-    MousePositionTile_t();
+    MousePositionTile_t(UIContext *ctx);
 
     /**
      * @brief Renders the tile with current mouse position.
@@ -51,7 +51,7 @@ public:
      * 
      * @param renderer The SDL renderer to use
      */
-    void render(SDL_Renderer* renderer) override;
+    void render() override;
 
     /**
      * @brief Handles mouse events to update the displayed position.

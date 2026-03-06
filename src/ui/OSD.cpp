@@ -259,7 +259,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
             });
         }
         button->set_key(drive.key);
-        drive_container->add_tile(button);
+        drive_container->add(button);
     }
     // Initial layout for drive container
     drive_container->layout();
@@ -286,7 +286,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         SlotButton *slot = new SlotButton(&ui_ctx, 0, 0, i, slot_manager);
         //slot->set_text_renderer(text_render); // set text renderer for the button
         slot->set_tile_size(300, 30);
-        slot_container->add_tile(slot, 7 - i);    // Add in reverse order (7 to 0)
+        slot_container->add(slot, 7 - i);    // Add in reverse order (7 to 0)
     }
     slot_container->layout();
     containers.push_back(slot_container);
@@ -327,11 +327,11 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         getMenuInterface()->setMonitor(MONITOR_MONO_WHITE);
         return true;
     });
-    mon_color_con->add_tile(mc1);
-    mon_color_con->add_tile(mc2);
-    mon_color_con->add_tile(mc3);
-    mon_color_con->add_tile(mc4);
-    mon_color_con->add_tile(mc5);
+    mon_color_con->add(mc1);
+    mon_color_con->add(mc2);
+    mon_color_con->add(mc3);
+    mon_color_con->add(mc4);
+    mon_color_con->add(mc5);
     mon_color_con->layout();
 
     Container_t *speed_con = new Container_t(&ui_ctx, 6, SC);
@@ -365,11 +365,11 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         this->clock->set_clock_mode(CLOCK_FREE_RUN);
         return true;
     });
-    speed_con->add_tile(speed_btn_10);
-    speed_con->add_tile(speed_btn_28);
-    speed_con->add_tile(speed_btn_71);
-    speed_con->add_tile(speed_btn_14);
-    speed_con->add_tile(speed_btn_8);
+    speed_con->add(speed_btn_10);
+    speed_con->add(speed_btn_28);
+    speed_con->add(speed_btn_71);
+    speed_con->add(speed_btn_14);
+    speed_con->add(speed_btn_8);
     speed_con->layout();
 
     Style_t ModalStyle;
@@ -414,13 +414,13 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         modal_diskii_click(new diskii_modal_callback_data_t{this, diskii_save_con, 4});
         return true;
     });
-    diskii_save_con->add_tile(save_btn);
+    diskii_save_con->add(save_btn);
 
-    diskii_save_con->add_tile(discard_btn);
-    diskii_save_con->add_tile(cancel_btn);
+    diskii_save_con->add(discard_btn);
+    diskii_save_con->add(cancel_btn);
     diskii_save_con->layout();
 
-    close_btn = new Button_t("<", TextButtonCfg);
+    close_btn = new Button_t(&ui_ctx, "<", TextButtonCfg);
     close_btn->on_click([this](const SDL_Event& event) -> bool {
         close_panel();
         return true;
@@ -428,7 +428,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     close_btn->set_tile_size(36, 36);
     close_btn->set_tile_position(window_w-100, 49);
 
-    open_btn = new FadeButton_t(">", TextButtonCfg);
+    open_btn = new FadeButton_t(&ui_ctx, ">", TextButtonCfg);
     open_btn->on_click([this](const SDL_Event& event) -> bool {
         open_panel();
         return true;
@@ -454,7 +454,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
             computer->reset(false);
             return true;
         });
-        hover_controls_con->add_tile(b1);
+        hover_controls_con->add(b1);
 
         LabeledButton *b3 = new LabeledButton(&ui_ctx, GreenDisplayButton, "Capture", 0);
         b3->set_tile_size(60, 60);
@@ -462,7 +462,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
             getMenuInterface()->machineCaptureMouse();
             return true;
         });
-        hover_controls_con->add_tile(b3);
+        hover_controls_con->add(b3);
 
         LabeledButton *b2 = new LabeledButton(&ui_ctx, GreenDisplayButton, "Debug", 0);
         b2->set_tile_size(60, 60);
@@ -470,17 +470,17 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
             getMenuInterface()->openDebugWindow();
             return true;
         });
-        hover_controls_con->add_tile(b2);
+        hover_controls_con->add(b2);
 
         // clone each item in speed_con into a new container "hov_speed_con"
         hov_speed_con = new Container_t(&ui_ctx, 10, SB);
         // don't set position yet, we'll do that when we open the submenu.
         hov_speed_con->set_tile_size(360, 65);
-        hov_speed_con->add_tile(new Button_t(*speed_btn_10), 0);
-        hov_speed_con->add_tile(new Button_t(*speed_btn_28), 1);
-        hov_speed_con->add_tile(new Button_t(*speed_btn_71), 2);
-        hov_speed_con->add_tile(new Button_t(*speed_btn_14), 3);
-        hov_speed_con->add_tile(new Button_t(*speed_btn_8), 4);
+        hov_speed_con->add(new Button_t(*speed_btn_10), 0);
+        hov_speed_con->add(new Button_t(*speed_btn_28), 1);
+        hov_speed_con->add(new Button_t(*speed_btn_71), 2);
+        hov_speed_con->add(new Button_t(*speed_btn_14), 3);
+        hov_speed_con->add(new Button_t(*speed_btn_8), 4);
         hov_speed_con->set_visible(false);
         hov_containers.push_back(hov_speed_con);       
 
@@ -500,7 +500,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         
             return true;
         });
-        hover_controls_con->add_tile(b4);
+        hover_controls_con->add(b4);
         hover_controls_con->layout();
 
     }
@@ -638,7 +638,7 @@ void OSD::update() {
                 storage_key_t key = button->get_key();
                 drive_status_t ds = button->get_disk_status();
                 if (key.slot == key_slot_match) {
-                    hud_drive_container->add_tile(button);
+                    hud_drive_container->add(button);
                     button->on_hover_changed(false);
                 }
             }            
@@ -721,12 +721,12 @@ void OSD::render() {
 
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-        system_badge->render(renderer);
+        system_badge->render();
         text_render->set_color(0, 0, 0, 0xFF);
         text_render->render(system_config->name, 220, 70, TEXT_ALIGN_LEFT);
         text_render->render(system_config->description, 220, 90, TEXT_ALIGN_LEFT);
 
-        close_btn->render(renderer);
+        close_btn->render();
 
         // re-lay this out since the hud might have changed the buttons.
         drive_container->layout();
@@ -764,7 +764,7 @@ void OSD::render() {
     if (currentSlideStatus == SLIDE_OUT) {
         SDL_SetRenderScale(renderer, 1,1);       // TODO: calculate these based on window size
 
-        open_btn->render(renderer); // this now takes care of its own fade-out.
+        open_btn->render(); // this now takes care of its own fade-out.
 
         hover_controls_con->render();
         for (Container_t* container : hov_containers) {

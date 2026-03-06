@@ -57,14 +57,14 @@ void Container_t::apply_style(const Style_t& new_style) {
     layout(); // Relayout with new styling
 }
 
-void Container_t::add_tile(Tile_t* tile, size_t index) {
+void Container_t::add(Tile_t* tile, size_t index) {
     if (index < tile_max) {
         tiles[index] = tile;
         tile_count++;
     }
 }
 
-void Container_t::add_tile(Tile_t* tile) {
+void Container_t::add(Tile_t* tile) {
     if (tile_count < tile_max) {
         tiles[tile_count] = tile;
         tile_count++;
@@ -265,7 +265,7 @@ void Container_t::render() {
     // Render all visible tiles
     for (size_t i = 0; i < tile_count; i++) {
         if (tiles[i] && tiles[i]->is_visible()) {
-            tiles[i]->render(ctx->renderer);
+            tiles[i]->render();
         }
     }
 }

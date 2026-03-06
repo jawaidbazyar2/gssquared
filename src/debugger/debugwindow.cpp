@@ -67,7 +67,7 @@ debug_window_t::debug_window_t(computer_t *computer) {
         toggle_panel(DEBUG_PANEL_TRACE);
         return true;
     });
-    tab_container->add_tile(s1,0);
+    tab_container->add(s1,0);
     
     Button_t* s2 = new Button_t(&ui_ctx, "Monitor", SS);
     s2->set_tile_size(70, 22);
@@ -76,7 +76,7 @@ debug_window_t::debug_window_t(computer_t *computer) {
         toggle_panel(DEBUG_PANEL_MONITOR);
         return true;
     });
-    tab_container->add_tile(s2,1);
+    tab_container->add(s2,1);
 
     Button_t* s3 = new Button_t(&ui_ctx, "Watch", SS);
     s3->set_tile_size(70, 22);
@@ -86,11 +86,11 @@ debug_window_t::debug_window_t(computer_t *computer) {
         return true;
     });
 
-    tab_container->add_tile(s3,2);
+    tab_container->add(s3,2);
 
     tab_container->layout();
 
-    mon_textinput = new TextInput_t("help", SS);
+    mon_textinput = new TextInput_t(&ui_ctx, "help", SS);
     mon_textinput->set_text_renderer(text_renderer);
     mon_textinput->set_max_length(80);
     mon_textinput->set_tile_size(600, 20);
@@ -387,7 +387,7 @@ void debug_window_t::render_pane_monitor() {
     char buffer[256] = {' '};
     draw_text(DEBUG_PANEL_MONITOR, x, textarea_pos, ">");
     mon_textinput->set_tile_position(x + 20, (textarea_pos * font_line_height));
-    mon_textinput->render(renderer);
+    mon_textinput->render();
 
     // get number of lines in mon_display_buffer
     int bufferlines = mon_display_buffer.size();

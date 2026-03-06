@@ -97,13 +97,13 @@ public:
      * @param tile Pointer to the tile to add
      * @param index Position in the container where to add the tile
      */
-    void add_tile(Tile_t* tile, size_t index);
+    void add(Tile_t* tile, size_t index);
 
     /**
      * @brief Adds a tile to the container, automatically adds to the next available index.
      * @param tile Pointer to the tile to add
      */
-    void add_tile(Tile_t* tile); 
+    void add(Tile_t* tile); 
 
     /**
      * @brief Sets the container's position.

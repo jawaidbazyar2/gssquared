@@ -48,7 +48,7 @@ Style_t CS;
             selected_system = i;
             return true;
         });
-        container->add_tile(button, i);
+        container->add(button, i);
     }
 
     container->layout();
