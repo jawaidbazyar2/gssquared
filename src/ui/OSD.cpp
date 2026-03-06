@@ -706,9 +706,10 @@ void OSD::render() {
         SDL_RenderFillRect(renderer, NULL);
 
         // Draw CP background with some opacity
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xE0);
         SDL_FRect rect = {0, 50, (float)(window_w-100), (float)(window_h-100)};
-        SDL_RenderFillRect(renderer, &rect);
+        ui_ctx.fill_rect(rect, 0xFFFFFFE0);
+        /* SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xE0);
+        SDL_RenderFillRect(renderer, &rect); */
       
         /* ----- */
 

@@ -50,10 +50,6 @@ void DiskII_Button_t::render() {
     // First, perform the base button rendering
     Button_t::render();
 
-    // Get content area position for additional rendering
-    //float content_x, content_y;
-    //get_content_position(&content_x, &content_y);
-
     // Additional rendering can be added here
     // This space intentionally left empty for manual implementation
     if ((key & 0xFF) == 0) aa->draw(DiskII_Drive1, tp.x + cp.x + 4, tp.y + cp.y + 4);
@@ -63,22 +59,19 @@ void DiskII_Button_t::render() {
 
     char text[32];
     snprintf(text, sizeof(text), "Slot %u", key.slot);
-    SDL_SetRenderDrawColor(ctx->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-    SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + 62, tp.y + cp.y + 84, text);
+    ctx->debug_text(text, tp.x + cp.x + 62, tp.y + cp.y + 84, 0xFFFFFFFF);
+
     if (/* is_hovering &&  */!status.filename.empty()) {
         float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
         SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 36, text_width+10, 16};
-        SDL_SetRenderDrawColor(ctx->renderer, 0x80, 0x80, 0xFF, 0x80);
-        SDL_RenderFillRect(ctx->renderer, &rect);
-        SDL_SetRenderDrawColor(ctx->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + text_x, tp.y + cp.y + 40, status.filename.c_str());
+        ctx->fill_rect(rect, 0x8080FF80);
+        ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 40, 0xFFFFFFFF);
     }
     if (status.is_mounted && status.motor_on) {
         // if mounted and hovering, show the track number over the drive
         char text[32];
         snprintf(text, sizeof(text), "Tr %d", status.position / 2);
-        SDL_SetRenderDrawColor(ctx->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + 68, tp.y + cp.y + 28, text);
+        ctx->debug_text(text, tp.x + cp.x + 68, tp.y + cp.y + 28, 0xFFFFFFFF);
     }
 }

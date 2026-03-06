@@ -34,48 +34,37 @@
   * @brief Renders the DiskII button with additional drive-specific elements.
   * @param renderer The SDL renderer to use.
   */
- void AppleDisk_525_Button_t::render() {
-     if (status.is_mounted) this->set_assetID(AppleDisk_525_Closed);
-     else this->set_assetID(AppleDisk_525_Open);
- 
-     // First, perform the base button rendering
-     Button_t::render();
- 
-     // Get content area position for additional rendering
-     //float content_x, content_y;
-     //get_content_position(&content_x, &content_y);
- 
-     // Additional rendering can be added here
-     // This space intentionally left empty for manual implementation
+void AppleDisk_525_Button_t::render() {
+    if (status.is_mounted) this->set_assetID(AppleDisk_525_Closed);
+    else this->set_assetID(AppleDisk_525_Open);
+
+    // First, perform the base button rendering
+    Button_t::render();
+
+    // Additional rendering can be added here
+    // This space intentionally left empty for manual implementation
     aa->draw(
         (key & 0xFF) == 0 ? Unidisk_Drive1 : Unidisk_Drive2,
         tp.x + cp.x + 130, tp.y + cp.y + 24
     );
 
-/*      if ((key & 0xFF) == 0) aa->draw(Unidisk_Drive1, tp.x + cp.x + 4, tp.y + cp.y + 4);
-     else aa->draw(Unidisk_Drive2, tp.x + cp.x + 4, tp.y + cp.y + 4);
- */ 
-     if (status.motor_on) aa->draw(DiskII_DriveLightOn, tp.x + cp.x + 150, tp.y + cp.y + 24);
+    if (status.motor_on) aa->draw(DiskII_DriveLightOn, tp.x + cp.x + 150, tp.y + cp.y + 24);
  
-     char text[32];
-     snprintf(text, sizeof(text), "Slot %u", key.slot);
-     SDL_SetRenderDrawColor(ctx->renderer, 0x00, 0x00, 0x00, 0xFF);
-     SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + 65, tp.y + cp.y + 78, text);
-     if (/* is_hovering && */ !status.filename.empty()) {
-         float text_width = (float)(status.filename.length() * 8);
-         float text_x = (float)((174 - text_width) / 2);
-         SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 36, text_width+10, 16};
-         SDL_SetRenderDrawColor(ctx->renderer, 0x80, 0x80, 0xFF, 0x80);
-         SDL_RenderFillRect(ctx->renderer, &rect);
-         SDL_SetRenderDrawColor(ctx->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-         SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + text_x, tp.y + cp.y + 40, status.filename.c_str());
-     }
-     if (status.is_mounted && status.motor_on) {
-         // if mounted and hovering, show the track number over the drive
-         char text[32];
-         snprintf(text, sizeof(text), "Tr %d", status.position / 2);
-         SDL_SetRenderDrawColor(ctx->renderer, 0x00, 0x00, 0x00, 0xFF);
-         SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + 70, tp.y + cp.y + 18, text);
-     }
- }
+    char text[32];
+    snprintf(text, sizeof(text), "Slot %u", key.slot);
+    ctx->debug_text(text, tp.x + cp.x + 65, tp.y + cp.y + 78, 0x000000FF);
+    if (/* is_hovering && */ !status.filename.empty()) {
+        float text_width = (float)(status.filename.length() * 8);
+        float text_x = (float)((174 - text_width) / 2);
+        SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 36, text_width+10, 16};
+        ctx->fill_rect(rect, 0x8080FF80);
+        ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 40, 0xFFFFFFFF);
+    }
+    if (status.is_mounted && status.motor_on) {
+        // if mounted and hovering, show the track number over the drive
+        char text[32];
+        snprintf(text, sizeof(text), "Tr %d", status.position / 2);         
+        ctx->debug_text(text, tp.x + cp.x + 70, tp.y + cp.y + 18, 0x000000FF);
+    }
+}
  

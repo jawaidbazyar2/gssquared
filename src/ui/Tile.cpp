@@ -81,34 +81,19 @@ void Tile_t::render() {
     uint32_t bcolor = (is_hovering) ? style.hover_color : style.border_color;
 
     // Draw background (includes padding area)
-   /*  SDL_SetRenderDrawColor(renderer, 
-        (style.background_color >> 24) & 0xFF,
-        (style.background_color >> 16) & 0xFF,
-        (style.background_color >> 8) & 0xFF,
-        calc_opacity(style.background_color)
-    ); */
-    
-    /* SDL_FRect tile_rect = {tp.x, tp.y, tp.w, tp.h};
-    SDL_RenderFillRect(renderer, &tile_rect); */
     ctx->fill_rect({tp.x, tp.y, tp.w, tp.h}, opaque(style.background_color));
 
     // Draw border if needed
     if (style.border_width > 0) {
         //printf("tile_t:render:hover: %d, draw border: %08X width: %d\n", (int)is_hovering,  bcolor, style.border_width);
         uint32_t color = opaque(bcolor);
-/*         SDL_SetRenderDrawColor(ctx->renderer,
-            (bcolor >> 24) & 0xFF,
-            (bcolor >> 16) & 0xFF,
-            (bcolor >> 8) & 0xFF,
-            calc_opacity(bcolor)
-        ); */
+
         for (uint32_t i = 0; i < style.border_width; i++) {
             SDL_FRect border_rect = {
                 tp.x + i, tp.y + i,
                 tp.w - 2 * i, tp.h - 2 * i
             };
             ctx->draw_rect(border_rect, color);
-            //SDL_RenderRect(ctx->renderer, &border_rect);
         }
     }
 }
@@ -156,13 +141,10 @@ void Tile_t::set_background_color(uint32_t color) { style.background_color = col
 void Tile_t::set_border_color(uint32_t color) { style.border_color = color; }
 void Tile_t::set_hover_color(uint32_t color) { style.hover_color = color; }
 
-/* void Tile_t::on_click(click_callback_t callback, void* data) {
-    click_callback = callback;
-    callback_data = data;
-} */
-
-// border is outside the content area.
-// padding is inside the content area.
+/*
+border is outside the content area.
+padding is inside the content area.
+*/
 void Tile_t::calc_content_position() {
     switch (pos_h) {
 
@@ -222,10 +204,6 @@ void Tile_t::do_click(const SDL_Event& event) {
         click_callback_h(event);
     }
 }
-
-/* void Tile_t::set_text_renderer(TextRenderer *text_render) {
-    this->text_render = text_render;
-} */
 
 void Tile_t::set_opacity(int o) {
     opacity = o;

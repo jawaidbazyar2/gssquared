@@ -174,11 +174,6 @@ protected:
     UI_Rect tp;                  // tile position - does not include padding or border
     UI_Rect cp;                  // content position - if content is smaller than tp
 
-    //float x, y;                  // Position of the entire tile
-    //float w, h;                  // Total size including padding and border
-    //float content_w, content_h;  // Size of the content area
-    //float content_x, content_y;  // Position of the content area
-
     ContentPosition_t pos_h = CP_LEFT, pos_v = CP_TOP;
     bool visible = true;
     bool active = true;
@@ -186,6 +181,5 @@ protected:
     click_callback_t click_callback = nullptr;
     EventHandler click_callback_h = nullptr;
     void* callback_data = nullptr;
-    //TextRenderer *text_render = nullptr;
 
 }; 

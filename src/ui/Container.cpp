@@ -235,30 +235,17 @@ void Container_t::render() {
     uint32_t bgcolor = (is_hovering) ? style.hover_color : style.background_color;
 
     // Draw container background
-    SDL_SetRenderDrawColor(ctx->renderer, 
-        (bgcolor >> 24) & 0xFF,
-        (bgcolor >> 16) & 0xFF,
-        (bgcolor >> 8) & 0xFF,
-        bgcolor & 0xFF
-    );
-    
     SDL_FRect container_rect = {x, y, w, h};
-    SDL_RenderFillRect(ctx->renderer, &container_rect);
+    ctx->fill_rect(container_rect, bgcolor);
 
     // Draw border if needed
     if (style.border_width > 0) {
-        SDL_SetRenderDrawColor(ctx->renderer,
-            (style.border_color >> 24) & 0xFF,
-            (style.border_color >> 16) & 0xFF,
-            (style.border_color >> 8) & 0xFF,
-            style.border_color & 0xFF
-        );
         for (uint32_t i = 0; i < style.border_width; i++) {
             SDL_FRect border_rect = {
                 x + i, y + i,
                 w - 2 * i, h - 2 * i
             };
-            SDL_RenderRect(ctx->renderer, &border_rect);
+            ctx->draw_rect(border_rect, style.border_color);
         }
     }
 

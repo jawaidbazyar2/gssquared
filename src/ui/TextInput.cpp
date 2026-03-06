@@ -102,6 +102,20 @@ void TextInput_t::set_enter_handler(EventHandler handler) {
     enter_handler = handler;
 }
 
+inline uint32_t TextInput_t::dim(uint32_t color, float level) {
+    float r,g,b,a;
+    r = (color & 0xFF000000) >> 24;
+    g = (color & 0x00FF0000) >> 16;
+    b = (color & 0x0000FF00) >> 8;
+    a = (color & 0x000000FF);
+
+    r = r * 0.7;
+    g = g * 0.7;
+    b = b * 0.7;
+
+    return ((int)r << 24) | ((int)g << 16) | ((int)b << 8) | (int)a;
+}
+
 void TextInput_t::render() {
     int text_line = 0;
     if (text_renderer == nullptr) {
@@ -115,21 +129,11 @@ void TextInput_t::render() {
     // take padding, border etc into account
     int eff_x = tp.x + style.padding + style.border_width;
 
+    uint32_t bgcolor = (edit_active) ? style.background_color : dim(style.background_color, 0.7) ;
+
     // draw the background
-    int r,g,b,a;
-    r = (style.background_color & 0xFF000000) >> 24;
-    g = (style.background_color & 0x00FF0000) >> 16;
-    b = (style.background_color & 0x0000FF00) >> 8;
-    a = (style.background_color & 0x000000FF);
-    if (!edit_active) {
-        r = r * 0.7;
-        g = g * 0.7;
-        b = b * 0.7;
-        //a = a * 0.4;
-    }
-    SDL_SetRenderDrawColor(ctx->renderer, r, g, b, a);
     SDL_FRect eb = {tp.x, tp.y, tp.w, tp.h};
-    SDL_RenderFillRect(ctx->renderer, &eb);
+    ctx->fill_rect(eb, bgcolor);
 
     // first, render what is in the text input area.    
     text_renderer->render(text, eff_x, tp.y + style.padding);
@@ -137,9 +141,7 @@ void TextInput_t::render() {
     // now, render the text input cursor.
     if (cursor_state < 30 && edit_active) {
         int cursor_x = eff_x + cursor_pixel_pos;
-        SDL_SetRenderDrawColor(ctx->renderer, 255, 255, 255, 255);
-        SDL_RenderLine(ctx->renderer, cursor_x, tp.y, cursor_x, tp.y + font_line_height);
-        SDL_SetRenderDrawColor(ctx->renderer, 0, 0, 0, 255);
+        ctx->line(cursor_x, tp.y, cursor_x, tp.y + font_line_height, 0xFFFFFFFF);
     }
 }
 

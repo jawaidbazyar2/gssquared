@@ -42,28 +42,21 @@ void Unidisk_Button_t::render() {
     // First, perform the base button rendering
     Button_t::render();
 
-    // Get content area position for additional rendering
-    //float content_x, content_y;
-    //get_content_position(&content_x, &content_y);
-
     // Additional rendering can be added here
     if ((key & 0xFF) == 0) aa->draw(Unidisk_Drive1, tp.x + cp.x + 11, tp.y + cp.y + 31);
     else aa->draw(Unidisk_Drive2, tp.x + cp.x + 11, tp.y + cp.y + 31);
  
     if (status.motor_on) aa->draw(Unidisk_Light, tp.x + cp.x, tp.y + cp.y + 30);
 
-    SDL_SetRenderDrawColor(ctx->renderer, 0x00, 0x00, 0x00, 0xFF);
     char text[32];
     snprintf(text, sizeof(text), "Slot %u", key.slot);
-    SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + 62, tp.y + cp.y + 75, text);
+    ctx->debug_text(text, tp.x + cp.x + 62, tp.y + cp.y + 75, 0x000000FF);
     
     if (/* is_hovering &&  */!status.filename.empty()) {
         float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
         SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 40, text_width+10, 16};
-        SDL_SetRenderDrawColor(ctx->renderer, 0x80, 0x80, 0xFF, 0x80);
-        SDL_RenderFillRect(ctx->renderer, &rect);
-        SDL_SetRenderDrawColor(ctx->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_RenderDebugText(ctx->renderer, tp.x + cp.x + text_x, tp.y + cp.y + 44, status.filename.c_str());
+        ctx->fill_rect(rect, 0x8080FF80);
+        ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 44, 0xFFFFFFFF);
     }
 }

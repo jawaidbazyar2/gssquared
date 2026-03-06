@@ -20,7 +20,6 @@
 #include <SDL3/SDL.h>
 #include "Button.hpp"
 #include "StorageButton.hpp"
-#include "util/mount.hpp"
 
 /**
  * @brief A specialized button class for Unidisk drive interface.

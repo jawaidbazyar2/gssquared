@@ -7,6 +7,7 @@ class TextInput_t : public Tile_t {
 public:
     TextInput_t(UIContext *ctx, const std::string& text, const Style_t& style = Style_t());
     void render() override;
+    inline uint32_t dim(uint32_t color, float level);
     //void on_click(const SDL_Event& event) override;
     void set_text_renderer(TextRenderer* text_renderer);
     void set_text(const std::string& text);

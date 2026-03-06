@@ -36,18 +36,29 @@ struct UIContext {
     AssetAtlas_t *asset_atlas   = nullptr;
 
     // In UIContext (or a companion DrawCtx helper)
-    void fill_rect(SDL_FRect rect, uint32_t rgba) {
+
+    inline void color(uint32_t rgba) {
         SDL_SetRenderDrawColor(renderer,
             (rgba >> 24) & 0xFF, (rgba >> 16) & 0xFF,
             (rgba >> 8)  & 0xFF,  rgba & 0xFF);
+    }
+
+    inline void fill_rect(SDL_FRect rect, uint32_t rgba) {
+        color(rgba);
         SDL_RenderFillRect(renderer, &rect);
     }
 
-    void draw_rect(SDL_FRect rect, uint32_t rgba) {
-        SDL_SetRenderDrawColor(renderer,
-            (rgba >> 24) & 0xFF, (rgba >> 16) & 0xFF,
-            (rgba >> 8)  & 0xFF,  rgba & 0xFF);
+    inline void draw_rect(SDL_FRect rect, uint32_t rgba) {
+        color(rgba);
         SDL_RenderRect(renderer, &rect);
     }
+    inline void line(int x1, int y1, int x2, int y2, uint32_t rgba) {
+        color(rgba);
+        SDL_RenderLine(renderer, x1, y1, x2, y2);
+    }
 
+    inline void debug_text(const char *text, int x, int y, uint32_t rgba) {
+        color(rgba);
+        SDL_RenderDebugText(renderer, x, y, text);
+    }
 };

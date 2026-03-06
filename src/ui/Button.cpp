@@ -116,23 +116,11 @@ void Button_t::render() {
     // Restore original background color
     style.background_color = original_bg_color;
 
-    // Get content area position and size
-    //float content_x, content_y;
-    //get_content_position(&content_x, &content_y);
-
     // Draw button-specific content (text or image)
     if (buttonType == BT_Text) {
         if (ctx->text_render == nullptr) {
-            SDL_SetRenderDrawColor(ctx->renderer,
-                (style.text_color >> 24) & 0xFF,
-                (style.text_color >> 16) & 0xFF,
-                (style.text_color >> 8) & 0xFF,
-                calc_opacity(style.text_color)
-            );
-            /* int wid = (strlen(text.c_str()) * SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE);
-            int hei = SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE; */
-            //SDL_RenderDebugText(renderer, tp.x + cp.x + (tp.w - wid) / 2, tp.y + cp.y + (tp.h - hei) / 2, text.c_str());
-            SDL_RenderDebugText(ctx->renderer, tp.x + cp.x, tp.y + cp.y, text.c_str());
+            uint32_t color = opaque(style.text_color);
+            ctx->debug_text(text.c_str(), tp.x + cp.x, tp.y + cp.y, color);
         } else {
             /* if (cp.w == -1) {
                 cp.w = 
@@ -140,7 +128,6 @@ void Button_t::render() {
             } */
 
             ctx->text_render->set_color((style.text_color >> 24) & 0xFF, (style.text_color >> 16) & 0xFF, (style.text_color >> 8) & 0xFF, calc_opacity(style.text_color)); 
-            //text_render->render(text, tp.x +cp.x + (cp.w /2), tp.y + cp.y, TEXT_ALIGN_CENTER);
             ctx->text_render->render(text, tp.x +cp.x, tp.y + cp.y, TEXT_ALIGN_LEFT);
         }
     } else if (buttonType == BT_Atlas) {

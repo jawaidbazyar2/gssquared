@@ -193,10 +193,9 @@ void debug_window_t::execute_command(const std::string& command) {
 }
 
 void debug_window_t::separator_line(debug_panel_t pane, int y) {
-    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
     int x = pane_area[pane].x;
     int w = pane_area[pane].w;
-    SDL_RenderLine(renderer, x, (y*font_line_height)-3, x+w, (y*font_line_height)-3);
+    ui_ctx.line(x, (y*font_line_height)-3, x+w, (y*font_line_height)-3, 0xFFFFFFFF);
 }
 
 void debug_window_t::draw_text(debug_panel_t pane, int x,int y, const char *textToShow) {
@@ -288,9 +287,9 @@ void debug_window_t::render_pane_trace() {
         step_disasm->setAddress(cpu->full_pc);
         std::vector<std::string> disasm_lines = step_disasm->disassemble(disasm_displayed);
         // first line of disassembly is current unexecuted instruction. highlight the background. in white.
-        SDL_SetRenderDrawColor(renderer, 0x60, 0x60, 0x60, 0xFF);
+        
         SDL_FRect hl_rect = {0, (float)(8 + trace_displayed)*font_line_height, 750, (float)font_line_height};
-        SDL_RenderFillRect(renderer, &hl_rect);
+        ui_ctx.fill_rect(hl_rect, 0x606060FF);
         text_renderer->set_color(0, 255, 255, 255);
         for (int i = 0; i < disasm_lines.size(); i++) {
             draw_text(DEBUG_PANEL_TRACE, x, 8 + trace_displayed + i, disasm_lines[i].c_str());
@@ -345,8 +344,7 @@ void debug_window_t::render_pane_trace() {
     }
     
     separator_line(DEBUG_PANEL_TRACE, 8);
-
-    SDL_RenderLine(renderer, w + x -1.0f, 0, w + x -1.0f, window_height);
+    ui_ctx.line(w + x -1.0f, 0, w + x -1.0f, window_height, 0xFFFFFFFF);
 
     // draw location bar (not exactly a scrollbar)
     // Calculate number of lines entries distance of view_position is from tail
@@ -356,11 +354,11 @@ void debug_window_t::render_pane_trace() {
     float bar_fraction = 1 - (float)view_position / buffer_size; // it's the inverse of the fraction since we want it to be at the bottom
     float bar_divider = (bar_fraction * bar_height);
     SDL_FRect bar_rect = {w + x - 10.0f, (float)control_area_height, 10.0f, bar_height};
-    SDL_RenderRect(renderer, &bar_rect);
+    ui_ctx.draw_rect(bar_rect, 0x00FFFFFF);
+
     bar_rect.y = control_area_height + bar_divider;
     bar_rect.h = bar_height - bar_divider;
-    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-    SDL_RenderFillRect(renderer, &bar_rect);
+    ui_ctx.fill_rect(bar_rect, 0x00FFFFFF);
 }
 
 void debug_window_t::render_pane_monitor() {
@@ -522,14 +520,14 @@ void debug_window_t::render() {
 
     // end of update
 
-    SDL_SetRenderDrawColor(renderer, 0,0,0, 255);
+    ui_ctx.color(0x000000FF);
     SDL_RenderClear(renderer);
 
     for (Container_t *container : containers) {
         container->render();
     }
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    ui_ctx.color(0xFFFFFFFF);
     text_renderer->set_color(255, 255, 255, 255);
 
     if (panel_visible[DEBUG_PANEL_TRACE]) {
@@ -697,8 +695,6 @@ void debug_window_t::set_open() {
     window_open = true;
     computer->video_system->show(window);
     computer->video_system->raise(window);
-    //SDL_ShowWindow(window);
-    //SDL_RaiseWindow(window);
 }
 
 void debug_window_t::set_closed() {
@@ -711,9 +707,6 @@ void debug_window_t::set_closed() {
     disasm = nullptr;
     delete step_disasm;
     step_disasm = nullptr;
-
-    // SDL_HideWindow(window);
-    // SDL_RaiseWindow(video_system->window);
 }
 
 void debug_window_t::resize_window() {
