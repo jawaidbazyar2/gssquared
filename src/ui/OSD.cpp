@@ -146,58 +146,6 @@ void unidisk_button_click(void *userdata) {
         false);
 }
 
-void set_color_display_ntsc(void *data) {
-    printf("set_color_display_ntsc %p\n", data);
-    display_state_t *ds = (display_state_t *)data;
-    ds->video_system->set_display_engine(DM_ENGINE_NTSC);
-}
-
-void set_color_display_rgb(void *data) {
-    printf("set_color_display_rgb %p\n", data);
-    display_state_t *ds = (display_state_t *)data;
-    ds->video_system->set_display_engine(DM_ENGINE_RGB);
-}
-
-void set_green_display(void *data) {
-    printf("set_green_display %p\n", data);
-    display_state_t *ds = (display_state_t *)data;
-    ds->video_system->set_display_mono_color(DM_MONO_GREEN);
-    ds->video_system->set_display_engine(DM_ENGINE_MONO);
-}
-
-void set_amber_display(void *data) {
-    printf("set_amber_display %p\n", data);
-    display_state_t *ds = (display_state_t *)data;
-    ds->video_system->set_display_mono_color(DM_MONO_AMBER);
-    ds->video_system->set_display_engine(DM_ENGINE_MONO);
-}
-
-void set_white_display(void *data) {
-    printf("set_white_display %p\n", data);
-    display_state_t *ds = (display_state_t *)data;
-    ds->video_system->set_display_mono_color(DM_MONO_WHITE);
-    ds->video_system->set_display_engine(DM_ENGINE_MONO);
-}
-
-void click_reset_cpu(void *data) {
-    printf("click_reset_cpu %p\n", data);
-    
-    computer_t *computer = (computer_t *)data;
-    computer->reset(false);
-}
-
-void close_btn_click(void *data) {
-    printf("close_btn_click %p\n", data);
-    OSD *osd = (OSD *)data;
-    osd->close_panel();
-}
-
-void open_btn_click(void *data) {
-    printf("open_btn_click %p\n", data);
-    OSD *osd = (OSD *)data;
-    osd->open_panel();
-}
-
 void modal_diskii_click(void *data) {
     diskii_modal_callback_data_t *d = (diskii_modal_callback_data_t *)data;
     printf("modal_diskii_click %p %llu\n", data, u64_t(d->key));
@@ -267,13 +215,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     SC.border_width = 2;
     SC.hover_color = 0x008080FF;
     SC.padding = 4;
-    /* Style_t SS;
-    SS.background_color = 0x0084C6FF;
-    SS.border_color = 0xFFFFFFFF;
-    SS.hover_color = 0x606060FF;
-    SS.text_color = 0xFFFFFFFF;
-    SS.padding = 4;
-    SS.border_width = 1; */
     Style_t HUD;
     HUD.background_color = 0x00000000;
     HUD.border_color = 0x000000FF;
@@ -430,18 +371,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     speed_con->add_tile(speed_btn_14);
     speed_con->add_tile(speed_btn_8);
     speed_con->layout();
-
-   /*  Container_t *gen_con = new Container_t(renderer, 10, SC);
-    gen_con->set_position(5, 100);
-    gen_con->set_tile_size(65, 300);
-    Button_t *b1 = new Button_t(aa, ResetButton, CB);
-    b1->on_click([this,computer](const SDL_Event& event) -> bool {
-        computer->reset(false);
-        return true;
-    });
-    gen_con->add_tile(b1, 0);
-    gen_con->layout();
-    containers.push_back(gen_con); */
 
     Style_t ModalStyle;
     ModalStyle.background_color = 0xFFFFFFFF;
@@ -631,8 +560,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         }
         return true;
     });
-
-
 }
 
 OSD::~OSD() {
@@ -684,7 +611,6 @@ void OSD::update() {
     }
 
     // update disk status - iterate over all drives based on what's in slots
-    //uint64_t key_mask = 0;
     uint16_t key_slot_match = 0;
     // two pass. First, update buttons and calculate the key mask. (the lit drive could have been the previous one, hence 2-pass.)
     for (int i = 0; i < drive_container->get_tile_count(); i++) {
@@ -765,8 +691,7 @@ void OSD::render() {
 
     /** if current Status is out, don't draw. If status is in transition or IN, draw. */
     if (currentSlideStatus == SLIDE_IN || (slideStatus && (currentSlideStatus != slideStatus))) {
-/*         float ox,oy;
-        SDL_GetRenderScale(renderer, &ox, &oy); */
+
         SDL_SetRenderScale(renderer, 1.0,1.0); // TODO: calculate these based on window size
 
         /* ----- */
@@ -796,8 +721,6 @@ void OSD::render() {
 
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-/*         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
-        title_trender->render("Control Panel", 100, 50); */
         system_badge->render(renderer);
         text_render->set_color(0, 0, 0, 0xFF);
         text_render->render(system_config->name, 220, 70, TEXT_ALIGN_LEFT);
@@ -840,18 +763,6 @@ void OSD::render() {
 
     if (currentSlideStatus == SLIDE_OUT) {
         SDL_SetRenderScale(renderer, 1,1);       // TODO: calculate these based on window size
-
-        //render_heads_up_message();
-
-       /*  if (headsUpMessageCount) { // set it to 512 for instance to sit at full opacity for 4 seconds then fade out over 4ish seconds.
-            int opacity = headsUpMessageCount < 255 ? headsUpMessageCount : 255;
-            //SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, opacity);
-            text_render->set_color(0xFF, 0xFF, 0xFF, opacity);
-            text_render->render(headsUpMessageText, window_width/2, 30, TEXT_ALIGN_CENTER);
-            
-            headsUpMessageCount -= 3;
-            if (headsUpMessageCount < 0) headsUpMessageCount = 0;
-        } */
 
         open_btn->render(renderer); // this now takes care of its own fade-out.
 
