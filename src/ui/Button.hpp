@@ -20,7 +20,7 @@
 #include <string>
 #include "Tile.hpp"
 #include "AssetAtlas.hpp"
-#include "util/TextRenderer.hpp"
+#include "UIContext.hpp"
 
 /**
  * @brief Enumeration of button types.
@@ -71,22 +71,22 @@ public:
     Button_t(const std::string& button_text, const Style_t& style = Style_t(), int group = 0);
     
     /**
-     * @brief Constructs a text button with style.
+     * @brief Constructs a text button with style using a rendering context.
      * @param button_text The text to display
-     * @param text_render Pointer to the text renderer
+     * @param ctx Shared UI rendering context (provides text renderer)
      * @param style The button's style settings
      * @param group The button group ID
      */
-    Button_t(const std::string& button_text, TextRenderer *tr, const Style_t& style = Style_t(), int group = 0);
+    Button_t( UIContext *ctx, const std::string& button_text, const Style_t& style = Style_t(), int group = 0);
 
     /**
-     * @brief Constructs an image button with style.
-     * @param assetp Pointer to the asset atlas
+     * @brief Constructs an image button with style using a rendering context.
+     * @param ctx Shared UI rendering context (provides asset atlas)
      * @param assetID ID of the asset in the atlas
      * @param style The button's style settings
      * @param group The button group ID
      */
-    Button_t(AssetAtlas_t* assetp, int assetID, const Style_t& style = Style_t(), int group = 0);
+    Button_t(UIContext *ctx, int assetID, const Style_t& style = Style_t(), int group = 0);
 
     /**
      * @brief Constructs a text button without style.
@@ -94,14 +94,6 @@ public:
      * @param group The button group ID
      */
     Button_t(const std::string& button_text, int group = 0);
-
-    /**
-     * @brief Constructs an image button without style.
-     * @param assetp Pointer to the asset atlas
-     * @param assetID ID of the asset in the atlas
-     * @param group The button group ID
-     */
-    Button_t(AssetAtlas_t* assetp, int assetID, int group = 0);
 
     /**
      * @brief Sets the asset ID for image buttons.
@@ -131,5 +123,5 @@ protected:
     /**
      * @brief Called when the button is clicked.
      */
-    void on_click(const SDL_Event& event) override;
+    void do_click(const SDL_Event& event) override;
 }; 

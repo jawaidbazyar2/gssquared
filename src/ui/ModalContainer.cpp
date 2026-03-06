@@ -17,15 +17,15 @@
 
 #include <SDL3/SDL.h>
 #include "ModalContainer.hpp"
-#include "util/TextRenderer.hpp"
+#include "UIContext.hpp"
 #include "util/StorageDevice.hpp"
 
-ModalContainer_t::ModalContainer_t(SDL_Renderer *rendererp, TextRenderer *text_render, size_t max_tiles, const char* msg_text, const Style_t& initial_style)
-    : Container_t(rendererp, max_tiles, initial_style), msg_text(msg_text), text_render(text_render) {
+ModalContainer_t::ModalContainer_t(UIContext *ctx, size_t max_tiles, const char* msg_text, const Style_t& initial_style)
+    : Container_t(ctx, max_tiles, initial_style), msg_text(msg_text) {
 }
 
-ModalContainer_t::ModalContainer_t(SDL_Renderer *rendererp, TextRenderer *text_render, size_t max_tiles, const char* msg_text)
-    : Container_t(rendererp, max_tiles), msg_text(msg_text), text_render(text_render) {
+ModalContainer_t::ModalContainer_t(UIContext *ctx, size_t max_tiles, const char* msg_text)
+    : Container_t(ctx, max_tiles), msg_text(msg_text) {
 }
 
 void ModalContainer_t::layout() {
@@ -64,8 +64,8 @@ void ModalContainer_t::render() {
         //printf("Modal Message: %s\n", msg_text.c_str());
         float content_x = (w - strlen(msg_text.c_str()) * SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE) / 2;
         //printf("content_x: %f X: %f Y: %f %s %08X\n", content_x, x, y, msg_text.c_str(), style.text_color);
-        text_render->set_color(style.text_color >> 24, style.text_color >> 16, style.text_color >> 8, style.text_color & 0xFF);
-        text_render->render(msg_text, x + (w / 2), y + 30, TEXT_ALIGN_CENTER );
+        ctx->text_render->set_color(style.text_color >> 24, style.text_color >> 16, style.text_color >> 8, style.text_color & 0xFF);
+        ctx->text_render->render(msg_text, x + (w / 2), y + 30, TEXT_ALIGN_CENTER );
     }
 }
 

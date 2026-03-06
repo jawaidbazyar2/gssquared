@@ -38,6 +38,7 @@
 #include "util/mount.hpp"
 #include "util/strndup.h"
 #include "ModalContainer.hpp"
+#include "UIContext.hpp"
 #include "util/printf_helper.hpp"
 #include "paths.hpp"
 #include "util/MenuInterface.h"
@@ -240,6 +241,8 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     text_render->set_color(0xFF, 0xFF, 0xFF, 0xFF);
     title_trender->set_color(0, 0, 0, 0xFF);
 
+    ui_ctx = { renderer, text_render, title_trender, aa };
+
     Style_t CS;
     CS.padding = 4;
     CS.border_width = 2;
@@ -277,7 +280,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     HUD.border_width = 0;
 
     // Create a container for our drive buttons
-    drive_container = new Container_t(renderer, 10, DC);
+    drive_container = new Container_t(&ui_ctx, 10, DC);
     drive_container->set_position(600, 70);
     drive_container->set_tile_size(415, 600);
     containers.push_back(drive_container);
@@ -286,7 +289,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     // Get all registered drives from the Mounts system
     const std::vector<drive_info_t>& drives = computer->mounts->get_all_drives();
     
-    int tile_id = 0;
     bool has_hud_drives = false;
     
     // Create buttons for each registered drive
@@ -297,18 +299,26 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
 
         // Create the appropriate button type based on drive_type
         if (drive.drive_type == DRIVE_TYPE_DISKII) {
-            button = new DiskII_Button_t(aa, DiskII_Open, DS);
-            button->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, drive.key});
+            button = new DiskII_Button_t(&ui_ctx, DiskII_Open, DS);
+            button->on_click([this, drive](const SDL_Event& event) -> bool {
+                diskii_button_click(new diskii_callback_data_t{this, drive.key});
+                return true;
+            });
         } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_525) {
-            button = new AppleDisk_525_Button_t(aa, AppleDisk_525_Open, DS);
-            button->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, drive.key});
+            button = new AppleDisk_525_Button_t(&ui_ctx, AppleDisk_525_Open, DS);
+            button->on_click([this, drive](const SDL_Event& event) -> bool {
+                diskii_button_click(new diskii_callback_data_t{this, drive.key});
+                return true;
+            });
         } else if (drive.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-            button = new Unidisk_Button_t(aa, Unidisk_Face, DS);
-            button->set_click_callback(unidisk_button_click, new diskii_callback_data_t{this, drive.key});
+            button = new Unidisk_Button_t(&ui_ctx, Unidisk_Face, DS);
+            button->on_click([this, drive](const SDL_Event& event) -> bool {
+                unidisk_button_click(new diskii_callback_data_t{this, drive.key});
+                return true;
+            });
         }
         button->set_key(drive.key);
-        button->set_click_callback(diskii_button_click, new diskii_callback_data_t{this, drive.key});
-        drive_container->add_tile(button, tile_id++);
+        drive_container->add_tile(button);
     }
     // Initial layout for drive container
     drive_container->layout();
@@ -318,13 +328,13 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
      this needs to be dynamic, based on which slot is active at any given time.
      Create HUD drive container for first DiskII slot found 
     */
-    hud_drive_container = new Container_t(renderer, 10, HUD);
+    hud_drive_container = new Container_t(&ui_ctx, 10, HUD);
     hud_drive_container->set_position(340, 800);
     hud_drive_container->set_tile_size(420, 120);
     hud_drive_container->layout();
 
     // Create another container, this one for slots.
-    Container_t *slot_container = new Container_t(renderer, 8, SC);  // Container for 8 slot buttons
+    Container_t *slot_container = new Container_t(&ui_ctx, 8, SC);  // Container for 8 slot buttons
     slot_container->set_position(30, 140);
     slot_container->set_tile_size(320, 304);
 
@@ -332,7 +342,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         char slot_text[128];
         snprintf(slot_text, sizeof(slot_text), "Slot %d: %s", i, slot_manager->get_device(static_cast<SlotType_t>(i))->name);
         //Button_t* slot = new Button_t(slot_text, text_render, SS);
-        SlotButton *slot = new SlotButton(aa, 0, text_render, 0, i, slot_manager);
+        SlotButton *slot = new SlotButton(&ui_ctx, 0, 0, i, slot_manager);
         //slot->set_text_renderer(text_render); // set text renderer for the button
         slot->set_tile_size(300, 30);
         slot_container->add_tile(slot, 7 - i);    // Add in reverse order (7 to 0)
@@ -340,7 +350,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     slot_container->layout();
     containers.push_back(slot_container);
 
-    Container_t *mon_color_con = new Container_t(renderer, 5, SC);
+    Container_t *mon_color_con = new Container_t(&ui_ctx, 5, SC);
     mon_color_con->set_position(100, 510);
     mon_color_con->set_tile_size(320, 65);
     containers.push_back(mon_color_con);
@@ -350,67 +360,82 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     CB.border_width = 1;
     CB.border_color = 0x000000FF;
     CB.padding = 2;
-    Button_t *mc1 = new Button_t(aa, ColorDisplayButton, CB);
-    Button_t *mc2 = new Button_t(aa, RGBDisplayButton, CB);
-    Button_t *mc3 = new Button_t(aa, GreenDisplayButton, CB);
-    Button_t *mc4 = new Button_t(aa, AmberDisplayButton, CB);
-    Button_t *mc5 = new Button_t(aa, WhiteDisplayButton, CB);
+    Button_t *mc1 = new Button_t(&ui_ctx, ColorDisplayButton, CB);
+    Button_t *mc2 = new Button_t(&ui_ctx, RGBDisplayButton, CB);
+    Button_t *mc3 = new Button_t(&ui_ctx, GreenDisplayButton, CB);
+    Button_t *mc4 = new Button_t(&ui_ctx, AmberDisplayButton, CB);
+    Button_t *mc5 = new Button_t(&ui_ctx, WhiteDisplayButton, CB);
     display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
-    mc1->set_click_callback(set_color_display_ntsc, ds);
-    mc2->set_click_callback(set_color_display_rgb, ds);
-    mc3->set_click_callback(set_green_display, ds);
-    mc4->set_click_callback(set_amber_display, ds);
-    mc5->set_click_callback(set_white_display, ds);
-    mon_color_con->add_tile(mc1, 0);
-    mon_color_con->add_tile(mc2, 1);
-    mon_color_con->add_tile(mc3, 2);
-    mon_color_con->add_tile(mc4, 3);
-    mon_color_con->add_tile(mc5, 4);
+    mc1->on_click([ds](const SDL_Event& event) -> bool {
+        getMenuInterface()->setMonitor(MONITOR_COMPOSITE);
+        return true;
+    });
+    mc2->on_click([ds](const SDL_Event& event) -> bool {
+        getMenuInterface()->setMonitor(MONITOR_GS_RGB);
+        return true;
+    });
+    mc3->on_click([ds](const SDL_Event& event) -> bool {
+        getMenuInterface()->setMonitor(MONITOR_MONO_GREEN);
+        return true;
+    });
+    mc4->on_click([ds](const SDL_Event& event) -> bool {
+        getMenuInterface()->setMonitor(MONITOR_MONO_AMBER);
+        return true;
+    });
+    mc5->on_click([ds](const SDL_Event& event) -> bool {
+        getMenuInterface()->setMonitor(MONITOR_MONO_WHITE);
+        return true;
+    });
+    mon_color_con->add_tile(mc1);
+    mon_color_con->add_tile(mc2);
+    mon_color_con->add_tile(mc3);
+    mon_color_con->add_tile(mc4);
+    mon_color_con->add_tile(mc5);
     mon_color_con->layout();
 
-    Container_t *speed_con = new Container_t(renderer, 6, SC);
+    Container_t *speed_con = new Container_t(&ui_ctx, 6, SC);
     speed_con->set_position(100, 450);
     speed_con->set_tile_size(320, 65);
     containers.push_back(speed_con);
 
-    speed_btn_10 = new Button_t(aa, MHz1_0Button, CB);
-    speed_btn_28 = new Button_t(aa, MHz2_8Button, CB);
-    speed_btn_71 = new Button_t(aa, MHz7_159Button, CB);
-    speed_btn_14 = new Button_t(aa, MHz14_318Button, CB);
-    speed_btn_8 = new Button_t(aa, MHzInfinityButton, CB);
+    speed_btn_10 = new Button_t(&ui_ctx, MHz1_0Button, CB);
+    speed_btn_28 = new Button_t(&ui_ctx, MHz2_8Button, CB);
+    speed_btn_71 = new Button_t(&ui_ctx, MHz7_159Button, CB);
+    speed_btn_14 = new Button_t(&ui_ctx, MHz14_318Button, CB);
+    speed_btn_8 = new Button_t(&ui_ctx, MHzInfinityButton, CB);
     
-    speed_btn_10->set_click_callback([this](const SDL_Event& event) -> bool {
+    speed_btn_10->on_click([this](const SDL_Event& event) -> bool {
         this->clock->set_clock_mode(CLOCK_1_024MHZ);
         return true;
     });
-    speed_btn_28->set_click_callback([this](const SDL_Event& event) -> bool {
+    speed_btn_28->on_click([this](const SDL_Event& event) -> bool {
         this->clock->set_clock_mode(CLOCK_2_8MHZ);
         return true;
     });
-    speed_btn_71->set_click_callback([this](const SDL_Event& event) -> bool {
+    speed_btn_71->on_click([this](const SDL_Event& event) -> bool {
         this->clock->set_clock_mode(CLOCK_7_159MHZ);
         return true;
     });
-    speed_btn_14->set_click_callback([this](const SDL_Event& event) -> bool {
+    speed_btn_14->on_click([this](const SDL_Event& event) -> bool {
         this->clock->set_clock_mode(CLOCK_14_3MHZ);
         return true;
     });
-    speed_btn_8->set_click_callback([this](const SDL_Event& event) -> bool {
+    speed_btn_8->on_click([this](const SDL_Event& event) -> bool {
         this->clock->set_clock_mode(CLOCK_FREE_RUN);
         return true;
     });
-    speed_con->add_tile(speed_btn_10, 0);
-    speed_con->add_tile(speed_btn_28, 1);
-    speed_con->add_tile(speed_btn_71, 2);
-    speed_con->add_tile(speed_btn_14, 3);
-    speed_con->add_tile(speed_btn_8, 4);
+    speed_con->add_tile(speed_btn_10);
+    speed_con->add_tile(speed_btn_28);
+    speed_con->add_tile(speed_btn_71);
+    speed_con->add_tile(speed_btn_14);
+    speed_con->add_tile(speed_btn_8);
     speed_con->layout();
 
    /*  Container_t *gen_con = new Container_t(renderer, 10, SC);
     gen_con->set_position(5, 100);
     gen_con->set_tile_size(65, 300);
     Button_t *b1 = new Button_t(aa, ResetButton, CB);
-    b1->set_click_callback([this,computer](const SDL_Event& event) -> bool {
+    b1->on_click([this,computer](const SDL_Event& event) -> bool {
         computer->reset(false);
         return true;
     });
@@ -425,7 +450,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     ModalStyle.border_color = 0xFF0000FF;
     ModalStyle.padding = 2;
     
-    diskii_save_con = new ModalContainer_t(renderer, text_render, 10, "Disk Data has been modified. Save?", ModalStyle);
+    diskii_save_con = new ModalContainer_t(&ui_ctx, 10, "Disk Data has been modified. Save?", ModalStyle);
     diskii_save_con->set_position(300, 200);
     diskii_save_con->set_tile_size(500, 200);
 
@@ -437,37 +462,53 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     TextButtonCfg.border_color = 0x000000FF;
     TextButtonCfg.padding = 2;
     
-    save_btn = new Button_t("Save", text_render, TextButtonCfg);
-    save_as_btn = new Button_t("Save As", text_render, TextButtonCfg);
-    discard_btn = new Button_t("Discard", text_render, TextButtonCfg);
-    cancel_btn = new Button_t("Cancel", text_render, TextButtonCfg);
+    save_btn = new Button_t(&ui_ctx, "Save", TextButtonCfg);
+    save_as_btn = new Button_t(&ui_ctx, "Save As", TextButtonCfg);
+    discard_btn = new Button_t(&ui_ctx, "Discard", TextButtonCfg);
+    cancel_btn = new Button_t(&ui_ctx, "Cancel", TextButtonCfg);
     save_btn->set_tile_size(100, 30);
     save_as_btn->set_tile_size(100, 30);
     discard_btn->set_tile_size(100, 30);
     cancel_btn->set_tile_size(100, 30);
 
-    save_btn->set_click_callback(modal_diskii_click, new diskii_modal_callback_data_t{this, diskii_save_con, 1});
+    save_btn->on_click(
+        [this](const SDL_Event& event) -> bool {
+            modal_diskii_click(new diskii_modal_callback_data_t{this, diskii_save_con, 1});
+            return true;
+        }
+    );
+    discard_btn->on_click([this](const SDL_Event& event) -> bool {
+        modal_diskii_click(new diskii_modal_callback_data_t{this, diskii_save_con, 3});
+        return true;
+    });
+    cancel_btn->on_click([this](const SDL_Event& event) -> bool {
+        modal_diskii_click(new diskii_modal_callback_data_t{this, diskii_save_con, 4});
+        return true;
+    });
+    diskii_save_con->add_tile(save_btn);
 
-    discard_btn->set_click_callback(modal_diskii_click, new diskii_modal_callback_data_t{this, diskii_save_con, 3});
-    cancel_btn->set_click_callback(modal_diskii_click, new diskii_modal_callback_data_t{this, diskii_save_con, 4});
-    diskii_save_con->add_tile(save_btn, 0);
-
-    diskii_save_con->add_tile(discard_btn, 1);
-    diskii_save_con->add_tile(cancel_btn, 2);
+    diskii_save_con->add_tile(discard_btn);
+    diskii_save_con->add_tile(cancel_btn);
     diskii_save_con->layout();
 
     close_btn = new Button_t("<", TextButtonCfg);
-    close_btn->set_click_callback(close_btn_click, this);
+    close_btn->on_click([this](const SDL_Event& event) -> bool {
+        close_panel();
+        return true;
+    });
     close_btn->set_tile_size(36, 36);
     close_btn->set_tile_position(window_w-100, 49);
 
     open_btn = new FadeButton_t(">", TextButtonCfg);
-    open_btn->set_click_callback(open_btn_click, this);
+    open_btn->on_click([this](const SDL_Event& event) -> bool {
+        open_panel();
+        return true;
+    });
     open_btn->set_tile_size(36, 36);
     open_btn->set_tile_position(0, 50);
     open_btn->set_fade_frames(512, 4); // hold for one second, then fade out over next second. (roughly)
 
-    hover_controls_con = new FadeContainer_t(renderer, 10, HUD, 512);
+    hover_controls_con = new FadeContainer_t(&ui_ctx, 10, HUD, 512);
     hover_controls_con->set_position(10, 100);
     hover_controls_con->set_tile_size(65, 500);
 
@@ -476,35 +517,34 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     SB.border_width = 0;
     SB.border_color = 0x000000FF;
     SB.padding = 0;
-    
+
     {
-        int pos = 0;
-        LabeledButton *b1 = new LabeledButton(aa, ResetButton, "", text_render, 0);
+        LabeledButton *b1 = new LabeledButton(&ui_ctx, ResetButton, "", 0);
         b1->set_tile_size(60, 60);
-        b1->set_click_callback([this,computer](const SDL_Event& event) -> bool {
+        b1->on_click([this,computer](const SDL_Event& event) -> bool {
             computer->reset(false);
             return true;
         });
-        hover_controls_con->add_tile(b1, pos++);
+        hover_controls_con->add_tile(b1);
 
-        LabeledButton *b3 = new LabeledButton(aa, GreenDisplayButton, "Capture", text_render, 0);
+        LabeledButton *b3 = new LabeledButton(&ui_ctx, GreenDisplayButton, "Capture", 0);
         b3->set_tile_size(60, 60);
-        b3->set_click_callback([this,computer](const SDL_Event& event) -> bool {
+        b3->on_click([this,computer](const SDL_Event& event) -> bool {
             getMenuInterface()->machineCaptureMouse();
             return true;
         });
-        hover_controls_con->add_tile(b3, pos++);
+        hover_controls_con->add_tile(b3);
 
-        LabeledButton *b2 = new LabeledButton(aa, GreenDisplayButton, "Debug", text_render, 0);
+        LabeledButton *b2 = new LabeledButton(&ui_ctx, GreenDisplayButton, "Debug", 0);
         b2->set_tile_size(60, 60);
-        b2->set_click_callback([this,computer](const SDL_Event& event) -> bool {
+        b2->on_click([this,computer](const SDL_Event& event) -> bool {
             getMenuInterface()->openDebugWindow();
             return true;
         });
-        hover_controls_con->add_tile(b2, pos++);
+        hover_controls_con->add_tile(b2);
 
         // clone each item in speed_con into a new container "hov_speed_con"
-        hov_speed_con = new Container_t(renderer, 10, SB);
+        hov_speed_con = new Container_t(&ui_ctx, 10, SB);
         // don't set position yet, we'll do that when we open the submenu.
         hov_speed_con->set_tile_size(360, 65);
         hov_speed_con->add_tile(new Button_t(*speed_btn_10), 0);
@@ -515,9 +555,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         hov_speed_con->set_visible(false);
         hov_containers.push_back(hov_speed_con);       
 
-        LabeledButton *b4 = new LabeledButton(aa, MHz1_0Button, "Speed", text_render, 0);
+        LabeledButton *b4 = new LabeledButton(&ui_ctx, MHz1_0Button, "Speed", 0);
         b4->set_tile_size(60, 60);
-        b4->set_click_callback([b4,this](const SDL_Event& event) -> bool {
+        b4->on_click([b4,this](const SDL_Event& event) -> bool {
             // open the speed submenu container
             if (!hov_speed_con->is_visible()) {            
                 // get position of b4
@@ -531,13 +571,13 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         
             return true;
         });
-        hover_controls_con->add_tile(b4, pos++);        
+        hover_controls_con->add_tile(b4);
         hover_controls_con->layout();
 
     }
 
     system_config = computer->get_system();
-    system_badge = new Button_t(aa, system_config->image_id, SB);
+    system_badge = new Button_t(&ui_ctx, system_config->image_id, SB);
     system_badge->set_tile_position(30, 65);
 
     computer->sys_event->registerHandler(SDL_EVENT_DROP_BEGIN, [this](const SDL_Event &event) {
@@ -665,7 +705,6 @@ void OSD::update() {
     if ((currentSlideStatus == SLIDE_OUT)  && (key_slot_match)) {
         // second pass, update the hud container with items matching the key mask.
         // and set their hover status to false.
-        uint32_t hud_index = 0;
         for (int i = 0; i < drive_container->get_tile_count(); i++) {
             Tile_t *tile = drive_container->get_tile(i);
             if (tile) {
@@ -673,7 +712,7 @@ void OSD::update() {
                 storage_key_t key = button->get_key();
                 drive_status_t ds = button->get_disk_status();
                 if (key.slot == key_slot_match) {
-                    hud_drive_container->add_tile(button, hud_index++);
+                    hud_drive_container->add_tile(button);
                     button->on_hover_changed(false);
                 }
             }            

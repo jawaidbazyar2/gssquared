@@ -12,8 +12,8 @@ const Style_t SlotButton_Style = {
     .text_color = 0xFFFFFFFF,
 };
 
-SlotButton::SlotButton(AssetAtlas_t* assetp, int assetID, TextRenderer* tr, int group, int slot_number, SlotManager_t *slot_manager) 
-  : Button_t("", tr, SlotButton_Style, group) {
+SlotButton::SlotButton(UIContext *ctx, int assetID, int group, int slot_number, SlotManager_t *slot_manager) 
+  : Button_t(ctx, "", SlotButton_Style, group) {
     this->slot_number = slot_number;
     this->slot_manager = slot_manager;
     this->device = slot_manager->get_device((SlotType_t)slot_number);

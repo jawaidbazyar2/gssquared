@@ -1,11 +1,11 @@
 #include "FadeContainer.hpp"
 
-FadeContainer_t::FadeContainer_t(SDL_Renderer *renderer, size_t max_tiles, const Style_t& initial_style, int fade_frames) : Container_t(renderer, max_tiles, initial_style) {
+FadeContainer_t::FadeContainer_t(UIContext *ctx, size_t max_tiles, const Style_t& initial_style, int fade_frames) : Container_t(ctx, max_tiles, initial_style) {
     this->fade_frames = fade_frames;
     fade_steps = 3;
 }
 
-FadeContainer_t::FadeContainer_t(SDL_Renderer *renderer, size_t max_tiles) : Container_t(renderer, max_tiles) {
+FadeContainer_t::FadeContainer_t(UIContext *ctx, size_t max_tiles) : Container_t(ctx, max_tiles) {
     fade_frames = 256;
     fade_steps = 3;
 }

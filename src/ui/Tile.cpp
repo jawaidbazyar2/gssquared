@@ -126,7 +126,7 @@ bool Tile_t::handle_mouse_event(const SDL_Event& event) {
         // others may care about same event
     }
     else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && is_hovering) {
-        on_click(event);
+        do_click(event);
         return(true); // we did a thing.
     }
     else if (event.type == SDL_EVENT_WINDOW_MOUSE_LEAVE) {
@@ -148,10 +148,11 @@ void Tile_t::set_tile_position(float x, float y) { tp.x = x; tp.y = y; }
 void Tile_t::set_background_color(uint32_t color) { style.background_color = color; }
 void Tile_t::set_border_color(uint32_t color) { style.border_color = color; }
 void Tile_t::set_hover_color(uint32_t color) { style.hover_color = color; }
-void Tile_t::set_click_callback(click_callback_t callback, void* data) {
+
+/* void Tile_t::on_click(click_callback_t callback, void* data) {
     click_callback = callback;
     callback_data = data;
-}
+} */
 
 // border is outside the content area.
 // padding is inside the content area.
@@ -190,7 +191,7 @@ void Tile_t::position_content(ContentPosition_t pos_h, ContentPosition_t pos_v) 
     calc_content_position(); 
 }
 
-void Tile_t::set_click_callback(EventHandler handler) {
+void Tile_t::on_click(EventHandler handler) {
     click_callback_h = handler;
 }
 
@@ -206,7 +207,7 @@ void Tile_t::on_hover_changed(bool hovering) {
 /**
 * @brief Called when the tile is clicked. (send the event for fullness, for text edit etc we need the exact x/y location)
 */
-void Tile_t::on_click(const SDL_Event& event) {
+void Tile_t::do_click(const SDL_Event& event) {
     if (click_callback) {
         click_callback(callback_data);
     }

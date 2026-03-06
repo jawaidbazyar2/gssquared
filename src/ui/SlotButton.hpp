@@ -1,4 +1,5 @@
 #include "Button.hpp"
+#include "UIContext.hpp"
 #include "SlotData.hpp"
 
 class SlotManager_t;
@@ -6,7 +7,7 @@ class Device_t;
 
 class SlotButton : public Button_t {
     public:
-        SlotButton(AssetAtlas_t* assetp, int assetID, TextRenderer* tr, int group = 0, int slot_number = 0, SlotManager_t *slot_manager = nullptr);
+        SlotButton(UIContext *ctx, int assetID, int group = 0, int slot_number = 0, SlotManager_t *slot_manager = nullptr);
         void render(SDL_Renderer* renderer) override;
     private:
         SlotManager_t *slot_manager;

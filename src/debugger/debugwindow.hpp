@@ -6,6 +6,7 @@
 #include "cpu.hpp"
 #include "util/TextRenderer.hpp"
 #include "ui/Container.hpp"
+#include "ui/UIContext.hpp"
 #include "ui/TextInput.hpp"
 #include "debugger/MemoryWatch.hpp"
 #include "debugger/disasm.hpp"
@@ -37,6 +38,7 @@ struct debug_window_t {
     int view_position = 0;
     
     TextRenderer *text_renderer;
+    UIContext ui_ctx;
     int font_line_height = 14;
     std::vector<Container_t *> containers;
     Container_t *tab_container;

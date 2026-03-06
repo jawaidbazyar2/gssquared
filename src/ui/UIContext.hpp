@@ -17,25 +17,21 @@
 
 #pragma once
 
-#include <string>
-#include "Container.hpp"
-#include "UIContext.hpp"
-#include "util/StorageDevice.hpp"
+#include <SDL3/SDL.h>
+#include "util/TextRenderer.hpp"
+#include "AssetAtlas.hpp"
 
-class ModalContainer_t : public Container_t {
-private:
-    std::string msg_text;
-    storage_key_t key;
-    uint64_t data;
-    
-public:
-    ModalContainer_t(UIContext *ctx, size_t max_tiles, const char* msg_text, const Style_t& initial_style);
-    ModalContainer_t(UIContext *ctx, size_t max_tiles, const char* msg_text);
-    
-    void layout() override;
-    void render() override;
-    void set_key(storage_key_t key);
-    storage_key_t get_key() const;
-    void set_data(uint64_t data);
-    uint64_t get_data() const;
+/**
+ * @brief Shared rendering context passed to all UI widgets.
+ *
+ * Bundles the SDL renderer, font renderers, and asset atlas so that
+ * widget constructors receive a single context pointer instead of
+ * individual rendering parameters.  UIContext does not own any of
+ * the pointed-to objects.
+ */
+struct UIContext {
+    SDL_Renderer *renderer      = nullptr;
+    TextRenderer *text_render   = nullptr;
+    TextRenderer *title_trender = nullptr;
+    AssetAtlas_t *asset_atlas   = nullptr;
 };

@@ -41,6 +41,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    UIContext ui_ctx = { renderer, tr, nullptr, nullptr };
+
     // TODO: feel like changing these names.
     // set_position; set_size
     // Create a Tile and render it.
@@ -48,14 +50,14 @@ int main(int argc, char **argv) {
     tile.set_tile_position(100, 100);
     tile.set_tile_size(100, 50);
 
-    Button_t button("Button1", tr, style);
+    Button_t button(&ui_ctx, "Button1", style);
     button.set_tile_position(220, 100);
     button.set_tile_size(100, 50);
     //button.set_text_renderer(tr);
     //button.position_content(CP_CENTER, CP_CENTER);
     button.print();
 
-    Button_t button2("Button2", nullptr, style);
+    Button_t button2(&ui_ctx, "Button2", style);
     button2.set_tile_position(340, 100);
     button2.set_tile_size(100, 50);
     button2.print();

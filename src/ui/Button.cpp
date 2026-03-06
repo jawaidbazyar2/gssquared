@@ -20,6 +20,7 @@
 #include "AssetAtlas.hpp"
 #include "Tile.hpp"
 #include "Button.hpp"
+#include "UIContext.hpp"
 
 /**
  * @brief A button class that can display either text or an image.
@@ -46,10 +47,9 @@ Button_t::Button_t(const std::string& button_text, const Style_t& style, int gro
         position_content(CP_CENTER, CP_CENTER);
     }
     
-Button_t::Button_t(const std::string& button_text, TextRenderer *tr, const Style_t& style, int group)
+Button_t::Button_t(UIContext *ctx, const std::string& button_text, const Style_t& style, int group)
     : Tile_t(style), text(button_text), group_id(group), buttonType(BT_Text) {
-        set_text_renderer(tr);
-        //set_content_size_from_tile();
+        set_text_renderer(ctx->text_render);
         set_content_size_from_text();
         position_content(CP_CENTER, CP_CENTER);
     }
@@ -64,8 +64,9 @@ void Button_t::set_content_size_from_text() {
     }
 }
 
-Button_t::Button_t(AssetAtlas_t* assetp, int assetID, const Style_t& style, int group)
-    : Tile_t(style), aa(assetp), assetID(assetID), group_id(group), buttonType(BT_Atlas) {
+Button_t::Button_t(UIContext *ctx, int assetID, const Style_t& style, int group)
+    : Tile_t(style), aa(ctx->asset_atlas), assetID(assetID), group_id(group), buttonType(BT_Atlas) {
+        set_text_renderer(ctx->text_render);
         set_size_from_asset();
         position_content(CP_CENTER, CP_CENTER);
     }
@@ -78,15 +79,6 @@ Button_t::Button_t(AssetAtlas_t* assetp, int assetID, const Style_t& style, int 
 Button_t::Button_t(const std::string& button_text, int group) 
     : text(button_text), group_id(group), buttonType(BT_Text) {}
 
-/**
- * @brief Constructs an image button.
- * @param button_image The image asset to display on the button.
- * @param group The button group ID (default 0).
- */
-Button_t::Button_t(AssetAtlas_t* assetp, int assetID, int group) 
-    : aa(assetp), assetID(assetID), group_id(group), buttonType(BT_Atlas) {
-        set_size_from_asset();
-    }
 
 void Button_t::set_assetID(int id) { 
     assetID = id;
@@ -161,8 +153,8 @@ void Button_t::render(SDL_Renderer* renderer) {
     // For now, the base hover detection is sufficient
 } */
 
-void Button_t::on_click(const SDL_Event& event) {
+void Button_t::do_click(const SDL_Event& event) {
     // Button-specific click behavior could go here
     // For now, just call the base class implementation
-    Tile_t::on_click(event);
+    Tile_t::do_click(event);
 }

@@ -27,24 +27,24 @@ Style_t CS;
 
     int num_configs = NUM_SYSTEM_CONFIGS;
 
-    container = new Container_t(vs->renderer, num_configs, CS); 
+    text_renderer = new TextRenderer(vs->renderer, "fonts/OpenSans-Regular.ttf", 24);
+    ui_ctx = { vs->renderer, text_renderer, nullptr, aa };
+
+    container = new Container_t(&ui_ctx, num_configs, CS); 
 
     container->set_tile_size(1024, 768);
     SDL_GetWindowSize(vs->window, &window_width, &window_height);
     container->set_position((window_width - 1024) / 2, (window_height - 768) / 2);
 
-    text_renderer = new TextRenderer(vs->renderer, "fonts/OpenSans-Regular.ttf", 24);
     selected_system = SELECT_PENDING;
 
     // add a text button for each system.
     for (int i = 0; i < num_configs; i++) {
-        //Button_t *button = new Button_t(aa, BuiltinSystemConfigs[i].image_id, BS, 0);
-        SystemButton *button = new SystemButton(aa, &BuiltinSystemConfigs[i], BS);
+        SystemButton *button = new SystemButton(&ui_ctx, &BuiltinSystemConfigs[i], BS);
         button->set_tile_size(200, 200);
         button->position_content(CP_CENTER, CP_CENTER);
-        button->set_text_renderer(text_renderer);
 
-        button->set_click_callback([this,i](const SDL_Event& event) -> bool {
+        button->on_click([this,i](const SDL_Event& event) -> bool {
             selected_system = i;
             return true;
         });

@@ -30,13 +30,13 @@ void Container_t::init_tiles(size_t max_tiles) {
     }
 }
 
-Container_t::Container_t(SDL_Renderer *rendererp, size_t max_tiles, const Style_t& initial_style) 
-    : style(initial_style), renderer(rendererp) {
+Container_t::Container_t(UIContext *ctx, size_t max_tiles, const Style_t& initial_style) 
+    : style(initial_style), ctx(ctx) {
     init_tiles(max_tiles);
 }
 
-Container_t::Container_t(SDL_Renderer *rendererp, size_t max_tiles) 
-    : renderer(rendererp) {
+Container_t::Container_t(UIContext *ctx, size_t max_tiles) 
+    : ctx(ctx) {
     init_tiles(max_tiles);
 }
 
@@ -60,6 +60,13 @@ void Container_t::apply_style(const Style_t& new_style) {
 void Container_t::add_tile(Tile_t* tile, size_t index) {
     if (index < tile_max) {
         tiles[index] = tile;
+        tile_count++;
+    }
+}
+
+void Container_t::add_tile(Tile_t* tile) {
+    if (tile_count < tile_max) {
+        tiles[tile_count] = tile;
         tile_count++;
     }
 }
@@ -228,7 +235,7 @@ void Container_t::render() {
     uint32_t bgcolor = (is_hovering) ? style.hover_color : style.background_color;
 
     // Draw container background
-    SDL_SetRenderDrawColor(renderer, 
+    SDL_SetRenderDrawColor(ctx->renderer, 
         (bgcolor >> 24) & 0xFF,
         (bgcolor >> 16) & 0xFF,
         (bgcolor >> 8) & 0xFF,
@@ -236,11 +243,11 @@ void Container_t::render() {
     );
     
     SDL_FRect container_rect = {x, y, w, h};
-    SDL_RenderFillRect(renderer, &container_rect);
+    SDL_RenderFillRect(ctx->renderer, &container_rect);
 
     // Draw border if needed
     if (style.border_width > 0) {
-        SDL_SetRenderDrawColor(renderer,
+        SDL_SetRenderDrawColor(ctx->renderer,
             (style.border_color >> 24) & 0xFF,
             (style.border_color >> 16) & 0xFF,
             (style.border_color >> 8) & 0xFF,
@@ -251,14 +258,14 @@ void Container_t::render() {
                 x + i, y + i,
                 w - 2 * i, h - 2 * i
             };
-            SDL_RenderRect(renderer, &border_rect);
+            SDL_RenderRect(ctx->renderer, &border_rect);
         }
     }
 
     // Render all visible tiles
     for (size_t i = 0; i < tile_count; i++) {
         if (tiles[i] && tiles[i]->is_visible()) {
-            tiles[i]->render(renderer);
+            tiles[i]->render(ctx->renderer);
         }
     }
 }

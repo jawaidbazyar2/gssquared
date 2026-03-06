@@ -21,6 +21,7 @@
 #include <SDL3/SDL.h>
 #include "Tile.hpp"
 #include "Style.hpp"
+#include "UIContext.hpp"
 
 /**
  * @brief A container class that manages and layouts multiple tiles in a grid pattern.
@@ -45,7 +46,7 @@ protected:
     size_t tile_count = 0;
     size_t tile_max = 0;
     Tile_t **tiles = nullptr;  // Array of pointers to tiles
-    SDL_Renderer *renderer;
+    UIContext *ctx;
 
 private:
     /**
@@ -57,18 +58,18 @@ private:
 public:
     /**
      * @brief Constructs a container with style.
-     * @param rendererp SDL renderer to use
+     * @param ctx Shared UI rendering context
      * @param max_tiles Maximum number of tiles this container can hold
      * @param initial_style Initial style settings
      */
-    Container_t(SDL_Renderer *rendererp, size_t max_tiles, const Style_t& initial_style);
+    Container_t(UIContext *ctx, size_t max_tiles, const Style_t& initial_style);
     
     /**
      * @brief Constructs a container with default style.
-     * @param rendererp SDL renderer to use
+     * @param ctx Shared UI rendering context
      * @param max_tiles Maximum number of tiles this container can hold
      */
-    Container_t(SDL_Renderer *rendererp, size_t max_tiles);
+    Container_t(UIContext *ctx, size_t max_tiles);
 
     /**
      * @brief Destructor that cleans up all contained tiles.
@@ -97,6 +98,12 @@ public:
      * @param index Position in the container where to add the tile
      */
     void add_tile(Tile_t* tile, size_t index);
+
+    /**
+     * @brief Adds a tile to the container, automatically adds to the next available index.
+     * @param tile Pointer to the tile to add
+     */
+    void add_tile(Tile_t* tile); 
 
     /**
      * @brief Sets the container's position.

@@ -10,6 +10,7 @@
 #include "computer.hpp"
 #include "videosystem.hpp"
 #include "ui/Container.hpp"
+#include "ui/UIContext.hpp"
 #include "ui/Button.hpp"
 #include "ui/TextInput.hpp"
 #include "debugger/ExecuteCommand.hpp"
@@ -31,6 +32,7 @@ debug_window_t::debug_window_t(computer_t *computer) {
     text_renderer = new TextRenderer(renderer, "/fonts/OxygenMono-Regular.ttf", 15.0f);
     text_renderer->set_color(255, 255, 255, 255);
     font_line_height = text_renderer->font_line_height;
+    ui_ctx = { renderer, text_renderer, nullptr, nullptr };
 
     window_id = SDL_GetWindowID(window);
     control_area_height = 8 * font_line_height;
@@ -44,7 +46,7 @@ debug_window_t::debug_window_t(computer_t *computer) {
     CS.border_color = 0x00800000;
     CS.hover_color = 0x00000000;
 
-    tab_container = new Container_t(renderer, 10, CS);  // Increased to 5 to accommodate the mouse position tile
+    tab_container = new Container_t(&ui_ctx, 10, CS);  // Increased to 5 to accommodate the mouse position tile
     tab_container->set_position(25, 15);
     tab_container->set_tile_size(400, 35);
     containers.push_back(tab_container);
@@ -58,28 +60,28 @@ debug_window_t::debug_window_t(computer_t *computer) {
     SS.padding = 4;
     SS.border_width = 1;
     
-    Button_t* s1 = new Button_t("Trace", text_renderer, SS);
+    Button_t* s1 = new Button_t(&ui_ctx, "Trace", SS);
     s1->set_tile_size(70, 22);
     //s1->set_text_renderer(text_renderer); // set text renderer for the button
-    s1->set_click_callback([this](const SDL_Event& event) -> bool {
+    s1->on_click([this](const SDL_Event& event) -> bool {
         toggle_panel(DEBUG_PANEL_TRACE);
         return true;
     });
     tab_container->add_tile(s1,0);
     
-    Button_t* s2 = new Button_t("Monitor", text_renderer, SS);
+    Button_t* s2 = new Button_t(&ui_ctx, "Monitor", SS);
     s2->set_tile_size(70, 22);
     //s2->set_text_renderer(text_renderer); // set text renderer for the button
-    s2->set_click_callback([this](const SDL_Event& event) -> bool {
+    s2->on_click([this](const SDL_Event& event) -> bool {
         toggle_panel(DEBUG_PANEL_MONITOR);
         return true;
     });
     tab_container->add_tile(s2,1);
 
-    Button_t* s3 = new Button_t("Watch", text_renderer, SS);
+    Button_t* s3 = new Button_t(&ui_ctx, "Watch", SS);
     s3->set_tile_size(70, 22);
     //s3->set_text_renderer(text_renderer); // set text renderer for the button
-    s3->set_click_callback([this](const SDL_Event& event) -> bool {
+    s3->on_click([this](const SDL_Event& event) -> bool {
         toggle_panel(DEBUG_PANEL_MEMORY);
         return true;
     });

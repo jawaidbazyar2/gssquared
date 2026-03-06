@@ -27,6 +27,7 @@
 #include "FadeContainer.hpp"
 #include "MousePositionTile.hpp"
 #include "AssetAtlas.hpp"
+#include "UIContext.hpp"
 #include "util/TextRenderer.hpp"
 #include "FadeButton.hpp"
 #include "util/EventQueue.hpp"
@@ -101,6 +102,7 @@ protected:
     int window_h = 0;
     TextRenderer *text_render = nullptr;
     TextRenderer *title_trender = nullptr;
+    UIContext ui_ctx;
 
     std::string headsUpMessageText;
     int headsUpMessageCount = 0;

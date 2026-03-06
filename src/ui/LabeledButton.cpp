@@ -1,8 +1,8 @@
 #include "LabeledButton.hpp"
 
-LabeledButton::LabeledButton(AssetAtlas_t* assetp, int assetID, const std::string& button_text, TextRenderer* tr, int group) : Button_t(assetp, assetID, group) {
+LabeledButton::LabeledButton(UIContext *ctx, int assetID, const std::string& button_text, int group) : Button_t(ctx, assetID, {}, group) {
     this->text = button_text;
-    set_text_renderer(tr);
+    set_text_renderer(ctx->text_render);
 }
 
 void LabeledButton::render(SDL_Renderer* renderer) {

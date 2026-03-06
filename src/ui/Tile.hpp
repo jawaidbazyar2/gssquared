@@ -136,8 +136,8 @@ public:
     void set_hover_color(uint32_t color);
 
     /* Two varieties - one for C-style callbacks, one for lambdas */
-    void set_click_callback(click_callback_t callback, void* data = nullptr);
-    void set_click_callback(EventHandler handler);
+    //void on_click(click_callback_t callback, void* data = nullptr);
+    void on_click(EventHandler handler);
 
     void set_text_renderer(TextRenderer *text_render);
     void set_opacity(int o);
@@ -158,7 +158,7 @@ protected:
     /**
      * @brief Called when tile is clicked.
      */
-    virtual void on_click(const SDL_Event& event);
+    virtual void do_click(const SDL_Event& event);
 
     void calc_content_position();
 

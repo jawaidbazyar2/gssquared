@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include "Container.hpp"
 #include "AssetAtlas.hpp"
+#include "UIContext.hpp"
 #include "videosystem.hpp"
 
 #define SELECT_PENDING -2
@@ -17,6 +18,7 @@ protected:
     int selected_system = SELECT_PENDING;
     int window_width, window_height;
     AssetAtlas_t *aa;
+    UIContext ui_ctx;
 
 public:
     

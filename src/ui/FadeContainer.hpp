@@ -9,8 +9,8 @@ protected:
     int frameCount = 0;
 
 public:
-    FadeContainer_t(SDL_Renderer *renderer, size_t max_tiles, const Style_t& initial_style, int fade_frames);
-    FadeContainer_t(SDL_Renderer *renderer, size_t max_tiles);
+    FadeContainer_t(UIContext *ctx, size_t max_tiles, const Style_t& initial_style, int fade_frames);
+    FadeContainer_t(UIContext *ctx, size_t max_tiles);
     virtual void handle_mouse_event(const SDL_Event& event) override;
     void render() override;
     void reset() { frameCount = 0; }
