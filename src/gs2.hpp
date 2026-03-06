@@ -57,5 +57,3 @@ typedef enum {
     SLOT_7 = 7,
     NUM_SLOTS = 8
 } SlotType_t;
-
-#define VIDEX_ENABLED 1
