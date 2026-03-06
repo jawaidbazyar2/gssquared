@@ -142,6 +142,7 @@ public:
     void set_text_renderer(TextRenderer *text_render);
     void set_opacity(int o);
     int calc_opacity(uint32_t color);
+    void get_tile_position(float &x, float &y) const { x = tp.x; y = tp.y; }
 
     void position_content(ContentPosition_t pos_h, ContentPosition_t pos_v);
     void print();

@@ -18,7 +18,9 @@
 #pragma once
 
 #include "gs2.hpp"
-#include "computer.hpp"
+
+// forward declare.
+class computer_t;
 
 #include "Device_ID.hpp"
 

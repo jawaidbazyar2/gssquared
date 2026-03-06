@@ -489,6 +489,7 @@ enum AppPhase {
     PHASE_SHUTTING_DOWN,
 };
 
+/* This is "application state" as passed by SDL into the various AppCallbacks routines */
 struct GS2AppState {
     AppPhase phase = PHASE_SYSTEM_SELECT;
 
@@ -542,6 +543,7 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
 
     computer->set_platform(platform);
     computer->set_video_scanner(system_config->scanner_type);
+    computer->set_system_id(system_id);
     
     // TODO: load platform roms - this info should get stored in the 'computer'
     rom_data *rd = load_platform_roms(platform);

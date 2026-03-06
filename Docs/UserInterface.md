@@ -10,6 +10,10 @@ When we're "in emulator", I don't want a bunch of "modern" user interface clutte
 
 Implementing these will be a primary target of the 0.8 release.
 
+## OSD
+
+OSD is On Screen Display, which refers generally to the way we composit controls, displays on top of the main display. The OSD module is the repository for all that code.
+
 ## System Selector
 
 * Create new profile (opens full control panel) (tile with a big + in the middle)
@@ -21,11 +25,11 @@ Implementing these will be a primary target of the 0.8 release.
 
 ## Control Panel
 
-* Show Platform Type and Logo / Icon
+* Show Platform Type and Logo / Icon (done)
 * Show/Manage slots (Manage only when system off)
 * Show / Manage devices connected to serial ports
 * Manage Hard Disk Partitions on SmartPort
-* Drag and drop mount disks - if CP not open, slide it open as drag enters our window, and the reverse
+* Drag and drop mount disks - if CP not open, slide it open as drag enters our window, and the reverse (done)
 * When system is off will need info about what drives, just for display. They can mount disks and re-save after starting.
 * Create, Save, Load system configs
 * UI doesn't need to redraw the various UI textures unless it's been updated (incl. system select)
@@ -34,6 +38,7 @@ Implementing these will be a primary target of the 0.8 release.
 * Slots: use image of the slot connector with text over it. Slot number outside it to the left. "Slots" label.
 * Scale with window size? (Coordinate system scaling will bend my mind)
 * Consider using higher-resolution assets and scaling down as necessary (will look better on high-res screens)
+* OSD background color chosen to match system case color. 
 
 we're going to need a "register serial port" concept for OSD to talk to ports.
 
@@ -243,3 +248,8 @@ Maybe we can flash the hover on and off and pause for a half second after DROP_F
 # Mouse Location
 
 If the mouse is outside the visible screen area (i.e., if it's in window, but also over borders) then make sure OSD eats mouse events, so clicking on things outside the screen area will never cause clicks to effect the VM.
+
+# Other Design Ideas
+
+there is also the possibility to use a windows-like Hamburger menu.
+Three lines. this pops down a menu, then you can navigate that. progressive (click and release, instead of click and drag). it wouldn't interfere with emulator operations at all. it would be a fair bit like the feel of the control panel. it's a metaphor many are familiar with. and it would not require platform-specific code..

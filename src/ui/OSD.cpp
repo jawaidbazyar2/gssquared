@@ -27,6 +27,7 @@
 #include "Unidisk_Button.hpp"
 #include "AppleDisk_525_Button.hpp"
 #include "LabeledButton.hpp"
+#include "SlotButton.hpp"
 #include "Container.hpp"
 #include "AssetAtlas.hpp"
 #include "Style.hpp"
@@ -40,6 +41,7 @@
 #include "util/printf_helper.hpp"
 #include "paths.hpp"
 #include "util/MenuInterface.h"
+#include "systemconfig.hpp"
 
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
@@ -257,18 +259,18 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     DS.padding = 5;
     DS.border_width = 2;
     Style_t SC;
-    SC.background_color = 0x800080FF;
+    SC.background_color = 0x006030FF;
     SC.border_color = 0xFFFFFFFF;
     SC.border_width = 2;
     SC.hover_color = 0x008080FF;
     SC.padding = 4;
-    Style_t SS;
+    /* Style_t SS;
     SS.background_color = 0x0084C6FF;
     SS.border_color = 0xFFFFFFFF;
     SS.hover_color = 0x606060FF;
     SS.text_color = 0xFFFFFFFF;
     SS.padding = 4;
-    SS.border_width = 1;
+    SS.border_width = 1; */
     Style_t HUD;
     HUD.background_color = 0x00000000;
     HUD.border_color = 0x000000FF;
@@ -323,13 +325,14 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
 
     // Create another container, this one for slots.
     Container_t *slot_container = new Container_t(renderer, 8, SC);  // Container for 8 slot buttons
-    slot_container->set_position(100, 100);
+    slot_container->set_position(30, 140);
     slot_container->set_tile_size(320, 304);
 
     for (int i = 7; i >= 0; i--) {
         char slot_text[128];
         snprintf(slot_text, sizeof(slot_text), "Slot %d: %s", i, slot_manager->get_device(static_cast<SlotType_t>(i))->name);
-        Button_t* slot = new Button_t(slot_text, text_render, SS);
+        //Button_t* slot = new Button_t(slot_text, text_render, SS);
+        SlotButton *slot = new SlotButton(aa, 0, text_render, 0, i, slot_manager);
         //slot->set_text_renderer(text_render); // set text renderer for the button
         slot->set_tile_size(300, 30);
         slot_container->add_tile(slot, 7 - i);    // Add in reverse order (7 to 0)
@@ -401,15 +404,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     speed_con->add_tile(speed_btn_71, 2);
     speed_con->add_tile(speed_btn_14, 3);
     speed_con->add_tile(speed_btn_8, 4);
-    
     speed_con->layout();
-    /* speed_btn_10 = sp1;
-    speed_btn_28 = sp2;
-    speed_btn_71 = sp3;
-    speed_btn_8 = sp4;
-    speed_btn_14 = sp5; */
 
-    Container_t *gen_con = new Container_t(renderer, 10, SC);
+   /*  Container_t *gen_con = new Container_t(renderer, 10, SC);
     gen_con->set_position(5, 100);
     gen_con->set_tile_size(65, 300);
     Button_t *b1 = new Button_t(aa, ResetButton, CB);
@@ -419,7 +416,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     });
     gen_con->add_tile(b1, 0);
     gen_con->layout();
-    containers.push_back(gen_con);
+    containers.push_back(gen_con); */
 
     Style_t ModalStyle;
     ModalStyle.background_color = 0xFFFFFFFF;
@@ -431,8 +428,8 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     diskii_save_con = new ModalContainer_t(renderer, text_render, 10, "Disk Data has been modified. Save?", ModalStyle);
     diskii_save_con->set_position(300, 200);
     diskii_save_con->set_tile_size(500, 200);
+
     // Create text buttons for the disk save dialog
-    
     Style_t TextButtonCfg;
     TextButtonCfg.background_color = 0xE0E0FFFF;
     TextButtonCfg.text_color = 0x000000FF;
@@ -471,16 +468,24 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     open_btn->set_fade_frames(512, 4); // hold for one second, then fade out over next second. (roughly)
 
     hover_controls_con = new FadeContainer_t(renderer, 10, HUD, 512);
-    hover_controls_con->set_position(10, 85);
+    hover_controls_con->set_position(10, 100);
     hover_controls_con->set_tile_size(65, 500);
+
+    Style_t SB;
+    SB.background_color = 0x00000000;
+    SB.border_width = 0;
+    SB.border_color = 0x000000FF;
+    SB.padding = 0;
+    
     {
+        int pos = 0;
         LabeledButton *b1 = new LabeledButton(aa, ResetButton, "", text_render, 0);
         b1->set_tile_size(60, 60);
         b1->set_click_callback([this,computer](const SDL_Event& event) -> bool {
             computer->reset(false);
             return true;
         });
-        hover_controls_con->add_tile(b1, 0);
+        hover_controls_con->add_tile(b1, pos++);
 
         LabeledButton *b3 = new LabeledButton(aa, GreenDisplayButton, "Capture", text_render, 0);
         b3->set_tile_size(60, 60);
@@ -488,7 +493,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
             getMenuInterface()->machineCaptureMouse();
             return true;
         });
-        hover_controls_con->add_tile(b3, 1);
+        hover_controls_con->add_tile(b3, pos++);
 
         LabeledButton *b2 = new LabeledButton(aa, GreenDisplayButton, "Debug", text_render, 0);
         b2->set_tile_size(60, 60);
@@ -496,11 +501,44 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
             getMenuInterface()->openDebugWindow();
             return true;
         });
-        hover_controls_con->add_tile(b2, 2);
+        hover_controls_con->add_tile(b2, pos++);
 
+        // clone each item in speed_con into a new container "hov_speed_con"
+        hov_speed_con = new Container_t(renderer, 10, SB);
+        // don't set position yet, we'll do that when we open the submenu.
+        hov_speed_con->set_tile_size(360, 65);
+        hov_speed_con->add_tile(new Button_t(*speed_btn_10), 0);
+        hov_speed_con->add_tile(new Button_t(*speed_btn_28), 1);
+        hov_speed_con->add_tile(new Button_t(*speed_btn_71), 2);
+        hov_speed_con->add_tile(new Button_t(*speed_btn_14), 3);
+        hov_speed_con->add_tile(new Button_t(*speed_btn_8), 4);
+        hov_speed_con->set_visible(false);
+        hov_containers.push_back(hov_speed_con);       
 
+        LabeledButton *b4 = new LabeledButton(aa, MHz1_0Button, "Speed", text_render, 0);
+        b4->set_tile_size(60, 60);
+        b4->set_click_callback([b4,this](const SDL_Event& event) -> bool {
+            // open the speed submenu container
+            if (!hov_speed_con->is_visible()) {            
+                // get position of b4
+                float x,y;
+                b4->get_tile_position(x, y);
+                printf("b4 position: %f, %f\n", x, y);
+                hov_speed_con->set_position(x+60, y);
+                hov_speed_con->set_visible(true);
+                hov_speed_con->layout();
+            } else hov_speed_con->set_visible(false);
+        
+            return true;
+        });
+        hover_controls_con->add_tile(b4, pos++);        
         hover_controls_con->layout();
+
     }
+
+    system_config = computer->get_system();
+    system_badge = new Button_t(aa, system_config->image_id, SB);
+    system_badge->set_tile_position(30, 65);
 
     computer->sys_event->registerHandler(SDL_EVENT_DROP_BEGIN, [this](const SDL_Event &event) {
         SDL_RaiseWindow(window);
@@ -703,7 +741,8 @@ void OSD::render() {
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
         SDL_RenderFillRect(renderer, NULL);
 
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xC0);
+        // Draw CP background with some opacity
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xE0);
         SDL_FRect rect = {0, 50, (float)(window_w-100), (float)(window_h-100)};
         SDL_RenderFillRect(renderer, &rect);
       
@@ -718,9 +757,12 @@ void OSD::render() {
 
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
-        //SDL_RenderDebugText(renderer, 50, 80, "This is your menu. It isn't very done, hai!");
-        title_trender->render("Control Panel", 100, 50);
+/*         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+        title_trender->render("Control Panel", 100, 50); */
+        system_badge->render(renderer);
+        text_render->set_color(0, 0, 0, 0xFF);
+        text_render->render(system_config->name, 220, 70, TEXT_ALIGN_LEFT);
+        text_render->render(system_config->description, 220, 90, TEXT_ALIGN_LEFT);
 
         close_btn->render(renderer);
 
@@ -775,6 +817,9 @@ void OSD::render() {
         open_btn->render(renderer); // this now takes care of its own fade-out.
 
         hover_controls_con->render();
+        for (Container_t* container : hov_containers) {
+            container->render();
+        }
 
         if (hud_drive_container->get_tile_count() > 0) {
             hud_drive_container->layout();

@@ -165,4 +165,11 @@ public:
      * @return The tiles in the container
      */
     Tile_t** get_tiles() const { return tiles; };
+
+    /**
+     * @brief Shows or hides the container.
+     * @param visible If true, the container is visible, otherwise it is hidden.
+     */
+    inline void set_visible(bool visible) { this->visible = visible; };
+    inline bool is_visible() const { return visible; };
 }; 

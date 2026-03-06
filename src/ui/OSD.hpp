@@ -29,6 +29,7 @@
 #include "AssetAtlas.hpp"
 #include "util/TextRenderer.hpp"
 #include "FadeButton.hpp"
+#include "util/EventQueue.hpp"
 
 #define SLIDE_IN 1
 #define SLIDE_OUT 2
@@ -38,6 +39,8 @@
 #define slidePositionDeltaMin 20
 #define slidePositionAcceleration 10
 #define slidePositionMax 1120
+
+class SystemConfig_t;
 
 /**
  * @brief On-Screen Display manager class.
@@ -76,13 +79,19 @@ protected:
     Button_t *close_btn = nullptr;
     FadeButton_t *open_btn = nullptr;
 
+    // System badge
+    SystemConfig_t *system_config = nullptr;
+    Button_t *system_badge = nullptr;
+    
     std::vector<Container_t *> containers;
     Container_t *hud_drive_container = nullptr;
     ModalContainer_t *activeModal = nullptr;
     ModalContainer_t *diskii_save_con = nullptr;
 
     FadeContainer_t *hover_controls_con = nullptr;
-
+    std::vector<Container_t *> hov_containers;
+    Container_t *hov_speed_con = nullptr;
+    
     MousePositionTile_t* mouse_pos = nullptr;
     AssetAtlas_t *aa = nullptr;
     SDL_Renderer *renderer = nullptr;

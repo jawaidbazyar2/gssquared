@@ -16,6 +16,7 @@
 #include "util/InterruptController.hpp"
 #include "util/AudioSystem.hpp"
 #include "util/SoundEffect.hpp"
+#include "systemconfig.hpp"
 
 class SlotManager_t; // forward declare.
 
@@ -80,6 +81,9 @@ struct computer_t {
 
     Mounts *mounts = nullptr;
 
+    // For use by OSD.
+    int system_id = -1;
+
     std::vector<ResetHandler> reset_handlers;
     std::vector<ShutdownHandler> shutdown_handlers;
     std::vector<DebugDisplayHandlerInfo> debug_display_handlers;
@@ -120,6 +124,8 @@ struct computer_t {
     void set_mmu(MMU_II *mmu) { this->mmu = mmu; }
     void set_cpu(cpu_state *cpu) { this->cpu = cpu; }
     void set_platform(platform_info *platform) { this->platform = platform; }
+    void set_system_id(int system_id) { this->system_id = system_id; }
+    inline SystemConfig_t *get_system() { return get_system_config(system_id); }
     void set_video_scanner(video_scanner_t video_scanner) { this->video_scanner = video_scanner; }
     video_scanner_t get_video_scanner() { return video_scanner; }
     void reset(bool cold_start);

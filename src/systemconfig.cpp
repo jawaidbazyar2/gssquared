@@ -164,7 +164,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleII,
-        "64K RAM (incl Lang Card); Disk II; ProDOS Clock; Parallel Port; VIDEX 80-col; Mockingboard",
+        "64K RAM (incl Lang Card); Disk II; Clock; Parallel Port; VIDEX 80-col; Mockingboard",
     },
     {
         "Apple IIe",
@@ -174,7 +174,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
-        "128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard",
+        "128K RAM; Disk II; Clock; Parallel Port; Mockingboard",
     },
     {
         "Apple IIe Enhanced",
@@ -184,7 +184,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
-        "128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard",
+        "128K RAM; Disk II; Clock; Parallel Port; Mockingboard",
     },
     {
         "Apple IIe Enhanced w/Mouse",
@@ -194,7 +194,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
-        "128K RAM; Disk II; ProDOS Clock; Mouse",
+        "128K RAM; Disk II; Clock; Mouse",
     },
     {
         "Apple IIe Enhanced Dual Mockingboard",
@@ -204,7 +204,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
-        "128K RAM; Disk II; ProDOS Clock; DUAL Mockingboard",
+        "128K RAM; Disk II; Clock; DUAL Mockingboard",
     },
     {
         "Apple IIe 65816 w/Mouse",
@@ -214,7 +214,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleIIgs,
-        "128K RAM; Disk II; ProDOS Clock; Mouse; 65816"
+        "128K RAM; Disk II; Clock; Mouse; 65816"
     }, 
     {
         "Apple IIe Enhanced / PAL",
@@ -224,7 +224,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_PAL,
         Scanner_AppleIIePAL,
-        "PAL Video; 128K RAM; Disk II; ProDOS Clock; Parallel Port; Mockingboard",
+        "PAL Video; 128K RAM; Disk II; Clock; Parallel Port; Mockingboard",
     },
     {
         "Apple IIgs",
