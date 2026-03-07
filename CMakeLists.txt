@@ -1,5 +1,23 @@
 cmake_minimum_required(VERSION 3.10)
 
+# Prefer Clang over GCC on Linux/Mac. Must happen before project() so CMake
+# hasn't already detected and cached the default system compiler.
+if(NOT WIN32)
+    find_program(CLANG_EXECUTABLE NAMES clang)
+    find_program(CLANGPP_EXECUTABLE NAMES clang++)
+
+    if(CLANG_EXECUTABLE AND CLANGPP_EXECUTABLE)
+        if(NOT CMAKE_C_COMPILER)
+            set(CMAKE_C_COMPILER "${CLANG_EXECUTABLE}" CACHE FILEPATH "C compiler" FORCE)
+        endif()
+        if(NOT CMAKE_CXX_COMPILER)
+            set(CMAKE_CXX_COMPILER "${CLANGPP_EXECUTABLE}" CACHE FILEPATH "C++ compiler" FORCE)
+        endif()
+    else()
+        message(STATUS "Clang not found, falling back to default system compiler")
+    endif()
+endif()
+
 # Set the project name
 project(gssquared)
 
@@ -68,24 +86,6 @@ if(WIN32)
     set(CMAKE_SYSTEM_VERSION 10.0)
     set(CMAKE_SYSTEM_PROCESSOR x86_64)
 endif()
-
-# Find Clang compilers before project() is called
-#if(NOT WIN32)  # For Unix-like systems (Linux and Mac)
-    find_program(CLANG_EXECUTABLE NAMES clang)
-    find_program(CLANGPP_EXECUTABLE NAMES clang++)
-
-    if(CLANG_EXECUTABLE AND CLANGPP_EXECUTABLE)
-        # Only set if not already set in cache
-        if(NOT CMAKE_C_COMPILER)
-            set(CMAKE_C_COMPILER "${CLANG_EXECUTABLE}" CACHE FILEPATH "C compiler" FORCE)
-        endif()
-        if(NOT CMAKE_CXX_COMPILER)
-            set(CMAKE_CXX_COMPILER "${CLANGPP_EXECUTABLE}" CACHE FILEPATH "C++ compiler" FORCE)
-        endif()
-    else()
-        message(STATUS "Clang not found, using default system compiler")
-    endif()
-#endif() 
 
 # Define build options and set defaults
 option(GS2_BUILD_NATIVE "Build for native architecture only" OFF)
@@ -180,7 +180,7 @@ configure_sdl_builds()
 #set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3 -fsanitize=address,undefined -fno-omit-frame-pointer")
 if(WIN32)
     # Windows debug build without sanitizers
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3 -Werror=reorder-init-list")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3")
 else()
     # Non-Windows debug build with sanitizers
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3 -fsanitize=address,undefined -fno-omit-frame-pointer -Werror=reorder-init-list")
