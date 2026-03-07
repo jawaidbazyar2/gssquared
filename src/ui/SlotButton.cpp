@@ -6,9 +6,9 @@
 const Style_t SlotButton_Style = {
     .background_color = 0x0084C6FF,
     .border_color = 0xFFFFFFFF,
-    .border_width = 1,
-    .padding = 4,
     .hover_color = 0x606060FF,
+    .padding = 4,
+    .border_width = 1,
     .text_color = 0xFFFFFFFF,
 };
 

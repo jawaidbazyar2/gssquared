@@ -180,12 +180,12 @@ configure_sdl_builds()
 #set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3 -fsanitize=address,undefined -fno-omit-frame-pointer")
 if(WIN32)
     # Windows debug build without sanitizers
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3 -Werror=reorder-init-list")
 else()
     # Non-Windows debug build with sanitizers
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3 -fsanitize=address,undefined -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -ggdb3 -fsanitize=address,undefined -fno-omit-frame-pointer -Werror=reorder-init-list")
 endif()
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Werror=reorder-init-list")
 
 # When using sanitizers, we need to link with them too
 #if(CMAKE_BUILD_TYPE STREQUAL "Debug")
