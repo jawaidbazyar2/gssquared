@@ -1,6 +1,6 @@
 #include "LabeledButton.hpp"
 
-LabeledButton::LabeledButton(UIContext *ctx, int assetID, const std::string& button_text, int group) : Button_t(ctx, assetID, {}, group) {
+LabeledButton::LabeledButton(UIContext *ctx, int assetID, const std::string& button_text, int64_t value) : Button_t(ctx, assetID, {}, value) {
     this->text = button_text;
     //set_text_renderer(ctx->text_render);
 }

@@ -43,6 +43,7 @@
 #include "paths.hpp"
 #include "util/MenuInterface.h"
 #include "systemconfig.hpp"
+#include "SelectButton.hpp"
 
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
@@ -287,30 +288,31 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     for (int i = 7; i >= 0; i--) {
         char slot_text[128];
         snprintf(slot_text, sizeof(slot_text), "Slot %d: %s", i, slot_manager->get_device(static_cast<SlotType_t>(i))->name);
-        //Button_t* slot = new Button_t(slot_text, text_render, SS);
         SlotButton *slot = new SlotButton(&ui_ctx, 0, 0, i, slot_manager);
-        //slot->set_text_renderer(text_render); // set text renderer for the button
         slot->size(300, 30);
         slot_container->add(slot);    // Add in reverse order (7 to 0)
     }
     slot_container->layout();
     containers.push_back(slot_container);
 
-    Container_t *mon_color_con = new Container_t(&ui_ctx, SC);
+    mon_color_con = new Container_t(&ui_ctx, SC);
     mon_color_con->set_position(100, 510);
     mon_color_con->size(320, 65);
     containers.push_back(mon_color_con);
 
-    Style_t CB;
-    CB.background_color = 0x00000000;
-    CB.border_width = 1;
-    CB.border_color = 0x000000FF;
-    CB.padding = 2;
-    Button_t *mc1 = new Button_t(&ui_ctx, ColorDisplayButton, CB);
-    Button_t *mc2 = new Button_t(&ui_ctx, RGBDisplayButton, CB);
-    Button_t *mc3 = new Button_t(&ui_ctx, GreenDisplayButton, CB);
-    Button_t *mc4 = new Button_t(&ui_ctx, AmberDisplayButton, CB);
-    Button_t *mc5 = new Button_t(&ui_ctx, WhiteDisplayButton, CB);
+    Style_t CB = {
+        .background_color = 0x00000000,
+        .border_color = 0x000000FF,
+        .hover_color = 0x00C0C0FF,
+        .padding = 2,
+        .border_width = 1,        
+    };
+
+    SelectButton_t *mc1 = new SelectButton_t(&ui_ctx, ColorDisplayButton, CB, MONITOR_COMPOSITE);
+    SelectButton_t *mc2 = new SelectButton_t(&ui_ctx, RGBDisplayButton, CB, MONITOR_GS_RGB);
+    SelectButton_t *mc3 = new SelectButton_t(&ui_ctx, GreenDisplayButton, CB, MONITOR_MONO_GREEN);
+    SelectButton_t *mc4 = new SelectButton_t(&ui_ctx, AmberDisplayButton, CB, MONITOR_MONO_AMBER);
+    SelectButton_t *mc5 = new SelectButton_t(&ui_ctx, WhiteDisplayButton, CB, MONITOR_MONO_WHITE);
     display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
     mc1->on_click([ds](const SDL_Event& event) -> bool {
         getMenuInterface()->setMonitor(MONITOR_COMPOSITE);
@@ -339,16 +341,16 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     mon_color_con->add(mc5);
     mon_color_con->layout();
 
-    Container_t *speed_con = new Container_t(&ui_ctx, SC);
+    speed_con = new Container_t(&ui_ctx, SC);
     speed_con->set_position(100, 450);
     speed_con->size(320, 65);
     containers.push_back(speed_con);
 
-    speed_btn_10 = new Button_t(&ui_ctx, MHz1_0Button, CB);
-    speed_btn_28 = new Button_t(&ui_ctx, MHz2_8Button, CB);
-    speed_btn_71 = new Button_t(&ui_ctx, MHz7_159Button, CB);
-    speed_btn_14 = new Button_t(&ui_ctx, MHz14_318Button, CB);
-    speed_btn_8 = new Button_t(&ui_ctx, MHzInfinityButton, CB);
+    speed_btn_10 = new SelectButton_t(&ui_ctx, MHz1_0Button, CB, CLOCK_1_024MHZ);
+    speed_btn_28 = new SelectButton_t(&ui_ctx, MHz2_8Button, CB, CLOCK_2_8MHZ);
+    speed_btn_71 = new SelectButton_t(&ui_ctx, MHz7_159Button, CB, CLOCK_7_159MHZ);
+    speed_btn_14 = new SelectButton_t(&ui_ctx, MHz14_318Button, CB, CLOCK_14_3MHZ);
+    speed_btn_8 = new SelectButton_t(&ui_ctx, MHzInfinityButton, CB, CLOCK_FREE_RUN);
     
     speed_btn_10->on_click([this](const SDL_Event& event) -> bool {
         this->clock->set_clock_mode(CLOCK_1_024MHZ);
@@ -377,12 +379,13 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     speed_con->add(speed_btn_8);
     speed_con->layout();
 
-    Style_t ModalStyle;
-    ModalStyle.background_color = 0xFFFFFFFF;
-    ModalStyle.text_color = 0x000000FF;
-    ModalStyle.border_width = 2;
-    ModalStyle.border_color = 0xFF0000FF;
-    ModalStyle.padding = 2;
+    Style_t ModalStyle = {
+        .background_color = 0xFFFFFFFF,
+        .border_color = 0xFF0000FF,
+        .padding = 2,
+        .border_width = 2,
+        .text_color = 0x000000FF,
+    };
     
     diskii_save_con = new ModalContainer_t(&ui_ctx, "Disk Data has been modified. Save?", ModalStyle);
     diskii_save_con->set_position(300, 200);
@@ -481,22 +484,22 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         hov_speed_con = new Container_t(&ui_ctx, SB);
         // don't set position yet, we'll do that when we open the submenu.
         hov_speed_con->size(360, 65);
-        hov_speed_con->add(new Button_t(*speed_btn_10));
-        hov_speed_con->add(new Button_t(*speed_btn_28));
-        hov_speed_con->add(new Button_t(*speed_btn_71));
-        hov_speed_con->add(new Button_t(*speed_btn_14));
-        hov_speed_con->add(new Button_t(*speed_btn_8));
+        hov_speed_con->add(new SelectButton_t(*speed_btn_10));
+        hov_speed_con->add(new SelectButton_t(*speed_btn_28));
+        hov_speed_con->add(new SelectButton_t(*speed_btn_71));
+        hov_speed_con->add(new SelectButton_t(*speed_btn_14));
+        hov_speed_con->add(new SelectButton_t(*speed_btn_8));
         hov_speed_con->set_visible(false);
         hov_containers.push_back(hov_speed_con);       
 
-        LabeledButton *b4 = new LabeledButton(&ui_ctx, MHz1_0Button, "Speed", 0);
-        b4->size(60, 60);
-        b4->on_click([b4,this](const SDL_Event& event) -> bool {
+        hov_speed = new LabeledButton(&ui_ctx, MHz1_0Button, "Speed", 0);
+        hov_speed->size(60, 60);
+        hov_speed->on_click([this](const SDL_Event& event) -> bool {
             // open the speed submenu container
             if (!hov_speed_con->is_visible()) {            
                 // get position of b4
                 float x,y;
-                b4->get_tile_position(x, y);
+                hov_speed->get_tile_position(x, y);
                 printf("b4 position: %f, %f\n", x, y);
                 hov_speed_con->set_position(x+60, y);
                 hov_speed_con->set_visible(true);
@@ -505,7 +508,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         
             return true;
         });
-        hover_controls_con->add(b4);
+        hover_controls_con->add(hov_speed);
         hover_controls_con->layout();
 
     }
@@ -650,31 +653,10 @@ void OSD::update() {
         }
     }
 
-    // background color update based on clock speed to highlight current button.
-    speed_btn_10->style.background_color = 0x000000FF;
-    speed_btn_28->style.background_color = 0x000000FF;
-    speed_btn_71->style.background_color = 0x000000FF;
-    speed_btn_8->style.background_color = 0x000000FF;
-    speed_btn_14->style.background_color = 0x000000FF;
-    switch (this->clock->get_clock_mode()) {
-        case CLOCK_1_024MHZ:
-            speed_btn_10->style.background_color = 0x00FF00FF;
-            break;
-        case CLOCK_2_8MHZ:
-            speed_btn_28->style.background_color = 0x00FF00FF;
-            break;
-        case CLOCK_7_159MHZ:
-            speed_btn_71->style.background_color = 0x00FF00FF;
-            break;
-        case CLOCK_14_3MHZ:
-            speed_btn_14->style.background_color = 0x00FF00FF;
-            break;
-        case CLOCK_FREE_RUN:
-            speed_btn_8->style.background_color = 0x00FF00FF;
-            break;
-        default:
-            break; // should never happen..
-    }
+    speed_con->selected_value(getMenuInterface()->getCurrentSpeed());
+    hov_speed->set_assetID(speed_asset.at(getMenuInterface()->getCurrentSpeed()));
+    hov_speed_con->selected_value(getMenuInterface()->getCurrentSpeed());
+    mon_color_con->selected_value(getMenuInterface()->getCurrentMonitor());
 
     if (activeModal) {
         activeModal->render();
@@ -713,8 +695,6 @@ void OSD::render() {
         // Draw CP background with some opacity
         SDL_FRect rect = {0, 50, (float)(window_w-100), (float)(window_h-100)};
         ui_ctx.fill_rect(rect, 0xFFFFFFE0);
-        /* SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xE0);
-        SDL_RenderFillRect(renderer, &rect); */
       
         /* ----- */
 

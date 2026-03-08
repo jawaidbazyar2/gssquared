@@ -17,8 +17,11 @@
 #pragma once
 
 #include <vector>
+#include <map>
 
 #include <SDL3/SDL.h>
+#include "util/MenuInterface.h"
+#include "MainAtlas.hpp"
 
 #include "slots.hpp"
 
@@ -26,11 +29,12 @@
 #include "ModalContainer.hpp"
 #include "FadeContainer.hpp"
 #include "MousePositionTile.hpp"
-#include "AssetAtlas.hpp"
+
 #include "UIContext.hpp"
 #include "util/TextRenderer.hpp"
 #include "FadeButton.hpp"
 #include "util/EventQueue.hpp"
+#include "SelectButton.hpp"
 
 #define SLIDE_IN 1
 #define SLIDE_OUT 2
@@ -59,15 +63,19 @@ protected:
     int currentSlideStatus = SLIDE_OUT;
     int slidePosition = -slidePositionMax;
     int slidePositionDelta = slidePositionDeltaMax;
+
     SlotManager_t *slot_manager = nullptr;
     
     Container_t *drive_container = nullptr;
 
-    Button_t *speed_btn_10 = nullptr;
-    Button_t *speed_btn_28 = nullptr;
-    Button_t *speed_btn_71 = nullptr;
-    Button_t *speed_btn_8 = nullptr;
-    Button_t *speed_btn_14 = nullptr;
+    Container_t *speed_con = nullptr;
+    SelectButton_t *speed_btn_10 = nullptr;
+    SelectButton_t *speed_btn_28 = nullptr;
+    SelectButton_t *speed_btn_71 = nullptr;
+    SelectButton_t *speed_btn_8 = nullptr;
+    SelectButton_t *speed_btn_14 = nullptr;
+
+    Container_t *mon_color_con = nullptr;
 
     Button_t *save_btn = nullptr;
     Button_t *save_as_btn = nullptr;
@@ -91,6 +99,7 @@ protected:
 
     FadeContainer_t *hover_controls_con = nullptr;
     std::vector<Container_t *> hov_containers;
+    Button_t *hov_speed = nullptr;
     Container_t *hov_speed_con = nullptr;
     
     MousePositionTile_t* mouse_pos = nullptr;
@@ -108,6 +117,20 @@ protected:
     int headsUpMessageCount = 0;
 
     int slideStatusBeforeDrop = SLIDE_NONE;
+
+    const std::map<int, int> monitor_asset =  {
+        {MONITOR_COMPOSITE, ColorDisplayButton},
+        {MONITOR_GS_RGB, RGBDisplayButton},
+        {MONITOR_MONO_GREEN, GreenDisplayButton},
+        {MONITOR_MONO_AMBER, AmberDisplayButton},
+        {MONITOR_MONO_WHITE, WhiteDisplayButton},
+    };
+    const std::map<int, int> speed_asset =  {
+        {SPEED_1_0, MHz1_0Button},
+        {SPEED_2_8, MHz2_8Button},
+        {SPEED_7_1, MHz7_159Button},
+        {SPEED_14_3, MHz14_318Button},
+    };
 
 public:
     /**

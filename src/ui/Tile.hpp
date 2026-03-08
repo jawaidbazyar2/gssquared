@@ -55,7 +55,7 @@ public:
      * @brief Constructs a tile with the given style.
      * @param initial_style The initial style settings for the tile
      */
-    Tile_t(UIContext *ctx, const Style_t& initial_style = Style_t());
+    Tile_t(UIContext *ctx, const Style_t& initial_style = Style_t(), int64_t initial_value = 0);
     
     /**
      * @brief Virtual destructor for proper cleanup of derived classes.
@@ -143,6 +143,9 @@ public:
     void position_content(ContentPosition_t pos_h, ContentPosition_t pos_v);
     void print();
 
+    inline int64_t value() const { return _value; }
+    inline void value(int64_t v) { _value = v; }
+
     /**
      * @brief Called when hover state changes.
      * @param hovering True if mouse is hovering, false otherwise
@@ -159,6 +162,12 @@ protected:
     virtual void do_click(const SDL_Event& event);
 
     void calc_content_position();
+    inline virtual void calc_style() { 
+        estyle = style;
+        if (is_hovering) { estyle.background_color = estyle.hover_color; } 
+    }
+
+    Style_t estyle; // effective style
 
     UIContext *ctx = nullptr;
 
@@ -171,6 +180,8 @@ protected:
     bool active = true;
     bool is_hovering = false;
     int opacity = 255;
+
+    int64_t _value = 0;
 
     EventHandler click_callback_h = nullptr;
 

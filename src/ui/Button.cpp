@@ -40,8 +40,8 @@ void Button_t::set_content_size_from_tile() {
     cp.w = tp.w; cp.h = tp.h;
 }
 
-Button_t::Button_t(UIContext *ctx, const std::string& button_text, const Style_t& style, int group)
-    : Tile_t(ctx, style), text(button_text), group_id(group), buttonType(BT_Text) {
+Button_t::Button_t(UIContext *ctx, const std::string& button_text, const Style_t& style, int64_t value)
+    : Tile_t(ctx, style, value), text(button_text), buttonType(BT_Text)  {
         //set_content_size_from_tile();
         set_content_size_from_text();
         position_content(CP_CENTER, CP_CENTER);
@@ -64,8 +64,8 @@ void Button_t::set_content_size_from_text() {
     }
 }
 
-Button_t::Button_t(UIContext *ctx, int assetID, const Style_t& style, int group)
-    : Tile_t(ctx, style), aa(ctx->asset_atlas), assetID(assetID), group_id(group), buttonType(BT_Atlas) {
+Button_t::Button_t(UIContext *ctx, int assetID, const Style_t& style, int64_t value)
+    : Tile_t(ctx, style, value), aa(ctx->asset_atlas), assetID(assetID), buttonType(BT_Atlas) {
         //set_text_renderer(ctx->text_render);
         set_size_from_asset();
         position_content(CP_CENTER, CP_CENTER);
@@ -76,8 +76,8 @@ Button_t::Button_t(UIContext *ctx, int assetID, const Style_t& style, int group)
  * @param button_text The text to display on the button.
  * @param group The button group ID (default 0).
  */
-Button_t::Button_t(UIContext *ctx, const std::string& button_text, int group) 
-    : Tile_t(ctx, Style_t()), text(button_text), group_id(group), buttonType(BT_Text) {}
+Button_t::Button_t(UIContext *ctx, const std::string& button_text, int64_t value) 
+    : Tile_t(ctx, Style_t(), value), text(button_text), buttonType(BT_Text) {}
 
 
 void Button_t::set_assetID(int id) { 
@@ -86,16 +86,10 @@ void Button_t::set_assetID(int id) {
 }
 
 /**
- * @brief Sets the hover color for the button.
- * @param color The color to display when hovering over the button.
- */
-void Button_t::set_hover_color(uint32_t color) { style.hover_color = color; }
-
-/**
  * @brief Gets the button's group ID.
  * @return The group ID this button belongs to.
  */
-int Button_t::get_group_id() const { return group_id; }
+/* int Button_t::get_group_id() const { return group_id; } */
 
 /**
  * @brief Renders the button to the screen.

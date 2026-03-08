@@ -230,3 +230,11 @@ Tile_t* Container_t::get_tile(size_t index) const {
 void Container_t::remove_all_tiles() {
     tiles.clear();
 }
+
+void Container_t::selected_value(int64_t v) {
+    for (size_t i = 0; i < tiles.size(); i++) {
+        tiles[i]->set_active(tiles[i]->value() == v);
+    }
+    // optionally track selected value
+    _selected_value = v;
+}

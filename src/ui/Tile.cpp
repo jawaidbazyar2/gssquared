@@ -17,7 +17,7 @@
 
 #include "Tile.hpp"
 
-Tile_t::Tile_t(UIContext *ctx, const Style_t& initial_style) : ctx(ctx), style(initial_style) {
+Tile_t::Tile_t(UIContext *ctx, const Style_t& initial_style, int64_t initial_value) : ctx(ctx), style(initial_style), _value(initial_value) {
     calc_content_position();
 }
 
@@ -78,17 +78,18 @@ uint32_t Tile_t::opaque(uint32_t color) {
 void Tile_t::render() {
     if (!visible) return;
 
-    uint32_t bcolor = (is_hovering) ? style.hover_color : style.border_color;
+    calc_style();
+    /* uint32_t bcolor = (is_hovering) ? style.hover_color : style.border_color; */
 
     // Draw background (includes padding area)
-    ctx->fill_rect({tp.x, tp.y, tp.w, tp.h}, opaque(style.background_color));
+    ctx->fill_rect({tp.x, tp.y, tp.w, tp.h}, opaque(estyle.background_color));
 
     // Draw border if needed
     if (style.border_width > 0) {
         //printf("tile_t:render:hover: %d, draw border: %08X width: %d\n", (int)is_hovering,  bcolor, style.border_width);
-        uint32_t color = opaque(bcolor);
+        uint32_t color = opaque(estyle.border_color);
 
-        for (uint32_t i = 0; i < style.border_width; i++) {
+        for (uint32_t i = 0; i < estyle.border_width; i++) {
             SDL_FRect border_rect = {
                 tp.x + i, tp.y + i,
                 tp.w - 2 * i, tp.h - 2 * i
@@ -99,7 +100,7 @@ void Tile_t::render() {
 }
 
 bool Tile_t::handle_mouse_event(const SDL_Event& event) {
-    if (!active || !visible) return(false);
+    if (/* !active ||  */!visible) return(false);
 
     if (event.type == SDL_EVENT_MOUSE_MOTION) {
         float mouse_x = event.motion.x;

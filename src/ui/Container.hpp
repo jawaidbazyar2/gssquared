@@ -35,7 +35,7 @@
  */
 class Container_t : public Tile_t {
 protected:
-
+    int64_t _selected_value = 0;
     int layout_lr = 0; /* 0 = left to right, 1 = right to left */
     int layout_tb = 0; /* 0 = top to bottom, 1 = bottom to top */
     std::vector<Tile_t*> tiles;
@@ -157,4 +157,11 @@ public:
      */
     inline void set_visible(bool visible) { this->visible = visible; };
     inline bool is_visible() const { return visible; };
+
+    /**
+     * @brief Selects a tile by value.
+     * @param v The value to select
+     */
+    void selected_value(int64_t v);
+    int64_t selected_value() const { return _selected_value; }
 }; 

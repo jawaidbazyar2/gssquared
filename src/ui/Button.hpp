@@ -43,7 +43,7 @@ protected:
     std::string text;           // Button text (if text button)
     AssetAtlas_t* aa = nullptr;
     int assetID = 0;
-    int group_id = 0;          // For grouping related buttons
+    //int group_id = 0;          // For grouping related buttons
     ButtonType_t buttonType;    // Type of button (text or image)
 
     /**
@@ -68,7 +68,7 @@ public:
      * @param style The button's style settings
      * @param group The button group ID
      */
-    Button_t(UIContext *ctx, const std::string& button_text, const Style_t& style = Style_t(), int group = 0);
+    Button_t(UIContext *ctx, const std::string& button_text, const Style_t& style = Style_t(), int64_t value = 0);
     
     /**
      * @brief Constructs a text button with style using a rendering context.
@@ -86,14 +86,14 @@ public:
      * @param style The button's style settings
      * @param group The button group ID
      */
-    Button_t(UIContext *ctx, int assetID, const Style_t& style = Style_t(), int group = 0);
+    Button_t(UIContext *ctx, int assetID, const Style_t& style = Style_t(), int64_t value = 0);
 
     /**
      * @brief Constructs a text button without style.
      * @param button_text The text to display
      * @param group The button group ID
      */
-    Button_t(UIContext *ctx, const std::string& button_text, int group = 0);
+    Button_t(UIContext *ctx, const std::string& button_text, int64_t value = 0);
 
     /**
      * @brief Sets the asset ID for image buttons.
@@ -102,16 +102,10 @@ public:
     void set_assetID(int id);
 
     /**
-     * @brief Sets the hover color for the button.
-     * @param color The color to display when hovering
-     */
-    void set_hover_color(uint32_t color);
-
-    /**
      * @brief Gets the button's group ID.
      * @return The group ID this button belongs to
      */
-    int get_group_id() const;
+    /* int get_group_id() const; */
 
     /**
      * @brief Renders the button.
