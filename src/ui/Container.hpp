@@ -143,7 +143,7 @@ public:
      * @brief Gets the number of tiles in the container.
      * @return The number of tiles in the container
      */
-    size_t get_tile_count() const { return tiles.size(); };
+    size_t count() const { return tiles.size(); };
 
     /**
      * @brief Gets the tiles in the container.

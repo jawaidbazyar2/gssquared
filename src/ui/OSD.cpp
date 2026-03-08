@@ -538,7 +538,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         }
         delete media;
         // after that, find button that was under the mouse. Scan Drive Container for button that is highlighted.
-        for (int i = 0; i < drive_container->get_tile_count(); i++) {
+        for (int i = 0; i < drive_container->count(); i++) {
             Tile_t *tile = drive_container->get_tile(i);
             if (tile && tile->is_mouse_hovering()) {
                 StorageButton *button = dynamic_cast<StorageButton *>(tile);
@@ -621,7 +621,7 @@ void OSD::update() {
     // update disk status - iterate over all drives based on what's in slots
     uint16_t key_slot_match = 0;
     // two pass. First, update buttons and calculate the key mask. (the lit drive could have been the previous one, hence 2-pass.)
-    for (int i = 0; i < drive_container->get_tile_count(); i++) {
+    for (int i = 0; i < drive_container->count(); i++) {
         Tile_t *tile = drive_container->get_tile(i);
         if (tile) {
             StorageButton *button = dynamic_cast<StorageButton *>(tile);
@@ -639,7 +639,7 @@ void OSD::update() {
     if ((currentSlideStatus == SLIDE_OUT)  && (key_slot_match)) {
         // second pass, update the hud container with items matching the key mask.
         // and set their hover status to false.
-        for (int i = 0; i < drive_container->get_tile_count(); i++) {
+        for (int i = 0; i < drive_container->count(); i++) {
             Tile_t *tile = drive_container->get_tile(i);
             if (tile) {
                 StorageButton *button = dynamic_cast<StorageButton *>(tile);
@@ -757,7 +757,7 @@ void OSD::render() {
             container->render();
         }
 
-        if (hud_drive_container->get_tile_count() > 0) {
+        if (hud_drive_container->count() > 0) {
             hud_drive_container->layout();
             hud_drive_container->set_position(((float)window_width - 420) / 2, window_height - 125 );
 
