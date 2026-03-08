@@ -4513,7 +4513,6 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_INOP_CB: /* INOP CB */ /* OP_WAI_IMP */
             if constexpr (CPUTraits::has_65816_ops) {
-                printf("WAI\n"); // debug, see if anyone ever uses this.
                 cpu->rdy = true;
                 incr_cycles(); // ticks 2 cycles past the opcode.
                 incr_cycles();
