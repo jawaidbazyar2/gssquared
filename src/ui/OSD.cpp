@@ -191,39 +191,44 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
 
     ui_ctx = { renderer, text_render, title_trender, aa };
 
-    Style_t CS;
-    CS.padding = 4;
-    CS.border_width = 2;
-    CS.background_color = 0xFFFFFFFF;
-    CS.border_color = 0x008000E0;
-    CS.hover_color = 0x008080FF;
-    Style_t DC;
-    DC.background_color = 0x00000040;
-    DC.border_color = 0xFFFFFF80;
-    DC.hover_color = 0x008080FF;
-    DC.padding = 4;
-    DC.border_width = 2;
-    Style_t DS;
-    DS.background_color = 0x00000000;
-    DS.border_color = 0x00000000;
-    DS.hover_color = 0x008080FF;
-    DS.padding = 5;
-    DS.border_width = 2;
-    Style_t SC;
-    SC.background_color = 0x006030FF;
-    SC.border_color = 0xFFFFFFFF;
-    SC.border_width = 2;
-    SC.hover_color = 0x008080FF;
-    SC.padding = 4;
-    Style_t HUD;
-    HUD.background_color = 0x00000000;
-    HUD.border_color = 0x000000FF;
-    HUD.border_width = 0;
+    Style_t CS = {
+        .background_color = 0xFFFFFFFF,
+        .border_color = 0x008000E0,
+        .hover_color = 0x008080FF,
+        .padding = 4,
+        .border_width = 2,
+    };
+    Style_t DC = {
+        .background_color = 0x00000040,
+        .border_color = 0xFFFFFF80,
+        .hover_color = 0x008080FF,
+        .padding = 4,
+        .border_width = 2,
+    };
+    Style_t DS = {
+        .background_color = 0x00000000,
+        .border_color = 0x00000000,
+        .hover_color = 0x008080FF,
+        .padding = 5,
+        .border_width = 2,
+    };
+    Style_t SC = {
+        .background_color = 0x006030FF,
+        .border_color = 0xFFFFFFFF,
+        .hover_color = 0x008080FF,
+        .padding = 4,
+        .border_width = 2,
+    };
+    Style_t HUD = {
+        .background_color = 0x00000000,
+        .border_color = 0x000000FF,
+        .border_width = 0,
+    };
 
     // Create a container for our drive buttons
-    drive_container = new Container_t(&ui_ctx, 10, DC);
+    drive_container = new Container_t(&ui_ctx, DC);
     drive_container->set_position(600, 70);
-    drive_container->set_tile_size(415, 600);
+    drive_container->size(415, 600);
     containers.push_back(drive_container);
 
     // New Mounts-based button creation
@@ -269,15 +274,15 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
      this needs to be dynamic, based on which slot is active at any given time.
      Create HUD drive container for first DiskII slot found 
     */
-    hud_drive_container = new Container_t(&ui_ctx, 10, HUD);
+    hud_drive_container = new Container_t(&ui_ctx, HUD);
     hud_drive_container->set_position(340, 800);
-    hud_drive_container->set_tile_size(420, 120);
+    hud_drive_container->size(420, 120);
     hud_drive_container->layout();
 
     // Create another container, this one for slots.
-    Container_t *slot_container = new Container_t(&ui_ctx, 8, SC);  // Container for 8 slot buttons
+    Container_t *slot_container = new Container_t(&ui_ctx, SC);
     slot_container->set_position(30, 140);
-    slot_container->set_tile_size(320, 304);
+    slot_container->size(320, 304);
 
     for (int i = 7; i >= 0; i--) {
         char slot_text[128];
@@ -285,15 +290,15 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         //Button_t* slot = new Button_t(slot_text, text_render, SS);
         SlotButton *slot = new SlotButton(&ui_ctx, 0, 0, i, slot_manager);
         //slot->set_text_renderer(text_render); // set text renderer for the button
-        slot->set_tile_size(300, 30);
-        slot_container->add(slot, 7 - i);    // Add in reverse order (7 to 0)
+        slot->size(300, 30);
+        slot_container->add(slot);    // Add in reverse order (7 to 0)
     }
     slot_container->layout();
     containers.push_back(slot_container);
 
-    Container_t *mon_color_con = new Container_t(&ui_ctx, 5, SC);
+    Container_t *mon_color_con = new Container_t(&ui_ctx, SC);
     mon_color_con->set_position(100, 510);
-    mon_color_con->set_tile_size(320, 65);
+    mon_color_con->size(320, 65);
     containers.push_back(mon_color_con);
 
     Style_t CB;
@@ -334,9 +339,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     mon_color_con->add(mc5);
     mon_color_con->layout();
 
-    Container_t *speed_con = new Container_t(&ui_ctx, 6, SC);
+    Container_t *speed_con = new Container_t(&ui_ctx, SC);
     speed_con->set_position(100, 450);
-    speed_con->set_tile_size(320, 65);
+    speed_con->size(320, 65);
     containers.push_back(speed_con);
 
     speed_btn_10 = new Button_t(&ui_ctx, MHz1_0Button, CB);
@@ -379,9 +384,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     ModalStyle.border_color = 0xFF0000FF;
     ModalStyle.padding = 2;
     
-    diskii_save_con = new ModalContainer_t(&ui_ctx, 10, "Disk Data has been modified. Save?", ModalStyle);
+    diskii_save_con = new ModalContainer_t(&ui_ctx, "Disk Data has been modified. Save?", ModalStyle);
     diskii_save_con->set_position(300, 200);
-    diskii_save_con->set_tile_size(500, 200);
+    diskii_save_con->size(500, 200);
 
     // Create text buttons for the disk save dialog
     Style_t TextButtonCfg;
@@ -395,10 +400,10 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     save_as_btn = new Button_t(&ui_ctx, "Save As", TextButtonCfg);
     discard_btn = new Button_t(&ui_ctx, "Discard", TextButtonCfg);
     cancel_btn = new Button_t(&ui_ctx, "Cancel", TextButtonCfg);
-    save_btn->set_tile_size(100, 30);
-    save_as_btn->set_tile_size(100, 30);
-    discard_btn->set_tile_size(100, 30);
-    cancel_btn->set_tile_size(100, 30);
+    save_btn->size(100, 30);
+    save_as_btn->size(100, 30);
+    discard_btn->size(100, 30);
+    cancel_btn->size(100, 30);
 
     save_btn->on_click(
         [this](const SDL_Event& event) -> bool {
@@ -425,21 +430,21 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         close_panel();
         return true;
     });
-    close_btn->set_tile_size(36, 36);
-    close_btn->set_tile_position(window_w-100, 49);
+    close_btn->size(36, 36);
+    close_btn->set_position(window_w-100, 49);
 
     open_btn = new FadeButton_t(&ui_ctx, ">", TextButtonCfg);
     open_btn->on_click([this](const SDL_Event& event) -> bool {
         open_panel();
         return true;
     });
-    open_btn->set_tile_size(36, 36);
-    open_btn->set_tile_position(0, 50);
+    open_btn->size(36, 36);
+    open_btn->set_position(0, 50);
     open_btn->set_fade_frames(512, 4); // hold for one second, then fade out over next second. (roughly)
 
-    hover_controls_con = new FadeContainer_t(&ui_ctx, 10, HUD, 512);
+    hover_controls_con = new FadeContainer_t(&ui_ctx, HUD, 512);
     hover_controls_con->set_position(10, 100);
-    hover_controls_con->set_tile_size(65, 500);
+    hover_controls_con->size(65, 500);
 
     Style_t SB;
     SB.background_color = 0x00000000;
@@ -449,7 +454,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
 
     {
         LabeledButton *b1 = new LabeledButton(&ui_ctx, ResetButton, "", 0);
-        b1->set_tile_size(60, 60);
+        b1->size(60, 60);
         b1->on_click([this,computer](const SDL_Event& event) -> bool {
             computer->reset(false);
             return true;
@@ -457,7 +462,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         hover_controls_con->add(b1);
 
         LabeledButton *b3 = new LabeledButton(&ui_ctx, GreenDisplayButton, "Capture", 0);
-        b3->set_tile_size(60, 60);
+        b3->size(60, 60);
         b3->on_click([this,computer](const SDL_Event& event) -> bool {
             getMenuInterface()->machineCaptureMouse();
             return true;
@@ -465,7 +470,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         hover_controls_con->add(b3);
 
         LabeledButton *b2 = new LabeledButton(&ui_ctx, GreenDisplayButton, "Debug", 0);
-        b2->set_tile_size(60, 60);
+        b2->size(60, 60);
         b2->on_click([this,computer](const SDL_Event& event) -> bool {
             getMenuInterface()->openDebugWindow();
             return true;
@@ -473,19 +478,19 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         hover_controls_con->add(b2);
 
         // clone each item in speed_con into a new container "hov_speed_con"
-        hov_speed_con = new Container_t(&ui_ctx, 10, SB);
+        hov_speed_con = new Container_t(&ui_ctx, SB);
         // don't set position yet, we'll do that when we open the submenu.
-        hov_speed_con->set_tile_size(360, 65);
-        hov_speed_con->add(new Button_t(*speed_btn_10), 0);
-        hov_speed_con->add(new Button_t(*speed_btn_28), 1);
-        hov_speed_con->add(new Button_t(*speed_btn_71), 2);
-        hov_speed_con->add(new Button_t(*speed_btn_14), 3);
-        hov_speed_con->add(new Button_t(*speed_btn_8), 4);
+        hov_speed_con->size(360, 65);
+        hov_speed_con->add(new Button_t(*speed_btn_10));
+        hov_speed_con->add(new Button_t(*speed_btn_28));
+        hov_speed_con->add(new Button_t(*speed_btn_71));
+        hov_speed_con->add(new Button_t(*speed_btn_14));
+        hov_speed_con->add(new Button_t(*speed_btn_8));
         hov_speed_con->set_visible(false);
         hov_containers.push_back(hov_speed_con);       
 
         LabeledButton *b4 = new LabeledButton(&ui_ctx, MHz1_0Button, "Speed", 0);
-        b4->set_tile_size(60, 60);
+        b4->size(60, 60);
         b4->on_click([b4,this](const SDL_Event& event) -> bool {
             // open the speed submenu container
             if (!hov_speed_con->is_visible()) {            
@@ -507,7 +512,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
 
     system_config = computer->get_system();
     system_badge = new Button_t(&ui_ctx, system_config->image_id, SB);
-    system_badge->set_tile_position(30, 65);
+    system_badge->set_position(30, 65);
 
     computer->sys_event->registerHandler(SDL_EVENT_DROP_BEGIN, [this](const SDL_Event &event) {
         SDL_RaiseWindow(window);
@@ -646,26 +651,26 @@ void OSD::update() {
     }
 
     // background color update based on clock speed to highlight current button.
-    speed_btn_10->set_background_color(0x000000FF);
-    speed_btn_28->set_background_color(0x000000FF);
-    speed_btn_71->set_background_color(0x000000FF);
-    speed_btn_8->set_background_color(0x000000FF);
-    speed_btn_14->set_background_color(0x000000FF);
+    speed_btn_10->style.background_color = 0x000000FF;
+    speed_btn_28->style.background_color = 0x000000FF;
+    speed_btn_71->style.background_color = 0x000000FF;
+    speed_btn_8->style.background_color = 0x000000FF;
+    speed_btn_14->style.background_color = 0x000000FF;
     switch (this->clock->get_clock_mode()) {
         case CLOCK_1_024MHZ:
-            speed_btn_10->set_background_color(0x00FF00FF);
+            speed_btn_10->style.background_color = 0x00FF00FF;
             break;
         case CLOCK_2_8MHZ:
-            speed_btn_28->set_background_color(0x00FF00FF);
+            speed_btn_28->style.background_color = 0x00FF00FF;
             break;
         case CLOCK_7_159MHZ:
-            speed_btn_71->set_background_color(0x00FF00FF);
+            speed_btn_71->style.background_color = 0x00FF00FF;
             break;
         case CLOCK_14_3MHZ:
-            speed_btn_14->set_background_color(0x00FF00FF);
+            speed_btn_14->style.background_color = 0x00FF00FF;
             break;
         case CLOCK_FREE_RUN:
-            speed_btn_8->set_background_color(0x00FF00FF);
+            speed_btn_8->style.background_color = 0x00FF00FF;
             break;
         default:
             break; // should never happen..

@@ -20,34 +20,34 @@
 #include "UIContext.hpp"
 #include "util/StorageDevice.hpp"
 
-ModalContainer_t::ModalContainer_t(UIContext *ctx, size_t max_tiles, const char* msg_text, const Style_t& initial_style)
-    : Container_t(ctx, max_tiles, initial_style), msg_text(msg_text) {
+ModalContainer_t::ModalContainer_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style)
+    : Container_t(ctx, initial_style), msg_text(msg_text) {
 }
 
-ModalContainer_t::ModalContainer_t(UIContext *ctx, size_t max_tiles, const char* msg_text)
-    : Container_t(ctx, max_tiles), msg_text(msg_text) {
+ModalContainer_t::ModalContainer_t(UIContext *ctx, const char* msg_text)
+    : Container_t(ctx, Style_t()), msg_text(msg_text) {
 }
 
 void ModalContainer_t::layout() {
-    if (!visible || tile_count == 0) return;
+    if (!visible || tiles.empty()) return;
 
     // TODO: actually add up the widths of the tiles (don't assume/set them);
     // and iterate based on each actual tile width
 
     // Center buttons in the container
     // Calculate total width of all tiles and gaps
-    float buttons_width = (tile_count * 90.0f) + ((tile_count - 1) * 10.0f);
+    float buttons_width = (tiles.size() * 90.0f) + ((tiles.size() - 1) * 10.0f);
     // Center the starting position
-    float buttons_x = (w - buttons_width) / 2;
+    float buttons_x = (tp.w - buttons_width) / 2;
     float buttons_y = 100.0f;
-    printf("x: %f y: %f w: %f h: %f\n", x, y, w, h);
+    printf("x: %f y: %f w: %f h: %f\n", tp.x, tp.y, tp.w, tp.h);
     printf("buttons_x: %f buttons_y: %f buttons_width: %f\n", buttons_x, buttons_y, buttons_width);
-    for (size_t i = 0; i < tile_count; i++) {
+    for (size_t i = 0; i < tiles.size(); i++) {
         if (tiles[i] && tiles[i]->is_visible()) {
-            tiles[i]->set_tile_position(x + buttons_x, y + buttons_y);
-            tiles[i]->set_tile_size(90.0f, 20.0f);  // Set each tile to 100 width, 20 height
+            tiles[i]->set_position(tp.x + buttons_x, tp.y + buttons_y);
+            tiles[i]->size(90.0f, 20.0f);  // Set each tile to 100 width, 20 height
             buttons_x += 100.0f;  // Add some spacing between tiles
-            printf("tile %zu: %f %f\n", i, x+buttons_x, y+buttons_y);
+            printf("tile %zu: %f %f\n", i, tp.x+buttons_x, tp.y+buttons_y);
         }
     }
 }
@@ -62,10 +62,10 @@ void ModalContainer_t::render() {
         // For now, we'll just print the message to console
         // TODO: Implement proper text rendering
         //printf("Modal Message: %s\n", msg_text.c_str());
-        float content_x = (w - strlen(msg_text.c_str()) * SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE) / 2;
+        float content_x = (tp.w - strlen(msg_text.c_str()) * SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE) / 2;
         //printf("content_x: %f X: %f Y: %f %s %08X\n", content_x, x, y, msg_text.c_str(), style.text_color);
         ctx->text_render->set_color(style.text_color >> 24, style.text_color >> 16, style.text_color >> 8, style.text_color & 0xFF);
-        ctx->text_render->render(msg_text, x + (w / 2), y + 30, TEXT_ALIGN_CENTER );
+        ctx->text_render->render(msg_text, tp.x + (tp.w / 2), tp.y + 30, TEXT_ALIGN_CENTER );
     }
 }
 

@@ -21,7 +21,7 @@ Tile_t::Tile_t(UIContext *ctx, const Style_t& initial_style) : ctx(ctx), style(i
     calc_content_position();
 }
 
-void Tile_t::set_tile_size(float tile_width, float tile_height) {
+void Tile_t::size(float tile_width, float tile_height) {
     tp.w = tile_width;
     tp.h = tile_height;
     calc_content_position();
@@ -56,13 +56,13 @@ void Tile_t::set_padding(uint32_t new_padding) {
     style.padding = new_padding;
     // Recalculate total size based on new padding
     calc_content_position();
-//    set_tile_size(cp.w, cp.h);  
+//    size(cp.w, cp.h);  
 }
 
 void Tile_t::set_border_width(uint32_t width) {
     style.border_width = width;
     // Recalculate total size based on new border width
-    //set_tile_size(cp.w, cp.h);
+    //size(cp.w, cp.h);
 }
 
 int Tile_t::calc_opacity(uint32_t color) {
@@ -136,10 +136,7 @@ bool Tile_t::is_active() const { return active; }
 bool Tile_t::is_mouse_hovering() const { return is_hovering; }
 void Tile_t::set_visible(bool v) { visible = v; }
 void Tile_t::set_active(bool a) { active = a; }
-void Tile_t::set_tile_position(float x, float y) { tp.x = x; tp.y = y; }
-void Tile_t::set_background_color(uint32_t color) { style.background_color = color; }
-void Tile_t::set_border_color(uint32_t color) { style.border_color = color; }
-void Tile_t::set_hover_color(uint32_t color) { style.hover_color = color; }
+void Tile_t::set_position(float x, float y) { tp.x = x; tp.y = y; }
 
 /*
 border is outside the content area.
@@ -197,10 +194,7 @@ void Tile_t::on_hover_changed(bool hovering) {
 * @brief Called when the tile is clicked. (send the event for fullness, for text edit etc we need the exact x/y location)
 */
 void Tile_t::do_click(const SDL_Event& event) {
-    if (click_callback) {
-        click_callback(callback_data);
-    }
-    else if (click_callback_h) {
+    if (click_callback_h) {
         click_callback_h(event);
     }
 }

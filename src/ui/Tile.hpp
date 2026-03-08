@@ -49,7 +49,7 @@ class Tile_t {
 
 public:
     using EventHandler = std::function<bool(const SDL_Event&)>;
-    typedef void (*click_callback_t)(void* data);
+    //typedef void (*click_callback_t)(void* data);
 
     /**
      * @brief Constructs a tile with the given style.
@@ -67,7 +67,7 @@ public:
      * @param content_width Width of the content area
      * @param content_height Height of the content area
      */
-    void set_tile_size(float tile_width, float tile_height);
+    void size(float tile_width, float tile_height);
 
     /**
      * @brief Gets the content area position.
@@ -97,7 +97,7 @@ public:
      * @param out_h Output parameter for total height
      */
     void get_tile_size(float* out_w, float* out_h) const;
-    //void set_tile_size(float tile_width, float tile_height);
+    //void size(float tile_width, float tile_height);
 
     /**
      * @brief Sets the padding around the content area.
@@ -131,16 +131,10 @@ public:
     // State setters
     void set_visible(bool v);
     void set_active(bool a);
-    void set_tile_position(float x, float y);
-    void set_background_color(uint32_t color);
-    void set_border_color(uint32_t color);
-    void set_hover_color(uint32_t color);
+    virtual void set_position(float x, float y);
 
-    /* Two varieties - one for C-style callbacks, one for lambdas */
-    //void on_click(click_callback_t callback, void* data = nullptr);
     void on_click(EventHandler handler);
 
-    //void set_text_renderer(TextRenderer *text_render);
     void set_opacity(int o);
     int calc_opacity(uint32_t color);
     uint32_t opaque(uint32_t color);
@@ -155,6 +149,8 @@ public:
      */
      virtual void on_hover_changed(bool hovering);
 
+     Style_t style;
+
 protected:
 
     /**
@@ -166,10 +162,6 @@ protected:
 
     UIContext *ctx = nullptr;
 
-// should be private?
-    Style_t style;
-    int opacity = 255;
-
     UI_Rect out;                 // outer rect - rectangle that includes padding and border
     UI_Rect tp;                  // tile position - does not include padding or border
     UI_Rect cp;                  // content position - if content is smaller than tp
@@ -178,8 +170,8 @@ protected:
     bool visible = true;
     bool active = true;
     bool is_hovering = false;
-    click_callback_t click_callback = nullptr;
+    int opacity = 255;
+
     EventHandler click_callback_h = nullptr;
-    void* callback_data = nullptr;
 
 }; 

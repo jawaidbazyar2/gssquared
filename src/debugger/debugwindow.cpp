@@ -46,9 +46,9 @@ debug_window_t::debug_window_t(computer_t *computer) {
     CS.border_color = 0x00800000;
     CS.hover_color = 0x00000000;
 
-    tab_container = new Container_t(&ui_ctx, 10, CS);  // Increased to 5 to accommodate the mouse position tile
+    tab_container = new Container_t(&ui_ctx, CS);
     tab_container->set_position(25, 15);
-    tab_container->set_tile_size(400, 35);
+    tab_container->size(400, 35);
     containers.push_back(tab_container);
 
     Style_t SS;
@@ -61,39 +61,39 @@ debug_window_t::debug_window_t(computer_t *computer) {
     SS.border_width = 1;
     
     Button_t* s1 = new Button_t(&ui_ctx, "Trace", SS);
-    s1->set_tile_size(70, 22);
+    s1->size(70, 22);
     //s1->set_text_renderer(text_renderer); // set text renderer for the button
     s1->on_click([this](const SDL_Event& event) -> bool {
         toggle_panel(DEBUG_PANEL_TRACE);
         return true;
     });
-    tab_container->add(s1,0);
+    tab_container->add(s1);
     
     Button_t* s2 = new Button_t(&ui_ctx, "Monitor", SS);
-    s2->set_tile_size(70, 22);
+    s2->size(70, 22);
     //s2->set_text_renderer(text_renderer); // set text renderer for the button
     s2->on_click([this](const SDL_Event& event) -> bool {
         toggle_panel(DEBUG_PANEL_MONITOR);
         return true;
     });
-    tab_container->add(s2,1);
+    tab_container->add(s2);
 
     Button_t* s3 = new Button_t(&ui_ctx, "Watch", SS);
-    s3->set_tile_size(70, 22);
+    s3->size(70, 22);
     //s3->set_text_renderer(text_renderer); // set text renderer for the button
     s3->on_click([this](const SDL_Event& event) -> bool {
         toggle_panel(DEBUG_PANEL_MEMORY);
         return true;
     });
 
-    tab_container->add(s3,2);
+    tab_container->add(s3);
 
     tab_container->layout();
 
     mon_textinput = new TextInput_t(&ui_ctx, "help", SS);
     mon_textinput->set_text_renderer(text_renderer);
     mon_textinput->set_max_length(80);
-    mon_textinput->set_tile_size(600, 20);
+    mon_textinput->size(600, 20);
     mon_textinput->set_padding(2);
     mon_textinput->set_enter_handler([this](const SDL_Event& event) -> bool {
         // Call the command interpreter.
@@ -384,7 +384,7 @@ void debug_window_t::render_pane_monitor() {
     separator_line(DEBUG_PANEL_MONITOR, textarea_pos);
     char buffer[256] = {' '};
     draw_text(DEBUG_PANEL_MONITOR, x, textarea_pos, ">");
-    mon_textinput->set_tile_position(x + 20, (textarea_pos * font_line_height));
+    mon_textinput->set_position(x + 20, (textarea_pos * font_line_height));
     mon_textinput->render();
 
     // get number of lines in mon_display_buffer
@@ -511,9 +511,9 @@ void debug_window_t::render() {
         if (btn) {
             // Set active tab button to different background color
             if (panel_visible[i]) {
-                btn->set_background_color(0x00A1F0FF); // Active tab color
+                btn->style.background_color = 0x00A1F0FF; // Active tab color
             } else {
-                btn->set_background_color(0x00426340); // Inactive tab color
+                btn->style.background_color = 0x00426340; // Inactive tab color
             }
         }
     }

@@ -29,8 +29,8 @@ private:
     uint64_t data;
     
 public:
-    ModalContainer_t(UIContext *ctx, size_t max_tiles, const char* msg_text, const Style_t& initial_style);
-    ModalContainer_t(UIContext *ctx, size_t max_tiles, const char* msg_text);
+    ModalContainer_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style);
+    ModalContainer_t(UIContext *ctx, const char* msg_text);
     
     void layout() override;
     void render() override;

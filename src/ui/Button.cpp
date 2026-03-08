@@ -32,7 +32,7 @@
 // default to setting both tile and content size.
 void Button_t::set_size_from_asset() {
     SDL_FRect rect = aa->get_rect(assetID);
-    set_tile_size(rect.w, rect.h);
+    size(rect.w, rect.h);
     set_content_size(rect.w, rect.h);
 }
 

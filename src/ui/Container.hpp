@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <string>
+#include <vector>
 #include <SDL3/SDL.h>
 #include "Tile.hpp"
 #include "Style.hpp"
@@ -33,43 +33,27 @@
  * - Support different layout directions
  * - Render all contained tiles
  */
-class Container_t {
+class Container_t : public Tile_t {
 protected:
-    Style_t style;
-    float x, y;
-    float w, h;
-    bool visible = true;
-    bool active = true;
-    bool is_hovering = false;
+
     int layout_lr = 0; /* 0 = left to right, 1 = right to left */
     int layout_tb = 0; /* 0 = top to bottom, 1 = bottom to top */
-    size_t tile_count = 0;
-    size_t tile_max = 0;
-    Tile_t **tiles = nullptr;  // Array of pointers to tiles
-    UIContext *ctx;
-
-private:
-    /**
-     * @brief Initializes the tiles array.
-     * @param max_tiles Maximum number of tiles this container can hold
-     */
-    void init_tiles(size_t max_tiles);
+    std::vector<Tile_t*> tiles;
 
 public:
+
     /**
      * @brief Constructs a container with style.
      * @param ctx Shared UI rendering context
-     * @param max_tiles Maximum number of tiles this container can hold
      * @param initial_style Initial style settings
      */
-    Container_t(UIContext *ctx, size_t max_tiles, const Style_t& initial_style);
+    Container_t(UIContext *ctx, const Style_t& initial_style = Style_t());
     
     /**
      * @brief Constructs a container with default style.
      * @param ctx Shared UI rendering context
-     * @param max_tiles Maximum number of tiles this container can hold
      */
-    Container_t(UIContext *ctx, size_t max_tiles);
+    Container_t(UIContext *ctx);
 
     /**
      * @brief Destructor that cleans up all contained tiles.
@@ -93,43 +77,37 @@ public:
     void apply_style(const Style_t& new_style);
 
     /**
-     * @brief Adds a tile to the container.
+     * @brief Appends a tile to the container.
      * @param tile Pointer to the tile to add
-     * @param index Position in the container where to add the tile
      */
-    void add(Tile_t* tile, size_t index);
+    void add(Tile_t* tile);
 
     /**
-     * @brief Adds a tile to the container, automatically adds to the next available index.
-     * @param tile Pointer to the tile to add
+     * @brief Replaces the tile at a given index.
+     * @param tile Pointer to the new tile
+     * @param index Position in the container to replace
      */
-    void add(Tile_t* tile); 
+    void replace(Tile_t* tile, size_t index);
 
     /**
      * @brief Sets the container's position.
      * @param new_x X coordinate
      * @param new_y Y coordinate
      */
-    void set_position(float new_x, float new_y);
+/*     void set_position(float new_x, float new_y); */
 
     /**
      * @brief Sets the container's size.
      * @param new_w Width
      * @param new_h Height
      */
-    void set_tile_size(float new_w, float new_h);
+/*     void size(float new_w, float new_h); */
 
     /**
      * @brief Sets the container's padding.
      * @param new_padding Padding value
      */
     void set_padding(uint32_t new_padding);
-
-    // Style setters
-    void set_background_color(uint32_t color);
-    void set_border_color(uint32_t color);
-    void set_border_width(uint32_t width);
-    void set_hover_color(uint32_t color);
 
     /**
      * @brief Sets the layout direction.
@@ -147,7 +125,7 @@ public:
      * @brief Handles mouse events for the container and its tiles.
      * @param event The SDL event to handle
      */
-    virtual void handle_mouse_event(const SDL_Event& event);
+    virtual bool handle_mouse_event(const SDL_Event& event);
 
     /**
      * @brief Renders the container and all its tiles.
@@ -165,13 +143,13 @@ public:
      * @brief Gets the number of tiles in the container.
      * @return The number of tiles in the container
      */
-    size_t get_tile_count() const { return tile_count; };
+    size_t get_tile_count() const { return tiles.size(); };
 
     /**
      * @brief Gets the tiles in the container.
      * @return The tiles in the container
      */
-    Tile_t** get_tiles() const { return tiles; };
+    const std::vector<Tile_t*>& get_tiles() const { return tiles; };
 
     /**
      * @brief Shows or hides the container.

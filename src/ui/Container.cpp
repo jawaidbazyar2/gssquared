@@ -21,66 +21,31 @@
 #include "Tile.hpp"
 #include "Style.hpp"
 
-void Container_t::init_tiles(size_t max_tiles) {
-    tile_max = max_tiles;
-    tile_count = 0;
-    tiles = new Tile_t*[max_tiles]();  // Initialize to nullptr
-    for (size_t i = 0; i < max_tiles; i++) {
-        tiles[i] = nullptr;
-    }
-}
+Container_t::Container_t(UIContext *ctx, const Style_t& initial_style) : Tile_t(ctx, initial_style)
+    {}
 
-Container_t::Container_t(UIContext *ctx, size_t max_tiles, const Style_t& initial_style) 
-    : style(initial_style), ctx(ctx) {
-    init_tiles(max_tiles);
-}
-
-Container_t::Container_t(UIContext *ctx, size_t max_tiles) 
-    : ctx(ctx) {
-    init_tiles(max_tiles);
-}
+Container_t::Container_t(UIContext *ctx) : Tile_t(ctx)
+    {}
 
 Container_t::~Container_t() {
-    // Clean up the buttons (since we created them with new)
-    for (size_t i = 0; i < tile_count; i++) {
-            if (tiles[i]) {
-                delete tiles[i];
-                tiles[i] = nullptr;
-            }
-        }
-        // Clean up the tiles array
-        delete[] tiles;
+    for (auto* tile : tiles) {
+        delete tile;
     }
+}
 
 void Container_t::apply_style(const Style_t& new_style) {
     style = new_style;
     layout(); // Relayout with new styling
 }
 
-void Container_t::add(Tile_t* tile, size_t index) {
-    if (index < tile_max) {
-        tiles[index] = tile;
-        tile_count++;
-    }
-}
-
 void Container_t::add(Tile_t* tile) {
-    if (tile_count < tile_max) {
-        tiles[tile_count] = tile;
-        tile_count++;
+    tiles.push_back(tile);
+}
+
+void Container_t::replace(Tile_t* tile, size_t index) {
+    if (index < tiles.size()) {
+        tiles[index] = tile;
     }
-}
-
-void Container_t::set_position(float new_x, float new_y) {
-    x = new_x;
-    y = new_y;
-    layout();  // Relayout when container position changes
-}
-
-void Container_t::set_tile_size(float new_w, float new_h) {
-    w = new_w;
-    h = new_h;
-    layout();  // Relayout when container size changes
 }
 
 void Container_t::set_padding(uint32_t new_padding) {
@@ -88,10 +53,6 @@ void Container_t::set_padding(uint32_t new_padding) {
     layout();  // Relayout when padding changes
 }
 
-void Container_t::set_background_color(uint32_t color) { style.background_color = color; }
-void Container_t::set_border_color(uint32_t color) { style.border_color = color; }
-void Container_t::set_border_width(uint32_t width) { style.border_width = width; }
-void Container_t::set_hover_color(uint32_t color) { style.hover_color = color; }
 void Container_t::set_layout_direction(bool right_to_left, bool bottom_to_top) {
     layout_lr = right_to_left ? 1 : 0;
     layout_tb = bottom_to_top ? 1 : 0;
@@ -107,14 +68,14 @@ void Container_t::set_layout_direction(bool right_to_left, bool bottom_to_top) {
  * 3. Positions each visible tile according to layout direction flags
 */
 void Container_t::layout() {
-    if (!visible || tile_count == 0) return;
+    if (!visible || tiles.empty()) return;
 
     // First pass: find largest tile dimensions among visible tiles
     float max_tile_width = 0;
     float max_tile_height = 0;
     size_t visible_count = 0;
 
-    for (size_t i = 0; i < tile_count; i++) {
+    for (size_t i = 0; i < tiles.size(); i++) {
         if (tiles[i] && tiles[i]->is_visible()) {
             float tile_w, tile_h;
             tiles[i]->get_tile_size(&tile_w, &tile_h);
@@ -131,7 +92,7 @@ void Container_t::layout() {
     float cell_height = max_tile_height + style.padding * 2;
     
     // Calculate how many tiles can fit in each row
-    size_t tiles_per_row = static_cast<size_t>(w / cell_width);
+    size_t tiles_per_row = static_cast<size_t>(tp.w / cell_width);
     if (tiles_per_row == 0) tiles_per_row = 1;  // Ensure at least one tile per row
     
     // Calculate number of rows needed
@@ -139,7 +100,7 @@ void Container_t::layout() {
 
     // Second pass: position the tiles
     size_t current_visible = 0;
-    for (size_t i = 0; i < tile_count; i++) {
+    for (size_t i = 0; i < tiles.size(); i++) {
         if (!tiles[i] || !tiles[i]->is_visible()) continue;
 
         size_t row = current_visible / tiles_per_row;
@@ -154,11 +115,11 @@ void Container_t::layout() {
         }
 
         // Calculate position within container
-        float tile_x = x + col * cell_width + style.padding;
-        float tile_y = y + row * cell_height + style.padding;
+        float tile_x = tp.x + col * cell_width + style.padding;
+        float tile_y = tp.y + row * cell_height + style.padding;
 
         // Set tile position
-        tiles[i]->set_tile_position(tile_x, tile_y);
+        tiles[i]->set_position(tile_x, tile_y);
         current_visible++;
     }
 }
@@ -167,8 +128,8 @@ void Container_t::layout() {
  * @brief Handles mouse events for the container and its tiles.
  * @param event The SDL event to handle.
 */
-void Container_t::handle_mouse_event(const SDL_Event& event) {
-    if (!active || !visible) return;
+bool Container_t::handle_mouse_event(const SDL_Event& event) {
+    if (!active || !visible) return(false);
 
     // Handle mouse motion and button events
     if (event.type == SDL_EVENT_MOUSE_MOTION ||
@@ -186,8 +147,8 @@ void Container_t::handle_mouse_event(const SDL_Event& event) {
         }
         
         // Check if mouse is within container bounds
-        bool is_inside = (mouse_x >= x && mouse_x <= x + w &&
-                        mouse_y >= y && mouse_y <= y + h);
+        bool is_inside = (mouse_x >= tp.x && mouse_x <= tp.x + tp.w &&
+                        mouse_y >= tp.y && mouse_y <= tp.y + tp.h);
 
         // Update container hover state
         /* if (is_hovering != is_inside) {
@@ -196,14 +157,14 @@ void Container_t::handle_mouse_event(const SDL_Event& event) {
 
         // Forward events to tiles if we're inside the container
         if (is_inside) {
-            for (size_t i = 0; i < tile_count; i++) {
+            for (size_t i = 0; i < tiles.size(); i++) {
                 if (tiles[i] && tiles[i]->is_visible()) {
                     tiles[i]->handle_mouse_event(event);
                 }
             }
         } else {
             // If mouse is outside container, ensure all tiles clear their hover state
-            for (size_t i = 0; i < tile_count; i++) {
+            for (size_t i = 0; i < tiles.size(); i++) {
                 if (tiles[i] && tiles[i]->is_visible() && tiles[i]->is_mouse_hovering()) {
                     SDL_Event fake_motion = event;
                     // Use current mouse position to trigger proper hover exit
@@ -217,12 +178,13 @@ void Container_t::handle_mouse_event(const SDL_Event& event) {
     else if (event.type == SDL_EVENT_WINDOW_MOUSE_LEAVE) {
         // Mouse left the window, clear all hover states
         is_hovering = false;
-        for (size_t i = 0; i < tile_count; i++) {
+        for (size_t i = 0; i < tiles.size(); i++) {
             if (tiles[i] && tiles[i]->is_visible()) {
                 tiles[i]->handle_mouse_event(event);
             }
         }
     }
+    return(false);
 }
 
 /**
@@ -235,22 +197,23 @@ void Container_t::render() {
     uint32_t bgcolor = (is_hovering) ? style.hover_color : style.background_color;
 
     // Draw container background
-    SDL_FRect container_rect = {x, y, w, h};
+    SDL_FRect container_rect = {tp.x, tp.y, tp.w, tp.h};
     ctx->fill_rect(container_rect, bgcolor);
 
     // Draw border if needed
     if (style.border_width > 0) {
         for (uint32_t i = 0; i < style.border_width; i++) {
             SDL_FRect border_rect = {
-                x + i, y + i,
-                w - 2 * i, h - 2 * i
+                tp.x + i, tp.y + i,
+                tp.w - 2 * i, tp.h - 2 * i
             };
             ctx->draw_rect(border_rect, style.border_color);
         }
     }
 
     // Render all visible tiles
-    for (size_t i = 0; i < tile_count; i++) {
+    // TODO: won't invisible tiles ignore themselves?
+    for (size_t i = 0; i < tiles.size(); i++) {
         if (tiles[i] && tiles[i]->is_visible()) {
             tiles[i]->render();
         }
@@ -258,17 +221,12 @@ void Container_t::render() {
 }
 
 Tile_t* Container_t::get_tile(size_t index) const {
-    if (index < tile_count) {
+    if (index < tiles.size()) {
         return tiles[index];
     }
     return nullptr;
 }
 
 void Container_t::remove_all_tiles() {
-    for (size_t i = 0; i < tile_count; i++) {
-        if (tiles[i]) {
-            tiles[i] = nullptr;
-        }
-    }
-    tile_count = 0;
+    tiles.clear();
 }

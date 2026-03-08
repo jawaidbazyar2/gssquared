@@ -29,7 +29,7 @@ MousePositionTile_t::MousePositionTile_t(UIContext *ctx) : Tile_t(ctx) {
     // Initialize the position text
     snprintf(position_text, sizeof(position_text), "Mouse: %.0f,%.0f", mouse_x, mouse_y);
     // Set a default size that can accommodate the text
-    set_tile_size(150, 30);
+    size(150, 30);
 }
 
 void MousePositionTile_t::render() {

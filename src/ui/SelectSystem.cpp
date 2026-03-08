@@ -12,27 +12,29 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 
 // create container with tiles for each system.
 // be cheap right now and do a text button.
-Style_t CS;
-    CS.background_color = 0x000000FF;
-    CS.border_width = 0;
-    CS.padding = 25;
+    Style_t CS = {
+        .background_color = 0x000000FF,
+        .padding = 25,
+        .border_width = 0,
+    };
 
-    Style_t BS;
-    BS.background_color = 0xBFBB98FF;
-    BS.border_color = 0xBFBB9840;
-    BS.hover_color = 0x008C4AFF;
-    BS.padding = 15;
-    BS.border_width = 1;
-    BS.text_color = 0xFFFFFFFF;
+    Style_t BS = {
+        .background_color = 0xBFBB98FF,
+        .border_color = 0xBFBB9840,
+        .hover_color = 0x008C4AFF,
+        .padding = 15,
+        .border_width = 1,
+        .text_color = 0xFFFFFFFF
+    };
 
     int num_configs = NUM_SYSTEM_CONFIGS;
 
     text_renderer = new TextRenderer(vs->renderer, "fonts/OpenSans-Regular.ttf", 24);
     ui_ctx = { vs->renderer, text_renderer, nullptr, aa };
 
-    container = new Container_t(&ui_ctx, num_configs, CS); 
+    container = new Container_t(&ui_ctx, CS);
 
-    container->set_tile_size(1024, 768);
+    container->size(1024, 768);
     SDL_GetWindowSize(vs->window, &window_width, &window_height);
     container->set_position((window_width - 1024) / 2, (window_height - 768) / 2);
 
@@ -41,14 +43,14 @@ Style_t CS;
     // add a text button for each system.
     for (int i = 0; i < num_configs; i++) {
         SystemButton *button = new SystemButton(&ui_ctx, &BuiltinSystemConfigs[i], BS);
-        button->set_tile_size(200, 200);
+        button->size(200, 200);
         button->position_content(CP_CENTER, CP_CENTER);
 
         button->on_click([this,i](const SDL_Event& event) -> bool {
             selected_system = i;
             return true;
         });
-        container->add(button, i);
+        container->add(button);
     }
 
     container->layout();

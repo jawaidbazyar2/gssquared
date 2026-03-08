@@ -47,19 +47,19 @@ int main(int argc, char **argv) {
     // set_position; set_size
     // Create a Tile and render it.
     Tile_t tile(&ui_ctx, style);
-    tile.set_tile_position(100, 100);
-    tile.set_tile_size(100, 50);
+    tile.set_position(100, 100);
+    tile.size(100, 50);
 
     Button_t button(&ui_ctx, "Button1", style);
-    button.set_tile_position(220, 100);
-    button.set_tile_size(100, 50);
+    button.set_position(220, 100);
+    button.size(100, 50);
     //button.set_text_renderer(tr);
     //button.position_content(CP_CENTER, CP_CENTER);
     button.print();
 
     Button_t button2(&ui_ctx, "Button2", style);
-    button2.set_tile_position(340, 100);
-    button2.set_tile_size(100, 50);
+    button2.set_position(340, 100);
+    button2.size(100, 50);
     button2.print();
 
 
