@@ -668,6 +668,7 @@ void OSD::render() {
         /* Redraw the whole control panel from bottom up, because the modal could have been anywhere! */
         SDL_SetRenderTarget(renderer, cpTexture);
         
+        //ui_ctx.color(0x000000FF);
         SDL_RenderClear(renderer);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
