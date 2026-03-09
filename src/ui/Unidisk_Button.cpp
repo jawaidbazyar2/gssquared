@@ -43,7 +43,7 @@ void Unidisk_Button_t::render() {
     Button_t::render();
 
     // Additional rendering can be added here
-    if ((key & 0xFF) == 0) aa->draw(Unidisk_Drive1, tp.x + cp.x + 11, tp.y + cp.y + 31);
+    if (key.drive == 0) aa->draw(Unidisk_Drive1, tp.x + cp.x + 11, tp.y + cp.y + 31);
     else aa->draw(Unidisk_Drive2, tp.x + cp.x + 11, tp.y + cp.y + 31);
  
     if (status.motor_on) aa->draw(Unidisk_Light, tp.x + cp.x, tp.y + cp.y + 30);

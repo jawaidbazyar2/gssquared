@@ -52,7 +52,7 @@ void DiskII_Button_t::render() {
 
     // Additional rendering can be added here
     // This space intentionally left empty for manual implementation
-    if ((key & 0xFF) == 0) aa->draw(DiskII_Drive1, tp.x + cp.x + 4, tp.y + cp.y + 4);
+    if ((key.drive) == 0) aa->draw(DiskII_Drive1, tp.x + cp.x + 4, tp.y + cp.y + 4);
     else aa->draw(DiskII_Drive2, tp.x + cp.x + 4, tp.y + cp.y + 4);
 
     if (status.motor_on) aa->draw(DiskII_DriveLightOn, tp.x + cp.x + 30, tp.y + cp.y + 69);

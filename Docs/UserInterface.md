@@ -297,3 +297,8 @@ We may want to separate the "style" (which is a definition partly of what colors
 
 Making some progress now with these abstraction changes.
 
+## Drives HUD
+
+There are sort of TWO of these. One that displays inside the Control Panel. One that displays at bottom of screen (and which we probably will allow for a user to optionally turn off).
+
+They are currently intertwined, sharing setup, configuration, etc. I don't want to do them twice, but we're not exactly doing them twice. And they don't appear on screen at the same time - it's one or the other. If invisible, all of the logic is bypassed. So, ok then. Let's go ahead and write them independently.

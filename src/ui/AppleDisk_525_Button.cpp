@@ -44,7 +44,7 @@ void AppleDisk_525_Button_t::render() {
     // Additional rendering can be added here
     // This space intentionally left empty for manual implementation
     aa->draw(
-        (key & 0xFF) == 0 ? Unidisk_Drive1 : Unidisk_Drive2,
+        key.drive == 0 ? Unidisk_Drive1 : Unidisk_Drive2,
         tp.x + cp.x + 130, tp.y + cp.y + 24
     );
 

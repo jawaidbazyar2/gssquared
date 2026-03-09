@@ -44,7 +44,7 @@
 #include "util/MenuInterface.h"
 #include "systemconfig.hpp"
 #include "SelectButton.hpp"
-
+#include "DrivesHUD.hpp"
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
 // comes back later, we know which drive this was for.
@@ -275,10 +275,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
      this needs to be dynamic, based on which slot is active at any given time.
      Create HUD drive container for first DiskII slot found 
     */
-    hud_drive_container = new Container_t(&ui_ctx, HUD);
-    hud_drive_container->set_position(340, 800);
+    hud_drive_container = new DrivesHUD_t(&ui_ctx, HUD, computer->mounts);
     hud_drive_container->size(420, 120);
-    hud_drive_container->layout();
+    ncontainers.push_back(hud_drive_container);
 
     // Create another container, this one for slots.
     Container_t *slot_container = new Container_t(&ui_ctx, SC);
@@ -624,8 +623,6 @@ void OSD::update() {
     }
 
     // update disk status - iterate over all drives based on what's in slots
-    uint16_t key_slot_match = 0;
-    // two pass. First, update buttons and calculate the key mask. (the lit drive could have been the previous one, hence 2-pass.)
     for (int i = 0; i < drive_container->count(); i++) {
         Tile_t *tile = drive_container->get_tile(i);
         if (tile) {
@@ -633,45 +630,19 @@ void OSD::update() {
             storage_key_t key = button->get_key();
             drive_status_t ds = computer->mounts->media_status(key);
             button->set_disk_status(ds);
-            if (ds.motor_on) {
-                key_slot_match = key.slot;
-            }            
         }
     }
 
-    // update the HUD container.
-    hud_drive_container->remove_all_tiles(); // always clear.. 
-    if ((currentSlideStatus == SLIDE_OUT)  && (key_slot_match)) {
-        // second pass, update the hud container with items matching the key mask.
-        // and set their hover status to false.
-        for (int i = 0; i < drive_container->count(); i++) {
-            Tile_t *tile = drive_container->get_tile(i);
-            if (tile) {
-                StorageButton *button = dynamic_cast<StorageButton *>(tile);
-                storage_key_t key = button->get_key();
-                drive_status_t ds = button->get_disk_status();
-                if (key.slot == key_slot_match) {
-                    hud_drive_container->add(button);
-                    button->on_hover_changed(false);
-                }
-            }            
-        }
-    }
+    hud_drive_container->set_visible((currentSlideStatus == SLIDE_OUT) ? true : false);
 
     speed_con->selected_value(getMenuInterface()->getCurrentSpeed());
     hov_speed->set_assetID(speed_asset.at(getMenuInterface()->getCurrentSpeed()));
     hov_speed_con->selected_value(getMenuInterface()->getCurrentSpeed());
     mon_color_con->selected_value(getMenuInterface()->getCurrentMonitor());
 
-    if (activeModal) {
-        activeModal->render();
-    }
-
     for (Container_t* container : ncontainers) {
         container->update();
     }
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF); // TODO: a dirty hack to make sure the background is black.
 }
 
 void OSD::set_heads_up_message(const std::string &text, int count) {
@@ -682,13 +653,16 @@ void OSD::set_heads_up_message(const std::string &text, int count) {
 void OSD::render() {
     int window_width, window_height;
     SDL_GetWindowSize(window, &window_width, &window_height);
+    
+    // save the current rendering scale
     float ox,oy;
     SDL_GetRenderScale(renderer, &ox, &oy);
 
+    // assume everything in this routine is drawn at 1:1 scale.
+    SDL_SetRenderScale(renderer, 1.0,1.0); // TODO: calculate these based on window size
+
     /** if current Status is out, don't draw. If status is in transition or IN, draw. */
     if (currentSlideStatus == SLIDE_IN || (slideStatus && (currentSlideStatus != slideStatus))) {
-
-        SDL_SetRenderScale(renderer, 1.0,1.0); // TODO: calculate these based on window size
 
         /* ----- */
         /* Redraw the whole control panel from bottom up, because the modal could have been anywhere! */
@@ -734,13 +708,15 @@ void OSD::render() {
         if (activeModal) {
             activeModal->render();
         }
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 
         SDL_SetRenderTarget(renderer, nullptr);
 
         // now render the cpTexture into window
         SDL_RenderTexture(renderer, cpTexture, NULL, &cpTargetRect);
-        SDL_SetRenderScale(renderer, ox,oy);
+    }
+
+    if (activeModal) {
+        activeModal->render();
     }
 
     // for each item in ncontainers, call render()
@@ -750,10 +726,7 @@ void OSD::render() {
         container->render();
     }
 
-    SDL_SetRenderScale(renderer, ox,oy);
-
     if (currentSlideStatus == SLIDE_OUT) {
-        SDL_SetRenderScale(renderer, 1,1);       // TODO: calculate these based on window size
 
         open_btn->render(); // this now takes care of its own fade-out.
 
@@ -762,7 +735,7 @@ void OSD::render() {
             container->render();
         }
 
-        if (hud_drive_container->count() > 0) {
+        /* if (hud_drive_container->count() > 0) {
             hud_drive_container->layout();
             hud_drive_container->set_position(((float)window_width - 420) / 2, window_height - 125 );
 
@@ -770,8 +743,8 @@ void OSD::render() {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
             hud_drive_container->render();
-        }
-       
+        } */
+
         // display the MHz at the bottom of the screen.
         { // we are currently at A2 display scale.
             char hud_str[150];
@@ -784,9 +757,11 @@ void OSD::render() {
                 SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);
             }            
         }
-        SDL_SetRenderScale(renderer, ox,oy);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     }
+    // Restore scale
+    SDL_SetRenderScale(renderer, ox,oy);
+    // set draw color to black - why?
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 
 }
 
