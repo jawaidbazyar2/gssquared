@@ -10561,7 +10561,7 @@ diskii reset
 
 This will be fun, and easy! Let's do it!
 
-Ironically, a short delay on powerup (5-6 frames) may be just what we need to not have an audio blip out on powerup. It will give time for everything to settle.. well we'll see about that!
+Ironically, a short delay on powerup (5-6 frames) may be just what we need to not have an audio blip out on powerup. It will give time for everything to settle.. well we'll see about that! (nope, what the ... is something IRQing the startup-time beep??)
 
 In II+, I now have the keydown-keyup responsive reset in place! What we're looking for is 
 
@@ -10570,7 +10570,7 @@ oh, well first we need it in the Disk II controller. YES! There is a nice short 
 Technically we also still need a poweronreset in everything past appleII. otherwise if someone builds a machine w/o disk II they will have a bad time.
 
 [x] There is some OSD stuff being drawn for a couple frames in the upper left corner of the display. The disk drives I think.  
-[ ] Also, the screen background is being drawn in the background color of the SelectSystem tiles on startup now.  
+[x] Also, the screen background is being drawn in the background color of the SelectSystem tiles on startup now.  
 [ ] add reset handler to gamecontroller (for AN0-3 OFF)  
 [ ] add reset down-up distinction to the OSD HOV RESET button.  
 
@@ -10579,3 +10579,10 @@ so on my IIe (enhanced), if in text mode you stay in text mode (so the text/grap
 
 [ ] See also Sather UTA2e 4-14 about the MMU bus fingerprinting. (This is crazy, the MMU looks for 3 inc-or-decremental accesses to page 1 )
 [ ] 6502 reset pulls 3 values from the stack, just like an RTI would, but ignores the values  
+
+I may have just resolved some of the apple iie speaker distortion at boot bug:
+>> The fix is straightforward: the speaker should be at rest (neutral/silent) at powerup. Change polarity_impulse to 0:
+it occurred to me that the GS was getting a noticeable "blip" of audio at boot - which was more readily apparently, since it takes a while to get around to BONK. I used to start polarity_impulse and polarity at 1; which basically meant we were always starting with the cone activated.
+This fixes MOST but not all of the distortion. I think before we were getting it 50% of the time. Maybe now it's down to 10% of the time.
+I definitely now longer get any pop booting the GS. So there may still be some last minor issue interfering with the //e and below.
+
