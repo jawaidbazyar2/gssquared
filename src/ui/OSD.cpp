@@ -672,8 +672,9 @@ void OSD::render() {
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
         // make the background opaque and black.
-        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
-        SDL_RenderFillRect(renderer, NULL);
+        ui_ctx.fill_rect({0, 0, (float)window_w, (float)window_h}, 0x00000000);
+        /* SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
+        SDL_RenderFillRect(renderer, NULL); */
 
         // Draw CP background with some opacity
         SDL_FRect rect = {0, 50, (float)(window_w-100), (float)(window_h-100)};
@@ -736,7 +737,7 @@ void OSD::render() {
         }
 
         // display the MHz at the bottom of the screen.
-        { // we are currently at A2 display scale.
+        {
             char hud_str[150];
             snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f / Idle: %5.1f%%", computer->e_mhz, computer->fps, computer->get_idle_percent());
             SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
