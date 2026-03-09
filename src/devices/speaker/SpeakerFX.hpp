@@ -65,8 +65,8 @@ class SpeakerFX {
         speaker_t cycles_per_sample;
         speaker_t rect_remain = 0ULL;
         speaker_t sample_remain = 0ULL;
-        speaker_t polarity_impulse = 1ULL;
-        speaker_t polarity = 1ULL << FRACTION_BITS;
+        speaker_t polarity_impulse = 0ULL;
+        speaker_t polarity = 0ULL;
         uint64_t hold_counter = 0;
         uint64_t hold_counter_value = 0;
         uint64_t last_event_time = 0;
