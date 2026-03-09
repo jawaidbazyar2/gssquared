@@ -129,62 +129,58 @@ void Container_t::layout() {
  * @param event The SDL event to handle.
 */
 bool Container_t::handle_mouse_event(const SDL_Event& event) {
-    if (!active || !visible) return(false);
+    if (!active || !visible) return false;
 
-    // Handle mouse motion and button events
     if (event.type == SDL_EVENT_MOUSE_MOTION ||
         event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || 
         event.type == SDL_EVENT_DROP_POSITION) {
         
-        float mouse_x;
-        float mouse_y;
+        float mouse_x, mouse_y;
         if (event.type == SDL_EVENT_MOUSE_MOTION) {
             mouse_x = event.motion.x;
             mouse_y = event.motion.y;
         } else if (event.type == SDL_EVENT_DROP_POSITION) {
             mouse_x = event.drop.x;
             mouse_y = event.drop.y;
+        } else {
+            mouse_x = event.button.x;
+            mouse_y = event.button.y;
         }
         
-        // Check if mouse is within container bounds
         bool is_inside = (mouse_x >= tp.x && mouse_x <= tp.x + tp.w &&
-                        mouse_y >= tp.y && mouse_y <= tp.y + tp.h);
+                          mouse_y >= tp.y && mouse_y <= tp.y + tp.h);
 
-        // Update container hover state
-        /* if (is_hovering != is_inside) {
-            is_hovering = is_inside;
-        } */
-
-        // Forward events to tiles if we're inside the container
         if (is_inside) {
             for (size_t i = 0; i < tiles.size(); i++) {
                 if (tiles[i] && tiles[i]->is_visible()) {
-                    tiles[i]->handle_mouse_event(event);
+                    bool consumed = tiles[i]->handle_mouse_event(event);
+                    if (consumed && event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) break;
                 }
             }
+            return true;  // mouse is inside this container; claim the event from siblings
         } else {
-            // If mouse is outside container, ensure all tiles clear their hover state
+            // mouse is outside — clear any lingering hover states on children
             for (size_t i = 0; i < tiles.size(); i++) {
                 if (tiles[i] && tiles[i]->is_visible() && tiles[i]->is_mouse_hovering()) {
                     SDL_Event fake_motion = event;
-                    // Use current mouse position to trigger proper hover exit
                     fake_motion.motion.x = mouse_x;
                     fake_motion.motion.y = mouse_y;
                     tiles[i]->handle_mouse_event(fake_motion);
                 }
             }
+            return false;
         }
     }
     else if (event.type == SDL_EVENT_WINDOW_MOUSE_LEAVE) {
-        // Mouse left the window, clear all hover states
         is_hovering = false;
         for (size_t i = 0; i < tiles.size(); i++) {
             if (tiles[i] && tiles[i]->is_visible()) {
                 tiles[i]->handle_mouse_event(event);
             }
         }
+        return false;  // window leave broadcasts to all containers
     }
-    return(false);
+    return false;
 }
 
 /**
@@ -237,4 +233,13 @@ void Container_t::selected_value(int64_t v) {
     }
     // optionally track selected value
     _selected_value = v;
+}
+
+// Update everything in the Container
+void Container_t::update() {
+    for (size_t i = 0; i < tiles.size(); i++) {
+        if (tiles[i]) {
+            tiles[i]->update();
+        }
+    }
 }

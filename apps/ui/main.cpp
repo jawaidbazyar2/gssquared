@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    UIContext ui_ctx = { renderer, tr, nullptr, nullptr };
+    UIContext ui_ctx = { renderer, window, tr, nullptr, nullptr };
 
     // TODO: feel like changing these names.
     // set_position; set_size

@@ -30,7 +30,7 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     int num_configs = NUM_SYSTEM_CONFIGS;
 
     text_renderer = new TextRenderer(vs->renderer, "fonts/OpenSans-Regular.ttf", 24);
-    ui_ctx = { vs->renderer, text_renderer, nullptr, aa };
+    ui_ctx = { vs->renderer, vs->window, text_renderer, nullptr, aa };
 
     container = new Container_t(&ui_ctx, CS);
 

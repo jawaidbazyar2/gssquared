@@ -112,6 +112,11 @@ public:
     void set_border_width(uint32_t width);
 
     /**
+     * @brief Updates the tile.
+     */
+    virtual void update() { }
+
+    /**
      * @brief Renders the tile.
      * @param renderer The SDL renderer to use
      */

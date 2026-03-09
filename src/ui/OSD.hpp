@@ -35,6 +35,7 @@
 #include "FadeButton.hpp"
 #include "util/EventQueue.hpp"
 #include "SelectButton.hpp"
+#include "StatusMessage.hpp"
 
 #define SLIDE_IN 1
 #define SLIDE_OUT 2
@@ -93,6 +94,7 @@ protected:
     Button_t *system_badge = nullptr;
     
     std::vector<Container_t *> containers;
+    std::vector<Container_t *> ncontainers;
     Container_t *hud_drive_container = nullptr;
     ModalContainer_t *activeModal = nullptr;
     ModalContainer_t *diskii_save_con = nullptr;
@@ -113,8 +115,9 @@ protected:
     TextRenderer *title_trender = nullptr;
     UIContext ui_ctx;
 
-    std::string headsUpMessageText;
-    int headsUpMessageCount = 0;
+    /* std::string headsUpMessageText;
+    int headsUpMessageCount = 0; */
+    StatusMessage_t *status_message = nullptr;
 
     int slideStatusBeforeDrop = SLIDE_NONE;
 

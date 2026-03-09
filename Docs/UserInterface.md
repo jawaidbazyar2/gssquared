@@ -253,3 +253,47 @@ If the mouse is outside the visible screen area (i.e., if it's in window, but al
 
 there is also the possibility to use a windows-like Hamburger menu.
 Three lines. this pops down a menu, then you can navigate that. progressive (click and release, instead of click and drag). it wouldn't interfere with emulator operations at all. it would be a fair bit like the feel of the control panel. it's a metaphor many are familiar with. and it would not require platform-specific code..
+
+# UI Sections
+
+* Slide-out Control Panel
+* StatusMessage: Fade-out message text.
+* Drive HUD
+* Side Menu
+
+Right now these are all just piled into big chonky funktions. Split these out into specialized Containers and trim OSD down into just one more container, that composes and loops through the others.
+
+Start with Fade-out text then Drive HUD since these are relatively simple (don't have any interactivity).
+
+StatusMessage: it's a container with just one element.
+
+# UI Element API
+
+## Rects
+
+* tile position
+* content position
+* something else
+
+## Style
+
+## Attributes
+
+* Visible
+
+Is the element visible and displayed?
+
+* Hover
+
+Is the mouse hovering over the element?
+
+* Active
+
+For 'toggle' type elements, is the element active or inactive? (e.g., the current speed selection)
+
+Specific subclasses can define and render visual behavior based on these flags (or others they may choose to implement).
+
+We may want to separate the "style" (which is a definition partly of what colors to use given certain states) and the effective colors, which is a more delimited palette. 
+
+Making some progress now with these abstraction changes.
+

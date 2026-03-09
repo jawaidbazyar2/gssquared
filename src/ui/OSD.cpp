@@ -190,7 +190,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     text_render->set_color(0xFF, 0xFF, 0xFF, 0xFF);
     title_trender->set_color(0, 0, 0, 0xFF);
 
-    ui_ctx = { renderer, text_render, title_trender, aa };
+    ui_ctx = { renderer, windowp, text_render, title_trender, aa };
 
     Style_t CS = {
         .background_color = 0xFFFFFFFF,
@@ -500,7 +500,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
                 // get position of b4
                 float x,y;
                 hov_speed->get_tile_position(x, y);
-                printf("b4 position: %f, %f\n", x, y);
                 hov_speed_con->set_position(x+60, y);
                 hov_speed_con->set_visible(true);
                 hov_speed_con->layout();
@@ -516,6 +515,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     system_config = computer->get_system();
     system_badge = new Button_t(&ui_ctx, system_config->image_id, SB);
     system_badge->set_position(30, 65);
+
+    status_message = new StatusMessage_t(&ui_ctx);
+    ncontainers.push_back(status_message);
 
     computer->sys_event->registerHandler(SDL_EVENT_DROP_BEGIN, [this](const SDL_Event &event) {
         SDL_RaiseWindow(window);
@@ -575,6 +577,9 @@ OSD::~OSD() {
     delete text_render;
     delete title_trender;
     for (Container_t* container : containers) {
+        delete container;
+    }
+    for (Container_t* container : ncontainers) {
         delete container;
     }
     delete diskii_save_con;
@@ -661,12 +666,16 @@ void OSD::update() {
     if (activeModal) {
         activeModal->render();
     }
+
+    for (Container_t* container : ncontainers) {
+        container->update();
+    }
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF); // TODO: a dirty hack to make sure the background is black.
 }
 
 void OSD::set_heads_up_message(const std::string &text, int count) {
-    headsUpMessageText = text;
-    headsUpMessageCount = count;
+    status_message->trigger(text);
 }
 
 /** Draw the control panel (if visible) */
@@ -734,17 +743,13 @@ void OSD::render() {
         SDL_SetRenderScale(renderer, ox,oy);
     }
 
-    // Display this regardless of OSD state.
-    SDL_SetRenderScale(renderer, 1,1); // TODO: calculate these based on window size
-    if (headsUpMessageCount) { // set it to 512 for instance to sit at full opacity for 4 seconds then fade out over 4ish seconds.    
-        SDL_SetRenderTarget(renderer, nullptr);
-        int opacity = headsUpMessageCount < 255 ? headsUpMessageCount : 255;
-        text_render->set_color(0xFF, 0xFF, 0xFF, opacity);
-        text_render->render(headsUpMessageText, window_width/2, 30, TEXT_ALIGN_CENTER);
-        
-        headsUpMessageCount -= 3;
-        if (headsUpMessageCount < 0) headsUpMessageCount = 0;
+    // for each item in ncontainers, call render()
+    // As I move functions out of OSD into their own classes, I need to add them to ncontainers
+    // so they can be rendered.
+    for (Container_t* container : ncontainers) {
+        container->render();
     }
+
     SDL_SetRenderScale(renderer, ox,oy);
 
     if (currentSlideStatus == SLIDE_OUT) {
@@ -777,9 +782,7 @@ void OSD::render() {
             if (clock->get_video_scanner()) {
                 snprintf(hud_str, sizeof(hud_str), "H: %3d V: %3d c: %6d", clock->get_video_scanner()->hcount, clock->get_video_scanner()->get_vcount(), clock->get_video_scanner()->get_frame_scan()->get_count());
                 SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);
-            }
-            
-            uint64_t etime, esecs, emsecs;
+            }            
         }
         SDL_SetRenderScale(renderer, ox,oy);
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
@@ -808,7 +811,7 @@ bool OSD::event(const SDL_Event &event) {
             close_btn->handle_mouse_event(event);
             // Let containers have a stab at the event
             for (Container_t* container : containers) {
-                container->handle_mouse_event(event);
+                if (container->handle_mouse_event(event)) break;
             }
         }
     } else {

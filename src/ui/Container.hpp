@@ -121,16 +121,22 @@ public:
      */
     virtual void layout();
 
+
+    /**
+     * @brief Updates the container and its tiles.
+     */
+    virtual void update() override;
+
     /**
      * @brief Handles mouse events for the container and its tiles.
      * @param event The SDL event to handle
      */
-    virtual bool handle_mouse_event(const SDL_Event& event);
+    virtual bool handle_mouse_event(const SDL_Event& event) override;
 
     /**
      * @brief Renders the container and all its tiles.
      */
-    virtual void render();
+    virtual void render() override;
 
     /**
      * @brief Gets a tile by index.

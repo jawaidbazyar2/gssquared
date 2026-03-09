@@ -31,6 +31,7 @@
  */
 struct UIContext {
     SDL_Renderer *renderer      = nullptr;
+    SDL_Window *window         = nullptr;
     TextRenderer *text_render   = nullptr;
     TextRenderer *title_trender = nullptr;
     AssetAtlas_t *asset_atlas   = nullptr;

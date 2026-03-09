@@ -32,7 +32,7 @@ debug_window_t::debug_window_t(computer_t *computer) {
     text_renderer = new TextRenderer(renderer, "/fonts/OxygenMono-Regular.ttf", 15.0f);
     text_renderer->set_color(255, 255, 255, 255);
     font_line_height = text_renderer->font_line_height;
-    ui_ctx = { renderer, text_renderer, nullptr, nullptr };
+    ui_ctx = { renderer, window, text_renderer, nullptr, nullptr };
 
     window_id = SDL_GetWindowID(window);
     control_area_height = 8 * font_line_height;
