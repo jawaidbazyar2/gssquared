@@ -91,5 +91,6 @@ void SelectSystem::render() {
         container->render();
         SDL_SetRenderScale(vs->renderer, scale_x, scale_y);
         //updated = false;
+        ui_ctx.color(0x000000FF); // set back to 0. Someone isn't correctly setting color elsewhere..
     }
 }
