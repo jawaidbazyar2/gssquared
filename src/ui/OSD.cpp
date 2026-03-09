@@ -735,16 +735,6 @@ void OSD::render() {
             container->render();
         }
 
-        /* if (hud_drive_container->count() > 0) {
-            hud_drive_container->layout();
-            hud_drive_container->set_position(((float)window_width - 420) / 2, window_height - 125 );
-
-            // display running disk drives at the bottom of the screen.
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-            hud_drive_container->render();
-        } */
-
         // display the MHz at the bottom of the screen.
         { // we are currently at A2 display scale.
             char hud_str[150];
