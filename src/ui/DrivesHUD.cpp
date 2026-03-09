@@ -35,8 +35,6 @@ void DrivesHUD_t::render() {
     if (!visible) return;
 
     if (tiles.size() > 0) {
-        layout();
-        set_position(drives_x, drives_y );
 
         // display running disk drives at the bottom of the screen.
         SDL_SetRenderDrawBlendMode(ctx->renderer, SDL_BLENDMODE_BLEND);
@@ -80,4 +78,7 @@ void DrivesHUD_t::update() {
                 add(button);
         }
     }
+    set_position(drives_x, drives_y );
+    calc_content_position();
+    layout();
 }
