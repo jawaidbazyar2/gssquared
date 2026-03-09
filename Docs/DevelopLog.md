@@ -10586,3 +10586,4 @@ it occurred to me that the GS was getting a noticeable "blip" of audio at boot -
 This fixes MOST but not all of the distortion. I think before we were getting it 50% of the time. Maybe now it's down to 10% of the time.
 I definitely now longer get any pop booting the GS. So there may still be some last minor issue interfering with the //e and below.
 
+ok, I have (mostly correctly) implemented the ASSERT RESET gizmo in the GS. However, I may be returning incorrectly the reset packets in some way, because I can't get Wolf3D to reset. One possibility: that even in SRQ mode we're supposed to be tracking updates to the mod bits? I'll have to trace this code, at least I know where the SRQ handler vector is so that won't be too hard.

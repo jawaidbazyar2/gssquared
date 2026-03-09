@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <cstdio>
 
+#include "device_reset_id.hpp"
 #include "util/ResourceFile.hpp"
 
 #include "ADB_Host.hpp"
@@ -11,6 +12,7 @@
 #include "ADB_ASCII.hpp"
 #include "SDL3/SDL_events.h"
 #include "util/DebugFormatter.hpp"
+#include "util/ResetController.hpp"
 
 #define BUFSIZE 0x10
 
@@ -110,6 +112,8 @@ class KeyGloo
         bool data_interrupt_asserted = false;
         bool send_data_register = false;
 
+        ResetController *reset_control = nullptr;
+
         /* bool mouse_interrupt_asserted = false;
         bool kb_interrupt_asserted = false; */
         
@@ -142,7 +146,7 @@ class KeyGloo
         int keysdown = 0;
 
     public:
-        KeyGloo() {
+        KeyGloo(ResetController *reset_control) : reset_control(reset_control) {
             const char *rom_filename = (true /* is rom 01 */) ? "roms/cards/keyglu/rom01-adb-341s0345.bin" : "roms/cards/keyglu/rom03-adb-341s0632-2.bin";
 
             ResourceFile *rom = new ResourceFile(rom_filename, READ_ONLY);
@@ -637,6 +641,7 @@ class KeyGloo
                         } else if (value == 0x0E) { // READ CHAR SETS AVAILABLE
                         } else if (value == 0x0F) { // READ LAYOUTS AVAILABLE
                         } else if (value == 0x10) { // RESET SYSTEM
+                            printf("are they not resetting?");
                         } else if (value == 0x11) { // SEND FDB KEYCODE
                             cmd_bytes = 1;
                         } else {
@@ -744,10 +749,26 @@ class KeyGloo
                 if (event.type == SDL_EVENT_KEY_DOWN && event.key.repeat) auto_repeat = true;
 
                 // for each key event in returned reg, process and update modifiers.
-                // and keycode.
-                // process from LSB to MSB. (i.e., byte 0 (low) first then byte 1 (high))
+                // and keycode. process from LSB to MSB. (i.e., byte 0 (low) first then byte 1 (high))
+
+                // TODO: handle power key. probably need to keep track of power key up/down state, in case they hit that
+                // then control command later.
+                if (!auto_repeat && reg.data[0] == 0x7F && reg.data[1] == 0x7F) { // press power key
+                    // if control key is not down, don't do anything.
+                    if (!vars.currmod.ctrl) return status;
+                    
+                    reset_control->assert_reset(RST_ID_KEYMICRO, true);
+                    return status;
+                } else if (!auto_repeat && reg.data[0] == 0xFF && reg.data[1] == 0xFF) { // release power key
+                    // if control key is not down, don't do anything.
+                    //if (!vars.currmod.ctrl) return status;
+                    
+                    reset_control->assert_reset(RST_ID_KEYMICRO, false);
+                    return status;
+                }
+                
                 for (int i = 0; i < reg.size; i++) {
-                    if (reg.data[i] == 0xFF) break;
+                    if (reg.data[i] == 0xFF) break; // this means only one of the bytes was 0xFF, means empty
                     uint8_t keycode = reg.data[i] & 0x7F;
                     uint8_t keyupdown = reg.data[i] & 0x80 ? false : true; // true = key down, false = key up
                     switch (keycode) {

@@ -103,8 +103,9 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
     kb_state->computer = computer;
     kb_state->irq_control = computer->irq_control;
     kb_state->mmu = computer->mmu;
-    
-    KeyGloo *kg = new KeyGloo();
+    kb_state->reset_control = computer->reset_control;
+
+    KeyGloo *kg = new KeyGloo(kb_state->reset_control);
     kb_state->kg = kg;
 
     computer->dispatch->registerHandler(SDL_EVENT_KEY_DOWN, [kb_state](const SDL_Event &event) {

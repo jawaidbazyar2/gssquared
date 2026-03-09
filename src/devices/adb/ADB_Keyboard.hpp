@@ -132,6 +132,7 @@ enum adb_keycode_t {
     // 0x5D - 0x7A unused
     ADB_RIGHT_SHIFT = 0x7B,
     // Power key is special: 0x7F7F (two-byte code)
+    ADB_POWER = 0x7F,
 };
 
 class ADB_Keyboard : public ADB_Device
@@ -427,6 +428,7 @@ class ADB_Keyboard : public ADB_Device
         sdl_to_adb_key_map[KEY_OPTION_R] = ADB_OPTION;
         sdl_to_adb_key_map[KEY_COMMAND_L] = ADB_COMMAND;
         sdl_to_adb_key_map[KEY_COMMAND_R] = ADB_COMMAND;
+        sdl_to_adb_key_map[KEY_RESET&(SDL_SCANCODE_COUNT-1)] = ADB_POWER;
         
     }
 
@@ -475,6 +477,11 @@ class ADB_Keyboard : public ADB_Device
             dequeue_key(&key);
             uint8_t code = ((key.status == KEY_STATUS_UP) ? 0x80 : 0x00) | key.keycode;
             registers[0].data[0] = code;
+            // if power key, send the special 2-byte code.
+            if (code == ADB_POWER) {
+                registers[0].data[1] = code;
+                return status;
+            }
         }
         // and now the MSB byte.
         if (registers[0].data[1] == 0xFF && count > 0) {

@@ -90,7 +90,7 @@ computer_t::computer_t(NClockII *clock) {
     sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [this](const SDL_Event &event) {
         int key = event.key.key;
         SDL_Keymod mod = event.key.mod;
-        if (this->platform->id == PLATFORM_APPLE_IIGS) { // try out new reset thing.
+        /* if (this->platform->id == PLATFORM_APPLE_IIGS) { // try out new reset thing.
             if ((mod & SDL_KMOD_CTRL) && (key == KEY_RESET)) {
                 if ((mod & KEYMOD_OPENAPPLE) && (this->platform->id <= PLATFORM_APPLE_II_PLUS)) { // only II+ and earlier.
                     reset(true);
@@ -99,7 +99,7 @@ computer_t::computer_t(NClockII *clock) {
                 }
                 return true;
             }
-        }
+        } */
         if (key == SDLK_F9) { 
             this->speed_shift = true;
             if (mod & SDL_KMOD_SHIFT) {
