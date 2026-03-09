@@ -10569,8 +10569,13 @@ OK, I need a "powerup reset" device? Right now reset not asserted at powerup so 
 oh, well first we need it in the Disk II controller. YES! There is a nice short 1/10th second delay there now on boot showing the weird memory patterns on the text screen.
 Technically we also still need a poweronreset in everything past appleII. otherwise if someone builds a machine w/o disk II they will have a bad time.
 
-[ ] There is some OSD stuff being drawn for a couple frames in the upper left corner of the display
-[ ] Also, the screen background is being drawn in the background color of the SelectSystem tiles on startup now.
+[x] There is some OSD stuff being drawn for a couple frames in the upper left corner of the display. The disk drives I think.  
+[ ] Also, the screen background is being drawn in the background color of the SelectSystem tiles on startup now.  
+[ ] add reset handler to gamecontroller (for AN0-3 OFF)  
+[ ] add reset down-up distinction to the OSD HOV RESET button.  
 
 so on my IIe (enhanced), if in text mode you stay in text mode (so the text/graphics switch is left alone). if in any graphics mode, lo-res is forced along with the 7M timing (i.e., LORES7M). So that is, I think, ANC3 is forced off. (maybe all the ANCs). and the HIRES switch is turned off.
 80COL also appears to be turned off. (we do this correctly now).
+
+[ ] See also Sather UTA2e 4-14 about the MMU bus fingerprinting. (This is crazy, the MMU looks for 3 inc-or-decremental accesses to page 1 )
+[ ] 6502 reset pulls 3 values from the stack, just like an RTI would, but ignores the values  

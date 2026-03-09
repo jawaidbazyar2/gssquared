@@ -79,6 +79,9 @@ public:
             cpu->EFFI = 0;
             cpu->rdy = false;
             printf("stack init: %04X\n", cpu->sp);
+        } else { // TODO: confirm this is correct for all CPUs and then take out of the if above.
+            cpu->I = 1;
+            cpu->EFFI = 1;    
         }
 
         // fill in with register reset logic.
