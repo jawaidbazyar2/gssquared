@@ -129,6 +129,7 @@ protected:
         {MONITOR_MONO_WHITE, WhiteDisplayButton},
     };
     const std::map<int, int> speed_asset =  {
+        {SPEED_FREE_RUN, MHzInfinityButton},
         {SPEED_1_0, MHz1_0Button},
         {SPEED_2_8, MHz2_8Button},
         {SPEED_7_1, MHz7_159Button},

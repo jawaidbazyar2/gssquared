@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdint>
 
+#include "PlatformIDs.hpp"
 #include "SDL3/SDL_keycode.h"
 #include "cpu.hpp"
 #include "NClock.hpp"
@@ -18,6 +19,7 @@
 #include "platform-specific/menu.h"
 #include "devices/keyboard/keyboard.hpp"
 #include "util/InterruptController.hpp"
+#include "util/ResetController.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/AudioSystem.hpp"
 #include "util/SoundEffect.hpp"
@@ -54,6 +56,19 @@ computer_t::computer_t(NClockII *clock) {
         }
     );
 
+    reset_control = new ResetController(this);
+    reset_control->register_reset_receiver([this](uint64_t reset_asserted) {
+        cpu->reset_asserted = reset_asserted;
+    });
+    /* register_debug_display_handler(
+        "reset",
+        DH_RESET, // unique ID for this, need to have in a header.
+        [this]() -> DebugFormatter * {
+            return reset_control->debug_reset();
+        }
+    ); */
+
+
     audio_system = new AudioSystem();
     sound_effect = new SoundEffect(audio_system);
 
@@ -75,13 +90,15 @@ computer_t::computer_t(NClockII *clock) {
     sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [this](const SDL_Event &event) {
         int key = event.key.key;
         SDL_Keymod mod = event.key.mod;
-        if ((mod & SDL_KMOD_CTRL) && (key == KEY_RESET)) {
-            if ((mod & KEYMOD_OPENAPPLE) && (this->platform->id <= PLATFORM_APPLE_II_PLUS)) { // only II+ and earlier.
-                reset(true);
-            } else {
-                reset(false); 
+        if (this->platform->id == PLATFORM_APPLE_IIGS) { // try out new reset thing.
+            if ((mod & SDL_KMOD_CTRL) && (key == KEY_RESET)) {
+                if ((mod & KEYMOD_OPENAPPLE) && (this->platform->id <= PLATFORM_APPLE_II_PLUS)) { // only II+ and earlier.
+                    reset(true);
+                } else {
+                    reset(false); 
+                }
+                return true;
             }
-            return true;
         }
         if (key == SDLK_F9) { 
             this->speed_shift = true;
@@ -170,6 +187,19 @@ computer_t::computer_t(NClockII *clock) {
         return false;
     });
 
+    // TODO: it might be nice to, after this is done, remove ourselves from the device_frame_dispatcher.
+    device_frame_dispatcher->registerHandler(
+        [this]() {
+            if (powerup_reset_cycles > 0) {
+                powerup_reset_cycles--;
+                if (powerup_reset_cycles == 0) {
+                    reset_control->assert_reset((device_reset_id)RST_ID_POWERUP, false);
+                }
+            }
+            return true;
+        }
+    );
+
 }
 
 computer_t::~computer_t() {
@@ -181,6 +211,7 @@ computer_t::~computer_t() {
     delete sound_effect;
     delete audio_system;
     delete irq_control;
+    delete reset_control;
     delete video_system;
     delete debug_window;
     delete event_timer;
@@ -226,11 +257,6 @@ void computer_t::reset(bool cold_start) {
     mmu->reset(); // this first, so when CPU fetches PC from RESET it will be based on main memory/rom.
     cpu->reset();
     
-//    mmu->init_map(); // changed to reset() above.
-
-    /* for (reset_handler_rec rec : reset_handlers) {
-        rec.handler(rec.context);
-    } */
     for (auto& handler : reset_handlers) {
         handler();
     }
@@ -240,16 +266,6 @@ void computer_t::set_clock(NClockII *clock) {
     this->clock = clock;
     event_timer->set_clock(clock);
 }
-
-/* void computer_t::registerHandler(EventHandler handler) {
-    handlers.push_back(handler);
-}
-
-void DeviceFrameDispatcher::dispatch() {
-    for (auto& handler : handlers) {
-        handler();
-    }
-} */
 
 /** State storage for non-slot devices. */
 void *computer_t::get_module_state(module_id_t module_id) {

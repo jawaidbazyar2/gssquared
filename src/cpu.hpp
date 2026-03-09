@@ -180,7 +180,8 @@ struct cpu_state {
 
     uint8_t halt = 0; /* == 1 is HLT instruction halt; == 2 is user halt */
 
-    uint64_t irq_asserted = 0; /** bits 0-7 correspond to slot IRQ lines slots 0-7. */
+    uint64_t irq_asserted = 0; /** bits 0-7 correspond to various IRQ sources */
+    uint64_t reset_asserted = 0; /** bits 0-10 correspond to various RESET sources. */
 
     bool ICHANGE = false; /* if set, the I flag has changed */
     bool EFFI = 0; /* if set, the E flag has changed */

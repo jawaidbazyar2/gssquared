@@ -170,6 +170,7 @@ In DOS at $B800 lives the "prenibble routine" . I could perhaps steal that. hehe
 #include "util/SoundEffectKeys.hpp"
 #include "util/SoundEffect.hpp"
 #include "util/printf_helper.hpp"
+#include "util/ResetController.hpp"
  
  
 #define DEBUG_PH(slot, drive, phase, onoff) fprintf(stdout, "PH: slot %d, drive %d, phase %d, onoff %d \n", slot, drive, phase, onoff)
@@ -216,6 +217,7 @@ void ndiskii_reset(ndiskII_controller *ndiskII_d) {
 void init_slot_ndiskII(computer_t *computer, SlotType_t slot) {
    
     ndiskII_controller *diskII_d = new ndiskII_controller();
+    diskII_d->_slot = slot;
     diskII_d->computer = computer;
     diskII_d->clock = computer->clock;
 
@@ -258,6 +260,10 @@ void init_slot_ndiskII(computer_t *computer, SlotType_t slot) {
     key.drive = 1;
     computer->mounts->register_storage_device(key, dc, DRIVE_TYPE_DISKII);
     
+    diskII_d->powerup_reset_cycles = 6;
+    diskII_d->reset_control = computer->reset_control;
+    diskII_d->reset_control->assert_reset((device_reset_id)(slot), true);
+
     computer->register_reset_handler(
         [diskII_d]() {
             ndiskii_reset(diskII_d);
@@ -272,30 +278,15 @@ void init_slot_ndiskII(computer_t *computer, SlotType_t slot) {
             if (diskII_d->computer->execution_mode == EXEC_NORMAL) {
                 diskII_d->dc->soundeffects_update();
             }
+
+            if (diskII_d->powerup_reset_cycles > 0) {
+                diskII_d->powerup_reset_cycles--;
+                if (diskII_d->powerup_reset_cycles == 0) {
+                    diskII_d->reset_control->assert_reset((device_reset_id)(diskII_d->_slot), false);
+                }
+            }
             return true;
         });
- 
-    /* computer->dispatch->registerHandler(SDL_EVENT_DROP_FILE,
-        [diskII_d](const SDL_Event &event) {
-            printf("SDL_EVENT_DROP_FILE\n");
-            const char *filename = event.drop.data;
-            printf("filename: %s\n", filename);
-            // x and y coordinates are where in my window the file was dropped.
-            printf("x: %6.1f, y: %6.1f\n", event.drop.x, event.drop.y);
-            disk_mount_t dm;
-            dm.filename = strndup(filename, 1024);
-            dm.slot = 6;
-            dm.drive = 0;   
-            int retval = diskII_d->computer->mounts->mount_media(dm);
-            if (retval == 0) {
-                diskII_d->computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Failed to mount media"));
-                return false;
-            }
-            diskII_d->computer->event_queue->addEvent(new Event(EVENT_PLAY_SOUNDEFFECT, 0, SE_SHUGART_CLOSE));
-            diskII_d->computer->event_queue->addEvent(new Event(EVENT_REFOCUS, 0, (uint64_t)0));
-            diskII_d->computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Disk Mounted Slot 6, Drive 1"));
 
-            return true;
-        }); */
 }
  

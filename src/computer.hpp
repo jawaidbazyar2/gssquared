@@ -14,6 +14,7 @@
 #include "util/Metrics.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
 #include "util/InterruptController.hpp"
+//#include "util/ResetController.hpp"
 #include "util/AudioSystem.hpp"
 #include "util/SoundEffect.hpp"
 #include "systemconfig.hpp"
@@ -26,7 +27,7 @@ struct video_system_t; // same.
 class Mounts;
 class EventTimer;
 class VideoScannerII;
-
+class ResetController;
 
 enum execution_modes_t {
     EXEC_NORMAL = 0,
@@ -58,6 +59,7 @@ struct computer_t {
 
     SlotManager_t *slot_manager = nullptr;
     InterruptController *irq_control = nullptr;
+    ResetController *reset_control = nullptr;
 
     // handle speed shift requests (between frames)
     bool speed_shift = false;
@@ -116,6 +118,8 @@ struct computer_t {
     uint64_t last_start_frame_c14m = 0;
     void *cached_speaker_state = nullptr;
     void *cached_display_state = nullptr;
+
+    int powerup_reset_cycles = 2;
 
     void set_clock(NClockII *clock); 
     inline void set_idle_percent(float idle_percent) { this->idle_percent = idle_percent; }

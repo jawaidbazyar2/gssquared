@@ -1,6 +1,7 @@
 #pragma once
 
 enum MenuSpeedID {
+	SPEED_FREE_RUN = 0,
 	SPEED_1_0  = 1,
 	SPEED_2_8  = 2,
 	SPEED_7_1  = 3,

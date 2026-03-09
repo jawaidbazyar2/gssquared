@@ -1374,6 +1374,32 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         return true;
     });
 
+    computer->register_reset_handler([ds]() {
+        if (ds->computer->platform->id == PLATFORM_APPLE_IIGS) {
+            display_write_c041(ds, 0xC041, 0x00);
+            // TODO: this is the cleanest way to do it for now, but it feels a little hacky, as if
+            // reset handler in mmu and here should each be responsible for clearing their own bits.
+            ds->mmu->write(0xC029, ds->new_video&0x1);
+        }
+        if (ds->computer->platform->id >= PLATFORM_APPLE_IIE) {
+            // JB test/confirm: //e switches to LORES and 7M video clock on reset
+            ds->display_graphics_mode = LORES_MODE; // TODO: is this also on a II+?
+            ds->f_80col = false;
+            ds->f_double_graphics = true;
+            ds->f_altcharset = false;
+            ds->video_scanner->reset_80col();
+            ds->video_scanner->reset_altchrset();
+            ds->video_scanner->reset_dblres();
+            ds->video_scanner->set_lores();
+            // TODO: set ANC3 to 7M video mode
+            ds->a2_display->set_char_set(ds->f_altcharset);
+            ds->a2_display->set_80store(false); // TODO: check this, but it makes sense.
+        }
+        // What about the II/II+????
+        update_line_mode(ds);
+        return true;
+    });
+
     if (computer->platform->id == PLATFORM_APPLE_IIE || computer->platform->id == PLATFORM_APPLE_IIE_ENHANCED
     || computer->platform->id == PLATFORM_APPLE_IIE_65816 || computer->platform->id == PLATFORM_APPLE_IIGS) {
         ds->f_altcharset = false;
@@ -1397,25 +1423,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         mmu->set_C0XX_read_handler(0xC05F, { display_read_C05EF, ds });
         mmu->set_C0XX_write_handler(0xC05F, { display_write_C05EF, ds });
         mmu->set_C0XX_read_handler(0xC019, { display_read_vbl, ds });
-        computer->register_reset_handler([ds]() {
-            if (ds->computer->platform->id == PLATFORM_APPLE_IIGS) {
-                display_write_c041(ds, 0xC041, 0x00);
-            }
-            ds->f_80col = false;
-            ds->f_double_graphics = true;
-            ds->f_altcharset = false;
-            ds->video_scanner->reset_80col();
-            ds->video_scanner->reset_altchrset();
-            ds->video_scanner->reset_dblres();
-            ds->a2_display->set_char_set(ds->f_altcharset);
-            ds->a2_display->set_80store(false); // TODO: check this, but it makes sense.
-            // TODO: this is the cleanest way to do it for now, but it feels a little hacky, as if
-            // reset handler in mmu and here should each be responsible for clearing their own bits.
-            ds->mmu->write(0xC029, ds->new_video&0x1);
 
-            update_line_mode(ds);
-            return true;
-        });
     }
     if (computer->platform->id == PLATFORM_APPLE_IIGS) {
         mmu->set_C0XX_write_handler(0xC023, { display_write_c023, ds });

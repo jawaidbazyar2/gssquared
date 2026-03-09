@@ -31,6 +31,7 @@ struct keyboard_state_t {
     std::string paste_buffer;
     message_keyboard_t *mk = nullptr;
     MMU_II *mmu = nullptr;
+    ResetController *reset_control = nullptr;
 } ;
 
 /* uint8_t kb_memory_read(uint16_t address);

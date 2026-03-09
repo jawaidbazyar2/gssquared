@@ -2091,6 +2091,10 @@ int execute_next(cpu_state *cpu) override {
         return 0;
     }
 
+    if (cpu->reset_asserted) {
+        incr_cycles();
+        return 0;
+    }
     system_trace_entry_t *tb = &cpu->trace_entry;
     TRACE(
     if (cpu->trace) {

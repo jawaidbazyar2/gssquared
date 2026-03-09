@@ -10520,3 +10520,57 @@ On the one hand, I think my overall architecture has been pretty good, and we we
 I don't see any noticeable changes. Though I don't see the same nice behavior I had yesterday with FreeSync even though it seems still on. 
 
 OK for the top buttons. Either they need to be quite a bit smaller, or, I need to reduce them vertically somewhat. They're just taking up too much room. Alternatively, I could run them down the left border. Hmm. Let's try that. That's interesting, because then when I click on one they can expand sideways for the options.. 
+
+Another option, is I could have a menu item or key that makes the window a hair wider, and puts the buttons up there all the time. on the left, or, along the top. Optional. In fullscreen, on most monitors (WIDE) there is plenty of room for the buttons beyond the display margins. 
+
+ok, so now I have the buttons show up only when the mouse is over that area, and if you move off, they disappear instantly, and if you hover over them and do nothing they fade out. That is less annoying. 
+
+## Mar 5, 2026
+
+there's a bug, when you close the CP, if you leave the mouse where it is and just click again, it acts and reopens CP. Whoopsie.
+
+OK, how KEGS does the mouse sync is as follows: it looks to see if the Event Manager is active. If it is, it stores mouse location into various memory locations, E1, screen holes, etc. I've got to think there is some fragility to that. What if instead, we -observe- the Event Manager, but use that to generate synchronizing x/y deltas, instead of simply passing SDL's deltas in. I.e., use SDL's *absolute* coordinates, and create deltas that get us to that target based on observing the EM x/y locations. This should work better. We can still have it be an option the user can enable/disable.
+
+## Mar 7, 2026
+
+doing some refactoring of the UI API. Need to make a Container a type of Tile, so we can have containers inside containers.
+
+Done!! ooh.
+
+## Mar 8, 2026
+
+some more abstraction changes. we have a SelectButton that highlights based on being "active"; I removed the "group" concept which was unused.
+Next up: perhaps a Container specialization for the disk drive displays, that takes care of updating the drive status for display in its update() routine? Would have to inject Mounts. It will move a fair bit of ugly out.
+Also, we can now construct some of the containers from a value-icon map; would need that to be ordered instead of unordered..
+Also need some query primitives for containers, things like "who is hover", "who is active", who has matching value, etc.
+
+## Mar 9, 2026
+
+Various devices (Disk II, at least) can assert /RESET, and it does so for ~ 100ms on power-up. The //e motherboard only asserts it for 2 video frames (33ms) on powerup. 
+
+So what we need is the following infrastructure:
+reset(resetsource, true) - assert reset. This will trigger the (existing) reset() routines in devices and the cpu. However, while reset is asserted, the CPU will not run.
+reset(resetsource, false) - deassert reset. This will only release the cpu.
+similar to the IRQ vector, we'll have a RESET variable to track who is asserting reset, because the mobo and the disk ii (and in the GS, the keymicro) all have some control over RESET. 
+in //e, key down (and ignore key repeat) of our reset key, will reset(keyboard, true). key up (and ignore key repeat) will reset(keyboard, false).
+
+so in //e, so far known sources are:
+powerup reset
+keyboard reset
+diskii reset
+
+This will be fun, and easy! Let's do it!
+
+Ironically, a short delay on powerup (5-6 frames) may be just what we need to not have an audio blip out on powerup. It will give time for everything to settle.. well we'll see about that!
+
+In II+, I now have the keydown-keyup responsive reset in place! What we're looking for is 
+
+OK, I need a "powerup reset" device? Right now reset not asserted at powerup so things boot like they have been. A device for this would be composable. If not, what other frame handler could I tuck it into..
+oh, well first we need it in the Disk II controller. YES! There is a nice short 1/10th second delay there now on boot showing the weird memory patterns on the text screen.
+Technically we also still need a poweronreset in everything past appleII. otherwise if someone builds a machine w/o disk II they will have a bad time.
+
+[ ] There is some OSD stuff being drawn for a couple frames in the upper left corner of the display
+[ ] Also, the screen background is being drawn in the background color of the SelectSystem tiles on startup now.
+
+so on my IIe (enhanced), if in text mode you stay in text mode (so the text/graphics switch is left alone). if in any graphics mode, lo-res is forced along with the 7M timing (i.e., LORES7M). So that is, I think, ANC3 is forced off. (maybe all the ANCs). and the HIRES switch is turned off.
+80COL also appears to be turned off. (we do this correctly now).

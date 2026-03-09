@@ -25,6 +25,7 @@
  #include "util/media.hpp"
  #include "util/SoundEffectKeys.hpp"
  #include "devices/diskii/Floppy525.hpp"
+ #include "util/ResetController.hpp"
  
  #define DiskII_Ph0_Off 0x00
  #define DiskII_Ph0_On 0x01
@@ -252,6 +253,9 @@ public:
     computer_t *computer;
     NClockII *clock;
     DiskII_Controller *dc;
+    ResetController *reset_control;    
+
+    int powerup_reset_cycles = 6;
 };
 
 void init_slot_ndiskII(computer_t *computer, SlotType_t slot);

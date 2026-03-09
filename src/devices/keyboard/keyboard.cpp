@@ -24,6 +24,7 @@
 #include "keyboard.hpp"
 #include "util/applekeys.hpp"
 #include "mbus/KeyboardMessage.hpp"
+#include "util/ResetController.hpp"
 
 // Software should be able to:
 // Read keyboard from register at $C000.
@@ -135,6 +136,13 @@ void handle_keydown_iiplus(const SDL_Event &event, keyboard_state_t *kb_state) {
 
     if (DEBUG(DEBUG_KEYBOARD))  decode_key_mod(key, mod);
 
+    if ((mod & SDL_KMOD_CTRL) && (key == KEY_RESET)) {
+        if (event.key.repeat) return; // ignore repeated
+
+        kb_state->reset_control->assert_reset(RST_ID_KEYBOARD, true);
+        return;
+    }
+
     if (mod & SDL_KMOD_CTRL) { // still have to handle control this way..
         // Convert lowercase to control code (0x01-0x1A)
         if (mod & SDL_KMOD_SHIFT && key == 'p') { // handle control-shift-P as a special case.
@@ -168,6 +176,7 @@ void init_mb_iiplus_keyboard(computer_t *computer, SlotType_t slot) {
     computer->set_module_state(MODULE_KEYBOARD, kb_state);
 
     kb_state->mmu = computer->mmu;
+    kb_state->reset_control = computer->reset_control;
 
     /** Sather P31: 'The keyboard read addres sis $C00X and the strobe flip-flop reset address is $C01X. */
     for (int i = 0; i < 16; i++) {
@@ -186,6 +195,12 @@ void init_mb_iiplus_keyboard(computer_t *computer, SlotType_t slot) {
         handle_keydown_iiplus(event, kb_state);
         return false;
     });
+    computer->dispatch->registerHandler(SDL_EVENT_KEY_UP, [kb_state](const SDL_Event &event) {
+        if (event.key.key == KEY_RESET) {
+            kb_state->reset_control->assert_reset(RST_ID_KEYBOARD, false);
+        }
+        return false;
+    });
 }
 
 void handle_keydown_iie(const SDL_Event &event, keyboard_state_t *kb_state) {
@@ -195,6 +210,13 @@ void handle_keydown_iie(const SDL_Event &event, keyboard_state_t *kb_state) {
     SDL_Keycode key = event.key.key;
 
     if (DEBUG(DEBUG_KEYBOARD))  decode_key_mod(key, mod);
+    
+    if ((mod & SDL_KMOD_CTRL) && (key == KEY_RESET)) {
+        if (event.key.repeat) return; // ignore repeated
+
+        kb_state->reset_control->assert_reset(RST_ID_KEYBOARD, true);
+        return;
+    }
 
     if (mod & SDL_KMOD_CTRL) { // still have to handle control this way..
         // Convert lowercase to control code (0x01-0x1A)
@@ -235,6 +257,7 @@ void init_mb_iie_keyboard(computer_t *computer, SlotType_t slot) {
     computer->set_module_state(MODULE_KEYBOARD, kb_state);
 
     kb_state->mmu = computer->mmu;
+    kb_state->reset_control = computer->reset_control;
 
     /** Sather P31: 'The keyboard read addres sis $C00X and the strobe flip-flop reset address is $C01X. */
     // IIe Read C000-C00F - same as II+.
@@ -259,7 +282,12 @@ void init_mb_iie_keyboard(computer_t *computer, SlotType_t slot) {
         handle_keydown_iie(event, kb_state);
         return false;
     });
-
+    computer->dispatch->registerHandler(SDL_EVENT_KEY_UP, [kb_state](const SDL_Event &event) {
+        if (event.key.key == KEY_RESET) {
+            kb_state->reset_control->assert_reset(RST_ID_KEYBOARD, false);
+        }
+        return false;
+    });
     // set up the keyboard message.
     kb_state->mk = new message_keyboard_t;
     Message *msg = new KeyboardMessage(kb_state->mk);
