@@ -2,19 +2,23 @@
 
 The ambition for this project is large - and it will take a while to get it done. So at any given point in time, consider it a work-in-progress complete with bugs, missing features, and experiments. Of course there will be plenty that "just works".
 
+Looking for how to use GSSquared?
+[Click here for User Documentation](Index.md)
+
+Keep reading for Project Status, Design, and development journals.
+
 * [Project Status](#project-status-as-of-2025-06-12)
-* [Using GSSquared](#using-gssquared)
 * [Code Organization](#code-organization)
 
-# Project Status (as of 2025-06-12)
+# Project Status (as of 2026-03-10)
 
 ## Supported Host Platforms
 
 | Platform | Status |
 |----------|--------|
-| MacOS    | The primary development platform. This will always be up to date. |
-| Linux    | Can now build Linux binary. All features working. |
-| Windows  | Not started. |
+| MacOS    | Builds a MacOS App Bundle with all assets |
+| Linux    | Builds a linux AppImage with all assets |
+| Windows  | Builds a ZIP file with all assets (no 'installation' required) |
 
 ## Modeled Virtual Platforms
 
@@ -25,7 +29,7 @@ The ambition for this project is large - and it will take a while to get it done
 | Apple II+ | ✅ |
 | Apple II j-plus | ❌ |
 | Apple IIe | ✅ |
-| Apple IIe (enh) | ❌ |
+| Apple IIe (enh) | ✅ |
 | Apple IIc | ❌ |
 | Apple IIc+ | ❌ |
 | Apple IIgs | ✅ |
@@ -33,7 +37,7 @@ The ambition for this project is large - and it will take a while to get it done
 
 ## Supported Video Modes
 
-We currently have the following implemented:
+The following video modes are currently implemented:
 
 | Apple II Mode | Composite | RGB | Monochrome |
 |---------------|-----------|-----|------------|
@@ -45,8 +49,10 @@ We currently have the following implemented:
 | DLGR          | ✅        |     | ✅         |
 | DHGR          | ✅        | ✅  | ✅         |
 | SHR 320       |           | ✅  |            |
+| SHR 640       |           | ✅  |            |
 
-By "Composite" we mean DisplayNG, to accurately render composite artifacts.
+The Composite mode is an accurate simulation of a real NTSC monitor.
+RGB is an accurate (exact) Apple IIgs RGB presentation.
 
 ## CPUs
 
@@ -77,15 +83,14 @@ By "Composite" we mean DisplayNG, to accurately render composite artifacts.
 
 | Type | Status |
 |------|--------|
-| Cassette | Not started |
+| Cassette | No support planned. |
 | Disk II Controller Card | ✅ |
 | ProDOS Block-Device Interface | ✅ |
-| SmartPort / ProDOS Block-Device Interface | Not started |
+| SmartPort / ProDOS Block-Device Interface | ✅ |
 | RAMfast SCSI Interface | Not started |
-| Pascal Storage Device | Not started (Same as generic ProDOS-compatible?) |
-| IWM - Integrated Woz Machine | Not started |
+| IWM - Integrated Woz Machine | 5.25 Support Complete, 3.5 Pending |
 
-Additional notes: Disk II does not support quarter or half tracks.
+Additional notes: 5.25 Floppy does not support quarter or half tracks.
 
 ## Disk Image Formats
 
@@ -102,15 +107,15 @@ Additional notes: Disk II does not support quarter or half tracks.
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Basic Speaker | ✅ Complete |  |
-| Ensoniq | In progress |
+| Ensoniq / IIGS Sound | In progress |
 
 ## I/O Devices
 
 | Device | Status | Notes |
 |--------|--------|-------|
 | Printer / parallel port | Work in progress | Right now just dumps binary data to file, no processsing or printer emulation |
-| Printer / serial port | Not started | |
-| Modem / serial port | Not started | Intend to emulate SSC and Hayes-compatible modem to telnet |
+| Printer / serial port | Partial | GS-only, support SCC chip and "print to file" |
+| Modem / serial port | Not started | GS-only, support SCC chip and Hayes-compatible modem with telnet |
 | ImageWriter printer emulation | Not started | |
 | Joystick / paddles | ✅ Complete | Mouse emulation of Joystick; Gamepads;  |
 | Sirius JoyPort (Atari) | ✅ | Implemented Single Joystick - enable mode with F6 |
@@ -130,25 +135,19 @@ Additional notes: Disk II does not support quarter or half tracks.
 
 ### Apple II+
 
-| Platform | Open Apple | Closed Apple |
-|-|-|-|
-| Mac | Option (Left) | Option (Right) |
-| PC/Linux | Windows (Left) | Windows (Right) |
+For specific platform key mappings, see: [Keyboard Shortcuts](KeyboardShortcuts.md)
 
-Hopefully these get typical Apple II Open-Apple and Closed-Apple sequences out of any conflict with host-OS command sequences.
-
-On the Mac, you will want to disable "Pressing Option 5 Times enables Mouse Keys".
+On the Mac, you will want to disable "Pressing Option 5 Times enables Mouse Keys", and Dictation. Otherwise pressing CTRL repeatedly will interfere with the emulator's use of the option / control keys.
 
 BTW, Control-OpenApple-Reset will also "force reboot" a II+ mode, because it's super-useful, even though OpenApple and ClosedApple are NOT mapped to the game controller buttons on the II+.
 
 1. control keys: YES
 1. shift keys: YES
-1. arrow keys: YES. II+ only has left and right arrow keys.
+1. arrow keys: YES. II+ only has left and right arrow keys, so only those work on II+.
 1. Escape key: YES
-1. RESET key: YES. Control+F10.
-1. EXIT key: YES. Command-Q on Mac, other depends on OS.
+1. RESET key: YES.
 1. REPT key: no. But we don't need this, autorepeat driven by real keyboard.
-1. Backspace - YES. This apparently maps to same as back arrow. Got lucky.
+1. Backspace - YES.
 
 ### Apple IIe
 
@@ -156,11 +155,10 @@ BTW, Control-OpenApple-Reset will also "force reboot" a II+ mode, because it's s
 1. shift keys: YES
 1. arrow keys: YES. All 4 arrow keys.
 1. Escape key: YES
-1. RESET key: YES. Control+F10.
-1. EXIT key: YES. Command-Q on Mac, other depends on OS
+1. RESET key: YES.
 1. REPT key: no. But we don't need this, autorepeat driven by real keyboard.
-1. Backspace - YES. Mapped to 0x7F.
-1. OA and CA - YES. Mapped to Command on Mac, Windows on Win/Linux.
+1. Backspace - YES. Mapped to 0x7F 'Delete' on IIe keyboard.
+1. OA and CA - YES.
 
 ## ROMs
 
@@ -184,19 +182,20 @@ emulators fit the video game category quite closely.
 
 GSSquared supports three video display engines:
 * NTSC - a highly accurate rendering of Apple II video as it would have worked on a composite monitor of the time.
-* RGB - a more typical "emulator" rendering of video. Based on what I believe is the IIgs RGB video patent.
-* Monochrome - green, amber, or white high bandwidth monochrome display.
+* RGB - the exact Apple IIgs mapping of Apple II video to RGB
+* Monochrome - green, amber, or white 'high bandwidth' monochrome display.
 
 At this time all video modes below work with all display engines.
 
 ### Text Mode
 
-Text mode is complete. It supports 40-column normal, inverse, and flash;
-80-column with standard and alternate character sets.
+Supports 40-column normal, inverse, and flash;
+80-column with standard and alternate character sets, and on GS, all 8 international character sets.
+Also, GS2 supports Videx VideoTerm in the II+ model.
 
 ### Low-Resolution Graphics
 
-Low-resolution graphics are complete. They work with screen 1, 2, split-screen, and full-screen.
+Wwork with screen 1, 2, split-screen, and full-screen.
 
 ### High-Resolution Graphics
 
@@ -227,98 +226,6 @@ make more sense).
 
 There is a standardized device interface that ProDOS supports, called Pascal. This may be what
 became known as the SmartPort / ProDOS block-device interface. See above.
-
-
-# Using GSSquared
-
-## Mouse Capture
-
-If you click inside the GS2 window, the mouse will be "captured". This is important for Mouse-based Joystick emulation, and later for supporting Mouse card emulation.
-
-To release the mouse, you can hit **F1**, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)
-
-Mouse capture also turns off the "mouse movement shows OSD controls" feature. It locks you into that keyboard-oriented Apple II experience.
-
-## On-Screen Display (OSD)
-
-This is the "Control Panel" of the system.
-
-To open, press **F4** or click the Triangle tab that appears near the upper left corner of the display when the mouse is moving.
-
-Inside the OSD, there are buttons to control:
-
-* Display mode (NTSC, RGB, and three colors of monochrome);
-* Speed (1MHz, 2.8MHz, 4.0MHz, and Ludicrous speed)
-
-## Reset
-
-Apple II reset is Control-F10; or, press the RESET button in the OSD.
-
-You can Control-Alt-Reset to simulate a IIe style "force reboot" even on a II+. (This clears the reset vector to 0's to trigger a monitor ROM autostart).
-
-## Virtual Disks
-
-### Mounting disks into the Emulator is hopefully simple!
-
-1. Open the OSD.
-1. Click a disk drive.
-1. Select a disk image.
-1. Close the OSD.
-
-Drive-specific details:
-
-* 3.5" Drives
-
-You can mount any 800K or bigger disk image file onto the 3.5 drives, including hard drive images, up to 32MB. Changes to these images are written immediately whenever an emulated program writes to disk.
-
-* 5.25" Drives
-
-You can mount any exactly 143K (140K) disk image to a 5.25" drive. Changes written to these drives are held in memory until you unmount them. At that time the system will ask if you want to save changes back to the original disk image file.
-
-### Write-protection
-
-If the disk image is set in the host operating system as Read-Only (i.e., writes not allowed) then the image will be mounted into GS2 as Write Protected.
-
-## Display Configuration
-
-In the OSD, there are buttons to change the display engine - NTSC, RGB, and Monochrome. And, buttons to change the Monochrome color (green, amber, white).
-
-* F2 cycles through the display engines.  
-* F5 toggles between pixel-blur and rectangular. pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays. Rectangular performs an exact square upscaling/downscaling.
-* F3 toggles between Full-Screen and Windowed modes.
-
-These are matters of personal preference, so you get to pick the one you like best.
-
-## Game Controller (Joystick / Paddle / Joyport)
-
-### Mouse
-
-By default, if no gamepad is detected, GS2 tries its best to emulate a Apple II joystick/paddles using the mouse.
-It's best if you click inside the window to activate Mouse Capture mode. This prevents the mouse from leaving the bounds of the window and causing all kinds of weirdness.
-
-It's mapped as follows: 
-* Left to Right is the horizontal axis PDL(0). Up to Down is the vertical axis PDL(1).
-* The left mouse button is Button 0; right is Button 1. If you only have a 1-button mouse, you're limited to Button 0.
-
-### Gamepads
-
-GS2 will detect and activate multiple Gamepads if present. However, the current implementation only supports using the first Gamepad detected for user input.
-Tested devices: I have and have tested a 8BitDo Pro2 Gamepad. However, the underlying SDL library is known to work with hundreds of Gamepad models.
-
-Buttons A and B (the East and South buttons on a typical gamepad) are Button(0) and Button(1) respectively.
-The Left joystick is PDL(0) and PDL(1).
-
-### Sirius Joyport Emulation (Atari Joystick games)
-
-Enable Atari Joyport mode by pressing F6 on your keyboard. (Switch back to regular Apple Joystick mode by pressing F6 again).
-
-Joyport emulation only works with Gamepads, not the Mouse.
-
-The Gamepad D-PAD (+ shaped control) is what is used for the Atari Joystick.
-Currently, only the first Gamepad is recognized by the system, so no multi-player games.
-
-Almost all Joyport games will require configuration in-game to enable Joyport support. Many Sirius Software games use Control-Shift-@ (Apple IIe Emulation) or Control-Shift-P (Apple II+ Emulation) to enable Joyport. Other games have setup menus. You will have to check the manual for the game.
-
 
 # Code Organization
 

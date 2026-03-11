@@ -10394,8 +10394,8 @@ so we throw SRQ.. do we do the talk, or does the ROM do the talk? check the Wolf
 The goal of all this is for the apple ii to get all the low-level keydown and keyup codes. ok, so this is definitely turning off that normal handling and normal processing of C000, except that we send some codes back into that to appear at C000?
 
 
-[ ] implement HOLD and RELEASE reset. 
-[ ] move RESET generation to ADB_Micro
+[x] implement HOLD and RELEASE reset. 
+[x] move RESET generation to ADB_Micro
 
 the HOLD AND RELEASE reset will assert reset soi long as the F10 and control are held down. When released, reset is de-asserted. when RESET is asserted, we do something very similar to the WAI, which is just spin a cycle (so video keeps working). And I think we call the device reset handlers. now that is very interesting. we call them, but then hold and spin without calling them?
 
@@ -10567,7 +10567,7 @@ In II+, I now have the keydown-keyup responsive reset in place! What we're looki
 
 OK, I need a "powerup reset" device? Right now reset not asserted at powerup so things boot like they have been. A device for this would be composable. If not, what other frame handler could I tuck it into..
 oh, well first we need it in the Disk II controller. YES! There is a nice short 1/10th second delay there now on boot showing the weird memory patterns on the text screen.
-Technically we also still need a poweronreset in everything past appleII. otherwise if someone builds a machine w/o disk II they will have a bad time.
+Technically we also still need a poweronreset in everything past appleII. otherwise if someone builds a machine w/o disk II they will have a bad time. ok, I just put this in computer. 2 frames, per UtA2e (though he suggests it's not quite 2 full frames).
 
 [x] There is some OSD stuff being drawn for a couple frames in the upper left corner of the display. The disk drives I think.  
 [x] Also, the screen background is being drawn in the background color of the SelectSystem tiles on startup now.  
@@ -10577,7 +10577,7 @@ Technically we also still need a poweronreset in everything past appleII. otherw
 so on my IIe (enhanced), if in text mode you stay in text mode (so the text/graphics switch is left alone). if in any graphics mode, lo-res is forced along with the 7M timing (i.e., LORES7M). So that is, I think, ANC3 is forced off. (maybe all the ANCs). and the HIRES switch is turned off.
 80COL also appears to be turned off. (we do this correctly now).
 
-[ ] See also Sather UTA2e 4-14 about the MMU bus fingerprinting. (This is crazy, the MMU looks for 3 inc-or-decremental accesses to page 1 )
+[ ] See also Sather UTA2e 4-14 about the MMU bus fingerprinting. (This is crazy, the MMU looks for 3 inc-or-decremental accesses to page 1, cuz reset line isn't hooked up)  
 [ ] 6502 reset pulls 3 values from the stack, just like an RTI would, but ignores the values  
 
 I may have just resolved some of the apple iie speaker distortion at boot bug:
@@ -10587,3 +10587,23 @@ This fixes MOST but not all of the distortion. I think before we were getting it
 I definitely now longer get any pop booting the GS. So there may still be some last minor issue interfering with the //e and below.
 
 ok, I have (mostly correctly) implemented the ASSERT RESET gizmo in the GS. However, I may be returning incorrectly the reset packets in some way, because I can't get Wolf3D to reset. One possibility: that even in SRQ mode we're supposed to be tracking updates to the mod bits? I'll have to trace this code, at least I know where the SRQ handler vector is so that won't be too hard.
+
+FF/818A: the IRQ_SRQ handler. this routine is supposed to read the packet then call to fetch it and deliver it to registered handlers?
+FF/81C4: this sends the TALK command to the KB. JMP 84EE? this is CLEAN to return from interrupt handler.
+FF/B9C5: JSR BAA3. this is heading towards exiting here..
+however, whenever the keyboard has the data back to us, I bet we will interrupt again..
+oh yes we did. So now is it irq_response ? that's E1/0040.
+Ff/8485: INTRSPNS
+it's going to call E1/03DC which is the completion vector.
+which jumps to FF/8217. (for pete's sake)
+SRQCPLT: SRQ Completion Routine
+FF/823D: this is the RTL that vectors to the actual user handler.
+Currently, this is 04/CB72. Whew.
+yah the first thing it's doing is checking for the reset pattern of 7F7F. it does an AND, so it will match whether key down or up. ok that's good to know..
+ah, yep. At 04/CC25, it's reading E1/C025. which is the modifiers.
+it's loading $00 of course, but looking for $02 (control). 
+
+
+AHHH, and besides all that, I am seeing ADB Bugs in: Cavern Cobra (type a key, get tons of "disable srq on device"). Also just booting WITA2GS. Hmmm. Something in the ROM?
+
+[ ] drag and drop does not give user an opportunity to save/discard. this function should get moved somewhere conveniently reproducible.  
