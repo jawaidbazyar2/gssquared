@@ -401,6 +401,8 @@ add_subdirectory(apps/vpp)
 
 add_subdirectory(apps/iieromcsum)
 
+add_subdirectory(apps/binprint)
+
 add_subdirectory(apps/cpu816test)
 
 add_subdirectory(apps/ui)
