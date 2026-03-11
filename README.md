@@ -2,7 +2,7 @@
 
 GSSquared is a complete emulator for the Apple II series of computers.
 
-GSSquared has two primary design goals: support both 8- and 16-bit Apple IIs; and be cross-platform.
+GSSquared has three primary design goals: support both 8- and 16-bit Apple IIs; be cross-platform; have a simple, intuitive user interface and be packaged 100% ready to go.
 
 To my knowledge, it is the only emulator besides MAME that models (most of) the 8-bit Apple II as well as the 16-bit Apple IIgs:
 
@@ -18,7 +18,9 @@ It is written in C++ and runs on:
 * Linux
 * macOS
 
-I think these two characteristics make GSSquared unique among Apple II emulators.
+It has an intuitive user interface and is 100% ready to run without any other downloads.
+
+I think these characteristics make GSSquared unique among Apple II emulators.
 
 It uses the SDL3 library for graphics, sound, and I/O. This is a video game-oriented library and suits an emulator well. It's what made building across three (very different) platforms work.
 
