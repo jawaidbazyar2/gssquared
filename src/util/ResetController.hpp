@@ -64,7 +64,7 @@ class ResetController {
         return reset_asserted != 0;
     }
 
-    inline void clear_all_irqs() {
+    inline void clear_all_resets() {
         uint64_t old = reset_asserted;
         reset_asserted = 0;
         if (old != reset_asserted) {
