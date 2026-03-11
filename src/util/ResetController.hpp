@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <functional>
-#include "computer.hpp"
 #include "device_reset_id.hpp"
 #include "util/DebugFormatter.hpp"
 
@@ -25,13 +24,10 @@ class ResetController {
     // Parameter is true if any IRQ is currently asserted
     std::function<void(uint64_t)> reset_receiver;
 
-    computer_t *computer = nullptr;
-
     public:
-    ResetController(computer_t *computer) { 
+    ResetController() { 
         reset_asserted = 0; 
         reset_receiver = nullptr; 
-        this->computer = computer;
     };
     ~ResetController() { reset_receiver = nullptr; };
 
@@ -44,10 +40,10 @@ class ResetController {
             reset_asserted &= ~(1 << reset);
         }
 
-        if ((reset_asserted) && (!old)) { // if reset was NOT asserted, but now is, call reset() chain.
+    /*     if ((reset_asserted) && (!old)) { // if reset was NOT asserted, but now is, call reset() chain.
             computer->reset(false);
         }
-        
+         */
         if (old != reset_asserted) { // on any change tell computer to change cpu reset state
             notify_reset_receiver();
         }

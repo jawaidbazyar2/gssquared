@@ -56,18 +56,14 @@ computer_t::computer_t(NClockII *clock) {
         }
     );
 
-    reset_control = new ResetController(this);
+    reset_control = new ResetController();
     reset_control->register_reset_receiver([this](uint64_t reset_asserted) {
+        uint64_t old = cpu->reset_asserted;
         cpu->reset_asserted = reset_asserted;
-    });
-    /* register_debug_display_handler(
-        "reset",
-        DH_RESET, // unique ID for this, need to have in a header.
-        [this]() -> DebugFormatter * {
-            return reset_control->debug_reset();
+        if ((reset_asserted) && (!old)) { // if reset was NOT asserted, but now is, call reset() chain.
+            reset(false);
         }
-    ); */
-
+    });
 
     audio_system = new AudioSystem();
     sound_effect = new SoundEffect(audio_system);
@@ -90,16 +86,7 @@ computer_t::computer_t(NClockII *clock) {
     sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [this](const SDL_Event &event) {
         int key = event.key.key;
         SDL_Keymod mod = event.key.mod;
-        /* if (this->platform->id == PLATFORM_APPLE_IIGS) { // try out new reset thing.
-            if ((mod & SDL_KMOD_CTRL) && (key == KEY_RESET)) {
-                if ((mod & KEYMOD_OPENAPPLE) && (this->platform->id <= PLATFORM_APPLE_II_PLUS)) { // only II+ and earlier.
-                    reset(true);
-                } else {
-                    reset(false); 
-                }
-                return true;
-            }
-        } */
+
         if (key == SDLK_F9) { 
             this->speed_shift = true;
             if (mod & SDL_KMOD_SHIFT) {
