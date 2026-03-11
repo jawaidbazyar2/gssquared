@@ -20,8 +20,8 @@ class ResetController {
     private:
     uint64_t reset_asserted = 0;
     
-    // Callback to notify when IRQ state changes
-    // Parameter is true if any IRQ is currently asserted
+    // Callback to notify when RESET state changes
+    // Parameter is true if any RESET is currently asserted
     std::function<void(uint64_t)> reset_receiver;
 
     public:
@@ -53,13 +53,13 @@ class ResetController {
         return reset_asserted & (1 << reset);
     }
 
-    // Register a callback to receive IRQ state updates
-    // The callback receives true when any IRQ is asserted, false when all are cleared
+    // Register a callback to receive RESET state updates
+    // The callback receives true when any RESET is asserted, false when all are cleared
     void register_reset_receiver(std::function<void(uint64_t)> receiver) {
         reset_receiver = std::move(receiver);
     }
     
-    // Check if any IRQ is currently asserted
+    // Check if any RESET is currently asserted
     inline bool any_reset_asserted() const {
         return reset_asserted != 0;
     }
@@ -73,7 +73,7 @@ class ResetController {
     }
 
     protected:
-    // Call this after IRQ state changes to notify the receiver
+    // Call this after RESET state changes to notify the receiver
     void notify_reset_receiver() {
         if (reset_receiver) {
             reset_receiver(reset_asserted);
