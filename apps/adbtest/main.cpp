@@ -68,7 +68,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     }
     SDL_SetWindowKeyboardGrab(window, true);
 
-    KeyGloo *kg = new KeyGloo();
+    KeyGloo *kg = new KeyGloo(nullptr);
     MyAppState *as = new MyAppState();
     as->kg = kg;
     as->window = window;

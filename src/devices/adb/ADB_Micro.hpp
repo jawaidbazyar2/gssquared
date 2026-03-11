@@ -757,13 +757,13 @@ class KeyGloo
                     // if control key is not down, don't do anything.
                     if (!vars.currmod.ctrl) return status;
                     
-                    reset_control->assert_reset(RST_ID_KEYMICRO, true);
+                    if (reset_control) reset_control->assert_reset(RST_ID_KEYMICRO, true);
                     return status;
                 } else if (!auto_repeat && reg.data[0] == 0xFF && reg.data[1] == 0xFF) { // release power key
                     // if control key is not down, don't do anything.
                     //if (!vars.currmod.ctrl) return status;
                     
-                    reset_control->assert_reset(RST_ID_KEYMICRO, false);
+                    if (reset_control) reset_control->assert_reset(RST_ID_KEYMICRO, false);
                     return status;
                 }
                 
