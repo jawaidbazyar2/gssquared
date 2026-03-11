@@ -24,17 +24,16 @@ I think these characteristics make GSSquared unique among Apple II emulators.
 
 It uses the SDL3 library for graphics, sound, and I/O. This is a video game-oriented library and suits an emulator well. It's what made building across three (very different) platforms work.
 
-The code base builds and has been tested on:
-* MacBook Pro M1
-* Mac Intel
-* Mac Mini M4
-* Ubuntu Linux 22.04 (x64 AMD)
 
-# Download Binary
+# Documentation
+
+Check out the [User Documentation](Docs/Index.md) for detailed instructions on how to use GSSquared.
+
+# Pre-compiled Packages
 
 A binary release is available at [https://github.com/jawaidbazyar2/gssquared/releases](https://github.com/jawaidbazyar2/gssquared/releases).
 
-For the Mac, you will need to tell MacOS the software is A-OK even though it's from the Internet.
+For the Mac, after downloading you will need to tell MacOS the software is A-OK even though it's from the Internet.
 
 ```
 % xattr -d com.apple.quarantine gssquared.dmg 
@@ -45,8 +44,13 @@ or
 xattr -d com.apple.quarantine /Applications/gssquared.app
 ```
 
-
 # Building
+
+The code base builds and has been tested on:
+* MacBook Pro M1
+* Mac Intel
+* Mac Mini M4
+* Ubuntu Linux 22.04 (x64 AMD)
 
 General Build Instructions:
 
@@ -205,10 +209,6 @@ cmake -G "MinGW Makefiles" -DGS2_PROGRAM_FILES=OFF -DCMAKE_BUILD_TYPE=Release -D
 cmake --build build --parallel --target package
 ```
 
-
-# Documentation
-
-Check out the [KeyboardShortcuts.md](Docs/KeyboardShortcuts.md) file for a list of keyboard shortcuts needed to operate.
 
 # Affiliated Programs
 
