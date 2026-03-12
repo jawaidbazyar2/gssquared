@@ -23,7 +23,7 @@
 
 #include "cpu.hpp"
 #include "media.hpp"
-#include "slots.hpp"
+//#include "slots.hpp"
 #include "drive_status.hpp"
 #include "StorageDevice.hpp"
 
@@ -59,25 +59,22 @@ enum unmount_action_t {
 };
 
 class Mounts {
-
+protected:
     struct storage_device_registration_t {
         StorageDevice *device;
         drive_type_t drive_type;
     };   
 
-    protected:
-    SlotManager_t *slot_manager;
     std::unordered_map<storage_key_t, storage_device_registration_t> storage_devices;
     std::unordered_map<storage_key_t, media_descriptor*> mounted_media;
     mutable std::vector<drive_info_t> cached_drive_info;
 
 public:
-    Mounts(SlotManager_t *slot_managerx) : slot_manager(slot_managerx) {}
+    Mounts() {}
     bool mount_media(disk_mount_t disk_mount);
     bool unmount_media(storage_key_t key, unmount_action_t action);
     drive_status_t media_status(storage_key_t key);
     const std::vector<drive_info_t>& get_all_drives();
-    //int register_drive(drive_type_t drive_type, uint64_t key);
     int register_storage_device(storage_key_t key, StorageDevice *storage_device, drive_type_t drive_type);
     void dump();
 };

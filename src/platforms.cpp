@@ -34,6 +34,14 @@ static  platform_info platforms[] = {
         PROCESSOR_6502, 
         CLOCK_1_024MHZ ,
         MMU_MMU_II,
+        {
+            DEVICE_ID_KEYBOARD_IIPLUS, 
+            DEVICE_ID_SPEAKER,
+            DEVICE_ID_CASSETTE,
+            DEVICE_ID_DISPLAY,
+            DEVICE_ID_GAMECONTROLLER,
+            DEVICE_ID_END
+        },
     },
     { 
         PLATFORM_APPLE_II_PLUS, 
@@ -42,7 +50,15 @@ static  platform_info platforms[] = {
         PROCESSOR_6502, 
         CLOCK_1_024MHZ, 
         MMU_MMU_II,
-        },
+        {
+            DEVICE_ID_KEYBOARD_IIPLUS,
+            DEVICE_ID_SPEAKER,
+            DEVICE_ID_CASSETTE,
+            DEVICE_ID_DISPLAY,
+            DEVICE_ID_GAMECONTROLLER,
+            DEVICE_ID_END
+        }
+    },
     { 
         PLATFORM_APPLE_IIE, 
         "Apple IIe", 
@@ -50,6 +66,15 @@ static  platform_info platforms[] = {
         PROCESSOR_6502, 
         CLOCK_1_024MHZ, 
         MMU_MMU_IIE,
+        {
+            DEVICE_ID_DISPLAY,          // display must be before IIE_MEMORY
+            DEVICE_ID_KEYBOARD_IIE,     // Keyboard should be before IIE_MEMORY
+            DEVICE_ID_IIE_MEMORY,
+            DEVICE_ID_SPEAKER,
+            DEVICE_ID_CASSETTE,
+            DEVICE_ID_GAMECONTROLLER,
+            DEVICE_ID_END
+        }
     },
     { 
         PLATFORM_APPLE_IIE_ENHANCED, 
@@ -57,7 +82,16 @@ static  platform_info platforms[] = {
         "apple2e_enh", 
         PROCESSOR_65C02, 
         CLOCK_1_024MHZ,
-        MMU_MMU_IIE
+        MMU_MMU_IIE,
+        {
+            DEVICE_ID_DISPLAY,          // display must be before IIE_MEMORY
+            DEVICE_ID_KEYBOARD_IIE,     // Keyboard should be before IIE_MEMORY
+            DEVICE_ID_IIE_MEMORY,
+            DEVICE_ID_SPEAKER,
+            DEVICE_ID_CASSETTE,
+            DEVICE_ID_GAMECONTROLLER,
+            DEVICE_ID_END
+        }
      },
      {
         PLATFORM_APPLE_IIE_65816,
@@ -65,7 +99,16 @@ static  platform_info platforms[] = {
         "apple2e_enh",
         PROCESSOR_65816,
         CLOCK_1_024MHZ,
-        MMU_MMU_IIE
+        MMU_MMU_IIE,
+        {
+            DEVICE_ID_DISPLAY,          // display must be before IIE_MEMORY
+            DEVICE_ID_KEYBOARD_IIE,     // Keyboard should be before IIE_MEMORY
+            DEVICE_ID_IIE_MEMORY,
+            DEVICE_ID_SPEAKER,
+            DEVICE_ID_CASSETTE,
+            DEVICE_ID_GAMECONTROLLER,
+            DEVICE_ID_END
+        }
      },
      {
         PLATFORM_APPLE_IIGS,
@@ -73,7 +116,18 @@ static  platform_info platforms[] = {
         "apple2gs",
         PROCESSOR_65816,
         CLOCK_2_8MHZ,
-        MMU_MMU_IIGS
+        MMU_MMU_IIGS,
+        {
+            DEVICE_ID_SPEAKER,     // speaker must be before display so iigs can override some things?? Still a thing?
+            DEVICE_ID_DISPLAY, 
+            DEVICE_ID_KEYGLOO,     // Keyboard should be before IIGS_MEMORY
+            DEVICE_ID_RTC_PRAM,
+            DEVICE_ID_GAMECONTROLLER,
+            DEVICE_ID_ENSONIQ,
+            DEVICE_ID_SCC8530,
+            DEVICE_ID_IWM,
+            DEVICE_ID_END
+        }
      },
     // Add more platforms as needed:
     // { "Apple IIc",         "apple2c" },

@@ -597,25 +597,33 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
     // Initialize the slot manager.
     //SlotManager_t *slot_manager = new SlotManager_t();
 
-    // Create Mounts object
-    //computer->mounts = new Mounts(computer->cpu, computer->slot_manager);
 
     //init_display_font(rd);
 
-    //SystemConfig_t *system_config = get_system_config(platform_id);
 
-    for (int i = 0; system_config->device_map[i].id != DEVICE_ID_END; i++) {
-        DeviceMap_t dm = system_config->device_map[i];
-
-        Device_t *device = get_device(dm.id);
+    // Iterate through Platform Devices and create/register/initialize the devices.
+    for (int i = 0; platform->mb_devices[i] != DEVICE_ID_END; i++) {
+        Device_t *device = get_device(platform->mb_devices[i]);
         if (device->power_on == nullptr) {
-            printf("Device has no poweron, not found: %d", dm.id);
+            printf("Device has no poweron, not found: %d", platform->mb_devices[i]);
+            continue;
+        }
+        device->power_on(computer, SLOT_NONE);
+    }
+
+    // Iterate through SystemConfig Slot Devices and create/register/initialize the devices.
+    for (int i = 0; i < NUM_SLOTS; i++) {
+        device_id id = system_config->slot_devices[i];
+        if (id == DEVICE_ID_NONE) continue;
+
+        Device_t *device = get_device(id);
+        if (device->power_on == nullptr) {
+            printf("Slot Device has no poweron handler: %d", id);
             continue;
         } 
-        device->power_on(computer, dm.slot);
-        if (dm.slot != SLOT_NONE) {
-            computer->slot_manager->register_slot(device, dm.slot);
-        }
+        device->power_on(computer, (SlotType_t)i);
+
+        computer->slot_manager->register_slot(device, (SlotType_t)i);
     }
 
     register_clock_debug(computer);

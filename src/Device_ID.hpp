@@ -2,6 +2,7 @@
 
 typedef enum device_id {
     DEVICE_ID_END = 0,
+    DEVICE_ID_NONE = 0,
     DEVICE_ID_KEYBOARD_IIPLUS,
     DEVICE_ID_KEYBOARD_IIE,
     DEVICE_ID_SPEAKER,

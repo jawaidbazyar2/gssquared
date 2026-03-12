@@ -21,12 +21,11 @@
 #include "devices/displaypp/VideoScanner.hpp"
 
 DeviceMap_t DeviceMap_II[] = {
-    {DEVICE_ID_KEYBOARD_IIPLUS, SLOT_NONE},
+    /* {DEVICE_ID_KEYBOARD_IIPLUS, SLOT_NONE},
     {DEVICE_ID_SPEAKER, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
     {DEVICE_ID_DISPLAY, SLOT_NONE},
-    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
-    //{DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
+    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE}, */
     {DEVICE_ID_DISK_II, SLOT_6},
     {DEVICE_ID_PARALLEL, SLOT_1},
     {DEVICE_ID_LANGUAGE_CARD, SLOT_0},
@@ -34,11 +33,11 @@ DeviceMap_t DeviceMap_II[] = {
 };
 
 DeviceMap_t DeviceMap_IIPLUS[] = {
-    {DEVICE_ID_KEYBOARD_IIPLUS, SLOT_NONE},
+    /* {DEVICE_ID_KEYBOARD_IIPLUS, SLOT_NONE},
     {DEVICE_ID_SPEAKER, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
     {DEVICE_ID_DISPLAY, SLOT_NONE},
-    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
+    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE}, */
     {DEVICE_ID_LANGUAGE_CARD, SLOT_0},
     {DEVICE_ID_PD_BLOCK3, SLOT_5},
     {DEVICE_ID_PRODOS_CLOCK, SLOT_2},
@@ -47,18 +46,16 @@ DeviceMap_t DeviceMap_IIPLUS[] = {
     {DEVICE_ID_PARALLEL, SLOT_1},
     {DEVICE_ID_VIDEX, SLOT_3},
     {DEVICE_ID_MOCKINGBOARD, SLOT_4},
-    //{DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
     {DEVICE_ID_END, SLOT_NONE}
 };
 
 DeviceMap_t DeviceMap_IIE[] = {
-    {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
+    /* {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
     {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
     {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
     {DEVICE_ID_SPEAKER, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
-    //{DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
-    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
+    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE}, */
     {DEVICE_ID_MEM_EXPANSION, SLOT_2},
     {DEVICE_ID_PD_BLOCK3, SLOT_5},
     {DEVICE_ID_DISK_II, SLOT_6},
@@ -68,13 +65,12 @@ DeviceMap_t DeviceMap_IIE[] = {
 };
 
 DeviceMap_t DeviceMap_IIE_MOUSE[] = {
-    {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
+    /* {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
     {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
     {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
     {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
-    //{DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
-    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
+    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE}, */
     {DEVICE_ID_MEM_EXPANSION, SLOT_2},
     {DEVICE_ID_PD_BLOCK3, SLOT_5},
     {DEVICE_ID_DISK_II, SLOT_6},
@@ -83,13 +79,12 @@ DeviceMap_t DeviceMap_IIE_MOUSE[] = {
 };
 
 DeviceMap_t DeviceMap_IIX[] = {
-    {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
+    /* {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
     {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
     {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
     {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
-    //{DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
-    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
+    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE}, */
     {DEVICE_ID_MEM_EXPANSION, SLOT_2},
     {DEVICE_ID_PD_BLOCK3, SLOT_5},
     {DEVICE_ID_DISK_II, SLOT_6},
@@ -99,13 +94,12 @@ DeviceMap_t DeviceMap_IIX[] = {
 };
 
 DeviceMap_t DeviceMap_IIE_ENH_2MB[] = {
-    {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
+    /* {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
     {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
     {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
     {DEVICE_ID_SPEAKER, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
-    //{DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
-    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
+    {DEVICE_ID_GAMECONTROLLER, SLOT_NONE}, */
     {DEVICE_ID_PD_BLOCK3, SLOT_5},
     {DEVICE_ID_DISK_II, SLOT_6},
     {DEVICE_ID_MOCKINGBOARD, SLOT_4},
@@ -114,34 +108,27 @@ DeviceMap_t DeviceMap_IIE_ENH_2MB[] = {
 };
 
 DeviceMap_t DeviceMap_IIGS[] = {
-    {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
+    /* {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
     {DEVICE_ID_DISPLAY, SLOT_NONE}, 
     {DEVICE_ID_KEYGLOO, SLOT_NONE}, // Keyboard should be before IIGS_MEMORY
-    //{DEVICE_ID_IIGS_MEMORY, SLOT_NONE},
     {DEVICE_ID_RTC_PRAM, SLOT_NONE},
-    //{DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
     {DEVICE_ID_ENSONIQ, SLOT_NONE},
     {DEVICE_ID_SCC8530, SLOT_NONE},
-    {DEVICE_ID_IWM, SLOT_NONE},
+    {DEVICE_ID_IWM, SLOT_NONE}, */
     {DEVICE_ID_PD_BLOCK3, SLOT_7},
-    /* {DEVICE_ID_DISK_II, SLOT_7}, */
     {DEVICE_ID_END, SLOT_NONE}
 };
 
 DeviceMap_t DeviceMap_IIGS_2[] = {
-    {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
+   /*  {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
     {DEVICE_ID_DISPLAY, SLOT_NONE}, 
     {DEVICE_ID_KEYGLOO, SLOT_NONE}, // Keyboard should be before IIGS_MEMORY
-    //{DEVICE_ID_IIGS_MEMORY, SLOT_NONE},
     {DEVICE_ID_RTC_PRAM, SLOT_NONE},
-    //{DEVICE_ID_ANNUNCIATOR, SLOT_NONE},
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE},
     {DEVICE_ID_ENSONIQ, SLOT_NONE},
     {DEVICE_ID_SCC8530, SLOT_NONE},
-    {DEVICE_ID_IWM, SLOT_NONE},
-    /* {DEVICE_ID_PD_BLOCK3, SLOT_7}, */
-    //{DEVICE_ID_DISK_II, SLOT_7},
+    {DEVICE_ID_IWM, SLOT_NONE}, */
     {DEVICE_ID_END, SLOT_NONE}
 };
 
@@ -149,102 +136,195 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple ][", 
         PLATFORM_APPLE_II, 
-        DeviceMap_II,
         Badge_II,
         true,
         CLOCK_SET_US,
         Scanner_AppleII,
         "48K RAM; Disk II",
+        {
+            DEVICE_ID_LANGUAGE_CARD,
+            DEVICE_ID_PARALLEL,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_DISK_II,
+            DEVICE_ID_NONE        
+        },
     },
     {
         "Apple ][+", 
         PLATFORM_APPLE_II_PLUS, 
-        DeviceMap_IIPLUS,
         Badge_IIPlus,
         true,
         CLOCK_SET_US,
         Scanner_AppleII,
         "64K RAM (incl Lang Card); Disk II; Clock; Parallel Port; VIDEX 80-col; Mockingboard",
+        {
+            DEVICE_ID_LANGUAGE_CARD,
+            DEVICE_ID_PARALLEL,
+            DEVICE_ID_PRODOS_CLOCK,
+            DEVICE_ID_VIDEX,
+            DEVICE_ID_MOCKINGBOARD,
+            DEVICE_ID_PD_BLOCK3,
+            DEVICE_ID_DISK_II,
+            DEVICE_ID_MEM_EXPANSION,
+        },
     },
     {
         "Apple IIe",
         PLATFORM_APPLE_IIE,
-        DeviceMap_IIE,
         Badge_IIE,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
         "128K RAM; Disk II; Clock; Parallel Port; Mockingboard",
+        {
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MEM_EXPANSION,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MOCKINGBOARD,
+            DEVICE_ID_PD_BLOCK3,
+            DEVICE_ID_DISK_II,
+            DEVICE_ID_MOUSE,
+        },
     },
     {
         "Apple IIe Enhanced",
         PLATFORM_APPLE_IIE_ENHANCED,
-        DeviceMap_IIE,
         Badge_IIEEnh,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
         "128K RAM; Disk II; Clock; Parallel Port; Mockingboard",
+        {
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MEM_EXPANSION,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MOCKINGBOARD,
+            DEVICE_ID_PD_BLOCK3,
+            DEVICE_ID_DISK_II,
+            DEVICE_ID_MOUSE,
+        },
     },
     {
         "Apple IIe Enhanced w/Mouse",
         PLATFORM_APPLE_IIE_ENHANCED,
-        DeviceMap_IIE_MOUSE,
         Badge_IIEEnh,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
         "128K RAM; Disk II; Clock; Mouse",
+        {
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MEM_EXPANSION,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MOUSE,
+            DEVICE_ID_PD_BLOCK3,
+            DEVICE_ID_DISK_II,
+            DEVICE_ID_NONE,
+        },
     },
     {
         "Apple IIe Enhanced Dual Mockingboard",
         PLATFORM_APPLE_IIE_ENHANCED,
-        DeviceMap_IIE_ENH_2MB,
         Badge_IIEEnh,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
         "128K RAM; Disk II; Clock; DUAL Mockingboard",
+        {
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MOCKINGBOARD,
+            DEVICE_ID_PD_BLOCK3,
+            DEVICE_ID_DISK_II,
+            DEVICE_ID_MOCKINGBOARD,
+        }
     },
     {
         "Apple IIe 65816 w/Mouse",
         PLATFORM_APPLE_IIE_65816,
-        DeviceMap_IIX,
         Badge_IIEEnh,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIgs,
-        "128K RAM; Disk II; Clock; Mouse; 65816"
+        "128K RAM; Disk II; Clock; Mouse; 65816",
+        {
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MEM_EXPANSION,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MOUSE,
+            DEVICE_ID_PD_BLOCK3,
+            DEVICE_ID_DISK_II,
+            DEVICE_ID_VIDHD,
+        },
     }, 
     {
         "Apple IIe Enhanced / PAL",
         PLATFORM_APPLE_IIE_ENHANCED,
-        DeviceMap_IIE,
         Badge_IIEEnh,
         true,
         CLOCK_SET_PAL,
         Scanner_AppleIIePAL,
         "PAL Video; 128K RAM; Disk II; Clock; Parallel Port; Mockingboard",
+        {
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MEM_EXPANSION,
+            DEVICE_ID_NONE,
+            DEVICE_ID_MOCKINGBOARD,
+            DEVICE_ID_PD_BLOCK3,
+            DEVICE_ID_DISK_II,
+            DEVICE_ID_MOUSE,
+        },
     },
     {
         "Apple IIgs",
         PLATFORM_APPLE_IIGS,
-        DeviceMap_IIGS,
+        //DeviceMap_IIGS,
         Badge_IIGS,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIgs,
-        "Apple IIgs 8MB RAM"
+        "Apple IIgs 8MB RAM",
+        {
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_PD_BLOCK3,
+        }
     },
     {
         "Apple IIgs / Disk II",
         PLATFORM_APPLE_IIGS,
-        DeviceMap_IIGS_2,
+        //DeviceMap_IIGS_2,
         Badge_IIGS,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIgs,
-        "Apple IIgs 8MB RAM, Only 5.25 Drives"
+        "Apple IIgs 8MB RAM, Only 5.25 Drives",
+        {
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+        }
+
     },
 /*     {
         "Apple IIc",

@@ -10603,7 +10603,92 @@ yah the first thing it's doing is checking for the reset pattern of 7F7F. it doe
 ah, yep. At 04/CC25, it's reading E1/C025. which is the modifiers.
 it's loading $00 of course, but looking for $02 (control). 
 
-
 AHHH, and besides all that, I am seeing ADB Bugs in: Cavern Cobra (type a key, get tons of "disable srq on device"). Also just booting WITA2GS. Hmmm. Something in the ROM?
 
 [ ] drag and drop does not give user an opportunity to save/discard. this function should get moved somewhere conveniently reproducible.  
+
+## Mar 11, 2026
+
+Thinking about editing and dynamically creating system configs. First, we're going to need systemconfigs that are BASE configs. I.e., just the motherboard with no devices.
+All the base mobos should go into one list; then we'll have another list for user-editable devices; then have something that can compose them together, and return the combination. There is the "platform" concept, which is where these "base device lists" go.
+Then create serialize and de-serialize methods to JSON.
+
+Two, we already have the list of devices. The devices list likely needs another flag for what systems the device is allowed in. For instance, don't allow ProDOS clock in a IIgs; don't allow Videx in a //e or GS, etc. The Devices need serializable names; also the base configs.
+
+systemconfig is currently this:
+```
+    {
+        "Apple IIe 65816 w/Mouse",
+        PLATFORM_APPLE_IIE_65816,
+        DeviceMap_IIX,
+        Badge_IIEEnh,
+        true,
+        CLOCK_SET_US,
+        Scanner_AppleIIgs,
+        "128K RAM; Disk II; Clock; Mouse; 65816"
+    }, 
+```
+so the systemconfig becomes a structure that looks something like this:
+
+```
+platform {
+  {
+        PLATFORM_APPLE_IIGS, // ID
+        "Apple IIgs",
+        "apple2gs",  // rom folder name, serializable ID
+        PROCESSOR_65816,
+        CLOCK_2_8MHZ,
+        MMU_MMU_IIGS,
+        IMAGE_ID,
+        [  // say max 16 or 32 of these
+          DEVICE_ID_blah,
+          DEVICE_ID_blah,
+          // etc.
+          DEVICE_ID_END
+        ]
+     },
+}
+systemconfig {
+    platform_id;
+    serializable_name;
+    name;
+    description;
+    SlotDevice_t slots[8] = {
+      DEVICE_ID_NONE,
+      DEVICE_ID_PCLOCK,
+      // etc.
+    };
+}
+```
+This structure allows the UI to directly set/query the Slot maps, and we can deprecate the current SlotManager I think.
+
+This here will be a pretty heavy lift. However, what if, for now, we cut the difference and keep the current device structure, but change systemconfig and platforms as above.
+
+We may not need the "slot manager" any more? It's primarily used at this point by OSD. It's injected into Mounts but does not appear to be used there any more. (now removed) It's used in a few places, but, all it does is provide information about the device (name, init vector, etc.) Maybe pull this back into computer? Consider it.
+
+So, some devices are configurable at runtime (not removable, just configurable). E.g. the serial ports, select attached virtual comm device. What images are mounted in disk drives; so, other needed device methods for save/restore a configuration:
+serialize_config
+deserialize_config
+serialize_state // for the future
+deserialize_state
+
+Where should the clock setting (US/PAL) go? I guess it can be in systemconfig, it's fairly composable.. but not on GS. Don't allow that combination.
+
+This implies SlotDevice is a different type of device, is likely a class (and this makes sense) then we know the name of all the .
+Will need a DeviceFactory that takes the ID and gives you back an instance of the device.
+currently gs2:transition_to_emulation is what runs through all this stuff and creates and composes all the devices.
+The list of device objects created can be placed into a state->vector().
+If I Classify up all the devices, I fix a bunch of memory leak, properly handle deallocate, could handle RESET differently (i.e., not with callbacks but with direct method call) if I wanted..
+
+
+
+The mainloop in gs2 is this:
+main loop gs2:
+  while (not quit) {
+    if mode=select 
+       systemselect->dostuff();
+
+    if mode=run
+       computer->dostuff();
+  }
+computer->dostuff() is the "run" loop.

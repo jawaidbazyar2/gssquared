@@ -30,12 +30,12 @@
 struct SystemConfig_t {
     const char *name;
     PlatformId_t platform_id;
-    DeviceMap_t *device_map;
     int image_id;
     bool builtin;
     clock_set_t clock_set;
     video_scanner_t scanner_type;
     const char *description;
+    device_id slot_devices[NUM_SLOTS];
 };
 
 extern SystemConfig_t BuiltinSystemConfigs[];

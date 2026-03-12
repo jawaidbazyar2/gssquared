@@ -23,6 +23,7 @@
 #include "cpus/processor_type.hpp"
 #include "PlatformIDs.hpp"
 #include "NClock.hpp"
+#include "Device_ID.hpp"
 
 typedef enum MMU_Type_t {
     MMU_MMU_II,
@@ -37,6 +38,7 @@ struct platform_info {
     const processor_type cpu_type;   // processor type
     const clock_mode_t default_clock_mode; // default clock mode for this platform at startup.
     const MMU_Type_t mmu_type;
+    const device_id mb_devices[16];
 };
 
 typedef uint8_t char_rom_t[256 * 8];

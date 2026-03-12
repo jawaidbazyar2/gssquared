@@ -24,6 +24,7 @@
 #include "util/AudioSystem.hpp"
 #include "util/SoundEffect.hpp"
 #include "util/printf_helper.hpp"
+#include "slots.hpp"
 
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
@@ -78,7 +79,7 @@ computer_t::computer_t(NClockII *clock) {
     vid_event_timer = new EventTimer(clock); 
 
     slot_manager = new SlotManager_t();
-    mounts = new Mounts(slot_manager);
+    mounts = new Mounts();
 
     video_system = new video_system_t(this);
     debug_window = new debug_window_t(this);
