@@ -10602,8 +10602,9 @@ Currently, this is 04/CB72. Whew.
 yah the first thing it's doing is checking for the reset pattern of 7F7F. it does an AND, so it will match whether key down or up. ok that's good to know..
 ah, yep. At 04/CC25, it's reading E1/C025. which is the modifiers.
 it's loading $00 of course, but looking for $02 (control). 
+[ ] must track modifiers even if SRQ is enabled  
 
-AHHH, and besides all that, I am seeing ADB Bugs in: Cavern Cobra (type a key, get tons of "disable srq on device"). Also just booting WITA2GS. Hmmm. Something in the ROM?
+AHHH, and besides all that, I am seeing ADB Bugs in: Cavern Cobra (type a key, get tons of "disable srq on device"). Also just booting WITA2GS. Hmmm. Something in the ROM? (fixed below)
 
 [ ] drag and drop does not give user an opportunity to save/discard. this function should get moved somewhere conveniently reproducible.  
 
