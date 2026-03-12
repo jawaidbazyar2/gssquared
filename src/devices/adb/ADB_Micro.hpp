@@ -293,7 +293,7 @@ class KeyGloo
             response_index = 0;
             // TODO: on a new command, reset the response index. we may have the wrong # of response bytes on one of our commands. or GS might not be reading them all.
 
-            /* printf("ADB_Micro> Executing command: ");
+            /* printf("ADB_Micro> Executing command (current mode: %02X): ", modes_byte);
             for (int i = 0; i < cmd_index; i++) {
                 printf("%02X ", cmd[i]);
             }
@@ -312,9 +312,9 @@ class KeyGloo
                         flush();
                         update_interrupt_status();
                     } else if (value == 0x04) { // set modes
-                        modes_byte = value | cmd[1];
+                        modes_byte |= cmd[1]; 
                     } else if (value == 0x05) { // clr modes
-                        modes_byte = value & ~cmd[1];
+                        modes_byte &= ~cmd[1];
                     } else if (value == 0x06) { // set configuration bytes
                         configuration_bytes[0] = cmd[1];
                         configuration_bytes[1] = cmd[2];
@@ -741,6 +741,7 @@ class KeyGloo
                     return status;
                 }
 
+                // if auto-poll is enabled.
                 ADB_Register reg;
                 bool auto_repeat = false;
                 adb_host->talk(0x02, 0b11, 0, reg);
