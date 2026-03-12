@@ -10692,3 +10692,26 @@ main loop gs2:
        computer->dostuff();
   }
 computer->dostuff() is the "run" loop.
+
+## Mar 12, 2026
+
+implementing Extended SmartPort. actually seems to be working, but went to test speed using BenchmarkeD and it's not reading the keyboard.
+When I press a key I get a flurry of 
+DISABLE SRQ ON DEVICE - unimplemented
+DISABLE SRQ ON DEVICE - unimplemented
+which I've seen elsewhere recently; and, it's not reading any keys. This is a simple text app so it's probably just using the Console or text tools or whatever, nothing fancy.
+Also, RESET is not working! Hm.. 
+the modes_byte is 0x05. so bit 1 (no keyboard auto-poll) is set, which is the mode Wolf3D uses, and that's what we added recently. So that is likely when that broke. What is the 4.. "| 2 | Include Spacebar, Delete key on Dual Repeat |" that's not relevant here at all. ok. 
+ok, there are exactly 16 calls, so something is trying to disable SRQ on every device! Hmm. So what effect does disable SRQ supposed to achieve.
+But did I break it when I implemented the RESET stuff, or when I did the Wolf3D related stuff..
+ok, the place that's trying to send this cmd is FF/83E1. This is FDBRECV command. 
+that is inside 83D6, let's BP that. that's being called by 83A2. So the call tree is:
+81E0 -> FDBRECV -> 839B -> fallthrough if Carry clear coming back from 839B
+81E0 is in the INTSRQ SRQ interrupt handler.
+"gets next device in SRQ table and initiated fdb poll. 
+if all devices in srqtbl are polled and none responded then routine turns off srq on all devices except keyboard,
+then reenables srq for all devices in the srq table".
+So this is a sort of error condition.
+The trigger is: if all devices are polled and none responded.. so let's dump debug the pollers.
+DERP. the set modes commands were OR/ANDing with the command byte, not the existing modes value. Double derp, ha ha. Adding the Wolf3D stuff (SRQ) exposed this bug where the modes byte was being corrupted, enabling SRQ when software didn't actually want it.
+
