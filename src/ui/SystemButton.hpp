@@ -6,7 +6,7 @@
 
 class SystemButton : public Button_t {
     public:
-        SystemButton(UIContext *ctx, SystemConfig_t *system_config, Style_t style) : Button_t(ctx, system_config->image_id, style, 0) {
+        SystemButton(UIContext *ctx, SystemConfig_t *system_config, Style_t style) : Button_t(ctx, get_platform(system_config->platform_id)->image_id, style, 0) {
             this->system_config = system_config;
         }
         ~SystemButton() { };

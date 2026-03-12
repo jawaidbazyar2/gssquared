@@ -36,6 +36,8 @@ struct platform_info {
     const char* name;           // Human readable name
     const char* rom_dir;        // Directory under roms/
     const processor_type cpu_type;   // processor type
+    const uint32_t case_color;
+    const int image_id;
     const clock_mode_t default_clock_mode; // default clock mode for this platform at startup.
     const MMU_Type_t mmu_type;
     const device_id mb_devices[16];

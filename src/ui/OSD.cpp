@@ -512,7 +512,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     }
 
     system_config = computer->get_system();
-    system_badge = new Button_t(&ui_ctx, system_config->image_id, SB);
+    system_badge = new Button_t(&ui_ctx, get_platform(system_config->platform_id)->image_id, SB);
     system_badge->set_position(30, 65);
 
     status_message = new StatusMessage_t(&ui_ctx);
@@ -679,7 +679,8 @@ void OSD::render() {
 
         // Draw CP background with some opacity
         SDL_FRect rect = {0, 50, (float)(window_w-100), (float)(window_h-100)};
-        ui_ctx.fill_rect(rect, 0xFFFFFFE0);
+        //ui_ctx.fill_rect(rect, 0xFFFFFFE0);
+        ui_ctx.fill_rect(rect, get_platform(system_config->platform_id)->case_color & 0xFFFFFF00 | 0xE0);
       
         /* ----- */
 

@@ -45,6 +45,7 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
         SystemButton *button = new SystemButton(&ui_ctx, &BuiltinSystemConfigs[i], BS);
         button->size(200, 200);
         button->position_content(CP_CENTER, CP_CENTER);
+        button->style.background_color = get_platform(BuiltinSystemConfigs[i].platform_id)->case_color;
 
         button->on_click([this,i](const SDL_Event& event) -> bool {
             selected_system = i;

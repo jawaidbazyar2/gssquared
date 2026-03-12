@@ -30,7 +30,7 @@
 struct SystemConfig_t {
     const char *name;
     PlatformId_t platform_id;
-    int image_id;
+    //int image_id;
     bool builtin;
     clock_set_t clock_set;
     video_scanner_t scanner_type;

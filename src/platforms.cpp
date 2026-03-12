@@ -25,6 +25,7 @@
 #include "util/ResourceFile.hpp"
 #include "util/dialog.hpp"
 #include "ui/MainAtlas.hpp"
+#include "devices/displaypp/RGBA.hpp"
 
 static  platform_info platforms[] = {
     { 
@@ -32,7 +33,9 @@ static  platform_info platforms[] = {
         "Apple II", 
         "apple2", 
         PROCESSOR_6502, 
-        CLOCK_1_024MHZ ,
+        0xBFBB98FF,
+        Badge_II,
+        CLOCK_1_024MHZ,
         MMU_MMU_II,
         {
             DEVICE_ID_KEYBOARD_IIPLUS, 
@@ -48,6 +51,8 @@ static  platform_info platforms[] = {
         "Apple II Plus", 
         "apple2_plus", 
         PROCESSOR_6502, 
+        0xBFBB98FF,
+        Badge_IIPlus,
         CLOCK_1_024MHZ, 
         MMU_MMU_II,
         {
@@ -64,6 +69,8 @@ static  platform_info platforms[] = {
         "Apple IIe", 
         "apple2e", 
         PROCESSOR_6502, 
+        0xBFBB98FF,
+        Badge_IIE,
         CLOCK_1_024MHZ, 
         MMU_MMU_IIE,
         {
@@ -81,6 +88,8 @@ static  platform_info platforms[] = {
         "Apple IIe Enhanced",   
         "apple2e_enh", 
         PROCESSOR_65C02, 
+        0xD2D0C8FF,
+        Badge_IIEEnh,
         CLOCK_1_024MHZ,
         MMU_MMU_IIE,
         {
@@ -98,6 +107,8 @@ static  platform_info platforms[] = {
         "Apple IIe Enhanced 65816",
         "apple2e_enh",
         PROCESSOR_65816,
+        0xD2D0C8FF,
+        Badge_IIEEnh,
         CLOCK_1_024MHZ,
         MMU_MMU_IIE,
         {
@@ -115,6 +126,8 @@ static  platform_info platforms[] = {
         "Apple IIgs",
         "apple2gs",
         PROCESSOR_65816,
+        0xD2D0C8FF,
+        Badge_IIGS,
         CLOCK_2_8MHZ,
         MMU_MMU_IIGS,
         {

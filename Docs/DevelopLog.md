@@ -10716,3 +10716,11 @@ So this is a sort of error condition.
 The trigger is: if all devices are polled and none responded.. so let's dump debug the pollers.
 DERP. the set modes commands were OR/ANDing with the command byte, not the existing modes value. Double derp, ha ha. Adding the Wolf3D stuff (SRQ) exposed this bug where the modes byte was being corrupted, enabling SRQ when software didn't actually want it.
 
+Google suggests these colors for cases:
+Model 	Color Name	Approx. HEX	Approx. RGB
+Apple II/II+/IIe	Apple Beige	#C4C0AA	(196, 192, 170)
+Apple IIc	"Fog" (Creamy)	#F3F0E7	(243, 240, 231)
+IIGS/Late IIe	Platinum (Warm Gray)	#D2D0C8	(210, 208, 200) Measured: 208, 197, 193
+
+I ended up going back to my original color for the II, and the GS one seems a hair off but I need to measure it. I got an app - but my ceiling light has a color skew and it's night outside. I'll try again tomorrow, but it should work well.
+

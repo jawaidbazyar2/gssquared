@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include "util/media.hpp"
-#include "slots.hpp"
+#include "SlotData.hpp"
 
 #define MAX_PD_BUFFER_SIZE 16
 
@@ -53,6 +53,8 @@ struct sp_cmd_standard { // CMDNUM is NOT replicated here.
     uint8_t pcount;
 };
 
+/********  Status  **********/
+//   Standard
 struct sp_cmd_status_st : public sp_cmd_standard {
     uint8_t unit;
     uint8_t status_p_0;
@@ -60,15 +62,7 @@ struct sp_cmd_status_st : public sp_cmd_standard {
     uint8_t status_code;
 };
 
-struct sp_cmd_rw_st : public sp_cmd_standard {
-    uint8_t unit;
-    uint8_t addr_lo;
-    uint8_t addr_hi;
-    uint8_t block_0;
-    uint8_t block_1;
-    uint8_t block_2;
-};
-
+//   Extended
 struct sp_cmd_status_ex : public sp_cmd_standard {
     uint8_t unit;
     uint8_t status_p_0;
@@ -78,6 +72,32 @@ struct sp_cmd_status_ex : public sp_cmd_standard {
     uint8_t status_code;
 };
 
+/********  Read-Write  **********/
+//   Standard
+struct sp_cmd_rw_st : public sp_cmd_standard {
+    uint8_t unit;
+    uint8_t addr_lo;
+    uint8_t addr_hi;
+    uint8_t block_0;
+    uint8_t block_1;
+    uint8_t block_2;
+};
+
+//   Extended
+struct sp_cmd_rw_ex : public sp_cmd_standard {
+    uint8_t unit;
+    uint8_t addr_0;
+    uint8_t addr_1;
+    uint8_t addr_2;
+    uint8_t addr_3;
+    uint8_t block_0;
+    uint8_t block_1;
+    uint8_t block_2;
+    uint8_t block_3;
+};
+
+// Status 00 response
+//   Standard
 struct sp_cmd0_statcode_00 {
     uint8_t status;
     uint8_t blk_count_0;
@@ -85,6 +105,17 @@ struct sp_cmd0_statcode_00 {
     uint8_t blk_count_2;
 };
 
+//   Extended
+struct sp_cmd0_statcode_00_ex {
+    uint8_t status;
+    uint8_t blk_count_0;
+    uint8_t blk_count_1;
+    uint8_t blk_count_2;
+    uint8_t blk_count_3;
+};
+
+// Status 03 response
+//   Standard
 struct sp_cmd0_statcode_03 {
     uint8_t status;
     uint8_t blk_count_0;
@@ -97,7 +128,22 @@ struct sp_cmd0_statcode_03 {
     uint8_t version_0;
     uint8_t version_1;
 };
+// Extended
+struct sp_cmd0_statcode_03_ex {
+    uint8_t status;
+    uint8_t blk_count_0;
+    uint8_t blk_count_1;
+    uint8_t blk_count_2;
+    uint8_t blk_count_3;
+    uint8_t id_str_length;
+    uint8_t id_str[16];
+    uint8_t device_type;
+    uint8_t device_subtype;
+    uint8_t version_0;
+    uint8_t version_1;
+};
 
+// Same for both standard and extended
 struct sp_cmd0_statcode_00_driver {
     uint8_t num_devices;
     uint8_t reserved[7];

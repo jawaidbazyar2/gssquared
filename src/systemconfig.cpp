@@ -136,7 +136,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple ][", 
         PLATFORM_APPLE_II, 
-        Badge_II,
+        //Badge_II,
         true,
         CLOCK_SET_US,
         Scanner_AppleII,
@@ -155,7 +155,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple ][+", 
         PLATFORM_APPLE_II_PLUS, 
-        Badge_IIPlus,
+        //Badge_IIPlus,
         true,
         CLOCK_SET_US,
         Scanner_AppleII,
@@ -174,7 +174,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple IIe",
         PLATFORM_APPLE_IIE,
-        Badge_IIE,
+        //Badge_IIE,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
@@ -193,7 +193,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple IIe Enhanced",
         PLATFORM_APPLE_IIE_ENHANCED,
-        Badge_IIEEnh,
+        //Badge_IIEEnh,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
@@ -212,7 +212,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple IIe Enhanced w/Mouse",
         PLATFORM_APPLE_IIE_ENHANCED,
-        Badge_IIEEnh,
+        //Badge_IIEEnh,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
@@ -231,7 +231,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple IIe Enhanced Dual Mockingboard",
         PLATFORM_APPLE_IIE_ENHANCED,
-        Badge_IIEEnh,
+        //Badge_IIEEnh,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
@@ -250,7 +250,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple IIe 65816 w/Mouse",
         PLATFORM_APPLE_IIE_65816,
-        Badge_IIEEnh,
+        //Badge_IIEEnh,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIgs,
@@ -269,7 +269,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
     {
         "Apple IIe Enhanced / PAL",
         PLATFORM_APPLE_IIE_ENHANCED,
-        Badge_IIEEnh,
+        //Badge_IIEEnh,
         true,
         CLOCK_SET_PAL,
         Scanner_AppleIIePAL,
@@ -289,7 +289,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         "Apple IIgs",
         PLATFORM_APPLE_IIGS,
         //DeviceMap_IIGS,
-        Badge_IIGS,
+        //Badge_IIGS,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIgs,
@@ -309,7 +309,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         "Apple IIgs / Disk II",
         PLATFORM_APPLE_IIGS,
         //DeviceMap_IIGS_2,
-        Badge_IIGS,
+        //Badge_IIGS,
         true,
         CLOCK_SET_US,
         Scanner_AppleIIgs,
