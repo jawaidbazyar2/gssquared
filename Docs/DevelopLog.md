@@ -10603,7 +10603,7 @@ yah the first thing it's doing is checking for the reset pattern of 7F7F. it doe
 ah, yep. At 04/CC25, it's reading E1/C025. which is the modifiers.
 it's loading $00 of course, but looking for $02 (control). 
 
-[ ] must track modifiers even if SRQ is enabled  
+[x] must track modifiers even if SRQ is enabled  
 
 AHHH, and besides all that, I am seeing ADB Bugs in: Cavern Cobra (type a key, get tons of "disable srq on device"). Also just booting WITA2GS. Hmmm. Something in the ROM? (fixed below)
 
@@ -10683,8 +10683,6 @@ currently gs2:transition_to_emulation is what runs through all this stuff and cr
 The list of device objects created can be placed into a state->vector().
 If I Classify up all the devices, I fix a bunch of memory leak, properly handle deallocate, could handle RESET differently (i.e., not with callbacks but with direct method call) if I wanted..
 
-
-
 The mainloop in gs2 is this:
 main loop gs2:
   while (not quit) {
@@ -10753,4 +10751,6 @@ The ADB Micro is SO COMPLEX.
 
 cleaning up the ADBMicro code some, since we no longer allow any autorepeat chars through, there are a bunch of dead conditionals.
 Trying to figure out where to place the (extra?) code to update the modifiers in SRQ mode. Presumably, where it reads / maps a keystroke? Hmm.
-we're now getting a reset through to the wolf srq routine but we are crashing into the monitor instead of doing resetty things. is it expecting 
+we're now getting a reset through to the wolf srq routine but we are crashing into the monitor instead of doing resetty things. I hacked at this until resets got through as expected. FIXED.
+
+So, no, the color value reader phone app is not good.
