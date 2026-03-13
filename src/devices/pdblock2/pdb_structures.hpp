@@ -40,15 +40,6 @@ struct pdblock_cmd_buffer {
     uint8_t status2;
 };
 
-class PDBlock3; // forward declaration
-
-struct pdblock3_data: public SlotData {
-    ResourceFile *rom;
-    MMU *mmu;
-    MMU_II *megaii;
-    PDBlock3 *pdb;
-};
-
 struct sp_cmd_standard { // CMDNUM is NOT replicated here.
     uint8_t pcount;
 };

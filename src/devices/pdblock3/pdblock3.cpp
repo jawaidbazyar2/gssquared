@@ -26,6 +26,16 @@
 #include "util/ResourceFile.hpp"
 #include "util/mount.hpp"
 
+
+class PDBlock3; // forward declaration
+
+struct pdblock3_data: public SlotData {
+    ResourceFile *rom;
+    MMU *mmu;
+    MMU_II *megaii;
+    PDBlock3 *pdb;
+};
+
 class PDBlock3 : public StorageDevice {
 private:
     MMU *mmu;
