@@ -164,9 +164,7 @@ class KeyGloo
             delete rom;
 
             // "power on" the RAM here should be all 0's.
-            for (int i = 0; i < sizeof(ram); i++) {
-                ram[i] = 0;
-            }
+            memset(ram, 0, sizeof(ram));
             adb_host = new ADB_Host();
             adb_host->add_device(0x02, new ADB_Keyboard());
             adb_host->add_device(0x03, new ADB_Mouse());
@@ -186,14 +184,19 @@ class KeyGloo
             response_index = 0;
             response_bytes = 0;
 
-            vars.currmod.value &= 0b0100; // clear everything except caps lock
-            vars.prevmod.value = 0;
+            // don't change the modifier values on a reset.
+            //vars.currmod.value &= 0b0100; // clear everything except caps lock
+            //vars.prevmod.value = 0;
             mouse_x_available = MOUSE_X;
             keysdown = 0;
             status = 0;
 
             datareg = 0;
+            // TODO: do we need to also clear the interrupt enabled here?
             data_register_full = false;
+            kb_register_full = false;
+            mouse_data_full = false;
+            update_interrupt_status();
         }
 
         void abort() {
@@ -468,7 +471,7 @@ class KeyGloo
                         uint8_t addr = value & 0x0F;
                         ADB_Register reg;
                         adb_host->talk(addr, 0b11, regnum, reg);
-                        // TODO: if keyboard only.. 
+                        // if keyboard only.. 
                         if (addr == (vars.fdbadr & 0x0F)) update_modifiers_from_reg(reg);
                         
                         response_bytes = 2;
@@ -498,7 +501,7 @@ class KeyGloo
             key_latch.keycode = key_codes[vars.inpt] | 0x80; // set the 'key present' bit.
             key_latch.keymods.value = key_mods[vars.inpt];
             vars.inpt = (vars.inpt + 1) % 16;
-            //elements_in_buffer = (vars.outpt - vars.inpt + 16) % 16;
+            
             kb_register_full = true;
             update_interrupt_status();
         }
@@ -508,7 +511,7 @@ class KeyGloo
             key_codes[vars.outpt] = keycode;
             key_mods[vars.outpt] = keymods;
             vars.outpt = (vars.outpt + 1) % 16;
-            //elements_in_buffer = (vars.outpt - vars.inpt + 16) % 16;
+            
             // if the latch is cleared, load it.
             if (key_latch.keycode & 0x80) return;
             load_key_from_buffer();
