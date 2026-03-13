@@ -109,6 +109,7 @@ class KeyGloo
 
         //mouse_next_t mouse_next_read = MOUSE_Y;
         uint8_t mouse_data[2] = {0};
+        int reset_counter = 0;
 
         bool interrupt_asserted = false;
         bool data_interrupt_asserted = false;
@@ -290,6 +291,40 @@ class KeyGloo
             return ascii;
         }
 
+        /*
+          For certain (based on expectation in Wolf3D), the keymicro processes modifier key state updates based on keyboard messages; 
+          in normal mode, when keygloo auto-polls. In SRQ mode, when the application sends a TALK to the
+          keyboard.
+
+          TODO: it's possible it also processes data into the keyboard register (C000); 
+          This is currently unknown for certain.
+          If it turns out to be true (and, it would make a certain amount of sense), then we need to have the rest of the
+          keyboard receive routine here.
+          There is a counter-factual to this theory: Wolf3D actively uses the routine that fakes keypresses to shove data
+          into C000. So, it's probably just the modifiers?
+        */
+        bool update_modifiers_from_reg(ADB_Register &reg) {
+            for (int i = 0; i < reg.size; i++) {
+                uint8_t keycode = reg.data[i] & 0x7F;
+                uint8_t keyupdown = reg.data[i] & 0x80 ? false : true; // true = key down, false = key up
+                switch (keycode) {
+                    case ADB_CONTROL: vars.prevmod = vars.currmod; vars.currmod.ctrl = keyupdown; return true;
+                    case ADB_LEFT_SHIFT: vars.prevmod = vars.currmod; vars.currmod.shift = keyupdown; return true;
+                    case ADB_COMMAND: vars.prevmod = vars.currmod; vars.currmod.open = keyupdown; return true;
+                    case ADB_OPTION: vars.prevmod = vars.currmod; vars.currmod.closed = keyupdown; return true;
+                    case ADB_CAPS_LOCK: 
+                        // caps lock is a special case, it toggles the caps lock state, but only on key up.
+                        // TODO: should I do it on the key down instead?
+                        if (!keyupdown) {
+                            vars.prevmod = vars.currmod; 
+                            vars.currmod.caps = ! vars.currmod.caps;
+                        }
+                        return true;
+                }
+            }
+            return false;
+        }
+
         void execute_command() {
             uint8_t value = cmd[0];
             response_bytes = 0; // by default
@@ -333,8 +368,6 @@ class KeyGloo
                         configuration_bytes[1] = cmd[3];
                         configuration_bytes[2] = cmd[4];
                         set_vals_from_configuration();
-                        //response_bytes = 1;
-                        //response_bytes_reported = 1;
                     } else if (value == 0x08) { // WRITE uC MEMORY
                         // write 1 byte to uC memory
                         ram[cmd[1]] = cmd[2];
@@ -347,51 +380,44 @@ class KeyGloo
                             response[0] = rom[addr - 0x1400];
                         }
                         response_bytes = 1;
-                        //response_bytes_reported = 2;
                     } else if (value == 0x0A) { // READ MODES BYTE
                         response[0] = modes_byte;
                         response_bytes = 1;
-                        //response_bytes_reported = 2;
                     } else if (value == 0x0B) { // READ CONFIGURATION BYTES
                         response[0] = configuration_bytes[0];
                         response[1] = configuration_bytes[1];
                         response[2] = configuration_bytes[2];
                         response_bytes = 3;
-                        //response_bytes_reported = 4;
                     } else if (value == 0x0C) { // READ THEN CLEAR ERROR BYTE
                         response[0] = error_byte;
                         error_byte = 0;
                         response_bytes = 1;
-                        //response_bytes_reported = 2;
                     } else if (value == 0x0D) { // GET VERSION NUMBER
                         response[0] = adb_version; // Version ?
                         response_bytes = 1;
-                        //response_bytes_reported = 2;
                     } else if (value == 0x0E) { // READ CHAR SETS AVAILABLE (8 char sets, 0-7) should match mega ii
                         response[0] = 8; // TODO: unsure about bytes returned value here, need to read the docs again.
                         for (int i = 0; i < 8; i++) {
                             response[i+1] = i;
                         }
                         response_bytes = 9;
-                        //response_bytes_reported = 2;
                     } else if (value == 0x0F) { // READ LAYOUTS AVAILABLE (10 layouts, 0-9)
                         response[0] = 10;
                         for (int i = 0; i < 10; i++) {
                             response[i+1] = i;
                         }
                         response_bytes = 11;
-                        //response_bytes_reported = 2;
                     } else if (value == 0x10) { // RESET SYSTEM
-                        reset();
-                        //response_bytes = 1;
+                        // TODO: this needs to signal a reset to the host, not just reset uC values!
+                        reset_counter = 4; // 4 frames of reset
+                        reset_control->assert_reset(RST_ID_KEYMICRO, true);
+                        //reset(); // host reset will come around and reset us too
                     } else if (value == 0x11) { // SEND FDB KEYCODE
                         uint8_t keycode = cmd[1];
                         uint8_t kpflag = 0;
                         // TODO: this also needs to update currmod.keypad if a keypad key is being held down?
                         if (keycode >= 0x43 && keycode <= 0x5C) kpflag = 0x10;
                         store_key_to_buffer(map_us(keycode, (adb_mod_key_t){0}), kpflag); // TODO: update modifiers.
-
-                        //store_key_to_buffer(cmd[1], 0);
                     } 
 
                     break;
@@ -438,18 +464,21 @@ class KeyGloo
                         // 11xyabcd
                         // xy = register;
                         // abcd = address
-                        uint8_t reg = (value & 0b0011'0000) >> 4; // oopsie this was wrong
+                        uint8_t regnum = (value & 0b0011'0000) >> 4; // oopsie this was wrong
                         uint8_t addr = value & 0x0F;
-                        ADB_Register poll_reg;                        
-                        adb_host->talk(addr, 0b11, reg, poll_reg);
+                        ADB_Register reg;
+                        adb_host->talk(addr, 0b11, regnum, reg);
+                        // TODO: if keyboard only.. 
+                        if (addr == (vars.fdbadr & 0x0F)) update_modifiers_from_reg(reg);
+                        
                         response_bytes = 2;
                         response_byte = 1;
-                        response[0] = poll_reg.data[0];
-                        response[1] = poll_reg.data[1];
-                        printf("adb->talk addr: %02X, cmd: %02X, reg: %02X, msg: %02X %02X\n", addr, 0b11, reg, poll_reg.data[0], poll_reg.data[1]);
-                    }
-                    break;
-            }
+                        response[0] = reg.data[0];
+                        response[1] = reg.data[1];
+                        printf("adb->talk addr: %02X, cmd: %02X, reg: %02X, msg: %02X %02X\n", addr, 0b11, regnum, reg.data[0], reg.data[1]);
+                        }
+                        break;
+                }
 
             if (response_bytes > 0) data_register_full = true;
             update_interrupt_status();
@@ -736,16 +765,18 @@ class KeyGloo
 
         bool process_event(SDL_Event &event) {
             
-            // if modes_byte indicates no keyboard auto-poll, disregard repeated key events.
-            //if ((modes_byte & 0x01) != 0 && (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) && event.key.repeat) return true;
+            // if key event, and it's a repeat, ignore it.
             if ((event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) && (event.key.repeat)) return true; // ignore ANY repeated key events.
 
             // TODO: need to track which keys are down in this function.
             // TODO: after processing event, check keyboard register for new key event and read it here.
             bool status = adb_host->process_event(event);
 
+            // Key event..
             if (status && (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP)) {
-                if (modes_byte & 0x01) { // keyboard auto-poll is disabled...
+
+                // keyboard auto-poll is disabled...
+                if (modes_byte & 0x01) { 
                     // assert SRQ ..
                     service_request_valid = true;
                     data_register_full = true;
@@ -754,80 +785,60 @@ class KeyGloo
                     return status;
                 }
 
-                // if auto-poll is enabled.
+                // auto-poll is enabled
                 ADB_Register reg;
-                bool auto_repeat = false;
                 adb_host->talk(0x02, 0b11, 0, reg);
-
-                // Discard auto-repeat events.
-                if (event.type == SDL_EVENT_KEY_DOWN && event.key.repeat) auto_repeat = true;
 
                 // for each key event in returned reg, process and update modifiers.
                 // and keycode. process from LSB to MSB. (i.e., byte 0 (low) first then byte 1 (high))
 
-                // TODO: handle power key. probably need to keep track of power key up/down state, in case they hit that
+                // handle power (reset) key. probably need to keep track of power key up/down state, in case they hit that
                 // then control command later.
-                if (!auto_repeat && reg.data[0] == 0x7F && reg.data[1] == 0x7F) { // press power key
+                if (reg.data[0] == 0x7F && reg.data[1] == 0x7F) { // press power key
                     // if control key is not down, don't do anything.
                     if (!vars.currmod.ctrl) return status;
                     
                     if (reset_control) reset_control->assert_reset(RST_ID_KEYMICRO, true);
                     return status;
-                } else if (!auto_repeat && reg.data[0] == 0xFF && reg.data[1] == 0xFF) { // release power key
-                    // if control key is not down, don't do anything.
-                    //if (!vars.currmod.ctrl) return status;
-                    
+                } else if (reg.data[0] == 0xFF && reg.data[1] == 0xFF) { // release power key
                     if (reset_control) reset_control->assert_reset(RST_ID_KEYMICRO, false);
                     return status;
                 }
                 
+                if (update_modifiers_from_reg(reg)) return status;
+
+                // TODO: we're losing track of modifier values on a reset? maybe none of the modifier flags should change on reset?
+
                 for (int i = 0; i < reg.size; i++) {
                     if (reg.data[i] == 0xFF) break; // this means only one of the bytes was 0xFF, means empty
                     uint8_t keycode = reg.data[i] & 0x7F;
                     uint8_t keyupdown = reg.data[i] & 0x80 ? false : true; // true = key down, false = key up
-                    switch (keycode) {
-                        case ADB_CONTROL: vars.prevmod = vars.currmod; vars.currmod.ctrl = keyupdown; break;
-                        case ADB_LEFT_SHIFT: vars.prevmod = vars.currmod; vars.currmod.shift = keyupdown; break;
-                        case ADB_COMMAND: vars.prevmod = vars.currmod; vars.currmod.open = keyupdown; break;
-                        case ADB_OPTION: vars.prevmod = vars.currmod; vars.currmod.closed = keyupdown; break;
-                        case ADB_CAPS_LOCK: 
-                            // caps lock is a special case, it toggles the caps lock state, but only on key up.
-                            // TODO: should I do it on the key down instead?
-                            if (!keyupdown) {
-                                vars.prevmod = vars.currmod; 
-                                vars.currmod.caps = ! vars.currmod.caps;
-                            }
-                            break;
-                        default:           
-                            // Send key to C000 on key up
-                            // TODO: we may need to ignore auto-repeat events and autorepeat keys ourselves,
-                            // for instance for the benefit of games that might control that.
-                            if (!auto_repeat) { // don't look at auto-repeat events for keysdown counter
-                                if (keyupdown) keysdown++;
-                                else keysdown--;
-                            }
+    
+                    // Send key to C000 on key up
+                    if (keyupdown) keysdown++;
+                    else keysdown--;
 
-                            // TODO: Map the keycode here through a mapper based on the language setting.
-                            if ((keycode == ADB_DELETE) && vars.currmod.ctrl && vars.currmod.open) flush_buffer();
-                            else if ((keycode == ADB_ESCAPE) && vars.currmod.ctrl && vars.currmod.open) {
-                                if (!keyupdown) { // only assert on key down.
-                                    desktop_manager_key_sequence = 1;
-                                    send_data_register = true;
-                                    data_register_full = 1;
-                                    update_interrupt_status();
-                                }
-                            }
-                            else {
-                                uint8_t kpflag = 0;
-                                // TODO: this also needs to update currmod.keypad if a keypad key is being held down?
-                                if (keycode >= 0x43 && keycode <= 0x5C) kpflag = 0x10;
-                                last_key_down = map_us(keycode, vars.currmod);
-                                if (keyupdown) store_key_to_buffer(last_key_down, vars.currmod.value | kpflag); // TODO: update modifiers.
-                                if (!keyupdown) stop_repeat();
-                                else start_repeat(); // delay to repeat
-                            }
-                            break;
+                    // TODO: Map the keycode here through a mapper based on the language setting.
+                    if ((keycode == ADB_DELETE) && vars.currmod.ctrl && vars.currmod.open) flush_buffer();
+                    else if ((keycode == ADB_ESCAPE) && vars.currmod.ctrl && vars.currmod.open) {
+                        if (!keyupdown) { // only assert on key down.
+                            desktop_manager_key_sequence = 1;
+                            send_data_register = true;
+                            data_register_full = 1;
+                            update_interrupt_status();
+                        }
                     }
+                    else {
+                        uint8_t kpflag = 0;
+                        // TODO: this also needs to update currmod.keypad if a keypad key is being held down?
+                        if (keycode >= 0x43 && keycode <= 0x5C) kpflag = 0x10;
+                        last_key_down = map_us(keycode, vars.currmod);
+                        if (keyupdown) store_key_to_buffer(last_key_down, vars.currmod.value | kpflag); // TODO: update modifiers.
+                        if (!keyupdown) stop_repeat();
+                        else start_repeat(); // delay to repeat
+                    }
+                    break;
+
                 }
                 //print_keyboard();
 
@@ -866,6 +877,12 @@ class KeyGloo
                 if (vars.dncntr == 0) {
                     store_key_to_buffer(last_key_down, vars.currmod.value);
                     vars.dncntr = repeat_rate[vars.dlyrpt & 0x0F]; // repeat rate
+                }
+            }
+            if (reset_counter) {
+                reset_counter--;
+                if (reset_counter == 0) {
+                    reset_control->assert_reset(RST_ID_KEYMICRO, false);
                 }
             }
         }

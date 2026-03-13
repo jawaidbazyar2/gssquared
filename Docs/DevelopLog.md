@@ -10602,6 +10602,7 @@ Currently, this is 04/CB72. Whew.
 yah the first thing it's doing is checking for the reset pattern of 7F7F. it does an AND, so it will match whether key down or up. ok that's good to know..
 ah, yep. At 04/CC25, it's reading E1/C025. which is the modifiers.
 it's loading $00 of course, but looking for $02 (control). 
+
 [ ] must track modifiers even if SRQ is enabled  
 
 AHHH, and besides all that, I am seeing ADB Bugs in: Cavern Cobra (type a key, get tons of "disable srq on device"). Also just booting WITA2GS. Hmmm. Something in the ROM? (fixed below)
@@ -10614,7 +10615,9 @@ Thinking about editing and dynamically creating system configs. First, we're goi
 All the base mobos should go into one list; then we'll have another list for user-editable devices; then have something that can compose them together, and return the combination. There is the "platform" concept, which is where these "base device lists" go.
 Then create serialize and de-serialize methods to JSON.
 
-Two, we already have the list of devices. The devices list likely needs another flag for what systems the device is allowed in. For instance, don't allow ProDOS clock in a IIgs; don't allow Videx in a //e or GS, etc. The Devices need serializable names; also the base configs.
+Two, we already have the list of devices. 
+[x] The devices list likely needs another flag for what systems the device is allowed in. 
+For instance, don't allow ProDOS clock in a IIgs; don't allow Videx in a //e or GS, etc. The Devices need serializable names; also the base configs.
 
 systemconfig is currently this:
 ```
@@ -10651,7 +10654,6 @@ platform {
 }
 systemconfig {
     platform_id;
-    serializable_name;
     name;
     description;
     SlotDevice_t slots[8] = {
@@ -10724,3 +10726,31 @@ IIGS/Late IIe	Platinum (Warm Gray)	#D2D0C8	(210, 208, 200) Measured: 208, 197, 1
 
 I ended up going back to my original color for the II, and the GS one seems a hair off but I need to measure it. I got an app - but my ceiling light has a color skew and it's night outside. I'll try again tomorrow, but it should work well.
 
+This looks like a good library to use for JSON read/write for the systemconfig stuff.
+https://github.com/nlohmann/json
+
+Have a class SystemConfigs. Do we want to have builtin ones? Or have them all on disk and handle them all the same way? SystemConfigs provides methods to 
+added a "valid slots" field to devices.
+
+ok, implemented the keyboard autorepeat! We now ignore autorepeated chars given to us by SDL; and track repeat intervals using frame counts, as long as any key is still down. The behavior seems to exactly replicate the GS keyboard so far.
+
+[ ] when we boot straight into ProDOS 8 on a 3.5 image, something hinky is occurring, where I can't get into control panel and ctrl-reset gives "system error 01 restart system"
+
+Huh, yeah, IRQs are disabled. Why? the adb data register is perpetually full. It's ProDOS 1.1.1. So when we do the reset there are just too many unhandled interrupts because IRQ has been off? Ok, good theory, let's see..
+no, here's the sequence.
+1. i boot adbtest.po to prodos 1.1.1
+1. I try to ctrl-oa-esc
+1. it's likely here that 
+1. it doesn't respond. I then hit ctrl-reset, get the error thing.
+If I do in this sequence instead:
+1. boot adbtest.po
+1. hit ctrl-reset
+1. ctrl-oa-esc
+that works.
+the ctrl-reset is patching something back in for the control panel interrupt handler that, perhaps, PD1.1.1 overwrites? it didn't know anything about the GS..
+ah! On RealGS, after booting adbtest/pd1.1.1, it ignores my ctrl-oa-esc too! But, Ctrl-Reset doesn't give me the error. So, ctrl-reset is doing something extra special like clearing the buffer, clearing the interrupt status, etc, on RealGS, but not in GS2.
+The ADB Micro is SO COMPLEX.
+
+cleaning up the ADBMicro code some, since we no longer allow any autorepeat chars through, there are a bunch of dead conditionals.
+Trying to figure out where to place the (extra?) code to update the modifiers in SRQ mode. Presumably, where it reads / maps a keystroke? Hmm.
+we're now getting a reset through to the wolf srq routine but we are crashing into the monitor instead of doing resetty things. is it expecting 
