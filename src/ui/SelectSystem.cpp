@@ -1,10 +1,9 @@
 #include "SelectSystem.hpp"
 #include "Container.hpp"
 #include "systemconfig.hpp"
-#include "Button.hpp"
 #include "Style.hpp"
 #include "util/TextRenderer.hpp"
-#include "MainAtlas.hpp"
+#include "AssetAtlas.hpp"
 #include "SystemButton.hpp"
 
 SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)

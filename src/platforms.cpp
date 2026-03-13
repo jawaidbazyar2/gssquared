@@ -15,17 +15,15 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 #include <errno.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <sys/stat.h>
-#include "cpu.hpp"
 #include "platforms.hpp"
 #include "util/ResourceFile.hpp"
 #include "util/dialog.hpp"
 #include "ui/MainAtlas.hpp"
-#include "devices/displaypp/RGBA.hpp"
 
 static  platform_info platforms[] = {
     { 

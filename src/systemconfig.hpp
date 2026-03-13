@@ -17,10 +17,9 @@
 
 #pragma once
 
-//#include "gs2.hpp"
-#include "platforms.hpp"
-#include "devices.hpp"
-#include "clock.hpp"
+#include "PlatformIDs.hpp"
+#include "Device_ID.hpp"
+#include "NClock.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
 
 /**

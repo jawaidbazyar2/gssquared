@@ -17,8 +17,8 @@
 
 #include "gs2.hpp"
 #include "systemconfig.hpp"
-#include "ui/MainAtlas.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
+#include "devices.hpp"
 
 DeviceMap_t DeviceMap_II[] = {
     /* {DEVICE_ID_KEYBOARD_IIPLUS, SLOT_NONE},

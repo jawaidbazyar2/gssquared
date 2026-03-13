@@ -3,6 +3,7 @@
 #include "Button.hpp"
 #include "UIContext.hpp"
 #include "systemconfig.hpp"
+#include "platforms.hpp"
 
 class SystemButton : public Button_t {
     public:

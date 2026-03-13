@@ -33,6 +33,8 @@ struct Device_t {
     device_id id;
     const char *name;
     bool multipleInstances = false;
+    const uint8_t slots_allowed;
+    const uint32_t platform_flags;
     void (*power_on)(computer_t *computer, SlotType_t slot_number);
     void (*power_off)(void *context);
 };

@@ -41,10 +41,14 @@
 #include "devices/scc8530/scc8530.hpp"
 #include "devices/iwm/iwm_device.hpp"
 
+#include "PlatformIDs.hpp"
+
 Device_t NoDevice = {
         DEVICE_ID_END,
         "No Device",
         false,
+        0,
+        PLATFLAG_NONE,
         NULL,
         NULL
     };
@@ -54,6 +58,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_KEYBOARD_IIPLUS,
         "Apple II Plus Keyboard",
         false,
+        0,
+        PLATFLAG_APPLE_II_PLUS,
         init_mb_iiplus_keyboard,
         NULL
     },
@@ -61,6 +67,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_KEYBOARD_IIE,
         "Apple IIe Keyboard",
         false,
+        0,
+        PLATFLAG_APPLE_IIE|PLATFLAG_APPLE_IIE_ENHANCED|PLATFLAG_APPLE_IIE_65816,
         init_mb_iie_keyboard,
         NULL
     },
@@ -68,6 +76,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_SPEAKER,
         "Speaker",
         false,
+        0,
+        PLATFLAG_ALL,
         init_mb_speaker,
         NULL
     },
@@ -75,6 +85,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_DISPLAY,
         "Display",
         false,
+        0,
+        PLATFLAG_ALL,
         init_mb_device_display,
         NULL
     },
@@ -82,6 +94,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_GAMECONTROLLER,
         "Game Controller",  
         false,
+        0,
+        PLATFLAG_ALL,
         init_mb_game_controller,
         NULL
     },
@@ -89,6 +103,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_LANGUAGE_CARD,
         "II/II+ Language Card",
         false,
+        0b00000001, // only slot 0
+        PLATFLAG_APPLE_II|PLATFLAG_APPLE_II_PLUS,
         init_slot_languagecard,
         NULL
     },
@@ -96,6 +112,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_PRODOS_BLOCK,
         "Generic ProDOS Block",
         true,
+        0b11111110,
+        PLATFLAG_ALL,
         NULL, //init_prodos_block,
         NULL
     },
@@ -103,6 +121,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_PRODOS_CLOCK,
         "Generic ProDOS Clock",
         false,
+        0b11111110,
+        PLATFLAG_APPLE_II|PLATFLAG_APPLE_II_PLUS|PLATFLAG_APPLE_IIE|PLATFLAG_APPLE_IIE_ENHANCED|PLATFLAG_APPLE_IIE_65816,
         init_slot_prodosclock,
         NULL
     },
@@ -110,6 +130,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_DISK_II,
         "Disk II Controller",
         true,
+        0b11111110,
+        PLATFLAG_ALL,
         init_slot_ndiskII,
         NULL
     },
@@ -117,6 +139,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_MEM_EXPANSION,
         "Memory Expansion (Slinky)",
         true,
+        0b11111110,
+        PLATFLAG_ALL,
         init_slot_memexp,
         NULL
     },
@@ -124,6 +148,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_THUNDER_CLOCK,
         "Thunder Clock Plus",
         false,
+        0b11111110,
+        PLATFLAG_APPLE_II|PLATFLAG_APPLE_II_PLUS|PLATFLAG_APPLE_IIE|PLATFLAG_APPLE_IIE_ENHANCED|PLATFLAG_APPLE_IIE_65816,
         init_slot_thunderclock,
         NULL
     },
@@ -131,6 +157,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_PD_BLOCK2,
         "Generic ProDOS Block 2",
         true,
+        0b11111110,
+        PLATFLAG_ALL,
         init_pdblock2,
         NULL
     },
@@ -138,6 +166,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_PARALLEL,
         "Apple II Parallel Interface",
         true,
+        0b11111110,
+        PLATFLAG_ALL,
         init_slot_parallel,
         NULL
     },
@@ -145,6 +175,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_VIDEX,
         "Videx VideoTerm",
         false,
+        0b00001000,
+        PLATFLAG_APPLE_II|PLATFLAG_APPLE_II_PLUS,
         init_slot_videx,
         NULL
     },
@@ -152,6 +184,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_MOCKINGBOARD,
         "Mockingboard",
         true,
+        0b11111110,
+        PLATFLAG_ALL,
         init_slot_mockingboard,
         NULL
     },
@@ -159,6 +193,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_IIE_MEMORY,
         "IIe Memory",
         false,
+        0,
+        PLATFLAG_APPLE_IIE|PLATFLAG_APPLE_IIE_ENHANCED|PLATFLAG_APPLE_IIE_65816,
         init_iiememory,
         NULL
     },
@@ -166,6 +202,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_MOUSE,
         "Apple Mouse II",
         false,
+        0b11111110,
+        PLATFLAG_APPLE_II|PLATFLAG_APPLE_II_PLUS|PLATFLAG_APPLE_IIE|PLATFLAG_APPLE_IIE_ENHANCED|PLATFLAG_APPLE_IIE_65816,
         init_mouse,
         NULL
     },
@@ -173,6 +211,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_CASSETTE,
         "Cassette",
         false,
+        0,
+        PLATFLAG_ALL,
         init_mb_cassette,
         NULL
     },
@@ -180,6 +220,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_VIDHD,
         "VIDHD",
         false,
+        0b11111110,
+        PLATFLAG_APPLE_IIE_65816,
         init_slot_vidhd,
         NULL
     },
@@ -187,6 +229,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_RTC_PRAM,
         "RTC (Clock + Battery RAM)",
         false,
+        0,
+        PLATFLAG_APPLE_IIGS,
         init_slot_rtc_pram,
         NULL
     },
@@ -194,6 +238,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_KEYGLOO,
         "ADB (KeyGloo)",
         false,
+        0,
+        PLATFLAG_APPLE_IIGS,
         init_slot_keygloo,
         NULL
     },
@@ -201,6 +247,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_ENSONIQ,
         "Ensoniq",
         false,
+        0,
+        PLATFLAG_APPLE_IIGS,
         init_ensoniq_slot,
         NULL
     },
@@ -208,6 +256,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_SCC8530,
         "SCC8530",
         false,
+        0,
+        PLATFLAG_APPLE_IIGS,
         init_scc8530_slot,
         NULL
     },
@@ -215,6 +265,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_IWM,
         "IWM",
         false,
+        0,
+        PLATFLAG_APPLE_IIGS,
         init_iwm_slot,
         NULL
     },
@@ -222,6 +274,8 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         DEVICE_ID_PD_BLOCK3,
         "Generic ProDOS Block 3",
         true,
+        0b11111110,
+        PLATFLAG_ALL,
         init_pdblock3,
         NULL
     },
