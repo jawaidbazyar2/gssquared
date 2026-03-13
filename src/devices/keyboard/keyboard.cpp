@@ -75,8 +75,8 @@ uint8_t kb_read_C010(void *context, uint32_t address) {
     kb_clear_strobe(kb_state);
     // AKD is "any key down". it is set instantly whenever a key is pressed.
     // the apple ii keyboard can't report multiple keys. So, just check to see if SDL
-        // sees any key as down.
-        // alternately we can keep track of all key-down and key-up events and if there are more key down than key up, set AKD.
+    // sees any key as down.
+    // TODO: alternately we can keep track of all key-down and key-up events and if there are more key down than key up, set AKD.
     int numkeys;
     const bool *keyarr = SDL_GetKeyboardState(&numkeys);
     bool akd = false;
