@@ -499,27 +499,31 @@ are repeat keys.
 
 But if I were to implement our own key repeat, how is that done..
 
-| Setting | Repeats/sec | Divisor | 120 Ticks/sec |
-|---------|-------------|---------|---------------|
-| 0       | 40          | 3       | 40            |
-| 1       | 30          | 4       | 30            |
-| 2       | 24          | 5       | 24            |
-| 3       | 20          | 6       | 20            |
-| 4       | 15          | 8       | 15            |
-| 5       | 11          | 11      | 10.91         |
-| 6       | 8           | 15      | 8             |
-| 7       | 4           | 30      | 4             |
+| Setting | Repeats/sec | Divisor | 120 Ticks/sec | ~59.9226 Ticks/sec |
+|---------|-------------|---------|---------------|--------------------|
+| 0       | 40          | 3       | 40            | 1 |
+| 1       | 30          | 4       | 30            | 2 |
+| 2       | 24          | 5       | 24            | 2 |
+| 3       | 20          | 6       | 20            | 3 |
+| 4       | 15          | 8       | 15            | 4 |
+| 5       | 11          | 11      | 10.91         | 5 |
+| 6       | 8           | 15      | 8             | 8 |
+| 7       | 4           | 30      | 4             | 15 |
 
-| Setting | Delay before repeat (sec) | Ticks (of 120/sec) |
-|-|-|-|
-| 0 | 1/4 sec | 30 |
-| 1 | 1/2 sec | 60 |
-| 2 | 3/4 sec | 90 |
-| 3 | 1 sec | 120 |
-| 4 | no rpt | |
+| Setting | Delay before repeat (sec) | Ticks (of 120/sec) | ticks (~59.9226) |
+|-|-|-|-|
+| 0 | 1/4 sec | 30 | 15 |
+| 1 | 1/2 sec | 60 | 30 |
+| 2 | 3/4 sec | 90 | 45 |
+| 3 | 1 sec | 120 | 60 |
+| 4 | no rpt | | - |
 
+My normal frame rate is 59.9226.. close to 60, which is 1/2 the 120 rate. Likely close enough for government work.
 
-My normal frame rate is 59.9226.. not fast enough, nor does /40 divide into 60 cleanly. SDL has SDL_AddTimer and SDL_AddTimerNS, which schedules timers on a separate thread.
+So: last_repeat_key;  next_repeat_cnt;
+the start_repeat_in is reset on new key down; e.g. if you're repeating f but then hit and hold g, it waits the "delay before repeat".
+
+So we use a frame handler here. decrement next_repeat_cnt (dncntr), when it's 0, call store_key_to_buffer with the saved "repeated key" info. Only do this when "keysdown">0. 
 
 divisor
 divisor_count
@@ -528,6 +532,8 @@ delay
 delay_count
 
 on key up, clear divisor_count, repeat_active=0
+
+We know multiple keys can be down; but the micro should track and repeat the -most recent- one.
 
 ```
 each iteration, 

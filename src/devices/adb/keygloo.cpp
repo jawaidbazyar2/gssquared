@@ -137,6 +137,10 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
     computer->mmu->set_C0XX_read_handler(0xC027, { keygloo_read_C027, kb_state });
     computer->mmu->set_C0XX_write_handler(0xC027, { keygloo_write_C027, kb_state });
 
+    computer->device_frame_dispatcher->registerHandler([kb_state]() {
+        kb_state->kg->frame_handler();
+        return true;
+    });
     computer->register_debug_display_handler(
         "adb",
         DH_ADB, // unique ID for this, need to have in a header.

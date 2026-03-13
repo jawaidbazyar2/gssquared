@@ -26,29 +26,29 @@ constexpr bool MOUSE_Y = true;
  */
 struct uc_vars_t {
     uint8_t permlang; // char set in high nibble
-    uint8_t dlyrpt; // delay-to-repeat & repeat-rate values
-    uint8_t dncntr; // delay to repeat and auto-repeat counters
+    uint8_t dlyrpt;   // delay-to-repeat & repeat-rate values
+    uint8_t dncntr;   // delay to repeat and auto-repeat counters
     uint8_t modeflgs; // hold different mode flags set if:
-    uint8_t initsp; // initial mouse stepping value
+    uint8_t initsp;   // initial mouse stepping value
     uint8_t msedlyrp; // mouse start delay and start speed
     uint8_t msetrack; // mouse scaling (tracking)
     uint8_t msemaxsp; // mouse keys max speed
     uint8_t mseaccrt; // mouse keys accelration rate
-    uint8_t keyqpt; // various flag bits
+    uint8_t keyqpt;   // various flag bits
     uint8_t respstat; // response / status return from cmd->set
-    uint8_t fdbxtra; // various bits
+    uint8_t fdbxtra;  // various bits
     uint8_t fdbxkeys; // modifier bits (set if pressed)
     adb_mod_key_t currmod; // keep track for internal and fdb mod state
     adb_mod_key_t prevmod; // previous modifier keys status
     uint8_t ctlshfcnt; // control, shift counts
-    uint8_t applecnt; // open apple, solid apple counts
+    uint8_t applecnt;  // open apple, solid apple counts
     uint8_t stickstat; // sticky mod status
-    uint8_t actmod; // active mode flags set if:
+    uint8_t actmod;   // active mode flags set if:
     uint8_t spclbyte; // count for sync during warm start; sys rd/wr; bunch of misc stuff.
-    uint8_t lstkey; // last key
-    uint8_t lstmod; // last modifier
-    uint8_t inpt; // buffer input index (says "pointer"), so this might be absolute memory address.
-    uint8_t outpt; // buffer output index
+    uint8_t lstkey;   // last key
+    uint8_t lstmod;   // last modifier
+    uint8_t inpt;     // buffer input index (says "pointer"), so this might be absolute memory address.
+    uint8_t outpt;    // buffer output index
     uint8_t bufmod[BUFSIZE];
     uint8_t bufque[BUFSIZE];
     uint8_t fdbmtrx; // table holding list of current keys down.
@@ -67,7 +67,7 @@ class KeyGloo
     private:
         ADB_Host * adb_host = nullptr;
 
-        uint8_t rom[3072];       
+        uint8_t rom[3072];
 
         union {
             uint8_t ram[96];
@@ -103,6 +103,8 @@ class KeyGloo
 
         key_code_t key_latch;
 
+        uint8_t last_key_down = 0;
+
         const uint8_t adb_version = 0x06;
 
         //mouse_next_t mouse_next_read = MOUSE_Y;
@@ -114,8 +116,9 @@ class KeyGloo
 
         ResetController *reset_control = nullptr;
 
-        /* bool mouse_interrupt_asserted = false;
-        bool kb_interrupt_asserted = false; */
+        const uint8_t repeat_rate[8] = { 1, 2, 2, 3, 4, 5, 8, 15 };
+
+        const uint8_t delay_to_repeat[5] = { 15, 30, 45, 60, 0 };
         
         union {
             struct {
@@ -227,7 +230,7 @@ class KeyGloo
             // LANG: 
             vars.lang = configuration_bytes[1] & 0b1111;
             // DLYRPT: 
-            vars.dlyrpt = configuration_bytes[2] & 0b1111;
+            vars.dlyrpt = configuration_bytes[2] /* & 0b1111 */;
             vars.fdbadr = configuration_bytes[0]; // set kb / mouse addresses
         }
 
@@ -722,11 +725,21 @@ class KeyGloo
             }
         }
 
+        void start_repeat() {
+            uint8_t dlyval = (vars.dlyrpt & 0xF0) >> 4;
+            printf("start_repeat: %02X %d\n", vars.dlyrpt, delay_to_repeat[dlyval]);
+            vars.dncntr = delay_to_repeat[dlyval]; 
+        }
+        void stop_repeat() {
+            vars.dncntr = 0;
+        }
+
         bool process_event(SDL_Event &event) {
             
             // if modes_byte indicates no keyboard auto-poll, disregard repeated key events.
-            if ((modes_byte & 0x01) != 0 && (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) && event.key.repeat) return true;
-            
+            //if ((modes_byte & 0x01) != 0 && (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) && event.key.repeat) return true;
+            if ((event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) && (event.key.repeat)) return true; // ignore ANY repeated key events.
+
             // TODO: need to track which keys are down in this function.
             // TODO: after processing event, check keyboard register for new key event and read it here.
             bool status = adb_host->process_event(event);
@@ -808,7 +821,10 @@ class KeyGloo
                                 uint8_t kpflag = 0;
                                 // TODO: this also needs to update currmod.keypad if a keypad key is being held down?
                                 if (keycode >= 0x43 && keycode <= 0x5C) kpflag = 0x10;
-                                if (keyupdown) store_key_to_buffer(map_us(keycode, vars.currmod), vars.currmod.value | kpflag); // TODO: update modifiers.
+                                last_key_down = map_us(keycode, vars.currmod);
+                                if (keyupdown) store_key_to_buffer(last_key_down, vars.currmod.value | kpflag); // TODO: update modifiers.
+                                if (!keyupdown) stop_repeat();
+                                else start_repeat(); // delay to repeat
                             }
                             break;
                     }
@@ -841,6 +857,17 @@ class KeyGloo
             }
 
             return status;
+        }
+
+        void frame_handler() {
+            // TODO: implement this.
+            if (vars.dncntr) { // if there is a pending...
+                vars.dncntr--;
+                if (vars.dncntr == 0) {
+                    store_key_to_buffer(last_key_down, vars.currmod.value);
+                    vars.dncntr = repeat_rate[vars.dlyrpt & 0x0F]; // repeat rate
+                }
+            }
         }
 
         void debug_display(DebugFormatter *df) {
