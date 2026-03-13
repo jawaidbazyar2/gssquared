@@ -340,7 +340,7 @@ target_link_libraries(GSSquared
     gs2_ntsc
     gs2_devices_tcp 
     gs2_devices_keyboard 
-    gs2_devices_diskii_fmt 
+    #gs2_devices_diskii_fmt 
     gs2_devices_languagecard 
     gs2_devices_prodos_clock
     gs2_devices_speaker
@@ -359,7 +359,7 @@ target_link_libraries(GSSquared
     gs2_devices_iwm
     gs2_serial_devices
     gs2_debugger
-    gs2_util
+    #gs2_util
     gs2_util_audio
     gs2_ui
     gs2_event_dispatcher
