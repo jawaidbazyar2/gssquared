@@ -10769,3 +10769,13 @@ ImageWriter printer
 
 User Interface stuff:
 lots of buttons
+
+## Mar 14, 2026
+
+I'm wondering if the stuff in frame_appevent might be in some ways a second way of doing the same type of "custom events" that we implemented in computer with actual SDL custom events.
+The primary goal of frame_appevent was to remove certain functions that we didn't want to potentially interrupt or unnecessarily delay the cpu emulation loop, and push those things into the event handling portion of the loop.
+
+ok Clod did a reasonable job getting menus for drive media mount/unmount, however, some of the code is piling stuff into gs2_app_values, a global, which is icky.
+
+MenuInterface.cpp is relying on a bunch of those, and should probably have those injected instead?
+it's sort of right, that isn't really part of Computer.

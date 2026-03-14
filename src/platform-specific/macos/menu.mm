@@ -94,8 +94,9 @@ The initMenu function signature is unchanged so no callers need updating. The wi
 I don't know what all these words mean exactly. But I confirmed it does seem to be working correctly again.
 */
 
-@interface MenuActionHandler : NSObject
+@interface MenuActionHandler : NSObject <NSMenuItemValidation>
 - (void)fileClose:(id)sender;
+- (void)appQuit:(id)sender;
 - (void)machineReset:(id)sender;
 - (void)machineRestart:(id)sender;
 - (void)machinePauseResume:(id)sender;
@@ -113,6 +114,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)displayFullScreen:(id)sender;
 - (void)editCopyScreen:(id)sender;
 - (void)editPasteText:(id)sender;
+- (void)diskToggleDrive:(id)sender;
 @end
 
 @implementation MenuActionHandler
@@ -123,6 +125,19 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 		SDL_PushEvent(&event);
 	}
 	(void)sender;
+}
+
+- (void)appQuit:(id)sender {
+	[NSApp terminate:nil];
+	(void)sender;
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
+	if (menuItem.action == @selector(appQuit:)) {
+		return !getMenuInterface()->isEmulationRunning();
+	}
+	// All other items (File, Edit, Machine, Settings, Display) require emulation
+	return getMenuInterface()->isEmulationRunning();
 }
 
 - (void)machineReset:(id)sender       { getMenuInterface()->machineReset(); (void)sender; }
@@ -145,6 +160,13 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)displayFullScreen:(id)sender { getMenuInterface()->displayFullScreen(); (void)sender; }
 - (void)editCopyScreen:(id)sender    { getMenuInterface()->editCopyScreen(); (void)sender; }
 - (void)editPasteText:(id)sender     { getMenuInterface()->editPasteText(); (void)sender; }
+
+- (void)diskToggleDrive:(id)sender {
+	NSMenuItem *item = (NSMenuItem *)sender;
+	NSNumber *keyNumber = (NSNumber *)[item representedObject];
+	storage_key_t key((uint64_t)[keyNumber unsignedLongLongValue]);
+	getMenuInterface()->diskToggle(key);
+}
 @end
 
 @interface SpeedMenuDelegate : NSObject <NSMenuDelegate>
@@ -187,10 +209,55 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 }
 @end
 
+@class DrivesMenuDelegate;
+
 static MenuActionHandler *sMenuHandler = nil;
 static SpeedMenuDelegate *sSpeedMenuDelegate = nil;
 static SettingsMenuDelegate *sSettingsMenuDelegate = nil;
 static MonitorMenuDelegate *sMonitorMenuDelegate = nil;
+static DrivesMenuDelegate *sDrivesMenuDelegate = nil;
+
+@interface DrivesMenuDelegate : NSObject <NSMenuDelegate>
+@end
+
+@implementation DrivesMenuDelegate
+- (void)menuNeedsUpdate:(NSMenu *)menu {
+	[menu removeAllItems];
+
+	std::vector<MenuDriveInfo> drives = getMenuInterface()->getDriveList();
+	if (drives.empty()) {
+		NSMenuItem *empty = [[[NSMenuItem alloc]
+			initWithTitle:NSLocalizedString(@"(no drives)", nil)
+			       action:nil
+			keyEquivalent:@""] autorelease];
+		[empty setEnabled:NO];
+		[menu addItem:empty];
+		return;
+	}
+
+	for (const MenuDriveInfo &info : drives) {
+		std::string label = "S" + std::to_string(info.key.slot)
+		                  + "D" + std::to_string(info.key.drive + 1);
+		if (info.is_mounted && !info.filename.empty()) {
+			// Show only the filename, not the full path
+			std::string fname = info.filename;
+			size_t slash = fname.rfind('/');
+			if (slash != std::string::npos) fname = fname.substr(slash + 1);
+			label += ": " + fname;
+		} else {
+			label += ": (empty)";
+		}
+
+		NSMenuItem *item = [[[NSMenuItem alloc]
+			initWithTitle:[NSString stringWithUTF8String:label.c_str()]
+			       action:@selector(diskToggleDrive:)
+			keyEquivalent:@""] autorelease];
+		[item setTarget:sMenuHandler];
+		[item setRepresentedObject:[NSNumber numberWithUnsignedLongLong:info.key.key]];
+		[menu addItem:item];
+	}
+}
+@end
 
 static NSMenu *addMenu(NSString *title) {
 	[[NSApp mainMenu] addItem:[[[NSMenuItem alloc] init] autorelease]];
@@ -201,6 +268,7 @@ static NSMenu *addMenu(NSString *title) {
 
 static void setupMenus(void) {
 	sMenuHandler = [[MenuActionHandler alloc] init];
+	sDrivesMenuDelegate = [[DrivesMenuDelegate alloc] init];
 
 	// Remove SDL's default menus so we can replace them with our own
 	NSMenu *mainMenu = [NSApp mainMenu];
@@ -215,6 +283,14 @@ static void setupMenus(void) {
 						[[NSProcessInfo processInfo] processName]]
 		       action:@selector(orderFrontStandardAboutPanel:)
 		keyEquivalent:@""] autorelease]];
+	[appMenu addItem:[NSMenuItem separatorItem]];
+	NSMenuItem *quitItem = [[[NSMenuItem alloc]
+		initWithTitle:[NSString stringWithFormat:NSLocalizedString(@"Quit %@", nil),
+						[[NSProcessInfo processInfo] processName]]
+		       action:@selector(appQuit:)
+		keyEquivalent:@""] autorelease];
+	[quitItem setTarget:sMenuHandler];
+	[appMenu addItem:quitItem];
 #if 0
 	[appMenu addItem:[NSMenuItem separatorItem]];
 #ifdef __MAC_13_0
@@ -239,10 +315,23 @@ static void setupMenus(void) {
 	// File menu
 	NSMenu *fileMenu = addMenu(NSLocalizedString(@"File", nil));
 
+	// Drives submenu — populated dynamically by DrivesMenuDelegate on each pull-down
+	NSMenu *drivesMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Drives", nil)] autorelease];
+	[drivesMenu setDelegate:sDrivesMenuDelegate];
+
+	NSMenuItem *drivesMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Drives", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[drivesMenuItem setSubmenu:drivesMenu];
+	[fileMenu addItem:drivesMenuItem];
+
+	[fileMenu addItem:[NSMenuItem separatorItem]];
+
 	NSMenuItem *closeItem = [[[NSMenuItem alloc]
-		initWithTitle:NSLocalizedString(@"Close", nil)
+		initWithTitle:NSLocalizedString(@"Close Emulation", nil)
 		       action:@selector(fileClose:)
-		keyEquivalent:[NSString stringWithFormat:@"%C", (unichar)NSF12FunctionKey]] autorelease];
+		keyEquivalent:@""] autorelease];
 	[closeItem setTarget:sMenuHandler];
 	[fileMenu addItem:closeItem];
 

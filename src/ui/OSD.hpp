@@ -172,6 +172,8 @@ public:
 
     void set_raise_window();
 
+    void open_file_dialog(storage_key_t key);
+
     void show_diskii_modal(storage_key_t key, uint64_t data);
     void close_diskii_modal(storage_key_t key, uint64_t data);
 

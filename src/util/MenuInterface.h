@@ -1,5 +1,15 @@
 #pragma once
 
+#include <string>
+#include <vector>
+#include "util/StorageDevice.hpp"
+
+struct MenuDriveInfo {
+    storage_key_t key;
+    bool          is_mounted;
+    std::string   filename;
+};
+
 enum MenuSpeedID {
 	SPEED_FREE_RUN = 0,
 	SPEED_1_0  = 1,
@@ -16,8 +26,13 @@ enum MenuMonitorID {
 	MONITOR_MONO_WHITE = 204,
 };
 
+struct computer_t;
+
 class MenuInterface {
+	computer_t *computer_ = nullptr;
 public:
+	void setComputer(computer_t *computer) { computer_ = computer; }
+
 	void machineReset();
 	void machineRestart();
 	void machinePauseResume();
@@ -29,10 +44,13 @@ public:
 	void editCopyScreen();
 	void editPasteText();
 	void openDebugWindow();
+	void diskToggle(storage_key_t key);
 
 	int  getCurrentSpeed();
 	int  getCurrentMonitor();
 	bool getSleepMode();
+	bool isEmulationRunning();
+	std::vector<MenuDriveInfo> getDriveList();
 };
 
 MenuInterface *getMenuInterface();

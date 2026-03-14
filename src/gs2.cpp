@@ -92,7 +92,16 @@
 /** Globals we haven't dealt properly with yet. */
 OSD *osd = nullptr;
 
+// Defined in OSD.cpp — used here where osd is accessible for menu-triggered disk toggle
+void handle_disk_toggle(computer_t *computer, OSD *osd, storage_key_t key);
+
 void handle_single_event(computer_t *computer, cpu_state *cpu, SDL_Event &event) {
+    // Handle disk toggle from menu directly here where osd is accessible
+    if (event.type == gs2_app_values.menu_event_type && event.user.code == MENU_DISK_TOGGLE) {
+        storage_key_t key((uint64_t)(uintptr_t)event.user.data1);
+        handle_disk_toggle(computer, osd, key);
+        return;
+    }
     // check for system "pre" events
     if (computer->sys_event->dispatch(event)) {
         return;
@@ -537,7 +546,7 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
     // important to do this before setting up the rest of the computer.
     NClockII *nclock = NClockFactory::create_clock(platform->id, system_config->clock_set);
     computer->set_clock(nclock);
-    gs2_app_values.clock = nclock;
+    getMenuInterface()->setComputer(computer);
 
     //computer->set_cpu(new cpu_state(platform->cpu_type));
 
@@ -693,6 +702,7 @@ void transition_to_shutdown(GS2AppState *state) {
     osd = nullptr;
 
     platform_info *platform = computer->platform;
+    getMenuInterface()->setComputer(nullptr);
     delete computer;
     state->computer = nullptr;
 
@@ -722,7 +732,6 @@ void transition_to_shutdown(GS2AppState *state) {
     // Create fresh computer and select system for next cycle
     state->computer = new computer_t(nullptr);
     video_system_t *vs = state->computer->video_system;
-    gs2_app_values.video_system = vs;
 
     initMenu(vs->window);
 
@@ -818,7 +827,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     state->computer = new computer_t(nullptr); // We'll set the clock later.
 
     video_system_t *vs = state->computer->video_system;
-    gs2_app_values.video_system = vs;
 
     initMenu(vs->window);
 

@@ -26,6 +26,8 @@ enum MenuEventCode {
 
 	MENU_OPEN_DEBUG_WINDOW = 501,
 
+	MENU_DISK_TOGGLE = 600,  // user.data1 = storage_key_t cast to void*
+
 };
 
 typedef SDL_AppResult (*MenuIterateCallback)(void *appstate);

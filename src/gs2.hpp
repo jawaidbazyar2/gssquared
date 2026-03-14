@@ -29,9 +29,6 @@ typedef uint8_t byte_t;
 typedef uint16_t word_t;
 typedef uint8_t opcode_t;
 
-class NClock;
-struct video_system_t;
-
 typedef struct gs2_app_t {
     std::string base_path;
     std::string pref_path;
@@ -39,8 +36,6 @@ typedef struct gs2_app_t {
    /*  bool disk_accelerator = false; */
     bool sleep_mode = false;
     uint32_t menu_event_type = 0;
-    NClock *clock = nullptr;
-    video_system_t *video_system = nullptr;
 } gs2_app_t;
 
 extern gs2_app_t gs2_app_values;

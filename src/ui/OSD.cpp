@@ -61,7 +61,7 @@ struct diskii_modal_callback_data_t {
     storage_key_t key;
 };
 
-/** handle file dialog callback */
+/** handle file dialog callback — userdata is owned by the caller, not freed here */
 static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const* filelist, int filter)
 {
      diskii_callback_data_t *data = (diskii_callback_data_t *)userdata;
@@ -91,34 +91,48 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     osd->computer->mounts->mount_media(dm);
 }
 
-void diskii_button_click(void *userdata) {
-    diskii_callback_data_t *data = (diskii_callback_data_t *)userdata;
-    OSD *osd = data->osd;
+/** Wrapper used when userdata was heap-allocated: delegates then frees. */
+static void menu_file_dialog_callback(void* userdata, const char* const* filelist, int filter) {
+    file_dialog_callback(userdata, filelist, filter);
+    delete (diskii_callback_data_t*)userdata;
+}
 
-    if (osd->computer->mounts->media_status(data->key).is_mounted) {
-        // if media was modified, create Event to handle modal dialog. Otherwise, just unmount.
-        if (osd->computer->mounts->media_status(data->key).is_modified) {
-            osd->show_diskii_modal(data->key, 0);
-        } else {
-            osd->computer->mounts->unmount_media(data->key, DISCARD);
-        }
-        return;
-    }
-
+void OSD::open_file_dialog(storage_key_t key) {
     static const SDL_DialogFileFilter filters[] = {
         { "Disk Images",  "do;po;woz;dsk;hdv;2mg" },
         { "All files",   "*" }
     };
 
-    printf("diskii button clicked\n");
+    diskii_callback_data_t *data = new diskii_callback_data_t();
+    data->osd = this;
+    data->key = key;
+
     const std::string& last_path = Paths::get_last_file_dialog_dir();
-    SDL_ShowOpenFileDialog(file_dialog_callback, 
-        userdata, 
-        osd->get_window(),
+    SDL_ShowOpenFileDialog(menu_file_dialog_callback,
+        data,
+        get_window(),
         filters,
         sizeof(filters)/sizeof(SDL_DialogFileFilter),
         last_path.c_str(),
         false);
+}
+
+void handle_disk_toggle(computer_t *computer, OSD *osd, storage_key_t key) {
+    auto status = computer->mounts->media_status(key);
+    if (status.is_mounted) {
+        if (status.is_modified) {
+            osd->show_diskii_modal(key, 0);
+        } else {
+            computer->mounts->unmount_media(key, DISCARD);
+        }
+        return;
+    }
+    osd->open_file_dialog(key);
+}
+
+void diskii_button_click(void *userdata) {
+    diskii_callback_data_t *data = (diskii_callback_data_t *)userdata;
+    handle_disk_toggle(data->osd->computer, data->osd, data->key);
 }
 
 void unidisk_button_click(void *userdata) {
@@ -510,7 +524,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     }
 
     system_config = computer->get_system();
-    //system_badge = new Button_t(&ui_ctx, get_platform(system_config->platform_id)->image_id, SB);
     system_badge = new Button_t(&ui_ctx, computer->platform->image_id, SB);
     system_badge->set_position(30, 65);
 
@@ -679,7 +692,6 @@ void OSD::render() {
         // Draw CP background with some opacity
         SDL_FRect rect = {0, 50, (float)(window_w-100), (float)(window_h-100)};
         //ui_ctx.fill_rect(rect, 0xFFFFFFE0);
-        //ui_ctx.fill_rect(rect, get_platform(system_config->platform_id)->case_color & 0xFFFFFF00 | 0xE0);
         ui_ctx.fill_rect(rect, computer->platform->case_color & 0xFFFFFF00 | 0xE0);
       
         /* ----- */
@@ -772,15 +784,20 @@ bool OSD::event(const SDL_Event &event) {
     }
 
     bool active = (currentSlideStatus == SLIDE_IN);
+
+    // Modal intercepts all mouse events regardless of whether the panel is open.
+    // The modal renders directly to the window (not just inside the panel), so
+    // its event handling must also work when the panel is closed.
+    if (activeModal) {
+        activeModal->handle_mouse_event(event);
+        return true;
+    }
+
     if (active) {
-        if (activeModal) {
-            activeModal->handle_mouse_event(event);
-        } else {
-            close_btn->handle_mouse_event(event);
-            // Let containers have a stab at the event
-            for (Container_t* container : containers) {
-                if (container->handle_mouse_event(event)) break;
-            }
+        close_btn->handle_mouse_event(event);
+        // Let containers have a stab at the event
+        for (Container_t* container : containers) {
+            if (container->handle_mouse_event(event)) break;
         }
     } else {
         if (open_btn->handle_mouse_event(event)) {
