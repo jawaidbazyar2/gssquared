@@ -116,9 +116,9 @@ Slow down the OSD open/close a bit, to make it whooshier.
     * Unlimited
   * Sleep/Busy Wait
   * Game Controller
-    * Gamepad (Normal Joystick)
+    * Joystick - Gamepad
+    * Joystick - Mouse
     * Atari Joyport
-    * the other options..
   * Modifier Keys
     * OA/Cmd = ALT; CA/Opt = Win
     * OA/Cmd = WIN; CA/Opt = ALT

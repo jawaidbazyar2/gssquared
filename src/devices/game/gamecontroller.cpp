@@ -372,6 +372,10 @@ void set_joystick_mode(gamec_state_t *gp_d, joystick_mode_t mode) {
     gp_d->joystick_mode = mode;
 }
 
+joystick_mode_t get_joystick_mode(gamec_state_t *gp_d) {
+    return gp_d->joystick_mode;
+}
+
 const char *get_mode_name(joystick_mode_t mode) {
     const char *mode_names[] = {
         "Apple Joystick (Gamepad)",
@@ -536,4 +540,6 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
             ds->joyport_activate = ds->clock->get_cycles() + 100000; // 100ms
             return true;
         });
+
+    computer->set_module_state(MODULE_GAMECONTROLLER, ds);
 }

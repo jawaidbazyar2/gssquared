@@ -46,10 +46,14 @@ public:
 	void openDebugWindow();
 	void diskToggle(storage_key_t key);
 
+	void setControllerMode(int mode);
+
 	int  getCurrentSpeed();
 	int  getCurrentMonitor();
 	bool getSleepMode();
 	bool isEmulationRunning();
+	bool isPaused();
+	int  getCurrentControllerMode();
 	std::vector<MenuDriveInfo> getDriveList();
 };
 

@@ -6,6 +6,8 @@
 #include "debugger/debugwindow.hpp"
 #include "computer.hpp"
 #include "util/mount.hpp"
+#include "devices/game/gamecontroller.hpp"
+#include "Module_ID.hpp"
 
 static void pushMenuEvent(Sint32 code) {
 	SDL_Event event = {};
@@ -76,6 +78,25 @@ bool MenuInterface::getSleepMode() {
 
 bool MenuInterface::isEmulationRunning() {
 	return computer_ != nullptr;
+}
+
+bool MenuInterface::isPaused() {
+	return computer_ && computer_->execution_mode == EXEC_PAUSED;
+}
+
+void MenuInterface::setControllerMode(int mode) {
+	switch (mode) {
+		case JOYSTICK_APPLE_GAMEPAD: pushMenuEvent(MENU_CONTROLLER_GAMEPAD); break;
+		case JOYSTICK_APPLE_MOUSE:   pushMenuEvent(MENU_CONTROLLER_MOUSE);   break;
+		case JOYSTICK_ATARI_DPAD:    pushMenuEvent(MENU_CONTROLLER_JOYPORT); break;
+	}
+}
+
+int MenuInterface::getCurrentControllerMode() {
+	if (!computer_) return JOYSTICK_APPLE_GAMEPAD;
+	gamec_state_t *gc = (gamec_state_t *)computer_->get_module_state(MODULE_GAMECONTROLLER);
+	if (!gc) return JOYSTICK_APPLE_GAMEPAD;
+	return (int)get_joystick_mode(gc);
 }
 
 std::vector<MenuDriveInfo> MenuInterface::getDriveList() {

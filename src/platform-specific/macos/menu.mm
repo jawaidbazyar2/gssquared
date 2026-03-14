@@ -106,6 +106,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)speed7_1:(id)sender;
 - (void)speed14_3:(id)sender;
 - (void)toggleSleepMode:(id)sender;
+- (void)controllerMode:(id)sender;
 - (void)monitorComposite:(id)sender;
 - (void)monitorGSRGB:(id)sender;
 - (void)monitorMonoGreen:(id)sender;
@@ -136,6 +137,13 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	if (menuItem.action == @selector(appQuit:)) {
 		return !getMenuInterface()->isEmulationRunning();
 	}
+	if (menuItem.action == @selector(machinePauseResume:)) {
+		[menuItem setState:getMenuInterface()->isPaused() ? NSControlStateValueOn : NSControlStateValueOff];
+	}
+	if (menuItem.action == @selector(controllerMode:)) {
+		int current = getMenuInterface()->getCurrentControllerMode();
+		[menuItem setState:([menuItem tag] == current) ? NSControlStateValueOn : NSControlStateValueOff];
+	}
 	// All other items (File, Edit, Machine, Settings, Display) require emulation
 	return getMenuInterface()->isEmulationRunning();
 }
@@ -151,6 +159,11 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)speed14_3:(id)sender { getMenuInterface()->setSpeed(SPEED_14_3); (void)sender; }
 
 - (void)toggleSleepMode:(id)sender { getMenuInterface()->toggleSleepMode(); (void)sender; }
+
+- (void)controllerMode:(id)sender {
+	NSMenuItem *item = (NSMenuItem *)sender;
+	getMenuInterface()->setControllerMode((int)[item tag]);
+}
 
 - (void)monitorComposite:(id)sender { getMenuInterface()->setMonitor(MONITOR_COMPOSITE); (void)sender; }
 - (void)monitorGSRGB:(id)sender     { getMenuInterface()->setMonitor(MONITOR_GS_RGB); (void)sender; }
@@ -209,13 +222,27 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 }
 @end
 
+@interface ControllerMenuDelegate : NSObject <NSMenuDelegate>
+@end
+
+@implementation ControllerMenuDelegate
+- (void)menuNeedsUpdate:(NSMenu *)menu {
+	int current = getMenuInterface()->getCurrentControllerMode();
+	for (NSMenuItem *item in [menu itemArray]) {
+		[item setState:([item tag] == current) ? NSControlStateValueOn : NSControlStateValueOff];
+	}
+}
+@end
+
 @class DrivesMenuDelegate;
+@class ControllerMenuDelegate;
 
 static MenuActionHandler *sMenuHandler = nil;
 static SpeedMenuDelegate *sSpeedMenuDelegate = nil;
 static SettingsMenuDelegate *sSettingsMenuDelegate = nil;
 static MonitorMenuDelegate *sMonitorMenuDelegate = nil;
 static DrivesMenuDelegate *sDrivesMenuDelegate = nil;
+static ControllerMenuDelegate *sControllerMenuDelegate = nil;
 
 @interface DrivesMenuDelegate : NSObject <NSMenuDelegate>
 @end
@@ -269,6 +296,7 @@ static NSMenu *addMenu(NSString *title) {
 static void setupMenus(void) {
 	sMenuHandler = [[MenuActionHandler alloc] init];
 	sDrivesMenuDelegate = [[DrivesMenuDelegate alloc] init];
+	sControllerMenuDelegate = [[ControllerMenuDelegate alloc] init];
 
 	// Remove SDL's default menus so we can replace them with our own
 	NSMenu *mainMenu = [NSApp mainMenu];
@@ -417,6 +445,33 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[speedMenuItem setSubmenu:speedMenu];
 	[settingsMenu addItem:speedMenuItem];
+
+	// Game Controller submenu
+	NSMenu *controllerMenu = [[[NSMenu alloc]
+		initWithTitle:NSLocalizedString(@"Game Controller", nil)] autorelease];
+	[controllerMenu setDelegate:sControllerMenuDelegate];
+
+	struct { NSString *title; NSInteger tag; } controllerItems[] = {
+		{ @"Joystick - Gamepad",          0 },  // JOYSTICK_APPLE_GAMEPAD
+		{ @"Joystick - Mouse",            1 },  // JOYSTICK_APPLE_MOUSE
+		{ @"Sirius / Atari Joyport",      2 },  // JOYSTICK_ATARI_DPAD
+	};
+	for (auto &ci : controllerItems) {
+		NSMenuItem *item = [[[NSMenuItem alloc]
+			initWithTitle:ci.title
+			       action:@selector(controllerMode:)
+			keyEquivalent:@""] autorelease];
+		[item setTarget:sMenuHandler];
+		[item setTag:ci.tag];
+		[controllerMenu addItem:item];
+	}
+
+	NSMenuItem *controllerMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Game Controller", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[controllerMenuItem setSubmenu:controllerMenu];
+	[settingsMenu addItem:controllerMenuItem];
 
 	NSMenuItem *sleepItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Sleep / Busy Wait", nil)

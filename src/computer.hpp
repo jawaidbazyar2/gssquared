@@ -32,6 +32,7 @@ class ResetController;
 enum execution_modes_t {
     EXEC_NORMAL = 0,
     EXEC_STEP_INTO,
+    EXEC_PAUSED,
     //EXEC_STEP_OVER // no longer used?
 };
 

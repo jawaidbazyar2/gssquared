@@ -18,6 +18,7 @@
 #include "gs2.hpp"
 #include "platform-specific/menu.h"
 #include "devices/keyboard/keyboard.hpp"
+#include "devices/game/gamecontroller.hpp"
 #include "util/InterruptController.hpp"
 #include "util/ResetController.hpp"
 #include "util/DebugHandlerIDs.hpp"
@@ -110,8 +111,10 @@ computer_t::computer_t(NClockII *clock) {
                 reset(false);
                 return true;
             case MENU_MACHINE_RESTART:
+                reset(true);
                 return true;
             case MENU_MACHINE_PAUSE_RESUME:
+                execution_mode = (execution_mode == EXEC_PAUSED) ? EXEC_NORMAL : EXEC_PAUSED;
                 return true;
             case MENU_MACHINE_CAPTURE_MOUSE:
                 video_system->display_capture_mouse_message(true);
@@ -171,6 +174,18 @@ computer_t::computer_t(NClockII *clock) {
             case MENU_OPEN_DEBUG_WINDOW:
                 debug_window->set_open();
                 return true;
+            case MENU_CONTROLLER_GAMEPAD:
+            case MENU_CONTROLLER_MOUSE:
+            case MENU_CONTROLLER_JOYPORT: {
+                gamec_state_t *gc = (gamec_state_t *)get_module_state(MODULE_GAMECONTROLLER);
+                if (gc) {
+                    joystick_mode_t mode = (event.user.code == MENU_CONTROLLER_GAMEPAD) ? JOYSTICK_APPLE_GAMEPAD
+                                        : (event.user.code == MENU_CONTROLLER_MOUSE)   ? JOYSTICK_APPLE_MOUSE
+                                                                                        : JOYSTICK_ATARI_DPAD;
+                    set_joystick_mode(gc, mode);
+                }
+                return true;
+            }
         }
         return false;
     });

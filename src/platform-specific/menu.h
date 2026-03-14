@@ -28,6 +28,10 @@ enum MenuEventCode {
 
 	MENU_DISK_TOGGLE = 600,  // user.data1 = storage_key_t cast to void*
 
+	MENU_CONTROLLER_GAMEPAD = 700,
+	MENU_CONTROLLER_MOUSE,
+	MENU_CONTROLLER_JOYPORT,
+
 };
 
 typedef SDL_AppResult (*MenuIterateCallback)(void *appstate);

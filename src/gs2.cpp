@@ -261,6 +261,10 @@ bool run_one_frame(computer_t *computer) {
 
     uint64_t c14M_per_frame = clock->get_c14m_per_frame();
 
+    if (computer->execution_mode == EXEC_PAUSED) {
+        return true;
+    }
+
     if (computer->speed_shift) {
         computer->speed_shift = false;
 
