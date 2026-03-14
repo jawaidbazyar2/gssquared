@@ -86,7 +86,7 @@ static  platform_info platforms[] = {
         "Apple IIe Enhanced",   
         "apple2e_enh", 
         PROCESSOR_65C02, 
-        0xC7C9C7FF,
+        0xd5d5b4FF,
         Badge_IIEEnh,
         CLOCK_1_024MHZ,
         MMU_MMU_IIE,

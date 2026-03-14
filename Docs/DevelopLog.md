@@ -10747,10 +10747,25 @@ If I do in this sequence instead:
 that works.
 the ctrl-reset is patching something back in for the control panel interrupt handler that, perhaps, PD1.1.1 overwrites? it didn't know anything about the GS..
 ah! On RealGS, after booting adbtest/pd1.1.1, it ignores my ctrl-oa-esc too! But, Ctrl-Reset doesn't give me the error. So, ctrl-reset is doing something extra special like clearing the buffer, clearing the interrupt status, etc, on RealGS, but not in GS2.
-The ADB Micro is SO COMPLEX.
+The ADB Micro is SO COMPLEX. OK, I clear the mouse data full, kbd register full and data reg full flags on a reset, and this now seems to be behaving.
 
 cleaning up the ADBMicro code some, since we no longer allow any autorepeat chars through, there are a bunch of dead conditionals.
 Trying to figure out where to place the (extra?) code to update the modifiers in SRQ mode. Presumably, where it reads / maps a keystroke? Hmm.
 we're now getting a reset through to the wolf srq routine but we are crashing into the monitor instead of doing resetty things. I hacked at this until resets got through as expected. FIXED.
 
-So, no, the color value reader phone app is not good.
+So, no, the color value reader phone app is not good. But did some research and have some passable color choices for the cases. Also redid the GS badge, much better.
+https://bzotto.medium.com/apple-beige-revisited-b08702b98175
+I am thinking of a different color for SelectSystem than motherboard green, which is a little hard to read on the IIgs badge. 
+
+Outstanding bugs:
+textfunk timing wrong
+ensoniq slow interrupts
+One-second interrupts need to be based on the 14.318 timer, synced to the realtime clock.
+
+Features pending:
+3.5" SmartPort Floppy
+Multi-volume Hard Drive
+ImageWriter printer
+
+User Interface stuff:
+lots of buttons

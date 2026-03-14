@@ -407,12 +407,10 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     discard_btn->size(100, 30);
     cancel_btn->size(100, 30);
 
-    save_btn->on_click(
-        [this](const SDL_Event& event) -> bool {
-            modal_diskii_click(new diskii_modal_callback_data_t{this, diskii_save_con, 1});
-            return true;
-        }
-    );
+    save_btn->on_click([this](const SDL_Event& event) -> bool {
+        modal_diskii_click(new diskii_modal_callback_data_t{this, diskii_save_con, 1});
+        return true;
+    });
     discard_btn->on_click([this](const SDL_Event& event) -> bool {
         modal_diskii_click(new diskii_modal_callback_data_t{this, diskii_save_con, 3});
         return true;
@@ -512,7 +510,8 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     }
 
     system_config = computer->get_system();
-    system_badge = new Button_t(&ui_ctx, get_platform(system_config->platform_id)->image_id, SB);
+    //system_badge = new Button_t(&ui_ctx, get_platform(system_config->platform_id)->image_id, SB);
+    system_badge = new Button_t(&ui_ctx, computer->platform->image_id, SB);
     system_badge->set_position(30, 65);
 
     status_message = new StatusMessage_t(&ui_ctx);
@@ -680,7 +679,8 @@ void OSD::render() {
         // Draw CP background with some opacity
         SDL_FRect rect = {0, 50, (float)(window_w-100), (float)(window_h-100)};
         //ui_ctx.fill_rect(rect, 0xFFFFFFE0);
-        ui_ctx.fill_rect(rect, get_platform(system_config->platform_id)->case_color & 0xFFFFFF00 | 0xE0);
+        //ui_ctx.fill_rect(rect, get_platform(system_config->platform_id)->case_color & 0xFFFFFF00 | 0xE0);
+        ui_ctx.fill_rect(rect, computer->platform->case_color & 0xFFFFFF00 | 0xE0);
       
         /* ----- */
 

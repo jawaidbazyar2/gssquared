@@ -48,7 +48,7 @@
 
 ## Release 0.7.1
 
-[ ] Maintenance release: bug fixes
+[x] Maintenance release: bug fixes
 [x] More visual/sound effects for broader class of disks
 [x] Display AppleDisk drives on GS  
 [x] IWM 5.25
@@ -62,3 +62,5 @@ Primary Focus: UI
 [ ] Can make custom hw config. (Click "+ Custom").
 [ ] put "modified" and "write protected" indicator of some kind on the disk icons.  
 [ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  
+[ ] Add buttons for step/run in the debugger
+[ ] IWM 3.5
