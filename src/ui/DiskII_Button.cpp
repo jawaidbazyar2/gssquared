@@ -58,21 +58,21 @@ void DiskII_Button_t::render() {
     if (status.motor_on) aa->draw(DiskII_DriveLightOn, tp.x + cp.x + 30, tp.y + cp.y + 69);
     if (status.is_write_protected) aa->draw(WriteProtected, tp.x + cp.x + 145, tp.y + cp.y + 4 );
 
-    char text[32];
-    snprintf(text, sizeof(text), "Slot %u", key.slot);
-    ctx->debug_text(text, tp.x + cp.x + 62, tp.y + cp.y + 84, 0xFFFFFFFF);
-
     if (/* is_hovering &&  */!status.filename.empty()) {
         float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
         SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 36, text_width+10, 16};
-        ctx->fill_rect(rect, 0x8080FF80);
+        ctx->fill_rect(rect, 0x8080FF60);
         ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 40, 0xFFFFFFFF);
     }
+
+    char text[32];
     if (status.is_mounted && status.motor_on) {
         // if mounted and hovering, show the track number over the drive
-        char text[32];
-        snprintf(text, sizeof(text), "Tr %d", status.position / 2);
-        ctx->debug_text(text, tp.x + cp.x + 68, tp.y + cp.y + 18, 0xFFFFFFFF);
+        snprintf(text, sizeof(text), "%d/%d %2d", key.slot, key.drive+1, status.position / 2);
+    } else {
+        snprintf(text, sizeof(text), "%d/%d", key.slot, key.drive+1);
     }
+    float text_width = (strlen(text) * 8.0);
+    ctx->debug_text(text, tp.x + cp.x + 88 - (text_width/2), tp.y + cp.y + 84, 0xFFFFFFFF);
 }
