@@ -206,6 +206,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderDebugText(as->renderer, 10, 60, buf);
     draw_controls(as->renderer);
     
+    SDL_Time time;
+    SDL_GetCurrentTime(&time);
+    snprintf(buf, sizeof(buf), "Time: %08llu\n", time);
+    SDL_RenderDebugText(as->renderer, 10, 80, buf);
+
     rect_pos += rect_dir;
     if (rect_pos > 60 || rect_pos < 0) {
         rect_dir = -rect_dir;
