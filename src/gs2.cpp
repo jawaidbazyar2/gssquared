@@ -182,6 +182,8 @@ void frame_video_update(computer_t *computer, cpu_state *cpu, bool force_full_fr
 
 void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per_frame)
     /* uint64_t frame_count) */ {
+    if (gs2_app_values.modal_tracking) return;
+
     uint64_t wakeup_time = last_cycle_time + ns_per_frame; /*  + (frame_count & 1); */ // even frames have 16688154, odd frames have 16688154 + 1
 
     // sleep out the rest of this frame.
@@ -916,7 +918,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 }
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-    (void)result;
+    //(void)result;
     GS2AppState *state = (GS2AppState *)appstate;
     if (!state) return;
 

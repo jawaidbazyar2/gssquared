@@ -36,6 +36,7 @@ typedef struct gs2_app_t {
    /*  bool disk_accelerator = false; */
     bool sleep_mode = false;
     uint32_t menu_event_type = 0;
+    bool modal_tracking = false;  // true while macOS menu/resize modal loop owns the run loop
 } gs2_app_t;
 
 extern gs2_app_t gs2_app_values;
