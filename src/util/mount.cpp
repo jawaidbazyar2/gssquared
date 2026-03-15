@@ -83,7 +83,7 @@ bool Mounts::unmount_media(storage_key_t key, unmount_action_t action) {
 drive_status_t Mounts::media_status(storage_key_t key) {
     auto it = storage_devices.find(key);
     if (it == storage_devices.end()) {
-        return {false, nullptr, false, 0, false};
+        return {false, nullptr, false, 0, false, false};
     }
     return it->second.device->status(key);
 }

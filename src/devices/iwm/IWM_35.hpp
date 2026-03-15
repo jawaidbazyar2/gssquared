@@ -39,7 +39,7 @@ class IWM_Drive_35 : public IWM_Drive {
         
         drive_status_t status(storage_key_t key) override {
             // TODO: implement 3.5" status
-            return {false, nullptr, false, 0, false};
+            return {false, nullptr, false, 0, false, false};
         }
 };
 

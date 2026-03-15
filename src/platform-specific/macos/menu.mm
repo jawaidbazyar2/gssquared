@@ -6,6 +6,7 @@
 
 #include "util/MenuInterface.h"
 #include "platform-specific/menu.h"
+#include "gs2.hpp"
 
 /* ========================================================================
    Menu Tracking and Resize Tracking Helpers
@@ -29,6 +30,7 @@ static NSTimer *s_resizeTrackingTimer = nil;
 @implementation MenuTrackingHelper
 + (void)menuDidBeginTracking:(NSNotification *)notification {
 	if (s_iterateCallback && !s_menuTrackingTimer) {
+		gs2_app_values.modal_tracking = true;
 		s_menuTrackingTimer = [NSTimer timerWithTimeInterval:1.0/59.9226
 		                                             target:self
 		                                           selector:@selector(timerFired:)
@@ -41,6 +43,7 @@ static NSTimer *s_resizeTrackingTimer = nil;
 + (void)menuDidEndTracking:(NSNotification *)notification {
 	[s_menuTrackingTimer invalidate];
 	s_menuTrackingTimer = nil;
+	gs2_app_values.modal_tracking = false;
 }
 
 + (void)timerFired:(NSTimer *)timer {
@@ -59,7 +62,8 @@ static NSTimer *s_resizeTrackingTimer = nil;
 @implementation ResizeTrackingHelper
 + (void)windowWillStartLiveResize:(NSNotification *)notification {
 	if (s_iterateCallback && !s_resizeTrackingTimer) {
-		s_resizeTrackingTimer = [NSTimer timerWithTimeInterval:1.0/60.0
+		gs2_app_values.modal_tracking = true;
+		s_resizeTrackingTimer = [NSTimer timerWithTimeInterval:1.0/59.9226
 		                                               target:self
 		                                             selector:@selector(timerFired:)
 		                                             userInfo:nil
@@ -71,6 +75,7 @@ static NSTimer *s_resizeTrackingTimer = nil;
 + (void)windowDidEndLiveResize:(NSNotification *)notification {
 	[s_resizeTrackingTimer invalidate];
 	s_resizeTrackingTimer = nil;
+	gs2_app_values.modal_tracking = false;
 }
 
 + (void)timerFired:(NSTimer *)timer {
@@ -271,6 +276,8 @@ static ControllerMenuDelegate *sControllerMenuDelegate = nil;
 			size_t slash = fname.rfind('/');
 			if (slash != std::string::npos) fname = fname.substr(slash + 1);
 			label += ": " + fname;
+			if (info.is_modified) label += " *";
+			if (info.is_write_protected) label += " 🔒";
 		} else {
 			label += ": (empty)";
 		}

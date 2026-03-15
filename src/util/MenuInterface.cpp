@@ -105,9 +105,11 @@ std::vector<MenuDriveInfo> MenuInterface::getDriveList() {
 
 	for (const drive_info_t &info : computer_->mounts->get_all_drives()) {
 		MenuDriveInfo mdi;
-		mdi.key        = info.key;
-		mdi.is_mounted = info.status.is_mounted;
-		mdi.filename   = info.status.filename;
+		mdi.key               = info.key;
+		mdi.is_mounted        = info.status.is_mounted;
+		mdi.is_modified       = info.status.is_modified;
+		mdi.is_write_protected = info.status.is_write_protected;
+		mdi.filename          = info.status.filename;
 		result.push_back(mdi);
 	}
 	return result;

@@ -8,5 +8,6 @@ struct drive_status_t {
     bool motor_on;
     int position;
     bool is_modified;
+    bool is_write_protected;
 };
 

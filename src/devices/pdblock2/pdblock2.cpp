@@ -52,7 +52,7 @@ drive_status_t pdblock2_osd_status(pdblock2_data *pdblock_d, storage_key_t key) 
         mounted = true;
     }
 
-    return {mounted, fname, motor, seldrive.last_block_accessed};
+    return {mounted, fname, motor, seldrive.last_block_accessed, seldrive.media->write_protected};
 }
 
 uint8_t pdblock2_status(pdblock2_data *pdblock_d, uint8_t drive) {

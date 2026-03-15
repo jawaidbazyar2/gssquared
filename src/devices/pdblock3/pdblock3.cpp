@@ -537,7 +537,7 @@ public:
     }
 
     drive_status_t status(storage_key_t key) {
-        if (key.drive >= PDB3_MAX_UNITS) return {false, "", false, 0, false};
+        if (key.drive >= PDB3_MAX_UNITS || drives[key.drive].media == nullptr) return {false, "", false, 0, false, false};
         media_t seldrive = drives[key.drive];
 
         bool motor = false;
@@ -553,8 +553,8 @@ public:
             fname = seldrive.media->filestub;
             mounted = true;
         }
-
-        return {mounted, fname, motor, seldrive.last_block_accessed};
+        
+        return {mounted, fname, motor, seldrive.last_block_accessed, seldrive.media->write_protected};
     }
 
     void print_cmdbuffer() {

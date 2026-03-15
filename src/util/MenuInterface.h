@@ -7,6 +7,8 @@
 struct MenuDriveInfo {
     storage_key_t key;
     bool          is_mounted;
+    bool          is_modified;
+    bool          is_write_protected;
     std::string   filename;
 };
 
