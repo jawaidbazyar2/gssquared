@@ -48,9 +48,9 @@ void Unidisk_Button_t::render() {
  
     if (status.motor_on) aa->draw(Unidisk_Light, tp.x + cp.x, tp.y + cp.y + 30);
 
-    char text[32];
-    snprintf(text, sizeof(text), "Slot %u", key.slot);
-    ctx->debug_text(text, tp.x + cp.x + 62, tp.y + cp.y + 75, 0x000000FF);
+    //char text[32];
+    //snprintf(text, sizeof(text), "Slot %u", key.slot);
+    //ctx->debug_text(text, tp.x + cp.x + 62, tp.y + cp.y + 75, 0x000000FF);
     
     if (/* is_hovering &&  */!status.filename.empty()) {
         float text_width = (float)(status.filename.length() * 8);
@@ -59,4 +59,14 @@ void Unidisk_Button_t::render() {
         ctx->fill_rect(rect, 0x8080FF80);
         ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 44, 0xFFFFFFFF);
     }
+
+    char text[32];
+    if (status.is_mounted && status.motor_on) {
+        // if mounted and hovering, show the track number over the drive
+        snprintf(text, sizeof(text), "%d/%d %04X", key.slot, key.drive+1, status.position / 2);
+    } else {
+        snprintf(text, sizeof(text), "%d/%d", key.slot, key.drive+1);
+    }
+    float text_width = (strlen(text) * 8.0);
+    ctx->debug_text(text, tp.x + cp.x + 88 - (text_width/2), tp.y + cp.y + 75, 0x000000FF);
 }
