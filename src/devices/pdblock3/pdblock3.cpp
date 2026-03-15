@@ -40,6 +40,7 @@ class PDBlock3 : public StorageDevice {
 private:
     MMU *mmu;
     pdblock_cmd_buffer cmd_buffer;
+    bool disk_switched[PDB3_MAX_UNITS];
     media_t drives[PDB3_MAX_UNITS];
     uint8_t _slot;
 
@@ -48,6 +49,7 @@ public:
         for (int j = 0; j < PDB3_MAX_UNITS; j++) {
             drives[j].file = nullptr;
             drives[j].media = nullptr;
+            disk_switched[j] = false;
         }
         cmd_buffer.index = 0;
         cmd_buffer.error = 0x00;
@@ -213,6 +215,10 @@ public:
                                 }
                                 bool wp = drives[cmdlist.unit-1].media->write_protected;
                                 s.status = wp ? 0b1011'0100 : 0b1111'0000;
+                                if (disk_switched[cmdlist.unit-1]) {
+                                    s.status |= 0b0000'0001; // disk switched
+                                    disk_switched[cmdlist.unit-1] = false;
+                                }
                                 s.blk_count_0 = blkcount & 0xFF;
                                 s.blk_count_1 = (blkcount >> 8) & 0xFF;
                                 s.blk_count_2 = (blkcount >> 16) & 0xFF;
@@ -239,6 +245,10 @@ public:
                             }
                             bool wp = drives[cmdlist.unit-1].media->write_protected;
                             s.status = wp ? 0b1011'0100 : 0b1111'0000;
+                            if (disk_switched[cmdlist.unit-1]) {
+                                s.status |= 0b0000'0001; // disk switched
+                                disk_switched[cmdlist.unit-1] = false;
+                            }
                             s.blk_count_0 = blkcount & 0xFF;
                             s.blk_count_1 = (blkcount >> 8) & 0xFF;
                             s.blk_count_2 = (blkcount >> 16) & 0xFF;
@@ -248,8 +258,7 @@ public:
                             memcpy(s.id_str, "PDBLOCK3        ", 16);
                             s.id_str[8] = 'A' + cmdlist.unit - 1;
                             s.device_type = 0x02; // nonremovable hard disk
-                            //s.device_subtype = 0b0010'0000; // supports extended smartport = no; no disk-switch errors; no removable media
-                            s.device_subtype = 0x80;
+                            s.device_subtype = 0b1100'0000; // extended smartport = yes; disk-switch errors = yes
                             s.version_1 = 0x03; // version 3
                             s.version_0 = 0x00; // .0
                             
@@ -350,6 +359,10 @@ public:
                                 }
                                 bool wp = drives[cmdlist.unit-1].media->write_protected;
                                 s.status = wp ? 0b1011'0100 : 0b1111'0000;
+                                if (disk_switched[cmdlist.unit-1]) {
+                                    s.status |= 0b0000'0001; // disk switched
+                                    disk_switched[cmdlist.unit-1] = false;
+                                }
                                 s.blk_count_0 = blkcount & 0xFF;
                                 s.blk_count_1 = (blkcount >> 8) & 0xFF;
                                 s.blk_count_2 = (blkcount >> 16) & 0xFF;
@@ -377,6 +390,10 @@ public:
                             }
                             bool wp = drives[cmdlist.unit-1].media->write_protected;
                             s.status = wp ? 0b1011'0100 : 0b1111'0000;
+                            if (disk_switched[cmdlist.unit-1]) {
+                                s.status |= 0b0000'0001; // disk switched
+                                disk_switched[cmdlist.unit-1] = false;
+                            }
                             s.blk_count_0 = blkcount & 0xFF;
                             s.blk_count_1 = (blkcount >> 8) & 0xFF;
                             s.blk_count_2 = (blkcount >> 16) & 0xFF;
@@ -387,8 +404,7 @@ public:
                             memcpy(s.id_str, "PDBLOCK3        ", 16);
                             s.id_str[8] = 'A' + cmdlist.unit - 1;
                             s.device_type = 0x02; // nonremovable hard disk
-                            //s.device_subtype = 0b0010'0000; // supports extended smartport = no; no disk-switch errors; no removable media
-                            s.device_subtype = 0x80; // "hard disk supporting extended calls" 
+                            s.device_subtype = 0b1100'0000; // "hard disk supporting extended calls" = yes; disk-switch errors = yes
                             s.version_1 = 0x03; // version 3
                             s.version_0 = 0x00; // .0
                             
@@ -486,6 +502,7 @@ public:
                 cmd_buffer.error = PD_ERROR_DEVICE_OFFLINE;
                 return;
             }
+            // TODO: check and handle disk switched? 
             cmd_buffer.error = 0x00;
             cmd_buffer.status1 = media->block_count & 0xFF;
             cmd_buffer.status2 = (media->block_count >> 8) & 0xFF;
@@ -519,6 +536,7 @@ public:
         }
         drives[key.drive].file = fp;
         drives[key.drive].media = media;
+        disk_switched[key.drive] = true;
         return true;
     }
     
@@ -528,6 +546,7 @@ public:
             fclose(drives[key.drive].file);
             drives[key.drive].file = nullptr;
             drives[key.drive].media = nullptr;
+            //disk_switched[key.drive] = false; // no change here..
         }
         return true;
     }
