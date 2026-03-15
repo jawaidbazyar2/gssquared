@@ -56,6 +56,7 @@ void DiskII_Button_t::render() {
     else aa->draw(DiskII_Drive2, tp.x + cp.x + 4, tp.y + cp.y + 4);
 
     if (status.motor_on) aa->draw(DiskII_DriveLightOn, tp.x + cp.x + 30, tp.y + cp.y + 69);
+    if (status.is_write_protected) aa->draw(WriteProtected, tp.x + cp.x + 145, tp.y + cp.y + 4 );
 
     char text[32];
     snprintf(text, sizeof(text), "Slot %u", key.slot);
@@ -72,6 +73,6 @@ void DiskII_Button_t::render() {
         // if mounted and hovering, show the track number over the drive
         char text[32];
         snprintf(text, sizeof(text), "Tr %d", status.position / 2);
-        ctx->debug_text(text, tp.x + cp.x + 68, tp.y + cp.y + 28, 0xFFFFFFFF);
+        ctx->debug_text(text, tp.x + cp.x + 68, tp.y + cp.y + 18, 0xFFFFFFFF);
     }
 }
