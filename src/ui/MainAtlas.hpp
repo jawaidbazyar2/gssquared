@@ -49,6 +49,7 @@ enum MainAtlas {
     Badge_IIGS,
     AppleDisk_525_Open,
     AppleDisk_525_Closed,
+    WriteProtected,
     MainAtlas_count
 };
 
