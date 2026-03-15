@@ -10779,3 +10779,8 @@ ok Clod did a reasonable job getting menus for drive media mount/unmount, howeve
 
 MenuInterface.cpp is relying on a bunch of those, and should probably have those injected instead?
 it's sort of right, that isn't really part of Computer.
+
+when holding a menu down on the mac, the Idle percent goes nuts, pressing causes sometimes 20 slips, and releasing causes another couple, and this interferes with the audio stuff. So something isn't quite right with the timer. When we're running on the timer we should not -also- sleep, right? So we're doing too many frames.. ok I have a thing in now that purports to not sleep during menu time. The idle calculation is bonkers but that might be because we pull the current time right after sleep for -why?-.
+
+I now append * to the menu disk menu if a disk image is modified. however, I'm not sure what to put on the drive itself.
+I added a write protect icon, which is a lock, which makes some sense, however, it's a little big at 30x30. I guess I'll do 25x25.
