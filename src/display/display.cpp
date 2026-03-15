@@ -35,6 +35,7 @@
 #include "devices/displaypp/VideoScanGenerator.hpp"
 #include "mbus/MessageBus.hpp"
 #include "mbus/KeyboardMessage.hpp"
+#include "util/EventTimer.hpp"
 
 #include "devices/displaypp/VideoScanGenerator.cpp"
 #include "devices/displaypp/VideoScannerIIgs.hpp"
@@ -1180,12 +1181,6 @@ void scanner_iigs_handler(void *context, VideoScannerEvent event) {
             ds->f_vblint_asserted = true;
             update_megaii_interrupt(ds, true);
             
-            // every 60 frames, also assert 1 sec
-            if (++ds->onesec_counter == 60) {
-                ds->f_onesec_asserted = true; // only assert if enabled.
-                ds->onesec_counter = 0; // kinda need to reset the counter bro.
-                update_vgc_interrupt(ds, true);
-            }
             break;
         case VS_EVENT_QTR:
             // every 16 frames, also assert 0.25 sec
@@ -1199,8 +1194,25 @@ void scanner_iigs_handler(void *context, VideoScannerEvent event) {
             assert(false && "Unhandled VideoScannerEvent in scanner_iigs_handler");
             break;
     }
+}
 
+/*
+ in a real IIgs, the one second trigger comes out of the realtime clock, on UG3.1 to UH2.57.
+ This is probably a signal that ticks high for a bit when the RTC ticks over to a new second,
+ so the IRQ in VGC for 1 second is edge triggered low to hi, which is why there is no "reset"
+ for this IRQ source.
 
+ This routine could check for skew and adjust the schedule accordingly, but that is not implemented
+ currently.
+*/
+void rtc_pram_1sec_interrupt(uint64_t instanceID, void *context) {
+    display_state_t *ds = (display_state_t *)context;
+    // throw interrupt
+    ds->f_onesec_asserted = true;
+    update_vgc_interrupt(ds, true);
+    // reschedule ourselves for 1 second.
+    uint64_t trigger_cycle = ds->clock->get_c14m() + 14318180;
+    ds->computer->event_timer->scheduleEvent(trigger_cycle, rtc_pram_1sec_interrupt, instanceID, ds);
 }
 
 void display_write_c032(void *context, uint32_t address, uint8_t value) {
@@ -1503,6 +1515,20 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
             }
             return ret;
         });
+    }
+
+    if (ds->video_scanner_type == Scanner_AppleIIgs) {
+        // For generating the 1sec interrupt, try to sync to real time as close to a 1 second increment as possible,
+        // based on module startup time.
+        SDL_Time time;
+        SDL_GetCurrentTime(&time); // get current time in nanoseconds.
+        uint64_t remain = 1000000000 - (time % 1000000000);
+        // how many nanoseconds is a 14M
+        uint64_t ns_14m = 1000000000 / 14318180;
+        // calculate number of 14M ticks (14318180hz) are in remain nanoseconds
+        uint64_t ticks_14m = remain / ns_14m;
+        // set the 14M timer to the number of ticks
+        computer->event_timer->scheduleEvent(ticks_14m, rtc_pram_1sec_interrupt, 0xFF112200, ds);
     }
     computer->register_debug_display_handler(
         "display",
