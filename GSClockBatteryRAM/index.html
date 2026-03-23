@@ -1,0 +1,3503 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../Thunderclock/">
+      
+      
+        <link rel="next" href="../VideoTerm/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>GS Clock & Battery RAM - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#apple-iigs-clock-and-battery-ram-device" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              GS Clock & Battery RAM
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#control-register-c034" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Control Register - $C034
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-register-c033" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Register - $C033
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cortland-ers-apple-spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cortland ERS (Apple Spec)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#control-register-c034" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Control Register - $C034
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-register-c033" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Register - $C033
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cortland-ers-apple-spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cortland ERS (Apple Spec)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="apple-iigs-clock-and-battery-ram-device">Apple IIgs Clock and Battery RAM Device<a class="headerlink" href="#apple-iigs-clock-and-battery-ram-device" title="Permanent link">&para;</a></h1>
+<p>The Apple IIgs clock device also has "battery-backed parameter RAM" which is I believe 256 bytes of memory kept live by battery. (As opposed to what a modern computer might do with a small flash memory chip).</p>
+<h2 id="control-register-c034">Control Register - $C034<a class="headerlink" href="#control-register-c034" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>start/finished</td>
+<td>1 = read or write begins by setting this to 1. RTC sets back to 0 when data exchange is complete. Program detects end of data exchange by polling this bit to become 0</td>
+</tr>
+<tr>
+<td>6</td>
+<td>read/write</td>
+<td>set this bit to 1 prior to a read; set to 0 prior to a write</td>
+</tr>
+<tr>
+<td>5</td>
+<td>last byte</td>
+<td>set this bit to 1 after the last byte has been read or written. Typically 2 or 3 bytes</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Reserved</td>
+<td>Reserved; do not modify</td>
+</tr>
+<tr>
+<td>3 - 0</td>
+<td>Border Color</td>
+<td>Border Color Register</td>
+</tr>
+</tbody>
+</table>
+<h2 id="data-register-c033">Data Register - $C033<a class="headerlink" href="#data-register-c033" title="Permanent link">&para;</a></h2>
+<p>8 bits</p>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<p>Using toolbox:</p>
+<p>https://groups.google.com/g/comp.sys.apple2/c/FmncxrjEVlw</p>
+<pre><code>Using the IIGS Battery-Backed-Up RAM and Clock From Assembly Language
+
+Neil Parker
+
+npa...@cie.uoregon.edu
+par...@corona.uoregon.edu
+Version 1.00
+January 1994
+
+COPYRIGHT by 1993 Neil Parker
+All Rights Reserved
+
+========
+Abstract
+========
+This technical note discusses how a machine-language programmer can access
+the Apple IIGS battery-backed-up RAM and clock hardware directly, bypassing
+the firmware and system software. The BRAM and clock are normally accessed
+through a set of subroutines in the Miscellaneous Toolset, which is the only
+Apple-supported method accessing them. Direct manipulation of the hardware
+provides access to several features that the Miscelaneous Toolset does not,
+such as the &quot;raw&quot; time and the BRAM write-protect register.
+
+===========
+Terminology
+===========
+
+Terminology:
+Bit 0 The least significant bit in a byte
+Bit 7 The most significant bit in a byte
+BRAM Battery backed-up RAM. Information stored in the
+BRAM is not lost when the IIGS is turned off.
+CLOCKCTL Clock/BRAM protocol control register
+CLOCKDATA Clock/BRAM data register
+
+========================
+Accessing the IIGS Clock
+========================
+The IIGS BRAM/Clock chip seems to be identical to the one documented in
+_The Macintosh Family Hardware Reference_. The BRAM/Clock chip uses a
+simple protocol to transfer data in and out using two memory locations:
+
+ Register Address    Function
+--------- ---------- ------------------------------------
+CLOCKCTL  0xC034     Clock/BRAM control register
+CLOCKDATA 0xC033     Clock/BRAM command and data register
+
+The protocol for a &quot;write&quot; is:
+CLOCKDATA &lt;-- command specifying register to be written
+CLOCKCTL &lt;-- bits to initiate transfer
+CLOCKDATA &lt;-- data to be written
+CLOCKCTL &lt;-- bits to continue transfer
+
+The protocol for a &quot;read&quot; is:
+CLOCKDATA &lt;-- command specifying register to be read
+CLOCKCTL &lt;-- bits to initiate transfer
+CLOCKDATA --&gt; data from BRAM/Clock
+at the conclusion of this sequence, CLOCKDATA contains the desired data.
+
+The available commands are shown in the table:
+
+Comamnd  Access Purpose
+-------- ------ --------------------------------------
+z0000001 R/W    Clock seconds register lo
+z0000101 R/W    Clock seconds register next-to-lo
+z0001001 R/W    Clock seconds register next-to-hi
+z0001101 R/W    Clock seconds register hi
+00110001 W-Only Write to test register Always set bits 6 &amp; 7 to &quot;0&quot;.
+00110101 W-Only Write to write-protect register ## (wrong) Setting bit 7 to &quot;1&quot; locks out further writes to the BRAM/Clock
+z010ab01 R/W    Access BRAM address 100ab
+z1abcd01 R/W    Access BRAM address 0abcd
+z0111abc R/W    Followed by 0defgh00. Access BRAM address abcdefgh
+
+The &quot;Command&quot; column contains entries beginning with an &quot;z&quot;. This letter
+is replaced by a &quot;0&quot; or &quot;1&quot; indicating the desired access type. A value
+of &quot;0&quot; for this bit specifies a write, while a value of &quot;1&quot; for this bit
+specifies a read.
+
+For example, the command to access the low byte of the clock's seconds
+register is &quot;z0000001&quot;. To write a value to this register, write the
+byte &quot;00000001&quot; followed by the new value for the low byte of the seconds
+register. To read the value of the low byte of the clock seconds register,
+write the byte &quot;10000001&quot;, and then read the value from CLOCKDATA.
+
+----------------
+Seconds Register
+----------------
+The four bytes of the seconds register form a 32-bit count of seconds since
+midnight, January 1, 1904. They should always be accessed in lo-to-hi
+order. When reading the clock, the ROM reads all four registers several
+times, until it gets the same value twice in a row. When writing, the ROM
+immediately tests the written value by reading it back -- if the values
+don't match, it tries again.
+
+----------------------------------------
+Test Register and Write-Protect Register
+----------------------------------------
+The test register and the write-protect register are write-only registers.
+Setting the high bit of the write-protect register prevents any of the
+other registers (or BRAM locations) from being written to, and clearing it
+enables writes to the registers and BRAM locations. The two high-order
+bits of the test register are used as control bits during testing, and
+should normally be set to 0 (setting them to anything else interferes with
+normal clock functioning).
+
+I can't find any code in the IIGS ROM that accesses these registers.
+
+(jb) Write Protect: From Cortland manual.
+This is essentially a write-only register.
+Write 1101'010x data to WP register to write protect
+Write 0101'010x data to WP register to remove write protect.
+
+
+
+---------------------
+Battery Ram Locations
+---------------------
+The z010ab01 and z1abcd01 commands are holdovers from the early Macintosh
+days when there were only 20 bytes of BRAM. The IIGS doesn't seem to use
+these functions--it uses the more general z0111abc 0defgh00 command
+instead.
+
+Note that the z0111abc 0defgh00 command is two bytes long. For reading,
+read the data byte after writing the second byte. For writing, write the
+data byte after writing the second byte.
+
+========================
+Reading/Writing the BRAM
+========================
+The CLOCKCTL byte is used to transfer data to and from the BRAM and the
+clock. Only the upper three bits of the CLOCKCTL byte at $C034 are used
+by the BRAM/Clock; the lower five bits contain the current screen border
+and are thus not used by the BRAM/Clock. The bits are organized as:
+7 6 5 4 3 2 1 0
++---+---+---+---+---+---+---+---+
+| S | T | A | Z | B | B | B | B |
++---+---+---+---+---+---+---+---+
+where:
+B Screen Border Color (Unused By BRAM/Clock)
+S Start Transaction
+T Transaction Type (Read/Write)
+A Clock Enable Assert
+Z This bit should always be set to 0
+
+------------------
+Start Transfer Bit
+------------------
+Bit 7 is the &quot;Start Transaction&quot; bit. Writing a &quot;1&quot; to this bit begins a
+read or write transaction. All this means is that the BRAM/Clock begins
+processing the value in CLOCKDATA. When the operation has completed, Bit
+7 will be reset to &quot;0&quot;. Thus, testing this bit allows the programmer to
+determine when an operation has completed.
+
+--------------------
+Transaction Type Bit
+--------------------
+Bit 6 specifies the &quot;Transaction Type&quot; bit, either a read or a write. The
+values and meanings for this bit are shown below:
+0 = Write
+1 = Read
+
+-----------------------
+Clock Enable Assert Bit
+-----------------------
+Bit 5 is the &quot;Clock Enable Assert&quot; bit. All the documentation says this
+bit should be set to &quot;0&quot; before beginning a transfer, and should be set
+back to &quot;1&quot; after the transfer is complete. However, the ROM routines
+do the opposite -- they set the bit to &quot;1&quot; at the beginning of a transfer,
+and &quot;0&quot; when the transfer completes.
+
+--------------
+Remaining Bits
+--------------
+Bit 4 should always be 0. Bits 0-3 have nothing to do with the BRAM/Clock
+-- they control the screen border color.
+
+--------------------
+Writing Data To BRAM
+--------------------
+To write a byte, write the command indicating which location is desired to
+CLOCKDATA. Then set bits 7 and 5 of CLOCKCTL, and clear bit 6 of CLOCKCTL.
+When bit 7 is cleared by the BRAM, CLOCKDATA can be loaded with the data
+value to be written. If you have more data to write from the BRAM, bits 6
+and 5 in CLOCKCTL need not be changed between transfers. After each write,
+clear bit 5.
+
+A write uses the following protocol:
+CLOCKDATA = &quot;write&quot; cmd for desired register or BRAM location
+CLOCKCTL[bit 7] = 1
+CLOCKCTL[bit 6] = 0
+CLOCKCTL[bit 5] = 1
+wait until CLOCKCTL[bit 7] == 0
+if this is a two-byte command (&quot;00111abc 0defgh00&quot;)
+CLOCKDATA = second byte of command
+CLOCKCTL[bit 7] = 1
+CLOCKCTL[bit 6] = 0
+CLOCKCTL[bit 5] = 1
+wait until CLOCKCTL[bit 7] = 0
+end if
+CLOCKDATA = data to be written
+CLOCKCTL[bit 7] = 1
+CLOCKCTL[bit 6] = 0
+CLOCKCTL[bit 5] = 1
+wait until CLOCKCTL[bit 7] == 0
+CLOCKCTL[bit 5] = 0
+
+----------------------
+Reading Data From BRAM
+----------------------
+To read a byte, write the command indicating which location is desired to
+CLOCKDATA. Then set bits 7, 6, and 5 of CLOCKCTL. When bit 7 is cleared
+by the BRAM, CLOCKDATA contains the data value. If you have more data to
+read from the BRAM, bits 6 and 5 in CLOCKCTL need not be changed between
+transfers. After each read, clear bit 5.
+
+The algorithm looks like this:
+CLOCKDATA = &quot;read&quot; cmd for desired register or BRAM location
+CLOCKCTL[bit 7] = 1
+CLOCKCTL[bit 6] = 0
+CLOCKCTL[bit 5] = 1
+wait until CLOCKCTL[bit 7] == 0
+If this is a two-byte command (&quot;10111abc 0defgh00&quot;)
+CLOCKDATA = second byte of &quot;read&quot; command
+CLOCKCTL[bit 7] = 1
+CLOCKCTL[bit 6] = 0
+CLOCKCTL[bit 5] = 1
+wait until CLOCKCTL[bit 7] == 0
+end if
+CLOCKCTL[bit 7] = 1
+CLOCKCTL[bit 6] = 1
+CLOCKCTL[bit 5] = 1
+wait until CLOCKCTL[bit 7] = 0
+result = CLOCKDATA
+CLOCKCTL[bit 5] = 0
+
+------------------
+Computing Checksum
+------------------
+Any change to the BRAM invalidates the checksum unless the programmer
+explicitly recomputes the checksum and stores it in the BRAM. An invalid
+checksum causes the IIGS to reload the BRAM with default values. The
+checksum is a 16-bit number computed by the following algorithm:
+initialize checksum to 0
+start at end of BRAM buffer (BRAM locations $FA and $FB)
+repeat
+rotate checksum left 1 bit
+checksum = checksum + word from buffer
+buffer position = buffer position - 1 byte
+until we reach the beginning of the buffer
+
+The checksum is stored in BRAM bytes $FC (low byte) and $FD (high byte).
+The checksum exclusive-ORed with the constant $AAAA is stored in BRAM bytes
+$FE (low byte) and $FF (high byte).
+
+The source code for computing the BRAM checksum is included in the ROM
+disassembly below.
+
+-------
+Caveats
+-------
+The Macintosh documentation recommends that the last access to the
+BRAM/Clock
+be a write operation, in order to avoid running down the battery. Since the
+IIGS ROM code does not seem to heed this advice it is possible that the IIGS
+hardware makes the final write unnecessary.
+
+Beware of writing directly to the BRAM. The last few bytes of BRAM are
+reserved for a checksum -- if the checksum doesn't match the remaining
+contents of the BRAM, then the IIGS will ignore the entire BRAM contents
+and reset everything to the defaults. The BRAM will also be ignored and
+reset to defaults if any of its values are outside their legal ranges.
+
+======================================
+Appendix A: IIGS ROM Clock Access Code
+======================================
+
+The following code was disassembled from the IIGS ROM code accessing the
+clock and BRAM. This code is for illustrative purposes only, and may
+contain transcription errors.
+
+; Copyright by Apple Computer, Inc.
+; Disassembly by Neil Parker
+; (Warning: There may be some transcription errors below)
+;
+ClockData equ $C033
+ClockCtl equ $C034
+BatteryRAM equ $E102C0 ;Battery RAM buffer
+ClkErr equ $E103E0 ;Clock read error count
+ClkRData equ $E103E1 ;4 bytes--clock read buffer
+ClkWData equ $E103E5 ;4 bytes--clock write buffer
+DBRE1 equ $FFF882 ;Set DBR to $E1
+;
+; Subroutine READTIME, at $FF/B5A0 (ROM 1) or $FF/B45A (ROM 0)
+; Read the time into CLKRDATA
+; Enter in 8-bit native mode
+; Returns carry clear for success, carry set for failure
+;
+; The TOREADTIME vector at $E1/008C jumps to this routine.
+;
+ReadTime php        ;Save interrupt state
+        sei         ;No interrupts allowed
+        phb
+        jsr DBRE1   ;Switch to bank $E1
+        stz |ClkErr ;Start error count at 0
+RTTry   ldy #0      ;Start read count at 0
+RTTry2  inc |ClkErr
+        beq RTFail ;If error count wraps, fail
+        ldx #0      ;Start byte count at 0
+        lda #$FD    ;Command--turns into 10000001 below
+RTByteLp clc
+        adc #4      ;Form next sec reg read command
+        pha         ;Save partial cmd on stack
+        ora #$80    ;Set &quot;read&quot; bit
+        sep #$40    ;Set overflow bit (indicates read command)
+        jsr BatRWAY ;Access register
+        cpy #0      ;First read of regs?
+        bne RTComp  ;If not, compare with previous read
+        sta |ClkRData,X ;1st read, so store it
+        bra RTMatch ;Go prepare for reading next byte
+RTComp cmp |ClkRData,X ;Does this read match last read?
+        beq RTMatch ;If so, go prepare for next byte
+        pla         ;Otherwise discard partial command
+        bra RTTry   ;...and try again
+RTMatch pla ;Get partial cmd
+        inx
+        cpx #4 ;Got all 4 bytes yet?
+        bcc RTByteLp ;If not, go get more
+        tyx ;First read?
+        bne RTGood ;If not, success!
+        iny ;Otherwise indicate 2nd read
+        bra RTTry2 ;...and go read again
+RTFail  plb ;Failure exit--restore old DBR
+SECRTL  plp ;Restore int state
+        sec ;Return failure
+        rtl
+RTGood  plb
+CLCRTL  plp
+        clc ;Return success
+        rtl
+;
+; Subroutine WRITETIME, at $FF/B5E4 (ROM 1) or $FF/B49E (ROM 0)
+; Writes raw time in CLKWDATA to clock chip
+; Enter in 8-bit native mode
+; Returns carry clear for success, set for failure
+;
+; The TOWRITETIME vector at $E1/0088 jumps to this routine.
+;
+WriteTime php ;Save int state
+        sei ;No interrupts allowed
+        lda #0 ;Start error count at 0
+        pha ;Keep error count on stack
+WTTry ldx #0 ;Start byte count at 0
+        lda #$FD ;Cmd--turns into 00000001 below
+WTByteLp clc
+        adc #4 ;Form next write cmd
+        pha ;Save it
+        lda &gt;ClkWData,X ;Get byte to write
+        tay
+        lda 1,S ;Get write cmd
+        jsr BatWAY ;Write the byte
+        pla ;Get write cmd
+        inx
+        cpx #4 ;Done 4 bytes yet?
+        bcc WTByteLp ;If not, go do the next
+        jsl ReadTime ;Read back what we just wrote
+        ldx #3
+WTCmpLp lda &gt;ClkRData,X ;Compare data just read
+        cmp &gt;ClkWData,X ;...to data we wrote
+        bne WTNotSame ;If not the same, go read again
+        dex ;Compared all 4 bytes yet?
+        bpl WTCmpLp ;If not, compare more
+        pla ;Success--discard error count
+        bra CLCRTL ;...and exit with success
+WTNotSame pla ;Get error count
+        dec A
+        bne WTTry ;If not too many errors, try again
+        bra SECRTL ;Otherwise exit with failure
+;
+; Subroutine BCHECKSUM, at $FF/B61D (ROM 1) or $FF/B4D7 (ROM 0)
+; Calculate the checksum of the BRAM
+; Enter with data to be checksummed in BATTERYRAM buffer
+; 8-bit native mode
+; DBR pointing to bank $E1
+; Returns with X=checksum
+; A=checksum EORed with constant $AAAA
+; 16-bit native mode
+; Don't call this routine yourself--it resides in bank $FF, and ends with
+; an RTS, not an RTL. If you need to compute a new BRAM checksum yourself,
+; you should write your own routine that duplicates the functionality of
+; this code.
+;
+BCheckSum ldx #$FA ;Start at end of buffer
+        rep #$20 ;16-bit A-reg, since checksum is 16 bits
+        longa on
+        lda #0 ;Initialize checksum to 0
+BCheck1 rol A
+        adc |BatteryRAM,X ;Add in current word of buffer
+        dex
+        cpx #$FF ;At beginning of buffer yet?
+        bne BCheck1 ;If not, go do more
+        rep #$30
+        longi on
+        tax ;Else save checksum in X
+        eor #$AAAA ;Get complement of checksum in A
+        rts
+        longa off
+        longi off
+;
+; Subroutine BATIO, at $FF/B635 (ROM 1) or $FF/B4EF (ROM 0)
+; Read or write a byte from a BRAM location
+; Enter with A=value to read (if reading)
+; Y=address to read or write
+; Overflow flag= 1 to read or 0 to write
+; 8-bit native mode
+; DBR pointing to bank 0, 1, $E0, or $E1
+; If reading, returns byte read in A reg
+;
+; The READBRAM and WRITEBRAM routines just call this in a loop. Don't
+; try to call it yourself--it resides in bank $FF, and ends with an RTS,
+; not an RTL.
+;
+BatIO pha ;Save byte for writing
+        tya ;Save address to read/write
+        pha
+        and #$E0 ;Work on 1st byte: abcdefgh -&gt; v0111abc
+        lsr A
+        lsr A
+        lsr A
+        lsr A
+        lsr A
+        ora #$38
+        bvc BNoOv
+        ora #$80
+BNoOv xba ;Save 1st byte
+        pla ;Work on 2nd byte: abcdefgh -&gt; 0defgh00
+        and #$1F
+        asl A
+        asl A
+        xba ;Get 1st byte back, save 2nd byte
+        php ;Save overflow bit
+        jsr BatSend ;Send 1st byte to BRAM/Clock
+        xba ;Get 2nd byte
+BDoTrans jsr BatSend ;Send it
+        plp ;Restore overflow bit
+        pla ;Get data to be sent
+        jsr BatSR ;Read or write byte (depending on V bit)
+        pha ;Save data read, if any
+        lda |ClockCtl ;Turn off &quot;clock enable assert&quot; bit
+        and #$DF
+        sta |ClockCtl
+        pla
+        rts
+;
+; BATWAY: Write A-reg, then Y-reg to BRAM/Clock chip
+;
+BatWAY clv ;Force write mode, then fall into...
+;
+; BATRWAY: Write A-reg, then either write Y-reg or read into A-reg
+;
+BatRWAY phy
+        php ;Save overflow bit
+        bra BDoTrans ;Go do the transaction
+;
+; BATSEND: Send A-reg to BRAM/Clock chip
+;
+BatSend clv ;Force write mode, then fall into...
+;
+; BATSR: Send or receive data to/from BRAM/Clock chip
+;
+BatSR sta |ClockData ;Put send data (if any) in data reg
+        lda |ClockCtl ;Get control bits
+        and #$3F ;Done-status=0, R/W=W
+        bvs SRVSet ;Overflow set (read mode)?
+        ora #$A0 ;No: Done-status=1, &quot;assert&quot;=1
+        bra SRDoIt
+SRVSet ora #$E0 ;Yes: Done-status=1, R/W=R, &quot;assert&quot;=1
+SRDoIt sta |ClockCtl ;Perform action
+SRLoop lda |ClockCtl
+        bmi SRLoop ;Wait for action to finish
+        lda |ClockData ;Get data to be read (if any)
+        rts ;Done
+
+==================================
+Appendix B: Battery RAM Memory Map
+==================================
+
+Apple Computer's official position is that NONE of the BRAM is free for
+programmer use; all 256 bytes are used. The table below describes the
+value in each location in the BRAM for ROM 1. Any locations marked
+&quot;Reserved&quot; are reserved by Apple for future use; some of these locations
+may in fact be used by ROM 3 or by GS/OS. Note that the Port 2 values
+at locations $0C through $17 function identically to the Port 1 values
+at locations $00 through $0B and have been omitted for brevity.
+
+Location Contents
+-------- --------------------------------------------------
+$00 Port 1 peripheral
+0 = Printer
+1 = Modem
+2 = Appletalk (ROM 3 only)
+$01 Port 1 line length
+0 = Unlimited
+1 = 40 characters
+2 = 72 characters
+3 = 80 characters
+4 = 132 characters
+$02 Port 1 Delete Line Feed After Carriage Return
+0 = No
+1 = Yes
+$03 Port 1 Add Line Feed After Carriage Return
+0 = No
+1 = Yes
+$04 Port 1 Echo
+0 = Off
+1 = On
+$05 Port 1 Buffering
+0 = Off
+1 = On
+$06 Port 1 Baud Rate
+0 = 50 Baud
+1 = 75 Baud
+2 = 110 Baud
+$D = 9600 Baud
+$E = 19200 Baud
+$07 Port 1 Data/Stop Bits
+0 = 5 Data Bits, 1 Stop Bit
+1 = 5 Data Bits, 2 Stop Bit
+2 = 6 Data Bits, 1 Stop Bit
+3 = 6 Data Bits, 2 Stop Bit
+4 = 7 Data Bits, 1 Stop Bit
+5 = 7 Data Bits, 2 Stop Bit
+6 = 8 Data Bits, 1 Stop Bit
+7 = 8 Data Bits, 2 Stop Bit
+$08 Port 1 Parity
+0 = Odd
+1 = Even
+2 = None
+$09 Port 1 DCD Handshake
+0 = Off
+1 = On
+$0A Port 1 DSR Handshake
+0 = Off
+1 = On
+$0B Port 1 XON/XOFF Handshake
+0 = Off
+1 = On
+
+$0C Port 2 Printer/Modem
+$0D Port 2 Line Length
+$0E Port 2 Delete Line Feed After Carriage Return
+$0F Port 2 Add Line Feed After Carriage Return
+$10 Port 2 Echo
+$11 Port 2 Buffering
+$12 Port 2 Baud rate
+$13 Port 2 Data/Stop bits
+$14 Port 2 Parity
+$15 Port 2 DCD Handshake
+$16 Port 2 DSR Handshake
+$17 Port 2 XON/XOFF Handshake
+
+$18 Display Color/Monochrome
+0 = Color
+1 = Monochrome
+$19 Display 40/80 Columns
+0 = 40 columns
+1 = 80 columns
+$1A Display Text Color
+Color = $0 to $F
+$1B Display Background Color
+Color = $0 to $F
+$1C Display Border Color
+Color = $0 to $F
+$1D 50/60 Hertz
+0 = 60 Hertz
+1 = 50 Hertz
+$1E User Volume
+Volume = $0 to $F ($0 is quietest)
+$1F Bell Pitch
+Pitch = $0 to $F ($0 is lowest)
+$20 System Speed
+0 = Slow
+1 = Fast
+
+$21 Slot 1 Internal/External
+0 = Printer
+1 = Your Card
+$22 Slot 2 Internal/External
+0 = Modem
+1 = Your Card
+$23 Slot 3 Internal/External
+0 = 80-Column Card Firmware
+1 = Your Card
+$24 Slot 4 Internal/External
+0 = Mouse
+1 = Your Card
+$25 Slot 5 Internal/External
+0 = Smartport
+1 = Your Card
+$26 Slot 6 Internal/External
+0 = 5.25 Drive
+1 = Your Card
+$27 Slot 7 Internal/External
+0 = AppleTalk
+1 = Your Card
+$28 Startup Slot
+0 = Scan
+1-7 = Slot Number
+8 = RAM Disk
+9 = ROM Disk
+
+$29 Text Display Language
+$2A Keyboard Language
+$2B Keyboard Buffering
+0 = off
+1 = on
+$2C Keyboard Repeat Speed
+Speed = 0 to 7 (0 is slowest)
+$2D Keyboard Repeat Delay
+0 = shortest delay
+...
+3 = longest delay
+4 = no delay
+Speed = 0 to 4
+$2E Double-Click Time
+0 = longest delay
+...
+4 = shortest delay
+$2F Cursor Flash Rate
+0 = fastest flash rate
+...
+4 = slowest flash rate
+$30 Shift Caps/Lowercase
+0 = No
+1 = Yes
+$31 Fast space/delete Keys
+0 = No
+1 = Yes
+$32 Dual Speed Keys
+0 = No
+1 = Yes
+$33 High Speed Mouse
+0 = No
+1 = Yes
+
+$34 Month/day/year format
+0 = MM/DD/YY
+1 = DD/MM/YY
+2 = YY/MM/DD
+$35 24-hr/AM-PM format
+0 = 12 Hour Format with AM/PM
+1 = 24-Hour format
+$36 Minimum RAM for RAM disk
+0 = None
+$20 = Largest Selectable Size
+$37 Maximum RAM for RAM disk
+0 = None
+$20 = Largest Selectable Size
+
+$38-$40 List of available display languages
+$41-$51 List of available keyboard layouts
+
+$52-$58 Reserved (Maybe Used On ROM 3???)
+$59 Memory Peeker and Visit Monitor CDA settings
+Bit Meaning
+0-6 ???
+7 Install CDAs at boot time
+$5A Keyboard translation setting
+0 = none
+1-$FE = user-defined
+$FF = standard
+$5B CloseView settings
+Bit Meaning
+0-3 magnification
+4 cvUseKeys
+5 cvMagnify
+6 cvInvert
+7 cvEnabled
+$5E Miscellaneous System 6 settings
+Bit Meaning
+0 disable close captioning
+(&quot;visual indication of sounds&quot;)
+1 0 = daylight savings time
+1 = standard time
+2 disable automatic daylight savings time
+3-4 number of menu blinks
+$5F Miscellaneous System 6 settings
+Bit Meaning
+0 Alphabetize DA Menus
+1 Disable Init Icons On Boot
+2 Disable QuickDraw Scanline Interrupts
+3-5 Reserved
+6-7 Set to %10 If This Byte Is Valid
+$60 Scaling For WaitUntil Toolbox Call
+$61 Reserved For Network Medium Selection
+$62 OS For Network Boot
+1 = GS/OS
+2 = ProDOS 8
+$63-$7F Reserved
+$80 AppleTalk Node Number
+$81 GS/OS Cache Size
+0 = Minimum
+1 = 32K
+2 = 64K
+...
+$FE = 8128K
+$82 Reserved for operating system variables
+...
+$A1 Reserved for operating system variables
+$A2 Reserved
+...
+$FB Reserved
+
+$FC Checksum (low byte)
+$FD Checksum (high byte)
+$FE Complement of checksum (low byte)
+$FF Complement of checksum (high byte)
+
+============
+Bibliography
+============
+
+_Inside Macintosh, Volume III_
+Apple Computer, Inc.
+Addison-Wesley
+1985
+Contains a description of the old Mac BRAM/Clock chip (the one with only
+20 bytes of RAM).
+
+_The Macintosh Family Hardware Reference_
+Apple Computer, Inc.
+Addison-Wesley.
+Contains a description of the newer Mac BRAM/Clock chip and the commands
+that it accepts.
+
+_Apple IIGS Hardware Reference_
+Apple Computer, Inc.
+Addison-Wesley.
+1987
+Describes the CLOCKDATA and CLOCKCTL registers.
+
+_Apple IIGS Toolbox Reference: Volume 1_
+Apple Computer, Inc.
+Addison-Wesley.
+1988
+Describes the contents of most of the Battery RAM locations.
+
+_Apple IIGS Technical Reference_
+Michael Fischer.
+McGraw-Hill, Inc.
+1986
+This seems to be the only source that lists the legal values for most of
+the BRAM locations.
+</code></pre>
+<h2 id="cortland-ers-apple-spec">Cortland ERS (Apple Spec)<a class="headerlink" href="#cortland-ers-apple-spec" title="Permanent link">&para;</a></h2>
+<p>https://www.brutaldeluxe.fr/documentation/cortland/v6/3430042B%20Real-Time%20Clock%20ERS%20198411.pdf</p>
+<p>This indicates the bram is not mapped straight through based on the value, but the address pins are mapped in a weird way to support the old "20 byte" version of the RTC chip.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

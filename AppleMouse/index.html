@@ -1,0 +1,3345 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../ProDOS_Block/">
+      
+      
+        <link rel="next" href="../AppleMemoryExpansionCard/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Apple Mouse Card - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#applemouse" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Apple Mouse Card
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#6805" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6805
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6520" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6520
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6520">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cra-and-crb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CRA and CRB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register Access
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#6805" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6805
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6520" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6520
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6520">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cra-and-crb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CRA and CRB
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register Access
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="applemouse">AppleMouse<a class="headerlink" href="#applemouse" title="Permanent link">&para;</a></h1>
+<p>The AppleMouse card is fairly complex considering what it does. It's got an onboard microprocessor (6805), a 6520 chip (according to one thing I read). 6520 is like 6522 without timers.</p>
+<p>The programming references for it specify use of a bunch of standardized firmware vectors. It's got a 2K ROM for C800-CFFF.</p>
+<p>So there are two options: ParaVirtual, or emulate the hardware.</p>
+<p>https://github.com/freitz85/AppleIIMouse/blob/master/AppleMouse.txt</p>
+<pre><code>ClampMouseX -&gt;  W 4 Bytes   LLX, LHX, HLX, HHX
+ClampMouseY -&gt;  W 4 Bytes   LLY, LHY, HLY, HHY
+SetMouse    -&gt;  W 1 Byte    MODE
+ServeMouse  -&gt;  R 1 Byte    STATUS
+ReadMouse   -&gt;  R 6 Bytes   LX, LY, HX, HY, STATUS, MODE
+ClearMouse  -&gt;  W 4 Bytes   LX, LY, HX, HY
+PosMouse    -&gt;  W 4 Bytes   LX, LY, HX, HY
+HomeMouse   -&gt;  R 4 Bytes   LLX, HLX, LLY, HLY
+                W 4 Bytes   LX, LY, HX, HY
+
+A0-A3:
+
+Write:
+0x00    Position:   LX, HX
+0x01                LY, HY
+0x02    BoundaryX:  LLX, LHX
+0x03                HLX, HHX
+0x04    BoundaryY:  LLY, LHY
+0x05                HLY, HHY
+0x06    State:      MODE
+0x07    Set to Input
+
+Read:
+0x08    Position:   LX, HX
+0x09                LY, HY
+0x0a    BoundaryX:  LLX, LHX
+0x0b                HLX, HHX
+0x0c    BoundaryY:  LLY, LHY
+0x0d                HLY, HHY
+0x0e    State:      STATUS
+0x0f    Reset to default
+</code></pre>
+<p>These are 6805 microcontroller register indexes. </p>
+<ul>
+<li>PA: </li>
+</ul>
+<p>PA0-7 on the 6520 is connected to the microcontroller data lines D0-7.</p>
+<ul>
+<li>PB: likely set for output direction</li>
+</ul>
+<p>PB4-7 are connected to the microcontroller PC0-3 lines - Port C I/O lines.
+I suspect these are the register selects.
+PB1-3 are connected to PB1-3 but also pulldowns, and, also A8-A10 on the EPROM (hmm). So this is apparently used to bankswitch the ROM.</p>
+<p>PB0 is connected to "sync latch" from some clock related chip.</p>
+<p>CB1 is tied to 6805:T to +5 with a pull-up. T is timer, unused, so in short this is just always '1'. But also tied to 6805:/INT pin 2</p>
+<p>CB2, CA1, CA2 are NC/unused.</p>
+<p>A0-1 are connected to 6520 RS0-1. </p>
+<p>IRQ connects to PB6 on 6805.</p>
+<p>R/W to the 6805 is determined by the address. I.e. address 0-7 is reads, 8-F is write.</p>
+<p>On a read, put the value from the MC into PIB. On a write, we use the value in ORB.</p>
+<p>Here's a disassembly of the ROM:</p>
+<p>https://github.com/freitz85/AppleIIMouse/blob/master/mouse%20rom.s</p>
+<p>This is a project which emulates the Apple Mouse II card pretty closely:</p>
+<p>https://www.applefritter.com/content/a2usb-apple-ii-usb-mouse-interface-card-emulation</p>
+<p>ok I'm going to guess the following:</p>
+<p>BoundaryX provides a range from L to H - low value to high value. And a similar range for Y low to high.
+This clamps the mouse Position to be inside that range. Simple enough.
+What we need is the State: MODE and STATUS values.</p>
+<p>The position X and Y can range from -32768 to 32767 (signed 16 bit integer). "Are normally clamped to range $0 to $3FF (0 to 1023 decimal).</p>
+<p>ah ok these are in the manual. The Mode byte:</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Turn mouse on</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Enable interrupts with mouse movement</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Enable interrupts when button pushed</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Enable interrupts every screen refresh</td>
+</tr>
+<tr>
+<td>4-7</td>
+<td>Reserved</td>
+</tr>
+</tbody>
+</table>
+<p>if you write value of $01 to mode, it's "passive mode" - i.e., no interrupts.</p>
+<p>Status</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>Button is down</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Button was down at last reading</td>
+</tr>
+<tr>
+<td>5</td>
+<td>x or Y changed since last reading</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Reserved</td>
+</tr>
+<tr>
+<td>3</td>
+<td>interrupt caused by screen refresh</td>
+</tr>
+<tr>
+<td>2</td>
+<td>interrupt caused by button press</td>
+</tr>
+<tr>
+<td>1</td>
+<td>interrupt caused by mouse movement</td>
+</tr>
+<tr>
+<td>0</td>
+<td>Reserved</td>
+</tr>
+</tbody>
+</table>
+<p>Oh, somewhere we need a register for a mouse click?
+What is SERVEMOUSE?</p>
+<p>if you use an interrupt mode, the interrupt handler must call SERVEMOUSE as part of that - it determines whether interrupt was caused by mouse so we can call READMOUSE if it was.</p>
+<p>So what clears the interrupts? Just reading the STATUS byte perhaps?</p>
+<h2 id="6805">6805<a class="headerlink" href="#6805" title="Permanent link">&para;</a></h2>
+<p>/RESET - system bus reset
+/INT - tied to pullup along with 6520:CB1 (which seems to be an input only). Not likely this is used anywhere. But make available to read.</p>
+<h2 id="6520">6520<a class="headerlink" href="#6520" title="Permanent link">&para;</a></h2>
+<p>6520 has these registers:
+| Register | Function |
+|-----|----------|
+| CRA | Control Register A |
+| DIR | Data Input Register |
+| DDRA | Data Direction Register A |
+| DDRB | Data Direction Register B |
+| PIBA | Peripheral Interface Buffer A |
+| PIBB | Peripheral Interface Buffer B |
+| DDRB | Data Direction Register B |
+| ISCB | Interrupt Status Control B |
+| CRB | Control Register B |
+| ORA | Peripheral Output Register A |
+| ORB | Peripheral Output Register B |</p>
+<p>The two RS lines (RS0/1) and CRA/CRB select various 6520 registers to be accessed.
+RS0 = A0, RS1 = A1. </p>
+<p>There are pins RS0/1 on the 6520 - Register Select. There are only two of these, so there are only four register locations.</p>
+<p>The 6520 IRQ lines are not used. IRQ is connected to the MC6805.</p>
+<h3 id="cra-and-crb">CRA and CRB<a class="headerlink" href="#cra-and-crb" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>7</th>
+<th>6</th>
+<th>5  4  3</th>
+<th>2</th>
+<th>1 0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CRA</td>
+<td>IRQA1</td>
+<td>IRQA2</td>
+<td>CA2 Control</td>
+<td>DDRA Access</td>
+<td>CA1 Control</td>
+</tr>
+<tr>
+<td>CRB</td>
+<td>IRQB1</td>
+<td>IRQB2</td>
+<td>CB2 Control</td>
+<td>DDRB Access</td>
+<td>CB1 Control</td>
+</tr>
+</tbody>
+</table>
+<p>When Bit 2 = 0 (see below), access DDR. When Bit 2 = 1, access PIB.</p>
+<p>CA1/CB1 are interrupt input pins only.
+CA1 is NC.
+CB1 is tied to pullup so it just always high. Should always read as 1.
+CA2 is NC, CB2 is NC.</p>
+<p>Cx2 control: bit 5 = 1, output mode "ca2 can operate independently to generate a simple pulse each time the microprocessor reads the data on the peripheral port". Since Cx2 is NC we can disregard the values of the CA2 and CB2 control bits.
+CR bit 1 (CA1 high bit) is 0 for negative transition, 1 for positive transition. These values are unused.</p>
+<p>This is covered on Page 2-29 of the 6520 data sheet.</p>
+<h3 id="register-access">Register Access<a class="headerlink" href="#register-access" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>A2 Bus Addr</th>
+<th>Register Address</th>
+<th>RS1</th>
+<th>RS0</th>
+<th>CRA (bit 2)</th>
+<th>CRB (Bit 2) R/W=H</th>
+<th>R/W = L</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C080</td>
+<td>0</td>
+<td>L</td>
+<td>L</td>
+<td>1</td>
+<td>-</td>
+<td>Read PIBA</td>
+<td>Write ORA</td>
+</tr>
+<tr>
+<td>C080</td>
+<td>0</td>
+<td>L</td>
+<td>L</td>
+<td>0</td>
+<td>-</td>
+<td>Read DDRA</td>
+<td>Write DDRA</td>
+</tr>
+<tr>
+<td>C081</td>
+<td>1</td>
+<td>L</td>
+<td>H</td>
+<td>-</td>
+<td>-</td>
+<td>Read CRA</td>
+<td>Write CRA</td>
+</tr>
+<tr>
+<td>C082</td>
+<td>2</td>
+<td>H</td>
+<td>L</td>
+<td>-</td>
+<td>1</td>
+<td>Read PIBB</td>
+<td>Write ORB</td>
+</tr>
+<tr>
+<td>C082</td>
+<td>2</td>
+<td>H</td>
+<td>L</td>
+<td>-</td>
+<td>0</td>
+<td>Read DDRB</td>
+<td>Write DDRB</td>
+</tr>
+<tr>
+<td>C083</td>
+<td>3</td>
+<td>H</td>
+<td>H</td>
+<td>-</td>
+<td>-</td>
+<td>Read CRB</td>
+<td>Write CRB</td>
+</tr>
+</tbody>
+</table>
+<p>(But also addresses C084-7, C088-B, C08C-F)</p>
+<h1 id="paravirtualization-approach">Paravirtualization Approach<a class="headerlink" href="#paravirtualization-approach" title="Permanent link">&para;</a></h1>
+<p>Apple2TS uses a paravirtual approach for its mouse implementation. Which is interesting, however, the device is still fairly complex, with interrupts, multiple registers, etc etc.</p>
+<p>There probably should not be any software that directly accesses the hardware as Apple started pushing devs hard on this at that time.</p>
+<h1 id="hardware-emulation-approach">Hardware Emulation Approach<a class="headerlink" href="#hardware-emulation-approach" title="Permanent link">&para;</a></h1>
+<p>Practically speaking we only need to emulate the 6520 interface.</p>
+<h1 id="screen-holes">Screen Holes<a class="headerlink" href="#screen-holes" title="Permanent link">&para;</a></h1>
+<pre><code>$0478 + slot Low byte of absolute X position
+$04F8 + slot Low byte of absolute Y position
+$0578 + slot High byte of absolute X position
+$05F8 + slot High byte of absolute Y position
+$0678 + slot Reserved and used by the firmware
+$06F8 + slot Reserved and used by the firmware
+$0778 + slot Button 0/1 interrupt status byte
+$07F8 + slot Mode byte
+</code></pre>
+<h1 id="rom-mapping">ROM Mapping<a class="headerlink" href="#rom-mapping" title="Permanent link">&para;</a></h1>
+<p>the first 256 bytes of the ROM seem to be $Cn00-$CnFF. And perhaps then the whole 2K ROM is also at $C800-$C8FF. However it is unclear how the $C800 space is mapped in. The IOSTROBE line is connected into a small PAL chip, and this may have an output on pin 17 that goes to PB0. 
+Alright, so PB0 is mapped as an input (in the source code, for "sync latch" whatever that is).
+Putting $3E into PB should then result in PB1-3 being E, and setting address bits of the ROM A8-A10 to 111. The low byte of PB is what ROM page to map in.</p>
+<p>So, I don't think that it does. I think ORB is used to set the firmware bank that appears in $Cn00. There are no absolute references JSR/JMP inside $C800 in the firmware. And, in every bank, at $7B there is a "PLA" - i.e, here is the code in $Cn00:</p>
+<pre><code>C85B   B9 83 C0   LC85B     LDA $C083,Y
+C85E   29 FB                AND #$FB
+C860   99 83 C0             STA $C083,Y
+C863   A9 3E                LDA #$3E
+C865   99 82 C0             STA $C082,Y
+C868   B9 83 C0             LDA $C083,Y
+C86B   09 04                ORA #$04
+C86D   99 83 C0             STA $C083,Y
+C870   B9 82 C0   LC870     LDA $C082,Y
+C873   29 C1                AND #$C1
+C875   1D B8 05             ORA $05B8,X
+C878   99 82 C0             STA $C082,Y
+C87B   68                   PLA
+</code></pre>
+<p>There is that same PLA in almost every bank. This is because $C878 is setting the bank number to 111 (7) which means ROM $700-$7FF. So this falls through to this:</p>
+<pre><code>CF7B   68                   PLA
+CF7C   D0 82                BNE LCF00
+CF7E   A9 00      LCF7E     LDA #$00
+CF80   9D B8 05             STA $05B8,X
+CF83   48                   PHA
+</code></pre>
+<p>This is really freakin crazy. They do all this just to save some address decode logic? Or was there some other purpose?</p>
+<h1 id="bazmouse">BazMouse<a class="headerlink" href="#bazmouse" title="Permanent link">&para;</a></h1>
+<p>ok, I think it may be significantly simpler to write my own mouse card setup.</p>
+<table>
+<thead>
+<tr>
+<th>Screen Hole</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$478 + n</td>
+<td>Low byte of X position</td>
+</tr>
+<tr>
+<td>$4F8 + n</td>
+<td>Low byte of Y position</td>
+</tr>
+<tr>
+<td>$578 + n</td>
+<td>High byte of X position</td>
+</tr>
+<tr>
+<td>$5F8 + n</td>
+<td>High byte of Y position</td>
+</tr>
+<tr>
+<td>$678 + n</td>
+<td>Reserved</td>
+</tr>
+<tr>
+<td>$6F8 + n</td>
+<td>Reserved</td>
+</tr>
+<tr>
+<td>$778 + n</td>
+<td>Button and interrupt status</td>
+</tr>
+<tr>
+<td>$7F8 + n</td>
+<td>Current mode</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Address</th>
+<th>Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C0s0</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0s1</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0s2</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0s3</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0s4</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0s5</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0s6</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0s7</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0s8</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0s9</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0sA</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0sB</td>
+<td>RW</td>
+</tr>
+<tr>
+<td>C0sE</td>
+<td>R</td>
+</tr>
+<tr>
+<td>C0sF</td>
+<td>RW</td>
+</tr>
+</tbody>
+</table>
+<p>Mode</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Turn mouse on</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Enable interrupts on mouse movement</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Enable interrupts when button pressed</td>
+</tr>
+<tr>
+<td>3</td>
+<td>enable interrupts every screen refresh</td>
+</tr>
+<tr>
+<td>4-7</td>
+<td>Reserved</td>
+</tr>
+</tbody>
+</table>
+<p>Status</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bit 7</td>
+<td>Button is down</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Button was down at last reading</td>
+</tr>
+<tr>
+<td>5</td>
+<td>X or Y changed since last reading</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Reserved</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Interrupt caused by screen refresh</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Interrupt caused by button press</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Interrupt caused by mouse movement</td>
+</tr>
+<tr>
+<td>0</td>
+<td>Reserved</td>
+</tr>
+</tbody>
+</table>
+<p>The application program is responsible for setting up the interrupt vector and handler routines.</p>
+<h2 id="mouse-api-routines">Mouse API Routines<a class="headerlink" href="#mouse-api-routines" title="Permanent link">&para;</a></h2>
+<h3 id="setmouse">SETMOUSE<a class="headerlink" href="#setmouse" title="Permanent link">&para;</a></h3>
+<p>Input:
+A = mode value
+X = $Cn
+Y = $n0</p>
+<p>Return:</p>
+<p>C = 1: if mode byte is illegal (greater than $0F)
+C = 0: everything fine.
+No change to registers or screen holes.</p>
+<h3 id="servemouse">SERVEMOUSE<a class="headerlink" href="#servemouse" title="Permanent link">&para;</a></h3>
+<p>If an interrupt was caused by mouse, SERVEMOUSE updates the status byte ($778+n) to show which event caused the interrupt.</p>
+<p>Return:
+C = 0: interrupt caused by mouse
+C = 1: interrupt not caused by mouse.</p>
+<h3 id="readmouse">READMOUSE<a class="headerlink" href="#readmouse" title="Permanent link">&para;</a></h3>
+<p>Transfers current mouse data to screen holes. Sets bits 1,2,3 in status byte to 0.</p>
+<h3 id="clearmouse">CLEARMOUSE<a class="headerlink" href="#clearmouse" title="Permanent link">&para;</a></h3>
+<p>Sets X and Y position values to 0, both in screen holes and on card. Button and interrupt status remains unchanged.</p>
+<h3 id="posmouse">POSMOUSE<a class="headerlink" href="#posmouse" title="Permanent link">&para;</a></h3>
+<p>sets position registers on peripheral card to the values it finds in the screen holes.</p>
+<h3 id="clampmouse">CLAMPMOUSE<a class="headerlink" href="#clampmouse" title="Permanent link">&para;</a></h3>
+<p>Input:
+A = 0: change X coordinate limits
+A = 1: change Y coordinate limits</p>
+<p>New boundaries are read from Apple main memory:
+$478 - low byte of lower bound
+$4F8 - low byte of higher bound
+$578 - high byte of lower bound
+$5F8 - high byte of higher bound</p>
+<p>destroys contents of mouse's X and Y position screen holes. Program must follow CLAMP with a READMOUSE.</p>
+<h3 id="homemouse">HOMEMOUSE<a class="headerlink" href="#homemouse" title="Permanent link">&para;</a></h3>
+<p>Sets mouse position registers on the peripheral card to the lower boundaries.
+Does not update the screen holes. To do that, you should follow with READMOUSE.</p>
+<h3 id="initmouse">INITMOUSE<a class="headerlink" href="#initmouse" title="Permanent link">&para;</a></h3>
+<p>sets internal default values for mouse subsystem and synchronizes with monitor's vertical blanking cycle.</p>
+<h2 id="call-jump-table">Call jump table<a class="headerlink" href="#call-jump-table" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$Cn12</td>
+<td>Low byte of SETMOUSE entry point address</td>
+</tr>
+<tr>
+<td>$Cn13</td>
+<td>Low byte of SERVEMOUSE entry point address</td>
+</tr>
+<tr>
+<td>$Cn14</td>
+<td>Low byte of READMOUSE entry point address</td>
+</tr>
+<tr>
+<td>$Cn15</td>
+<td>Low byte of CLEARMOUSE entry point address</td>
+</tr>
+<tr>
+<td>$Cn16</td>
+<td>Low byte of POSMOUSE entry point address</td>
+</tr>
+<tr>
+<td>$Cn17</td>
+<td>Low byte of CLAMPMOUSE entry point address</td>
+</tr>
+<tr>
+<td>$Cn18</td>
+<td>Low byte of HOMEMOUSE entry point address</td>
+</tr>
+<tr>
+<td>$Cn19</td>
+<td>Low byte of INITMOUSE entry point address</td>
+</tr>
+</tbody>
+</table>
+<h1 id="translation-of-mouse-motion">Translation of Mouse Motion<a class="headerlink" href="#translation-of-mouse-motion" title="Permanent link">&para;</a></h1>
+<p>The virtual Apple will have its own clamping. This presents two options:
+1) SetWindowRelativeMouseMode will constrain the mouse to the interior of the window; when we're using the mouse in the gameport code, we translate and scale mouse-in-window coordinates to 0-255. This means there is a different scale vertically and horizontally. I don't think that's what we want.
+2) Have the above mode, BUT, use Mouse movement events to update the virtual mouse x and y positions.</p>
+<p>I think the latter approach is better - x and y will have the same sensitivity this way, and, we're not having to deal with translating and scaling. It also deals better with setting the mouse position, and we won't have to do a SDLSetMousePos call.</p>
+<p>SDL_MouseMotionEvent is the ticket.</p>
+<p>I have an odd conflict: A2Desktop can use both mouse and joystick and gets confused. So when the Mouse is active (turned on), disable Mouse-Joystick emulation.</p>
+<h1 id="interrupts">Interrupts<a class="headerlink" href="#interrupts" title="Permanent link">&para;</a></h1>
+<p>there are three interrupts: vbl, on mouse motion, on button click.
+"upon detecting an interrupt event, the mouse subsystem sends an IRQ to the 6502 at the end of the current monitor screen writing cycle".
+So, it only sends IRQ when we're in VBL. </p>
+<p>OK, whenever we initmouse, this synchronizes with the vbl. So we can calculate where the vbl should be and set and event timer for that cycle.
+The handler for that event will check whether the mouse moved, button pressed, or .. i.e. we should set flags "this event occurred".
+when the handler is called, we (may) push these into the IRQ flags then OR them and set (or clear) the slot IRQ. then clear the underlying flags?</p>
+<p>ok. So we can grab the cycle counter whenever the mouse is enabled. grab this from the video routines. That's the simplest way, and will work on ii plus mode or //e mode.</p>
+<p>This is what Shufflepuck author learned writing it:</p>
+<p>https://www.colino.net/wordpress/en/archives/2025/05/08/yes-the-apple-ii-mousecard-irq-is-synced-to-the-vbl/</p>
+<p>(for initial test, we don't care, just pick current cycle plus 17,030)</p>
+<h1 id="compatibility">Compatibility<a class="headerlink" href="#compatibility" title="Permanent link">&para;</a></h1>
+<h2 id="a2desktop">A2Desktop<a class="headerlink" href="#a2desktop" title="Permanent link">&para;</a></h2>
+<p>working w/o interrupts. However, when the gamepad is not connected, and gamecontroller uses mouse to emulate joystick, there is a conflict in that some mouse clicks and motion cause joystick which interferes with reading from the mouse card. We should disable mouse-based gamecontroller when mouse card mode is Active.</p>
+<h2 id="shufflepuck">Shufflepuck<a class="headerlink" href="#shufflepuck" title="Permanent link">&para;</a></h2>
+<p>[x] starts to blank screen?<br />
+[ ] The mouse is overly sensitive  </p>
+<p>plays a short bit of music
+hangs on blank screen in a tight loop waiting for $B003 to become non-zero.</p>
+<p>likely waiting on mouse interrupts. maybe even vbl.</p>
+<p>the blank screen issue was unrelated to mouse, it was not handling the //e quasi video mode with 80col off but hires on doing no-shift mode.</p>
+<h2 id="dazzledraw">DazzleDraw<a class="headerlink" href="#dazzledraw" title="Permanent link">&para;</a></h2>
+<p>also likely waiting on mouse interrupts. specifically, DD wants VBL interrupt. So that's easy to implement.</p>
+<p>status byte toggles between 0x60 -&gt; 0xA0 when I click mouse. If I spastically click mouse many times it may get one click every so often through.</p>
+<h1 id="bugs">Bugs<a class="headerlink" href="#bugs" title="Permanent link">&para;</a></h1>
+<p>[ ] When I click and drag (like choosing a menu), only the X or the Y coordinate can change, not both. That is weird. not reproducing this today with debugging off  </p>
+<p>[ ] when using apple-W to close, well it actually closes the emulator window.  </p>
+<p>Cmd-W is being acted on by the MacOS and closing the window before I ever have a chance to do anything with it.</p>
+<p>[ ] in DD, clicking in-window does not cause mouse to be captured  </p>
+<p>videosystem was returning true on the mouse capture section - changed to -false- because we also still want these clicks passed through to whatever there is underneath looking for these events.</p>
+<p>in DD about 20% to 40% of vertical area, the cursor gets weird. So VBL is in the wrong place.</p>
+<h1 id="other-implementations">Other Implementations<a class="headerlink" href="#other-implementations" title="Permanent link">&para;</a></h1>
+<h2 id="applewin">AppleWin<a class="headerlink" href="#applewin" title="Permanent link">&para;</a></h2>
+<p>Emulates the 6521 interface (labels it a 6821), so it's likely simulating the AppleMouseII fairly directly and using its firmware.</p>
+<h2 id="_1"><a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3466 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../Compatibility/">
+      
+      
+        <link rel="next" href="../DiskII/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Compatibility (IIgs) - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#compatibility-gs" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Compatibility (IIgs)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prodos-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ProDOS 2.4
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#merlin-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merlin-16
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appleworks-43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AppleWorks 4.3
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thexder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thexder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prodos-8-111" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ProDOS 8 1.1.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apple-panic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple Panic
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#taxman" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Taxman
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-603" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System 6.0.3
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appleworks-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AppleWorks 1.3
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mdt-multi-display-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MDT (multi display test)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bards-tale-ii-destiny-knight" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bard's Tale II: Destiny Knight
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bards-tale-i" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bard's Tale I
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#christmas-music-christmas2mg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Christmas Music (Christmas.2mg)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fta-xmas-demo-ftaxmas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FTA XMAS Demo (FTAXMAS)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a2desktop-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2Desktop 1.5
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arkanoid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arkanoid
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#airball" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airball
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apple-iigs-tour" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple IIgs Tour
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apple-iigs-dealer-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple IIgs Dealer Demo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#qix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Qix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rastan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rastan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gauntlet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gauntlet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-603-installer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System 6.0.3 Installer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#airheart-standalone-sans-crack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airheart (standalone SANS Crack)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#donkey-kong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Donkey Kong
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#noisetracker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NoiseTracker
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#senseiplay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Senseiplay
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#telcom-028-1991" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Telcom 0.28 (1991)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dreamgrafx-from-golden-orchard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DreamGrafx (from Golden Orchard)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#total-replay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Total Replay
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Total Replay">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#airheart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airheart
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prodos-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ProDOS 2.4
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#merlin-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Merlin-16
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appleworks-43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AppleWorks 4.3
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thexder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thexder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prodos-8-111" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ProDOS 8 1.1.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apple-panic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple Panic
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#taxman" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Taxman
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-603" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System 6.0.3
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appleworks-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AppleWorks 1.3
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mdt-multi-display-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MDT (multi display test)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bards-tale-ii-destiny-knight" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bard's Tale II: Destiny Knight
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bards-tale-i" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bard's Tale I
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#christmas-music-christmas2mg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Christmas Music (Christmas.2mg)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fta-xmas-demo-ftaxmas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FTA XMAS Demo (FTAXMAS)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a2desktop-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2Desktop 1.5
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arkanoid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arkanoid
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#airball" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airball
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apple-iigs-tour" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple IIgs Tour
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apple-iigs-dealer-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple IIgs Dealer Demo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#qix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Qix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rastan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rastan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gauntlet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gauntlet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-603-installer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System 6.0.3 Installer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#airheart-standalone-sans-crack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airheart (standalone SANS Crack)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#donkey-kong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Donkey Kong
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#noisetracker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NoiseTracker
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#senseiplay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Senseiplay
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#telcom-028-1991" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Telcom 0.28 (1991)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dreamgrafx-from-golden-orchard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DreamGrafx (from Golden Orchard)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#total-replay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Total Replay
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Total Replay">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#airheart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Airheart
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="compatibility-gs">Compatibility - GS<a class="headerlink" href="#compatibility-gs" title="Permanent link">&para;</a></h1>
+<h2 id="prodos-24">ProDOS 2.4<a class="headerlink" href="#prodos-24" title="Permanent link">&para;</a></h2>
+<p>ProDOS 2.4 crashes at FF/2028.  2.4.3 slightly different address. I think this may now be resolved. Do more testing.</p>
+<h2 id="merlin-16">Merlin-16<a class="headerlink" href="#merlin-16" title="Permanent link">&para;</a></h2>
+<p>crashes after displaying MERLIN-16 splash screen, in FF/somethingorother.
+Merlin-16 is booting now!!!! (LC Bank 1 fix)</p>
+<h2 id="appleworks-43">AppleWorks 4.3<a class="headerlink" href="#appleworks-43" title="Permanent link">&para;</a></h2>
+<p>crashes during ProDOS boot - likely same issue as ProDOS 2.4 above.
+ah ha! Works now after I fixed the issue with ALTZP not switching in LC Bank 1.</p>
+<h2 id="thexder">Thexder<a class="headerlink" href="#thexder" title="Permanent link">&para;</a></h2>
+<p>Thexder hangs part way through boot. it uses AUX and LC heavily.<br />
+Thexder on Total Replay loads and runs.
+It seems to want to run only out of slot 6.</p>
+<h2 id="prodos-8-111">ProDOS 8 1.1.1<a class="headerlink" href="#prodos-8-111" title="Permanent link">&para;</a></h2>
+<p>crashes during boot, likely due to some MMU problem.<br />
+THIS HAS BEEN FIXED. ProDOS 1.1.1 User's disk now booting on both 5.25 and 3.5.</p>
+<h2 id="apple-panic">Apple Panic<a class="headerlink" href="#apple-panic" title="Permanent link">&para;</a></h2>
+<p>Apple Panic is not clearing c010?? that is some wacky stuff. Issue here is that the keyboard buffer is always "enabled". </p>
+<p>On a real GS, if we read C000 w/o clearing strobe, it does change as we type characters. in GS2, it does not, because I didn't write it that way.</p>
+<p>So what the hell does the GS do? ah ha!!! By default, GS has keyboard buffering DISABLED. When I ENABLE it, it behaves the same as GS2. So I need to respect the "buffer yes/no" bit and do the right thing.</p>
+<h2 id="taxman">Taxman<a class="headerlink" href="#taxman" title="Permanent link">&para;</a></h2>
+<p>TAXMAN loads switches to text page 2 and I got no other display..  hit reset, and then it starts working.. ?  ctrl-c switches back to text page 2. huh..  WE'RE NOT SHADOWING PAGE 2, HA HA  </p>
+<p>So this works, according to ROM01 where text page 2 doesn't work.</p>
+<h2 id="system-603">System 6.0.3<a class="headerlink" href="#system-603" title="Permanent link">&para;</a></h2>
+<p>System 6.0.3 Install disk crashes into monitor after doing a bunch of stuff. BUT it does throw up the GS/OS boot shr screen!</p>
+<p>Booting pretty reliably now.</p>
+<h2 id="appleworks-13">AppleWorks 1.3<a class="headerlink" href="#appleworks-13" title="Permanent link">&para;</a></h2>
+<p>works.</p>
+<h2 id="mdt-multi-display-test">MDT (multi display test)<a class="headerlink" href="#mdt-multi-display-test" title="Permanent link">&para;</a></h2>
+<p>seems to work all video modes</p>
+<h2 id="bards-tale-ii-destiny-knight">Bard's Tale II: Destiny Knight<a class="headerlink" href="#bards-tale-ii-destiny-knight" title="Permanent link">&para;</a></h2>
+<p>My recollection is this worked ok. Well something was working somewhere, because I walked around a town, however, it is decidedly not working now. It's doing weird disk stuff then going kablooey.</p>
+<h2 id="bards-tale-i">Bard's Tale I<a class="headerlink" href="#bards-tale-i" title="Permanent link">&para;</a></h2>
+<p>boots to "NO SMARTPORT" error. Doesn't like running off the hard disk.</p>
+<h2 id="christmas-music-christmas2mg">Christmas Music (Christmas.2mg)<a class="headerlink" href="#christmas-music-christmas2mg" title="Permanent link">&para;</a></h2>
+<p>Error: 13 (from PlayMidiStartup).
+2/18/26: the midi tool is now starting, and playing a song.. way too slowly, just like QiX. Still, this is a big improvement over crashing.</p>
+<h2 id="fta-xmas-demo-ftaxmas">FTA XMAS Demo (FTAXMAS)<a class="headerlink" href="#fta-xmas-demo-ftaxmas" title="Permanent link">&para;</a></h2>
+<p>immediately hits BRK at 5300 after loading boot block. I read this loads stuff from disk while animations are occurring, so this may depend on directly manipulating the IWM.</p>
+<h2 id="a2desktop-15">A2Desktop 1.5<a class="headerlink" href="#a2desktop-15" title="Permanent link">&para;</a></h2>
+<p>crashes with progress bar halfway
+it's done a ProDOS call to BF00 -&gt; DE00 to find the prodos routine overwritten.
+Test correct behavior of:
+ALTZP with LC enabled</p>
+<p>A couple issues:
+when ALTZP is set (well, any aux memory really), if we do a direct read of 1'0000, then we get data from bank 2! We're indiscriminately adding another 1'0000 to the 1'0000.
+When, if the lo bit of bank is 1, we should not do that. (Is this that bank latch business?)</p>
+<p>ok, ZP switches back and forth correctly page 0 anyway. However, it does NOT switch the LC bank space.</p>
+<p>bank_shadow_read first checks LC - and subtracts 0x1000. Then that modified address is run through the aux thing. Except it's page C0-CF and that doesn't match D0-DF.</p>
+<p>Oddly, double hires seems to not be working correctly. I only get every other byte-column on the screen. Other double hires stuff is working (Arkanoid, skull island splash). </p>
+<p>Now supports C029 mono mode in rgb (and composite) rendering.</p>
+<p>WORKING SUPER DUPER PERFECTO</p>
+<p>The text editor/viewer crashes, there is likely some issue with AUX/MAIN bank switching still.</p>
+<p>With Floppies enabled, hangs forever trying to read floppies.</p>
+<h2 id="arkanoid">Arkanoid<a class="headerlink" href="#arkanoid" title="Permanent link">&para;</a></h2>
+<p>Crashes during boot.
+It's executing from E0/D100 page, does 00 =&gt; C068, and then the code disappears out from under it and hits a BRK.</p>
+<p>Indeed, the code they're expecting is switched in if I hit c08b c08b. and 0 =&gt; C068 definitely turns OFF LC Bank 1. 
+Is there even supposed to be a LC in banks E0/E1 ?</p>
+<p>It now boots and plays (without sound!!) IT IS HAPPENING!!</p>
+<p>IT NOW PLAYS WITH SOUND!!!!! IT HAS HAPPENED!!</p>
+<h2 id="airball">Airball<a class="headerlink" href="#airball" title="Permanent link">&para;</a></h2>
+<p>same crash location as Arkanoid. 
+After fixing State/C068/LCBNK2 was incorrect, we now boot to finder!</p>
+<p>The mouse isn't moving, probably because interrupts are not hooked up yet.</p>
+<p>you can select some things in the UI via keyboard, but joystick is not responding.</p>
+<p>WORKS NOW, joystick and keyboard controls. I wonder if this hits the joystick from E1. </p>
+<h2 id="apple-iigs-tour">Apple IIgs Tour<a class="headerlink" href="#apple-iigs-tour" title="Permanent link">&para;</a></h2>
+<p>boots past a "loading" screen, but then is looping doing ??</p>
+<p>Working now.</p>
+<h2 id="apple-iigs-dealer-demo">Apple IIgs Dealer Demo<a class="headerlink" href="#apple-iigs-dealer-demo" title="Permanent link">&para;</a></h2>
+<p>boots to "Demo Configuration";
+asks for volume; 
+tries to load stuff off slot 6 for a while then crashes. is likely expecting IWM in slot 5.</p>
+<h2 id="qix">Qix<a class="headerlink" href="#qix" title="Permanent link">&para;</a></h2>
+<p>sometimes we have a crash booting GS/OS, and then a reboot, and it works.
+This feels like there is a s/s not being set correctly on powerup or reset.
+At splash screen hangs in tight loop waiting for 1D00 to be non-zero. It's waiting for an interrupt handler to set a variable.
+it's just slow. The music is playing like 8 times too slow. Weeeird.</p>
+<h2 id="rastan">Rastan<a class="headerlink" href="#rastan" title="Permanent link">&para;</a></h2>
+<p>gets a little further now, you can start the game, but the game screen draws as the guy falls on the left, eventually screen blacks and audio keeps repeating in a loop. Getting closer!
+Likely a Ensoniq issue.</p>
+<h2 id="gauntlet">Gauntlet<a class="headerlink" href="#gauntlet" title="Permanent link">&para;</a></h2>
+<p>Boots - however joystick won't go right or down, only up or left. I believe the timing is wrong. ?pdl(0) in basic works, but, it is slowing down the CPU to read the value. </p>
+<h2 id="system-603-installer">System 6.0.3 Installer<a class="headerlink" href="#system-603-installer" title="Permanent link">&para;</a></h2>
+<p>This now boots to the installer! (there may be that "doesn't boot on a first load" issue?)</p>
+<h2 id="airheart-standalone-sans-crack">Airheart (standalone SANS Crack)<a class="headerlink" href="#airheart-standalone-sans-crack" title="Permanent link">&para;</a></h2>
+<p>so, this  but then crashes after trying to calculate a slot offset from $2B. $2B in some docs says "boot slot * 16". we lsr that four times. ok fine.
+Except when this code runs $2B just contains 7. 7 is right slot but in wrong place. 
+Well, funnily enough, this is a 143K disk, not an 800K disk. So I bet its bootloader is just doing the wrong thing because it's expecting a 5.25.
+Boots most of the way on GS but then fails in a tight loop reading C0EC (at D27F, prodos?)
+Interestingly, same media boots and plays fine on //e.</p>
+<h2 id="donkey-kong">Donkey Kong<a class="headerlink" href="#donkey-kong" title="Permanent link">&para;</a></h2>
+<p>Plays very well with keyboard. (It does not support keyboard) Does support SNESMAX for gamepads, so look into adding this in the future.</p>
+<h2 id="noisetracker">NoiseTracker<a class="headerlink" href="#noisetracker" title="Permanent link">&para;</a></h2>
+<p>there was a MMU bug involving RAMRD/RAMWRT and direct access to bank 1. (we were adding an extra 0x1'0000 erroneously).
+It now starts but then hits a BRK; it plays music for a while; then dies with a "RESTART SYSTEM". Could be Ensoniq IRQ or another memory issue.
+2/18/26: gets a little further now before crashing, it displays a 3d Ball pyramid.</p>
+<h2 id="senseiplay">Senseiplay<a class="headerlink" href="#senseiplay" title="Permanent link">&para;</a></h2>
+<p>similar to noisetracker, now starts and plays a song for a couple seconds, then fails with a "RESTART SYSTEM-$01".</p>
+<h2 id="telcom-028-1991">Telcom 0.28 (1991)<a class="headerlink" href="#telcom-028-1991" title="Permanent link">&para;</a></h2>
+<p>my baby!</p>
+<p>this crashes to a BRK on GS2. It does NOT crash on Kegs. Something is doing a tool call 2403 to call 00/C2CC in emulation mode. (Why?) This routine exits with a JMP $4xxx, meaning, it's expecting the program bank to be FF, not 00. So something in that stretch between 14/6360 (can't guarantee it's always here, but, it's the JSL $E10000 before the BRK).</p>
+<p>^^ This likely points to an MMU bug?</p>
+<p>YES. See DevelopLog.md Feb 18 2026. </p>
+<p>Telcom now runs. (Issue was IO space wasn't being mapped into bank E1 correctly).</p>
+<h2 id="dreamgrafx-from-golden-orchard">DreamGrafx (from Golden Orchard)<a class="headerlink" href="#dreamgrafx-from-golden-orchard" title="Permanent link">&para;</a></h2>
+<p>This appears to work nicely even in SBC 3200 mode (full 3200 colors while editing).</p>
+<p>However, the associated DreamVoir program crashes with a BRK 00/0000 after its splash screen.
+A different DreamVoir (from What Is the Apple IIgs?) loads up just fine.</p>
+<h2 id="total-replay">Total Replay<a class="headerlink" href="#total-replay" title="Permanent link">&para;</a></h2>
+<h3 id="airheart">Airheart<a class="headerlink" href="#airheart" title="Permanent link">&para;</a></h3>
+<p>crashes after displaying splash screen (same as on IIe)
+Now working. This is a known bug in TR. I updated pdblock2 to pdblock3 (which supports prodos and smartport standard) and it now works!!</p>
+<h1 id="what-is-the-apple-iigs-launcher">What Is the Apple IIgs: Launcher<a class="headerlink" href="#what-is-the-apple-iigs-launcher" title="Permanent link">&para;</a></h1>
+<p>The demos on here are great because they load under normal ProDOS and that gets around my lack of 3.5 ..</p>
+<h2 id="f-demos">F: Demos<a class="headerlink" href="#f-demos" title="Permanent link">&para;</a></h2>
+<h3 id="happy-friday">Happy Friday<a class="headerlink" href="#happy-friday" title="Permanent link">&para;</a></h3>
+<p>Seems to work fine. Has some border-based cycle-counting effecs that look (mostly) correct. </p>
+<h3 id="kernkompetenz">Kernkompetenz<a class="headerlink" href="#kernkompetenz" title="Permanent link">&para;</a></h3>
+<p>takes a bit to load up, but starts. Ran for a long while (prefers to be accelerated) but then eventually succumbed to RESTART SYSTEM 01.
+Uses fill mode, which we haven't implemented yet.
+OK fine, I implemented fill, only took 20 minutes, but this still crashes.</p>
+<h3 id="no-hard-feelings">No Hard Feelings<a class="headerlink" href="#no-hard-feelings" title="Permanent link">&para;</a></h3>
+<p>Also desperately wants fill mode. Also implemented. What a great demo.</p>
+<h3 id="plasma">Plasma<a class="headerlink" href="#plasma" title="Permanent link">&para;</a></h3>
+<p>crashes on start with sound interrupt stutter issue like Rastan has. Very similar to Plasmagoria. It's working this time though.. </p>
+<h3 id="lower-planes">Lower Planes<a class="headerlink" href="#lower-planes" title="Permanent link">&para;</a></h3>
+<p>ok this is doing border effects, which are working correctly EXCEPT - the right border is offset, everything is too low. by 1 (maybe 2) scanlines.</p>
+<h3 id="photonix">Photonix<a class="headerlink" href="#photonix" title="Permanent link">&para;</a></h3>
+<p>it's slamming the disk drives trying to do direct 3.5" stuff. "Non bootable disk" over and over. Whack.</p>
+<h3 id="megademo">Megademo<a class="headerlink" href="#megademo" title="Permanent link">&para;</a></h3>
+<p>causes a segfault! Whoo, that's entertaining. The mask for "oscillators enabled" in ensoniq was 0x3F, when it should have been 0x1F. Boots up to the menu now but then is non-responsive.</p>
+<h3 id="modulae">Modulae<a class="headerlink" href="#modulae" title="Permanent link">&para;</a></h3>
+<p>Causes a segfault also! Same problem as above, now starts up.. plays music and rotates text. click button to get past the start screen.
+Seems to run pretty well now, though at one point when the 3D engine gets busy, the mouse maybe doesn't respond well? Not sure how many of those controls are supposed to work..
+all the controls work, the mouse is just a little sluggish sometimes. </p>
+<h3 id="nucleus">Nucleus<a class="headerlink" href="#nucleus" title="Permanent link">&para;</a></h3>
+<p>interrupt issues. Also, after it spazzes out, even RESET isn't turning off some VGC interrupts.</p>
+<h3 id="revenge-of-the-bobs">Revenge of the Bobs<a class="headerlink" href="#revenge-of-the-bobs" title="Permanent link">&para;</a></h3>
+<p>Coredump! I didn't have the 2nd disk mounted, sadly did not replicate.
+Boots, starts to run, wants accelerated mode, but then dies with SYSTEM ERROR 01</p>
+<h3 id="shoddy-demo">Shoddy Demo<a class="headerlink" href="#shoddy-demo" title="Permanent link">&para;</a></h3>
+<p>starts to load, hits a BRK</p>
+<h3 id="airforce-demo">Airforce Demo<a class="headerlink" href="#airforce-demo" title="Permanent link">&para;</a></h3>
+<p>Doesn't do much, but what it does, works</p>
+<h3 id="gs-underground-demo-2">GS Underground: Demo 2<a class="headerlink" href="#gs-underground-demo-2" title="Permanent link">&para;</a></h3>
+<h3 id="zavtra-i-ii">Zavtra I / II<a class="headerlink" href="#zavtra-i-ii" title="Permanent link">&para;</a></h3>
+<p>these both worked</p>
+<h3 id="wolfenstein-3d">Wolfenstein 3D<a class="headerlink" href="#wolfenstein-3d" title="Permanent link">&para;</a></h3>
+<p>This crashes on startup. Why?
+POLL FDB DEVICE - unimplemented
+interesting!
+WORKING!!! Implemented improvements to ADB emulation to support what w3d wanted.</p>
+<p><strong>PLAYS LIKE A CHAMP</strong></p>
+<h3 id="zany-golf">Zany Golf<a class="headerlink" href="#zany-golf" title="Permanent link">&para;</a></h3>
+<p>Works right up until you are actually playing a level, then the screen is black where level should be. Say wha.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

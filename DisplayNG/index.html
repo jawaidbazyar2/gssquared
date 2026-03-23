@@ -1,0 +1,3000 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../DoubleHiRes/">
+      
+      
+        <link rel="next" href="../DisplayPP/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Display (Next Gen) - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#display-next-generation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Display (Next Gen)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pseudo-code-for-frame-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pseudo-code for frame rendering
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#video-modes-generation-of-bitstream" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Video modes - generation of bitstream.
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Video modes - generation of bitstream.">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#text-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Text mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lgr-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LGR mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hgr-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HGR mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dhgr-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DHGR mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fancy-timing-based-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fancy timing-based updates
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pseudo-code-for-frame-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pseudo-code for frame rendering
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#video-modes-generation-of-bitstream" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Video modes - generation of bitstream.
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Video modes - generation of bitstream.">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#text-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Text mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lgr-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LGR mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hgr-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HGR mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dhgr-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DHGR mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fancy-timing-based-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fancy timing-based updates
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="display-next-generation">Display Next Generation<a class="headerlink" href="#display-next-generation" title="Permanent link">&para;</a></h1>
+<p>Currently hgrdecode uses source data of single bytes that are either FF or 00.</p>
+<p>The new ntsc.cpp implementation in it converts to bits.</p>
+<p>We use a 17-bit sliding window of the bits and feed that into a lookup table. Instead of starting with bytes and converting to bits, just start with bits and feed bits. This routine is then going to be hyper-efficient.</p>
+<p>We're going to want routines that adds certain numbers of bits to the bit stream, that all the display modes will use:
+   * 4 bits, for lo-res.
+   * 1 bit, for text mode.
+   * 14 bits for hires mode.
+   * 2 bits for double hires.</p>
+<p>All the display modes will be reimplemented the same way - as a 560x192 bit grid, that will be fed directly into the composite renderer.</p>
+<p>Display data is converted from whatever source format, into bits.</p>
+<p>64 bits </p>
+<p>Since 560 isn't divisible by 64, we'll pad to get us to 576 bits per line layout in memory.</p>
+<p>Then the rendering routine will have a func that provides the next 17-bit window of bits from the source data. This can all be implemented with keeping a counter, and two 64-bit values from the source line. The current 17-bit value is just "reg0 &amp; 0x1FFFF" into the lookup table. Whenever reg1 is empty we fetch the next 64-bit value from the source line or a 0 if we're at the end of the line.</p>
+<p>One goal of this, is to optimize for caching. The M1 L1 cache line size is 128 bytes. This means that every one of our scanlines will be able to be fetched with either 1 or 2 cache lines, only two memory accesses. Most of the heavy lifting will be done shifting stuff in registers.</p>
+<p>L1 is 128KB, L2 is 12MB. This means the entire lookup table will easily fit into L2 cache. We may want to lay out the lookup table in memory in a way that further optimizes cache usage. For instance, we know we will iterate across the phase parameter 0, 0.25, 0.5, 0.75 as we process a scanline. If we've got a run of similar color pixels (e.g. 101010101010) that will be effectively cached. Easy enough to test.</p>
+<p>We can do testing to see if the 13-bit is sufficient - it would work the same way. It will use less memory for the lookup table. And may affect overall cache performance. And would be faster to regenerate if the user wants to change any of the input parameters.</p>
+<p>The renderer iterates 192 scanlines and 560 pixels per line, drawing each pixel.
+It will have two modes:
+   * color-kill (i.e., white or monochrome)
+   * composite</p>
+<p>Maybe I will eventually create a RGB mode that will have different filter parameters going into the lookup table - faster response times.</p>
+<p>If we are in a pure text mode, we use color-kill. If we are in a graphics mode, either full or mixed mode, we use the composite mode for the whole frame. Or, do we use a LUT for monochrome that captures the luma value from the composite calculations? I guess it depends on whether luma ever is significantly different from 1. Should be able to back-convert a rendered image to YUV to look at the Y values. If there is variation in the Y values then it would make sense to do LUT for monochrome. If not, just do it the way we do it not.</p>
+<p>We don't have to re-calculate the LUT whenever params change. We're a desktop app, we can just pre-generate as many different LUTs as we want to support different modes and mode combinations.</p>
+<p>Currently it takes 100microseconds to render a frame. I am betting that we can reduce this quite a bit further.</p>
+<p>On the one hand, at 100uS we are already doing great. On the other hand, this is with pretty fast modern hardware. If we can optimize more we can improve operation on older hardware.</p>
+<h2 id="pseudo-code-for-frame-rendering">Pseudo-code for frame rendering<a class="headerlink" href="#pseudo-code-for-frame-rendering" title="Permanent link">&para;</a></h2>
+<p>At startup time:</p>
+<ul>
+<li>buildHires40Font(MODEL_IIE, 0);</li>
+<li>setupConfig();</li>
+<li>init_hgr_LUT();</li>
+<li>Create bit image frame buffer - 560 x 192 bytes.</li>
+</ul>
+<p>In main loop:
+   * For each dirty "line" (8 scanlines) call the appropriate mode function to update the bit image frame buffer.
+   * Call the composite renderer to render just the 8 scanlines. call generateHiresScanLine() for each of the 8 scanlines.
+   *   processAppleIIFrame_LUT(graymap, hgrdecode_LUT_outputImage);</p>
+<p>Let's have the new code in the same area as the current code, and have an if statement to </p>
+<h2 id="video-modes-generation-of-bitstream">Video modes - generation of bitstream.<a class="headerlink" href="#video-modes-generation-of-bitstream" title="Permanent link">&para;</a></h2>
+<h3 id="text-mode">Text mode<a class="headerlink" href="#text-mode" title="Permanent link">&para;</a></h3>
+<p>Only for updated lines:
+Read and double values from the font. Based on scanline % 8, grab that scanline of data from the pre-computed font and emit each byte twice to double it.</p>
+<h3 id="lgr-mode">LGR mode<a class="headerlink" href="#lgr-mode" title="Permanent link">&para;</a></h3>
+<p>only for updated lines:
+For each scanline, read the byte. scanline / 8 to find the line, then convert line to memory location.
+If scanline % 8 between 0-3, emit the lo nibble. If scanline % 8 between 4-7, emit the hi nibble. (or whichever it is).</p>
+<p>as long as we're on an X location in this dot, emit output based on the pixel X location mod 4 as an index into the bits of the lo-res pattern. Sometimes we start halfway through a pattern; sometimes we end halfway through a pattern. This is what generates artifacts between different colored lores blocks.</p>
+<h3 id="hgr-mode">HGR mode<a class="headerlink" href="#hgr-mode" title="Permanent link">&para;</a></h3>
+<p>only for updated lines:
+Already know how to do that.</p>
+<h3 id="dhgr-mode">DHGR mode<a class="headerlink" href="#dhgr-mode" title="Permanent link">&para;</a></h3>
+<p>only for updated lines:
+Similar to HGR mode, except pulling values first from alt bank, then main, back and forth across the 40 bytes. And, disregards the hi bit of each byte.
+Each byte starts at a 180 degree phase offset from each other, and, the whole scanline starts at 90 degree phase difference from normal hgr.</p>
+<h2 id="fancy-timing-based-updates">Fancy timing-based updates<a class="headerlink" href="#fancy-timing-based-updates" title="Permanent link">&para;</a></h2>
+<p>The video frame can now be generated, if we like, down to the cycle level. We can track where the "beam" is based on cycle counts. This is just some simple math. So if display mode is changed in the middle of a scanline, we could in theory start rendering the bitstream based on the new mode from that point on. This is how some of the other emulators do it (OE, AppleWin).
+I still am not sure how important this is to me. But, we're much closer to being able to do it.</p>
+<h1 id="new-rgb-approach">New RGB Approach<a class="headerlink" href="#new-rgb-approach" title="Permanent link">&para;</a></h1>
+<p>took a look at the hgrd code - I remember that I manually brought in a filter coefficient array instead of calculating it. If I want to try higher-bandwidth devices, I can edit a template in openemulator and try them live! ok that's cool. Once I settle on parameters in OE I can calculate a new coefficient array for 'RGB'. And that would be easier than trying to write more special code for 'rgb mode'.</p>
+<p>these params are pretty good for composite, about the best we get. if chrome bandwidth is too high, the color changes so rapidly you get effectively dithering.</p>
+<pre><code>        &lt;property name=&quot;videoBandwidth&quot; value=&quot;7000000&quot;/&gt;
+        &lt;property name=&quot;videoLumaBandwidth&quot; value=&quot;2000000&quot;/&gt;
+        &lt;property name=&quot;videoChromaBandwidth&quot; value=&quot;2250000&quot;/&gt;
+</code></pre>
+<p>the higher the videoLumaBandwidth, the more you get the dot pattern colored as opposed to smeared. i.e., you see distinct black dots in the middle of what should be color fields. text in gr mode at 6M / 2.25M is colored, but very easy to read. 2.5M for each isn't bad either. slight dithering effect but good text resolution.</p>
+<p>if luma too high, you get black. in middle range, you get for example yellow and darker yellow where there's a 0 bit. The black dots (high luma) might be how the IIe RGB worked. (SOMEWHERE in my memory i remember a crisp display with striations. it's not the GS RGB.)</p>
+<p>SO. no, that doesn't work. RGB is in nature different from NTSC. it does not split luma from chroma in the same way, and it does not combine colors the same way. SO, that implies the IIgs video display chip is doing some very special things.</p>
+<p>This is interesting..
+https://comp.sys.apple2.narkive.com/r0nqAIM3/mega-ii-chip-information
+https://tek4um.com/Apple%20Cork%20Cupertino%20Arhive/photos/2gsDesingDoc1985/</p>
+<p>the GS might be using a ROM lookup table. "VGC takes standard apple II video information from the Mega II and generates the video output".
+"adds enhancements to existing apple ii video modes"
+There's a bit in the manual that discusses how to view the dhgr color generation, as a sliding window 4 pixels wide. That might be the best way to think about it - the color of a pixel is determined by a lookup of those 4 values. That would be a 16-color lookup table. OH. the Mega II diagram says: 16x12. 16 entries, 12 bits - 4096 colors. I think that's what Mega II / VGC is doing. This would also make HGR and DHGR consistent with each other. How about LGR? it is clearly using solid colors. So the GS is picking the color based on the LGR nibble value, and keeping that one throughout the LGR block. Same for DLGR.</p>
+<p>So, it's a lookup table you want, is it?</p>
+<p>AppleWin does this:</p>
+<pre><code>    uint32_t mask  =  0x01C0; //  00|000001 1|1000000
+    uint32_t chck1 =  0x0140; //  00|000001 0|1000000
+    uint32_t chck2 =  0x0080; //  00|000000 1|0000000
+
+    // HIRES render in RGB works on a pixel-basis (1-bit data in framebuffer)
+    // The pixel can be 'color', if it makes a 101 or 010 pattern with the two neighbour bits
+    // In all other cases, it's black if 0 and white if 1
+    // The value of 'color' is defined on a 2-bits basis
+</code></pre>
+<p>Call it a 3-bit sliding window of the hgr data. So what would this look like using the dhgr data? a 6-bit sliding window (or, in dhgr, 8-bit?)</p>
+<p>let's assume 6.</p>
+<p>1100110011001100</p>
+<p>so 110011 is a color
+001100 is a color (phase shifted 90 or 180 degrees in the LUT)
+111111 is white
+000000 is black</p>
+<p>this is dhgr table from:
+https://www.appleoldies.ca/graphics/dhgr/dhgrtechnote.txt</p>
+<pre><code>                                                Repeated
+                                                Binary
+          Color         aux1  main1 aux2  main2 Pattern
+          Black          00    00    00    00    0000
+          Magenta        08    11    22    44    0001
+          Brown          44    08    11    22    0010
+          Orange         4C    19    33    66    0011
+          Dark Green     22    44    08    11    0100
+          Grey1          2A    55    2A    55    0101
+          Green          66    4C    19    33    0110
+          Yellow         6E    5D    3B    77    0111
+          Dark Blue      11    22    44    08    1000
+          Violet         19    33    66    4C    1001
+          Grey2          55    2A    55    2A    1010
+          Pink           5D    3B    77    6E    1011
+          Medium Blue    33    66    4C    19    1100
+          Light Blue     3B    77    6E    5D    1101
+          Aqua           77    6E    5D    3B    1110
+          White          7F    7F    7F    7F    1111
+</code></pre>
+<ul>
+<li>violet = 1100</li>
+<li>Green = 0011</li>
+<li>Medium Blue = 0110 - 1 dot shift</li>
+<li>orange = 1001 - 1 dot shift</li>
+<li>white = 1111</li>
+<li>black = 0000</li>
+</ul>
+<p>So extracted - the hires colors map into this, blue/orange phase-shifted from the violet/green.</p>
+<p>This approach should still pick up the artifacts. It's not dissimilar to the ntsc code in that regard. hires will always generate only one of those six patterns (except on color and byte edge crossings).</p>
+<p>The IIGS LGR is clearly generated more like the way I did it originally. (i.e. we have a color, paint the block that color - i.e., no artifacts, except, there is just a tiny hair of phosphor matrix coloring).</p>
+<p>On the IIGS RGB, there is -no NTSC fringing-. It DOES do the dots / half pixel for the hi bit delay.</p>
+<pre><code>   11 00 11 00 - repeated violet
+
+00 11 00         - color - ror 2, violet
+   11 00 11      - color - violet
+      00 11 00   - color. ror 2 violet.
+         11 00 00 - black.
+</code></pre>
+<p>00 11 11 - black, white, white (double of course)
+11 11 00 - white, white, black (double up of course)</p>
+<p>this is hires bits, not 560 dots:</p>
+<p>10 - gives us a single dot of purple
+1010 - gives us three dots of purple. i.e., it fills the 0 with the same purple color
+111 - three dots of white</p>
+<p>1001 - should be a dot of purple and a dot of green.</p>
+<p>So on any pixel - we look ahead 2 pixels. if there is any kind of repeating pattern, 010 or 101, we color this dot and the next dot. (a "wide" pixel)
+if we have a non-repeating pattern, 100, we color only this dot. (a "narrow" pixel)</p>
+<p>When we draw white line at right edge (279), we do get this value in memory: C0
+that is, shifted, and last bit set. last bit set is not a double 1. so we don't get white, we get brown. (hi res artifact!)
+(unshifted would get us what..) unshifted gets us green. 0x40. 1 in odd column, so yeah, green.
+So the color lookup is based on the 560 dots value. but we're jumping by two dots.
+So on GS RGB there ARE some artifacts but they're not because of ntsc. they're because of the way bit streams are calculomated.</p>
+<p>how about look behind one, look ahead one</p>
+<pre><code>   11 11 11 00 00 - white
+
+00 11 11          - white
+   11 11 11       - white  - white. ror 2 it's still white.
+      11 11 00    - white. 
+         11 00 00 - the pixels are off, so NO COLOR.
+</code></pre>
+<p>I think I'm going to bag the above, and just patch the current 'rgb' code. Which isn't awful.
+NO I AM NOT A QUITTER! HA HA.</p>
+<p>I did fix a bug where when writing black I was writing with alpha=0, which is wrong. Fixed to write 0xFF alpha.</p>
+<p>So, I think the bug was actually: you have to clear the buffer before you update the texture. that old thing again. So now I clear the entire scanline to 0x000000FF before doing the other updates. Much happier. let's try Choplifter, to "test".</p>
+<p>Let's think about modes again.</p>
+<p>there is:
+   NTSC (color) mode
+   RGB (color) mode
+   Mono mode (based on NTSC engine)
+      with green, amber, white color choices.
+   There should not be a mono+rgb mode. Doesn't make sense.
+   These should be vectored in display.cpp, not anywhere else.
+   All options: user can select LINEAR or NEAREST.
+   Another option: scanline option (to show distinct scanlines).</p>
+<p>F2 becomes: toggle between display engines - NTSC, RGB, Mono.</p>
+<p>Have:</p>
+<p>render_line_ntsc
+render_line_rgb
+render_line_mono</p>
+<h1 id="optimizing-the-lut-creation-code">Optimizing the LUT-creation code.<a class="headerlink" href="#optimizing-the-lut-creation-code" title="Permanent link">&para;</a></h1>
+<p>Starting point:</p>
+<p>LUT init time: 425731833 nanoseconds (425 milliseconds).</p>
+<p>the phase is only ever one of four values. it's 0, 0.25, 0.5, 0.75.
+So precalculate these ..
+LUT init time: 402014750 nanoseconds</p>
+<p>pre-calculate them once and put them into config. SCORE.</p>
+<p>width being pased in to processAppleIIScanline_init is 48.
+He's 'painting' the 17 bits into positions 8 .. 24. plus 3, or 27. So use 28 as width instead of 48?
+I don't think we need to loop in here..</p>
+<p>put the bit pattern into frameData 0 .. 16
+run processAppleIIScanline only on pixel position 8.</p>
+<p>we DO need to convert 17 pixels to YIQ
+but we DON'T need to run the filter on anything except the center pixel. That, mind-blowingly, gets us to:</p>
+<p>LUT init time: 27367666 nanoseconds</p>
+<p>a 15x speedup. ok that is still not fast enough yet to change this at runtime. It is, however, fast enough to pre-compute a couple different ones at startup time.</p>
+<p>Next, we are calling processPixel 9M times, doing two float multiplies, and a divide of luminance by 255. The thing is, luminance is only ever 0 or 255. So luminance is only ever 0 or 1. So the values are either:
+  luminance = 255: output = 1.0f, config.phase_sin, config.phase_cos
+  luminance = 0  : output = 0.0f, 0.0f, 0.0f</p>
+<p>ok, not getting it below 27ms so far, but simplifying and cleaning up the code..</p>
+<p>so with the phases.. wouldn't phases 1-3 just be the same data as phase 0, only indexed differently? if that's true, then perhaps we could greatly reduce the memory footprint and execution time by 4x. That would help with cache etc too. cuz it's a half million x 4 = 2MB of data.</p>
+<p>while there are some lines in here that repeat the entire line compared to other entries, there is no clear-cut repetition.</p>
+<p>I bet we may need to calculate the filter for N taps if that's how many taps we want. As opposed to 8. We're calculating for 8 but only using 5 or 6 or whatever. I bet that's the issue.</p>
+<p>so with the phases.. wouldn't phases 1-3 just be the same data as phase 0, only indexed differently? if that's true, then perhaps we could greatly reduce the memory footprint and execution time by 4x. That would help with cache etc too. cuz it's a half million x 4 = 2MB of data.</p>
+<p>while there are some lines in here that repeat the entire line compared to other entries, there is no clear-cut repetition.</p>
+<p>I bet we may need to calculate the filter for N taps if that's how many taps we want. As opposed to 8. We're calculating for 8 but only using 5 or 6 or whatever. I bet that's the issue.</p>
+<p>8 / 50 = looks great
+7 / 45 = pretty good
+6 / 35 = pretty good
+5 / 25 = some artifacts</p>
+<p>Light wavelengths in nm of different CRT phosphors:</p>
+<p>https://www.labguysworld.com/crt_phosphor_research.pdf</p>
+<p>I think it's going to be : the actual phosphor frequency, but, some average brightness based on peak and persistence. "time to decay to 10% of peak".
+For instance P1 green says 20ms to decay to 10% of peak. So a frame is 16ms, so the average brightness will be what, 50%, assuming a linear dropoff? There are online wavelength to RGB converter tools.</p>
+<p>Measurement app says 549nm dominant wavelength on the monitor ///. The app is probably not calibrated well. and the ambient light might be affecting my readings. but it was reading 549/550 on both. So maybe that's the way to do it.</p>
+<p>openemulator measures at 495nm. The Apple monochrome monitor //e uses EIA Type P31 phosphor; the "monochrome monitor" uses EIA P4. P4 peak is 540 - HOWEVER "range" is 330-699", i.e., white. Probably not evenly. P1 says peak 525 range 490-580 (fairly narrow). P31 is 531nm.</p>
+<p>So the dominant is not the only important thing, but, is just the peak.</p>
+<p>OK, I have continued refactoring the code here, I have it from 28ms down to 16ms by eliminating unnecessary arrays, flattening applyFilter and yiqtorgb into processappleIIScanline_lut. Combined two loops into one that were operating on the same indexes. Made the processing of the filter linear instead of center, then outside + and - etc repeating until 8. The next chunk - the code is using an integer to iterate through all 128k possible bit combinations; it is then generating an array of 17 bytes to represent these. Then it calls processScanline, which parses those bytes. 
+inputScanline[x] is being accessed in order. So instead of generating and reading bytes, let's just pass in the int and process the bits right in processAppleIIscanline_lut. That shaved another 2ms. </p>
+<h2 id="further-discussion">Further Discussion<a class="headerlink" href="#further-discussion" title="Permanent link">&para;</a></h2>
+<p>I see this referenced here:</p>
+<p>https://groups.google.com/g/comp.sys.apple2/c/X_LKB6t6njE
+https://observablehq.com/@zellyn/apple-ii-ntsc-emulation-openemulator-explainer
+https://zellyn.com/apple2shader/ - the webgl port of openemulator ntsc code. 
+https://github.com/zellyn/apple2shader</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

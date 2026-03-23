@@ -1,0 +1,3739 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../MMU/">
+      
+      
+        <link rel="next" href="../HiRes/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Apple IIgs Memory - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#iigsmemory" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Apple IIgs Memory
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#shadow-register-c035" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shadow Register - $C035
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Shadow Register - $C035">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#6-io-and-lc-inhibit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6: I/O and LC inhibit:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-inhibit-shadowing-text-page-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5: Inhibit shadowing text page 2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-inhibit-shadowing-aux-hi-res-graphics-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4: Inhibit Shadowing Aux Hi-Res graphics pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-inhibit-shadowing-super-hires-buffer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3: Inhibit shadowing: Super Hires buffer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-inhibit-shadowing-hires-graphics-page-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2: Inhibit Shadowing Hires Graphics Page 2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-inhibit-shadowing-hires-graphics-page-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1: Inhibit Shadowing Hires Graphics Page 1
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#0-inhibit-shadowing-text-page-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0: Inhibit shadowing text page 1
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c036-speed-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $C036 - Speed Register
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="$C036 - Speed Register">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#7-cpu-speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7: CPU Speed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-power-on-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6: Power-on status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-reserved-do-not-modify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5: reserved - do not modify
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-shadowing-enable-for-all-fast-ram-banks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4: Shadowing enable for ALL FAST RAM banks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-slot-7-disk-motor-on-detect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3: Slot 7 disk motor-on detect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-slot-6-disk-motor-on-detect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2: Slot 6 disk motor-on detect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-slot-5-disk-motor-on-detect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1: Slot 5 disk motor-on detect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#0-slot-4-disk-motor-on-detect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0: Slot 4 disk motor-on detect
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c029-newvideo-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $C029 - newvideo register
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="$C029 - newvideo register">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#7-disable-video" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7: Disable Video
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-change-memory-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6: Change Memory Map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-bw-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5: B&amp;W / Color
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-1-reserved-must-set-to-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4-1: Reserved, must set to 0.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#0-enable-bank-latch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0: Enable Bank Latch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c068-state-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $C068 - State Register
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-translation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Translation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Memory Translation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vector-pulls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vector Pulls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c1-cf-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C1-CF Mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#shadow-register-c035" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shadow Register - $C035
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Shadow Register - $C035">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#6-io-and-lc-inhibit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6: I/O and LC inhibit:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-inhibit-shadowing-text-page-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5: Inhibit shadowing text page 2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-inhibit-shadowing-aux-hi-res-graphics-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4: Inhibit Shadowing Aux Hi-Res graphics pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-inhibit-shadowing-super-hires-buffer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3: Inhibit shadowing: Super Hires buffer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-inhibit-shadowing-hires-graphics-page-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2: Inhibit Shadowing Hires Graphics Page 2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-inhibit-shadowing-hires-graphics-page-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1: Inhibit Shadowing Hires Graphics Page 1
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#0-inhibit-shadowing-text-page-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0: Inhibit shadowing text page 1
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c036-speed-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $C036 - Speed Register
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="$C036 - Speed Register">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#7-cpu-speed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7: CPU Speed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-power-on-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6: Power-on status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-reserved-do-not-modify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5: reserved - do not modify
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-shadowing-enable-for-all-fast-ram-banks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4: Shadowing enable for ALL FAST RAM banks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-slot-7-disk-motor-on-detect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3: Slot 7 disk motor-on detect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-slot-6-disk-motor-on-detect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2: Slot 6 disk motor-on detect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1-slot-5-disk-motor-on-detect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1: Slot 5 disk motor-on detect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#0-slot-4-disk-motor-on-detect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0: Slot 4 disk motor-on detect
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c029-newvideo-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $C029 - newvideo register
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="$C029 - newvideo register">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#7-disable-video" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7: Disable Video
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-change-memory-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6: Change Memory Map
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-bw-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5: B&amp;W / Color
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-1-reserved-must-set-to-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4-1: Reserved, must set to 0.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#0-enable-bank-latch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0: Enable Bank Latch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c068-state-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $C068 - State Register
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-translation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory Translation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Memory Translation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vector-pulls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vector Pulls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c1-cf-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C1-CF Mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="iigsmemory">iigsmemory<a class="headerlink" href="#iigsmemory" title="Permanent link">&para;</a></h1>
+<p>Memory Control Switches</p>
+<p>This is a great discussion directly addressing several questions I have:
+https://comp.sys.apple2.narkive.com/o1R6slX2/apple-iigs-bank-latching</p>
+<p>Also this:
+http://umich.edu/~archive/apple2/technotes/tn/iigs/TN.IIGS.032</p>
+<h2 id="shadow-register-c035">Shadow Register - $C035<a class="headerlink" href="#shadow-register-c035" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Default on Power-up:</li>
+<li>Default on RESET:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Description</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>Reserved - do not modify</td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Inhibit I/O and language-card Operation</td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Inhibit Shadowing text page 2</td>
+<td>ROM03 only</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Inhibit shadowing, aux bank hi-res pages (both)</td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Inhibit shadowing - Super Hires Buffer</td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Inhibit shadowing - hires page 2</td>
+<td></td>
+</tr>
+<tr>
+<td>1</td>
+<td>Inhibit shadowing - hires page 1</td>
+<td></td>
+</tr>
+<tr>
+<td>0</td>
+<td>inhibit shadowing - text page 1</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="6-io-and-lc-inhibit">6: I/O and LC inhibit:<a class="headerlink" href="#6-io-and-lc-inhibit" title="Permanent link">&para;</a></h3>
+<ol>
+<li>enable I/O at $C000, and perform LC operations in $D000-$FFFF</li>
+<li>flat RAM memory space from $0000 - $FFFF</li>
+</ol>
+<p>There is no shadowing from $D000-$FFFF. the LC that can appear in banks $00/$01 is distinct from the LC that can appear in banks $E0/$E1.</p>
+<h3 id="5-inhibit-shadowing-text-page-2">5: Inhibit shadowing text page 2<a class="headerlink" href="#5-inhibit-shadowing-text-page-2" title="Permanent link">&para;</a></h3>
+<p>Text Page 2 is $0800 - $0BFF.</p>
+<ol>
+<li>shadow main text page 2 and auxiliary text page 2 to E0/E1</li>
+<li>no shadowing</li>
+</ol>
+<p>ROM01 boards don't have this and so have that classic desk accessory to do it in software.</p>
+<h3 id="4-inhibit-shadowing-aux-hi-res-graphics-pages">4: Inhibit Shadowing Aux Hi-Res graphics pages<a class="headerlink" href="#4-inhibit-shadowing-aux-hi-res-graphics-pages" title="Permanent link">&para;</a></h3>
+<p>The hires pages are $2000 - $5FFF</p>
+<ol>
+<li>shadowing is enabled subject to the setting of bit 1.</li>
+<li>shadowing is disabled in the auxiliary bank. Main bank hires shadowing is unaffected.</li>
+</ol>
+<h3 id="3-inhibit-shadowing-super-hires-buffer">3: Inhibit shadowing: Super Hires buffer<a class="headerlink" href="#3-inhibit-shadowing-super-hires-buffer" title="Permanent link">&para;</a></h3>
+<p>This is Aux bank, $2000 - $9FFF</p>
+<ol>
+<li>Shadowing enabled for super hires graphics buffer.</li>
+<li>Shadowing is disabled for entire 32K video buffer.</li>
+</ol>
+<h3 id="2-inhibit-shadowing-hires-graphics-page-2">2: Inhibit Shadowing Hires Graphics Page 2<a class="headerlink" href="#2-inhibit-shadowing-hires-graphics-page-2" title="Permanent link">&para;</a></h3>
+<p>Address Range: $4000 - $5FFF</p>
+<ol>
+<li>Shadowing is enabled for hires page2, both Main and Aux, subject also to Bit 4</li>
+<li>Shadowing disabled for hires page 2, both Main and Aux.</li>
+</ol>
+<h3 id="1-inhibit-shadowing-hires-graphics-page-1">1: Inhibit Shadowing Hires Graphics Page 1<a class="headerlink" href="#1-inhibit-shadowing-hires-graphics-page-1" title="Permanent link">&para;</a></h3>
+<p>Address Range: $2000 - $3FFF</p>
+<ol>
+<li>Shadowing is enabled for hires page 1, both Main and Aux, subject also to Bit 4</li>
+<li>Shadowing disabled for hires page 1, both Main and Aux.</li>
+</ol>
+<h3 id="0-inhibit-shadowing-text-page-1">0: Inhibit shadowing text page 1<a class="headerlink" href="#0-inhibit-shadowing-text-page-1" title="Permanent link">&para;</a></h3>
+<p>Text Page 1 is $0400 - $07FF.</p>
+<ol>
+<li>shadow main text page 1 and auxiliary text page 1 to E0/E1</li>
+<li>shadow disabled for text page 1.</li>
+</ol>
+<h2 id="c036-speed-register">$C036 - Speed Register<a class="headerlink" href="#c036-speed-register" title="Permanent link">&para;</a></h2>
+<h3 id="7-cpu-speed">7: CPU Speed<a class="headerlink" href="#7-cpu-speed" title="Permanent link">&para;</a></h3>
+<h3 id="6-power-on-status">6: Power-on status<a class="headerlink" href="#6-power-on-status" title="Permanent link">&para;</a></h3>
+<h3 id="5-reserved-do-not-modify">5: reserved - do not modify<a class="headerlink" href="#5-reserved-do-not-modify" title="Permanent link">&para;</a></h3>
+<h3 id="4-shadowing-enable-for-all-fast-ram-banks">4: Shadowing enable for ALL FAST RAM banks<a class="headerlink" href="#4-shadowing-enable-for-all-fast-ram-banks" title="Permanent link">&para;</a></h3>
+<p>GuS only changes pagetable entries for the SHR page; banks $02 - $MAXFASTBANK.
+But both even and odd banks, which doesn't seem right. And it -only- considers the SHR area for shadowing, not any other video area. This seems wrong. let's look at KEGS.</p>
+<p>/<em> Assume Ninja Force Megademo </em>/
+/<em> only do banks 3 - num_banks by 2, shadowing into e1 </em>/
+At least this only does the odd banks. But clearly is a hack for one piece of software.</p>
+<h3 id="3-slot-7-disk-motor-on-detect">3: Slot 7 disk motor-on detect<a class="headerlink" href="#3-slot-7-disk-motor-on-detect" title="Permanent link">&para;</a></h3>
+<h3 id="2-slot-6-disk-motor-on-detect">2: Slot 6 disk motor-on detect<a class="headerlink" href="#2-slot-6-disk-motor-on-detect" title="Permanent link">&para;</a></h3>
+<h3 id="1-slot-5-disk-motor-on-detect">1: Slot 5 disk motor-on detect<a class="headerlink" href="#1-slot-5-disk-motor-on-detect" title="Permanent link">&para;</a></h3>
+<h3 id="0-slot-4-disk-motor-on-detect">0: Slot 4 disk motor-on detect<a class="headerlink" href="#0-slot-4-disk-motor-on-detect" title="Permanent link">&para;</a></h3>
+<p>The CYA (Speed) reg is cleared to zeros on reset or power up</p>
+<h2 id="c029-newvideo-register">$C029 - newvideo register<a class="headerlink" href="#c029-newvideo-register" title="Permanent link">&para;</a></h2>
+<h3 id="7-disable-video">7: Disable Video<a class="headerlink" href="#7-disable-video" title="Permanent link">&para;</a></h3>
+<p>when 0, all existing Apple II video modes are supported.
+When 1, memory address bus is tri-stated during PHI1 except for refresh. Also changed memory map to linear per bit 6.</p>
+<h3 id="6-change-memory-map">6: Change Memory Map<a class="headerlink" href="#6-change-memory-map" title="Permanent link">&para;</a></h3>
+<p>When 0, memory map is same as normal Apple II.
+When 1, memory map is linear and starts at $2000 and ends at $9FFF in Aux memory.</p>
+<p>When linearization is enabled, e1/2000..9fff is remapped per below, to allow the SHR stuff to read two bytes of SHR data per cycle.</p>
+<pre><code>x = linear_address - $2000
+y = x[15]:x[0]:x[14..1]
+physical_address = y + $2000
+</code></pre>
+<p>in other words:</p>
+<p>linear $2000 maps to physical $2000
+linear $2001 maps to physical $6000</p>
+<p>$2002 -&gt; $2001
+$2003 -&gt; $6001</p>
+<p>the pattern continues...</p>
+<p>It just so happens that the mapping between main/aux bank and physical
+chips on the board is swapped for addresses $6000..$9fff. These two
+hacks together let the VGC access two contiguous bytes of SHR data
+simultaneously.</p>
+<p>Experiment:
+turn on linear
+E1/2000:1 2 3 4
+turn off linear
+these values should now be in:
+e1/2000.2001 e1/6000.6001
+E1/2000
+E1/6000
+monitor is changing this.
+so have to write a test program.</p>
+<h3 id="5-bw-color">5: B&amp;W / Color<a class="headerlink" href="#5-bw-color" title="Permanent link">&para;</a></h3>
+<p>When 0, double hires displayed in color.
+When 1, double hires display is black and white.</p>
+<h3 id="4-1-reserved-must-set-to-0">4-1: Reserved, must set to 0.<a class="headerlink" href="#4-1-reserved-must-set-to-0" title="Permanent link">&para;</a></h3>
+<h3 id="0-enable-bank-latch">0: Enable Bank Latch<a class="headerlink" href="#0-enable-bank-latch" title="Permanent link">&para;</a></h3>
+<p>When 1, data on alternate-data-bus bit 1 is latched as bank address bit 0.
+When the bit is 0, data is not latched.</p>
+<p>When the bank address is latched, the Main/Aux hierarchy is as follows: if bank address is 1, Aux memory is always addressed. If bank address is 0, soft switches determine which bank is accessed. (RAMRD/RAMWRT). ** however, the I/O space and the LC arrangement must still be respected in the odd bank/bank 1!</p>
+<ul>
+<li>When the bank latch is enabled, A17 is passed to the Mega II, so you can
+access E1/xxxx directly. If the bank latch is disabled, all accesses to
+E1/xxxx go to E0/xxxx (where you can still access auxiliary memory through
+Apple IIe soft switches)</li>
+</ul>
+<p>Enable bank latch. If this bit is 1, the 17th address bit is
+used to select either the main or auxiliary memory bank.
+If the address bit is 1, then the auxiliary bank is
+enabled. (Actually data bit 0 is used as the 17th address
+bit). If the address bit is 0, the state of the memory
+configuration soft switches determines which memory
+bank is enabled. See Chapter 3 for descriptions of the
+memory configuration soft switches. Table 4-18 shows
+how to use this bit to select a memory bank.
+1 The 17th address bit is ignored.</p>
+<p>So, "data bit" is just "we're going to hack another address bit by using the data bus" because the MegaII has only a 16-bit input. So that really can be treated as address bit 17.</p>
+<p>ugh this is still not clear which banks this works against.</p>
+<h2 id="c068-state-register">$C068 - State Register<a class="headerlink" href="#c068-state-register" title="Permanent link">&para;</a></h2>
+<p>The State Register duplicates in the FPI certain memory management bits that can be read all in one byte, instead of across many bytes as in the Apple IIe.</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Softswitch</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>ALTZP</td>
+<td>1 = ZP, Stack, LC are in Main; 0 = in Aux</td>
+</tr>
+<tr>
+<td>6</td>
+<td>PAGE2</td>
+<td>1 = Text Page 2 Selected</td>
+</tr>
+<tr>
+<td>5</td>
+<td>RAMRD</td>
+<td>1 = Aux RAM is read-enabled</td>
+</tr>
+<tr>
+<td>4</td>
+<td>RAMWRT</td>
+<td>1 = aux RAM is write-enabled</td>
+</tr>
+<tr>
+<td>3</td>
+<td>RDROM</td>
+<td>1 = ROM is read enabled in LC area; 0 = RAM read enabled in LC area</td>
+</tr>
+<tr>
+<td>2</td>
+<td>LCBNK2</td>
+<td>1 = LC Bank 2 Selected</td>
+</tr>
+<tr>
+<td>1</td>
+<td>ROMBANK</td>
+<td>Must always be 0</td>
+</tr>
+<tr>
+<td>0</td>
+<td>INTCXROM</td>
+<td>1 = internal ROM at $Cx00 is selected; 0 = peripheral-card ROM</td>
+</tr>
+</tbody>
+</table>
+<p>This is a read-write register - intention being to dramatically speed up interrupt handling.</p>
+<p>Here is an interesting question - is this -all- the softswitches that control IIe memory mapping in Main / Even Banks? NO.
+It's missing: 80STORE; but that's the only one I think.</p>
+<p>LCBNK2 here: the GS HW Reference has this bit's description backwards. HW Ref says "1 means Bank 1 selected". In fact, 1 means Bank 2 selected, just like the name says.</p>
+<h2 id="memory-translation">Memory Translation<a class="headerlink" href="#memory-translation" title="Permanent link">&para;</a></h2>
+<p>The Mega II swaps $6000-$9FFF (half the superhires page) in the <em>physical</em> RAM.
+I.e.
+logical address $5FFF is in Memory chips marked Main
+logical address $6000 is in Memory chips marked Aux</p>
+<p>I think there is a softswitch that controls this.</p>
+<p>Based on the schematic, the MegaII has following inputs:</p>
+<p>MDBUS (same as DBUS via a 245 bus transceiver). Main data bus (//e main bank)
+ADBUS (Aux data bus, shared only with video)
+RABUS - ram address on the two banks of 64K.
+CASA, CASM, RAS: column address for mega ii memory (aux and main) and row strobe. So it has its own address / dram decoder.
+So when there is an access from CPU to "aux RAM" it must be mediated by MegaII, and MegaII must internally push incoming data on MDBUS to ADBUS as required.</p>
+<p>ONLY 16 bits of address (A0-A15) are connected to MegaII. Plus we know, one more bit of address when multiplexed by 816 on the data bus D0.</p>
+<p>What is SBUS ? It's 6 bits (S0-S5) going into MegaII.</p>
+<h3 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Permanent link">&para;</a></h3>
+<p>Basis: iigs MMU page tables are 64k.</p>
+<p>iigsmem_shadow_config</p>
+<p>Do it like iiememory bsr_config?</p>
+<p>Compose a map to be used to rapidly determine what memory addresses shall be shadowed.
+If there is no shadowing enabled (as will often be the case for IIgs applications under GS/OS), remove the shadow handler from banks $00/$01.
+Otherwise set the handler and set the handler's map of 128 pages according to the map calculated.</p>
+<p>In Speed Register, bit 4 = 1 means shadowing in all banks $00 - $7F; otherwise shadowing only banks $00-$01.</p>
+<p>So we can either shadow (and make I/O &amp; LC appear) in banks 0/1; OR, in all RAM banks.</p>
+<p>For purposes of the LC, if shadowing is enabled for a particular bank, and the IOLC is enabled, then transform the address. for LC ROM, it's always going to point to the same real ROM. for LC RAM, we're mapping the addresses potentially like so:
+D000-DFFF: either C000-CFFF (bank 1), or D000-DFFF (bank 2)
+E000-FFFF: E000-FFFF.
+0000 - 01FF: 0000 - 01FF either in main bank, or in aux bank.
+Then re-add to base address of bank.</p>
+<p>The mapping could also be:
+17-bit address in
+lookup in 256-byte page table (just like //e)
+get new 17-bit address out (but not full 64-bit address, but just a relative address)
+There can be flag bits in the LUT: I/O; ROM; so we can then transform addresses the correct chunk of malloc'd memory. Because I think the memory </p>
+<p>RAMRD/RAMWRT</p>
+<p>Any access to an even shadowed bank must act like an Apple IIe access to main (the only) memory address space. Is this only bank 0, or, any shadowed even bank? (It seems likely THIS only operates in banks 00/01).</p>
+<p>On a direct access to an odd shadowed bank, it goes directly to that bank. (Does this bypass LC machinations?) Controlled by the Bit 17 thing. (of course this implies an effective MMU address &gt; $FFFF).
+Otherwise, an access to an even shadowed bank, gets transformed and might result in an access to its corresponding odd bank.</p>
+<h2 id="vector-pulls">Vector Pulls<a class="headerlink" href="#vector-pulls" title="Permanent link">&para;</a></h2>
+<p>Need to add these MMU tests. Not sure about this!
+    // Test: when IOLC not inhibited, interrupt vector pull reads from ROM.
+    // Test: when IOLC inhibited, interrupt vector pull reads from RAM.</p>
+<ol>
+<li>Set up vector for BRK?</li>
+<li>make sure IOLC enabled and ROM enabled</li>
+<li>BRK</li>
+<li>our vector handler will store a value into memory</li>
+<li>Test it.</li>
+</ol>
+<p>WriteOp(0x2000, 0x00)
+WriteOp(0x1000, )
+AssertOp(0x2000, 0xAE)</p>
+<pre><code>PHA
+LDA #$AE
+STA $00/2000
+PLA
+RTI
+
+PHA
+LDA #$EF
+STA $00/2000
+PLA
+RTI
+
+</code></pre>
+<p>Somehow, I'm going to have to signal a vector pull to the MMU module. I could use a different read() routine for those.
+Add a vector_read() routine.</p>
+<h2 id="c1-cf-mapping">C1-CF Mapping<a class="headerlink" href="#c1-cf-mapping" title="Permanent link">&para;</a></h2>
+<p>This works a little differently on the GS than IIe.</p>
+<p>There is (perhaps) the IIe behavior of INTCXROM SLOTC3ROM.
+There is of course the ability to set the slot roms between internal and slot.</p>
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
+<p>Apple IIe emulation is run in banks $00 and $01, but with shadowing to E0/E1 for I/O and video.<br />
+This allows reads by 8-bit software to occur at full speed, but shadowed writes are synced to 1MHz.
+There is various stuff in banks E0/E1 used by GS/OS, interrupt handlers, etc.</p>
+<p>I'll need something to return the speed and sync of a r/w. Maybe just a simple flag "1mhz read/write", which is:
+* any shadowed write in 00/01
+* any read or write in E0/E1</p>
+<p>So computer will have the RegMMU, but also FastMMU. RegMMU is injected into FastMMU.
+The CPU calls FastMMU. Everything else is injected with RegMMU.
+FastMMU is controlled by device iigsmemory, which exposes registers:
+* shadow register
+* New-Video register.</p>
+<p>iigsmemory will also replicate the language card functionality, and have those registers, because that bank switching exists in banks 00/01.</p>
+<p>New-Video, controls linearity or interleave of some memory in bank 1. Also, controls whether ALL even/odd banks are shadowed?</p>
+<p>So have page maps that map these banks to the Apple II MMU.
+Banks $00 - $01 are 128K built-in in ROM01 (plus E0/E1 = 256K). Banks $00 - $0F for ROM03 (1.125M total)
+Banks $00 and $01 are "shadowed" to banks $E0 and $E1 if shadowing is enabled - this is exact use of shadow handler for those pages.</p>
+<p>Fast ROM is banks $F0 to $FF. (1MB total).</p>
+<p>The $C000 - $FFFF space in E0/E1 is controlled by the LC. The Shadow register bit 6 just controls whether a WINDOW in those locations in banks0/1 is present or not.
+LC memory writes are NOT shadowed to E0/E1.</p>
+<p>The ROM01 file is 256KB exactly, and would map to banks $FC $FD $FE $FF. It looks like $FF/C000 is various slot card firmware, including at $C800-$CFFF (I forget, did the IIe have stuff here too?)
+$FF/D000 is AppleSoft etc. $F800 should be monitor ROM.. yep. All largely unmodified. So mapping this should be straightforward. Of course the reset/etc vectors are different.</p>
+<p>Weirdly, there is ROM data at $C06E-$C0FF. For example, $C06E is a JMP 9D36. what? </p>
+<p>The IRQ/BRK vector is 74 C0 ($C074). At that location in the ROM is this:
+B8 5C 10 00 E1</p>
+<p>which is CLV then JML $E1/0010. What? E1/0010 etc are interrupt vectors. What about apple II software that uses page 0? Ah, that is not shadowed.</p>
+<p>JBrooks: "$C07x ROM is active in bank 0 &amp; 1 when I/O shadowing is enabled, or after the CPU does a vector pull (interrupt) via $FFEx/FFFx"
+We determined that we think C07x ROM is controlled purely by the I/O shadowing flag.</p>
+<p>Shadowing: not all the regions in $00/$01 are shadowed:
+https://retrocomputing.stackexchange.com/questions/5555/apple-iigs-hardware-implementation-of-ram-shadowing</p>
+<pre><code>0 - 0400...07FF - Text1
+1 - 2000...3FFF - HGR1
+2 - 4000...5FFF - HGR2
+3 - 2000...9FFF - Super High-res
+4 - 2000...3FFF - Double High-res ($01/2000...)
+5 - Unused
+6 - C000...DFFF - Switches/Slot Memory
+7 - Speed indicator
+</code></pre>
+<p>ok. There is Fast RAM and Slow RAM. Slow RAM has the I/O stuff.</p>
+<h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
+<p>Develop a test harness that can easily do two things:</p>
+<ol>
+<li>run tests in an emulator test harness</li>
+<li>generate 65816 code to run tests on another emulator, or on real hardware.</li>
+</ol>
+<p>Define test data.
+iterate the test data
+generate C++ code for the tests
+also
+generate 65816 assembly code for the tests</p>
+<h3 id="test-data">Test Data<a class="headerlink" href="#test-data" title="Permanent link">&para;</a></h3>
+<p>Test data is a series of the following:</p>
+<p>W: ADDR24, VAL
+V: ADDR24, VAL
+VA: PADDR24, VAL</p>
+<p>W means "write", as in write VAL into ADDR24. ADDR24 is an address that is passed through the MMU.
+PADDR24 is a raw physical address read directly from the memory array, NOT via the MMU.
+V means "validate" - read the value from ADDR24, compare to VAL; continue if a match, error if mismatch.
+VA means "Validate absolute", or compare a value at physical address 24.</p>
+<h1 id="boiled-down">Boiled Down<a class="headerlink" href="#boiled-down" title="Permanent link">&para;</a></h1>
+<p>"shadow map"</p>
+<p>We could compress "shadow / not shadow" into a single bit, and an entire 64k bank into 256 bits at 1 bit per 256 bytes.
+Shadowing may even be fine on 1KB boundaries. So, 64 bits per bank. A single word.
+So then, we can trivially have a lookup table for any variation of the shadow register bits as the LUT index. This then means a bit test and function call down to MMU_IIe.</p>
+<p>Have an init func create a LUT based on every possible shadow bit (256 indices) and the 64-bit shadow mask above.</p>
+<p>"shadow enabled / disabled"</p>
+<p>Either banks $00/$01, or, ALL ram banks, may be set to shadow to $E0 and $E1, based on the shadow map above. (There are 3 or 4 basic methods each for read and write, for these options).</p>
+<h1 id="test-behavior-of-intcxrom-and-slotc3rom-in-gs">Test behavior of INTCXROM and SLOTC3ROM in GS<a class="headerlink" href="#test-behavior-of-intcxrom-and-slotc3rom-in-gs" title="Permanent link">&para;</a></h1>
+<p>the HW Ref shows 3 variations on I/O memory map. Peripheral expansion ROM (c800), internal rom and peripheral rom, and "internal rom". </p>
+<p>in KEGS:</p>
+<p>intcxromoff
+c800:floating bus</p>
+<p>intcxromon
+c800:"internal" memory</p>
+<p>ok, and I tested that this is the same in GS2.</p>
+<p>Speaking generally, since there is unlimited ROM in the IIgs there would be no reason for the GS builtin peripherals to each have their own C800 space. But, that space should behave like on IIe if you have a slot card in and the slot register set to "your card".</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

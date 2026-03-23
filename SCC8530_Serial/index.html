@@ -1,0 +1,4609 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../Parallel/">
+      
+      
+        <link rel="next" href="../Clock/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Serial (SCC8530) - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#scc8530-serial-ports" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Serial (SCC8530)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#clocking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clocking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#communication-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Communication Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#action-items-roadmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Action Items / Roadmap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Registers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scc-read-register-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SCC Read Register Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scc-write-register-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SCC Write Register Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR1
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR4
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR5
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr6-wr7-wr7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR6, WR7, WR7'
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR9
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR10
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR11
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr12-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR12-13
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR14
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR15
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r0-status-potential-interrupt-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R0 - Status (potential interrupt status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r1-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R1 - Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r2-interrupt-vector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R2 - interrupt vector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r3-interrupt-pending" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R3 - Interrupt Pending
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R10
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R15
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#async-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Encoding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auto-echo-and-local-loopback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto Echo and Local Loopback
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#receive-status-fifo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Receive Status FIFO
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#clocking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clocking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#communication-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Communication Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#action-items-roadmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Action Items / Roadmap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Registers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Registers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scc-read-register-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SCC Read Register Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scc-write-register-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SCC Write Register Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR0
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR1
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR4
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR5
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr6-wr7-wr7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR6, WR7, WR7'
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR9
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR10
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR11
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr12-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR12-13
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR14
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wr15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WR15
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r0-status-potential-interrupt-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R0 - Status (potential interrupt status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r1-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R1 - Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r2-interrupt-vector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R2 - interrupt vector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r3-interrupt-pending" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R3 - Interrupt Pending
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R10
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R15
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#async-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-encoding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Encoding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auto-echo-and-local-loopback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auto Echo and Local Loopback
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#receive-status-fifo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Receive Status FIFO
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="scc8530-serial-ports">SCC8530 Serial Ports<a class="headerlink" href="#scc8530-serial-ports" title="Permanent link">&para;</a></h1>
+<p>On the IIgs the SCC85C30 chip provides two serial ports for the GS.</p>
+<p>Typical applications are:</p>
+<ol>
+<li>connect to a printer</li>
+<li>connect to a modem</li>
+<li>connect to an appletalk network</li>
+</ol>
+<p>These functions are inherently I/O bound, and rather than try to implement them in the main emulator loop, we'll start a separate real OS thread, so that the "modem" thread for instance won't cause the OS to put the main loop process to sleep.</p>
+<p>AppleTalk is a dead, legacy protocol. While someone might get a kick out of connecting a GS to an ancient Mac via AppleTalk, it would be a huge amount of work for very little benefit.</p>
+<p>So we skip for now. However, the architecture described herein would be amenable to an AppleTalk option.</p>
+<h2 id="clocking">Clocking<a class="headerlink" href="#clocking" title="Permanent link">&para;</a></h2>
+<p>The master clock into the SCC is 3.6864MHz. We need to know this to determine how to interpret the time constants.</p>
+<h2 id="communication-modes">Communication Modes<a class="headerlink" href="#communication-modes" title="Permanent link">&para;</a></h2>
+<p>The SCC supports various synchronous modes, to be used for HDLC, SDLC, etc. These will never be engaged on an Apple IIgs, and we can disregard this functionality.</p>
+<p>The SCC "contains facilities for modem controls" this will be things like hangup, DSR/DTR, etc.</p>
+<ul>
+<li>CTSA, CTSB</li>
+<li>DCDA, DCDB</li>
+<li>IEI</li>
+<li>IEO</li>
+<li>INT</li>
+<li>INTACK</li>
+<li>RxDA, RxDB</li>
+<li>TxDA, TxDB</li>
+<li>DTxCA, RTxCB</li>
+<li>RTSA, RTSB</li>
+<li>SYNCA, SYNCB</li>
+<li>TRxCA, TRxCB</li>
+<li>W/REQA, W/REQB</li>
+</ul>
+<p>There is a 10 x 19 Status FIFO; a 3 byte Rec error FIFO, another 3 byte Rec error FIFO;</p>
+<h2 id="action-items-roadmap">Action Items / Roadmap<a class="headerlink" href="#action-items-roadmap" title="Permanent link">&para;</a></h2>
+<p>[ ] simulate the various serial control signals with messages to the serial device, such as CTS, RTS, DSR/DTR, etc. In theory you can hangup a modem that way.<br />
+[ ] clear out the various queues on a reset?  </p>
+<p>[ ] Implement "file" serial device<br />
+[ ] implement ImageWriter II emulation    </p>
+<p>[ ] When a file has completed writing and closes, issue a gizmo at the top of the screen saying where the file is  </p>
+<p>[ ] Refactor "parallel" card to use threads and be connectable to file or imagewriter.  </p>
+<h2 id="registers">Registers<a class="headerlink" href="#registers" title="Permanent link">&para;</a></h2>
+<p>There are 16 write registers, and 8 read registers.</p>
+<p>WR4A - write register 4 for channel A
+RR3 - read register 3 for either / both channels</p>
+<h3 id="scc-read-register-functions">SCC Read Register Functions<a class="headerlink" href="#scc-read-register-functions" title="Permanent link">&para;</a></h3>
+<p>For each channel:</p>
+<table>
+<thead>
+<tr>
+<th>Read Reg</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RR0</td>
+<td>Transmit / Receive buffer status and external status</td>
+</tr>
+<tr>
+<td>RR1</td>
+<td>Special Receive Condition status</td>
+</tr>
+<tr>
+<td>RR2</td>
+<td>Modified interrupt vector (Channel B only); Unmodified interrupt vector (Channel A only)</td>
+</tr>
+<tr>
+<td>RR3</td>
+<td>Interrupt Pending Bits (Channel A only)</td>
+</tr>
+<tr>
+<td>RR8</td>
+<td>Receive buffer</td>
+</tr>
+<tr>
+<td>RR10</td>
+<td>Miscellaneous Status</td>
+</tr>
+<tr>
+<td>RR12</td>
+<td>Lower byte of baud rate generator time constant</td>
+</tr>
+<tr>
+<td>RR13</td>
+<td>Upper byte of baud rate generator time constant</td>
+</tr>
+<tr>
+<td>RR15</td>
+<td>External / Status interrupt Information</td>
+</tr>
+</tbody>
+</table>
+<h3 id="scc-write-register-functions">SCC Write Register Functions<a class="headerlink" href="#scc-write-register-functions" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Write Reg</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WR0</td>
+<td>CRC Initialize; init commands for various modes, register pointers</td>
+</tr>
+<tr>
+<td>WR1</td>
+<td>Transmit / receive interrupt and data transfer mode definition</td>
+</tr>
+<tr>
+<td>WR2</td>
+<td>Interrupt vector (accessed through either channel)</td>
+</tr>
+<tr>
+<td>WR3</td>
+<td>Receive Parameters and control</td>
+</tr>
+<tr>
+<td>WR4</td>
+<td>Transmit / Receive misc parameters and modes</td>
+</tr>
+<tr>
+<td>WR5</td>
+<td>Transmit parameters and controls</td>
+</tr>
+<tr>
+<td>WR6</td>
+<td>Sync charatcers or SDLC address field</td>
+</tr>
+<tr>
+<td>WR7</td>
+<td>Sync character or SDLC flag</td>
+</tr>
+<tr>
+<td>WR7*</td>
+<td>Extended feature and FIFI control (WR7 Prime) - 85C30 only</td>
+</tr>
+<tr>
+<td>WR8</td>
+<td>Transmit buffer</td>
+</tr>
+<tr>
+<td>WR9</td>
+<td>master interrupt control and reset (accessed through either channel)</td>
+</tr>
+<tr>
+<td>WR10</td>
+<td>Misc transmitter / receiver control bits</td>
+</tr>
+<tr>
+<td>WR11</td>
+<td>Clock mode control</td>
+</tr>
+<tr>
+<td>WR12</td>
+<td>Lower byte of baud rate generator time constant</td>
+</tr>
+<tr>
+<td>WR13</td>
+<td>Upper byte of baud rate generator time constant</td>
+</tr>
+<tr>
+<td>WR14</td>
+<td>Misc control bits</td>
+</tr>
+<tr>
+<td>WR15</td>
+<td>External Status / Interrupt Control</td>
+</tr>
+</tbody>
+</table>
+<h3 id="wr0">WR0<a class="headerlink" href="#wr0" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7-6</td>
+<td>1 1</td>
+<td>Reset Tx Underrun/EOM Latch</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>1 0</td>
+<td>Reset Tx CRC Generator</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>0 1</td>
+<td>Reset Rx CRC Checker</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>0 0</td>
+<td>null code</td>
+</tr>
+<tr>
+<td>5-3</td>
+<td>0 0 0</td>
+<td>null code</td>
+</tr>
+<tr>
+<td>5-3</td>
+<td>0 0 1</td>
+<td>point high</td>
+</tr>
+<tr>
+<td>5-3</td>
+<td>0 1 0</td>
+<td>reset ext/status interrupts</td>
+</tr>
+<tr>
+<td>5-3</td>
+<td>0 1 1</td>
+<td>send abort (SDLC)</td>
+</tr>
+<tr>
+<td>5-3</td>
+<td>1 0 0</td>
+<td>enable int on next rx character</td>
+</tr>
+<tr>
+<td>5-3</td>
+<td>1 0 1</td>
+<td>reset tx int pending</td>
+</tr>
+<tr>
+<td>5-3</td>
+<td>1 1 0</td>
+<td>error reset</td>
+</tr>
+<tr>
+<td>5-3</td>
+<td>1 1 1</td>
+<td>reset highest IUS</td>
+</tr>
+<tr>
+<td>2-0</td>
+<td>x x x</td>
+<td>Register number, plus combined with point high can get all 16 registers</td>
+</tr>
+</tbody>
+</table>
+<h3 id="wr1">WR1<a class="headerlink" href="#wr1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>x</td>
+<td>Wait/dma request</td>
+</tr>
+<tr>
+<td>6</td>
+<td>x</td>
+<td>wait/dma request function</td>
+</tr>
+<tr>
+<td>5</td>
+<td>x</td>
+<td>wait/dma request on receive/transmit</td>
+</tr>
+<tr>
+<td>4-3</td>
+<td>0 0</td>
+<td>Rx Int Disable</td>
+</tr>
+<tr>
+<td>4-3</td>
+<td>0 1</td>
+<td>Rx int on first character or Sp Cond</td>
+</tr>
+<tr>
+<td>4-3</td>
+<td>1 0</td>
+<td>Int on all Rx characters or Sp Cond</td>
+</tr>
+<tr>
+<td>4-3</td>
+<td>1 1</td>
+<td>Rx Int on Sp Cond Only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="wr2">WR2<a class="headerlink" href="#wr2" title="Permanent link">&para;</a></h3>
+<p>Interrupt vector bits 7-0 (V7 - v0).</p>
+<h3 id="wr3">WR3<a class="headerlink" href="#wr3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7-6</td>
+<td>0 0</td>
+<td>Rx 5 bits/char</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>0 1</td>
+<td>Rx 6 bits/char</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>1 0</td>
+<td>Rx 7 bits/char</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>1 1</td>
+<td>Rx 8 bits/char</td>
+</tr>
+<tr>
+<td>5</td>
+<td>x</td>
+<td>Auto Enables</td>
+</tr>
+<tr>
+<td>4</td>
+<td>x</td>
+<td>Enter Hunt Mode</td>
+</tr>
+<tr>
+<td>3</td>
+<td>x</td>
+<td>Rx CRC Enable</td>
+</tr>
+<tr>
+<td>2</td>
+<td>x</td>
+<td>Address search Mode (SDLC)</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>Sync Character Load Inhibit</td>
+</tr>
+<tr>
+<td>0</td>
+<td>x</td>
+<td>Rx Enable</td>
+</tr>
+</tbody>
+</table>
+<h3 id="wr4">WR4<a class="headerlink" href="#wr4" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7-6</td>
+<td>0 0</td>
+<td>X1 Clock Mode</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>0 1</td>
+<td>X16 Clock Mode</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>1 0</td>
+<td>X32 Clock Mode</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>1 1</td>
+<td>X64 Clock Mode</td>
+</tr>
+<tr>
+<td>5-4</td>
+<td>0 0</td>
+<td>8-bit Sync Char</td>
+</tr>
+<tr>
+<td>5-4</td>
+<td>0 1</td>
+<td>16-bit Sync Char</td>
+</tr>
+<tr>
+<td>5-4</td>
+<td>1 0</td>
+<td>SDLC Mode</td>
+</tr>
+<tr>
+<td>5-4</td>
+<td>1 1</td>
+<td>External Sync Mode</td>
+</tr>
+<tr>
+<td>3-2</td>
+<td>0 0</td>
+<td>Sync Modes Enable</td>
+</tr>
+<tr>
+<td>3-2</td>
+<td>0 1</td>
+<td>1 Stop bit</td>
+</tr>
+<tr>
+<td>3-2</td>
+<td>0 0</td>
+<td>1.5 Stop Bit</td>
+</tr>
+<tr>
+<td>3-2</td>
+<td>0 0</td>
+<td>2 stop bit</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>Parity Even /ODD</td>
+</tr>
+<tr>
+<td>0</td>
+<td>x</td>
+<td>Parity Enable</td>
+</tr>
+</tbody>
+</table>
+<h3 id="wr5">WR5<a class="headerlink" href="#wr5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>x</td>
+<td>DTR</td>
+</tr>
+<tr>
+<td>6-5</td>
+<td>0 0</td>
+<td>Tx 5 Bits</td>
+</tr>
+<tr>
+<td>6-5</td>
+<td>0 1</td>
+<td>Tx 6 Bits</td>
+</tr>
+<tr>
+<td>6-5</td>
+<td>1 0</td>
+<td>Tx 7 Bits</td>
+</tr>
+<tr>
+<td>6-5</td>
+<td>1 1</td>
+<td>Tx 8 Bits</td>
+</tr>
+<tr>
+<td>4</td>
+<td>x</td>
+<td>Send Break</td>
+</tr>
+<tr>
+<td>3</td>
+<td>x</td>
+<td>Tx Enable</td>
+</tr>
+<tr>
+<td>2</td>
+<td>x</td>
+<td>/SDLC CRC16</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>RTS</td>
+</tr>
+<tr>
+<td>0</td>
+<td>x</td>
+<td>Tx CRC Enable</td>
+</tr>
+</tbody>
+</table>
+<h3 id="wr6-wr7-wr7">WR6, WR7, WR7'<a class="headerlink" href="#wr6-wr7-wr7" title="Permanent link">&para;</a></h3>
+<p>Used for Sync operation only</p>
+<h3 id="wr9">WR9<a class="headerlink" href="#wr9" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7-6</td>
+<td>0 0</td>
+<td>No Reset</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>0 1</td>
+<td>Channel Reset B</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>1 0</td>
+<td>Channel Reset A</td>
+</tr>
+<tr>
+<td>7-6</td>
+<td>1 1</td>
+<td>Force HW Reset</td>
+</tr>
+<tr>
+<td>5</td>
+<td>x</td>
+<td>Software INTACK Enable (must use this)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>x</td>
+<td>Status High /LOW</td>
+</tr>
+<tr>
+<td>3</td>
+<td>x</td>
+<td>MIE (master interrupt enable)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>x</td>
+<td>DLC</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>NV</td>
+</tr>
+<tr>
+<td>0</td>
+<td>x</td>
+<td>VIS</td>
+</tr>
+</tbody>
+</table>
+<h3 id="wr10">WR10<a class="headerlink" href="#wr10" title="Permanent link">&para;</a></h3>
+<p>| 1 | x | Loop Mode |</p>
+<h3 id="wr11">WR11<a class="headerlink" href="#wr11" title="Permanent link">&para;</a></h3>
+<p>7: RtxC Xtal /noxtal
+6-5: receive clock setting
+4-3: tx clock setting
+2-0: trxc output selection</p>
+<h3 id="wr12-13">WR12-13<a class="headerlink" href="#wr12-13" title="Permanent link">&para;</a></h3>
+<p>Time Constant Lo, Hi</p>
+<h3 id="wr14">WR14<a class="headerlink" href="#wr14" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7-5</td>
+<td>0 0 0</td>
+<td>null command</td>
+</tr>
+<tr>
+<td>7-5</td>
+<td>0 0 1</td>
+<td>enter search mode</td>
+</tr>
+<tr>
+<td>7-5</td>
+<td>0 1 0</td>
+<td>reset missing clock</td>
+</tr>
+<tr>
+<td>7-5</td>
+<td>0 1 1</td>
+<td>disable dPLL</td>
+</tr>
+<tr>
+<td>7-5</td>
+<td>1 0 0</td>
+<td>set source = BR Generator</td>
+</tr>
+<tr>
+<td>7-5</td>
+<td>1 0 1</td>
+<td>set source = RTxC</td>
+</tr>
+<tr>
+<td>7-5</td>
+<td>1 1 0</td>
+<td>set FM mode</td>
+</tr>
+<tr>
+<td>7-5</td>
+<td>1 1 1</td>
+<td>set NRZI mode</td>
+</tr>
+<tr>
+<td>4</td>
+<td>x</td>
+<td>Local Loopback</td>
+</tr>
+<tr>
+<td>3</td>
+<td>x</td>
+<td>Auto Echo</td>
+</tr>
+<tr>
+<td>2</td>
+<td>x</td>
+<td>/DTR / Request function</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>BR Generator Source</td>
+</tr>
+<tr>
+<td>0</td>
+<td>x</td>
+<td>BR Generator Enable</td>
+</tr>
+</tbody>
+</table>
+<h3 id="wr15">WR15<a class="headerlink" href="#wr15" title="Permanent link">&para;</a></h3>
+<p>Interrupt enables</p>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>x</td>
+<td>Break/Abort IE</td>
+</tr>
+<tr>
+<td>6</td>
+<td>x</td>
+<td>Tx Underrun/EOM IE</td>
+</tr>
+<tr>
+<td>5</td>
+<td>x</td>
+<td>CTS IE</td>
+</tr>
+<tr>
+<td>4</td>
+<td>x</td>
+<td>Sync/hunt IE</td>
+</tr>
+<tr>
+<td>3</td>
+<td>x</td>
+<td>DCD IE</td>
+</tr>
+<tr>
+<td>2</td>
+<td>x</td>
+<td>SDLC FIFO Enable</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>Zero Count IE</td>
+</tr>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>0 nothing</td>
+</tr>
+</tbody>
+</table>
+<h3 id="r0-status-potential-interrupt-status">R0 - Status (potential interrupt status)<a class="headerlink" href="#r0-status-potential-interrupt-status" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>x</td>
+<td>Break/Abort</td>
+</tr>
+<tr>
+<td>6</td>
+<td>x</td>
+<td>Tx Underrun/EOM</td>
+</tr>
+<tr>
+<td>5</td>
+<td>x</td>
+<td>CTS (also DSR?)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>x</td>
+<td>Sync/hunt</td>
+</tr>
+<tr>
+<td>3</td>
+<td>x</td>
+<td>DCD</td>
+</tr>
+<tr>
+<td>2</td>
+<td>x</td>
+<td>Tx Buffer Empty</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>Zero Count</td>
+</tr>
+<tr>
+<td>0</td>
+<td>x</td>
+<td>Rx Char Available</td>
+</tr>
+</tbody>
+</table>
+<h3 id="r1-status">R1 - Status<a class="headerlink" href="#r1-status" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>x</td>
+<td>End of Frame (SDLC)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>x</td>
+<td>CRC/Frmaing Err</td>
+</tr>
+<tr>
+<td>5</td>
+<td>x</td>
+<td>Rx Overrun Err</td>
+</tr>
+<tr>
+<td>4</td>
+<td>x</td>
+<td>Parity Error</td>
+</tr>
+<tr>
+<td>3</td>
+<td>x</td>
+<td>Residue Code 0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>x</td>
+<td>Residue Code 1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>Residue Code 2</td>
+</tr>
+<tr>
+<td>0</td>
+<td>x</td>
+<td>All Sent</td>
+</tr>
+</tbody>
+</table>
+<h3 id="r2-interrupt-vector">R2 - interrupt vector<a class="headerlink" href="#r2-interrupt-vector" title="Permanent link">&para;</a></h3>
+<p>RR2 contains either the unmodified interrupt vector (Channel A) or the vector
+modified by status information (Channel B). </p>
+<h3 id="r3-interrupt-pending">R3 - Interrupt Pending<a class="headerlink" href="#r3-interrupt-pending" title="Permanent link">&para;</a></h3>
+<p>Always 0's in B channel. (So, only read in A Channel)</p>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td>0</td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>x</td>
+<td>Channel A Rx IP</td>
+</tr>
+<tr>
+<td>4</td>
+<td>x</td>
+<td>Channel A Tx IP</td>
+</tr>
+<tr>
+<td>3</td>
+<td>x</td>
+<td>Channel A Ext/Status IP</td>
+</tr>
+<tr>
+<td>2</td>
+<td>x</td>
+<td>Channel B Rx IP</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>Channel B Tx IP</td>
+</tr>
+<tr>
+<td>0</td>
+<td>x</td>
+<td>Channel B Ext/Status IP</td>
+</tr>
+</tbody>
+</table>
+<h3 id="r10">R10<a class="headerlink" href="#r10" title="Permanent link">&para;</a></h3>
+<p>| 7 | x | one clocks missing |
+| 6 | x | two clocks missing |
+| 4 | x | Loop Sending |
+| 1 | x | On Loop |</p>
+<h3 id="r15">R15<a class="headerlink" href="#r15" title="Permanent link">&para;</a></h3>
+<p>Interrupt enables</p>
+<table>
+<thead>
+<tr>
+<th>bits</th>
+<th>values</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>x</td>
+<td>Break/Abort IE</td>
+</tr>
+<tr>
+<td>6</td>
+<td>x</td>
+<td>Tx Underrun/EOM IE</td>
+</tr>
+<tr>
+<td>5</td>
+<td>x</td>
+<td>CTS IE</td>
+</tr>
+<tr>
+<td>4</td>
+<td>x</td>
+<td>Sync/hunt IE</td>
+</tr>
+<tr>
+<td>3</td>
+<td>x</td>
+<td>DCD IE</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>1</td>
+<td>x</td>
+<td>Zero Count IE</td>
+</tr>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>0 nothing</td>
+</tr>
+</tbody>
+</table>
+<p>That all is a whole lot of bits, most of which we don't need.</p>
+<h2 id="use-modes">Use Modes<a class="headerlink" href="#use-modes" title="Permanent link">&para;</a></h2>
+<p>The two use modes are polling (all interrupts off) or interrupts mode - vectored and nested interrupts.</p>
+<p>Each of the 6 sources of interrupts in the SCC (Transmit, Receive, and External/Status interrupts in both channels) has 3 bits associated with the interrupt source:</p>
+<p>(So, 18 bits).</p>
+<p>Interrupt Pending; Interrupt Under Service; Interrupt Enable.
+If IE is set, then that source can request interrupts. (except when MIE master interrupt enable is reset, then no interrupts).
+The IE bits are write-only.</p>
+<p>the other two bits are related to interrupt priority chain - this is a little fuzzy. need to see how this is implemented in the GS.</p>
+<p>Channel A has higher interrupt priority than Channel B, and Receive - Transmit - External/Status - are prioritized in that order (highest to lowest).</p>
+<p>Receive interrupt modes:
+* interrupt on first receive character (or special receive condition)
+* interrupt on all receive characters (or special receive conditions)
+* interrupt on special receive conditions only.</p>
+<h2 id="async-modes">Async Modes<a class="headerlink" href="#async-modes" title="Permanent link">&para;</a></h2>
+<p>Send and receive are independent on each channel, with 5 to 8 bits per character, plus optional even or odd parity.
+1, 1.5, 2 stop bits, and can provide a break output.
+The receiver break detection can interrupt both at start , and at end, of a break.</p>
+<p>Transmit and receive clocks don't have to be symmetric.</p>
+<p>The Bitrate Generators start at the value, count down to 0, and this toggles a square wave from lo to hi or vice-versa.
+the output of the BRG can be the transmit clock, the receive clock, or both.</p>
+<p>Time Constant = (PCLK / (2 * Baud Rate * Clock Mode)) - 2</p>
+<p>or: </p>
+<p>Time Constant + 2 = PCLK / (2 * Baud Rate * Clock Mode)
+Baud Rate = PCLK / 2 * clock mode * (time constant + 2)</p>
+<p>the clock mode is 1, 16, 32, or 64 programmed in a register, and Async modes use 16, 32, or 64.</p>
+<p>So PCLK here is that 3.6864MHz.</p>
+<h2 id="data-encoding">Data Encoding<a class="headerlink" href="#data-encoding" title="Permanent link">&para;</a></h2>
+<p>NRZ, FM1, FM0, Manchester. I don't think we care about these.</p>
+<h2 id="auto-echo-and-local-loopback">Auto Echo and Local Loopback<a class="headerlink" href="#auto-echo-and-local-loopback" title="Permanent link">&para;</a></h2>
+<p>the SCC can automatically echo everything it receives. </p>
+<h2 id="receive-status-fifo">Receive Status FIFO<a class="headerlink" href="#receive-status-fifo" title="Permanent link">&para;</a></h2>
+<p>Used primarily for SDLC. Hopefully we don't have to fuss with this.</p>
+<h1 id="register-selection-readingwriting">Register Selection, Reading/Writing<a class="headerlink" href="#register-selection-readingwriting" title="Permanent link">&para;</a></h1>
+<p>First step is to write WR0, which contains 3 bits that point to the selected register.
+The second write is then the actual control word for the selected register.
+(same with read, it's a Write to WR0 then a read).
+The pointer bits are automaticalyl cleared after a read or write so that WR0/RR0 is addressed again.
+ok that is pretty straightforward.</p>
+<h1 id="iigs-implementation">IIgs Implementation<a class="headerlink" href="#iigs-implementation" title="Permanent link">&para;</a></h1>
+<p>IEI, INTACK are tied high.
+INT.L goes to the interrupt combiner doohickey.
+SEL tied low.
+D0-7 connect to data bus. Address decode logic feeds A/B, C/D.
+PCLK is NOT the 3.68. It's tied to RTXCA. The other side tied to RTXCB and SYNCA.
+I am unclear what PCKL (CREF) is. It's next to 14M and 7M so maybe it's the color burst signal at 3.579MHz.
+interesting so that other thing is 3.68MHz and this is 3.579MHz.. hmm..
+PCLK is for the chip, the other clock is for the communication lines.</p>
+<h1 id="development-plan">Development Plan<a class="headerlink" href="#development-plan" title="Permanent link">&para;</a></h1>
+<p>First, establish variables to store the registers, and be able to read/write them. This means we'll do the union / bitfield setup that is working well elsewhere.</p>
+<p>Then do calculations to go from Multiplier / Time Constants, to a baud rate and a "14M's to next event".</p>
+<p>Then, ought to be able to write a simple program to just stuff bytes out the port.
+Then try something simple like PR#1, to a simulated printer.</p>
+<p>Ah, of course, the ROM interrupt handler constantly pounds this thing to see if it's the source of an interrupt.</p>
+<p>Slot 2 = Modem = B
+Slot 1 = Printer = A</p>
+<h1 id="external-devices">External Devices<a class="headerlink" href="#external-devices" title="Permanent link">&para;</a></h1>
+<p>We need to model these various external devices. Each of these devices is a separate thread.</p>
+<p>Aside from character queues, we need a way to communicate status, configuration changes, etc.</p>
+<p>The main loop communicates with the thread through the use of thread-safe queueing.
+A buffer of appropriate size is created, and head and tail pointers maintained. the main loop must never block on either queue - if a queue is exhausted, the data must be discarded.
+The thread can, however, implement flow control and should typically do so by pushing the blocking decision towards the operating-system side. I.e., waiting on a TCP socket, opening/closing/writing disk files..</p>
+<p>Create a queueing class to manage the in's and out's of communicating with these modules.</p>
+<h2 id="file">File<a class="headerlink" href="#file" title="Permanent link">&para;</a></h2>
+<p>The constructor is called with the file name. Append a unique ID (time stamp?) to the end of filename.
+On first instance, just store the info.
+On reset, or DSR/DTR (whatever the heck it is) close the file.
+If the file is closed, and a character is written, open the file.</p>
+<h2 id="modem-socket-clear-done">Modem / Socket (clear) (done)<a class="headerlink" href="#modem-socket-clear-done" title="Permanent link">&para;</a></h2>
+<p>A cleartext socket, e.g., telnet. Captain's Quarters is port 6800, and plain text telnet. 
+Also- a simple Hayes command set modem emulator.
+For simple testing, just try opening a socket to port 23 on 192.168.0.96 now.</p>
+<p>uses telnet protocol. Is that the right choice?</p>
+<h2 id="printer">Printer<a class="headerlink" href="#printer" title="Permanent link">&para;</a></h2>
+<p>Somehow, print to a network printer. Somehow select the printer. Then it's really just telnet to the printer. There is no easy cross-platform stuff for printing.</p>
+<p>Practically speaking, I think the thing to do is:
+1) emulate an ImageWriter II (and/or some other printer)
+2) generate a unique file name
+3) generate a PDF file based on that.
+4) call OS to open the PDF file with syd::system(command)</p>
+<p>print job completion detection: wait for a significant pause in the data output to signal end of the job. (5 seconds? 10 seconds?) Have to see how that works with various programs.</p>
+<p>To generate postscript output, have to use this modified version with DC Printer control panel.
+http://www.apple2works.com/directconnectpostscriptdriver/</p>
+<h2 id="echo-done">Echo (done)<a class="headerlink" href="#echo-done" title="Permanent link">&para;</a></h2>
+<p>This is for my initial testing. Once the interrupts etc are tested ok, move the echo functionality to a newly created SerialDevice class, which will run in a separate thread (or will it?)</p>
+<h2 id="ssl-socket">SSL Socket<a class="headerlink" href="#ssl-socket" title="Permanent link">&para;</a></h2>
+<p>An SSL encrypted socket (just TLS) - or, do we have to go full ssh?</p>
+<h2 id="serial-port">Serial Port<a class="headerlink" href="#serial-port" title="Permanent link">&para;</a></h2>
+<p>I suppose we could support serial ports. This would be similar to file, and on sensible operating systems we can just access the serial port using a file name! With some extra ioctl's for configuring the port.</p>
+<h2 id="messages">Messages<a class="headerlink" href="#messages" title="Permanent link">&para;</a></h2>
+<p>So we need to be able to send both control and data messages to these processes. we can make the messages a 16-bit word.
+Since this is a serial emulator, I guess there would not need to be many. Basically the serial port signals.</p>
+<p>SDL3 AsyncIOQueue construct may be exactly what we're looking for here. the thread side could sleep. the main side could poll.</p>
+<h3 id="break">BREAK<a class="headerlink" href="#break" title="Permanent link">&para;</a></h3>
+<p>to send a brk, set Reg5[4] = 1 and hold it for some time. Proterm apple-B does this.
+So we should have BREAK:ON and BREAK:OFF messages.</p>
+<h3 id="rate">RATE<a class="headerlink" href="#rate" title="Permanent link">&para;</a></h3>
+<p>sets the effective data rate for the link. So all devices automatically follow the baud rate setting.</p>
+<h2 id="code-structure">Code Structure<a class="headerlink" href="#code-structure" title="Permanent link">&para;</a></h2>
+<p>base class: SerialDevice</p>
+<p>the constructor will fire off 
+we'll have basic routines:
+  host_read, host_write, host_message
+  device_read, device_write, device_message
+These will use the various message queues.</p>
+<p>these are for the host to read, write; and for the (threaded) device code to read.
+destructor will:
+  send shutdown message to the device
+  wait for the device thread to end</p>
+<p>Timing: timing can be handled by the base class, on the host side. That way:
+1. devices can just run at full speed and be limited by queue backpressure
+1. also keeps device code simpler
+1. it's all managed by the host side
+1. but the same code is used in one place, in the base class.
+1. will be in main thread with cpu as timer callbacks will get called regularly.
+1. however, if a device wants to and it makes sense (e.g., printers) it can disregard the base class event scheduling stuff and just cram data out as fast as possible.</p>
+<p>baud rate / (data bits + start + stop + parity bits) = "word size" we use for timing.
+e.g. 38400 baud / (8 + 1) = 4266 bytes per second, or, each 3356 14M's.
+2400 baud / (8+1) = 266 bytes/sec = each 54000 14M's.</p>
+<p>This is pretty interrupty. it could be a lot of context switches. We could back off on this somewhat and let data buffer in the queue. then we are not context switching all that often.</p>
+<p>Can call less often, but process 2x chars at a time? Just thinking of ways to reduce "interrupt" overhead. </p>
+<h2 id="feb-3-2026">Feb 3, 2026<a class="headerlink" href="#feb-3-2026" title="Permanent link">&para;</a></h2>
+<p>just doing a pr#1, we're hanging. It's reading C039 (sccareg), and checking bits. ok, reg 0 returning:
+DCD=1, CTS=1, Tx Buffer Empty=1, and we're working! (with pr#1 and pr#2 from basic).</p>
+<p>in GS/OS, we're in different code. FF/5100, FF/B84C</p>
+<p>2400 baud is reg12=2E. </p>
+<p>At one point the firmware was setting baud rate etc but now it's not after I added some r/w for another register. In fact there's a lot of reading Reg 0 and then a fat lot of nothing. Let the fun begin!</p>
+<p>Key functions involved: WRITESCC (X is register, A is value, Y is channel). Literally all that does is:
+3C - channel A, 3B - channel B. Load from BFFD,y. Now why would they do that. OY. It's to avoid the PHANTOM LORD (air guitar solo), er, I mean, the phantom read.</p>
+<h2 id="feb-7-2026">Feb 7, 2026<a class="headerlink" href="#feb-7-2026" title="Permanent link">&para;</a></h2>
+<p>got a few programs doing basic send/receive now and not barfing. That's a good start.</p>
+<h1 id="compatibility-testing">Compatibility / Testing<a class="headerlink" href="#compatibility-testing" title="Permanent link">&para;</a></h1>
+<p>ProTerm wants interrupts, according to the Interwebs.</p>
+<p>SCC: Register Select Ch: 0 -&gt; New Reg 3
+SCC: WRITE register: Ch 0 / Reg 0 = 03
+SCC: READ register 3: Ch 0
+SCC: READ register: Ch 0 / Reg 3 = 00
+SCC: READ register 0: Ch 0
+SCC: READ register: Ch 0 / Reg 0 = 2C
+SCC: WRITE register 0: Ch 0 = 03</p>
+<p>Teleworks also uses interrupts. Bit 3 of Reg9 is set. Well I Guess I can just enable interrupt support.</p>
+<p>because interrupts can happen any time, we need to provide the class a callback, that will update the interrupt status. It's that or pass in the CPU which is icky icky poo poo.</p>
+<p>Practically speaking, we should separate the IRQ management details from the cpu, so there will be an InterruptController. It's the only thing that will talk to the CPU (a single IRQ line to pull down). And all other devices that use IRQs go there. And it will live in computer, so devices can snatch it out of computer when they start.</p>
+<p>This is also gonna need a 14M eventTimer; the existing CPU-based eventTimer is more or less useless on a GS, so other eventTimer users should be switched over to the 14M also. Mockingboard is the biggie; it would be interesting if it continued to clock at 1MHz (because that's PH0 on the bus) but timing by the 14M. Then Ultima music would operate at the right speed regardless of CPU speed. That's how it would work in a GS, I think.</p>
+<p>pr#1 is hanging because when we write a char to it, it is never trying to read (why would it) and thus never clears the echo'd character. So be wary of that for now.
+You should run GS2 with the mount disk options bro.</p>
+<p>Ah ha!! once I fixed RR3 (only exists in Ch A) I can echo characters at my leisure in Teleworks.</p>
+<p>oddly, ProTERM is still giving me back garbage characters. I can see that it's reading the correct characters back. Let's try another program.</p>
+<p>ANSITerm Demo also works, tho there are two places I have to manually read the read Reg to get it to clear the interrupt and continue.</p>
+<p>Another possibility is that the interrupt comes back -too fast- for the code to do anything. This may be helped by implementing correct send and receive timing. that will be easier with the separate device.</p>
+<p>Telcom pretty much immediately blows up with a BRK. What the hell is that guy doing lolz. Does it require installing a custom serial driver? it's got the tools right in it, I think I load them manually..</p>
+<p>FreeTerm also working. </p>
+<h2 id="cross-platform-snippet-to-open-pdf-file-in-viewer">Cross-platform snippet to open PDF file in viewer<a class="headerlink" href="#cross-platform-snippet-to-open-pdf-file-in-viewer" title="Permanent link">&para;</a></h2>
+<pre><code>#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;cstdlib&gt; // Required for std::system
+
+void open_pdf_file(const std::string&amp; filename) {
+#ifdef _WIN32
+    // Windows: Use ShellExecute or the 'start' command
+    std::string command = &quot;start \&quot;\&quot; \&quot;&quot; + filename + &quot;\&quot;&quot;;
+    std::system(command.c_str());
+#elif __APPLE__
+    // macOS (OSX): Use the 'open' command
+    std::string command = &quot;open \&quot;&quot; + filename + &quot;\&quot;&quot;;
+    std::system(command.c_str());
+#elif __linux__
+    // Linux: Use xdg-open (common on many distributions)
+    std::string command = &quot;xdg-open \&quot;&quot; + filename + &quot;\&quot;&quot;;
+    std::system(command.c_str());
+#else
+    std::cerr &lt;&lt; &quot;Unsupported operating system for automatic PDF opening.&quot; &lt;&lt; std::endl;
+#endif
+}
+
+int main() {
+    std::string pdf_file_path = &quot;path/to/your/local_document.pdf&quot;; // Replace with your file path
+    open_pdf_file(pdf_file_path);
+    return 0;
+}
+</code></pre>
+<h2 id="going-through-self-test-06">Going through Self Test 06<a class="headerlink" href="#going-through-self-test-06" title="Permanent link">&para;</a></h2>
+<p>first thing is SCCRegRW test, which calls ResetSCC. This does:</p>
+<pre><code>80C: initial data
+80D: Register number
+80E: Serial Mask (mask out non r/w bits)
+80F: Mask Data (data masked with mask)
+
+C039:09    // register 9
+C039:C0    // write C0
+
+then we do RwChA with 80C:00 02 FF, mask is ff but data 0 so we write a 0.
+save the masked value to 80F.
+C039:00   // reg 2 Ch a -&gt; 0 , So this is setting the interrupt vector to 0.
+then we read reg 2, and compare the masked value to 80F.
+That's 0 in both cases. So this particular test passes.
+then we DEC 80C, and we're going to loop..
+They are testing that we have a clean 8 bits we can read and write to channel A. 
+
+0294 6934 AD 0D 08     REGRW    LDA   RegNo                    ;Actual R/W test
+0295 6937 99 FD BF              STA   SCCCmd,Y                 ;Point to the Wr reg
+0296 693A AD 0C 08              LDA   DATA                     ;Initially = 0
+0297 693D 2D 0E 08              AND   SerMask                  ;Mask out non R/W bits
+0298 6940 8D 0F 08              STA   MaskData                 ;Store for later comparison
+0299 6943 99 FD BF              STA   SCCCmd,Y                 ;Write the register
+0300 6946 AD 0D 08              LDA   RegNo
+0301 6949 99 FD BF              STA   SCCCmd,Y
+0302 694C B9 FD BF              LDA   SCCCmd,Y                 ;Read the register
+0303 694F CD 0F 08              CMP   MaskData                 ;Compare
+0304 6952 D0 07                 BNE   BadData
+0305 6954 CE 0C 08              DEC   DATA
+0306 6957 D0 DB                 BNE   RegRW                    ;Try $0-FF
+0307 6959 F0 D6                 BEQ   ZRTS
+0308 695B A9 80        BADDATA  LDA   #$80
+0309 695D 60                    RTS   
+</code></pre>
+<p>We are immediately failing when it tries to read back FF from ChA[02]. </p>
+<p>ok got past that - now need to test channel B, register C (12, baud rate) the same way?
+then channel A, register 12.
+then register 13 (0d) on both channels..
+then register 15 (F) with a mask of 0xFA.</p>
+<p>We're clearing the register r/w test now, and likely failing on the Internal Loop test.
+looks like it's going to do it on both channels.. smert.</p>
+<p>So to do that, it sets up the registers like so:</p>
+<pre><code>0421 6A1C              TBL2     EQU   *
+0422 6A1C 09 00                 DC B:9,$00                     ;Disable interupts
+0423 6A1E 04 4C                 DC B:4,$4C                     ;X16 clk 2 Stp bits
+0424 6A20 0B D0                 DC B:11,$D0                    ;Xtal RTxC
+0425 6A22 0C 5E                 DC B:12,$5E                    ;Low Byte Time const
+0426 6A24 0D 00                 DC B:13,$00                    ;Hi Byte Time const
+0427 6A26 0E 13                 DC B:14,$13                    ;Loopback BR enable
+0428 6A28 03 C1                 DC B:3,$C1                     ;Rx 8bits
+0429 6A2A 05 6A                 DC B:5,$6A                     ;Tx 8bits Tx enable RTS
+</code></pre>
+<p>we're failing test 6, "all sent". </p>
+<p>We now pass the self-test. However, see above for remaining action items.</p>
+<h2 id="more-bugs">more bugs<a class="headerlink" href="#more-bugs" title="Permanent link">&para;</a></h2>
+<p>"Each of the six sources of interrupts in the SCC (Transmit, Receive, and External/Status
+interrupts in both channels) has three bits associated with the interrupt source.
+Interrupt Pending (IP), Interrupt Under Service (IUS), and Interrupt Enable (IE)."</p>
+<p>"In the SCC, if the IE bit is not set by enabling interrupts, then the IP for that source is
+never set."</p>
+<p>"Also if the MIE Enable bit in WR9 is reset, no interrupts can be requested."</p>
+<p>OHHHH. My 8530 manual is way more complete than the one I've been using. For instance, page 3-9 shows the exact bits on reset of each channel's registers. Well duhhhh. I'm going to have to over the registers again in detail using the book.</p>
+<p>some notes:</p>
+<p>forgot to implement MIE (master interrupt control)
+tx interrupt is not merely the same s tx buf empty. It's the -transition- from tx buf non empty, to empty. So some of these are edge sensitive, not level sensitive. i.e.
+if !tx_buf_empty then tx_buf_empt=true; tx_interrupt=true
+need to implement the vector register
+apparently it will only flag interrupts according to a priority hierarchy:
+the register map is more complex than I implemented perhaps..</p>
+<p>let's start with the reset. The chip is reset by pulling r and w low at same time and holding a bit. there's logic on the mobo for this, mixing reset and the normal r/w signal.
+So ctrl-reset definitely resets. ok, I think we're good. Key elements:
+hw reset a little different than soft reset. Soft reset 3 is same as hw reset. Reminder than WR9 is the same register, accessed through either channel.</p>
+<p>next: verify the register map.
+ah, it may be ok - the table 3-3 lists A/B as one of the bits, which is just channel select.
+Let's modify the routines so it's a little clearer what happens with the shared registers (i.e., don't have ch as arg on those).
+ok, WR2 and WR9 are shared and we will always store these values in channel A's array.
+ok, these look right. For the read registers that are shadowed:
+11 (shadow) = 15 (real)
+14 (shadow0) = 10 (real)
+9 (shadow) = 13 (real)</p>
+<p>Interrupts</p>
+<p>transmit: 
+polling. disable transmit interrupts and poll transmit buffer empty bit in RR0. (So that bit is always active).
+Another way of polling is to enable transmit interrupt, then reset MIE bit. then cpu may poll the IP bits in RR3A to determine when transmit buffer is empty.
+the Tx Int Req has only one source. It can only be set when the transmit buffer goes from full to empty. This means the transmit interrupt will not be set until after the first character is written to the SCC.</p>
+<p>reset:
+    tx_irq_condition = false</p>
+<p>in transmit character:
+    do the transmit
+    if (tx_buf_empty) tx_irq_condition = true // this covers case if buffer is non-empty and they overwrite it anyway
+    update_interrupts()</p>
+<p>update:
+    if tx_irq_condition and tx_ie then tx_ip = true</p>
+<pre><code>if MIE and any IPs then assert interrupt to cpu.
+tx_irq_condition = false
+</code></pre>
+<p>the Rx Interrupt request caused by a receive char available; or a special condition.
+The Rx Char Avail interrupt is generated when a character is loaded into the FIFO and is ready to be read. (there's a 3-byte FIFO).
+special conditions are: receive FIFO overrun; CRC/framing error; end of frame; parity.
+Parity condition may be included or not based on WR1[2].</p>
+<p>The external/status interrupts have several sources which are individually enabled in WR15. They are:
+zero count; DCD; Sync/hunt; CTS; transmitter underrun/eom; break/abort.</p>
+<p>Each source of interrupt in SCC has 3 control status bits: IE (interrupt enable), IP (interrupt pending), IUS (interrupt under service).
+If the IE bit is set, that source may cause an interrupt request.
+if the IE bit is reset, no interrupt request will be generated by that source.
+the IP bit for a source may be set by the presence of an interrupt condition in the SCC and is reset directly by the processor,
+or indirectly by some action the processor may take.
+If the corresponding IE bit is not set, the IP for that source will never be set.</p>
+<p>Interrupt status flowchart</p>
+<p>The flowchart can be simplified somewhat, because the GS has /INTACK pulled high. But the first box, "interrupt condition exists".
+I think IUS bits are primarily used with this /INTACK logic.
+We may need some flags that are separate from the IP bits to indicate "interrupt condition exists". because setting IP may be masked by IE not being set.
+seems to imply if an interrupt condition exists and we then enable an IE, we'll get an IP.</p>
+<p>So far, the only one of these may be the Tx buffer empty since it's edge sensitive.</p>
+<p>ok, I have moved the logic for updating the IP bits to update_interrupts (and a couple helper routines). </p>
+<p>Interrupt Source Priority (highest to lowest)</p>
+<p>| source | channel | Vector Value |
+|-|-|
+| Rx | A | 
+| Tx | A | 
+| Ext/Status | A | 
+| Rx | B | 
+| Tx | B | 
+| Ext/Status | B | </p>
+<p>the internal daisy chain links the six sources of interrupt in a fixed order. chaining the ius bits for each source.
+while an ius bit is set, all lower-priority interrupt requests are masked off. during an intack cycle (not relevant).
+when MIE is set, has same effect as pulling IEI pin low, disabling all IRQ. But the above says you can disable MIE and poll IP bits. OK, so the IP
+bits still follow interrupt status.</p>
+<p>one thing that is still unclear:
+are the IP bits masked based on priority? I.e. if there is a Ch A IP set, are Ch B IPs suppressed?
+(or is that only when using the INTACK scheme?)</p>
+<p>vectors</p>
+<table>
+<thead>
+<tr>
+<th>bit 1</th>
+<th>bit 2</th>
+<th>bit 3</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V3</td>
+<td>V2</td>
+<td>V1</td>
+<td>Status High/Status Low = 0</td>
+</tr>
+<tr>
+<td>V4</td>
+<td>V5</td>
+<td>V6</td>
+<td>Status High/Status Low = 1</td>
+</tr>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>Ch B Transmit Buffer Empty</td>
+</tr>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>Ch B Ext/Status Change</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>Ch B Receive Char Avail</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>Ch B Special Receive Condition</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>Ch A Transmit Buffer Empty</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>Ch A Ext/Status Change</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>Ch A Receive Char Avail</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>Ch A Special Receive Condition</td>
+</tr>
+</tbody>
+</table>
+<p>Q: why is this a write register?
+ah, because the CPU can tell the chip which vector it is. i.e., assume it's using this intack procedure. Whichever device is asserting, that vector number is put on the data bus.
+So say you have 5 chips, you give each a distinct vector number.</p>
+<p>Note: 321 is reverse bit order from 456!
+WR9[4] is status high /status low.
+WR9[0] is VIS bit - if set, vector returned from reading WR2 is modified depending on highest priority IP. This bit is ignored if the NV (WR9[1]) bit is set.
+NV primarily tri-states the bus, but also affects vector read.</p>
+<p>I think I am probably failing to deal properly with some SCC interrupts, confusing the firmware into not clearing VBL interrupts? Is that possible?</p>
+<p>Some updates and improvements..</p>
+<p>ah ok, there was a mistake, I had a bool for the tx_ip pending flag inside a union instead of separate! I saw that error several times and ignored it assuming it was the audio thing, turns out to have been a real problem.</p>
+<p>I had claude integrate the eventtimer stuff. Seems to be actually working.. </p>
+<p>But print jobs are still hanging.</p>
+<p>After all these changes to the SCC code, some things are improved, however, I am failing self test 06070000. This is "rx char available". </p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

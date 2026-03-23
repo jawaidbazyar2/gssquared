@@ -1,0 +1,3429 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../AppleMemoryExpansionCard/">
+      
+      
+        <link rel="next" href="../Ensoniq5503/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Mockingboard - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mockingboard" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Mockingboard
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tone-generator-control-registers-r0-r1-r2-r3-r4-r5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tone Generator Control - Registers R0, R1, R2, R3, R4, R5
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#noise-generator-control-register-r6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noise Generator Control - Register R6
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mixer-control-io-enable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mixer Control - I/O Enable
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#amplitude-control-r10-r11-r12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Amplitude Control - R10, R11, R12
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#envelope-generator-control-r13-r14-r15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Envelope Generator Control - R13, R14, R15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Envelope Generator Control - R13, R14, R15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#envelope-period-control-r13-r14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Envelope Period Control - R13, R14
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#r6522-via" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R6522 - VIA
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="R6522 - VIA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interrupts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interrupts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ssi-263a-phoneme-speech-synthesizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SSI 263A Phoneme Speech Synthesizer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ROM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatibility
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Compatibility">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mb-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mb-audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparing-to-mariani-applewin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparing to Mariani / (AppleWin)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mockingboard-sound-speech-generator-disk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mockingboard Sound-Speech Generator Disk
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-ultima-v-conundrum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Ultima V Conundrum!
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tone-generator-control-registers-r0-r1-r2-r3-r4-r5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tone Generator Control - Registers R0, R1, R2, R3, R4, R5
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#noise-generator-control-register-r6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Noise Generator Control - Register R6
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mixer-control-io-enable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mixer Control - I/O Enable
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#amplitude-control-r10-r11-r12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Amplitude Control - R10, R11, R12
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#envelope-generator-control-r13-r14-r15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Envelope Generator Control - R13, R14, R15
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Envelope Generator Control - R13, R14, R15">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#envelope-period-control-r13-r14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Envelope Period Control - R13, R14
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#r6522-via" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R6522 - VIA
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="R6522 - VIA">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interrupts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interrupts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ssi-263a-phoneme-speech-synthesizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SSI 263A Phoneme Speech Synthesizer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ROM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatibility
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Compatibility">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mb-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mb-audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comparing-to-mariani-applewin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparing to Mariani / (AppleWin)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mockingboard-sound-speech-generator-disk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mockingboard Sound-Speech Generator Disk
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-ultima-v-conundrum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Ultima V Conundrum!
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="mockingboard">Mockingboard<a class="headerlink" href="#mockingboard" title="Permanent link">&para;</a></h1>
+<p>Mockingboard is a sound card developed for Apple II computers, and was the best sound generation available on Apple IIs until the release of the Apple IIgs which had waveform synthesizer onboard.</p>
+<p>The Mockingboard is built around the AY-3-8910 chip, a sound generation chip.</p>
+<p>Well, google says the C had one preinstalled speech chip. Which I don't have. And that A had no chip.
+So let's try A. Uh, nope.
+Says the Sound I and II had the 8910 chip, whereas A and C had the 8913 chip.
+This could be an issue.. </p>
+<p>Wikipedia says:
+The AY-3-8910 is a simple finite-state machine.</p>
+<p>BTW the Yamaha 2149 is a much better data sheet. </p>
+<p>Its state of sixteen 8-bit registers ..</p>
+<pre><code>Six registers control the pitches produced in the three primary channels. The frequency to generate is held in two 8-bit registers dedicated to each channel, but the value is limited to 12-bits for other reasons, for a total of 4095 (the register value is used as the frequency divider and 0 is treated as 1) different pitches. Another register controls the period of a pseudo-random noise generator (a total of 31 different cycle times), while another controls the mixing of this noise into the three primary channels.
+</code></pre>
+<ul>
+<li>(6) frequency registers (two 8-bit, limited to 12 bits total). Register value is a frequency divider. (What is the frequency?)</li>
+<li>(3) channel volume (3 more registers, one per channel)</li>
+<li>(1) Pseudo-random noise generator timing (31 cycle times)</li>
+<li>(1) mixing or pseudo-random noise into main channels</li>
+<li>(2??) optional envelope controls</li>
+<li>(3) three registers control times of the envelope controller: envelope type and cycle time.</li>
+</ul>
+<p>Envelope types: sawtooth; triangle; starting on min or max. Only one envelope shared among all three channels.</p>
+<p>16 total registers.</p>
+<p>While the GI data sheet calls the registers R0-R7, and R10-R17, there are only 16 (not 18) and they are referenced using numbers 0-8. 
+OH. It's <strong>octal</strong>. Man that is pretty dumb.</p>
+<p>Some clone cards had multiple of these chips, one had four chips for 12 voices. Most software only supported 2 chips / 6 voices.</p>
+<p>Here's if you want to build your own Mockingboard:</p>
+<p>https://wiki.reactivemicro.com/images/2/24/Mockingboard_Assembly_Guide_2019.pdf</p>
+<p>All registers can be read/written. CPU can read "present state", or "programmed values". </p>
+<p>The "analog sound outputs can each provide 4 bits of logarithmic digital to analog conversion". &lt;- what's this?</p>
+<p>However, the aforementioned Mockingboard demo disk (available freely on ReactiveMicro’s Wiki) actually contains this for you. Demo disk available here:</p>
+<p>https://wiki.reactivemicro.com/Mockingboard</p>
+<p>to wit two Demo disks. This will be good for testing.</p>
+<p>http://www.downloads.reactivemicro.com/Apple%20II%20Items/Hardware/Mockingboard_A/Software/mockingboard1.dsk</p>
+<p>http://www.downloads.reactivemicro.com/Apple%20II%20Items/Hardware/Mockingboard_A/Software/mockingboard2.dsk</p>
+<p>This is a MB-Audit (tester) program:
+https://github.com/tomcw/mb-audit</p>
+<p>exercises a Mockingboard and tests it.</p>
+<p>This will be a fairly involved emulation (maybe), but it will be an extremely satisfying one.</p>
+<p>ok so let's think about this stuff and define terms.</p>
+<p>First off:</p>
+<p><em>tone period</em> - this is controlling the frequency. </p>
+<p><em>Envelope</em> - In sound and music, an envelope describes how a sound changes over time. For example, a piano key, when struck and held, creates a near-immediate initial sound which gradually decreases in volume to zero. An envelope may relate to elements such as amplitude, frequency or pitch. So this is basically the shape of the waveform. Is this what is meant? Above, it says "envelope types include: sawtooth; triangle". </p>
+<p>Here's the data sheet for the AY:
+https://map.grauw.nl/resources/sound/generalinstrument_ay-3-8910.pdf</p>
+<p>Tone Generators: "produce the basic square wave tone frequencies for each channel (A, B, C)
+Mixers: combine the outputs of the tone generators and the noise generator. one for each channel (a,b,c)
+amplitude control: provides the D/A converters with either a fixed or variable amplitude pattern. Fixed amplitude is under CPU control; variable amplitude is accomplished by using the Envelope Generator.
+Envelope Generator: produces an envelope pattern which can be used to amplitude modulate the output of each Mixer.</p>
+<h3 id="tone-generator-control-registers-r0-r1-r2-r3-r4-r5">Tone Generator Control - Registers R0, R1, R2, R3, R4, R5<a class="headerlink" href="#tone-generator-control-registers-r0-r1-r2-r3-r4-r5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Registers</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tone Generator Control</td>
+<td>R0 - R5</td>
+<td>Program tone periods</td>
+</tr>
+<tr>
+<td>Noise Generator Control</td>
+<td>R6</td>
+<td>Program noise period</td>
+</tr>
+<tr>
+<td>Mixer Control</td>
+<td>R7</td>
+<td>Enable tone and/or noise on selected channels</td>
+</tr>
+<tr>
+<td>Amplitude Control</td>
+<td>R10 - R12</td>
+<td>select "fixed" or "envelope variable" amplitudes</td>
+</tr>
+<tr>
+<td>Envelope Generator Control</td>
+<td>R13 - R15</td>
+<td>Program Envelope period and select envelope pattern</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Coarse Tune Register</th>
+<th>Channel</th>
+<th>Fine Tune Register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>A</td>
+<td>R0</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>B</td>
+<td>R2</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>C</td>
+<td>R4</td>
+</tr>
+</tbody>
+</table>
+<p>The 4 MSB of the Coarse register is not used; Coarse B3-B0 + Fine B7-R0 are the 12-bit value up to 4095.</p>
+<p>"The frequency of each square wave generated by the three Tone Generators" is obtained by counting down the input clock by 16, then by further counting down the result by the programmed 12-bit tone period value. (What's the input clock on a Mockingboard? Reactive Micro parts list to the rescue.. </p>
+<p>Is it the Apple II clock? Divide by 16. then divide by the counter. that would be 65KHz. </p>
+<h3 id="noise-generator-control-register-r6">Noise Generator Control - Register R6<a class="headerlink" href="#noise-generator-control-register-r6" title="Permanent link">&para;</a></h3>
+<p>Bits B7 - B5 unused. Bits B4 - B0 (5 bits).
+Frequency of the noise source is obtained by first counting down the input clock by 16, then by further counting down the result by the 5 bit noise period value.</p>
+<h3 id="mixer-control-io-enable">Mixer Control - I/O Enable<a class="headerlink" href="#mixer-control-io-enable" title="Permanent link">&para;</a></h3>
+<p>There are two "general purpose I/O ports" which I think are likely unused on a Mockingboard.</p>
+<p>Bits B5 - B3 are NOT Noise Enable C B A; B2 - B0 are NOT Tone Enable C B A. So you can mix tone and noise on the same channel.</p>
+<p>Instead of mixing, instead have a AudioStream for each one of these. (i.e., treat as six channels instead of 3).</p>
+<h3 id="amplitude-control-r10-r11-r12">Amplitude Control - R10, R11, R12<a class="headerlink" href="#amplitude-control-r10-r11-r12" title="Permanent link">&para;</a></h3>
+<p>R10 - A
+R11 - B
+R12 - C</p>
+<p>B4 is amplitude mode. B3 - B0 is 4-bit fixed amplitude level.</p>
+<h3 id="envelope-generator-control-r13-r14-r15">Envelope Generator Control - R13, R14, R15<a class="headerlink" href="#envelope-generator-control-r13-r14-r15" title="Permanent link">&para;</a></h3>
+<p>R13 and R14 vary the frequency of the envelope. relative shape and cycle pattern is controlled by R15.</p>
+<h4 id="envelope-period-control-r13-r14">Envelope Period Control - R13, R14<a class="headerlink" href="#envelope-period-control-r13-r14" title="Permanent link">&para;</a></h4>
+<p>Frequency of the envelope is obtained by first counting down the input clock by 256, then further counting down the result by the programmed 16-bit envelope period value. R14 is Coarse (Hi) and R13 is Fine (lo).</p>
+<p>Envelope Shape - R15</p>
+<p>The envelope generator further counts down the envelope frequency by 16, producing a 16-state-per-cycle envelope pattern as defined by its 4 bit counter E3, E2, E1, E0. The shape/cycle control is bits B3 - B0 of R15.
+B0 - Hold
+B1 - Alternate
+B2 - Attack
+B3 - Continue</p>
+<p>These together create particular waveforms. </p>
+<h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h3>
+<p>All of these together create a 4-bit output level; which is logarithmic. i.e., 12 is significantly higher than 11. </p>
+<p>Each envelope is a repeating cycle; for instance, the triangle wave is 16 steps down from 15 to 0, followed by 16 steps up to 0 to 15, repeating. (B1 'alternate' bit is set).</p>
+<p>It's all based on 16 samples, either repeating, or non-repeating.</p>
+<p>The length of the 16 samples is the EP, Envelope Period.</p>
+<p>In any given envelope period, the amplitude:
+* changes by 1 step - levels 0 to 15 or levels 15 to 0.
+* stays at level 15 or at level 0</p>
+<p>Attack = 0 means go from 15 to 0; 1 means go from 0 to 15;
+Hold means, whatever the level was at the end of the last EP, keep it at that level.
+continue means repeat the previous EP form.
+Alternate means repeat the previous EP form in reverse.</p>
+<p>in effect, the envelope generator output E3-E0 is a 4-bit counter, which has three states:
+step; (attack=1, step up)
+step-reverse; (attack=0, step down)
+hold.</p>
+<p>So with these 4 bits of inputs I should be able to emulate all these waveforms. Ought to be easy..</p>
+<p>Handling stuff that manually controls the amplitude is going to require some effort a'la the current speaker.cpp device.</p>
+<p>Due to the logarithmic DAC, a triangle wave doesn't sound so harsh. It's a mix of a sine wave and a triangle wave.</p>
+<p>In a modern system, we directly control the amplitude on every sample, which is how we generate frequencies.</p>
+<p>(Contemplate this logarithmic thing in speaker.cpp?)</p>
+<p>All of this supposedly can be generated by state machines. So, definitely gotta know the input frequency. Maybe it's the Apple II 1.0205?</p>
+<p>So Step 1 is to create a state machine that based on B3-B0 can create the 16-sample envelope sections.</p>
+<p>Or instead of that, how about we just define lookup tables with those. A 2nd lookup table for the logarithmic gizmo.</p>
+<p>From AppleWin:</p>
+<pre><code>    /* AY output doesn't match the claimed levels; these levels are based
+    * on the measurements posted to comp.sys.sinclair in Dec 2001 by
+    * Matthew Westcott, adjusted as I described in a followup to his post,
+    * then scaled to 0..0xffff.
+    */
+    static const int levels[16] = {
+        0x0000, 0x0385, 0x053D, 0x0770,
+        0x0AD7, 0x0FD5, 0x15B0, 0x230C,
+        0x2B4C, 0x43C1, 0x5A4B, 0x732F,
+        0x9204, 0xAFF1, 0xD921, 0xFFFF
+    };
+</code></pre>
+<p>So, once you have all this, the maximum number of EPs per second if we do one sample per 44.1KHz is 2,756. But does this combine with the square wave generator in some way?</p>
+<p>yeah. so the frequency is not strictly controlled by the 16 sample EP. </p>
+<p>There's a registers / frequency table in the manual. Example: B8, 7902hz. is coarse=0,fine=8. if 8 is number of ticks delay between cycle change, then 8 * 7902 = 63216.</p>
+<p>We cannot represent a 64KHz frequency with 44.1KHz sample rate. We -can- with a sample rate of 120,000. Is that possible? what if we do 120K samples of 8 bit unsigned. That would be 120KB/sec, an eminently reasonable speed. And then we're dumping data into there pretty much raw as-is, without having to sample shift it ourselves. We're letting SDL do the mixing and downsampling as needed to hardware. I guess we could test that?</p>
+<p>and if this worked, could I do the same for the speaker-click emulator?</p>
+<p>NO, we don't need to do any of that. The Envelope as a waveform is multiplied by the base square wave. They are completely independent counters/frequencies.</p>
+<p>The "tone" is a square-wave output. The "envelope" controls the amplitude. When you multiply them together (where tone is from 0.0 to 1.0, and envelope is also from 0.0 to 1.0), then you can get a variety of interesting effects.</p>
+<p>The "noise generator" will be pre-calculated noise in a LUT. And the envelope can be a LUT also, where we lookup values for TWO cycles and then repeat or not the 2nd of those cycles.</p>
+<p>What we do need is a reliable way to generate a square wave at an arbitrary frequency into a 44100Hz sample stream. the highest possible frequency of the chip is crazy, 64KHz. But nobody can hear that. We don't need to represent that. (or do we?).</p>
+<h2 id="r6522-via">R6522 - VIA<a class="headerlink" href="#r6522-via" title="Permanent link">&para;</a></h2>
+<p>This is an I/O controller. Often paired with 6502s and prominent on many apple II cards. This is the interface between the Apple II bus, and AY-3-8910 chip(s).</p>
+<p>So the MockingBoardManual.rtf shows routines for programming the MB. First are routines:
+INIT, LATCH, WRITE, RESET that send commands to a 6522. Then there is START, which actually sends commands to the AY.</p>
+<p>Basically: </p>
+<pre><code>   LDY #$REGISTER
+   STY ORA              ($C401)
+   JSR LATCH            ('latch' in the register number)
+   LDA #$DATA
+   STA ORA
+   JSR WRITE            write the data to the AY
+
+LATCH:
+    LDA #$07
+    STA ORB
+    LDA #$04
+    STA ORB
+
+WRITE:
+    LDA #$06
+    STA ORB
+    LDA #$04
+    STA ORB
+
+; these set the 6522 port directions
+INIT:
+    LDA #$FF            set port a for output
+    STA DDRA            set data direction
+    LDA #$07            set port b for output
+    STA DDRB            
+</code></pre>
+<p>AppleWin implements the whole 6522 and then separately 'attaches' it to the AY in its code. I will implement a simpler approach since we only need to support normal use cases. But at a minimum, we should emulate the DDR (direction registers) as they might also mask data being read/written.* (I never did this, now biting me)</p>
+<p>In the case above, DDRB is set to 7 because port B is the 'Command' port, and commands are only 0-7. These may be wired directly to the AY somehow.. yes, PB2-PB0 are wired:</p>
+<ul>
+<li>PB2 - /RESET</li>
+<li>PB1 - BDIR - direction of data</li>
+<li>PB0 - BC1</li>
+</ul>
+<p>BC2 is not present on AY-8913.</p>
+<p>Thus, the RESET routine is: clear that bit (/RESET means do a reset) then turn reset off (/RESET = 1 is disabled).</p>
+<p>to send a command, you LATCH the command then WRITE the data, i.e.</p>
+<pre><code>cmd -&gt; ORA
+7, then 4 -&gt; ORB
+data -&gt; ORA
+6, then 4 -&gt; ORB
+</code></pre>
+<p>ORA is the data; ORB is the PB2/1/0 commands.</p>
+<p>or you LATCH command (5?) then READ the data, i.e.
+cmd -&gt; ORA
+7, then 4 -&gt; ORB
+5, then 4 &lt;- IRB</p>
+<p>That's pretty straightforward, if poorly documented.</p>
+<p>6522 data sheet:
+https://www.princeton.edu/~mae412/HANDOUTS/Datasheets/6522.pdf</p>
+<p>lots more information on the timer counters and interrupt scheme.</p>
+<h3 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h3>
+<ul>
+<li>00 - 000 - RESET</li>
+<li>01 - 001 - RESET</li>
+<li>02 - 010 - RESET</li>
+<li>03 - 011 - RESET</li>
+<li>04 - 100 - end strobe (inactive)</li>
+<li>05 - 101 - read  from PSG (pb1 = 0)</li>
+<li>06 - 110 - write to PSG (pb1 = 1)</li>
+<li>07 - 111 - bus contains register address which should be latched.</li>
+</ul>
+<h2 id="interrupts">Interrupts<a class="headerlink" href="#interrupts" title="Permanent link">&para;</a></h2>
+<p>There is some use of interrupts. However, in the example code, it appears to be only for Speech. It uses the 6522 interrupt handling stuff. Interrupt flag is $C40D, Interrupt Enable is $C40C.</p>
+<p>In the speech driver, it is using interrupts to feed data from a "data file" as needed. (Because each phoneme takes a certain amount of time to output?)</p>
+<p>I would not assume that nothing else uses the interrupt logic however.</p>
+<p>This brings up the general lack of IRQ support in the EMU right now. for IRQ support, I guess we would have an IRQ_asserted flag for each slot, in the cpu struct. Then we can just check if that is non-zero to determine IRQ assert input into the CPU loop.</p>
+<h2 id="ssi-263a-phoneme-speech-synthesizer">SSI 263A Phoneme Speech Synthesizer<a class="headerlink" href="#ssi-263a-phoneme-speech-synthesizer" title="Permanent link">&para;</a></h2>
+<p>Some Mockingboards also had a speech synthesis chip. (See the doc above).</p>
+<h2 id="rom">ROM<a class="headerlink" href="#rom" title="Permanent link">&para;</a></h2>
+<p>Mockingboard.D ROM is at:</p>
+<p>https://github.com/AppleWin/AppleWin/blob/master/resource/Mockingboard-D.rom</p>
+<p>But whoops, that's the Apple IIc standalone thing.</p>
+<h2 id="compatibility">Compatibility<a class="headerlink" href="#compatibility" title="Permanent link">&para;</a></h2>
+<p>see spreadsheet</p>
+<p>Ultima IV - I am getting fairly far into it; mockingboard music works in the intro (interrupt driven); but at various points in the game I get hung up at PC 0x0348. Why? Don't Know. Need a debugger! the code seems to be:</p>
+<p>0348: LDA $82
+034A: BNE $0348</p>
+<p>that is clearly something pending interrupts. Well, of course I haven't finished all the code yet. Maybe they use timer 2? run with full MB debug.</p>
+<p>Bank Street Music Writer - it pings early on:
+mb_read_Cx00: 04
+mb_read_Cx00: 04</p>
+<p>That's the T1 low-order counter. In almost all cards, this will be ROM and the value won't change. I bet they're checking to see if it changes.</p>
+<h3 id="mb-audit">mb-audit<a class="headerlink" href="#mb-audit" title="Permanent link">&para;</a></h3>
+<p>I am finally getting around to running the mb-audit tool against GS2. The first issue is that it starts up and immediately goes into a mode where the interrupt service routine executes and then instantly runs again - i.e., the IRQ flag is never clearing.</p>
+<p>[x] ok, I need a debug feature that will show the MB registers without executing the logic.   </p>
+<p>bp 325e.32e6; c404.c405; c484.c485</p>
+<p>Timer 1 One-Shot Mode</p>
+<p>"Timer 1 one-shot mode generates a single interrupt for each timer load operation".</p>
+<p>Writing into T1L-H has no effect on timer operation (we know)
+when counter reaches zero,
+  interrupt flag is set
+  counter will continue to decrement at system clock rate.</p>
+<p>interrupt can't be set again unless it has been cleared
+  requires a write T1C-H to reenable another interrupt.</p>
+<p>Timer 2 Free-Run Mode</p>
+<p>each time counter reaches zero,
+  interrupt flag is set
+  latch -&gt; counter
+  continue to decrement counter.</p>
+<p>NOT necessary to rewrite timer value to enable interrupt when we reach 0 again.</p>
+<p>so the mb_t1_timer_callback is NOT correct currently. We need a flag "interrupt on next timer timeout".</p>
+<p>CRAZY CYCLES runs with interrupts disabled, because of course they can't tolerate an IRQ in the middle of their graphics routines. So they must not use the 6522 via timers.
+[ ] TLB1.dsk isn't working  </p>
+<p>DD (Digidream) drops audio frames like crazy in debug build and if debugger window is open. </p>
+<p>mb-audit now failing with mockingboard failed test 50:06:00
+50: is 6522-A
+06: is test, 00 subtest</p>
+<p>ok issue is with when we set T1C-H, we also set the latch.
+In one-shot mode, after 0, the counter will decrement to FFFF. In continuous, it will reset to the latch value.
+When we read the value at any other time, we calculate what the value is supposed to be, but assume always in continuous mode.</p>
+<p>t1_triggered_cycles is currently when the counter was written. Let's change to:</p>
+<p>when the counter will count down to 0. Which we set whenever we write T1C-H.
+And then:
+   if one-shot mode,
+       counter is trigger_cycles - cycles &amp; 0xFFFF.
+   if continuous mode,
+       if cycles &lt; trigger_cycles, counter is trigger_cycles - cycles &amp; 0xFFFF.
+       if cycles &gt;= trigger_cycles, counter is (trigger_cycles - cycles) % latchval like it is now.</p>
+<p>ok, next problem: we might be interrupting too quickl.y</p>
+<pre><code>   135                                                                  ;   T1C
+   136                                                                  ; $0006
+   137  2bd8 a902                   lda     #2                  ; 2cy   ; $0004
+   138  2bda a201                   ldx     #1                  ; 2cy   ; $0002
+   139  2bdc 58                     cli                         ; 2cy   ; $0000
+   140  2bdd 85fc                   sta     zpTmp2              ; 3cy   ; $ffff
+   141                                                                  ; $0002 : real 6522 - IRQ occurs on 2nd cycle... so IRQ occurs after this 'sta zp'
+   142                                                                  ; $0001 : FPGA 6522 - IRQ occurs on 3rd cycle... so IRQ deferred until after next 'stx zp'
+   143  2bdf 86fc                   stx     zpTmp2
+</code></pre>
+<p>They set T1C to 6 and then the values are supposed to be as above.. yes, we're interrupting 1 cycle too soon. 
+There was something about the counter needing to be one off. I can just add 1 to triggered_cycles when I set it initially.</p>
+<p>OK, that is now working correctly I think. I had to add an extra 2 cycles to delay triggering of the thing. I wonder if this is due to precisely when the 6502 is writing, and if I might be a cycle early? It's (FE),Y so I could be off (one of those phantom cycle things?)</p>
+<p>now I have failures: slot 4 warning unknown card (no AYs) ?</p>
+<p>So, this code:</p>
+<pre><code>    99  4208 a000                       ldy     #AY_AFINE
+   100  420a 20d550                     jsr     AY_Echo_ReadRegValueEx
+   101  420d c9aa                       cmp     #$AA
+   102  420f d01a                       bne     +
+</code></pre>
+<p>is failing (where it tries to read back the #$AA it wrote).
+DDRA is 0. ORA is 0. So am I not reading values back correctly?
+yah. So it sets the register it wants to read (in this case 00). And it sets DDR to 0 (all input).
+When it reads, it should be reading from the chip register. Instead it is just returning ora.
+I need to separate IRA (input register) and ORA (output register). When we strobe something with 5 (versus 6 or 4) we need to read the chip register and put in IRA/B. And then mask and return appropriately based on the DDRA/B value.</p>
+<p>ok the next test is at $3010. It turns off interrupts; sets T1 for one-shot with value $0101, then waits for it to go below 0; then clears IFR.
+After it goes below 0, it then enables T1/T2 IRQ and waits for T1C to underrun -again-.
+Because we had done a 1-shot, and we have not reprogrammed T1C, it should not interrupt again, even though we enabled interrupts.
+in case MB_6522_IER we schedule an interrupt. But should only schedule an interrupt <strong>if we're in continuous mode</strong>.</p>
+<p>ok, I added state flags to T1 and T2. When we write the counter, the flag is set to indicate the one shot has not yet shot.
+In the interrupt handlers (because a timer is set whether IRQ are enabled or not, after writing a counter) if it's one-shot mode, AND the flag is set, we set IRQ.
+Otherwise the flag was off, and we do not re-irq.</p>
+<p>now we've cleared that, and have an error 11:03:00. Expected F1, Actual F2.</p>
+<p>starts at $31F8: there was $FFFF in the latch, then we write 0 to L1H and reset counter to 00FF. When we readit back with lda c400,y we get F2, they are expecting F1. If I adjust the counter offset of +2 to +1, the previous tests where we check when the IRQ happens fail. ($50 and $60 which as 6522-A and 6522-B?). </p>
+<p>ok, looking back at $2BD6, where it checks T1C IRQ timing on a 6-count countdown.
+Right after we: sta ($fe),y we are showing T1L of $0006, and T1C of $0007. That's obvious B.S. audit says it should be 6 and that makes sense to me.
+But also of note, the 6522 doc says the IRQ should be triggered when the counter reaches $0. </p>
+<p>sta ($FE),y -&gt; 0006
+lda #2 - 2 cycles, should be 4 after.
+ldx #1 - 2 cycles, 0002 after
+cli - 2 cycles, 0000 
+sta zpTmp2 ; 3cy; $ffff &lt;- ?? what </p>
+<pre><code>   140  2bdd 85fc                   sta     zpTmp2              ; 3cy   ; $ffff
+   141                                                                  ; $0002 : real 6522 - IRQ occurs on 2nd cycle... so IRQ occurs after this 'sta zp'
+   142                                                                  ; $0001 : FPGA 6522 - IRQ occurs on 3rd cycle... so IRQ deferred until after next 'stx zp'
+</code></pre>
+<p>so we hit 0 on the last cycle of the cli. we need the interrupt to trigger not then, but after. This is why I added +2 to the trigger.</p>
+<p>I do one step on STA $FC, and it sets PC to irq handler. 
+1) when should IRQ be checked?
+2) how soon after a cli will 6502 allow interrupt to occur?</p>
+<p>In debugger I should create a trace entry for an IRQ, so we have a record of it and it's a lot more clear what happened.</p>
+<p>"On the 6502 CPU, an interrupt will not stop an instruction mid-execution. The 6502 completes the current instruction before servicing an interrupt. This is a common design principle in many processors to maintain data integrity and avoid complex state management during partial instruction execution.
+Regarding the timing of interrupts after a CLI (Clear Interrupt Disable Flag) instruction:
+The effect of CLI is delayed by one instruction. This means that the interrupt disable flag (I flag) in the status register is cleared during the execution of the CLI instruction, but the CPU's ability to respond to IRQ interrupts is not enabled until the next instruction has begun.
+Therefore, an IRQ interrupt will not occur immediately after a CLI instruction. If an IRQ becomes pending during or immediately after the CLI, it will be recognized and serviced only after the instruction following the CLI has completed its execution. NMI (Non-Maskable Interrupts) are not affected by the I flag and can be serviced regardless of its state, but they still wait for the current instruction to complete."</p>
+<p>ok. So this is actually why the 2bdd code was failing. I did the wrong fix.
+So:
+if C was 1,
+and we CLI,
+skip next interrupt check.</p>
+<p>ok. I pulled the +2 back to +1, and, implemented the "skip irq next instruction" logic. The IRQ is triggering after STA zpTmp2.</p>
+<p>So now I have mb test 6522-A 50:07:01 failed. expected 40, got 00.
+and also 6522-B failed with 60:03:01, expected 40: actual 00</p>
+<h2 id="comparing-to-mariani-applewin">Comparing to Mariani / (AppleWin)<a class="headerlink" href="#comparing-to-mariani-applewin" title="Permanent link">&para;</a></h2>
+<p>on a reset, T1L is FFFF, not 0.</p>
+<p>[x] read of IER should always have bit 7 set to 1. I do this in code, but the debug output wasn't setting it. I set that now.</p>
+<h2 id="mockingboard-sound-speech-generator-disk">Mockingboard Sound-Speech Generator Disk<a class="headerlink" href="#mockingboard-sound-speech-generator-disk" title="Permanent link">&para;</a></h2>
+<p>boot, do music player, this is the ASDF to play notes program.</p>
+<p>the keyboard music player isn't working, because IFR bit is never being set. ACR is 0, IER is 0. But I wonder if IFR is supposed to come on anyway?
+PCR is B0 and it's checking BIT $10 here? </p>
+<p>PCR B0 means: CB2 is Pulse Output, CB1 interrupt control is positive active edge.
+And BIT $10 is checking for CB1 active edge. </p>
+<p>[ ] Implement whatever the heck CB2 / CB1 are.</p>
+<p>[ ] manually test Mariani to see if IFR T1 is set at 0 even if IER T1 is not set. NO, IFR T1 is never set if IER is off. (guessing).  </p>
+<p>ok, the AY code queues register changes, it does not set them immediately, because we generate audio based on time stamps of register changes. However, code in the 6502 needs to be able to read the instantaneous value of a register. So we need a raw_registers[0x18] which is basically a copy of the registers.</p>
+<p>ok!! Making some progress now. MB-Audit detects the card as a 'C', which I guess is Mockingboard C? Unsure. But it's better than a ? and no longer says "no AYs detected".
+Still failing 6522 Test: 11:00:00</p>
+<p>Run against some software to test. The suite should be:
+Ultima IV; Ultima V; Skyfox; mockingboard1.dsk; Nox Archaist Demo</p>
+<p>nox archaist volume is set to 7, a little on the low side esp once everything is mixed.</p>
+<h2 id="the-ultima-v-conundrum">The Ultima V Conundrum!<a class="headerlink" href="#the-ultima-v-conundrum" title="Permanent link">&para;</a></h2>
+<p>I've never gotten this to work, but I've always been testing Mockingboard C. A didn't work either.</p>
+<p>with sound ii the IRQ never turns off. I bet it's just slamming in the IRQ handler. 
+Yep. I just did the RTI. and immediately back to the interrupt handler. ok, so at least I know a little more what's going on..
+is it the voice stuff?</p>
+<p>The interrupt handler does this:
+check to see if this is the timer1 interrupt
+if so, write new value to T1L_L and T1L_H. The latch.
+Since it's immediately falling back into interrupt routine, it's expecting this write to the latch to clear the timer1 interrupt.
+But the 6522 data sheet says the timer1 interrupt flag is reset by writing to T1CH (which I do). Says nothing about T1LH.
+However, AppleWin clears the timer1 flag when the T1L_H is written to.
+So, both the UltimaV code and AppleWin strongly suggest we need to clear timer1 int on T1L_H write.
+Sigh. FIXED.</p>
+<h1 id="other-implementations">Other implementations<a class="headerlink" href="#other-implementations" title="Permanent link">&para;</a></h1>
+<p>This is a cycle-by-cycle emulation for the 6522. Check it out to see if it can help understand some of the 6522 behavior I'm unsure about.</p>
+<p>https://github.com/floooh/chips/blob/master/chips/m6522.h</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

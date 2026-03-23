@@ -1,0 +1,3835 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../Imagewriter/">
+      
+      
+        <link rel="next" href="../Joyport/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>ADB - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#adb-apple-desktop-bus" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ADB
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#interrupts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interrupts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Layers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#microcontroller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microcontroller
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keyboard-modifier-register-c025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keyboard Modifier Register - $C025
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mouse-data-register-c024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mouse Data register - $C024
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adb-command-data-register-c026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADB Command / Data Register - $C026
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adb-status-register-c027" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADB Status Register - $C027
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands-signals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands / Signals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transaction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Transaction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#listen-addressed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Listen (Addressed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#send-reset-broadcast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Send Reset (Broadcast)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flush-addressed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flush (Addressed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attentionsync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attention/Sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#global-reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Reset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#service-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service Request
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#device-registers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device Registers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands-to-microcontroller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands to Microcontroller
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#microcontroller-mode-and-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microcontroller Mode and Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#interrupts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interrupts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Layers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#microcontroller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microcontroller
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keyboard-modifier-register-c025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keyboard Modifier Register - $C025
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mouse-data-register-c024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mouse Data register - $C024
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adb-command-data-register-c026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADB Command / Data Register - $C026
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adb-status-register-c027" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADB Status Register - $C027
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands-signals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands / Signals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transaction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transaction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Transaction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#listen-addressed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Listen (Addressed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#send-reset-broadcast" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Send Reset (Broadcast)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flush-addressed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flush (Addressed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attentionsync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attention/Sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#global-reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Reset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#service-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service Request
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#device-registers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device Registers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands-to-microcontroller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commands to Microcontroller
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#microcontroller-mode-and-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Microcontroller Mode and Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="adb-apple-desktop-bus">ADB - Apple Desktop Bus<a class="headerlink" href="#adb-apple-desktop-bus" title="Permanent link">&para;</a></h1>
+<p>The ADB-related registers are:</p>
+<p>• Keyboard Data register ($C000)
+• Modifier Key register ($C025)
+• Keyboard Strobe register ($C010)</p>
+<p>• Mouse Data register ($C024)</p>
+<p>• ADB Command/Data register ($C026)
+• ADB Status register ($C027)</p>
+<p>C000/C010 are legacy registers to emulate Apple //e. The others are new and ADB-specific.</p>
+<p>C000/C010 must be implemented using the underlying ADB logic.</p>
+<p>Those registers are all managed by the KeyGloo, a 6502-based Microcontroller that interposes between GS and ADB bus. The GS host has access to about 20 commands it can send to the uC, and it is the uC that manages the actual ADB bus - likely chosen this way because the ADB bus is extremely timing sensitive.</p>
+<p>In this emulator, we do not need to go to that level of detail - a real IIgs cannot do anything with ADB except via the uC. The one thing to be mindful about, is that GS software can read from and write to the ADB memory, and does so (address 0x51) in one case to determine if the machine was reset or just powered on. So we should allocate 3K for the ROM and 96 bytes for the RAM inside the keygloo object.</p>
+<h2 id="interrupts">Interrupts<a class="headerlink" href="#interrupts" title="Permanent link">&para;</a></h2>
+<p>the ADB Controller can assert 3 interrupts:</p>
+<ul>
+<li>keyboard data available</li>
+<li>mouse data available</li>
+<li>data available (when command/data register contains valid data)</li>
+</ul>
+<p>"the keygloo chip can be setup to int whenever keylatch is written to by the uC". Cleared by reading status register followed by read of keyboard latch. If any s/w reads keyboard after status register says int occurred, then int condition will be cleared.
+The keylatch, the keymodifiers latch are both valid together until the strobe is cleared.</p>
+<p>If mouse has moved or button pushed, returns two bytes data. uC writes x/y values into KEYGLOO which triggers the interrupt. When the second byte is read back by the cPU, the interrupt is cleared. The uC only writes mouse data when registers are empty (after mouse latch X has been read). "Only interrupted at VBL time". unclear how or why.
+uC won't do another FDB mouse poll until both bytes have been transferred.</p>
+<h2 id="layers">Layers<a class="headerlink" href="#layers" title="Permanent link">&para;</a></h2>
+<p>There are essentially two layers here.</p>
+<ol>
+<li>the microcontroller-bus-device layer</li>
+<li>the GS-microcontroller layer</li>
+</ol>
+<p>Generally the system polls. However, a device may signal a Service Request (SR or SRq) to tell the host it has data. All transactions are triggered by the host though.</p>
+<p>"ADB Keyboards are prohibited by Cortland from issuing Service Requests". So only the Mouse will ever do this.</p>
+<h3 id="microcontroller">Microcontroller<a class="headerlink" href="#microcontroller" title="Permanent link">&para;</a></h3>
+<p>The ADB microcontroller also implements the keyboard buffer - 16 keystrokes can be queued up / stored. Such that when we seek to refill the keyboard GLU registers, we fetch from that queue.</p>
+<p>Mouse Interrupts can occur only during VBL.</p>
+<p>So, I think the microcontroller is what is implementing ADB protocol for Mouse and Keyboard, usually, BUT, the CPU can also execute custom ADB commands. YES:</p>
+<p>"Scans built-in (internal) keyboard and periodically polls FDB for keyboard and keypad data"
+"acts as FDB host for mouse by periodically polling the FDB mouse"
+"acts as a transceiver chip for other FDB devices".</p>
+<p>https://www.brutaldeluxe.fr/documentation/cortland/v3_10_FDBERS.pdf</p>
+<p>Also this has links to a dump of the ROM
+https://llx.com/Neil/a2/adb.html</p>
+<p>There is a separate KEYGLOO chip "acts as holding register so that data written by uC can be read by system and data written by system can be read by uC". Also this is the chip that generates interrupts.</p>
+<p>The keyboard auto-repeat rate is handled by the uC, and delay-before-auto-repeat. There is also "dual speed mode" where arrow key + control is 2x the repeat rate.</p>
+<p>"All FDB keyboards and keypads will automatically be handled by the uC". </p>
+<p>Key presses are returned by loading keylatch w/data.  "The key-modifiers latch is updated when a key is pressed and the ASCII value is loaded into the keylatch". The values reflect the state of modifiers when the key was pressed - NOT the current state of the modifiers.</p>
+<p>"Bit 5 update" is used to signify modifier latch was changed w/o any other keypresses - only occurs when KYSTB is clear. if only control or shift is pressed and KYSTB is clear, then uC sets Update bit and changes modifiers latch.</p>
+<p>Appendix B shows keycodes generated by FDB keyboard.</p>
+<p>"undefined codes for FDB keyboards are passed directly through keyboard latch with keypad bit set".</p>
+<p>"Polling" by the uC will be simulated by calling the event handler. We could also, potentially, have a frame handler if we needed periodic processing not as a response to an event.</p>
+<p>the IIgs Firmware Reference has thorough and much clearer write-up on the uC commands and responses, and esp. of the status byte.
+The status byte per Kent (in KEGS):</p>
+<p>The Firmware Reference manual says in the C026 description: "Data at interrupt time in this register defined as follows:".  I agree the Hardware reference manual gives a brief $C026 description that doesn't mention this, but the Firmware Reference is better.  The ADB has 3 states for $C026, and returns different values in each of the states.  KEGS calls them ADB_IDLE, ADB_IN_CMD, and ADB_SENDING_DATA.  The documented bits are the ADB_IDLE definitions.  In ADB_IN_CMD (entered by writing $C026 bits 3:0 to several different values), KEGS returns 0 on reads to $C026 (I don't know what the actual hardware does in this case, but nothing I've ever run seems to care about this).  And in ADB_SENDING_DATA (the CMD is now returning data), you return the data requested, and when done, go to ADB_IDLE.</p>
+<h2 id="keyboard-modifier-register-c025">Keyboard Modifier Register - $C025<a class="headerlink" href="#keyboard-modifier-register-c025" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Modifier Key Pressed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>Command</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Option</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Modifier Latch updated, but no key pressed</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Numeric keypad key</td>
+</tr>
+<tr>
+<td>3</td>
+<td>non-modifier key is being held down</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Caps Lock</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Control</td>
+</tr>
+<tr>
+<td>0</td>
+<td>Shift</td>
+</tr>
+</tbody>
+</table>
+<p>Bit 5=1 means these are "live" values.
+I think this means if 5=0, then these values are latched and associated with the most recent key press? That is unclear.</p>
+<p>These are pretty straightforward.</p>
+<h2 id="mouse-data-register-c024">Mouse Data register - $C024<a class="headerlink" href="#mouse-data-register-c024" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>1=Mouse button is up, 0=Mouse button is down</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Delta sign bit: =1, delta is negative; =0, delta is positive</td>
+</tr>
+<tr>
+<td>5-0</td>
+<td>Delta X/Y (with sign bit, up to +/- 31)</td>
+</tr>
+</tbody>
+</table>
+<p>Read register twice in succession; first to get X, second to get Y. If you get out of sync, you will be reading X for Y and vice-versa. Is there a reset for this?</p>
+<h2 id="adb-command-data-register-c026">ADB Command / Data Register - $C026<a class="headerlink" href="#adb-command-data-register-c026" title="Permanent link">&para;</a></h2>
+<p>On a write:</p>
+<p>The command (as defined below) is written in these 8 bits. These are uC commands, not directly ADB commands.</p>
+<p>On a read:
+Bits 0-7 are data from the keyboard micro</p>
+<p>AT INTERRUPT TIME, on a read: (Per Cortland 2.01 Apple IIgs Firmware Reference Manual Appendix E)</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>Response/status</td>
+<td>When this bit is 1, the ADB microcontroller has received a response from an ADB device previously addressed. 0: No response.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Abort/CTRLSTB flush</td>
+<td>When this bit is 1, and only this bit in the register is 1, the ADB microcontroller has encountered an error and has reset itself. When this bit is 1 and bit 4 is also 1, the ADB microcontroller should clear the key strobe (bit 7 in the Keyboard Data register at $C000).</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Reset key sequence</td>
+<td>When this bit is 1, the Control, Command, and Reset keys have been pressed simultaneously. This condition is usually used to initiate a cold start up</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Buffer flush key sequence</td>
+<td>When this bit is 1, the Control, Command, and Delete keys have been pressed simultaneously. This condition wil result in the ADB microcontroller's flushing al internally buffered commands.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Service request valid</td>
+<td>When this bit is 1, a valid service request is pending. The ADB microcontroller will then poll the ADB devices and determine which has initiated the request</td>
+</tr>
+<tr>
+<td>2 - 0</td>
+<td>Number of data bytes returned</td>
+<td>The number of data bytes to be returned from the command is listed here.</td>
+</tr>
+</tbody>
+</table>
+<p>Subsequent reads will pass data bytes per bits 2-0. </p>
+<h2 id="adb-status-register-c027">ADB Status Register - $C027<a class="headerlink" href="#adb-status-register-c027" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Modifier Key Pressed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>Mouse Data Reg Full</td>
+<td>=1, Mouse Data register at $C024 is full</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Mouse int ena/dis</td>
+<td>= 1, mouse interrupt is enabled, int generated when mouse register contains valid data and in vbl period</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Data register full</td>
+<td>=1, command/data register contains valid data</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Data interrupt ena/dis</td>
+<td>=1, generate interrupt when command/data reg contains valid data</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Keybd data register is full</td>
+<td>=1, kbd data ($C000) has valid data. =0, kbd register empty. is cleared when kbd data reg is read, or adb status is read</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Keybd data register int ena/dis</td>
+<td>=1, interrupt thrown when kbd register contains valid data</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Mouse X Available</td>
+<td>=1, a X-coord data is available; if =0, a Y-coord data is available</td>
+</tr>
+<tr>
+<td>0</td>
+<td>Command register full</td>
+<td>=1 when command/data register is written to; =0 cmd register empty, cleared when cmd/data register is read by uC</td>
+</tr>
+</tbody>
+</table>
+<p>ok, a clearer description of this is in the Cortland manual:
+The Command Full flag is set to 1 when the system writes to the command register; and cleared to when the Keyboard micro reads the command register.</p>
+<h2 id="commands-signals">Commands / Signals<a class="headerlink" href="#commands-signals" title="Permanent link">&para;</a></h2>
+<p>Command: message sent to a specific device
+Signal: broadcast to instruct all devices to perform a function.</p>
+<p>Commands:
+* Listen (write to device)
+* Talk (read from device)
+* Device Reset 
+* Flush</p>
+<p>Signals:
+* Attention
+* Sync
+* Global Reset
+* Service Request</p>
+<h2 id="transaction">Transaction<a class="headerlink" href="#transaction" title="Permanent link">&para;</a></h2>
+<p>Attention / Sync
+Address: 4 bits
+Cmd: 2 bits: LISTEN
+Register: 2 bits
+Then, 2 to 8 bytes of data</p>
+<table>
+<thead>
+<tr>
+<th>Address</th>
+<th>Command Code</th>
+<th>Register</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7 6 5 4</td>
+<td>3 2</td>
+<td>1 0</td>
+<td><strong>Command</strong></td>
+</tr>
+<tr>
+<td>x x x x</td>
+<td>0 0</td>
+<td>0 0</td>
+<td>Send Reset</td>
+</tr>
+<tr>
+<td>A3 A2 A1 A0</td>
+<td>0 0</td>
+<td>0 1</td>
+<td>Flush</td>
+</tr>
+<tr>
+<td>x x x x</td>
+<td>0 0</td>
+<td>1 0</td>
+<td>Reserved</td>
+</tr>
+<tr>
+<td>x x x x</td>
+<td>0 0</td>
+<td>1 1</td>
+<td>Reserved</td>
+</tr>
+<tr>
+<td>x x x x</td>
+<td>0 1</td>
+<td>1 0</td>
+<td>Reserved</td>
+</tr>
+<tr>
+<td>A3 A2 A1 A0</td>
+<td>1 0</td>
+<td>r1 r0</td>
+<td>Listen</td>
+</tr>
+<tr>
+<td>A3 A2 A1 A0</td>
+<td>1 1</td>
+<td>r1 r0</td>
+<td>Talk</td>
+</tr>
+</tbody>
+</table>
+<h3 id="listen-addressed">Listen (Addressed)<a class="headerlink" href="#listen-addressed" title="Permanent link">&para;</a></h3>
+<p>Requests device to store data being transmitted in specified internal register (0-3).
+When the host addresses a device to listen, the device receives the next data packet from the host and places it in the appropriate register. (So, 'registers' can be multiple bytes).
+If the addressed device detects another command on the bus before it receives any data, the original transaction is immediately considered complete. (This may never happen in practice in an emulator).</p>
+<h3 id="send-reset-broadcast">Send Reset (Broadcast)<a class="headerlink" href="#send-reset-broadcast" title="Permanent link">&para;</a></h3>
+<p>When a device receives this command, it clears all pending operations and data and inits to power-on state. This will reset ALL devices.</p>
+<h3 id="flush-addressed">Flush (Addressed)<a class="headerlink" href="#flush-addressed" title="Permanent link">&para;</a></h3>
+<p>Clear all pending commands from the device.</p>
+<h3 id="attentionsync">Attention/Sync<a class="headerlink" href="#attentionsync" title="Permanent link">&para;</a></h3>
+<p>start of every command. Does not need to be emulated.</p>
+<h3 id="global-reset">Global Reset<a class="headerlink" href="#global-reset" title="Permanent link">&para;</a></h3>
+<p>If bus held low for 2.8ms, all devices reset. Only initiated by host.</p>
+<h3 id="service-request">Service Request<a class="headerlink" href="#service-request" title="Permanent link">&para;</a></h3>
+<p>Sent by device, to inform host that a device requires service, for example, when there are data to send to the host.
+Following any command packet, a requesting device can signal an SR by holding the bus low. The devices hold this until they have been served.
+At that point, the Host polls all devices by sending a Talk Register 0 command beginning with last active device.
+Only the device with data to send will respond to this Talk command.
+The Mouse does NOT ever use this SR mechanism.</p>
+<h3 id="device-registers">Device Registers<a class="headerlink" href="#device-registers" title="Permanent link">&para;</a></h3>
+<p>0-2 are device specific.
+Register 3 is Talk: status, and device address handler; Listen: status.</p>
+<ul>
+<li>Keyboard Register 0</li>
+<li>Bit 15: Key Released</li>
+<li>Bit 14-8: Keycode 2</li>
+<li>Bit 7: Key Released</li>
+<li>
+<p>Bit 6-0: Keycode 1</p>
+</li>
+<li>
+<p>Mouse Register 0</p>
+</li>
+<li>Bit 15: Button Pressed (1 = button up, 0 = button down)</li>
+<li>Bit 14: Moved Up</li>
+<li>Bit 13-8: Y move value</li>
+<li>Bit 7: always 1</li>
+<li>Bit 6: Moved right</li>
+<li>
+<p>Bit 5-0: X move value</p>
+</li>
+<li>
+<p>Registers 1 and 2</p>
+</li>
+<li>
+<p>basically unused by keyboard/mouse</p>
+</li>
+<li>
+<p>Register 3</p>
+</li>
+<li>Bit 15: reserved, must be 0.</li>
+<li>Bit 14: exceptional event.</li>
+<li>Bit 13: SR enable</li>
+<li>Bit 12: Reserved, must be 0.</li>
+<li>Bit 11-8: Device address.</li>
+<li>
+<p>Bit 7-0: Device handler.</p>
+</li>
+<li>
+<p>Device Handlers. As Listen Register 3 data,</p>
+</li>
+<li>$FF - initiate self-test.</li>
+<li>$FE - change address field to new address sent in this message.</li>
+<li>$FD - change address to new address "if activator is pressed"</li>
+<li>
+<p>$00 - change address and enable fields to new values sent by host</p>
+</li>
+<li>
+<p>Device addresses</p>
+</li>
+<li>$02 - Encoded Devices - Keyboard</li>
+<li>$03 - Relative Devices - Mouse</li>
+</ul>
+<p>The keycodes are scancodes, not ASCII:
+https://github.com/szymonlopaciuk/stm32-adb2usb/blob/main/src/keymap.h</p>
+<p>https://github.com/gblargg/adb-usb/blob/master/keymap.h</p>
+<p>So, we need to implement just like the ADB microcontroller. 
+1. Receive (and send) messages on an ADB Bus. Have a data structure for a queue of packets.
+1. as packets come in, we present them to the ADB Command/Data registers.
+1. But, we also process them to some degree, e.g. updating values for $C024, $C025, $C000, etc.</p>
+<h2 id="commands-to-microcontroller">Commands to Microcontroller<a class="headerlink" href="#commands-to-microcontroller" title="Permanent link">&para;</a></h2>
+<p>Apparently you send commands to the uC in a format different from the ADB bus itself. That makes sense, the ADB bus timing is very particular.</p>
+<p>See Page 13 on in the v3_10_FDBERS document.</p>
+<h2 id="microcontroller-mode-and-configuration">Microcontroller Mode and Configuration<a class="headerlink" href="#microcontroller-mode-and-configuration" title="Permanent link">&para;</a></h2>
+<p>The MODES byte is:</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>Reset on RESET key only (control not needed)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Set XOR LOCK-SHIFT mode</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Change FDB Keyboard Layout to //e Layout</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Buffer Keyboard Mode</td>
+</tr>
+<tr>
+<td>3</td>
+<td>4x Repeat Enabled; instead of dual (2x) repeat</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Include Spacebar, Delete key on Dual Repeat</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Disable auto-poll of fdb mouse</td>
+</tr>
+<tr>
+<td>0</td>
+<td>Disable auto-poll of fdb keyboard</td>
+</tr>
+</tbody>
+</table>
+<h1 id="keygloo-dev-notes">KeyGloo Dev notes<a class="headerlink" href="#keygloo-dev-notes" title="Permanent link">&para;</a></h1>
+<p>Even though today I only have two devices, and am unsure about ever supporting any other devices (graphics tablets? radio tuners? security keys?)</p>
+<p>[x] Patch in event handling for keyboard.
+[x] Patch in event handling for Mouse.
+[x] test harness  </p>
+<p>Apparently the CDA panel is handled by the firmware during VBL interrupts. (NO)</p>
+<p>Event handling. Put it into this object?
+Or, handle it at the device level and decouple the KeyGloo object from: timing, SDL, etc?
+Yeah, let's try that.</p>
+<p>ok. So, events are sent in this way:
+main -&gt; KeyGloo -&gt; ADB_Host -&gt; ADB_Device1, Device2, etc.
+then, based on this, the ADB devices should set some information in their registers.
+Then, KeyGloo should poll through the ADB Host to get some kind of status. E.g. was a key pressed.
+It would do this with a talk() command.
+KeyGloo does have special knowledge of Keyboards and Mice.</p>
+<p>in the ADB Keyboard device, the keycodes are scan codes, not ascii, even though the GS manual says ascii.
+So if we're to maintain this fiction, there is a lot to do.</p>
+<ol>
+<li>Convert PC/SDL scancode to ADB keyboard scan code.</li>
+<li>convert ADB Scancode to ascii (in the key latch). or leave it as-is for direct reads from the adb key device.</li>
+</ol>
+<p>now, this is ickyish because we already have to call an SDL routine to map from scancode to ascii, in order to take account of international keyboards.
+Each international keyboard in a GS is going to have a map. Would this imply we need a unique </p>
+<p>KB register 0 just packs up to two events into one message. </p>
+<p>https://www.brutaldeluxe.fr/documentation/cortland/v3/The%20ADB%20uC%20Tool%20Set%20-%20Peter%20Baum%20-%20Rev%201.1%20-%2019860515.pdf</p>
+<p>https://gemini.google.com/app/c600196fa04cec55</p>
+<p>OK, the buffer DOES live in the microcontroller, NOT in the keyboard device. Well, the keyboard device seems to be able to hold two keypresses.</p>
+<pre><code>Example Scan
+If you press the 'A' key (ADB code 0x00):
+
+Register 0 result: 0x00FF
+00: High byte (Bit 15=0 for Down, Bits 14-8=0x00 for 'A').
+FF: Low byte (No second key, idling).
+
+If you release the 'A' key:
+
+Register 0 result: 0x80FF
+80: High byte (Bit 15=1 for Up, Bits 14-8=0x00 for 'A').
+FF: Low byte (Idling).
+</code></pre>
+<p>So while we -could- use both bytes we really probably don't have to. It said "if no data, request ignored". not sure that's right..
+if there's data, it goes in high byte, and 0xFF in low byte.
+0xFFFF is reset / poweron.</p>
+<p>Great convo on this on the slack: https://apple2infinitum.slack.com/archives/CPSGNGE05/p1767030235302959</p>
+<p>I am motivated to run this PACMAN GAME on my emulated GS!!</p>
+<h2 id="mouse">Mouse<a class="headerlink" href="#mouse" title="Permanent link">&para;</a></h2>
+<p>This doc goes into great detail on the Mouse on the GS.</p>
+<p>https://www.brutaldeluxe.fr/documentation/cortland/v3/Mouse%20ERS%20-%20Fern%20Bachman%20-%20v00.10%20-%2019850715.pdf</p>
+<p>key takeaways so far:</p>
+<p>[ ] the mouse interrupts in sync with vbl, only 60 times per second. How does that work? Does ADB Micro get fed the vbl signal? yes, it and the keygloo do.
+[ ] +/- 63 counts max movement, is 0.8 inches of travel.
+[ ] there IS a button 1. 
+[ ] At RESET, interrupts must be disabled<br />
+[ ] mouse data - 1st read gets X data and button 1 data; 2nd read gets Y and button 0</p>
+<h2 id="control-panel-cda-ctrl-oa-esc">Control Panel (CDA) Ctrl-OA-ESC<a class="headerlink" href="#control-panel-cda-ctrl-oa-esc" title="Permanent link">&para;</a></h2>
+<p>hello! I’m struggling to figure out exactly which IRQ source is triggered on a control-openapple-ESC to open the CDA panel.</p>
+<p>First, this seems to be signaled in the ADB Command/Status Register (“at interrupt time”) in bit 5. Cortland doc labels this “Desktop Manager Key Sequence.” but then contradicts itself halfway down the page calling it the “reset key sequence” indicator.  But the FW Ref also calls it “Desktop Manager Key Sequence”. </p>
+<p>KEGS has routines to set and clear C026[3]. This is "SRQ Valid If Set". That's Service Request. And C026[5] is "Desktop manager key sequence" pressed.</p>
+<p>So when Bit 3 here is set we assert an ADB_SRQ interrupt to the cpu. 
+After the 3 keys are hit, it sets the IRQ, but goes ahead and processes the data as a normal keypress.</p>
+<p>But what clears it exactly?</p>
+<p>in KEGS, the function adb_kbd_talk_reg0. And this is called only by uC commands 0xC0-0xCF. "Talk Dev x Reg 0" to the keyboard. And when the response data from that has been stored, we clear the IRQ. This doesn't feel right? That would clear it in time for then C026 to read the data from this request..</p>
+<p>So when SRQ bit is set, and C026 is read, we present this status register. </p>
+<p>Hmmm. Another possibility is that the keyboard is generating an ADB SRQ? and then the uC polls it to see which device did it. perhaps the uC expects the host to poll for the SRQ initiator, and KEGS just triggers it on the KB. This is mysterious.</p>
+<p>this hinges on the "Data Register", which "at interrupt time" is .. </p>
+<p>ok. If c027[54] = 11, then we are in "interrupt time". and reading the datareg C026 and/or the full response (based on number bytes noted in C026[2:0]).</p>
+<p>we want an IRQ_ADB_DATAREG</p>
+<pre><code>c027[4] = data int enable; c027[5] = data reg full
+1108 BE5A              @66      EQU   *
+1109 BE5A AF C5 00 E1           LDA   &gt;IRQ_KMSTATUS            ;Test for data register interrupts    -- C027 was copied here.
+1110 BE5E 29 30                 AND   #$30                     ;Bits 4,5 are status/enable
+1111 BE60 0A                    ASL   A                        ;Bit 5 to 'c'/bit 4 to bit 7
+1112 BE61 0A                    ASL   A                        ;
+1113 BE62 0A                    ASL   A                        ;
+1114 BE63 10 61                 BPL   @55                      ;+ then not enabled                   -- data int not enabled
+1115 BE65 90 5F                 BCC   @55                      ;'c'=0 then not data reg int          -- data int enabled, but this is not a data interrupt
+1116 BE67
+1117 BE67 AD 26 C0              LDA   DATAREG                  ;Pick up DATAREG for testing now and later
+1118 BE6A 8F C4 00 E1           STA   &gt;IRQ_DATAREG             ;Save for later
+1119 BE6E 10 07                 BPL   @66_1                    ;Not response byte interrupt          -- c026[7] &quot;response byte if set, otherwise status byte&quot;. response from what?
+1120 BE70 22 40 00 E1           JSL   &gt;IRQ_RESPONSE            ;Go do interrupt if possible          -- this is a &quot;response byte&quot;. 
+1121 BE74 20 83 BF              JSR   TSTSETFLG                ;Check 'c' and maybe set flag
+1122 BE77
+1123 BE77              @66_1    EQU   *
+1124 BE77 AF C4 00 E1           LDA   &gt;IRQ_DATAREG             ;Recall status byte
+1125 BE7B 29 08                 AND   #$08                     ; and test for SRQ interrupt
+1126 BE7D F0 07                 BEQ   @66_2                    ;=0 then not an SRQ
+1127 BE7F 22 44 00 E1           JSL   &gt;IRQ_SRQ                 ;Go do interrupt if possible
+1128 BE83 20 83 BF              JSR   TSTSETFLG                ;Check 'c' and maybe set flag
+1129 BE86
+1130 BE86              @66_2    EQU   *
+1131 BE86 AF C4 00 E1           LDA   &gt;IRQ_DATAREG             ;Recall status byte
+1132 BE8A 29 20                 AND   #$20                     ; and test for desktop mgr interrupt
+1133 BE8C F0 13                 BEQ   @66_3                    ;=0 then not an desktop mgr interrupt
+1134 BE8E AD 25 C0              LDA   KEYMODREG                ;Is Shift key pressed also ?
+1135 BE91 6A                    ROR   A                        ;Rotate bit0 (shift) to 'c'
+1136 BE92 90 06                 BCC   @66_2_1                  ;BRA if not pressed with Shift key
+1137 BE94 22 08 00 FE           JSL   &gt;TODESKMGR               ;Else use private vector to jmp to
+1138 BE98 80 04                 BRA   @66_2_3                  ;Continue on  
+1139 BE9A              @66_2_1  EQU   *
+1140 BE9A 22 48 00 E1           JSL   &gt;IRQ_DSKACC              ;Go do interrupt if possible
+1141 BE9E              @66_2_3  EQU   *
+1142 BE9E 20 83 BF              JSR   TSTSETFLG                ;Check 'c' and maybe set flag
+1143 BEA1
+1144 BEA1              @66_3    EQU   *
+1145 BEA1 AF C4 00 E1           LDA   &gt;IRQ_DATAREG             ;Recall status byte
+1146 BEA5 29 50                 AND   #$50                     ; and test for flush buffer interrupt  -- OH, this is actually handled this way.
+1147 BEA7 0A                    ASL   A                        ;Shift bit 6 to carry
+1148 BEA8 0A                    ASL   A                        ;
+1149 BEA9 F0 09                 BEQ   @66_4                    ;=0 then not flush buffer interrupt
+1150 BEAB 90 03                 BCC   @66_2_2                  ;'c' clear then don't clear KBDSTRB
+1151 BEAD 8D 10 C0              STA   KBDSTRB                  ;Remove key in buffer
+1152 BEB0              @66_2_2  EQU   *
+1153 BEB0 22 4C 00 E1           JSL   &gt;IRQ_FLUSH               ;Go do interrupt if possible
+1154 BEB4
+1155 BEB4              @66_4    EQU   *
+1156 BEB4 AF C4 00 E1           LDA   &gt;IRQ_DATAREG             ;Recall status byte
+1157 BEB8 C9 40                 CMP   #$40                     ; and test for keyboard micro interrupt
+1158 BEBA D0 07                 BNE   @66_8                    ;= then abort interrupt                 -- probably never happen for us
+1159 BEBC 22 50 00 E1           JSL   &gt;IRQ_MICRO               ;Go do interrupt if possible
+1160 BEC0              @66_6    EQU   *
+1161 BEC0 20 83 BF              JSR   TSTSETFLG                ;Check 'c' and maybe set flag
+1162 BEC3              @66_8    EQU   *
+1163 BEC3 4C 8F BF              JMP   IRQDONE1_1               ;See if we exit or go to OS int handler
+</code></pre>
+<h2 id="test-suite">Test Suite<a class="headerlink" href="#test-suite" title="Permanent link">&para;</a></h2>
+<p>All commands return at least a single response byte</p>
+<p>Value of bits 2-0 in response byte match number of bytes of response, and is 0 if there is only the response byte.</p>
+<p>Except 0x0E and 0x0F, which should return bits 2-0 as "1", which is the # entries following.</p>
+<h2 id="dec-31-2025">Dec 31, 2025<a class="headerlink" href="#dec-31-2025" title="Permanent link">&para;</a></h2>
+<p>happy new year!</p>
+<p>ok, the ADB test harness is starting to come together.</p>
+<p>SDL event -&gt; keyglu -&gt; adb_host -&gt; adb_keyboard</p>
+<p>the SDL scancode is getting converted to ADB scan codes. I need to fill the table in quite a bit.</p>
+<p>the keyboard needs a concept of "what keys are down right now".</p>
+<h2 id="jan-2-2026">Jan 2, 2026<a class="headerlink" href="#jan-2-2026" title="Permanent link">&para;</a></h2>
+<p>On Standard Keyboards left and right modifiers cannot be discriminated. Right Shift acts just as left Shift for example.</p>
+<p>So, I think this means regardless of USB code, send an ADB_LEFT_SHIFT. We can try it, anyway.</p>
+<h2 id="jan-3-2026">Jan 3, 2026<a class="headerlink" href="#jan-3-2026" title="Permanent link">&para;</a></h2>
+<p>the ADB uC should be the entity responsible for mapping from ADB Keyboard scancodes to ASCII, based on the language setting. However, it's not done with pure lookup tables. It seems there might be a partial lut somewhere but for compactness there is probably also some code somewhere to handle stuff like lowercase to uppercase letters when user is holding shift, etc.</p>
+<p>This is what we need to be putting in the queue.</p>
+<p>The KeyGLU might be a separate chip from the ADB uController. i.e. it might be the bit that is the four registers between the GS and the ADB uC. Consider renaming the classes? Currently, the functions are merged and the KeyGloo class is both the registers and the uC. Other than potential future reusability, there is no benefit to splitting these out and adding extra complexity.</p>
+<p>What I implemented so far is: partial lookup table for 0x00 - 0x5F: and then a bunch of IF statements checking various modifier keys. E.g., shift and 'a' subs 32 from the char to get 'A'. </p>
+<h2 id="jan-6-2025">Jan 6, 2025<a class="headerlink" href="#jan-6-2025" title="Permanent link">&para;</a></h2>
+<p>thinking about the auto-repeat. There is a GS setting to stop auto repeat. We can do that by ignoring repeats from the OS: 
+events with: 
+    event.key.repeat == 1
+are repeat keys.</p>
+<p>But if I were to implement our own key repeat, how is that done..</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Repeats/sec</th>
+<th>Divisor</th>
+<th>120 Ticks/sec</th>
+<th>~59.9226 Ticks/sec</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>40</td>
+<td>3</td>
+<td>40</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>30</td>
+<td>4</td>
+<td>30</td>
+<td>2</td>
+</tr>
+<tr>
+<td>2</td>
+<td>24</td>
+<td>5</td>
+<td>24</td>
+<td>2</td>
+</tr>
+<tr>
+<td>3</td>
+<td>20</td>
+<td>6</td>
+<td>20</td>
+<td>3</td>
+</tr>
+<tr>
+<td>4</td>
+<td>15</td>
+<td>8</td>
+<td>15</td>
+<td>4</td>
+</tr>
+<tr>
+<td>5</td>
+<td>11</td>
+<td>11</td>
+<td>10.91</td>
+<td>5</td>
+</tr>
+<tr>
+<td>6</td>
+<td>8</td>
+<td>15</td>
+<td>8</td>
+<td>8</td>
+</tr>
+<tr>
+<td>7</td>
+<td>4</td>
+<td>30</td>
+<td>4</td>
+<td>15</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Delay before repeat (sec)</th>
+<th>Ticks (of 120/sec)</th>
+<th>ticks (~59.9226)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>1/4 sec</td>
+<td>30</td>
+<td>15</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1/2 sec</td>
+<td>60</td>
+<td>30</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3/4 sec</td>
+<td>90</td>
+<td>45</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1 sec</td>
+<td>120</td>
+<td>60</td>
+</tr>
+<tr>
+<td>4</td>
+<td>no rpt</td>
+<td></td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<p>My normal frame rate is 59.9226.. close to 60, which is 1/2 the 120 rate. Likely close enough for government work.</p>
+<p>So: last_repeat_key;  next_repeat_cnt;
+the start_repeat_in is reset on new key down; e.g. if you're repeating f but then hit and hold g, it waits the "delay before repeat".</p>
+<p>So we use a frame handler here. decrement next_repeat_cnt (dncntr), when it's 0, call store_key_to_buffer with the saved "repeated key" info. Only do this when "keysdown"&gt;0. </p>
+<p>divisor
+divisor_count
+repeat_active
+delay
+delay_count</p>
+<p>on key up, clear divisor_count, repeat_active=0</p>
+<p>We know multiple keys can be down; but the micro should track and repeat the -most recent- one.</p>
+<pre><code>each iteration, 
+  if key is down, 
+    if repeat_active = 0,
+      incr delay_count
+      if delay_count == delay, 
+        delay_count=0, repeat_active=1
+      return
+
+    if key down is same as last key, 
+      increment divisor_count
+      If divisor_count = divisor, then divisor_count=0, insert key into buffer again
+
+    if key down different from last key,
+      repeat_active=0; divisor_count=0
+
+  if key up,
+    repeat_active=0
+    divisor_count=0
+    delay_count=0
+</code></pre>
+<h2 id="jan-8-2026">Jan 8, 2026<a class="headerlink" href="#jan-8-2026" title="Permanent link">&para;</a></h2>
+<p>ok, the ROM is doing this:</p>
+<pre><code>   LDA C026
+   LDA C027
+   ROR A
+   bcs 8501 - if bit 0 is set
+   LDX #1D4C
+   LDA #7
+   STA C026 ; write cmd 7 / synch
+8515: DEX
+   BEQ 8521 - if X hits 0, exit this loop
+   LDA C026
+   LDA C027
+   ROR A
+   BCS 8515
+</code></pre>
+<p>This is a loop, to do a synch, then keep reading bit 0 of C027 - "cmd register full". As long as the cmd register is full, it's going to loop.
+Ah from Cortland manual:
+The Command Full flag is set to 1 when the system writes to the command register; and cleared to when the Keyboard micro reads the command register.</p>
+<p>So after you write the cmd, this clears that bit when the uC has read it, a handshake saying "you can send the next cmd byte"? yeah I think so. And this handshake is for every byte, not the whole command.
+So this is working by accident since we are never setting or clearing the bit, it's just always 0.</p>
+<p>In order, it's writing:</p>
+<p>07 00 32 00 24 </p>
+<p>this might be mode =0, config = 32, 0, 24. Yes, 32/00/24 are the defaults I set in ADB_Micro. So this makes sense.</p>
+<p>Then next is:</p>
+<p>73</p>
+<p>This appears to be disable SRQ on device 3 - the mouse. And I'm guess it's not waiting for a response from either of these commands..</p>
+<p>Then:</p>
+<p>09 51 00</p>
+<p>this is READ uC MEM, address 0x0051!! We know what that is.</p>
+<p>That is the kSYSPWRUP variable (as named by GuS). </p>
+<p>then it's waiting in a big ole loop:</p>
+<pre><code>repeat: DEX
+   LDA C027
+   AND #$20
+   BEQ repeat
+</code></pre>
+<p>that's data register full. It's probably the same thing, a handshake per byte. We're never setting this, and it's timing out, so that is why we get the 0911?</p>
+<p>Got past the memory read, and it stores it into </p>
+<p>now we're doing command</p>
+<p>08 51 A5 </p>
+<p>write uC memory! This writes A5 to indicate not a power-on.</p>
+<p>now:
+01 - abort</p>
+<p>--</p>
+<p>I am now dumping the complete ADB Command and Response messages.</p>
+<h2 id="bug-fix">BUG FIX<a class="headerlink" href="#bug-fix" title="Permanent link">&para;</a></h2>
+<p>ok, SO: The bits 2-0 being number of valid bytes thing, this ONLY applies to C026 "during interrupt time". I'm guessing, an IRQ is triggered, this value is set.
+If there is no interrupt then it's normal response.</p>
+<h2 id="debugging">Debugging<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h2>
+<p>ok this is a routine from the rom03.
+This reads  1 byte. This seems to indicate KMSTATUS[5] = 1, the "data register full" bit, means a byte has been placed in the data register.
+It -waits- for KMSTATUS[5] to go high, then does the read.
+meaning, it expects it to take some time for data bytes to get there.</p>
+<pre><code>1474 DB22                       entry RCVDATA
+1475 DB22              RCVDATA                                 ;
+1476 DB22
+1477 DB22                       longa off
+1478 DB22                       longi on
+1479 DB22
+1480 DB22 18                    clc   
+1481 DB23 A2 4C 1D              ldx   #7500                    ;TIMEOUT 7500*(2+2+4+2+3)/3 = 30 MS.
+1482 DB26                       entry REGOK
+1483 DB26 CA           REGOK    dex   
+1484 DB27 F0 0B                 beq   FDBTIMEOUT
+1485 DB29 AD 27 C0              lda   |KMSTATUS                ;GET DATA REG FULL BIT -&gt; BIT 5
+1486 DB2C 29 20                 and   #DATAFULL                ;AND TEST
+1487 DB2E F0 F6                 beq   REGOK                    ;CLR IF EMPTY (READ)
+1488 DB30              *  ;SET IF FULL (DON'T READ)
+1489 DB30              *
+1490 DB30 AD 26 C0              lda   |DATAREG
+1491 DB33 60                    rts   
+1492 DB34              *
+1493 DB34                       entry FDBTIMEOUT
+1494 DB34 38           FDBTIMEOUT sec   
+1495 DB35 60                    rts   
+</code></pre>
+<p>another routine READRSPNS uses that - it reads 1 byte - if it's a status byte [7]=1, it stores it and loops to the top.
+else, it's a "response byte". clear hi bit, save in status.
+get the low 3 bits, that tells us how many bytes.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

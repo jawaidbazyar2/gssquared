@@ -1,0 +1,4109 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../runloop/">
+      
+      
+        <link rel="next" href="../PowerOnStates/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>App Callbacks - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#restructuring-gs2cpp-to-the-sdl3-app-callbacks-paradigm" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              App Callbacks
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem Statement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entry-point-main-in-srcgs2cpp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entry point: main() in src/gs2.cpp
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-functions-called-per-frame" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key functions called per-frame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-modes-within-run_cpus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution modes within run_cpus()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proposed-architecture-sdl3-app-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proposed Architecture: SDL3 App Callbacks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Proposed Architecture: SDL3 App Callbacks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#app-state-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        App State Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sdl_appinit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SDL_AppInit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sdl_appevent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SDL_AppEvent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sdl_appiterate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SDL_AppIterate
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SDL_AppIterate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iterate_system_select" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterate_system_select()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iterate_emulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterate_emulation()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iterate_shutdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterate_shutdown()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sdl_appquit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SDL_AppQuit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-challenges-and-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Challenges and Solutions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Challenges and Solutions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-the-cpu-execution-inner-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. The CPU Execution Inner Loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-frame-sleep-timing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Frame Sleep / Timing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-event-handling-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Event Handling Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-the-system-select-emulation-restart-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The System-Select / Emulation / Restart Cycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-menu-tracking-on-macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Menu Tracking on macOS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-window-resize-freezing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Window Resize Freezing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-ludicrous-speed-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Ludicrous Speed Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-debug-step-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Debug Step Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration Plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-extract-state-from-locals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Extract State from Locals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-extract-single-frame-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Extract Single-Frame Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-extract-event-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Extract Event Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-refactor-selectsystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Refactor SelectSystem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-implement-the-callback-entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: Implement the Callback Entry Points
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-macos-menu-and-resize-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6: macOS Menu and Resize Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-7-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 7: Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#impact-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Impact Assessment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Impact Assessment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#files-requiring-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files Requiring Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files-unchanged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files Unchanged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#risk-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relationship-to-existing-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relationship to Existing Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem Statement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entry-point-main-in-srcgs2cpp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entry point: main() in src/gs2.cpp
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-functions-called-per-frame" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key functions called per-frame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-modes-within-run_cpus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution modes within run_cpus()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#proposed-architecture-sdl3-app-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proposed Architecture: SDL3 App Callbacks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Proposed Architecture: SDL3 App Callbacks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#app-state-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        App State Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sdl_appinit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SDL_AppInit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sdl_appevent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SDL_AppEvent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sdl_appiterate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SDL_AppIterate
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SDL_AppIterate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iterate_system_select" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterate_system_select()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iterate_emulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterate_emulation()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iterate_shutdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iterate_shutdown()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sdl_appquit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SDL_AppQuit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-challenges-and-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Challenges and Solutions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Challenges and Solutions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-the-cpu-execution-inner-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. The CPU Execution Inner Loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-frame-sleep-timing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Frame Sleep / Timing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-event-handling-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Event Handling Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-the-system-select-emulation-restart-cycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The System-Select / Emulation / Restart Cycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-menu-tracking-on-macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Menu Tracking on macOS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-window-resize-freezing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Window Resize Freezing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-ludicrous-speed-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Ludicrous Speed Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-debug-step-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Debug Step Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration Plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-extract-state-from-locals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Extract State from Locals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-extract-single-frame-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Extract Single-Frame Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-extract-event-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Extract Event Handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-refactor-selectsystem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Refactor SelectSystem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-implement-the-callback-entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: Implement the Callback Entry Points
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-macos-menu-and-resize-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6: macOS Menu and Resize Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-7-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 7: Cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#impact-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Impact Assessment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Impact Assessment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#files-requiring-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files Requiring Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files-unchanged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files Unchanged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#risk-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relationship-to-existing-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relationship to Existing Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="restructuring-gs2cpp-to-the-sdl3-app-callbacks-paradigm">Restructuring gs2.cpp to the SDL3 App Callbacks Paradigm<a class="headerlink" href="#restructuring-gs2cpp-to-the-sdl3-app-callbacks-paradigm" title="Permanent link">&para;</a></h1>
+<p><strong>Status: COMPLETED</strong> — All 7 phases implemented and tested. The emulator now
+uses SDL3 App Callbacks (<code>SDL_AppInit</code>, <code>SDL_AppEvent</code>, <code>SDL_AppIterate</code>,
+<code>SDL_AppQuit</code>) with macOS-specific NSTimer helpers for menu tracking and window
+resize. Emulation continues running during menu pulldown and window resize drag.</p>
+<h2 id="problem-statement">Problem Statement<a class="headerlink" href="#problem-statement" title="Permanent link">&para;</a></h2>
+<p>GSSquared currently uses a traditional <code>main()</code> with nested <code>while</code> loops for its
+run loop. On macOS (and potentially other platforms), this architecture causes the
+emulation to <strong>freeze</strong> during:</p>
+<ul>
+<li><strong>Window resize</strong> — the OS enters a modal run loop for the resize drag, blocking
+  our <code>while</code> loop from executing.</li>
+<li><strong>Menu pulldown</strong> — the Cocoa menu tracking enters its own modal run loop,
+  again blocking our main thread.</li>
+</ul>
+<p>The root cause is the same in both cases: when the OS takes over the main thread's
+run loop, our <code>while</code>-based emulation loop cannot run. No CPU cycles execute, no
+audio frames are produced, and no video frames are rendered.</p>
+<p>SDL3 offers an <strong>App Callbacks</strong> paradigm (<code>SDL_AppInit</code>, <code>SDL_AppEvent</code>,
+<code>SDL_AppIterate</code>, <code>SDL_AppQuit</code>) that is designed to solve exactly this class of
+problem. Instead of the application owning the main loop, SDL owns it and calls
+back into the application at appropriate times. On macOS, SDL can integrate with
+the native run loop so that iteration callbacks continue to fire even during
+modal operations like resize and menu tracking.</p>
+<p>The <code>apps/adbtest</code> project already uses this paradigm successfully, including a
+macOS <code>MenuTrackingHelper</code> (<code>apps/adbtest/menu.mm</code>) that fires <code>SDL_AppIterate</code>
+via an <code>NSTimer</code> during menu tracking.</p>
+<hr />
+<h2 id="current-architecture">Current Architecture<a class="headerlink" href="#current-architecture" title="Permanent link">&para;</a></h2>
+<h3 id="entry-point-main-in-srcgs2cpp">Entry point: <code>main()</code> in <code>src/gs2.cpp</code><a class="headerlink" href="#entry-point-main-in-srcgs2cpp" title="Permanent link">&para;</a></h3>
+<p>The current flow is:</p>
+<pre><code>main()
+├── Parse args, initialize paths
+├── while (1)                           // &quot;outer loop&quot; — system-select loop
+│   ├── Create computer_t, video_system_t
+│   ├── initMenu(window)
+│   ├── SelectSystem::select()          // BLOCKING inner while loop
+│   │   └── while (!selected)
+│   │       ├── SDL_PollEvent()
+│   │       ├── render()
+│   │       └── SDL_Delay(16)
+│   ├── Configure platform, MMU, CPU, slots, devices
+│   ├── run_cpus(computer)              // BLOCKING — main emulation loop
+│   │   └── while (cpu-&gt;halt != HLT_USER)   // one iteration = one frame
+│   │       ├── Execute CPU cycles for ~1/60th second
+│   │       ├── frame_event()           // SDL_PollEvent loop
+│   │       ├── frame_appevent()        // internal event queue
+│   │       ├── device_frame_dispatcher-&gt;dispatch()
+│   │       ├── frame_video_update()    // render + present
+│   │       └── frame_sleep()           // busy-wait to frame boundary
+│   ├── Cleanup (delete osd, computer, mmu, etc.)
+│   └── Loop back to system select
+└── SDL_Quit()
+</code></pre>
+<h3 id="key-functions-called-per-frame">Key functions called per-frame<a class="headerlink" href="#key-functions-called-per-frame" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>frame_event()</code></td>
+<td>Polls all SDL events, dispatches to sys_event, debug_window, OSD, then general dispatch</td>
+</tr>
+<tr>
+<td><code>frame_appevent()</code></td>
+<td>Processes internal <code>EventQueue</code> (sound effects, refocus, modals, messages)</td>
+</tr>
+<tr>
+<td><code>frame_video_update()</code></td>
+<td>Calls <code>video_system-&gt;update_display()</code>, <code>osd-&gt;render()</code>, <code>debug_window-&gt;render()</code>, <code>present()</code></td>
+</tr>
+<tr>
+<td><code>frame_sleep()</code></td>
+<td>Busy-waits (optionally with <code>SDL_DelayPrecise</code>) until the frame boundary</td>
+</tr>
+</tbody>
+</table>
+<h3 id="execution-modes-within-run_cpus">Execution modes within <code>run_cpus()</code><a class="headerlink" href="#execution-modes-within-run_cpus" title="Permanent link">&para;</a></h3>
+<p>The frame loop has three paths:</p>
+<ol>
+<li>
+<p><strong><code>EXEC_STEP_INTO</code></strong> — Single-step debugger mode. Runs only the requested
+   number of instructions, then does a full-frame render at ~60fps paced by
+   <code>SDL_DelayPrecise</code>.</p>
+</li>
+<li>
+<p><strong><code>EXEC_NORMAL</code> + clocked</strong> — Normal emulation. Runs CPU cycles until
+   <code>c14m &gt;= frame_end_c14M</code> (one video frame's worth), then does event/audio/video
+   processing and sleeps to the frame boundary. Two sub-paths: with debug window
+   open (checks breakpoints) and without (fast path).</p>
+</li>
+<li>
+<p><strong>Free-run ("Ludicrous Speed")</strong> — Runs as many CPU cycles as possible in
+   real-time ~1/60s, skips audio, does event/video processing, no sleep.</p>
+</li>
+</ol>
+<hr />
+<h2 id="proposed-architecture-sdl3-app-callbacks">Proposed Architecture: SDL3 App Callbacks<a class="headerlink" href="#proposed-architecture-sdl3-app-callbacks" title="Permanent link">&para;</a></h2>
+<h3 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h3>
+<p>Replace <code>main()</code> + <code>run_cpus()</code> with the four SDL3 callbacks:</p>
+<pre><code class="language-c">#define SDL_MAIN_USE_CALLBACKS
+#include &lt;SDL3/SDL_main.h&gt;
+
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv);
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event);
+SDL_AppResult SDL_AppIterate(void *appstate);
+void          SDL_AppQuit(void *appstate, SDL_AppResult result);
+</code></pre>
+<h3 id="app-state-structure">App State Structure<a class="headerlink" href="#app-state-structure" title="Permanent link">&para;</a></h3>
+<p>All state currently spread across local variables in <code>main()</code> and <code>run_cpus()</code>
+would be consolidated into a single struct:</p>
+<pre><code class="language-cpp">enum AppPhase {
+    PHASE_SYSTEM_SELECT,
+    PHASE_EMULATION,
+    PHASE_SHUTTING_DOWN,
+};
+
+struct GS2AppState {
+    // Phase management
+    AppPhase phase = PHASE_SYSTEM_SELECT;
+
+    // Initialization state (parsed once in AppInit)
+    int platform_id;
+    std::vector&lt;disk_mount_t&gt; disks_to_mount;
+
+    // System selection
+    SelectSystem *select_system = nullptr;
+    AssetAtlas_t *aa = nullptr;
+
+    // Emulation state
+    computer_t *computer = nullptr;
+    OSD *osd = nullptr;
+
+    // Frame timing (moved from run_cpus locals)
+    uint64_t last_cycle_time = 0;
+    uint64_t frame_count = 0;
+    uint64_t last_start_frame_c14m = 0;
+
+    // Cached module pointers (avoid per-frame lookups)
+    speaker_state_t *speaker_state = nullptr;
+    display_state_t *ds = nullptr;
+};
+</code></pre>
+<h3 id="sdl_appinit">SDL_AppInit<a class="headerlink" href="#sdl_appinit" title="Permanent link">&para;</a></h3>
+<p>Handles everything currently before the <code>while(1)</code> outer loop:</p>
+<ul>
+<li>Parse command-line arguments</li>
+<li>Initialize paths</li>
+<li>Set SDL app metadata</li>
+<li>Create the initial <code>computer_t</code> (for its <code>video_system_t</code> / window)</li>
+<li>Create <code>AssetAtlas_t</code> and <code>SelectSystem</code></li>
+<li>Set phase to <code>PHASE_SYSTEM_SELECT</code></li>
+<li>Store state in <code>*appstate</code></li>
+</ul>
+<pre><code class="language-cpp">SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
+    auto *state = new GS2AppState();
+
+    // ... parse args, init paths, set metadata (same as current main()) ...
+
+    state-&gt;computer = new computer_t(nullptr);
+    initMenu(state-&gt;computer-&gt;video_system-&gt;window);
+
+    state-&gt;aa = new AssetAtlas_t(...);
+    state-&gt;select_system = new SelectSystem(state-&gt;computer-&gt;video_system, state-&gt;aa);
+    state-&gt;phase = PHASE_SYSTEM_SELECT;
+
+    // Register macOS menu tracking callback
+    setMenuTrackingCallback(SDL_AppIterate, state);
+
+    *appstate = state;
+    return SDL_APP_CONTINUE;
+}
+</code></pre>
+<h3 id="sdl_appevent">SDL_AppEvent<a class="headerlink" href="#sdl_appevent" title="Permanent link">&para;</a></h3>
+<p>Replaces <code>frame_event()</code> and the <code>SDL_PollEvent</code> loops in <code>SelectSystem::select()</code>.
+SDL calls this once per event — we do <strong>not</strong> call <code>SDL_PollEvent</code> ourselves.</p>
+<pre><code class="language-cpp">SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
+    auto *state = (GS2AppState *)appstate;
+
+    if (state-&gt;phase == PHASE_SYSTEM_SELECT) {
+        if (state-&gt;select_system-&gt;event(*event)) {
+            // System was selected (or quit). Transition handled in AppIterate.
+        }
+        if (event-&gt;type == SDL_EVENT_QUIT) {
+            return SDL_APP_SUCCESS;  // clean exit
+        }
+        return SDL_APP_CONTINUE;
+    }
+
+    if (state-&gt;phase == PHASE_EMULATION) {
+        computer_t *computer = state-&gt;computer;
+        cpu_state *cpu = computer-&gt;cpu;
+
+        // Same dispatch chain as current frame_event(), minus the SDL_PollEvent loop
+        if (computer-&gt;sys_event-&gt;dispatch(*event)) return SDL_APP_CONTINUE;
+        if (computer-&gt;debug_window-&gt;handle_event(*event)) return SDL_APP_CONTINUE;
+        if (!state-&gt;osd-&gt;event(*event)) {
+            computer-&gt;dispatch-&gt;dispatch(*event);
+        }
+
+        if (event-&gt;type == SDL_EVENT_QUIT) {
+            // Signal the emulation to stop
+            cpu-&gt;halt = HLT_USER;
+        }
+        return SDL_APP_CONTINUE;
+    }
+
+    return SDL_APP_CONTINUE;
+}
+</code></pre>
+<h3 id="sdl_appiterate">SDL_AppIterate<a class="headerlink" href="#sdl_appiterate" title="Permanent link">&para;</a></h3>
+<p>This is the heart of the restructuring. It replaces both <code>SelectSystem::select()</code>'s
+while loop and <code>run_cpus()</code>'s while loop. Each call performs <strong>one frame</strong> of work.</p>
+<pre><code class="language-cpp">SDL_AppResult SDL_AppIterate(void *appstate) {
+    auto *state = (GS2AppState *)appstate;
+
+    if (state-&gt;phase == PHASE_SYSTEM_SELECT) {
+        return iterate_system_select(state);
+    }
+
+    if (state-&gt;phase == PHASE_EMULATION) {
+        return iterate_emulation(state);
+    }
+
+    if (state-&gt;phase == PHASE_SHUTTING_DOWN) {
+        return iterate_shutdown(state);
+    }
+
+    return SDL_APP_CONTINUE;
+}
+</code></pre>
+<h4 id="iterate_system_select"><code>iterate_system_select()</code><a class="headerlink" href="#iterate_system_select" title="Permanent link">&para;</a></h4>
+<pre><code class="language-cpp">SDL_AppResult iterate_system_select(GS2AppState *state) {
+    // Events already dispatched by SDL_AppEvent
+
+    // Render the selection UI
+    SDL_SetRenderDrawColor(state-&gt;computer-&gt;video_system-&gt;renderer, 0, 0, 0, 255);
+    state-&gt;computer-&gt;video_system-&gt;clear();
+    if (state-&gt;select_system-&gt;update()) {
+        state-&gt;select_system-&gt;render();
+        state-&gt;computer-&gt;video_system-&gt;present();
+    }
+
+    // Check if a system was selected
+    int system_id = state-&gt;select_system-&gt;get_selected_system();
+    if (system_id == -1) {
+        return SDL_APP_CONTINUE;  // still waiting
+    }
+
+    // Transition: configure the selected system and enter emulation
+    transition_to_emulation(state, system_id);
+    return SDL_APP_CONTINUE;
+}
+</code></pre>
+<h4 id="iterate_emulation"><code>iterate_emulation()</code><a class="headerlink" href="#iterate_emulation" title="Permanent link">&para;</a></h4>
+<p>This is the most complex part. It is a direct translation of one iteration of
+the <code>while (cpu-&gt;halt != HLT_USER)</code> loop in <code>run_cpus()</code>.</p>
+<pre><code class="language-cpp">SDL_AppResult iterate_emulation(GS2AppState *state) {
+    computer_t *computer = state-&gt;computer;
+    cpu_state *cpu = computer-&gt;cpu;
+    NClock *clock = computer-&gt;clock;
+
+    if (cpu-&gt;halt == HLT_USER) {
+        // User requested stop. Transition to shutdown/system-select.
+        transition_to_shutdown(state);
+        return SDL_APP_CONTINUE;
+    }
+
+    // --- Speed shift handling (same as current) ---
+    handle_speed_shift(state);
+
+    // --- Execute one frame of CPU cycles ---
+    // (Same three-mode logic: EXEC_STEP_INTO, EXEC_NORMAL+clocked, free-run)
+    execute_frame_cycles(state);
+
+    // --- OSD update (was in frame_event) ---
+    state-&gt;osd-&gt;update();
+
+    // --- Process internal event queue ---
+    frame_appevent(computer, cpu);
+
+    // --- Device frame dispatch ---
+    computer-&gt;device_frame_dispatcher-&gt;dispatch();
+
+    // --- Video frame output ---
+    frame_video_update(computer, cpu,
+        computer-&gt;execution_mode == EXEC_STEP_INTO);
+
+    // --- Frame timing, stats, sleep ---
+    handle_frame_timing(state);
+
+    return SDL_APP_CONTINUE;
+}
+</code></pre>
+<h4 id="iterate_shutdown"><code>iterate_shutdown()</code><a class="headerlink" href="#iterate_shutdown" title="Permanent link">&para;</a></h4>
+<p>Handles cleanup of the current emulation session. Optionally loops back to
+system select for the "play again" flow.</p>
+<pre><code class="language-cpp">SDL_AppResult iterate_shutdown(GS2AppState *state) {
+    // Save trace buffer
+    std::string tracepath;
+    Paths::calc_docs(tracepath, &quot;trace.bin&quot;);
+    state-&gt;computer-&gt;cpu-&gt;trace_buffer-&gt;save_to_file(tracepath);
+
+    // Cleanup
+    delete state-&gt;osd;  state-&gt;osd = nullptr;
+    delete state-&gt;computer;  state-&gt;computer = nullptr;
+    // ... delete MMU, etc. ...
+
+    // Go back to system select (or return SDL_APP_SUCCESS to quit)
+    state-&gt;computer = new computer_t(nullptr);
+    initMenu(state-&gt;computer-&gt;video_system-&gt;window);
+    state-&gt;select_system = new SelectSystem(state-&gt;computer-&gt;video_system, state-&gt;aa);
+    state-&gt;phase = PHASE_SYSTEM_SELECT;
+
+    return SDL_APP_CONTINUE;
+}
+</code></pre>
+<h3 id="sdl_appquit">SDL_AppQuit<a class="headerlink" href="#sdl_appquit" title="Permanent link">&para;</a></h3>
+<p>Final cleanup:</p>
+<pre><code class="language-cpp">void SDL_AppQuit(void *appstate, SDL_AppResult result) {
+    auto *state = (GS2AppState *)appstate;
+    // Any remaining cleanup...
+    delete state-&gt;osd;
+    delete state-&gt;computer;
+    delete state-&gt;aa;
+    delete state;
+    // SDL_Quit() is called automatically by SDL after this returns
+}
+</code></pre>
+<hr />
+<h2 id="key-challenges-and-solutions">Key Challenges and Solutions<a class="headerlink" href="#key-challenges-and-solutions" title="Permanent link">&para;</a></h2>
+<h3 id="1-the-cpu-execution-inner-loop">1. The CPU Execution Inner Loop<a class="headerlink" href="#1-the-cpu-execution-inner-loop" title="Permanent link">&para;</a></h3>
+<p><strong>Challenge:</strong> In the current design, <code>run_cpus()</code> runs a tight CPU execution
+loop for an entire frame (~16,667 CPU cycles at 1 MHz) before returning. In the
+callbacks model, <code>SDL_AppIterate</code> is called once per frame by SDL, so we still
+need to execute all those cycles within one call.</p>
+<p><strong>Solution:</strong> This is actually fine. <code>SDL_AppIterate</code> is allowed to take a
+reasonable amount of time — it just can't block indefinitely. Running ~16,667
+cycles of CPU emulation plus audio/video rendering is well within a frame budget.
+The tight inner CPU loop (<code>while (clock-&gt;get_c14m() &lt; clock-&gt;get_frame_end_c14M())</code>)
+remains inside <code>SDL_AppIterate</code>; it just isn't wrapped in an outer <code>while</code> loop
+anymore.</p>
+<p><strong>Key insight:</strong> The CPU inner loop executes for ~1/60th of a second and returns.
+That's exactly what <code>SDL_AppIterate</code> wants — one frame's work, then return.</p>
+<h3 id="2-frame-sleep-timing">2. Frame Sleep / Timing<a class="headerlink" href="#2-frame-sleep-timing" title="Permanent link">&para;</a></h3>
+<p><strong>Challenge:</strong> Currently, <code>frame_sleep()</code> busy-waits until the frame boundary.
+In the callbacks model, SDL controls when <code>SDL_AppIterate</code> is called and may
+align it to vsync or display refresh rate.</p>
+<p><strong>Solution:</strong> Two options:</p>
+<ul>
+<li>
+<p><strong>Option A (Recommended):</strong> Keep <code>frame_sleep()</code> as-is inside <code>SDL_AppIterate</code>.
+  SDL's callback loop will simply call us again immediately after we return,
+  but since we've already slept to the frame boundary, the timing works out.
+  The sleep ensures we don't run faster than the emulated clock.</p>
+</li>
+<li>
+<p><strong>Option B:</strong> Remove <code>frame_sleep()</code> and let SDL pace the callbacks. This
+  could work if SDL paces to ~60 Hz (vsync), but it removes our precise
+  sub-microsecond frame timing. Not recommended for cycle-accurate emulation.</p>
+</li>
+</ul>
+<h3 id="3-event-handling-changes">3. Event Handling Changes<a class="headerlink" href="#3-event-handling-changes" title="Permanent link">&para;</a></h3>
+<p><strong>Challenge:</strong> Currently <code>frame_event()</code> calls <code>SDL_PollEvent()</code> in a loop
+to drain the event queue. With App Callbacks, <code>SDL_AppEvent</code> is called
+individually per event by SDL — we must not call <code>SDL_PollEvent</code> ourselves.</p>
+<p><strong>Solution:</strong> Move the event dispatch logic from <code>frame_event()</code> into
+<code>SDL_AppEvent()</code>, processing one event at a time. Remove all <code>SDL_PollEvent</code>
+calls. The <code>osd-&gt;update()</code> call, which doesn't depend on SDL events, moves
+into <code>SDL_AppIterate</code>.</p>
+<h3 id="4-the-system-select-emulation-restart-cycle">4. The System-Select / Emulation / Restart Cycle<a class="headerlink" href="#4-the-system-select-emulation-restart-cycle" title="Permanent link">&para;</a></h3>
+<p><strong>Challenge:</strong> The current code has an outer <code>while(1)</code> loop that allows
+returning from emulation to system select. This becomes a state machine.</p>
+<p><strong>Solution:</strong> Introduce an <code>AppPhase</code> enum (<code>PHASE_SYSTEM_SELECT</code>,
+<code>PHASE_EMULATION</code>, <code>PHASE_SHUTTING_DOWN</code>). <code>SDL_AppIterate</code> dispatches to
+the appropriate sub-handler. Transition functions handle setup/teardown
+between phases. <code>SelectSystem::select()</code> no longer has its own <code>while</code> loop;
+instead, each <code>SDL_AppIterate</code> call renders one frame and checks
+<code>get_selected_system()</code>.</p>
+<h3 id="5-menu-tracking-on-macos">5. Menu Tracking on macOS<a class="headerlink" href="#5-menu-tracking-on-macos" title="Permanent link">&para;</a></h3>
+<p><strong>Challenge:</strong> When a macOS menu is pulled down, the Cocoa run loop enters
+a modal tracking mode that blocks SDL's normal event pump.</p>
+<p><strong>Solution:</strong> This is already solved in <code>apps/adbtest/menu.mm</code> with
+<code>MenuTrackingHelper</code>. The helper registers for <code>NSMenuDidBeginTrackingNotification</code>
+and fires an <code>NSTimer</code> at 60 Hz that calls <code>SDL_AppIterate</code> directly during menu
+tracking. The same pattern applies directly to the main app. The existing
+<code>src/platform-specific/macos/menu.mm</code> needs to be extended with the
+<code>MenuTrackingHelper</code> class and the <code>setMenuTrackingCallback</code> function.</p>
+<h3 id="6-window-resize-freezing">6. Window Resize Freezing<a class="headerlink" href="#6-window-resize-freezing" title="Permanent link">&para;</a></h3>
+<p><strong>Challenge:</strong> During a window resize drag on macOS, the OS enters a
+modal event loop that blocks our code.</p>
+<p><strong>Solution:</strong> There are two complementary approaches:</p>
+<ul>
+<li>
+<p><strong>Resize timer approach (like menu tracking):</strong> Register for
+  <code>NSWindowWillStartLiveResizeNotification</code> and
+  <code>NSWindowDidEndLiveResizeNotification</code>, and use the same NSTimer pattern
+  to call <code>SDL_AppIterate</code> during the resize.</p>
+</li>
+<li>
+<p><strong>SDL3 native support:</strong> With the callbacks paradigm, SDL3's macOS backend
+  can potentially integrate resize handling more cleanly. The callback model
+  means SDL's own run loop integration can fire <code>SDL_AppIterate</code> during
+  the resize. However, this may depend on the SDL3 version and platform
+  backend details — the NSTimer approach is the reliable fallback.</p>
+</li>
+</ul>
+<h3 id="7-ludicrous-speed-mode">7. Ludicrous Speed Mode<a class="headerlink" href="#7-ludicrous-speed-mode" title="Permanent link">&para;</a></h3>
+<p><strong>Challenge:</strong> In free-run mode, the current code runs CPU cycles in a
+tight loop for one real-time frame (~16.6ms), without sleeping. This
+doesn't change conceptually.</p>
+<p><strong>Solution:</strong> The free-run path in <code>execute_frame_cycles()</code> works the same
+way — it runs cycles until <code>SDL_GetTicksNS() &gt;= next_frame_time</code>, does the
+frame update, and returns. No architectural change needed beyond moving
+it out of the while loop.</p>
+<h3 id="8-debug-step-mode">8. Debug Step Mode<a class="headerlink" href="#8-debug-step-mode" title="Permanent link">&para;</a></h3>
+<p><strong>Challenge:</strong> In step mode, the emulator runs only the requested number of
+instructions, then waits at ~60fps for user input in the debugger window.</p>
+<p><strong>Solution:</strong> In the callbacks model, step mode simply executes the requested
+instructions (if any), renders the debugger state, and returns. The 60fps
+pacing comes from SDL's own callback timing (or from <code>frame_sleep</code> if
+retained). The <code>SDL_Delay(16)</code> at the end of the step-mode path can remain
+or be handled by SDL's pacing.</p>
+<hr />
+<h2 id="migration-plan">Migration Plan<a class="headerlink" href="#migration-plan" title="Permanent link">&para;</a></h2>
+<h3 id="phase-1-extract-state-from-locals">Phase 1: Extract State from Locals<a class="headerlink" href="#phase-1-extract-state-from-locals" title="Permanent link">&para;</a></h3>
+<p>Before touching the callback structure, refactor <code>run_cpus()</code> to store
+all its local variables (like <code>last_cycle_time</code>, <code>frame_count</code>,
+<code>last_start_frame_c14m</code>, <code>speaker_state</code>, <code>ds</code>) in the <code>computer_t</code> struct
+or a new <code>EmulationState</code> struct. This makes each frame iteration stateless
+with respect to local variables — a prerequisite for the callback model.</p>
+<h3 id="phase-2-extract-single-frame-functions">Phase 2: Extract Single-Frame Functions<a class="headerlink" href="#phase-2-extract-single-frame-functions" title="Permanent link">&para;</a></h3>
+<p>Refactor <code>run_cpus()</code> so the body of its <code>while</code> loop is a standalone function:</p>
+<pre><code class="language-cpp">bool run_one_frame(computer_t *computer, EmulationState *es);
+</code></pre>
+<p>At this point, <code>run_cpus()</code> becomes:</p>
+<pre><code class="language-cpp">void run_cpus(computer_t *computer) {
+    EmulationState es;
+    es.initialize(computer);
+    while (computer-&gt;cpu-&gt;halt != HLT_USER) {
+        run_one_frame(computer, &amp;es);
+    }
+}
+</code></pre>
+<p>Verify the emulator works identically after this refactor.</p>
+<h3 id="phase-3-extract-event-handling">Phase 3: Extract Event Handling<a class="headerlink" href="#phase-3-extract-event-handling" title="Permanent link">&para;</a></h3>
+<p>Refactor <code>frame_event()</code> so it no longer calls <code>SDL_PollEvent</code> but instead
+processes a single event:</p>
+<pre><code class="language-cpp">void handle_single_event(computer_t *computer, cpu_state *cpu, OSD *osd, SDL_Event &amp;event);
+</code></pre>
+<p>Create a compatibility shim so both the old <code>SDL_PollEvent</code> path and the
+new <code>SDL_AppEvent</code> path can use the same logic.</p>
+<h3 id="phase-4-refactor-selectsystem">Phase 4: Refactor SelectSystem<a class="headerlink" href="#phase-4-refactor-selectsystem" title="Permanent link">&para;</a></h3>
+<p>Remove the blocking <code>while</code> loop from <code>SelectSystem::select()</code>. Instead,
+make selection a per-frame check: call <code>event()</code> from <code>SDL_AppEvent</code>, call
+<code>update()</code>/<code>render()</code> from <code>SDL_AppIterate</code>, and poll <code>get_selected_system()</code>
+to detect when a selection is made.</p>
+<h3 id="phase-5-implement-the-callback-entry-points">Phase 5: Implement the Callback Entry Points<a class="headerlink" href="#phase-5-implement-the-callback-entry-points" title="Permanent link">&para;</a></h3>
+<ol>
+<li>
+<p>Replace <code>#include &lt;SDL3/SDL_main.h&gt;</code> with:
+   <code>cpp
+   #define SDL_MAIN_USE_CALLBACKS
+   #include &lt;SDL3/SDL_main.h&gt;</code></p>
+</li>
+<li>
+<p>Remove <code>main()</code>.</p>
+</li>
+<li>
+<p>Implement <code>SDL_AppInit</code>, <code>SDL_AppEvent</code>, <code>SDL_AppIterate</code>, <code>SDL_AppQuit</code>
+   using the state machine and extracted functions from phases 1-4.</p>
+</li>
+<li>
+<p>Remove <code>run_cpus()</code>.</p>
+</li>
+</ol>
+<h3 id="phase-6-macos-menu-and-resize-fixes">Phase 6: macOS Menu and Resize Fixes<a class="headerlink" href="#phase-6-macos-menu-and-resize-fixes" title="Permanent link">&para;</a></h3>
+<ol>
+<li>
+<p>Extend <code>src/platform-specific/macos/menu.mm</code> with the <code>MenuTrackingHelper</code>
+   class from <code>apps/adbtest/menu.mm</code>.</p>
+</li>
+<li>
+<p>Add <code>setMenuTrackingCallback(SDL_AppIterate, appstate)</code> in <code>SDL_AppInit</code>.</p>
+</li>
+<li>
+<p>Add resize tracking notifications using the same NSTimer pattern.</p>
+</li>
+<li>
+<p>Test that emulation continues during menu pulldown and window resize.</p>
+</li>
+</ol>
+<h3 id="phase-7-cleanup">Phase 7: Cleanup<a class="headerlink" href="#phase-7-cleanup" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Remove any remaining <code>SDL_PollEvent</code> calls</li>
+<li>Remove the outer <code>while(1)</code> restart loop</li>
+<li>Ensure all cleanup paths go through <code>SDL_AppQuit</code></li>
+<li>Verify that the "return to system select" flow works via phase transitions</li>
+</ul>
+<hr />
+<h2 id="impact-assessment">Impact Assessment<a class="headerlink" href="#impact-assessment" title="Permanent link">&para;</a></h2>
+<h3 id="files-requiring-changes">Files Requiring Changes<a class="headerlink" href="#files-requiring-changes" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/gs2.cpp</code></td>
+<td>Major rewrite: remove <code>main()</code>, <code>run_cpus()</code>, add callback functions</td>
+</tr>
+<tr>
+<td><code>src/gs2.hpp</code></td>
+<td>Add <code>GS2AppState</code> definition (or new header)</td>
+</tr>
+<tr>
+<td><code>src/ui/SelectSystem.cpp/.hpp</code></td>
+<td>Remove blocking <code>select()</code> loop; make event-driven</td>
+</tr>
+<tr>
+<td><code>src/platform-specific/macos/menu.mm</code></td>
+<td>Add <code>MenuTrackingHelper</code>, <code>setMenuTrackingCallback</code></td>
+</tr>
+<tr>
+<td><code>src/platform-specific/menu.h</code></td>
+<td>Add <code>setMenuTrackingCallback</code> declaration</td>
+</tr>
+<tr>
+<td><code>src/videosystem.cpp</code></td>
+<td>Minor: remove <code>SDL_Init</code> (SDL3 callbacks handle this)</td>
+</tr>
+<tr>
+<td><code>src/computer.hpp</code></td>
+<td>Possibly move frame-timing state here</td>
+</tr>
+</tbody>
+</table>
+<h3 id="files-unchanged">Files Unchanged<a class="headerlink" href="#files-unchanged" title="Permanent link">&para;</a></h3>
+<p>Most of the codebase is unaffected. The CPU emulation, device emulation, display
+rendering, audio system, MMU, slot system, OSD, and debug window all continue
+to work exactly as before. They are called from the same functions — those
+functions are just invoked from <code>SDL_AppIterate</code> instead of from within a
+<code>while</code> loop.</p>
+<h3 id="risk-assessment">Risk Assessment<a class="headerlink" href="#risk-assessment" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Low risk:</strong> The CPU execution, device frames, and rendering logic remain
+  identical. Only the outermost control flow changes.</li>
+<li><strong>Medium risk:</strong> Frame timing could drift if SDL's callback pacing interacts
+  unexpectedly with our <code>frame_sleep()</code>. Testing on both normal and Ludicrous
+  Speed modes is important.</li>
+<li><strong>Medium risk:</strong> The macOS resize/menu NSTimer callbacks need careful testing
+  to ensure they fire at the right rate and don't cause re-entrancy issues.</li>
+<li><strong>Low risk:</strong> The state machine (select → emulate → shutdown → select) is
+  straightforward and already implicit in the current code.</li>
+</ul>
+<hr />
+<h2 id="relationship-to-existing-code">Relationship to Existing Code<a class="headerlink" href="#relationship-to-existing-code" title="Permanent link">&para;</a></h2>
+<p>The <code>apps/adbtest</code> project serves as a working proof-of-concept. It already:</p>
+<ul>
+<li>Uses <code>SDL_MAIN_USE_CALLBACKS</code> with all four callback functions</li>
+<li>Has the <code>MenuTrackingHelper</code> NSTimer pattern for menu tracking</li>
+<li>Demonstrates the <code>appstate</code> pattern for carrying state across callbacks</li>
+</ul>
+<p>The main app's migration is essentially scaling this pattern to the full
+complexity of the emulator, with the addition of multiple app phases
+(system select vs. emulation) and the much more complex per-frame work.</p>
+<hr />
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>The restructuring is feasible and well-aligned with the existing code's
+natural frame-based structure. The <code>run_cpus()</code> function already does
+"one frame per iteration" — the <code>while</code> loop is the only thing that needs
+to be removed, with its body becoming <code>SDL_AppIterate</code>. The hardest part
+is not the emulation logic itself but the lifecycle management: converting
+the outer restart loop into a state machine, and ensuring the macOS
+platform-specific code properly fires callbacks during modal operations.</p>
+<p>The expected payoff is significant: eliminating UI freezes during resize
+and menu interaction, better platform compatibility going forward, and
+a cleaner separation of concerns between SDL's event loop and the
+application's frame logic.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3968 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../CPUs/">
+      
+      
+        <link rel="next" href="../MMU/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>65816 - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#65816-processor" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              65816
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-suites-for-the-65816-6502" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test suites for the 65816 / 6502
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discussion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discussion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oct-1-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Oct 1, 2025
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debugging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debug-line-formatter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Line Formatter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oct-3-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Oct 3, 2025
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Oct 3, 2025">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#width-of-address-mode-calculation-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Width of Address Mode Calculation Register
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phantom-read-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phantom Read handling.
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commonality-of-sbc-and-cmp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commonality of SBC and CMP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stack-register-transfers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stack register transfers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mvn-mvp-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MVN / MVP handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clocking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clocking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#address-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Address Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commonality-of-address-mode-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commonality of address mode handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#method-nomenclature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method Nomenclature
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oct-9-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Oct 9, 2025
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resources
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-suites-for-the-65816-6502" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test suites for the 65816 / 6502
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discussion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discussion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oct-1-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Oct 1, 2025
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debugging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debug-line-formatter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Line Formatter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oct-3-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Oct 3, 2025
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Oct 3, 2025">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#width-of-address-mode-calculation-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Width of Address Mode Calculation Register
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phantom-read-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phantom Read handling.
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commonality-of-sbc-and-cmp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commonality of SBC and CMP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stack-register-transfers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stack register transfers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mvn-mvp-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MVN / MVP handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tracing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tracing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clocking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clocking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#address-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Address Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commonality-of-address-mode-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commonality of address mode handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#method-nomenclature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Method Nomenclature
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#oct-9-2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Oct 9, 2025
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="65816-processor">65816 Processor<a class="headerlink" href="#65816-processor" title="Permanent link">&para;</a></h1>
+<h2 id="resources">Resources<a class="headerlink" href="#resources" title="Permanent link">&para;</a></h2>
+<p>This looks like an excellent resource:</p>
+<p>http://www.6502.org/tutorials/65c816opcodes.html</p>
+<h2 id="test-suites-for-the-65816-6502">Test suites for the 65816 / 6502<a class="headerlink" href="#test-suites-for-the-65816-6502" title="Permanent link">&para;</a></h2>
+<p>https://github.com/gilyon/snes-tests</p>
+<ul>
+<li>this test does assume snes hardware. So, moving on from that..</li>
+</ul>
+<p>https://forums.nesdev.org/viewtopic.php?t=24940</p>
+<p>https://github.com/SingleStepTests/ProcessorTests</p>
+<p>This is one John Brooks pointed out, it's got some sample code but also test traces:
+https://emudev.de/q00-snes/65816-the-cpu/</p>
+<h2 id="discussion">Discussion<a class="headerlink" href="#discussion" title="Permanent link">&para;</a></h2>
+<p>Evaluating expanding the current template-based approach, with five templates total for the 816:</p>
+<ol>
+<li>emulation mode</li>
+<li>native + 8 A + 8 Index</li>
+<li>native + 16 A + 8 Index</li>
+<li>native + 8 A + 16 Index</li>
+<li>native + 16 A + 16 Index</li>
+</ol>
+<p>m_16 and x_16 are template traits.</p>
+<p>So there are a number of areas we need to deal with 16-bit values in addition to 8-bit values.</p>
+<p>addressing mode helper functions
+opcode stanzas</p>
+<p>for example:</p>
+<pre><code>inline byte_t get_operand_immediate(cpu_state *cpu) {
+    byte_t N = cpu-&gt;read_byte_from_pc();
+    TRACE(cpu-&gt;trace_entry.operand = N;)
+    return N;
+}
+</code></pre>
+<p>This is used by all these opcodes: lda, ldx, ldy, adc, sbc, bit, and, cmp, cpx, cpy, etc. (14 in 65c02). </p>
+<pre><code>        case OP_LDA_IMM: /* LDA Immediate */
+            {
+                _A(cpu) = get_operand_immediate(cpu);
+                set_n_z_flags(cpu, _A(cpu));
+            }
+            break;
+</code></pre>
+<p>get_operand_immediate doesn't know whether the destination is A or X/Y or what the result is. What if:</p>
+<pre><code>inline byte_t get_operand_immediate(cpu_state *cpu) {
+    byte_t N = cpu-&gt;read_byte_from_pc();
+    TRACE(cpu-&gt;trace_entry.operand = N;)
+    return N;
+}
+inline word_t get_operand_immediate_16(cpu_state *cpu) {
+    word_t N = cpu-&gt;read_word_from_pc();
+    TRACE(cpu-&gt;trace_entry.operand = N;)
+    return N;
+}
+</code></pre>
+<p>and then:</p>
+<pre><code>        case OP_LDA_IMM: /* LDA Immediate */
+            {
+                if (constexpr (m_16==true)) 
+                    _A(cpu) = get_operand_immediate_16(cpu);
+                else 
+                    _A(cpu) = get_operand_immediate(cpu);
+
+                set_n_z_flags(cpu, _A(cpu));
+            }
+            break;
+</code></pre>
+<p>Then get_operand doesn't have to deduce register size. This implies for most of those address mode funcs, we'll have 8-and-16 bit versions, and then this kind of constexpr logic in the opcodes. This seems relatively readable. it reads like if then else code but is handled at compile time.</p>
+<p>There were a number there that were the same, but here is a new pattern:</p>
+<pre><code>case OP_SBC_IMM: /* SBC Immediate */
+            {
+                if constexpr (CPUTraits::m_16) {
+                    word_t N = get_operand_immediate_16(cpu);
+                    subtract_and_set_flags(cpu, N);
+                } else {
+                    byte_t N = get_operand_immediate(cpu);
+                    subtract_and_set_flags(cpu, N);
+                }
+            }
+            break;
+</code></pre>
+<p>this is where we call a utility function with an intermediate value, instead of a direct assignment or operator like the above. Now, subtract_and_set_flags could have a special 16 bit version, or, it can be templated and check constexpr m_16 internally. maybe it can't, because subtract_core is used for cmp, cpx, cpy also and these need to check x_16 instead. So maybe we do need _16 version. </p>
+<p>ok at this point except for cmp, cpx, cpy, and 16-bit decimal adc/sbc, I have now implemented 16-bit-capable versions of all the immediate mode instructions. So far, this isn't actually that bad! I might get excited about this, ha ha.</p>
+<h2 id="oct-1-2025">Oct 1, 2025<a class="headerlink" href="#oct-1-2025" title="Permanent link">&para;</a></h2>
+<p>So I had never implemented the Emulation Mode bit. Right now, I just set this up as its own flag. Apparently KEGS makes this bit 9 of the P register, however, the only way to manipulate it is with XCE. You can't push or pull it or anything. There are a few opcodes that work slightly differently if it's set; otherwise, we only want it in the trace record.
+[ ] store 'e' bit into trace-&gt;flags.
+[x] store m and x register width flags into trace-&gt;flags.
+[ ] we don't need to display 'data' on immediate operand. it is the data.</p>
+<p>CPU mask flags need to be more like - at least. So if we say an instruction is a 65c02, then the 65c02 AND the 65816 have it. if it's 6502, they all have it.</p>
+<p>so when we're in emulation mode (and we start on a reset in emulation mode) the m and x bits should be 1 (8-bit), and they are forced that way. Currently I initialize registers in cpu_struct. That's not gonna work. </p>
+<h2 id="debugging">Debugging<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h2>
+<p>instead of storing -current- m / x bits in trace-&gt;flags, maybe we need to store the operand size. these are different based on bits:
+immediate mode (1 byte or 2 bytes of operand)
+data path: is either 1 byte or 2 bytes depending on register involved.
+So we need 3 bits of flags for this - 2 bits for operand length (0-3) and 1 bit for data width. And the various trace operations need to set it. They default to 8bit and 0 bytes (flags=0) so we can only set when needed.
+I want a bitfield for this.</p>
+<p>So really, the only opcodes where the number of bytes differs based on M/X is immediate mode. So maybe only set the size flag for immediate mode.</p>
+<p>so if it's JUST immediate mode, maybe we even just use one bit (16-bit imm) and check that bit when the address mode is IMM. </p>
+<h2 id="debug-line-formatter">Debug Line Formatter<a class="headerlink" href="#debug-line-formatter" title="Permanent link">&para;</a></h2>
+<p>We're going to want different formatters for: 6502 / 65c02, and 65816. So that implies a trace_entry base class, two subclasses, and some differentiation.
+We also want a "line_format" buffer concept to make it easier to emit the pieces of trace debug output.
+I suppose I could just do a big "if" statement for now. So let's start with the line_format.</p>
+<p>line_format - char(255)
+line_format-&gt;pos(int cursor) - set "cursor" to specified position.
+int line_format-&gt;pos() get cursor
+line_format-&gt;put(byte_t)
+line_format-&gt;put(word_t)
+line_format-&gt;put(uint32_t)
+line_format-&gt;put(char *)
+line_format-&gt;put(char)</p>
+<p>ok had to fix this:</p>
+<pre><code>    tb-&gt;a = cpu-&gt;a;
+    tb-&gt;x = cpu-&gt;x;
+    tb-&gt;y = cpu-&gt;y;
+</code></pre>
+<p>originally I was only copying in the low byte! This is probably actually faster or no speed difference.</p>
+<p>Looking at TXS now. in Emulation mode, S is always 01XX. in any other mode, S is 16-bits. If x is 8 bit, s becomes 00XX. </p>
+<h2 id="oct-3-2025">Oct 3, 2025<a class="headerlink" href="#oct-3-2025" title="Permanent link">&para;</a></h2>
+<p>Currently, cpu_struct has the methods for read_byte, read_byte_from_pc, the word variants, etc. The 816 needs its own versions of these, because it needs to include the D(ata) and P(rogram) bank registers and generate a 24-bit address to the MMU.</p>
+<p>Currently, the cpu core does a call to say read_byte, which then does a call to the MMU. read_byte is in the header and defined as inline so in theory it should be optimized. But, I think these methods really need to be in BaseCPU. BaseCPU can still access MMU by cpu_struct-&gt;mmu. Though I am also thinking, should I merge cpu_struct into BaseCPU? it's kind of weird having data in a separate class from the methods that work on it. Howeve, cpu_struct does act as a "neutral middleman". It's how we can change the 65816 cores on the fly. Let's leave alone for now. However, should keep working on removing stuff from cpu_struct that shouldn't be there.</p>
+<p>The main chunk that I think about is all the clocking stuff. There are 15+ variables in cpu_struct related to clock tracking, what incr_cycles does, etc. I feel like this maybe should be modularized. It's possible the compiler is already not inlining it since there are several hundred repetitions in BaseCPU meaning we would not harm performance by doing so. Something to think about.. </p>
+<p>Now, for accessing memory!</p>
+<pre><code>zeropage
+    Add:
+       bank 0
+       D
+       zero page address
+       to get the effective address.
+
+absolute
+    D
+    absolute address
+    to get the effective address.
+
+program fetch
+    P
+    absolute address
+    to get the effective address.
+</code></pre>
+<p>For example:
+   STA $2100</p>
+<p>will do the second of those. This calls:</p>
+<pre><code>        case OP_STA_ABS: /* STA Absolute */
+            {
+                store_operand_absolute(cpu, cpu-&gt;a_lo);
+            }
+            break;
+
+inline void store_operand_absolute(cpu_state *cpu, byte_t N) {
+    absaddr_t addr = get_operand_address_absolute(cpu);
+    write_byte(cpu,addr, N);
+    TRACE(cpu-&gt;trace_entry.data = N;)
+}
+</code></pre>
+<p>since this is not long mode (STL) store_operand_absolute should do the D bank thing. It get_operand_address_absolute (the 16-bit partial address). Then if it's an 816 and in native mode, it needs to generate the 24-bit address. For the trace to be correct, it sort of wants to be here. But then we have to have the same code everywhere we use it. Does it makes sense to have a write_byte_absolute that takes a 16-bit address and fills it out? then we'd have a write_byte_direct also for zeropage. and a write_byte_long.</p>
+<p>push_byte currently calls write_byte, which creates conflicting eaddr - and we're doubling-up on setting eaddr in a number of places. But that's the only way we don't calculate eaddr twice with the data bank. So we'll have to redo placement of the trace calls.</p>
+<p>ok I like the idea of re-defining word_t to be something like</p>
+<pre><code>union {
+    struct {
+        uint8_t lo;
+        uint8_t hi;
+    }
+    uint16_t w;
+}
+</code></pre>
+<p>I had actually done that with the addr_t type. however, Claude suggests it might be more efficient to use bit shifts and OR to assemble these things. So, ok.
+I've now refactored read and write byte and word, as well as fetch from PC routines. I think the last chunk will be the stack functions push/pop. 
+For the trace function, and as an aid to development of all the complex shadow reads/writes, maybe the trace record should optionally have an array of address/data times potential number of cycles. i.e., we keep a log of all of them. That would make the records quite a lot larger I guess, and of limited utility in production, but for dev it would be great. We still need to record the 'real' or 'final' such access. I guess they typically will be the last access.
+Still need dp and long versions of these funcs.</p>
+<p>Also considering that the rules around wrapping are somewhat complex and maybe should be buried into functions that also have an "index" or "offset" argument. E.g.</p>
+<p>read_byte_direct (uint8_t address, uint16_t offset)</p>
+<p>read_byte_absolute (uint16_t address, uint16_t offset)</p>
+<p>The offset might be 8-bit, it might be 16-bit. Could be X, Y, etc. The Direct page rules are particularly complex.
+There are two classes of "wrapping" behavior:
+incrementing an address for the hi byte of a word access; offset of base address by an X or Y index.
+And these can be combined. 
+Let's look at one of the examples, lda abs,x. 
+My notation here differs a little from the 6502.org doc.</p>
+<p>If a portion of a value is encased in () then this says "this will wrap on this boundary".
+$DDHHLL is "Take data bank, combine with 16-bit address, add X without any kind of wrapping." Well, I suppose technically </p>
+<ul>
+<li>$BB = data bank</li>
+<li>$PP = program bank</li>
+<li>$dd = direct page low byte</li>
+<li>$DD = direct page high byte</li>
+<li>$LL = operand low byte</li>
+<li>$HH = operand high byte</li>
+</ul>
+<p>For long instructions,
+* $LL = operand low byte
+* $MM = operand mid byte
+* $HH = operand high byte</p>
+<p>Indirect modes have two steps - calculation of the base effective address, then calculation of the effective address +1 (and maybe +2) for lo/mid/hi parts of data.</p>
+<table>
+<thead>
+<tr>
+<th>Address Mode</th>
+<th>Emu</th>
+<th>Emu Hi</th>
+<th>Nat</th>
+<th>Nat Hi</th>
+<th>Nat Long</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ABS P</td>
+<td>$PPHHLL</td>
+<td></td>
+<td>$PPHHLL</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>ABS D</td>
+<td>$BBHHLL</td>
+<td></td>
+<td>$BBHHLL</td>
+<td>$BBHHLL+1</td>
+<td></td>
+</tr>
+<tr>
+<td>(ABS,x)</td>
+<td>$PP(HHLL+X)</td>
+<td></td>
+<td>$PP(HHLL+X)</td>
+<td>$PP(HHLL+X+1)</td>
+<td>JMP/JSR only</td>
+</tr>
+<tr>
+<td>ABS, xy</td>
+<td>$BBHHLL+X</td>
+<td></td>
+<td>$BBHHLL+X</td>
+<td>$BBHHLL+X+1</td>
+<td></td>
+</tr>
+<tr>
+<td>(ABS), [ABS] *4 address</td>
+<td>$00(HHLL)</td>
+<td></td>
+<td>$00(HHLL)</td>
+<td>$00(HHLL+1)</td>
+<td>JMP or JML</td>
+</tr>
+<tr>
+<td>(ABS) data</td>
+<td>$PPEEEE</td>
+<td>$PPEEEE+1</td>
+<td>$PPEEEE</td>
+<td>$PPEEEE+1</td>
+<td>$PPEEEE+2 (JMP only)</td>
+</tr>
+<tr>
+<td>[ABS] data</td>
+<td>$EEEEEE</td>
+<td>$EEEEEE+1</td>
+<td>$EEEEEE</td>
+<td>$EEEEEE+1</td>
+<td>$EEEEEE+2 (JML only)</td>
+</tr>
+<tr>
+<td>ABSL, x</td>
+<td>$HHMMLL+X</td>
+<td></td>
+<td>$HHMMLL+X</td>
+<td>$HHMMLL+X+1</td>
+<td></td>
+</tr>
+<tr>
+<td>ABSL</td>
+<td>$HHMMLL</td>
+<td></td>
+<td>$HHMMLL</td>
+<td>$HHMMLL+1</td>
+<td></td>
+</tr>
+<tr>
+<td>(DIRECT,x) Add</td>
+<td>$00DD(dd+LL+X)</td>
+<td>$00DD(dd+LL+X+1)</td>
+<td>$00(DDdd+LL+X)</td>
+<td>$00(DDdd+LL+X+1)</td>
+<td></td>
+</tr>
+<tr>
+<td>(DIRECT,x) Data</td>
+<td>$BBEEEE</td>
+<td></td>
+<td>$BBEEEE</td>
+<td>$BBEEEE+1</td>
+<td></td>
+</tr>
+<tr>
+<td>DIRECT, xy</td>
+<td>$00DD(dd+LL+X)</td>
+<td></td>
+<td>$00(DDdd+LL+X)</td>
+<td>$00(DDdd+LL+X+1)</td>
+<td></td>
+</tr>
+<tr>
+<td>(DIRECT),y Add</td>
+<td>$00DD(dd+LL)</td>
+<td>$00DD(dd+LL+1)</td>
+<td>$00(DDdd+LL)</td>
+<td>$00(DDdd+LL+1)</td>
+<td></td>
+</tr>
+<tr>
+<td>(DIRECT),y Data</td>
+<td>$BBEEEE+Y</td>
+<td></td>
+<td>$BBEEEE+y</td>
+<td>$BBEEEE+y+1</td>
+<td></td>
+</tr>
+<tr>
+<td>[DIRECT],y Add</td>
+<td></td>
+<td></td>
+<td>$00(DDdd+LL)</td>
+<td>$00(DDdd+LL+1)</td>
+<td>$00(DDdd+LL+2)</td>
+</tr>
+<tr>
+<td>[DIRECT],y Data</td>
+<td>$EEEEEE+Y</td>
+<td></td>
+<td>$EEEEEE+y</td>
+<td>$EEEEEE+y+1</td>
+<td></td>
+</tr>
+<tr>
+<td>[DIRECT] Add</td>
+<td></td>
+<td></td>
+<td>$00(DDdd+LL)</td>
+<td>$00(DDdd+LL+1)</td>
+<td>$00(DDdd+LL+2)</td>
+</tr>
+<tr>
+<td>[DIRECT] Data</td>
+<td>$EEEEEE</td>
+<td></td>
+<td>$EEEEEE</td>
+<td>$EEEEEE+1</td>
+<td></td>
+</tr>
+<tr>
+<td>(DIRECT) Add *1</td>
+<td>$00DD(dd+LL)</td>
+<td>$00DD(dd+LL+1)</td>
+<td>$00(DDdd+LL)</td>
+<td>$00(DDdd+LL+1)</td>
+<td></td>
+</tr>
+<tr>
+<td>(DIRECT) Data</td>
+<td>$BBEEEE</td>
+<td></td>
+<td>$BBEEEE</td>
+<td>$BBEEEE+1</td>
+<td></td>
+</tr>
+<tr>
+<td>DIRECT *2</td>
+<td>$00DD(dd+LL)</td>
+<td></td>
+<td>$00(DDdd+LL)</td>
+<td>$00(DDdd+LL+1)</td>
+<td></td>
+</tr>
+<tr>
+<td>STACK d,s *3</td>
+<td>$00SS(ss+LL)</td>
+<td></td>
+<td>$00(SSss+LL)</td>
+<td>$00(SSss+LL+1)</td>
+<td></td>
+</tr>
+<tr>
+<td>STACK (d,s),y Add</td>
+<td>$00SS(ss+LL)</td>
+<td></td>
+<td>$00(SSss+LL)</td>
+<td>$00(SSss+LL+1)</td>
+<td></td>
+</tr>
+<tr>
+<td>STACK (d,s),y Data</td>
+<td>$BB(EEEE+y)</td>
+<td></td>
+<td>$BBEEEE+y</td>
+<td>$BBEEEE+y+1</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>if low byte of DDdd is non-zero, then even in emu mode the lookup is performed as it is in Native mode, with no page wrapping. If it's zero, then it performs as it would on a 6502 (with page wrapping).</li>
+<li>an extra cycle is required whenever dd is non-zero (i.e. DDdd not page-aligned).</li>
+<li>LL is a signed 8-bit from -128 to 127.</li>
+<li>on an nmos 6502, the behavior is actually $PPHH(LL) and $PPHH(LL+1), which is a bug (unintentional).</li>
+</ol>
+<p>These modes have registers used to calculate the effective address. </p>
+<p>For some of these calculations, a wrap takes an extra cpu cycle. </p>
+<p>Questions:
+1. does [DIRECT] work in Emulation mode, if so, what bank is used in eaddr?
+1. confirm that in E mode, if PP is non-zero, the effective address will be PPPCPC. (i.e. that K and B apply even in E mode)</p>
+<h3 id="width-of-address-mode-calculation-register">Width of Address Mode Calculation Register<a class="headerlink" href="#width-of-address-mode-calculation-register" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Emulation</th>
+<th>Native</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Direct</td>
+<td>8</td>
+<td>16</td>
+</tr>
+<tr>
+<td>Absolute</td>
+<td>16</td>
+<td>24</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusions">Conclusions<a class="headerlink" href="#conclusions" title="Permanent link">&para;</a></h2>
+<p>I am confusing the concepts of reading data, effective address generation, and might have been before.</p>
+<p>Each address mode should look something like this. Currently I have the read/write inside the address mode handler. That's wrong. We move it out.</p>
+<pre><code>OP_LDA_ABS
+    read_abs(cpu, _A(cpu))
+    set_n_z_flags(cpu, _A(cpu));
+
+OP_STA_ABS
+    write_abs(cpu, _A(cpu))
+
+OP_LDA_DIRECT_X
+    read_direct_x(cpu, _A(cpu))
+
+uint8_t fetch_pc(cpu_state *cpu)
+    uint8_t b = mmu-&gt;read(_PC());
+    cpu-&gt;pc++;
+    cpu-&gt;incr_cycles();
+    return b;
+
+template&lt;typename T&gt;
+void read_abs(cpu_state *cpu, T &amp;reg)
+    uint32_t eaddr = fetch_pc(cpu);
+    eaddr |= fetch_pc(cpu) &lt;&lt; 8;
+    if constexpr (is_65816)
+        eaddr |= (cpu-&gt;db &lt;&lt; 16)
+
+    if constexpr sizeof(T) == 1
+        reg = mmu-&gt;read(eaddr);
+        TRACE(tb-&gt;eaddr = eaddr; tb-&gt;data = reg; tb-&gt;datawidth = 0;)
+
+    if constexpr sizeof(T) == 2 
+        uint16_t tmp = mmu-&gt;read(eaddr);
+        tmp |= (mmu-&gt;read(cpu, eaddr+1) &lt;&lt; 8)
+        TRACE(tb-&gt;eaddr = eaddr; tb-&gt;data = tmp; tb-&gt;datawidth = 1;)
+</code></pre>
+<p>eaddr_abs() will return either a 24-bit address (if is_65816) or a 16-bit address (otherwise) in a 32-bit word, ready to pass into mmu-&gt;read().
+_A = read() will automatically do either an 8-bit read or a 16-bit read depending on A register width (m16); 
+that will use the appropriate set_n_z_flags based on register width (templated by type of 'value' in that call);</p>
+<p>That's fine for LDA ABS. But for say DIRECT,x, the increment for hi byte of 16-bit read, has to be done differently: we have to either page wrap or bank wrap. 
+For each byte of a 16-bit transfer, and for different address modes (DIRECT, stack, etc) I need to have different rules for calculating the address.</p>
+<p>OK so second iteration:
+read_abs takes a reference to the register we're reading into; we fetch two bytes of ABS address from the program counter (which adds K if necessary);
+we take that 16-bits, and if an 816, add the data bank;
+if the width of the destination is 1 byte, we do a single read, store it in the register (by reference);
+if width of destination is 2 bytes, we do two reads, constructing the 16-bit value according to the address construction rules of ABS mode.</p>
+<p>The code produced from the one template, will vary based on: 816 or not; (emulation mode does not matter for address construction); size of target (based on m_16 1 or 0.). There could be 4 or 5 variations. But all generated automagically based on the traits.</p>
+<p>Let's try implementing this. OK, I had to add incr_cycles which I forgot, but, it's working. passes 6502 and cycletest. </p>
+<h2 id="phantom-read-handling">Phantom Read handling.<a class="headerlink" href="#phantom-read-handling" title="Permanent link">&para;</a></h2>
+<p>I am thinking of having two routines: PhantomRead (maybe also PhantomWrite) and PhantomReadIgn (and maybe also PhantomWriteIgn).</p>
+<p>PhantomRead just executes a bus read to the address specified.
+PhantomReadIgn is based on a Traits check - and will either execute a bus read or not depending on the setting of the flag. Some of the phantom reads can have no effect on I/O in an Apple II because they do things like (for instance) re-read the last operand byte. So there's no need to do the work. However, if someone later wants to use this core and have these work exactly like in the real thing, they can instantiate with that flag set and the PhantomReadIgn will execute.</p>
+<h2 id="commonality-of-sbc-and-cmp">Commonality of SBC and CMP<a class="headerlink" href="#commonality-of-sbc-and-cmp" title="Permanent link">&para;</a></h2>
+<p>Can SBC and CMP be shared now by performing the subtraction into a tmp reference, instead of performing it into _A ?</p>
+<p>yes. I think the subtract routine is the same.
+But a CMP should store the subtract result in a temp register; SBC stores it in _A(cpu).</p>
+<h2 id="stack-register-transfers">Stack register transfers<a class="headerlink" href="#stack-register-transfers" title="Permanent link">&para;</a></h2>
+<p>There are: TXS, TSX; TCS, TSC</p>
+<p>S is always 16 bits wide.
+| Mode | Effect |
+|-|-|
+| Emul  | SH = 0x01, SL = RL |
+| width 8 | SH = 0x00, SL = RL |
+| width 16 | S = R |</p>
+<p>When x_16 is 8-bit, high byte of registers is forced to zero?
+however NOT same with accumulator since you can swap the accumulator bytes.</p>
+<h2 id="mvn-mvp-handling">MVN / MVP handling<a class="headerlink" href="#mvn-mvp-handling" title="Permanent link">&para;</a></h2>
+<p>These are a sort of complex, compound instruction. It's a copy loop implemented in the hardware - but it can be interrupted (every 7 cycles); the state is maintained in the A (counter), X (source address), and Y (destination address) registers. 
+In order for all of our other stuff to work, we will have to do this instruction like so: we will need a mode flag "mvn in progress", "mvp in progress", or "no move in progress". Then each byte copied acts like one instruction executed. For trace record, we can log every iteration of the loop, along with the register values, which could be useful.. or only log it once.
+After each 7 cycle iteration, we exit execute_next. So we can do frame updates etc just the way we do now, in the middle of a mvn/mvp.</p>
+<h2 id="tracing">Tracing<a class="headerlink" href="#tracing" title="Permanent link">&para;</a></h2>
+<p>Tracing can now be enabled/disabled through use of the TraceTraits traits. Either TraceEnabled or TraceDisabled can be passed to CPU template as 2nd argument. 6502, trace enabled gets us ~ 370MHz. Trace disabled gets us ~ 430MHz. So that's a 15% performance hit to have tracing on. So for MAXIMUM OVERDRIVE you can turn trace off. Maybe we do that in Ludicrous Speed.</p>
+<p>I will also add a flag that will enable full bus tracing per cycle - read / write info kept for every cycle.</p>
+<h2 id="clocking">Clocking<a class="headerlink" href="#clocking" title="Permanent link">&para;</a></h2>
+<p>I should figure out a way to inject the clocking into the CPU Core. Right now it's just done with some if statements and a hard call to video scanner, which creates a dependency there.</p>
+<h2 id="address-modes">Address Modes<a class="headerlink" href="#address-modes" title="Permanent link">&para;</a></h2>
+<p>This is the list of address modes from the 65816 data sheet, and checked off if we have completed.</p>
+<p>[x] 1a. Absolute a<br />
+[x] 1b. Absolute a (jmp)
+[x] 1c. Absolute a (jsr)<br />
+[x] 1d. Absolute (r-m-w) a<br />
+[x] 2a. Absolute indexed indirect (a,x) (jmp)<br />
+[x] 2b. absolute indexed indirect (a,x) (jsr)<br />
+[x] 3a. Absolute indirect [a]   JML [a]
+[x] 3b. Absolute indirect (a)   JMP (a)  TODO: normalize to new methods
+[x] 4a. Absolute long al<br />
+[x] 4b. Absolute long AL  - JML
+[x] 4c. Absolute long AL  - JSL 
+[x] 5 . Absolute Long, X al,x<br />
+[x] 6a. Absolute, X<br />
+[x] 6b. Absolute, X (rmw)<br />
+[x] 7 . Absolute, Y<br />
+[x] 8.  Accumulator (a)<br />
+[x] 9a. Block Move Negative<br />
+[x] 9b. Block Move Positive<br />
+[x] 10a. Direct d<br />
+[x] 10b. Direct (rmw) d<br />
+[x] 11. Direct indexed indirect (d,x)<br />
+[x] 12. Direct Indirect (d)<br />
+[x] 13. Direct Indirect Indexed (d),y<br />
+[x] 14. Direct Indirect Indexed Long [d],y
+[x] 15. direct Indirect Long [d]<br />
+[x] 16a. Direct, X   d,x<br />
+[x] 16b. Direct, X (rmw) d,x
+[x] 17. Direct, Y   d,y<br />
+[x] 18. Immediate<br />
+[x] 19a. Implied i
+[x] 19b. Implied i (xba)<br />
+[ ] 19c. Stop the clock (stp)<br />
+[ ] 19d. wait for interrupt (WAI)<br />
+[x] 20. Relative   r
+[x] 21. Relative long rl<br />
+[ ] 22a. Stack s  (abort, irq, nmi, res)<br />
+[x] 22b. Stack s (pla, plb, pld, ..)<br />
+[x] 22c. Stack s pha, phb, php...
+[x] 22d. Stack s pea<br />
+[x] 22e. Stack s pei<br />
+[x] 22f. Stack s per<br />
+[x] 22g. Stack s rti<br />
+[x] 22h. Stack s rts<br />
+[x] 22i. Stack s rtl<br />
+[x] 22j. Stack s brk, cop<br />
+[x] 23. Stack Relative   d,s<br />
+[x] 24. Stack Relative Indirect Indexed  (d,s),y  </p>
+<h2 id="commonality-of-address-mode-handling">Commonality of address mode handling<a class="headerlink" href="#commonality-of-address-mode-handling" title="Permanent link">&para;</a></h2>
+<p>There is a ton of common code, especially around:</p>
+<p>read byte or word of data
+write byte or word of data</p>
+<p>for example:</p>
+<pre><code>    if constexpr (is_byte&lt;T&gt;) {
+        cpu-&gt;mmu-&gt;write(eaddr, reg);
+        cpu-&gt;incr_cycles();
+    }
+    if constexpr (is_word&lt;T&gt;) {
+        cpu-&gt;mmu-&gt;write(eaddr, word_lo(reg));
+        cpu-&gt;incr_cycles();
+        cpu-&gt;mmu-&gt;write(eaddr+1, word_hi(reg));
+        cpu-&gt;incr_cycles();
+    }
+</code></pre>
+<p>this pattern is used all over the place. Four times, to be precise. So let's factor that out into:</p>
+<pre><code>template&lt;typename T&gt;
+inline void write_data(cpu_state *cpu, uint32_t eaddr, T &amp;reg, ) {
+
+    if constexpr (is_byte&lt;T&gt;) {
+        cpu-&gt;mmu-&gt;write(eaddr, reg);
+        cpu-&gt;incr_cycles();
+    }
+    if constexpr (is_word&lt;T&gt;) {
+        cpu-&gt;mmu-&gt;write(eaddr, word_lo(reg));
+        cpu-&gt;incr_cycles();
+        cpu-&gt;mmu-&gt;write(eaddr+1, word_hi(reg));
+        cpu-&gt;incr_cycles();
+    }
+}
+</code></pre>
+<p>and the same for read..
+and another for write_tada &lt;- data in reverse chrono order</p>
+<p>Bah I introduced a regression into Apple II Audit.
+It's the same one from before I think, 
+zellyn.com/A2AUDIT/V0#E0007</p>
+<p>it's rmw_abs_x , inc.
+    if constexpr (CPUTraits::has_65c02_ops || (CPUTraits::has_65816_ops &amp;&amp; !CPUTraits::e_mode))
+        phantom_read(cpu, eaddr+1); 
+I suspect eaddr+1 is wrong.. why would it be +1 in emul mode. it won't be, because AA+X won't have been incremented to AA+X+1 in any 8-bit mode. </p>
+<p>816+emul mode: write
+nmos: write
+65c02: read
+816non-emu and 8-bit: read
+816non-emu and 16-bit: read+1</p>
+<p>if constexpr (CPUTraits::has_65816_ops) {
+  if constexpr CPUTraits::e_mode
+        phantom_write(cpu, eaddr, reg);
+  else {
+    if constexpr (sizeof(reg) == 1) 
+        phantom_read(cpu, eaddr);
+    else phantom_read(cpu, eaddr+1);
+  }<br />
+} else if constexpr (CPUTraits::has_65c02_ops) {
+    phantom_read(cpu, eaddr);
+} else { // nmos
+    phantom_write(cpu, eaddr, reg);
+}</p>
+<p>ok, fixed! now REALLY fixed.</p>
+<p>direct indirect modes</p>
+<p>the next chunk of modes with similarities is 11-15. they all grab either a 16-bit or a 24-bit address from a direct page address and the 1 or 2 bytes past it - and use that as an address to read/write 1 or 2 bytes.</p>
+<h2 id="method-nomenclature">Method Nomenclature<a class="headerlink" href="#method-nomenclature" title="Permanent link">&para;</a></h2>
+<p>let's call methods:</p>
+<p>read; write; rmw; prefixes indicating what type of address mode.
+let's call actual reading/writing from the memory bus, to be bus_read, bus_write;
+and let's call snippets that combine a bus_read/write with incr_cycles to be: mem_read; mem_write</p>
+<p>so we'll go through here and do a refactor to combine a</p>
+<pre><code>
+inline uint8_t bus_read(cpu_state *cpu, uint32_t addr) {
+    uint8_t data = cpu-&gt;mmu-&gt;read(addr);
+    cpu-&gt;incr_cycles();
+    return data;
+}
+inline void bus_write(cpu_state *cpu, uint32_t addr, uint8_t data) {
+    cpu-&gt;mmu-&gt;write(addr, data);
+    cpu-&gt;incr_cycles();
+}
+</code></pre>
+<h2 id="oct-9-2025">Oct 9, 2025<a class="headerlink" href="#oct-9-2025" title="Permanent link">&para;</a></h2>
+<p>oopsie, the stack routines are reading and writing to the program bank (via write_byte). That's just not right. ha ha.
+read_byte is also used by jml [absolute]
+let's have the stack routines use bus_read and bus_write.
+read_byte and read_word convert an abs address to a long address, which I now do differently for the most part. ok those are good..</p>
+<p>ok, test0004 fails - expected results are 0000 / 10 / 78 - with 8 bit X. However, I think what's happening is on the X width switch we're not setting the high bytes of X/Y to 0. </p>
+<p>16-bit X = 1234, switch to 8-bit, X = 34, switch to 16-bit, is X now:, 0034 or 1234?: 0034.</p>
+<p>"So TAX with 8 bit accumulator and 16 bit index will set X to 1234."
+No, accumulator has B always.
+Yes, moving into emulation mode truncates X, Y and SP.
+so with A 8bit X 16 bit, what does TXA do?
+TXA will set A and B
+8 A | 8 X | ??
+8 A | 16 X | B and A -&gt; X
+16 A | 8 X | ??
+16 A | 16 X | B and A -&gt; X"</p>
+<p>ohoh. This says "the size of the destination register determines whether these instructions are 8-bit operations or 16-bit operations". when the destination is 8 bits, 8 bits are transferred. When the destination is 16 bits, 16 bits are transferred."</p>
+<p>ok to screw it, we do:
+OP_TYA:
+    if constexpr (sizeof(_A) == 2) cpu-&gt;a = cpu-&gt;y
+    else cpu-&gt;a_lo = cpu-&gt;y_lo</p>
+<p>OP_TAY:
+    if constexpr (sizeof(_Y) == 2) cpu-&gt;y = cpu-&gt;a
+    else cpu-&gt;y_lo = cpu-&gt;a_lo</p>
+<p>ok these are in .. I didn't break 6502.. I hope these work, ha ha.</p>
+<p>test0005 - missing opcode 63. ah, ADC $32,S. Of course that doesn't work. I didn't make it yet.</p>
+<p>test0024</p>
+<p>this is whack:</p>
+<p>Test 0024: adc ($EF,x)
+   Input: A=$1112 X=$0010 Y=$5678 P=$21 E=1 DBR=$7f D=$0100 ($0001ff)=$34 ($000100)=$12 ($7f1234)=$ed
+   Expected output: A=$1100 X=$0010 Y=$0078 P=$33 E=1 ($7f1234)=$ed</p>
+<p>the setup:
+   1ff: 34
+   100: 12
+   7f/1234: ED
+   D = 0100; X=10; A=12; B = 0x7F
+   ($EF,X) -&gt; 100 + EF + 10 = 1FF, 100
+   so in E mode we are supposed to: wrap the hi address inside whatever 1 page it is,
+   to get the two indirect bytes. then add data bank.</p>
+<p>ok.. read_data_direct when reading a word might need special handling in Emul mode.
+ok I fixed, but, it's kind of gnarly. I wonder where the fix should really go..</p>
+<p>On test0028, the stack is on page 0, instead of page 1. The tracer was not displaying correctly, it was forcing display of stackhi as 0x01. Displaying the correct 16-bit sp, I now see there are problems where on reset sp hi is not 0x01 as it's supposed to be.
+adding in some other reset condition register sets.</p>
+<p>after test E5 we're jumping into code that is doing test $243. I think that's because I'm not loading the rom correctly. the rom is mapped using "lorom", so each 32K of the rom file is put at 8000-FFFF in a bank. So there are 8 banks represented here, not 4.</p>
+<p>I had to update get_operand_relative to use fetch_pc(). deprecated read_byte_from_pc which don't work right somehow. now getting to test 0100!!</p>
+<p>and that appears to be wanting to test BRK, so uh I'm gonna have to take out my "stop emulation on brk".</p>
+<p>Wow we cleared $0104 (brl) and have proceeded straight to $026C. which craps out and runs back to $0001 somehow.</p>
+<p>test 0274 - this is demonstrating "UNSAFE" stack operation on 816 with JSL instruction. Stack starts at 100 and the JSL pushes to 100, FF, and FE - followed by the SP being reset at end of instruction to 1FD. </p>
+<p>Kent's discussion of this:
+"Direct, Stack, and things like JMP (Abs), JMP (abs,x) and JSR (Abs,x) stay within the bank (so JSR (Abs,x) does all reads to the current K bank, regardless of Abs and X--the add wraps, and the reading of the address wraps and stays within the bank).  Instruction fetch always stays within the bank.  Other data accesses cross banks using 24-bit math, including Abs,X, and if reading/writing 16-bits, that will also cross banks.  Stack accesses come in two types which KEGS calls SAFE and UNSAFE.  Old 6502-based instructions are always safe, and in emulation mode always stay within $01xx (so JSR with S=$00 will write the address to $100 and $1ff).  Newer instructions are UNSAFE, and push/pull is done ignoring stack wrapping in emulation mode, and so they can touch $ff and $200, and at the end of the instruction, the stack pointer is forced to $01xx.  The stack is always bank [edited] 0, even unsafe operations cannot leave bank 0. (edited) 
+"</p>
+<p>The Data Sheet discusses this too:
+"7.1 Stack Addressing
+When in the Native mode, the Stack may use memory locations 000000 to 00FFFF. The effective address
+of Stack, Stack Relative, and Stack Relative Indirect Indexed addressing modes will always be within this
+range. In the Emulation mode, the Stack address range is 000100 to 0001FF. The following opcodes and
+addressing modes will increment or decrement beyond this range when accessing two or three bytes: JSL,
+JSR (a,x), PEA, PEI, PER, PHD, PLD, RTL"</p>
+<p>That comports with the snes-test. Unsure whether the silicon does it like that, but the net effect is what we want. So a list of "new" instructions that touch the stack -</p>
+<p>COP - wdc says NO
+* JSL
+* RTL
+* PER
+* PEI
+* PEA
+* JSR (abs,x)
+* PHD
+* PLD</p>
+<p>At the end of the instruction, in E mode, S_HI forced back to 0x01. so weirdo.
+So we want:
+push_byte_new
+push_word_new
+pop_byte_new
+pop_word_new
+these are only called from 65816; can we put in a compile-time assert so we don't accidentally call them elsewhere? and these actually don't need to check e_mode. They just bump SP.</p>
+<p>then at end of each instruction:
+stack_fix_new - "if 65816 and e_mode then s_hi = 0x01";
+test 275 -jsr (a,x) needed same treatment as jmp (a,x) meaning some very special handling of wrapping, and also "new" stack mode.</p>
+<p>now at 0281! oops, wasn't setting_n_z after lda absl or lda absl,x. 
+0296.. ldx Direct not setting flags? Chortle. 
+                set_n_z_flags(cpu, cpu-&gt;x_lo);
+oops, needs to be _X. and found another one like that (_Y(cpu)).</p>
+<p>ooh, 036A!! we're starting to crank right along now.. ah ha, we're at MVN. I haven't implemented that yet. Takin a break..</p>
+<p>blasting through these - got to $4A0. Done for the night.</p>
+<p>boom boom - now at 05AC. This appears to be a 16-bit decimal mode test. ugh I have dreaded this! tee hee.</p>
+<p>This is a discussion of efficient BCD arithmetic using a correction factor after the add:
+https://gemini.google.com/app/809b15a0c56c7248</p>
+<p>this is probably what the 8086 did with its bcd instruction (add and correct) or something like that.
+8-bit isn't bad, 16-bit is pretty gnarly. but it's branchless and is better than doing gobs of multiplies and divides I'm doing now to convert back and forth to bcd.</p>
+<p>on nmos 6502 V N Z were considered invalid in decimal mode so probably no software relied on them.
+however, 65c02/816 claim that the flags are valid. In fact I set n/z for both (unclear what a real nmos 6502 does).</p>
+<p>my current bcd stuff is horrific. So what we need to do is change it to something more like what the CPU must do internally.</p>
+<ol>
+<li>alu first performs a normal 8-bit binary addition of accumulator, operand, carry flag.</li>
+<li>lower 4-bit nibble checked; if &gt; 9, or "if a half carry occurred from bit 3 to bit 4", hardware adds 6 to the low nibble.</li>
+<li>upper 4-bit nibble checked. if &gt; 9, adds 6 to the high nibble and sets the overall carry flag.</li>
+</ol>
+<p>ok, the 816 is not using the 8086 algo. When digits are valid everything works ok, but if digits are -invalid- the low nibble is not right.</p>
+<p>alright, let's say we're doing this nibble by nibble. Let's take a (valid digits) first.</p>
+<p>78 + 13 = 91</p>
+<p>8 + 3 = B
+B is &gt; 9, so add 6.
+So that's a 1 with a carry ("11")</p>
+<p>(maximum sum of two nibbles is 0x1E. (F + F). So the high nibble of a carry nibble is always 1.)</p>
+<p>so let's do next nibble.</p>
+<p>7 + 1 + 1 (carry) = 9</p>
+<p>that is not &gt; 9, so we're done, and the result is 91.</p>
+<p>So let's look at an example with two carries.</p>
+<p>78 + 23 = 101</p>
+<p>8 + 3 = B
+B is &gt; 9, so add 6
+That's 1 with a carry ("11")</p>
+<p>7 + 2 + 1 (carry) = A</p>
+<p>that is &gt; 9, so we have a carry. add 6 to A to get x10.
+now, that's 0 with a carry, so it's (1)01.</p>
+<p>so let's look at our weird example.</p>
+<p>CA + BA</p>
+<p>A + A = 14
+this result is &gt; 9, so add 6 =&gt; 1A. plus a carry.
+C + B + 1 (carry) = 18 - so that's also &gt; 9 and needs 6 added, to get
+  0x1E. (with a carry) (&gt; 9 means carry)
+so we get EA.</p>
+<p>So we should be checking if result &amp; 0x1F &gt; 9; no. We need to check each nibble &gt;9, and add 6, and set carry. This is a nibble-by-nibble operation.</p>
+<p>And I got new code inserted.. it's working except for the V flag failing.</p>
+<p>http://www.6502.org/tutorials/decimal_mode.html</p>
+<p>says:</p>
+<p>2f. The V flag result is 1 if A &lt; -128 or A &gt; 127, and is 0 if -128 &lt;= A &lt;= 127
+in 32-bit</p>
+<p>Well that's an ugly way to do it. This article has pseudo-code about halfway down that -seems- to be working so far for ADC. it's sort of mask intensive but surely it's faster than my old multiply-divide nonsense.</p>
+<p>Alright, looking at Kent's code from KEGS:</p>
+<p>This is the code unraveled for only decimal subtraction. It mostly follows the 6502.org article with a couple of tweaks. (particularly, he can use unsigned because he adjusts for positive comparisons). For now I'll leave exactly as it is as 6502. make a note to come back and optimize later. (honestly, dec mode is not commonly used it's probably not worth a lot of time, which was my original attitude towards it lol.</p>
+<pre><code>overflow = 0;
+
+/* decimal */
+    word32  tmp1, tmp2;
+// lo byte
+    tmp1 = do_adc_sbc8(in1 &amp; 0xff, in2 &amp; 0xff, psr, sub);
+// this is carry
+    psr = (tmp1 &gt;&gt; 16);
+    tmp2 = do_adc_sbc8((in1 &gt;&gt; 8) &amp; 0xff, (in2 &gt;&gt; 8) &amp; 0xff, psr, sub);
+
+    in2 = (in2 ^ 0xfffff);
+
+    sum = ((tmp2 &amp; 0xff) &lt;&lt; 8) + (tmp1 &amp; 0xff) +
+            (((tmp2 &gt;&gt; 16) &amp; 1) &lt;&lt; 16);
+
+    // do_adc_sbc8 returns the -entire- P register in bits 16-23 of this result.
+    // so this is checking if V was set on the high byte math.
+    overflow = (tmp2 &gt;&gt; 16) &amp; 0x40;
+    if((in1 ^ in2) &amp; 0x8000) {
+        overflow = 0;
+    }
+
+    carry = (sum &gt;= 0x10000);
+
+and here's the 8-bit part:
+do_adc_sbc8(word32 in1, word32 in2, word32 psr, int sub)
+{
+    word32  sum, carry, overflow;
+    word32  zero;
+    int decimal;
+
+    overflow = 0;
+    decimal = psr &amp; 8;
+    in2 = (in2 ^ 0xff);
+
+    /* decimal */
+    sum = (in1 &amp; 0xf) + (in2 &amp; 0xf) + (psr &amp; 1);
+    if(sum &lt; 0x10) {
+        sum = (sum - 0x6) &amp; 0xf;
+    }
+
+    sum = (in1 &amp; 0xf0) + (in2 &amp; 0xf0) + sum;
+    // 10101010 =&gt; 0_0_101010  bit 8 (carry)
+    // 10101010 =&gt; 0_1_010101  bit 7
+    overflow = ((sum &gt;&gt; 2) ^ (sum &gt;&gt; 1)) &amp; 0x40;
+    if(sum &lt; 0x100) {
+        sum = (sum + 0xa0) &amp; 0xff;
+    }
+
+    if((in1 ^ in2) &amp; 0x80) {
+        overflow = 0;
+    }
+
+    psr = psr &amp; (~0xc3);
+    psr = psr + (sum &amp; 0x80) + overflow + (zero &lt;&lt; 1) + carry;
+
+    return (psr &lt;&lt; 16) + (sum &amp; 0xff);
+}
+</code></pre>
+<p>WHOO!</p>
+<p>Good news:
+We now pass both the original 6502/65c02 tests and the snes-tests.</p>
+<p>Bad news:
+effective 65816 speed is only between 140 and 150mhz.
+Here are some things to look at:</p>
+<p>what is this unique_ptr business, is it slow, and, update_current_core_if_needed should be in the core, not called every single cycle in the outer loop.</p>
+<p>make sure I don't have excessive TRACE statements in there. (in fact I set trace=no but it's still this slow speed).</p>
+<p>examine some of the address_mode handler routines. for instance there is stuff like this:</p>
+<pre><code>       if constexpr (CPUTraits::e_mode) {
+            if ((cpu-&gt;d &amp; 0xFF) == 0) {
+                eaddr_16 = cpu-&gt;d | operand;
+            } else {
+                eaddr_16 = (cpu-&gt;d + operand); // with just direct there can be no page wrapping.
+        }
+</code></pre>
+<p>where we probably don't need that IF statement at all.
+(cuz if d is zero, ).</p>
+<p>Additionally, I know there is just more cache contention in this suite (it's all over 16MB of RAM, instead of packed in 128K of RAM).. 
+and I know there is a fair bit of work being done in the system to generate the 24-bit addresses.</p>
+<p>I put in a lot of phantom_read stuff - those are mostly the same for 6502 except that the 24-bit address calculation is more complex.</p>
+<p>Should run a profile on this and see where the time is being spent.</p>
+<p>BUGS</p>
+<p>[ ] inline void read_direct_x_ind(cpu_state <em>cpu, T &amp;reg, U &amp;index ) {
+and its write counterpart- 
+my code assumes these are 65816 only, but in fact, they go back to the 6502. So I am inappropriately putting a (uninitialized) bank address in 6502 mode.
+/</em><em> Address Mode: 11. Direct Indexed Indirect (d,x) (Read) </em>/
+template<typename T, typename U>
+inline void read_direct_x_ind(cpu_state *cpu, T &amp;reg, U &amp;index ) {
+    uint16_t eaddr_16 = address_direct_x(cpu, index);
+    uint16_t temp;
+    uint32_t eaddr;</p>
+<pre><code>if constexpr (CPUTraits::has_65816_ops &amp;&amp; !CPUTraits::e_mode) {
+    read_data_direct(cpu, eaddr_16, temp); 
+    eaddr = (cpu-&gt;db &lt;&lt; 16) | temp; // add data bank
+}else {
+//    if constexpr (CPUTraits::e_mode) {
+    // in e mode the +1 needs to wrap inside its page.
+    eaddr = bus_read(cpu, (uint16_t)(eaddr_16));
+    eaddr |= bus_read(cpu, (uint16_t)(eaddr_16 &amp; 0xFF00) | (uint8_t)((eaddr_16 &amp; 0x00FF) + 1)) &lt;&lt; 8;
+}
+read_data(cpu, eaddr, reg);
+
+TRACE(cpu-&gt;trace_entry.eaddr = eaddr_16; cpu-&gt;trace_entry.data = reg; cpu-&gt;trace_entry.f_data_sz = sizeof(T)-1;)
+</code></pre>
+<p>}</p>
+<p>ok I fixed the memory issue in cputest/Airheart BUT the 816 test fails now. It's because:
+emul mode needs to add bank, AND also do the fonky wrap.</p>
+<p>I also crashed it by reading a word from FFFFFF.</p>
+<p>[ ] bug: booting ProDOS v2.4.3 in emulation mode (what other mode is there?) at PC:
+59595 E8CB, it tries to LDA FF48,Y with Y=FE
+I don't know if that's intentional or not, but it causes an exception.</p>
+<p>Thinking about having some helper functions for constructing:
+index_16_8(word_t base, byte_t index) - create 16-bit address with 8-bit wrap
+index_16_16(word_t base, word_t index) - 16-bit address with 16-bit wrap</p>
+<p>scrutinize code - 
+[ ] in plain 6502 mode we sometimes index e.g. address_abs_x with high values. Creates address &gt;= 0x1'0000. causes crash.
+[ ] what happens if we index past 0xFFFFFF ?</p>
+<p>The quick fix is to and xFFFF eaddr if we're a normal 6502 or in emulation mode. Maybe what we do in these cases is trigger a log of the bad memory reference:
+PC, registers, EADDR. maybe mask it, and set an 'invalid eaddr' flag in the trace record.</p>
+<p>Who all does this:</p>
+<ul>
+<li>address_abs_x</li>
+<li>address_abs_x_write</li>
+<li>address_rmw_abs_x</li>
+</ul>
+<p>SO these on 816 even in EMU mode would wrap to next bank. However, we need to force to 16-bit in 6502/65c02 mode.</p>
+<p>read_direct_ind_x
+write_direct_ind_x
+ABSL 16-bit read/write</p>
+<p>the basic question is:
+1. fix addresses in bus_read/bus_write
+1. fix addresses in the mmu interface (the mmu knows how much memory is in the computer)
+1. fix them in the calling functions</p>
+<p>Until now, the cpu and mmu have mutually assumed 64K of memory, and mmu assumed cpu would only ever send it a 16-bit address; further, we always gave the mmu at least 64K of ram block to work with.</p>
+<p>I currently do an assert -&gt; crash if the page is out of range of the page table. This would change to: 1) mask with a mask value created when template is defined; mask and if masked addr is not same as input address then flag some kind of warning.</p>
+<p>Let's say we instantiate MMU as a template with arguments: address size, page_size. Then we can use some relatively inexpensive static bounds checks.</p>
+<p>also I note:
+    union {
+        struct {
+                uint16_t pc;  /<em> Program Counter - lower 16 bits of the 24-bit program counter </em>/
+                uint8_t pb;   /<em> Program Bank - upper 8 bits of the 24-bit program counter </em>/
+                uint8_t unused; /<em> Padding to align with 32-bit full_pc </em>/
+        };
+        uint32_t full_pc; /<em> Full 24-bit program counter (with 8 unused bits) </em>/
+    };</p>
+<ol>
+<li>We don't init 'unused' here to 0.</li>
+<li>I don't have to do all this dumbass bit manipulation to construct a 24-bit PC. I <strong>ALREADY HAVE A 24-BIT PC</strong>, I just need to read full_pc instead of pc.</li>
+</ol>
+<p>[x] optimize generation of pb + pc. </p>
+<p>[x] Hm, what if we store the data bank as part of a 32-bit union also. For example:
+```
+union {
+    struct {
+        uint16_t unused_db;
+        uint16_t db;
+    };
+    uint32_t full_db;
+}</p>
+<p>Then we are never shifting it, just using full_db instead of (db &lt;&lt; 16) all over the place. That seems to be working ok.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
