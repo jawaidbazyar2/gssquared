@@ -4210,6 +4210,39 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#mar-25-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mar 25, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mar-27-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mar 27, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mar-28-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mar 28, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5887,6 +5920,39 @@
     <span class="md-ellipsis">
       
         Mar 22, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mar-25-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mar 25, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mar-27-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mar 27, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mar-28-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mar 28, 2026
       
     </span>
   </a>
@@ -15137,6 +15203,202 @@ load symbols, save trace</p>
 <p>[x] on Windows (at least) the OA/CA keys on //e are incorrect (they are still left win and right win). (it was just Windows)</p>
 <h2 id="mar-22-2026">Mar 22, 2026<a class="headerlink" href="#mar-22-2026" title="Permanent link">&para;</a></h2>
 <p>I investigated integrating in the Cyrene debugger. It doesn't look all that bad. There is a relatively small contact surface where it needs state variables. They are somewhat spread around the system tho. Where KEGS has gobs of global variables for everything, we have things broken into different modules.</p>
+<p>"abnormal LORES"</p>
+<p>https://github.com/jawaidbazyar2/gssquared/issues/98</p>
+<p>now, we do the "undelayed processing of HIRES40" already. (VM_HIRES_NOSHIFT in VSG).</p>
+<p>LORES is normally a 14MHz operation, because the LORES pattern for each color is "painted" across all 560 dot positions.</p>
+<p>I'm going to need to catch this state in VideoScanner, call it VM_LORES_7M.</p>
+<p>In hires noshift, we are repeating every 7M dot twice, and there is no relative shift.</p>
+<p>So what do we normally paint with lores color say 1.</p>
+<p>10001000100010 00100010001000 1000</p>
+<p>So what I <em>seem</em> to be seeing in LORES7M, is this (but doubled):
+1000100 0010001 1000
+11000000110000 00001100001100</p>
+<p>imagine the same lores shift register, just operating at half the speed. So we load the pattern in for our current position same as with current LORES code. But then shift 7 times and double each dot.</p>
+<h2 id="mar-25-2026">Mar 25, 2026<a class="headerlink" href="#mar-25-2026" title="Permanent link">&para;</a></h2>
+<p>Composite Output Cookoff!</p>
+<p>Interesting stuff.</p>
+<p>Color enabled in CP:</p>
+<p>Text mode:
+in text mode (40 col all text, 80 col all text) text colors are respected BUT they are grayscale. Colorburst off here clearly means no chroma but variable luma.</p>
+<p>Lores mode: all the color comes on - border color is enabled, text color is enabled, and we get fringy text. And we get the normal lores composite fringies.
+lores7m: identical to RGB ouput of lores7m: no lines; but full lores blocks.
+lores with mono switch on AC2E: you see the 1s/0s bitstream pattern.
+hires: normal ntsc and you get the dot patterns when you use A2CE mono
+borders with mono switch on a2ce: border colors are generated with ntsc bit patterns</p>
+<p>Color disabled in CP</p>
+<p>Text - no difference.
+lores - the lores bars are definitely more distinct when we're dealing only with luma. I wonder if using regular composite display but with saturation turned down to 0 is the same thing.. no not really. the artifacts are still there.
+So "no chroma" is not the same as "luma and chroma with all the color taken out of chroma".
+ok now I'm wondering: is my lo-res wrong, or is the GS Compo just that much better. Need to test with the //e also.
+lores7m: very clean grayscale of the lores blocks.
+there is NO 1s/0s bitstream pattern with GS color disabled setting. Color areas are <em>solid</em>. 
+hires:again, solid shades of gray. essentially a mono rendering of the RGB output.</p>
+<h2 id="mar-27-2026">Mar 27, 2026<a class="headerlink" href="#mar-27-2026" title="Permanent link">&para;</a></h2>
+<p>Thinking about why textfunk runs fast. I did find some 65816 instructions that weren't clocking long enough (and that fixed videomodes.po) </p>
+<p>ok, the white border is getting turned on around scanline 163, and we're looping waiting for this:</p>
+<pre><code>        ldx #$7F
+:vsync
+        cpx $2e
+        bne :vsync
+</code></pre>
+<p>c02e is basically the vcounter / 2. (the low bit of the vcounter is the high bit of C02f). I just double checked the calculation of these registers, looks ok.
+ah, that vsync is also used to wait for and synchronize every scanline?</p>
+<pre><code> lda $2f
+        sbc #2
+        and #7
+        asl
+        tax
+</code></pre>
+<p>then it subtracts 2, takes low 3 bits (scanline 0-7 of a character), multiplies by two to get a jump table index. Ah, this then runs a variety of different delay code intended to synchronize to the beam.
+So no matter where we're at at the end of this we are supposed to be synced.
+PEA is disassembling wrong, it's disasm as an immediate when it should be disasm as absolute (address).
+ok on the first scanline we start out synced, but the start of second scanline, the beam is still on scanline 0, and only H35. meaning we're running way fast ahead of the beam. That's why we see the same characters - instead of changing chars just before the beam passes, we're ahead of it so the beam only ever sees the same character after the first couple scanlines.
+What we want here is an mmu trace feature, that will show the last X cycles of mmu / bus activity.
+It would also be super helpful to, in step mode, show the ScanBuffer <strong>up until now</strong>, superimposed on the existing stuff, and the current cycle highlighted some way (like maybe in an xor rectangle).</p>
+<p>So in MMU, we want: address, r/w, value. Only keep a rolling buffer of say 16. Or should it go into CPU? We have a clean interface in either case.</p>
+<p>My working theory here is that the RAM refresh has its own counter which ticks off no matter what. In the nclock code currently, we reset that counter on a slow cycle. But what we should actually do is leave it alone; increment it by the number of 14M's as we normally would; and if we're in a slow cycle, don't ADD more cycles for the refresh. i.e. if we have 4 slow cycles in a row (for total of 52M) the ram refresh would have occurred at 14M #45 in that series; but because it occurred during a slow cycle, we don't ADD 5 more for the refresh. We get it "for free". This means the timing of the ram refresh cycles is precisely on a clock, we just suppress syncing to the end of the refresh cycle when they occur.</p>
+<p>From John Brooks:
+"In general, DRAM refresh will occur at specific times (every 3.5 usec for GS), so will not be done every slow cycle, but only when needed. If the 3.5 usec refresh time lands while the bus is in fast mode, then the next fast cycle is delayed by 5 ticks while the dram refresh occurs."
+"From an emulator's point of view, I think the emulator can 'ignore' any refresh cycle than lands on a slow cycle, and then has to 'delay 5 ticks' if the refresh is due at the start of a fast cycle. The emulator also needs to delay 2 ticks every NTSC/PAL scanline == 63.7 usec (65 PH0)."</p>
+<p>Crossrunner is using a 28MHz clock apparently. All the cycle counts inside are 2x what I usually think of them as. Looks like he does it so he can track rising and falling edges of pulses. (1824 is 2x 912, a familiar value).</p>
+<pre><code>bool currentCycleSlow = (memAccess.cycleType == MemorySubsystem::CycleType::WriteSlowMemory) || (memAccess.cycleType == MemorySubsystem::CycleType::ReadSlowRAM) || (memAccess.cycleType == MemorySubsystem::CycleType::InternalOperationSlow) || (instructionSpeed == Wdc65816State::CpuSpeed::Slow);
+if (lastCycleSlow &amp;&amp; currentCycleSlow)
+{
+  // advance by either 28 (normal) or 32 (stretched) master cycles
+  unsigned cycleLength = stretchCycleSchedule[cycleScheduleOffset] ? 32 : 28;
+  masterCycles += cycleLength, cycleScheduleOffset += cycleLength;
+  if (cycleScheduleOffset &gt;= 1824)
+    cycleScheduleOffset -= 1824;
+
+  // check if we need to delay the memory refresh
+  delayedRefresh = (masterCyclesUntilMemRefresh &lt; cycleLength) &amp;&amp; (masterCyclesUntilMemRefresh &gt; 8);
+
+  // update refresh clock
+  masterCyclesUntilMemRefresh -= cycleLength;
+  if (masterCyclesUntilMemRefresh &lt; 0)
+    masterCyclesUntilMemRefresh += 100;
+}
+else if (!currentCycleSlow)
+{
+  // calculate fast cycle time (without refresh)
+  unsigned cycleLength;
+  if (instructionSpeed == Wdc65816State::CpuSpeed::VeryFast)
+    cycleLength = 2;
+  else if (instructionSpeed == Wdc65816State::CpuSpeed::Fast)
+    cycleLength = 4;
+  else
+    cycleLength = 10;
+
+  // check for DRAM refresh cycle
+  if ((instructionSpeed == Wdc65816State::CpuSpeed::Normal) &amp;&amp; (memAccess.cycleType != MemorySubsystem::CycleType::ReadFastROM) &amp;&amp; (memAccess.cycleType != MemorySubsystem::CycleType::ReadFastFPIRegister) &amp;&amp; (memAccess.cycleType != MemorySubsystem::CycleType::InternalOperationFastNoStall))
+  {
+    if (delayedRefresh || (masterCyclesUntilMemRefresh &lt;= 10))
+    {
+      // take an extra fast cycle to refresh
+      cycleLength += 10;
+    }
+  }
+  delayedRefresh = false;
+
+  // advance by 10 master cycles (if running at 2.8 MHz)
+  masterCycles += cycleLength, cycleScheduleOffset += cycleLength;
+
+  // update refresh clock
+  masterCyclesUntilMemRefresh -= cycleLength;
+  if (masterCyclesUntilMemRefresh &lt; 0)
+    masterCyclesUntilMemRefresh += 100;
+
+  lastCycleSlow = false;
+}
+else
+{
+  // check if we can sync to the next slow cycle
+  unsigned transitionOffset = 0;
+  while (slowCycleSchedule[cycleScheduleOffset] != Ph0State::RisingEdge)
+  {
+    ++cycleScheduleOffset, ++transitionOffset;
+    if (cycleScheduleOffset == 1824)
+      cycleScheduleOffset = 0;
+  }
+  if (transitionOffset &lt; 4)
+  {
+    // too close to the next slow cycle - sync to the one after
+    while (slowCycleSchedule[cycleScheduleOffset] != Ph0State::Low)
+    {
+      ++cycleScheduleOffset, ++transitionOffset;
+      if (cycleScheduleOffset == 1824)
+        cycleScheduleOffset = 0;
+    }
+    while (slowCycleSchedule[cycleScheduleOffset] != Ph0State::RisingEdge)
+    {
+      ++cycleScheduleOffset, ++transitionOffset;
+      if (cycleScheduleOffset == 1824)
+        cycleScheduleOffset = 0;
+    }
+  }
+
+  // skip to the end of the slow cycle
+  unsigned cycleLength = 0;
+  while (slowCycleSchedule[cycleScheduleOffset] != Ph0State::Low)
+  {
+    ++cycleLength, ++cycleScheduleOffset;
+    if (cycleScheduleOffset == 1824)
+      cycleScheduleOffset = 0;
+  }
+
+  masterCycles += transitionOffset + cycleLength;
+
+  // check if we need to delay the memory refresh
+  delayedRefresh = (masterCyclesUntilMemRefresh &gt; transitionOffset + 4) &amp;&amp; (masterCyclesUntilMemRefresh &lt; transitionOffset + cycleLength);
+
+  // update refresh clock
+  masterCyclesUntilMemRefresh -= transitionOffset + cycleLength;
+  if (masterCyclesUntilMemRefresh &lt; 0)
+    masterCyclesUntilMemRefresh += 100;
+
+  lastCycleSlow = true;
+}
+</code></pre>
+<p>ahh, ok. the issue is I'm not picking up slow mode when I end up shadowing a write to the MegaII. In this case, from text page 1.
+I am never triggering CYCLE_TYPE_SYNC while executing this code.
+so, write a test case where we have shadow on (pretty much all the time), M=1, and STA $400 STA $401 etc.
+this:</p>
+<pre><code>STA $0400
+STA $0401
+</code></pre>
+<p>is 5 cpu cycles, TWO of which should be sync cycles, for a total execution time of 5 + 5 + 5 + 14 + 14 (plus whatever is needed to sync to that.)
+yes, hot damn!!!! That largely fixed textfunk.
+However, we now have an additional problem. There is garbage/junk at around cycle 6 or 7 of the funky area. This comes back to that weird 7-cycle offset. 
+The grid image is a good one to show what's going on.
+OK, the 7-cycle offset made no difference at all here. (Maybe elsewhere?) maybe nowhere? hunh. But it may yet be related to the correlation between: scan_index; h/v; and the scanner counters. We would tweak this by changing the scanner LUT init. 
+Sather says he thinks the power-on value of scanner is: 000 000 000 / 0000000. This is the start of HBL, right after hcounter reaches 64, or, hcounter=0. normally the vcounter starts at 0x100. If you start it at 0x000, that's where you get (almost) another frame during the power on RESET hold. 
+on CR, the color countdown border color changes are a hair more than 3 vidcycles wide. On GS2, they are pretty exactly two. That may be some of the latency being discussed where switches don't take effect immediately. It could also be instructions aren't slowing down for I/O.</p>
+<p>so what would cause there to be less vid cycles.. vid cycles going too fast.. refresh cycles being added into vid?</p>
+<p>ok, so the white border area starts 6 cycles earlier than CR. That 6 can hardly be coincidental, it's so similar to our other 6. 
+So scrutinize what's before it turning white on.
+ah ha, I am not triggering slow cycles on the STX $34 -&gt; $C034. But first, fried chicken.
+ok, that reduced the erroneous bit to ONE cycle. the green is a hair late. So I am down to 3 vidycycles off (in the opposite direction!)</p>
+<p>it wants H to be just starting in the border as the first PEA of a scanline is pushed.
+We're at 9. 9!! that's way off.. </p>
+<p>ok. We need to resolve our discrepancies with sather on what Hcounter and VCounter are.
+our "h/v" position are: H 0 is the start of right border.
+25 is start of content.
+64 is end of content.</p>
+<p>According to Sather, the scanner starts with H = 0 which is HBL, but which sather also alls "ck no 40". that refers to the 40th cycle of video content on the horizontal line.
+So yes, hcounter=0 is the right edge 
+it also says that hcounter=7F does "vert+1". That rollover of the horizontal counter from 7F to 00, must trigger the vertical counter to increase by 1. if vcounter enters line 224, that starts a VSYNC. So on entry into BORDER/HBL there (start of right border) the beam has jumped to the top of the screen. scanline minus 1. ugh!</p>
+<p>The beam does not scan on a perfect horizontal line. All lines on a monitor are slightly slanted, descending left to right.
+HSYNC comes after that right border area (confirm).</p>
+<pre><code>        if ((hc == 64) &amp;&amp; (vc &lt; 261)) fl |= SA_FLAG_HSYNC;
+</code></pre>
+<p>So this hsync is in the wrong place. hsync should be at hc == 9-12 or 8-11.
+We start at 0, so we do stream out the right border first. but the pixel data that appears at the top, should be from the last scanline, if I put the hsync where it needs to go.</p>
+<h2 id="mar-28-2026">Mar 28, 2026<a class="headerlink" href="#mar-28-2026" title="Permanent link">&para;</a></h2>
+<p>user complained that disk image wouldn't mount - their image ends in .img. Two things:
+Any error message goes to the console, which is useless for most people. And .img is just the same as .hdv.
+For now I guess we can just make the errors do the error fadeout.. it does! Except if control panel is open those aren't displayed.
+ok, fixed, there was a second call site for mounts that wasn't displaying an error, also in OSD. Should clean that up..</p>
 
 
 

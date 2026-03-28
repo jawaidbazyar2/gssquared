@@ -3280,6 +3280,27 @@ ncontainers
 <p>Working pretty well now, but, want to minimize the submenus whenever we hide the main menu.</p>
 <p>Windows menus implemented. works well. It's still displayed in fullscreen though, so we probably want to hide it when in fullscreen. Otherwise it's kind of awkward.
 OH, also on Windows the "Choose your retro experience" is partly erased at the bottom. The buttons container backround was black and there must have been some overlap. Not sure why it didn't do the same thing on Mac? resolution / placement difference I guess.</p>
+<p>Linux - ahh, linux, you are a PITA. Trying to implement using Gtk. It's not going well. there are usability issues, particularly:
+1) there is a permanent hamburger in the upper left corner of the emulator window. dislike.
+2) sometimes it works as expected; sometimes you click the burger, move over into the menu, and it disappears in 1 second.
+3) the wiring into Gtk etc is fairly involved and likely fragile.</p>
+<p>SO. What if we implement the menu as containers of just text buttons. It would be exactly like we have now with the graphical buttons, except just text.</p>
+<p>And at that point, if that works well enough, do we just use THAT as the menu for all 3 platforms?
+Humhmmmm.</p>
+<p>OK, tried the system tray but the thing isn't even enabled in GNOME/Ubuntu 22 by default. Oy vey, does linux actually hate application authors? (the answer is: yes, and this is clearly a key reason for Linux desktop adoption failure).</p>
+<p>OK tried imgui. it's not awful. it lets you pick a custom font, so I am using Oxygen. Two observations:
+1. The menu text is still a little small, at 17px.
+1. since -we- draw the menus based on -our- frame rate, it is fully asynchronous (this would be a benefit on the Mac)
+1. it is obscuring part of the top border area. So we should either expand increase the window size slightly, or, have the menu display when we're a) not mouse captured and b) mouse has been moving.
+1. we should see how much we can tweak the styling. Can we include cool icons in the menu items? Can we have slider menu items for hue / saturation?
+1. if I go cross platform with this, we're going to want to bring the imgui source into the project.</p>
+<p>So I would say at this point we have a -glut- of user interface choices. 
+The linux and Windows menu placement is basically the same. Mac could offer an option?</p>
+<p>I wonder if we should convert mouse wheel to up and down arrows. (and, mouse wheel while control or shift is down, to left and right arrows). There will be no Apple II software that understands what a mouse wheel is.</p>
+<p>[ ] test Mouse Wheel -&gt; arrow key insertion.  </p>
+<p>so, mouse wheel motion should probably be capped at 2-3 up-arrow insertions. Currently, mouse wheel is set up as a paddle. I think that is probably pretty useless.</p>
+<p>[ ] Remove "mouse wheel is paddle" function.  </p>
+<p>In terms of packaging, the imgui library is a .a - so, static? And basically always linked into my exe? Ah, yep. well ok then so it's good to go.</p>
 
 
 
