@@ -4243,6 +4243,116 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#mar-30-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mar 30, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-1-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 1, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-3-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 3, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-4-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 4, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-6-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 6, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-7-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 7, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-8-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 8, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-9-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 9, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-10-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 10, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-11-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 11, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5953,6 +6063,116 @@
     <span class="md-ellipsis">
       
         Mar 28, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mar-30-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mar 30, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-1-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 1, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-3-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 3, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-4-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 4, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-6-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 6, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-7-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 7, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-8-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 8, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-9-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 9, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-10-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 10, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apr-11-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apr 11, 2026
       
     </span>
   </a>
@@ -15392,13 +15612,271 @@ it also says that hcounter=7F does "vert+1". That rollover of the horizontal cou
 HSYNC comes after that right border area (confirm).</p>
 <pre><code>        if ((hc == 64) &amp;&amp; (vc &lt; 261)) fl |= SA_FLAG_HSYNC;
 </code></pre>
-<p>So this hsync is in the wrong place. hsync should be at hc == 9-12 or 8-11.
-We start at 0, so we do stream out the right border first. but the pixel data that appears at the top, should be from the last scanline, if I put the hsync where it needs to go.</p>
+<p>So this hsync is in the wrong place. hsync should be at hc == 9-12 or 8-11 (maybe same for both platforms).</p>
 <h2 id="mar-28-2026">Mar 28, 2026<a class="headerlink" href="#mar-28-2026" title="Permanent link">&para;</a></h2>
 <p>user complained that disk image wouldn't mount - their image ends in .img. Two things:
 Any error message goes to the console, which is useless for most people. And .img is just the same as .hdv.
 For now I guess we can just make the errors do the error fadeout.. it does! Except if control panel is open those aren't displayed.
-ok, fixed, there was a second call site for mounts that wasn't displaying an error, also in OSD. Should clean that up..</p>
+ok, fixed, there was a second call site for mounts that wasn't displaying an error, also in OSD. Should clean that up..
+[ ] add error status code to mounts so different messages can be thrown  </p>
+<p>back to video timing..</p>
+<p>on system poweron, the counters are all 0. The first frame we get who knows where the monitor beam will be, so the first frame is a sort of "sync up". the H pos runs for a short time then gets SYNCd (after only first 7-8 cycles).</p>
+<p>Towards bottom of 1st frame, we get VSYNC for four scanlines, starting scanline 224 through 227 according to Sather. (NTSC says it's 3 scanlines ntsc, 2 scanlines PAL). when the vsync releases, the beam is now on top scanline. The H pos has been tracking separately so is now most of the way across the screen in the border area. On a GS, the border starts here which is what we see on the display if we shrink the vertical. (and we also see the corresponding trait, the last scanline the border ends short of the actual right edge).</p>
+<p>To model this I need an extra scanline in my buffer. I've had 262 (0-261). I need 263 total. I do have that already.</p>
+<p>in terms of position of data, it's the same as I have now, where the right border is leftmost in the border buffer, then left comes after that.
+ok this is maybe starting to come together.. I am having to relax some constraints on VideoScanGenerator. will need to put in some asserts to notify me if we get out of sync. But a "frame" should now include hsync in the right positions as well as a vsync at the very end. With this approach, we might let VideoScanGenerator keep track of its beam position from one invocation to the next; and, that means we can now easily do incremental updates to the buffer, for stepwise updates to the video frame! So can have "right now" frame mode as well as "beam history" mode. That will be super-handy for debugging this stuff, we can call the video renderer safely regardless of how much data is in the buffer.</p>
+<p>ok I'm tweaking the stuff.. let's try the IRC demo. </p>
+<h2 id="mar-30-2026">Mar 30, 2026<a class="headerlink" href="#mar-30-2026" title="Permanent link">&para;</a></h2>
+<p>so the missing border pixels must be a blanking flag at the very end of my frame or something along those lines?
+because the start of frame is 0,0 in the content. So it's scanline 261..
+I'm attempting to reduce the number of VBL lines, and oddly I am getting doubled text+border entries. I am missing a conditional somewhere.. yeah. So that's better, but I still have the same missing border pixels, lol.</p>
+<p>It's getting hard to reason about the border composition stuff. GSIRC looks ok, but Synchro Cyclo is pretty wrong. My own test looks ok. Maybe SC is some issue with scanline interrupt timing and not the display? Because it's incorrect in a number of ways that aren't easily explained by just being off by one in the shr_borders rects.</p>
+<p>The other thing though, is that composing the rects is time-consuming and confusing. The reason I do this is because I scale the borders differently, so as to have borders not take up so much room on the display.</p>
+<p>some options:
+1. draw the whole thing with extra-big borders like CR
+1. draw border pixels the same as regular pixels (i.e., when there's a border command I'll have to emit 7 or 8 pixels, not just one. we do include the shr flag so VSG will know)
+1. I could still pull rectangles and scale them separately as I do now. 
+1. OR, I could render at full border width and when I render to window, I can select a rectangle from the center of that buffer. This will make it way easier to implement vsize/hsize controls.</p>
+<p>The last implies:
+1. a single, larger 651x232 or 740x232 buffer depending on shr vs regular II mode;
+1. we have to generate 7/8 pixels per visible cycle no matter what - we're generating a lot more data, every beam position will need a videoscanner entry (except when we're in hbl/vbl).</p>
+<p>This would have pretty deep implications for how we render NTSC (much larger display area.). Today I do the borders completely independently.</p>
+<p>ok.. an alternate approach would be to track beam h/v so that border texture is laid out more sensibly. </p>
+<p>So I'm trying this on the real GS (my testvert) program. on realgs, the border starts about 1/2 cycle before the right edge of text display. 
+the missing border is 7 cycles worth (measured by text). This border is the tail end of the frame.</p>
+<p>So this last line is weird. it's V261. And I am getting border_color from 0 to 98 before the vsync, say what?</p>
+<p>if we want to simulate the pixel clock change, each scanline should have the pixel clock recorded, and if a frame has multiple pixel clock values, then compose the frame in chunks of similar pixel clock.</p>
+<p>Hm what about the buffers that are directly textures.. I think that's just the last stage, i.e. after the ntsc or rgb processing.
+we'll need to calculate src rectangle (onle one!!) based on 8-bit versus GS (without/with border area)
+for palettes, Instead of having 32bits for every entry which are mostly not used, I can just insert two entries into ScanBuffer instead of 1.
+This may be where we need to split handling of RGB and NTSC. RGB first, so VSG2 is for RGB.
+ok, it's starting to come together.. top/bot border isn't wide enough.</p>
+<h2 id="apr-1-2026">Apr 1, 2026<a class="headerlink" href="#apr-1-2026" title="Permanent link">&para;</a></h2>
+<p>ok, I'm done! I fixed all the bugs!
+April fools.</p>
+<p>vsg:hcount is NOT the horizontal position on the scanline. It's an attempt to track start of line for pixel data etc.
+instead of starting cycle index at 0, should I start it right after the vsync position? After the first partial frame we should sync up..
+let's review the vert timing again..  ok.</p>
+<h2 id="apr-3-2026">Apr 3, 2026<a class="headerlink" href="#apr-3-2026" title="Permanent link">&para;</a></h2>
+<p>ok, I have the sync stuff working correctly now! The issue was confusion over what vcount/hcount meant. I added a beam_h and beam_v to track the beam location, because hcount/vcount are actually just keeping track of which scanline of a character or lores block we're on. It's taking 200 microseconds longer than before, but, we are generating a lot more data - the borders aren't one pixel per cycle, they're 14 now, and I'm also emitting pixels for the vbl/hbl; if I use advance instead of writing black pixels for, it drops from 530uS to 370uS. Trouble is I have leftover stuff after the first frame where we draw stuff in the wrong place because video isn't synced up yet.. oh, am I erasing the whole thing to red?</p>
+<h2 id="apr-4-2026">Apr 4, 2026<a class="headerlink" href="#apr-4-2026" title="Permanent link">&para;</a></h2>
+<p>[ ] the API for the AppleII graphics and the VSG should be the same.  </p>
+<p>Especially now that we're going to have two VSG's (one RGB, one Composite).  But this brings back up the question, should we even still have the AppleII module, or, should we just make a wrapper for VSG that executes an entire frame at once, as in VPP? It's kind of a pain to maintain both sets of code. Actually I like that. </p>
+<p>If we are directly updating the texture, we don't have a copy of the data for single-step updates and the buffer we get may not be complete. For this, have a separate Frame for single-step that we can plug in that will keep the data locally, and populate it on entry into single-step with a "copy data from texture".</p>
+<p>Developing monitor controls, horizontal and vertical position and resize.
+hsize: 680 vsize: 237 hpos: -8 vpos: 4</p>
+<p>new frame: [107.000000, 17.000000] 680 x 237</p>
+<p>ok, I'm whittling away at issues now. Still dealing with 16/14 and the content rectangle. the v/h size/pos vars should put the content in the same place regardless of the 16/14 mode. I should also probably go ahead and add the frequency to each scanline as a float so we can eventually send that to a shader.
+I think my issue is I need to calculate a rect as centered on the image. 
+I am now scaling the 910 by 16/14 (1040) and it's pretty close.. but hsize still scales unexpectedly.. </p>
+<h2 id="apr-6-2026">Apr 6, 2026<a class="headerlink" href="#apr-6-2026" title="Permanent link">&para;</a></h2>
+<p>ok, so where are we at then. VideoScanGenerator2 is working, minus the one scaling tweak above. I probably want to tweak the parameters to be closer to 2:4 scale. Double check the default window size.</p>
+<p>It should be called VideoScanGeneratorGSRGB. Do a cleanup pass on the code - there is a bunch of stuff we no longer need, at all, since we are emitting the final frame directly. Need to put the dhgr monochrome mode back in.</p>
+<p>Now, I can clean up VideoScanGenerator and call it VideoScanGeneratorComp. by clean up I mean, get rid of a bunch of the hacks put in to support some the RGB stuff. And it should have the same API as VSGGSRGB. The border generation and handling might be different, i.e., emit those 4-bit patterns I discovered.</p>
+<p>What did I say, the Composite Monochrome mode is grayscale and looks like the RGB output in that it's not bit patterns, it's the luma. I think I will defer supporting this until later, but, it shouldn't be that hard honestly.</p>
+<p>ah oops I'm a few pixels short of the scanline, hm now what. it looks like 4? in hires, maybe 3 in dhr? more than that.
+ok so I check for hcount=39.</p>
+<p>ok, so the funky lores7m mode. The allowed colors are only 4: 0000, 0011 (purple), 1100 (green), 1111 (white)
+color value (0-15)
+0000 = 0000
+0001 = 0000
+0010 = 1100
+0011 = 0000
+0100 = 0000
+0101 = 1100
+0110 = 1100
+0111 = 1100
+1000 = 0000
+1001 = 0011
+1010 = 1100
+1011 = 0011
+1100 = 0000
+1101 = 1111
+1110 = 1100
+1111 = 1111
+^^ this takes into account the offset. So, retest using:</p>
+<p>are these based on the pixel values? Or pixel + location?
+do same pattern offset by 1 on 481: ah, different. Different for +2, and +3
+but +4 is a repeat of no offset. So in the lores code we are essentially rotating the pattern by hcount%4, i.e. starting the bit pattern at a different point inside the pattern.
+So apply that lookup table above, to the rotation.
+400:0 404:8
+480:1 484:9
+etc.</p>
+<p>ok, pixel values without rotation/offset:</p>
+<p>0000 = 0000
+0001 = 0011
+0010 = 1100
+0011 = 1111
+0100 = 0000
+0101 = 0011
+0110 = 1100
+0111 = 1111
+1000 = 0000
+1001 = 0011
+1010 = 1100
+1011 = 1111
+1100 = 0000
+1101 = 0011
+1110 = 1100
+1111 = 1111</p>
+<p>So it's rotate, double bits 0-1 (e.g. 00 = 0000, 01 = 0011, etc). yeah that's kind of what I was doing, doubling the bits but repeating the pattern over 7 bits.
+I'm sort of close; 0-3 are ok and C-F are ok but the 2nd and 3rd groups are reversed. So what does that imply.. 
+should we be looking at bits 2-3 instead of bits 0-1?</p>
+<p>0000 = 0000
+0001 = 0011
+0010 = 1100
+0011 = 1111</p>
+<p>0100 = 0000
+0101 = 0011   &gt; 1100
+0110 = 1100   &gt; 0011
+0111 = 1111
+1000 = 0000
+1001 = 0011   &gt; 1100
+1010 = 1100   &gt; 0011
+1011 = 1111</p>
+<p>1100 = 0000
+1101 = 0011
+1110 = 1100
+1111 = 1111</p>
+<p>agh ok let's do more test data here.
+400:0 0 0 0 8 8 8 8
+480:1 1 1 1 9 9 9 9
+500:2 2 2 2 A A A A
+580:3 3 3 3 B B B B
+600:4 4 4 4 C C C C
+680:5 5 5 5 D D D D
+700:6 6 6 6 E E E E
+780:7 7 7 7 F F F F</p>
+<h2 id="apr-7-2026">Apr 7, 2026<a class="headerlink" href="#apr-7-2026" title="Permanent link">&para;</a></h2>
+<p>ok, so there are really only two phases. 0 / 2 are always the same. 1/3 are always the same. which makes sense since we're shifting out at 1/2 rate. (at normal 14mhz rate there would be 4 phases per normal composite lores code, 4 bits).</p>
+<p>Ahhh. So phase 0 we use the two low bits. Phase 1 we use the two high bits to determine the color? Forget rotating.
+So, it does use the hi bits, but the meaning of 01 and 10 are reversed with phase=1. That makes sense, because the phase is shifted so that would put the dots in a different location and reverse the colors. I am using a small LUT for this to avoid more math. But, it's working!!</p>
+<p>So I don't think I need any of this colormode setting stuff. </p>
+<p>For doing grayscale, claude suggests this approach:</p>
+<pre><code>// Pass 1: Red channel contribution (0.299)
+SDL_SetTextureColorMod(srcTexture, 76, 0, 0);   // 0.299 * 255 ≈ 76
+SDL_SetTextureBlendMode(srcTexture, SDL_BLENDMODE_ADD);
+SDL_RenderTexture(renderer, srcTexture, NULL, NULL);
+
+// Pass 2: Green channel contribution (0.587)
+SDL_SetTextureColorMod(srcTexture, 0, 150, 0);  // 0.587 * 255 ≈ 150
+SDL_RenderTexture(renderer, srcTexture, NULL, NULL);
+
+// Pass 3: Blue channel contribution (0.114)
+SDL_SetTextureColorMod(srcTexture, 0, 0, 29);   // 0.114 * 255 ≈ 29
+SDL_RenderTexture(renderer, srcTexture, NULL, NULL);
+</code></pre>
+<p>https://claude.ai/chat/11362068-5805-4379-ac67-3f60b57ca8c6</p>
+<p>it also has a much simpler fragment shader that just does the formula 
+float luma = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));</p>
+<h2 id="apr-8-2026">Apr 8, 2026<a class="headerlink" href="#apr-8-2026" title="Permanent link">&para;</a></h2>
+<p>Ahh, the size issue wasn't the position or scale, it was just that hgr/dhgr weren't quite wide enough because I wasn't rendering all the pixels. So it's actually working fine now.</p>
+<p>There is an interesting discontinuity when I change between hgr/shr modes, starting at cycle 0 and proceeding for a bit. Perhaps we are initially rendering the data incorrectly, some variable hasn't caught up? I guess we'll see if it happens in the emu.</p>
+<p>so using VideoScannerII, we only ever have 560 pixels across in the buffer. No border or hbl/vbl areas are created. I could create a hbl area.</p>
+<p>ok, my iie rect is not working right with vsg_gs. because vsg_gs does not modify the position based on 40/80 col. So with vsg_gs, use same rect as ii.
+well that's pretty good then, I have borders matching the last edition of Video Stuff (except on GS the borders aren't stretched oddly, they're same aspect ratio as the rest of the pixels). I suppose if I ever want to change that.</p>
+<p>now there's a note - we are technically overflowing a scanline in the pixmap. The only reason we're not crashing on the last scanline, is that we vsync before we get to the end of it, throwing us back up to scanline 0. So I could increase the buffer size to match what we need for SHR (not that many more pixels), and avoid this concern.</p>
+<p>There is some additional fallout from this. First, we want to make sure that we have a 2:4 integral ratio at default settings, just like we do now. But second, there are references to border size all over the existing code. This goes away. </p>
+<p>I'm wondering about screen area height and differences on the II vs IIgs. People would likely have tuned their monitors to reduce the border area. On a GS, they would tune the monitor to be the right size for SHR mode where it would run mostly, meaning text would use less of the vertical area of the monitor. So that's how I have it tuned right now, with a lower border of 29 instead of 21. </p>
+<p>Next step is to refactor original VideoScanGenerator -&gt; VideoScanGenerator_Comp, for Composite, which creates the bit stream for the final conversion / rendering stage. I guess I just have the two modes, really, color and monochrome.</p>
+<p>Currently, VSG generates to three possible different textures: border texture; apple2 texture; and shr texture. Then we compose them accordingly. The key difference here is that we have to generate ntsc dots for the borders. Let me re-read that research above.</p>
+<p>here is a matrix</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Color</th>
+<th>Mono</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>text</td>
+<td>grayscale</td>
+<td>grayscale</td>
+</tr>
+<tr>
+<td>gr</td>
+<td>ntsc bitstream</td>
+<td>grayscale</td>
+</tr>
+<tr>
+<td>shr</td>
+<td>ntsc border + fringey shr</td>
+<td>grayscale</td>
+</tr>
+</tbody>
+</table>
+<p>So, to do this grayscale mode, for text, gr, hgr, dhgr - use a <strong>mono lookup table</strong> and use VSG_RGB. for shr, it is the shr stuff grayscale, but borders are ntsc dots.
+I could do shr + composite, it would take regenerating the lookup table at a higher frequency. I'm not sure how the RGB-to-composite chip does this exactly, it may be that it's sampling the rgb signals and interpolating? Short version is, this is not important for roadmap. I bet the converter chip is what's doing the gray modes, and it does it based on whether the colorburst signal is on or off.</p>
+<p>For color composite, on II/II+/IIe, that's the same as it's always been, render to a 560/567x192 texture. So I'm going to generate a bunch of 0 bytes (one zero byte per pixel here).
+For color composite on GS, insert border pixels .. it will be kind of like lores. a lot like lores. we will emit a synched bit pattern of the color number. (might have to map the color number?) but it's otherwise exactly the same as lores (we'll only use for legacy modes, so always 14 dots across == lores). Then we'll do a little larger rectangle. This will then do the right thing when we use mono setting.
+Alternative: just use regular composite, and render a static border like the AppleII code does.
+For shr in composite mode, just use VSG_RGB for now. I do not understand how composite is generating colored text. it seems like it's mixing the foreground and background dots, however, it's not strictly on the "dots" basis. it seems like the GS composite chip can generate a colored dot in the correct place with somewhat arbitrary colors! That's a whole different kettle than what I implemented so far.
+in GS2 today, I do not try to do any of the following in GS composite: color text; I do the border tho.</p>
+<h2 id="apr-9-2026">Apr 9, 2026<a class="headerlink" href="#apr-9-2026" title="Permanent link">&para;</a></h2>
+<p>ok, reading the MC1377 datasheet I have confirmed that the GS composite output is produced from the RGB analog signals. The color/mono signal controls generation of colorburst into the 1377. The "bit patterns" I have seen are likely just the result of the 1377's conversion process. i.e., when I see "solid" color that's because the 1377 is generating those patterns. i.e. the GS comp is generated from its RGB which is generated from the LUT. So the renderings are -not- the apple iie renderings, they're fuzzed-out GS RGB renderings. This could perhaps be done relatively easily with a shader.</p>
+<p>now I -could- do a 'composite mode' for GS, which is just the RGB mode, with the ability to generate mono out. Can use 3 small LUT and addition for the color-&gt;luma conversion, and color selection for the monochrome output. (as small as 16 entries each for R, G, B.) Is it worth even having the switch? or can just respect the mono softswitch using the RGB mode. yeah, let's just do it in RGB mode so people don't have to switch the monitor setting.
+Still have composite color/green/amber/white. </p>
+<p>First step then, backing up, is to do mono mode in RGB. ok, I have that for text, lores, hires, dhgr. not shr. I tried a big LUT for shr and it added pretty significant time, as we're now blowing cache lookups. Ah, instead of using a 4096 lookup, we already have a LUT - the palette! and we're already indexing that. So what we can do is pre-calculate this stuff. Pre-scale the colors from 4 to 8 bit; and pre-calculate the color and the mono version of the palette.</p>
+<p>WIN: precalculating the 24-bit RGB (color or mono) values when palette entries are set gives us about a 10% performance boost on the overall loop.
+And using a pointer resulted in higher usage. So let's try doing that with the text/lores colors.
+Ah, yes, we get that same 10% back in text mode etc.
+As we stand, we're only a hair slower than original vpp on text40; (20-30uS). similar differences for text80, lores, lores80.
+Hires is 100uS worse!! ugh! dhgr almost 200uS worse! 
+shr320 140uS worse; shr640 90uS worse. These figures are all so weird.
+We -are- generating and copying a lot more data into the gpu. So.. </p>
+<p>But for this price we have gained some features and accuracy. The SHR is still way more expensive. Is that because of how much border data we're emitting? Probably.. 
+ok, I replaced the std::queue with a custom ring buffer - hires is now same time as before! dhgr is only slightly (10uS?) slower than before. This leaves only SHR to work on.
+320 takes more time than 640? That hardly makes sense.
+So I disabled border generation and am just doing advance. text40/80: saves 80uS! shr: saves 55uS! 
+ok. So I created a push_n to push the same value n times and only add to the index after the loop. That is saving us 40-50uS on border on text!
+it's shaving up to 50uS on shr320. nothing on 640 because those are already distinct pixels.
+Using push_n(2) on text40 pixels gave me another 20uS there!
+lores is currently 300uS. holy SH!T I'm now about 165-180uS. massive difference.
+WHAT IS EVEN GOING ON RIGHT NOW.
+there is a serious price to pay updating loc every time inside Frame.
+Well at this point, except for the shr modes which are a little slower than before, all the modes are now FASTER than the current VSG+RGB.
+I don't need to, but I wonder how it would be if I write 0's for blank. it seems to speed up text a bit, but slow down lores. (WEIRD).</p>
+<p>This is a chart of measured voltages and corresponding (estimated) rgb values from a real gs:
+https://docs.google.com/spreadsheets/d/1kvbVGTf2rpywoJe3FvliAD_KdN74aBL9uMcQSybTc6Q/edit?gid=0#gid=0</p>
+<p>I currently have a conflict of color values between this GuS lookup table, and the other one I'm using. These need to be rationalized to be exactly the same colors. ok, I hand edited in the colors (that match Renee's) into the GuS order, and all the colors now seem to match. But are they correct? There's what the mobo says, and there's what actually comes out of the monitor.</p>
+<p>[ ] Test RGB monitor colors.  </p>
+<h2 id="apr-10-2026">Apr 10, 2026<a class="headerlink" href="#apr-10-2026" title="Permanent link">&para;</a></h2>
+<p>ok, now to backport all these changes to VSG_Comp.</p>
+<p>VSG_RGB is the completion, but VSG_Comp is just one stage, and the renderers are after it. For partial updates, need to maintain the bitmap, and pass the bitmap through to the renderers. The renderers would do the full frame decode, and need to save/restore the hloc/scanline in the source frame.</p>
+<p>generate_frame can process only a partial frame. So maybe the thing to do is, when generate_frame has done that, IT will call the appropriate renderer, which we have injected. Then the output of generate_frame is the same - a FrameVSG. Ah, and the FrameByte representation is just internal then.</p>
+<p>Currently, in GS mode, composite doesn't do borders. So leave that as-is. Do we have any hooks to pass border color to renderer, in FrameByte? unclear.</p>
+<p>OK starting to come together. Render now has proper virtual methods. and VSG_Intf is now a interface base class so we can more easily choose between the two VSG classes (with a pointer switch, instead of an if statement).
+Render is now injected into VSG. it's ignored in RGB. And you now set the composite mono color using a method call, instead of passing it at render time. I've been able to use the push_n method to speed up composite text40 rendering.</p>
+<p>Everything seems to be working in vpp! at least the way it used to. (I dunno, did I used to have border in ntsc mode?)</p>
+<p>there is some leftover logic in NTSC560 to create transparent pixels. don't need that any more.</p>
+<p>naming.. Render is really CompositeRender. VSG could be, more succinctly, VideoGenerator.</p>
+<p>Well ok, it's time to integrate into display.cpp!
+Then do some heavy duty testing.</p>
+<p>Then change LS mode to use this same code, but by feeding in 17,030 cycles (full frame) instead of 
+then make sure single step debugger still working with this
+then provide switch in debugger to flip between partial update mode and full frame update mode.</p>
+<p>shr mode, we're not scaling the render correctly - i.e. we're not using the right rectangle. Hm I have some weird artifact on the scanline right before the first data line. I think it corresponds to going a cycle or 3 over 17,030. Sometimes we start a frame at H1-3 and that's probably what this is. in vpp2 it's exactly 17030 cycles. so the border is the wrong color? </p>
+<p>oh, so many bugs! Probably something wrong with palettes. However, the border effects on GSIRC and Synchro Cyclo work.
+Definitely palette problems in shr. I'm going to guess something to do with the changes I made to VideoScannerIIgs.  Look at it more tomorrow.
+Crazy Cycles 2 first demo, colors are wrong! Maybe 3rd demo too? Definitely the wrong colors. Hm. Something to do with the color mask?
+ok, yes, I was forgetting to reset the byte mask to ff after a NODELAY. (basically after any ctrl-reset).</p>
+<p>The screen cap might need to grab a sub-rectangle instead of the whole texture. or we might want to grab a different one based on mode..</p>
+<h2 id="apr-11-2026">Apr 11, 2026<a class="headerlink" href="#apr-11-2026" title="Permanent link">&para;</a></h2>
+<p>ahh, the issue could be changing into SHR mid-frame and then the palette index gets out of sync because we don't generate the palette lookup commands unless we're in shr mode. (Clod is thinking extra hard on this one)
+I used to reset palette_index at start of frame. or on an hsync.
+Maybe reset palette_index whenever we have just seen an shr_mode. (This seems to be working!)
+Also the No Hard Feelings intro screen looks amazing doing all the mode switching between 14/16. shr stuff gets stretched out past the border etc. It's whack! In a good way.
+However there is the occasional line artifact with a blank or mostly blank line. the main part of no hard feelings doesn't do anything weird, other than maybe something to do with the fill-mode at start of scanline thing?</p>
+<p>beam_h is only used for debugging / display in vpp. should I track this separately as I do now, or just fetch it from the frame?
+The difference between vpp2 and gs2 is definitely that vpp2 always generates exactly 17030 cycles worth of data. What if we have slightly less than 17030 cycles? try 17029.. the "missing" cycle shows up as black. Ah. Ha. the reason we're not permanently out of sync is that we make it up the next frame. So this is the bug.. </p>
+<p>We want to emit the frame to video at the end of vsync..
+YES!!!! This way some data is left for processing the next frame, and we have now synced vsync in the emulator with vsync in the real world too. I should do the same thing in Comp.. 
+Hm I am overrunning my buffer. in shr with border effects the border is overrunning. So 910 is not enough. But that's not the discontinuity in the demo. I think that's a timing thing. GSIRC border effects are fine. We do still have a timing issue in textfunk. </p>
+<p>ok, did I deal with all the new bugs? I want to push! it's ok, push it now and do some cleanups.</p>
+<p>Display should have a routine to set up the modes: 
+   rgb, ntsc, mono (with colors)</p>
 
 
 
