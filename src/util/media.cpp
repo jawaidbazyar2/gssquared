@@ -162,6 +162,7 @@ const char * get_media_type_name(media_type_t media_type) {
         case MEDIA_NYBBLE: return "NYBBLE";
         case MEDIA_PRENYBBLE: return "PRE-NYBBLE";
         case MEDIA_BLK: return "BLOCK";
+        case MEDIA_WOZ: return "WOZ";
         default: return "UNKNOWN";
     }
 }
@@ -371,6 +372,14 @@ int identify_media(media_descriptor& md) {
         md.data_size = 140 * 1024;
         md.block_size = 256;
         md.block_count = 560; // assumed 560 sectors on a 143K diskette.
+        md.interleave = INTERLEAVE_NONE;
+        md.data_offset = 0;
+    } else if (compare_suffix(md.filename, ".woz")) {
+        md.media_type = MEDIA_WOZ;
+        md.file_size = get_file_size(md.filename);
+        md.data_size = md.file_size;
+        md.block_size = 512;
+        md.block_count = md.file_size / md.block_size;
         md.interleave = INTERLEAVE_NONE;
         md.data_offset = 0;
     } else {

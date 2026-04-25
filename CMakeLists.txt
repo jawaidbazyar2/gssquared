@@ -330,6 +330,14 @@ add_library(gs2_ntsc src/display/ntsc.cpp src/display/Matrix3x3.cpp src/display/
 
 add_library(gs2_diskii src/devices/diskii/ndiskii.cpp)
 
+add_library(gs2_devices_diskii_woz
+    src/devices/diskii/Floppy525_woz.cpp
+    src/devices/diskii/ndiskii_woz.cpp
+)
+
+add_library(gs2_woz src/util/woz.cpp)
+target_link_libraries(gs2_woz gs2_devices_diskii_fmt gs2_util)
+
 add_library(gs2_message_bus src/mbus/MessageBus.cpp)
 
 add_library(gs2_paths src/paths.cpp)
@@ -356,6 +364,7 @@ target_link_libraries(gs2_cpu gs2_trace)
 target_link_libraries(gs2_mmu gs2_trace gs2_cpu)
 target_link_libraries(gs2_devices_adb gs2_util)
 target_link_libraries(gs2_devices_iwm gs2_devices_diskii_fmt)
+target_link_libraries(gs2_devices_diskii_woz gs2_woz gs2_devices_diskii_fmt gs2_util)
 
 # Add the executable
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
@@ -416,6 +425,7 @@ target_link_libraries(GSSquared
     gs2_devices_rtc_pram
     gs2_devices_adb
     gs2_diskii
+    gs2_devices_diskii_woz
     platform_specific
 )
 
@@ -431,6 +441,8 @@ add_subdirectory(apps/nibblizer)
 add_subdirectory(apps/denibblizer)
 
 add_subdirectory(apps/diskid)
+
+add_subdirectory(apps/wozutil)
 
 #add_subdirectory(apps/speaker) # Temporarily remove until I make a "fake computer" interface.
 

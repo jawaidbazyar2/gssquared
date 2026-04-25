@@ -10571,7 +10571,7 @@ Technically we also still need a poweronreset in everything past appleII. otherw
 
 [x] There is some OSD stuff being drawn for a couple frames in the upper left corner of the display. The disk drives I think.  
 [x] Also, the screen background is being drawn in the background color of the SelectSystem tiles on startup now.  
-[ ] add reset handler to gamecontroller (for AN0-3 OFF)  
+[x] add reset handler to gamecontroller (for AN0-3 OFF)  
 [ ] add reset down-up distinction to the OSD HOV RESET button.  
 
 so on my IIe (enhanced), if in text mode you stay in text mode (so the text/graphics switch is left alone). if in any graphics mode, lo-res is forced along with the 7M timing (i.e., LORES7M). So that is, I think, ANC3 is forced off. (maybe all the ANCs). and the HIRES switch is turned off.
@@ -10853,7 +10853,7 @@ GS/OS is not calling eject when I eject a disk.. there may be some status or cap
 
 the smartport code is very repetitious. Let's examine it for code reuse. Big win here!
 
-[ ] there's a bug in 5.25 floppy code, sometimes when I insert a disk when the drive is spinning (but empty) it reads partially but eventually craps out.
+[x] there's a bug in 5.25 floppy code, sometimes when I insert a disk when the drive is spinning (but empty) it reads partially but eventually craps out.
 
 ## Mar 21, 2026
 
@@ -11570,7 +11570,7 @@ Going to have Clod do an audit for other similar problems to STA (ZP),Y. Ah yeah
 
 The decorrelation works better when I push it to 256 samples, which is about 5ms. gives it a bit of a "big room" reverb feel. doesn't hurt the tonality too much. Stereo is certainly the best here tho. So, for sure have a user option.
 
-[ ] Add "Mockingboard/Mono" menu setting to enable decorrelation on right channel.  
+[x] Add "Mockingboard/Mono" menu setting to enable decorrelation on right channel.  
 [ ] add mockingboard cycle hook into NClockIIgs
 
 When mockingboard is on but all of one chip is off, should we treat it as mono and copy live chip to the other channel?
@@ -11598,3 +11598,35 @@ so Drol is supposed to use AKD but I don't think it does. this internet post: "A
 well that's what I'm seeing.. oh, ctrl-J switches between keyboard and joystick mode, so don't use the down arrow!!! ok so it's probably fine, just not using AKD. Well, Jason may implement AKD!
 
 OK, I've gone through that.
+
+## Apr 23, 2026
+
+Get back to ui button up the hard disk multi volume stuff
+
+[x] Add ui option for right mouse button speedup
+
+Settle on config storage (use mikes format?)
+
+Cut a release 
+
+Drag and drop. 
+If you just drop on the window generally, it should automatically match the first available drive. If you drag and drop onto the drive icon specifically it replaces that drive. The hard disk icon should be twice as wide and if you click on it you get a list of volumes to unmount. Otherwise it works the same. It's status should display the block number and the file name as it does now 
+
+[x] pdblock3 firmware also needs to jump back into the right place in boot sequence. (JMP SLOOP)
+
+Shoot, I really need to do the 3.5 drives first on GS, then I can stop using pdblock3 as if it was 3.5 drives.
+
+Maybe a good place to start is using a pre-nibblized image, like a .woz file for 3.5. should be easy to create these (ciderpress2, applesauce) and defer internally creating the nibbles or decoding them for writeback later. This may just be the point where I have to implement .woz.
+info about 3.5 nibblizations.
+https://ciderpress2.com/formatdoc/Nibble-notes.html
+
+## Apr 24, 2026
+
+made a blank 800K .woz image to check out some elements of the format. First, it definitely puts in FF as a stream of 10 bits: 0011111111. However by the time we get to D5AA96 those are in "sync". is the number of FF's constrained to do that intentionally?
+
+See Woz format notes in Woz.md.
+
+[ ] being in atari joystick mode is back to making ctrl-oa-reset not work on iie  
+
+[ ] bug in GS AKD - if you hold G, then H, then release H, we still show AKD, but real GS has AKD=0.  
+

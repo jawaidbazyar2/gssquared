@@ -206,7 +206,8 @@ bool Floppy525::writeback() {
 //void Floppy525::nibblize() {}
 
 drive_status_t Floppy525::status() {
-    if (is_mounted) return {is_mounted, media_d->filestub, enable, track, modified, media_d->write_protected};
+    // double 'track' here, 2 bits of fraction.
+    if (is_mounted) return {is_mounted, media_d->filestub, enable, track<<1, modified, media_d->write_protected};
     else return {is_mounted, "", enable, track, modified, false};
 }
 

@@ -93,6 +93,7 @@ typedef enum media_type_t {
     MEDIA_NYBBLE, /* 143K disk that needs nibblization on load */
     MEDIA_PRENYBBLE, /* 143K Diskette - pre-nibblized */
     MEDIA_BLK, /* generic block image */
+    MEDIA_WOZ, /* WOZ 1.0 or 2.x bitstream disk image */
 } media_type_t;
 
 typedef enum media_interleave_t {
