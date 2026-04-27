@@ -194,7 +194,7 @@ void txt_bus_write_C053(void *context, uint32_t address, uint8_t value) {
 void reset_page2(display_state_t *ds) {
     // switch to page 1
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Switching to page 1\n");
-    //set_display_page1(ds);
+    ds->display_page_num = DISPLAY_PAGE_1;
     /* if (!ds->framebased) */ ds->video_scanner->set_page_1();
 }
 
@@ -213,7 +213,7 @@ uint8_t txt_bus_read_C055(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
     // switch to screen 2
     if (DEBUG(DEBUG_DISPLAY)) fprintf(stdout, "Switching to page 2\n");
-    //set_display_page2(ds);
+    ds->display_page_num = DISPLAY_PAGE_2;
     /* if (!ds->framebased) */ ds->video_scanner->set_page_2();
     return ds->mmu->floating_bus_read();
 }
