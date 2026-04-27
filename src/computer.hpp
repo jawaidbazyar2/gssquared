@@ -18,6 +18,7 @@
 #include "util/AudioSystem.hpp"
 #include "util/SoundEffect.hpp"
 #include "systemconfig.hpp"
+#include "device_reset_id.hpp"
 
 class SlotManager_t; // forward declare.
 
@@ -77,6 +78,7 @@ struct computer_t {
     
     EventTimer *event_timer = nullptr;
     EventTimer *vid_event_timer = nullptr;
+    EventTimer *cpu_event_timer = nullptr;
 
     EventQueue *event_queue = nullptr;
 
@@ -121,6 +123,7 @@ struct computer_t {
     void *cached_display_state = nullptr;
 
     int powerup_reset_cycles = 2;
+    uint64_t last_reset = 0;
 
     clock_mode_t old_speed;
 
@@ -136,6 +139,7 @@ struct computer_t {
     void set_video_scanner(video_scanner_t video_scanner) { this->video_scanner = video_scanner; }
     video_scanner_t get_video_scanner() { return video_scanner; }
     void reset(bool cold_start);
+    void assert_reset(device_reset_id reset, bool assert);
     void set_frame_start_cycle();
     uint64_t get_frame_start_cycle() { return frame_start_cycle; }
 

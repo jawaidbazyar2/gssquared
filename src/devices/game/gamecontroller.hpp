@@ -46,6 +46,8 @@
 
 #define MAX_GAMEPAD_COUNT 2
 
+struct computer_t;
+
 typedef struct gamepad_state {
     SDL_JoystickID id;
     SDL_Gamepad *gamepad;    
@@ -72,7 +74,7 @@ typedef enum joystick_mode {
 
 typedef struct gamec_state_t {
     joystick_mode_t joystick_mode = JOYSTICK_APPLE_GAMEPAD;
-    uint64_t joyport_activate = 0;
+    //uint64_t joyport_activate = 0;
 
     int game_switch_0;
     int game_switch_1;
@@ -92,8 +94,8 @@ typedef struct gamec_state_t {
 
     EventQueue *event_queue;
     MMU_II *mmu;
-    cpu_state *cpu;
     NClock *clock;
+    computer_t *computer;
 
     JoystickValues last_jv = {0, 0};
 } gamec_state_t;

@@ -304,6 +304,9 @@ bool run_one_frame(computer_t *computer) {
             if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
                 computer->vid_event_timer->processEvents(clock->get_vid_cycles());
             }
+            if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
+                computer->cpu_event_timer->processEvents(clock->get_cycles());
+            }
             (cpu->cpun->execute_next)(cpu);
             computer->instructions_left--;
         }
@@ -351,6 +354,9 @@ bool run_one_frame(computer_t *computer) {
                 if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
                     computer->vid_event_timer->processEvents(clock->get_vid_cycles());
                 }
+                if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
+                    computer->cpu_event_timer->processEvents(clock->get_cycles());
+                }
                 // do the pre check.
                 if (computer->debug_window->check_pre_breakpoint(cpu)) {
                     computer->execution_mode = EXEC_STEP_INTO;
@@ -380,6 +386,9 @@ bool run_one_frame(computer_t *computer) {
                 }
                 if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
                     computer->vid_event_timer->processEvents(clock->get_vid_cycles());
+                }
+                if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
+                    computer->cpu_event_timer->processEvents(clock->get_cycles());
                 }
                 (cpu->cpun->execute_next)(cpu);
             }
@@ -435,6 +444,9 @@ bool run_one_frame(computer_t *computer) {
                 if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
                     computer->vid_event_timer->processEvents(clock->get_vid_cycles());
                 }
+                if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
+                    computer->cpu_event_timer->processEvents(clock->get_cycles());
+                }
                 if (computer->debug_window->check_pre_breakpoint(cpu)) {
                     computer->execution_mode = EXEC_STEP_INTO;
                     computer->instructions_left = 0;
@@ -462,6 +474,9 @@ bool run_one_frame(computer_t *computer) {
                 }
                 if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
                     computer->vid_event_timer->processEvents(clock->get_vid_cycles());
+                }
+                if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
+                    computer->cpu_event_timer->processEvents(clock->get_cycles());
                 }
                 (cpu->cpun->execute_next)(cpu);
             }

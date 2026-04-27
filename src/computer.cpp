@@ -64,7 +64,7 @@ computer_t::computer_t(NClockII *clock) {
         cpu->reset_asserted = reset_asserted;
         if ((reset_asserted) && (!old)) { // if reset was NOT asserted, but now is, call reset() chain.
             reset(false);
-        }
+        } else last_reset = this->clock->get_cycles(); // catch deassert
     });
 
     audio_system = new AudioSystem();
@@ -76,8 +76,10 @@ computer_t::computer_t(NClockII *clock) {
 
     cpu = new cpu_state(PROCESSOR_6502); // default to 6502, then we will override later.
 
-    event_timer = new EventTimer(clock); // TODO: clock needs to be set before here?
-    vid_event_timer = new EventTimer(clock); 
+    //  clock needs to be set before here
+    event_timer = new EventTimer(clock); // runs at 14MHz clock speed.
+    vid_event_timer = new EventTimer(clock); // runs at video clock speed (always 1MHz)
+    cpu_event_timer = new EventTimer(clock); // runs at cpu clock speed.
 
     slot_manager = new SlotManager_t();
     mounts = new Mounts();
@@ -282,7 +284,7 @@ DebugFormatter *computer_t::call_debug_display_handler(std::string name) {
 }
 
 void computer_t::reset(bool cold_start) {
-
+    last_reset = clock->get_cycles(); // catch this here (assert or instantaneous)
     if (cold_start) {
         // force a cold start reset
         mmu->write(0x3f2, 0x00);

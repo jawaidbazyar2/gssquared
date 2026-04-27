@@ -200,7 +200,7 @@ uint8_t read_game_input_3(void *context, uint32_t address) {
 uint8_t read_game_switch_0(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
     
-    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->joyport_activate)) { // reverse polarity for atari
+    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->computer->last_reset + 100000)) { // reverse polarity for atari
         bool val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
         return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);    
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
@@ -230,7 +230,7 @@ uint8_t read_game_switch_0(void *context, uint32_t address) {
 uint8_t read_game_switch_1(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
 
-    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->joyport_activate)) {
+    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->computer->last_reset + 100000)) {
         bool val = false;
 
         bool anc_1 = ds->annunciators[1];
@@ -269,7 +269,7 @@ uint8_t read_game_switch_1(void *context, uint32_t address) {
 uint8_t read_game_switch_2(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
 
-    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->joyport_activate)) {
+    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->computer->last_reset + 100000)) {
         bool val = false;
 
         bool anc_1 = ds->annunciators[1];
@@ -446,7 +446,6 @@ void annunciator_write_C0xx_anc0(void *context, uint32_t addr, uint8_t data) {
 
 
 void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
-    cpu_state *cpu = computer->cpu;
     
     SDL_InitSubSystem(SDL_INIT_GAMEPAD);
     // alloc and init display state
@@ -454,7 +453,7 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     ds->event_queue = computer->event_queue;
     ds->mmu = computer->mmu;
     ds->clock = computer->clock;
-    ds->cpu = cpu;
+    ds->computer = computer;
 
     ds->joystick_mode = JOYSTICK_APPLE_GAMEPAD;
     ds->game_switch_0 = 0;
@@ -543,8 +542,10 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
 
     computer->register_reset_handler(
         // might need to be longer for GS, since GS may take longer to get around to check buttons on reset.
-        [ds,cpu]() {
-            ds->joyport_activate = ds->clock->get_cycles() + 100000; // 100ms
+        [ds]() {
+            // TODO: erp. reset used to be instant. now if we hold reset, the cpu clock keeps ticking and
+            // we exceed our 100,000 cycle delay here rapidly. 
+            //ds->joyport_activate = ds->clock->get_cycles() + 100000; // 100ms
 
             // reset annunciators
             ds->annunciators[3] = 0;
