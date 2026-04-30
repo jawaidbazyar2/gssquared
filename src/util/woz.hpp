@@ -122,7 +122,8 @@ public:
     // Validates magic cookie and CRC32 (if non-zero).
     // Returns 0 on success, -1 on error.
     int load(const std::string& filename);
-
+    inline std::string get_current_filename() { return current_image_filename; }
+    
     // Write m_image to disk as WOZ 2.x with a freshly computed CRC32.
     // Returns 0 on success, -1 on error.
     int save(const std::string& filename);
@@ -141,7 +142,7 @@ public:
 
     // Returns a pointer to the bit-stream for the given quarter-track index
     // (0–159).  Returns nullptr if the TMAP entry is 0xFF (empty track).
-    const woz_track_t* get_track(int quarter_track) const;
+    const woz_track_t* get_track_ptr(int quarter_track) const;
 
     // ── Human-readable diagnostics ───────────────────────────────────────────
     void dump_info()   const;
@@ -150,7 +151,8 @@ public:
 
 private:
     woz_image_t m_image;
-
+    std::string current_image_filename;
+    
     // ── Bit-stream primitives ────────────────────────────────────────────────
     // Append one bit (0 or 1) to trk, MSB-first within each byte.
     void emit_bit(woz_track_t& trk, int bit);

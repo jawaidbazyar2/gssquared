@@ -59,9 +59,9 @@ class Floppy525: public FloppyDrive {
     virtual bool get_Q6() { return Q6; }
     // The controller only lets one drive be on at a time, and that must be managed by the controller.
     //virtual void motor(bool onoff) override ;
-    virtual void set_track(int track_num) override;
+/*     virtual void set_track(int track_num) override; */
     virtual int get_track() override { return track; } ;
-    virtual void move_head(int direction) override;
+    /* virtual void move_head(int direction) override; */
 
     virtual void write_nybble(uint8_t nybble) override;
     virtual uint8_t read_nybble() override;
@@ -75,6 +75,8 @@ class Floppy525: public FloppyDrive {
 
     virtual bool get_enable() override { return enable; }
     virtual void set_enable(bool enable) override { this->enable = enable; }
+    virtual void set_phase(uint8_t phase, bool onoff) override {}; // TODO: this is a dummy, not used by older 5.25
+    virtual void get_rdpulse() override {}; // TODO: this is a dummy, not used by older 5.25
 
     virtual uint8_t read_cmd(uint16_t address) override;
     virtual void write_cmd(uint16_t address, uint8_t data) override;

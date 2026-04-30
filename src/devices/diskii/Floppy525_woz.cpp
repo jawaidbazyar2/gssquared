@@ -15,6 +15,8 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+ /** Begin Refactoring this to be ONLY the Disk II drive itself interface, separating out all controller elements  */
+
 #include <iostream>
 #include <cstdint>
 #include <cstdio>
@@ -24,114 +26,7 @@
 #include "util/SoundEffectKeys.hpp"
 #include "debug.hpp"
 
-// ─── Head position helpers ────────────────────────────────────────────────────
-
-void Floppy525_woz::set_track(int track_num) {
-    track = track_num;
-}
-
-void Floppy525_woz::move_head(int direction) {
-    track += direction;
-}
-
-// ─── Bit-stream helpers ───────────────────────────────────────────────────────
-
-void Floppy525_woz::update_track_ptr() {
-    // `track` is a half-track index (same as Floppy525).  WOZ TMAP is indexed
-    // by quarter-track, so multiply by 2: half-track N → quarter-track N*2.
-    // (Full track T = half-track T*2 = quarter-track T*4.)
-    cur_track_ptr = woz.get_track(track * 2);
-
-    // Clear LSS state on track change so bits from the old track don't
-    // contaminate the first nibble on the new track.
-    lss_shift = 0;
-    read_shift_register = 0;
-
-    // Re-wrap bit_fp for the new track's revolution length so start_bit
-    // is always in-range.  The disk keeps spinning so the angular position
-    // is preserved; only the modulus changes.
-    if (cur_track_ptr && cur_track_ptr->bit_count > 0) {
-        bit_fp = bit_fp % (cur_track_ptr->bit_count * 8);
-    }
-
-}
-
-void Floppy525_woz::fast_forward() {
-    uint64_t now     = clock->get_cycles();
-    uint64_t elapsed = now - last_cycle;
-    last_cycle = now;
-
-    if (!enable || !cur_track_ptr || cur_track_ptr->bit_count == 0) {
-        // Motor off or no track: still update bit_fp so position is consistent
-        // when the track becomes available, but don't shift any bits.
-        return;
-    }
-
-    uint64_t track_bits = cur_track_ptr->bit_count;
-
-    // Compute new physical position BEFORE updating bit_fp so we can derive
-    // the exact number of whole bit-cells to simulate from the fractional
-    // position already accumulated in bit_fp.
-    //
-    // Using (new_fp >> 3) - (bit_fp >> 3) instead of elapsed/4 is critical:
-    // bit_fp may be mid-cell (e.g. bit_fp=30 = bit 3 + 6/8 of a cell elapsed).
-    // 7 elapsed cycles (14 units) from that position completes cells 3 AND 4,
-    // but elapsed/4=1 would only simulate 1, permanently skipping bits.
-    uint64_t new_bit_fp    = bit_fp + elapsed * 2;
-    uint64_t bits_to_sim   = ((new_bit_fp >> 3) - (bit_fp >> 3)) % track_bits;
-    uint64_t start_bit     = (bit_fp >> 3) % track_bits;
-
-    for (uint64_t i = 0; i < bits_to_sim; i++) {
-        uint64_t bi  = (start_bit + i) % track_bits;
-        uint8_t  bit = (cur_track_ptr->bits[bi / 8] >> (7 - (bi % 8))) & 1;
-        lss_shift = (lss_shift << 1) | bit;
-        if (lss_shift & 0x80) {
-            // LSS latch fires: bit 7 went high.  Capture nibble and reset accumulator
-            // so the next nibble always accumulates from 0 — this is what makes every
-            // valid nibble produce its exact byte value (D5→0xD5, AA→0xAA, 96→0x96).
-            read_shift_register = lss_shift;
-            lss_shift = 0;
-        }
-    }
-
-    // Advance and wrap physical position (1/8-bit-cell units).
-    bit_fp = new_bit_fp % (track_bits * 8);
-}
-
-// ─── Nybble I/O ───────────────────────────────────────────────────────────────
-
-uint8_t Floppy525_woz::read_nybble() {
-    if (!enable) {
-        // Motor off: return the last latched value without advancing.
-        return read_shift_register;
-    }
-
-    fast_forward();
-
-    if (!is_mounted || !cur_track_ptr || cur_track_ptr->bit_count == 0) {
-        // No track data: shift a 1-bit through the LSS accumulator so the
-        // controller sees noise (eventually latches 0xFF as a sync-like byte).
-        lss_shift = (lss_shift << 1) | 1;
-        if (lss_shift & 0x80) {
-            read_shift_register = lss_shift;
-            lss_shift = 0;
-        }
-    }
-
-    // Consume the latch: the Apple II LSS data register is cleared after each
-    // CPU read of Q6L.  This ensures the BPL loop for each prologue byte
-    // (AA, 96) actually waits for the next nibble to accumulate rather than
-    // immediately exiting on the previously latched value.
-    uint8_t val = read_shift_register;
-    read_shift_register = 0;
-    return val;
-}
-
-void Floppy525_woz::write_nybble(uint8_t /* nybble */) {
-    // WOZ write-back requires bit-level splicing into the bitstream.
-    // Deferred: stub only.
-    modified = true;
-}
+// ---- Start Storage Device Interface ────────────────────────────────────────────
 
 // ─── Mount / unmount / writeback ─────────────────────────────────────────────
 
@@ -150,13 +45,16 @@ bool Floppy525_woz::mount(uint64_t key, media_descriptor *media_in) {
         return false;
     }
 
-    bit_fp = 0;
+    //bit_fp = 0;
+    read_position = 0;
+    head_position = 0;
     last_cycle = clock->get_cycles();
-    lss_shift = 0;
-    read_shift_register = 0;
-    write_shift_register = 0;
+    //lss_shift = 0;
+    
+    //data_register = 0; // this lives in controller.
+    
     //track               = 0; // don't reset track. however, we need point to the current track.
-    cur_track_ptr = woz.get_track(track*2);
+    //cur_track_ptr = woz.get_track_ptr(track); // handled inside update_track_ptr()
 
     update_track_ptr();
 
@@ -175,11 +73,12 @@ bool Floppy525_woz::unmount(uint64_t key) {
     // Reset Woz image to a clean blank state
     woz = Woz{};
     cur_track_ptr = nullptr;
-    bit_fp        = 0;
+    //bit_fp        = 0;
+    read_position = 0;
+    head_position = 0;
     last_cycle    = 0;
-    lss_shift            = 0;
-    read_shift_register  = 0;
-    write_shift_register = 0;
+    //lss_shift            = 0;
+    //data_register  = 0;
 
     is_mounted = false;
     media_d    = nullptr;
@@ -218,70 +117,252 @@ bool Floppy525_woz::writeback() {
 
 drive_status_t Floppy525_woz::status() {
     if (is_mounted)
-        return {is_mounted, media_d->filestub, enable, track<<1, modified,
+        return {is_mounted, media_d->filestub, enable, track, modified,
                 media_d->write_protected};
     return {is_mounted, "", enable, track, modified, false};
 }
 
+// TODO: this should be moved to controller which will reset a bunch of stuff.
+// also, if drive not selected, it should turn everything off.
 void Floppy525_woz::reset() {
     enable = false;
 }
 
-// ─── Controller register dispatch ────────────────────────────────────────────
+// ---------------------- END Storage Device Interface ────────────────────────────
 
-uint8_t Floppy525_woz::read_cmd(uint16_t address) {
-    uint16_t reg = address & 0x0F;
+// ─── Head position helpers ────────────────────────────────────────────────────
 
-    if (enable && mark_cycles_turnoff != 0 &&
-        (clock->get_c14m() > mark_cycles_turnoff)) {
-        if (DEBUG(DEBUG_DISKII))
-            printf("motor off: %llu %llu cycles\n",
-                   u64_t(clock->get_c14m()), u64_t(mark_cycles_turnoff));
-        enable = false;
-        mark_cycles_turnoff = 0;
+/* void Floppy525_woz::set_track(int track_num) {
+    track = track_num;
+}
+
+void Floppy525_woz::move_head(int direction) {
+    track += direction;
+} */
+
+/* General methods for setting / reading floppy bus signals */
+void Floppy525_woz::set_phase(uint8_t phase, bool onoff) {
+
+    // first update phase vars..
+    switch (phase) {
+        case 0:
+            phase0 = onoff;
+            break;
+        case 1:
+            phase1 = onoff;
+            break;
+        case 2:
+            phase2 = onoff;
+            break;
+        case 3:
+            phase3 = onoff;
+            break;
     }
 
+    // schedule a phase change in 0.5ms (500 cycles-ish) out.
+    // TODO: come up with a better, calculated instanceID
+    // TODO: I'm a doof, this timer is 14m's.
+    event_timer->scheduleEvent(clock->get_cycles() + 520, phase_change_callback, 0xABAB0001, this);
+    fprintf(dbglog, "schedule_phase_change: %lld + 520 = %lld\n", clock->get_cycles(), clock->get_cycles() + 520);
+}
+
+void Floppy525_woz::get_rdpulse() {
+    // TODO: implement this
+}
+
+/**
+| 2        | PHS0    |
+| 4        | PHS1    |
+| 6        | PHS2    |
+| 8        | PHS3    |
+| 10       | WR REQUEST'   |
+| 14       | ENABLE'   |
+| 16       | RDPULSE   |
+| 18       | WRITE SIGNAL   |
+| 20       | WRPROTECT'   |
+ */
+
+// ─── Bit-stream helpers ───────────────────────────────────────────────────────
+
+void Floppy525_woz::update_track_ptr() {
+    // `track` is a half-track index (same as Floppy525).  WOZ TMAP is indexed
+    // by quarter-track, so multiply by 2: half-track N → quarter-track N*2.
+    // (Full track T = half-track T*2 = quarter-track T*4.)
+    cur_track_ptr = woz.get_track_ptr(track);
+
+    // Re-wrap read_position for the new track's revolution length so start_bit
+    // is always in-range.  The disk keeps spinning so the angular position
+    // is preserved; only the modulus changes.
+    if (cur_track_ptr && cur_track_ptr->bit_count > 0) {
+        //bit_fp = bit_fp % (cur_track_ptr->bit_count * 8);
+        head_position = head_position % (cur_track_ptr->bit_count * 8);
+        read_position = head_position;
+    }
+}
+
+namespace {
+
+// Index: phase0 | (phase1 << 1) | (phase2 << 2) | (phase3 << 3). Value: detent 0…7
+// (0° = phase1 / +x, then 45° steps CCW in math coords with phase0 as +y).
+constexpr int8_t kDetentFromPhases[16] = {
+    // Phase0 | Phase1 | Phase2 | Phase3 | Detent
+    //   0    | 0      | 0      | 0      | -1  N/A
+    //   1    | 0      | 0      | 0      | 0
+    //   0    | 1      | 0      | 0      | 2
+    //   1    | 1      | 0      | 0      | 1
+    
+    //   0    | 0      | 1      | 0      | 4
+    //   1    | 0      | 1      | 0      | -1  N/A
+    //   0    | 1      | 1      | 0      | 3
+    //   1    | 1      | 1      | 0      | 2
+
+    //   0    | 0      | 0      | 1      | 6
+    //   1    | 0      | 0      | 1      | 7
+    //   0    | 1      | 0      | 1      | -1  N/A
+    //   1    | 1      | 0      | 1      | 0
+
+    //   0    | 0      | 1      | 1      | 5
+    //   1    | 0      | 1      | 1      | 6
+    //   0    | 1      | 1      | 1      | 4
+    //   1    | 1      | 1      | 1      | -1  N/A
+
+    -1, 0,2,1,4,-1,3,2,6,7,-1,0,5,6,4,-1
+
+};
+
+} // namespace
+
+// ─── Controller register dispatch ────────────────────────────────────────────
+
+void Floppy525_woz::update_track() {
+
     int8_t cur_track = track;
-    int8_t cur_phase = cur_track % 4;
+    int8_t cur_phase = (cur_track % 8);
+
+    const unsigned phase_bits =
+        (phase0 << 0) | (phase1 << 1) | (phase2 << 2) | (phase3 << 3);
+    const int8_t detent = kDetentFromPhases[phase_bits];
+    if (dbglog) fprintf(dbglog, "--- %lld update_phases: detent: %d\n", clock->get_cycles(), detent);
+    if (detent == -1) return;  // forces cancel
+    if (detent == cur_phase) return;
+
+    // we now know which way the force is pointing.
+    // need to determine which direction the head will move.
+    // if will be whichever direction around the circle is a shortest path
+    // from the current phase to the new phase.
+    // phase and detent define two pie slices; one is smaller. the smaller one is the direction we'll go.
+    uint8_t slice_add = (detent - cur_phase) & 7;
+    uint8_t slice_subtract = (cur_phase - detent) & 7;
+    if (slice_add == slice_subtract) return;
+    
+    if (slice_subtract < slice_add) {
+        track -= slice_subtract;
+    } else {
+        track += slice_add;
+    }
+    if (dbglog) fprintf(dbglog, "update_phases: track: %d slice_subtract: %d slice_add: %d\n", track, slice_subtract, slice_add);
+    // if current phase is 0, and detent is < 4; subtract; if detent is > 4, add.
+    
+    if (track < 0) track = 0;
+    if (track > 139) track = 139;
+
+    if (track != cur_track) {
+        update_track_ptr();
+    }
+}
+
+void Floppy525_woz::phase_change_callback(uint64_t instanceID, void *userData) {
+    Floppy525_woz *floppy = static_cast<Floppy525_woz *>(userData);
+    floppy->update_track();
+}
+
+uint8_t Floppy525_woz::read_cmd(uint16_t address) {
+    assert(false);
+    return 0;
+}
+
+void Floppy525_woz::write_cmd(uint16_t address, uint8_t data) {
+    assert(false);
+}
+
+uint64_t Floppy525_woz::fast_forward(uint64_t now) {
+    //uint64_t now     = clock->get_cycles();
+    uint64_t elapsed = now - last_cycle;
+    last_cycle = now;
+
+    if (!enable) {
+        return 0; // the disk is not spinning
+    }
+    if ( !cur_track_ptr || cur_track_ptr->bit_count == 0) {
+        // Motor off or no track: still update bit_fp so position is consistent
+        // when the track becomes available, but don't shift any bits.
+        // if there is no track we need to generate random bits..
+        // we just need to return bits_to_sim based on the elapsed time.
+        uint64_t bits_to_sim = elapsed * 2;
+        return bits_to_sim;
+        //return 0;
+    }
+
+    uint64_t track_bits = cur_track_ptr->bit_count;
+
+    // Compute new physical position BEFORE updating read_position so we can derive
+    // the exact number of whole bit-cells to simulate from the fractional
+    // position already accumulated in bit_fp.
+    //
+    // Using (new_fp >> 3) - (bit_fp >> 3) instead of elapsed/4 is critical:
+    // bit_fp may be mid-cell (e.g. bit_fp=30 = bit 3 + 6/8 of a cell elapsed).
+    // 7 elapsed cycles (14 units) from that position completes cells 3 AND 4,
+    // but elapsed/4=1 would only simulate 1, permanently skipping bits.
+
+    head_position += (elapsed * 2);
+    uint64_t bits_to_sim   = ((head_position >> 3) - (read_position >> 3)) % track_bits;
+    return bits_to_sim;
+
+}
+
+inline uint8_t Floppy525_woz::get_random_bit() {
+    random_bits = (random_bits << 1) | (random_bits >>63);
+    return random_bits & 1;
+}
+
+uint8_t Floppy525_woz::read_pulse() {
+    uint8_t bit;
+    if (!enable || !cur_track_ptr || cur_track_ptr->bit_count == 0) {
+        bit = 0; //get_random_bit(); // this will get randomized below when we check the window
+    } else {
+        // bit_fp is in 1/8-bit-cell units (see fast_forward / update_track_ptr).
+        // Track bit index = bit_fp >> 3; byte in packed buffer = that / 8.
+        uint64_t track_bits = cur_track_ptr->bit_count;
+        uint64_t bi         = (read_position >> 3) % track_bits;
+        uint64_t byte_idx   = bi >> 3;
+        uint64_t bit_in_byte = bi & 7;
+        size_t   need_bytes = (static_cast<size_t>(track_bits) + 7) / 8;
+        if (byte_idx < cur_track_ptr->bits.size() && cur_track_ptr->bits.size() >= need_bytes) {
+            bit = (cur_track_ptr->bits[byte_idx] >> (7 - static_cast<int>(bit_in_byte))) & 1;
+        } else {
+            // corrupted / inconsistent WOZ track metadata vs buffer
+            bit = 0; // get_random_bit(); // this will get randomized below when we check the window
+        }
+    }
+
+    windowBits = (windowBits << 1) | bit;
+    if ((windowBits & 0x0F) == 0) { // four zero bits in a row start to insert random bits.
+        bit = get_random_bit();
+    }
+    read_position += 8;
+    if (cur_track_ptr && cur_track_ptr->bit_count > 0) {
+        read_position %= cur_track_ptr->bit_count * 8;
+    }
+    return bit;
+}
+
+// TODO: these routines should go down into the controller class.
+#if 0
+uint8_t Floppy525_woz::read_cmd(uint16_t address) {
+    uint16_t reg = address & 0x0F;
+    uint8_t cur_track = track; // for debugging only
 
     switch (reg) {
-        case DiskII_Ph0_Off:
-            phase0 = 0;
-            break;
-        case DiskII_Ph0_On:
-            if (cur_phase == 1) track--;
-            else if (cur_phase == 3) track++;
-            phase0 = 1;
-            last_phase_on = 0;
-            break;
-        case DiskII_Ph1_Off:
-            phase1 = 0;
-            break;
-        case DiskII_Ph1_On:
-            if (cur_phase == 2) track--;
-            else if (cur_phase == 0) track++;
-            phase1 = 1;
-            last_phase_on = 1;
-            break;
-        case DiskII_Ph2_Off:
-            phase2 = 0;
-            break;
-        case DiskII_Ph2_On:
-            if (cur_phase == 3) track--;
-            else if (cur_phase == 1) track++;
-            phase2 = 1;
-            last_phase_on = 2;
-            break;
-        case DiskII_Ph3_Off:
-            phase3 = 0;
-            break;
-        case DiskII_Ph3_On:
-            if (cur_phase == 0) track--;
-            else if (cur_phase == 2) track++;
-            phase3 = 1;
-            last_phase_on = 3;
-            break;
-
         case DiskII_Q6L:
             /**
             * when Q6=0 and Q7=0, then cycle another bit read of a nybble from the disk
@@ -289,32 +370,20 @@ uint8_t Floppy525_woz::read_cmd(uint16_t address) {
             /**
             * when Q6L is read, and Q7H was previously set (written) then we need to write the byte to the disk.
             */    
-            Q6 = 0;
             if (Q7 == 1 || Q6 == 1) {
-                write_nybble(write_shift_register);
+                write_nybble(data_register);
             }
             break;
-        case DiskII_Q6H:
-            Q6 = 1;
-            break;
+
         case DiskII_Q7L:
-            Q7 = 0;
+
             if (Q6 == 1) { // Q6H then Q7L is a write protect sense.
                 uint8_t xwp = write_protect << 7;
                 //printf("wp: Q7: %d, Q6: %d, wp: %d %02X\n", seldrive.Q7, seldrive.Q6, seldrive.write_protect, xwp);
                 return xwp; // write protect sense. Return hi bit set (write protected)
             }
             break;
-        case DiskII_Q7H:
-            Q7 = 1;
-            break;
-    }
 
-    if (track < 0) track = 0;
-    if (track > 68) track = 68;
-
-    if (track != cur_track) {
-        update_track_ptr();
     }
 
     return 0;
@@ -322,16 +391,19 @@ uint8_t Floppy525_woz::read_cmd(uint16_t address) {
 
 void Floppy525_woz::write_cmd(uint16_t address, uint8_t data) {
     uint16_t reg = address & 0x0F;
+    uint8_t cur_track = track; // for debugging only
 
     // store the value being written into the write_shift_register. It will be stored in the disk image when Q6L is tweaked in read.
     switch (reg) {
         case DiskII_Q6H:
-            write_shift_register = data;
+            data_register = data;
             Q6 = 1;
             break;
         case DiskII_Q7H:
-            write_shift_register = data;
+            data_register = data;
             Q7 = 1;
             break;
     }
+
 }
+#endif

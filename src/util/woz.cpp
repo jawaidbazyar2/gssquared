@@ -403,6 +403,7 @@ int Woz::parse_meta(const uint8_t* data, uint32_t size) {
 // ─── Load ─────────────────────────────────────────────────────────────────────
 
 int Woz::load(const std::string& filename) {
+    current_image_filename = filename;
     FILE* fp = fopen(filename.c_str(), "rb");
     if (!fp) {
         std::cerr << "WOZ: cannot open '" << filename << "'\n";
@@ -773,7 +774,7 @@ int Woz::import_from_media(media_descriptor* media) {
 
 // ─── Accessors ────────────────────────────────────────────────────────────────
 
-const woz_track_t* Woz::get_track(int quarter_track) const {
+const woz_track_t* Woz::get_track_ptr(int quarter_track) const {
     if (quarter_track < 0 || quarter_track >= 160) return nullptr;
     uint8_t idx = m_image.tmap[quarter_track];
     if (idx == 0xFF) return nullptr;

@@ -31,7 +31,7 @@
 #include "util/printf_helper.hpp"
 #include "util/ResetController.hpp"
 #include "util/DebugHandlerIDs.hpp"
-
+#include "devices/diskii/diskii_controller.hpp"
 
 uint8_t ndiskII_woz_read_C0xx(void *context, uint32_t address) {
     ndiskII_woz_controller *d = (ndiskII_woz_controller *)context;
@@ -83,7 +83,7 @@ void init_slot_ndiskII_woz(computer_t *computer, SlotType_t slot) {
     computer->mmu->set_slot_rom(slot, rom_data, "DISK2_ROM");
 
     DiskII_WOZ_Controller *dc = new DiskII_WOZ_Controller(
-        computer->sound_effect, computer->clock);
+        computer->sound_effect, computer->clock, computer->cpu_event_timer);
     diskII_d->dc = dc;
 
     storage_key_t key;
@@ -105,11 +105,9 @@ void init_slot_ndiskII_woz(computer_t *computer, SlotType_t slot) {
 
     computer->device_frame_dispatcher->registerHandler(
         [diskII_d]() {
-            diskII_d->dc->check_motor_off_timer();
-
-            if (diskII_d->computer->execution_mode == EXEC_NORMAL) {
-                diskII_d->dc->soundeffects_update();
-            }
+            // we call the disk controller class frame update because it owns its own sound effects.
+            // but we tell it whether to play sound effects or not.
+            diskII_d->dc->frameUpdate(diskII_d->computer->execution_mode == EXEC_NORMAL);
 
             if (diskII_d->powerup_reset_cycles > 0) {
                 diskII_d->powerup_reset_cycles--;

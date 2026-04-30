@@ -7,13 +7,13 @@
 #include "debug.hpp"
 
 
-void Floppy525::set_track(int track_num) {
+/* void Floppy525::set_track(int track_num) {
     track = track_num;
  }
 
 void Floppy525::move_head(int direction) {
     track += direction;
-}
+} */
 
 void Floppy525::write_nybble(uint8_t nybble) {
 
