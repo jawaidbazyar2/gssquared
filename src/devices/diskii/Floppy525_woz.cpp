@@ -163,11 +163,7 @@ void Floppy525_woz::set_phase(uint8_t phase, bool onoff) {
     // TODO: come up with a better, calculated instanceID
     // TODO: I'm a doof, this timer is 14m's.
     event_timer->scheduleEvent(clock->get_cycles() + 520, phase_change_callback, 0xABAB0001, this);
-    fprintf(dbglog, "schedule_phase_change: %lld + 520 = %lld\n", clock->get_cycles(), clock->get_cycles() + 520);
-}
-
-void Floppy525_woz::get_rdpulse() {
-    // TODO: implement this
+    //fprintf(dbglog, "schedule_phase_change: %lld + 520 = %lld\n", clock->get_cycles(), clock->get_cycles() + 520);
 }
 
 /**
@@ -242,7 +238,7 @@ void Floppy525_woz::update_track() {
     const unsigned phase_bits =
         (phase0 << 0) | (phase1 << 1) | (phase2 << 2) | (phase3 << 3);
     const int8_t detent = kDetentFromPhases[phase_bits];
-    if (dbglog) fprintf(dbglog, "--- %lld update_phases: detent: %d\n", clock->get_cycles(), detent);
+    //if (dbglog) fprintf(dbglog, "--- %lld update_phases: detent: %d\n", clock->get_cycles(), detent);
     if (detent == -1) return;  // forces cancel
     if (detent == cur_phase) return;
 
@@ -260,7 +256,7 @@ void Floppy525_woz::update_track() {
     } else {
         track += slice_add;
     }
-    if (dbglog) fprintf(dbglog, "update_phases: track: %d slice_subtract: %d slice_add: %d\n", track, slice_subtract, slice_add);
+    //if (dbglog) fprintf(dbglog, "update_phases: track: %d slice_subtract: %d slice_add: %d\n", track, slice_subtract, slice_add);
     // if current phase is 0, and detent is < 4; subtract; if detent is > 4, add.
     
     if (track < 0) track = 0;
@@ -286,7 +282,7 @@ void Floppy525_woz::write_cmd(uint16_t address, uint8_t data) {
 }
 
 uint64_t Floppy525_woz::fast_forward(uint64_t now) {
-    //uint64_t now     = clock->get_cycles();
+
     uint64_t elapsed = now - last_cycle;
     last_cycle = now;
 
@@ -376,55 +372,3 @@ void Floppy525_woz::write_pulse(uint8_t bit) {
         read_position %= cur_track_ptr->bit_count * 8;
     }
 }
-
-// TODO: these routines should go down into the controller class.
-#if 0
-uint8_t Floppy525_woz::read_cmd(uint16_t address) {
-    uint16_t reg = address & 0x0F;
-    uint8_t cur_track = track; // for debugging only
-
-    switch (reg) {
-        case DiskII_Q6L:
-            /**
-            * when Q6=0 and Q7=0, then cycle another bit read of a nybble from the disk
-            */
-            /**
-            * when Q6L is read, and Q7H was previously set (written) then we need to write the byte to the disk.
-            */    
-            if (Q7 == 1 || Q6 == 1) {
-                write_nybble(data_register);
-            }
-            break;
-
-        case DiskII_Q7L:
-
-            if (Q6 == 1) { // Q6H then Q7L is a write protect sense.
-                uint8_t xwp = write_protect << 7;
-                //printf("wp: Q7: %d, Q6: %d, wp: %d %02X\n", seldrive.Q7, seldrive.Q6, seldrive.write_protect, xwp);
-                return xwp; // write protect sense. Return hi bit set (write protected)
-            }
-            break;
-
-    }
-
-    return 0;
-}
-
-void Floppy525_woz::write_cmd(uint16_t address, uint8_t data) {
-    uint16_t reg = address & 0x0F;
-    uint8_t cur_track = track; // for debugging only
-
-    // store the value being written into the write_shift_register. It will be stored in the disk image when Q6L is tweaked in read.
-    switch (reg) {
-        case DiskII_Q6H:
-            data_register = data;
-            Q6 = 1;
-            break;
-        case DiskII_Q7H:
-            data_register = data;
-            Q7 = 1;
-            break;
-    }
-
-}
-#endif

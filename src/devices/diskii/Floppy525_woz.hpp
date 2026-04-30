@@ -70,7 +70,7 @@ public:
 
     // TODO: these should all be virtual, both 5.25 and 3.5 implement them (but their behavior is radically different)
     virtual void set_phase(uint8_t phase, bool onoff) override;
-    virtual void get_rdpulse() override;
+    /* virtual void get_rdpulse() override; */
     virtual void set_enable(bool enable) override {
         if (!this->enable && enable) {
             // we are turning the motor on
@@ -85,8 +85,8 @@ public:
     // Advance bit_fp by elapsed cycles and shift the corresponding bits through
     // read_shift_register.  Tracks are circular; wrapping never resets the register.
     uint64_t fast_forward(uint64_t now);
-    uint8_t read_pulse();
-    void    write_pulse(uint8_t bit);
+    uint8_t read_pulse() override;
+    void    write_pulse(uint8_t bit) override;
     inline uint8_t get_write_protect() { return write_protect; }
 
     /* virtual bool get_Q7() { return Q7; }

@@ -292,8 +292,7 @@ This comes from the DRIVE, not the controller.
 
 Do we have to implement the LSS? We've been working pretty well without it, but, we know some of these disk images don't work and it's likely to do with LSS deficiencies. Maybe we can improve our handling of the various states without implementing the logic state sequencer.
 
-
-When in write mode, 
+OK, so I borrowed openemulator's abbreviated LSS. I don't think running the real, exact LSS would cost much, and it would probably simplify the logic quite a bit.
 
 
 ## Doesn't work at faster speeds
@@ -307,7 +306,7 @@ try using the cpu clock, not the 14m clock.
 Ah ok, I have an eventtimer that runs at 14m, and one that runs at video speed (1M), but I don't have one that runs at the cpu clock? oops.
 So, I didn't HAVE a cpu event. I just had to wire it into the main loop in gs2. ugh! well let's try it.. yes, that works, though I don't like having so many checks in the main loop. Isn't working in ludicrous speed. that's weird, it ought to. ok, forgot to add the check to the LS loop.
 Overall this costs us a couple mhz at L.S.
-
+(FIXED)
 
 ## Test harness
 
@@ -426,14 +425,20 @@ Locksmith can successfully speed test the disk, and it is successfully nibble-co
 I am curious about track length. Are woz track lengths typically the same +/- some small nominal amount? If so, this is probably fine. But if a track is short for some reason (uh, the bit writing speed is not 3.910) then we will need to expand the track length when we start writing.
 Copy II Plus speed test is also working just fine. I did a lot of copying.
 Accelerating seems to make no difference, as it shouldn't, since we clock floppy on the CPU.
-Let's re-test the broken images..
+Let's re-test the broken images.. just have four not working.
 
+cleaning up the code, removing debug stuff (can't generate a 1.9GB debug file every time we run, lolz).
+
+[ ] improve debug() emitters in diskii_controller and Floppy525.  
+[ ] see if we can optimize rdpulse and wrpulse by not calculating the bit index from scratch every single call  
 
 
 [ ] make all the 74LS259 Addressible Latch registers be bools
 
 [ ] Have Soundeffects support stereo
 [ ] have drive 1 play through left channel, drive 2 play through right channel.  
+
+
 
 
 ## P6 PROM

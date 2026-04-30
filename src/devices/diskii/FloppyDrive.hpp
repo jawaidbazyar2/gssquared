@@ -21,7 +21,9 @@ protected:
     virtual void set_enable(bool enable) = 0;
     virtual bool get_enable() = 0;
     virtual void set_phase(uint8_t phase, bool onoff) = 0;
-    virtual void get_rdpulse() = 0;
+    //virtual void get_rdpulse() = 0;
+    virtual void write_pulse(uint8_t bit) = 0;
+    virtual uint8_t read_pulse() = 0;
 
    /*  virtual void set_track(int track_num) = 0; */
     virtual int get_track() = 0;

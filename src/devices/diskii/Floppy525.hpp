@@ -65,6 +65,9 @@ class Floppy525: public FloppyDrive {
 
     virtual void write_nybble(uint8_t nybble) override;
     virtual uint8_t read_nybble() override;
+    // these are unimplemented, in this old version of code.
+    virtual void write_pulse(uint8_t bit) override {};
+    virtual uint8_t read_pulse() override { return 0;};
 
     virtual bool mount(uint64_t key, media_descriptor *media) override;
     virtual bool unmount(uint64_t key) override;
@@ -76,7 +79,7 @@ class Floppy525: public FloppyDrive {
     virtual bool get_enable() override { return enable; }
     virtual void set_enable(bool enable) override { this->enable = enable; }
     virtual void set_phase(uint8_t phase, bool onoff) override {}; // TODO: this is a dummy, not used by older 5.25
-    virtual void get_rdpulse() override {}; // TODO: this is a dummy, not used by older 5.25
+    //virtual void get_rdpulse() override {}; // TODO: this is a dummy, not used by older 5.25
 
     virtual uint8_t read_cmd(uint16_t address) override;
     virtual void write_cmd(uint16_t address, uint8_t data) override;

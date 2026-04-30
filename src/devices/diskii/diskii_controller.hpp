@@ -70,7 +70,7 @@ class DiskII_WOZ_Controller : public StorageDevice {
     // `sequencerState` in the SEQUENCER_READSHIFT case.
     bool sequencer_state = false;
 
-    FILE *dbglog = nullptr;
+    //FILE *dbglog = nullptr;
 
     const char *sound_files[5] = {
         "sounds/shugart-drive.wav",
@@ -105,9 +105,9 @@ public:
             sounds[i].si    = sound_effect->load(sound_files[i], SE_SHUGART_DRIVE + i);
         }
 
-        dbglog = fopen("ndiskii_woz_debug.log", "w");
+        /* dbglog = fopen("ndiskii_woz_debug.log", "w");
         drives[0].set_dbglog(dbglog);
-        drives[1].set_dbglog(dbglog);
+        drives[1].set_dbglog(dbglog); */
     }
 
     void reset() {
@@ -122,8 +122,8 @@ public:
             drives[0].set_phase(i, false);
             drives[1].set_phase(i, false);
         }
-        drives[0].reset();
-        drives[1].reset();
+        drives[0].set_enable(false);
+        drives[1].set_enable(false);
     }
 
     bool get_motor()   { return enable; }
@@ -186,13 +186,12 @@ public:
     }
 
     void fast_forward() {
-        uint64_t now     = clock->get_cycles();
-
-        if (!enable /* || !cur_track_ptr || cur_track_ptr->bit_count == 0 */) {
-            // Motor off or no track: still update bit_fp so position is consistent
-            // when the track becomes available, but don't shift any bits.
+        if (!enable) {
+            // Motor off: the LSS state machine is stopped.
             return;
         }
+
+        uint64_t now     = clock->get_cycles();
 
         // this updates the sim and tells us how many bits to update through the LSS.
         uint64_t bits_to_sim = drives[drive_select].fast_forward(now);
@@ -241,19 +240,14 @@ public:
 
     // ─── Nybble I/O ───────────────────────────────────────────────────────────────
 
-    uint8_t read_nybble() {
+    /* uint8_t read_nybble() {
         // Reads of Q6L are non-destructive on real hardware: the CPU just
         // samples whatever the LSS data register currently holds.  bit-cell
         // accumulation (and the QA-hold reset) happens in fast_forward().
         return data_register;
-    }
+    } */
 
-    void write_nybble(uint8_t /* nybble */) {
-        // WOZ write-back requires bit-level splicing into the bitstream.
-        // Deferred: stub only.
-    }
-
-    void decode(uint8_t reg) {
+    inline void decode(uint8_t reg) {
         Floppy525_woz &sel = drives[drive_select];
         switch (reg) {
             case DiskII_Ph0_Off:
@@ -329,7 +323,7 @@ public:
         uint16_t reg = address & 0x0F;
         Floppy525_woz &sel = drives[drive_select];
 
-        uint8_t cur_track = sel.get_track();
+        //uint8_t cur_track = sel.get_track();
 
         fast_forward();
 
@@ -339,12 +333,12 @@ public:
         // fast_forward(); reads of $C0EC no longer need an explicit
         // "trigger write" hook here.
 
-        fprintf(dbglog, "read_cmd: %lld reg:%X sl:%d  track=%d, cur_track=%d, Q7=%d, Q6=%d en:%d ph [ %d %d %d %d ]\n", 
-            clock->get_cycles(), reg, drive_select, sel.get_track(), cur_track, Q7, Q6, enable, phase0, phase1, phase2, phase3);
+        /* fprintf(dbglog, "read_cmd: %lld reg:%X sl:%d  track=%d, cur_track=%d, Q7=%d, Q6=%d en:%d ph [ %d %d %d %d ]\n", 
+            clock->get_cycles(), reg, drive_select, sel.get_track(), cur_track, Q7, Q6, enable, phase0, phase1, phase2, phase3); */
 
 
         if ((reg & 0x01) == 0) {
-            return read_nybble();
+            return data_register;
         }
         return 0; // odd-address reads return floating bus (simplified to 0)
     }
@@ -352,7 +346,7 @@ public:
     void write_cmd(uint16_t address, uint8_t data) {
         uint16_t reg = address & 0x0F;
         Floppy525_woz &sel = drives[drive_select];
-        uint8_t cur_track = sel.get_track();
+        /* uint8_t cur_track = sel.get_track(); */
 
         // Drain LSS work using the OLD Q6/Q7 state before the switch flips.
         fast_forward();
@@ -367,8 +361,8 @@ public:
             data_register = data;
         }
 
-        fprintf(dbglog, "write_cmd: %lld reg:%X sl:%d  track=%d, cur_track=%d, Q7=%d, Q6=%d en:%d ph [ %d %d %d %d ] data=%02X\n",
-            clock->get_cycles(), reg, drive_select, sel.get_track(), cur_track, Q7, Q6, enable, phase0, phase1, phase2, phase3, data);
+        /* fprintf(dbglog, "write_cmd: %lld reg:%X sl:%d  track=%d, cur_track=%d, Q7=%d, Q6=%d en:%d ph [ %d %d %d %d ] data=%02X\n",
+            clock->get_cycles(), reg, drive_select, sel.get_track(), cur_track, Q7, Q6, enable, phase0, phase1, phase2, phase3, data); */
     }
 
     bool mount(storage_key_t key, media_descriptor *media) {
