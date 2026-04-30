@@ -65,8 +65,11 @@ class DiskII_WOZ_Controller : public StorageDevice {
     int start_track_movement = -1;
 
     uint8_t data_register = 0;
-    uint8_t lss_shift = 0;
-    
+    // LSS QA-hold sub-state: tracks whether we are in the first or second
+    // bit-cell after bit 7 of data_register went high.  Mirrors OpenEmulator's
+    // `sequencerState` in the SEQUENCER_READSHIFT case.
+    bool sequencer_state = false;
+
     FILE *dbglog = nullptr;
 
     const char *sound_files[5] = {
@@ -195,16 +198,24 @@ public:
         uint64_t bits_to_sim = drives[drive_select].fast_forward(now);
 
         for (uint64_t i = 0; i < bits_to_sim; i++) {
-            uint8_t  bit = drives[drive_select].read_pulse();
-            
-            lss_shift = (lss_shift << 1) | bit;
-            
-            if (lss_shift & 0x80) {
-                // LSS latch fires: bit 7 went high.  Capture nibble and reset accumulator
-                // so the next nibble always accumulates from 0 — this is what makes every
-                // valid nibble produce its exact byte value (D5→0xD5, AA→0xAA, 96→0x96).
-                data_register = lss_shift;
-                lss_shift = 0;
+            uint8_t bit = drives[drive_select].read_pulse();
+
+            // LSS READSHIFT behavior (mirrors OpenEmulator's
+            // AppleDiskIIInterfaceCard::updateSequencer SEQUENCER_READSHIFT case):
+            // while QA (bit 7) is 0, shift incoming RP bits left into the data
+            // register so the CPU can observe partial-nibble accumulation
+            // (e.g. 1F, 3F, 7F, FF).  Once QA goes high the byte holds for two
+            // more bit cells, then the LSS preloads `0x02 | bit` for the next
+            // nibble's leading bits.
+            if (data_register & 0x80) {
+                if (!sequencer_state) {
+                    sequencer_state = bit;
+                } else {
+                    sequencer_state = false;
+                    data_register = 0x02 | bit;
+                }
+            } else {
+                data_register = (data_register << 1) | bit;
             }
         }
     }
@@ -212,22 +223,10 @@ public:
     // ─── Nybble I/O ───────────────────────────────────────────────────────────────
 
     uint8_t read_nybble() {
-        if (!enable) {
-            // Motor off: return the last latched value without advancing.
-            return data_register;
-        }
-
-        // TODO: this comment is actually false. the data register is NOT cleared
-        // after every read. It's more subtle than that.
-        // Consume the latch: the Apple II LSS data register is cleared after each
-        // CPU read of Q6L.  This ensures the BPL loop for each prologue byte
-        // (AA, 96) actually waits for the next nibble to accumulate rather than
-        // immediately exiting on the previously latched value.
-        uint8_t val = data_register;
-        if (data_register & 0x80) { // clear data register only if hi bit was set
-            data_register = 0;
-        }
-        return val;
+        // Reads of Q6L are non-destructive on real hardware: the CPU just
+        // samples whatever the LSS data register currently holds.  bit-cell
+        // accumulation (and the QA-hold reset) happens in fast_forward().
+        return data_register;
     }
 
     void write_nybble(uint8_t /* nybble */) {
