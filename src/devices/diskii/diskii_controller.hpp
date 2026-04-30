@@ -198,25 +198,35 @@ public:
         uint64_t bits_to_sim = drives[drive_select].fast_forward(now);
 
         for (uint64_t i = 0; i < bits_to_sim; i++) {
-            uint8_t bit = drives[drive_select].read_pulse();
-
-            // LSS READSHIFT behavior (mirrors OpenEmulator's
-            // AppleDiskIIInterfaceCard::updateSequencer SEQUENCER_READSHIFT case):
-            // while QA (bit 7) is 0, shift incoming RP bits left into the data
-            // register so the CPU can observe partial-nibble accumulation
-            // (e.g. 1F, 3F, 7F, FF).  Once QA goes high the byte holds for two
-            // more bit cells, then the LSS preloads `0x02 | bit` for the next
-            // nibble's leading bits.
-            if (data_register & 0x80) {
-                if (!sequencer_state) {
-                    sequencer_state = bit;
+            if (Q7 == 0 && Q6 == 0) {
+                // READSHIFT (mirrors OpenEmulator's
+                // AppleDiskIIInterfaceCard::updateSequencer SEQUENCER_READSHIFT
+                // case): while QA (bit 7) is 0, shift incoming RP bits left
+                // into the data register so the CPU can observe partial-nibble
+                // accumulation (e.g. 1F, 3F, 7F, FF).  Once QA goes high the
+                // byte holds for two more bit cells, then the LSS preloads
+                // `0x02 | bit` for the next nibble's leading bits.
+                uint8_t bit = drives[drive_select].read_pulse();
+                if (data_register & 0x80) {
+                    if (!sequencer_state) {
+                        sequencer_state = bit;
+                    } else {
+                        sequencer_state = false;
+                        data_register = 0x02 | bit;
+                    }
                 } else {
-                    sequencer_state = false;
-                    data_register = 0x02 | bit;
+                    data_register = (data_register << 1) | bit;
                 }
-            } else {
-                data_register = (data_register << 1) | bit;
+            } else if (Q7 == 0 && Q6 == 1) {
+                // READLOAD (SEQUENCER_READLOAD): the LSS executes SR every step,
+                // shifting the write-protect sense bit right into bit 7 of the
+                // data register.  Repeated reads while LOAD is held therefore
+                // saturate the register (FF for WP=1, 00 for WP=0).
+                uint8_t wp = drives[drive_select].get_write_protect() & 1;
+                data_register = (data_register >> 1) | (wp << 7);
+                sequencer_state = false;
             }
+            // Q7 == 1 (write modes): no data_register update yet (out of scope).
         }
     }
 
@@ -324,26 +334,16 @@ public:
                     write_nybble(data_register);
                 }
                 break;
-
-            case DiskII_Q7L:
-
-                if (Q6 == 1) { // Q6H then Q7L is a write protect sense.
-                    uint8_t xwp = sel.get_write_protect() << 7;
-                    //printf("wp: Q7: %d, Q6: %d, wp: %d %02X\n", seldrive.Q7, seldrive.Q6, seldrive.write_protect, xwp);
-                    return xwp; // write protect sense. Return hi bit set (write protected)
-                }
-                break;
-
         }
 
         fprintf(dbglog, "read_cmd: %lld reg:%X sl:%d  track=%d, cur_track=%d, Q7=%d, Q6=%d en:%d ph [ %d %d %d %d ]\n", 
             clock->get_cycles(), reg, drive_select, sel.get_track(), cur_track, Q7, Q6, enable, phase0, phase1, phase2, phase3);
 
 
-        if (((reg & 0x01) == 0) && (Q7 == 0 && Q6 == 0)) {
+        if ((reg & 0x01) == 0) {
             return read_nybble();
         }
-        return 0; // sel.read_cmd used to do this..
+        return 0; // odd-address reads return floating bus (simplified to 0)
     }
 
     void write_cmd(uint16_t address, uint8_t data) {
