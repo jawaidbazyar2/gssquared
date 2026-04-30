@@ -774,6 +774,14 @@ int Woz::import_from_media(media_descriptor* media) {
 
 // ─── Accessors ────────────────────────────────────────────────────────────────
 
+woz_track_t* Woz::get_track_ptr(int quarter_track) {
+    if (quarter_track < 0 || quarter_track >= 160) return nullptr;
+    uint8_t idx = m_image.tmap[quarter_track];
+    if (idx == 0xFF) return nullptr;
+    if (idx >= m_image.tracks.size()) return nullptr;
+    return &m_image.tracks[idx];
+}
+
 const woz_track_t* Woz::get_track_ptr(int quarter_track) const {
     if (quarter_track < 0 || quarter_track >= 160) return nullptr;
     uint8_t idx = m_image.tmap[quarter_track];

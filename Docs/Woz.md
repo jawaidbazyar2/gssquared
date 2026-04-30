@@ -254,14 +254,14 @@ aw heck, the readme.txt goes into detail on each image and what you need to do r
 [X] Dino Eggs  
 [X] DOS 3.2 System Master (using BOOT13 from DOS 33 master)
 [X] DOS 3.3 System Master  
-[ ] First Math Adventure  
+[X] First Math Adventure  
 [X] Hard Hat Mack  
 [X] Miner 2049er  
 [X] Planetfall  
 [X] Rescue Raiders  
 [X] Sammy Lightfoot  
 [X] Stargate  
-[ ] Stickybear Town  
+[X] Stickybear Town  
 [ ] Take 1
 [X] Apple at Play  
 [X] Bilestoad  
@@ -409,16 +409,32 @@ ok, after the big refactor, I lost: Miner 2049er II; Sammy Lightfoot. (FIXED! ha
 need to check what happens when we switch tracks, validate all that stuff.
 
 So, there are 2 outstanding issues I know of, besides whatever is needed to make the above broken images work:
-[ ] wp should not merely set hi bit, it should shift values into hi bit, inside fast_forward.
-[ ] we should not clear latch on every read and should not have this phantom lss register  
+[X] wp should not merely set hi bit, it should shift values into hi bit, inside fast_forward.
+[X] we should not clear latch on every read and should not have this phantom lss register  
 
 I think read should clear the data register ONLY when the hi bit is set (i.e. QA). 
+
+after the "should not clear latch", First Math works!! ALSO DOS 3.2 is a lot faster. 
+
+[ ] .nib 13-sector disk doesn't work, they're the same size as dos 3.3 .nib which doesn't seem right. Some way to detect .nib correct track dimensions?  
+
+ok, I think the write protect stuff is handled correctly now. 
+
+WRITES ARE IN THERE BABY!!!
+
+Locksmith can successfully speed test the disk, and it is successfully nibble-copying a disk (itself).
+I am curious about track length. Are woz track lengths typically the same +/- some small nominal amount? If so, this is probably fine. But if a track is short for some reason (uh, the bit writing speed is not 3.910) then we will need to expand the track length when we start writing.
+Copy II Plus speed test is also working just fine. I did a lot of copying.
+Accelerating seems to make no difference, as it shouldn't, since we clock floppy on the CPU.
+Let's re-test the broken images..
+
 
 
 [ ] make all the 74LS259 Addressible Latch registers be bools
 
 [ ] Have Soundeffects support stereo
 [ ] have drive 1 play through left channel, drive 2 play through right channel.  
+
 
 ## P6 PROM
 

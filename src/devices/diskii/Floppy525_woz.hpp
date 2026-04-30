@@ -23,7 +23,8 @@ class Floppy525_woz: public FloppyDrive {
     Woz woz;
 
     // Cached pointer to current quarter-track's bitstream; nullptr = empty track.
-    const woz_track_t *cur_track_ptr = nullptr;
+    // Non-const because write_pulse() needs to mutate the bits in place.
+    woz_track_t *cur_track_ptr = nullptr;
 
     // Physical disk position in 1/8-bit-cell units.
     //   Bit index into track = bit_fp >> 3  (mod track_bits)
@@ -85,6 +86,7 @@ public:
     // read_shift_register.  Tracks are circular; wrapping never resets the register.
     uint64_t fast_forward(uint64_t now);
     uint8_t read_pulse();
+    void    write_pulse(uint8_t bit);
     inline uint8_t get_write_protect() { return write_protect; }
 
     /* virtual bool get_Q7() { return Q7; }

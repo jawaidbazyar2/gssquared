@@ -225,8 +225,17 @@ public:
                 uint8_t wp = drives[drive_select].get_write_protect() & 1;
                 data_register = (data_register >> 1) | (wp << 7);
                 sequencer_state = false;
+            } else if (Q7 == 1) {
+                // WRITESHIFT / WRITELOAD: per OE both Q6 sub-modes behave
+                // identically — shift QA (bit 7) of data_register out to disk,
+                // then shift data_register left.  The actual CPU-initiated load
+                // happens out-of-band in write_cmd() (any odd-address write
+                // while motor enabled loads data_register).
+                uint8_t out_bit = (data_register >> 7) & 0x01;
+                drives[drive_select].write_pulse(out_bit);
+                data_register   = static_cast<uint8_t>(data_register << 1);
+                sequencer_state = false;
             }
-            // Q7 == 1 (write modes): no data_register update yet (out of scope).
         }
     }
 
@@ -326,15 +335,9 @@ public:
 
         decode(reg);
 
-        switch (reg) {
-            case DiskII_Q6L:
-                /** when Q6=0 and Q7=0, then cycle another bit read of a nybble from the disk */
-                /** when Q6L is read, and Q7H was previously set (written) then we need to write the byte to the disk. */    
-                if (Q7 == 1 || Q6 == 1) {
-                    write_nybble(data_register);
-                }
-                break;
-        }
+        // Per-bit-cell write (and WP shift) handling is now entirely inside
+        // fast_forward(); reads of $C0EC no longer need an explicit
+        // "trigger write" hook here.
 
         fprintf(dbglog, "read_cmd: %lld reg:%X sl:%d  track=%d, cur_track=%d, Q7=%d, Q6=%d en:%d ph [ %d %d %d %d ]\n", 
             clock->get_cycles(), reg, drive_select, sel.get_track(), cur_track, Q7, Q6, enable, phase0, phase1, phase2, phase3);
@@ -351,21 +354,21 @@ public:
         Floppy525_woz &sel = drives[drive_select];
         uint8_t cur_track = sel.get_track();
 
+        // Drain LSS work using the OLD Q6/Q7 state before the switch flips.
+        fast_forward();
+
         decode(reg);
 
-        switch (reg) {
-            case DiskII_Q6H:
-                data_register = data;
-                break;
-            case DiskII_Q7H:
-                data_register = data;
-                break;
+        // Hardware behavior: any odd-address write while the drive is enabled
+        // captures the CPU value into data_register (matches OE's
+        // AppleDiskIIInterfaceCard::write).  This subsumes the previous
+        // Q6H/Q7H-only special case.
+        if (enable && (address & 0x01)) {
+            data_register = data;
         }
 
-        fprintf(dbglog, "read_cmd: %lld reg:%X sl:%d  track=%d, cur_track=%d, Q7=%d, Q6=%d en:%d ph [ %d %d %d %d ]\n", 
-            clock->get_cycles(), reg, drive_select, sel.get_track(), cur_track, Q7, Q6, enable, phase0, phase1, phase2, phase3);
-
-        sel.write_cmd(address, data);
+        fprintf(dbglog, "write_cmd: %lld reg:%X sl:%d  track=%d, cur_track=%d, Q7=%d, Q6=%d en:%d ph [ %d %d %d %d ] data=%02X\n",
+            clock->get_cycles(), reg, drive_select, sel.get_track(), cur_track, Q7, Q6, enable, phase0, phase1, phase2, phase3, data);
     }
 
     bool mount(storage_key_t key, media_descriptor *media) {

@@ -142,6 +142,7 @@ public:
 
     // Returns a pointer to the bit-stream for the given quarter-track index
     // (0–159).  Returns nullptr if the TMAP entry is 0xFF (empty track).
+    woz_track_t*       get_track_ptr(int quarter_track);
     const woz_track_t* get_track_ptr(int quarter_track) const;
 
     // ── Human-readable diagnostics ───────────────────────────────────────────
