@@ -35,7 +35,10 @@
 
 uint8_t ndiskII_woz_read_C0xx(void *context, uint32_t address) {
     ndiskII_woz_controller *d = (ndiskII_woz_controller *)context;
-    return d->dc->read_cmd(address);
+    uint8_t data = d->dc->read_cmd(address);
+    if ((address & 0x1) == 1) return d->computer->mmu->floating_bus_read();
+    return data;
+    //return d->dc->read_cmd(address);
 }
 
 void ndiskII_woz_write_C0xx(void *context, uint32_t address, uint8_t data) {
