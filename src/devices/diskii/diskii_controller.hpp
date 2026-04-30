@@ -56,16 +56,14 @@ class DiskII_WOZ_Controller : public StorageDevice {
     uint8_t phase1 = 0; // C0x2, C0x3
     uint8_t phase2 = 0; // C0x4, C0x5
     uint8_t phase3 = 0; // C0x6, C0x7
-    //bool    motor = false; // C0x8, C0x9
     uint8_t enable = 0; // Cx08, Cx09
-    uint8_t drive_select = 0; // C0x10, C0x11
-    uint8_t Q6 = 0; // C0x12, C0x13
-    uint8_t Q7 = 0; // C0x14, C0x15
+    uint8_t drive_select = 0; // C0x0A, C0x0B
+    uint8_t Q6 = 0; // C0x0C, C0x0D - shift = 0, load = 1
+    uint8_t Q7 = 0; // C0x0E, C0x0F - READ=0, WRITE=1
 
     int running_chunknumber  = 0;
     int start_track_movement = -1;
 
-    uint64_t last_cycle = 0;
     uint8_t data_register = 0;
     uint8_t lss_shift = 0;
     
@@ -186,8 +184,6 @@ public:
 
     void fast_forward() {
         uint64_t now     = clock->get_cycles();
-        uint64_t elapsed = now - last_cycle;
-        last_cycle = now;
 
         if (!enable /* || !cur_track_ptr || cur_track_ptr->bit_count == 0 */) {
             // Motor off or no track: still update bit_fp so position is consistent
