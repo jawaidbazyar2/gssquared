@@ -67,8 +67,12 @@
 
 ## Release 0.7.4
 
-[ ] IWM 3.5  
+[ ] IWM 5.25/3.5 + WOZ  
 [ ] True "hard drive" Control Panel for editing mounts on the SmartPort device.
+
+## Release 0.7.5
+
+[ ] Host FST
 [ ] Mouse tracking for GS/OS  
 
 ## Release 0.8
@@ -77,8 +81,7 @@ Primary Focus: UI
 
 [ ] Can make custom hw config. (Click "+ Custom").
 [ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  
-[ ] Refactor MB to use new synth, and pass mb-audit tests  
-
+[ ] Refactor MB to use new fixed-point synth
 
 ## Release 0.9
 
@@ -88,4 +91,3 @@ Primary Focus: UI
 ## Release 1.0
 
 [ ] CRT Effects
-[ ] Host FST
