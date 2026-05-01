@@ -328,3 +328,36 @@ need to check other code in CPU for the same problem.
 Uh, this isn't right:
     uint64_t get_clock_cycles() { return clock->get_cycles(); }
 it should be vid_cycles. Why would it have changed this..
+
+# Phasor Card
+
+This has same components as the Mockingboard but a slightly different layout:
+
+| Chip Number | Control Reg | Data Reg | Latch | Write |
+|-|-|-|-|-|
+| 1 | Cs10 | Cs11 | $0F, $0C | $0E, $0C |
+| 2 | Cs10 | Cs11 | $17, $14 | $16, $14 |
+| 3 | Cs80 | Cs81 | $0F, $0C | $0E, $0C |
+| 4 | Cs80 | Cs81 | $17, $14 | $16, $14 |
+
+Differences:
+* instead of being at Cs00, the 2nd 6522 is at Cs10. 
+* Each 6522 controls TWO AY chips; these have different control/data reg values.
+
+Chip 1 CE is set via bit [3]. Chip 2 CE is set via bit [4] in each value.
+
+That's pretty straightforward.
+
+However, there are maybe also these "activate" or configuration locations.
+"These 3 lines enable communications with the Phasor Card and initialize the sound chips. The addresses
+change based on the slot where the Phasor is installed. "
+```
+C0CD
+C493:FF
+C492:FF
+```
+
+Oh, it says C490-C493 are for talking to the speech chip. I never did figure out what memory locations are used on a regular mockingboard for that..
+
+It seems like you can write to both AYs at the same time. So each 6522 controls a left/right pair? Interesting.
+Unclear what C0CD is. 
