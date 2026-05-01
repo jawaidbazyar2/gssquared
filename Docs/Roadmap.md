@@ -55,15 +55,21 @@
 
 ## Release 0.7.2
 
-[x] put common controls in hover-over on main page - reset, restart, power-off, open debugger  
-[x] put "modified" and "write protected" indicator of some kind on the disk icons.  
-[x] Add Menus on Mac/Windows
-[x] Add Help menu  
+[X] put common controls in hover-over on main page - reset, restart, power-off, open debugger  
+[X] put "modified" and "write protected" indicator of some kind on the disk icons.  
+[X] Add Menus on Mac/Windows
+[X] Add Help menu  
 
 ## Release 0.7.3
 
+[X] 5.25 Floppy Disk Support for .WOZ files  
+[X] Mockingboard passes all mb-audit tests  
+
+## Release 0.7.4
+
 [ ] IWM 3.5  
 [ ] True "hard drive" Control Panel for editing mounts on the SmartPort device.
+[ ] Mouse tracking for GS/OS  
 
 ## Release 0.8
 
@@ -71,8 +77,8 @@ Primary Focus: UI
 
 [ ] Can make custom hw config. (Click "+ Custom").
 [ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  
-[ ] Add buttons for step/run in the debugger
-[ ] Refactor MB to use new synth, and pass Shuttleworth tests  
+[ ] Refactor MB to use new synth, and pass mb-audit tests  
+
 
 ## Release 0.9
 

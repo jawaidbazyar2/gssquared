@@ -11630,3 +11630,30 @@ See Woz format notes in Woz.md.
 
 [ ] bug in GS AKD - if you hold G, then H, then release H, we still show AKD, but real GS has AKD=0.  
 
+[ ] consider possible bug in right-click-accelerate mode when we restore the clock after the GS maybe has changed it and we revert back, the GS clock will get reset to the wrong value. Accel mode should be a feature of NClock, which itself will track the accelerated speed, and if a caller changes the clock speed via software, restores it correctly (or cancels that acceleration phase, but that would happen like all the time in a GS). In a GS it's either "user set speed" or "1MHz".
+
+## Apr 27, 2026
+
+been working inside Woz.md recently.
+
+There are now three event timers that get checked in the main loop, and each one costs us a couple MHz of LS performance: cpu clock; 14m clock; video clock.
+
+The 14m clock is always 14m; the video clock is always 1m; and the cpu clock is whatever the cpu speed is.
+
+having three separate timers in the main loop is slowing things down; the handling is also spread out; they're allocated with malloc; they're dynamically sized (vectors).
+
+Since NClock already manages the three clocks and their counters, perhaps restructure like this:
+
+NClock is the clock module holding all the clocks. Each clock is a Clock object, and Clock will be responsible for managing its own callback queues.
+
+That would push these checks into every cycle increment instead of after every instruction - in some ways, this is worse than now. It might help to have the clock stuff allocated in data segment rather than heap?
+
+I could scale the timer instead of using cpu cycles? that's hard to do in LS.
+
+[x] Apple II Audit (Zellyn) failing: "READ AT C055 should set C01C; Got 41" (fixed - was bug introduced in recent video refactor, big oops)  
+
+Reset issue. So gamecontroller needs to know when reset is de-asserted so it can start timing the joyport. The problem is, we have two different reset mechanisms. Some driven through computer, and some driven directly by the keyboards. The two mechanisms are: assert then deassert reset; instantaneous reset.
+The instantaneous is still used by the UI resets. the assert/deassert is used by keyboards. these peek pretty deeply into computer->resetController etc. So perhaps have the API for keyboards in computer. Then computer can more easily set "last_reset".
+
+ 
+
