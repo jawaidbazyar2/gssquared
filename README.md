@@ -179,10 +179,12 @@ applications list.
 After building, you can create a folder that contains a complete package for Linux:
 
 ```
-cmake --build build --target package
+cmake -DCMAKE_BUILD_TYPE=Release -DGS2_PROGRAM_FILES=OFF -S . -B build
+cmake --build build
+cmake --build build --target appimage
 ```
 
-Creates a .TGZ package in the build/ directory that contains all the pieces you need.
+Creates a .appimage package in the build/ directory that contains all the pieces you need.
 
 ## Windows
 
