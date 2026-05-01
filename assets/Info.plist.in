@@ -23,7 +23,7 @@
     <key>LSMultipleInstancesProhibited</key>
     <false/>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2025 Jawaid Bazyar</string>
+    <string>Copyright © 2025-2026 Jawaid Bazyar</string>
     <key>CFBundleGetInfoString</key>
     <string>GSSquared @PROJECT_VERSION@ (build @GIT_HASH@)</string>
     <key>NSHumanReadableDescription</key>
