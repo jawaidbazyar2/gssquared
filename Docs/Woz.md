@@ -431,6 +431,9 @@ cleaning up the code, removing debug stuff (can't generate a 1.9GB debug file ev
 
 [ ] improve debug() emitters in diskii_controller and Floppy525.  
 [ ] see if we can optimize rdpulse and wrpulse by not calculating the bit index from scratch every single call  
+[ ] we did not writeback a .po file successfully
+
+For that matter, are we writing out ANY non-woz files?
 
 
 [ ] make all the 74LS259 Addressible Latch registers be bools
@@ -442,6 +445,8 @@ cleaning up the code, removing debug stuff (can't generate a 1.9GB debug file ev
 
 
 ## P6 PROM
+
+Should I eventually choose to go this way:
 
 | Address Bit | tied to |
 |-|-|

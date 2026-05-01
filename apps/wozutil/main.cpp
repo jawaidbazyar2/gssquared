@@ -22,15 +22,19 @@
  *   wozutil info   [-v] <file.woz>
  *   wozutil import [-v] [-V <vol>] <input.(do|po|dsk|2mg)> <output.woz>
  *   wozutil save   [-v] <input.woz> <output.woz>
+ *   wozutil export [-v] [-i (do|po)] <input.woz> <output.(do|po|dsk)>
  *
  * Commands:
  *   info    Load a WOZ file and print its INFO chunk, TMAP, and track summary.
  *   import  Convert a block-based disk image to WOZ2 format.
  *   save    Load a WOZ 1.0 or 2.x file and re-save it as WOZ2 (round-trip test).
+ *   export  Convert a WOZ file to a 140K block image (.do/.po/.dsk).
  *
  * Flags:
  *   -v         Verbose: also print TMAP and per-track bit counts.
  *   -V <num>   DOS 3.3 volume number for import (default: 254 / 0xFE).
+ *   -i do|po   Sector interleave for export (default: inferred from
+ *              output extension; .do/.dsk → DO, .po → PO).
  *
  * Testing with CiderPress2:
  *   ~/src/cp2_1.0.5_osx-x64_sc/cp2 <command> <file.woz>
@@ -44,6 +48,7 @@
 
 #include "util/woz.hpp"
 #include "util/media.hpp"
+#include "devices/diskii/diskii_fmt.hpp"
 
 /* Silence the debug_level symbol required by debug.hpp */
 uint64_t debug_level = 0;
@@ -56,14 +61,17 @@ static void print_usage(const char* prog) {
         "  %s info   [-v] <file.woz>\n"
         "  %s import [-v] [-V <vol>] <input.(do|po|dsk|2mg)> <output.woz>\n"
         "  %s save   [-v] <input.woz> <output.woz>\n"
+        "  %s export [-v] [-i (do|po)] <input.woz> <output.(do|po|dsk)>\n"
         "\n"
         "  info    Load and display WOZ file metadata\n"
         "  import  Convert a block disk image to WOZ2\n"
         "  save    Load WOZ1 or WOZ2, re-save as WOZ2 (round-trip test)\n"
+        "  export  Convert WOZ to a 140K block image (.do/.po/.dsk)\n"
         "\n"
-        "  -v        Verbose: also print TMAP and per-track stats\n"
-        "  -V <num>  DOS 3.3 volume number for import (default 254)\n",
-        prog, prog, prog);
+        "  -v         Verbose: also print TMAP and per-track stats\n"
+        "  -V <num>   DOS 3.3 volume number for import (default 254)\n"
+        "  -i do|po   Interleave for export (default: inferred from extension)\n",
+        prog, prog, prog, prog);
     exit(1);
 }
 
@@ -134,6 +142,68 @@ static int cmd_import(const std::string& input_file,
     return 0;
 }
 
+// Returns INTERLEAVE_DO/INTERLEAVE_PO inferred from the output filename's
+// extension. .do/.dsk default to DO; .po defaults to PO. Returns
+// INTERLEAVE_NONE if the extension is unrecognised.
+static media_interleave_t infer_interleave(const std::string& filename) {
+    auto dot = filename.find_last_of('.');
+    if (dot == std::string::npos) return INTERLEAVE_NONE;
+    std::string ext = filename.substr(dot + 1);
+    for (auto& c : ext) c = static_cast<char>(tolower(c));
+    if (ext == "po")              return INTERLEAVE_PO;
+    if (ext == "do" || ext == "dsk") return INTERLEAVE_DO;
+    return INTERLEAVE_NONE;
+}
+
+static int cmd_export(const std::string& input_woz,
+                      const std::string& output_block,
+                      media_interleave_t interleave_override,
+                      bool verbose) {
+    Woz woz;
+    if (woz.load(input_woz) != 0) {
+        fprintf(stderr, "wozutil: failed to load '%s'\n", input_woz.c_str());
+        return 1;
+    }
+
+    media_interleave_t interleave = interleave_override;
+    if (interleave == INTERLEAVE_NONE) {
+        interleave = infer_interleave(output_block);
+        if (interleave == INTERLEAVE_NONE) {
+            fprintf(stderr,
+                    "wozutil: cannot infer interleave from '%s'; "
+                    "use -i do|po to override\n",
+                    output_block.c_str());
+            return 1;
+        }
+    }
+
+    if (verbose) {
+        printf("=== Loaded: %s ===\n", input_woz.c_str());
+        woz.dump_info();
+        printf("Output interleave: %s\n",
+               interleave == INTERLEAVE_PO ? "PO (ProDOS)" : "DO (DOS 3.3)");
+    }
+
+    disk_image_t out{};
+    int rc = woz.export_to_disk_image(out, interleave);
+    if (rc != 0) {
+        fprintf(stderr,
+                "wozutil: export had decode errors (some tracks/sectors did "
+                "not yield a clean checksum); writing partial result\n");
+    }
+
+    std::string out_copy = output_block; // write_disk_image_po_do_filename takes std::string&
+    if (!write_disk_image_po_do_filename(out, out_copy)) {
+        fprintf(stderr, "wozutil: write failed\n");
+        return 1;
+    }
+
+    printf("Exported '%s' → '%s' (%s)\n",
+           input_woz.c_str(), output_block.c_str(),
+           interleave == INTERLEAVE_PO ? "PO" : "DO");
+    return rc == 0 ? 0 : 2; // 2 = wrote partial result
+}
+
 static int cmd_save(const std::string& input_woz,
                     const std::string& output_woz,
                     bool verbose) {
@@ -172,14 +242,26 @@ int main(int argc, char* argv[]) {
     argc -= 1;
     argv += 1;
 
-    bool    verbose = false;
-    uint8_t volume  = 254;
-    int     opt;
+    bool               verbose             = false;
+    uint8_t            volume              = 254;
+    media_interleave_t interleave_override = INTERLEAVE_NONE;
+    int                opt;
 
-    while ((opt = getopt(argc, argv, "vV:")) != -1) {
+    while ((opt = getopt(argc, argv, "vV:i:")) != -1) {
         switch (opt) {
             case 'v': verbose = true;  break;
             case 'V': volume = static_cast<uint8_t>(atoi(optarg)); break;
+            case 'i': {
+                std::string s = optarg;
+                for (auto& c : s) c = static_cast<char>(tolower(c));
+                if      (s == "do") interleave_override = INTERLEAVE_DO;
+                else if (s == "po") interleave_override = INTERLEAVE_PO;
+                else {
+                    fprintf(stderr, "wozutil: -i must be 'do' or 'po'\n");
+                    print_usage(argv[0] - 1);
+                }
+                break;
+            }
             default:  print_usage(argv[0] - 1); // restore original name
         }
     }
@@ -197,6 +279,11 @@ int main(int argc, char* argv[]) {
     } else if (command == "save") {
         if (remaining < 2) print_usage(argv[0]);
         return cmd_save(argv[optind], argv[optind + 1], verbose);
+
+    } else if (command == "export") {
+        if (remaining < 2) print_usage(argv[0]);
+        return cmd_export(argv[optind], argv[optind + 1],
+                          interleave_override, verbose);
 
     } else {
         fprintf(stderr, "wozutil: unknown command '%s'\n", command.c_str());

@@ -772,6 +772,218 @@ int Woz::import_from_media(media_descriptor* media) {
     return 0;
 }
 
+// ─── Export to media (WOZ bit-stream → raw block image) ─────────────────────
+// Self-contained mirrors of denibble_table[] and decode_sector_62() from
+// diskii_fmt.cpp, kept here so gs2_woz has no link-time dependency on that
+// module (matching the comment near woz_translate_62 above).
+
+static const uint8_t woz_denibble_table[256] = {
+//   0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x00
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x10
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x20
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x30
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x40
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x50
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x60
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x70
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 0x80
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x02, 0x03, 0x00, 0x04, 0x05, 0x06, // 0x90
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x08, 0x00, 0x00, 0x00, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, // 0xA0
+    0x00, 0x00, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x00, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, // 0xB0
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1B, 0x00, 0x1C, 0x1D, 0x1E, // 0xC0
+    0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x20, 0x21, 0x00, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, // 0xD0
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x29, 0x2A, 0x2B, 0x00, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, // 0xE0
+    0x00, 0x00, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x00, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F, // 0xF0
+};
+
+// Reverses Woz's POSTNB16 routine, mirror of decode_sector_62() in diskii_fmt.cpp.
+static void woz_decode_sector_62(sector_62_t& nbuf, sector_t& decoded) {
+    uint8_t y = 0;
+    int8_t  x;
+    uint8_t c;
+    uint8_t* nbuf1 = nbuf;
+    uint8_t* nbuf2 = nbuf + 0x100;
+
+post1:
+    x = 0x56;
+post2:
+    x--;
+    if (x < 0) goto post1;
+
+    {
+        uint8_t a = nbuf1[y];
+        c = nbuf2[x] & 1; nbuf2[x] >>= 1; a = (a << 1) | c;
+        c = nbuf2[x] & 1; nbuf2[x] >>= 1; a = (a << 1) | c;
+        decoded[y] = a;
+    }
+    y++;
+    if (y != 0x00) goto post2;
+}
+
+namespace {
+
+// LSS-style bit cursor over a WOZ track. The bit position is monotonically
+// incrementing and wrapped modulo trk->bit_count on read, so callers can
+// safely walk past the revolution boundary; `consumed` is the total number
+// of bits read since the cursor was created (used to bound scans).
+struct BitCursor {
+    const woz_track_t* trk;
+    uint32_t           pos;
+    uint64_t           consumed;
+
+    int read_bit() {
+        uint32_t i = pos++ % trk->bit_count;
+        consumed++;
+        return (trk->bits[i >> 3] >> (7 - (i & 7))) & 1;
+    }
+};
+
+// Latches one complete nibble using the bit-7-set technique from the Disk II
+// LSS: shift bits into a register; once the high bit is set we have a full
+// nibble. Naturally absorbs 0xFF sync bytes (8 ones latch a 0xFF; the two
+// trailing zeros leave the shifter empty, ready for the next nibble's
+// leading 1) so 8-bit data and 10-bit sync are both handled transparently.
+static uint8_t read_nibble(BitCursor& c) {
+    uint8_t shifter = 0;
+    while (true) {
+        shifter = static_cast<uint8_t>((shifter << 1) | c.read_bit());
+        if (shifter & 0x80) return shifter;
+    }
+}
+
+} // namespace
+
+int Woz::decode_track(const woz_track_t& trk, int track_num,
+                      const interleave_t& phys_to_logical,
+                      disk_image_t& out) {
+    if (trk.bit_count == 0) return 0;
+
+    BitCursor c{&trk, 0, 0};
+
+    // Bound the scan to two full revolutions so a sector that straddles the
+    // wrap-point is still recoverable, and so a corrupt track can't loop us
+    // forever. The factor of 2 mirrors max_iterations in denibblize_disk_image.
+    const uint64_t max_bits = static_cast<uint64_t>(trk.bit_count) * 2;
+
+    bool found[SECTORS_PER_TRACK] = {false};
+    int  found_count = 0;
+
+    uint8_t n0 = 0, n1 = 0, n2 = 0;
+
+    while (found_count < SECTORS_PER_TRACK && c.consumed < max_bits) {
+        n2 = n1; n1 = n0; n0 = read_nibble(c);
+        if (!(n2 == 0xD5 && n1 == 0xAA && n0 == 0x96)) continue;
+
+        // Address field: 8 4&4-encoded nibbles → vol, track, sector, checksum.
+        uint8_t e[8];
+        for (int i = 0; i < 8; i++) e[i] = read_nibble(c);
+        uint8_t volume    = static_cast<uint8_t>(((e[0] & 0x55) << 1) | (e[1] & 0x55));
+        uint8_t trk_no    = static_cast<uint8_t>(((e[2] & 0x55) << 1) | (e[3] & 0x55));
+        uint8_t sector    = static_cast<uint8_t>(((e[4] & 0x55) << 1) | (e[5] & 0x55));
+        uint8_t checksum  = static_cast<uint8_t>(((e[6] & 0x55) << 1) | (e[7] & 0x55));
+
+        if (checksum != static_cast<uint8_t>(volume ^ trk_no ^ sector)) {
+            n0 = n1 = n2 = 0;
+            continue;
+        }
+        if (sector >= SECTORS_PER_TRACK) {
+            n0 = n1 = n2 = 0;
+            continue;
+        }
+
+        // Skip the 3-nibble address epilogue (DE AA EB) — values not checked.
+        (void)read_nibble(c);
+        (void)read_nibble(c);
+        (void)read_nibble(c);
+
+        // Hunt for the data prologue (D5 AA AD), bounded so we don't run away.
+        uint8_t d0 = 0, d1 = 0, d2 = 0;
+        const uint64_t hunt_limit = c.consumed + 64 * 8; // ~64 nibbles
+        bool got_prologue = false;
+        while (c.consumed < hunt_limit) {
+            d2 = d1; d1 = d0; d0 = read_nibble(c);
+            if (d2 == 0xD5 && d1 == 0xAA && d0 == 0xAD) { got_prologue = true; break; }
+        }
+        if (!got_prologue) {
+            n0 = n1 = n2 = 0;
+            continue;
+        }
+
+        // Read the 342 nibbles of 6&2-encoded payload (XOR-chain).
+        sector_62_t nbuf;
+        uint8_t csum = 0;
+        for (int i = 0x155; i >= 0x100; i--) {
+            nbuf[i] = static_cast<uint8_t>(csum ^ woz_denibble_table[read_nibble(c)]);
+            csum = nbuf[i];
+        }
+        for (int i = 0; i < 0x100; i++) {
+            nbuf[i] = static_cast<uint8_t>(csum ^ woz_denibble_table[read_nibble(c)]);
+            csum = nbuf[i];
+        }
+        // Trailing checksum nibble — verifies that the running csum is zero
+        // after XORing with the table-decoded checksum nibble.
+        uint8_t tail = woz_denibble_table[read_nibble(c)];
+        if (static_cast<uint8_t>(csum ^ tail) != 0) {
+            // Bad checksum: drop this sector, try the next prologue.
+            n0 = n1 = n2 = 0;
+            continue;
+        }
+
+        sector_t decoded;
+        woz_decode_sector_62(nbuf, decoded);
+
+        int logical = phys_to_logical[sector];
+        std::memcpy(out.sectors[track_num][logical], decoded, SECTOR_SIZE);
+
+        if (!found[sector]) { found[sector] = true; ++found_count; }
+        n0 = n1 = n2 = 0;
+    }
+
+    return found_count;
+}
+
+int Woz::export_to_disk_image(disk_image_t& out, media_interleave_t interleave) {
+    const interleave_t* phys_to_logical = nullptr;
+    if (interleave == INTERLEAVE_PO) {
+        phys_to_logical = &po_phys_to_logical;
+    } else if (interleave == INTERLEAVE_DO) {
+        phys_to_logical = &do_phys_to_logical;
+    } else {
+        std::cerr << "WOZ: export_to_disk_image: unsupported interleave "
+                  << interleave << "\n";
+        return -1;
+    }
+
+    // Start from a clean slate so any sector we fail to decode is left zeroed
+    // rather than carrying whatever the caller's stack had.
+    std::memset(&out, 0, sizeof(out));
+
+    int total_decoded = 0;
+    int tracks_with_full_data = 0;
+
+    for (int t = 0; t < TRACKS_PER_DISK; t++) {
+        uint8_t idx = m_image.tmap[t * 4];
+        if (idx == 0xFF || idx >= m_image.tracks.size()) {
+            std::cerr << "WOZ: export_to_disk_image: track " << t
+                      << " missing from TMAP\n";
+            continue;
+        }
+        const woz_track_t& trk = m_image.tracks[idx];
+        int got = decode_track(trk, t, *phys_to_logical, out);
+        total_decoded += got;
+        if (got == SECTORS_PER_TRACK) {
+            ++tracks_with_full_data;
+        } else {
+            std::cerr << "WOZ: export_to_disk_image: track " << t
+                      << " decoded " << got << "/" << SECTORS_PER_TRACK
+                      << " sectors\n";
+        }
+    }
+
+    return (tracks_with_full_data == TRACKS_PER_DISK) ? 0 : -1;
+}
+
 // ─── Accessors ────────────────────────────────────────────────────────────────
 
 woz_track_t* Woz::get_track_ptr(int quarter_track) {

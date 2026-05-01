@@ -135,6 +135,13 @@ public:
     // Returns 0 on success, -1 on error.
     int import_from_media(media_descriptor* media);
 
+    // Reverse of import_from_media. Walks each whole-track entry in TMAP,
+    // decodes the WOZ bit-stream into raw 256-byte sectors using the LSS-style
+    // bit-7 latch technique (sync bytes are 10 bits, data nibbles are 8 bits),
+    // applies the physical-to-logical interleave, and fills `out`.
+    // Returns 0 if all 35*16 sectors decoded; -1 if any track failed.
+    int export_to_disk_image(disk_image_t& out, media_interleave_t interleave);
+
     // ── Accessors ────────────────────────────────────────────────────────────
 
     woz_image_t&        image()       { return m_image; }
@@ -181,6 +188,14 @@ private:
     woz_track_t build_track_from_nib(const uint8_t* nib_data, uint32_t nib_size);
     // Import a MEDIA_PRENYBBLE (.nib) image into the in-memory WOZ representation.
     int import_from_nib(media_descriptor* media);
+
+    // Decode one WOZ bit-stream track into the 16 sectors of out.sectors[track_num].
+    // Walks the bit stream with an LSS-style shifter (a complete nibble is latched
+    // when bit 7 becomes 1), then applies the same address/data prologue scan as
+    // denibblize_disk_image(). Returns the number of sectors decoded (0..16).
+    int decode_track(const woz_track_t& trk, int track_num,
+                     const interleave_t& phys_to_logical,
+                     disk_image_t& out);
 
     // ── Chunk parsers ────────────────────────────────────────────────────────
     int parse_info(const uint8_t* data, uint32_t size);

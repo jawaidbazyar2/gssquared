@@ -91,22 +91,39 @@ bool Floppy525_woz::unmount(uint64_t key) {
 bool Floppy525_woz::writeback() {
     if (!media_d) return false;
 
-    // For WOZ files save in-place; for imported block images write back as WOZ, but change the file extension to .woz.
-    std::string filename = media_d->filename;
-    std::cout << "Floppy525_woz: writing back disk image" << media_d->filename << "  " << media_d->media_type << std::endl;
-    if (media_d->media_type == MEDIA_NYBBLE) { // poorly named
-        std::cout << "Floppy525_woz: writing back WOZ disk image" << std::endl;
-        filename = filename.substr(0, filename.find_last_of('.')) + ".woz";
-        // woz.export
-    } else {
+    // MEDIA_NYBBLE here means the original mount source was a 140K block
+    // image (.do/.po/.dsk) — see mount() above where MEDIA_WOZ takes the
+    // woz.load() path and everything else takes import_from_media(). For the
+    // block-image case, decode the in-memory WOZ bit-stream back into a
+    // raw disk_image_t and rewrite the original file in place. For native
+    // WOZ files just save the image as WOZ2.
+    std::cout << "Floppy525_woz: writing back disk image " << media_d->filename
+              << " (media_type=" << media_d->media_type << ")" << std::endl;
+
+    if (media_d->media_type == MEDIA_NYBBLE) {
         std::cout << "Floppy525_woz: writing back block disk image" << std::endl;
-        // TODO: write back the block disk image.
-        int rc = woz.save(filename);
+        disk_image_t out{};
+        if (woz.export_to_disk_image(out, media_d->interleave) != 0) {
+            fprintf(stderr,
+                    "Floppy525_woz: WOZ->block export had decode errors for '%s'; "
+                    "writing partial result\n",
+                    media_d->filename.c_str());
+            // Fall through and write whatever was recovered, mirroring
+            // Floppy525::writeback() which always writes after denibblize.
+        }
+        if (!write_disk_image_po_do(media_d, out)) {
+            fprintf(stderr, "Floppy525_woz: block writeback failed for '%s'\n",
+                    media_d->filename.c_str());
+            return false;
+        }
+    } else {
+        std::cout << "Floppy525_woz: writing back WOZ disk image" << std::endl;
+        int rc = woz.save(media_d->filename);
         if (rc != 0) {
             fprintf(stderr, "Floppy525_woz: writeback failed for '%s'\n",
                     media_d->filename.c_str());
             return false;
-        }   
+        }
     }
 
     modified = false;
