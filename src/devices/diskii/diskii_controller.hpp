@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "computer.hpp"
+//#include "computer.hpp"
 #include "NClock.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/media.hpp"
@@ -45,7 +45,7 @@
 #define DISKII_SWITCH_COUNT 8
 
 class DiskII_WOZ_Controller : public StorageDevice {
-    computer_t   *computer;
+    //computer_t   *computer;
     SoundEffect  *sound_effect;
     SoundEffectContainer_t sounds[5];
     NClock       *clock;
@@ -283,8 +283,8 @@ public:
         }
     }
     
-    uint8_t read_cmd(uint16_t address) {
-        uint16_t reg = address & 0x0F;
+    uint8_t read(uint16_t reg) {
+        //uint16_t reg = address & 0x0F;
 
         fast_forward();
 
@@ -300,8 +300,8 @@ public:
         return 0; // odd-address reads return floating bus (simplified to 0)
     }
 
-    void write_cmd(uint16_t address, uint8_t data) {
-        uint16_t reg = address & 0x0F;
+    void write(uint16_t reg, uint8_t data) {
+        //uint16_t reg = address & 0x0F;
 
         // Drain LSS work using the OLD Q6/Q7 state before the switch flips.
         fast_forward();
@@ -312,7 +312,7 @@ public:
         // captures the CPU value into data_register (matches OE's
         // AppleDiskIIInterfaceCard::write).  This subsumes the previous
         // Q6H/Q7H-only special case.
-        if (motor_on && (address & 0x01)) {
+        if (motor_on && (reg & 0x01)) {
             data_register = data;
         }
     }
