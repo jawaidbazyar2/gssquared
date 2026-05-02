@@ -44,7 +44,7 @@ void init_iwm_slot(computer_t *computer, SlotType_t slot) {
 
     iwm_state_t *st = new iwm_state_t();
     st->computer = computer;
-    st->iwm = new IWM(computer->sound_effect, computer->clock);
+    st->iwm = new IWM(computer->sound_effect, computer->clock, computer->event_timer);
 
     for (uint32_t i = 0xC0E0; i <= 0xC0EF; i++) {
         computer->mmu->set_C0XX_write_handler(i, { iwm_write_C0xx, st });
