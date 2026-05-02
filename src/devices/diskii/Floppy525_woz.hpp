@@ -12,8 +12,6 @@ class Floppy525_woz: public FloppyDrive {
     uint8_t phase2 = 0;
     uint8_t phase3 = 0;
     bool enable = false; // "enable" or drive off/on
-    /* uint8_t Q6 = 0;
-    uint8_t Q7 = 0; */
 
     uint8_t write_protect = 0; // 1 = write protect, 0 = not write protect
     uint16_t image_index = 0;
@@ -31,16 +29,9 @@ class Floppy525_woz: public FloppyDrive {
     //   1 bit cell = 4 CPU cycles → 1 CPU cycle = 2 units.
     // Advances by elapsed_cycles × 2 each fast_forward() call and is kept
     // wrapped within one revolution (track_bits × 8 units).
-    //uint64_t bit_fp = 0;
     uint64_t last_cycle = 0;
-    uint64_t read_position = 0;
-    uint64_t head_position = 0;
-
-    // Apple II LSS shift accumulator (internal; cleared on each latch event).
-    /* uint8_t lss_shift = 0; */
-    // Data latch: set to lss_shift whenever lss_shift's bit 7 becomes 1.
-    // This is what the CPU reads via Q6L.  Held until the next latch event.
-    /* uint8_t data_register = 0; */
+    uint64_t read_position = 0; // how far the emulation has progressed consuming bits from the track
+    uint64_t head_position = 0; // the simulated head position.
 
     bool is_mounted = false;
     bool modified = false;
@@ -70,14 +61,14 @@ public:
 
     // TODO: these should all be virtual, both 5.25 and 3.5 implement them (but their behavior is radically different)
     virtual void set_phase(uint8_t phase, bool onoff) override;
-    /* virtual void get_rdpulse() override; */
+
     virtual void set_enable(bool enable) override {
         if (!this->enable && enable) {
             // we are turning the motor on
             last_cycle = clock->get_cycles();
         }
         this->enable = enable;
-        //last_cycle = clock->get_cycles();
+
         // TODO: various state we probably need to clear here if they turn enable off. Also,
         // enable=1 means motor on, motor sound is handled by controller class.
     }
@@ -89,12 +80,7 @@ public:
     void    write_pulse(uint8_t bit) override;
     inline uint8_t get_write_protect() { return write_protect; }
 
-    /* virtual bool get_Q7() { return Q7; }
-    virtual bool get_Q6() { return Q6; } */
-
-    /* virtual void set_track(int track_num) override; */
     virtual int get_track() override { return track; }
-    /* virtual void move_head(int direction) override; */
 
     virtual void write_nybble(uint8_t nybble) override {};
     virtual uint8_t read_nybble() override { return 0;};
@@ -123,15 +109,8 @@ public:
         uint64_t pos = head_position>>3;
         f->addLine("Head Position: %llu (%d.%d)", pos, pos / 8, pos % 8);
         pos = read_position>>3;
-        f->addLine("Read Position: %llu (%d.%d)", pos, pos / 8, pos % 8);
-        
+        f->addLine("Read Position: %llu (%d.%d)", pos, pos / 8, pos % 8);       
         f->addLine("Last Cycle: %llu", (unsigned long long)last_cycle);
-
-        //f->addLine("LSS Shift: %02X", lss_shift);
-        //f->addLine("Data Register: %02X", data_register);
-        //f->addLine("Write Shift Register: %02X", write_shift_register);
-        /* f->addLine("Q6: %d", Q6);
-        f->addLine("Q7: %d", Q7); */
         f->addLine("Modified: %d", modified);
     }
 };

@@ -45,17 +45,10 @@ bool Floppy525_woz::mount(uint64_t key, media_descriptor *media_in) {
         return false;
     }
 
-    //bit_fp = 0;
     read_position = 0;
     head_position = 0;
     last_cycle = clock->get_cycles();
-    //lss_shift = 0;
-    
-    //data_register = 0; // this lives in controller.
-    
-    //track               = 0; // don't reset track. however, we need point to the current track.
-    //cur_track_ptr = woz.get_track_ptr(track); // handled inside update_track_ptr()
-
+ 
     update_track_ptr();
 
     write_protect = media_in->write_protected;
@@ -73,12 +66,10 @@ bool Floppy525_woz::unmount(uint64_t key) {
     // Reset Woz image to a clean blank state
     woz = Woz{};
     cur_track_ptr = nullptr;
-    //bit_fp        = 0;
+
     read_position = 0;
     head_position = 0;
     last_cycle    = 0;
-    //lss_shift            = 0;
-    //data_register  = 0;
 
     is_mounted = false;
     media_d    = nullptr;
@@ -147,16 +138,6 @@ void Floppy525_woz::reset() {
 
 // ---------------------- END Storage Device Interface ────────────────────────────
 
-// ─── Head position helpers ────────────────────────────────────────────────────
-
-/* void Floppy525_woz::set_track(int track_num) {
-    track = track_num;
-}
-
-void Floppy525_woz::move_head(int direction) {
-    track += direction;
-} */
-
 /* General methods for setting / reading floppy bus signals */
 void Floppy525_woz::set_phase(uint8_t phase, bool onoff) {
 
@@ -207,7 +188,6 @@ void Floppy525_woz::update_track_ptr() {
     // is always in-range.  The disk keeps spinning so the angular position
     // is preserved; only the modulus changes.
     if (cur_track_ptr && cur_track_ptr->bit_count > 0) {
-        //bit_fp = bit_fp % (cur_track_ptr->bit_count * 8);
         head_position = head_position % (cur_track_ptr->bit_count * 8);
         read_position = head_position;
     }
@@ -255,7 +235,7 @@ void Floppy525_woz::update_track() {
     const unsigned phase_bits =
         (phase0 << 0) | (phase1 << 1) | (phase2 << 2) | (phase3 << 3);
     const int8_t detent = kDetentFromPhases[phase_bits];
-    //if (dbglog) fprintf(dbglog, "--- %lld update_phases: detent: %d\n", clock->get_cycles(), detent);
+
     if (detent == -1) return;  // forces cancel
     if (detent == cur_phase) return;
 
@@ -273,7 +253,7 @@ void Floppy525_woz::update_track() {
     } else {
         track += slice_add;
     }
-    //if (dbglog) fprintf(dbglog, "update_phases: track: %d slice_subtract: %d slice_add: %d\n", track, slice_subtract, slice_add);
+
     // if current phase is 0, and detent is < 4; subtract; if detent is > 4, add.
     
     if (track < 0) track = 0;
@@ -341,9 +321,9 @@ inline uint8_t Floppy525_woz::get_random_bit() {
 uint8_t Floppy525_woz::read_pulse() {
     uint8_t bit;
     if (!enable || !cur_track_ptr || cur_track_ptr->bit_count == 0) {
-        bit = 0; //get_random_bit(); // this will get randomized below when we check the window
+        bit = 0;  // this will get randomized below when we check the window
     } else {
-        // bit_fp is in 1/8-bit-cell units (see fast_forward / update_track_ptr).
+        // head_position is in 1/8-bit-cell units (see fast_forward / update_track_ptr).
         // Track bit index = bit_fp >> 3; byte in packed buffer = that / 8.
         uint64_t track_bits = cur_track_ptr->bit_count;
         uint64_t bi         = (read_position >> 3) % track_bits;
@@ -354,7 +334,7 @@ uint8_t Floppy525_woz::read_pulse() {
             bit = (cur_track_ptr->bits[byte_idx] >> (7 - static_cast<int>(bit_in_byte))) & 1;
         } else {
             // corrupted / inconsistent WOZ track metadata vs buffer
-            bit = 0; // get_random_bit(); // this will get randomized below when we check the window
+            bit = 0;  // this will get randomized below when we check the window
         }
     }
 
