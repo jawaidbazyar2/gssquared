@@ -15,16 +15,77 @@
 
 class IWM {
     protected:
+
+        SoundEffect *sound_effect;
+        SoundEffectContainer_t sounds[5];
         NClockII *clock;
+
+        IWM_Drive *drives[4];
 
         uint64_t mark_cycles_turnoff = 0; // when DRIVES OFF, set this to current cpu cycles. Then don't actually set motor=0 until one second (1M cycles) has passed. Then reset this to 0.
         bool motor = false;
         //int drive_select = 0;
 
-        SoundEffect *sound_effect;
-        SoundEffectContainer_t sounds[5];
         int running_chunknumber = 0;
         int start_track_movement = -1;
+
+        uint8_t any_enabled = 0;
+        uint8_t any_drive_on = 0;
+
+        /* You can access the switch states either by array index, or by individual switch name */
+        union {
+            uint8_t switches[IWM_SWITCH_COUNT];
+            struct {
+                uint8_t iwm_ca0;
+                uint8_t iwm_ca1;
+                uint8_t iwm_ca2;
+                uint8_t iwm_lstrb;
+                uint8_t iwm_enable;
+                uint8_t iwm_select;
+                uint8_t iwm_q6;
+                uint8_t iwm_q7;
+            };        
+        };
+
+        uint32_t drive_selected = 0; // 0 = 5.25 1, 1 = 5.25 2, 2 = 3.5 1, 3 = 3.5 2
+
+        uint8_t sense_input = 0;
+        union {
+            struct {
+                uint8_t dr_reserved: 6;
+                uint8_t dr_enable35 : 1;
+                uint8_t dr_sel : 1;
+            };
+            uint8_t disk_register;
+        };
+
+        union {
+            struct {
+                uint8_t mr_latch : 1;
+                uint8_t mr_hsprotocol : 1;
+                uint8_t mr_motorofftimer : 1;
+                uint8_t mr_bitcelltime : 1;
+                uint8_t mr_clockspeed : 1;
+                uint8_t mr_reserved : 3;
+            };
+            uint8_t reg_mode; // write only
+        };
+        union {
+            struct {
+                uint8_t hr_reserved : 6;
+                uint8_t hr_underrun : 1;
+                uint8_t hr_register_ready : 1;
+            };
+            uint8_t reg_handshake;
+        };
+
+        // controller data register
+        uint8_t data_register = 0;
+        // LSS QA-hold sub-state: tracks whether we are in the first or second
+        // bit-cell after bit 7 of data_register went high.  Mirrors OpenEmulator's
+        // `sequencerState` in the SEQUENCER_READSHIFT case. This is a helper to fast-forward lss state.
+        bool sequencer_state = false;
+
 
         /* Load our sound effects */
         const char *sound_files[5] = {
@@ -38,7 +99,7 @@ class IWM {
         // schedule a motor off.
         void request_motor_off() {
             if (drive_selected < 2) { // is a 5.25 
-                mark_cycles_turnoff = clock->get_c14m() + 14318180;
+                mark_cycles_turnoff = clock->get_c14m() + clock->get_c14m_per_second();
             } else { // 3.5, drive on/off handled differently.
             }
             //if (DEBUG(DEBUG_DISKII)) printf("request_motor_off: %llu\n", u64_t(mark_cycles_turnoff));
@@ -56,9 +117,9 @@ class IWM {
 
     public:
         IWM(SoundEffect *sound_effect, NClockII *clock) {
-            for (uint32_t i = 0; i < IWM_SWITCH_COUNT; i++) {
+            /* for (uint32_t i = 0; i < IWM_SWITCH_COUNT; i++) {
                 switches[i] = 0;
-            }
+            } */
             drives[0] = new IWM_Drive_525(sound_effect, clock);
             drives[1] = new IWM_Drive_525(sound_effect, clock);
             drives[2] = new IWM_Drive_35(sound_effect, clock);
@@ -72,13 +133,8 @@ class IWM {
                 sounds[i].fname = sound_files[i];
                 sounds[i].si = sound_effect->load(sound_files[i], SE_SHUGART_DRIVE + i);
             }
-/*             disk_register = 0;
-            for (uint32_t i = 0; i < 4; i++) {
-                drives[i]->set_enable(false);
-            }
-            drive_selected = 0;
-            reg_mode = 0;
-            reg_handshake = 0; */
+
+            memset(switches, 0, sizeof(switches));
         };
 
         ~IWM() {
@@ -89,6 +145,18 @@ class IWM {
                 }
             }
         };
+
+        void reset() {
+            disk_register = 0;
+            for (uint32_t i = 0; i < 4; i++) {
+                drives[i]->set_enable(false);
+            }
+            mark_cycles_turnoff = 0;
+            drive_selected = 0;
+            reg_mode = 0;
+            reg_handshake = 0;
+            motor = false;
+        }
 
         void check_motor_off_timer() {
             if (mark_cycles_turnoff != 0 && (clock->get_c14m() > mark_cycles_turnoff)) {
@@ -104,18 +172,6 @@ class IWM {
         
         void mount(media_descriptor *media) {
             drives[0]->mount(0x600, media);  // key = slot 6, drive 0
-        }
-
-        void reset() {
-            disk_register = 0;
-            for (uint32_t i = 0; i < 4; i++) {
-                drives[i]->set_enable(false);
-            }
-            mark_cycles_turnoff = 0;
-            drive_selected = 0;
-            reg_mode = 0;
-            reg_handshake = 0;
-            motor = false;
         }
 
         // utility functions
@@ -313,57 +369,7 @@ class IWM {
 
     bool get_motor() { return motor; }
 
-    private:
-        /* You can access the switch states either by array index, or by individual switch name */
-        union {
-            uint32_t switches[IWM_SWITCH_COUNT];
-            struct {
-                uint32_t iwm_ca0;
-                uint32_t iwm_ca1;
-                uint32_t iwm_ca2;
-                uint32_t iwm_lstrb;
-                uint32_t iwm_enable;
-                uint32_t iwm_select;
-                uint32_t iwm_q6;
-                uint32_t iwm_q7;
-            };        
-        };
-
-        IWM_Drive *drives[4];
-
-        uint32_t drive_selected = 0; // 0 = 5.25 1, 1 = 5.25 2, 2 = 3.5 1, 3 = 3.5 2
-        uint8_t any_enabled = 0;
-        uint8_t any_drive_on = 0;
-        uint8_t sense_input = 0;
-        union {
-            struct {
-                uint8_t dr_reserved: 6;
-                uint8_t dr_enable35 : 1;
-                uint8_t dr_sel : 1;
-            };
-            uint8_t disk_register;
-        };
-
-        union {
-            struct {
-                uint8_t mr_latch : 1;
-                uint8_t mr_hsprotocol : 1;
-                uint8_t mr_motorofftimer : 1;
-                uint8_t mr_bitcelltime : 1;
-                uint8_t mr_clockspeed : 1;
-                uint8_t mr_reserved : 3;
-            };
-            uint8_t reg_mode; // write only
-        };
-        union {
-            struct {
-                uint8_t hr_reserved : 6;
-                uint8_t hr_underrun : 1;
-                uint8_t hr_register_ready : 1;
-            };
-            uint8_t reg_handshake;
-        };
-
+   
         /*
         * Handles state changes on "access" to registers C0E0-C0EF, which apply to either reads or writes.
         */
