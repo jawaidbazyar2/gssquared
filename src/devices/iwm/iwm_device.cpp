@@ -2,7 +2,7 @@
 
 #include "iwm_device.hpp"
 #include "computer.hpp"
-#include "IWM.hpp"
+#include "IWM2.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/media.hpp"
@@ -72,9 +72,9 @@ void init_iwm_slot(computer_t *computer, SlotType_t slot) {
     storage_key_t key;
     key.slot = 6;
     key.drive = 0;
-    computer->mounts->register_storage_device(key, st->iwm->get_drive(0), DRIVE_TYPE_APPLEDISK_525);
+    computer->mounts->register_storage_device(key, st->iwm, DRIVE_TYPE_APPLEDISK_525);
     key.drive = 1;
-    computer->mounts->register_storage_device(key + 1, st->iwm->get_drive(1), DRIVE_TYPE_APPLEDISK_525);
+    computer->mounts->register_storage_device(key, st->iwm, DRIVE_TYPE_APPLEDISK_525);
     
     // TODO: register the 3.5s here later
 

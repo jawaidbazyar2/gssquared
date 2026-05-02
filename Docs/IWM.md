@@ -120,6 +120,8 @@ So, I am feeling like we could have iwm_controller. It will be very similar to 
 
 the things that will be different between 5.25 and 3.5 in controller are:fast_forwardthe way the register loads are bytewise for reading and writing (i.e. check for completion byte at a time instead of bit at a time?)
 
+IWM now using Floppy525_woz. All is good except ProDOS8 2.4.3 does -something- that causes the emulator to drag and blow frames. Must be something wrong with fast_forward?
+
 ## Commonalities between disk_controller and IWM
 
 disk::decode is similar to iwm::access. the read_cmd/write_cmd are now fairly similar. 
@@ -133,13 +135,14 @@ decode(): motor-on/motor-off differs based on that mode flag;
 
 Make the switches implementation the same between these (array union with individual switch names).
 
+ok with some fussing and munging the apis are very similar now.
 
 
 ## Floppy Differences between 5.25 and 3.5
 
 the floppy525_woz->floppy35_woz changes are:
 
-the fast_forward speed per cycle. currently head_position += cycles * 2. head position is bit with a , so this advances by 1/4 or 1 bit cell.however, for 3.5, it runs twice as fast, so we would do head_positoin += cycles * 4 (2 cpu cycles per bit cell). this will return more bits_to_sim per invocation. (the iwm should be clocked at 1mhz, not cpu clock). 
+the fast_forward speed per cycle. currently head_position += cycles * 2. head position is bit with a , so this advances by 1/4 or 1 bit cell.however, for 3.5, it runs twice as fast, so we would do head_positoin += cycles * 4 (2 cpu cycles per bit cell). this will return more bits_to_sim per invocation.
 
 This could be a parameter from disk_controller. 
 

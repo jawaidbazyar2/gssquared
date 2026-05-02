@@ -1,7 +1,10 @@
 #pragma once
 
 #include <cstdint>
-#include "IWM.hpp"
+#include "SlotData.hpp"
+
+class computer_t;
+class IWM;
 
 struct iwm_state_t {
     computer_t *computer;
