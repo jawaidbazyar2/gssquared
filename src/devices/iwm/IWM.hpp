@@ -10,17 +10,20 @@
 #include "IWM_Drive.hpp"
 #include "IWM_525.hpp"
 #include "IWM_35.hpp"
+//#include "devices/diskii/Floppy525_woz.hpp"
 
 #include "util/SoundEffectKeys.hpp"
 
-class IWM {
+class IWM /* : public StorageDevice */ {
     protected:
 
         SoundEffect *sound_effect;
         SoundEffectContainer_t sounds[5];
         NClockII *clock;
 
-        IWM_Drive *drives[4];
+        IWM_Drive *drives_525[2];
+        IWM_Drive *drives_35[2];
+        //Floppy525_woz drives_525[2];
 
         uint64_t mark_cycles_turnoff = 0; // when DRIVES OFF, set this to current cpu cycles. Then don't actually set motor=0 until one second (1M cycles) has passed. Then reset this to 0.
         bool motor = false;
@@ -98,32 +101,37 @@ class IWM {
 
         // schedule a motor off.
         void request_motor_off() {
-            if (drive_selected < 2) { // is a 5.25 
+            if (dr_enable35) {
+                // TODO: 3.5 drive motor off instantly.
+            } else {
                 mark_cycles_turnoff = clock->get_c14m() + clock->get_c14m_per_second();
-            } else { // 3.5, drive on/off handled differently.
             }
             //if (DEBUG(DEBUG_DISKII)) printf("request_motor_off: %llu\n", u64_t(mark_cycles_turnoff));
         }
 
         // motor on is always immediate.
         void request_motor_on() {
-            if (drive_selected < 2) { // is a 5.25 
+            if (dr_enable35) { // is a 3.5 drive
+                // TODO: 3.5 drive motor on instantly.
+            } else { // is a 5.25 drive
                 mark_cycles_turnoff = 0;
                 motor = true;
-                drives[drive_selected]->set_enable(true);
+                drives_525[drive_selected]->set_enable(true);
             }
             //if (DEBUG(DEBUG_DISKII)) printf("request_motor_on: %llu\n", u64_t(mark_cycles_turnoff));
         }
 
     public:
-        IWM(SoundEffect *sound_effect, NClockII *clock) {
+        IWM(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer) 
+           /*  : StorageDevice(), 
+              drives_525{Floppy525_woz(sound_effect, clock, event_timer), Floppy525_woz(sound_effect, clock, event_timer)} */ {
             /* for (uint32_t i = 0; i < IWM_SWITCH_COUNT; i++) {
                 switches[i] = 0;
             } */
-            drives[0] = new IWM_Drive_525(sound_effect, clock);
-            drives[1] = new IWM_Drive_525(sound_effect, clock);
-            drives[2] = new IWM_Drive_35(sound_effect, clock);
-            drives[3] = new IWM_Drive_35(sound_effect, clock);
+            drives_525[0] = new IWM_Drive_525(sound_effect, clock);
+            drives_525[1] = new IWM_Drive_525(sound_effect, clock);
+            drives_35[0] = new IWM_Drive_35(sound_effect, clock);
+            drives_35[1] = new IWM_Drive_35(sound_effect, clock);
             reset();
 
             this->sound_effect = sound_effect;
@@ -138,18 +146,23 @@ class IWM {
         };
 
         ~IWM() {
-            for (uint32_t i = 0; i < 4; i++) {
-                if (drives[i] != nullptr) {
-                    delete drives[i];
-                    drives[i] = nullptr;
+            for (uint32_t i = 0; i < 2; i++) {
+                if (drives_525[i] != nullptr) {
+                    delete drives_525[i];
+                    drives_525[i] = nullptr;
+                }
+                if (drives_35[i] != nullptr) {
+                    delete drives_35[i];
+                    drives_35[i] = nullptr;
                 }
             }
         };
 
         void reset() {
             disk_register = 0;
-            for (uint32_t i = 0; i < 4; i++) {
-                drives[i]->set_enable(false);
+            for (uint32_t i = 0; i < 2; i++) {
+                drives_525[i]->set_enable(false);
+                drives_35[i]->set_enable(false);
             }
             mark_cycles_turnoff = 0;
             drive_selected = 0;
@@ -160,33 +173,19 @@ class IWM {
 
         void check_motor_off_timer() {
             if (mark_cycles_turnoff != 0 && (clock->get_c14m() > mark_cycles_turnoff)) {
-                drives[drive_selected]->set_enable(false);
+                drives_525[drive_selected]->set_enable(false);
                 motor = false;
                 mark_cycles_turnoff = 0;
             }
         }
-      
+
         IWM_Drive *get_drive(int index) {
-            return drives[index];
+            return drives_525[index];
         }
         
-        void mount(media_descriptor *media) {
-            drives[0]->mount(0x600, media);  // key = slot 6, drive 0
-        }
-
         // utility functions
         inline bool address_odd(uint32_t address) { return address & 0x01; }
         inline bool address_even(uint32_t address) { return (address & 0x01) == 0; }
-        //uint32_t register_index() { }
-
-        void set_switch(uint32_t switch_index, bool onoff) { 
-            assert(switch_index < IWM_SWITCH_COUNT && "IWM: switch index out of bounds");
-            switches[switch_index] = onoff; 
-        }
-        bool get_switch(uint32_t switch_index) { 
-            assert(switch_index < IWM_SWITCH_COUNT && "IWM: switch index out of bounds");
-            return switches[switch_index]; 
-        }
 
         uint8_t read_disk_register() { return disk_register; }
         void write_disk_register(uint8_t data) { disk_register = data; }
@@ -196,48 +195,79 @@ class IWM {
             return (reg_mode & 0b000'11111) | any_drive_on << 5 | sense_input << 7;
         }
 
-        inline void handle_switch(uint32_t address) {
-            switch (address) {
-                case IWM_ENABLE_ON:
-                    any_enabled = true;
-                    if (drive_selected < 2) { // is a 5.25 
+        inline void decode(uint16_t reg) {
+            // Update the switch state
+            switches[reg>>1] = reg & 0x01;
+
+            if (dr_enable35) {
+                // TODO: 3.5 drive motor on/off instantly.
+                switch (reg) {
+                    case IWM_ENABLE_ON:
+                        any_enabled = true;
+                        drives_35[drive_selected]->set_enable(true);
+                        break;
+                    case IWM_ENABLE_OFF:
+                        any_enabled = false;
+                        drives_35[drive_selected]->set_enable(false);
+                        break;
+                    case IWM_SELECT_ON:
+                        drives_35[drive_selected]->set_enable(false); // de-select     
+                        drive_selected = 1;
+                        drives_35[drive_selected]->set_enable(any_enabled);
+                        break;
+                    case IWM_SELECT_OFF:
+                        drives_35[drive_selected]->set_enable(false); // de-select 
+                        drive_selected = 0;
+                        drives_35[drive_selected]->set_enable(any_enabled);
+                        break;
+                    default:
+                        break;
+                }
+            } else {
+                // 5.25 drive motor on/off handled differently.
+                switch (reg) {
+                    case IWM_ENABLE_ON:
+                        any_enabled = true;
                         request_motor_on();
-                    } else drives[drive_selected]->set_enable(true);
-                    break;
-                case IWM_ENABLE_OFF:
-                    any_enabled = false;
-                    if (drive_selected < 2) { // is a 5.25 
+                        break;
+                    case IWM_ENABLE_OFF:
+                        any_enabled = false;
                         request_motor_off();
-                    } else drives[drive_selected]->set_enable(false);
-                    break;
-                case IWM_SELECT_ON:
-                    drives[drive_selected]->set_enable(false); // de-select     
-                    drive_selected = 1;
-                    drives[drive_selected]->set_enable(any_enabled);
-                    break;
-                case IWM_SELECT_OFF:
-                    drives[drive_selected]->set_enable(false); // de-select 
-                    drive_selected = 0;
-                    drives[drive_selected]->set_enable(any_enabled);
-                    break;
-                default:
-                    break;
+                        break;
+                    case IWM_SELECT_ON:
+                        drives_525[drive_selected]->set_enable(false); // de-select     
+                        drive_selected = 1;
+                        drives_525[drive_selected]->set_enable(any_enabled);
+                        break;
+                    case IWM_SELECT_OFF:
+                        drives_525[drive_selected]->set_enable(false); // de-select 
+                        drive_selected = 0;
+                        drives_525[drive_selected]->set_enable(any_enabled);
+                        break;
+                    default:
+                        break;
+                }
             }
+           
         }
 
-        uint8_t read(uint32_t address) {
-            assert(address < IWM_ADDRESS_MAX && "IWM: read address out of bounds");
-            access(address);
+        uint8_t read(uint16_t reg) {
+            assert(reg < IWM_ADDRESS_MAX && "IWM: read address out of bounds");
+            //access(address);
             
-            drives[drive_selected]->read_cmd(address);
+            if (dr_enable35) {
+                //drives_35[drive_selected]->read_cmd(reg);
+            } else {
+                drives_525[drive_selected]->read_cmd(reg);
+            }
 
-            handle_switch(address);           
+            decode(reg);
 
             /* Read Status Register 
             To access it, turn Q7 off and Q6 on, and read from any even-numbered address in the
             $C0E0...$C0EF range.
             */
-            if (address_even(address) && !iwm_q7 && iwm_q6) {
+            if (address_even(reg) && !iwm_q7 && iwm_q6) {
                 return read_status_register();
             }
             /* The handshake register is a read-only register used when writing to the
@@ -245,26 +275,34 @@ class IWM {
             indicates whether the IWM is ready to receive the next data byte. To
             read the handshake register, turn switches Q6 off and Q7 on, and read
             from any even-numbered address  */
-            if (address_even(address) && !iwm_q6 && iwm_q7) {
+            if (address_even(reg) && !iwm_q6 && iwm_q7) {
                 return reg_handshake;                
             }
             /* The data register is the register that you read to get the actual data
             from the disk and write to store data on the disk. To read it, turn Q6
             and Q7 off and read from any even-numbered address in the $C0E0...$C0EF
             range. */
-            if (address_even(address) && !iwm_q6 && !iwm_q7) {
-                return drives[drive_selected]->read_data_register();
+            if (address_even(reg) && !iwm_q6 && !iwm_q7) {
+                if (dr_enable35) {
+                    //return drives_35[drive_selected]->read_data_register();
+                } else {
+                    return drives_525[drive_selected]->read_data_register();
+                }
             }
             return 0;
         }
 
-        void write(uint32_t address, uint8_t data) { 
-            assert(address < IWM_ADDRESS_MAX && "IWM: write address out of bounds");
-            access(address);
+        void write(uint16_t reg, uint8_t data) { 
+            assert(reg < IWM_ADDRESS_MAX && "IWM: write address out of bounds");
+            //access(address);
 
-            drives[drive_selected]->write_cmd(address, data);
+            if (dr_enable35) {
+                //drives_35[drive_selected]->write_cmd(reg, data);
+            } else {
+                drives_525[drive_selected]->write_cmd(reg, data);
+            }
 
-            handle_switch(address);
+            decode(reg);
 
             
             /*
@@ -275,7 +313,7 @@ class IWM {
             written until the status register (see below) indicates that the desired
             changes have taken effect.
             */
-            if (address_odd(address) && !any_enabled && !any_drive_on && iwm_q6 && iwm_q7) { // write to mode register.
+            if (address_odd(reg) && !any_enabled && !any_drive_on && iwm_q6 && iwm_q7) { // write to mode register.
                 reg_mode = data;
             }
             /* To write it, turn Q6 and Q7 on and write to any odd-numbered
@@ -295,31 +333,32 @@ class IWM {
             df->addLine(  "         5.25/1     5.25/2     3.5/1     3.5/2");
             df->addLine("Drive Selected: %d", drive_selected);
             df->addLine("  Motor:   %d          %d          %d          %d      ", 
-                drives[0]->get_motor_on(), 
-                drives[1]->get_motor_on(), 
-                drives[2]->get_motor_on(), 
-                drives[3]->get_motor_on());
+                drives_525[0]->get_motor_on(), 
+                drives_525[1]->get_motor_on(), 
+                drives_35[2]->get_motor_on(), 
+                drives_35[3]->get_motor_on());
             df->addLine("  Sense:   %d          %d          %d          %d      ", 
-                drives[0]->get_sense_input(), 
-                drives[1]->get_sense_input(), 
-                drives[2]->get_sense_input(), 
-                drives[3]->get_sense_input());
+                drives_525[0]->get_sense_input(), 
+                drives_525[1]->get_sense_input(), 
+                drives_35[0]->get_sense_input(), 
+                drives_35[1]->get_sense_input());
             df->addLine("  LED:     %d          %d          %d          %d      ", 
-                drives[0]->get_led_status(), 
-                drives[1]->get_led_status(), 
-                drives[2]->get_led_status(), 
-                drives[3]->get_led_status());
-            df->addLine("  Track / Side:  %d          %d          %d          %d      ", drives[0]->get_track(),
-                drives[1]->get_track(),
-                drives[2]->get_track(),
-                drives[3]->get_track());
+                drives_525[0]->get_led_status(), 
+                drives_525[1]->get_led_status(), 
+                drives_35[0]->get_led_status(), 
+                drives_35[1]->get_led_status());
+            df->addLine("  Track / Side:  %d          %d          %d          %d      ", 
+                drives_525[0]->get_track(),
+                drives_525[1]->get_track(),
+                drives_35[0]->get_track(),
+                drives_35[1]->get_track());
         }
 
   
     bool diskii_running_last = false;
     int tracknumber_last = 0;
     void soundeffects_update() {
-        int tracknumber = drives[drive_selected]->get_track(); /* drives[drive_select].get_track() */;
+        int tracknumber = drives_525[drive_selected]->get_track(); /* drives[drive_select].get_track() */;
 
         //printf("diskii_running: %d, tracknumber: %d / %d\n", diskii_running, tracknumber, tracknumber_last);
     
@@ -373,12 +412,12 @@ class IWM {
         /*
         * Handles state changes on "access" to registers C0E0-C0EF, which apply to either reads or writes.
         */
-        void access(uint32_t address) { // address must be between 0 and 0x0F
+        /* void access(uint32_t address) { // address must be between 0 and 0x0F
             assert(address <= 0x0F && "IWM: access address out of bounds");
             uint32_t switch_index = (address >> 1);
             bool onoff = (address & 0x01) == 1;
             set_switch(switch_index, onoff); 
-        }
+        } */
 
 };
 
