@@ -340,3 +340,12 @@ const int NUM_SYSTEM_CONFIGS = sizeof(BuiltinSystemConfigs) / sizeof(BuiltinSyst
 SystemConfig_t *get_system_config(int index) {
     return &BuiltinSystemConfigs[index];
 }
+
+int find_first_system_for_platform(int platform_id) {
+    for (int i = 0; i < NUM_SYSTEM_CONFIGS; ++i) {
+        if (BuiltinSystemConfigs[i].platform_id == platform_id) {
+            return i;
+        }
+    }
+    return -1;
+}
