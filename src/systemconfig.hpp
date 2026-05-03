@@ -41,3 +41,9 @@ extern SystemConfig_t BuiltinSystemConfigs[];
 extern const int NUM_SYSTEM_CONFIGS;
 
 SystemConfig_t *get_system_config(int index);
+
+// Walks BuiltinSystemConfigs and returns the first system index whose
+// platform_id matches `platform_id`, or -1 if none match. Used for the
+// command-line `-p PLATFORM` auto-launch path so we can pick a system
+// without going through the SelectSystem UI.
+int find_first_system_for_platform(int platform_id);

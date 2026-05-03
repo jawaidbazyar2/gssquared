@@ -538,6 +538,13 @@ struct GS2AppState {
     int platform_id = PLATFORM_APPLE_II_PLUS;
     std::vector<disk_mount_t> disks_to_mount;
 
+    // True when the user gave -p PLATFORM and we skipped the system
+    // selector at startup. In that mode, closing the emulator window
+    // quits the app (rather than bouncing back to the selector) — the
+    // user expressly asked for one specific machine and there's no
+    // "back" to return to.
+    bool auto_launched = false;
+
     // System selection
     SelectSystem *select_system = nullptr;
     AssetAtlas_t *aa = nullptr;
@@ -794,6 +801,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     GS2AppState *state = new GS2AppState();
     
     int platform_id = PLATFORM_APPLE_II_PLUS;  // default to Apple II Plus
+    bool platform_explicit = false;            // true when -p was given on CLI
     int opt;
     int slot, drive;
 
@@ -813,6 +821,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
             switch (opt) {
                 case 'p':
                     platform_id = std::stoi(optarg);
+                    platform_explicit = true;
                     break;
                 case 'd':
                     {
@@ -839,9 +848,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     gs2_app_values.sleep_mode = true;
                     break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [-p platform] [-dsXdX=filename] [-x] [-s] \n";
+                    std::cerr << "Usage: " << argv[0] << " [-p platform] [-dsXdY=filename] [-s]\n";
+                    std::cerr << "  -p N: skip the system-selector UI and auto-launch the\n";
+                    std::cerr << "        first builtin system that matches the given platform.\n";
+                    std::cerr << "        Closing the emulator window then quits the app rather\n";
+                    std::cerr << "        than returning to the selector. Valid N:\n";
+                    std::cerr << "          0 = Apple II         3 = Apple IIe Enhanced\n";
+                    std::cerr << "          1 = Apple II Plus    4 = Apple IIe 65816\n";
+                    std::cerr << "          2 = Apple IIe        5 = Apple IIgs\n";
+                    std::cerr << "  -dsXdY=filename: mount disk image `filename` in slot X drive Y.\n";
+                    std::cerr << "        Drives are 1-indexed; e.g. -ds6d1=foo.dsk for the\n";
+                    std::cerr << "        first drive of the controller in slot 6.\n";
                     std::cerr << "  -s: sleep mode (don't busy-wait, sleep)\n";
-                    std::cerr << "  -x: disk accelerator (speed up CPU when disk II drive is active)\n";
                     return SDL_APP_FAILURE;
             }
         }
@@ -871,6 +889,22 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     // Let vsync throttle the selection UI instead of spinning.
     SDL_SetRenderVSync(vs->renderer, 1);
     state->phase = PHASE_SYSTEM_SELECT;
+
+    // If the caller passed `-p PLATFORM`, skip the system-selector UI
+    // and jump straight into emulation using the first builtin system
+    // whose platform_id matches.
+    if (platform_explicit) {
+        const int system_id = find_first_system_for_platform(platform_id);
+        if (system_id >= 0) {
+            std::cout << "Auto-launching system_id=" << system_id
+                      << " for platform_id=" << platform_id << std::endl;
+            transition_to_emulation(state, system_id);
+            state->auto_launched = true;
+        } else {
+            std::cerr << "No system config matches platform_id=" << platform_id
+                      << ", staying in selector\n";
+        }
+    }
 
     *appstate = state;
 
@@ -942,8 +976,15 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         osd->update();
 
         if (!run_one_frame(computer)) {
-            // User requested halt, transition back to system select
+            // User requested halt. Always run transition_to_shutdown
+            // so the trace buffer is saved and the computer/MMUs are
+            // properly destroyed. Then either go back to the selector
+            // (interactive flow) or exit the app (we auto-launched
+            // via -p PLATFORM and have no selector to return to).
             transition_to_shutdown(state);
+            if (state->auto_launched) {
+                return SDL_APP_SUCCESS;
+            }
         }
         return SDL_APP_CONTINUE;
     }
