@@ -317,7 +317,7 @@ add_library(gs2_util src/util/media.cpp src/util/ResourceFile.cpp src/util/dialo
     src/util/HexDecode.cpp src/util/DeviceFrameDispatcher.cpp src/util/Metrics.cpp
     src/util/MenuInterface.cpp)
 
-add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Button.cpp src/ui/AppleDisk_525_Button.cpp src/ui/Unidisk_Button.cpp 
+add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Button.cpp src/ui/AppleDisk_525_Button.cpp src/ui/AppleDisk_35_Button.cpp src/ui/Unidisk_Button.cpp 
     src/ui/MousePositionTile.cpp src/ui/OSD.cpp src/ui/Tile.cpp src/ui/Button.cpp src/ui/MainAtlas.cpp src/ui/ModalContainer.cpp
     src/ui/FadeButton.cpp src/ui/Clipboard.cpp src/ui/TextInput.cpp src/ui/SelectSystem.cpp src/ui/SystemButton.cpp
     src/ui/LabeledButton.cpp src/ui/FadeContainer.cpp src/ui/SlotButton.cpp src/ui/StatusMessage.cpp src/ui/DrivesHUD.cpp
@@ -331,7 +331,9 @@ add_library(gs2_ntsc src/display/ntsc.cpp src/display/Matrix3x3.cpp src/display/
 add_library(gs2_diskii src/devices/diskii/ndiskii.cpp)
 
 add_library(gs2_devices_diskii_woz
+    src/devices/diskii/Floppy_woz.cpp
     src/devices/diskii/Floppy525_woz.cpp
+    src/devices/diskii/Floppy35_woz.cpp
     src/devices/diskii/ndiskii_woz.cpp
 )
 

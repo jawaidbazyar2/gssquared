@@ -38,6 +38,7 @@ enum drive_type_t {
     DRIVE_TYPE_DISKII,
     DRIVE_TYPE_PRODOS_BLOCK,
     DRIVE_TYPE_APPLEDISK_525,
+    DRIVE_TYPE_APPLEDISK_35,
 };
 
 struct drive_media_t {

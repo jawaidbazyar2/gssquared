@@ -276,6 +276,14 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
                 diskii_button_click(new diskii_callback_data_t{this, drive.key});
                 return true;
             });
+        } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_35) {
+            // Phase 1: reuse the 5.25 AppleDisk button asset for 3.5 drives.
+            // A distinct 3.5 button asset is a follow-up.
+            button = new Unidisk_Button_t(&ui_ctx, AppleDisk_525_Open, DS);
+            button->on_click([this, drive](const SDL_Event& event) -> bool {
+                diskii_button_click(new diskii_callback_data_t{this, drive.key});
+                return true;
+            });
         } else if (drive.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
             button = new Unidisk_Button_t(&ui_ctx, Unidisk_Face, DS);
             button->on_click([this, drive](const SDL_Event& event) -> bool {

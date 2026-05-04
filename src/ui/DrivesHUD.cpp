@@ -2,6 +2,7 @@
 #include "DrivesHUD.hpp"
 #include "DiskII_Button.hpp"
 #include "AppleDisk_525_Button.hpp"
+#include "AppleDisk_35_Button.hpp"
 #include "Unidisk_Button.hpp"
 #include "StorageButton.hpp"
 #include "util/mount.hpp"
@@ -23,6 +24,10 @@ DrivesHUD_t::DrivesHUD_t(UIContext *ctx, const Style_t& style, Mounts *mounts) :
             button = new DiskII_Button_t(ctx, 0, style);
         } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_525) {
             button = new AppleDisk_525_Button_t(ctx, 0, style);
+        } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_35) {
+            // Phase 1: reuse the 5.25 AppleDisk button asset for 3.5 drives.
+            // A distinct 3.5 button asset is a follow-up.
+            button = new AppleDisk_35_Button_t(ctx, 0, style);
         } else if (drive.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
             button = new Unidisk_Button_t(ctx, 0, style);
         }
