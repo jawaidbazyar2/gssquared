@@ -7,10 +7,9 @@
 #include "util/SoundEffect.hpp"
 #include "debug.hpp"
 
-#include "IWM_Drive.hpp"
-//#include "IWM_525.hpp"
-#include "IWM_35.hpp"
+#include "IWM_Drive.hpp"  // iwm_switch_t constants shared by 5.25 and 3.5 decode
 #include "devices/diskii/Floppy525_woz.hpp"
+#include "devices/diskii/Floppy35_woz.hpp"
 
 #include "util/SoundEffectKeys.hpp"
 
@@ -22,8 +21,7 @@ class IWM : public StorageDevice {
         NClockII *clock;
 
         Floppy525_woz drives_525[2];
-        IWM_Drive *drives_35[2];
-        //Floppy525_woz drives_525[2];
+        Floppy35_woz  drives_35[2];
 
         uint64_t mark_cycles_turnoff = 0; // when DRIVES OFF, set this to current cpu cycles. Then don't actually set motor=0 until one second (1M cycles) has passed. Then reset this to 0.
         bool motor = false;
@@ -82,12 +80,29 @@ class IWM : public StorageDevice {
             uint8_t reg_handshake;
         };
 
-        // controller data register
+        // controller data register (CPU-visible on data-register reads)
         uint8_t data_register = 0;
+        // 3.5 latch mode (L=1): READSHIFT runs against this; data_register is
+        // derived so partial assembly never sets bit 7 until the internal
+        // byte has MSB set (Neil Parker: poll LDA Q6 / BPL until valid).
+        uint8_t internal_data_register = 0;
+
+        // 3.5 async write (H=1): CPU loads bytes via odd Q6+Q7 writes; the IWM
+        // serializes at disk bit rate and raises handshake bit 7 when ready
+        // for the next byte (Neil Parker write example).
+        uint8_t async_shift_reg      = 0;
+        uint8_t async_bits_remaining = 0;
+        uint8_t async_buffer_register = 0;
+
         // LSS QA-hold sub-state: tracks whether we are in the first or second
-        // bit-cell after bit 7 of data_register went high.  Mirrors OpenEmulator's
-        // `sequencerState` in the SEQUENCER_READSHIFT case. This is a helper to fast-forward lss state.
+        // bit-cell after bit 7 of the working shift register went high.
+        // Mirrors OpenEmulator's `sequencerState` in the SEQUENCER_READSHIFT case.
         bool sequencer_state = false;
+
+        void update_handshake_ready(bool ready, bool no_underrun) {
+            hr_register_ready = ready ? 1 : 0;
+            hr_underrun         = no_underrun ? 1 : 0;
+        }
 
 
         /* Load our sound effects */
@@ -99,35 +114,40 @@ class IWM : public StorageDevice {
             "sounds/shugart-close.wav",
         };
 
-        // schedule a motor off.
+        // 5.25 ENABLE'-off schedules spindle-off ~1s later (MC14536 timer).
+        // 3.5 has no equivalent latch: its spindle is commanded directly by
+        // CONT35 $4/$C strobes inside Floppy35_woz, so on 3.5 we simply do
+        // nothing and let the drive itself handle spindle state.
         void request_motor_off() {
-            if (dr_enable35) {
-                // TODO: 3.5 drive motor off instantly.
-            } else {
-                mark_cycles_turnoff = clock->get_c14m() + clock->get_c14m_per_second();
-            }
-            //if (DEBUG(DEBUG_DISKII)) printf("request_motor_off: %llu\n", u64_t(mark_cycles_turnoff));
+            if (dr_enable35) return;
+            mark_cycles_turnoff = clock->get_c14m() + clock->get_c14m_per_second();
         }
 
-        // motor on is always immediate.
+        // 5.25 ENABLE'-on starts the spindle immediately; cancels any pending
+        // off-timer. 3.5 ENABLE' just lights the LED / locks the disk — the
+        // drive's own set_enable() does that — and never spins the motor.
         void request_motor_on() {
-            if (dr_enable35) { // is a 3.5 drive
-                // TODO: 3.5 drive motor on instantly.
-            } else { // is a 5.25 drive
-                mark_cycles_turnoff = 0;
-                motor = true;
-                drives_525[iwm_select].set_enable(true);
-            }
-            //if (DEBUG(DEBUG_DISKII)) printf("request_motor_on: %llu\n", u64_t(mark_cycles_turnoff));
+            if (dr_enable35) return;
+            mark_cycles_turnoff = 0;
+            motor = true;
+            drives_525[iwm_select].set_enable(true);
+        }
+
+        // Unified "LSS should advance" predicate. For 5.25 this is the
+        // request_motor_on/off latched `motor` flag; for 3.5 it's the
+        // currently-selected drive's spindle state.
+        bool lss_active() {
+            if (dr_enable35) return drives_35[iwm_select].get_motor_on();
+            return motor;
         }
 
     public:
         IWM(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer) : StorageDevice(),
-            drives_525{Floppy525_woz(sound_effect, clock, event_timer), Floppy525_woz(sound_effect, clock, event_timer)} {
-/*             drives_525[0] = new Floppy525_woz(sound_effect, clock, event_timer);
-            drives_525[1] = new Floppy525_woz(sound_effect, clock, event_timer);
- */            drives_35[0] = new IWM_Drive_35(sound_effect, clock);
-            drives_35[1] = new IWM_Drive_35(sound_effect, clock);
+            drives_525{Floppy525_woz(sound_effect, clock, event_timer),
+                       Floppy525_woz(sound_effect, clock, event_timer)},
+            drives_35 {Floppy35_woz (sound_effect, clock, event_timer),
+                       Floppy35_woz (sound_effect, clock, event_timer)}
+        {
             reset();
 
             this->sound_effect = sound_effect;
@@ -139,33 +159,32 @@ class IWM : public StorageDevice {
             }
 
             memset(switches, 0, sizeof(switches));
-            
         };
 
-        ~IWM() {
-            for (uint32_t i = 0; i < 2; i++) {
-                if (drives_35[i] != nullptr) {
-                    delete drives_35[i];
-                    drives_35[i] = nullptr;
-                }
-            }
-        };
+        ~IWM() = default;
 
         void reset() {
             memset(switches, 0, sizeof(switches));
             disk_register = 0;
-            for (uint32_t i = 0; i < 2; i++) {
-                drives_525[i].set_enable(false);
-                drives_35[i]->set_enable(false);
-            }
+            
+            drives_525[0].set_enable(false);
+            drives_525[1].set_enable(false);
+            drives_35[0].set_enable(false);
+            drives_35[1].set_enable(false);
+        
             mark_cycles_turnoff = 0;
-            //drive_selected = 0;
             reg_mode = 0;
             reg_handshake = 0;
+            internal_data_register = 0;
+            async_shift_reg          = 0;
+            async_bits_remaining     = 0;
+            sequencer_state          = false;
             motor = false;
         }
 
         void check_motor_off_timer() {
+            // 5.25 MC14536 off-timer: unchanged. 3.5 never arms this timer
+            // (request_motor_off() is a no-op in 3.5 mode).
             if (mark_cycles_turnoff != 0 && (clock->get_c14m() > mark_cycles_turnoff)) {
                 drives_525[iwm_select].set_enable(false);
                 motor = false;
@@ -182,88 +201,186 @@ class IWM : public StorageDevice {
         inline bool address_even(uint32_t address) { return (address & 0x01) == 0; }
 
         uint8_t read_disk_register() { return disk_register; }
-        void write_disk_register(uint8_t data) { disk_register = data; }
+
+        // DISKREG side-effects: bit 7 (SEL / "HDSEL") is the 4th selector bit
+        // for the 3.5 status/control switch; bit 6 (EN35) picks 3.5 vs. 5.25.
+        // When either changes we push the updated SEL into the currently
+        // selected 3.5 drive so its sense output tracks.
+        void write_disk_register(uint8_t data) {
+            const uint8_t prev_sel     = dr_sel;
+            const uint8_t prev_en35    = dr_enable35;
+            disk_register = data;
+            if (dr_sel != prev_sel || dr_enable35 != prev_en35) {
+                // Keep both 3.5 drives' sense lines consistent with the new
+                // SEL value — cheap, and avoids stale sense if the program
+                // toggles the drive-select switch after a DISKREG write.
+                drives_35[0].set_hdsel(dr_sel);
+                drives_35[1].set_hdsel(dr_sel);
+            }
+        }
 
         uint8_t read_status_register() {
-            // TODO: change any_drive_on and sense_input to query selected disk statuses later
-            return (reg_mode & 0b000'11111) | motor << 5 | sense_input << 7;
+            // In 3.5 mode bit 7 is the selected drive's status-selector
+            // output; in 5.25 mode it's the WP-sense line (already mirrored
+            // into sense_input by the LSS's READLOAD path).
+            uint8_t sense = dr_enable35 ? drives_35[iwm_select].read_sense()
+                                        : sense_input;
+            uint8_t motor_bit = lss_active() ? 1 : 0;
+            return (reg_mode & 0b000'11111) | (motor_bit << 5) | (sense << 7);
         }
 
         void fast_forward() {
-            if (!motor) {
+            if (!lss_active()) {
                 // Motor off: the LSS state machine is stopped.
                 return;
             }
-    
-            uint64_t now     = clock->get_cycles();
-    
-            // this updates the sim and tells us how many bits to update through the LSS.
-            uint64_t bits_to_sim = drives_525[iwm_select].fast_forward(now);
-    
+
+            
+
+            // Dispatch the head-advance + LSS loop against whichever drive
+            // family is currently selected by dr_enable35.
+            if (dr_enable35) {
+                uint64_t now = clock->get_vid_cycles();
+                fast_forward_impl<Floppy35_woz>(now, drives_35[iwm_select]);
+            } else {
+                uint64_t now = clock->get_cycles();
+                fast_forward_impl<Floppy525_woz>(now, drives_525[iwm_select]);
+            }
+        }
+
+    private:
+        // Shared LSS loop. Templated on the concrete drive type so the
+        // Floppy_woz virtuals dispatch directly (read_pulse/write_pulse/
+        // fast_forward/get_write_protect) without an extra indirection.
+        template <typename Drive>
+        void fast_forward_impl(uint64_t now, Drive &drive) {
+            uint64_t bits_to_sim = drive.fast_forward(now);
+
+            const bool latch_read = dr_enable35 && mr_latch;
+            const bool async_wr   = dr_enable35 && mr_hsprotocol;
+
             for (uint64_t i = 0; i < bits_to_sim; i++) {
                 if (iwm_q7 == 0 && iwm_q6 == 0) {
-                    // READSHIFT (mirrors OpenEmulator's
-                    // AppleDiskIIInterfaceCard::updateSequencer SEQUENCER_READSHIFT
-                    // case): while QA (bit 7) is 0, shift incoming RP bits left
-                    // into the data register so the CPU can observe partial-nibble
-                    // accumulation (e.g. 1F, 3F, 7F, FF).  Once QA goes high the
-                    // byte holds for two more bit cells, then the LSS preloads
-                    // `0x02 | bit` for the next nibble's leading bits.
-                    uint8_t bit = drives_525[iwm_select].read_pulse();
-                    if (data_register & 0x80) {
-                        if (!sequencer_state) {
-                            sequencer_state = bit;
-                        } else {
-                            sequencer_state = false;
-                            data_register = 0x02 | bit;
+                    // READSHIFT (mirrors OpenEmulator's SEQUENCER_READSHIFT):
+                    // while QA (bit 7) is 0, shift incoming RP bits left.
+                    // 5.25 / sync: expose partial nibbles on data_register.
+                    // 3.5 latch (L=1): accumulate in internal_data_register;
+                    // CPU-visible data_register hides MSB until valid byte.
+                    uint8_t bit = drive.read_pulse();
+                    if (latch_read) {
+                        internal_data_register = static_cast<uint8_t>((internal_data_register << 1) | bit);
+                        if (internal_data_register & 0x80) {
+                            data_register = internal_data_register;
+                            internal_data_register = 0;
                         }
                     } else {
-                        data_register = (data_register << 1) | bit;
+                        uint8_t &shift_reg = data_register;
+                        if (shift_reg & 0x80) {
+                            if (!sequencer_state) {
+                                sequencer_state = bit;
+                            } else {
+                                sequencer_state = false;
+                                shift_reg       = static_cast<uint8_t>(0x02 | bit);
+                            }
+                        } else {
+                            shift_reg = static_cast<uint8_t>((shift_reg << 1) | bit);
+                        }
                     }
                 } else if (iwm_q7 == 0 && iwm_q6 == 1) {
-                    // READLOAD (SEQUENCER_READLOAD): the LSS executes SR every step,
-                    // shifting the write-protect sense bit right into bit 7 of the
-                    // data register.  Repeated reads while LOAD is held therefore
-                    // saturate the register (FF for WP=1, 00 for WP=0).
-                    uint8_t wp = drives_525[iwm_select].get_write_protect() & 1;
-                    data_register = (data_register >> 1) | (wp << 7);
+                    // READLOAD (SEQUENCER_READLOAD): shift the WP-sense bit
+                    // right into bit 7 of the shift register.
+                    drive.read_pulse(); // advance but discard.
+                    uint8_t wp = drive.get_write_protect() & 1;
+                    if (latch_read) {
+                        internal_data_register = static_cast<uint8_t>((internal_data_register >> 1) | (wp << 7));
+                    } else {
+                        data_register = static_cast<uint8_t>((data_register >> 1) | (wp << 7));
+                    }
                     sequencer_state = false;
                 } else if (iwm_q7 == 1) {
-                    // WRITESHIFT / WRITELOAD: per OE both Q6 sub-modes behave
-                    // identically — shift QA (bit 7) of data_register out to disk,
-                    // then shift data_register left.  The actual CPU-initiated load
-                    // happens out-of-band in write_cmd() (any odd-address write
-                    // while motor enabled loads data_register).
-                    uint8_t out_bit = (data_register >> 7) & 0x01;
-                    drives_525[iwm_select].write_pulse(out_bit);
-                    data_register   = static_cast<uint8_t>(data_register << 1);
-                    sequencer_state = false;
+                    if (async_wr) {
+                        if (async_bits_remaining == 0) {
+                            if (hr_register_ready == 0) { // there is data, transfer it.
+                                async_shift_reg = async_buffer_register;
+                                async_bits_remaining = 8;
+                                update_handshake_ready(true, true);
+                            } else {
+                                update_handshake_ready(true, false); // there was no data, flag underrun
+                            }
+                        }
+                        // Async write: IWM clocks bits out at disk rate; CPU
+                        // loads bytes via write() when handshake says ready.                        
+                        if (async_bits_remaining > 0) {
+                            uint8_t out_bit =
+                                static_cast<uint8_t>((async_shift_reg >> 7) & 0x01);
+                            drive.write_pulse(out_bit);
+                            async_shift_reg = static_cast<uint8_t>(async_shift_reg << 1);
+                            async_bits_remaining--;
+                        } else {
+                            // Waiting for next STA Q6+1 / underrun gap: keep
+                            // media timing aligned without flipping bits.
+                            // there's nothing left to write, so we emit 0's..
+                            drive.write_pulse(0);
+                        }
+                    } else {
+                        // WRITESHIFT / WRITELOAD (sync): per OE both Q6 sub-modes
+                        // behave identically — shift QA out to disk, then shift
+                        // data_register left.
+                        uint8_t out_bit =
+                            static_cast<uint8_t>((data_register >> 7) & 0x01);
+                        drive.write_pulse(out_bit);
+                        data_register =
+                            static_cast<uint8_t>(data_register << 1);
+                        sequencer_state = false;
+                    }
                 }
             }
         }
 
+    public:
+
         inline void decode(uint16_t reg) {
-            // Update the switch state
+            // Remember the pre-write SELECT state so we can detect a change
+            // and flip which physical drive is "selected" below.
+            const uint8_t prev_select = iwm_select;
+
+            // Update the switch state.
             switches[reg>>1] = reg & 0x01;
 
             if (dr_enable35) {
-                // TODO: 3.5 drive motor on/off instantly.
                 switch (reg) {
+                    case IWM_CA0_OFF:
+                    case IWM_CA0_ON:
+                    case IWM_CA1_OFF:
+                    case IWM_CA1_ON:
+                    case IWM_CA2_OFF:
+                    case IWM_CA2_ON:
+                    case IWM_LSTRB_OFF:
+                    case IWM_LSTRB_ON:
+                        // CA0-CA2 and LSTRB are state/control selectors for
+                        // the 3.5 drive. The drive decodes them internally;
+                        // IWM just forwards the raw bit.
+                        drives_35[iwm_select].set_phase(reg >> 1, reg & 0x01);
+                        break;
                     case IWM_ENABLE_ON:
-                        //any_enabled = true;
-                        drives_35[iwm_select]->set_enable(true);
+                        // 3.5 ENABLE' = LED on / disk locked. Does NOT start
+                        // the spindle (that's CONT35 $4).
+                        drives_35[iwm_select].set_enable(true);
                         break;
                     case IWM_ENABLE_OFF:
-                        //any_enabled = false;
-                        drives_35[iwm_select]->set_enable(false);
+                        drives_35[iwm_select].set_enable(false);
                         break;
                     case IWM_SELECT_ON:
-                        drives_35[iwm_select]->set_enable(false); // de-select     
-                        drives_35[iwm_select]->set_enable(motor);
-                        break;
                     case IWM_SELECT_OFF:
-                        drives_35[iwm_select]->set_enable(false); // de-select 
-                        drives_35[iwm_select]->set_enable(motor);
+                        if (iwm_select != prev_select) {
+                            // De-select the previously-active drive and
+                            // hand the LED + CA/SEL state to the new one.
+                            drives_35[prev_select].set_enable(false);
+                            // Re-push HDSEL so the newly-selected drive's
+                            // sense output reflects the current SEL line.
+                            drives_35[iwm_select].set_hdsel(dr_sel);
+                            drives_35[iwm_select].set_enable(iwm_enable);
+                        }
                         break;
                     default:
                         break;
@@ -282,19 +399,17 @@ class IWM : public StorageDevice {
                         drives_525[iwm_select].set_phase(reg>>1,reg&0x01);
                         break;
                     case IWM_ENABLE_ON:
-                        //any_enabled = true;
                         request_motor_on();
                         break;
                     case IWM_ENABLE_OFF:
-                        //any_enabled = false;
                         request_motor_off();
                         break;
                     case IWM_SELECT_ON:
-                        drives_525[1-iwm_select].set_enable(false); // de-select     
+                        drives_525[1-iwm_select].set_enable(false); // de-select
                         drives_525[iwm_select].set_enable(motor);
                         break;
                     case IWM_SELECT_OFF:
-                        drives_525[1-iwm_select].set_enable(false); // de-select 
+                        drives_525[1-iwm_select].set_enable(false); // de-select
                         drives_525[iwm_select].set_enable(motor);
                         break;
                     default:
@@ -305,114 +420,131 @@ class IWM : public StorageDevice {
 
         uint8_t read(uint16_t reg) {
             assert(reg < IWM_ADDRESS_MAX && "IWM: read address out of bounds");
-            //access(address);
-            
-            if (dr_enable35) {
-                //drives_35[drive_selected]->read_cmd(reg);
-            } else {
-                fast_forward();
-            }
+
+            // Roll the LSS forward to "now" using whichever drive family is
+            // currently selected. fast_forward() itself is a no-op when the
+            // LSS is inactive (5.25 motor off or 3.5 spindle off).
+            fast_forward();
 
             decode(reg);
 
-            /* Read Status Register 
-            To access it, turn Q7 off and Q6 on, and read from any even-numbered address in the
-            $C0E0...$C0EF range.
-            */
+            /* Read Status Register
+            To access it, turn Q7 off and Q6 on, and read from any
+            even-numbered address in the $C0E0...$C0EF range. */
             if (address_even(reg) && iwm_q6 && !iwm_q7) {
                 return read_status_register();
             }
-            /* The handshake register is a read-only register used when writing to the
-            disk in asynchronous mode (when bit 1 of the mode register is on). It
-            indicates whether the IWM is ready to receive the next data byte. To
-            read the handshake register, turn switches Q6 off and Q7 on, and read
-            from any even-numbered address  */
+            /* The handshake register is a read-only register used when
+            writing to the disk in asynchronous mode (when bit 1 of the
+            mode register is on). Q6 off, Q7 on, even address. */
             if (address_even(reg) && !iwm_q6 && iwm_q7) {
-                return reg_handshake;                
+                return reg_handshake;
             }
-            /* The data register is the register that you read to get the actual data
-            from the disk and write to store data on the disk. To read it, turn Q6
-            and Q7 off and read from any even-numbered address in the $C0E0...$C0EF
-            range. */
+            /* Data register: Q6 off, Q7 off, even address. Same path for
+            5.25 and 3.5 — the LSS above has already latched the result in
+            data_register. */
             if (address_even(reg) && !iwm_q6 && !iwm_q7) {
-                if (dr_enable35) {
-                    //return drives_35[drive_selected]->read_data_register();
-                } else {
-                    //return drives_525[iwm_select].read_data_register();
-                    return data_register;
+                uint8_t val = data_register;
+                // In Latch mode (L=1), reading the data register clears it so that
+                // subsequent polls will wait for the next full byte to assemble.
+                if (dr_enable35 && mr_latch) {
+                    data_register = 0;
                 }
+                return val;
             }
             return 0;
         }
 
-        void write(uint16_t reg, uint8_t data) { 
+        void write(uint16_t reg, uint8_t data) {
             assert(reg < IWM_ADDRESS_MAX && "IWM: write address out of bounds");
-            //access(address);
 
-            if (dr_enable35) {
-                //drives_35[drive_selected]->write_cmd(reg, data);
-            } else {
-                fast_forward();
-            }
+            fast_forward();
 
             decode(reg);
 
             
             /*
-            Note that the drive may remain active for a second or two after the ENABLE
-            access, and that the write to the mode register will fail unless the drive
-            is fully deactivated.
-            This means that the mode register must be repeatedly
-            written until the status register (see below) indicates that the desired
-            changes have taken effect.
+            Note that the drive may remain active for a second or two after
+            the ENABLE access, and that the write to the mode register will
+            fail unless the drive is fully deactivated. The mode register
+            must be repeatedly written until the status register indicates
+            the desired changes have taken effect. See the ROM's SELIWM loop.
             */
-            // TODO: not sure about any_enabled here, where is it set..
-            if (!motor && address_odd(reg) && iwm_q6 && iwm_q7) { // write to mode register.
+            if (!lss_active() && address_odd(reg) && iwm_q6 && iwm_q7) {
                 reg_mode = data;
             }
-            /* To write it, turn Q6 and Q7 on and write to any odd-numbered
-            address in the $C0E0...$C0EF range. */
-            // TODO: I'm disabling this to, I think, make 5.25" floppy work, but unsure how this will interact with 3.5" drive.
-            else if (motor && address_odd(reg)  && iwm_q6 && iwm_q7) {
+            /* Data-register write: Q6+Q7 on, odd address, motor running.
+            5.25 sync: LSS consumes data_register each WRITESHIFT step.
+            3.5 async (H=1): bytes queue into async_shift_reg; handshake
+            clears until another byte is needed (Neil Parker write sequence). */
+            else if (lss_active() && address_odd(reg) && iwm_q6 && iwm_q7) {
                 data_register = data;
+                if (dr_enable35 && mr_hsprotocol) {
+                    async_buffer_register = data;
+                    /* async_shift_reg      = data;
+                    async_bits_remaining = 8; */
+                    update_handshake_ready(false, true); // mark busy (i.e. loaded)
+                }
             }
         }
 
         void debug_output(DebugFormatter *df) {
             df->addLine("CA0: %d, CA1: %d, CA2: %d, LSTRB: %d, ENABLE: %d, SELECT: %d, Q6: %d, Q7: %d",
                 iwm_ca0, iwm_ca1, iwm_ca2, iwm_lstrb, iwm_enable, iwm_select, iwm_q6, iwm_q7);
-            df->addLine("Disk Register: %02X", disk_register);
-            df->addLine("Mode: %02X  ClkSpd: %d  BitCell: %d  MotorOff: %d  HSProtocol: %d", reg_mode, mr_clockspeed, mr_bitcelltime, mr_motorofftimer, mr_hsprotocol);
+            df->addLine("Disk Register: %02X  (EN35=%d SEL=%d)",
+                disk_register, dr_enable35, dr_sel);
+            df->addLine("Mode: %02X  ClkSpd: %d  BitCell: %d  MotorOff: %d  HSProtocol: %d Ltch: %d",
+                reg_mode, mr_clockspeed, mr_bitcelltime, mr_motorofftimer, mr_hsprotocol, mr_latch);
             df->addLine("Handshake: %02X  Status: %02X", reg_handshake, read_status_register());
-            df->addLine(  "         5.25/1     5.25/2     3.5/1     3.5/2");
-            df->addLine("3.5: %d Drive Selected: %d", dr_enable35, iwm_select);
-            /* df->addLine("  Motor:   %d          %d          %d          %d      ", 
-                drives_525[0]->get_motor_on(), 
-                drives_525[1]->get_motor_on(), 
-                drives_35[2]->get_motor_on(), 
-                drives_35[3]->get_motor_on());
-            df->addLine("  Sense:   %d          %d          %d          %d      ", 
-                drives_525[0]->get_sense_input(), 
-                drives_525[1]->get_sense_input(), 
-                drives_35[0]->get_sense_input(), 
-                drives_35[1]->get_sense_input());
-            df->addLine("  LED:     %d          %d          %d          %d      ", 
-                drives_525[0]->get_led_status(), 
-                drives_525[1]->get_led_status(), 
-                drives_35[0]->get_led_status(), 
-                drives_35[1]->get_led_status());
-            df->addLine("  Track / Side:  %d          %d          %d          %d      ", 
-                drives_525[0]->get_track(),
-                drives_525[1]->get_track(),
-                drives_35[0]->get_track(),
-                drives_35[1]->get_track()); */
+            df->addLine("Active: %s drive %d   LSS: %s",
+                dr_enable35 ? "3.5" : "5.25", iwm_select,
+                lss_active() ? "running" : "stopped");
+            df->addLine("               5.25/0    5.25/1     3.5/0     3.5/1");
+            df->addLine("  Enable   :   %-9d %-9d %-9d %-9d",
+                (int)drives_525[0].get_enable(),
+                (int)drives_525[1].get_enable(),
+                (int)drives_35[0].get_enable(),
+                (int)drives_35[1].get_enable());
+            df->addLine("  Motor    :   %-9d %-9d %-9d %-9d",
+                (int)drives_525[0].get_motor_on(),
+                (int)drives_525[1].get_motor_on(),
+                (int)drives_35[0].get_motor_on(),
+                (int)drives_35[1].get_motor_on());
+            df->addLine("  Selected:    %-9d %-9d %-9d %-9d",
+                (int)(iwm_select == 0 && !dr_enable35),
+                (int)(iwm_select == 1 && !dr_enable35),
+                (int)(iwm_select == 0 && dr_enable35),
+                (int)(iwm_select == 1 && dr_enable35));
+            df->addLine("  Track:       %-9d %-9d %-9d %-9d",
+                drives_525[0].get_track(),
+                drives_525[1].get_track(),
+                drives_35[0].get_track(),
+                drives_35[1].get_track());
+            df->addLine("  Side:        %-9s %-9s %-9d %-9d",
+                "-", "-",
+                drives_35[0].get_side(),
+                drives_35[1].get_side());
+            drives_525[0].debug(df);
+            drives_525[1].debug(df);
+            drives_35[0].debug(df);
+            drives_35[1].debug(df);
         }
 
   
     bool diskii_running_last = false;
     int tracknumber_last = 0;
     void soundeffects_update() {
-        int tracknumber = drives_525[iwm_select].get_track(); /* drives[drive_select].get_track() */;
+        // Shugart sound effects are 5.25-specific. When the IWM is in
+        // 3.5 mode, skip queueing spindle / head sounds so we don't play
+        // the wrong sound over a 3.5 disk access.
+        if (dr_enable35) {
+            if (diskii_running_last) {
+                diskii_running_last = false;
+                sound_effect->flush(SE_SHUGART_DRIVE);
+            }
+            return;
+        }
+        int tracknumber = drives_525[iwm_select].get_track();
 
         //printf("diskii_running: %d, tracknumber: %d / %d\n", diskii_running, tracknumber, tracknumber_last);
     
@@ -467,33 +599,41 @@ class IWM : public StorageDevice {
         if (key.slot == 6) {
             return drives_525[key.drive].mount(key, media);
         } else if (key.slot == 5) {
-            //return drives_35[key.drive].mount(key, media);
+            return drives_35[key.drive].mount(key, media);
+        } else {
+            assert(false && "IWM: invalid key mount()");
             return false;
-        } else assert(false && "IWM: invalid key mount()");
+        }
     }
     bool unmount(storage_key_t key) {
         if (key.slot == 6) {
             return drives_525[key.drive].unmount(key);
         } else if (key.slot == 5) {
-            //return drives_35[key.drive]->unmount(key);
+            return drives_35[key.drive].unmount(key);
+        } else {
+            assert(false && "IWM: invalid key unmount()");
             return false;
-        } else assert(false && "IWM: invalid key unmount()");
+        }
     }
     bool writeback(storage_key_t key) {
         if (key.slot == 6) {
             return drives_525[key.drive].writeback();
         } else if (key.slot == 5) {
-            //return drives_35[key.drive]->writeback();
+            return drives_35[key.drive].writeback();
+        } else {
+            assert(false && "IWM: invalid key writeback()");
             return false;
-        } else assert(false && "IWM: invalid key writeback()");
+        }
     }
     drive_status_t status(storage_key_t key) {
         if (key.slot == 6) {
             return drives_525[key.drive].status();
         } else if (key.slot == 5) {
-            //return drives_35[key.drive]->status();
-            return {false, nullptr, false, 0, false, false};
-        } else assert(false && "IWM: invalid key status()");
+            return drives_35[key.drive].status();
+        } else {
+            assert(false && "IWM: invalid key status()");
+            return {false, "", false, 0, false, false};
+        }
     }
 
 };

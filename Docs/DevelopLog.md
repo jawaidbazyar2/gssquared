@@ -11655,5 +11655,6 @@ I could scale the timer instead of using cpu cycles? that's hard to do in LS.
 Reset issue. So gamecontroller needs to know when reset is de-asserted so it can start timing the joyport. The problem is, we have two different reset mechanisms. Some driven through computer, and some driven directly by the keyboards. The two mechanisms are: assert then deassert reset; instantaneous reset.
 The instantaneous is still used by the UI resets. the assert/deassert is used by keyboards. these peek pretty deeply into computer->resetController etc. So perhaps have the API for keyboards in computer. Then computer can more easily set "last_reset".
 
- 
+## May 3, 2026
 
+[ ] ctrl-enter leaks an enter into the emulator  

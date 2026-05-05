@@ -266,7 +266,7 @@ aw heck, the readme.txt goes into detail on each image and what you need to do r
 [X] Apple at Play  
 [X] Bilestoad  
 [X] Print Shop Companion  
-[ ] Wings of Fury Side A / B
+[X] Wings of Fury Side A / B
 
 ## Long strings of zero bits
 
@@ -318,6 +318,8 @@ However if we break the tests into clear components we should be able to figure 
 
 [ ] if no drive is enabled then we need to deactivate a bunch of the logic, phases, etc. 
 [ ] all phases, Q6, Q7 etc should clear on a reset  
+
+Wings of Fury now boots after fixing the bug where we weren't advancing the read pointer on a wpsense access.
 
 ## Testing
 

@@ -60,6 +60,7 @@ My recollection is this worked ok. Well something was working somewhere, because
 ## Bard's Tale I
 
 boots to "NO SMARTPORT" error. Doesn't like running off the hard disk.
+After Woz3.5 support, now boots to initial screen! But crashes with RESTART SYSTEM (Ensoniq interrupt problem).
 
 ## Christmas Music (Christmas.2mg)
 

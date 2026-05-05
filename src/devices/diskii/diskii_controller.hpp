@@ -227,6 +227,7 @@ public:
                 // shifting the write-protect sense bit right into bit 7 of the
                 // data register.  Repeated reads while LOAD is held therefore
                 // saturate the register (FF for WP=1, 00 for WP=0).
+                drives[diskii_select].read_pulse(); // advance but discard.
                 uint8_t wp = drives[diskii_select].get_write_protect() & 1;
                 data_register = (data_register >> 1) | (wp << 7);
                 sequencer_state = false;

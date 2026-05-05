@@ -68,15 +68,20 @@ void init_iwm_slot(computer_t *computer, SlotType_t slot) {
             return true;
         });
 
-    // TODO: this might need to go into the Floppy525 constructor.
+    // Register both pairs of drives with the Mounts subsystem. The IWM
+    // routes slot 6 to drives_525[] and slot 5 to drives_35[] internally.
     storage_key_t key;
     key.slot = 6;
     key.drive = 0;
     computer->mounts->register_storage_device(key, st->iwm, DRIVE_TYPE_APPLEDISK_525);
     key.drive = 1;
     computer->mounts->register_storage_device(key, st->iwm, DRIVE_TYPE_APPLEDISK_525);
-    
-    // TODO: register the 3.5s here later
+
+    key.slot = 5;
+    key.drive = 0;
+    computer->mounts->register_storage_device(key, st->iwm, DRIVE_TYPE_APPLEDISK_35);
+    key.drive = 1;
+    computer->mounts->register_storage_device(key, st->iwm, DRIVE_TYPE_APPLEDISK_35);
 
     // register frame handler for soundeffects etc.
     computer->device_frame_dispatcher->registerHandler(

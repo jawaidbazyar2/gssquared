@@ -16,6 +16,10 @@ https://www.brutaldeluxe.fr/documentation/iwm/apple2_IWM_Spec_Rev19_1982.pdf
 Nick Parker's 3.5-focused treatment - but should give a good idea of how both operate (since 5.25 is just 'default mode')
 https://www.applefritter.com/files/2025/03/02/IWM-Controlling%20the%203.5%20Drive%20Hardware%20on%20the%20Apple%20IIGS_alt.pdf
 
+## Reset State
+
+thinking about reset states.
+the 3.5 motor on is separate from enable=1; but what happens when iwm is reset, enable=0, does that cause drive to turn off motor? that would be sensible thing..
 
 ## Refactoring Disk II
 
@@ -155,4 +159,67 @@ this . the SEL bit from DISKREG needs to go to the 3.5 port? it must be on one o
 
 the way phase, SEL behave is of course radically different from the 5.25. but the controller interface is still those pins.
 basically depending on how those are setup, the selected status is read on the write protect sense line. which is -always- this status bit on a 3.5.
+
+## Debugging
+
+no media in the drive:
+so if I turn the motor on 35 on manually, there is a big long wait - read_position comes out in the billions, and head_position hasn't moved at all. And everything freezes for a while.
+
+I monkeyed with other stuff for a while, there were issues with the motor on flag being inaccurately tied in to enable. I've dealt with that..
+
+and then we were seeing partial bytes being read. Fixed that. I am only seeing whole nybbles come in. However, the read sequence I see right now:
+
+D5 AA 96    A7    DB    DE
+is actually on disk
+D5 AA 96 96 A7 96 DB E9 DE
+
+After the D5 AA 96 signature we are missing every other byte. 
+
+I wonder if this is a cycle timing issue.
+
+We are calling Floppy_woz::fast_forward with cycles from clock->get_cycles() 
+@src/devices/iwm/IWM2.hpp:237 
+this is cpu cycles.
+I wonder if the floppy should be clocked with vid_cycles (1mhz), independently of the cpu speed. 
+gemini changes all of them to vid_cycle (too eager to do what I was asking about) and it broke 5.25.
+But let's think about this. the bits from the disk are coming in twice as fast as before. The bit cells are 2uS. So one (regular) nybble is 16uS (2 * 8), instead of the old 32uS.
+The Neil 3.5 primer says "set fast speed". If we have cpu at 2.8 but the drive also clocked at 2.8.. the bits are coming in too fast. 5.25 code at 1mhz can keep up with a 5.25 disk. A 3.5 disk we need to be faster.
+
+we know the 5.25 code can match any cpu clock speed. So, hmm...
+
+I should eliminate direct accesses to ->get_cycles in the floppy code. 
+it does use nclock for a timer for disk head movement. this use is unrelated to the other use.
+
+floppy::fast_forward could take the incremental number of cycles. or it can treat 0 as special case "this is first access".
+
+ok so I am calling floppy35:fast_forward with nclock now, and I am seeing all the bytes! but I'm still getting I/O error trying to "cat,s5".
+
+ahhh. My test800.woz image was invalid! I created it with cp2 and it can access/validate it just fine but it doesn't work in emulator. ba ha ha ha. Once I started passing 3.5 the vid_clock, and used a non-broken image, it works FINE.
+
+Writes very much confuse the system. I think the issue is write code expects to see an underrun flag when the write is complete; and iwm2 never sets underrun. So underrun flag is important.
+
+ok!
+
+“IWM Device Specification” says “in asynchronous mode the write shift register is buffered and when the buffer is empty the iwm sets the msb of the handshake register to 1 to indicate the next nibble can be written to the buffer. the buffer may be written at any time during the write state. only the data last written into the buffer register, before the contents of the buffer register is transferred to the write shift register, is used”
+
+ok, so that clearly implies a one-nibble queue. there is “shift register actively writing bits”, and “one more nibble waiting to be loaded into shift register automatically” if it’s there.
+
+An underrun occurs when data has not been written to the buffer register between the time the write-handshake bit indicates an empty buffer, and the time the buffer is transferred to the write shift register. If an underrun occurs in asynch mode /WRREQ will be disabled and /underrun will be set to 0.
+
+there are TWO registers involved in writing in async mode:
+write shift register
+buffer register
+
+the write-handshake bit is set to 0 when buffer register is written;
+it is set to 1 when the shift register is empty, and the contents of the buffer are transferred into the shift register.
+And if write-handshake was already *1* at that time, we flag underrun (set underrun bit to 0) and transfer nothing.
+You can write the buffer at any time (writing multiple different values there) before it's shifted into the shift reg.
+
+I AM WINNING SO MUCH I'M SICK OF IT!
+
+OK, P8 seems to be able to write to the 3.5's just fine. 
+[X] GS/OS gets multiple disk insert sounds when I try to insert the disk in GS/OS. I wonder if it's continually reading a "disk changed" sense from it. (fixed, I think )
+[ ] The track and side are not being displayed correctly.
+
+[ ] attempting to Initialize a disk in GS/OS results in no drive activity (no spinning) and the system hanging until the disk is ejected
 
