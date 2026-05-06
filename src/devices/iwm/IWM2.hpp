@@ -55,7 +55,7 @@ class IWM : public StorageDevice {
             struct {
                 uint8_t dr_reserved: 6;
                 uint8_t dr_enable35 : 1;
-                uint8_t dr_sel : 1;
+                uint8_t dr_hdsel : 1;
             };
             uint8_t disk_register;
         };
@@ -207,15 +207,15 @@ class IWM : public StorageDevice {
         // When either changes we push the updated SEL into the currently
         // selected 3.5 drive so its sense output tracks.
         void write_disk_register(uint8_t data) {
-            const uint8_t prev_sel     = dr_sel;
+            const uint8_t prev_sel     = dr_hdsel;
             const uint8_t prev_en35    = dr_enable35;
             disk_register = data;
-            if (dr_sel != prev_sel || dr_enable35 != prev_en35) {
+            if (dr_hdsel != prev_sel || dr_enable35 != prev_en35) {
                 // Keep both 3.5 drives' sense lines consistent with the new
                 // SEL value — cheap, and avoids stale sense if the program
                 // toggles the drive-select switch after a DISKREG write.
-                drives_35[0].set_hdsel(dr_sel);
-                drives_35[1].set_hdsel(dr_sel);
+                drives_35[0].set_hdsel(dr_hdsel);
+                drives_35[1].set_hdsel(dr_hdsel);
             }
         }
 
@@ -378,7 +378,7 @@ class IWM : public StorageDevice {
                             drives_35[prev_select].set_enable(false);
                             // Re-push HDSEL so the newly-selected drive's
                             // sense output reflects the current SEL line.
-                            drives_35[iwm_select].set_hdsel(dr_sel);
+                            drives_35[iwm_select].set_hdsel(dr_hdsel);
                             drives_35[iwm_select].set_enable(iwm_enable);
                         }
                         break;
@@ -492,7 +492,7 @@ class IWM : public StorageDevice {
             df->addLine("CA0: %d, CA1: %d, CA2: %d, LSTRB: %d, ENABLE: %d, SELECT: %d, Q6: %d, Q7: %d",
                 iwm_ca0, iwm_ca1, iwm_ca2, iwm_lstrb, iwm_enable, iwm_select, iwm_q6, iwm_q7);
             df->addLine("Disk Register: %02X  (EN35=%d SEL=%d)",
-                disk_register, dr_enable35, dr_sel);
+                disk_register, dr_enable35, dr_hdsel);
             df->addLine("Mode: %02X  ClkSpd: %d  BitCell: %d  MotorOff: %d  HSProtocol: %d Ltch: %d",
                 reg_mode, mr_clockspeed, mr_bitcelltime, mr_motorofftimer, mr_hsprotocol, mr_latch);
             df->addLine("Handshake: %02X  Status: %02X", reg_handshake, read_status_register());

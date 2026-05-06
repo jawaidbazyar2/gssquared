@@ -45,9 +45,10 @@ bool Floppy35_woz::mount(uint64_t key, media_descriptor *media_in) {
     }
 
     disk_in_place = true;
-    disk_switched = true;
+    disk_switched = false;
 
     // Start at track 0 side 0; angular position irrelevant at mount time.
+    // TODO: should not reset track or side here.
     track_num = 0;
     side      = 0;
     track_side_changed();
@@ -59,9 +60,10 @@ bool Floppy35_woz::mount(uint64_t key, media_descriptor *media_in) {
 bool Floppy35_woz::unmount(uint64_t key) {
     disk_in_place = false;
     motor_on      = false;
-    track_num     = 0;
-    side          = 0;
-    step_dir      = 0;
+    disk_switched = true;
+    //track_num     = 0;
+    //side          = 0;
+    //step_dir      = 0;
     update_spinning();
     refresh_sense();
     return Floppy_woz::unmount(key);
@@ -96,8 +98,6 @@ void Floppy35_woz::set_phase(uint8_t phase, bool onoff) {
         default: return;  // ENABLE/SELECT/Q6/Q7 are not our lines
     }
 
-    refresh_sense();
-
     // Control table is latched on the LSTRB off->on edge. We run the
     // selected function once per rising strobe and ignore the falling
     // edge; the ROM always toggles LSTRB+1 / LSTRB back to off which
@@ -105,6 +105,8 @@ void Floppy35_woz::set_phase(uint8_t phase, bool onoff) {
     if (lstrb_rise) {
         trigger_control();
     }
+
+    refresh_sense();
 }
 
 // ─── 16-way status decode (CA2|CA1|CA0|SEL) ────────────────────────────────
@@ -116,34 +118,38 @@ void Floppy35_woz::refresh_sense() {
     // condition (drive empty / motor off / not at track 0 / ...), as
     // documented at the foot of the status table.
     uint8_t out = 0;
+    update_timers(clock->get_vid_cycles());
     switch (select_index()) {
-        case 0x0:  // step direction: 0 = inward, 1 = outward
+        case 0b0000:  // step direction: 0 = inward, 1 = outward
             out = step_dir ? 1 : 0;
             break;
-        case 0x1:  // disk-in-place: 0 = present, 1 = empty
+        case 0b0001:  // disk-in-place: 0 = present, 1 = empty
             out = disk_in_place ? 0 : 1;
             break;
-        case 0x2:  // disk-is-stepping: 0 = stepping, 1 = done. We
+        case 0b0010:  // disk-is-stepping: 0 = stepping, 1 = done. We
             // emulate head motion synchronously so we are never
             // "stepping": always return 1 (done).
-            out = 1;
+            //out = 1;
+            
+            out = disk_stepping ? 0 : 1;
             break;
-        case 0x3:  // write-protect: 0 = WP, 1 = writable
+        case 0b0011:  // write-protect: 0 = WP, 1 = writable
             out = write_protect ? 0 : 1;
             break;
-        case 0x4:  // motor on: 0 = spinning, 1 = off
+        case 0b0100:  // motor on: 0 = spinning, 1 = off
             out = motor_on ? 0 : 1;
             break;
-        case 0x5:  // at track 0: 0 = at T0, 1 = elsewhere
+        case 0b0101:  // at track 0: 0 = at T0, 1 = elsewhere
             out = (track_num == 0) ? 0 : 1;
             break;
-        case 0x6:  // disk-switched: 0 = user ejected, 1 = not ejected
-            out = disk_switched ? 0 : 1; // reversed sense.
+        case 0b0110:  // disk-switched: 0 = user ejected, 1 = not ejected
+        // TODO: the documentation may be wrong here. This is "normal sense" and it seems to be working..
+            out = disk_switched ? 1 : 0; // reversed sense.
             break;
-        case 0x7:  // tachometer pulses (60/rev). Stubbed to 0 this phase.
+        case 0b0111:  // tachometer pulses (60/rev). Stubbed to 0 this phase.
             out = 0;
             break;
-        case 0x8:  // instantaneous lower-head data: reading also
+        case 0b1000:  // instantaneous lower-head data: reading also
                    // latches side = 0 per the Neil Parker note that
                    // sampling this selector configures the active head.
             if (side != 0) {
@@ -152,21 +158,22 @@ void Floppy35_woz::refresh_sense() {
             }
             out = 0;  // raw track bit unavailable at status-read time
             break;
-        case 0x9:  // instantaneous upper-head data: latches side = 1
+        case 0b1001:  // instantaneous upper-head data: latches side = 1
             if (side != 1) {
                 side = 1;
                 track_side_changed();
             }
             out = 0;
             break;
-        case 0xC:  // number of sides: 0 = SS, 1 = DS
+        case 0b1100:  // number of sides: 0 = SS, 1 = DS
             out = double_sided ? 1 : 0;
             break;
-        case 0xD:  // disk-ready-for-reading. Stubbed to 0 = ready so
+        case 0b1101:  // disk-ready-for-reading. Stubbed to 0 = ready so
                    // firmware's READYT wait loop returns immediately.
-            out = 0;
+           
+            out = disk_ready ? 0 : 1;
             break;
-        case 0xF:  // drive installed: 0 = connected
+        case 0b1111:  // drive installed: 0 = connected
             out = 0;
             break;
         default:
@@ -174,6 +181,7 @@ void Floppy35_woz::refresh_sense() {
             out = 0;
             break;
     }
+    fprintf(dbglog, "[%llu] 3.5 sense_out: %X (%s) = %d\n", clock->get_vid_cycles(), select_index(), statusNames[select_index()], out);
     sense_out = out;
 }
 
@@ -183,35 +191,47 @@ void Floppy35_woz::trigger_control() {
     // Control semantics mirror NeilA235Floppy.md lines 460..475 but use
     // the natural CA2|CA1|CA0|SEL ordering.
     switch (select_index()) {
-        case 0x0:  // 0 0 0 0 - set step direction inward (toward higher tracks)
+        // CA2 CA1 CA0 SEL
+        case 0b0000:  // set step direction inward (toward higher tracks)
             step_dir = 0;
             break;
-        case 0x8:  // 1 0 0 0 - set step direction outward (toward lower tracks)
+        case 0b1000:  // set step direction outward (toward lower tracks)
             step_dir = 1;
             break;
-        case 0x9:  // 1 0 0 1 - reset disk-switched flag (firmware clears the
-                   // "user ejected while mounted" latch here)
+        case 0x1001:  // reset disk-switched flag (firmware clears the
+                      // "user ejected while mounted" latch here)
             disk_switched = false;
             break;
-        case 0x2: {  // 0 0 1 0 - step one track in the current direction
+        case 0b0010: {  // step one track in the current direction
             int new_track = track_num + (step_dir ? -1 : +1);
             if (new_track < 0)  new_track = 0;
             if (new_track > 79) new_track = 79;
             if (new_track != track_num) {
+                if (new_track/0x10 != track_num/0x10) {
+                    ready_cycles_end = clock->get_vid_cycles() + 5000; disk_ready = false;
+                } else {
+                    ready_cycles_end = clock->get_vid_cycles() + 1000; disk_ready = false;
+                }
+                stepping_cycles_end = clock->get_vid_cycles() + 300; disk_stepping = true;
                 track_num = new_track;
                 track_side_changed();
             }
+            /* ready_counter = 3; disk_ready = false; */
+            
             break;
         }
-        case 0x4:  // 0 1 0 0 - spindle motor on
+        case 0b0100:  // spindle motor on
             motor_on = true;
             update_spinning();
+            ready_cycles_end = clock->get_vid_cycles() + 5000; disk_ready = false;
             break;
-        case 0xC:  // 1 1 0 0 - spindle motor off
+        case 0b1100:  // spindle motor off
             motor_on = false;
             update_spinning();
+            ready_cycles_end = 0;
+            disk_ready = false;
             break;
-        case 0xE:  // 1 1 1 0 - eject disk: Phase 1 flags only, no auto-unmount
+        case 0b1110:  // eject disk: Phase 1 flags only, no auto-unmount
             disk_in_place = false;
             disk_switched = true;
             break;
@@ -219,6 +239,7 @@ void Floppy35_woz::trigger_control() {
             // Unknown / reserved control selector — ignore.
             break;
     }
+    fprintf(dbglog, "[%llu] 3.5 control_out: %X (%s)\n", clock->get_vid_cycles(), select_index(), controlNames[select_index()]);
     refresh_sense();
 }
 

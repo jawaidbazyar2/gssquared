@@ -62,9 +62,19 @@ class Floppy35_woz : public Floppy_woz {
     // selected. Recomputed any time the CA*/SEL state changes.
     uint8_t sense_out = 0;
 
+    // On track change or motor_on, set this to a positive number.
+    // when it counts down to 0 (based on number of reads of this sense)
+    // then set disk
+    uint64_t ready_cycles_end = 0;
+    bool     disk_ready = false;
+
+    uint64_t stepping_cycles_end = 0;
+    bool     disk_stepping = false;
+
     // Build the 4-bit CA2|CA1|CA0|SEL index used for both the status
     // read table and the LSTRB-strobed control table.
     inline uint8_t select_index() const {
+        fprintf(dbglog, "[%llu] 3.5 select_index: %d%d%d%d = %X\n", clock->get_vid_cycles(), ca2, ca1, ca0, hdsel, static_cast<uint8_t>((ca2 << 3) | (ca1 << 2) | (ca0 << 1) | hdsel));
         return static_cast<uint8_t>((ca2 << 3) | (ca1 << 2) | (ca0 << 1) | hdsel);
     }
 
@@ -85,6 +95,7 @@ class Floppy35_woz : public Floppy_woz {
     // fast_forward/read_pulse/write_pulse) should be on. 3.5 spins only
     // when the drive is selected AND the spindle motor is commanded on.
     void update_spinning();
+    FILE *dbglog = nullptr;
 
 protected:
     uint32_t head_advance_per_cycle() const override { return 4; }  // 2us bit cell
@@ -92,7 +103,12 @@ protected:
 
 public:
     Floppy35_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer)
-        : Floppy_woz(sound_effect, clock, event_timer) {}
+        : Floppy_woz(sound_effect, clock, event_timer) {
+            dbglog = fopen("3.5_woz.dbg", "w");
+        }
+        ~Floppy35_woz() {
+            if (dbglog) fclose(dbglog);
+        }
 
     // ── FloppyDrive contract ─────────────────────────────────────────────
 
@@ -106,20 +122,49 @@ public:
     // computed from (drive_selected && motor_on) via update_spinning().
     void set_enable(bool on) override {
         enable = on;
-        if (!on) motor_on = false;
+        if (!on) {
+            motor_on = false;
+            ready_cycles_end = 0;
+            disk_ready = false;
+            stepping_cycles_end = 0;
+            disk_stepping = false;
+        }
         update_spinning();
         refresh_sense();
+        fprintf(dbglog, "[%llu] 3.5 set_enable: %d\n", clock->get_vid_cycles(), on);
+    }
+
+    void update_timers(uint64_t now) {
+        if (stepping_cycles_end && (now > stepping_cycles_end)) {
+            stepping_cycles_end = 0;
+            disk_stepping = false;
+        }
+        if (ready_cycles_end && (now > ready_cycles_end)) {
+            ready_cycles_end = 0;
+            disk_ready = true;
+        }
+        fprintf(dbglog, "[%llu] 3.5 timers: (%d,%d) stepping_cycles_end: %llu, ready_cycles_end: %llu\n", now, disk_stepping, disk_ready, stepping_cycles_end, ready_cycles_end);
+    }
+
+    uint64_t fast_forward(uint64_t now) {
+        //update_timers(now); // if they're just cruising the disk, update timers
+        refresh_sense();
+        return Floppy_woz::fast_forward(now);
     }
 
     // ── 3.5-specific API used by IWM ─────────────────────────────────────
 
     void set_hdsel(bool on) override {
         hdsel = on ? 1 : 0;
+        fprintf(dbglog, "[%llu] 3.5 set_hdsel: %d\n", clock->get_vid_cycles(), hdsel);
         refresh_sense();
+
     }
 
     // Bit 7 of the IWM status register while this drive is selected.
-    uint8_t read_sense() const { return sense_out; }
+    uint8_t read_sense() const { 
+        return sense_out; 
+    }
 
     virtual bool get_motor_on() override { return motor_on; }
     int  get_side()           const { return side; }
