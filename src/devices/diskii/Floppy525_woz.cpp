@@ -37,6 +37,10 @@ void Floppy525_woz::set_phase(uint8_t phase, bool onoff) {
                                0xABAB0001, this);
 }
 
+uint8_t Floppy525_woz::read_sense() {
+    return write_protect;
+}
+
 namespace {
 
 // Index: phase0 | (phase1 << 1) | (phase2 << 2) | (phase3 << 3). Value: detent

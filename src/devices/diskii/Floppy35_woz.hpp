@@ -71,6 +71,8 @@ class Floppy35_woz : public Floppy_woz {
     uint64_t stepping_cycles_end = 0;
     bool     disk_stepping = false;
 
+    virtual uint64_t get_current_time() override { return clock->get_vid_cycles(); }
+
     // Build the 4-bit CA2|CA1|CA0|SEL index used for both the status
     // read table and the LSTRB-strobed control table.
     inline uint8_t select_index() const {
@@ -146,10 +148,10 @@ public:
         fprintf(dbglog, "[%llu] 3.5 timers: (%d,%d) stepping_cycles_end: %llu, ready_cycles_end: %llu\n", now, disk_stepping, disk_ready, stepping_cycles_end, ready_cycles_end);
     }
 
-    uint64_t fast_forward(uint64_t now) {
+    uint64_t fast_forward(/* uint64_t now */) override {
         //update_timers(now); // if they're just cruising the disk, update timers
         refresh_sense();
-        return Floppy_woz::fast_forward(now);
+        return Floppy_woz::fast_forward(/* now */);
     }
 
     // ── 3.5-specific API used by IWM ─────────────────────────────────────
@@ -162,12 +164,12 @@ public:
     }
 
     // Bit 7 of the IWM status register while this drive is selected.
-    uint8_t read_sense() const { 
+    uint8_t read_sense() override { 
         return sense_out; 
     }
 
     virtual bool get_motor_on() override { return motor_on; }
-    int  get_side()           const { return side; }
+    int  get_side() override           { return side; }
 
     // ── Mount policy: 3.5 is WOZ-only this phase ────────────────────────
     bool mount(uint64_t key, media_descriptor *media) override;
@@ -212,7 +214,7 @@ public:
         "",
     };
 
-    void debug(DebugFormatter *f) {
+    void debug(DebugFormatter *f) override {
         if (disk_in_place) f->addLine("+++ Image: %s", woz.get_current_filename().c_str());
         f->addLine("CA[210]: %d%d%d SEL: %d LSTRB: %d  sel-idx: %X (%s) => %d",
                    ca2, ca1, ca0, hdsel, lstrb, select_index(), 

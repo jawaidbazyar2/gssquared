@@ -43,7 +43,7 @@ bool Floppy_woz::mount(uint64_t key, media_descriptor *media_in) {
 
     read_position = 0;
     head_position = 0;
-    last_cycle    = clock->get_cycles();
+    last_cycle    = get_current_time();
     // Force update_track_ptr() to treat this as a fresh track (old_bits == 0
     // skips the angular-rescale path so we start at position 0).
     cur_track_ptr = nullptr;
@@ -154,7 +154,8 @@ void Floppy_woz::update_track_ptr() {
     read_position = head_position;
 }
 
-uint64_t Floppy_woz::fast_forward(uint64_t now) {
+uint64_t Floppy_woz::fast_forward(/* uint64_t now */) {
+    uint64_t now = get_current_time(); // use our own clock.
     uint64_t elapsed = now - last_cycle;
     last_cycle = now;
 

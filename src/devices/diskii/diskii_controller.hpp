@@ -200,7 +200,7 @@ public:
         uint64_t now     = clock->get_cycles();
 
         // this updates the sim and tells us how many bits to update through the LSS.
-        uint64_t bits_to_sim = drives[diskii_select].fast_forward(now);
+        uint64_t bits_to_sim = drives[diskii_select].fast_forward(/* now */);
 
         for (uint64_t i = 0; i < bits_to_sim; i++) {
             if (diskii_q7 == 0 && diskii_q6 == 0) {

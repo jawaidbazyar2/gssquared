@@ -705,3 +705,16 @@ This makes the motor_on signal.
 selected_drive = dr_enable<<1 | iwm_select
 
 and the 555 timer operation is further activated by mr_motorofftimer.
+
+ok, first step - use a single array of drives to simplify sending commands to drives.
+
+I added a "get_current_cycle()" method to the floppy base because the different floppy methods use different clocks.
+and there is still an awkward bit in IWM2. Instead of passing the cycles to advance in, let floppy->fast_forward get its own time.
+
+OK I think I have the write_protect and read_sense mixed up. read_sense is a superset of wp on 3.5; identical on 5.25.
+
+[ ] I ejected Tomahawk and it went to try to read and we got into an infinite loop in the emu. 
+
+Alright, I am now back to Tomahawk working; Alien Mind not.
+
+Next step, modifying the IWM code to not switch on dr_35enable, but on the mode flags.

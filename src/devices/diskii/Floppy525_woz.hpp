@@ -51,8 +51,12 @@ public:
     int get_track() override { return track; }
 
     bool get_motor_on() override { return enable; } // on 5.52 if enable, motor is always on
+    
+    int get_side() override { return 0; }
 
-    void debug(DebugFormatter *f) {
+    uint8_t read_sense() override;
+
+    void debug(DebugFormatter *f) override {
         f->addLine("Image: %s", woz.get_current_filename().c_str());
         f->addLine("enable: %d ph [%d,%d,%d,%d]", enable, phase0, phase1, phase2, phase3);
         f->addLine("Track: %d.%d", track/4, track%4);

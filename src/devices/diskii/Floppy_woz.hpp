@@ -66,6 +66,8 @@ protected:
     EventTimer *event_timer = nullptr;
     FILE       *dbglog      = nullptr;
 
+    virtual uint64_t get_current_time() { return clock->get_cycles(); }
+
     // Angular-preserving track switch. Looks up the new track via
     // current_tmap_index() and rescales the angular head position so disk
     // rotation continues naturally when the new track has a different
@@ -94,7 +96,7 @@ protected:
 
     void note_spinning_inputs_changed(bool was_spinning) {
         if (!was_spinning && lss_disk_spinning()) {
-            last_cycle = clock->get_cycles();
+            last_cycle = get_current_time();
         }
     }
 
@@ -124,7 +126,7 @@ public:
 
     // Advance the head based on elapsed cycles since the previous call;
     // returns how many whole bit cells the LSS should clock through.
-    uint64_t fast_forward(uint64_t now);
+    virtual uint64_t fast_forward(/* uint64_t now */);
 
     inline uint8_t get_write_protect() { return write_protect; }
 
@@ -136,6 +138,8 @@ public:
     void    write_nybble(uint8_t nybble) override { (void)nybble; }
     uint8_t read_nybble() override { return 0; }
 
+    virtual uint8_t read_sense() = 0;
+
     // Legacy command-reg shims: intentionally asserts — Floppy_woz drives
     // are always driven through the LSS path in IWM/diskii_controller.
     uint8_t read_cmd(uint16_t address) override;
@@ -145,5 +149,9 @@ public:
 
     // Accessors for debugging
     virtual bool get_motor_on() = 0;
+
+    virtual int get_side() = 0;
+
+    virtual void debug(DebugFormatter *f) = 0;
 
 };
