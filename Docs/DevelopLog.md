@@ -11626,7 +11626,7 @@ made a blank 800K .woz image to check out some elements of the format. First, it
 
 See Woz format notes in Woz.md.
 
-[ ] being in atari joystick mode is back to making ctrl-oa-reset not work on iie  
+[X] being in atari joystick mode is back to making ctrl-oa-reset not work on iie  
 
 [ ] bug in GS AKD - if you hold G, then H, then release H, we still show AKD, but real GS has AKD=0.  
 
@@ -11650,7 +11650,7 @@ That would push these checks into every cycle increment instead of after every i
 
 I could scale the timer instead of using cpu cycles? that's hard to do in LS.
 
-[x] Apple II Audit (Zellyn) failing: "READ AT C055 should set C01C; Got 41" (fixed - was bug introduced in recent video refactor, big oops)  
+[X] Apple II Audit (Zellyn) failing: "READ AT C055 should set C01C; Got 41" (fixed - was bug introduced in recent video refactor, big oops)  
 
 Reset issue. So gamecontroller needs to know when reset is de-asserted so it can start timing the joyport. The problem is, we have two different reset mechanisms. Some driven through computer, and some driven directly by the keyboards. The two mechanisms are: assert then deassert reset; instantaneous reset.
 The instantaneous is still used by the UI resets. the assert/deassert is used by keyboards. these peek pretty deeply into computer->resetController etc. So perhaps have the API for keyboards in computer. Then computer can more easily set "last_reset".
@@ -11658,3 +11658,12 @@ The instantaneous is still used by the UI resets. the assert/deassert is used by
 ## May 3, 2026
 
 [ ] ctrl-enter leaks an enter into the emulator  
+
+## May 9, 2026
+
+Whoo doggies. Got through a TON of work on floppies. GS2 now supports 5.25 AND 3.5" WOZ and much-bugs-corrected IWM. can boot Tomahawk and Alien Mind. Can format a blank floppy image with 2:1 or 4:1. As long as it has enough bits! Andy McFadden is updating cp2 to do correctly GS-sized tracks for .woz images.
+
+looking at this control-enter leak. there are a couple issues with this. One is that debugwindow isn't called until after all the other keydown handlers are called. Ah, which means we probably want to use an F key to open the debugger, something that a guest won't ever need.
+Technically a GS might be interested in control-enter anyway, so that conflict is not easy to resolve.
+
+F1-6 are accounted for. F7 or 8 could work. 9 is cpu speed, F10 used to be reset but no longer is. that would work on all platforms as long as we don't require modifiers. ok, I can do F10.

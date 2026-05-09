@@ -692,15 +692,15 @@ bool debug_window_t::handle_event(SDL_Event &event) {
             case SDL_EVENT_KEY_DOWN:
                 switch (event.key.key) {
                     case SDLK_SPACE: step_one(); break;
-                    case SDLK_RETURN: 
-                        if (event.key.mod & SDL_KMOD_CTRL) {
-                            if (window_open) {
-                                set_closed();
-                            } else {
-                                set_open();
-                            }
-                        } else resume();
+                    case SDLK_F10: 
+                        if (window_open) {
+                            set_closed();
+                            resume();
+                        } else {
+                            set_open();
+                        }
                         break;
+                    case SDLK_RETURN: resume(); break;
                     case SDLK_O: step_over(); break;
                     case SDLK_R: step_out(); break;
                     case SDLK_UP: trace_scroll_up(1); break;
@@ -711,6 +711,7 @@ bool debug_window_t::handle_event(SDL_Event &event) {
                     case SDLK_END: view_position = 0; break;
                     case SDLK_T: cpu->trace = !cpu->trace; break;
                 }
+                return true; // consume the key down.
 
         
                 // TODO: add Step over MLI call here for Joshua Bell
@@ -759,9 +760,10 @@ bool debug_window_t::handle_event(SDL_Event &event) {
         }
         return true;
     } else {
-        if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_RETURN && event.key.mod & SDL_KMOD_CTRL) {
+        if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_F10) {
             if (window_open) {
                 set_closed();
+                resume();
             } else {
                 set_open();
             }
