@@ -247,9 +247,9 @@ whenever the timer fires, at that point, it moves the head accordingly.
 aw heck, the readme.txt goes into detail on each image and what you need to do right to get it booting. 
 
 [X] Print Shop Companion
-[ ] Blazing Paddles  
+[X] Blazing Paddles  
 [X] Bouncing Kamungas  
-[ ] Commando  
+[X] Commando  
 [X] Crisis Mountain  
 [X] Dino Eggs  
 [X] DOS 3.2 System Master (using BOOT13 from DOS 33 master)
@@ -262,11 +262,13 @@ aw heck, the readme.txt goes into detail on each image and what you need to do r
 [X] Sammy Lightfoot  
 [X] Stargate  
 [X] Stickybear Town  
-[ ] Take 1
+[X] Take 1
 [X] Apple at Play  
 [X] Bilestoad  
 [X] Print Shop Companion  
 [X] Wings of Fury Side A / B
+
+^^^ They all work.
 
 ## Long strings of zero bits
 

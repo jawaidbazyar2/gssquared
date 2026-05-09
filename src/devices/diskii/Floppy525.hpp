@@ -78,7 +78,7 @@ class Floppy525: public FloppyDrive {
 
     virtual bool get_enable() override { return enable; }
     virtual void set_enable(bool enable) override { this->enable = enable; }
-    virtual void set_phase(uint8_t phase, bool onoff) override {}; // TODO: this is a dummy, not used by older 5.25
+    virtual void set_phase(uint8_t phase, uint8_t onoff) override {}; // TODO: this is a dummy, not used by older 5.25
     //virtual void get_rdpulse() override {}; // TODO: this is a dummy, not used by older 5.25
 
     virtual uint8_t read_cmd(uint16_t address) override;

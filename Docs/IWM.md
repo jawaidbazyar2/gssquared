@@ -219,13 +219,13 @@ I AM WINNING SO MUCH I'M SICK OF IT!
 
 OK, P8 seems to be able to write to the 3.5's just fine. 
 
-[ ] GS/OS gets multiple disk insert sounds when I try to insert the disk in GS/OS. I wonder if it's continually reading a "disk changed" sense from it.
+[X] GS/OS gets multiple disk insert sounds when I try to insert the disk in GS/OS. I wonder if it's continually reading a "disk changed" sense from it.
 
 if you insert after Finder is already up, it works. If you have inserted at boot time, you get the multiple insert sounds and it never works.
 
-[ ] The track and side are not being displayed correctly. (side tends to flutter back and forth)
+[X] The track and side are not being displayed correctly. (side tends to flutter back and forth)
 
-[ ] attempting to Initialize a 3.5 in GS/OS results in no drive activity (no spinning) and the system hanging until the disk is ejected
+[X] attempting to Initialize a 3.5 in GS/OS results in no drive activity (no spinning) and the system hanging until the disk is ejected
 
 [ ] Copy2Plus - attempt to format 5,1 and get "no disk in drive" even though it's in there.  (This was after the GS/OS debacle above)
 eject and reinsert, copy2plus sees it, but failed format at block $BA5 (but I was at accelerated speed..).  ok, also did not work at 2.8. Hm!  
@@ -633,7 +633,15 @@ b232: tya
 ```
 
 John suggests that maybe Alien Mind is using the "wait 1 second to shut off drive" on the 3.5 (which is possible, though not commonly used).
+Well I went ahead and implemented that crap, but I might have been wrong about this.
 
+[13516675] 3.5 sense_out: 8 (lowerHeadData) = 0
+[13516676] 3.5 select_index: 1000 = 8
+[13516676] 3.5 select_index: 1000 = 8
+... shittons of this all at the same cycle. is that a fast_forward with bad cycle count?
+11,704 of them to be exact. Yowza.
+
+well it's trying to read 0010, diskIsStepping. 
 
 Found a doc detailing the 3.5 floppy interface PAL logic! Wow!
 
@@ -663,18 +671,17 @@ STEP:
 
 MOTORON:
 
-in formulate values are internal and all treated as active high
+in formula values are internal and all treated as active high
 
 /MOTORON = 
 	ENBL * LE * /CA2 * CA1 * /CA0 * /SEL +       # if ENBL and LE and 0100, motoron=1
 	MOTORON * /CA1 +                             # if !LSTRB, if x010, motoron=1
 	MOTORON * CA0 +                              
 	MOTORON * SEL +                              
-	MOTORON * /LSTRB                             
+	MOTORON * /LSTRB                             # if !LSTRB and motor on, keep it on?
 
-this seems like the second group is 
-    MOTORON * (/CA1 + CA0 + SEL + /LSTRB) which is a (partial) logical inversion of the AND formula from the 1st line.
-
+that 2nd group is same as: 
+    MOTORON * ! ( CA1 * /CA0 * /SEL * LSTRB )    # i.e., MOTORON AND NOT (100 and lstrb), disregard value of CA2
 
 EJECT:
 EJECT = 
@@ -718,3 +725,206 @@ OK I think I have the write_protect and read_sense mixed up. read_sense is a sup
 Alright, I am now back to Tomahawk working; Alien Mind not.
 
 Next step, modifying the IWM code to not switch on dr_35enable, but on the mode flags.
+
+[ ] Identify if 'motor' flag in IWM2 can be removed in favor of some other check.  
+
+[X] Commands do not activate until the LSTRB has gone low-hi-low; i.e., edge triggered hi to low?? the logic and some examples indicate it's edge triggered on low-hi.
+
+testing on realgs:
+if mode is F, c031:0, c0e9 turns on 5.25, c0e8 turns it off immediately (no 1 S wait).
+on the 3.5, the light doesn't turn off for 1-2 seconds! But that must be the -drive-, not the IWM.
+
+"Note that the drive may remain active for a second or two after the ENABLE access"
+
+So the behavior on the 3.5 is the drive light (not motor) stays on for 1-2 seconds after I C0E8. Huh. And you can't write to mode register as long as enable is on. Which is likely that Status Register bit 5 (E) is also for.
+
+So I need a test routine that:
+    enable 3.5
+	turn on motor
+	disable
+    
+and
+    enable 3.5
+	turn on motor
+	disable
+    wait a few cycles
+	enable
+
+Hmm!
+https://www.applefritter.com/comment/111125 - see post #74
+when LATCH mode bit is set, timer period reduces from 8322815 FCLK to 4063 FCLK.
+
+Also see post #47, which is MOSFET schematic of the IWM. 
+
+"The timer is not needed when accessing the 3.5" drive and is intended to be disabled. The 3.5" drive has internal logic to keep its motor spinning if it has not finished the last seek command when the host de-asserts /ENABLE."
+
+"If the latch mode bit is set, the timer is not guaranteed to count up to 2^32"
+ok, so if you've got the motor-off delay active BUT latch mode also active, it's using some portion of the 23/24-bit counter (half?). So it's not 1 sec delay, but some fraction of 1 second.
+
+I think the big thing is the drive itself won't disable its motor if it's in the middle of a track seek. Let's see if our test data shows that..
+
+[11254980] 3.5 control_out: 2 (stepOneTrack)
+[11254980] 3.5 timers: (1,0) stepping_cycles_end: 11255280, ready_cycles_end: 11255980
+[11483889] 3.5 set_enable: 0   - 228909
+[13414497] 3.5 set_enable: 0
+[13414512] 3.5 set_enable: 1
+it's after here the thing is expecting the motor to still be on
+
+so that's 230milliseconds. That's long for a track seek. So, that is probably not the issue.
+
+ok so let's make a little test program for exercising the IWM and 3.5.
+
+we need to control these things:
+iwm
+  5.25 / 3.5 (C031) - 3 / 5
+  enable on/off - E / e
+  mode 0 / F
+
+3.5
+  motor on/off - M / m
+  track direction T / t
+  stepOneTrack
+
+q - exit
+
+ok, this is handy.
+
+[X] Bug: if 3.5 enabled and switch to 5.25, spin sound comes on but no icon! Missing a flag somewhere.  
+
+Test 1:
+    3, E, M
+	e
+	takes 1-2 seconds for red light to turn off
+	drive spins until red light goes out.
+note I haven't set the mode register yet.
+
+Test 1a:
+    3, P, E, M        <- P means set latch=1 and delay=0
+	should still take 1-2 seconds plus 4ms, no way to test that exactly
+	but it should not be instant-off.
+
+Test 2:
+    3, O, E, M
+	then e
+
+	This still takes 1-2 seconds to turn off motor
+
+	3, o, E, M
+	then e
+	Takes an extra second on top of that to turn off motor
+
+Test 3:
+    3, O, E, M
+	then 5
+
+	this should switch running state to the 5.25.
+	How long to disable 3.5?
+	uh, it's instant.
+	of course this is toggling the 35enable signal which does go to the 3.5.
+
+ok let's say the in-drive motor-off delay is 1.5 seconds. Even 1 sec would do. 
+Will eventually need the 3.5 signal sent to the drives too.
+
+Test 4:
+    3, E, +, s
+	the 3.5 head can move while the drive motor is off
+
+
+ok, there's a flag "motor" in iwm2. well, iwm2 doesn't know if a drive's motor is on or off because 
+so it's inappropriately used in the decode() switch SELECT. it's otherwise used to gate sound effetcs.
+soundeffects should probably query the drives to find the drive that has its motor on. (could in theory be some overlap between 5.25 and 3.5)
+
+[X] when 3.5 not enabled, it should ignore attempt to strobe command  
+
+ok, base class and 525 don't separately track motor_on, they just return status of enable, which is same thing to them.
+uhhh there was a problem with the LSTRB logic that was causing it to trigger constantly! it was:
+!lstrb
+lstrb was a uint8_t. 
+ok that was not the problem, I am still getting massively repeated strobes. WTF.
+address is 2413.
+maybe it's an artifact of the memory access breakpoint.
+
+when motor is on, and I disable, (and I don't have media mounted), i am getting super long fast_forward. so last_cycle is being set inappropriately.  
+oh maybe that is causing a big delay in updating the screen such that it only appears enable and motor are being changed at same time. Ahh.
+
+ok, well we need to figure that out. that has to be based on last_cycles? Or perhaps with enable off we're never advancing the head pointer?
+I think it's because the drive is on, the head_pointer is advancing, but my test code is never actually reading, so the read pointer never advances. At some point when I motor off, there's a state change (or a read?) and then it has to catch up, and it could be anywhere from thousands to 50,000 bits to run through the simulator. If we're more than like 20 bits behind, can we not ignore 50,000 bits? can we set the read pointer to be a little behind the head so the catchup is bounded?
+
+So I keep getting confused by event_timer. The event_timer passed to the 35 is the 14m clock. I was using the wrong units.
+However, when switch to the correct clock (which does resolve the "turn off after 1 second bug") something in the ROM/ProDOS seems to be waiting for a status to change - because this got REAL slow. the fw turns enable off a lot (probably after every block read). But then it's waiting .. for what? to spin back up?
+I guess I will try to catch it
+FF/6A5F:
+this code looks familiar. yeah, this is the code that keeps writing MODE register.
+So in iwm2 writing to mode register is gated on the drive motor running. But that can't be right, it can't know that. Let's try gating it on the drive->get_enable.
+ok that makes everything wrong. But I'm changing the "lss_enabled" routine. I must be breaking something else.
+Let's just have the mode_reg routine check enable directly. all of these things break the drive, no idea why.
+
+[ ] Don't allow setting mode register if iwm_enable is active  
+
+ok, apparently turning off enable does NOT make the drive not ready.
+Probably ONLY turning the motor off does. 
+            //ready_cycles_end = 0;
+            //disk_ready = false;
+            //stepping_cycles_end = 0;
+            //disk_stepping = false;
+
+AGGGGH Alien Mind Still doesn't work. m****er. And it's the same thing. Let's extend that motor off timer to 1.5 seconds..
+So, it's looping waiting for the read sense to become negative. And the index is "diskIsStepping". So we now know the disk can step even when the motor is off.
+But my code is not allowing updates to state when motor is off?
+
+[11218217] 3.5 control_out: 2 (stepOneTrack)
+[11218217] 3.5 timers: (1,0) stepping_cycles_end: 11223217, ready_cycles_end: 11219217
+[11218217] 3.5 select_index: 0010 = 2
+[11218217] 3.5 select_index: 0010 = 2
+[11218217] 3.5 select_index: 0010 = 2
+[11218217] 3.5 sense_out: 2 (diskIsStepping) = 0
+[11218217] 3.5 timers: (1,0) stepping_cycles_end: 11223217, ready_cycles_end: 11219217
+[11218217] 3.5 select_index: 0010 = 2
+[11218217] 3.5 select_index: 0010 = 2
+[11218217] 3.5 select_index: 0010 = 2
+[11218217] 3.5 sense_out: 2 (diskIsStepping) = 0
+[11218220] 3.5 set_phase: 3 0
+[11218220] 3.5 timers: (1,0) stepping_cycles_end: 11223217, ready_cycles_end: 11219217
+[11218220] 3.5 select_index: 0010 = 2
+[11218220] 3.5 select_index: 0010 = 2
+[11218220] 3.5 select_index: 0010 = 2
+[11218220] 3.5 sense_out: 2 (diskIsStepping) = 0
+[21781374] 3.5 select_index: 0010 = 2
+[21781374] 3.5 select_index: 0010 = 2
+
+after that then we run the same cycle 25000 times - is this another huge bits_to_sim?
+but main issue is the stepping cycles never ends. and they're trying to read diskIsStepping and it never clears.
+
+OK. man, fixed this and a couple other problems.
+
+I also had an outstanding issue where we were corrupting disks by dropping a 0 bit when reading the handshake register -not- in a read cycle.
+
+ok, so I thought I had one bad disk write where it failed to write the full sector prologue like D5 AA ... but I can't reproduce that. I should write a test thing to do heavy duty image conversion and testing.
+
+Now the next issue is I cannot format one of these .woz images I created with cp2. Let's say the number of bits isn't enough. 
+
+just putting a floppy into GS/OS, it tends to get corrupted. When it writes finder.info etc?
+insert fresh floppy
+verify disk
+-> usually a couple bad blocks near start of disk
+
+P8 with C2+, does not seem to have this issue. 
+
+OK! Fixed a few issues related to drive polling (enable was being left behind).and dealing with edge cases where we were inappropriately write_pulse when: we were in a halfway 5.25/3.5 state. (This was occasionally corrupting single bits here and there, two different cases).
+
+GS/OS polling of the drives is keeping the 3.5 drive motor on. The drive motor has a 1.5 second timeout. But we put in the timeout because it's real, and because Alien Mind doesn't work without it.
+Maybe the issue is it's too long. Bring it in under the GS/OS poll interval?
+I set it for 0.5 seconds - and GS/OS and Alien Mind are both happy.
+
+Still need to:
+[ ] on 5.25, make motor_on follow enable explicitly  
+[ ] gate fast_forward on the drives, on motor_on. currently checks lss_disk_spinning which returns enable; but this is wrong. (well, it's right for the 5.25, wrong for the 3.5).  
+
+Whoa. Something I did got Blazing Paddles, Commando working. Ace. I have no idea what I did to fix it :-O
+
+The initialization issue is, indeed, the tracks aren't quite long enough. CP2 was generating a number of bits appropriate to a Mac; the GS has a higher effective bit cell frequency, i.e. more bits per revolution.
+
+https://ciderpress2.com/formatdoc/Nibble-notes.html
+https://apple2infinitum.slack.com/archives/CABEM8JFK/p1778299480339599
+
+The IIgs compensates by writing longer inter-sector gaps. So I think Andy is gonna tweak this in CP2.

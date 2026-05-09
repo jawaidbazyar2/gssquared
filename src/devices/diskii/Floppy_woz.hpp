@@ -148,10 +148,16 @@ public:
     void set_dbglog(FILE *f) { dbglog = f; }
 
     // Accessors for debugging
-    virtual bool get_motor_on() = 0;
+    virtual bool get_motor_on() { return enable; }
 
     virtual int get_side() = 0;
 
     virtual void debug(DebugFormatter *f) = 0;
 
+    void tick_no_write() {
+        read_position += 8;
+        if (cur_track_ptr && cur_track_ptr->bit_count > 0) {
+            read_position %= cur_track_ptr->bit_count * 8;
+        }
+    }
 };

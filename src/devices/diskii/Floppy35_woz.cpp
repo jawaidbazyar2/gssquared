@@ -80,20 +80,23 @@ drive_status_t Floppy35_woz::status() {
 
 // ─── Phase / HDSEL / LSTRB state plumbing ──────────────────────────────────
 
-void Floppy35_woz::set_phase(uint8_t phase, bool onoff) {
+void Floppy35_woz::set_phase(uint8_t phase, uint8_t onoff) {
     // IWM2 pushes all four switch lines through set_phase() keyed by
     // the IWM switch index (0 = CA0, 1 = CA1, 2 = CA2, 3 = LSTRB).
     // See IWM_Drive.hpp for the iwm_switch_t enum definition.
-    const uint8_t bit = onoff ? 1 : 0;
+    //const uint8_t bit = onoff ? 1 : 0;
+    
+    //fprintf(dbglog, "[%llu] 3.5 set_phase: %d %d\n", clock->get_vid_cycles(), phase, onoff);
+
     bool lstrb_rise = false;
 
     switch (phase) {
-        case 0: ca0 = bit; break;
-        case 1: ca1 = bit; break;
-        case 2: ca2 = bit; break;
+        case 0: ca0 = onoff; break;
+        case 1: ca1 = onoff; break;
+        case 2: ca2 = onoff; break;
         case 3:
-            lstrb_rise = (!lstrb && bit);
-            lstrb = bit;
+            lstrb_rise = ((lstrb == 0) && (onoff == 1));
+            lstrb = onoff;
             break;
         default: return;  // ENABLE/SELECT/Q6/Q7 are not our lines
     }
@@ -107,6 +110,30 @@ void Floppy35_woz::set_phase(uint8_t phase, bool onoff) {
     }
 
     refresh_sense();
+}
+
+void Floppy35_woz::motor_off_callback(uint64_t cycles, void *userData) {
+    Floppy35_woz *floppy = static_cast<Floppy35_woz *>(userData);
+    floppy->motor_on = false;
+    floppy->ready_cycles_end = 0;
+    floppy->disk_ready = false;
+    floppy->stepping_cycles_end = 0;
+    floppy->disk_stepping = false;
+    floppy->update_spinning();
+    floppy->refresh_sense();
+}
+
+void Floppy35_woz::schedule_motor_off() {
+    // The shared `event_timer` is processed against clock->get_c14m()
+    // (see gs2.cpp's processEvents calls and IWM2::request_enable_off()
+    // which uses get_c14m_per_second() for its own 1-second timer).
+    // Scheduling in CPU-cycle units against a 14M-driven event timer
+    // would fire ~immediately because c_14M outpaces (cycles + hz_rate)
+    // within the first ~80 ms of emulation, so use 14M units here.
+    /* event_timer->scheduleEvent(clock->get_cycles() + clock->get_hz_rate(), motor_off_callback, instanceID, this); */
+
+    event_timer->scheduleEvent(clock->get_c14m() + clock->get_c14m_per_second()*0.5,
+                               motor_off_callback, instanceID, this);
 }
 
 // ─── 16-way status decode (CA2|CA1|CA0|SEL) ────────────────────────────────
@@ -181,7 +208,7 @@ void Floppy35_woz::refresh_sense() {
             out = 0;
             break;
     }
-    fprintf(dbglog, "[%llu] 3.5 sense_out: %X (%s) = %d\n", clock->get_vid_cycles(), select_index(), statusNames[select_index()], out);
+    //fprintf(dbglog, "[%llu] 3.5 sense_out: %X (%s) = %d\n", clock->get_vid_cycles(), select_index(), statusNames[select_index()], out);
     sense_out = out;
 }
 
@@ -190,6 +217,8 @@ void Floppy35_woz::refresh_sense() {
 void Floppy35_woz::trigger_control() {
     // Control semantics mirror NeilA235Floppy.md lines 460..475 but use
     // the natural CA2|CA1|CA0|SEL ordering.
+    if (enable == false) return;
+
     switch (select_index()) {
         // CA2 CA1 CA0 SEL
         case 0b0000:  // set step direction inward (toward higher tracks)
@@ -212,7 +241,7 @@ void Floppy35_woz::trigger_control() {
                 } else {
                     ready_cycles_end = clock->get_vid_cycles() + 1000; disk_ready = false;
                 }
-                stepping_cycles_end = clock->get_vid_cycles() + 300; disk_stepping = true;
+                stepping_cycles_end = clock->get_vid_cycles() + 5000; disk_stepping = true;
                 track_num = new_track;
                 track_side_changed();
             }
@@ -220,16 +249,20 @@ void Floppy35_woz::trigger_control() {
             
             break;
         }
-        case 0b0100:  // spindle motor on
+        case 0b0100: { // spindle motor on
+            if (!motor_on) last_cycle = get_current_time();
             motor_on = true;
+            event_timer->cancelEvents(instanceID); // cancel any pending motor off event
             update_spinning();
             ready_cycles_end = clock->get_vid_cycles() + 5000; disk_ready = false;
+        }
             break;
-        case 0b1100:  // spindle motor off
+        case 0b1100: { // spindle motor off
             motor_on = false;
             update_spinning();
             ready_cycles_end = 0;
             disk_ready = false;
+        }
             break;
         case 0b1110:  // eject disk: Phase 1 flags only, no auto-unmount
             disk_in_place = false;
@@ -239,7 +272,7 @@ void Floppy35_woz::trigger_control() {
             // Unknown / reserved control selector — ignore.
             break;
     }
-    fprintf(dbglog, "[%llu] 3.5 control_out: %X (%s)\n", clock->get_vid_cycles(), select_index(), controlNames[select_index()]);
+    //fprintf(dbglog, "[%llu] 3.5 control_out: %X (%s)\n", clock->get_vid_cycles(), select_index(), controlNames[select_index()]);
     refresh_sense();
 }
 

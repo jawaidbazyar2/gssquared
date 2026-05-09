@@ -46,11 +46,11 @@ public:
     Floppy525_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer)
         : Floppy_woz(sound_effect, clock, event_timer) {}
 
-    void set_phase(uint8_t phase, bool onoff) override;
+    void set_phase(uint8_t phase, uint8_t onoff) override;
 
     int get_track() override { return track; }
 
-    bool get_motor_on() override { return enable; } // on 5.52 if enable, motor is always on
+    //bool get_motor_on() override { return enable; } // on 5.52 if enable, motor is always on
     
     int get_side() override { return 0; }
 

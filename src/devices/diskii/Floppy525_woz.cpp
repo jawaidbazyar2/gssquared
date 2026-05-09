@@ -22,7 +22,7 @@
 
 // ─── Phase-line handling (5.25-specific stepper) ────────────────────────────
 
-void Floppy525_woz::set_phase(uint8_t phase, bool onoff) {
+void Floppy525_woz::set_phase(uint8_t phase, uint8_t onoff) {
     switch (phase) {
         case 0: phase0 = onoff; break;
         case 1: phase1 = onoff; break;

@@ -165,23 +165,56 @@ uint64_t Floppy_woz::fast_forward(/* uint64_t now */) {
 
     const uint32_t adv = head_advance_per_cycle();
 
+    // Bound LSS catch-up work. While the motor is on but no IWM register
+    // accesses are happening, head_position keeps advancing but read_position
+    // is frozen (only read_pulse/write_pulse move it). When the CPU finally
+    // pokes the IWM, the lag can be tens of thousands of bits, and we'd
+    // burn that many LSS iterations on output nobody will ever see. The
+    // LSS only has a few bits of effective state (data_register=8,
+    // internal_data_register=8, sequencer_state=1, windowBits' 4-zero
+    // detector=4, async_shift_reg=8); once we've fed it more than ~16
+    // bits, all prior history is gone. So when the lag exceeds this cap
+    // we snap read_position forward to leave a warm-up window in front
+    // of the head and discard the rest. The IWM2 fast_forward_impl loop
+    // drives one bit per iteration, so after MAX_BITS_TO_SIM iterations
+    // read_position lands exactly on (head_position >> 3).
+    constexpr uint64_t MAX_BITS_TO_SIM = 64;
+
+    // Always advance head_position so angular position stays consistent,
+    // including across no-track periods. update_track_ptr() rescales /
+    // modulos head_position when a track later becomes available.
+    head_position += (elapsed * adv);
+
     if (!cur_track_ptr || cur_track_ptr->bit_count == 0) {
-        // No track under the head: caller will feed the LSS random bits.
-        // Return bits_to_sim proportional to elapsed time so read_position
-        // stays consistent when a track later becomes available.
-        return elapsed * adv;
+        // No track under the head: read_pulse() will synthesize random
+        // bits for the LSS. read_position doesn't wrap in this state
+        // (read_pulse skips the modulo when bit_count==0), so we just
+        // measure raw lag and apply the same cap.
+        uint64_t bits_to_sim = (head_position >> 3) - (read_position >> 3);
+        if (bits_to_sim > MAX_BITS_TO_SIM) {
+            read_position = ((head_position >> 3) - MAX_BITS_TO_SIM) * 8;
+            bits_to_sim = MAX_BITS_TO_SIM;
+        }
+        return bits_to_sim;
     }
 
     uint64_t track_bits = cur_track_ptr->bit_count;
 
-    // Compute new angular position BEFORE updating read_position so we can
-    // derive the number of whole bit cells to simulate from the fractional
-    // position already accumulated. Using (new_fp >> 3) - (read_fp >> 3)
+    // Derive the number of whole bit cells to simulate from the fractional
+    // positions already accumulated. Using (head_fp >> 3) - (read_fp >> 3)
     // is critical: head_position may be mid-cell, and naive elapsed/4 would
-    // permanently skip bits on a straddling boundary.
-    head_position += (elapsed * adv);
+    // permanently skip bits on a straddling boundary. The modulo collapses
+    // multi-rotation lag (LSS state can't tell the difference).
     uint64_t bits_to_sim =
         ((head_position >> 3) - (read_position >> 3)) % track_bits;
+
+    if (bits_to_sim > MAX_BITS_TO_SIM) {
+        uint64_t head_bit = (head_position >> 3) % track_bits;
+        uint64_t snap_bit =
+            (head_bit + track_bits - MAX_BITS_TO_SIM) % track_bits;
+        read_position = snap_bit * 8;
+        bits_to_sim = MAX_BITS_TO_SIM;
+    }
     return bits_to_sim;
 }
 

@@ -71,12 +71,14 @@ class Floppy35_woz : public Floppy_woz {
     uint64_t stepping_cycles_end = 0;
     bool     disk_stepping = false;
 
+    uint64_t instanceID = 0;
+
     virtual uint64_t get_current_time() override { return clock->get_vid_cycles(); }
 
     // Build the 4-bit CA2|CA1|CA0|SEL index used for both the status
     // read table and the LSTRB-strobed control table.
     inline uint8_t select_index() const {
-        fprintf(dbglog, "[%llu] 3.5 select_index: %d%d%d%d = %X\n", clock->get_vid_cycles(), ca2, ca1, ca0, hdsel, static_cast<uint8_t>((ca2 << 3) | (ca1 << 2) | (ca0 << 1) | hdsel));
+        //fprintf(dbglog, "[%llu] 3.5 select_index: %d%d%d%d = %X\n", clock->get_vid_cycles(), ca2, ca1, ca0, hdsel, static_cast<uint8_t>((ca2 << 3) | (ca1 << 2) | (ca0 << 1) | hdsel));
         return static_cast<uint8_t>((ca2 << 3) | (ca1 << 2) | (ca0 << 1) | hdsel);
     }
 
@@ -104,9 +106,10 @@ protected:
     int      current_tmap_index()     const override { return (track_num << 1) | side; }
 
 public:
-    Floppy35_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer)
+    Floppy35_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer, uint16_t drive_index)
         : Floppy_woz(sound_effect, clock, event_timer) {
-            dbglog = fopen("3.5_woz.dbg", "w");
+            instanceID = 0xABAC0000 + drive_index;
+            //dbglog = fopen("3.5_woz.dbg", "w");
         }
         ~Floppy35_woz() {
             if (dbglog) fclose(dbglog);
@@ -114,7 +117,7 @@ public:
 
     // ── FloppyDrive contract ─────────────────────────────────────────────
 
-    void set_phase(uint8_t phase, bool onoff) override;
+    void set_phase(uint8_t phase, uint8_t onoff) override;
 
     int get_track() override { return (track_num << 1) | side; }
 
@@ -123,17 +126,22 @@ public:
     // The base-class `enable` latch (which gates LSS spinning) is
     // computed from (drive_selected && motor_on) via update_spinning().
     void set_enable(bool on) override {
-        enable = on;
-        if (!on) {
-            motor_on = false;
-            ready_cycles_end = 0;
-            disk_ready = false;
-            stepping_cycles_end = 0;
-            disk_stepping = false;
+        if (!on && enable) {
+            //motor_on = false;
+            schedule_motor_off();
+            // TODO: if a head movement is in progress, the motor off must be delayed until after the movement is complete, so have a "pending motor off" flag.
+            //ready_cycles_end = 0;
+            //disk_ready = false;
+            //stepping_cycles_end = 0;
+            //disk_stepping = false;
         }
+        if (on) {
+            event_timer->cancelEvents(instanceID); // cancel any pending motor off event
+        }
+        enable = on;
         update_spinning();
         refresh_sense();
-        fprintf(dbglog, "[%llu] 3.5 set_enable: %d\n", clock->get_vid_cycles(), on);
+        //fprintf(dbglog, "[%llu] 3.5 set_enable: %d\n", clock->get_vid_cycles(), on);
     }
 
     void update_timers(uint64_t now) {
@@ -145,7 +153,7 @@ public:
             ready_cycles_end = 0;
             disk_ready = true;
         }
-        fprintf(dbglog, "[%llu] 3.5 timers: (%d,%d) stepping_cycles_end: %llu, ready_cycles_end: %llu\n", now, disk_stepping, disk_ready, stepping_cycles_end, ready_cycles_end);
+        //fprintf(dbglog, "[%llu] 3.5 timers: (%d,%d) stepping_cycles_end: %llu, ready_cycles_end: %llu\n", now, disk_stepping, disk_ready, stepping_cycles_end, ready_cycles_end);
     }
 
     uint64_t fast_forward(/* uint64_t now */) override {
@@ -158,7 +166,7 @@ public:
 
     void set_hdsel(bool on) override {
         hdsel = on ? 1 : 0;
-        fprintf(dbglog, "[%llu] 3.5 set_hdsel: %d\n", clock->get_vid_cycles(), hdsel);
+        //fprintf(dbglog, "[%llu] 3.5 set_hdsel: %d\n", clock->get_vid_cycles(), hdsel);
         refresh_sense();
 
     }
@@ -170,6 +178,9 @@ public:
 
     virtual bool get_motor_on() override { return motor_on; }
     int  get_side() override           { return side; }
+
+    void schedule_motor_off();
+    static void motor_off_callback(uint64_t cycles, void *userData);
 
     // ── Mount policy: 3.5 is WOZ-only this phase ────────────────────────
     bool mount(uint64_t key, media_descriptor *media) override;
