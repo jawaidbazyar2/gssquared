@@ -50,6 +50,7 @@ enum MainAtlas {
     AppleDisk_525_Open,
     AppleDisk_525_Closed,
     WriteProtected,
+    AppleDisk_Face,
     MainAtlas_count
 };
 

@@ -35,7 +35,7 @@
  * @param renderer The SDL renderer to use.
  */
 void AppleDisk_35_Button_t::render() {
-    this->set_assetID(Unidisk_Face);
+    this->set_assetID(AppleDisk_Face);
 /*     if (status.is_mounted)    
     else this->set_assetID(Unidisk_Face);
  */
