@@ -265,32 +265,40 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         StorageButton *button;
 
         // Create the appropriate button type based on drive_type
-        if (drive.drive_type == DRIVE_TYPE_DISKII) {
-            button = new DiskII_Button_t(&ui_ctx, DiskII_Open, DS);
-            button->on_click([this, drive](const SDL_Event& event) -> bool {
-                diskii_button_click(new diskii_callback_data_t{this, drive.key});
-                return true;
-            });
-        } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_525) {
-            button = new AppleDisk_525_Button_t(&ui_ctx, AppleDisk_525_Open, DS);
-            button->on_click([this, drive](const SDL_Event& event) -> bool {
-                diskii_button_click(new diskii_callback_data_t{this, drive.key});
-                return true;
-            });
-        } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_35) {
-            // Phase 1: reuse the 5.25 AppleDisk button asset for 3.5 drives.
-            // A distinct 3.5 button asset is a follow-up.
-            button = new AppleDisk_35_Button_t(&ui_ctx, AppleDisk_Face, DS);
-            button->on_click([this, drive](const SDL_Event& event) -> bool {
-                diskii_button_click(new diskii_callback_data_t{this, drive.key});
-                return true;
-            });
-        } else if (drive.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-            button = new Unidisk_Button_t(&ui_ctx, Unidisk_Face, DS);
-            button->on_click([this, drive](const SDL_Event& event) -> bool {
-                unidisk_button_click(new diskii_callback_data_t{this, drive.key});
-                return true;
-            });
+        switch (drive.drive_type) {
+
+            case DRIVE_TYPE_DISKII:
+                button = new DiskII_Button_t(&ui_ctx, DiskII_Open, DS);
+                button->on_click([this, drive](const SDL_Event& event) -> bool {
+                    diskii_button_click(new diskii_callback_data_t{this, drive.key});
+                    return true;
+                });
+                break;
+            case DRIVE_TYPE_APPLEDISK_525:
+                button = new AppleDisk_525_Button_t(&ui_ctx, AppleDisk_525_Open, DS);
+                button->on_click([this, drive](const SDL_Event& event) -> bool {
+                    diskii_button_click(new diskii_callback_data_t{this, drive.key});
+                    return true;
+                });
+                break;
+            case DRIVE_TYPE_APPLEDISK_35:
+                // Phase 1: reuse the 5.25 AppleDisk button asset for 3.5 drives.
+                // A distinct 3.5 button asset is a follow-up.
+                button = new AppleDisk_35_Button_t(&ui_ctx, AppleDisk_Face, DS);
+                button->on_click([this, drive](const SDL_Event& event) -> bool {
+                    diskii_button_click(new diskii_callback_data_t{this, drive.key});
+                    return true;
+                });
+                break;
+            case DRIVE_TYPE_PRODOS_BLOCK:
+                button = new Unidisk_Button_t(&ui_ctx, Unidisk_Face, DS);
+                button->on_click([this, drive](const SDL_Event& event) -> bool {
+                    unidisk_button_click(new diskii_callback_data_t{this, drive.key});
+                    return true;
+                });
+                break;
+            default:
+                throw std::runtime_error(std::string("Unknown drive type: ") + std::to_string(drive.drive_type));
         }
         button->set_key(drive.key);
         drive_container->add(button);
