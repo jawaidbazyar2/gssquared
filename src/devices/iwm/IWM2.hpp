@@ -3,16 +3,39 @@
 #include "NClock.hpp"
 #include "computer.hpp"
 #include "SlotData.hpp"
-#include "devices/diskii/Floppy525.hpp"
+//#include "devices/floppy/Floppy525.hpp"
 #include "util/SoundEffect.hpp"
 #include "debug.hpp"
 
-#include "IWM_Drive.hpp"  // iwm_switch_t constants shared by 5.25 and 3.5 decode
-#include "devices/diskii/Floppy525_woz.hpp"
-#include "devices/diskii/Floppy35_woz.hpp"
+//#include "IWM_Drive.hpp"  // iwm_switch_t constants shared by 5.25 and 3.5 decode
+#include "devices/floppy/Floppy525_woz.hpp"
+#include "devices/floppy/Floppy35_woz.hpp"
 
 #include "util/SoundEffectKeys.hpp"
 #include <stdexcept>
+
+
+static const uint32_t IWM_SWITCH_COUNT = 8;
+static const uint32_t IWM_ADDRESS_MAX = IWM_SWITCH_COUNT * 2;
+
+enum iwm_switch_t {
+    IWM_CA0_OFF = 0,
+    IWM_CA0_ON = 1,
+    IWM_CA1_OFF = 2,
+    IWM_CA1_ON = 3,
+    IWM_CA2_OFF = 4,
+    IWM_CA2_ON = 5,
+    IWM_LSTRB_OFF = 6,
+    IWM_LSTRB_ON = 7,
+    IWM_ENABLE_OFF = 8,
+    IWM_ENABLE_ON = 9,
+    IWM_SELECT_OFF = 10,
+    IWM_SELECT_ON = 11,
+    IWM_Q6_OFF = 12,
+    IWM_Q6_ON = 13,
+    IWM_Q7_OFF = 14,
+    IWM_Q7_ON = 15,
+};
 
 class IWM : public StorageDevice {
     protected:

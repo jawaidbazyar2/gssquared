@@ -11570,14 +11570,14 @@ Going to have Clod do an audit for other similar problems to STA (ZP),Y. Ah yeah
 
 The decorrelation works better when I push it to 256 samples, which is about 5ms. gives it a bit of a "big room" reverb feel. doesn't hurt the tonality too much. Stereo is certainly the best here tho. So, for sure have a user option.
 
-[x] Add "Mockingboard/Mono" menu setting to enable decorrelation on right channel.  
+[X] Add "Mockingboard/Mono" menu setting to enable decorrelation on right channel.  
 [ ] add mockingboard cycle hook into NClockIIgs
 
 When mockingboard is on but all of one chip is off, should we treat it as mono and copy live chip to the other channel?
 
-[x] IIe - any key down bit (C010[7] erroneous comes on when I press a modifier key)  
+[X] IIe - any key down bit (C010[7] erroneous comes on when I press a modifier key)  
 
-[x] uhh double lores with the RGB scanner is wrong  
+[X] uhh double lores with the RGB scanner is wrong  
 
 ## Apr 22, 2026
 
@@ -11603,7 +11603,7 @@ OK, I've gone through that.
 
 Get back to ui button up the hard disk multi volume stuff
 
-[x] Add ui option for right mouse button speedup
+[X] Add ui option for right mouse button speedup
 
 Settle on config storage (use mikes format?)
 
@@ -11612,7 +11612,7 @@ Cut a release
 Drag and drop. 
 If you just drop on the window generally, it should automatically match the first available drive. If you drag and drop onto the drive icon specifically it replaces that drive. The hard disk icon should be twice as wide and if you click on it you get a list of volumes to unmount. Otherwise it works the same. It's status should display the block number and the file name as it does now 
 
-[x] pdblock3 firmware also needs to jump back into the right place in boot sequence. (JMP SLOOP)
+[X] pdblock3 firmware also needs to jump back into the right place in boot sequence. (JMP SLOOP)
 
 Shoot, I really need to do the 3.5 drives first on GS, then I can stop using pdblock3 as if it was 3.5 drives.
 
@@ -11657,7 +11657,7 @@ The instantaneous is still used by the UI resets. the assert/deassert is used by
 
 ## May 3, 2026
 
-[ ] ctrl-enter leaks an enter into the emulator  
+[X] ctrl-enter leaks an enter into the emulator (change key to F10, this is better)  
 
 ## May 9, 2026
 
@@ -11667,3 +11667,33 @@ looking at this control-enter leak. there are a couple issues with this. One is 
 Technically a GS might be interested in control-enter anyway, so that conflict is not easy to resolve.
 
 F1-6 are accounted for. F7 or 8 could work. 9 is cpu speed, F10 used to be reset but no longer is. that would work on all platforms as long as we don't require modifiers. ok, I can do F10.
+
+I continue to be somewhat unhappy with the Mac menu situation. I am tempted to just punt and use the imgui menus. Pros: all the sh!t won't be broked. the code will be the same as linux, only leaving the windows-specific code.   Cons: it's not the normal Mac interface. 
+more Pro's: I can fade the imgui menu in and out, and the presentation would be consistent on all platforms. HRM.
+I have to deal with scaling the menu and other controls anyway (on high-res platforms). 
+
+Alright it's time to do this hard drive thing already?!?!
+
+[ ] Rename Generic ProDOS Block 3 to "BazFast"
+
+So let's say we start and always display a minimum of one hard drive unit. When we drag and drop items onto it, more units appear.
+You can click those to eject and make it disappear (but the first is always there).
+If a hard drive is active, only display the one unit's image.
+nah I think that is awkward.
+
+ok. the first one is special. if you click on it, you mount a new unit, which then shows up in the list.
+clicking on one of the units unmounts that unit.
+If a unit is active, only display the one unit's image.
+
+This implies pushing the HUD status display into the devices, which honestly is probably where they belong. So the diskii controller knows how to render its stuff, etc. Other devices could then have HUD status on the screen.. could be neat.
+
+Ah, ok. So we can have device classes for the OSD:
+   Network/Serial
+   Storage
+   Slot
+
+Each of these can have a list and configuration area in OSD. Storage we already have. The area is not that big. The container layout should be able to have lines of varying heights so the icons use the space more efficiently.
+the network/serial buttons become how you configure what's attached to those devices.
+and the slot buttons let you .. do what exactly.. give it some thought.
+
+Issue: the drive buttons are all actually 100 px high. So we have to alter the Atlas so the rects are just big enough. Then have Button auto-size based on the asset rect (we have a routine for this). Then 

@@ -267,6 +267,7 @@ aw heck, the readme.txt goes into detail on each image and what you need to do r
 [X] Bilestoad  
 [X] Print Shop Companion  
 [X] Wings of Fury Side A / B
+[ ] Border Zone - disk 2 loading is very slow (we do not respect bit timing field in woz)
 
 ^^^ They all work.
 
@@ -652,3 +653,31 @@ holy hell
          !byte $60        ; RTS
 .exit
 }
+
+## Image generation and conversion
+
+So we need to be able to import a block file to Woz format, and go the other way, same as we do for 5.25 floppies.
+
+We're going to want to perform a conversion just like CP2 does it. 
+
+We also want some menu items to create new blank 140K and 800K Woz disk images (and maybe .2mg too?)
+
+
+
+
+## Test Regime
+
+in Apple IIe and IIgs each, run the following test regime
+
+Mount prodos 2.4.3 in 6/1 and a dummy disk in drive 2 
+1. format drive 2; verify disk
+1. block copy drive 1 to drive 2; verify disk
+
+Mount locksmith 6 in 6/1 and dummy disk in drive 2
+1. bit copy drive 1 to drive 2;
+1. compare driver 1 to drive 2
+1. verify drive 2 (quick verify in 16-sect utils)
+
+On IIgs only, run the following test regime
+1. boot GS/OS; initialize 3.5 with 2:1 and 4:1 formatting, verify
+1. format with 2:1; copy a folder of test files to the floppy; verify

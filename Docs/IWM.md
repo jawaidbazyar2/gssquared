@@ -227,8 +227,10 @@ if you insert after Finder is already up, it works. If you have inserted at boot
 
 [X] attempting to Initialize a 3.5 in GS/OS results in no drive activity (no spinning) and the system hanging until the disk is ejected
 
-[ ] Copy2Plus - attempt to format 5,1 and get "no disk in drive" even though it's in there.  (This was after the GS/OS debacle above)
+[X] Copy2Plus - attempt to format 5,1 and get "no disk in drive" even though it's in there.  (This was after the GS/OS debacle above)
 eject and reinsert, copy2plus sees it, but failed format at block $BA5 (but I was at accelerated speed..).  ok, also did not work at 2.8. Hm!  
+
+[ ] when booting prodos 8, if a 3.5 was already in the drive, copy2plus does not think there's a disk in the drive. eject and reinsert and works fine.  
 
 Going through the IWM spec, it says "if an underrun occurs in asynchronous mode /WRREQ will be disabled (set to ttl high) and /underrun will be set to 0." So this means no writing when underrun is 1. Currently we are forcing 0 writes. I'm not sure how you format a disk w/o writing during overrun.. (could it shift to synchronous mode?)
 
@@ -720,13 +722,13 @@ and there is still an awkward bit in IWM2. Instead of passing the cycles to adva
 
 OK I think I have the write_protect and read_sense mixed up. read_sense is a superset of wp on 3.5; identical on 5.25.
 
-[ ] I ejected Tomahawk and it went to try to read and we got into an infinite loop in the emu. 
+[X] I ejected Tomahawk and it went to try to read and we got into an infinite loop in the emu. 
 
 Alright, I am now back to Tomahawk working; Alien Mind not.
 
 Next step, modifying the IWM code to not switch on dr_35enable, but on the mode flags.
 
-[ ] Identify if 'motor' flag in IWM2 can be removed in favor of some other check.  
+[X] Identify if 'motor' flag in IWM2 can be removed in favor of some other check.  
 
 [X] Commands do not activate until the LSTRB has gone low-hi-low; i.e., edge triggered hi to low?? the logic and some examples indicate it's edge triggered on low-hi.
 
@@ -859,7 +861,7 @@ So in iwm2 writing to mode register is gated on the drive motor running. But tha
 ok that makes everything wrong. But I'm changing the "lss_enabled" routine. I must be breaking something else.
 Let's just have the mode_reg routine check enable directly. all of these things break the drive, no idea why.
 
-[ ] Don't allow setting mode register if iwm_enable is active  
+[X] Don't allow setting mode register if iwm_enable is active  
 
 ok, apparently turning off enable does NOT make the drive not ready.
 Probably ONLY turning the motor off does. 
@@ -928,3 +930,5 @@ https://ciderpress2.com/formatdoc/Nibble-notes.html
 https://apple2infinitum.slack.com/archives/CABEM8JFK/p1778299480339599
 
 The IIgs compensates by writing longer inter-sector gaps. So I think Andy is gonna tweak this in CP2.
+
+Also let's clean up all the old IWM and floppy stuff, get it out of here.

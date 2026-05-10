@@ -20,12 +20,12 @@
 #include <iostream>
 #include <sys/stat.h>
 
-#include "gs2.hpp"
-#include "cpu.hpp"
+//#include "gs2.hpp"
+//#include "cpu.hpp"
 #include "media.hpp"
 #include "debug.hpp"
-#include "devices/diskii/diskii_fmt.hpp"
-#include "devices/diskii/diskii.hpp"
+//#include "devices/diskii/diskii_fmt.hpp"
+//#include "devices/diskii/diskii.hpp"
 #include "strndup.h"
 
 /**

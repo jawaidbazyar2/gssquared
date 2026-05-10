@@ -262,8 +262,9 @@ void Floppy_woz::write_pulse(uint8_t bit) {
         uint64_t byte_idx    = bi >> 3;
         uint64_t bit_in_byte = bi & 7;
         size_t   need_bytes  = (static_cast<size_t>(track_bits) + 7) / 8;
-        if (byte_idx < cur_track_ptr->bits.size() &&
-            cur_track_ptr->bits.size() >= need_bytes) {
+        /* if (byte_idx < cur_track_ptr->bits.size() &&
+            cur_track_ptr->bits.size() >= need_bytes) { */
+        if (bi < cur_track_ptr->bit_count) { // WOZ metadata vs. buffer inconsistency, disregard.
             uint8_t mask = static_cast<uint8_t>(1u << (7 - static_cast<int>(bit_in_byte)));
             if (bit & 1) cur_track_ptr->bits[byte_idx] |= mask;
             else         cur_track_ptr->bits[byte_idx] &= static_cast<uint8_t>(~mask);

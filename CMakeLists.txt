@@ -283,7 +283,7 @@ add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp src/devices/es550
 
 add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
 
-add_library(gs2_devices_iwm src/devices/iwm/iwm_device.cpp src/devices/iwm/IWM_Drive.cpp src/devices/diskii/Floppy525.cpp)
+add_library(gs2_devices_iwm src/devices/iwm/iwm_device.cpp)
 
 add_library(gs2_devices_cassette     src/devices/cassette/cassette.cpp )
 
@@ -328,17 +328,20 @@ add_library(gs2_displaypp src/devices/displaypp/frame/frame_bit.cpp src/devices/
 
 add_library(gs2_ntsc src/display/ntsc.cpp src/display/Matrix3x3.cpp src/display/OEVector.cpp src/display/filters.cpp )
 
-add_library(gs2_diskii src/devices/diskii/ndiskii.cpp)
+#add_library(gs2_diskii src/devices/diskii/ndiskii.cpp)
 
-add_library(gs2_devices_diskii_woz
-    src/devices/diskii/Floppy_woz.cpp
-    src/devices/diskii/Floppy525_woz.cpp
-    src/devices/diskii/Floppy35_woz.cpp
-    src/devices/diskii/ndiskii_woz.cpp
+add_library(gs2_devices_floppy_woz
+    src/util/woz.cpp
+    src/devices/floppy/Floppy_woz.cpp
+    src/devices/floppy/Floppy525_woz.cpp
+    src/devices/floppy/Floppy35_woz.cpp
 )
 
-add_library(gs2_woz src/util/woz.cpp)
-target_link_libraries(gs2_woz gs2_devices_diskii_fmt gs2_util)
+target_link_libraries(gs2_devices_floppy_woz gs2_devices_diskii_fmt gs2_util)
+
+add_library(gs2_devices_diskii_woz
+    src/devices/diskii/ndiskii_woz.cpp
+)
 
 add_library(gs2_message_bus src/mbus/MessageBus.cpp)
 
@@ -366,7 +369,7 @@ target_link_libraries(gs2_cpu gs2_trace)
 target_link_libraries(gs2_mmu gs2_trace gs2_cpu)
 target_link_libraries(gs2_devices_adb gs2_util)
 target_link_libraries(gs2_devices_iwm gs2_devices_diskii_fmt)
-target_link_libraries(gs2_devices_diskii_woz gs2_woz gs2_devices_diskii_fmt gs2_util)
+target_link_libraries(gs2_devices_diskii_woz gs2_devices_floppy_woz gs2_devices_diskii_fmt gs2_util)
 
 # Add the executable
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
@@ -426,7 +429,7 @@ target_link_libraries(GSSquared
     gs2_devices_mouse
     gs2_devices_rtc_pram
     gs2_devices_adb
-    gs2_diskii
+    #gs2_diskii
     gs2_devices_diskii_woz
     platform_specific
 )

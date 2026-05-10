@@ -22,7 +22,7 @@
 #include "util/DebugFormatter.hpp"
 #include "util/media.hpp"
 #include "util/SoundEffectKeys.hpp"
-#include "devices/diskii/Floppy525_woz.hpp"
+#include "devices/floppy/Floppy525_woz.hpp"
 
 // Soft-switch offsets within the slot's I/O page (same as ndiskii.hpp)
 #define DiskII_Ph0_Off       0x00

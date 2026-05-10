@@ -65,25 +65,25 @@
 [X] 5.25 Floppy Disk Support for .WOZ files  
 [X] Mockingboard passes all mb-audit tests  
 
-## Release 0.7.4
+## Release 0.8
 
-[ ] IWM 5.25/3.5 + WOZ  
+[X] IWM 5.25/3.5 + WOZ  
 [ ] True "hard drive" Control Panel for editing mounts on the SmartPort device.
+[ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  
 
-## Release 0.7.5
+## Release 0.9
 
 [ ] Host FST
 [ ] Mouse tracking for GS/OS  
 
-## Release 0.8
+## Release 0.10
 
 Primary Focus: UI
 
 [ ] Can make custom hw config. (Click "+ Custom").
-[ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  
 [ ] Refactor MB to use new fixed-point synth
 
-## Release 0.9
+## Release 0.11
 
 [ ] Fix all known / pending bugs  
 [ ] Integrate with Cyrene Debugger  
