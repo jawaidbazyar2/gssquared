@@ -2,17 +2,13 @@
 
 #include "NClock.hpp"
 #include "computer.hpp"
-#include "SlotData.hpp"
-//#include "devices/floppy/Floppy525.hpp"
 #include "util/SoundEffect.hpp"
-#include "debug.hpp"
 
-//#include "IWM_Drive.hpp"  // iwm_switch_t constants shared by 5.25 and 3.5 decode
 #include "devices/floppy/Floppy525_woz.hpp"
 #include "devices/floppy/Floppy35_woz.hpp"
 
 #include "util/SoundEffectKeys.hpp"
-#include <stdexcept>
+#include "debug.hpp"
 
 
 static const uint32_t IWM_SWITCH_COUNT = 8;
