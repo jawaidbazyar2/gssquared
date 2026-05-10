@@ -21,7 +21,11 @@
 #include <cstdio>
 
 #include "util/woz.hpp"
-#include "FloppyDrive.hpp"
+#include "util/SoundEffect.hpp"
+#include "NClock.hpp"
+#include "util/media.hpp"
+#include "util/mount.hpp"
+
 
 class EventTimer;
 
@@ -37,8 +41,11 @@ class EventTimer;
 //     4 cycles per bit cell on 5.25 vs. 2 cycles per bit cell on 3.5);
 //   - which WOZ TMAP slot corresponds to the current head position
 //     (current_tmap_index(), quarter-track vs. track*2+side).
-class Floppy_woz : public FloppyDrive {
+class Floppy_woz /* : public FloppyDrive */ {
 protected:
+    SoundEffect *sound_effect;
+    NClockII *clock;
+
     Woz woz;
     // Bit stream for the currently-selected track; nullptr = empty track.
     // Non-const because write_pulse() mutates bits in place.
@@ -102,27 +109,33 @@ protected:
 
 public:
     Floppy_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer)
-        : FloppyDrive(sound_effect, clock), event_timer(event_timer) {}
+        : sound_effect(sound_effect), clock(clock), event_timer(event_timer) {}
     virtual ~Floppy_woz() = default;
 
     // ── FloppyDrive contract: shared across 5.25 and 3.5 ─────────────────
-    bool mount(uint64_t key, media_descriptor *media) override;
-    bool unmount(uint64_t key) override;
-    bool writeback() override;
-    drive_status_t status() override;
-    void reset() override;
+    // Implemented in Floppy_woz.cpp; subclasses override only when behavior
+    // differs (e.g. Floppy35_woz mount/status/unmount).
+    virtual bool mount(uint64_t key, media_descriptor *media);
+    virtual bool unmount(uint64_t key);
+    virtual bool writeback();
+    virtual drive_status_t status();
+    virtual void reset();
 
-    uint8_t read_pulse() override;
-    void    write_pulse(uint8_t bit) override;
+    virtual uint8_t read_pulse();
+    virtual void    write_pulse(uint8_t bit);
 
-    bool get_enable() override { return enable; }
-    void set_enable(bool on) override {
+    virtual void set_phase(uint8_t phase, uint8_t onoff) = 0;
+
+    virtual int get_track() = 0;
+
+    virtual bool get_enable() { return enable; }
+    virtual void set_enable(bool on) {
         const bool was_spinning = lss_disk_spinning();
         enable = on;
         note_spinning_inputs_changed(was_spinning);
     }
 
-    bool is_bitstream_spinning() const { return lss_disk_spinning(); }
+    virtual bool is_bitstream_spinning() const { return lss_disk_spinning(); }
 
     // Advance the head based on elapsed cycles since the previous call;
     // returns how many whole bit cells the LSS should clock through.
@@ -135,15 +148,15 @@ public:
 
     // Legacy nybble API: unused in the WOZ/LSS path but required by the
     // FloppyDrive interface.
-    void    write_nybble(uint8_t nybble) override { (void)nybble; }
-    uint8_t read_nybble() override { return 0; }
+    //virtual void    write_nybble(uint8_t nybble) override { (void)nybble; }
+    //virtual uint8_t read_nybble() override { return 0; }
 
     virtual uint8_t read_sense() = 0;
 
     // Legacy command-reg shims: intentionally asserts — Floppy_woz drives
     // are always driven through the LSS path in IWM/diskii_controller.
-    uint8_t read_cmd(uint16_t address) override;
-    void    write_cmd(uint16_t address, uint8_t data) override;
+    //uint8_t read_cmd(uint16_t address) override;
+    //void    write_cmd(uint16_t address, uint8_t data) override;
 
     void set_dbglog(FILE *f) { dbglog = f; }
 
@@ -160,4 +173,9 @@ public:
             read_position %= cur_track_ptr->bit_count * 8;
         }
     }
+
+    virtual void play_sound(uint64_t sound_effect_id) {
+        sound_effect->play(sound_effect_id);
+    }
+
 };

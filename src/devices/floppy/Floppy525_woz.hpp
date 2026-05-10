@@ -46,13 +46,13 @@ public:
     Floppy525_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer)
         : Floppy_woz(sound_effect, clock, event_timer) {}
 
-    void set_phase(uint8_t phase, uint8_t onoff) override;
+    virtual void set_phase(uint8_t phase, uint8_t onoff) override;
 
-    int get_track() override { return track; }
+    virtual int get_track() override { return track; }
    
-    int get_side() override { return 0; }
+    virtual int get_side() override { return 0; }
 
-    uint8_t read_sense() override;
+    virtual uint8_t read_sense() override;
 
     void debug(DebugFormatter *f) override {
         f->addLine("Image: %s", woz.get_current_filename().c_str());

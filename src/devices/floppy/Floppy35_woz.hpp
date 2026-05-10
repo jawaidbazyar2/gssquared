@@ -178,9 +178,8 @@ public:
     static void motor_off_callback(uint64_t cycles, void *userData);
 
     // ── Mount policy: 3.5 is WOZ-only this phase ────────────────────────
-    bool mount(uint64_t key, media_descriptor *media) override;
-    bool unmount(uint64_t key) override;
-    
+    virtual bool mount(uint64_t key, media_descriptor *media) override;
+    virtual bool unmount(uint64_t key) override;
     virtual drive_status_t status() override;
 
     static constexpr const char *statusNames[16] = {

@@ -279,7 +279,7 @@ void Floppy_woz::write_pulse(uint8_t bit) {
 
 // ───────────────────────────── unused cmd shims ──────────────────────────────
 
-uint8_t Floppy_woz::read_cmd(uint16_t address) {
+/* uint8_t Floppy_woz::read_cmd(uint16_t address) {
     (void)address;
     assert(false && "Floppy_woz::read_cmd is not used in the IWM/LSS path");
     return 0;
@@ -289,4 +289,4 @@ void Floppy_woz::write_cmd(uint16_t address, uint8_t data) {
     (void)address;
     (void)data;
     assert(false && "Floppy_woz::write_cmd is not used in the IWM/LSS path");
-}
+} */
