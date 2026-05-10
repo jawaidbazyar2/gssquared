@@ -246,10 +246,10 @@ link_libraries(gs2_headers SDL3::SDL3-shared SDL3_net::SDL3_net-shared)
 
 add_library(gs2_devices_game src/devices/game/gamecontroller.cpp src/devices/game/mousewheel.cpp )
 
-add_library(gs2_devices_diskii_fmt
-    src/devices/diskii/diskii_fmt.cpp
-    src/devices/diskii/diskii_fmt.cpp
-)
+#add_library(gs2_devices_diskii_fmt
+#    src/devices/diskii/diskii_fmt.cpp
+#    src/devices/diskii/diskii_fmt.cpp
+#)
 
 add_library(gs2_util_audio src/devices/speaker/LowPass.cpp src/devices/speaker/SpeakerX.cpp)
 
@@ -332,12 +332,16 @@ add_library(gs2_ntsc src/display/ntsc.cpp src/display/Matrix3x3.cpp src/display/
 
 add_library(gs2_devices_floppy_woz
     src/util/woz.cpp
+    src/util/woz_nibblizer.cpp
+    src/util/woz_nibblizer_525.cpp
     src/devices/floppy/Floppy_woz.cpp
     src/devices/floppy/Floppy525_woz.cpp
     src/devices/floppy/Floppy35_woz.cpp
 )
 
-target_link_libraries(gs2_devices_floppy_woz gs2_devices_diskii_fmt gs2_util)
+target_link_libraries(gs2_devices_floppy_woz 
+#gs2_devices_diskii_fmt 
+gs2_util)
 
 add_library(gs2_devices_diskii_woz
     src/devices/diskii/ndiskii_woz.cpp
@@ -368,8 +372,8 @@ target_link_libraries(gs2_computer SDL3_ttf::SDL3_ttf-shared)
 target_link_libraries(gs2_cpu gs2_trace)
 target_link_libraries(gs2_mmu gs2_trace gs2_cpu)
 target_link_libraries(gs2_devices_adb gs2_util)
-target_link_libraries(gs2_devices_iwm gs2_devices_diskii_fmt)
-target_link_libraries(gs2_devices_diskii_woz gs2_devices_floppy_woz gs2_devices_diskii_fmt gs2_util)
+target_link_libraries(gs2_devices_iwm gs2_devices_floppy_woz)
+target_link_libraries(gs2_devices_diskii_woz gs2_devices_floppy_woz gs2_util)
 
 # Add the executable
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
@@ -441,13 +445,13 @@ add_subdirectory(apps/adbtest)
 
 add_subdirectory(apps/mbtest)
 
-add_subdirectory(apps/nibblizer)
-
-add_subdirectory(apps/denibblizer)
+#add_subdirectory(apps/nibblizer)
+#add_subdirectory(apps/denibblizer)
 
 add_subdirectory(apps/diskid)
 
-add_subdirectory(apps/wozutil)
+# Temporary disabled, need to refactor it to match new nibblizer API.
+#add_subdirectory(apps/wozutil)
 
 #add_subdirectory(apps/speaker) # Temporarily remove until I make a "fake computer" interface.
 

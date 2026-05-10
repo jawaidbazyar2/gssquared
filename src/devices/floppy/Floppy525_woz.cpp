@@ -18,6 +18,7 @@
 #include <cstdint>
 
 #include "Floppy525_woz.hpp"
+#include "util/woz_nibblizer_525.hpp"
 #include "util/EventTimer.hpp"
 
 // ─── Phase-line handling (5.25-specific stepper) ────────────────────────────
@@ -114,4 +115,8 @@ void Floppy525_woz::phase_change_callback(uint64_t instanceID, void *userData) {
     (void)instanceID;
     Floppy525_woz *floppy = static_cast<Floppy525_woz *>(userData);
     floppy->update_track();
+}
+
+Woz_Nibblizer* Floppy525_woz::make_nibblizer(media_descriptor *media) {
+    return new Woz_Nibblizer_525();
 }

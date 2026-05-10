@@ -24,7 +24,9 @@
 #include <algorithm>
 
 #include "util/media.hpp"
-#include "devices/diskii/diskii_fmt.hpp"
+//#include "devices/diskii/diskii_fmt.hpp"
+
+// Disk data structure (raw, unencoded)
 
 // ─── WOZ file magic ──────────────────────────────────────────────────────────
 // First 8 bytes of a WOZ1 or WOZ2 file.
@@ -127,7 +129,7 @@ public:
     // Write m_image to disk as WOZ 2.x with a freshly computed CRC32.
     // Returns 0 on success, -1 on error.
     int save(const std::string& filename);
-
+#if 0
     // Build m_image from a block-based or nibblized disk image described by
     // media (as returned by identify_media).  Generates a proper Apple II
     // 6&2-encoded bit stream where sync bytes occupy 10 bits (0b00_1111_1111).
@@ -141,7 +143,7 @@ public:
     // applies the physical-to-logical interleave, and fills `out`.
     // Returns 0 if all 35*16 sectors decoded; -1 if any track failed.
     int export_to_disk_image(disk_image_t& out, media_interleave_t interleave);
-
+#endif
     // ── Accessors ────────────────────────────────────────────────────────────
 
     woz_image_t&        image()       { return m_image; }
@@ -160,7 +162,7 @@ public:
 private:
     woz_image_t m_image;
     std::string current_image_filename;
-    
+#if 0    
     // ── Bit-stream primitives ────────────────────────────────────────────────
     // Append one bit (0 or 1) to trk, MSB-first within each byte.
     void emit_bit(woz_track_t& trk, int bit);
@@ -196,7 +198,7 @@ private:
     int decode_track(const woz_track_t& trk, int track_num,
                      const interleave_t& phys_to_logical,
                      disk_image_t& out);
-
+#endif
     // ── Chunk parsers ────────────────────────────────────────────────────────
     int parse_info(const uint8_t* data, uint32_t size);
     int parse_tmap(const uint8_t* data, uint32_t size);

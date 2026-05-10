@@ -85,6 +85,7 @@ Woz::Woz() {
     std::memcpy(m_image.info.creator, CREATOR, 32);
 }
 
+#if 0
 // ─── Bit-stream primitives ────────────────────────────────────────────────────
 
 void Woz::emit_bit(woz_track_t& trk, int bit) {
@@ -263,6 +264,7 @@ woz_track_t Woz::build_track_from_nib(const uint8_t* nib_data, uint32_t nib_size
     }
     return trk;
 }
+#endif
 
 // ─── Chunk parsers ────────────────────────────────────────────────────────────
 
@@ -675,6 +677,7 @@ int Woz::save(const std::string& filename) {
     return 0;
 }
 
+#if 0
 // ─── Import from media ────────────────────────────────────────────────────────
 
 int Woz::import_from_nib(media_descriptor* media) {
@@ -983,6 +986,7 @@ int Woz::export_to_disk_image(disk_image_t& out, media_interleave_t interleave) 
 
     return (tracks_with_full_data == TRACKS_PER_DISK) ? 0 : -1;
 }
+#endif
 
 // ─── Accessors ────────────────────────────────────────────────────────────────
 

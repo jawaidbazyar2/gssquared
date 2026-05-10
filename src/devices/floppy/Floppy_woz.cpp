@@ -21,8 +21,9 @@
 #include <iostream>
 
 #include "Floppy_woz.hpp"
-#include "devices/diskii/diskii_fmt.hpp"
+//#include "devices/diskii/diskii_fmt.hpp"
 #include "util/SoundEffectKeys.hpp"
+#include "util/woz_nibblizer.hpp"
 
 // ───────────────────────────── mount/unmount/writeback ─────────────────────────
 
@@ -31,9 +32,15 @@ bool Floppy_woz::mount(uint64_t key, media_descriptor *media_in) {
         unmount(key);
     }
 
-    int rc = (media_in->media_type == MEDIA_WOZ)
-                 ? woz.load(media_in->filename)
-                 : woz.import_from_media(media_in);
+    int rc = 0;
+    if (media_in->media_type == MEDIA_WOZ) {
+        rc = woz.load(media_in->filename);
+    } else {
+        auto nibblizer = make_nibblizer(media_in);
+        if (!nibblizer) return false;
+        rc = nibblizer->import_block_image(woz, media_in);
+    }
+ //                : woz.import_from_media(media_in);
 
     if (rc != 0) {
         fprintf(stderr, "Floppy_woz: failed to load/import '%s'\n",
@@ -62,7 +69,7 @@ bool Floppy_woz::mount(uint64_t key, media_descriptor *media_in) {
 }
 
 bool Floppy_woz::unmount(uint64_t key) {
-    (void)key;
+    //(void)key;
     // Reset WOZ image to a clean blank state.
     woz = Woz{};
     cur_track_ptr = nullptr;
@@ -86,11 +93,22 @@ bool Floppy_woz::writeback() {
     // (.do/.po/.dsk): decode the in-memory WOZ bit stream back into a raw
     // disk_image_t and rewrite the file in place. For native WOZ images
     // just save as WOZ2.
+    // TODO: we should dealloc the nibblizer here on exit
     std::cout << "Floppy_woz: writing back disk image " << media_d->filename
               << " (media_type=" << media_d->media_type << ")" << std::endl;
 
+    auto nibblizer = make_nibblizer(media_d);
+    if (!nibblizer) return false;
+
     if (media_d->media_type == MEDIA_NYBBLE) {
         std::cout << "Floppy_woz: writing back block disk image" << std::endl;
+        int rc = nibblizer->export_block_image(woz, media_d);
+        if (rc != 0) {
+            fprintf(stderr, "Floppy_woz: block export failed for '%s'\n",
+                    media_d->filename.c_str());
+            return false;
+        }
+#if 0
         disk_image_t out{};
         if (woz.export_to_disk_image(out, media_d->interleave) != 0) {
             fprintf(stderr,
@@ -105,6 +123,7 @@ bool Floppy_woz::writeback() {
                     media_d->filename.c_str());
             return false;
         }
+#endif    
     } else {
         std::cout << "Floppy_woz: writing back WOZ disk image" << std::endl;
         int rc = woz.save(media_d->filename);

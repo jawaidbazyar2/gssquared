@@ -45,6 +45,8 @@ protected:
 public:
     Floppy525_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer)
         : Floppy_woz(sound_effect, clock, event_timer) {}
+    
+    virtual Woz_Nibblizer* make_nibblizer(media_descriptor *media) override;
 
     virtual void set_phase(uint8_t phase, uint8_t onoff) override;
 

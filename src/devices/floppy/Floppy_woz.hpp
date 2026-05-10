@@ -28,6 +28,7 @@
 
 
 class EventTimer;
+class Woz_Nibblizer;
 
 // Abstract base for floppy drives backed by a WOZ in-memory bit stream.
 //
@@ -111,6 +112,8 @@ public:
     Floppy_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer)
         : sound_effect(sound_effect), clock(clock), event_timer(event_timer) {}
     virtual ~Floppy_woz() = default;
+
+    virtual Woz_Nibblizer* make_nibblizer(media_descriptor *media) { return nullptr; };
 
     // ── FloppyDrive contract: shared across 5.25 and 3.5 ─────────────────
     // Implemented in Floppy_woz.cpp; subclasses override only when behavior
