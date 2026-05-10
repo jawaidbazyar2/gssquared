@@ -8,7 +8,10 @@ GS2 supports the following virtual disk media formats:
 | .dsk | 140K | DOS33 ordered |
 | .nib | 140K | Nibblized 5.25" |
 | .2mg | 140K, 800K | 5.25 and 3.5 |
+| .woz | 140K, 800K | 5.25 and 3.5 |
 | .hdv, .img | any | Can be any size, raw block device |
+
+Woz format is the heart of GS2 floppy emulation. GS2 supports copy-protected 5.25 and 3.5 disks in Woz format, even ones with half tracks, quarter tracks, spiral tracks, weak bits, etc etc. Virtually any copy-protected Woz image should work fine in GS2.
 
 ## Mounting disks
 
@@ -30,7 +33,7 @@ Once done, Close the OSD (F4 again or the OSD Button).
 
 ### Menus
 
-On systems that have system menus defined, you can choose the storage device from the menu, and mount/unmount otherwise the same as above.
+You can choose a storage device from the menu, and mount/unmount images to the device the same as above.
 
 ### Drag and Drop
 
@@ -38,25 +41,37 @@ If you drag a file from your operating system Finder / Explorer / Linuxything on
 
 ## Drive-specific details:
 
-* 3.5" Drives
+* BazFast
 
-You can mount any 800K or bigger disk image file onto the 3.5 drives, including hard drive images, up to 32MB. Changes to these images are written immediately whenever an emulated program writes to disk.
+BazFast is a SmartPort hard drive device - you can mount any kind of media 800K or larger to the BazFast device. You can mount a 140K media, however, ProDOS assumes a 140K media is a Disk II and will usually crash trying to use such a disk.
+
+You can have up to 10 media mounted on BazFast. The upper limit on volume size under ProDOS 8 is 32M. The limit on GS/OS is 2 GiB.
 
 * 5.25" Drives
 
 You can mount any exactly 140K disk image to a 5.25" drive. Changes written to these drives are held in memory until you unmount them. At that time the system will ask if you want to save changes back to the original disk image file.
 
+* 3.5" Drives
+
+You can mount any 800K image onto a 3.5 drive. As with a 5.25 floppy, changes are hald in memory until you unmount, and you'll be asked then if you want to save changes back to the original disk image file.
+
 ## Write-protection
 
-If the disk image is set in the host operating system as Read-Only (i.e., writes not allowed) then the image will be mounted into GS2 as Write Protected.
+If the disk image permission in the host operating system is Read-Only (i.e., writes not allowed) then the image will be mounted into GS2 as Write Protected.
 
-## Display Configuration
+## Floppy Emulation Speeds
 
-In the OSD, there are buttons to change the display engine - NTSC, RGB, and Monochrome. And, buttons to change the Monochrome color (green, amber, white).
+In a real Apple II or IIe or IIgs, the 5.25 Floppy disk is clocked to the I/O bus clock - exactly 1.0205MHz no matter what.
 
-* F2 cycles through the display engines.  
-* F5 toggles between pixel-blur and rectangular. pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays. Rectangular performs an exact square upscaling/downscaling.
-* F3 toggles between Full-Screen and Windowed modes.
+In GS2, however, in Apple II / IIe mode, the Floppy disk is clocked to the CPU clock, even if you have the CPU speed set to 2.8, 7.1, or 14.3MHz. This allows us to accelerate floppy reads/writes safely. This is especially useful with the middle-mouse or INS "accelerate" mode.
 
-These are matters of personal preference, so you get to pick the one you like best.
+In IIgs mode, the Floppy disk is clocked to the bus clock - always 1MHz. This is because the IIgs speed-shifts on its own. Don't worry, the 5.25 and 3.5 floppies still perform quite well, because lots of the floppy processing on a IIgs can happen at the fast CPU speed.
 
+
+## Some Notes about Disk Formats
+
+Whatever disk image format you mount, GS2 will always write back to the same format on disk - it does not convert your disk images, but assumes you want to update / keep the same format.
+
+Floppy disk drives always convert whatever format is used on disk, to Woz format *internally*. This is so the virtual floppy disk always operates exactly the same way in the emulator. But when you unmount and choose to Save changes, GS2 converts the internal Woz format back to whatever format you had on the disk. GS2 thus cannot be used to convert other formats to Woz or vice-versa.
+
+If you want to convert a file from a block format to Woz format or vice-versa, use a program like CiderPress2, or AppleSauce.

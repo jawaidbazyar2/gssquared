@@ -29,6 +29,16 @@ Saturation is adjusted with the keypad Plus and Minus Keys, while holding OPTION
 Reducing Saturation to 0.5 results in colors that are a little more subdued, similar to some other emulators and certain CRT monitors.
 Reducing Saturation to 0 results in a grayscale (not monochrome) display.
 
+## Display Configuration
+
+In the OSD, there are buttons to change the display engine - NTSC, RGB, and Monochrome. And, buttons to change the Monochrome color (green, amber, white).
+
+* F2 cycles through the display engines.  
+* F5 toggles between pixel-blur and rectangular. pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays. Rectangular performs an exact square upscaling/downscaling.
+* F3 toggles between Full-Screen and Windowed modes.
+
+These are matters of personal preference, so you get to pick the one you like best.
+
 ## Pixel Modes
 
 GS2 has two Pixel Modes:
