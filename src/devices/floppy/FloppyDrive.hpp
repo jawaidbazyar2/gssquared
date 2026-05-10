@@ -17,24 +17,21 @@ protected:
     public:
     FloppyDrive(SoundEffect *sound_effect, NClockII *clock) : sound_effect(sound_effect), clock(clock) {}
 
-    //virtual void motor(bool) = 0;
     virtual void set_enable(bool enable) = 0;
     virtual bool get_enable() = 0;
     virtual void set_phase(uint8_t phase, uint8_t onoff) = 0;
-    //virtual void get_rdpulse() = 0;
+
     virtual void write_pulse(uint8_t bit) = 0;
     virtual uint8_t read_pulse() = 0;
 
-   /*  virtual void set_track(int track_num) = 0; */
     virtual int get_track() = 0;
     virtual void write_nybble(uint8_t nybble) = 0;
     virtual uint8_t read_nybble() = 0;
-/*     virtual void move_head(int direction) = 0; */
 
     virtual bool mount(uint64_t key, media_descriptor *media) = 0;
     virtual bool unmount(uint64_t key) = 0;
     virtual bool writeback() = 0;
-    //virtual void nibblize() = 0;
+
     virtual drive_status_t status() = 0;
     virtual void reset() = 0;
 

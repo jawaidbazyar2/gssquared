@@ -15,23 +15,21 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
-#include "util/strndup.h"
-#include "cpu.hpp"
+
 #include "ndiskii_woz.hpp"
-#include "util/Event.hpp"
-#include "util/media.hpp"
+
 #include "util/ResourceFile.hpp"
-#include "debug.hpp"
 #include "util/mount.hpp"
-#include "util/SoundEffectKeys.hpp"
-#include "util/SoundEffect.hpp"
-#include "util/printf_helper.hpp"
+
 #include "util/ResetController.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "devices/diskii/diskii_controller.hpp"
+
+#include "debug.hpp"
+
 
 uint8_t ndiskII_woz_read_C0xx(void *context, uint32_t address) {
     ndiskII_woz_controller *d = (ndiskII_woz_controller *)context;

@@ -49,9 +49,7 @@ public:
     void set_phase(uint8_t phase, uint8_t onoff) override;
 
     int get_track() override { return track; }
-
-    //bool get_motor_on() override { return enable; } // on 5.52 if enable, motor is always on
-    
+   
     int get_side() override { return 0; }
 
     uint8_t read_sense() override;

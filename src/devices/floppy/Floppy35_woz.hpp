@@ -127,13 +127,8 @@ public:
     // computed from (drive_selected && motor_on) via update_spinning().
     void set_enable(bool on) override {
         if (!on && enable) {
-            //motor_on = false;
             schedule_motor_off();
             // TODO: if a head movement is in progress, the motor off must be delayed until after the movement is complete, so have a "pending motor off" flag.
-            //ready_cycles_end = 0;
-            //disk_ready = false;
-            //stepping_cycles_end = 0;
-            //disk_stepping = false;
         }
         if (on) {
             event_timer->cancelEvents(instanceID); // cancel any pending motor off event

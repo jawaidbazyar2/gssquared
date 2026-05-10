@@ -17,7 +17,6 @@
 
 #pragma once
 
-//#include "computer.hpp"
 #include "NClock.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/media.hpp"
@@ -45,7 +44,6 @@
 #define DISKII_SWITCH_COUNT 8
 
 class DiskII_WOZ_Controller : public StorageDevice {
-    //computer_t   *computer;
     SoundEffect  *sound_effect;
     SoundEffectContainer_t sounds[5];
     NClock       *clock;

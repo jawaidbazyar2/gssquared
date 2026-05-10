@@ -61,9 +61,7 @@ bool Floppy35_woz::unmount(uint64_t key) {
     disk_in_place = false;
     motor_on      = false;
     disk_switched = true;
-    //track_num     = 0;
-    //side          = 0;
-    //step_dir      = 0;
+
     update_spinning();
     refresh_sense();
     return Floppy_woz::unmount(key);
@@ -84,7 +82,6 @@ void Floppy35_woz::set_phase(uint8_t phase, uint8_t onoff) {
     // IWM2 pushes all four switch lines through set_phase() keyed by
     // the IWM switch index (0 = CA0, 1 = CA1, 2 = CA2, 3 = LSTRB).
     // See IWM_Drive.hpp for the iwm_switch_t enum definition.
-    //const uint8_t bit = onoff ? 1 : 0;
     
     //fprintf(dbglog, "[%llu] 3.5 set_phase: %d %d\n", clock->get_vid_cycles(), phase, onoff);
 
@@ -130,7 +127,6 @@ void Floppy35_woz::schedule_motor_off() {
     // Scheduling in CPU-cycle units against a 14M-driven event timer
     // would fire ~immediately because c_14M outpaces (cycles + hz_rate)
     // within the first ~80 ms of emulation, so use 14M units here.
-    /* event_timer->scheduleEvent(clock->get_cycles() + clock->get_hz_rate(), motor_off_callback, instanceID, this); */
 
     event_timer->scheduleEvent(clock->get_c14m() + clock->get_c14m_per_second()*0.5,
                                motor_off_callback, instanceID, this);
@@ -156,8 +152,6 @@ void Floppy35_woz::refresh_sense() {
         case 0b0010:  // disk-is-stepping: 0 = stepping, 1 = done. We
             // emulate head motion synchronously so we are never
             // "stepping": always return 1 (done).
-            //out = 1;
-            
             out = disk_stepping ? 0 : 1;
             break;
         case 0b0011:  // write-protect: 0 = WP, 1 = writable
