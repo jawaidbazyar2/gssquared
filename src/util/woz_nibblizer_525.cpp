@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 #include <iostream>
 #include "woz_nibblizer_525.hpp"
 
@@ -367,8 +368,8 @@ int Woz_Nibblizer_525::decode_track(const woz_track_t *trk, int track_num,
         }
 
         sector_t decoded;
-        decode_sector_62(nbuf, decoded);
 
+        decode_sector_62(nbuf, decoded);
         int logical = phys_to_logical[sector];
         std::memcpy(out->sectors[track_num][logical], decoded, SECTOR_SIZE);
 
