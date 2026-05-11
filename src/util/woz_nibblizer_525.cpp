@@ -105,9 +105,9 @@ woz_track_t Woz_Nibblizer_525::build_track(disk_image_t& disk_image,
 woz_track_t Woz_Nibblizer_525::build_track_from_nib(const uint8_t* nib_data, uint32_t nib_size) {
     woz_track_t trk;
     for (uint32_t i = 0; i < nib_size; i++) {
-        if (nib_data[i] == 0xFF)
+        /* if (nib_data[i] == 0xFF)
             emit_sync_byte(trk);            // 10 bits: 1111111100
-        else
+        else */
             emit_data_byte(trk, nib_data[i]);  // 8 bits, MSB first
     }
     return trk;
@@ -124,7 +124,11 @@ int Woz_Nibblizer_525::load_nib_image(nibblized_disk_t& disk, const std::string&
     }
 
     for (int t = 0; t < TRACKS_PER_DISK; t++) {
-        fread(disk.tracks[t].data, 1, TRACK_SIZE, fp);
+        if (fread(disk.tracks[t].data, 1, TRACK_SIZE, fp) < TRACK_SIZE) {
+            std::cerr << "Could not read " << TRACK_SIZE << " bytes from " << filename << std::endl;
+            fclose(fp);
+            return -1;
+        }
         disk.tracks[t].position = 0;
         disk.tracks[t].size = TRACK_SIZE; // TODO: maybe determine how many bytes actually used in .nib.
     }
@@ -139,7 +143,7 @@ int Woz_Nibblizer_525::import_from_nib(Woz& woz, const media_descriptor* media) 
         std::cerr << "WOZ: failed to load .nib image from '" << media->filename << "'\n";
         return -1;
     }
-    auto m_image = woz.image();
+    woz_image_t& m_image = woz.image();
     // Reset the in-memory image.
     std::fill(std::begin(m_image.tmap), std::end(m_image.tmap), 0xFF);
     m_image.tracks.clear();
@@ -164,6 +168,10 @@ int Woz_Nibblizer_525::import_from_nib(Woz& woz, const media_descriptor* media) 
         if (qt     < 160) m_image.tmap[qt]     = trk_idx;  // T.00
         if (qt + 1 < 160) m_image.tmap[qt + 1] = trk_idx;  // T.25 (readable)
     }
+
+   /*  if (woz.save("debug.woz") != 0) {
+        std::cerr << "WOZ: failed to write internal image to 'debug.woz'\n";
+    } */
 
     return 0;
 }

@@ -374,6 +374,7 @@ int identify_media(media_descriptor& md) {
         md.block_count = 560; // assumed 560 sectors on a 143K diskette.
         md.interleave = INTERLEAVE_NONE;
         md.data_offset = 0;
+        md.write_protected = true;
     } else if (compare_suffix(md.filename, ".woz")) {
         md.media_type = MEDIA_WOZ;
         md.file_size = get_file_size(md.filename);

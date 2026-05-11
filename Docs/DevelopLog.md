@@ -11696,4 +11696,34 @@ Each of these can have a list and configuration area in OSD. Storage we already 
 the network/serial buttons become how you configure what's attached to those devices.
 and the slot buttons let you .. do what exactly.. give it some thought.
 
-Issue: the drive buttons are all actually 100 px high. So we have to alter the Atlas so the rects are just big enough. Then have Button auto-size based on the asset rect (we have a routine for this). Then 
+Issue: the drive buttons are all actually 100 px high. So we have to alter the Atlas so the rects are just big enough. Then have Button auto-size based on the asset rect (we have a routine for this). 
+
+ok, well, that was some horseshit. Tried to use Composer to refactor the 525 nibblizer/denibblizer routines into a separate class, but epic fail. I probably confused the issue early on by insisting it bring the old diskii_fmt stuff in - but that had really already been done.
+
+So what I want is probably something like the following class heirarchy.
+
+```
+class Woz_Nibblizer {
+public:
+    virtual ~Woz_Nibblizer() = default;
+    // Populate `woz` from a block/nib image described by `media`.
+    // `woz` is reset to a clean state before importing.
+    // Returns 0 on success, -1 on error.
+    virtual int import_block_image(Woz& woz, const media_descriptor* media) = 0;
+    // Decode `woz` back to a raw block image on disk.
+    // `media` supplies filename, interleave, and target format.
+    // Returns 0 on success, -1 on error.
+    virtual int export_block_image(const Woz& woz, const media_descriptor* media) = 0;
+protected:
+    static void emit_bit(woz_track_t& trk, int bit);
+    static void emit_sync_byte(woz_track_t& trk);
+    static void emit_data_byte(woz_track_t& trk, uint8_t byte);
+    static void emit_sync_bytes(woz_track_t& trk, int n);
+};
+```
+
+then there will be a 525 and 35 nibblizer that derive from this.
+
+OK, that is mostly in there. 
+
+[ ] .nib files aren't working.  

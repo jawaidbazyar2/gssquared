@@ -6,7 +6,7 @@ GS2 supports the following virtual disk media formats:
 |--|--|--|
 | .do / .po | 140K | DOS33 or ProDOS ordered |
 | .dsk | 140K | DOS33 ordered |
-| .nib | 140K | Nibblized 5.25" |
+| .nib | 140K | Read only Nibblized 5.25" |
 | .2mg | 140K, 800K | 5.25 and 3.5 |
 | .woz | 140K, 800K | 5.25 and 3.5 |
 | .hdv, .img | any | Can be any size, raw block device |
