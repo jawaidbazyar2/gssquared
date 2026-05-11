@@ -51,6 +51,8 @@ You can have up to 10 media mounted on BazFast. The upper limit on volume size u
 
 You can mount any exactly 140K disk image to a 5.25" drive. Changes written to these drives are held in memory until you unmount them. At that time the system will ask if you want to save changes back to the original disk image file.
 
+Because .nib format loses information about which FF nybbles are 10-bit sync bytes and which are regular data bytes, it is not possible to safely/accurately convert .nib to .woz. We can load them, however, we cannot write them. So they are mounted readonly (write protected).
+
 * 3.5" Drives
 
 You can mount any 800K image onto a 3.5 drive. As with a 5.25 floppy, changes are hald in memory until you unmount, and you'll be asked then if you want to save changes back to the original disk image file.
