@@ -19,6 +19,7 @@
 #include <cstdio>
 
 #include "Floppy35_woz.hpp"
+#include "util/woz_nibblizer_35.hpp"
 
 // ─── Mount policy (3.5 = WOZ-only in Phase 1) ──────────────────────────────
 
@@ -278,6 +279,7 @@ void Floppy35_woz::track_side_changed() {
     update_track_ptr();
 }
 
+// TODO: eliminate this, it literally does nothing.
 void Floppy35_woz::update_spinning() {
     
     /* const bool should_spin = enable && motor_on && disk_in_place;
@@ -285,4 +287,9 @@ void Floppy35_woz::update_spinning() {
     // is reset on spin-up — otherwise the first fast_forward() would
     // replay a huge idle gap as random bits.
     Floppy_woz::set_enable(should_spin); */
+}
+
+
+Woz_Nibblizer* Floppy35_woz::make_nibblizer(media_descriptor *media) {
+    return new Woz_Nibblizer_35();
 }

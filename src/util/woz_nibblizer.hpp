@@ -21,7 +21,7 @@ class Woz_Nibblizer {
         static void emit_data_byte(woz_track_t& trk, uint8_t byte);
         static void emit_sync_bytes(woz_track_t& trk, int n);
         static void emit_encoded_44(woz_track_t& trk, uint8_t value);
-        static void emit_address_field(woz_track_t& trk, uint8_t volume, uint8_t track_num, uint8_t sector_num);
+        //static void emit_address_field(woz_track_t& trk, uint8_t volume, uint8_t track_num, uint8_t sector_num);
 
         // LSS-style bit cursor over a WOZ track. The bit position is monotonically
         // incrementing and wrapped modulo trk->bit_count on read, so callers can

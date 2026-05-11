@@ -12,6 +12,7 @@ static constexpr int TRACKS_PER_DISK = 80;
 static constexpr int ZONES_PER_DISK = 5;
 static constexpr int SIDE_COUNT = 2;
 static constexpr int SECTORS_PER_DISK = 1600;
+static constexpr int SECTOR_SIZE = 0x0200;
 
 // Figures from image created by CP2
 static constexpr int GAP_A_SIZE = 148;
@@ -148,12 +149,12 @@ const uint8_t INVALID_INV = 0xff;
 
     void prenibble(sector_t& buf, sector_62_t& nbuf);
     void emit_nibblized_sector(woz_track_t& trk, sector_ondisk_t& in);
+    void emit_address_field(woz_track_t& trk, int track_num, int side, int sector_num);
     void emit_data_field(woz_track_t& trk, sector_ondisk_t& in);
-    void emit_sector(woz_track_t& trk, sector_t& in,
-                     uint8_t volume, uint8_t track_num, uint8_t sector_num);
+    void emit_sector(woz_track_t& trk, sector_t& in, int track_num, int side, int sector_num);
     woz_track_t build_track(disk_image_t& disk_image,
                             const interleave_t& phys_to_logical,
-                            int track_num, uint8_t volume);
+                            int track_num, int side);
 
     bool EncodeSector62_524(uint8_t* output, const uint8_t* buffer);
     bool DecodeSector62_524(uint8_t* buffer, const uint8_t *input);

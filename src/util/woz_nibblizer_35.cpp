@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cassert>
 #include "woz_nibblizer_35.hpp"
+#include "util/media.hpp"
 
 bool Woz_Nibblizer_35::EncodeSector62_524(uint8_t* output, const uint8_t* buffer) {
     if (output == nullptr || buffer == nullptr) {
@@ -202,28 +203,45 @@ void Woz_Nibblizer_35::emit_data_field(woz_track_t& trk, sector_ondisk_t& in) {
     emit_data_byte(trk, 0xFF);
 }
 
+void Woz_Nibblizer_35::emit_address_field(woz_track_t& trk, int track_num, int side, int sector_num) {
+    emit_data_byte(trk, 0xD5);
+    emit_data_byte(trk, 0xAA);
+    emit_data_byte(trk, 0x96);
+    emit_encoded_44(trk, track_num);
+    emit_encoded_44(trk, sector_num);
+    emit_data_byte(trk, 0xDE);
+    emit_data_byte(trk, 0xAA);
+    emit_data_byte(trk, 0xFF);
+}
+
 void Woz_Nibblizer_35::emit_sector(woz_track_t& trk, sector_t& in,
-                       uint8_t volume, uint8_t track_num, uint8_t sector_num) {
-    emit_address_field(trk, volume, track_num, sector_num);
+                    int track_num, int side, int sector_num) {
+    sector_ondisk_t ondisk;
+    memcpy(ondisk+12, in, 512);
+    memset(ondisk, 0, 12);
+    emit_address_field(trk, track_num, side, sector_num);
     emit_sync_bytes(trk, GAP_B_SIZE);
-    emit_data_field(trk, in);
+    emit_data_field(trk, ondisk);
     emit_sync_bytes(trk, GAP_C_SIZE);
 }
 
 woz_track_t Woz_Nibblizer_35::build_track(disk_image_t& disk_image,
                                const interleave_t& phys_to_logical,
-                               int track_num, uint8_t volume) {
+                               int track_num, int side) {
     woz_track_t trk;
+
     // Gap A: self-sync bytes at the start of the track
     emit_sync_bytes(trk, GAP_A_SIZE);
     // Sectors in physical order
-    for (int s = 0; s < SECTORS_PER_TRACK; s++) {
+    int sectors = sectorsPerZone[track_num / 16];
+    for (int s = 0; s < sectors; s++) {
+        int index = calculateSectorOffset(track_num, s, side);
         int logical = phys_to_logical[s];
         emit_sector(trk,
                     reinterpret_cast<sector_t&>(disk_image.sectors[track_num][logical]),
-                    volume,
-                    static_cast<uint8_t>(track_num),
-                    static_cast<uint8_t>(s));
+                    track_num,
+                    side,
+                    s);
     }
     return trk;
 }
@@ -240,14 +258,10 @@ int Woz_Nibblizer_35::load_disk_image(const media_descriptor *media, disk_image_
 
     int sect_index = 0;
     fseek(fp, media->data_offset, SEEK_SET);
-    for (int t = 0; t < TRACKS_PER_DISK; t++) {
-        for (int s = 0; s < SECTORS_PER_TRACK; s++) {
-            if (fread(disk_image.sectors[t][s], 1, SECTOR_SIZE, fp) != SECTOR_SIZE) {
-                std::cerr << "Could not read " << SECTOR_SIZE << " bytes from " << media->filename << std::endl;
-                fclose(fp);
-                return -1;
-            }
-        }
+    if (fread((void *)&disk_image, SECTORS_PER_DISK, SECTOR_SIZE, fp) != SECTOR_SIZE) {
+        std::cerr << "Could not read " << SECTORS_PER_DISK * SECTOR_SIZE << " bytes from " << media->filename << std::endl;
+        fclose(fp);
+        return -1;
     }
 
     fclose(fp);
@@ -257,13 +271,9 @@ int Woz_Nibblizer_35::load_disk_image(const media_descriptor *media, disk_image_
 int Woz_Nibblizer_35::import_block_image(Woz& woz, const media_descriptor* media) {
     if (!media) return -1;
 
-    if (media->media_type == MEDIA_PRENYBBLE) {
-        return import_from_nib(woz, media);
-    }
-
-    if (media->media_type != MEDIA_NYBBLE) {
-        std::cerr << "WOZ: import only supports MEDIA_NYBBLE / MEDIA_PRENYBBLE sources "
-                     "(DOS/ProDOS 140K floppy images)\n";
+    if (media->media_type != MEDIA_BLK) {
+        std::cerr << "WOZ: import only supports MEDIA_BLK sources "
+                     "(3.5 800K floppy images)\n";
         return -1;
     }
 
@@ -275,14 +285,9 @@ int Woz_Nibblizer_35::import_block_image(Woz& woz, const media_descriptor* media
 
     // Select interleave table.
     const interleave_t* phys_to_logical = nullptr;
-    if (media->interleave == INTERLEAVE_PO) {
-        phys_to_logical = &po_phys_to_logical;
-    } else if (media->interleave == INTERLEAVE_DO) {
-        phys_to_logical = &do_phys_to_logical;
-    } else {
-        std::cerr << "WOZ: unsupported interleave " << media->interleave << "\n";
-        return -1;
-    }
+
+    // no interleave assumption for 3.5
+    
     woz_image_t &m_image = woz.image();
 
     // Reset the in-memory image.
@@ -291,25 +296,20 @@ int Woz_Nibblizer_35::import_block_image(Woz& woz, const media_descriptor* media
     m_image.tracks.reserve(TRACKS_PER_DISK);
 
     // Populate INFO fields appropriate for an imported disk.
-    m_image.info.disk_type          = 1;   // 5.25"
+    m_image.info.disk_type          = 2;   // 3.5"
     m_image.info.write_protected    = media->write_protected ? 1 : 0;
     m_image.info.synchronized       = 0;
     m_image.info.cleaned            = 1;
-    m_image.info.optimal_bit_timing = 32;  // 4 µs
+    m_image.info.optimal_bit_timing = 16;  // 4 µs
     m_image.info.boot_sector_format = 1;   // assume 16-sector unless told otherwise
-    m_image.info.disk_sides         = 1;
-
-    uint8_t volume = static_cast<uint8_t>(media->dos33_volume);
+    m_image.info.disk_sides         = 2;
 
     for (int t = 0; t < TRACKS_PER_DISK; t++) {
         uint8_t trk_idx = static_cast<uint8_t>(m_image.tracks.size());
-        m_image.tracks.push_back(build_track(disk_image, *phys_to_logical, t, volume));
-
-        // Map the whole track and its two adjacent quarter-tracks to this entry.
-        // Quarter-track index for whole track T is T*4.
-        int qt = t * 4;
-        if (qt     < 160) m_image.tmap[qt]     = trk_idx;    // T.00
-        if (qt + 1 < 160) m_image.tmap[qt + 1] = trk_idx;   // T.25 (readable)
+        int zone = t / 16;
+        // in Woz It's T0S0, T0S1, T1S0, T1S1, etc.
+        m_image.tracks.push_back(build_track(disk_image, interleaveTable[zone], t, 0));
+        m_image.tracks.push_back(build_track(disk_image, interleaveTable[zone], t, 1));
     }
 
     return 0;
@@ -317,7 +317,7 @@ int Woz_Nibblizer_35::import_block_image(Woz& woz, const media_descriptor* media
 
 
 // ─── Export to media (WOZ bit-stream → raw block image) ─────────────────────
-
+#if 0
 // Reverses Woz's POSTNB16 routine, mirror of decode_sector_62() in diskii_fmt.cpp.
 void Woz_Nibblizer_35::decode_sector_62(sector_62_t& nbuf, sector_t& decoded) {
     uint8_t y = 0;
@@ -453,9 +453,10 @@ int Woz_Nibblizer_35::write_disk_image_po_do(const media_descriptor *media, cons
     fclose(out_fp);
     return true;
 }
-
+#endif
 
 int Woz_Nibblizer_35::export_block_image(const Woz& woz, const media_descriptor* media) {
+#if 0
     disk_image_t *out = new disk_image_t;
 
     const interleave_t* phys_to_logical = nullptr;
@@ -519,4 +520,5 @@ int Woz_Nibblizer_35::export_block_image(const Woz& woz, const media_descriptor*
     }
 
     return status;
+#endif
 }

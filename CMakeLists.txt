@@ -334,6 +334,7 @@ add_library(gs2_devices_floppy_woz
     src/util/woz.cpp
     src/util/woz_nibblizer.cpp
     src/util/woz_nibblizer_525.cpp
+    src/util/woz_nibblizer_35.cpp
     src/devices/floppy/Floppy_woz.cpp
     src/devices/floppy/Floppy525_woz.cpp
     src/devices/floppy/Floppy35_woz.cpp
@@ -451,7 +452,7 @@ add_subdirectory(apps/mbtest)
 add_subdirectory(apps/diskid)
 
 # Temporary disabled, need to refactor it to match new nibblizer API.
-#add_subdirectory(apps/wozutil)
+add_subdirectory(apps/wozutil)
 
 #add_subdirectory(apps/speaker) # Temporarily remove until I make a "fake computer" interface.
 

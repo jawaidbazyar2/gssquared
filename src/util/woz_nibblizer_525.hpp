@@ -124,6 +124,7 @@ protected:
 
     void prenibble(sector_t& buf, sector_62_t& nbuf);
     void emit_nibblized_sector(woz_track_t& trk, sector_t& in);
+    void emit_address_field(woz_track_t& trk, uint8_t volume, uint8_t track_num, uint8_t sector_num);
     void emit_data_field(woz_track_t& trk, sector_t& in);
     void emit_sector(woz_track_t& trk, sector_t& in,
                      uint8_t volume, uint8_t track_num, uint8_t sector_num);

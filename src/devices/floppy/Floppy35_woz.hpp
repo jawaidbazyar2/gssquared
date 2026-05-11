@@ -176,6 +176,7 @@ public:
 
     void schedule_motor_off();
     static void motor_off_callback(uint64_t cycles, void *userData);
+    virtual Woz_Nibblizer* make_nibblizer(media_descriptor *media) override;
 
     // ── Mount policy: 3.5 is WOZ-only this phase ────────────────────────
     virtual bool mount(uint64_t key, media_descriptor *media) override;

@@ -40,7 +40,7 @@ void Woz_Nibblizer::emit_encoded_44(woz_track_t& trk, uint8_t value) {
     emit_data_byte(trk, xx);
     emit_data_byte(trk, yy);
 }
-
+/* 
 void Woz_Nibblizer::emit_address_field(woz_track_t& trk,
                               uint8_t volume, uint8_t track_num, uint8_t sector_num) {
     // Address prologue
@@ -58,3 +58,4 @@ void Woz_Nibblizer::emit_address_field(woz_track_t& trk,
     emit_data_byte(trk, 0xAA);
     emit_data_byte(trk, 0xEB);
 }
+ */

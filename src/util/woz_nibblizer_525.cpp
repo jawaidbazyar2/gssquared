@@ -58,6 +58,24 @@ void Woz_Nibblizer_525::emit_nibblized_sector(woz_track_t& trk, sector_t& in) {
     emit_data_byte(trk, woz_translate_62[nbuf[0xFF]]); // checksum byte
 }
 
+
+void Woz_Nibblizer_525::emit_address_field(woz_track_t& trk, uint8_t volume, uint8_t track_num, uint8_t sector_num) {
+    // Address prologue
+    emit_data_byte(trk, 0xD5);
+    emit_data_byte(trk, 0xAA);
+    emit_data_byte(trk, 0x96);
+    // Volume, track, sector, checksum – each encoded 4&4
+    uint8_t checksum = volume ^ track_num ^ sector_num;
+    emit_encoded_44(trk, volume);
+    emit_encoded_44(trk, track_num);
+    emit_encoded_44(trk, sector_num);
+    emit_encoded_44(trk, checksum);
+    // Address epilogue
+    emit_data_byte(trk, 0xDE);
+    emit_data_byte(trk, 0xAA);
+    emit_data_byte(trk, 0xEB);
+}
+
 void Woz_Nibblizer_525::emit_data_field(woz_track_t& trk, sector_t& in) {
     // Data prologue
     emit_data_byte(trk, 0xD5);
