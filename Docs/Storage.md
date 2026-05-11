@@ -63,7 +63,7 @@ If the disk image permission in the host operating system is Read-Only (i.e., wr
 
 In a real Apple II or IIe or IIgs, the 5.25 Floppy disk is clocked to the I/O bus clock - exactly 1.0205MHz no matter what.
 
-In GS2, however, in Apple II / IIe mode, the Floppy disk is clocked to the CPU clock, even if you have the CPU speed set to 2.8, 7.1, or 14.3MHz. This allows us to accelerate floppy reads/writes safely. This is especially useful with the middle-mouse or INS "accelerate" mode.
+In GS2, however, in Apple II / IIe mode, the Floppy disk is clocked to the CPU clock, even if you have the CPU speed set to 2.8, 7.1, or 14.3MHz. This allows us to accelerate floppy reads/writes safely. This is especially useful with the right-mouse or INS "accelerate" mode.
 
 In IIgs mode, the Floppy disk is clocked to the bus clock - always 1MHz. This is because the IIgs speed-shifts on its own. Don't worry, the 5.25 and 3.5 floppies still perform quite well, because lots of the floppy processing on a IIgs can happen at the fast CPU speed.
 
