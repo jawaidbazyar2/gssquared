@@ -10394,8 +10394,8 @@ so we throw SRQ.. do we do the talk, or does the ROM do the talk? check the Wolf
 The goal of all this is for the apple ii to get all the low-level keydown and keyup codes. ok, so this is definitely turning off that normal handling and normal processing of C000, except that we send some codes back into that to appear at C000?
 
 
-[x] implement HOLD and RELEASE reset. 
-[x] move RESET generation to ADB_Micro
+[X] implement HOLD and RELEASE reset. 
+[X] move RESET generation to ADB_Micro
 
 the HOLD AND RELEASE reset will assert reset soi long as the F10 and control are held down. When released, reset is de-asserted. when RESET is asserted, we do something very similar to the WAI, which is just spin a cycle (so video keeps working). And I think we call the device reset handlers. now that is very interesting. we call them, but then hold and spin without calling them?
 
@@ -10569,9 +10569,9 @@ OK, I need a "powerup reset" device? Right now reset not asserted at powerup so 
 oh, well first we need it in the Disk II controller. YES! There is a nice short 1/10th second delay there now on boot showing the weird memory patterns on the text screen.
 Technically we also still need a poweronreset in everything past appleII. otherwise if someone builds a machine w/o disk II they will have a bad time. ok, I just put this in computer. 2 frames, per UtA2e (though he suggests it's not quite 2 full frames).
 
-[x] There is some OSD stuff being drawn for a couple frames in the upper left corner of the display. The disk drives I think.  
-[x] Also, the screen background is being drawn in the background color of the SelectSystem tiles on startup now.  
-[x] add reset handler to gamecontroller (for AN0-3 OFF)  
+[X] There is some OSD stuff being drawn for a couple frames in the upper left corner of the display. The disk drives I think.  
+[X] Also, the screen background is being drawn in the background color of the SelectSystem tiles on startup now.  
+[X] add reset handler to gamecontroller (for AN0-3 OFF)  
 [ ] add reset down-up distinction to the OSD HOV RESET button.  
 
 so on my IIe (enhanced), if in text mode you stay in text mode (so the text/graphics switch is left alone). if in any graphics mode, lo-res is forced along with the 7M timing (i.e., LORES7M). So that is, I think, ANC3 is forced off. (maybe all the ANCs). and the HIRES switch is turned off.
@@ -10603,7 +10603,7 @@ yah the first thing it's doing is checking for the reset pattern of 7F7F. it doe
 ah, yep. At 04/CC25, it's reading E1/C025. which is the modifiers.
 it's loading $00 of course, but looking for $02 (control). 
 
-[x] must track modifiers even if SRQ is enabled  
+[X] must track modifiers even if SRQ is enabled  
 
 AHHH, and besides all that, I am seeing ADB Bugs in: Cavern Cobra (type a key, get tons of "disable srq on device"). Also just booting WITA2GS. Hmmm. Something in the ROM? (fixed below)
 
@@ -10616,7 +10616,7 @@ All the base mobos should go into one list; then we'll have another list for use
 Then create serialize and de-serialize methods to JSON.
 
 Two, we already have the list of devices. 
-[x] The devices list likely needs another flag for what systems the device is allowed in. 
+[X] The devices list likely needs another flag for what systems the device is allowed in. 
 For instance, don't allow ProDOS clock in a IIgs; don't allow Videx in a //e or GS, etc. The Devices need serializable names; also the base configs.
 
 systemconfig is currently this:
@@ -10732,7 +10732,7 @@ added a "valid slots" field to devices.
 
 ok, implemented the keyboard autorepeat! We now ignore autorepeated chars given to us by SDL; and track repeat intervals using frame counts, as long as any key is still down. The behavior seems to exactly replicate the GS keyboard so far.
 
-[x] when we boot straight into ProDOS 8 on a 3.5 image, something hinky is occurring, where I can't get into control panel and ctrl-reset gives "system error 01 restart system" ()
+[X] when we boot straight into ProDOS 8 on a 3.5 image, something hinky is occurring, where I can't get into control panel and ctrl-reset gives "system error 01 restart system" ()
 
 Huh, yeah, IRQs are disabled. Why? the adb data register is perpetually full. It's ProDOS 1.1.1. So when we do the reset there are just too many unhandled interrupts because IRQ has been off? Ok, good theory, let's see..
 no, here's the sequence.
@@ -10758,11 +10758,10 @@ https://bzotto.medium.com/apple-beige-revisited-b08702b98175
 I am thinking of a different color for SelectSystem than motherboard green, which is a little hard to read on the IIgs badge. 
 
 Outstanding bugs:
-[x] One-second interrupts need to be based on the 14.318 timer, synced to the realtime clock.
+[X] One-second interrupts need to be based on the 14.318 timer, synced to the realtime clock.
 
 Features pending:
-[ ] 3.5" SmartPort Floppy
-[ ] .woz file support
+[X] .woz file support
 [ ] Multi-volume Hard Drive
 [ ] ImageWriter printer
 
@@ -11435,7 +11434,7 @@ ok, did I deal with all the new bugs? I want to push! it's ok, push it now and d
 
 ## Apr 12, 2026
 
-[x] look into the registers that live in the FPI because those should be fast (not 1mhz).
+[X] look into the registers that live in the FPI because those should be fast (not 1mhz).
 
 Got these and they're now documneted in [AppleIIgs](AppleIIgs.md). Textfunk is not using any of these in the timing critical area. So my textfunk timing issue is elsewhere. Could still have some CPU instructions that work at the wrong speed, I didn't finish writing those tests.
 
@@ -11444,7 +11443,7 @@ ok next thing to do here:
 Display should have a routine to set up the modes: 
    rgb, ntsc, mono (with colors)
 
-[x] full screen is wrong aspect ratio because I'm now writing to nullptr (i.e. no target dimensions)  
+[X] full screen is wrong aspect ratio because I'm now writing to nullptr (i.e. no target dimensions)  
 [ ] make shr work again in Comp.  
 
 So, if I wanted to support monochrome mode cycle-accurate, I would need to track the value of the register and pass it into VideoGenerator. I'm not sure I have any bits left! I do sort of want to know if I can stuff an extra chunk.. I just had an interesting idea, which is only when I need it I can have the extra 32-bits of GS stuff just be an extra message. i.e. when we read a palette command, we then also read another 32-bits which is the palette data, but don't otherwise do that (so we're not wasting 64 bits for every cycle). This should reduce cache contention.
@@ -11478,9 +11477,9 @@ if 3, we need to calculate new scale based on aspect and X.
 
 ok problem now is I need to generate a border area for the Videx. I don't want to go thru rigamarole to draw into a bigger texture though that would certainly solve the problem.. instead of a dst rect, I can pass amounts to add to X and subtract from W in the dstrect. But call it dst_adjust.
 
-[x] implement (fake) border area for videx  
+[X] implement (fake) border area for videx  
 
-[x] ah, the screen grab isn't working. the lasttexture is no longer stage2 typically. So we need to alloc a screencap texture in videosystem; on PRNT render that to screencap, then grab pixels back from screencap.
+[X] ah, the screen grab isn't working. the lasttexture is no longer stage2 typically. So we need to alloc a screencap texture in videosystem; on PRNT render that to screencap, then grab pixels back from screencap.
 
 The AppleII video routines are finally being ripped out! At least from Display. I am going to reuse this code in the debugger for the "display arbitrary display page" and "display arbitrary memory as a display page".
 
@@ -11726,4 +11725,33 @@ then there will be a 525 and 35 nibblizer that derive from this.
 
 OK, that is mostly in there. 
 
-[ ] .nib files aren't working.  
+[X] .nib files aren't working.  
+
+Well, .nib cannot be converted to .woz with accuracy, because once you lose the extra 2 0 bits on sync FFs, they're gone, and you can't easily determine which FF in a nib to add them back to. (applesauce does not allow exporting NIB to WOZ either)
+
+I had a situation where I inserted a disk while the GS was booting, and the drive was like stuck in write mode or something and kept overwriting 525 floppies. That doesn't seem to make sense. Keep an eye out for that.
+
+Well, this was a HERCULEAN weekend. Today, Sunday, was all about not doing 3.5 imports to internal woz, but just restructuring the code so it would be possible to write that code.
+
+it ultimately shouldn't be that hard to do the 35 nibblizer/denibblizer. It's going to look a lot like the 525 one, with a few minor differences. Fortunately the work Andy did recently gave me a lot of insight into that, and now have the ability to generate good .woz from block data using cp2.
+
+## May 12, 2026
+
+The Great Floppy Migration of 2026 is almost over. We can successfully do the following:
+
+mount 5.25 .dsk, .do, .po, .woz to internal woz format
+write 5.25 back dsk, .do, .po, .woz when modified
+mount 3.5 .po, .2mg, .woz to internal woz format
+write back .woz
+
+Last thing to do is to write back (i.e., decode) the block formats. That shouldn't be too hard.
+
+The 3.5's don't map sector numbers, exactly. it does interleave the sectors but there is no alteration between logical and physical sector numbers. 
+
+on writebacks to block images, currently if there are disk errors we recover what we can and write a partial image back to disk. Think about this, I'm not sure that's really what we want to do.
+ok, writeback is partially in place, but apparently I either have a interleave problem or I'm otherwise just calculating positions wrong. Did I not just convince myself interleave doesn't change the sector address?
+ok, everything's fine until we get to side 1.
+
+wozutil has a problem which is that if the image didn't exist before it honestly doesn't know how to write a correct .2mg file that has a data offset.
+
+ok, writeback to block images is done. Whoowhee!

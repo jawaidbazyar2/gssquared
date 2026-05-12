@@ -230,7 +230,7 @@ void Woz_Nibblizer_35::emit_address_field(woz_track_t& trk, int track_num, int s
     uint8_t side_number = (side == 0 ? 0 : 0x20) | ((track_num & 0b0100'0000) >> 6);
     uint8_t format = 0x24;
     uint8_t address_checksum = (low_part_of_track_number ^ sector_number ^ side_number ^ format) & 0x3f;
-    printf("EAF >> track: %02X side: %02X sector: %02X | low_part_of_track_number: %02X sector_number: %02X side_number: %02X format: %02X address_checksum: %02X\n", track_num, side, sector_num, low_part_of_track_number, sector_number, side_number, format, address_checksum);
+    //printf("EAF >> track: %02X side: %02X sector: %02X | low_part_of_track_number: %02X sector_number: %02X side_number: %02X format: %02X address_checksum: %02X\n", track_num, side, sector_num, low_part_of_track_number, sector_number, side_number, format, address_checksum);
     emit_data_byte(trk, sDiskBytes62[low_part_of_track_number]);
     emit_data_byte(trk, sDiskBytes62[sector_number]);
     emit_data_byte(trk, sDiskBytes62[side_number]);
@@ -247,13 +247,13 @@ void Woz_Nibblizer_35::emit_sector(woz_track_t& trk, sector_t& in,
     memcpy(ondisk+12, in, 512);
     memset(ondisk, 0, 12);
 
-    for (int i = 0; i < 524; i++) {
+    /* for (int i = 0; i < 524; i++) {
         printf("%02X ", ondisk[i]);
         if (i % 16 == 15) {
             printf("\n");
         }
     }
-    printf("\n");
+    printf("\n"); */
     emit_address_field(trk, track_num, side, sector_num);
     emit_sync_bytes(trk, GAP_B_SIZE);
     emit_data_field(trk, ondisk, sector_num);
@@ -272,7 +272,7 @@ woz_track_t Woz_Nibblizer_35::build_track(disk_image_t& disk_image,
     for (int s = 0; s < sectors; s++) {
         int logical = phys_to_logical[s];
         int index = calculateSectorOffset(track_num, logical, side);
-        printf("bt >> track %d side %d sector %d blk index: %d\n", track_num, side, s, index);
+        //printf("bt >> track %d side %d sector %d blk index: %d\n", track_num, side, s, index);
         emit_sector(trk,
                     disk_image.sectors[index],
                     track_num,
@@ -319,9 +319,6 @@ int Woz_Nibblizer_35::import_block_image(Woz& woz, const media_descriptor* media
         return -1;
     }
 
-    // Select interleave table.
-    //const interleave_t* phys_to_logical = nullptr;
-
     // no interleave assumption for 3.5
     
     woz_image_t &m_image = woz.image();
@@ -356,35 +353,8 @@ int Woz_Nibblizer_35::import_block_image(Woz& woz, const media_descriptor* media
 
 
 // ─── Export to media (WOZ bit-stream → raw block image) ─────────────────────
-#if 0
-// Reverses Woz's POSTNB16 routine, mirror of decode_sector_62() in diskii_fmt.cpp.
-void Woz_Nibblizer_35::decode_sector_62(sector_62_t& nbuf, sector_t& decoded) {
-    uint8_t y = 0;
-    int8_t  x;
-    uint8_t c;
-    uint8_t* nbuf1 = nbuf;
-    uint8_t* nbuf2 = nbuf + 0x100;
 
-post1:
-    x = 0x56;
-post2:
-    x--;
-    if (x < 0) goto post1;
-
-    {
-        uint8_t a = nbuf1[y];
-        c = nbuf2[x] & 1; nbuf2[x] >>= 1; a = (a << 1) | c;
-        c = nbuf2[x] & 1; nbuf2[x] >>= 1; a = (a << 1) | c;
-        decoded[y] = a;
-    }
-    y++;
-    if (y != 0x00) goto post2;
-}
-
-
-int Woz_Nibblizer_35::decode_track(const woz_track_t *trk, int track_num,
-                    const interleave_t& phys_to_logical,
-                    disk_image_t *out) {
+int Woz_Nibblizer_35::decode_track(const woz_track_t *trk, int track_num, int side, disk_image_t *out) {
     if (trk->bit_count == 0) return 0;
 
     BitCursor c{trk, 0, 0};
@@ -394,33 +364,33 @@ int Woz_Nibblizer_35::decode_track(const woz_track_t *trk, int track_num,
     // forever. The factor of 2 mirrors max_iterations in denibblize_disk_image.
     const uint64_t max_bits = static_cast<uint64_t>(trk->bit_count) * 2;
 
-    bool found[SECTORS_PER_TRACK] = {false};
+    int sectors_this_track = sectorsPerZone[track_num / 16];
+    bool found[12] = {false}; // max 12 sectors per track
     int  found_count = 0;
 
     uint8_t n0 = 0, n1 = 0, n2 = 0;
 
-    while (found_count < SECTORS_PER_TRACK && c.consumed < max_bits) {
+    while (found_count < sectors_this_track && c.consumed < max_bits) {
         n2 = n1; n1 = n0; n0 = read_nibble(c);
         if (!(n2 == 0xD5 && n1 == 0xAA && n0 == 0x96)) continue;
 
         // Address field: 8 4&4-encoded nibbles → vol, track, sector, checksum.
         uint8_t e[8];
-        for (int i = 0; i < 8; i++) e[i] = read_nibble(c);
-        uint8_t volume    = static_cast<uint8_t>(((e[0] & 0x55) << 1) | (e[1] & 0x55));
-        uint8_t trk_no    = static_cast<uint8_t>(((e[2] & 0x55) << 1) | (e[3] & 0x55));
-        uint8_t sector    = static_cast<uint8_t>(((e[4] & 0x55) << 1) | (e[5] & 0x55));
-        uint8_t checksum  = static_cast<uint8_t>(((e[6] & 0x55) << 1) | (e[7] & 0x55));
+        for (int i = 0; i < 5; i++) e[i] = read_nibble(c);
+        uint8_t track_low = sInvDiskBytes62[e[0]] & 0x3f;
+        uint8_t sector    = sInvDiskBytes62[e[1]] & 0x3f;
+        uint8_t side      = sInvDiskBytes62[e[2]] & 0x3f;
+        uint8_t format    = sInvDiskBytes62[e[3]] & 0x3f;
+        uint8_t checksum  = sInvDiskBytes62[e[4]] & 0x3f;
+        int track_num = (track_low | (side & 1) << 6);
+        int side_num = (side >> 5) & 1;
 
-        if (checksum != static_cast<uint8_t>(volume ^ trk_no ^ sector)) {
+        if (checksum != (track_low ^ sector ^ side ^ format)) { // bad address checksum
             n0 = n1 = n2 = 0;
             continue;
         }
-        if (sector >= SECTORS_PER_TRACK) {
-            n0 = n1 = n2 = 0;
-            continue;
-        }
 
-        // Skip the 3-nibble address epilogue (DE AA EB) — values not checked.
+        // Skip the 3-nibble address epilogue (DE AA FF) — values not checked.
         (void)read_nibble(c);
         (void)read_nibble(c);
         (void)read_nibble(c);
@@ -438,37 +408,31 @@ int Woz_Nibblizer_35::decode_track(const woz_track_t *trk, int track_num,
             continue;
         }
 
-        // Read the 342 nibbles of 6&2-encoded payload (XOR-chain).
+        // consume the extra sector number
+        uint8_t extra_sector_num = read_nibble(c);
+
         sector_62_t nbuf;
-        uint8_t csum = 0;
-        for (int i = 0x155; i >= 0x100; i--) {
-            nbuf[i] = static_cast<uint8_t>(csum ^ woz_denibble_table[read_nibble(c)]);
-            csum = nbuf[i];
+        for (int i = 0; i < 703; i++) {
+            nbuf[i] = read_nibble(c);
         }
-        for (int i = 0; i < 0x100; i++) {
-            nbuf[i] = static_cast<uint8_t>(csum ^ woz_denibble_table[read_nibble(c)]);
-            csum = nbuf[i];
-        }
-        // Trailing checksum nibble — verifies that the running csum is zero
-        // after XORing with the table-decoded checksum nibble.
-        uint8_t tail = woz_denibble_table[read_nibble(c)];
-        if (static_cast<uint8_t>(csum ^ tail) != 0) {
-            // Bad checksum: drop this sector, try the next prologue.
+
+        // decode - if there was an error (checksum, etc.) ignore this sector
+        sector_ondisk_t decoded;
+        if (!DecodeSector62_524(decoded, nbuf )) {
             n0 = n1 = n2 = 0;
             continue;
         }
 
-        sector_t decoded;
-
-        decode_sector_62(nbuf, decoded);
-        int logical = phys_to_logical[sector];
-        std::memcpy(out->sectors[track_num][logical], decoded, SECTOR_SIZE);
+        // convert track, sector, side to logical sector number 0-1599.
+        int logical = calculateSectorOffset(track_num, sector, side_num);
+        //printf("decode_track >> track: %d sector: %d side: %d => logical: %d\n", track_num, sector, side_num, logical);
+        std::memcpy(out->sectors[logical], decoded+12, SECTOR_SIZE); // skip the first 12 bytes (block metadata)
 
         if (!found[sector]) { found[sector] = true; ++found_count; }
         n0 = n1 = n2 = 0;
     }
 
-    return found_count;
+    return found_count==sectors_this_track;
 }
 
 
@@ -479,35 +443,22 @@ int Woz_Nibblizer_35::decode_track(const woz_track_t *trk, int track_num,
  */
 
 int Woz_Nibblizer_35::write_disk_image_po_do(const media_descriptor *media, const disk_image_t *disk_image) {
-    FILE *out_fp = fopen(media->filename.c_str(), "r+b");
+    FILE *out_fp = fopen(media->filename.c_str(), "w+b");
     if (!out_fp) {
         std::cerr << "Could not open " << media->filename << " for writing" << std::endl;
         return false;
     }
     fseek(out_fp, media->data_offset, SEEK_SET);
-    for (int t = 0; t < TRACKS_PER_DISK; t++) {
-        fwrite(disk_image->sectors[t], sizeof(sector_t), SECTORS_PER_TRACK, out_fp);
-    }
+    fwrite(disk_image->sectors, SECTOR_SIZE, SECTORS_PER_DISK, out_fp);   
 
     fclose(out_fp);
     return true;
 }
-#endif
+
 
 int Woz_Nibblizer_35::export_block_image(const Woz& woz, const media_descriptor* media) {
-#if 0
-    disk_image_t *out = new disk_image_t;
 
-    const interleave_t* phys_to_logical = nullptr;
-    if (media->interleave == INTERLEAVE_PO) {
-        phys_to_logical = &po_phys_to_logical;
-    } else if (media->interleave == INTERLEAVE_DO) {
-        phys_to_logical = &do_phys_to_logical;
-    } else {
-        std::cerr << "WOZ: export_to_disk_image: unsupported interleave "
-                  << media->interleave << "\n";
-        return -1;
-    }
+    disk_image_t *out = new disk_image_t;
 
     // Start from a clean slate so any sector we fail to decode is left zeroed
     // rather than carrying whatever the caller's stack had.
@@ -517,32 +468,25 @@ int Woz_Nibblizer_35::export_block_image(const Woz& woz, const media_descriptor*
     int tracks_with_full_data = 0;
 
     for (int t = 0; t < TRACKS_PER_DISK; t++) {
-        /* uint8_t idx = m_image.tmap[t * 4];
-        if (idx == 0xFF || idx >= m_image.tracks.size()) {
-            std::cerr << "WOZ: export_to_disk_image: track " << t
-                      << " missing from TMAP\n";
-            continue;
-        } */
+        for (int side = 0; side < 2; side++) {
         
-        const woz_track_t *trk_ptr = woz.get_track_ptr(t*4);
-        if (trk_ptr == nullptr) {
-            std::cerr << "WOZ: export_to_disk_image: track " << t
-                      << " missing from TMAP\n";
-            continue;
-        }
-        //const woz_track_t& trk = m_image.tracks[idx];
-        int got = decode_track(trk_ptr, t, *phys_to_logical, out);
-        total_decoded += got;
-        if (got == SECTORS_PER_TRACK) {
-            ++tracks_with_full_data;
-        } else {
-            std::cerr << "WOZ: export_to_disk_image: track " << t
-                      << " decoded " << got << "/" << SECTORS_PER_TRACK
-                      << " sectors\n";
+            const woz_track_t *trk_ptr = woz.get_track_ptr(t*2+side);
+            if (trk_ptr == nullptr) {
+                std::cerr << "WOZ: export_to_disk_image: track " << t
+                        << " missing from TMAP\n";
+                continue;
+            }
+            if (decode_track(trk_ptr, t, side, out)) {
+                ++tracks_with_full_data;
+            } else {
+                std::cerr << "WOZ: export_to_disk_image: track " << t << " side " << side
+                        << " short sectors\n";
+            }
+
         }
     }
 
-    int status = (tracks_with_full_data == TRACKS_PER_DISK) ? 0 : -1;
+    int status = (tracks_with_full_data == TRACKS_PER_DISK*2) ? 0 : -1;
 
     if (status < 0) {
         fprintf(stderr,
@@ -552,12 +496,12 @@ int Woz_Nibblizer_35::export_block_image(const Woz& woz, const media_descriptor*
         // Fall through and write whatever was recovered, matching
         // Floppy525::writeback()'s always-write behaviour.
     }
-    if (write_disk_image_po_do(media, out) != 0) {
-        fprintf(stderr, "Floppy_woz: block writeback failed for '%s'\n",
+    if (!write_disk_image_po_do(media, out)) {
+        fprintf(stderr, "Woz_Nibblizer_35: block writeback failed for '%s'\n",
                 media->filename.c_str());
-        return -1;
+        status = -1;
     }
+    delete out;
 
     return status;
-#endif
 }

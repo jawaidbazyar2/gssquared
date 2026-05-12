@@ -100,7 +100,7 @@ bool Floppy_woz::writeback() {
     auto nibblizer = make_nibblizer(media_d);
     if (!nibblizer) return false;
 
-    if (media_d->media_type == MEDIA_NYBBLE) {
+    if ((media_d->media_type == MEDIA_NYBBLE) || (media_d->media_type == MEDIA_BLK)) {
         std::cout << "Floppy_woz: writing back block disk image" << std::endl;
         int rc = nibblizer->export_block_image(woz, media_d);
         if (rc != 0) {

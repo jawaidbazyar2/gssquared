@@ -168,6 +168,13 @@ static int cmd_export(const std::string& input_woz,
         return 1;
     }
 
+    media_descriptor md;
+    md.filename = output_block;
+    if (identify_media(md) != 0) {
+        fprintf(stderr, "wozutil: cannot identify media '%s'\n", output_block.c_str());
+        return 1;
+    }
+#if 0
     media_interleave_t interleave = interleave_override;
     if (interleave == INTERLEAVE_NONE) {
         interleave = infer_interleave(output_block);
@@ -179,13 +186,18 @@ static int cmd_export(const std::string& input_woz,
             return 1;
         }
     }
+#endif
 
     if (verbose) {
         printf("=== Loaded: %s ===\n", input_woz.c_str());
         woz.dump_info();
-        printf("Output interleave: %s\n",
-               interleave == INTERLEAVE_PO ? "PO (ProDOS)" : "DO (DOS 3.3)");
+/*         printf("Output interleave: %s\n",
+               interleave == INTERLEAVE_PO ? "PO (ProDOS)" : "DO (DOS 3.3)"); */
     }
+
+    Woz_Nibblizer *nibblizer = new Woz_Nibblizer_35();
+    nibblizer->export_block_image(woz, &md);
+
 #if 0
     disk_image_t out{};
     int rc = woz.export_to_disk_image(out, interleave);

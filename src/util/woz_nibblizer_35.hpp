@@ -166,7 +166,9 @@ const uint8_t INVALID_INV = 0xff;
 
     bool EncodeSector62_524(uint8_t* output, const uint8_t* buffer);
     bool DecodeSector62_524(uint8_t* buffer, const uint8_t *input);
-                    
+
+    int decode_track(const woz_track_t *trk, int track_num, int side, disk_image_t *out);
+    int write_disk_image_po_do(const media_descriptor *media, const disk_image_t *disk_image);
     int load_disk_image(const media_descriptor *media, disk_image_t& disk_image);
     int write_disk_image(const media_descriptor *media, const disk_image_t *disk_image);
 
