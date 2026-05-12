@@ -101,7 +101,9 @@ Additional notes: 5.25 Floppy does not support quarter or half tracks.
 | .hdv, .img | ✅ Read/write | Any size | Block device, complete |
 | .2mg | ✅ Read/Write | Various | For block devices, complete |
 | .nib | ✅ Read Only | 140K | |
-| .woz | ✅ Read/Write | 140K 800K | |
+| .woz 1.0 | ✅ Read/Write | 140K 800K | |
+| .woz 2.0 | ✅ Read/Write | 140K 800K | |
+| .woz 2.1 | ❌ | 140K 800K | |
 
 
 | Component | Status | Notes |

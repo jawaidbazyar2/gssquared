@@ -5,6 +5,11 @@
 #include "woz_nibblizer_35.hpp"
 #include "util/media.hpp"
 
+/*
+    6&2 for 3.5 encoding/decoding taken from CiderPress2, Andy McFadden.
+    https://ciderpress2.com/formatdoc/Nibble-notes.html
+*/
+
 bool Woz_Nibblizer_35::EncodeSector62_524(uint8_t* output, const uint8_t* buffer) {
     if (output == nullptr || buffer == nullptr) {
         return false;
@@ -189,11 +194,13 @@ void Woz_Nibblizer_35::emit_nibblized_sector(woz_track_t& trk, sector_ondisk_t& 
     }
 }
 
-void Woz_Nibblizer_35::emit_data_field(woz_track_t& trk, sector_ondisk_t& in) {
+void Woz_Nibblizer_35::emit_data_field(woz_track_t& trk, sector_ondisk_t& in, int sector_num) {
     // Data prologue
     emit_data_byte(trk, 0xD5);
     emit_data_byte(trk, 0xAA);
     emit_data_byte(trk, 0xAD);
+    uint8_t sector_number = sector_num;
+    emit_data_byte(trk, sDiskBytes62[sector_number]);
 
     emit_nibblized_sector(trk, in);
 
@@ -204,11 +211,31 @@ void Woz_Nibblizer_35::emit_data_field(woz_track_t& trk, sector_ondisk_t& in) {
 }
 
 void Woz_Nibblizer_35::emit_address_field(woz_track_t& trk, int track_num, int side, int sector_num) {
+
     emit_data_byte(trk, 0xD5);
     emit_data_byte(trk, 0xAA);
     emit_data_byte(trk, 0x96);
-    emit_encoded_44(trk, track_num);
-    emit_encoded_44(trk, sector_num);
+
+/* 
++$024 / 3: address prolog ($d5 $aa $96)
++$027 / 1: 6&2enc low part of track number: 0-79 mod 64
++$028 / 1: 6&2enc sector number (0-11)
++$029 / 1: 6&2enc side number ($00 or $20) and high part of track number ($01 for tracks >= 64)
++$02a / 1: 6&2enc format ($22 or $24)
++$02b / 1: 6&2enc address checksum: (track ^ sector ^ side ^ format) & $3f
++$02c / 2: address epilog ($de $aa) */
+
+    uint8_t low_part_of_track_number = track_num & 0x3F;
+    uint8_t sector_number = sector_num;
+    uint8_t side_number = (side == 0 ? 0 : 0x20) | ((track_num & 0b0100'0000) >> 6);
+    uint8_t format = 0x24;
+    uint8_t address_checksum = (low_part_of_track_number ^ sector_number ^ side_number ^ format) & 0x3f;
+    printf("EAF >> track: %02X side: %02X sector: %02X | low_part_of_track_number: %02X sector_number: %02X side_number: %02X format: %02X address_checksum: %02X\n", track_num, side, sector_num, low_part_of_track_number, sector_number, side_number, format, address_checksum);
+    emit_data_byte(trk, sDiskBytes62[low_part_of_track_number]);
+    emit_data_byte(trk, sDiskBytes62[sector_number]);
+    emit_data_byte(trk, sDiskBytes62[side_number]);
+    emit_data_byte(trk, sDiskBytes62[format]);
+    emit_data_byte(trk, sDiskBytes62[address_checksum]);
     emit_data_byte(trk, 0xDE);
     emit_data_byte(trk, 0xAA);
     emit_data_byte(trk, 0xFF);
@@ -219,9 +246,17 @@ void Woz_Nibblizer_35::emit_sector(woz_track_t& trk, sector_t& in,
     sector_ondisk_t ondisk;
     memcpy(ondisk+12, in, 512);
     memset(ondisk, 0, 12);
+
+    for (int i = 0; i < 524; i++) {
+        printf("%02X ", ondisk[i]);
+        if (i % 16 == 15) {
+            printf("\n");
+        }
+    }
+    printf("\n");
     emit_address_field(trk, track_num, side, sector_num);
     emit_sync_bytes(trk, GAP_B_SIZE);
-    emit_data_field(trk, ondisk);
+    emit_data_field(trk, ondisk, sector_num);
     emit_sync_bytes(trk, GAP_C_SIZE);
 }
 
@@ -235,13 +270,14 @@ woz_track_t Woz_Nibblizer_35::build_track(disk_image_t& disk_image,
     // Sectors in physical order
     int sectors = sectorsPerZone[track_num / 16];
     for (int s = 0; s < sectors; s++) {
-        int index = calculateSectorOffset(track_num, s, side);
         int logical = phys_to_logical[s];
+        int index = calculateSectorOffset(track_num, logical, side);
+        printf("bt >> track %d side %d sector %d blk index: %d\n", track_num, side, s, index);
         emit_sector(trk,
-                    reinterpret_cast<sector_t&>(disk_image.sectors[track_num][logical]),
+                    disk_image.sectors[index],
                     track_num,
                     side,
-                    s);
+                    logical);
     }
     return trk;
 }
@@ -284,7 +320,7 @@ int Woz_Nibblizer_35::import_block_image(Woz& woz, const media_descriptor* media
     }
 
     // Select interleave table.
-    const interleave_t* phys_to_logical = nullptr;
+    //const interleave_t* phys_to_logical = nullptr;
 
     // no interleave assumption for 3.5
     
@@ -300,16 +336,19 @@ int Woz_Nibblizer_35::import_block_image(Woz& woz, const media_descriptor* media
     m_image.info.write_protected    = media->write_protected ? 1 : 0;
     m_image.info.synchronized       = 0;
     m_image.info.cleaned            = 1;
-    m_image.info.optimal_bit_timing = 16;  // 4 µs
-    m_image.info.boot_sector_format = 1;   // assume 16-sector unless told otherwise
+    m_image.info.optimal_bit_timing = 16;  // 2 µs
+    m_image.info.boot_sector_format = 0;   
     m_image.info.disk_sides         = 2;
 
     for (int t = 0; t < TRACKS_PER_DISK; t++) {
-        uint8_t trk_idx = static_cast<uint8_t>(m_image.tracks.size());
+        uint8_t trk_idx = t * 2;
         int zone = t / 16;
         // in Woz It's T0S0, T0S1, T1S0, T1S1, etc.
-        m_image.tracks.push_back(build_track(disk_image, interleaveTable[zone], t, 0));
-        m_image.tracks.push_back(build_track(disk_image, interleaveTable[zone], t, 1));
+        m_image.tracks.push_back(build_track(disk_image, i_logical_to_phys[zone], t, 0));
+        m_image.tmap[trk_idx] = trk_idx;  // track side 0
+        
+        m_image.tracks.push_back(build_track(disk_image, i_logical_to_phys[zone], t, 1));
+        m_image.tmap[trk_idx+1] = trk_idx+1;  // track side 1
     }
 
     return 0;

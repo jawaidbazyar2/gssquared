@@ -59,7 +59,7 @@ const int zoneOffset[5] = { 0, 192*2, 368*2, 528*2, 672*2 };
 int16_t calculateSectorOffset(int track, int sector, int side) {
     int zone = track / 16;
     int zoneTrackIndex = track % 16;
-    return zoneOffset[zone] + (zoneTrackIndex * 2 + side) * sectorsPerZone[zone];
+    return zoneOffset[zone] + (zoneTrackIndex * 2 + side) * sectorsPerZone[zone] + sector;
 }
 
 // Interleave table
@@ -71,6 +71,14 @@ static constexpr interleave_t interleaveTable[5] = {
     {0 , 5 , 1 , 6 , 2 , 7 , 3 , 8 , 4 , 9},
     {0 , 5 , 1 , 6 , 2 , 7 , 3 , 8 , 4},
     {0 , 4 , 1 , 5 , 2 , 6 , 3 , 7},
+};
+
+static constexpr interleave_t i_logical_to_phys[5] = {
+    { 0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8, 11 },
+    { 0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8 },
+    { 0, 5, 3, 8, 1, 6, 4, 9, 2, 7 },
+    { 0, 7, 5, 3, 1, 8, 6, 4, 2 },
+    { 0, 2, 4, 6, 1, 3, 5, 7 },
 };
 
 protected:
@@ -150,7 +158,7 @@ const uint8_t INVALID_INV = 0xff;
     void prenibble(sector_t& buf, sector_62_t& nbuf);
     void emit_nibblized_sector(woz_track_t& trk, sector_ondisk_t& in);
     void emit_address_field(woz_track_t& trk, int track_num, int side, int sector_num);
-    void emit_data_field(woz_track_t& trk, sector_ondisk_t& in);
+    void emit_data_field(woz_track_t& trk, sector_ondisk_t& in, int sector_num);
     void emit_sector(woz_track_t& trk, sector_t& in, int track_num, int side, int sector_num);
     woz_track_t build_track(disk_image_t& disk_image,
                             const interleave_t& phys_to_logical,

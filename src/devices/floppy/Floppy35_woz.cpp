@@ -26,9 +26,9 @@
 bool Floppy35_woz::mount(uint64_t key, media_descriptor *media_in) {
     // Phase 1: only native WOZ images for 3.5 drives. Block/raw
     // containers (.po, .2mg, ...) are a follow-up task.
-    if (media_in->media_type != MEDIA_WOZ) {
+    if ((media_in->media_type != MEDIA_WOZ) && (media_in->media_type != MEDIA_BLK)) {
         fprintf(stderr,
-                "Floppy35_woz: refusing non-WOZ media '%s' (type=%d)"
+                "Floppy35_woz: refusing non-WOZ/BLOCK media '%s' (type=%d)"
                 " — only .woz is supported for 3.5 drives in this build\n",
                 media_in->filename.c_str(), (int)media_in->media_type);
         return false;
