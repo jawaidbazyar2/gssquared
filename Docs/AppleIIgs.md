@@ -17,19 +17,19 @@ http://krue.net/truegs/
 
 We can implement in this order.
 
-[x] 65816 [initial version done]  
-[x] Accurate Cycle Timing (FPI / Mega II / Fast-Slow)  
-[x] mmu (done-ish but might still be bugs)  
-[x] RTC / BRAM  
-[x] ADB  
-  [x] Keyboard  
-  [x] Mouse  
-[x] New Display Modes
-  [x] SHR  
-  [x] text mode enhancements (colored text / border)  
-[x] Game controller   
-[x] Interrupts  
-[ ] IWM  
+[X] 65816 [initial version done]  
+[X] Accurate Cycle Timing (FPI / Mega II / Fast-Slow)  
+[X] mmu (done-ish but might still be bugs)  
+[X] RTC / BRAM  
+[X] ADB  
+  [X] Keyboard  
+  [X] Mouse  
+[X] New Display Modes
+  [X] SHR  
+  [X] text mode enhancements (colored text / border)  
+[X] Game controller   
+[X] Interrupts  
+[X] IWM  
 [1/2] Ensoniq  
 [ ] Zilog SCC 8530  
 [ ] ROM03    
@@ -72,7 +72,7 @@ See Ensoniq.md. Accessed via new $C0xx registers.
 
 Pretty straightforward. Linear video buffer, pixel values look up 4096 colors (12-bit color value) in a palette table.
 
-[x] Implement Fill Mode  
+[X] Implement Fill Mode  
 
 ### Standard Apple II text with Color
 
@@ -304,16 +304,16 @@ This should involve cleanup/refactor of the trace, disasm, and monitor module mo
 
 ### Trace
 
-1. [x] all this to make room for decoding addresses -> symbols, as well as 16-bit widths for: A, X, Y, SP, PC.  That's two more characters for each of those.
+1. [X] all this to make room for decoding addresses -> symbols, as well as 16-bit widths for: A, X, Y, SP, PC.  That's two more characters for each of those.
 1. have debugger BP -before- instruction execute. i.e. if the PC is going to be XXXX, then BP before it executes. And highlight that instruction in the display.
-1. [x] instead of showing whole cycle, what if we just display last say 6 digits of cycle. That would be enough to show differences while not taking up too much screen.
-1. [x] make generation of the lines much easier by having a line class that tracks a horizontal 'cursor' inside the line.
+1. [X] instead of showing whole cycle, what if we just display last say 6 digits of cycle. That would be enough to show differences while not taking up too much screen.
+1. [X] make generation of the lines much easier by having a line class that tracks a horizontal 'cursor' inside the line.
 1. pack opcode and operand into a single 32-bit value, instead of 32-bit plus 8-bit.
 1. the other fields in the trace record are otherwise the right size.
 1. have a trace decoder base class plus two (maybe 3?) derived classes: 6502, 65c02, 65816. 
 1. Same for disassembler.
 1. in 6502/65c02 mode, show SP as just a byte, to free up room.
-1. [x] use p flags e/m/x to determine trace formatting in 65816 class.
+1. [X] use p flags e/m/x to determine trace formatting in 65816 class.
 
 ## Display Parameters
 
@@ -380,6 +380,9 @@ So I don't think the GS uses anything here except bits 3-4: vbl and quarter-seco
 
 Again, the ideal place to insert the VBL interrupt is in VideoScannerIIgs. (done)
 
+## CYAREG - $C036
+
+This is the speed control register. see AppleIIgs-Memory.md.
 
 ## ROM03
 
@@ -543,3 +546,4 @@ nextchar	anop
 
 lastchar	anop
 ```
+

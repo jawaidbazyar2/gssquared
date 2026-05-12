@@ -3,55 +3,55 @@
 
 ## Release 0.3
 
-[x] refactor all the other slot cards (like mb) to use the slot_store instead of device_store.  
-[x] vector the RGB stuff as discussed in DisplayNG correctly.  
-[x] make OSD fully match DisplayNG.  
-[x] Fix the joystick.  
-[x] video setup code should be put into its own area.  
-[x] Implement general filter on speaker.cpp. (Ended up doing big rewrite to improve audio)  
+[X] refactor all the other slot cards (like mb) to use the slot_store instead of device_store.  
+[X] vector the RGB stuff as discussed in DisplayNG correctly.  
+[X] make OSD fully match DisplayNG.  
+[X] Fix the joystick.  
+[X] video setup code should be put into its own area.  
+[X] Implement general filter on speaker.cpp. (Ended up doing big rewrite to improve audio)  
 
 ## Release 0.3.5:
 
-[x] refactor the hinky code we have in bus for handling mockingboard, I/O space memory switching, etc.  
-[x] Tracing  
-[x] Debugger  
-[x] Bring in a decent readable font for the OSD elements  
-[x] GS2 starts in powered-off mode. have snazzy tiles showing each platform that can be booted.  
-[x] Can select a 'platform' each of which has a default configuration.  
-[x] Can power on and power off vm  
+[X] refactor the hinky code we have in bus for handling mockingboard, I/O space memory switching, etc.  
+[X] Tracing  
+[X] Debugger  
+[X] Bring in a decent readable font for the OSD elements  
+[X] GS2 starts in powered-off mode. have snazzy tiles showing each platform that can be booted.  
+[X] Can select a 'platform' each of which has a default configuration.  
+[X] Can power on and power off vm  
 
 ## Release 0.4
 
-[x] Apple IIe support  
-[x] 80-column / double lo-res / double hi-res  
+[X] Apple IIe support  
+[X] 80-column / double lo-res / double hi-res  
 
 ## Release 0.5
 
-[x] Drag/drop disk images onto window to load into first drive  
+[X] Drag/drop disk images onto window to load into first drive  
 
-[x] Implement new optimized audio code  
+[X] Implement new optimized audio code  
 
-[x] Implement cycle-accurate video display to support apps that switch video mode by counting cycles  
-[x] implement floating-bus read based on video data  
+[X] Implement cycle-accurate video display to support apps that switch video mode by counting cycles  
+[X] implement floating-bus read based on video data  
 
-[x] provide a mode for Atari Joyport - use the dpad. https://lukazi.blogspot.com/2009/04/game-controller-atari-joysticks.html. Can also use gamepad.  
+[X] provide a mode for Atari Joyport - use the dpad. https://lukazi.blogspot.com/2009/04/game-controller-atari-joysticks.html. Can also use gamepad.  
 
 ## Release 0.6
 
-[x] Refactor CPU to be more cycle-accurate including false/phantom reads/writes  
-[x] Support PAL video timing  
-[x] Implement even more optimized audio code  
+[X] Refactor CPU to be more cycle-accurate including false/phantom reads/writes  
+[X] Support PAL video timing  
+[X] Implement even more optimized audio code  
 
 ## Release 0.7
 
-[x] First Apple IIgs release  
+[X] First Apple IIgs release  
 
 ## Release 0.7.1
 
-[x] Maintenance release: bug fixes
-[x] More visual/sound effects for broader class of disks
-[x] Display AppleDisk drives on GS  
-[x] IWM 5.25
+[X] Maintenance release: bug fixes
+[X] More visual/sound effects for broader class of disks
+[X] Display AppleDisk drives on GS  
+[X] IWM 5.25
 
 ## Release 0.7.2
 

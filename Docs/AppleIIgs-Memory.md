@@ -86,16 +86,18 @@ But both even and odd banks, which doesn't seem right. And it -only- considers t
 /* only do banks 3 - num_banks by 2, shadowing into e1 */
 At least this only does the odd banks. But clearly is a hack for one piece of software.
 
-### 3: Slot 7 disk motor-on detect
+### 3-0: Slot 7-4 disk motor-on detect
 
-### 2: Slot 6 disk motor-on detect
+The motor on detect watches for reads/writes to C0x8 and C0x9. If the bit here is on, and the corresponding slot is marked as "enabled" (by tracking the C0x8 and C0x9 addresses), 
 
-### 1: Slot 5 disk motor-on detect
+So, we can regsister those addresses (double register) and modify the system speed accordingly. system speed selected needs to be AND gated:
 
-### 0: Slot 4 disk motor-on detect
+speed = !cpuspeed & !slot7enable & !slot6enable
+speed=0 is 1.0, speed=1 is "fast" (whatever that is right now)
 
 
 The CYA (Speed) reg is cleared to zeros on reset or power up
+
 
 ## $C029 - newvideo register
 
@@ -357,6 +359,21 @@ https://retrocomputing.stackexchange.com/questions/5555/apple-iigs-hardware-impl
 ```
 
 ok. There is Fast RAM and Slow RAM. Slow RAM has the I/O stuff.
+
+## Fast Registers
+
+Access to:
+* Shdow C035
+* CYA C036
+* DMA Bank C037
+
+Reads from:
+* Slot register C02D
+* State Register C068
+
+run at full speed since they're handled on the FPI side of system.
+
+[ ] Implement fast accesses for the above registers.
 
 ## Tests
 
