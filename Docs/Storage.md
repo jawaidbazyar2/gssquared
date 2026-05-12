@@ -8,7 +8,8 @@ GS2 supports the following virtual disk media formats:
 | .dsk | 140K | DOS33 ordered |
 | .nib | 140K | Read only Nibblized 5.25" |
 | .2mg | 140K, 800K | 5.25 and 3.5 |
-| .woz | 140K, 800K | 5.25 and 3.5 |
+| .woz 1.0 | 140K, 800K | 5.25 and 3.5 |
+| .woz 2.0 | 140K, 800K | 5.25 and 3.5 |
 | .hdv, .img | any | Can be any size, raw block device |
 
 Woz format is the heart of GS2 floppy emulation. GS2 supports copy-protected 5.25 and 3.5 disks in Woz format, even ones with half tracks, quarter tracks, spiral tracks, weak bits, etc etc. Virtually any copy-protected Woz image should work fine in GS2.
