@@ -48,7 +48,8 @@
 
 #include "util/woz.hpp"
 #include "util/media.hpp"
-#include "devices/diskii/diskii_fmt.hpp"
+#include "util/woz_nibblizer.hpp"
+#include "util/woz_nibblizer_35.hpp"
 
 /* Silence the debug_level symbol required by debug.hpp */
 uint64_t debug_level = 0;
@@ -116,10 +117,12 @@ static int cmd_import(const std::string& input_file,
     md.dos33_volume = volume;
 
     Woz woz;
-    if (woz.import_from_media(&md) != 0) {
+    Woz_Nibblizer *nibblizer = new Woz_Nibblizer_35();
+    nibblizer->import_block_image(woz, &md);
+    /* if (woz.import_from_media(&md) != 0) {
         fprintf(stderr, "wozutil: import failed\n");
         return 1;
-    }
+    } */
 
     // Tag the output with a brief META entry so tools can identify its origin.
     woz.image().meta["creator"] = "wozutil import";
@@ -183,7 +186,7 @@ static int cmd_export(const std::string& input_woz,
         printf("Output interleave: %s\n",
                interleave == INTERLEAVE_PO ? "PO (ProDOS)" : "DO (DOS 3.3)");
     }
-
+#if 0
     disk_image_t out{};
     int rc = woz.export_to_disk_image(out, interleave);
     if (rc != 0) {
@@ -202,6 +205,7 @@ static int cmd_export(const std::string& input_woz,
            input_woz.c_str(), output_block.c_str(),
            interleave == INTERLEAVE_PO ? "PO" : "DO");
     return rc == 0 ? 0 : 2; // 2 = wrote partial result
+#endif
 }
 
 static int cmd_save(const std::string& input_woz,
