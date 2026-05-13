@@ -41,12 +41,18 @@ class Floppy525_woz : public Floppy_woz {
     static void phase_change_callback(uint64_t instanceID, void *userData);
 
 protected:
-    uint32_t head_advance_per_cycle() const override { return 2; }
+    uint64_t head_advance_per_cycle() const override { 
+        //return 2;
+        // 32 here is standard bit timing for 5.25" drives.
+        return (2 * POSITION_ADV_PER_CYCLE * 32) / woz.image().info.optimal_bit_timing;
+    }
+
     int      current_tmap_index()     const override { return track; }
 
 public:
     Floppy525_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer)
-        : Floppy_woz(sound_effect, clock, event_timer) {}
+        : Floppy_woz(sound_effect, clock, event_timer) {
+        }
 
     bool mount(uint64_t key, media_descriptor *media) override;
     bool unmount(uint64_t key) override;
@@ -63,14 +69,15 @@ public:
 
     void debug(DebugFormatter *f) override {
         f->addLine("Image: %s", woz.get_current_filename().c_str());
+        f->addLine("Optimal Bit Timing: %d", woz.image().info.optimal_bit_timing);
         f->addLine("enable: %d ph [%d,%d,%d,%d]", enable, phase0, phase1, phase2, phase3);
         f->addLine("Track: %d.%d [ max: %d.%d ]", track/4, track%4, max_tracks/4, max_tracks%4);
         f->addLine("Track Bits: %llu", (unsigned long long)(cur_track_ptr ? cur_track_ptr->bit_count : 0));
 
-        uint64_t pos = head_position>>3;
-        f->addLine("Head Position: %llu (%d.%d)", pos, pos / 8, pos % 8);
-        pos = read_position>>3;
-        f->addLine("Read Position: %llu (%d.%d)", pos, pos / 8, pos % 8);
+        Position pos_head = get_pos_head();
+        Position pos_read = get_pos_read();
+        f->addLine("Head Position: %llu.%llu", pos_head.pos, pos_head.fract);
+        f->addLine("Read Position: %llu.%llu", pos_read.pos, pos_read.fract);
         f->addLine("Last Cycle: %llu", (unsigned long long)last_cycle);
         f->addLine("Modified: %d", modified);
     }

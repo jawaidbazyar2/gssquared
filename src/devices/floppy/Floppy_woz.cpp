@@ -168,7 +168,7 @@ void Floppy_woz::update_track_ptr() {
             ((__uint128_t)head_position * new_bits) / old_bits);
     }
     if (new_bits) {
-        head_position %= new_bits * 8;
+        head_position %= new_bits * POSITION_FP_MUL;
     }
     read_position = head_position;
 }
@@ -182,8 +182,8 @@ uint64_t Floppy_woz::fast_forward(/* uint64_t now */) {
         return 0;  // disk is not spinning
     }
 
-    const uint32_t adv = head_advance_per_cycle();
-
+    //const uint64_t adv = (head_advance_per_cycle() * POSITION_ADV_PER_CYCLE * 32) / woz.image().info.optimal_bit_timing;
+    const uint64_t adv = head_advance_per_cycle();
     // Bound LSS catch-up work. While the motor is on but no IWM register
     // accesses are happening, head_position keeps advancing but read_position
     // is frozen (only read_pulse/write_pulse move it). When the CPU finally
@@ -209,9 +209,9 @@ uint64_t Floppy_woz::fast_forward(/* uint64_t now */) {
         // bits for the LSS. read_position doesn't wrap in this state
         // (read_pulse skips the modulo when bit_count==0), so we just
         // measure raw lag and apply the same cap.
-        uint64_t bits_to_sim = (head_position >> 3) - (read_position >> 3);
+        uint64_t bits_to_sim = (head_position >> POSITION_FP_SHIFT) - (read_position >> POSITION_FP_SHIFT);
         if (bits_to_sim > MAX_BITS_TO_SIM) {
-            read_position = ((head_position >> 3) - MAX_BITS_TO_SIM) * 8;
+            read_position = ((head_position >> POSITION_FP_SHIFT) - MAX_BITS_TO_SIM) * POSITION_FP_MUL;
             bits_to_sim = MAX_BITS_TO_SIM;
         }
         return bits_to_sim;
@@ -225,13 +225,13 @@ uint64_t Floppy_woz::fast_forward(/* uint64_t now */) {
     // permanently skip bits on a straddling boundary. The modulo collapses
     // multi-rotation lag (LSS state can't tell the difference).
     uint64_t bits_to_sim =
-        ((head_position >> 3) - (read_position >> 3)) % track_bits;
+        ((head_position >> POSITION_FP_SHIFT) - (read_position >> POSITION_FP_SHIFT)) % track_bits;
 
     if (bits_to_sim > MAX_BITS_TO_SIM) {
-        uint64_t head_bit = (head_position >> 3) % track_bits;
+        uint64_t head_bit = (head_position >> POSITION_FP_SHIFT) % track_bits;
         uint64_t snap_bit =
             (head_bit + track_bits - MAX_BITS_TO_SIM) % track_bits;
-        read_position = snap_bit * 8;
+        read_position = snap_bit * POSITION_FP_MUL;
         bits_to_sim = MAX_BITS_TO_SIM;
     }
     return bits_to_sim;
@@ -248,7 +248,7 @@ uint8_t Floppy_woz::read_pulse() {
         bit = 0;  // Randomized below via the 4-zero-bit window check.
     } else {
         uint64_t track_bits  = cur_track_ptr->bit_count;
-        uint64_t bi          = (read_position >> 3) % track_bits;
+        uint64_t bi          = (read_position >> POSITION_FP_SHIFT) % track_bits;
         uint64_t byte_idx    = bi >> 3;
         uint64_t bit_in_byte = bi & 7;
         size_t   need_bytes  = (static_cast<size_t>(track_bits) + 7) / 8;
@@ -267,9 +267,9 @@ uint8_t Floppy_woz::read_pulse() {
         // Four consecutive zeros: hand the LSS a random fake bit.
         bit = get_random_bit();
     }
-    read_position += 8;
+    read_position += POSITION_FP_MUL;
     if (cur_track_ptr && cur_track_ptr->bit_count > 0) {
-        read_position %= cur_track_ptr->bit_count * 8;
+        read_position %= cur_track_ptr->bit_count * POSITION_FP_MUL;
     }
     return bit;
 }
@@ -277,7 +277,7 @@ uint8_t Floppy_woz::read_pulse() {
 void Floppy_woz::write_pulse(uint8_t bit) {
     if (lss_disk_spinning() && cur_track_ptr && cur_track_ptr->bit_count > 0) {
         uint64_t track_bits  = cur_track_ptr->bit_count;
-        uint64_t bi          = (read_position >> 3) % track_bits;
+        uint64_t bi          = (read_position >> POSITION_FP_SHIFT) % track_bits;
         uint64_t byte_idx    = bi >> 3;
         uint64_t bit_in_byte = bi & 7;
         size_t   need_bytes  = (static_cast<size_t>(track_bits) + 7) / 8;
@@ -290,9 +290,9 @@ void Floppy_woz::write_pulse(uint8_t bit) {
             modified = true;
         }
     }
-    read_position += 8;
+    read_position += POSITION_FP_MUL;
     if (cur_track_ptr && cur_track_ptr->bit_count > 0) {
-        read_position %= cur_track_ptr->bit_count * 8;
+        read_position %= cur_track_ptr->bit_count * POSITION_FP_MUL;
     }
 }
 

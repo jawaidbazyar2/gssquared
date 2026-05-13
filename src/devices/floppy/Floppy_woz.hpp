@@ -43,7 +43,19 @@ class Woz_Nibblizer;
 //   - which WOZ TMAP slot corresponds to the current head position
 //     (current_tmap_index(), quarter-track vs. track*2+side).
 class Floppy_woz /* : public FloppyDrive */ {
+
 protected:
+
+    static constexpr uint64_t POSITION_FP_SHIFT = 3+4;
+    static constexpr uint64_t POSITION_FP_MUL = 8*16;
+    static constexpr uint64_t POSITION_FP_MASK = POSITION_FP_MUL - 1;
+    static constexpr uint64_t POSITION_ADV_PER_CYCLE = 16;
+
+    struct Position {
+        uint64_t pos;
+        uint64_t fract;
+    };
+
     SoundEffect *sound_effect;
     NClockII *clock;
 
@@ -90,7 +102,7 @@ protected:
     // Hook: how many 1/8-bit-cell units head_position advances per CPU cycle.
     //   5.25: 2  (4 cycles per bit cell @ 4 us)
     //   3.5 : 4  (2 cycles per bit cell @ 2 us)
-    virtual uint32_t head_advance_per_cycle() const = 0;
+    virtual uint64_t head_advance_per_cycle() const = 0;
 
     // Hook: which WOZ TMAP slot (0..159) identifies the track currently
     // under the head. 5.25 returns the quarter-track index; 3.5 returns
@@ -171,14 +183,22 @@ public:
     virtual void debug(DebugFormatter *f) = 0;
 
     void tick_no_write() {
-        read_position += 8;
+        read_position += POSITION_FP_MUL;
         if (cur_track_ptr && cur_track_ptr->bit_count > 0) {
-            read_position %= cur_track_ptr->bit_count * 8;
+            read_position %= cur_track_ptr->bit_count * POSITION_FP_MUL;
         }
     }
 
     virtual void play_sound(uint64_t sound_effect_id) {
         sound_effect->play(sound_effect_id);
+    }
+
+    virtual Position get_pos_head() {
+        return {head_position >> POSITION_FP_SHIFT, head_position & POSITION_FP_MASK};
+    }
+
+    virtual Position get_pos_read() {
+        return {read_position >> POSITION_FP_SHIFT, read_position & POSITION_FP_MASK};
     }
 
 };

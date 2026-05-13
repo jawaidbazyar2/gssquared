@@ -102,7 +102,11 @@ class Floppy35_woz : public Floppy_woz {
     FILE *dbglog = nullptr;
 
 protected:
-    uint32_t head_advance_per_cycle() const override { return 4; }  // 2us bit cell
+    uint64_t head_advance_per_cycle() const override { 
+        //return 4; 
+        // 16 here is standard bit timing for 3.5" drives.
+        return (4 * POSITION_ADV_PER_CYCLE * 16) / woz.image().info.optimal_bit_timing;
+    }  // 2us bit cell
     int      current_tmap_index()     const override { return (track_num << 1) | side; }
 
 public:
@@ -225,9 +229,14 @@ public:
         f->addLine("CA[210]: %d%d%d SEL: %d LSTRB: %d  sel-idx: %X (%s) => %d",
                    ca2, ca1, ca0, hdsel, lstrb, select_index(), 
                    lstrb ? controlNames[select_index()] : statusNames[select_index()], sense_out);
+        f->addLine("Optimal Bit Timing: %d", woz.image().info.optimal_bit_timing);
         f->addLine("Track: %d side %d  Track Bits: %llu",
                    track_num, side, (unsigned long long)(cur_track_ptr ? cur_track_ptr->bit_count : 0));
-        f->addLine("Position: Head: %llu  Read: %llu", head_position >> 3, read_position >> 3);
+        Position pos_head = get_pos_head();
+        Position pos_read = get_pos_read();
+        f->addLine("Head Position: %llu.%llu", pos_head.pos, pos_head.fract);
+        f->addLine("Read Position: %llu.%llu", pos_read.pos, pos_read.fract);
+/*         f->addLine("Position: Head: %llu  Read: %llu", head_position >> 3, read_position >> 3);
         f->addLine("inPlace: %d  switched: %d step_dir: %s", disk_in_place, disk_switched, step_dir ? "out" : "in");
-    }
+ */    }
 };
