@@ -41,10 +41,11 @@ bool Floppy_woz::mount(uint64_t key, media_descriptor *media_in) {
         rc = nibblizer->import_block_image(woz, media_in);
     }
  //                : woz.import_from_media(media_in);
-
+ 
     if (rc != 0) {
         fprintf(stderr, "Floppy_woz: failed to load/import '%s'\n",
                 media_in->filename.c_str());
+        is_mounted = false;
         return false;
     }
 

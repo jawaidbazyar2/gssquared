@@ -313,6 +313,12 @@ int Woz_Nibblizer_35::import_block_image(Woz& woz, const media_descriptor* media
         return -1;
     }
 
+    if (media->data_size != 800 * 1024) {
+        fprintf(stderr, "WOZ: import only supports 800K BLOCK media '%s' (size=%d)\n",
+                media->filename.c_str(), (int)media->data_size);
+        return -1;
+    }
+
     disk_image_t disk_image;
     if (load_disk_image(media, disk_image) != 0) {
         std::cerr << "WOZ: failed to load disk image from '" << media->filename << "'\n";

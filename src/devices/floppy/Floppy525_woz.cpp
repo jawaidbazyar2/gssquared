@@ -19,13 +19,30 @@
 #include <cstdint>
 
 #include "Floppy525_woz.hpp"
+#include "util/media.hpp"
 #include "util/woz_nibblizer_525.hpp"
 #include "util/EventTimer.hpp"
 
 // ─── Mount / head range ─────────────────────────────────────────────────────
 
 bool Floppy525_woz::mount(uint64_t key, media_descriptor *media) {
+    
+    if (((media->media_type == MEDIA_BLK) || (media->media_type == MEDIA_NYBBLE)) && (media->data_size != 140 * 1024)) {
+        fprintf(stderr,
+                "Floppy525_woz: refusing non-140K BLOCK media '%s' (size=%d)\n",
+                media->filename.c_str(), (int)media->data_size);
+        return false;
+    }
+
     if (!Floppy_woz::mount(key, media)) {
+        return false;
+    }
+
+    if ((media->media_type == MEDIA_WOZ) && (woz.image().info.disk_type != 1)) {
+        fprintf(stderr,
+                "Floppy525_woz: warning — WOZ INFO disk_type=%d (expected 1 for 5.25)\n",
+                (int)woz.image().info.disk_type);
+        is_mounted = false;
         return false;
     }
 

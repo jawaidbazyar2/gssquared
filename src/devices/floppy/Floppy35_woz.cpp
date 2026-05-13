@@ -28,21 +28,24 @@ bool Floppy35_woz::mount(uint64_t key, media_descriptor *media_in) {
     // containers (.po, .2mg, ...) are a follow-up task.
     if ((media_in->media_type != MEDIA_WOZ) && (media_in->media_type != MEDIA_BLK)) {
         fprintf(stderr,
-                "Floppy35_woz: refusing non-WOZ/BLOCK media '%s' (type=%d)"
-                " — only .woz is supported for 3.5 drives in this build\n",
+                "Floppy35_woz: supports only WOZ or BLOCK media '%s' (type=%d)\n",
                 media_in->filename.c_str(), (int)media_in->media_type);
         return false;
     }
 
     if (!Floppy_woz::mount(key, media_in)) return false;
 
+    // after mount (if it was a Woz) make sure is 800k disk type.
     // Sanity-check the WOZ disk_type byte (1 = 5.25", 2 = 3.5").
     // Only warn rather than refuse: some community tools have been known
     // to mis-tag 3.5 images, and the bit stream itself is what matters.
-    if (woz.image().info.disk_type != 2) {
+    if ((media_in->media_type == MEDIA_WOZ) && (woz.image().info.disk_type != 2)) {
+        // only 800K images are supported.
         fprintf(stderr,
                 "Floppy35_woz: warning — WOZ INFO disk_type=%d (expected 2 for 3.5)\n",
                 (int)woz.image().info.disk_type);
+        is_mounted = false;
+        return false;
     }
 
     disk_in_place = true;
