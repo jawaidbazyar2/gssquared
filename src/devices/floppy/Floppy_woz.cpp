@@ -197,7 +197,7 @@ uint64_t Floppy_woz::fast_forward(/* uint64_t now */) {
     // of the head and discard the rest. The IWM2 fast_forward_impl loop
     // drives one bit per iteration, so after MAX_BITS_TO_SIM iterations
     // read_position lands exactly on (head_position >> 3).
-    constexpr uint64_t MAX_BITS_TO_SIM = 64;
+    constexpr uint64_t MAX_BITS_TO_SIM = 32;
 
     // Always advance head_position so angular position stays consistent,
     // including across no-track periods. update_track_ptr() rescales /
