@@ -11755,3 +11755,9 @@ ok, everything's fine until we get to side 1.
 wozutil has a problem which is that if the image didn't exist before it honestly doesn't know how to write a correct .2mg file that has a data offset.
 
 ok, writeback to block images is done. Whoowhee!
+
+## May 13, 2026
+
+Instead of head_advance_per_cycle, should use a value precalculated on mount, then floppy_woz can just use that value directly. (done)
+
+When we reject an image, I feel like we should be able to play a sound effect like a bzzt or bonk or something to alert the user that the mount failed.
