@@ -15,11 +15,42 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <cstdint>
 
 #include "Floppy525_woz.hpp"
 #include "util/woz_nibblizer_525.hpp"
 #include "util/EventTimer.hpp"
+
+// ─── Mount / head range ─────────────────────────────────────────────────────
+
+bool Floppy525_woz::mount(uint64_t key, media_descriptor *media) {
+    if (!Floppy_woz::mount(key, media)) {
+        return false;
+    }
+
+    int hi_quarter = -1;
+    const uint8_t *tmap = woz.image().tmap;
+    for (int q = 0; q < 160; ++q) {
+        if (tmap[q] != 0xFF) {
+            hi_quarter = q;
+        }
+    }
+    const unsigned span_slots =
+        (hi_quarter < 0) ? 0u : static_cast<unsigned>(hi_quarter + 1);
+    max_tracks = static_cast<int16_t>(std::max(140u, span_slots) - 1);
+
+    if (track > max_tracks) {
+        track = max_tracks;
+        update_track_ptr();
+    }
+    return true;
+}
+
+bool Floppy525_woz::unmount(uint64_t key) {
+    max_tracks = 139;
+    return Floppy_woz::unmount(key);
+}
 
 // ─── Phase-line handling (5.25-specific stepper) ────────────────────────────
 
@@ -103,8 +134,8 @@ void Floppy525_woz::update_track() {
         track += slice_add;
     }
 
-    if (track < 0)   track = 0;
-    if (track > 139) track = 139;
+    if (track < 0) track = 0;
+    if (track > max_tracks) track = max_tracks;
 
     if (track != cur_track) {
         update_track_ptr();

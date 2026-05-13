@@ -33,7 +33,9 @@ class Floppy525_woz : public Floppy_woz {
     uint8_t phase3 = 0;
 
     uint16_t image_index = 0;
-    int16_t  track       = 0;  // quarter-track index (0..139 used, 0..159 in TMAP)
+    int16_t  track       = 0;  // quarter-track index (clamped by max_tracks at mount)
+    // Inclusive max quarter-track index from max(140, WOZ TMAP span); default 139.
+    int16_t  max_tracks  = 139;
 
     void update_track();
     static void phase_change_callback(uint64_t instanceID, void *userData);
@@ -45,7 +47,10 @@ protected:
 public:
     Floppy525_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer)
         : Floppy_woz(sound_effect, clock, event_timer) {}
-    
+
+    bool mount(uint64_t key, media_descriptor *media) override;
+    bool unmount(uint64_t key) override;
+
     virtual Woz_Nibblizer* make_nibblizer(media_descriptor *media) override;
 
     virtual void set_phase(uint8_t phase, uint8_t onoff) override;
@@ -59,7 +64,7 @@ public:
     void debug(DebugFormatter *f) override {
         f->addLine("Image: %s", woz.get_current_filename().c_str());
         f->addLine("enable: %d ph [%d,%d,%d,%d]", enable, phase0, phase1, phase2, phase3);
-        f->addLine("Track: %d.%d", track/4, track%4);
+        f->addLine("Track: %d.%d [ max: %d.%d ]", track/4, track%4, max_tracks/4, max_tracks%4);
         f->addLine("Track Bits: %llu", (unsigned long long)(cur_track_ptr ? cur_track_ptr->bit_count : 0));
 
         uint64_t pos = head_position>>3;
