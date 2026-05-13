@@ -70,6 +70,7 @@ protected:
     uint64_t last_cycle = 0;
     uint64_t read_position = 0;  // where the LSS has consumed bits to
     uint64_t head_position = 0;  // true simulated angular head position
+    uint64_t advance_per_cycle = 0;
 
     bool     enable        = false;  // IWM drive selected (ENABLE'). On 5.25 this
                                      // doubles as motor-on; on 3.5 the spindle is

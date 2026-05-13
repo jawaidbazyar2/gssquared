@@ -69,7 +69,7 @@ public:
 
     void debug(DebugFormatter *f) override {
         f->addLine("Image: %s", woz.get_current_filename().c_str());
-        f->addLine("Optimal Bit Timing: %d", woz.image().info.optimal_bit_timing);
+        f->addLine("Optimal Bit Timing: %d (advance_per_cycle: %llu)", woz.image().info.optimal_bit_timing, advance_per_cycle);
         f->addLine("enable: %d ph [%d,%d,%d,%d]", enable, phase0, phase1, phase2, phase3);
         f->addLine("Track: %d.%d [ max: %d.%d ]", track/4, track%4, max_tracks/4, max_tracks%4);
         f->addLine("Track Bits: %llu", (unsigned long long)(cur_track_ptr ? cur_track_ptr->bit_count : 0));

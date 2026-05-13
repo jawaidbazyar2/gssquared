@@ -229,7 +229,7 @@ public:
         f->addLine("CA[210]: %d%d%d SEL: %d LSTRB: %d  sel-idx: %X (%s) => %d",
                    ca2, ca1, ca0, hdsel, lstrb, select_index(), 
                    lstrb ? controlNames[select_index()] : statusNames[select_index()], sense_out);
-        f->addLine("Optimal Bit Timing: %d", woz.image().info.optimal_bit_timing);
+        f->addLine("Optimal Bit Timing: %d (advance_per_cycle: %llu)", woz.image().info.optimal_bit_timing, advance_per_cycle);
         f->addLine("Track: %d side %d  Track Bits: %llu",
                    track_num, side, (unsigned long long)(cur_track_ptr ? cur_track_ptr->bit_count : 0));
         Position pos_head = get_pos_head();

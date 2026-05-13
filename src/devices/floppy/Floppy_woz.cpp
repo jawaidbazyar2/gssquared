@@ -64,6 +64,8 @@ bool Floppy_woz::mount(uint64_t key, media_descriptor *media_in) {
 
     play_sound(SE_SHUGART_CLOSE);
 
+    advance_per_cycle = head_advance_per_cycle();
+
     std::cout << "Floppy_woz: mounted " << media_in->filestub << std::endl;
     return true;
 }
@@ -182,8 +184,6 @@ uint64_t Floppy_woz::fast_forward(/* uint64_t now */) {
         return 0;  // disk is not spinning
     }
 
-    //const uint64_t adv = (head_advance_per_cycle() * POSITION_ADV_PER_CYCLE * 32) / woz.image().info.optimal_bit_timing;
-    const uint64_t adv = head_advance_per_cycle();
     // Bound LSS catch-up work. While the motor is on but no IWM register
     // accesses are happening, head_position keeps advancing but read_position
     // is frozen (only read_pulse/write_pulse move it). When the CPU finally
@@ -202,7 +202,7 @@ uint64_t Floppy_woz::fast_forward(/* uint64_t now */) {
     // Always advance head_position so angular position stays consistent,
     // including across no-track periods. update_track_ptr() rescales /
     // modulos head_position when a track later becomes available.
-    head_position += (elapsed * adv);
+    head_position += (elapsed * advance_per_cycle);
 
     if (!cur_track_ptr || cur_track_ptr->bit_count == 0) {
         // No track under the head: read_pulse() will synthesize random
