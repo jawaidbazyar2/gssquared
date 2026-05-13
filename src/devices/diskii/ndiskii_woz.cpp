@@ -121,7 +121,7 @@ void init_slot_ndiskII_woz(computer_t *computer, SlotType_t slot) {
         });
 
     computer->register_debug_display_handler(
-        "diskii_woz",
+        "diskii",
         DH_DISKII,
         [diskII_d]() -> DebugFormatter * {
             return diskII_d->dc->debug();
