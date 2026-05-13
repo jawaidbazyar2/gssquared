@@ -248,7 +248,7 @@ public:
                         s.status    = st;
                         s.blk_count = blkcount;
                         s.id_str_length = 9;
-                        memcpy(s.id_str, "PDBLOCK3        ", 16);
+                        memcpy(s.id_str, "BAZFAST3        ", 16);
                         s.id_str[8]      = 'A' + effunit;
                         s.device_type    = 0x02;        // hard disk
                         s.device_subtype = 0b1100'0000; // extended smartport + disk-switch errors

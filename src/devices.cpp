@@ -272,7 +272,7 @@ Device_t Devices[NUM_DEVICE_IDS] = {
     },
     {
         DEVICE_ID_PD_BLOCK3,
-        "Generic ProDOS Block 3",
+        "BazFast 3 (DMA Storage)",
         true,
         0b11111110,
         PLATFLAG_ALL,

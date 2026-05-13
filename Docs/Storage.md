@@ -48,6 +48,8 @@ BazFast is a SmartPort hard drive device - you can mount any kind of media 800K 
 
 You can have up to 10 media mounted on BazFast. The upper limit on volume size under ProDOS 8 is 32M. The limit on GS/OS is 2 GiB.
 
+BazFast transfers data into the emulated machine using a kind of "Super DMA" that takes no processor cycles. It's about as fast as it can get.
+
 * 5.25" Drives
 
 You can mount any exactly 140K disk image to a 5.25" drive. Changes written to these drives are held in memory until you unmount them. At that time the system will ask if you want to save changes back to the original disk image file.
