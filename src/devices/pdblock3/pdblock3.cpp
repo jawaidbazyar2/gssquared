@@ -561,10 +561,9 @@ void init_pdblock3(computer_t *computer, SlotType_t slot)
     key.drive = 0;
     key.partition = 0;
     key.subunit = 0;
-    computer->mounts->register_storage_device(key, pd3, DRIVE_TYPE_PRODOS_BLOCK);
-
-    key.drive = 1;
-    computer->mounts->register_storage_device(key, pd3, DRIVE_TYPE_PRODOS_BLOCK);
+    for (key.drive = 0; key.drive < 10; key.drive++) {
+        computer->mounts->register_storage_device(key, pd3, DRIVE_TYPE_PRODOS_BLOCK);
+    }
 
     // register.. uh, registers.
     computer->mmu->set_C0XX_write_handler((slot * 0x10) + PD_CMD_RESET, { pdblock3_write_C0x0, pdblock_d });
