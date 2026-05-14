@@ -24,7 +24,8 @@
 #include "SDL3/SDL_events.h"
 #include "computer.hpp"
 #include "DiskII_Button.hpp"
-#include "Unidisk_Button.hpp"
+//#include "Unidisk_Button.hpp"
+#include "HD20SC_Button.hpp"
 #include "AppleDisk_525_Button.hpp"
 #include "AppleDisk_35_Button.hpp"
 #include "LabeledButton.hpp"
@@ -247,7 +248,8 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     };
 
     // Create a container for our drive buttons
-    drive_container = new Container_t(&ui_ctx, DC);
+    //drive_container = new Container_t(&ui_ctx, DC);
+    drive_container = new DrivesOSD_t(&ui_ctx, DC); // just container with special layout logic.
     drive_container->set_position(600, 70);
     drive_container->size(415, 600);
     containers.push_back(drive_container);
@@ -291,7 +293,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
                 });
                 break;
             case DRIVE_TYPE_PRODOS_BLOCK:
-                button = new Unidisk_Button_t(&ui_ctx, Unidisk_Face, DS);
+                button = new HD20SC_Button_t(&ui_ctx, Unidisk_Face, DS);
                 button->on_click([this, drive](const SDL_Event& event) -> bool {
                     unidisk_button_click(new diskii_callback_data_t{this, drive.key});
                     return true;

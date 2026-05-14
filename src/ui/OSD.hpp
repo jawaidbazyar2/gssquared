@@ -36,6 +36,7 @@
 #include "util/EventQueue.hpp"
 #include "SelectButton.hpp"
 #include "StatusMessage.hpp"
+#include "DrivesOSD.hpp"
 
 #define SLIDE_IN 1
 #define SLIDE_OUT 2
@@ -67,7 +68,8 @@ protected:
 
     SlotManager_t *slot_manager = nullptr;
     
-    Container_t *drive_container = nullptr;
+    //Container_t *drive_container = nullptr;
+    DrivesOSD_t *drive_container = nullptr;
 
     Container_t *speed_con = nullptr;
     SelectButton_t *speed_btn_10 = nullptr;
