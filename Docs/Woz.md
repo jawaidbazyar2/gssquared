@@ -662,7 +662,19 @@ We're going to want to perform a conversion just like CP2 does it.
 
 We also want some menu items to create new blank 140K and 800K Woz disk images (and maybe .2mg too?)
 
+## FLUX Tracks
 
+So, flux tracks are run length encoded.
+
+Any image with a FLUX track will need to be mounted readonly - we're just not gonna write to them. Well, ok, we could. We could unpack it, read/write it, then repack it to store back on disk. Seems unlikely any of these games are going to try to write to their flux track.
+
+So let's say we unpack it, and pack the flux bits into byte, one 5.25 track will take around 200KB, and longest 3.5 track around 312K bytes. That is one bit per 125ns.
+
+The issue here: can we do a fast-forward using the RLE data? Not sure we can. Much simpler to use non-compressed data.
+
+However (and correct me if I'm wrong) a flux track is still going through the same drive electronics right? So in practice is there anything to do besides compress it down to a normal track?
+apparently they think it's different enough.
+Wait until June to have Opus take a crack at this.
 
 
 ## Test Regime
@@ -681,3 +693,4 @@ Mount locksmith 6 in 6/1 and dummy disk in drive 2
 On IIgs only, run the following test regime
 1. boot GS/OS; initialize 3.5 with 2:1 and 4:1 formatting, verify
 1. format with 2:1; copy a folder of test files to the floppy; verify
+

@@ -11761,3 +11761,4 @@ ok, writeback to block images is done. Whoowhee!
 Instead of head_advance_per_cycle, should use a value precalculated on mount, then floppy_woz can just use that value directly. (done)
 
 When we reject an image, I feel like we should be able to play a sound effect like a bzzt or bonk or something to alert the user that the mount failed.
+
