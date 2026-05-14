@@ -36,9 +36,7 @@
  */
 void Unidisk_Button_t::render() {
     this->set_assetID(Unidisk_Face);
-/*     if (status.is_mounted)    
-    else this->set_assetID(Unidisk_Face);
- */
+
     // First, perform the base button rendering
     Button_t::render();
 
