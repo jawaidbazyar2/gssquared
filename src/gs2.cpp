@@ -953,9 +953,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     if (state->phase == PHASE_SYSTEM_SELECT) {
         /* Render the selection UI (one frame). Events already dispatched by SDL_AppEvent. */
         video_system_t *vs = state->computer->video_system;
-        SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
-        vs->clear();
+
         if (state->select_system->update()) {
+            SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
+            vs->clear();
             state->select_system->render();
             vs->present();
         }
@@ -967,6 +968,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         if (system_id >= 0) {
             transition_to_emulation(state, system_id);
         }
+        SDL_Delay(16);
         return SDL_APP_CONTINUE;
     }
 
