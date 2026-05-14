@@ -70,6 +70,11 @@ bool SelectSystem::event(const SDL_Event &event) {
         return true;
     }
     container->handle_mouse_event(event);
+    if ((event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) ||
+        (event.type == SDL_EVENT_MOUSE_BUTTON_UP) || 
+        (event.type == SDL_EVENT_MOUSE_MOTION)) {
+        updated = true;
+    }
     return (selected_system >= 0);
 }
 
@@ -95,5 +100,6 @@ void SelectSystem::render() {
         //SDL_SetRenderScale(vs->renderer, scale_x, scale_y);
         //updated = false;
         ui_ctx.color(0x000000FF); // set back to 0. Someone isn't correctly setting color elsewhere..
+        updated = false;
     }
 }
