@@ -67,6 +67,8 @@ void Container_t::set_layout_direction(bool right_to_left, bool bottom_to_top) {
  * 2. Calculates grid dimensions based on container size and tile sizes
  * 3. Positions each visible tile according to layout direction flags
 */
+
+/* */
 void Container_t::layout() {
     if (!visible || tiles.empty()) return;
 

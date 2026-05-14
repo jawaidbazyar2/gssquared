@@ -3,7 +3,7 @@
 #include "DiskII_Button.hpp"
 #include "AppleDisk_525_Button.hpp"
 #include "AppleDisk_35_Button.hpp"
-#include "Unidisk_Button.hpp"
+#include "HD20SC_Button.hpp"
 #include "StorageButton.hpp"
 #include "util/mount.hpp"
 
@@ -29,7 +29,7 @@ DrivesHUD_t::DrivesHUD_t(UIContext *ctx, const Style_t& style, Mounts *mounts) :
             // A distinct 3.5 button asset is a follow-up.
             button = new AppleDisk_35_Button_t(ctx, 0, style);
         } else if (drive.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-            button = new Unidisk_Button_t(ctx, 0, style);
+            button = new HD20SC_Button_t(ctx, 0, style);
         }
         button->set_key(drive.key);
         buttons.push_back(button);
@@ -54,7 +54,7 @@ void DrivesHUD_t::update() {
     int window_width, window_height;
     SDL_GetWindowSize(ctx->window, &window_width, &window_height);
     drives_x = ((float)window_width - 420) / 2;
-    drives_y = window_height - 125;
+
 
     // update disk status - iterate over all drives based on what's in slots
     uint16_t key_slot_match = 0;
@@ -71,6 +71,9 @@ void DrivesHUD_t::update() {
         }
     }
 
+    // TODO: if the currently active device is a HD20SC, then only display the active one.
+
+    float max_height = 0;
     // update the HUD container.
     remove_all_tiles(); // always clear.. 
     if (key_slot_match) {
@@ -79,10 +82,16 @@ void DrivesHUD_t::update() {
         for (StorageButton *button : buttons) {
             storage_key_t key = button->get_key();
             ds = button->get_disk_status();
-            if (key.slot == key_slot_match)
+            if (key.slot == key_slot_match) {
                 add(button);
+                float tile_width, tile_height;
+                button->get_tile_size(&tile_width, &tile_height);
+                max_height = std::max(max_height, tile_height);
+            }                
         }
     }
+
+    drives_y = window_height - max_height - 25; // adjust for height of the tiles, align to bottom
     set_position(drives_x, drives_y );
     calc_content_position();
     layout();
