@@ -11762,3 +11762,89 @@ Instead of head_advance_per_cycle, should use a value precalculated on mount, th
 
 When we reject an image, I feel like we should be able to play a sound effect like a bzzt or bonk or something to alert the user that the mount failed.
 
+## May 15, 2026
+
+it was certainly easy to add tons of mount buttons for the hd20sc (bazfast). However, folks are requesting crazy numbers of partitions. Also, it's a lot of make-work to mount all 8 of my hard drive partitions.
+
+let's think about some other options.
+Could point to a folder, and all the images in the folder are auto-mounted at startup time in alphabetical order.
+
+KEGS supposedly allows tons of mounts? Well, 12. (maybe you can edit the cfg manually?)
+
+Could let user open a text file that contains a list of mounts.
+
+Can have a different device interface. standard SmartPort (like I have it, with more reasonable number of icons, like 6). and another (bazfast?) that supports partitions? Ultimately, the number of SmartPort units is more or less arbitrary.
+
+Do need a way to specify the bootable partition.
+
+From a user interface perspective, the partitioned drive would be a single file and a single "mount point". i.e. it would use only one of the buttons. if you eject, all associated units get ejected at same time. (If you want to mount unmount individual units you just do that on different buttons).
+
+This doesn't create a partition scheme per-se, it's really more just a user convenience. So it can literally just be a text file with a filename per line, maybe support comment:
+
+# My IIgs Hard Drive Partitions (collection.pmap)
+filename1.hdv
+filename2.hdv
+#dontmountfilename3.hdv
+filename4.hdv
+
+We could call the file a .pmap
+
+ok. What about drag and drop multiple files: we sort them, mount them alphabetically, and treat it like the text file above.
+For that matter, drag (or select) a folder. There's SDL_ShowOpenFolderDialog. but I'd have to have different actions to let user pick mount by file vs mount by folder.
+
+Speaking of all this, should I restrict the dialogs to open known file suffixes? I don't do that currently. It could help reduce user error. e.g. on smartport I would not let you mount a .dsk or a .do. Yah give that some consideration.
+
+Having so many HDVs is sort of a power-user thing. BUT, there is wita2gs - not a power user thing, but annoying for people to load up one partition at a time.
+
+ok, another interesting idea: don't try to use the buttons for this, but, have a "Open Diskmap" menu function. Could have a control panel button for it too. And can handle it as a drag/drop. Lets you specify and mount any type disk media.
+
+So that's more like:
+
+# My disks setup
+s7d1 filename1.hdv
+s7d1 filename2.hdv
+#s7d1 dontmountfilename3.hdv
+s7d1 filename4.hdv
+s7d2 collection.pmap
+s5d1 floppy.woz
+s5d2 floppy.po
+s6d1 flop.dsk
+
+a mount here could even refer to a pmap file.
+
+However many units are assigned to a drive (in this case, s7d1 has 3), if you eject that button, they all go. If you load a new map that references a d, it clears all of them out.
+
+With the scheme above I could reduce the number of actual devices/buttons to something more reasonable, like 6 (6 drives on a SCSI controller!) Each button can have lots of units. and BazFast/pdblock3 assigns new mounts to the lowest-numbered unit. Perhaps I could allow:
+
+s7d1u1 filename.hdv
+
+as a way of enforcing "I want this to be the lowest-numbered unit". 
+
+ok so I have pmap which is just a filename list. And dmap, which is the above that can handle floppies too.
+
+Drag and Drop:
+
+single files: no change to current behavior.
+multiple files: the OS will probably just send them in random order, or whatever order they are in the display. Collect them and alphabetize them before processing?
+folder: read the directory filtering for images; alphabetize; mount in that order.
+pmap: read file, process mounts in order in file
+
+Any unmount, unmounts all images on that s/d.
+A multi-mount to a device, unmounts all devices first.
+A single mount to a device, adds the new image to that device.
+
+Hover over the button shows a tooltip listing all images under that device.
+Create a tooltip concept so other devices can return other potentially useful information to display in the tooltip.
+
+
+Open DMAP:
+
+select single file
+process instructions in file
+
+Challenge: device mount() today assumes a media descriptor, i.e. a single image.
+Where should the multi-media concept live?
+mount/unmount could be modified to take a vector<media_descriptor_t>.
+devices other than pdblock can check length and return error if > 1.
+pdblock mount/unmount treats the array like we've discussed above. 
+pdblock will define six (6) drives (for key purposes). Units managed internally to pdblock3.

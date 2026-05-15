@@ -67,8 +67,10 @@ class PDBlockThunk : public StorageDevice {
     
     public:
         PDBlockThunk(pdblock2_data *pdblock_d) : StorageDevice(), pdblock_d(pdblock_d) {}
-        bool mount(storage_key_t key, media_descriptor *media) override {
-            return mount_pdblock2(pdblock_d, key.drive, media);
+        bool mount(storage_key_t key, std::vector<media_descriptor *> media_list) override {
+            if (media_list.size() > 1) return false;
+            media_descriptor *media = media_list[0];
+            return mount_pdblock2(pdblock_d, key.drive, media_list[0]);
         }
         bool unmount(storage_key_t key) override {
             return unmount_pdblock2(pdblock_d, key);

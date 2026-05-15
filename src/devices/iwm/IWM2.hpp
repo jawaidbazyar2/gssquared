@@ -690,11 +690,14 @@ class IWM : public StorageDevice {
     bool get_motor() { return enable_asserted; }
 
 
-    bool mount(storage_key_t key, media_descriptor *media) {
+    bool mount(storage_key_t key, std::vector<media_descriptor *> media_list) {
+        if (media_list.size() > 1) {
+            return false;;
+        }
         if (key.slot == 6) {
-            return drives[0][key.drive]->mount(key, media);
+            return drives[0][key.drive]->mount(key, media_list[0]);
         } else if (key.slot == 5) {
-            return drives[1][key.drive]->mount(key, media);
+            return drives[1][key.drive]->mount(key, media_list[0]);
         } else {
             assert(false && "IWM: invalid key mount()");
             return false;

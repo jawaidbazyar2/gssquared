@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <vector>
 #include "media.hpp"
 #include "drive_status.hpp"
 
@@ -34,7 +35,7 @@ class StorageDevice {
     public:
         virtual ~StorageDevice() = default;
         
-        virtual bool mount(storage_key_t key, media_descriptor *media) = 0;
+        virtual bool mount(storage_key_t key, std::vector<media_descriptor *> media_list) = 0;
         virtual bool unmount(storage_key_t key) = 0;
         virtual bool writeback(storage_key_t key) = 0;
         virtual drive_status_t status(storage_key_t key) = 0;

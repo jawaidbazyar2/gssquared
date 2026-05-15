@@ -316,7 +316,9 @@ public:
         }
     }
 
-    bool mount(storage_key_t key, media_descriptor *media) {
+    bool mount(storage_key_t key, std::vector<media_descriptor *> media_list) {
+        if (media_list.size() > 1) return false;
+        media_descriptor *media = media_list[0];
         return drives[key.drive].mount(key, media);
     }
     bool unmount(storage_key_t key) {

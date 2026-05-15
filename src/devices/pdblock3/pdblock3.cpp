@@ -377,11 +377,14 @@ public:
         
     /* Implementations of the StorageDevice interface */
 
-    bool mount(storage_key_t key, media_descriptor *media) {
+    bool mount(storage_key_t key, std::vector<media_descriptor *> media_list) {
+        if (media_list.size() > 1) return false;
+        media_descriptor *media = media_list[0];
+
         if (key.drive >= PDB3_MAX_UNITS) return false;
         //if (DEBUG(DEBUG_PD_BLOCK)) printf("Mounting ProDOS block device %s slot %d drive %d\n", media->filename, slot, drive);
         if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Mounting PDB3 device " << media->filename << " slot: " << _slot << " drive " << key.drive << std::endl;
-    
+        
         const char *mode = media->write_protected ? "rb" : "r+b";
         FILE *fp = fopen(media->filename.c_str(), mode);
         if (fp == nullptr) {
@@ -561,7 +564,7 @@ void init_pdblock3(computer_t *computer, SlotType_t slot)
     key.drive = 0;
     key.partition = 0;
     key.subunit = 0;
-    for (key.drive = 0; key.drive < 10; key.drive++) {
+    for (key.drive = 0; key.drive < 6; key.drive++) {
         computer->mounts->register_storage_device(key, pd3, DRIVE_TYPE_PRODOS_BLOCK);
     }
 

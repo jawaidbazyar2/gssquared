@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <algorithm>
+#include <vector>
 
 #include "media.hpp"
 #include "mount.hpp"
@@ -40,6 +41,8 @@ bool Mounts::mount_media(disk_mount_t disk_mount) {
         return false;
     }
     
+    std::vector<media_descriptor *> media_list;
+
     // Identify media
     media_descriptor *media = new media_descriptor();
     media->filename = disk_mount.filename;
@@ -48,8 +51,10 @@ bool Mounts::mount_media(disk_mount_t disk_mount) {
         return false;
     }
     
+    media_list.push_back(media);
+
     // Call drive's mount method - polymorphic!
-    if (!it->second.device->mount(key, media)) {
+    if (!it->second.device->mount(key, media_list)) {
         delete media;
         return false;
     }
