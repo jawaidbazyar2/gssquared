@@ -15,6 +15,8 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include <string>
 
 const std::string& get_base_path(bool console_mode);
@@ -37,4 +39,8 @@ class Paths {
         static const std::string& get_last_file_dialog_dir();
         /** Directory of the last SDL_ShowOpenFileDialog selection (not the file name). */
         static void set_last_file_dialog_dir(const std::string& selected_path);
+        static bool is_directory(const std::string& filename);
+        static bool ends_with(std::string_view s, std::string_view suffix) noexcept;
+        static std::string get_directory(const std::string& filename);
+        static bool is_absolute(const std::string& filename);
 };

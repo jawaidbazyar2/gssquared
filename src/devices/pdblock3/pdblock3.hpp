@@ -23,7 +23,8 @@
 #include "computer.hpp"
 #include "util/StorageDevice.hpp"
 
-#define PDB3_MAX_UNITS 10
+#define PDB3_MAX_DEVICES 6
+#define PDB3_MAX_UNITS 32
 
 #define MAX_PD_BUFFER_SIZE 16
 #define PD_CMD_RESET 0xC080

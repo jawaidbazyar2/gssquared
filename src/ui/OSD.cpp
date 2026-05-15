@@ -106,6 +106,7 @@ static void menu_file_dialog_callback(void* userdata, const char* const* filelis
 void OSD::open_file_dialog(storage_key_t key) {
     static const SDL_DialogFileFilter filters[] = {
         { "Disk Images",  "do;po;woz;dsk;hdv;2mg;img" },
+        { "Partition Maps", "pmap" },
         { "All files",   "*" }
     };
 
@@ -563,8 +564,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     });
     computer->sys_event->registerHandler(SDL_EVENT_DROP_FILE, [this,computer](const SDL_Event &event) {
         printf("SDL_EVENT_DROP_FILE: %s\n", event.drop.data);
-
+#if 0
         // Identify the media type to help control what buttons we allow to highlight.
+        // TODO: there's little point in doing this here, the intention was to filter based on drive type but SDL can't do that yet.
         media_descriptor *media = new media_descriptor();
         media->filename = event.drop.data;
         if (identify_media(*media) != 0) { // if this is unrecognized media, don't allow it to be dropped.
@@ -573,6 +575,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
             return false;
         }
         delete media;
+#endif
         // after that, find button that was under the mouse. Scan Drive Container for button that is highlighted.
         for (int i = 0; i < drive_container->count(); i++) {
             Tile_t *tile = drive_container->get_tile(i);
@@ -598,6 +601,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         SDL_RaiseWindow(window);
         return true;
     });
+
     computer->sys_event->registerHandler(SDL_EVENT_DROP_COMPLETE, [this](const SDL_Event &event) {
         if (slideStatusBeforeDrop == SLIDE_OUT) {
             close_panel();

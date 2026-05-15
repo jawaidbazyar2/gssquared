@@ -37,6 +37,12 @@ struct pdblock3_data: public SlotData {
 };
 
 class PDBlock3 : public StorageDevice {
+
+    struct key_info_t {
+        std::vector<std::string> tooltip;
+        int last_active_unit;
+    };
+
 private:
     MMU *mmu;
     pdblock_cmd_buffer cmd_buffer;
@@ -44,12 +50,22 @@ private:
     media_t drives[PDB3_MAX_UNITS];
     uint8_t _slot;
 
+    std::unordered_map<storage_key_t, key_info_t> key_info;
+
 public:
     PDBlock3(uint8_t slot, MMU *mmu) : _slot(slot), mmu(mmu) {
         for (int j = 0; j < PDB3_MAX_UNITS; j++) {
             drives[j].file = nullptr;
             drives[j].media = nullptr;
             disk_switched[j] = false;
+        }
+        // initialize key_info for all 6 devices
+        for (int j = 0; j < 6; j++) {
+            storage_key_t key;
+            key.drive = j;
+            key.slot = _slot;
+            key_info[key] = {std::vector<std::string>(), -1};
+            // TODO: key_info[key].last_active_unit = XXXX in read and write below.
         }
         cmd_buffer.index = 0;
         cmd_buffer.error = 0x00;
@@ -102,6 +118,8 @@ public:
         if (!check_valid_unit(drive)) return;
         if (!check_online(drive)) return;
 
+        key_info[drives[drive].key].last_active_unit = drive; // mark this as the last active unit for this key
+
         FILE *fp = drives[drive].file;
         media_descriptor *media = drives[drive].media;
 
@@ -132,6 +150,8 @@ public:
         uint8_t block_buffer[512];
         if (!check_valid_unit(drive)) return;
         if (!check_online(drive)) return;
+
+        key_info[drives[drive].key].last_active_unit = drive; // mark this as the last active unit for this key
 
         FILE *fp = drives[drive].file;
         media_descriptor *media = drives[drive].media;
@@ -377,7 +397,7 @@ public:
         
     /* Implementations of the StorageDevice interface */
 
-    bool mount(storage_key_t key, std::vector<media_descriptor *> media_list) {
+    bool mounto(storage_key_t key, std::vector<media_descriptor *> media_list) {
         if (media_list.size() > 1) return false;
         media_descriptor *media = media_list[0];
 
@@ -396,8 +416,46 @@ public:
         disk_switched[key.drive] = true;
         return true;
     }
-    
-    bool unmount(storage_key_t key) {
+
+    bool mount(storage_key_t key, std::vector<media_descriptor *> media_list) {
+        if (media_list.empty()) return false;
+        if (key.drive >= PDB3_MAX_DEVICES) return false;
+
+        int unused_unit = 0;
+        int first_mounted_unit = -1;
+        for (media_descriptor *media : media_list) {
+            // find unused unit
+            while (unused_unit < PDB3_MAX_UNITS) {
+                if (drives[unused_unit].file == nullptr) break;
+                unused_unit++;
+            }
+            if (unused_unit == PDB3_MAX_UNITS) return false; // no units free
+
+            key_info[key].tooltip.push_back(media->filename);
+
+            //if (DEBUG(DEBUG_PD_BLOCK)) printf("Mounting ProDOS block device %s slot %d drive %d\n", media->filename, slot, drive);
+            if (DEBUG(DEBUG_PD_BLOCK)) std::cout << "Mounting PDB3 device " << media->filename << " slot: " << _slot << " drive " << key.drive << std::endl;
+            
+            const char *mode = media->write_protected ? "rb" : "r+b";
+            FILE *fp = fopen(media->filename.c_str(), mode);
+            if (fp == nullptr) {
+                std::cerr << "Could not open PDB3 device file: " << media->filename << std::endl;
+                return false;
+            }
+            drives[unused_unit].file = fp;
+            drives[unused_unit].media = media;
+            drives[unused_unit].key = key;  // mark this as being mounted on this key
+            disk_switched[unused_unit] = true;
+
+            if (first_mounted_unit == -1) first_mounted_unit = unused_unit;
+        }
+        if (key_info[key].last_active_unit == -1)
+            key_info[key].last_active_unit = first_mounted_unit;
+
+        return true;
+    }
+
+    bool unmounto(storage_key_t key) {
         if (key.drive >= PDB3_MAX_UNITS) return true;
         if (drives[key.drive].file) {
             fclose(drives[key.drive].file);
@@ -408,12 +466,37 @@ public:
         return true;
     }
 
+    // unmount all units that have a matching key
+    // clear the tooltip vector for this key
+    bool unmount(storage_key_t key) {
+        if (key.drive >= PDB3_MAX_DEVICES) return true;
+
+        for (int i = 0; i < PDB3_MAX_UNITS; i++) {
+            if (drives[i].key == key) {
+                fclose(drives[i].file);
+                drives[i].file = nullptr;
+                drives[i].media = nullptr;
+                disk_switched[i] = true;
+            }
+        }
+        key_info[key].tooltip.clear();
+
+        /* if (drives[key.drive].file) {
+            fclose(drives[key.drive].file);
+            drives[key.drive].file = nullptr;
+            drives[key.drive].media = nullptr;
+            disk_switched[key.drive] = true;
+        } */
+        return true;
+    }
+
     bool writeback(storage_key_t key) {
         return true;
     }
 
-    drive_status_t status(storage_key_t key) {
+    drive_status_t statuso(storage_key_t key) {
         if (key.drive >= PDB3_MAX_UNITS || drives[key.drive].media == nullptr) return {false, "", false, 0, false, false};
+        
         media_t seldrive = drives[key.drive];
 
         bool motor = false;
@@ -432,6 +515,38 @@ public:
         
         return {mounted, fname, motor, seldrive.last_block_accessed, seldrive.media->write_protected};
     }
+
+    drive_status_t status(storage_key_t key) {
+        if (key.drive >= PDB3_MAX_UNITS) {  
+            return {false, "", false, 0, false, false};
+        }
+
+        int last_active_unit = key_info[key].last_active_unit;
+        if (last_active_unit == -1) {
+            // TODO: should return status on the first unit that is mounted on this key.
+            return {false, "", false, 0, false, false};
+        }
+        media_t seldrive = drives[last_active_unit];
+
+        if (seldrive.media == nullptr) return {false, "", false, 0, false, false};
+
+        bool motor = false;
+
+        uint64_t curtime = SDL_GetTicksNS();
+        if (curtime - seldrive.last_block_access_time < 500000000) { // change this to 1/2 sec
+            motor = true;
+        }
+        // 3.5 drives turn off immediately.
+        std::string fname;
+        bool mounted = false;
+        if (seldrive.media) {
+            fname = seldrive.media->filestub;
+            mounted = true;
+        }
+        
+        return {mounted, fname, motor, seldrive.last_block_accessed, seldrive.media->write_protected};
+    }
+
 
     void print_cmdbuffer() {
         std::cout << "PD3_CMD_BUFFER: ";

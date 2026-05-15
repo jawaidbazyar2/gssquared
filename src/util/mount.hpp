@@ -31,7 +31,6 @@ typedef struct {
     uint16_t slot;
     uint16_t drive;
     std::string filename;
-    media_descriptor *media;
 } disk_mount_t;
 
 enum drive_type_t {

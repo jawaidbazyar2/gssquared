@@ -4,6 +4,7 @@
 #include <cstdio>
 #include "util/media.hpp"
 #include "SlotData.hpp"
+#include "util/StorageDevice.hpp"
 
 #define MAX_PD_BUFFER_SIZE 16
 
@@ -30,6 +31,7 @@ using packed32 = packed_uint<4>;
 struct media_t {
     FILE *file;
     media_descriptor *media;
+    storage_key_t key;
     int last_block_accessed;
     uint64_t last_block_access_time;
 };

@@ -19,10 +19,12 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <cstring>
 
 #include "media.hpp"
 #include "mount.hpp"
-
+#include "paths.hpp"
+#include "util/PMap.hpp"
 #include "util/printf_helper.hpp"
 
 // this and umount should work on the basis of a disk device registering callbacks for mount, unmount, status, whatever else.
@@ -43,23 +45,53 @@ bool Mounts::mount_media(disk_mount_t disk_mount) {
     
     std::vector<media_descriptor *> media_list;
 
-    // Identify media
-    media_descriptor *media = new media_descriptor();
-    media->filename = disk_mount.filename;
-    if (identify_media(*media) != 0) {
-        delete media;
-        return false;
-    }
-    
-    media_list.push_back(media);
+    bool is_dir = false;
+    is_dir = Paths::is_directory(disk_mount.filename);
 
-    // Call drive's mount method - polymorphic!
-    if (!it->second.device->mount(key, media_list)) {
-        delete media;
-        return false;
+    // if filename is a directory; or if it is a *.pmap file; treat as a list of filenames.
+    if (Paths::ends_with(disk_mount.filename, ".pmap")) {
+        // it's a pmap file, read the file and get all the filenames.
+        PMap pmap(disk_mount.filename);
+        std::vector<std::string> filenames = pmap.get_filenames();
+        
+        for (const std::string &filename : filenames) {
+            printf("mounting %s\n", filename.c_str());
+            media_descriptor *media = new media_descriptor();
+            media->filename = filename;
+            if (identify_media(*media) != 0) {
+                delete media;
+                continue;
+                //return false;
+            }        
+            media_list.push_back(media);
+        }
+        if (media_list.empty()) {
+            return false;
+        }
+        if (!it->second.device->mount(key, media_list)) {
+            for (media_descriptor *media : media_list) {
+                delete media;
+            }
+            return false;
+        }
+
+    } else {
+        // it's a single file, identify it and add to the list.
+        media_descriptor *media = new media_descriptor();
+        media->filename = disk_mount.filename;
+        if (identify_media(*media) != 0) {
+            delete media;
+            return false;
+        }
+        if (!it->second.device->mount(key, {media})) {
+            delete media;
+            return false;
+        }
+        media_list.push_back(media);
     }
     
-    mounted_media[key] = media;
+    // TODO: needs to be an array, fix
+    //mounted_media[key] = media;
     return true;
 }
 

@@ -69,7 +69,7 @@ void DrivesOSD_t::layout() {
             float tile_y = row_y + style.padding;
             visible_tiles[tile_base + j]->set_position(tile_x, tile_y);
         }
-        printf("row %zu: %f %f\n", i, row_y, row_max_tile_height);
+        //printf("row %zu: %f %f\n", i, row_y, row_max_tile_height);
         // now calculate the position for this row
         row_y += row_max_tile_height + style.padding*2;
 

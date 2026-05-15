@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <string_view>
 
 #include "paths.hpp"
 #include "build_config.hpp"
@@ -151,4 +152,34 @@ void Paths::set_last_file_dialog_dir(const std::string& selected_path) {
         return;
     }
     last_file_dialog_dir = dir.lexically_normal().string();
+}
+
+bool Paths::is_directory(const std::string& filename) {
+    // Platform-independent way to test if disk_mount.filename is a directory
+    // We'll use std::filesystem if available (C++17); fallback to stat otherwise
+    #if __has_include(<filesystem>)
+    namespace fs = std::filesystem;
+    return fs::is_directory(fs::u8path(filename));
+#else
+    struct stat path_stat;
+    if (stat(filename.c_str(), &path_stat) == 0) {
+        return S_ISDIR(path_stat.st_mode);
+    }
+#endif
+    return false;
+}
+
+bool Paths::ends_with(std::string_view s, std::string_view suffix) noexcept {
+    return s.size() >= suffix.size() &&
+           s.compare(s.size() - suffix.size(), std::string_view::npos, suffix) == 0;
+}
+
+std::string Paths::get_directory(const std::string& filename) {
+    std::filesystem::path p(filename);
+    return p.parent_path().string();
+}
+
+bool Paths::is_absolute(const std::string& filename) {
+    std::filesystem::path p(filename);
+    return p.is_absolute();
 }

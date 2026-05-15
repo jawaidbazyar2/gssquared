@@ -11848,3 +11848,12 @@ mount/unmount could be modified to take a vector<media_descriptor_t>.
 devices other than pdblock can check length and return error if > 1.
 pdblock mount/unmount treats the array like we've discussed above. 
 pdblock will define six (6) drives (for key purposes). Units managed internally to pdblock3.
+
+ok, that's getting better..
+
+so, unmount needs to unmount all units that have a matching key.
+status needs to return status for whatever unit matches a key and is/was last active.
+and return a tooltip string of all the mounted images. <- generate this 
+so we need a map by key of: tooltip; is/was last active.
+
+But, I am mounting multiple disks like a mofo!
