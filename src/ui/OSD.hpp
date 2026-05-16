@@ -99,7 +99,6 @@ protected:
     std::vector<Container_t *> ncontainers;
     Container_t *hud_drive_container = nullptr;
     ModalContainer_t *activeModal = nullptr;
-    ModalContainer_t *diskii_save_con = nullptr;
 
     HoverControls_t *hover_controls_con = nullptr;
     
@@ -174,7 +173,6 @@ public:
     void open_file_dialog(storage_key_t key);
 
     void show_diskii_modal(storage_key_t key, uint64_t data);
-    void close_diskii_modal(storage_key_t key, uint64_t data);
 
     void set_heads_up_message(const std::string &text, int count);
 

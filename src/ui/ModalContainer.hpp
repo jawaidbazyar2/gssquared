@@ -27,11 +27,14 @@ private:
     std::string msg_text;
     storage_key_t key;
     uint64_t data;
-    
+protected:
+    bool completed = false;
+
 public:
     ModalContainer_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style);
     ModalContainer_t(UIContext *ctx, const char* msg_text);
     
+    bool is_completed() const { return completed; }
     void layout() override;
     void render() override;
     void set_key(storage_key_t key);

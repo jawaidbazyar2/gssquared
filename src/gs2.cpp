@@ -135,10 +135,10 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
             case EVENT_REFOCUS:
                 computer->video_system->raise();
                 break;
-            case EVENT_MODAL_SHOW:
+            /* case EVENT_MODAL_SHOW:
                 osd->show_diskii_modal(event->getEventKey(), event->getEventData());
-                break;
-            case EVENT_MODAL_CLICK:
+                break; */
+            /* case EVENT_MODAL_CLICK:
                 {
                     storage_key_t key;
                     key.key = event->getEventKey();
@@ -159,7 +159,7 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
                     }
                     osd->close_diskii_modal(key, data);
                 }
-                break;
+                break; */
             case EVENT_SHOW_MESSAGE:
                 osd->set_heads_up_message((const char *)event->getEventData(), 512);
                 break;

@@ -50,6 +50,7 @@
 #include "DrivesHUD.hpp"
 #include "SpeedSelect.hpp"
 #include "HoverControls.hpp"
+#include "DirtyDiskSave.hpp"
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
 // comes back later, we know which drive this was for.
@@ -167,17 +168,6 @@ void unidisk_button_click(void *userdata) {
         last_path.empty() ? nullptr : last_path.c_str(),
         false);
 }
-
-void modal_diskii_click(void *data) {
-    diskii_modal_callback_data_t *d = (diskii_modal_callback_data_t *)data;
-    printf("modal_diskii_click %p %llu\n", data, u64_t(d->key));
-    OSD *osd = d->osd;
-
-    ModalContainer_t *container = d->container;
-    osd->event_queue->addEvent(new Event(EVENT_MODAL_CLICK, container->get_key().key, d->key.key));
-    // I need to reference back to the button that was clicked and get its ID.
-}
-
 
 /** -------------------------------------------------------------------------------------------------- */
 
@@ -417,18 +407,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     speed_con->add(speed_btn_8);
     speed_con->layout();
 
-    Style_t ModalStyle = {
-        .background_color = 0xFFFFFFFF,
-        .border_color = 0xFF0000FF,
-        .padding = 2,
-        .border_width = 2,
-        .text_color = 0x000000FF,
-    };
-    
-    diskii_save_con = new ModalContainer_t(&ui_ctx, "Disk Data has been modified. Save?", ModalStyle);
-    diskii_save_con->set_position(300, 200);
-    diskii_save_con->size(500, 200);
-
     // Create text buttons for the disk save dialog
     Style_t TextButtonCfg;
     TextButtonCfg.background_color = 0xE0E0FFFF;
@@ -436,33 +414,6 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     TextButtonCfg.border_width = 1;
     TextButtonCfg.border_color = 0x000000FF;
     TextButtonCfg.padding = 2;
-    
-    save_btn = new Button_t(&ui_ctx, "Save", TextButtonCfg);
-    save_as_btn = new Button_t(&ui_ctx, "Save As", TextButtonCfg);
-    discard_btn = new Button_t(&ui_ctx, "Discard", TextButtonCfg);
-    cancel_btn = new Button_t(&ui_ctx, "Cancel", TextButtonCfg);
-    save_btn->size(100, 30);
-    save_as_btn->size(100, 30);
-    discard_btn->size(100, 30);
-    cancel_btn->size(100, 30);
-
-    save_btn->on_click([this](const SDL_Event& event) -> bool {
-        modal_diskii_click(new diskii_modal_callback_data_t{this, diskii_save_con, 1});
-        return true;
-    });
-    discard_btn->on_click([this](const SDL_Event& event) -> bool {
-        modal_diskii_click(new diskii_modal_callback_data_t{this, diskii_save_con, 3});
-        return true;
-    });
-    cancel_btn->on_click([this](const SDL_Event& event) -> bool {
-        modal_diskii_click(new diskii_modal_callback_data_t{this, diskii_save_con, 4});
-        return true;
-    });
-    diskii_save_con->add(save_btn);
-
-    diskii_save_con->add(discard_btn);
-    diskii_save_con->add(cancel_btn);
-    diskii_save_con->layout();
 
     close_btn = new Button_t(&ui_ctx, "<", TextButtonCfg);
     close_btn->on_click([this](const SDL_Event& event) -> bool {
@@ -481,69 +432,12 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     open_btn->set_position(0, 50);
     open_btn->set_fade_frames(512, 4); // hold for one second, then fade out over next second. (roughly)
 
-#if 0
-    hover_controls_con = new FadeContainer_t(&ui_ctx, HUD, 512);
-    hover_controls_con->set_position(10, 100);
-    hover_controls_con->size(65, 500);
-#endif
     Style_t SB;
     SB.background_color = 0x00000000;
     SB.border_width = 0;
     SB.border_color = 0x000000FF;
     SB.padding = 0;
 
-#if 0
-    {
-        LabeledButton *b1 = new LabeledButton(&ui_ctx, ResetButton, "", 0);
-        b1->size(60, 60);
-        b1->on_click([this,computer](const SDL_Event& event) -> bool {
-            computer->reset(false);
-            return true;
-        });
-        hover_controls_con->add(b1);
-
-        LabeledButton *b3 = new LabeledButton(&ui_ctx, GreenDisplayButton, "Capture", 0);
-        b3->size(60, 60);
-        b3->on_click([this,computer](const SDL_Event& event) -> bool {
-            getMenuInterface()->machineCaptureMouse();
-            return true;
-        });
-        hover_controls_con->add(b3);
-
-        LabeledButton *b2 = new LabeledButton(&ui_ctx, GreenDisplayButton, "Debug", 0);
-        b2->size(60, 60);
-        b2->on_click([this,computer](const SDL_Event& event) -> bool {
-            getMenuInterface()->openDebugWindow();
-            return true;
-        });
-        hover_controls_con->add(b2);
-
-        hov_speed_con = new SpeedSelect_t(&ui_ctx, SB, clock);
-        hov_speed_con->set_visible(false);
-
-        hover_controls_con->add(hov_speed_con);
-        ncontainers.push_back(hover_controls_con);
-
-        hov_speed = new LabeledButton(&ui_ctx, MHz1_0Button, "Speed", 0);
-        hov_speed->size(60, 60);
-        hov_speed->on_click([this](const SDL_Event& event) -> bool {
-            // open the speed submenu container
-            if (!hov_speed_con->is_visible()) {            
-                // get position of b4
-                float x,y;
-                hov_speed_con->set_visible(true);
-                hov_speed->get_tile_position(x, y);
-                hov_speed_con->set_position(x+60, y);
-                hov_speed_con->layout();
-            } else hov_speed_con->set_visible(false);
-        
-            return true;
-        });
-        hover_controls_con->add(hov_speed);
-        hover_controls_con->layout();
-
-    }
-#endif
     hover_controls_con = new HoverControls_t(&ui_ctx, SB, clock);
     ncontainers.push_back(hover_controls_con);
 
@@ -620,7 +514,7 @@ OSD::~OSD() {
     for (Container_t* container : ncontainers) {
         delete container;
     }
-    delete diskii_save_con;
+    //delete diskii_save_con;
     delete close_btn;
     delete open_btn;
 }
@@ -809,7 +703,6 @@ void OSD::render() {
     //SDL_SetRenderScale(renderer, ox,oy);
     // set draw color to black - why?
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-
 }
 
 bool OSD::is_mouse_captured() {
@@ -832,6 +725,10 @@ bool OSD::event(const SDL_Event &event) {
     // its event handling must also work when the panel is closed.
     if (activeModal) {
         activeModal->handle_mouse_event(event);
+        if (activeModal->is_completed()) {
+            delete activeModal;
+            activeModal = nullptr;
+        }
         return true;
     }
 
@@ -913,12 +810,19 @@ void OSD::close_panel() {
     computer->video_system->pop_mouse_capture();
 }
 
+// TODO: refactor these to push/pop from the modal stack.
 void OSD::show_diskii_modal(storage_key_t key, uint64_t data) {
+
+    Style_t ModalStyle = {
+        .background_color = 0xFFFFFFFF,
+        .border_color = 0xFF0000FF,
+        .padding = 2,
+        .border_width = 2,
+        .text_color = 0x000000FF,
+    };
+    
+    ModalContainer_t *diskii_save_con = new DirtyDiskSave_t(&ui_ctx, "Disk Data has been modified. Save?", ModalStyle, key, computer->mounts);
     activeModal = diskii_save_con;
     diskii_save_con->set_key(key);
     diskii_save_con->set_data(data);
-}
-
-void OSD::close_diskii_modal(storage_key_t key, uint64_t data) {
-    activeModal = nullptr;
 }
