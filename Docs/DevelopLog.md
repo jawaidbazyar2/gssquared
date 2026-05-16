@@ -11836,7 +11836,6 @@ A single mount to a device, adds the new image to that device.
 Hover over the button shows a tooltip listing all images under that device.
 Create a tooltip concept so other devices can return other potentially useful information to display in the tooltip.
 
-
 Open DMAP:
 
 select single file
@@ -11851,9 +11850,26 @@ pdblock will define six (6) drives (for key purposes). Units managed internally 
 
 ok, that's getting better..
 
-so, unmount needs to unmount all units that have a matching key.
-status needs to return status for whatever unit matches a key and is/was last active.
+so, unmount needs to unmount all units that have a matching key. (done)
+status needs to return status for whatever unit matches a key and is/was last active. (done)
 and return a tooltip string of all the mounted images. <- generate this 
 so we need a map by key of: tooltip; is/was last active.
 
 But, I am mounting multiple disks like a mofo!
+
+ok, status and unmount are set up. Things to do:
+
+to make a drag/drop sortable, on a drag and drop, we should:
+clear a list on drop start;
+for each drop file event just add it to the list;
+on drop finish, THEN process the list, after sorting it.
+maybe forget the sorting thing.
+
+[ ] pdblock3 should disregard a mount request if a particular file is already mounted somewhere.  
+[X] status for pdblock3 should only show devices that are active.  
+[ ] 
+
+I'm thinking:
+    Disk II + ?? for II / II+. Profile also? You can.. 
+    AppleDisk 5.25 beige for IIe + Profile
+    IIgs - HD20SC and AppleDisk 3.5 / 5.25 platinum (what we have now)

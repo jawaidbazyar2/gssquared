@@ -31,6 +31,7 @@ DrivesHUD_t::DrivesHUD_t(UIContext *ctx, const Style_t& style, Mounts *mounts) :
         } else if (drive.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
             button = new HD20SC_Button_t(ctx, 0, style);
         }
+        button->set_drive_type(drive.drive_type);
         button->set_key(drive.key);
         buttons.push_back(button);
     }
@@ -53,8 +54,8 @@ void DrivesHUD_t::update() {
 
     int window_width, window_height;
     SDL_GetWindowSize(ctx->window, &window_width, &window_height);
-    drives_x = ((float)window_width - 420) / 2;
 
+    drive_type_t drive_type_active = DRIVE_TYPE_DISKII;
 
     // update disk status - iterate over all drives based on what's in slots
     uint16_t key_slot_match = 0;
@@ -68,12 +69,15 @@ void DrivesHUD_t::update() {
         button->set_disk_status(ds);
         if (ds.motor_on) {
             key_slot_match = key.slot;
+            drive_type_active = button->get_drive_type();
         }
     }
 
     // TODO: if the currently active device is a HD20SC, then only display the active one.
 
     float max_height = 0;
+    int drives_active = 0;
+
     // update the HUD container.
     remove_all_tiles(); // always clear.. 
     if (key_slot_match) {
@@ -83,14 +87,25 @@ void DrivesHUD_t::update() {
             storage_key_t key = button->get_key();
             ds = button->get_disk_status();
             if (key.slot == key_slot_match) {
+                // if the device is a HD20SC, and it's not the active one, don't display it.
+                if (button->get_drive_type() == DRIVE_TYPE_PRODOS_BLOCK && !button->get_disk_status().motor_on) {
+                    continue;
+                }
                 add(button);
+                button->set_active(false);
                 float tile_width, tile_height;
                 button->get_tile_size(&tile_width, &tile_height);
                 max_height = std::max(max_height, tile_height);
-            }                
+                drives_active++;
+            }
         }
     }
-
+    if (drive_type_active == DRIVE_TYPE_PRODOS_BLOCK) {
+        drives_x = ((float)window_width - 210*drives_active) / 2;
+    } else {
+        drives_x = ((float)window_width - 420) / 2;
+    }
+    
     drives_y = window_height - max_height - 25; // adjust for height of the tiles, align to bottom
     set_position(drives_x, drives_y );
     calc_content_position();

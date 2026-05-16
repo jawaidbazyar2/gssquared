@@ -480,6 +480,7 @@ public:
             }
         }
         key_info[key].tooltip.clear();
+        key_info[key].last_active_unit = -1;
 
         /* if (drives[key.drive].file) {
             fclose(drives[key.drive].file);
@@ -533,7 +534,7 @@ public:
         bool motor = false;
 
         uint64_t curtime = SDL_GetTicksNS();
-        if (curtime - seldrive.last_block_access_time < 500000000) { // change this to 1/2 sec
+        if (curtime - seldrive.last_block_access_time < 1000000000) {
             motor = true;
         }
         // 3.5 drives turn off immediately.

@@ -46,12 +46,12 @@ void HD20SC_Button_t::render() {
  
     if (status.motor_on) aa->draw(Unidisk_Light, tp.x + cp.x + 158, tp.y + cp.y + 9);
 
-    if (/* is_hovering &&  */!status.filename.empty()) {
+    if (!status.filename.empty()) {
         float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
-        SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 15, text_width+10, 16};
+        SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 14, text_width+10, 12};
         ctx->fill_rect(rect, 0x8080FF80);
-        ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 18, 0xFFFFFFFF);
+        ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 16, 0xFFFFFFFF);
     }
 
     char text[32];

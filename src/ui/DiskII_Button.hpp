@@ -32,7 +32,7 @@ class DiskII_Button_t : public StorageButton {
 public:
     // Inherit constructors from StorageButton
     using StorageButton::StorageButton;
-
+    
     // Override render to add disk-specific rendering
     void render() override;
 }; 
