@@ -68,7 +68,7 @@
 ## Release 0.8
 
 [X] IWM 5.25/3.5 + WOZ  
-[ ] True "hard drive" Control Panel for editing mounts on the SmartPort device.
+[X] True "hard drive" Control Panel for editing mounts on the SmartPort device.
 [ ] when we go to power off (from inside OSD), check to see if disks need writing, and throw up appropriate dialogs.  
 
 ## Release 0.9
