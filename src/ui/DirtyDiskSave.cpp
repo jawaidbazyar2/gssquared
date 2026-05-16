@@ -58,4 +58,9 @@ DirtyDiskSave_t::DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Sty
     layout();
 }
 
-
+DirtyDiskSave_t::~DirtyDiskSave_t() {
+    delete save_btn;
+    delete save_as_btn;
+    delete discard_btn;
+    delete cancel_btn;
+}

@@ -15,5 +15,5 @@ protected:
     Mounts *mounts;
 public:
     DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style, storage_key_t key, Mounts *mounts);
-    
+    ~DirtyDiskSave_t();
 };
