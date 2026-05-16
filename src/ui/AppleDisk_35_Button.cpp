@@ -36,33 +36,27 @@
  */
 void AppleDisk_35_Button_t::render() {
     this->set_assetID(AppleDisk_Face);
-/*     if (status.is_mounted)    
-    else this->set_assetID(Unidisk_Face);
- */
+
     // First, perform the base button rendering
     Button_t::render();
 
     // Additional rendering can be added here
-    if (key.drive == 0) aa->draw(Unidisk_Drive1, tp.x + cp.x + 11, tp.y + cp.y + 31);
-    else aa->draw(Unidisk_Drive2, tp.x + cp.x + 11, tp.y + cp.y + 31);
+    if (key.drive == 0) aa->draw(Unidisk_Drive1, tp.x + cp.x + 11, tp.y + cp.y + 18);
+    else aa->draw(Unidisk_Drive2, tp.x + cp.x + 11, tp.y + cp.y + 18);
  
-    if (status.motor_on) aa->draw(Unidisk_Light, tp.x + cp.x, tp.y + cp.y + 30);
+    if (status.motor_on) aa->draw(Unidisk_Light, tp.x + cp.x, tp.y + cp.y + 17);
 
-    //char text[32];
-    //snprintf(text, sizeof(text), "Slot %u", key.slot);
-    //ctx->debug_text(text, tp.x + cp.x + 62, tp.y + cp.y + 75, 0x000000FF);
-    
-    if (/* is_hovering &&  */!status.filename.empty()) {
+    if (!status.filename.empty()) {
         float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
-        SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 40, text_width+10, 16};
+        SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 27, text_width+10, 16};
         ctx->fill_rect(rect, 0x8080FF80);
-        ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 44, 0xFFFFFFFF);
+        ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 31, 0xFFFFFFFF);
     }
    
     char text[32];
     if (status.is_mounted && status.motor_on) {
-        // if mounted and hovering, show the track number over the drive
+        // if mounted, show the track number over the drive
         uint8_t track = status.position / 2;
         uint8_t side = status.position % 2;
         snprintf(text, sizeof(text), "%d/%d %02d.%d", key.slot, key.drive+1, track, side);
@@ -70,5 +64,5 @@ void AppleDisk_35_Button_t::render() {
         snprintf(text, sizeof(text), "%d/%d", key.slot, key.drive+1);
     }
     float text_width = (strlen(text) * 8.0);
-    ctx->debug_text(text, tp.x + cp.x + 88 - (text_width/2), tp.y + cp.y + 75, 0x000000FF);
+    ctx->debug_text(text, tp.x + cp.x + 88 - (text_width/2), tp.y + cp.y + 62, 0x000000FF);
 }

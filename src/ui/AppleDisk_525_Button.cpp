@@ -45,18 +45,18 @@ void AppleDisk_525_Button_t::render() {
     // This space intentionally left empty for manual implementation
     aa->draw(
         key.drive == 0 ? Unidisk_Drive1 : Unidisk_Drive2,
-        tp.x + cp.x + 130, tp.y + cp.y + 24
+        tp.x + cp.x + 130, tp.y + cp.y + 12
     );
 
-    if (status.motor_on) aa->draw(DiskII_DriveLightOn, tp.x + cp.x + 150, tp.y + cp.y + 24);
-    if (status.is_write_protected) aa->draw(WriteProtected, tp.x + cp.x + 6, tp.y + cp.y + 14 );
+    if (status.motor_on) aa->draw(DiskII_DriveLightOn, tp.x + cp.x + 150, tp.y + cp.y + 12);
+    if (status.is_write_protected) aa->draw(WriteProtected, tp.x + cp.x + 6, tp.y + cp.y + 2 );
 
     if (!status.filename.empty()) {
         float text_width = (float)(status.filename.length() * 8);
         float text_x = (float)((174 - text_width) / 2);
-        SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 40, text_width+10, 16};
+        SDL_FRect rect = { tp.x + cp.x + text_x-5, tp.y + cp.y + 28, text_width+10, 16};
         ctx->fill_rect(rect, 0x8080FF60);
-        ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 44, 0xFFFFFFFF);
+        ctx->debug_text(status.filename.c_str(), tp.x + cp.x + text_x, tp.y + cp.y + 32, 0xFFFFFFFF);
     }
 
     char text[32];
@@ -67,6 +67,6 @@ void AppleDisk_525_Button_t::render() {
         snprintf(text, sizeof(text), "%d/%d", key.slot, key.drive+1);
     }
     float text_width = (strlen(text) * 8.0);
-    ctx->debug_text(text, tp.x + cp.x + 88 - (text_width/2), tp.y + cp.y + 78, 0x000000FF);
+    ctx->debug_text(text, tp.x + cp.x + 88 - (text_width/2), tp.y + cp.y + 66, 0x000000FF);
 }
  
