@@ -51,6 +51,7 @@
 #include "SpeedSelect.hpp"
 #include "HoverControls.hpp"
 #include "DirtyDiskSave.hpp"
+#include "QuitModal.hpp"
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
 // comes back later, we know which drive this was for.
@@ -521,6 +522,14 @@ OSD::~OSD() {
 
 void OSD::update() {
 
+    if (!modal_stack.stack.empty()) {
+        modal_stack.stack.top()->update();
+        if (modal_stack.stack.top()->is_completed()) {
+            //delete modal_stack.stack.top();
+            modal_stack.stack.pop();
+        }
+    }
+
     /** Control panel slide in/out logic */ 
     /* if control panel is sliding in, update position and acceleration */
     if (slideStatus == SLIDE_IN) {
@@ -648,9 +657,13 @@ void OSD::render() {
         for (Container_t* container : containers) {
             container->render();
         }
-        if (activeModal) {
-            activeModal->render();
+
+        if (!modal_stack.stack.empty()) {
+            modal_stack.stack.top()->render();
         }
+/*         if (activeModal) {
+            activeModal->render();
+        } */
 
         SDL_SetRenderTarget(renderer, nullptr);
 
@@ -658,8 +671,11 @@ void OSD::render() {
         SDL_RenderTexture(renderer, cpTexture, NULL, &cpTargetRect);
     }
 
-    if (activeModal) {
+    /* if (activeModal) {
         activeModal->render();
+    } */
+    if (!modal_stack.stack.empty()) {
+        modal_stack.stack.top()->render();
     }
 
     // for each item in ncontainers, call render()
@@ -710,6 +726,11 @@ bool OSD::is_mouse_captured() {
 }
 
 bool OSD::event(const SDL_Event &event) {
+    if (event.type == SDL_EVENT_QUIT) {
+        modal_stack.stack.push(new QuitModal_t(&ui_ctx, "Are you sure you want to quit?", ModalStyle, event_queue, computer->mounts, modal_stack));
+        return true;
+    }
+
     //if mouse is captured we ignore events here.
     if (is_mouse_captured()) {
         if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
@@ -723,14 +744,22 @@ bool OSD::event(const SDL_Event &event) {
     // Modal intercepts all mouse events regardless of whether the panel is open.
     // The modal renders directly to the window (not just inside the panel), so
     // its event handling must also work when the panel is closed.
-    if (activeModal) {
+    if (!modal_stack.stack.empty()) {
+        modal_stack.stack.top()->handle_mouse_event(event);
+        /* if (modal_stack.stack.top()->is_completed()) {
+            delete modal_stack.stack.top();
+            modal_stack.stack.pop();
+        } */
+        return true;
+    }
+    /* if (activeModal) {
         activeModal->handle_mouse_event(event);
         if (activeModal->is_completed()) {
             delete activeModal;
             activeModal = nullptr;
         }
         return true;
-    }
+    } */
 
     if (active) {
         close_btn->handle_mouse_event(event);
@@ -812,17 +841,21 @@ void OSD::close_panel() {
 
 // TODO: refactor these to push/pop from the modal stack.
 void OSD::show_diskii_modal(storage_key_t key, uint64_t data) {
-
-    Style_t ModalStyle = {
-        .background_color = 0xFFFFFFFF,
-        .border_color = 0xFF0000FF,
-        .padding = 2,
-        .border_width = 2,
-        .text_color = 0x000000FF,
-    };
-    
-    ModalContainer_t *diskii_save_con = new DirtyDiskSave_t(&ui_ctx, "Disk Data has been modified. Save?", ModalStyle, key, computer->mounts);
-    activeModal = diskii_save_con;
+    ModalContainer_t *diskii_save_con = new DirtyDiskSave_t(&ui_ctx, nullptr, ModalStyle, key, computer->mounts, modal_stack);
+    modal_stack.stack.push(diskii_save_con);
     diskii_save_con->set_key(key);
     diskii_save_con->set_data(data);
+}
+
+bool OSD::check_for_dirty_disks() {
+//                 if (!osd->check_for_dirty_disks()) {
+    const std::vector<drive_info_t>& drives = computer->mounts->get_all_drives();
+
+    for (const drive_info_t& drive : drives) {
+        if (drive.status.is_modified) {
+            show_diskii_modal(drive.key, 0);
+            return true; // only show one at a time.
+        }
+    }
+    return false;
 }

@@ -136,10 +136,10 @@ computer_t::computer_t(NClockII *clock) {
         return false;
     });
 
-    sys_event->registerHandler(SDL_EVENT_QUIT, [this](const SDL_Event &event) {
+    /* sys_event->registerHandler(SDL_EVENT_QUIT, [this](const SDL_Event &event) {
         cpu->halt = HLT_USER;
         return true;
-    });
+    }); */
     sys_event->registerHandler(gs2_app_values.menu_event_type, [this](const SDL_Event &event) {
         switch (event.user.code) {
             case MENU_MACHINE_RESET:

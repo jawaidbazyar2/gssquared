@@ -1,13 +1,25 @@
 #include "DirtyDiskSave.hpp"
 #include "util/mount.hpp"
 
-DirtyDiskSave_t::DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style, storage_key_t key,Mounts *mounts) : 
-        ModalContainer_t(ctx, msg_text, initial_style), key(key), mounts(mounts) {
+DirtyDiskSave_t::DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style, 
+    storage_key_t key, Mounts *mounts, modal_stack &stack) : 
+        ModalContainer_t(ctx, msg_text, initial_style, stack), key(key), mounts(mounts) {
 
-    set_position(300, 200);
+    // get window size
+    int window_w, window_h;
+    SDL_GetWindowSize(ctx->window, &window_w, &window_h);
+    set_position((window_w - 500) / 2, (window_h - 200) / 2);
     size(500, 200);
 
+    if (msg_text == nullptr) this->msg_text = std::string("Disk Data has been modified. Save?");
 
+    // get the slot/drive from the key, and get filename from mounts, to display under msg_text below.
+    char slot_drive[32];
+    snprintf(slot_drive, sizeof(slot_drive), "%d/%d", key.slot, key.drive+1);
+
+    filename = std::string(slot_drive) + " " + mounts->media_status(key).filename;
+    if (filename.empty()) filename = "(empty)";
+    
     // Create text buttons for the disk save dialog
     Style_t TextButtonCfg;
     TextButtonCfg.background_color = 0xE0E0FFFF;
@@ -17,12 +29,12 @@ DirtyDiskSave_t::DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Sty
     TextButtonCfg.padding = 2;
     
     save_btn = new Button_t(ctx, "Save", TextButtonCfg);
-    save_as_btn = new Button_t(ctx, "Save As", TextButtonCfg);
+    //save_as_btn = new Button_t(ctx, "Save As", TextButtonCfg);
     discard_btn = new Button_t(ctx, "Discard", TextButtonCfg);
     cancel_btn = new Button_t(ctx, "Cancel", TextButtonCfg);
     
     save_btn->size(100, 30);
-    save_as_btn->size(100, 30);
+    //save_as_btn->size(100, 30);
     discard_btn->size(100, 30);
     cancel_btn->size(100, 30);
 
@@ -48,6 +60,7 @@ DirtyDiskSave_t::DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Sty
     });
     cancel_btn->on_click([this](const SDL_Event& event) -> bool {
         // do something to pop us off the modal stack.
+        canceled = true;
         completed = true;
         return true;
     });
@@ -58,9 +71,7 @@ DirtyDiskSave_t::DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Sty
     layout();
 }
 
-DirtyDiskSave_t::~DirtyDiskSave_t() {
-    delete save_btn;
-    delete save_as_btn;
-    delete discard_btn;
-    delete cancel_btn;
+void DirtyDiskSave_t::render() {
+    ModalContainer_t::render();
+    ctx->text_render->render(filename, tp.x + 250, tp.y + 65, TEXT_ALIGN_CENTER);
 }

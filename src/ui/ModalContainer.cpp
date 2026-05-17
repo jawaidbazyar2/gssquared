@@ -20,12 +20,16 @@
 #include "UIContext.hpp"
 #include "util/StorageDevice.hpp"
 
-ModalContainer_t::ModalContainer_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style)
-    : Container_t(ctx, initial_style), msg_text(msg_text) {
+ModalContainer_t::ModalContainer_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style, modal_stack &stack)
+    : Container_t(ctx, initial_style), stack(stack) {
+        if (msg_text == nullptr) msg_text = "";
+        this->msg_text = std::string(msg_text);
 }
 
-ModalContainer_t::ModalContainer_t(UIContext *ctx, const char* msg_text)
-    : Container_t(ctx, Style_t()), msg_text(msg_text) {
+ModalContainer_t::ModalContainer_t(UIContext *ctx, const char* msg_text, modal_stack &stack)
+    : Container_t(ctx, Style_t()), msg_text(msg_text), stack(stack) {
+        if (msg_text == nullptr) msg_text = "";
+        this->msg_text = std::string(msg_text);
 }
 
 void ModalContainer_t::layout() {

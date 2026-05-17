@@ -19,6 +19,7 @@
 #include "gs2.hpp"
 
 #define EVENT_NONE 0
+#define EVENT_QUIT 1
 //#define EVENT_MODAL_SHOW 1
 //#define EVENT_MODAL_CLICK 2
 #define EVENT_PLAY_SOUNDEFFECT 3

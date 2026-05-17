@@ -13,7 +13,10 @@ protected:
     Button_t *cancel_btn = nullptr;
     storage_key_t key;
     Mounts *mounts;
+    std::string filename;
+
 public:
-    DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style, storage_key_t key, Mounts *mounts);
-    ~DirtyDiskSave_t();
+    DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style, 
+        storage_key_t key, Mounts *mounts, modal_stack &stack);
+    void render() override;
 };

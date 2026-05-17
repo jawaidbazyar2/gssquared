@@ -322,7 +322,7 @@ add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Butt
     src/ui/FadeButton.cpp src/ui/Clipboard.cpp src/ui/TextInput.cpp src/ui/SelectSystem.cpp src/ui/SystemButton.cpp
     src/ui/LabeledButton.cpp src/ui/FadeContainer.cpp src/ui/SlotButton.cpp src/ui/StatusMessage.cpp src/ui/DrivesHUD.cpp
     src/ui/SpeedSelect.cpp src/ui/HoverControls.cpp src/ui/DisplaySelect.cpp src/ui/DrivesOSD.cpp src/ui/HD20SC_Button.cpp
-    src/ui/DirtyDiskSave.cpp
+    src/ui/DirtyDiskSave.cpp src/ui/QuitModal.cpp
 )
 
 add_library(gs2_displaypp src/devices/displaypp/frame/frame_bit.cpp src/devices/displaypp/frame/frame_byte.cpp src/devices/displaypp/CharRom.cpp src/devices/displaypp/AppleIIgsColors.cpp)

@@ -21,24 +21,33 @@
 #include "Container.hpp"
 #include "UIContext.hpp"
 #include "util/StorageDevice.hpp"
+#include <stack>
+
+struct modal_stack;
 
 class ModalContainer_t : public Container_t {
-private:
+protected:
     std::string msg_text;
     storage_key_t key;
     uint64_t data;
-protected:
     bool completed = false;
+    bool canceled = false;
+    modal_stack &stack;
 
 public:
-    ModalContainer_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style);
-    ModalContainer_t(UIContext *ctx, const char* msg_text);
+    ModalContainer_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style, modal_stack &stack);
+    ModalContainer_t(UIContext *ctx, const char* msg_text, modal_stack &stack);
     
     bool is_completed() const { return completed; }
+    bool is_canceled() const { return canceled; }
     void layout() override;
     void render() override;
     void set_key(storage_key_t key);
     storage_key_t get_key() const;
     void set_data(uint64_t data);
     uint64_t get_data() const;
+};
+
+struct modal_stack {
+    std::stack<ModalContainer_t *> stack;
 };

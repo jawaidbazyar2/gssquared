@@ -11863,13 +11863,119 @@ to make a drag/drop sortable, on a drag and drop, we should:
 clear a list on drop start;
 for each drop file event just add it to the list;
 on drop finish, THEN process the list, after sorting it.
-maybe forget the sorting thing.
 
+maybe forget the sorting thing. SmartPort won't boot a device if its unit isn't 1.
+OH. That's MY BazFast firmware. 
+
+[ ] pdblock3 investigate booting from lowest numbered unit, not always unit 1.  
 [ ] pdblock3 should disregard a mount request if a particular file is already mounted somewhere.  
 [X] status for pdblock3 should only show devices that are active.  
-[ ] 
 
 I'm thinking:
     Disk II + ?? for II / II+. Profile also? You can.. 
     AppleDisk 5.25 beige for IIe + Profile
     IIgs - HD20SC and AppleDisk 3.5 / 5.25 platinum (what we have now)
+
+## May 16, 2026
+
+I think this is working pretty well. Got positive feedback from fatdog. 
+
+So, the booting thing. The ProDOS block interface only supports unit numbers of 4 bits, basically - 3 bits for slot, and 1 bit for "drive". So it can only specify drive 0, drive 1. it might not be possible to change that.
+
+If we shift all the unit numbers, GS/OS and ProDOS -might- be able to handle that. It would be an eject and re-insert for every unit. It would be icky.
+
+Could we not change the smartport units, but, change how ProDOS block maps onto them? P8 might make assumptions after boot when it queries smartport.
+
+What if we only move ONE media to unit 1?
+
+--
+me: the reason I asked is that some smartport hosts are dynamic, right, you can add/remove units
+[1:35 PM]the question is, would the smartport host renumber all the units so there is always a unit 1, if the old unit 1 was removed.
+
+colin:
+Yeah no you can't it's 1 to N with no holes.
+
+Burniouf: For the former: depends on the ProDOS version. Later 1.x versions would special case slot 5 and map units 3 and 4 to slot 2 drive 1 and 2 (counting from 1 not 0) with varying logic/bug fixes to avoid stomping on a real disk controller in slot 2. 
+
+2.x versions will generally map SmartPort units > 2 to any other slot that doesn't have a drive controller in it, still giving slot 5 special treatment for back compat. 
+[1:23 PM]So for 2.x there is no "specific mapping" - it depends on the logic of the specific ProDOS version and what cards are in the system.
+For your second question... it doesn't make sense to me unless you're implying that you can have a SP unit greater than 1 without there being a unit 1. I think (but would have to look at the code) that P8  stops iterating in that case so it wouldn't see any units.
+
+the question is, would the smartport host renumber all the units so there is always a unit 1, if the old unit 1 was removed.
+Yeah no you can't it's 1 to N with no holes.
+
+don't mess between devices not on the bus...and devices that have no media...
+[1:49 PM]you can have 2 smartport floppies.....with no media in it...in that case thay are listed on the bus...but report DEV_OFFLINE....or so.
+in any cases....devices on the smartport bus are always seqencial....1..2..3...4.......never getting a "hole"
+ProDOS does is in 2 passes : map SP DEX 1 & SP DEV 2 on SxD1 & SxD2...then, as @Joshua Bell described, ProDOS tries to map additional 3...4...5....on empty slots as SyD1, SyD2, SzD1....respectively (edited)
+
+let’s say you had a smartport device with removable devices.
+The devices are enumerated at poweron?
+And whatever 1 is at poweron, that is the bootable device?
+
+Yes and yes
+[1:55 PM]You can't boot from device 2 even if device 1 is a floppy drive with no floppy
+
+--
+
+In the tooltip, display the unit number along with the name.
+
+I had one more thing on the roadmap, and that's on shutdown, make sure they get an opportunity to save all modified disks.
+
+So we enqueue a "shutdown" request.
+If we see that there are modified disks, we do the following:
+  enqueue an unmount request for any such disk
+  re-enqueue a shutdown request.
+Can this go in the regular "system event queue"? should not interfere with sound effects etc.
+So then then we loop around at the next frame time, we see the disk unmount then do that thing.
+Then we loop and see the next one.
+Then we eventually get around to the shutdown once all those are handled.
+the actual shutdown, should it ask if the user really wants to?
+A "Cancel" at any time would clear this queue.
+
+ANY disk unmount goes through this exact process, so the disk unmount events all do the same thing with the user interface.
+Create a nice disk save modal container class for reusability and ease of integrating into the one "modal override" render check.
+
+ok. So let's discuss a "modal stack".
+issue PendingQuit
+PendingQuit is a modal. Before rendering, it checks if there are dirty disks.
+If one is present, it pushes a Save Dirty modal onto the stack.
+Then the system displays and executes the Save Dirty modal.
+that does whatever it's gonna do: save and unmount (which clears dirty flag); discard (which unmounts); or cancel (which sends a "cancel"). Each of these removes itself from the stack.
+returning to PendingQuit, which sees another dirty disk, and repeats.
+or if PendingQuit sees a "cancel" event, it just removes itself from the stack.
+oh, and PendingQuit will then prompt user if they really want to exit, because they might lose unsaved data in an application.
+
+That seems workable. This concept is also reusable for later when we create our own open/save as file dialogs, which are modals that may have sub-modals as well.
+
+Create new classes derived from ModalContainer to localize the behavior. First one will be
+DirtyDiskModal to replicate the current functionality.
+
+working on "do you rly want to quit"
+currently we use CPU state=halt to exit emulation. I guess that's ok..  
+where should the SDL_EVENT_QUIT trigger live. I can actually have OSD catch it..
+ok so the quit screen is in. so let's say I like the "quit menu first". So then the 'check for dirty disks' will go into gs2?  or ??
+gs2 calls routine in osd.
+now here's the kicker - after we do that, we need to come back to quit. So I need the stack; and two, I need a way to signal the results back up the stack.
+
+ModalContainer
+  event
+  update
+  render
+
+only the top of the stack gets event, update, render called. So let's say QuitModal update does the check.
+it can set a state - waiting for savemodal
+it creates the save modal, saves its pointer
+a modal could only ever have one child modal at a time, because - it's modal
+so create, push the new child on the stack, sets the state.
+child then gets control. when child is done, OSD pops child off stack BUT DOES NOT DELETE IT.
+control passes back to QuitModal:update, which checks its return code. the state was "wait for save".
+the "value" is what button index in the container was triggered. if wait for save, and button was cancel, stop.
+otherwise set mode back to "normal" and re-run the check. if the check finds another dirty disk, repeat.
+otherwise, set the halt condition (send the quit event).
+
+ok, the logic is working, however, we are leaking the QuitModal object. I took out the delete in the OSD loop, which is correct for quit's child save, because it needs to interrogate it, and quit deletes it.
+Need a way to flag to the loop, that it should delete the modal.
+
+
+[ ] PAL //e is broken, apparently it needs more scanlines in its frame  

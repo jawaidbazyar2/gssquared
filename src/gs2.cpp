@@ -135,6 +135,9 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
             case EVENT_REFOCUS:
                 computer->video_system->raise();
                 break;
+            case EVENT_QUIT:
+                computer->cpu->halt = HLT_USER;
+                break;
             /* case EVENT_MODAL_SHOW:
                 osd->show_diskii_modal(event->getEventKey(), event->getEventData());
                 break; */
@@ -934,9 +937,10 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
         handle_single_event(computer, cpu, *event);
 
-        if (event->type == SDL_EVENT_QUIT) {
+        // handled in computer now
+        /* if (event->type == SDL_EVENT_QUIT) {
             cpu->halt = HLT_USER;
-        }
+        } */
         return SDL_APP_CONTINUE;
     }
 

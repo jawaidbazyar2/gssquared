@@ -98,7 +98,7 @@ protected:
     std::vector<Container_t *> containers;
     std::vector<Container_t *> ncontainers;
     Container_t *hud_drive_container = nullptr;
-    ModalContainer_t *activeModal = nullptr;
+    //ModalContainer_t *activeModal = nullptr;
 
     HoverControls_t *hover_controls_con = nullptr;
     
@@ -117,6 +117,8 @@ protected:
     int headsUpMessageCount = 0; */
     StatusMessage_t *status_message = nullptr;
 
+    modal_stack modal_stack;
+
     int slideStatusBeforeDrop = SLIDE_NONE;
 
     const std::map<int, int> monitor_asset =  {
@@ -134,6 +136,14 @@ protected:
         {SPEED_14_3, MHz14_318Button},
     }; */
 
+    Style_t ModalStyle = {
+        .background_color = 0xFFFFFFFF,
+        .border_color = 0xFF0000FF,
+        .padding = 3,
+        .border_width = 5,
+        .text_color = 0x000000FF,
+    };
+    
 public:
     /**
      * @brief Constructs the OSD with the given renderer and window.
@@ -182,4 +192,6 @@ public:
     void close_panel();
 
     void set_clock(NClock *clock) { this->clock = clock; }
+
+    bool check_for_dirty_disks();
 };
