@@ -32,7 +32,7 @@
 // Write to the keyboard clear latch at $C010.
 
 inline bool is_key_modifier(const SDL_Event &event) {
-    printf("is_key_modifier: %08X %08X %08X\n", event.key.key, SDLK_LCTRL, SDLK_RGUI);
+    //printf("is_key_modifier: %08X %08X %08X\n", event.key.key, SDLK_LCTRL, SDLK_RGUI);
 
     if (event.key.key >= SDLK_LCTRL && event.key.key <= SDLK_RGUI) {
         return true;
