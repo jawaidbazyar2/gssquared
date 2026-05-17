@@ -41,8 +41,6 @@ void HD20SC_Button_t::render() {
     Button_t::render();
 
     // Additional rendering can be added here
-    /* if (key.drive == 0) aa->draw(Unidisk_Drive1, tp.x + cp.x + 11, tp.y + cp.y + 31);
-    else aa->draw(Unidisk_Drive2, tp.x + cp.x + 11, tp.y + cp.y + 31); */
  
     if (status.motor_on) aa->draw(Unidisk_Light, tp.x + cp.x + 158, tp.y + cp.y + 9);
 
@@ -57,7 +55,7 @@ void HD20SC_Button_t::render() {
     char text[32];
     if (status.is_mounted && status.motor_on) {
         // if mounted and hovering, show the track number over the drive
-        snprintf(text, sizeof(text), "%d/%d %04X", key.slot, key.drive+1, status.position / 2);
+        snprintf(text, sizeof(text), "%d/%d %06X", key.slot, key.drive+1, status.position / 2);
     } else {
         snprintf(text, sizeof(text), "%d/%d", key.slot, key.drive+1);
     }
