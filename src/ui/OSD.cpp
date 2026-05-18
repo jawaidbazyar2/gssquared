@@ -108,7 +108,7 @@ static void menu_file_dialog_callback(void* userdata, const char* const* filelis
 void OSD::open_file_dialog(storage_key_t key) {
     static const SDL_DialogFileFilter filters[] = {
         { "Disk Images",  "do;po;woz;dsk;hdv;2mg;img" },
-        { "Partition Maps", "pmap" },
+        //{ "Partition Maps", "pmap" }, // this doesn't go here.
         { "All files",   "*" }
     };
 
