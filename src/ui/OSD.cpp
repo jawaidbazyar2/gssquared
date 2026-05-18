@@ -144,7 +144,8 @@ void diskii_button_click(void *userdata) {
     handle_disk_toggle(data->osd->computer, data->osd, data->key);
 }
 
-void unidisk_button_click(void *userdata) {
+// TODO: not unidisk, actually BazFast
+void bazfast_button_click(void *userdata) {
     diskii_callback_data_t *data = (diskii_callback_data_t *)userdata;
     OSD *osd = data->osd;
 
@@ -155,7 +156,7 @@ void unidisk_button_click(void *userdata) {
     }
     
     static const SDL_DialogFileFilter filters[] = {
-        { "Disk Images",  "po;dsk;hdv;2mg;img" },
+        { "Disk Images",  "po;dsk;hdv;2mg;img;pmap" },
         { "All files",   "*" }
     };
 
@@ -285,9 +286,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
                 });
                 break;
             case DRIVE_TYPE_PRODOS_BLOCK:
-                button = new HD20SC_Button_t(&ui_ctx, Unidisk_Face, DS);
+                button = new HD20SC_Button_t(&ui_ctx, Apple_HD20SC, DS);
                 button->on_click([this, drive](const SDL_Event& event) -> bool {
-                    unidisk_button_click(new diskii_callback_data_t{this, drive.key});
+                    bazfast_button_click(new diskii_callback_data_t{this, drive.key});
                     return true;
                 });
                 break;
