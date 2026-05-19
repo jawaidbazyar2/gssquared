@@ -1,10 +1,8 @@
 # Menus
 
-## MacOS
+GSSquared provides a top menu bar appropriate to your platform. A top menu bar for MacOS, an in-window menu bar for Windows and Linux.
 
-GSSquared provides MacOS-style top menu bar menus.
-
-* File
+### File
   * New Disk Image...
     * 5.25 DOS 3.3
     * 5.25 ProDOS
@@ -26,18 +24,27 @@ Open System can be exercised when you're at the System Select screen ("Choose yo
 
 Save System / Save As System let you save the current system configuration. This does not include any machine state except what disk images are mounted.
 
-* Edit
-  * Copy Text
+### Edit
   * Copy Screen
   * Paste Text
-* Machine
+
+Copy Screen copies the current display - with borders - into your computer's copy/paste buffer, where you can easily paste it into documents, Slack, Facebook, Twitter, etc.
+
+Paste Text pastes text in your computer's copy/paste buffer into the emulated Apple, as if you were typing it.
+
+### Machine
   * Reset
   * Restart
-  * Power Off/On
   * Pause / Resume
   * ---
   * Capture Mouse
-* Settings
+
+Reset issues a Ctrl-RESET to the Apple.
+Restart issues a Ctrl-OA-RESET to the Apple.
+Pause / Resume will pause the emulator, and then resume it.
+Capture Mouse - see [Using a Mouse](Mouse.md)
+
+### Settings
   * System Speed
     * 1.0
     * 2.8
@@ -47,12 +54,13 @@ Save System / Save As System let you save the current system configuration. This
   * Sleep/Busy Wait
   * Game Controller
     * Gamepad (Normal Joystick)
-    * Atari Joyport
-    * the other options..
+    * Mouse (Normal Joystick)
+    * Sirius / Atari Joyport
   * Modifier Keys
     * OA/Cmd = ALT; CA/Opt = Win
     * OA/Cmd = WIN; CA/Opt = ALT
-* Display
+
+### Display
   * Monitor
     * Composite
     * GS RGB
@@ -72,12 +80,3 @@ Save System / Save As System let you save the current system configuration. This
   * Save Trace
   * Load Symbols
   * Save Symbols
-
-
-## Linux
-
-There are currently no platform-specific menus on Linux.
-
-## Windows
-
-There are currently no platform-specific menus on Windows.

@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-05-19
+
+Covers commits from 2026-05-01 through 2026-05-19.
+```
+### Features
+
+- **3.5" floppy / WOZ support and IWM2 rewrite.** Added true 3.5" floppy WOZ read/write alongside the existing 5.25" path, with a major IWM2 rewrite that unifies the 3.5/5.25 floppy API. All WozTestImage test cases now boot and play. 3.5 writeback to WOZ and BLK images is complete; `.po` imports correctly into the internal WOZ representation. Head and read pointers gained 16× resolution, with `fast_forward` advance calculated from the mounted WOZ image (#115). Mount-time tests reject images incompatible with the target drive. (`91750ce`, `479c20d`, `13dd7bb`, `f34ea82`, `e0c6f15`, `7429b17`, `93a1539`, `29c6389`, `25be9e0`, `f3c834f`, `5d88290`)
+- **Floppy source reorg and nibblizer refactor.** Moved all WOZ floppy code into `src/devices/floppy/` as its own library; eliminated the old `diskii_fmt` path in favor of `woz_nibblizer` classes; deleted legacy IWM, `ndiskii`, and `Floppy525` implementations; flattened the class tree by removing the redundant `FloppyDrive` wrapper. (`.nib` images are now read-only — lossy FF-as-8-bit conversion works for read but cannot be written back safely.) (`96539fa`, `913920d`, `77a89c2`, `77496fc`, `53bf070`)
+- **BazFast hard drive (formerly pdblock3).** Renamed pdblock3 to BazFast. Added `.pmap` ("partition map") file support for mounting multiple volumes at once; `StorageDevice::mount` now accepts an array of `media_descriptor`. All 10 SmartPort units are registered. (`7f7091f`, `dc2b3b7`, `de8d525`, `2843e3f`, `9eda065`)
+- **Drives HUD / Control Panel overhaul.** New AppleDisk 3.5 and HD20SC button types with matching atlas assets; `DrivesOSD` uses a height-efficient layout grid. Drive type is stored in each button so the HUD composes correctly — IIe and later show the AppleDisk icon, II+ and below show Disk II; a lone HD drive is centered. (`eae604e`, `ae9803b`, `2642468`, `5f10110`, `1014c86`, `a39151c`, `695a560`)
+- **Modal dialog stack.** Implemented a modal dialog stack with window-centering; quit flow moved to a `QuitModal` that can chain into dirty-disk-save dialogs; dirty-disk save logic extracted into its own modal subclass, removing several layers of indirection from the main app event loop. (`9647640`, `bdbe63b`)
+- **CLI platform auto-launch.** Added `-p PLATFORM` to launch directly into a configured platform and auto-quit when the window closes (#113). (`4f8b9d7`)
+
+### User Interface
+
+- **Debugger.** Enter/exit debug window is now bound to F10 to avoid conflicting with emulated keyboard layouts. (`5707dd2`)
+- **System select.** Reduced CPU burn during the system-select screen by updating only when mouse-related events occur. (`90dc139`)
+- **Drive activity indicator.** Active-after-access timeout restored to 1 second. (`1014c86`)
+
+### Bug Fixes
+
+- **Floppy / IWM2.** Fixed all known issues with the new floppy code and IWM2; see `IWM.md` and `Woz.md` for details. (`13dd7bb`)
+- **Build.** Fixed a Windows build issue. (`68f1a45`)
+
+### Internals
+
+- **Disk controller API.** Controllers now expose `read`/`write` (instead of `read_cmd`) and take the register value rather than the full memory address. (`d1b61c1`, `eb3961f`, `ed6a946`)
+- **Mount plumbing.** Added `PMap` utility class and extended `mount.cpp` for multi-volume BazFast mounts. (`dc2b3b7`)
+- **Docs / notes.** Expanded `IWM.md`, `Woz.md`, and `Storage.md`; added Phasor card notes; updated Linux AppImage build instructions and copyright message. (`e21ea46`, `9eda065`, `bbce706`, `b3fd897`, `3e57e22`)
+
 ## 2026-04-30
 
 Covers commits from 2026-03-25 through 2026-04-30.
