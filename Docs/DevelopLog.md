@@ -11977,5 +11977,109 @@ otherwise, set the halt condition (send the quit event).
 ok, the logic is working, however, we are leaking the QuitModal object. I took out the delete in the OSD loop, which is correct for quit's child save, because it needs to interrogate it, and quit deletes it.
 Need a way to flag to the loop, that it should delete the modal.
 
+[ ] PAL //e is broken, apparently it needs more scanlines in its frame (it's not consistently crashy, but there is garbage from overrun sometimes)  
 
-[ ] PAL //e is broken, apparently it needs more scanlines in its frame  
+Ran the profiler for the first time in a while. The big users are (ignoring busy wait):
+
+19.9%: video_system update_display
+which is 11.4% generate_frame, and
+8.1% ntsc560::render
+
+14.7%: cpu_core::execute_next
+but a large part of that (at least half) is incr_cycle and side-effects
+
+But that's it. Nothing else amounts to much.
+
+So the generate_frame and render together are 20%. There might be two places we could optimize:
+1) ScanBuffer currently uses 8 bytes per entry; about 256KB per frame (128KB written by VideoScanner; 128KB read by generate_frame); I have an idea to reduce this a lot by normally emitting 32-bit and using 2x32 bit in the couple cases we need it in VideoScanGS. Should also make sure that memory is aligned. Then we convert back to packed bits for the LUT lookup (NTSC).
+
+2) Every pass between generate_frame and render writes 560*192 bytes (107K) then reads 560*192 bytes (107K) and writes 560*192*4 bytes (430K). So, 650KB. and in a sort of thrashy way, though, we have enough L1 cache lines for that surely?
+
+Some of the time is spent copying 430K into texture then rendering. The whole video pipeline is tons of reading and writing into buffers. Honestly most of this is gonna be cache-efficient. But it does have to go into main memory. So anything we can do to improve on the data flows is a likely win.
+
+Alignment checks:
+ScanBuffer: looks like yes (alignas(64) Scan_t buffer. ). but yeah, it's 8 bytes. What all uses shr_bytes.
+VM_SHR; VM_SHR_PALETTE; that's it. And then we don't use 2 or 3 bytes from the other half of the 8 bytes. 
+Also there is this construction in here:
+```
+  for (int x = 0; x < 4; x++) {
+      uint8_t pval = shr_bytes & 0xFF;
+      shr_bytes >>= 8;
+```
+Are we sure it wouldn't just be easier to access these as an array inside the struct?
+Ah in GS RGB mode I am also using shr_bytes for text color info. Hmm. That could be simplified.
+
+For composite: What if I called render for each 14 dots emitted- instead of buffering in a Frame560? We need at least uh, 17 bits I think it is for regular ntsc. So:
+when we generate each new bit, we are calling a func in render directly to "add bit".
+Now, in mono modes, we don't need any context. we immediately emit the appropriate color, and return.
+In ntsc mode, we collect bits. If we have enough for a LUT lookup, we lookup using 17 bits, emit the pixels, consume, uh, 4 bits? and return.
+So at no point are we buffering in the large buffer.
+The question is, what's more expensive: those subroutine calls, or moving a few hundred KB of memory.
+now it may not be that many subroutine calls, because there are cases where we can maybe enqueue multiple bits at once. e.g. can we stuff 7 bits of text with one like shift+or ?
+another alternative: emit one scanline at a time. Reduces to 192 subroutine calls at a cost of queueing 560 bits 70 bytes. That is a pretty small amount.
+
+ultimately there's no getting around writing 430K for the final frame buffer, but, if we also don't have to deal with 220K on top of that, that's a 33% memory access reduction. I'll note some of the GSRGB stuff has already gone this direction. 
+
+I already know also the frame_byte->push deals are kind of expensive because there were non-trivial savings using push_n. 
+
+## May 18, 2026
+
+I just noticed that there are 1 -billion- self cycles in run_one_frame, based on samples. (1.09G to be exact). This dwarfs what is going on elsewhere.
+
+There is stuff inside speed shift but that hardly ever runs.
+
+the big thing is the loop calling execute_next, and all the event timer checks, pre and post breakpoint checks. 
+Everything after that is just running at end of frame so is not likely a hot path.
+check_pre/post_breakpoint are not trivial routines. ah, but those only apply if the debug window is open. So we don't run them at all normally. It's just the event_timers.
+EventTimer uses this heap construct. Keep analyzing it and keep coming away with: it's pretty efficient.
+
+My perf concern isn't on Mac, it's on Windows. Also, it's pretty specifically measuring around the frame stuff. i.e. on the win box it's what, 700uS to do video frame. So yah, focus there?
+
+Zeroing in on frame update inefficiency on mac vs windows
+
+mac mini
+event_time:          7, audio_time:          0, display_time:     326322, app_event_time:         26, total:     326355
+PC: C28E, A: 0D, X: 00, Y: 01, P: 25
+2043597 delta 24523200 cycles clock-mode: 1 CPS:   1.02047584 MHz [ slips: 1]
+event_time:          7, audio_time:          0, display_time:     312210, app_event_time:         14, total:     312231
+PC: C27D, A: 0D, X: 00, Y: 01, P: 25
+2043602 delta 26566802 cycles clock-mode: 1 CPS:   1.02049944 MHz [ slips: 1]
+event_time:         11, audio_time:          0, display_time:     316239, app_event_time:         11, total:     316261
+
+this is text mode, //e. I don't remember if this is the same as before I just did this work. no it's not, this costs us 50-70 uS on the Mac. but does it bring time down on Windoze? 
+
+this is useful:
+https://claude.ai/chat/9c3c87ad-e636-48fa-bbcb-aea2f661251a
+
+Short version, instrument the lock, the unlock, etc. and see where time is actually getting burned. 
+possibilities:
+* double buffer the textures, if lock is variable it could be that sometimes we're doing an update before the first texture is free, and this could seriously slow things down (This could be the weird behavior I've seen in vpp before where frame times start taking 13ms)
+* this is just the nature of discrete GPUs. ah, which I don't have on linux or that laptop. Unified GPU arch is just more efficient in our case.
+
+## May 19, 2026
+
+more UI thinking
+
+So I now show the AppleDisk 5.25 icon on //es and up on diskii. However, that's the Platinum, so I really need to have a IIe-colored version. It's ok for now, but consider this when we do the right thing later. Also, maybe have a Profile icon for IIe and before hard disk versus the hd20sc.
+
+Thinking about dealing with hi-dpi displays a bit, at some point I may need to recreate all the assets at higher resolution, so I can have them look great on high-dpi displays (or even just be visible on them). Or if I want to scale the CP etc based on Window size. So probably need double the res assets. e.g. disk2 is 175x100, I'll want 350x200. We could scale the assets at load time based on system res..
+
+I'm probably going to punt on this for now, but, this is one of those things that will make it look awesome-sauce on highdpi. (I wonder if I could do AI upscaling on this..)
+
+For polish, we'll want different insert eject sound effects for appledisk (record them), including for 5.25 and 3.5. And the volume for 3.5 spinning should be much lower, because I can barely hear it.
+And, some sort of head movement and spinning sound effect for hard drive.
+
+So, task style:
+[ ] 3.5 sound effects: low volume spin; 3.5 auto eject and insert spring-snap
+[ ] appledisk 5.25 effects: same spin; 5.25 eject and close sound (record them, not the same as 5.25)
+[ ] upscale the assets 
+
+I am also wondering about a type of cache - maybe at a container level, for a container we allocate a texture, and optimize..
+
+Suggested order of attack
+TextRenderer — string/texture cache (cheapest, helps modals + OSD labels).
+Button base layer — cache composed sprite+border; hover as overlay.
+Modal / ModalContainer_t — one offscreen texture per modal while on stack; dirty on resize or text change.
+Extend cpTexture discipline — don’t call layout() + full child render() inside the cached panel every frame unless dirty.
+Leave dynamic HUD uncached (or cache only individual drive buttons).
+

@@ -3,7 +3,7 @@
 The ambition for this project is large - and it will take a while to get it done. So at any given point in time, consider it a work-in-progress complete with bugs, missing features, and experiments. Of course there will be plenty that "just works".
 
 Looking for how to use GSSquared?
-[Click here for User Documentation](Index.md)
+[Click here for User Documentation](index.md)
 
 Keep reading for Project Status, Design, and development journals.
 

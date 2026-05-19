@@ -25,13 +25,14 @@ OSD is On Screen Display, which refers generally to the way we composit controls
 
 ## Control Panel
 
-* Show Platform Type and Logo / Icon (done)
-* Show/Manage slots (Manage only when system off)
-* Show / Manage devices connected to serial ports
-* Manage Hard Disk Partitions on SmartPort
-* Drag and drop mount disks - if CP not open, slide it open as drag enters our window, and the reverse (done)
+* [X] Show Platform Type and Logo / Icon (done)
+* [X] Show slots
+* [ ] Manage slots (only when system off)
+* [ ] Show / Manage devices connected to serial ports
+* [X] Manage Hard Disk Partitions on SmartPort
+* [X] Drag and drop mount disks - if CP not open, slide it open as drag enters our window, and the reverse
 * When system is off will need info about what drives, just for display. They can mount disks and re-save after starting.
-* Create, Save, Load system configs
+* [ ] Create, Save, Load system configs
 * UI doesn't need to redraw the various UI textures unless it's been updated (incl. system select)
 * Control panel is used to configure system - full control when system off, more limited control when system on (e.g. can make config with pre-mounted disks)
 * Save, Save As.. settings to file. (Settings load/save to json code)
@@ -364,3 +365,26 @@ so, mouse wheel motion should probably be capped at 2-3 up-arrow insertions. Cur
 [ ] Remove "mouse wheel is paddle" function.  
 
 In terms of packaging, the imgui library is a .a - so, static? And basically always linked into my exe? Ah, yep. well ok then so it's good to go.
+
+## Create / Save / Load System Configs
+
+on the SelectSystem screen, have the following:
+
+A + icon; A Folder icon.
+The first lets the user create and define a new system config.
+The second lets them open an existing system config file.
+
+Also have this under File menu:
+* Open System Config
+* Save System Config
+
+Push some of our current system configs into files to clean up the display.
+
+Can have recently opened user configs show up as buttons on the main screen. e.g. maybe just have six (II, II+, IIe, Enh IIe, GS ROM01, GS ROM03). Then other / recent ones show up (up to four), then the + and Folder. Yeah that's nice.
+
+[ ] Get rid of the IIgs with 5.25 only. that was really just for testing.
+
+So these should open/save by default in the user directory. 
+
+We want to support both TOML and Project X files. The TOML .gs2 files are really more for locally-user-created files.
+Project X will be ones we 
