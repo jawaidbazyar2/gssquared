@@ -390,8 +390,8 @@ class NClockFactory {
             case PLATFORM_APPLE_IIGS:
                 return new NClockIIgs(clock_set);
             default:
-                assert(false && "Unknown platform in NClockFactory::create_clock");    
-                break;
+                assert(false && "Unknown platform in NClockFactory::create_clock");
+                return nullptr;    
         }
     }
 };
