@@ -73,8 +73,6 @@ void DrivesHUD_t::update() {
         }
     }
 
-    // TODO: if the currently active device is a HD20SC, then only display the active one.
-
     float max_height = 0;
     int drives_active = 0;
 
@@ -106,7 +104,7 @@ void DrivesHUD_t::update() {
         drives_x = ((float)window_width - 420) / 2;
     }
     
-    drives_y = window_height - max_height - 25; // adjust for height of the tiles, align to bottom
+    drives_y = window_height - max_height - 15; // adjust for height of the tiles, align to bottom
     set_position(drives_x, drives_y );
     calc_content_position();
     layout();
