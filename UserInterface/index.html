@@ -3027,13 +3027,14 @@
 </ul>
 <h2 id="control-panel">Control Panel<a class="headerlink" href="#control-panel" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Show Platform Type and Logo / Icon (done)</li>
-<li>Show/Manage slots (Manage only when system off)</li>
-<li>Show / Manage devices connected to serial ports</li>
-<li>Manage Hard Disk Partitions on SmartPort</li>
-<li>Drag and drop mount disks - if CP not open, slide it open as drag enters our window, and the reverse (done)</li>
+<li>[X] Show Platform Type and Logo / Icon (done)</li>
+<li>[X] Show slots</li>
+<li>[ ] Manage slots (only when system off)</li>
+<li>[ ] Show / Manage devices connected to serial ports</li>
+<li>[X] Manage Hard Disk Partitions on SmartPort</li>
+<li>[X] Drag and drop mount disks - if CP not open, slide it open as drag enters our window, and the reverse</li>
 <li>When system is off will need info about what drives, just for display. They can mount disks and re-save after starting.</li>
-<li>Create, Save, Load system configs</li>
+<li>[ ] Create, Save, Load system configs</li>
 <li>UI doesn't need to redraw the various UI textures unless it's been updated (incl. system select)</li>
 <li>Control panel is used to configure system - full control when system off, more limited control when system on (e.g. can make config with pre-mounted disks)</li>
 <li>Save, Save As.. settings to file. (Settings load/save to json code)</li>
@@ -3301,6 +3302,20 @@ The linux and Windows menu placement is basically the same. Mac could offer an o
 <p>so, mouse wheel motion should probably be capped at 2-3 up-arrow insertions. Currently, mouse wheel is set up as a paddle. I think that is probably pretty useless.</p>
 <p>[ ] Remove "mouse wheel is paddle" function.  </p>
 <p>In terms of packaging, the imgui library is a .a - so, static? And basically always linked into my exe? Ah, yep. well ok then so it's good to go.</p>
+<h2 id="create-save-load-system-configs">Create / Save / Load System Configs<a class="headerlink" href="#create-save-load-system-configs" title="Permanent link">&para;</a></h2>
+<p>on the SelectSystem screen, have the following:</p>
+<p>A + icon; A Folder icon.
+The first lets the user create and define a new system config.
+The second lets them open an existing system config file.</p>
+<p>Also have this under File menu:
+* Open System Config
+* Save System Config</p>
+<p>Push some of our current system configs into files to clean up the display.</p>
+<p>Can have recently opened user configs show up as buttons on the main screen. e.g. maybe just have six (II, II+, IIe, Enh IIe, GS ROM01, GS ROM03). Then other / recent ones show up (up to four), then the + and Folder. Yeah that's nice.</p>
+<p>[ ] Get rid of the IIgs with 5.25 only. that was really just for testing.</p>
+<p>So these should open/save by default in the user directory. </p>
+<p>We want to support both TOML and Project X files. The TOML .gs2 files are really more for locally-user-created files.
+Project X will be ones we </p>
 
 
 

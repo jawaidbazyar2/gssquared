@@ -893,10 +893,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#display-configuration" class="md-nav__link">
+  <a href="#floppy-emulation-speeds" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Display Configuration
+        Floppy Emulation Speeds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#some-notes-about-disk-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Some Notes about Disk Formats
       
     </span>
   </a>
@@ -2765,10 +2776,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#display-configuration" class="md-nav__link">
+  <a href="#floppy-emulation-speeds" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Display Configuration
+        Floppy Emulation Speeds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#some-notes-about-disk-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Some Notes about Disk Formats
       
     </span>
   </a>
@@ -2819,10 +2841,20 @@
 <tr>
 <td>.nib</td>
 <td>140K</td>
-<td>Nibblized 5.25"</td>
+<td>Read only Nibblized 5.25"</td>
 </tr>
 <tr>
 <td>.2mg</td>
+<td>140K, 800K</td>
+<td>5.25 and 3.5</td>
+</tr>
+<tr>
+<td>.woz 1.0</td>
+<td>140K, 800K</td>
+<td>5.25 and 3.5</td>
+</tr>
+<tr>
+<td>.woz 2.0</td>
 <td>140K, 800K</td>
 <td>5.25 and 3.5</td>
 </tr>
@@ -2831,8 +2863,14 @@
 <td>any</td>
 <td>Can be any size, raw block device</td>
 </tr>
+<tr>
+<td>.pmap</td>
+<td>any .2mg, .hdv, .img, .po</td>
+<td>"Partition Map" to mount multiple hard drive images at once</td>
+</tr>
 </tbody>
 </table>
+<p>Woz format is the heart of GS2 floppy emulation. GS2 supports copy-protected 5.25 and 3.5 disks in Woz format, even ones with half tracks, quarter tracks, spiral tracks, weak bits, etc etc. Virtually any copy-protected Woz image should work fine in GS2.</p>
 <h2 id="mounting-disks">Mounting disks<a class="headerlink" href="#mounting-disks" title="Permanent link">&para;</a></h2>
 <p>There are several ways to mount disks depending on your preference.</p>
 <h3 id="control-panel">Control Panel<a class="headerlink" href="#control-panel" title="Permanent link">&para;</a></h3>
@@ -2843,28 +2881,49 @@
 <p>If the disk image is not compatible with that drive, you will see an error at the top of the screen.</p>
 <p>Once done, Close the OSD (F4 again or the OSD Button).</p>
 <h3 id="menus">Menus<a class="headerlink" href="#menus" title="Permanent link">&para;</a></h3>
-<p>On systems that have system menus defined, you can choose the storage device from the menu, and mount/unmount otherwise the same as above.</p>
+<p>You can choose a storage device from the menu, and mount/unmount images to the device the same as above.</p>
 <h3 id="drag-and-drop">Drag and Drop<a class="headerlink" href="#drag-and-drop" title="Permanent link">&para;</a></h3>
 <p>If you drag a file from your operating system Finder / Explorer / Linuxything on top of GS2, the Control Panel will automatically open, and then you can drag the disk image on top of the drive you want to mount on.</p>
 <h2 id="drive-specific-details">Drive-specific details:<a class="headerlink" href="#drive-specific-details" title="Permanent link">&para;</a></h2>
 <ul>
-<li>3.5" Drives</li>
-</ul>
-<p>You can mount any 800K or bigger disk image file onto the 3.5 drives, including hard drive images, up to 32MB. Changes to these images are written immediately whenever an emulated program writes to disk.</p>
-<ul>
 <li>5.25" Drives</li>
 </ul>
 <p>You can mount any exactly 140K disk image to a 5.25" drive. Changes written to these drives are held in memory until you unmount them. At that time the system will ask if you want to save changes back to the original disk image file.</p>
-<h2 id="write-protection">Write-protection<a class="headerlink" href="#write-protection" title="Permanent link">&para;</a></h2>
-<p>If the disk image is set in the host operating system as Read-Only (i.e., writes not allowed) then the image will be mounted into GS2 as Write Protected.</p>
-<h2 id="display-configuration">Display Configuration<a class="headerlink" href="#display-configuration" title="Permanent link">&para;</a></h2>
-<p>In the OSD, there are buttons to change the display engine - NTSC, RGB, and Monochrome. And, buttons to change the Monochrome color (green, amber, white).</p>
+<p>Because .nib format loses information about which FF nybbles are 10-bit sync bytes and which are regular data bytes, it is not possible to safely/accurately convert .nib to .woz. We can load them, however, we cannot write them. So they are mounted readonly (write protected).</p>
 <ul>
-<li>F2 cycles through the display engines.  </li>
-<li>F5 toggles between pixel-blur and rectangular. pixel-blur provides a little more "analog" upscaling of Apple II dots to modern displays. Rectangular performs an exact square upscaling/downscaling.</li>
-<li>F3 toggles between Full-Screen and Windowed modes.</li>
+<li>3.5" Drives</li>
 </ul>
-<p>These are matters of personal preference, so you get to pick the one you like best.</p>
+<p>You can mount any 800K image onto a 3.5 drive. As with a 5.25 floppy, changes are hald in memory until you unmount, and you'll be asked then if you want to save changes back to the original disk image file.</p>
+<ul>
+<li>BazFast</li>
+</ul>
+<p>BazFast is a SmartPort hard drive device - you can mount any kind of media 800K or larger to the BazFast device. You can mount a 140K media, however, ProDOS assumes a 140K media is a Disk II and will usually crash trying to use such a disk.</p>
+<p>BazFast transfers data into the emulated machine using a kind of "Super DMA" that takes no processor cycles. It's about as fast as it can get.</p>
+<p>You can have up to 32 media mounted on BazFast. The upper limit on volume size under ProDOS 8 is 32M. The limit on GS/OS is 2 GiB.</p>
+<p>BazFast presents as six hard disk icons in the Control Panel. Each one of these icons can mount any number of images, up to the limit of 32 total across all six icons. This lets each device operate similarly to a single hard disk with partitions. Each "partition" or image gets a unique SmartPort unit number.</p>
+<p>Unlike the other drive types that <em>replace</em> any existing image when mounting a new one, BazFast is additive - if you drag a new image over a device that has a mount, the new image is ADDED to the images there.</p>
+<p>Clicking on a BazFast drive that has images mounted, will unmount -all- the images under that icon.</p>
+<p>In addition to .hdv, .2mg, .po, .img, BazFast can mount a .pmap file. .pmap is a text file that contains a list of filenames of image files. For example:</p>
+<p>wita2gs.pmap:</p>
+<pre><code>A_Boot.po
+B_Action Games.hdv
+C_Adventure and Sim Games.hdv
+D_Board Games and RPGs.hdv
+E_Sports and Unreleased Games.hdv
+F_Demos.hdv
+G_Games with Path Mods.hdv
+</code></pre>
+<p>If you mount this pmap on a BazFast device, all 7 images will be mounted at once, a big time-saver for those with complex setups, multi-disk collections like What Is the AppleIIgs or Golden Orchard.</p>
+<h2 id="write-protection">Write-protection<a class="headerlink" href="#write-protection" title="Permanent link">&para;</a></h2>
+<p>If the disk image permission in the host operating system is Read-Only (i.e., writes not allowed) then the image will be mounted into GS2 as Write Protected.</p>
+<h2 id="floppy-emulation-speeds">Floppy Emulation Speeds<a class="headerlink" href="#floppy-emulation-speeds" title="Permanent link">&para;</a></h2>
+<p>In a real Apple II or IIe or IIgs, the 5.25 Floppy disk is clocked to the I/O bus clock - exactly 1.0205MHz no matter what.</p>
+<p>In GS2, however, in Apple II / IIe mode, the Floppy disk is clocked to the CPU clock, even if you have the CPU speed set to 2.8, 7.1, or 14.3MHz. This allows us to accelerate floppy reads/writes safely. This is especially useful with the right-mouse or INS "accelerate" mode.</p>
+<p>In IIgs mode, the Floppy disk is clocked to the bus clock - always 1MHz. This is because the IIgs speed-shifts on its own. Don't worry, the 5.25 and 3.5 floppies still perform quite well, because lots of the floppy processing on a IIgs can happen at the fast CPU speed.</p>
+<h2 id="some-notes-about-disk-formats">Some Notes about Disk Formats<a class="headerlink" href="#some-notes-about-disk-formats" title="Permanent link">&para;</a></h2>
+<p>Whatever disk image format you mount, GS2 will always write back to the same format on disk - it does not convert your disk images, but assumes you want to update / keep the same format.</p>
+<p>Floppy disk drives always convert whatever format is used on disk, to Woz format <em>internally</em>. This is so the virtual floppy disk always operates exactly the same way in the emulator. But when you unmount and choose to Save changes, GS2 converts the internal Woz format back to whatever format you had on the disk. GS2 thus cannot be used to convert other formats to Woz or vice-versa.</p>
+<p>If you want to convert a file from a block format to Woz format or vice-versa, use a program like CiderPress2, or AppleSauce.</p>
 
 
 

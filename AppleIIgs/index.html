@@ -2682,19 +2682,19 @@
 <p>http://krue.net/truegs/</p>
 <h1 id="development-roadmap">Development Roadmap<a class="headerlink" href="#development-roadmap" title="Permanent link">&para;</a></h1>
 <p>We can implement in this order.</p>
-<p>[x] 65816 [initial version done]<br />
-[x] Accurate Cycle Timing (FPI / Mega II / Fast-Slow)<br />
-[x] mmu (done-ish but might still be bugs)<br />
-[x] RTC / BRAM<br />
-[x] ADB<br />
-  [x] Keyboard<br />
-  [x] Mouse<br />
-[x] New Display Modes
-  [x] SHR<br />
-  [x] text mode enhancements (colored text / border)<br />
-[x] Game controller <br />
-[x] Interrupts<br />
-[ ] IWM<br />
+<p>[X] 65816 [initial version done]<br />
+[X] Accurate Cycle Timing (FPI / Mega II / Fast-Slow)<br />
+[X] mmu (done-ish but might still be bugs)<br />
+[X] RTC / BRAM<br />
+[X] ADB<br />
+  [X] Keyboard<br />
+  [X] Mouse<br />
+[X] New Display Modes
+  [X] SHR<br />
+  [X] text mode enhancements (colored text / border)<br />
+[X] Game controller <br />
+[X] Interrupts<br />
+[X] IWM<br />
 [1/2] Ensoniq<br />
 [ ] Zilog SCC 8530<br />
 [ ] ROM03  <br />
@@ -2718,7 +2718,7 @@ https://github.com/gilyon/snes-tests</p>
 <h2 id="new-display-modes">New Display Modes<a class="headerlink" href="#new-display-modes" title="Permanent link">&para;</a></h2>
 <h3 id="shr-super-hi-res-video-modes">SHR - Super Hi-Res Video Modes<a class="headerlink" href="#shr-super-hi-res-video-modes" title="Permanent link">&para;</a></h3>
 <p>Pretty straightforward. Linear video buffer, pixel values look up 4096 colors (12-bit color value) in a palette table.</p>
-<p>[x] Implement Fill Mode  </p>
+<p>[X] Implement Fill Mode  </p>
 <h3 id="standard-apple-ii-text-with-color">Standard Apple II text with Color<a class="headerlink" href="#standard-apple-ii-text-with-color" title="Permanent link">&para;</a></h3>
 <p>Text modes have a foreground and background color applied from a choice of 16 colors. Configured with new $C0xx registers.</p>
 <h3 id="rgb-output-even-for-8-bit-ii-modes">RGB output even for 8-bit II modes<a class="headerlink" href="#rgb-output-even-for-8-bit-ii-modes" title="Permanent link">&para;</a></h3>
@@ -2807,6 +2807,10 @@ Personally, I don't think there's much point in implementing the refresh timing 
 I can paste code here, but it'll probably add to the confusion.
 Fundamentally, you need to implement 3 clocks - a fast clock, a slow clock with stretched cycles and a refresh clock. The refresh clock is every 10 fast clocks. The refresh clock gets delayed if it overlaps between a slow and a fast. Refresh clock is "free" if it happens on a slow cycle or a FPI register cycle.</p>
 <p>There's even some code of clocking implementation from CrossRunner.</p>
+<p>Some I/O locations are FAST even though they're in the I/O space, because they're in the FPI and MegaII and reads are from FPI:
+Ok, I can confirm that for reads $35,$36,$37,$2D,$68,$71-$7F are all fast. $69-$70 are all slow.
+For writes only $35,$36,$37 are fast. Everything else is slow. (edited)
+that's: SHADOW, CYRREG, DMA, SLTROMSEL, STATE, rom interrupt code jump table (these are rom addresses after all).</p>
 <h2 id="game-io">Game I/O<a class="headerlink" href="#game-io" title="Permanent link">&para;</a></h2>
 <p>The same as the Apple II. Can use the gamecontroller module as-is.</p>
 <h2 id="realtime-clock">Realtime Clock<a class="headerlink" href="#realtime-clock" title="Permanent link">&para;</a></h2>
@@ -2858,16 +2862,16 @@ This should involve cleanup/refactor of the trace, disasm, and monitor module mo
 </ol>
 <h3 id="trace">Trace<a class="headerlink" href="#trace" title="Permanent link">&para;</a></h3>
 <ol>
-<li>[x] all this to make room for decoding addresses -&gt; symbols, as well as 16-bit widths for: A, X, Y, SP, PC.  That's two more characters for each of those.</li>
+<li>[X] all this to make room for decoding addresses -&gt; symbols, as well as 16-bit widths for: A, X, Y, SP, PC.  That's two more characters for each of those.</li>
 <li>have debugger BP -before- instruction execute. i.e. if the PC is going to be XXXX, then BP before it executes. And highlight that instruction in the display.</li>
-<li>[x] instead of showing whole cycle, what if we just display last say 6 digits of cycle. That would be enough to show differences while not taking up too much screen.</li>
-<li>[x] make generation of the lines much easier by having a line class that tracks a horizontal 'cursor' inside the line.</li>
+<li>[X] instead of showing whole cycle, what if we just display last say 6 digits of cycle. That would be enough to show differences while not taking up too much screen.</li>
+<li>[X] make generation of the lines much easier by having a line class that tracks a horizontal 'cursor' inside the line.</li>
 <li>pack opcode and operand into a single 32-bit value, instead of 32-bit plus 8-bit.</li>
 <li>the other fields in the trace record are otherwise the right size.</li>
 <li>have a trace decoder base class plus two (maybe 3?) derived classes: 6502, 65c02, 65816. </li>
 <li>Same for disassembler.</li>
 <li>in 6502/65c02 mode, show SP as just a byte, to free up room.</li>
-<li>[x] use p flags e/m/x to determine trace formatting in 65816 class.</li>
+<li>[X] use p flags e/m/x to determine trace formatting in 65816 class.</li>
 </ol>
 <h2 id="display-parameters">Display Parameters<a class="headerlink" href="#display-parameters" title="Permanent link">&para;</a></h2>
 <p>on my GS RGB SHR is 7.75 inches across and regular hires is 7.75 inches across. So they are the same horizontal beam scan path, but the SHR just clocks the pixels out a bit faster. We'll have to hope the scaling doesn't look too bad. I think the Videx is ok (640 pixels). But, this may be where the aspect ratio stuff comes in. This is an interesting question actually.. </p>
@@ -3017,6 +3021,8 @@ Reading the video counters will also clear the ScanLine interrupt status bit!</p
 </table>
 <p>So I don't think the GS uses anything here except bits 3-4: vbl and quarter-second.</p>
 <p>Again, the ideal place to insert the VBL interrupt is in VideoScannerIIgs. (done)</p>
+<h2 id="cyareg-c036">CYAREG - $C036<a class="headerlink" href="#cyareg-c036" title="Permanent link">&para;</a></h2>
+<p>This is the speed control register. see AppleIIgs-Memory.md.</p>
 <h2 id="rom03">ROM03<a class="headerlink" href="#rom03" title="Permanent link">&para;</a></h2>
 <p>There are a few relatively minor differences between ROM01 and ROM03.</p>
 <ol>

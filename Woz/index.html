@@ -1,0 +1,3458 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Woz Format (and enhancements to Floppy Core) - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#woz-format-and-enhancements-to-floppy-core" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Woz Format (and enhancements to Floppy Core)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../UserInterface/" class="md-tabs__link">
+          
+  
+  
+  Misc
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Misc
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Misc
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#changing-floppy-status-display" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changing floppy status display
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#half-and-quarter-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        half- and quarter- tracking
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lss-logic-state-sequencer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LSS (Logic State Sequencer)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#long-strings-of-zero-bits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Long strings of zero bits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thinking-about-the-lss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thinking about the LSS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#doesnt-work-at-faster-speeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Doesn't work at faster speeds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-harness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test harness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bugs-to-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bugs to Fix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dos-32-system-masterwoz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DOS 3.2 System Master.woz
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-does-this-stuff-actually-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How does this stuff actually work?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#p6-prom" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        P6 PROM
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disk-ii-cable-io-api-to-the-drive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disk II Cable (I/O API to the drive)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#detail-tracebreakdown-of-miner-2049er" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detail trace/breakdown of Miner 2049er
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#image-generation-and-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image generation and conversion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flux-tracks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FLUX Tracks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-regime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Regime
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="woz-format-and-enhancements-to-floppy-core">Woz Format (and enhancements to Floppy Core)<a class="headerlink" href="#woz-format-and-enhancements-to-floppy-core" title="Permanent link">&para;</a></h1>
+<p>So the question is: is the fastest path to 3.5" through .woz, or building on my current code base.
+current:
+the nibblizer / denibblizer would have to be modified for 512 (524?) byte sectors/blocks. It shouldn't be that hard to do. 
+the chunk map is 32-bit offset then 32-bit length I think. C340 is the typical length. The lengths do get shorter as we go. 49984 is the short one. Ah, this is in bits.</p>
+<p>Remembering back to a2ts, it converts everything to .woz and when you load a non woz format it makes you do a save as. Perhaps that is a security thing, the save as gives it permission to write to the file.</p>
+<p>Today, we rely on the calling code having tight timing and assuming it knows the right thing, so it's safe for us to not sync to a clock. however, if we start doing this stuff, we will need to clock-sync, and if it's been a while since the caller did a read, we need to advance the bit we're looking at accordingly. We can do a fast forward - see how many cycles elapsed and just move the position. That math is pretty easy.</p>
+<p>Tracking bit position and grabbing bit should be pretty efficient.</p>
+<pre><code>update_bit_position(cycle_diff) {
+  bit_position_in_cycles += cycle_diff;
+  bit_position = disk_cycle_counter/4; // (4 cycles per bit)
+}
+
+bit = (bytes[bit_position &gt;&gt; 3] &gt;&gt; (bit_position &amp; 0b111)) &amp; 1
+</code></pre>
+<p>the bit cells are 3.9xuS, which is -precisely- 4 apple ii clock cycles, though in any given cell one of these might be a hair longer due to stretch cycles. For our purposes, I don't think this matters.</p>
+<p>This becomes super-important for writes.</p>
+<p>So plan A:
+* .dsk / .po -&gt; woz converter
+* create Woz parser, read them</p>
+<p>The converter can be tested against and validated with cp2.
+FloppyImage class that has import, write methods.</p>
+<p>ok! Got a lot done with Clod. It wasn't all that much code, really, though the structure is somewhat different.</p>
+<p>What seems to be working well:
+1. regular disk formats that worked until now (except nib see below).</p>
+<p>Weird Things:
+1. insert a new disk makes track go to 0 I think and makes the head move sound play, which is wrong. (fixed)</p>
+<p>Incomplete things:
+1. mount .nib images. it's failing these right now. (fixed)
+1. quarter-track support
+1. writing. (given the bit-level detail we're at now, this will probably not be hard) 
+1. write-back to original file format</p>
+<p>Once all this is done, it should be a relatively small lift to get 3.5 working. (famous last words).</p>
+<h2 id="changing-floppy-status-display">Changing floppy status display<a class="headerlink" href="#changing-floppy-status-display" title="Permanent link">&para;</a></h2>
+<p>To ease debugging, we should print the fractional track in the HUD. To display we could do .25/.50/.75 but that takes a lot of room. how about .0/.1/.2/.3. </p>
+<p>So track is fixed point with two decimal places, meaning the above.</p>
+<p>none of the disks seem to be halftracking. maybe they're trying to quarter and we don't support that..</p>
+<h2 id="half-and-quarter-tracking">half- and quarter- tracking<a class="headerlink" href="#half-and-quarter-tracking" title="Permanent link">&para;</a></h2>
+<p>So - one track movement is two phases of movement.
+the Apple II normally uses only the even phases (e.g. 0 and 2) (i.e., even positions), or, whole track numbers in our system.
+however, the head can be easily moved to a half track - or, odd phase and left there, because it does go through 0 -&gt; 1 -&gt; 2 -&gt; 3 -&gt; 0, it can just stop on an odd one.</p>
+<p>For half tracking: So let's say the head is on track 0 and last phase was 0. We turn on Phase 1 to move the head to track 0.5, and then turn it off and turn on Phase 2 to move the head to track 1.0. there is typically no overlap in the phases.</p>
+<p>But let's say we want to position the head on quarter track 0.25. We would turn on Phase 1, AND Phase 0 and hold them until the head settles, then turn each off right away and that leaves us on quarter track 0.25.</p>
+<p>Having Phase 0+2 on at same time, or 1+3 on at same time, produces no head movement.</p>
+<p>ok, so I'm thinking about rationalizing the magnetic moment (how and where the motor wants to spin to) based on the relative position of active phases.</p>
+<p>SO. The code is skipping quarter tracks, and I think I see why. But let's think it through.</p>
+<p>It's only changing the magnetic position when we -turn on- a phase. If we turn off a phase, we make no changes. </p>
+<p>Let's assume our position (direction) is phase 0. (We can rotate to make whatever direction we're pointing zero).
+One track = 2 phase movements. half track = 1 phase movement. quarter track = 1/2 phase movement.
+There are two possibilities: 1 phase is on, or 2 phases are on.
+If 1 phase is on, we move to that phase in that direction. Let's further think about this in terms of positive and negative. 0, -1 (or 3, rotate left) +1 (rotate right). 0 and 2 are no movement, either by themselves, or combined with each other. The following phase combinations can cause movement:</p>
+<table>
+<thead>
+<tr>
+<th>Relative Phases Active</th>
+<th>Movement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ph0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Ph1</td>
+<td>+2</td>
+</tr>
+<tr>
+<td>Ph0 + Ph1</td>
+<td>+1</td>
+</tr>
+<tr>
+<td>Ph0 + Ph3</td>
+<td>-1</td>
+</tr>
+<tr>
+<td>Ph3</td>
+<td>-2</td>
+</tr>
+</tbody>
+</table>
+<p>"Cur Phase" is basically "current track" low bits, 2 low bits out of the track number.</p>
+<p>Let's say we're at 0 and the code turns on Ph1 then Ph0. We'll move +2 on Ph1 active, but then we'll move -1 when Ph0 comes active and they're both on (but at that point it will look like Ph3).
+Let's say the code turns on Ph0 then Ph1. We'll move 0 on Ph0, then move +1 on Ph1. (when turned off, we don't move). This -ought- to provide the quarter track locations.</p>
+<p>ok, that's basically working HOWEVER when we turn off the magnets in rapid succession we are treating the first magnet off as a full move. When really what needs to happen is there be some inertia. i.e. if we turn them off 8 cycles apart there is not going to be any head movement. I previously tricked around this by ignoring magnet off, and only paying attention to magnet on. well what if I go back to that? NO. the last remaining magnet needs to pull that head over.</p>
+<p>so, code is going to keep those magnets on for a while. So when magnet status is changed, set a timer for 10ms to actually move the head. i.e., change the variables, but don't do the move head routine. If they change 2 phase status quickly, the timer will reset after the first change, push it out a bit. This is the way.</p>
+<p>This is rapidly getting out of hand! I think I'm going to save the current code (which is non-working) and revert to the code that works but only handles half-tracks, and switch instead of adding write support.</p>
+<p>in a diskii, when the data latch is loaded for write, emitting the bits is clocked automatically by the hardware, it does not require a software strobe every 4 cycles.</p>
+<p>see attached snippet from Beneath Apple DOS.</p>
+<p>Some context from Understanding the Apple IIe:
+The above example illustrates the principle of
+writing continuous bytes of data: initiate the WRITE
+sequence, then store data every 32 cycles. This will
+normally be accomplished in 32-eyele loops. After
+storing the last byte to be written, wait 32 eyeles.
+switching READ/WRITE to READ on the 32nd
+cycle. You don't have to write in 32-eyele loops. You
+can store 6-bit data words in 24-cyele loops if you can
+figure out some purpose for it. You can store data in
+any multiple of 4 cycles and the data register will
+accept it. Read syneing leaders are written by stor-
+ing $FF to the data register in 36-cycle loops (DOS
+3.2) or 40-cycle loops (DOS 3.3 or DIIDD).* This
+creates a series of 111111110 or 1111111100 strings
+which, we will see, synes up the sequencer for read-
+ing following data.</p>
+<p>So once a write is started, the cpu waits 32 or 36 or 40 cycles and then either does a new write C08D,X (to begin writing next byte of a field) or it does a read C08C,X to turn off write mode.</p>
+<p>So we need to track these states, because if there are 36 or 40 cycles to one of those from the last write, there should be 1 or 2 extra 0's written (this is a sync byte).</p>
+<p>I'm wondering if it might be easier to implement the diskii using the new nclock cycle_handler functionality, where a function in diskii will be called every cycle in order to update its state machine.
+And implement the LSS (logic state sequencer) as part of that.
+challenges with that: that function is clocked to the video clock, so always 1MHz, so we'd get no acceleration. And it would fail as you expect if we run the cpu faster than 1MHz. Clocking the disk routine to the CPU clock gets around that, allows acceleration; our pretend disk isn't actually rotating so can speed up to match the cpu, ha ha.</p>
+<p>If the motor is off the handler can return immediately.</p>
+<h2 id="lss-logic-state-sequencer">LSS (Logic State Sequencer)<a class="headerlink" href="#lss-logic-state-sequencer" title="Permanent link">&para;</a></h2>
+<p>The LSS is a 256-byte ROM. the address inputs are:
+  R/W
+  Read Pulse / no Read Pulse (from the media on the drive)
+  Shift/Load
+  QA/QA
+and the other four bits are SEQ, a 4-bit sequence. The details are page 9-19 of UtA2e. SEQ is updated each cycle from the high 4-bits of the output (so it's a "goto"). and the low 4 bits of the output are a command:
+QA is bit 7 of the data register.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Mnemonic</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>CLR</td>
+<td>Clear Data Register</td>
+</tr>
+<tr>
+<td>8</td>
+<td>NOP</td>
+<td>No Operation</td>
+</tr>
+<tr>
+<td>9</td>
+<td>SL0</td>
+<td>Shift zero left into data register</td>
+</tr>
+<tr>
+<td>A</td>
+<td>SR</td>
+<td>Shift Write Protect Signal Right into data Register</td>
+</tr>
+<tr>
+<td>B</td>
+<td>LD</td>
+<td>Load Data register from Data Bus</td>
+</tr>
+<tr>
+<td>D</td>
+<td>SL1</td>
+<td>Shift one left into data register</td>
+</tr>
+</tbody>
+</table>
+<p>Looking at OE, when its "updateSequencer" function is called, it does a "catch up" to update state for every cycle that has elapsed since the last time it was called. It also does writes all at once. So it's doing a sorta para approach, not calling it every cycle, BUT, doing a full replay when it does get called. </p>
+<p>ok, adding some debug logging. putting into a separate file, why didn't I think of that before. duh.
+phases are never being turned off.
+First bug, the phases and motor control work on a read or a write. In fact, any of them are going to because R/W is not connected to the bus decoder. However, RESET is and all variables should be set to 0 on a reset. Could the boot ROM be writing registers sometimes? It's NOT. But fix.
+ok, I broke the switch updates into their own method and that is strikingly similar to the IWM stuff, as it should be.</p>
+<p>ah ok the issue is in ndiskii_woz_controller. and there is an extra layer of complexity in here. these switches should be tracked in the controller, because that addressible latch (command decoder) is in the controller. </p>
+<p>here's the whole hierarchy:</p>
+<pre><code>ndiskii_woz
+-&gt; ndiskii_woz_controller
+-&gt; Floppy525_woz
+</code></pre>
+<p>So what is the interface to the drive itself supposed to be? the enable; the phases; write signal; write request; read pulse; write protect; </p>
+<p>The phases are not being turned off because that stuff is in the wrong place. That needs to move to the controller.
+That's done, and, it is still working. I also have this nice debug log showing it turns the phases on, then off, then next phase on, then off, in sequence. There is no case where the phases are on at the same time! That is likely why this wasn't working before.</p>
+<p>the bootrom holds a phase about 20ms. I'm now looking at Commando something and it definitely uses quarter tracks.
+turns on ph 1: holds 10ms.
+turns on ph 2: holds 5ms.
+then turns off ph1, waits 5ms, then turns on ph 3, then holds 4-5 ms and it keeps doing that. I bet it's doing spiral tracking.</p>
+<p>This is Blazing Paddles:
+read_cmd: 4194024 reg:C sl:0  track=0, cur_track=0, Q7=0, Q6=0 en:1 ph [ 1 0 0 0 ]
+read_cmd: 4203969 reg:3 sl:0  track=1, cur_track=0, Q7=0, Q6=0 en:1 ph [ 1 1 0 0 ]  turn on ph1
+read_cmd: 4204118 reg:0 sl:0  track=1, cur_track=1, Q7=0, Q6=0 en:1 ph [ 0 1 0 0 ]  then right away turn off ph0
+read_cmd: 4215526 reg:5 sl:0  track=2, cur_track=1, Q7=0, Q6=0 en:1 ph [ 0 1 1 0 ]  wait 10ms, then turn on ph2
+read_cmd: 4215675 reg:2 sl:0  track=2, cur_track=2, Q7=0, Q6=0 en:1 ph [ 0 0 1 0 ]  right away turn off ph1,
+read_cmd: 4252924 reg:4 sl:0  track=2, cur_track=2, Q7=0, Q6=0 en:1 ph [ 0 0 0 0 ]  this is holding ph2 for 40ms?
+Not sure about this..</p>
+<p>First math adventures:
+read_cmd: 5245493 reg:9 sl:0  track=0, cur_track=0, Q7=0, Q6=0 en:1 ph [ 1 0 0 0 ] drive on
+read_cmd: 5245597 reg:A sl:0  track=0, cur_track=0, Q7=0, Q6=0 en:1 ph [ 1 0 0 0 ] select 1
+read_cmd: 5245795 reg:3 sl:0  track=1, cur_track=0, Q7=0, Q6=0 en:1 ph [ 1 1 0 0 ] ph1 on
+read_cmd: 5245944 reg:0 sl:0  track=1, cur_track=1, Q7=0, Q6=0 en:1 ph [ 0 1 0 0 ] ph0 off (immediate)
+read_cmd: 5257354 reg:5 sl:0  track=2, cur_track=1, Q7=0, Q6=0 en:1 ph [ 0 1 1 0 ] after 1ms ph2 on
+read_cmd: 5262250 reg:2 sl:0  track=2, cur_track=2, Q7=0, Q6=0 en:1 ph [ 0 0 1 0 ] after 5ms ph1 off
+read_cmd: 5266790 reg:7 sl:0  track=3, cur_track=2, Q7=0, Q6=0 en:1 ph [ 0 0 1 1 ] after 4ms ph3 on
+read_cmd: 5271686 reg:4 sl:0  track=3, cur_track=3, Q7=0, Q6=0 en:1 ph [ 0 0 0 1 ] after 4ms ph2 off
+read_cmd: 5276230 reg:1 sl:0  track=4, cur_track=3, Q7=0, Q6=0 en:1 ph [ 1 0 0 1 ] after 4ms ph0 on
+read_cmd: 5276379 reg:6 sl:0  track=4, cur_track=4, Q7=0, Q6=0 en:1 ph [ 1 0 0 0 ] phase 3 off
+read_cmd: 5313628 reg:0 sl:0  track=4, cur_track=4, Q7=0, Q6=0 en:1 ph [ 0 0 0 0 ]
+then it tries to read, then it does a recalibrate. some pattern there is similar to BP.
+"when a program reads data from the data latch, the implementation should -not- be clearing the latch."</p>
+<p>Stickybear loads initially, but then runs back to around track 1ish, and then hangs trying to read something. Ah, yep, applesauce says it's got the same data from 0.75 - 1.50, so it's likely trying to hit the quarter track there. we're reading constant 0's from the register (which shouldn't happen?) ah, we are apparently in write mode? write_nybble is being called. Q6=1 Q7=0. The bit position isn't changing. So, who is supposed to own Q6/Q7? Technically it should be the controller. Q6 is coming on and it's not going off even after reset.</p>
+<p>Take1 fails: bounces between track 1 and 0. same data from 0.75 to 1.25. it's got the same boot screen and 0-1-0 flapjacks that Blazing Paddles does. This uses "CROSS TRACK SYNC" (also blazing paddles). </p>
+<p>Bilestoad initially loads from whole tracks. But then switches to half tracks and reads those ok. NICE, so that works.</p>
+<p>Print Shop Companion: loads a bunch then hangs around ~34ish. that is wackytrack. Track 34, this has a section with long runs of 0's (e.g., 16 bits, 20 bits, 17 bits, etc.) It must be expecting noise in there. [ FIXED!!! Indeed, inserting random bits when the source has long runs of 0's makes it BOOT!!!! ]</p>
+<p>Wings of Fury: sits near track 0 / maybe 0.2? hangs for a second, then reboots.</p>
+<p>So most of the Woz images work, and one that only uses halftracks, definitively works. </p>
+<p>ok, after refactoring to try to add mixed phase detent calculation, take1:
+read_cmd: 4301761 reg:0 sl:0  track=2, cur_track=1, Q7=0, Q6=0 en:1 ph [ 0 1 0 0 ]
+update_phases: detent: 3
+update_phases: track: 3 slice_subtract: 7 slice_add: 1
+read_cmd: 4313169 reg:5 sl:0  track=3, cur_track=2, Q7=0, Q6=0 en:1 ph [ 0 1 1 0 ]
+update_phases: detent: 4
+update_phases: track: 4 slice_subtract: 7 slice_add: 1
+read_cmd: 4313318 reg:2 sl:0  track=4, cur_track=3, Q7=0, Q6=0 en:1 ph [ 0 0 1 0 ]
+update_phases: detent: -1
+read_cmd: 4350567 reg:4 sl:0  track=4, cur_track=4, Q7=0, Q6=0 en:1 ph [ 0 0 0 0 ]</p>
+<p>"for long seek (step a number of tracks) two adjacent phases can overlap the phase on time in order to increase the torque of the stepper motor and to reduce the seek time. no matter how many tracks to step, the user has to allow the last phase to be on for 36.6 msec, this timing includes head settling time requirement of 25ms of the drive." -- IWM Info</p>
+<p>ok, so they CAN overlap and the idea is two magnets will pull harder and spin the head sprocket faster than one. fine, I get that. </p>
+<p>We need to define the time interval it will take to get from now to target, based on some constant (KEGS uses 2.8ms per track?) </p>
+<p>Locksmith - practically this is the only surefire way to see quarter-tracking.</p>
+<p>read_cmd: 65572725 reg:7 sl:0  track=14, cur_track=14, Q7=0, Q6=0 en:1 ph [ 0 0 0 1 ]
+update_phases: detent: 7
+update_phases: track: 15 slice_subtract: 7 slice_add: 1
+read_cmd: 65572763 reg:1 sl:0  track=15, cur_track=14, Q7=0, Q6=0 en:1 ph [ 1 0 0 1 ]
+update_phases: detent: 6
+update_phases: track: 14 slice_subtract: 1 slice_add: 7
+read_cmd: 65598568 reg:0 sl:0  track=14, cur_track=15, Q7=0, Q6=0 en:1 ph [ 0 0 0 1 ]
+update_phases: detent: -1
+read_cmd: 65598606 reg:6 sl:0  track=14, cur_track=14, Q7=0, Q6=0 en:1 ph [ 0 0 0 0 ]</p>
+<p>So this is more like it. We're turning on 7 and 1, then holding about 25ms, then turning both off quickly. But because we're not taking time into account, we immediately jump back to track 14. (half tracks work because there is only one phase on).</p>
+<p>on a phase change, OE sets a timer for 0.5ms (500 cycles-ish) out.
+if a phase changes within that period, the timer is REscheduled. 
+whenever the timer fires, at that point, it moves the head accordingly.</p>
+<p>aw heck, the readme.txt goes into detail on each image and what you need to do right to get it booting. </p>
+<p>[X] Print Shop Companion
+[X] Blazing Paddles<br />
+[X] Bouncing Kamungas<br />
+[X] Commando<br />
+[X] Crisis Mountain<br />
+[X] Dino Eggs<br />
+[X] DOS 3.2 System Master (using BOOT13 from DOS 33 master)
+[X] DOS 3.3 System Master<br />
+[X] First Math Adventure<br />
+[X] Hard Hat Mack<br />
+[X] Miner 2049er<br />
+[X] Planetfall<br />
+[X] Rescue Raiders<br />
+[X] Sammy Lightfoot<br />
+[X] Stargate<br />
+[X] Stickybear Town<br />
+[X] Take 1
+[X] Apple at Play<br />
+[X] Bilestoad<br />
+[X] Print Shop Companion<br />
+[X] Wings of Fury Side A / B
+[ ] Border Zone - disk 2 loading is very slow (we do not respect bit timing field in woz)</p>
+<p>^^^ They all work.</p>
+<h2 id="long-strings-of-zero-bits">Long strings of zero bits<a class="headerlink" href="#long-strings-of-zero-bits" title="Permanent link">&para;</a></h2>
+<p>headWindowWidth is by default 4 bits (with this mask of 0x0f). </p>
+<pre><code>        // MC3470 spurious bit behavior
+        if(headWindow &amp; headWindowWidth)
+        {
+            if(headWindowDelay) value = (headWindow &amp; 0x02) &gt;&gt; 1;
+            else value = (headWindow &amp; 0x01);
+        }
+        else value = (random() % 100) &lt; random1Percentage;
+</code></pre>
+<p>This is overly complicated. Just keep the last 4 bits shifted into headWindow. if its value is 0, generate a random bit. (don't use random, use a longish pseudorandom number like 64 bits or something.</p>
+<p>if no disk is mounted, return 0's here, and insert the randoms later. </p>
+<p>This comes from the DRIVE, not the controller.</p>
+<h2 id="thinking-about-the-lss">Thinking about the LSS<a class="headerlink" href="#thinking-about-the-lss" title="Permanent link">&para;</a></h2>
+<p>Do we have to implement the LSS? We've been working pretty well without it, but, we know some of these disk images don't work and it's likely to do with LSS deficiencies. Maybe we can improve our handling of the various states without implementing the logic state sequencer.</p>
+<p>OK, so I borrowed openemulator's abbreviated LSS. I don't think running the real, exact LSS would cost much, and it would probably simplify the logic quite a bit.</p>
+<h2 id="doesnt-work-at-faster-speeds">Doesn't work at faster speeds<a class="headerlink" href="#doesnt-work-at-faster-speeds" title="Permanent link">&para;</a></h2>
+<p>Does not boot at 14m. Does work at 2.8? seems to.
+does not work at ludicrous speed.
+could be the track motion stuff I just put in (not long enough at higher speed), or could be related to the fast_forward routine which is using regular cpu_cycles but might need to be vid_cycles. Using vid_cycles will keep the disk spinning at consistent time, meaning it won't be accelerated. Perhaps this can be tweaked to work right at faster speeds. yah, definitely a problem with the seek logic.
+1.0-fine. 2.8-fine. 7.1-mostly not working.
+currently clocking off 14M, but the number of 14M's chosen is appropriate for 1MHz clock.
+try using the cpu clock, not the 14m clock.
+Ah ok, I have an eventtimer that runs at 14m, and one that runs at video speed (1M), but I don't have one that runs at the cpu clock? oops.
+So, I didn't HAVE a cpu event. I just had to wire it into the main loop in gs2. ugh! well let's try it.. yes, that works, though I don't like having so many checks in the main loop. Isn't working in ludicrous speed. that's weird, it ought to. ok, forgot to add the check to the LS loop.
+Overall this costs us a couple mhz at L.S.
+(FIXED)</p>
+<h2 id="test-harness">Test harness<a class="headerlink" href="#test-harness" title="Permanent link">&para;</a></h2>
+<p>SO, developing a test harness is somewhat problematic as disk code has a lot of feedback loops. i.e., if something is wrong it can cause behavior that is not normally seen and which can skew "expected" results.</p>
+<p>However if we break the tests into clear components we should be able to figure things out. So, we record to a log file all the phase motion etc of the drive.</p>
+<h2 id="bugs-to-fix">Bugs to Fix<a class="headerlink" href="#bugs-to-fix" title="Permanent link">&para;</a></h2>
+<p>[ ] if no drive is enabled then we need to deactivate a bunch of the logic, phases, etc. 
+[ ] all phases, Q6, Q7 etc should clear on a reset  </p>
+<p>Wings of Fury now boots after fixing the bug where we weren't advancing the read pointer on a wpsense access.</p>
+<h2 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">&para;</a></h2>
+<h3 id="dos-32-system-masterwoz">DOS 3.2 System Master.woz<a class="headerlink" href="#dos-32-system-masterwoz" title="Permanent link">&para;</a></h3>
+<p>This doesn't work, but, it's because DOS3.2 uses different sector markers, e.g. D5 AA B5 instead of D5 AA 96. I don't think there's any other reason for it not to work, from .WOZ files. To be clear, full DOS 3.2 support would also require:
+[ ] DOS32 DiskII ROM (should just have a different version of the card, basically the same but with different init)
+[ ] conversion on import (based on smaller 116K size?)</p>
+<p>etc. Ah, this won't boot, but won't copy II plus read them? let's try that.. ah the dos33 system master has a utility "boot13" that can boot DOS3.2! and it works, WOOT! (but boy is it slow, ha ha)</p>
+<p>So for DOS32 we could easily support the different boot rom, and just say it's only compatible with dos32 woz images.</p>
+<h2 id="how-does-this-stuff-actually-work">How does this stuff actually work?<a class="headerlink" href="#how-does-this-stuff-actually-work" title="Permanent link">&para;</a></h2>
+<p>On disk, the polarity of field on a track periodically switches from say N to S or S to N. There is no absolute 0 and 1 - it is the CHANGE of polarity that indicates a 1, and NO CHANGE of polarity that indicates a 0. On a change, the drive generates a "Read Pulse" which is used in the LSS to determine next steps. </p>
+<p>A "write cycle" is four CPU cycles (3.98uS) and a read pulse from the drive is 1 microsecond. In the real hardware, there is a 2uS "mask period" to make sure a read wasn't noise. </p>
+<p>If there is too much time between the field reversals (i.e. long stretch of zeroes) the MC3470 has been increasing its amplification and starts generating random noise read pulses. (This is why we have the random data injection at two points in this code).</p>
+<p>If we want to support FLUX tracks at some point, we will need to simulate this field reversal stuff, and that implies a different LSS design (one that follows the real LSS closely). For our purposes right now, we can short-circuit some of the LSS.</p>
+<p>Because there is a read pulse once every 4uS (4 cycles) even though the LSS operates at 2MHz, from our simulation perspective its state likely changes only once every 4uS (with each read pulse or no). And each 4uS implies one bit read from the track buffer.</p>
+<p>I guess a choice to make is whether to go ahead and implement the LSS as-is. OR try to reimplement its logic knowing we'll just have to implement the full LSS later anyway.</p>
+<p>I'm thinking about the fast_forward routine - is it possible to implement a really fast fast forward optimization so if it's been a very long time since last fast_forward, it doesn't take forever. A rotation is 200ms. There can be 50,000 bits there - too many to simulate all at once. (I'm not sure what the current code does). </p>
+<p>So if we do this, we need to generate read pulses based on the track data. i.e. if the current and last bits are different, generate a read pulse. That's an XOR. So that is an output of the floppy525 class. </p>
+<p>Floppy525 class inputs and outputs:
+inputs:
+    ph0-3
+    writerequest'
+    write signal -- flux that is being written
+outputs:
+    read pulse
+    wrprotect'
+methods:
+    fast_forward</p>
+<p>Write Signal is generated from A7 that's fed into the LSS rom. So if it's on steps 0-7, it's 0, and steps 8-F, it's 1. 
+UtA2e 9-15: "In writing, the state of QA is monitored and the WRITE SIGNAL is toggled at the bit writing interval when QA is set." A toggle (field reversal) is a 1. So yes, the LSS reverses field when QA (hi bit) is set.</p>
+<p>So if we're going to use the precise LSS, what we feed into the LSS has to either be massaged to match this field flipping, or the in-memory representation changed to be flux.</p>
+<p>The current "bitstream" form is flux at lower resolution after being run through this field flipping.</p>
+<p>So our "floppy emitter" can have two versions:
+1. one that read pulses from the actual flux of a flux track and injects that into the LSS
+1. one that generates read pulses from the bitstream, and injects that into the LSS.</p>
+<p>This latter really isn't that hard, it's very simple logic.</p>
+<p>I think the above sets us up most easily to handle 2.1FLUX tracks (readonly very easy to play back), and all the current image types.</p>
+<p>Then the question is, do we execute the LSS or smart-algo it like we do so many other things.
+Two steps in the LSS == 1 apple II cycle. </p>
+<p>the four inputs to the LSS are READ/WRITE; SHIFT/LOAD; QA; RP (read pulse). QA is shift_register[7]. We should only have one shift register, not a read one and a write one. RP is derived from "was last bit different from this one". </p>
+<p>ok let's evaluate the READ LSS Logic. All what we care about here is READ=1 SHIFT=1.
+if QA=0, we are basically shifting the bits into the SR from the disk.
+if QA=1, everything is NOP with 3 points where we clear the register.
+the RP Read Pulse is basically the indication of a GCR bit coming in. So we can interpret "RP" as "the bit from bitstream". OE does not convert these to flux transitions.</p>
+<p>A bit cell is 4 cpu cycles. so registers CAN change in the middle of a bit cell and some copy protection does this.</p>
+<p>There was an AppleWin ticket noting the behavior of the wp sense is to shift right into register, so if you do multiple wp sense in a row or leave it in that state you will get lots of 1's in the register.</p>
+<p>So do I need to do a refactor to properly break up the Drive vs Controller concepts?</p>
+<p>so the hierarchy:</p>
+<pre><code>ndiskii.cpp - just the machine / bus interface.
+  DiskII_Controller - handles accesses to the 16 disk ii registers
+    Floppy525_woz
+
+iwm_device
+  IWM - basically a new controller
+   ? Insert the DiskII Controller here as a sub, knowing 3.5 is a little different?
+    Floppy525_woz
+    Floppy35_woz
+</code></pre>
+<p>ok, after the big refactor, I lost: Miner 2049er II; Sammy Lightfoot. (FIXED! had to keep track of fractional phase difference).
+need to check what happens when we switch tracks, validate all that stuff.</p>
+<p>So, there are 2 outstanding issues I know of, besides whatever is needed to make the above broken images work:
+[X] wp should not merely set hi bit, it should shift values into hi bit, inside fast_forward.
+[X] we should not clear latch on every read and should not have this phantom lss register  </p>
+<p>I think read should clear the data register ONLY when the hi bit is set (i.e. QA). </p>
+<p>after the "should not clear latch", First Math works!! ALSO DOS 3.2 is a lot faster. </p>
+<p>[ ] .nib 13-sector disk doesn't work, they're the same size as dos 3.3 .nib which doesn't seem right. Some way to detect .nib correct track dimensions?  </p>
+<p>ok, I think the write protect stuff is handled correctly now. </p>
+<p>WRITES ARE IN THERE BABY!!!</p>
+<p>Locksmith can successfully speed test the disk, and it is successfully nibble-copying a disk (itself).
+I am curious about track length. Are woz track lengths typically the same +/- some small nominal amount? If so, this is probably fine. But if a track is short for some reason (uh, the bit writing speed is not 3.910) then we will need to expand the track length when we start writing.
+Copy II Plus speed test is also working just fine. I did a lot of copying.
+Accelerating seems to make no difference, as it shouldn't, since we clock floppy on the CPU.
+Let's re-test the broken images.. just have four not working.</p>
+<p>cleaning up the code, removing debug stuff (can't generate a 1.9GB debug file every time we run, lolz).</p>
+<p>[ ] improve debug() emitters in diskii_controller and Floppy525.<br />
+[ ] see if we can optimize rdpulse and wrpulse by not calculating the bit index from scratch every single call<br />
+[ ] we did not writeback a .po file successfully</p>
+<p>For that matter, are we writing out ANY non-woz files?</p>
+<p>[ ] make all the 74LS259 Addressible Latch registers be bools</p>
+<p>[ ] Have Soundeffects support stereo
+[ ] have drive 1 play through left channel, drive 2 play through right channel.  </p>
+<h2 id="p6-prom">P6 PROM<a class="headerlink" href="#p6-prom" title="Permanent link">&para;</a></h2>
+<p>Should I eventually choose to go this way:</p>
+<table>
+<thead>
+<tr>
+<th>Address Bit</th>
+<th>tied to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7</td>
+<td>O7</td>
+</tr>
+<tr>
+<td>6</td>
+<td>O6</td>
+</tr>
+<tr>
+<td>5</td>
+<td>O4</td>
+</tr>
+<tr>
+<td>4</td>
+<td>read pulse gated to one Q3 (2mhz) and inverted so RP'</td>
+</tr>
+<tr>
+<td>3</td>
+<td>READ/WRITE</td>
+</tr>
+<tr>
+<td>2</td>
+<td>SHIFT/LOAD</td>
+</tr>
+<tr>
+<td>1</td>
+<td>QA</td>
+</tr>
+<tr>
+<td>0</td>
+<td>O5</td>
+</tr>
+</tbody>
+</table>
+<pre><code>000000: 18 D8 18 08  0A 0A 0A 0A  18 39 18 39  18 3B 18 3B  . . . . . . . . . 9 . 9 . ; . ;
+000010: 18 38 18 28  0A 0A 0A 0A  18 39 18 39  18 3B 18 3B  . 8 . ( . . . . . 9 . 9 . ; . ;
+000020: 2D D8 38 48  0A 0A 0A 0A  28 48 28 48  28 48 28 48  - . 8 H . . . . ( H ( H ( H ( H
+000030: 2D 48 38 48  0A 0A 0A 0A  28 48 28 48  28 48 28 48  - H 8 H . . . . ( H ( H ( H ( H
+000040: D8 D8 D8 D8  0A 0A 0A 0A  58 78 58 78  58 78 58 78  . . . . . . . . X x X x X x X x
+000050: 58 78 58 78  0A 0A 0A 0A  58 78 58 78  58 78 58 78  X x X x . . . . X x X x X x X x
+000060: D8 D8 D8 D8  0A 0A 0A 0A  68 08 68 88  68 08 68 88  . . . . . . . . h . h . h . h .
+000070: 68 88 68 88  0A 0A 0A 0A  68 08 68 88  68 08 68 88  h . h . . . . . h . h . h . h .
+000080: D8 CD D8 D8  0A 0A 0A 0A  98 B9 98 B9  98 BB 98 BB  . . . . . . . . . . . . . . . .
+000090: 98 BD 98 B8  0A 0A 0A 0A  98 B9 98 B9  98 BB 98 BB  . . . . . . . . . . . . . . . .
+0000A0: D8 D9 D8 D8  0A 0A 0A 0A  A8 C8 A8 C8  A8 C8 A8 C8  . . . . . . . . . . . . . . . .
+0000B0: 29 59 A8 C8  0A 0A 0A 0A  A8 C8 A8 C8  A8 C8 A8 C8  ) Y . . . . . . . . . . . . . .
+0000C0: D9 FD D8 F8  0A 0A 0A 0A  D8 F8 D8 F8  D8 F8 D8 F8  . . . . . . . . . . . . . . . .
+0000D0: D9 FD A0 F8  0A 0A 0A 0A  D8 F8 D8 F8  D8 F8 D8 F8  . . . . . . . . . . . . . . . .
+0000E0: D8 DD E8 E0  0A 0A 0A 0A  E8 88 E8 08  E8 88 E8 08  . . . . . . . . . . . . . . . .
+0000F0: 08 4D E8 E0  0A 0A 0A 0A  E8 88 E8 08  E8 88 E8 08  . M . . . . . . . . . . . . . .
+</code></pre>
+<h2 id="disk-ii-cable-io-api-to-the-drive">Disk II Cable (I/O API to the drive)<a class="headerlink" href="#disk-ii-cable-io-api-to-the-drive" title="Permanent link">&para;</a></h2>
+<p>non-power signals</p>
+<table>
+<thead>
+<tr>
+<th>Pin</th>
+<th>Signal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>PHS0</td>
+</tr>
+<tr>
+<td>4</td>
+<td>PHS1</td>
+</tr>
+<tr>
+<td>6</td>
+<td>PHS2</td>
+</tr>
+<tr>
+<td>8</td>
+<td>PHS3</td>
+</tr>
+<tr>
+<td>10</td>
+<td>WR REQUEST'</td>
+</tr>
+<tr>
+<td>14</td>
+<td>ENABLE'</td>
+</tr>
+<tr>
+<td>16</td>
+<td>RDPULSE</td>
+</tr>
+<tr>
+<td>18</td>
+<td>WRITE SIGNAL</td>
+</tr>
+<tr>
+<td>20</td>
+<td>WRPROTECT'</td>
+</tr>
+</tbody>
+</table>
+<p>All signals:
+| Pin | Signal        |
+|----------|-----------------|
+| 1        | GND    |
+| 2        | PHS0    |
+| 3        | GND    |
+| 4        | PHS1    |
+| 5        | GND    |
+| 6        | PHS2    |
+| 7        | GND    |
+| 8        | PHS3    |
+| 9        | -12V    |
+| 10       | WR REQUEST'   |
+| 11       | +5V   |
+| 12       | +5V   |
+| 13       | +12V   |
+| 14       | ENABLE'   |
+| 15       | +12V   |
+| 16       | RDPULSE   |
+| 17       | +12V   |
+| 18       | WRITE SIGNAL   |
+| 19       | +12V   |
+| 20       | WRPROTECT'   |</p>
+<h2 id="detail-tracebreakdown-of-miner-2049er">Detail trace/breakdown of Miner 2049er<a class="headerlink" href="#detail-tracebreakdown-of-miner-2049er" title="Permanent link">&para;</a></h2>
+<p>miner
+bp B958
+    when it's on track 2
+    it's looking for some sector</p>
+<p>BDC4 is a JSR to something to find a sector
+26.27 are header decode locations
+2E is track, 2F is well it might be sector but it's 254 (volume?)
+volume 2f
+track 2e
+sector 2d
+checksum 2c</p>
+<p>b98b: looking for 9E E7 (header trailer)</p>
+<p>it's putting stuff into sta (48),y -&gt; currently 40A4</p>
+<p>T00,S08 FOUND MICRO FUN PROTECTION CHECK
+T00,S08,$38: 4C6ABA -&gt; 08B08E</p>
+<p>that's JMP BA6A
+BEAF - the actual nybble check subroutine</p>
+<p>Ba70: LDA 2d (sector)
+Ba72: cmp #$0F (yes, we are!)
+lda 2E
+cmp #$01 - track 1, sector F
+we're not, but ..
+JSR BEAF
+ldy #0
+STY 26
+STY 27
+- that's the code they're looking for below</p>
+<p>it's reading a byte, looking for: FF, 9E, CF, if not any of those (we're DF from offset 4961)
+if it's an FF it increments 26.27 and branches back to loop.
+if it's 9E, it loads Y with 6 and branches back to BED5 - that's a lookup based on Y there</p>
+<p>then TAY, lookup from a table BE9F,Y. (A is 7A from offset DF)
+then TAY Again - Y now 7A)
+now I think we're counting how many FF there are. (there are 550)
+well, we read an FF, compares that to BF9F,Y == C01C (wrong!) == C1, doesn't match.
+So it's looking for a single nybble after this stuff.</p>
+<p>So what does it want to be here? As soon as it saw D5 AA, it is jumping into this mess.
+ok, DF is 11011111, then it's just a bunch of 1111111
+we know DF is wrong so skip one bit and see what makes sense in the table:
+10111111 - BF
+be9f+bf = bf5e, which contains AA (nope, still an overrun)</p>
+<p>it's doing bpl so it has to have hi bit set, so it's expecting FF?
+be9f+ff = bf9e is FF
+it does a false read into Be but it's going to read well into c0</p>
+<p>the 2nd lookup table seems to be
+BF9F: F7 F7 EE DC B9 E7 E7 FF FF FF FF FF FE F9 F9 CF CF CF CF CF 9E 9E E7
+      == == ==    ==       ==
+24 bytes.</p>
+<p>So the 1st lookup table is 24 or 25 bytes. 
+BF86 - BFxx =
+Bf86 - Be9F = E7
+So it's expecting the values it reads to be from E7 to FF</p>
+<p>nope it's neither of those. 
+9E - 10011110
+CF - 11001111</p>
+<p>what if we're supposed to catch the tail-end of the AA, that's 10 1101 1111
+is 1011 0111 is B7 nope</p>
+<p>well I could bp this and see what applewin provides it.</p>
+<p>(ok, right, if I set the routine to CLC RTS the game loads. That is definitely the issue.</p>
+<p>AppleWin is giving it FF &lt;- so we are not advancing the pointer/latch as much as we should.
+AppleWin is also showing the bits shifting into the register (i.e., it's not '0' until the hi bit is set like we're doing)
+ok so what it WANTS here is to see D5 AA ..skip.. FF, then read the 500ish FF's, then read a 9E E7 F9
+then it does 3 nop
+reads a 9E
+then it's reading and comparing against a -different- lut address, bfb7,Y
+E7, then F9 
+then counting in Y the number of FF's after that
+and then checking for D5
+and exactly 0F of the FF's (well, maybe 16)
+and AA, 
+and then it's finally exiting. 
+holy hell</p>
+<p>;-------------------------------
+; #MICROFUN
+; RWTS jumps to nibble check after
+; reading certain sectors
+;
+; tested on
+; - Station 5
+; - The Heist
+; - Miner 2049er (re-release)
+; - Miner 2049er II
+; - Short Circuit
+;-------------------------------
+!zone {
+         ; gTrack = 0
+         ; Caller found DOS 3.3 RWTS</p>
+<pre><code>     ldy   #$09
+     jsr   SearchTrack
+     !byte $A0,$00    ; LDY #$00
+     !byte $84,$26    ; STY $26
+     !byte $84,$27    ; STY $27
+     !byte $BD,$8C,$C0; LDA $C08C,X
+     bcs   .exit      ; passport-test-suite/Miner 2049er.woz [C=0] matches
+     jsr   PrintByID
+     !byte s_microfun
+     jsr   modify2
+     !byte $18        ; CLC
+     !byte $60        ; RTS
+</code></pre>
+<p>.exit
+}</p>
+<h2 id="image-generation-and-conversion">Image generation and conversion<a class="headerlink" href="#image-generation-and-conversion" title="Permanent link">&para;</a></h2>
+<p>So we need to be able to import a block file to Woz format, and go the other way, same as we do for 5.25 floppies.</p>
+<p>We're going to want to perform a conversion just like CP2 does it. </p>
+<p>We also want some menu items to create new blank 140K and 800K Woz disk images (and maybe .2mg too?)</p>
+<h2 id="flux-tracks">FLUX Tracks<a class="headerlink" href="#flux-tracks" title="Permanent link">&para;</a></h2>
+<p>So, flux tracks are run length encoded.</p>
+<p>Any image with a FLUX track will need to be mounted readonly - we're just not gonna write to them. Well, ok, we could. We could unpack it, read/write it, then repack it to store back on disk. Seems unlikely any of these games are going to try to write to their flux track.</p>
+<p>So let's say we unpack it, and pack the flux bits into byte, one 5.25 track will take around 200KB, and longest 3.5 track around 312K bytes. That is one bit per 125ns.</p>
+<p>The issue here: can we do a fast-forward using the RLE data? Not sure we can. Much simpler to use non-compressed data.</p>
+<p>However (and correct me if I'm wrong) a flux track is still going through the same drive electronics right? So in practice is there anything to do besides compress it down to a normal track?
+apparently they think it's different enough.
+Wait until June to have Opus take a crack at this.</p>
+<h2 id="test-regime">Test Regime<a class="headerlink" href="#test-regime" title="Permanent link">&para;</a></h2>
+<p>in Apple IIe and IIgs each, run the following test regime</p>
+<p>Mount prodos 2.4.3 in 6/1 and a dummy disk in drive 2 
+1. format drive 2; verify disk
+1. block copy drive 1 to drive 2; verify disk</p>
+<p>Mount locksmith 6 in 6/1 and dummy disk in drive 2
+1. bit copy drive 1 to drive 2;
+1. compare driver 1 to drive 2
+1. verify drive 2 (quick verify in 16-sect utils)</p>
+<p>On IIgs only, run the following test regime
+1. boot GS/OS; initialize 3.5 with 2:1 and 4:1 formatting, verify
+1. format with 2:1; copy a folder of test files to the floppy; verify</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

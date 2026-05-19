@@ -10,8 +10,6 @@
       
       
       
-        <link rel="next" href="../Roadmap/">
-      
       
         
       
@@ -21,7 +19,7 @@
     
     
       
-        <title>Overview - GSSquared Documentation</title>
+        <title>GSSquared v0.8.0 - GSSquared Documentation</title>
       
     
     
@@ -72,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#gssquared-ultimate-apple-ii-series-emulator" class="md-skip">
+        <a href="#gssquared-v080" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Overview
+              GSSquared v0.8.0
             
           </span>
         </div>
@@ -217,11 +215,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
         
   
   
@@ -421,19 +417,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
         
   
   
@@ -449,7 +436,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -2559,6 +2545,80 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#supported-platforms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported platforms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pre-built-binaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-built binaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accuracy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Accuracy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug Fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#internals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internals
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -2577,545 +2637,74 @@
   
 
 
-<h1 id="gssquared-ultimate-apple-ii-series-emulator">GSSquared - Ultimate Apple II Series Emulator<a class="headerlink" href="#gssquared-ultimate-apple-ii-series-emulator" title="Permanent link">&para;</a></h1>
-<p>The ambition for this project is large - and it will take a while to get it done. So at any given point in time, consider it a work-in-progress complete with bugs, missing features, and experiments. Of course there will be plenty that "just works".</p>
-<p>Looking for how to use GSSquared?
-<a href="Index.md">Click here for User Documentation</a></p>
-<p>Keep reading for Project Status, Design, and development journals.</p>
+<h1 id="gssquared-v080">GSSquared v0.8.0<a class="headerlink" href="#gssquared-v080" title="Permanent link">&para;</a></h1>
+<p>I am pleased to announce the release of <strong>GSSquared v0.8.0</strong>.</p>
+<p>GSSquared is an Apple II series computer emulator.</p>
+<h2 id="supported-platforms">Supported platforms<a class="headerlink" href="#supported-platforms" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="#project-status-as-of-2026-03-10">Project Status</a></li>
-<li><a href="#code-organization">Code Organization</a></li>
+<li>Apple ][</li>
+<li>Apple ][ Plus</li>
+<li>Apple //e</li>
+<li>Apple //e Enhanced</li>
+<li>Apple //e Enhanced with 65816 CPU and Super Hires Video</li>
+<li>Apple IIgs ROM 01</li>
 </ul>
-<h1 id="project-status-as-of-2026-03-10">Project Status (as of 2026-03-10)<a class="headerlink" href="#project-status-as-of-2026-03-10" title="Permanent link">&para;</a></h1>
-<h2 id="supported-host-platforms">Supported Host Platforms<a class="headerlink" href="#supported-host-platforms" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Platform</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>MacOS</td>
-<td>Builds a MacOS App Bundle with all assets</td>
-</tr>
-<tr>
-<td>Linux</td>
-<td>Builds a linux AppImage with all assets</td>
-</tr>
-<tr>
-<td>Windows</td>
-<td>Builds a ZIP file with all assets (no 'installation' required)</td>
-</tr>
-</tbody>
-</table>
-<h2 id="modeled-virtual-platforms">Modeled Virtual Platforms<a class="headerlink" href="#modeled-virtual-platforms" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Platform</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Apple II Rev 0.</td>
-<td>❌</td>
-</tr>
-<tr>
-<td>Apple II</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>Apple II+</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>Apple II j-plus</td>
-<td>❌</td>
-</tr>
-<tr>
-<td>Apple IIe</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>Apple IIe (enh)</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>Apple IIc</td>
-<td>❌</td>
-</tr>
-<tr>
-<td>Apple IIc+</td>
-<td>❌</td>
-</tr>
-<tr>
-<td>Apple IIgs</td>
-<td>✅</td>
-</tr>
-</tbody>
-</table>
-<h2 id="supported-video-modes">Supported Video Modes<a class="headerlink" href="#supported-video-modes" title="Permanent link">&para;</a></h2>
-<p>The following video modes are currently implemented:</p>
-<table>
-<thead>
-<tr>
-<th>Apple II Mode</th>
-<th>Composite</th>
-<th>RGB</th>
-<th>Monochrome</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Text (40-col)</td>
-<td>✅</td>
-<td>✅</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>Text (80-col)</td>
-<td>✅</td>
-<td>✅</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>Videx VideoTerm</td>
-<td></td>
-<td></td>
-<td>✅</td>
-</tr>
-<tr>
-<td>LGR</td>
-<td>✅</td>
-<td>✅</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>HGR</td>
-<td>✅</td>
-<td>✅</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>DLGR</td>
-<td>✅</td>
-<td></td>
-<td>✅</td>
-</tr>
-<tr>
-<td>DHGR</td>
-<td>✅</td>
-<td>✅</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>SHR 320</td>
-<td></td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>SHR 640</td>
-<td></td>
-<td>✅</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<p>The Composite mode is an accurate simulation of a real NTSC monitor.
-RGB is an accurate (exact) Apple IIgs RGB presentation.</p>
-<h2 id="cpus">CPUs<a class="headerlink" href="#cpus" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>CPU Type</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>NMOS 6502</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>CMOS 6502</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>65c816</td>
-<td>✅</td>
-</tr>
-</tbody>
-</table>
-<h2 id="keyboard">Keyboard<a class="headerlink" href="#keyboard" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Model</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Apple II+</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>Apple IIe</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>Apple IIc</td>
-<td>❌</td>
-</tr>
-<tr>
-<td>Apple IIgs</td>
-<td>✅</td>
-</tr>
-</tbody>
-</table>
-<h2 id="memory-expansion">Memory Expansion<a class="headerlink" href="#memory-expansion" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Type</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Language Card</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>Apple II Memory Expansion Card ("Slinky")</td>
-<td>✅</td>
-</tr>
-</tbody>
-</table>
-<h2 id="storage-devices">Storage Devices<a class="headerlink" href="#storage-devices" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Type</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Cassette</td>
-<td>No support planned.</td>
-</tr>
-<tr>
-<td>Disk II Controller Card</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>ProDOS Block-Device Interface</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>SmartPort / ProDOS Block-Device Interface</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>RAMfast SCSI Interface</td>
-<td>Not started</td>
-</tr>
-<tr>
-<td>IWM - Integrated Woz Machine</td>
-<td>5.25 Support Complete, 3.5 Pending</td>
-</tr>
-</tbody>
-</table>
-<p>Additional notes: 5.25 Floppy does not support quarter or half tracks.</p>
-<h2 id="disk-image-formats">Disk Image Formats<a class="headerlink" href="#disk-image-formats" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Format</th>
-<th>Status</th>
-<th>Size</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>.do, .dsk</td>
-<td>✅ Read/write</td>
-<td>1430</td>
-<td></td>
-</tr>
-<tr>
-<td>.po</td>
-<td>✅ Read/write</td>
-<td>140K</td>
-<td></td>
-</tr>
-<tr>
-<td>.hdv, .img</td>
-<td>✅ Read/write</td>
-<td>Any size</td>
-<td>Block device, complete</td>
-</tr>
-<tr>
-<td>.2mg</td>
-<td>✅ Read/Write</td>
-<td>Various</td>
-<td>For block devices, complete</td>
-</tr>
-<tr>
-<td>.nib</td>
-<td>✅ Read Only</td>
-<td>140K</td>
-<td></td>
-</tr>
-<tr>
-<td>.woz 1.0</td>
-<td>✅ Read/Write</td>
-<td>140K 800K</td>
-<td></td>
-</tr>
-<tr>
-<td>.woz 2.0</td>
-<td>✅ Read/Write</td>
-<td>140K 800K</td>
-<td></td>
-</tr>
-<tr>
-<td>.woz 2.1</td>
-<td>❌</td>
-<td>140K 800K</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<table>
-<thead>
-<tr>
-<th>Component</th>
-<th>Status</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Basic Speaker</td>
-<td>✅ Complete</td>
-<td></td>
-</tr>
-<tr>
-<td>Ensoniq / IIGS Sound</td>
-<td>In progress</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<h2 id="io-devices">I/O Devices<a class="headerlink" href="#io-devices" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Device</th>
-<th>Status</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Printer / parallel port</td>
-<td>Work in progress</td>
-<td>Right now just dumps binary data to file, no processsing or printer emulation</td>
-</tr>
-<tr>
-<td>Printer / serial port</td>
-<td>Partial</td>
-<td>GS-only, support SCC chip and "print to file"</td>
-</tr>
-<tr>
-<td>Modem / serial port</td>
-<td>Not started</td>
-<td>GS-only, support SCC chip and Hayes-compatible modem with telnet</td>
-</tr>
-<tr>
-<td>ImageWriter printer emulation</td>
-<td>Not started</td>
-<td></td>
-</tr>
-<tr>
-<td>Joystick / paddles</td>
-<td>✅ Complete</td>
-<td>Mouse emulation of Joystick; Gamepads;</td>
-</tr>
-<tr>
-<td>Sirius JoyPort (Atari)</td>
-<td>✅</td>
-<td>Implemented Single Joystick - enable mode with F6</td>
-</tr>
-<tr>
-<td>Shift-key mod and Lowercase Character Generator</td>
-<td>Not started</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<h2 id="clocks">Clocks<a class="headerlink" href="#clocks" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Type</th>
-<th>Status</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Thunderclock</td>
-<td>Partial</td>
-<td>Read of time implemented. Interrupts, writing clock - not implemented. Needs testing.</td>
-</tr>
-<tr>
-<td>Generic ProDOS-compatible Clock</td>
-<td>Complete</td>
-<td>Read-only.</td>
-</tr>
-<tr>
-<td>IIgs Realtime Clock</td>
-<td>✅</td>
-<td>syncs to host clock using local time zone</td>
-</tr>
-</tbody>
-</table>
-<h1 id="more-detailed-notes-on-status">More Detailed Notes on Status<a class="headerlink" href="#more-detailed-notes-on-status" title="Permanent link">&para;</a></h1>
-<h2 id="keyboard_1">Keyboard<a class="headerlink" href="#keyboard_1" title="Permanent link">&para;</a></h2>
-<h3 id="apple-ii">Apple II+<a class="headerlink" href="#apple-ii" title="Permanent link">&para;</a></h3>
-<p>For specific platform key mappings, see: <a href="../KeyboardShortcuts/">Keyboard Shortcuts</a></p>
-<p>On the Mac, you will want to disable "Pressing Option 5 Times enables Mouse Keys", and Dictation. Otherwise pressing CTRL repeatedly will interfere with the emulator's use of the option / control keys.</p>
-<p>BTW, Control-OpenApple-Reset will also "force reboot" a II+ mode, because it's super-useful, even though OpenApple and ClosedApple are NOT mapped to the game controller buttons on the II+.</p>
-<ol>
-<li>control keys: YES</li>
-<li>shift keys: YES</li>
-<li>arrow keys: YES. II+ only has left and right arrow keys, so only those work on II+.</li>
-<li>Escape key: YES</li>
-<li>RESET key: YES.</li>
-<li>REPT key: no. But we don't need this, autorepeat driven by real keyboard.</li>
-<li>Backspace - YES.</li>
-</ol>
-<h3 id="apple-iie">Apple IIe<a class="headerlink" href="#apple-iie" title="Permanent link">&para;</a></h3>
-<ol>
-<li>control keys: YES</li>
-<li>shift keys: YES</li>
-<li>arrow keys: YES. All 4 arrow keys.</li>
-<li>Escape key: YES</li>
-<li>RESET key: YES.</li>
-<li>REPT key: no. But we don't need this, autorepeat driven by real keyboard.</li>
-<li>Backspace - YES. Mapped to 0x7F 'Delete' on IIe keyboard.</li>
-<li>OA and CA - YES.</li>
-</ol>
-<h2 id="roms">ROMs<a class="headerlink" href="#roms" title="Permanent link">&para;</a></h2>
-<p>For now, ROMs are included in the source tree and distribution.</p>
-<h3 id="more-character-rom-stuff">More Character ROM stuff:<a class="headerlink" href="#more-character-rom-stuff" title="Permanent link">&para;</a></h3>
-<p>https://github.com/dschmenk/Apple2CharGen</p>
-<p>Info on the character set:</p>
-<p>https://en.wikipedia.org/wiki/Apple_II_character_set</p>
-<h2 id="display">Display<a class="headerlink" href="#display" title="Permanent link">&para;</a></h2>
-<p>The display is managed by the cross-platform SDL3 library, which supports graphics
-but also sound, user input, lots of other stuff. It is a library intended for
-video games, and in thinking about all the things that make up a good emulator, 
-emulators fit the video game category quite closely.</p>
-<p>GSSquared supports three video display engines:
-* NTSC - a highly accurate rendering of Apple II video as it would have worked on a composite monitor of the time.
-* RGB - the exact Apple IIgs mapping of Apple II video to RGB
-* Monochrome - green, amber, or white 'high bandwidth' monochrome display.</p>
-<p>At this time all video modes below work with all display engines.</p>
-<h3 id="text-mode">Text Mode<a class="headerlink" href="#text-mode" title="Permanent link">&para;</a></h3>
-<p>Supports 40-column normal, inverse, and flash;
-80-column with standard and alternate character sets, and on GS, all 8 international character sets.
-Also, GS2 supports Videx VideoTerm in the II+ model.</p>
-<h3 id="low-resolution-graphics">Low-Resolution Graphics<a class="headerlink" href="#low-resolution-graphics" title="Permanent link">&para;</a></h3>
-<p>Wwork with screen 1, 2, split-screen, and full-screen.</p>
-<h3 id="high-resolution-graphics">High-Resolution Graphics<a class="headerlink" href="#high-resolution-graphics" title="Permanent link">&para;</a></h3>
-<p>Works with page 1, 2, split-screen, and full-screen.</p>
-<h3 id="double-modes">Double Modes<a class="headerlink" href="#double-modes" title="Permanent link">&para;</a></h3>
-<p>Double lo-res and Double hi-res supported fully, and with all video engines.</p>
-<h2 id="disk-drive-interfaces">Disk Drive Interfaces<a class="headerlink" href="#disk-drive-interfaces" title="Permanent link">&para;</a></h2>
-<h3 id="disk-ii-controller-card-design-and-operation">Disk II Controller Card Design and Operation<a class="headerlink" href="#disk-ii-controller-card-design-and-operation" title="Permanent link">&para;</a></h3>
-<p>https://www.bigmessowires.com/2021/11/12/the-amazing-disk-ii-controller-card/</p>
-<p>We simulate time passage by counting cycles, not by counting realtime. This way floppy disks can be simulated at any speed. If you are running in one of the faster modes, the simulated disk drive "speeds up".</p>
-<p>We support reading and writing to Disk II images per the table above. Writes are buffered in memory until you unmount the disk, at which time if there have been changes you are given the opportunity to save them back to the original image file.</p>
-<h3 id="ramfast-scsi-interface">RAMfast SCSI Interface<a class="headerlink" href="#ramfast-scsi-interface" title="Permanent link">&para;</a></h3>
-<p>I'm not sure if there is any benefit to emulating the RAMfast SCSI interface. An Apple II forum
-user suggested it, but, I don't think there was any software that required it specifically?
-(There was also a suggestion to emulate a SecondSight, and, that would be way easier and
-make more sense).</p>
-<h3 id="pascal-storage-device">Pascal Storage Device<a class="headerlink" href="#pascal-storage-device" title="Permanent link">&para;</a></h3>
-<p>There is a standardized device interface that ProDOS supports, called Pascal. This may be what
-became known as the SmartPort / ProDOS block-device interface. See above.</p>
-<h1 id="code-organization">Code Organization<a class="headerlink" href="#code-organization" title="Permanent link">&para;</a></h1>
-<h2 id="frames">Frames<a class="headerlink" href="#frames" title="Permanent link">&para;</a></h2>
-<p>The system is organized around Frames, and an event loop. You can think of a frame as a video update cycle, occuring 60 times per second.</p>
-<p>This is basically modern video game development organization.</p>
-<p>The main system loop does the following:</p>
+<h2 id="pre-built-binaries">Pre-built binaries<a class="headerlink" href="#pre-built-binaries" title="Permanent link">&para;</a></h2>
 <ul>
-<li>execute 1/60th of a second's worth of CPU instructions, based on current "speed" setting.</li>
-<li>process events (keyboard, mouse inputs, etc)</li>
-<li>generate audio frames</li>
-<li>generate video update</li>
-<li>sleep precisely until start of next frame</li>
+<li><strong>macOS</strong> (Intel and Apple Silicon)</li>
+<li><strong>Windows 10+</strong></li>
+<li><strong>Linux AppImage</strong> (should run on many Linux distros; tested on Ubuntu 22)</li>
 </ul>
-<p>CPU instructions are emulated at the equivalent of 500 times faster than the original Apple II, which leaves plenty of time in that 1/60th second to do all the other work above. This allows the overall cycle rate to be very accurately timed as far as human perception goes.</p>
-<p>And that's the core of this design - organized around frames like this, the code is executing very differently to how it was in a real II, but the way we perceive it is indistinguishable.</p>
-<p>This organization also makes the system very portable, and, very accommodating to host systems of different speeds.</p>
-<h2 id="platforms">Platforms<a class="headerlink" href="#platforms" title="Permanent link">&para;</a></h2>
-<p>When a virtual Apple II is created and 'powered on', there are several stages.</p>
-<ol>
-<li>Platform is initialized.</li>
-<li>CPU structure is created.</li>
-<li>MMU is created</li>
-<li>Memory allocated and initial memory map assigned.</li>
-<li>Devices are initialized and 'registered'.</li>
-<li>The CPU is 'powered on'.</li>
-</ol>
-<p>A "Platform" is a specific selection and combination of: CPU type, devices, and memory map.
-Because so much of the Apple II series share significant systems and subsystems,
-we define and implement those with granularity and "compose" them together when a 
-particular virtual machine is set up.</p>
-<p>As one example, the Apple II, II+, IIe, IIc, and IIgs all share the same $C030 primitive
-speaker toggle. So, we write that only once. When we 'boot' a IIgs OR a IIe, we call
-"init_mb_speaker" against the Computer structure, and that hooks in this functionality using memory mapping routines in the MMU.</p>
-<p>Similarly with CPUs. You want a IIe with nmos 6502? Great. Select those components.
-You want a IIe with original firmware but 65c02 (it might not run very well but try it anyway!) You can define a platform to do exactly that.</p>
-<p>Want to create your own platform that never existed in reality and experiment?
-Go for it! Design the next generation of Apple II! Then maybe someone can take your
-idea and implement in hardware.</p>
-<p>Contribute new devices back to the project for fun and profit! Well, for fun anyway.</p>
-<h2 id="computer">Computer<a class="headerlink" href="#computer" title="Permanent link">&para;</a></h2>
-<p>The "Computer" serves as a nexus and container for the various components of the system - the CPU, MMU, Devices, VideoSystem, and AudioSystem.</p>
-<h2 id="cpu">CPU<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h2>
-<p>The CPU is the central processing unit, executing 6502/816 instructions.</p>
-<h2 id="mmu">MMU<a class="headerlink" href="#mmu" title="Permanent link">&para;</a></h2>
-<p>The MMU manages memory for the system, including allocating main system memory, and performing memory mapping at the request of devices.</p>
-<p>Memory is mapped in units of Pages. In the Apple II/II+/IIe world, a page is 256 bytes as this is typically the smallest unit of memory mapping.</p>
-<p>A page has 5 map controls:
-* Read memory - maps reads for the page to a certain memory block inside the emulator
-* Write memory - maps writes to a memory block
-* Read Handler Callback - maps reads to a callback handler
-* Write Handler Callback - maps writes to a callback handler
-* Shadow Callback - maps writes to a SECOND callback handler if desired.</p>
-<p>As an example, the Shadow callback function is used by the display system to be notified whenever a byte in video memory (text, or hires) is modified - this sets flags to update that part of the display. (An optimization, we don't redraw the entire screen every frame, only those areas changed).</p>
-<p>The page C000-C0FF is further broken down into 256 Softswitch locations. When a device initializes, it registers a read and/or write handler on I/O locations it wants to control.</p>
-<p>There is also a special callback handler for managing C800-C8FF memory space by a device.</p>
-<p>Whenever the MMU is asked to read or write a memory address, it looks up the page map entry for the page in question and handles according to programmed map controls.</p>
-<h2 id="videosystem">VideoSystem<a class="headerlink" href="#videosystem" title="Permanent link">&para;</a></h2>
-<p>The VideoSystem mediates video updates between display modules (e.g. motherboard video or Videx) and the underlying SDL. Typically, a display system will maintain a texture in the host video RAM. When frame update is complete, VideoSystem completes the frame by drawing the texture into the display window.</p>
-<h2 id="devices">Devices<a class="headerlink" href="#devices" title="Permanent link">&para;</a></h2>
-<p>Devices are components of an emulated system aside from the above ones. There are two categories: motherboard devices, and slot devices. A slot device is one which would go into an expansion slot in a real Apple II (Disk II, Videx, Memory Expansion Card, Language Card). A motherboard device is one that is typically embedded on the motherboard (e.g., keyboard, game port).</p>
-<p>Users will be able to edit the Slot Cards in a system, and you can have multiple instances of a slot device in a system. For example: you can put two Mockingboards into a system though I am unaware of any software besides Ultima V that acutally uses it. Or two Disk II controllers for four Disk II drives.</p>
-<p>You can only have one instance of each type of motherboard device in a system, and these are not user-changeable. These are defined in code as part of the "Platform" data structures.</p>
-<p>When a device initializes it hooks into the system by setting callbacks for its I/O locations in the MMU. It may also hook in callbacks for C800, shadow memory, etc. Whatever it needs.</p>
-<p>Devices may also register a "frame handler" which is called once per video frame.</p>
+<hr />
+<p>This release brings full <strong>3.5" floppy support</strong> on the Apple IIgs, a much-improved <strong>Control Panel</strong> for managing disks, and better handling when you quit with unsaved disk changes.</p>
+<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p><strong>Apple IIgs 3.5" floppy drives</strong> now support <strong>WOZ disk images</strong> for reading and writing, including many copy-protected titles.</p>
+</li>
+<li>
+<p><strong>5.25" and 3.5" floppy emulation</strong> has been significantly improved. Copy-protected WOZ images that previously failed should now work, and changes to mounted disks can be saved back to the original image file when you unmount.</p>
+</li>
+<li>
+<p>The <strong>Control Panel</strong> has new, clearer drive icons for 3.5" AppleDisk drives and hard drives. Icons match the machine you are emulating — Disk II on early Apple II models, AppleDisk on the //e and IIgs.</p>
+</li>
+<li>
+<p><strong>BazFast</strong>, the built-in SmartPort hard drive, can now mount <strong>multiple disk images at once</strong>. Drag a <code>.pmap</code> file onto a BazFast icon to load a whole set of volumes in one step — handy for multi-disk setups like a hard-drive collection with separate ProDOS volumes.</p>
+</li>
+<li>
+<p>When you <strong>quit or power off</strong>, GSSquared now properly asks whether to save any disks that have unsaved changes.</p>
+</li>
+<li>
+<p>You can launch GSSquared directly into a specific machine from the command line: <code>-p PLATFORM</code> (for example, <code>-p iigs</code>). Closing the window will then exit the emulator automatically.</p>
+</li>
+</ul>
+<h2 id="accuracy">Accuracy<a class="headerlink" href="#accuracy" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p>Floppy disk timing and head movement are more accurate, which helps games and copy-protection schemes that depend on precise disk behavior.</p>
+</li>
+<li>
+<p>Mounting a disk image on the wrong kind of drive (for example, a 140K floppy image on a hard drive) now shows a clear error instead of failing silently.</p>
+</li>
+</ul>
+<h2 id="bug-fixes">Bug Fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p>The debugger open/close key is now <strong>F10</strong>, so it no longer conflicts with keys used inside Apple II software.</p>
+</li>
+<li>
+<p>Fixed a Windows build issue.</p>
+</li>
+</ul>
+<h2 id="internals">Internals<a class="headerlink" href="#internals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>
+<p>The floppy and IWM disk code has been reorganized and rewritten as a foundation for future storage improvements.</p>
+</li>
+<li>
+<p>Documentation for disks, WOZ images, and BazFast has been updated.</p>
+</li>
+</ul>
 
 
 

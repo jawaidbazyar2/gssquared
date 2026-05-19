@@ -2016,43 +2016,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-slot-7-disk-motor-on-detect" class="md-nav__link">
+  <a href="#3-0-slot-7-4-disk-motor-on-detect" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3: Slot 7 disk motor-on detect
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-slot-6-disk-motor-on-detect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2: Slot 6 disk motor-on detect
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#1-slot-5-disk-motor-on-detect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1: Slot 5 disk motor-on detect
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#0-slot-4-disk-motor-on-detect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        0: Slot 4 disk motor-on detect
+        3-0: Slot 7-4 disk motor-on detect
       
     </span>
   </a>
@@ -2202,6 +2169,17 @@
     <span class="md-ellipsis">
       
         Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fast-registers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fast Registers
       
     </span>
   </a>
@@ -3131,43 +3109,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-slot-7-disk-motor-on-detect" class="md-nav__link">
+  <a href="#3-0-slot-7-4-disk-motor-on-detect" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3: Slot 7 disk motor-on detect
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-slot-6-disk-motor-on-detect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2: Slot 6 disk motor-on detect
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#1-slot-5-disk-motor-on-detect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1: Slot 5 disk motor-on detect
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#0-slot-4-disk-motor-on-detect" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        0: Slot 4 disk motor-on detect
+        3-0: Slot 7-4 disk motor-on detect
       
     </span>
   </a>
@@ -3317,6 +3262,17 @@
     <span class="md-ellipsis">
       
         Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fast-registers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fast Registers
       
     </span>
   </a>
@@ -3486,10 +3442,11 @@ But both even and odd banks, which doesn't seem right. And it -only- considers t
 <p>/<em> Assume Ninja Force Megademo </em>/
 /<em> only do banks 3 - num_banks by 2, shadowing into e1 </em>/
 At least this only does the odd banks. But clearly is a hack for one piece of software.</p>
-<h3 id="3-slot-7-disk-motor-on-detect">3: Slot 7 disk motor-on detect<a class="headerlink" href="#3-slot-7-disk-motor-on-detect" title="Permanent link">&para;</a></h3>
-<h3 id="2-slot-6-disk-motor-on-detect">2: Slot 6 disk motor-on detect<a class="headerlink" href="#2-slot-6-disk-motor-on-detect" title="Permanent link">&para;</a></h3>
-<h3 id="1-slot-5-disk-motor-on-detect">1: Slot 5 disk motor-on detect<a class="headerlink" href="#1-slot-5-disk-motor-on-detect" title="Permanent link">&para;</a></h3>
-<h3 id="0-slot-4-disk-motor-on-detect">0: Slot 4 disk motor-on detect<a class="headerlink" href="#0-slot-4-disk-motor-on-detect" title="Permanent link">&para;</a></h3>
+<h3 id="3-0-slot-7-4-disk-motor-on-detect">3-0: Slot 7-4 disk motor-on detect<a class="headerlink" href="#3-0-slot-7-4-disk-motor-on-detect" title="Permanent link">&para;</a></h3>
+<p>The motor on detect watches for reads/writes to C0x8 and C0x9. If the bit here is on, and the corresponding slot is marked as "enabled" (by tracking the C0x8 and C0x9 addresses), </p>
+<p>So, we can regsister those addresses (double register) and modify the system speed accordingly. system speed selected needs to be AND gated:</p>
+<p>speed = !cpuspeed &amp; !slot7enable &amp; !slot6enable
+speed=0 is 1.0, speed=1 is "fast" (whatever that is right now)</p>
 <p>The CYA (Speed) reg is cleared to zeros on reset or power up</p>
 <h2 id="c029-newvideo-register">$C029 - newvideo register<a class="headerlink" href="#c029-newvideo-register" title="Permanent link">&para;</a></h2>
 <h3 id="7-disable-video">7: Disable Video<a class="headerlink" href="#7-disable-video" title="Permanent link">&para;</a></h3>
@@ -3716,6 +3673,16 @@ https://retrocomputing.stackexchange.com/questions/5555/apple-iigs-hardware-impl
 7 - Speed indicator
 </code></pre>
 <p>ok. There is Fast RAM and Slow RAM. Slow RAM has the I/O stuff.</p>
+<h2 id="fast-registers">Fast Registers<a class="headerlink" href="#fast-registers" title="Permanent link">&para;</a></h2>
+<p>Access to:
+* Shdow C035
+* CYA C036
+* DMA Bank C037</p>
+<p>Reads from:
+* Slot register C02D
+* State Register C068</p>
+<p>run at full speed since they're handled on the FPI side of system.</p>
+<p>[ ] Implement fast accesses for the above registers.</p>
 <h2 id="tests">Tests<a class="headerlink" href="#tests" title="Permanent link">&para;</a></h2>
 <p>Develop a test harness that can easily do two things:</p>
 <ol>
