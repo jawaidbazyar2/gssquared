@@ -27,7 +27,7 @@ It uses the SDL3 library for graphics, sound, and I/O. This is a video game-orie
 
 # Documentation
 
-Check out the [User Documentation](Docs/Index.md) for detailed instructions on how to use GSSquared.
+Check out the [User Documentation](Docs/index.md) for detailed instructions on how to use GSSquared.
 
 # Pre-compiled Packages
 
