@@ -87,12 +87,18 @@ void init_slot_ndiskII_woz(computer_t *computer, SlotType_t slot) {
         computer->sound_effect, computer->clock, computer->cpu_event_timer);
     diskII_d->dc = dc;
 
+    drive_type_t drive_type;
+    if (computer->platform->id >= PLATFORM_APPLE_IIE) {
+        drive_type = DRIVE_TYPE_APPLEDISK_525;
+    } else {
+        drive_type = DRIVE_TYPE_DISKII;
+    }
     storage_key_t key;
     key.slot  = slot;
     key.drive = 0;
-    computer->mounts->register_storage_device(key, dc, DRIVE_TYPE_DISKII);
+    computer->mounts->register_storage_device(key, dc, drive_type);
     key.drive = 1;
-    computer->mounts->register_storage_device(key, dc, DRIVE_TYPE_DISKII);
+    computer->mounts->register_storage_device(key, dc, drive_type);
 
     diskII_d->powerup_reset_cycles = 6;
     diskII_d->reset_control        = computer->reset_control;
