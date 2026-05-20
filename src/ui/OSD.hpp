@@ -66,6 +66,8 @@ protected:
     int slidePosition = -slidePositionMax;
     int slidePositionDelta = slidePositionDeltaMax;
 
+    float osd_scale = 1.0f; // by default
+
     SlotManager_t *slot_manager = nullptr;
     
     //Container_t *drive_container = nullptr;
@@ -117,7 +119,7 @@ protected:
     int headsUpMessageCount = 0; */
     StatusMessage_t *status_message = nullptr;
 
-    modal_stack modal_stack;
+    modal_stack mstack;
 
     int slideStatusBeforeDrop = SLIDE_NONE;
 

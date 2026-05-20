@@ -523,11 +523,11 @@ OSD::~OSD() {
 
 void OSD::update() {
 
-    if (!modal_stack.stack.empty()) {
-        modal_stack.stack.top()->update();
-        if (modal_stack.stack.top()->is_completed()) {
+    if (!mstack.stack.empty()) {
+        mstack.stack.top()->update();
+        if (mstack.stack.top()->is_completed()) {
             //delete modal_stack.stack.top();
-            modal_stack.stack.pop();
+            mstack.stack.pop();
         }
     }
 
@@ -659,8 +659,8 @@ void OSD::render() {
             container->render();
         }
 
-        if (!modal_stack.stack.empty()) {
-            modal_stack.stack.top()->render();
+        if (!mstack.stack.empty()) {
+            mstack.stack.top()->render();
         }
 /*         if (activeModal) {
             activeModal->render();
@@ -675,8 +675,8 @@ void OSD::render() {
     /* if (activeModal) {
         activeModal->render();
     } */
-    if (!modal_stack.stack.empty()) {
-        modal_stack.stack.top()->render();
+    if (!mstack.stack.empty()) {
+        mstack.stack.top()->render();
     }
 
     // for each item in ncontainers, call render()
@@ -728,7 +728,7 @@ bool OSD::is_mouse_captured() {
 
 bool OSD::event(const SDL_Event &event) {
     if (event.type == SDL_EVENT_QUIT) {
-        modal_stack.stack.push(new QuitModal_t(&ui_ctx, "Are you sure you want to quit?", ModalStyle, event_queue, computer->mounts, modal_stack));
+        mstack.stack.push(new QuitModal_t(&ui_ctx, "Are you sure you want to quit?", ModalStyle, event_queue, computer->mounts, mstack));
         return true;
     }
 
@@ -745,8 +745,8 @@ bool OSD::event(const SDL_Event &event) {
     // Modal intercepts all mouse events regardless of whether the panel is open.
     // The modal renders directly to the window (not just inside the panel), so
     // its event handling must also work when the panel is closed.
-    if (!modal_stack.stack.empty()) {
-        modal_stack.stack.top()->handle_mouse_event(event);
+    if (!mstack.stack.empty()) {
+        mstack.stack.top()->handle_mouse_event(event);
         /* if (modal_stack.stack.top()->is_completed()) {
             delete modal_stack.stack.top();
             modal_stack.stack.pop();
@@ -842,8 +842,8 @@ void OSD::close_panel() {
 
 // TODO: refactor these to push/pop from the modal stack.
 void OSD::show_diskii_modal(storage_key_t key, uint64_t data) {
-    ModalContainer_t *diskii_save_con = new DirtyDiskSave_t(&ui_ctx, nullptr, ModalStyle, key, computer->mounts, modal_stack);
-    modal_stack.stack.push(diskii_save_con);
+    ModalContainer_t *diskii_save_con = new DirtyDiskSave_t(&ui_ctx, nullptr, ModalStyle, key, computer->mounts, mstack);
+    mstack.stack.push(diskii_save_con);
     diskii_save_con->set_key(key);
     diskii_save_con->set_data(data);
 }
