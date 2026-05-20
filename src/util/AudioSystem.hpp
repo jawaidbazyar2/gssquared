@@ -6,6 +6,9 @@
 
 #include "DebugFormatter.hpp"
 
+// forward declare.
+class computer_t;
+
 /* The goal here */
 
 struct audio_stream_t {
@@ -27,7 +30,7 @@ private:
     void printSpec(SDL_AudioSpec spec);
 
 public:
-    AudioSystem();
+    AudioSystem(computer_t *computer);
     ~AudioSystem();
 
     SDL_AudioStream *create_stream(int sample_rate, int channels, SDL_AudioFormat sample_format, bool apply_volume = false);

@@ -1,10 +1,11 @@
 #include <cstdio>
 #include <SDL3/SDL.h>
 
+#include "computer.hpp"
 #include "DebugFormatter.hpp"
 #include "AudioSystem.hpp"
 
-AudioSystem::AudioSystem() {
+AudioSystem::AudioSystem(computer_t *computer) {
     // Initialize SDL audio
     SDL_Init(SDL_INIT_AUDIO);
 
@@ -26,6 +27,10 @@ AudioSystem::AudioSystem() {
 
     gain = 1.0f * 6.0f / 16.0f;
     
+    computer->sys_event->registerHandler(SDL_EVENT_AUDIO_DEVICE_FORMAT_CHANGED, [this](const SDL_Event &event) {
+        printf("Audio device format changed\n");
+        return false;
+    });
 }
 
 void AudioSystem::printSpec(SDL_AudioSpec spec) {
@@ -119,6 +124,7 @@ void AudioSystem::resume() {
 
 void AudioSystem::set_volume(uint16_t volume) {
     if (volume > 15) volume = 15;
+    volume_setting = volume;
     gain = (float)volume / 16.0f;
     for (auto &streamr : allocated_streams) {
         if (streamr.apply_volume) {
