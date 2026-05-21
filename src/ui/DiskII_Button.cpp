@@ -44,6 +44,8 @@ drive_status_t DiskII_Button_t::get_disk_status() const { return status; }
  * @param renderer The SDL renderer to use.
  */
 void DiskII_Button_t::render() {
+    constexpr const char * fractions[4] = { ".0", ".25", ".5", ".75"};
+
     if (status.is_mounted) this->set_assetID(DiskII_Closed);
     else this->set_assetID(DiskII_Open);
 
@@ -71,7 +73,8 @@ void DiskII_Button_t::render() {
         // if mounted and hovering, show the track number over the drive
         uint16_t track = status.position >> 2;
         uint8_t fraction = status.position & 0x03;
-        snprintf(text, sizeof(text), "%d/%d %2d.%1d", key.slot, key.drive+1, track, fraction);
+        snprintf(text, sizeof(text), "%d/%d %2d%s", key.slot, key.drive+1, track, 
+        fractions[fraction]);
     } else {
         snprintf(text, sizeof(text), "%d/%d", key.slot, key.drive+1);
     }

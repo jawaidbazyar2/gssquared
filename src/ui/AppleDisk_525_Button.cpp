@@ -35,6 +35,8 @@
   * @param renderer The SDL renderer to use.
   */
 void AppleDisk_525_Button_t::render() {
+    constexpr const char * fractions[4] = { ".0", ".25", ".5", ".75"};
+
     if (status.is_mounted) this->set_assetID(AppleDisk_525_Closed);
     else this->set_assetID(AppleDisk_525_Open);
 
@@ -62,7 +64,8 @@ void AppleDisk_525_Button_t::render() {
     char text[32];
     if (status.is_mounted && status.motor_on) {
         // if mounted and hovering, show the track number over the drive
-        snprintf(text, sizeof(text), "%d/%d %2d.%d", key.slot, key.drive+1, status.position / 4, status.position % 4);
+        snprintf(text, sizeof(text), "%d/%d %2d%s", key.slot, key.drive+1, status.position / 4, //status.position % 4,
+        fractions[status.position % 4]);
     } else {
         snprintf(text, sizeof(text), "%d/%d", key.slot, key.drive+1);
     }
