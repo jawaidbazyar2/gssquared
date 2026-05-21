@@ -63,7 +63,7 @@ void init_iwm_slot(computer_t *computer, SlotType_t slot) {
     );
 
     computer->register_reset_handler(
-        [st]() {
+        [st](bool cold_start) {
             st->iwm->reset();
             return true;
         });

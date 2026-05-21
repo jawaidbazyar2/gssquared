@@ -285,7 +285,7 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     }
 
     computer->register_reset_handler(
-        [ds]() {
+        [ds](bool cold_start) {
             mouse_reset(ds);
             return true;
         });

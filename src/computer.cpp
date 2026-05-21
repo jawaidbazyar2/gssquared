@@ -296,7 +296,7 @@ void computer_t::reset(bool cold_start) {
     cpu->reset();
     
     for (auto& handler : reset_handlers) {
-        handler();
+        handler(cold_start);
     }
 }
 

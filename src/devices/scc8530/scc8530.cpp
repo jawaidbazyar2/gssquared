@@ -106,7 +106,7 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
     });
 
     // chip reset by pulling r and w low at same time and holding a bit. there's logic on the mobo for this, mixing reset and the normal r/w signal.
-    computer->register_reset_handler([st]() {
+    computer->register_reset_handler([st](bool cold_start) {
         st->scc->reset();
         return true;
     });

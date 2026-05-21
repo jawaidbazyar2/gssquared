@@ -716,7 +716,7 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
         computer->cpu->trace_buffer->set_cpu_type(PROCESSOR_65816);
         computer->video_system->set_display_engine(DM_ENGINE_RGB);
 
-        computer->register_reset_handler([state]() {
+        computer->register_reset_handler([state](bool cold_start) {
             state->mmu_iigs->reset();
             return true;
         });

@@ -12083,3 +12083,13 @@ Modal / ModalContainer_t — one offscreen texture per modal while on stack; dir
 Extend cpTexture discipline — don’t call layout() + full child render() inside the cached panel every frame unless dirty.
 Leave dynamic HUD uncached (or cache only individual drive buttons).
 
+## May 21, 2026
+
+bug report: restart menu item does not restart GS.
+
+the iie trick does not work on the GS (of course). So we can either simulate the user holding down open-apple. Or simulate a harder shutdown of the machine. What does that look like? Clearing the RAM? oh, on the GS, there is that value in the ADB memory. address 0x51 is it?
+
+Yeah I think if we zero that out the rom should treat it as a power-on reset? Likely.
+how do I trigger that. computer::reset(cold_start) could pass the cold_start flag to all the reset routines it calls. and when that eventually gets to keygloo it can zero out 0x51. I guess let's try that.
+
+Yep, that worked!

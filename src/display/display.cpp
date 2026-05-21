@@ -892,7 +892,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         return true;
     });
 
-    computer->register_reset_handler([ds]() {
+    computer->register_reset_handler([ds](bool cold_start) {
         if (ds->computer->platform->id == PLATFORM_APPLE_IIGS) {
             display_write_c041(ds, 0xC041, 0x00);
             // TODO: this is the cleanest way to do it for now, but it feels a little hacky, as if

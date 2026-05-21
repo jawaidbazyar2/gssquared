@@ -40,7 +40,7 @@ enum execution_modes_t {
 
 struct computer_t {
 
-    using ResetHandler = std::function<bool ()>;
+    using ResetHandler = std::function<bool (bool cold_start)>;
     using ShutdownHandler = std::function<bool ()>;
     using DebugDisplayHandler = std::function<DebugFormatter *()>;
     

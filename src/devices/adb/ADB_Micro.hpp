@@ -175,6 +175,11 @@ class KeyGloo
         };
         ~KeyGloo();
     
+        // zero out 0x51 to force a power-on reset.
+        void zero_0x51() {
+            ram[0x51] = 0;
+        }
+
         void reset() {
             vars.inpt = 0;
             vars.outpt = 0;

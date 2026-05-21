@@ -492,7 +492,7 @@ void init_iiememory(computer_t *computer, SlotType_t slot) {
     bsr_map_memory(iiememory_d);
 
     computer->register_reset_handler(
-        [iiememory_d]() {
+        [iiememory_d](bool cold_start) {
             reset_iiememory(iiememory_d);
             return true;
         });

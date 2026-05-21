@@ -305,7 +305,7 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     // this can move to the class
     // set up a reset handler to reset the chips on mockingboard
     computer->register_reset_handler(
-        [mb_d]() {
+        [mb_d](bool cold_start) {
             mb_d->mockingboard->reset();
             return true;
         });

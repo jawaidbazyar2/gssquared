@@ -49,7 +49,7 @@ void init_slot_parallel(computer_t *computer, SlotType_t slot) {
     // TODO: register a frame handler to track automatic timeout and closing of output file.
 
     computer->register_reset_handler(
-        [parallel_d]() {
+        [parallel_d](bool cold_start) {
             parallel_reset(parallel_d);
             return true;
         });

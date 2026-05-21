@@ -124,7 +124,7 @@ void init_slot_languagecard(computer_t *computer, SlotType_t slot) {
     set_memory_pages_based_on_flags(lc);
 
     computer->register_reset_handler(
-        [lc]() {
+        [lc](bool cold_start) {
             reset_languagecard(lc);
             return true;
         });

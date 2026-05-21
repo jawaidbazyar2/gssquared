@@ -149,7 +149,10 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
         }
     );
 
-    computer->register_reset_handler([kb_state]() {
+    computer->register_reset_handler([kb_state](bool cold_start) {
+        if (cold_start) {
+            kb_state->kg->zero_0x51();
+        }
         kb_state->kg->reset();
         return true;
     });

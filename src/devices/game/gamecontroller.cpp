@@ -542,7 +542,7 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
 
     computer->register_reset_handler(
         // might need to be longer for GS, since GS may take longer to get around to check buttons on reset.
-        [ds]() {
+        [ds](bool cold_start) {
             // TODO: erp. reset used to be instant. now if we hold reset, the cpu clock keeps ticking and
             // we exceed our 100,000 cycle delay here rapidly. 
             //ds->joyport_activate = ds->clock->get_cycles() + 100000; // 100ms

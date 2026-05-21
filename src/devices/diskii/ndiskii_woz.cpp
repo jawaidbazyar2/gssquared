@@ -105,7 +105,7 @@ void init_slot_ndiskII_woz(computer_t *computer, SlotType_t slot) {
     diskII_d->reset_control->assert_reset((device_reset_id)(slot), true);
 
     computer->register_reset_handler(
-        [diskII_d]() {
+        [diskII_d](bool cold_start) {
             ndiskii_woz_reset(diskII_d);
             return true;
         });
