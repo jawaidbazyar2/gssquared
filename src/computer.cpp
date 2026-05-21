@@ -67,12 +67,12 @@ computer_t::computer_t(NClockII *clock) {
         } else last_reset = this->clock->get_cycles(); // catch deassert
     });
 
-    audio_system = new AudioSystem();
-    sound_effect = new SoundEffect(audio_system);
-
     sys_event = new EventDispatcher(); // different queue for "system" events that get processed first.
     dispatch = new EventDispatcher(); // has to be very first thing, devices etc are going to immediately register handlers.
     device_frame_dispatcher = new DeviceFrameDispatcher();
+
+    audio_system = new AudioSystem(this);
+    sound_effect = new SoundEffect(audio_system);
 
     cpu = new cpu_state(PROCESSOR_6502); // default to 6502, then we will override later.
 
