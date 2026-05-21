@@ -136,6 +136,13 @@ class SpeakerFX {
             rect_remain = 0;
         }
 
+        // Discard all buffered audio waiting in the SDL stream.  Call this
+        // together with reset() so a stale backlog cannot keep the MAX_QUEUE
+        // check permanently triggered after a device format change.
+        void clear_stream() {
+            SDL_ClearAudioStream(stream);
+        }
+
         /* 
         Returns a whole number of samples worth of converted audio data.
         Has several optimizations over previous code.
@@ -248,7 +255,14 @@ class SpeakerFX {
         }
 
         int get_queued_samples() {
-            int samp = audio_system->get_stream_available(stream) / sizeof(int16_t);
+            // Use SDL_GetAudioStreamQueued (input-format bytes) rather than
+            // SDL_GetAudioStreamAvailable (output-format bytes).  The output
+            // format can change when the host audio device changes (e.g. 44100
+            // mono → 48000 stereo), which would make Available report 2-4x
+            // more "samples" than we actually pushed, causing the MAX_QUEUE
+            // check in audio_generate_frame to fire every frame and stall
+            // generation entirely, producing endless skew warnings.
+            int samp = audio_system->get_stream_queued(stream) / sizeof(int16_t);
             return samp;
         }
 

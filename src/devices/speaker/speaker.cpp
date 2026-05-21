@@ -58,6 +58,10 @@ uint64_t audio_generate_frame(speaker_state_t *speaker_state) {
         printf("Speaker skew: 14m: %16llu %13llu %13llu\n", u64_t(clock->get_c14m()), u64_t(end_frame_c14M - speaker_state->sp->last_event_time), u64_t(clock->get_c14m_per_frame()));
         // Resync to start of current frame so generate_and_queue can advance to end_frame_c14M.
         // Reset must pair with generate_samples skipping stale events (event_time <= last_event_time).
+        // Also clear the SDL stream: a stale backlog (e.g. accumulated while SDL paused the stream
+        // during a device format change) keeps get_queued_samples() above MAX_QUEUE every frame,
+        // permanently blocking generation and causing this skew handler to fire in a tight loop.
+        speaker_state->sp->clear_stream();
         speaker_state->sp->reset(end_frame_c14M - clock->get_c14m_per_frame());
     }
 
@@ -193,6 +197,16 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     speaker_state->postFilter = new LowPassFilter();
     speaker_state->postFilter->setCoefficients(8000.0f, (double)SAMPLE_RATE);
 #endif
+
+    // When the audio device format changes (e.g. user switches output device),
+    // AudioSystem clears all streams and then invokes these callbacks so each
+    // generator can snap its timing state forward.  Without this, the cleared
+    // stream would immediately refill with catch-up audio and the skew handler
+    // would fire again on the very next frame.
+    computer->audio_system->register_device_reset_callback([speaker_state]() {
+        NClock *clock = speaker_state->clock;
+        speaker_state->sp->reset(clock->get_frame_end_c14M() - clock->get_c14m_per_frame());
+    });
 
     computer->device_frame_dispatcher->registerHandler([speaker_state]() {
         audio_generate_frame(speaker_state);

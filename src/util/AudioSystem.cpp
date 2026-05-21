@@ -26,9 +26,33 @@ AudioSystem::AudioSystem(computer_t *computer) {
     }
 
     gain = 1.0f * 6.0f / 16.0f;
-    
+     
     computer->sys_event->registerHandler(SDL_EVENT_AUDIO_DEVICE_FORMAT_CHANGED, [this](const SDL_Event &event) {
-        printf("Audio device format changed\n");
+        printf("what the fuck\n");
+        if ((SDL_AudioDeviceID)event.adevice.which != device_id) return false;
+
+        SDL_AudioSpec spec;
+        SDL_GetAudioDeviceFormat(device_id, &spec, NULL);
+        printf("Audio device format changed: %d Hz, %d ch, fmt %d\n",
+               spec.freq, spec.channels, spec.format);
+
+        // Discard audio buffered while SDL paused the stream during the
+        // device migration.  Without this the generators' MAX_QUEUE checks
+        // block all new generation, last_event_time falls behind, and the
+        // skew handler fires in a tight loop indefinitely.
+        clear_all_streams();
+
+        // Re-apply per-stream gain (defensive; should survive on its own).
+        for (auto &streamr : allocated_streams) {
+            if (streamr.apply_volume) {
+                SDL_SetAudioStreamGain(streamr.stream, gain);
+            }
+        }
+
+        // Let each generator reset its own timing state.
+        for (auto &cb : device_reset_callbacks) {
+            cb();
+        }
         return false;
     });
 }
