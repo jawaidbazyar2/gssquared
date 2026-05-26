@@ -40,6 +40,7 @@
 #include "devices/es5503/soundglu.hpp"
 #include "devices/scc8530/scc8530.hpp"
 #include "devices/iwm/iwm_device.hpp"
+#include "devices/secondsight/secondsight.hpp"
 
 #include "PlatformIDs.hpp"
 
@@ -277,6 +278,15 @@ Device_t Devices[NUM_DEVICE_IDS] = {
         0b11111110,
         PLATFLAG_ALL,
         init_pdblock3,
+        NULL
+    },
+    {
+        DEVICE_ID_SECOND_SIGHT,
+        "Second Sight",
+        false,
+        0,
+        PLATFLAG_APPLE_IIGS,
+        init_secondsight,
         NULL
     },
 };

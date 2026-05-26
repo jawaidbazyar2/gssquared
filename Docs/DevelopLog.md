@@ -12093,3 +12093,64 @@ Yeah I think if we zero that out the rom should treat it as a power-on reset? Li
 how do I trigger that. computer::reset(cold_start) could pass the cold_start flag to all the reset routines it calls. and when that eventually gets to keygloo it can zero out 0x51. I guess let's try that.
 
 Yep, that worked!
+
+## May 23, 2026
+
+So Brutal Deluxe made a game that uses Second Sight!! I had no idea. And it does not require running Z180 code. However, if we wanted to go to that length, there is this:
+https://github.com/mtdev79/z180emu
+
+Doing it with a Z180 emulation would be a completely different approach vs working to the API. Cogito 2 only uses the API. I seem to remember someone (Ian?) did some work with Z180 code loaded on the board, perhaps to implement sprites or some such. 
+
+So let's look at a "naive" API-only implementation. there's the handshake and commands and register setting etc. I've dug up all the docs for that. Oh, and someone disassembled the ROM already if I have questions. 
+
+In the emu, this will work like the Videx. I.e., when SS is put into one of the VGA modes, our frame handler draws frames and short-cuts the display frame stack. 
+
+So we'll allocate 1MB of memory for the frame buffer. We need to support a variety of interpretations of the frame buffer. It supports:
+
+* 8, 16, 24-bit pixels
+* 8-bit pixels: palette of 24-bit colors; 640x400; 640x480; 800x600; 1024x768 resolution.
+* 16-bit pixels have 15 bits of color, or 32768 direct colors; 640x400; 640x480, 800x600
+* true color: 640x400; 640x480
+
+There's also a variety of text modes.
+
+These are selected by programming the VGA registers in a certain way. So we'll need to 'decode' those appropriately. 
+
+So the above tells us how to draw the frame buffer to our window. We can basically go directly from FB to window. Perhaps, we do FB -> Texture -> Window. ok, sure.
+
+But this brings up interesting possibilities for the future: supporting SS compatibility on the various hardware cards that are coming out, e.g. Project X, VidHD2, etc etc could be doable (as long as these have enough RAM for the frame buffer!) 
+
+Could extend the API to support 'hardware sprites'. PacMan suddenly becomes easier with 800x600: 224 x 288 doubled = 448 x 576. Fits easily (perfectly) into 800x600. Boojah. Hm, what if we could program a mode to give us 224 x 288 exactly? I don't know if that's a viable VGA mode. 
+
+The 640x400 mode is for compatibility with AppleColor displays.
+Here's another thought: we can also support memory-mapping the frame buffer directly into the 65816 address space, per Apple IIx documentation. So we have the API for setting the modes and palettes BUT then the 816 can write directly to the FB. That could be interesting..
+
+The "API" is going to require supporting all the various VGA and OAK I/O registers. So we'll need to "calculate" the correct video mode from the register settings. But perhaps define a new API call to set mode line so we don't have every programmer having to bang the VGA/OAK registers directly.
+
+Allocate three textures, one each for 8, 15, and 24 bit. Do at startup so we're not allocating/deallocating them at runtime.
+
+OK, this works. Cards that have the resources (CPU, and memory) to implement VGA framebuffers can do the above. And, for future Apple IIx, the framebuffer can be mapped into 65816 address space. And, for tile+sprites, we extend the SS API and leverage shadowing to get data into the card faster than the regular SS interface (though that interface is not at all bad). 
+
+Platforms I know that could handle at least some feature sets: Appletini; SS itself; Project X could up to 64K (small buffer but good for Apple II+/e also); MISTer; of course any emulator; AppleSqueezer (probably); 
+
+## May 24, 2026
+
+been reading up on how the NES works. There are two 1024 byte regions called namespaces that can be stacked horizontally or vertically, depending on the type of directional scrolling you're into. And then there is a pixel-granularity X and Y offset (they call it scroll). So if for instance you do them horizontally, You increment X by one, the display shifts by one pixel. The new needed pixel comes from the first column of tiles in the 2nd namespace. Once you've gone 8 pixels (a full tile), you can start to replace tiles in the other namespace. So each scroll only requires you to write 30 bytes to change a whole column of the screen.
+
+You could "shake" the whole world by manipulating Y and X . 
+
+Now the point of this isn't to exactly replicate the NES, because that is 40 year old hardware. We don't have to be constrained by the same cost limitations that platform was. But, a goal is to enable writing games in a -similar- manner.
+
+For instance, we don't HAVE to use the same limited palette system. We could let the user define tiles and sprites using 24-bit pixel values. Tiles and sprites don't HAVE to be purely 8x8; sprites esp could be bigger. But we know that for purposes of porting NES game, that would be sufficient.
+
+more - see SecondSight.md.
+
+## May 25, 2026
+
+DUDE! I've got some second sight support!! Tested and working:
+8bpp palettes
+
+Left to do:
+a few commands (set single palette entry; scroll; set border; set shadow; get vga reg; set text font);
+handle > 64K in UploadData; (not common in SecondView due to how the pics are drawn and uploaded);
+text mode support;

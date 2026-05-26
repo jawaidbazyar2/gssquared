@@ -298,7 +298,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
             DEVICE_ID_NONE,
             DEVICE_ID_NONE,
             DEVICE_ID_NONE,
-            DEVICE_ID_NONE,
+            DEVICE_ID_SECOND_SIGHT,
             DEVICE_ID_NONE,
             DEVICE_ID_NONE,
             DEVICE_ID_NONE,
