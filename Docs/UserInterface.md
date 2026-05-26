@@ -387,4 +387,8 @@ Can have recently opened user configs show up as buttons on the main screen. e.g
 So these should open/save by default in the user directory. 
 
 We want to support both TOML and Project X files. The TOML .gs2 files are really more for locally-user-created files.
-Project X will be ones we 
+Project X will be ones we generate for arqyv.
+
+## Speed Buttons
+
+Change these to just text buttons. Ah, good test case for caching text renders. We can generate and cache the whole button.

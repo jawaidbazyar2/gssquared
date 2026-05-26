@@ -73,21 +73,20 @@
 
 ## Release 0.9
 
-[ ] Host FST
+[ ] Edit, Save, Load custom hw config. (Click "+ Custom").
 [ ] Mouse tracking for GS/OS  
+[ ] Fix all known / pending bugs  
 
 ## Release 0.10
 
-Primary Focus: UI
-
-[ ] Can make custom hw config. (Click "+ Custom").
-[ ] Refactor MB to use new fixed-point synth
-
-## Release 0.11
-
-[ ] Fix all known / pending bugs  
+[ ] Host FST
 [ ] Integrate with Cyrene Debugger  
 
 ## Release 1.0
 
 [ ] CRT Effects
+
+## Post-1.0
+
+[ ] Refactor MB to use new fixed-point synth  
+[ ] Optimize / cache UI elements  
