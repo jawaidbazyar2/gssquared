@@ -2,6 +2,7 @@
 #include "computer.hpp"
 #include "videosystem.hpp"
 #include "cpu.hpp"
+#include "util/DebugHandlerIDs.hpp"
 
 /*
 ssCOMMAND =    $E0C0B0
@@ -66,6 +67,12 @@ void init_secondsight(computer_t *computer, SlotType_t slot) {
         delete st->secondsight;
         delete st;
         return true;
+    });
+
+    computer->register_debug_display_handler("ss", DH_SECOND_SIGHT, [st]() -> DebugFormatter * {
+        DebugFormatter *df = new DebugFormatter();
+        st->secondsight->debug(df);
+        return df;
     });
 
 }

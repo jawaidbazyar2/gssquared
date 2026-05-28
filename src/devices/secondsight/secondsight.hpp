@@ -97,15 +97,57 @@ class SecondSight {
 
     uint8_t crt_start_addr_high = 0; // CRTC reg 0x0C
     uint8_t crt_start_addr_low = 0;  // CRTC reg 0x0D
+    uint8_t crt_hdisplay_end = 0;  // CRTC reg 0x01 (horizontal display end)
+    uint8_t crt_offset = 0;        // CRTC reg 0x13 (scanline offset, in words)
+    uint8_t crt_char_width = 8;    // pixels per CRTC character clock
     uint32_t screen_base_addr = 0;
     uint16_t fb_pitch = 0;
 
+    constexpr static uint32_t WAIT_CYCLES = 50;
+
+    uint32_t crtc_char_clocks_per_line() const {
+        uint32_t char_clocks = (uint32_t)crt_hdisplay_end + 1;
+        if (char_clocks <= 1 && crt_char_width > 0 && current_vga_mode.width >= crt_char_width) {
+            char_clocks = current_vga_mode.width / crt_char_width;
+        }
+        return char_clocks > 0 ? char_clocks : 1;
+    }
+
+    uint32_t crtc_bytes_per_address_unit() const {
+        uint32_t char_clocks = crtc_char_clocks_per_line();
+        if (fb_pitch > 0) {
+            return fb_pitch / char_clocks;
+        }
+        // No pitch yet — derive from depth and character width.
+        uint32_t depth = current_vga_mode.color_depth;
+        if (depth == 0) {
+            depth = 8;
+        }
+        return (crt_char_width * depth + 7) / 8;
+    }
+
     void update_screen_base_addr() {
-        screen_base_addr = ((uint32_t)crt_start_addr_high << 8) | crt_start_addr_low;
+        // CRTC start address (regs 0x0C/0x0D) counts in character-clock units.
+        // Each unit covers (pitch / char_clocks_per_line) bytes in the linear FB.
+        uint32_t crtc_start = ((uint32_t)crt_start_addr_high << 8) | crt_start_addr_low;
+        screen_base_addr = crtc_start * crtc_bytes_per_address_unit();
+    }
+
+    void sync_crtc_timing_defaults() {
+        if (crt_char_width == 0) {
+            crt_char_width = 8;
+        }
+        if (current_vga_mode.width >= crt_char_width) {
+            crt_hdisplay_end = (uint8_t)((current_vga_mode.width / crt_char_width) - 1);
+        }
     }
 
     void write_crtc_reg(uint8_t index, uint8_t value) {
         switch (index) {
+            case 0x01:
+                crt_hdisplay_end = value;
+                update_screen_base_addr();
+                break;
             case 0x0C:
                 crt_start_addr_high = value;
                 update_screen_base_addr();
@@ -113,6 +155,17 @@ class SecondSight {
             case 0x0D:
                 crt_start_addr_low = value;
                 update_screen_base_addr();
+                break;
+            case 0x13:
+                crt_offset = value;
+                // Padded/virtual width: memory pitch may exceed visible width.
+                if (crt_offset > 0) {
+                    uint32_t offset_pitch = (uint32_t)crt_offset * 2;
+                    if (offset_pitch > fb_pitch) {
+                        fb_pitch = (uint16_t)offset_pitch;
+                        update_screen_base_addr();
+                    }
+                }
                 break;
         }
     }
@@ -210,6 +263,9 @@ class SecondSight {
             active_command = -1;
             crt_start_addr_high = 0;
             crt_start_addr_low = 0;
+            crt_hdisplay_end = 0;
+            crt_offset = 0;
+            crt_char_width = 8;
             screen_base_addr = 0;
             fb_pitch = 0;
         }
@@ -224,7 +280,7 @@ class SecondSight {
 
         struct vga_mode_t {
             uint8_t mode;
-            bool emulated;
+            bool vgamode;
             tg_t graphics;
             uint16_t width;
             uint16_t height;
@@ -233,11 +289,21 @@ class SecondSight {
         };
 
         static constexpr vga_mode_t vga_modes[] = {
+            {0x01, true, TG_TEXT, 40, 25, 4, 4},
+            {0x03, true, TG_TEXT, 80, 25, 4, 4},
             {0x13, true, TG_GRAPHICS, 320, 200, 8, 6},
             {0x53, true, TG_GRAPHICS, 640, 480, 8, 8},
             {0x5C, true, TG_GRAPHICS, 640, 480, 16, 5},
             {0x5F, true, TG_GRAPHICS, 640, 480, 24, 8},
+            // there is no 0x60 mode. must be used as a fake mode number in the library.
             {0x61, true, TG_GRAPHICS, 640, 400, 8, 8},
+
+            // "emulated" modes - these were internal for SS and just here for documentation.
+            {0xFA, false, TG_GRAPHICS, 560, 192, 8, 4},
+            {0xFB, false, TG_GRAPHICS, 280, 192, 8, 4},
+            {0xFC, false, TG_TEXT, 40, 24, 4, 4},
+            {0xFD, false, TG_TEXT,  80, 24, 4, 4},
+            {0xFE, false, TG_GRAPHICS, 640, 400, 8, 4},
         };
 
         vga_mode_t current_vga_mode = {0};
@@ -296,7 +362,7 @@ class SecondSight {
         }
         
         bytes_per_scanline = (hdisplay + 1) * 8;
-        
+
         switch (info->depth) {
             case 4:
                 info->hres = bytes_per_scanline * 2;
@@ -313,30 +379,30 @@ class SecondSight {
             default:
                 info->hres = bytes_per_scanline;
         }
-        
+
         vdisplay = mode->crt_regs[0x12];
         overflow = mode->crt_regs[0x07];
-        
+
         if (overflow & 0x02) vdisplay |= 0x100;
         if (overflow & 0x40) vdisplay |= 0x200;
-        
+
         info->vres = vdisplay + 1;
-        
+
         max_scanline = mode->crt_regs[0x09];
         info->double_scan = (max_scanline & 0x80) ? 1 : 0;
         if (info->double_scan) {
             info->vres /= 2;
         }
-        
+
         info->char_width = 8;
         info->pitch = bytes_per_scanline;
-        
+
         return 0;
     }
 
     void apply_analyzed_mode(struct vga_mode_rec *mode, const mode_info *info) {
         current_vga_mode.mode = 0xFF;
-        current_vga_mode.emulated = true;
+        current_vga_mode.vgamode = true;
         current_vga_mode.graphics = (info->depth <= 4) ? TG_TEXT : TG_GRAPHICS;
         current_vga_mode.width = info->hres;
         current_vga_mode.height = info->vres;
@@ -353,6 +419,9 @@ class SecondSight {
         res_y = info->vres;
         vga_active = 1;
         vga_mode_num = 0xFF;
+        crt_hdisplay_end = mode->crt_regs[0x01];
+        crt_offset = mode->crt_regs[0x13];
+        crt_char_width = (uint8_t)info->char_width;
         crt_start_addr_high = mode->crt_regs[0x0C];
         crt_start_addr_low = mode->crt_regs[0x0D];
         update_screen_base_addr();
@@ -481,26 +550,32 @@ class SecondSight {
             // look for mode, if we don't find it then error.
 
             if (command_step == 1) {
-                setup_dma(DMA_DIRECTION_IN, cmd_buffer, 0x02);
+                setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 0x02);
             } else if (command_step == 2) {
-                if (cmd_buffer[0] == 0xFF) {
+                if (cmd_buffer[1] == 0xFF) {
                     mode_info info;
                     analyze_vga_mode(&user_mode_rec, &info);
                     apply_analyzed_mode(&user_mode_rec, &info);
+                    vga_active = cmd_buffer[2] == 0x00 ? 0 : 1;
                 } else {
                     for (int i = 0; i < sizeof(vga_modes) / sizeof(vga_mode_t); i++) {
-                        if (vga_modes[i].mode == cmd_buffer[0]) {
+                        if (vga_modes[i].mode == cmd_buffer[1]) {
                             current_vga_mode = vga_modes[i];
-                            vga_active = vga_modes[i].emulated;
-                            vga_mode_num = cmd_buffer[0];
+                            //vga_active = vga_modes[i].emulated;
+                            vga_mode_num = cmd_buffer[1];
                             res_x = current_vga_mode.width;
                             res_y = current_vga_mode.height;
                             fb_pitch = current_vga_mode.width * (current_vga_mode.color_depth / 8);
+                            crt_char_width = 8;
+                            sync_crtc_timing_defaults();
+                            update_screen_base_addr();
                             break;
                         }
                     }
+                    // silently ignores invalid mode number, but respect this.
+                    vga_active = cmd_buffer[2] == 0x00 ? 0 : 1;
                 }
-                longrun_cycle_target = clock->get_cycles() + 50; // set up trigger
+                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
                 pending_status = 0xA5;
             }
         }
@@ -540,7 +615,7 @@ class SecondSight {
                 memset(frame_buffer+address, color, length);
                 command_step = 0;
                 reg_handshake = 0x00;
-                longrun_cycle_target = clock->get_cycles() + 50; // set up trigger
+                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
                 pending_status = 0xA5;
             }
         }
@@ -552,25 +627,48 @@ class SecondSight {
         3: DMA_IN - get data to load!
         4: DONE
         */
+
+        uint32_t dma_offset = 0;
+        uint32_t dma_length_remaining = 0;
+        uint32_t dma_this_chunk = 0;
+
         void cmd_upload_code_data() {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 10);
             } else if (command_step == 2) {
                 // args DMA complete..
                 // let handshake be 0 for a bit.
-                longrun_cycle_target = clock->get_cycles() + 50; // set up trigger
+                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
                 pending_status = 0x00;
             } else if (command_step == 3) {
                 // ok now 
                 uint8_t code_data_flag = cmd_buffer[1];
-                uint32_t address = (cmd_buffer[4] << 16) | (cmd_buffer[3] << 8) | cmd_buffer[2];
+                dma_offset = (cmd_buffer[4] << 16) | (cmd_buffer[3] << 8) | cmd_buffer[2];
                 uint32_t length = (cmd_buffer[7] << 16) | (cmd_buffer[6] << 8) | cmd_buffer[5];
-                
-                setup_dma(DMA_DIRECTION_IN, frame_buffer+address, length);
+                if (length == 0) { // handle special case of zero length
+                    command_step = 0;
+                    reg_handshake = 0x00;
+                    return;
+                }
+                dma_length_remaining = length;
+                dma_this_chunk = (dma_length_remaining & 0xFF0000) ? 0x1'0000 : dma_length_remaining;
+                setup_dma(DMA_DIRECTION_IN, frame_buffer+dma_offset, dma_this_chunk);
             } else if (command_step == 4) {
-                // DMA complete, we're done.
-                command_step = 0;
-                reg_handshake = 0x00;
+
+                dma_length_remaining -= dma_this_chunk;
+                dma_offset += dma_this_chunk;
+                if (dma_length_remaining > 0) {
+                    longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
+                    pending_status = 0x00;
+                    //command_step = 5; the longrun checker will increment this..
+                } else {  // DMA complete, we're done.
+                    command_step = 0;
+                    reg_handshake = 0x00;
+                }
+            } else if (command_step == 5) {
+                dma_this_chunk = (dma_length_remaining & 0xFF0000) ? 0x1'0000 : dma_length_remaining;
+                setup_dma(DMA_DIRECTION_IN, frame_buffer+dma_offset, dma_this_chunk);
+                command_step = 3; // loop (will loop back to command_step == 4 because dma end will command_step++ )
             }
             /* 
                $01: code/data flag (0 = code, 1 = data i.e. frame buffer)
@@ -594,8 +692,8 @@ class SecondSight {
                 if (ir == 0x3D4 && ra == 0x3D5) {
                     write_crtc_reg(ir_val, rv);
                 }
-                printf("SecondSight: cmd_set_vga_reg: ir=%X, ir_val=%X, ra=%X, rv=%X (base=%X)\n",
-                    ir, ir_val, ra, rv, screen_base_addr);
+                /* printf("SecondSight: cmd_set_vga_reg: ir=%X, ir_val=%X, ra=%X, rv=%X (base=%X)\n",
+                    ir, ir_val, ra, rv, screen_base_addr); */
                 command_step = 0;
                 reg_handshake = 0x00;
             }
@@ -605,7 +703,7 @@ class SecondSight {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 3);
             } else if (command_step == 2) {
-                longrun_cycle_target = clock->get_cycles() + 50; // set up trigger
+                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
                 pending_status = 0x00;
             } else if (command_step == 3) {
                 setup_dma(DMA_DIRECTION_IN, (uint8_t *)palette_rgb, 768);
@@ -792,7 +890,14 @@ class SecondSight {
         }
 
         void debug(DebugFormatter *df) {
-
+            df->addLine("VGA Active: %d", vga_active);
+            df->addLine("VGA Mode Num: %02X", vga_mode_num);
+            df->addLine("Screen Base Addr: %X", screen_base_addr);
+            df->addLine("CRT Start Addr: %02X%02X", crt_start_addr_high, crt_start_addr_low);
+            df->addLine("CRT HDisplay End: %02X (+%d clocks)", crt_hdisplay_end, crtc_char_clocks_per_line());
+            df->addLine("CRT Addr Scale: %u bytes/unit", crtc_bytes_per_address_unit());
+            df->addLine("FB Pitch: %d", fb_pitch);
+            df->addLine("Res X/Y @ Depth: %d/%d @ %d", res_x, res_y, current_vga_mode.color_depth);
         }
 };
 
