@@ -346,3 +346,7 @@ So no, not all commands use 0xA5/0xA6. DMA operations use the 0x01/0x00 pattern 
 | get command | get command | get command |
 | set up read dma to get args | execute | execute |
 | execute command hook after dma complete | set up DMA to write results |
+
+## Getting more out of SecondSight Card
+
+https://apple2infinitum.slack.com/archives/CPSGNGE05/p1712906967818249

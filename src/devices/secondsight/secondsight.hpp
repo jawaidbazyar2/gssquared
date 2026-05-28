@@ -55,6 +55,7 @@ class SecondSight {
 
     uint8_t vga_mode_num = 0;
     uint16_t vga_active = 0; // 1 means VGA mode active ("do not emulate current Apple II mode")
+    uint16_t display_enabled = 1; // 1 means display is enabled
 
     union {
         uint8_t user_mode_data[84] = {0};
@@ -103,7 +104,15 @@ class SecondSight {
     uint32_t screen_base_addr = 0;
     uint16_t fb_pitch = 0;
 
+    // Various apple II code is:
+    // edge-detect on the handshake value;
+    // and, takes some time to get around to the point where it can read the handshake value.
+    // So if these values are too low, the A2 will not see the correct edge and will hang.
     constexpr static uint32_t WAIT_CYCLES = 50;
+    // this value is used for long-running commands that would get executed during the SS event
+    // loop in the rom, and might take a long time (1000s of cycles) to execute. For example, clearscreen and scrollscreen.
+    // Here we accelerate them insanely.
+    constexpr static uint32_t LONGRUN_WAIT_CYCLES = 50;
 
     uint32_t crtc_char_clocks_per_line() const {
         uint32_t char_clocks = (uint32_t)crt_hdisplay_end + 1;
@@ -168,6 +177,20 @@ class SecondSight {
                 }
                 break;
         }
+    }
+
+    uint8_t read_crtc_reg(uint8_t index, uint16_t address) {
+        switch (index) {
+            case 0x01:
+                return crt_hdisplay_end;
+            case 0x0C:
+                return crt_start_addr_high;
+            case 0x0D:
+                return crt_start_addr_low;
+            case 0x13:
+                return crt_offset;
+        }
+        return 0;
     }
 
     void init_default_palette() {
@@ -239,6 +262,7 @@ class SecondSight {
             if (!tex_24bpp) {
                 printf("SecondSight: failed to create 24bpp texture\n");
             }
+            display_enabled = true;
         }
         ~SecondSight() {
             delete[] frame_buffer;
@@ -250,6 +274,7 @@ class SecondSight {
         void reset() {
             dma_address = nullptr;
             dma_length = 0;
+            display_enabled = 1;
 
             cmd_buffer[0] = 0;
             resp_length = 0;
@@ -575,9 +600,10 @@ class SecondSight {
                     // silently ignores invalid mode number, but respect this.
                     vga_active = cmd_buffer[2] == 0x00 ? 0 : 1;
                 }
-                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
+                longrun_cycle_target = clock->get_cycles() + LONGRUN_WAIT_CYCLES; // set up trigger
                 pending_status = 0xA5;
             }
+            display_enabled = 1;
         }
 
         void cmd_set_user_mode() {
@@ -601,6 +627,7 @@ class SecondSight {
 
                 command_step = 0;
                 reg_handshake = 0x00;
+                display_enabled = 1;
             }
         }
 
@@ -615,11 +642,22 @@ class SecondSight {
                 memset(frame_buffer+address, color, length);
                 command_step = 0;
                 reg_handshake = 0x00;
-                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
+                longrun_cycle_target = clock->get_cycles() + LONGRUN_WAIT_CYCLES; // set up trigger
                 pending_status = 0xA5;
             }
         }
 
+        void cmd_set_text_font() {
+            if (command_step == 1) {
+                setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 1);
+            } else if (command_step == 2) {
+                // DMA complete
+                uint8_t font_index = cmd_buffer[1];
+                //set_text_font(font_index);
+                command_step = 0;
+                reg_handshake = 0x00;
+            }
+        }
 
         /*
         1: DMA_IN - get arguments
@@ -699,6 +737,36 @@ class SecondSight {
             }
         }
 
+        void cmd_get_vga_reg() {
+            if (command_step == 1) {
+                setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 5);
+            } else if (command_step == 2) {
+                // args DMA complete..
+                // let handshake be 0 for a bit.
+                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
+                pending_status = 0x00;
+            } else if (command_step == 3) {
+                // ok now 
+                uint16_t ir = (cmd_buffer[2] << 8) | cmd_buffer[1];
+                uint8_t ir_val = cmd_buffer[3];
+                uint16_t ra = (cmd_buffer[5] << 8) | cmd_buffer[4];
+                resp_buffer[0] = read_crtc_reg(ir_val, ra);
+                setup_dma(DMA_DIRECTION_OUT, resp_buffer, 1);
+            } else if (command_step == 4) {
+
+                dma_length_remaining -= dma_this_chunk;
+                dma_offset += dma_this_chunk;
+                if (dma_length_remaining > 0) {
+                    longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
+                    pending_status = 0x00;
+                    //command_step = 5; the longrun checker will increment this..
+                } else {  // DMA complete, we're done.
+                    command_step = 0;
+                    reg_handshake = 0x00;
+                }
+            }
+        }
+
         void cmd_set_palette() {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 3);
@@ -710,6 +778,47 @@ class SecondSight {
             } else if (command_step == 4) {
                 // DMA wrote 768 bytes of RGB triplets into palette_rgb.
                 sync_vga_palette_from_rgb();
+                command_step = 0;
+                reg_handshake = 0x00;
+            }
+        }
+
+        void cmd_set_palette_entry() {
+            if (command_step == 1) {
+                setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 3);
+            } else if (command_step == 2) {
+                // DMA complete, we're done.
+                uint8_t index = cmd_buffer[1];
+                uint8_t red = cmd_buffer[2];
+                uint8_t green = cmd_buffer[3];
+                uint8_t blue = cmd_buffer[4];
+                set_palette_entry(index, red, green, blue);
+                command_step = 0;
+                reg_handshake = 0x00;
+            }
+        }
+
+        void cmd_scroll_screen() {
+            if (command_step == 1) {
+                setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 9);
+            } else if (command_step == 2) {
+                // DMA complete, we're done.
+                uint32_t start_addr = (cmd_buffer[3] << 16) | (cmd_buffer[2] << 8) | cmd_buffer[1];
+                uint32_t dest_addr = (cmd_buffer[6] << 16) | (cmd_buffer[5] << 8) | cmd_buffer[4];
+                uint32_t length = (cmd_buffer[9] << 16) | (cmd_buffer[8] << 8) | cmd_buffer[7];
+                // we need to do the copy directionally; if we are moving bytes up (higher addr) in memory, we need to copy down; 
+                // if we are moving bytes down in memory, we need to copy up.
+                if (start_addr < dest_addr) {
+                    for (uint32_t i = length - 1; i >= 0; i--) {
+                        frame_buffer[dest_addr + i] = frame_buffer[start_addr + i];
+                    }
+                } else {
+                    for (uint32_t i = 0; i < length; i++) {
+                        frame_buffer[dest_addr + i] = frame_buffer[start_addr + i];
+                    }
+                }
+                longrun_cycle_target = clock->get_cycles() + LONGRUN_WAIT_CYCLES; // set up trigger
+                pending_status = 0xA5;
                 command_step = 0;
                 reg_handshake = 0x00;
             }
@@ -734,7 +843,7 @@ class SecondSight {
            ScrollScreen (*long*)
         */
         /* Commands */
-        /* commands with two DMA (sometimes 2 )
+        /* commands with two or more DMA (2; upload can have multiple chunks)
            UploadCodeData DATA_IN EXECUTE DATA_IN (*long*)
            GetVGAReg DATA_IN EXECUTE DATA_OUT (*long*)
         */
@@ -743,6 +852,38 @@ class SecondSight {
            ScreenOn
         */
 
+        void cmd_screen_off() {
+            display_enabled = 0;
+            command_step = 0;
+            reg_handshake = 0x00;
+        }
+        void cmd_screen_on() {
+            display_enabled = 1;
+            command_step = 0;
+            reg_handshake = 0x00;
+        }
+        void cmd_set_border() {
+            if (command_step == 1) {
+                setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 1);
+            } else if (command_step == 2) {
+                // DMA complete, we're done.
+                uint8_t color = cmd_buffer[1];
+                //set_border(color); // TODO: we do not implement a border, or a border color, yet.
+                command_step = 0;
+                reg_handshake = 0x00;
+            }
+        }
+        void cmd_set_shadow() {
+            if (command_step == 1) {
+                setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 1);
+            } else if (command_step == 2) {
+                // DMA complete, we're done.
+                uint8_t shadow = cmd_buffer[1];
+                //set_border(color); // TODO: we do not implement a border, or a border color, yet.
+                command_step = 0;
+                reg_handshake = 0x00;
+            }
+        }
         /*
             track active command - we do
             track command step - 0 is none; others are command specific, but increment as each step completes.
@@ -759,17 +900,42 @@ class SecondSight {
                 case 2:
                     cmd_upload_code_data();
                     break;
+                case 4:
+                    cmd_screen_off();
+                    break;
+                case 5:
+                    cmd_screen_on();
+                    break;
                 case 6:
                     cmd_set_palette();
+                    break;
+                case 7:
+                    cmd_set_palette_entry();
+                    break;
+                case 8:
+                    cmd_set_border();
+                    break;
+                case 9:
+                    // cmd_run_code
+                    // we have no code to run, so disregard.
                     break;
                 case 10:
                     cmd_clear_screen();
                     break;
+                case 11:
+                    cmd_set_shadow();
+                    break;
                 case 12:
                     cmd_set_vga_reg();
                     break;
+                case 13:
+                    cmd_get_vga_reg();
+                    break;
                 case 14: 
                     cmd_set_user_mode();
+                    break;
+                case 15:
+                    cmd_set_text_font();
                     break;
                 default:
                     printf("SecondSight: execute_command: unknown command %d\n", active_command);
@@ -782,7 +948,7 @@ class SecondSight {
 
         void command_longrun_status() {
             if (longrun_cycle_target && (longrun_cycle_target < clock->get_cycles())) {
-                reg_handshake = pending_status; // 0xA5; // TODO: or error
+                reg_handshake = pending_status;
                 longrun_cycle_target = 0;
                 if (command_step) {
                     command_step++;
@@ -865,6 +1031,9 @@ class SecondSight {
         bool frame() {
             if (!vga_active) {
                 return false;
+            }
+            if (!display_enabled) {
+                return true; // we control frame, but have nothing to draw.
             }
             // draw the frame
             SDL_FRect src = { 0.0f, 0.0f, (float)current_vga_mode.width, (float)current_vga_mode.height };
