@@ -452,6 +452,7 @@ add_subdirectory(apps/mbtest)
 
 #add_subdirectory(apps/nibblizer)
 #add_subdirectory(apps/denibblizer)
+add_subdirectory(apps/vgatext)
 
 add_subdirectory(apps/diskid)
 
