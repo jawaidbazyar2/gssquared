@@ -16,6 +16,16 @@ static inline uint32_t argb(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 int main(int argc, char *argv[]) {
+    // --bench / -b : run exactly 300 frames, print the average frame time, then
+    // exit. Used for non-interactive perf measurement (skips the frame-pacing
+    // delay so the run completes as fast as possible).
+    bool bench = false;
+    for (int i = 1; i < argc; i++) {
+        if (SDL_strcmp(argv[i], "--bench") == 0 || SDL_strcmp(argv[i], "-b") == 0) {
+            bench = true;
+        }
+    }
+
     constexpr int COLS = 80;
     constexpr int ROWS = 25;
     constexpr int CELL_W = 9;
@@ -25,8 +35,8 @@ int main(int argc, char *argv[]) {
     constexpr int ATLAS_COL_STRIDE = 9;
     constexpr int ATLAS_ROW_STRIDE = 17;
 
-    uint8_t framebuf[2048];
-    uint8_t attrbuf[2048];
+    alignas(64) uint8_t framebuf[2048];
+    alignas(64) uint8_t attrbuf[2048];
     for (int i = 0; i < 2048; i++) {
         framebuf[i] = i & 0xFF;
         attrbuf[i] = (i + 1) & 0xFF;
@@ -34,7 +44,7 @@ int main(int argc, char *argv[]) {
 
     // Standard VGA 16-color palette (ARGB8888). Bits 0-3 of the attribute byte
     // select the foreground; bits 4-7 select the background (blink ignored).
-    const uint32_t palette[16] = {
+    alignas(64) const uint32_t palette[16] = {
         argb(0x00,0x00,0x00), argb(0x00,0x00,0xAA), argb(0x00,0xAA,0x00), argb(0x00,0xAA,0xAA),
         argb(0xAA,0x00,0x00), argb(0xAA,0x00,0xAA), argb(0xAA,0x55,0x00), argb(0xAA,0xAA,0xAA),
         argb(0x55,0x55,0x55), argb(0x55,0x55,0xFF), argb(0x55,0xFF,0x55), argb(0x55,0xFF,0xFF),
@@ -85,7 +95,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    static uint16_t glyph_masks[256][CELL_H];
+    alignas(64) static uint16_t glyph_masks[256][CELL_H];
     {
         const uint8_t *base = (const uint8_t *)fs->pixels;
         const int pitch = fs->pitch;
@@ -107,7 +117,8 @@ int main(int argc, char *argv[]) {
     }
     SDL_DestroySurface(fs);
 
-    uint64_t framestats[300];
+    uint64_t framestats[300];   // full frame (raster + present, vsync-bound)
+    uint64_t rasterstats[300];  // CPU raster only (lock -> unlock)
     int framecount = 0;
     SDL_Event event;
     while (1) {
@@ -120,6 +131,7 @@ int main(int argc, char *argv[]) {
 
         void *pixels = nullptr;
         int pitch = 0;
+        uint64_t raster_start = SDL_GetTicksNS();
         if (SDL_LockTexture(screen_tex, NULL, &pixels, &pitch)) {
             for (int sy = 0; sy < SCREEN_H; sy++) {
                 const uint16_t trow = sy / CELL_H;   // text row
@@ -144,6 +156,7 @@ int main(int argc, char *argv[]) {
             }
             SDL_UnlockTexture(screen_tex);
         }
+        uint64_t raster_end = SDL_GetTicksNS();
 
         SDL_RenderTexture(renderer, screen_tex, NULL, NULL);
         SDL_RenderPresent(renderer);
@@ -151,15 +164,25 @@ int main(int argc, char *argv[]) {
         uint64_t end = SDL_GetTicksNS();
         // 300 frames = 5 seconds
         framestats[framecount] = end - start;
-        framecount = (framecount + 1) % 300;
-        if (framecount == 0) {
+        rasterstats[framecount] = raster_end - raster_start;
+        framecount++;
+        if (framecount == 300) {
             uint64_t frametotal = 0;
+            uint64_t rastertotal = 0;
             for (int i = 0; i < 300; i++) {
                 frametotal += framestats[i];
+                rastertotal += rasterstats[i];
             }
-            printf("Average frame time: %llu ns\n", frametotal / 300);
+            printf("Average raster time: %llu ns\n", rastertotal / 300);
+            printf("Average frame time:  %llu ns\n", frametotal / 300);
+            if (bench) {
+                return 0;
+            }
+            framecount = 0;
         }
-        SDL_Delay(16);
+        if (!bench) {
+            SDL_Delay(16);
+        }
     }
 
     return 0;
