@@ -130,9 +130,10 @@ int main(int argc, char *argv[]) {
         SDL_RenderGeometry(renderer, font_texture,
                            vertices.data(), (int)vertices.size(),
                            indices.data(), (int)indices.size());
+        uint64_t end = SDL_GetTicksNS();
+
         SDL_RenderPresent(renderer);
         
-        uint64_t end = SDL_GetTicksNS();
         // 300 frames = 5 seconds
         framestats[framecount] = end - start;
         framecount = (framecount + 1) % 300;

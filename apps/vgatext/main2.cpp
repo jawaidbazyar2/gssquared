@@ -114,11 +114,16 @@ int main(int argc, char *argv[]) {
             for (int gy = 0; gy < CELL_H; gy++) {
                 uint16_t bits = 0;
                 const uint8_t *p = base + (sy + gy) * pitch + sx * 4;
-                for (int gx = 0; gx < CELL_W; gx++) {
+                const int src_cols = (g >= 0xC0 && g <= 0xDF) ? (CELL_W - 1) : CELL_W;
+                for (int gx = 0; gx < src_cols; gx++) {
                     uint8_t r = p[0], gc = p[1], b = p[2], a = p[3];
                     bool on = (a > 127) && ((r > 127) || (gc > 127) || (b > 127));
                     if (on) bits |= uint16_t(1u << (CELL_W - 1 - gx));
                     p += 4;
+                }
+                // Block-art glyphs (0xC0–0xDF): 9th column repeats the 8th (atlas slot is 8px wide).
+                if (g >= 0xC0 && g <= 0xDF) {
+                    bits = (bits & ~1u) | ((bits >> 1) & 1u);
                 }
                 glyph_masks[g][gy] = bits;
             }

@@ -85,9 +85,10 @@ int main(int argc, char *argv[]) {
         SDL_SetRenderTarget(renderer, nullptr);
         static SDL_FRect srcrect = { 0.0f, 0.0f, 720.0f, 400.0f };
         SDL_RenderTexture(renderer, texture, &srcrect, NULL);
+        uint64_t end = SDL_GetTicksNS();
+
         SDL_RenderPresent(renderer);
         
-        uint64_t end = SDL_GetTicksNS();
         // 300 frames = 5 seconds
         framestats[framecount] = end - start;
         framecount = (framecount + 1) % 300;
