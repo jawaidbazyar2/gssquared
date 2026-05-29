@@ -38,12 +38,14 @@ int main(int argc, char *argv[]) {
     constexpr int SCREEN_H = ROWS * CELL_H;   // 400
     constexpr int ATLAS_COL_STRIDE = 9;
     constexpr int ATLAS_ROW_STRIDE = 17;
+    constexpr int NUM_CELLS = COLS * ROWS;
+    constexpr int VRAM_BYTES = NUM_CELLS * 2;   // VGA text: char, attr per cell
 
-    alignas(64) uint8_t framebuf[2048];
-    alignas(64) uint8_t attrbuf[2048];
-    for (int i = 0; i < 2048; i++) {
-        framebuf[i] = i & 0xFF;
-        attrbuf[i] = (i + 1) & 0xFF;
+    // Interleaved like real VGA text VRAM (mode 3): even = character, odd = attribute.
+    alignas(64) uint8_t vram[VRAM_BYTES];
+    for (int i = 0; i < NUM_CELLS; i++) {
+        vram[i * 2 + 0] = i & 0xFF;
+        vram[i * 2 + 1] = (i + 1) & 0xFF;
     }
 
     // Standard VGA 16-color palette (ARGB8888). Bits 0-3 of the attribute byte
@@ -159,8 +161,9 @@ int main(int argc, char *argv[]) {
 
                 for (uint16_t x = 0; x < COLS; x++) {
                     const uint32_t cell = cellbase + x;
-                    const uint8_t ch   = framebuf[cell];
-                    const uint8_t attr = attrbuf[cell];
+                    const uint32_t vram_off = cell * 2;
+                    const uint8_t ch   = vram[vram_off];
+                    const uint8_t attr = vram[vram_off + 1];
                     const uint32_t fg = palette[attr & 0x0F];
                     const uint32_t bg = palette[(attr >> 4) & 0x0F];
                     uint16_t bits = glyph_masks[ch][gy];
