@@ -4,6 +4,10 @@
 #include <cstdint>
 #include <cstdio>
 
+#if defined(__ARM_NEON)
+#include <arm_neon.h>
+#endif
+
 // CPU rasterizer variant of the vgatext harness.
 //
 // Instead of asking the GPU to blit per-cell glyphs, we rasterize the whole
@@ -138,6 +142,10 @@ int main(int argc, char *argv[]) {
         int pitch = 0;
         uint64_t raster_start = SDL_GetTicksNS();
         if (SDL_LockTexture(screen_tex, NULL, &pixels, &pitch)) {
+#if defined(__ARM_NEON)
+            const uint32x4_t sel0 = {0x100u, 0x80u, 0x40u, 0x20u};
+            const uint32x4_t sel1 = {0x10u, 0x8u, 0x4u, 0x2u};
+#endif
             for (int sy = 0; sy < SCREEN_H; sy++) {
                 const uint16_t trow = sy / CELL_H;   // text row
                 const uint16_t gy   = sy % CELL_H;   // scanline within the glyph
@@ -152,11 +160,23 @@ int main(int argc, char *argv[]) {
                     const uint32_t bg = palette[(attr >> 4) & 0x0F];
                     uint16_t bits = glyph_masks[ch][gy];
 
+#if defined(__ARM_NEON)
+                    const uint32x4_t vbits = vdupq_n_u32(bits);
+                    const uint32x4_t m0 = vtstq_u32(vbits, sel0);
+                    const uint32x4_t m1 = vtstq_u32(vbits, sel1);
+                    const uint32x4_t fgv = vdupq_n_u32(fg);
+                    const uint32x4_t bgv = vdupq_n_u32(bg);
+                    vst1q_u32(dst, vbslq_u32(m0, fgv, bgv));
+                    vst1q_u32(dst + 4, vbslq_u32(m1, fgv, bgv));
+                    dst[8] = (bits & 1u) ? fg : bg;
+                    dst += 9;
+#else
                     // Branchless fg/bg select per pixel, MSB first.
                     for (int gx = CELL_W - 1; gx >= 0; gx--) {
                         const uint32_t m = uint32_t(-(int32_t)((bits >> gx) & 1u));
                         *dst++ = (fg & m) | (bg & ~m);
                     }
+#endif
                 }
             }
             SDL_UnlockTexture(screen_tex);
