@@ -69,6 +69,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     SDL_SetRenderLogicalPresentation(renderer, SCREEN_W, SCREEN_H, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    // Disable vsync so SDL_RenderPresent doesn't block on the display refresh;
+    // lets us measure raster + present cost without the VBL wait.
+    if (!SDL_SetRenderVSync(renderer, 0)) {
+        printf("SDL_SetRenderVSync failed: %s\n", SDL_GetError());
+    }
 
     // The CPU-rasterized framebuffer lives here. STREAMING so we can lock and
     // write directly into the mapped pixels each frame.
