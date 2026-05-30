@@ -173,11 +173,10 @@ class SecondSight {
     // edge-detect on the handshake value;
     // and, takes some time to get around to the point where it can read the handshake value.
     // So if these values are too low, the A2 will not see the correct edge and will hang.
-    constexpr static uint32_t WAIT_CYCLES = 60;
-    // this value is used for long-running commands that would get executed during the SS event
-    // loop in the rom, and might take a long time (1000s of cycles) to execute. For example, clearscreen and scrollscreen.
-    // Here we accelerate them insanely.
-    constexpr static uint32_t LONGRUN_WAIT_CYCLES = 60;
+    /** Poll reads to keep handshake at 0 between DMA phases (args done → ready for data). */
+    constexpr static uint32_t HANDSHAKE_HOLD_READS = 3;
+    /** Poll reads before publishing long-command completion (0xA5 / 0xA6). */
+    constexpr static uint32_t LONGRUN_WAIT_READS = 3;
 
     uint32_t crtc_char_clocks_per_line() const {
         uint32_t char_clocks = (uint32_t)crt_hdisplay_end + 1;
@@ -396,6 +395,9 @@ class SecondSight {
             dma_address = nullptr;
             dma_length = 0;
             display_enabled = 1;
+
+            clear_handshake_timers();
+            command_step = 0;
 
             cmd_buffer[0] = 0;
             resp_length = 0;
@@ -729,8 +731,7 @@ class SecondSight {
                     // silently ignores invalid mode number, but respect this.
                     vga_active = cmd_buffer[2] == 0x00 ? 0 : 1;
                 }
-                longrun_cycle_target = clock->get_cycles() + LONGRUN_WAIT_CYCLES; // set up trigger
-                pending_status = 0xA5;
+                trigger_longrun_wait(0xA5);
             }
             display_enabled = 1;
         }
@@ -771,8 +772,7 @@ class SecondSight {
                 memset(frame_buffer+address, color, length);
                 command_step = 0;
                 reg_handshake = 0x00;
-                longrun_cycle_target = clock->get_cycles() + LONGRUN_WAIT_CYCLES; // set up trigger
-                pending_status = 0xA5;
+                trigger_longrun_wait(0xA5);
             }
         }
 
@@ -805,10 +805,8 @@ class SecondSight {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 10);
             } else if (command_step == 2) {
-                // args DMA complete..
-                // let handshake be 0 for a bit.
-                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
-                pending_status = 0x00;
+                // args DMA complete — hold hs at 0 until host has polled enough.
+                trigger_handshake_hold();
             } else if (command_step == 3) {
                 upload_code_data_flag = cmd_buffer[1];
                 dma_offset = (cmd_buffer[4] << 16) | (cmd_buffer[3] << 8) | cmd_buffer[2];
@@ -837,9 +835,8 @@ class SecondSight {
                 dma_length_remaining -= dma_this_chunk;
                 dma_offset += dma_this_chunk;
                 if (dma_length_remaining > 0) {
-                    longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
-                    pending_status = 0x00;
-                    //command_step = 5; the longrun checker will increment this..
+                    trigger_handshake_hold();
+                    //command_step = 5; the hold checker will increment this..
                 } else {  // DMA complete, we're done.
                     record_upload_log(upload_code_data_flag, upload_start_offset,
                         upload_total_length, upload_host_src);
@@ -882,10 +879,8 @@ class SecondSight {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 5);
             } else if (command_step == 2) {
-                // args DMA complete..
-                // let handshake be 0 for a bit.
-                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
-                pending_status = 0x00;
+                // args DMA complete — hold hs at 0 until host has polled enough.
+                trigger_handshake_hold();
             } else if (command_step == 3) {
                 // ok now 
                 uint16_t ir = (cmd_buffer[2] << 8) | cmd_buffer[1];
@@ -898,9 +893,8 @@ class SecondSight {
                 dma_length_remaining -= dma_this_chunk;
                 dma_offset += dma_this_chunk;
                 if (dma_length_remaining > 0) {
-                    longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
-                    pending_status = 0x00;
-                    //command_step = 5; the longrun checker will increment this..
+                    trigger_handshake_hold();
+                    //command_step = 5; the hold checker will increment this..
                 } else {  // DMA complete, we're done.
                     command_step = 0;
                     reg_handshake = 0x00;
@@ -912,8 +906,7 @@ class SecondSight {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 3);
             } else if (command_step == 2) {
-                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
-                pending_status = 0x00;
+                trigger_handshake_hold();
             } else if (command_step == 3) {
                 setup_dma(DMA_DIRECTION_IN, (uint8_t *)palette_rgb, 768);
             } else if (command_step == 4) {
@@ -942,11 +935,6 @@ class SecondSight {
         void cmd_scroll_screen() {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 9);
-            /* }  else if (command_step == 2) {
-                // args DMA complete..
-                // let handshake be 0 for a bit.
-                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
-                pending_status = 0x00; */
             } else if (command_step == 2) {
                 // DMA complete, we're done.
                 uint32_t start_addr = screen_base_addr + ((cmd_buffer[3] << 16) | (cmd_buffer[2] << 8) | cmd_buffer[1]);
@@ -964,10 +952,8 @@ class SecondSight {
                         frame_buffer[dest_addr + i] = frame_buffer[start_addr + i];
                     }
                 }
-                longrun_cycle_target = clock->get_cycles() + LONGRUN_WAIT_CYCLES; // set up trigger
-                pending_status = 0xA5;
+                trigger_longrun_wait(0xA5);
                 command_step = 0;
-                //reg_handshake = 0x00;
             }
         }
 
@@ -1093,26 +1079,63 @@ class SecondSight {
             }
         }
 
-        uint64_t longrun_cycle_target = 0;
+        uint32_t handshake_hold_reads = 0;
+        uint32_t longrun_reads = 0;
         uint8_t pending_status = 0;
 
+        void clear_handshake_timers() {
+            handshake_hold_reads = 0;
+            longrun_reads = 0;
+            pending_status = 0;
+        }
+
+        /** Args DMA done (or inter-chunk gap): keep hs at 0 for N polls, then advance. */
+        inline void trigger_handshake_hold(uint32_t reads = HANDSHAKE_HOLD_READS) {
+            handshake_hold_reads = reads;
+        }
+
+        /** Long-running command finished: after N polls, publish A5/A6 (or 0). */
+        inline void trigger_longrun_wait(uint8_t status, uint32_t reads = LONGRUN_WAIT_READS) {
+            longrun_reads = reads;
+            pending_status = status;
+        }
+
+        void process_handshake_hold() {
+            if (handshake_hold_reads == 0) {
+                return;
+            }
+            handshake_hold_reads--;
+            if (handshake_hold_reads != 0) {
+                return;
+            }
+            if (command_step) {
+                command_step++;
+                execute_command();
+            }
+        }
+
         void command_longrun_status() {
-            if (longrun_cycle_target && (longrun_cycle_target < clock->get_cycles())) {
-                reg_handshake = pending_status;
-                longrun_cycle_target = 0;
-                if (command_step) {
-                    command_step++;
-                    execute_command(); // TODO: having this here is icky.
-                }
+            if (longrun_reads == 0) {
+                return;
+            }
+            longrun_reads--;
+            if (longrun_reads != 0) {
+                return;
+            }
+            reg_handshake = pending_status;
+            longrun_reads = 0;
+            pending_status = 0;
+            if (command_step) {
+                command_step++;
+                execute_command();
             }
         }
 
         uint8_t read_handshake() {
+            process_handshake_hold();
             command_longrun_status();
 
-            uint8_t value;
-            value = reg_handshake;
-            return value;
+            return reg_handshake;
         }
 
         void write_cmd(uint8_t value) {
@@ -1123,6 +1146,7 @@ class SecondSight {
                 return;
             }
 
+            clear_handshake_timers();
             active_command = value;
             cmd_buffer[0] = value;
             //cmd_length = cmd_lengths[value]-1;
