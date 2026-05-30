@@ -12214,3 +12214,5 @@ So we have:
 counter (16-bit); state ID; true or false for turn on or turn off.
 
 ok, that becomes very clean and straightforward. Display asks VideoScanner to change state; VS decides when to apply that request.
+
+re SecondSight support, I am not really happy with how the delay stuff is working. I'm currently checking for cycles, and, had to bump it up to 60 cycles because Cogito had the odd hang on handshaking. Perhaps instead of cycles, I Could count a certain number of handshake reads. 
