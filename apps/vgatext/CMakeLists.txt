@@ -5,7 +5,13 @@ target_link_libraries(vgatext PRIVATE
     SDL3_image::SDL3_image-shared
 )
 
-add_executable(vgatext2 main2.cpp)
+add_executable(vgatext2 main2.cpp
+    ${CMAKE_SOURCE_DIR}/src/devices/secondsight/vga_render_text_9x16.cpp
+)
+
+target_include_directories(vgatext2 PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
 
 target_link_libraries(vgatext2 PRIVATE
     SDL3::SDL3-shared

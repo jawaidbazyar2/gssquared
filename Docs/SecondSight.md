@@ -59,7 +59,7 @@ A tile set is 256 elements of 16 bytes each = 4K. The sprite config for 64 sprit
 So now we can pack all this into one hires page and still have almost 2K left over. And could then "page flip" potentially to use the other hires page. That could be for memory layout purposes; it could be for rapidly switching tile sets for special effects or level changes or title screens what-have-you.
 
 So we could support:
-2K namespace (could use the two text pages?) (this also contains palettes)
+2K namespace - this also contains palettes
 4K tileset - this could be anywhere in the two Hires pages, so you could conceivably have up to 4 full separate tilesets.
 256 bytes sprite control - this is called the object attribute memory or OAM. There are separate registers for controlling these. Guess this can be in the hires page too. 
 
@@ -350,3 +350,188 @@ So no, not all commands use 0xA5/0xA6. DMA operations use the 0x01/0x00 pattern 
 ## Getting more out of SecondSight Card
 
 https://apple2infinitum.slack.com/archives/CPSGNGE05/p1712906967818249
+
+## VGA Text Modes
+
+This site has all the various oldskool fonts (This is the real deal, INT10H is garbage)
+
+https://github.com/spacerace/romfont/blob/master/font-images/IBM_VGA_8x16.png
+
+These cells are 9x18, but it's largely just blank spacing?
+When the font is loaded, fill in the 9th column. 
+
+Spectrum 2.5.3 detects the SecondSight and puts it into this mode:
+
+VGA Mode: 03
+Screen base: 0
+crt start: 0000
+crt hdisplay end: 09
+crt addr scale: 4 bytes/unit
+fb pitch: 0
+res x/y @ depth: 80/25 @ 4
+
+### Mode 03h — ROM modetable `vga_text80x25`
+
+The Second Sight firmware uses a fixed register block (disassembly label `vga_text80x25`, 84 bytes). The emulator loads [`vga_mode_tables.hpp`](../src/devices/secondsight/vga_mode_tables.hpp) `SS_ROM_VGA_TEXT_80X25` on SetMode `$03`. Key values:
+
+| Register | Value | Role |
+|----------|-------|------|
+| Misc | `0x67` | VGA enable, clock select |
+| Seq 02 / 04 | `0x03` / `0x02` | Map mask, chain-4 odd/even (text) |
+| CRT 01 | `0x4F` | 80 character clocks |
+| CRT 09 | `0x4F` | 16 scan lines per character row |
+| CRT 13 | `0x28` | Offset → **160** byte line pitch |
+| GDC 05 / 06 | `0x10` / `0x0E` | Text mode, memory map |
+| Attr 10 | `0x0C` | Text mode, blink |
+
+### Mode 03h memory map (Oak OTI-087 / IBM VGA)
+
+The OTI-087 is IBM VGA compatible. In **mode 03h (80×25, 9×16)** the host-visible text buffer matches the usual **0xB800** layout:
+
+| Item | Value |
+|------|--------|
+| Cell format | byte0 = character, byte1 = attribute (interleaved) |
+| Bytes per cell | 2 |
+| Bytes per scanline | 160 (80 cells × 2) |
+| CRTC reg 0x01 | 0x4F (80 character clocks − 1) |
+| CRTC reg 0x13 (offset) | 0x28 → line pitch = 4 × offset = **160** bytes |
+
+Physically, VRAM uses **planes** (plane 0 = chars, plane 1 = attrs); the CPU still sees interleaved bytes. A linear framebuffer dump may alternatively use **planar split** (chars at base, attrs at base+0x2000, 80 bytes/row per plane).
+
+The debug line “crt addr scale: N bytes/unit” is `fb_pitch / char_clocks` (CRTC addressing), not cell size. For mode 03h with correct regs that is 160/80 = **2** bytes per character clock, not 4 bytes per cell.
+
+### SetTextFont (command `$0F`) and upload routing
+
+Per API docs / `ROM_BEEF.asm`:
+
+| SetTextFont `$01` | Meaning |
+|-------------------|---------|
+| `$00` | Standard ROM font |
+| `$01` | Alternate ROM font |
+| `$02` | Standard PC ANSI font (ROM `copy_font` copies `font_table_8x16` into **Z180 SRAM `$F000`**, not VGA VRAM) |
+| `$03` | User font at **Z180 `$F000`** (upload with code flag `$00`) |
+
+`upload_data` (`ROM_BEEF.asm` `upload_chunk`): **`$01` flag = 0** → Z180 address space (SRAM/code); **`$01` flag = 1** → VGA linear framebuffer. Fonts belong in Z180; **80×25 text cells** belong in VRAM at the CRTC screen base.
+
+Bulk data always arrives as a **DMA byte stream** on C0B1/C0B2 (the 65816 reads the host address in the command packet and writes each byte to the card). The Z180 never reads Apple II memory directly.
+
+The emulator logs each upload start/complete to stdout and shows the last 8 in the `ss` debug panel (`TextFont`, upload log, Z180 `$F000` peek).
+
+
+
+# New Mode Definitions
+
+SetMode byte $02, is "emulation flag". Currently:
+* $00: Apple II mode emulation mode
+* $01: VGA mode
+
+I think we add:
+* $02: PPU mode
+* $03: GPU mode
+
+PPU mode is where we render PPU style like a NES.
+GPU mode is where we process a command language. and render 
+
+Since all addon video cards (from SecondSight in 1995 to the present day) shadow Apple II video memory writes to the cards, and store in card memory, that is a fast and convenient way to put data into the cards. The PPU buffers just need to be mapped.
+
+Allow the mappings to be user-defined to provide flexibility in memory layout depending on the program.
+
+Areas do not HAVE to be mapped to Apple II shadow memory. For instance you could load 16 large tile sets into card memory then switch between them by using the 
+
+## PPU Mode
+
+### namespace / tilemaps
+
+Use hires page 1 in main memory. Each namespace is 1024 bytes, enough for a 32x30 tilemap with 64 bytes left over for palette assignment; alternatively, enough for a 32x32 tilemap (256x256 pixels).
+
+The tilemaps can be configured for horizontal or vertical alignment.
+
+### background/border color
+
+8 bit value of the palette entry to use for border/overscan/background color.
+
+### X/Y Scroll
+
+16-bit registers indicating the X and Y scroll offsets.
+Only 9 bits of each register are used.
+These registers are latched. They can be set any time, but only take effect at the start of the next VBL period.
+
+Rough offset is a whole tile and offsets through the tilemaps in whole tiles.
+Fine offset (0-7) offsets individual pixels.
+e.g. if X scroll is 1 then we'll start the scanline on the 2nd pixel of tile X=0, and end by displaying the first pixel of tile X=32 (which is in the other tilemap).
+
+### VBL
+
+we need to present a register somewhere that tells when we're in VBL, so Apple II code can sync to the card's VBL signal and do tilemap and register updates.
+
+### Tile data
+
+data for 256 tiles / sprites:
+
+With 2 Bpp, the tile data is 256 * 8 * 8 * 2 = 4 KByte.
+Also use a palette index (so there's a 2-level palette basically, just like PPU)
+
+With 4 bpp, tile data is 256 * 8 * 8 * 4 bits or 8KByte.
+
+With 8 bpp, the tile data is 256 * 8 * 8 = 16 KByte. 
+here, every pixel is an index into 256 palette, with 0 = transparent to background/whatever's underneath.
+
+The NES has TWO tile sets, set 0 and set 1, and typically background uses one and sprites the other. (Configurable).
+
+There is also a mode where sprites can become 8x16 and the low bit of the tile number decides which tile set is used for the double-high sprite.
+
+For legacy SecondSight cards, the tile data needs to reside in video memory to take advantage of Mode X acceleration.
+
+### Split Screen Register
+
+specified in tile heights: 0 for no split screen; 1-n for split screen after the Nth.
+Tiles before the split do not have X/Y scroll applied. Tiles after do. Locks the "hud" area (area above split) to tilemap 0.
+
+By default, sprites can be displayed over the HUD area, as it's just normal display. Perhaps have an optional 
+
+### Sprite Data
+
+256 bytes, 64 sprites, numbered from 0 to 63 and in that order.
+
+Unlike NES, there is no 8 sprite limit per scanline.
+
+* tile number - pointer to tile for this sprite
+* attributes - h/v flip bits; in front of background; or behind background.
+* X, Y - coordinates to draw on screen.
+
+Unsure how to implement sprite-behind-background on Z180+VGA.
+
+### Palette Data
+
+we could choose either 512 bytes (15bit color) or 768 bytes (24 bit color)
+
+### Transparency
+
+For both tiles and sprites, palette index $00 denotes transparency. 
+
+Background tile: If a background tile pixel is $00, the PPU renders the global background/border color.
+Sprite: if a sprite tile pixel is $00, the PPU draws nothing (lets background show through).
+
+### Location Registers
+
+Programmed via SS API
+
+Don't use text pages because peripherals may get confused if their screen hole data is overwritten. That would be sad :()
+
+24-bit registers to define where in memory the following lives:
+* tile map 0 (1K) - default hgr page 1 shadow memory
+* tile map 1 (1K) - default gfr page 1 shadow memory
+* sprite table (256 bytes) - default hires page 1
+* palette data (512 or 768 bytes) - default hires page 1
+
+So far this is only 3K of 8K in hires page1.
+
+The tile sets aren't directly mapped, because they need to live in the VRAM area for SS/Z180 Mode X compatibility.
+
+* tile set 0 (4K, or 16K) 
+* tile set 1 (4K, or 16K)
+
+So there is a API SetTileSet(TileSetIndex, Address)
+The card processes the data from wherever you uploaded it, and then copies into the place it needs in VRAM.
+This lets the Apple II re-use the hires page memory for program data/logic after loading the tile sets.
+(Alternatively, we can just have an API LoadTileSet, which honestly might be simpler.)

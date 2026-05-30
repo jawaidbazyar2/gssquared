@@ -1,20 +1,26 @@
 #pragma once
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
+#include <string>
 #include "util/DebugFormatter.hpp"
 #include "gs2.hpp"
 #include "videosystem.hpp"
 #include "NClock.hpp"
+#include "vga_render.hpp"
+#include "vga_render_text_9x16.hpp"
+#include "vga_render_text_9x16_present.hpp"
+#include "vga_mode_tables.hpp"
+#include "paths.hpp"
 
 struct computer_t;
 
 
 #define SECOND_SIGHT_FB_SIZE 1024 * 1024
-
-static constexpr int SS_MAX_WIDTH = 1024;
-static constexpr int SS_MAX_HEIGHT = 768;
-static constexpr int SS_RGB24_PITCH = SS_MAX_WIDTH * 3;
-static constexpr size_t SS_RGB24_BUFFER_SIZE = SS_RGB24_PITCH * SS_MAX_HEIGHT;
+/** Z180 SRAM ($00/0000–$01/FFFF per Second Sight memory map). */
+#define SS_Z180_SRAM_SIZE (128 * 1024)
+/** User-uploaded 8x16 font lives here (SetTextFont $03 / ROM copy_font). */
+#define SS_Z180_USER_FONT_ADDR 0xF000
 
 class SecondSight {
     // "RAW" mode rec for setting user modes.
@@ -34,6 +40,7 @@ class SecondSight {
     } vga_mode_rec;
 
     uint8_t *frame_buffer;
+    uint8_t *z180_sram = nullptr;
 
     uint8_t reg_cmd = 0;
 
@@ -91,6 +98,7 @@ class SecondSight {
     NClock *clock;
     SDL_Texture *tex_16bpp = nullptr;
     SDL_Texture *tex_24bpp = nullptr;
+    SDL_Texture *tex_text = nullptr;
 
     SDL_Color vga_palette[256] = {};
     uint8_t palette_rgb[256][3] = {};
@@ -103,16 +111,73 @@ class SecondSight {
     uint8_t crt_char_width = 8;    // pixels per CRTC character clock
     uint32_t screen_base_addr = 0;
     uint16_t fb_pitch = 0;
+    /** SetTextFont index ($00–$03); $FF = never set. */
+    uint8_t text_font_index = 0xFF;
+
+    struct upload_log_entry_t {
+        uint8_t code_data_flag = 0;
+        uint32_t dest = 0;
+        uint32_t length = 0;
+        /** Host-side read address (65816 reads here; bytes stream via C0B1 only). */
+        uint32_t host_src = 0;
+    };
+    static constexpr int SS_UPLOAD_LOG_MAX = 8;
+    /** Only print bulk uploads to stdout (avoids 2-byte spam). */
+    static constexpr uint32_t SS_UPLOAD_LOG_PRINTF_MIN = 64;
+    upload_log_entry_t upload_log[SS_UPLOAD_LOG_MAX] = {};
+    int upload_log_total = 0;
+    int upload_log_next = 0;
+    uint32_t upload_small_total = 0;
+
+    static const char *text_font_label(uint8_t index) {
+        switch (index) {
+            case 0: return "ROM standard ($00)";
+            case 1: return "ROM alternate ($01)";
+            case 2: return "PC ANSI ($02)";
+            case 3: return "User @ Z180 $F000 ($03)";
+            default: return "unknown";
+        }
+    }
+
+    void record_upload_log(uint8_t flag, uint32_t dest, uint32_t length, uint32_t host_src) {
+        if (length < SS_UPLOAD_LOG_PRINTF_MIN) {
+            upload_small_total++;
+            return;
+        }
+        upload_log[upload_log_next % SS_UPLOAD_LOG_MAX] = {flag, dest, length, host_src};
+        upload_log_next++;
+        upload_log_total++;
+        printf("SecondSight upload: VRAM dest=%06X len=%u host_src=%06X (flag=%d)\n",
+            dest, length, host_src, flag);
+    }
+
+    void apply_text_font(uint8_t font_index) {
+        text_font_index = font_index;
+        printf("SecondSight SetTextFont: %02X (%s)\n", font_index, text_font_label(font_index));
+        switch (font_index) {
+            case 3:
+                if (z180_sram != nullptr) {
+                    vga_text_9x16_load_font_from_vram(z180_sram + SS_Z180_USER_FONT_ADDR,
+                        SS_VRAM_FONT_GLYPH_BYTES);
+                }
+                break;
+            case 0:
+            case 1:
+            case 2:
+            default:
+                break;
+        }
+    }
 
     // Various apple II code is:
     // edge-detect on the handshake value;
     // and, takes some time to get around to the point where it can read the handshake value.
     // So if these values are too low, the A2 will not see the correct edge and will hang.
-    constexpr static uint32_t WAIT_CYCLES = 50;
+    constexpr static uint32_t WAIT_CYCLES = 60;
     // this value is used for long-running commands that would get executed during the SS event
     // loop in the rom, and might take a long time (1000s of cycles) to execute. For example, clearscreen and scrollscreen.
     // Here we accelerate them insanely.
-    constexpr static uint32_t LONGRUN_WAIT_CYCLES = 50;
+    constexpr static uint32_t LONGRUN_WAIT_CYCLES = 60;
 
     uint32_t crtc_char_clocks_per_line() const {
         uint32_t char_clocks = (uint32_t)crt_hdisplay_end + 1;
@@ -122,9 +187,60 @@ class SecondSight {
         return char_clocks > 0 ? char_clocks : 1;
     }
 
+    inline bool is_text_mode() const {
+        return current_vga_mode.graphics == TG_TEXT;
+    }
+
+    // SetUserMode DMA payload (misc through ext_regs); excludes trailing padding.
+    static constexpr size_t SS_VGA_MODE_REC_DMA_BYTES = 84;
+
+    void load_vga_mode_rec(const ss_vga_mode_rec *src) {
+        memcpy(&user_mode_rec, src, SS_VGA_MODE_REC_DMA_BYTES);
+    }
+
+    /** Apply SecondSight ROM modetable values to emulated CRTC/FB state. */
+    void apply_rom_vga_mode(const ss_vga_mode_rec *rom, uint8_t mode_num) {
+        load_vga_mode_rec(rom);
+
+        crt_hdisplay_end = rom->crt_regs[0x01];
+        crt_offset = rom->crt_regs[0x13];
+        crt_start_addr_high = rom->crt_regs[0x0C];
+        crt_start_addr_low = rom->crt_regs[0x0D];
+
+        for (int i = 0; i < sizeof(vga_modes) / sizeof(vga_mode_t); i++) {
+            if (vga_modes[i].mode == mode_num) {
+                current_vga_mode = vga_modes[i];
+                break;
+            }
+        }
+        vga_mode_num = mode_num;
+
+        if (mode_num == 0x03) {
+            crt_char_width = 9;
+            fb_pitch = (uint16_t)vga_text_pitch_from_crtc_offset(crt_offset);
+            res_x = VGA_TEXT_SCREEN_W;
+            res_y = VGA_TEXT_SCREEN_H;
+        } else {
+            mode_info info;
+            analyze_vga_mode(&user_mode_rec, &info);
+            apply_analyzed_mode(&user_mode_rec, &info);
+            vga_mode_num = mode_num;
+        }
+        update_screen_base_addr();
+        // OTI extended regs not yet tracked; for mode 03h the text buffer
+        // always lives at VRAM offset 0x01'0000 (OTI reg 0x22 / ext_regs[12] = 0x08).
+        if (mode_num == 0x03) {
+            screen_base_addr = 0x010000;
+        }
+    }
+
     uint32_t crtc_bytes_per_address_unit() const {
         uint32_t char_clocks = crtc_char_clocks_per_line();
-        if (fb_pitch > 0) {
+        if (current_vga_mode.graphics == TG_TEXT && char_clocks < current_vga_mode.width) {
+            // Trust the known column count when CRTC reg 0x01 is not programmed yet.
+            char_clocks = current_vga_mode.width;
+        }
+        if (fb_pitch > 0 && char_clocks > 0) {
             return fb_pitch / char_clocks;
         }
         // No pitch yet — derive from depth and character width.
@@ -146,7 +262,15 @@ class SecondSight {
         if (crt_char_width == 0) {
             crt_char_width = 8;
         }
-        if (current_vga_mode.width >= crt_char_width) {
+        if (current_vga_mode.graphics == TG_TEXT) {
+            if (crt_hdisplay_end < 0x10) {
+                crt_hdisplay_end = (uint8_t)(current_vga_mode.width - 1);
+            }
+            if (crt_offset == 0) {
+                crt_offset = (uint8_t)(current_vga_mode.width / 2);
+            }
+            fb_pitch = (uint16_t)vga_text_pitch_from_crtc_offset(crt_offset);
+        } else if (current_vga_mode.width >= crt_char_width) {
             crt_hdisplay_end = (uint8_t)((current_vga_mode.width / crt_char_width) - 1);
         }
     }
@@ -169,7 +293,9 @@ class SecondSight {
                 crt_offset = value;
                 // Padded/virtual width: memory pitch may exceed visible width.
                 if (crt_offset > 0) {
-                    uint32_t offset_pitch = (uint32_t)crt_offset * 2;
+                    uint32_t offset_pitch = is_text_mode()
+                        ? (uint32_t)vga_text_pitch_from_crtc_offset(crt_offset)
+                        : (uint32_t)crt_offset * 2;
                     if (offset_pitch > fb_pitch) {
                         fb_pitch = (uint16_t)offset_pitch;
                         update_screen_base_addr();
@@ -230,26 +356,12 @@ class SecondSight {
         palette_rgb[index][2] = b;
     }
 
-    void expand_8bpp_to_rgb24(const uint8_t *src, int src_pitch, int width, int height) {
-        for (int y = 0; y < height; y++) {
-            const uint8_t *row = src + (y * src_pitch);
-            uint8_t *out = rgb24_buffer + (y * SS_RGB24_PITCH);
-            for (int x = 0; x < width; x++) {
-                const uint8_t *rgb = palette_rgb[row[x]];
-                out[x * 3 + 0] = rgb[0];
-                out[x * 3 + 1] = rgb[1];
-                out[x * 3 + 2] = rgb[2];
-            }
-        }
-    }
-
     public:
         SecondSight(video_system_t *video_system, MMU *mmu, NClock *clock) : vs(video_system), mmu(mmu), clock(clock) {
             frame_buffer = new uint8_t[SECOND_SIGHT_FB_SIZE];
-            //memset(frame_buffer, 0, SECOND_SIGHT_FB_SIZE); // clear the buffer
-            for (int i = 0; i < SECOND_SIGHT_FB_SIZE; i++) {
-                frame_buffer[i] = i & 0xFF;
-            }
+            memset(frame_buffer, 0, SECOND_SIGHT_FB_SIZE);
+            z180_sram = new uint8_t[SS_Z180_SRAM_SIZE];
+            memset(z180_sram, 0, SS_Z180_SRAM_SIZE);
 
             rgb24_buffer = new uint8_t[SS_RGB24_BUFFER_SIZE];
             init_default_palette();
@@ -262,13 +374,22 @@ class SecondSight {
             if (!tex_24bpp) {
                 printf("SecondSight: failed to create 24bpp texture\n");
             }
+            tex_text = SDL_CreateTexture(vs->renderer, SDL_PIXELFORMAT_ARGB8888,
+                SDL_TEXTUREACCESS_STREAMING, VGA_TEXT_SCREEN_W, VGA_TEXT_SCREEN_H);
+            if (!tex_text) {
+                printf("SecondSight: failed to create text texture\n");
+            } else {
+                SDL_SetTextureScaleMode(tex_text, SDL_SCALEMODE_NEAREST);
+            }
             display_enabled = true;
         }
         ~SecondSight() {
             delete[] frame_buffer;
+            delete[] z180_sram;
             delete[] rgb24_buffer;
             SDL_DestroyTexture(tex_16bpp);
             SDL_DestroyTexture(tex_24bpp);
+            SDL_DestroyTexture(tex_text);
         }
 
         void reset() {
@@ -292,6 +413,10 @@ class SecondSight {
             crt_offset = 0;
             crt_char_width = 8;
             screen_base_addr = 0;
+            text_font_index = 0xFF;
+            upload_log_total = 0;
+            upload_log_next = 0;
+            upload_small_total = 0;
             fb_pitch = 0;
         }
 
@@ -583,18 +708,22 @@ class SecondSight {
                     apply_analyzed_mode(&user_mode_rec, &info);
                     vga_active = cmd_buffer[2] == 0x00 ? 0 : 1;
                 } else {
-                    for (int i = 0; i < sizeof(vga_modes) / sizeof(vga_mode_t); i++) {
-                        if (vga_modes[i].mode == cmd_buffer[1]) {
-                            current_vga_mode = vga_modes[i];
-                            //vga_active = vga_modes[i].emulated;
-                            vga_mode_num = cmd_buffer[1];
-                            res_x = current_vga_mode.width;
-                            res_y = current_vga_mode.height;
-                            fb_pitch = current_vga_mode.width * (current_vga_mode.color_depth / 8);
-                            crt_char_width = 8;
-                            sync_crtc_timing_defaults();
-                            update_screen_base_addr();
-                            break;
+                    if (cmd_buffer[1] == 0x03) {
+                        apply_rom_vga_mode(&SS_ROM_VGA_TEXT_80X25, 0x03);
+                    } else {
+                        for (int i = 0; i < sizeof(vga_modes) / sizeof(vga_mode_t); i++) {
+                            if (vga_modes[i].mode == cmd_buffer[1]) {
+                                current_vga_mode = vga_modes[i];
+                                vga_mode_num = cmd_buffer[1];
+                                res_x = current_vga_mode.width;
+                                res_y = current_vga_mode.height;
+                                fb_pitch = current_vga_mode.width
+                                    * (current_vga_mode.color_depth / 8);
+                                crt_char_width = 8;
+                                sync_crtc_timing_defaults();
+                                update_screen_base_addr();
+                                break;
+                            }
                         }
                     }
                     // silently ignores invalid mode number, but respect this.
@@ -651,9 +780,7 @@ class SecondSight {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 1);
             } else if (command_step == 2) {
-                // DMA complete
-                uint8_t font_index = cmd_buffer[1];
-                //set_text_font(font_index);
+                apply_text_font(cmd_buffer[1]);
                 command_step = 0;
                 reg_handshake = 0x00;
             }
@@ -669,6 +796,10 @@ class SecondSight {
         uint32_t dma_offset = 0;
         uint32_t dma_length_remaining = 0;
         uint32_t dma_this_chunk = 0;
+        uint32_t upload_start_offset = 0;
+        uint32_t upload_total_length = 0;
+        uint8_t upload_code_data_flag = 0;
+        uint32_t upload_host_src = 0;
 
         void cmd_upload_code_data() {
             if (command_step == 1) {
@@ -679,10 +810,13 @@ class SecondSight {
                 longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
                 pending_status = 0x00;
             } else if (command_step == 3) {
-                // ok now 
-                uint8_t code_data_flag = cmd_buffer[1];
+                upload_code_data_flag = cmd_buffer[1];
                 dma_offset = (cmd_buffer[4] << 16) | (cmd_buffer[3] << 8) | cmd_buffer[2];
                 uint32_t length = (cmd_buffer[7] << 16) | (cmd_buffer[6] << 8) | cmd_buffer[5];
+                upload_host_src = ((uint32_t)cmd_buffer[10] << 16)
+                    | ((uint32_t)cmd_buffer[9] << 8) | (uint32_t)cmd_buffer[8];
+                upload_start_offset = dma_offset;
+                upload_total_length = length;
                 if (length == 0) { // handle special case of zero length
                     command_step = 0;
                     reg_handshake = 0x00;
@@ -690,9 +824,16 @@ class SecondSight {
                 }
                 dma_length_remaining = length;
                 dma_this_chunk = (dma_length_remaining & 0xFF0000) ? 0x1'0000 : dma_length_remaining;
-                setup_dma(DMA_DIRECTION_IN, frame_buffer+dma_offset, dma_this_chunk);
+                // ROM firmware bug: upload_chunk always adds #8 to the dest bank, so
+                // flag=0 ("code") still lands in VGA VRAM (bank $08+), not Z180 SRAM.
+                // Both flag values therefore target frame_buffer at dma_offset.
+                if (dma_offset + dma_this_chunk > (uint32_t)SECOND_SIGHT_FB_SIZE) {
+                    command_step = 0;
+                    reg_handshake = 0x00;
+                    return;
+                }
+                setup_dma(DMA_DIRECTION_IN, frame_buffer + dma_offset, dma_this_chunk);
             } else if (command_step == 4) {
-
                 dma_length_remaining -= dma_this_chunk;
                 dma_offset += dma_this_chunk;
                 if (dma_length_remaining > 0) {
@@ -700,22 +841,22 @@ class SecondSight {
                     pending_status = 0x00;
                     //command_step = 5; the longrun checker will increment this..
                 } else {  // DMA complete, we're done.
+                    record_upload_log(upload_code_data_flag, upload_start_offset,
+                        upload_total_length, upload_host_src);
                     command_step = 0;
                     reg_handshake = 0x00;
                 }
             } else if (command_step == 5) {
                 dma_this_chunk = (dma_length_remaining & 0xFF0000) ? 0x1'0000 : dma_length_remaining;
-                setup_dma(DMA_DIRECTION_IN, frame_buffer+dma_offset, dma_this_chunk);
+                setup_dma(DMA_DIRECTION_IN, frame_buffer + dma_offset, dma_this_chunk);
                 command_step = 3; // loop (will loop back to command_step == 4 because dma end will command_step++ )
             }
-            /* 
-               $01: code/data flag (0 = code, 1 = data i.e. frame buffer)
-                    data = frame_buffer
-               $02: $0ABBCC: adddress to write to
-               $05: $0LLLLL: length of data
-               $08: $AABBCC: IIGS address to take data from
+            /*
+               $01: code/data flag (0 or 1 — firmware bug makes both go to VGA VRAM)
+               $02: dest address (24-bit VRAM offset)
+               $05: length (24-bit)
+               $08: host read address (65816 reads; each byte written via C0B1)
             */
-
         }
 
         void cmd_set_vga_reg() {
@@ -801,15 +942,21 @@ class SecondSight {
         void cmd_scroll_screen() {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 9);
+            /* }  else if (command_step == 2) {
+                // args DMA complete..
+                // let handshake be 0 for a bit.
+                longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
+                pending_status = 0x00; */
             } else if (command_step == 2) {
                 // DMA complete, we're done.
-                uint32_t start_addr = (cmd_buffer[3] << 16) | (cmd_buffer[2] << 8) | cmd_buffer[1];
-                uint32_t dest_addr = (cmd_buffer[6] << 16) | (cmd_buffer[5] << 8) | cmd_buffer[4];
+                uint32_t start_addr = screen_base_addr + ((cmd_buffer[3] << 16) | (cmd_buffer[2] << 8) | cmd_buffer[1]);
+                uint32_t dest_addr = screen_base_addr + ((cmd_buffer[6] << 16) | (cmd_buffer[5] << 8) | cmd_buffer[4]);
                 uint32_t length = (cmd_buffer[9] << 16) | (cmd_buffer[8] << 8) | cmd_buffer[7];
+                printf("SecondSight: cmd_scroll_screen: start_addr=%X, dest_addr=%X, length=%X\n", start_addr, dest_addr, length);
                 // we need to do the copy directionally; if we are moving bytes up (higher addr) in memory, we need to copy down; 
                 // if we are moving bytes down in memory, we need to copy up.
                 if (start_addr < dest_addr) {
-                    for (uint32_t i = length - 1; i >= 0; i--) {
+                    for (int32_t i = length - 1; i >= 0; i--) {
                         frame_buffer[dest_addr + i] = frame_buffer[start_addr + i];
                     }
                 } else {
@@ -820,7 +967,7 @@ class SecondSight {
                 longrun_cycle_target = clock->get_cycles() + LONGRUN_WAIT_CYCLES; // set up trigger
                 pending_status = 0xA5;
                 command_step = 0;
-                reg_handshake = 0x00;
+                //reg_handshake = 0x00;
             }
         }
 
@@ -899,6 +1046,9 @@ class SecondSight {
                     break;
                 case 2:
                     cmd_upload_code_data();
+                    break;
+                case 3:
+                    cmd_scroll_screen();
                     break;
                 case 4:
                     cmd_screen_off();
@@ -1035,38 +1185,156 @@ class SecondSight {
             if (!display_enabled) {
                 return true; // we control frame, but have nothing to draw.
             }
-            // draw the frame
-            SDL_FRect src = { 0.0f, 0.0f, (float)current_vga_mode.width, (float)current_vga_mode.height };
             const uint8_t *display_base = frame_buffer + screen_base_addr;
-
-            // update the texture based on what's in frame based on specified resolution and color depth.
-            if (current_vga_mode.color_depth == 8) {
-                expand_8bpp_to_rgb24(
-                    display_base,
-                    fb_pitch,
-                    current_vga_mode.width,
-                    current_vga_mode.height);
-                SDL_UpdateTexture(tex_24bpp, nullptr, rgb24_buffer, SS_RGB24_PITCH);
-                vs->render_frame(tex_24bpp, &src, nullptr);
+            if (is_text_mode()) {
+                const int text_pitch = fb_pitch > 0 ? fb_pitch : VGA_TEXT_FB_PITCH;
+                if (text_font_index != 3) {
+                    std::string font_path;
+                    Paths::calc_base(font_path, "img/IBM_VGA_8x16.png");
+                    vga_text_9x16_init(font_path.c_str());
+                }
+                if (tex_text) {
+                    vga_render_text_9x16(vs, tex_text, display_base, text_pitch);
+                }
+            } else if (current_vga_mode.color_depth == 8) {
+                vga_render_8bpp(vs, tex_24bpp, rgb24_buffer, palette_rgb, display_base, fb_pitch,
+                    current_vga_mode.width, current_vga_mode.height);
             } else if (current_vga_mode.color_depth == 16) {
-                SDL_UpdateTexture(tex_16bpp, nullptr, display_base, fb_pitch);
-                vs->render_frame(tex_16bpp, &src, nullptr);
+                vga_render_16bpp(vs, tex_16bpp, display_base, fb_pitch,
+                    current_vga_mode.width, current_vga_mode.height);
             } else if (current_vga_mode.color_depth == 24) {
-                SDL_UpdateTexture(tex_24bpp, nullptr, display_base, fb_pitch);
-                vs->render_frame(tex_24bpp, &src, nullptr);
+                vga_render_24bpp(vs, tex_24bpp, display_base, fb_pitch,
+                    current_vga_mode.width, current_vga_mode.height);
             }
             return true;
+        }
+
+        void debug_dump_vram_at(DebugFormatter *df, uint32_t byte_offset) const {
+            if (frame_buffer == nullptr) {
+                df->addLine("VRAM: (no buffer)");
+                return;
+            }
+            if (byte_offset >= SECOND_SIGHT_FB_SIZE) {
+                df->addLine("VRAM: base %X out of range", byte_offset);
+                return;
+            }
+
+            const int pitch = fb_pitch > 0 ? fb_pitch
+                : (is_text_mode() ? current_vga_mode.width * VGA_TEXT_CELL_BYTES : 80);
+            const int row_count = is_text_mode() ? 4 : 2;
+            const uint8_t *base = frame_buffer + byte_offset;
+
+            df->addLine("--- VRAM @ +%05X pitch %d (%d rows) ---",
+                byte_offset, pitch, row_count);
+
+            char line_buf[160];
+            for (int row = 0; row < row_count; row++) {
+                const size_t row_byte_off = (size_t)row * (size_t)pitch;
+                if (byte_offset + row_byte_off + (size_t)pitch > SECOND_SIGHT_FB_SIZE) {
+                    df->addLine("VRAM: row %d exceeds buffer", row);
+                    break;
+                }
+                const uint8_t *row_ptr = base + row_byte_off;
+
+                for (int col = 0; col < pitch; col += 16) {
+                    int chunk = pitch - col;
+                    if (chunk > 16) {
+                        chunk = 16;
+                    }
+                    int pos = snprintf(line_buf, sizeof(line_buf), "+%04X:",
+                        row * pitch + col);
+                    for (int i = 0; i < chunk; i++) {
+                        pos += snprintf(line_buf + pos, sizeof(line_buf) - (size_t)pos,
+                            " %02X", row_ptr[col + i]);
+                    }
+                    df->addLine("%s", line_buf);
+                }
+
+                if (is_text_mode()) {
+                    const int cells = pitch / VGA_TEXT_CELL_BYTES;
+                    const int show_cells = cells < 40 ? cells : 40;
+                    int pos = snprintf(line_buf, sizeof(line_buf), "  r%02d", row);
+                    for (int c = 0; c < show_cells; c++) {
+                        const uint8_t ch = row_ptr[c * VGA_TEXT_CELL_BYTES];
+                        const uint8_t at = row_ptr[c * VGA_TEXT_CELL_BYTES + 1];
+                        char disp = (ch >= 0x20 && ch < 0x7F) ? (char)ch : '.';
+                        pos += snprintf(line_buf + pos, sizeof(line_buf) - (size_t)pos,
+                            " %c:%02X", disp, at);
+                    }
+                    if (cells > show_cells) {
+                        snprintf(line_buf + pos, sizeof(line_buf) - (size_t)pos, " ...");
+                    }
+                    df->addLine("%s", line_buf);
+                }
+            }
+        }
+
+        void debug_dump_vram(DebugFormatter *df) const {
+            debug_dump_vram_at(df, screen_base_addr);
+        }
+
+        void debug_scan_text_regions(DebugFormatter *df) const {
+            if (frame_buffer == nullptr || !is_text_mode()) {
+                return;
+            }
+            static const uint32_t probes[] = {
+                0, 0x400, 0x800, 0x1000, 0x1020, 0x2000, 0xB800,
+            };
+            df->addLine("Text probes (printable ch, row0):");
+            for (uint32_t off : probes) {
+                if (off + VGA_TEXT_FB_PITCH > SECOND_SIGHT_FB_SIZE) {
+                    continue;
+                }
+                int score = 0;
+                for (int c = 0; c < 40; c++) {
+                    const uint8_t ch = frame_buffer[off + c * 2];
+                    const uint8_t at = frame_buffer[off + c * 2 + 1];
+                    if (ch >= 0x20 && ch < 0x7F && at < 0x80) {
+                        score++;
+                    }
+                }
+                df->addLine("  +%05X: %d/40", off, score);
+            }
+        }
+
+        void debug_upload_log(DebugFormatter *df) const {
+            if (upload_small_total > 0) {
+                df->addLine("Uploads <%u B: %u (omitted from log)",
+                    SS_UPLOAD_LOG_PRINTF_MIN, upload_small_total);
+            }
+            const int show = upload_log_total < SS_UPLOAD_LOG_MAX ? upload_log_total : SS_UPLOAD_LOG_MAX;
+            df->addLine("Upload log (bulk, last %d):", show);
+            for (int i = 0; i < show; i++) {
+                const int idx = (upload_log_next - 1 - i + SS_UPLOAD_LOG_MAX * 2) % SS_UPLOAD_LOG_MAX;
+                const upload_log_entry_t &e = upload_log[idx];
+                df->addLine("  VRAM %06X len=%u host=%06X (flag=%d)",
+                    e.dest, e.length, e.host_src, e.code_data_flag);
+            }
         }
 
         void debug(DebugFormatter *df) {
             df->addLine("VGA Active: %d", vga_active);
             df->addLine("VGA Mode Num: %02X", vga_mode_num);
+            if (text_font_index == 0xFF) {
+                df->addLine("TextFont: (not set)");
+            } else {
+                df->addLine("TextFont: %02X %s", text_font_index, text_font_label(text_font_index));
+            }
             df->addLine("Screen Base Addr: %X", screen_base_addr);
             df->addLine("CRT Start Addr: %02X%02X", crt_start_addr_high, crt_start_addr_low);
             df->addLine("CRT HDisplay End: %02X (+%d clocks)", crt_hdisplay_end, crtc_char_clocks_per_line());
             df->addLine("CRT Addr Scale: %u bytes/unit", crtc_bytes_per_address_unit());
             df->addLine("FB Pitch: %d", fb_pitch);
             df->addLine("Res X/Y @ Depth: %d/%d @ %d", res_x, res_y, current_vga_mode.color_depth);
+            df->addLine("Active command: %d", active_command);
+            debug_upload_log(df);
+            if (z180_sram != nullptr) {
+                df->addLine("Z180 $F000[0..3]: %02X %02X %02X %02X",
+                    z180_sram[SS_Z180_USER_FONT_ADDR], z180_sram[SS_Z180_USER_FONT_ADDR + 1],
+                    z180_sram[SS_Z180_USER_FONT_ADDR + 2], z180_sram[SS_Z180_USER_FONT_ADDR + 3]);
+            }
+            //debug_scan_text_regions(df);
+            //debug_dump_vram_at(df, screen_base_addr);
         }
 };
 

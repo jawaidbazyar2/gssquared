@@ -139,6 +139,7 @@ file(GLOB_RECURSE GS2_ASSET_FILES CONFIGURE_DEPENDS
 list(APPEND GS2_ASSET_FILES
     "${CMAKE_SOURCE_DIR}/assets/img/atlas.png"
     "${CMAKE_SOURCE_DIR}/assets/img/gs2.icns"
+    "${CMAKE_SOURCE_DIR}/assets/img/IBM_VGA_8x16.png"
 )
 
 set(GS2_RESOURCES_STAMP "${CMAKE_BINARY_DIR}/resources/.assembled.stamp")
@@ -155,6 +156,7 @@ add_custom_command(
     # Copy static resources
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/atlas.png ${CMAKE_BINARY_DIR}/resources/img/atlas.png
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns ${CMAKE_BINARY_DIR}/resources/gs2.icns
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/IBM_VGA_8x16.png ${CMAKE_BINARY_DIR}/resources/img/IBM_VGA_8x16.png
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/roms ${CMAKE_BINARY_DIR}/resources/roms
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/sounds ${CMAKE_BINARY_DIR}/resources/sounds
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/fonts ${CMAKE_BINARY_DIR}/resources/fonts
@@ -283,7 +285,15 @@ add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp src/devices/es550
 
 add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
 
-add_library(gs2_devices_secondsight src/devices/secondsight/secondsight.cpp)
+add_library(gs2_devices_secondsight
+    src/devices/secondsight/secondsight.cpp
+    src/devices/secondsight/vga_render_8.cpp
+    src/devices/secondsight/vga_render_16.cpp
+    src/devices/secondsight/vga_render_24.cpp
+    src/devices/secondsight/vga_render_text_9x16.cpp
+    src/devices/secondsight/vga_render_text_9x16_present.cpp
+)
+target_link_libraries(gs2_devices_secondsight PRIVATE SDL3_image::SDL3_image-shared)
 
 add_library(gs2_devices_iwm src/devices/iwm/iwm_device.cpp)
 

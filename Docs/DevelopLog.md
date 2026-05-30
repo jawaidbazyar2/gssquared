@@ -12154,3 +12154,63 @@ Left to do:
 a few commands (set single palette entry; scroll; set border; set shadow; get vga reg; set text font);
 handle > 64K in UploadData; (not common in SecondView due to how the pics are drawn and uploaded);
 text mode support;
+
+## May 26, 2026
+
+ok Cogito2 seems pretty good. Fixed an issue where on exit it was setting mode 0x60,0 to disable VGA, but I wasn't respecting the 2nd argument.
+
+There is some kind of similar issue in ThirdView. I'll have to grab source for that and see what it's doing. (It wasn't hung in a loop).
+
+well actually it's just Cmd-1 to turn off the viewer and go back to desktop. 
+
+## May 28, 2026
+
+Implemented the remaining API commands, except run_code, which we can't do because I don't want to emulate the Z180. I mean, we -could-. There is Z180 emulation code out there. There is no benefit however, except for the potential to run IB's fixed ROM.
+
+This is where I think we draw a line, and switch concept to GPU-with-GPU-commands instead.
+See SecondSight.md for more details.
+
+SO. 
+
+[ ] when in debug step mode, we are generating a frame by running 17,030 cycles? (are we?) It's acting like interrupts are firing while I'm just sitting there staring at a frozen cpu.
+
+## May 30, 2026
+
+Got a bug report about Sather "little text window" demo. essentially, the display is a tad off due to not emulating the latency between a video mode switch toggle, and the effect being seen on the display.
+
+Giving some thought. MAME deals with this by just forcing generation of one more cycle's worth of video output before changing the switch.
+
+This should have subtle but measurable effects on things like the borders in mode-switch artifacts. I'm thinking particularly the French Touch Crazy Cycles demos.
+
+GS2 doesn't work that way, so.. the naive approach is to queue an event that would get processed by .
+
+So instead of:
+
+decode softswitch
+call routine
+change video state immediately
+
+we'd have something like this:
+
+decode softswitch
+call routine
+queue a callback to execute next VScan cycle
+queue checked by VideoScanner; callback executed to complete SS change.
+
+let's think about this a sec. 
+
+cpu does stuff
+calls incr_cycle
+incr_cycle calls videoScanner
+  which uses LUT based on current mode
+  check queue and execute callbacks
+
+The mame approach can't be done here because we'd have to advance the display any time : softswitch change (fine) but also any time video memory changed. Our current approach is more straightforward if *potentially* less efficient.
+
+So, VideoScanner would check the queue and execute callback. Is it possible to have more than 1 SS change pending at a time? Seems unlikely. Delays will only ever be 1, maybe 2 cycles. I don't think we can generate a 2-cycle delay then have the very next cycle trigger a 1-cycle. it would have to be adjacent switches triggered with a 16-bit access (so on GS only). ok, so the callback needs:
+counter; callback addr; ss address; value (for write). 128 bits. using a simple queue.
+Ah ha, we don't need a callback, because we already push state into VideoScanner. VideoScanner can maintain its own delay state. SCORE. And scanner is a reasonable place to have the delays encoded, it changes per platform, so we can have different values for II/IIe/IIgs.
+So we have:
+counter (16-bit); state ID; true or false for turn on or turn off.
+
+ok, that becomes very clean and straightforward. Display asks VideoScanner to change state; VS decides when to apply that request.
