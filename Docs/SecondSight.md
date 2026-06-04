@@ -464,6 +464,38 @@ e.g. if X scroll is 1 then we'll start the scanline on the 2nd pixel of tile X=0
 
 we need to present a register somewhere that tells when we're in VBL, so Apple II code can sync to the card's VBL signal and do tilemap and register updates.
 
+SecondSight (and probably a number of other cards) can't IRQ the II.
+
+First idea: have _ReadVBL and _WaitVBL commands. _ReadVBL just returns current VBL status. But each call generates a Z180 interrupt and by the time you get your response back you might have missed a fair bit of VBL time.
+
+WaitVBL just has the Z180 wait to provide the "command complete handshake" until a new VGA VBL has occurred. So it will sit in a tight loop just reading VBL and waiting for completion.
+
+So, there are several things that need to occur related to VBL.
+1. Apple II starts updating the namespace/tilemap.
+2. Tells card to start rendering tilemap. This could take a while.
+3. We need to avoid tearing in both the namespace, and in the rendering steps.
+
+So, think about this double-buffering approach:
+1. Apple II executes game logic.
+2. Apple II sets tilemap (writes to HGR page 1)
+3. .. and sets sprite tiles/positions.
+4. Calls _RenderPPU.
+5. does WaitVBL.
+6. Calls Present to switch to the new buffer (or, can be part of WaitVBL)
+
+At WaitVBL, we *switch buffers* to the buffer rendered by RenderPPU. The next RenderPPU will render into the OTHER buffer.
+So here we avoid: tearing of the tilemap, because RenderPPU only renders when the Apple II confirms it is no longer modifying the tilemap/sprites. Then we WaitVBL. The Apple II does NOT have to busy-wait, though that is perhaps the normal option. It just has to switch the VGA frame pointer before VBL ends.
+
+The II can thus do game logic any time, but normally it will do it before calculating tilemap updates and sprite updates.
+
+What does this impose on card requirements: card needs two 64K (320x200) frame buffers to handle the double-buffering. No problem on SS or many other cards.
+
+A2DVI cards don't have much frame buffer (accurate?). They could do the following at Present time: copy the tilemap to a buffer and render from that. So the tilemap is double-buffered. It's only 2K, a 150MHz ARM should be able to do that w/o any trouble.
+
+If an Apple II misses a VBL, it's no big deal, it will just wait until the next VBL and "drop a frame".
+
+But Apple II can also be updating game state while the video card is rendering. 
+
 ### Tile data
 
 data for 256 tiles / sprites:
@@ -535,3 +567,17 @@ So there is a API SetTileSet(TileSetIndex, Address)
 The card processes the data from wherever you uploaded it, and then copies into the place it needs in VRAM.
 This lets the Apple II re-use the hires page memory for program data/logic after loading the tile sets.
 (Alternatively, we can just have an API LoadTileSet, which honestly might be simpler.)
+
+### Card Compatibility
+
+Cards must support:
+* Read and Write I/O registers (for config)
+* Automatically shadow Apple II video memory into card
+* Have enough RAM for storing two 64K frames; or, two 2K tilemap frames (alternative implementation);
+
+Cards I *think* may be able to do this:
+* A2Pico
+* Mystery Card X
+* A2DVI version 4 cards and up
+* SecondSight (aiming for that anyway)
+
