@@ -744,7 +744,7 @@ DebugFormatter *display_debug(display_state_t *ds) {
         ds->display_split_mode == SPLIT_SCREEN ? "SPLIT" : "FULL",
         ds->display_page_num == DISPLAY_PAGE_1 ? "PAGE1" : "PAGE2",
         ds->f_80col ? "80COL" : "40COL",
-        ds->f_double_graphics ? "DBL" : "SNG",
+        ds->f_double_graphics ? "-DBL" : "+DBL",        // reversed sense, ANC3 OFF = DBLRES
         ds->f_altcharset ? "ALTCHARSET" : "NORMAL");
     df->addLine("  SHR: %s", ds->new_video & 0x80 ? "ON" : "OFF");
 
