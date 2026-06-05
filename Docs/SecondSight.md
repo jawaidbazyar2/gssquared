@@ -481,7 +481,7 @@ So, think about this double-buffering approach:
 3. .. and sets sprite tiles/positions.
 4. Calls _RenderPPU.
 5. does WaitVBL.
-6. Calls Present to switch to the new buffer (or, can be part of WaitVBL)
+6. Calls Present to switch to the new buffer (which does a WaitVBL internally)
 
 At WaitVBL, we *switch buffers* to the buffer rendered by RenderPPU. The next RenderPPU will render into the OTHER buffer.
 So here we avoid: tearing of the tilemap, because RenderPPU only renders when the Apple II confirms it is no longer modifying the tilemap/sprites. Then we WaitVBL. The Apple II does NOT have to busy-wait, though that is perhaps the normal option. It just has to switch the VGA frame pointer before VBL ends.
@@ -580,4 +580,70 @@ Cards I *think* may be able to do this:
 * Mystery Card X
 * A2DVI version 4 cards and up
 * SecondSight (aiming for that anyway)
+
+## Quickdraw Acceleration
+
+This will involve handling various drawing primitives so as to offload responsibility for display manipulation off the 65816 on the motherboard which no matter how fast we eventually make it, will be relatively slow.
+This especially includes things like: font rendering; line/rect/roundrect; colors; bitmap blitting
+
+We want to be able to support current 2bpp, 4bpp as well as open up 8bpp and 15bpp modes. Interestingly, many of the color values you can pass into QD are word (2 bytes). I.e., you could probably specify 8bpp or 15bpp values directly.
+
+
+Some info:
+
+standard fb is "E1/2000-9FFF".
+high res fb is 640x400 4bpp; works just like QD; or, 640x480 
+onboard fb is one memory-mapped into the GS memory. Fine for emulators or applesqueezer (or, potentially, a memory expansion + video card), but can't work with regular slot video cards.
+offboard fb is one not memory-mapped into GS memory.
+
+slot card: limited to 1MHz and shadowing at 1MHz
+memory expansion + video: limited to 2.5MHz
+offboard: connects via 1MHz bus, however, you load assets in at 1mhz and then rendering and FB manipulation takes place at GPU speed. Easier to work with 8-bit IIs.
+I suppose we could combine offboard + memory expansion to get 2.5MHz bandwidth in/out of GPU. (But would only work on IIgs).
+
+
+### Jump into Ludicrous Speed
+
+Jump to Ludicrous speed for calls into the quickdraw tool set(s).
+
+This may or may not work. It would require at a minimum fixing so video scanner works right in LS.
+
+Compatibility: standard fb
+1Mhz bottleneck: yes
+
+Alternative: just run GS stuff at 56MHz and up (ah, but video memory is still just 1MHz)
+
+### ParaVirtualize QuickDraw
+
+Intercept QD calls and have them executed by the emulator in native code instead.
+
+Compatibility: standard fb; highres fb memory-mapped
+1Mhz bottleneck: no
+
+### ParaVirtualize QuickDraw + GPU (Offboard)
+
+Similar to PV QuickDraw, but generates a more "generic GPU" surface; creates a render list structure (list of drawing commands); calls "GPU" to render them. Can work with offboard frame buffer (i.e., not memory mapped at all) - to avoid 1MHz bottleneck.
+
+Does not intercept QD calls so much as completely reimplement them a different way.
+
+Data movement can be implemented with:
+   dma
+   register interface
+   paravirtualization
+
+### PV QuickDraw + GPU + Onboard (MM)
+
+This would work for emulators and memory-card expansion. Particularly in emulator, it would allow 56MHz + access to the frame buffer, and still allow acceleration by GPU. So things like bitmaps will be fast, everything else lightning speed.
+
+
+## GPU Mode
+
+GPU Mode provides software the ability to more generically than PPU:
+
+* upload textures
+* execute drawing and rendering primitives, including blitting from textures
+
+Helps apps avoid cost of 1MHz bus by moving all this stuff to a high speed device.
+
+The quickdraw acceleration above, where it refers to GPU, is referring to this.
 
