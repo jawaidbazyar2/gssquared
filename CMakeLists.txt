@@ -287,6 +287,7 @@ add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
 
 add_library(gs2_devices_secondsight
     src/devices/secondsight/secondsight.cpp
+    src/devices/secondsight/ppu_render.cpp
     src/devices/secondsight/vga_render_8.cpp
     src/devices/secondsight/vga_render_16.cpp
     src/devices/secondsight/vga_render_24.cpp
@@ -463,6 +464,8 @@ add_subdirectory(apps/mbtest)
 #add_subdirectory(apps/nibblizer)
 #add_subdirectory(apps/denibblizer)
 add_subdirectory(apps/vgatext)
+
+add_subdirectory(apps/ssppu)
 
 add_subdirectory(apps/diskid)
 

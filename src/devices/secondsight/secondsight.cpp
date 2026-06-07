@@ -37,8 +37,8 @@ uint8_t secondsight_read_08(void *context, uint32_t address) {
 
 void init_secondsight(computer_t *computer, SlotType_t slot) {
     secondsight_state_t *st = new secondsight_state_t();
-    // we pass in the "CPU" MMU, i.e., the one that has access to full IIgs memory.
-    st->secondsight = new SecondSight(computer->video_system, computer->cpu->mmu, computer->clock);
+    // for now, pass in the megaii MMU, which has access to just the IIe shadowed video memory.
+    st->secondsight = new SecondSight(computer->video_system, computer->mmu, computer->clock);
 
     uint16_t slot_base = 0xC080 + (slot * 0x10);
     

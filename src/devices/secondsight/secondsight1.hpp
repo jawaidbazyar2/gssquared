@@ -11,9 +11,7 @@
 #include "vga_render_text_9x16.hpp"
 #include "vga_render_text_9x16_present.hpp"
 #include "vga_mode_tables.hpp"
-#include "ppu_render.hpp"
 #include "paths.hpp"
-#include "mmus/mmu_ii.hpp"
 
 struct computer_t;
 
@@ -23,13 +21,6 @@ struct computer_t;
 #define SS_Z180_SRAM_SIZE (128 * 1024)
 /** User-uploaded 8x16 font lives here (SetTextFont $03 / ROM copy_font). */
 #define SS_Z180_USER_FONT_ADDR 0xF000
-
-enum ss_display_mode_t {
-    SS_MODE_EMU = 0,
-    SS_MODE_VGA = 1,
-    SS_MODE_PPU = 2,
-    SS_MODE_GPU = 3,
-};
 
 class SecondSight {
     // "RAW" mode rec for setting user modes.
@@ -71,7 +62,6 @@ class SecondSight {
 
     uint8_t vga_mode_num = 0;
     uint16_t vga_active = 0; // 1 means VGA mode active ("do not emulate current Apple II mode")
-    ss_display_mode_t ss_mode = SS_MODE_EMU;
     uint16_t display_enabled = 1; // 1 means display is enabled
 
     union {
@@ -104,10 +94,8 @@ class SecondSight {
     }; */
 
     video_system_t *vs;
-    MMU_II *megaii;
-    uint8_t *a2_ram = nullptr;
+    MMU *mmu;
     NClock *clock;
-    PPURender ppu;
     SDL_Texture *tex_16bpp = nullptr;
     SDL_Texture *tex_24bpp = nullptr;
     SDL_Texture *tex_text = nullptr;
@@ -185,10 +173,11 @@ class SecondSight {
     // edge-detect on the handshake value;
     // and, takes some time to get around to the point where it can read the handshake value.
     // So if these values are too low, the A2 will not see the correct edge and will hang.
-    /** Poll reads to keep handshake at 0 between DMA phases (args done → ready for data). */
-    constexpr static uint32_t HANDSHAKE_HOLD_READS = 3;
-    /** Poll reads before publishing long-command completion (0xA5 / 0xA6). */
-    constexpr static uint32_t LONGRUN_WAIT_READS = 3;
+    constexpr static uint32_t WAIT_CYCLES = 60;
+    // this value is used for long-running commands that would get executed during the SS event
+    // loop in the rom, and might take a long time (1000s of cycles) to execute. For example, clearscreen and scrollscreen.
+    // Here we accelerate them insanely.
+    constexpr static uint32_t LONGRUN_WAIT_CYCLES = 60;
 
     uint32_t crtc_char_clocks_per_line() const {
         uint32_t char_clocks = (uint32_t)crt_hdisplay_end + 1;
@@ -367,71 +356,8 @@ class SecondSight {
         palette_rgb[index][2] = b;
     }
 
-    static const char *ss_mode_label(ss_display_mode_t mode) {
-        switch (mode) {
-            case SS_MODE_EMU: return "emu";
-            case SS_MODE_VGA: return "vga";
-            case SS_MODE_PPU: return "ppu";
-            case SS_MODE_GPU: return "gpu";
-        }
-        return "?";
-    }
-
-    void apply_ppu_mode() {
-        ss_mode = SS_MODE_PPU;
-        vga_active = 1;
-        vga_mode_num = 0;
-        res_x = PPU_FB_W;
-        res_y = PPU_FB_H;
-        fb_pitch = PPU_FB_W;
-        screen_base_addr = SS_PPU_FB_PAGE1_ADDR;
-        current_vga_mode = {};
-        current_vga_mode.vgamode = true;
-        current_vga_mode.graphics = TG_GRAPHICS;
-        current_vga_mode.width = PPU_FB_W;
-        current_vga_mode.height = PPU_FB_H;
-        current_vga_mode.color_depth = 8;
-        current_vga_mode.bitspercolor = 8;
-        display_enabled = 1;
-        printf("SecondSight: PPU mode %dx%d\n", PPU_FB_W, PPU_FB_H);
-    }
-
-    void sync_ppu_registers_from_a2(ppu_config_t &cfg) {
-        const uint8_t *regs = a2_ram + SS_PPU_REGS_ADDR;
-        cfg.scroll_x = ss_ppu_read_reg16(regs, SS_PPU_REG_SCROLL_X);
-        cfg.scroll_y = ss_ppu_read_reg16(regs, SS_PPU_REG_SCROLL_Y);
-        cfg.bg_color = regs[SS_PPU_REG_BG_COLOR];
-    }
-
-    bool frame_ppu() {
-        if (!display_enabled) {
-            return true;
-        }
-        if (a2_ram == nullptr || frame_buffer == nullptr) {
-            return true;
-        }
-
-        ppu_config_t cfg = {};
-        cfg.framebuffer = frame_buffer + SS_PPU_FB_PAGE1_ADDR;
-        cfg.namespace0 = a2_ram + SS_PPU_NS0_ADDR;
-        cfg.namespace1 = a2_ram + SS_PPU_NS1_ADDR;
-        cfg.tileset0 = frame_buffer + SS_PPU_TILESET0_ADDR;
-        cfg.tileset1 = frame_buffer + SS_PPU_TILESET1_ADDR;
-        cfg.sprite_table = a2_ram + SS_PPU_OAM_ADDR;
-        sync_ppu_registers_from_a2(cfg);
-
-        ppu.render(cfg);
-        memcpy(palette_rgb, a2_ram + SS_PPU_PALETTE_ADDR, SS_PPU_PALETTE_BYTES);
-        sync_vga_palette_from_rgb();
-
-        vga_render_8bpp(vs, tex_24bpp, rgb24_buffer, palette_rgb,
-            frame_buffer + SS_PPU_FB_PAGE1_ADDR, PPU_FB_W, PPU_FB_W, PPU_FB_H);
-        return true;
-    }
-
     public:
-        SecondSight(video_system_t *video_system, MMU_II *megaii, NClock *clock) : vs(video_system), megaii(megaii), clock(clock) {
-            a2_ram = megaii ? megaii->get_memory_base() : nullptr;
+        SecondSight(video_system_t *video_system, MMU *mmu, NClock *clock) : vs(video_system), mmu(mmu), clock(clock) {
             frame_buffer = new uint8_t[SECOND_SIGHT_FB_SIZE];
             memset(frame_buffer, 0, SECOND_SIGHT_FB_SIZE);
             z180_sram = new uint8_t[SS_Z180_SRAM_SIZE];
@@ -471,7 +397,8 @@ class SecondSight {
             dma_length = 0;
             display_enabled = 1;
 
-            clear_handshake_timers();
+            longrun_cycle_target = 0;
+            pending_status = 0x00;
             command_step = 0;
 
             cmd_buffer[0] = 0;
@@ -479,7 +406,6 @@ class SecondSight {
             resp_buffer[0] = 0;
             reg_handshake = 0;
             vga_active = 0;
-            ss_mode = SS_MODE_EMU;
             vga_mode_num = 0;
             res_x = 640;
             res_y = 480;
@@ -646,7 +572,6 @@ class SecondSight {
         res_x = info->hres;
         res_y = info->vres;
         vga_active = 1;
-        ss_mode = SS_MODE_VGA;
         vga_mode_num = 0xFF;
         crt_hdisplay_end = mode->crt_regs[0x01];
         crt_offset = mode->crt_regs[0x13];
@@ -774,28 +699,18 @@ class SecondSight {
             //   $13 - 320x200x256
             //   $61 - 640x400x256
             // $02: $EE - emulation flag
-            //   $00: Apple II emulation mode
             //   $01: VGA mode
-            //   $02: PPU mode
+            //   $00: emulation mode
             // look for mode, if we don't find it then error.
 
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 0x02);
             } else if (command_step == 2) {
-                const uint8_t emu_flag = cmd_buffer[2];
-                if (emu_flag == 0x02) {
-                    apply_ppu_mode();
-                } else if (cmd_buffer[1] == 0xFF) {
+                if (cmd_buffer[1] == 0xFF) {
                     mode_info info;
                     analyze_vga_mode(&user_mode_rec, &info);
                     apply_analyzed_mode(&user_mode_rec, &info);
-                    if (emu_flag == 0x00) {
-                        vga_active = 0;
-                        ss_mode = SS_MODE_EMU;
-                    } else {
-                        vga_active = 1;
-                        ss_mode = SS_MODE_VGA;
-                    }
+                    vga_active = cmd_buffer[2] == 0x00 ? 0 : 1;
                 } else {
                     if (cmd_buffer[1] == 0x03) {
                         apply_rom_vga_mode(&SS_ROM_VGA_TEXT_80X25, 0x03);
@@ -815,13 +730,8 @@ class SecondSight {
                             }
                         }
                     }
-                    if (emu_flag == 0x00) {
-                        vga_active = 0;
-                        ss_mode = SS_MODE_EMU;
-                    } else {
-                        vga_active = 1;
-                        ss_mode = SS_MODE_VGA;
-                    }
+                    // silently ignores invalid mode number, but respect this.
+                    vga_active = cmd_buffer[2] == 0x00 ? 0 : 1;
                 }
                 trigger_longrun_wait(0xA5);
             }
@@ -842,8 +752,6 @@ class SecondSight {
                 mode_info info;
                 analyze_vga_mode(&user_mode_rec, &info);
                 apply_analyzed_mode(&user_mode_rec, &info);
-                ss_mode = SS_MODE_VGA;
-                vga_active = 1;
                 print_mode_info(&user_mode_rec);
                 printf("SecondSight: applied user mode, rendering %dx%d %dbpp pitch=%d base=%X\n",
                     current_vga_mode.width, current_vga_mode.height,
@@ -899,8 +807,9 @@ class SecondSight {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 10);
             } else if (command_step == 2) {
-                // args DMA complete — hold hs at 0 until host has polled enough.
-                trigger_handshake_hold();
+                // args DMA complete..
+                // let handshake be 0 for a bit.
+                trigger_longrun_wait(0x00);
             } else if (command_step == 3) {
                 upload_code_data_flag = cmd_buffer[1];
                 dma_offset = (cmd_buffer[4] << 16) | (cmd_buffer[3] << 8) | cmd_buffer[2];
@@ -929,8 +838,8 @@ class SecondSight {
                 dma_length_remaining -= dma_this_chunk;
                 dma_offset += dma_this_chunk;
                 if (dma_length_remaining > 0) {
-                    trigger_handshake_hold();
-                    //command_step = 5; the hold checker will increment this..
+                    trigger_longrun_wait(0x00);
+                    //command_step = 5; the longrun checker will increment this..
                 } else {  // DMA complete, we're done.
                     record_upload_log(upload_code_data_flag, upload_start_offset,
                         upload_total_length, upload_host_src);
@@ -973,8 +882,9 @@ class SecondSight {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 5);
             } else if (command_step == 2) {
-                // args DMA complete — hold hs at 0 until host has polled enough.
-                trigger_handshake_hold();
+                // args DMA complete..
+                // let handshake be 0 for a bit.
+                trigger_longrun_wait(0x00);
             } else if (command_step == 3) {
                 // ok now 
                 uint16_t ir = (cmd_buffer[2] << 8) | cmd_buffer[1];
@@ -987,8 +897,8 @@ class SecondSight {
                 dma_length_remaining -= dma_this_chunk;
                 dma_offset += dma_this_chunk;
                 if (dma_length_remaining > 0) {
-                    trigger_handshake_hold();
-                    //command_step = 5; the hold checker will increment this..
+                    trigger_longrun_wait(0x00);
+                    //command_step = 5; the longrun checker will increment this..
                 } else {  // DMA complete, we're done.
                     command_step = 0;
                     reg_handshake = 0x00;
@@ -1000,7 +910,7 @@ class SecondSight {
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 3);
             } else if (command_step == 2) {
-                trigger_handshake_hold();
+                trigger_longrun_wait(0x00);
             } else if (command_step == 3) {
                 setup_dma(DMA_DIRECTION_IN, (uint8_t *)palette_rgb, 768);
             } else if (command_step == 4) {
@@ -1173,63 +1083,49 @@ class SecondSight {
             }
         }
 
-        uint32_t handshake_hold_reads = 0;
-        uint32_t longrun_reads = 0;
+        uint64_t longrun_cycle_target = 0;
         uint8_t pending_status = 0;
 
-        void clear_handshake_timers() {
-            handshake_hold_reads = 0;
-            longrun_reads = 0;
-            pending_status = 0;
-        }
-
-        /** Args DMA done (or inter-chunk gap): keep hs at 0 for N polls, then advance. */
-        inline void trigger_handshake_hold(uint32_t reads = HANDSHAKE_HOLD_READS) {
-            handshake_hold_reads = reads;
-        }
-
-        /** Long-running command finished: after N polls, publish A5/A6 (or 0). */
-        inline void trigger_longrun_wait(uint8_t status, uint32_t reads = LONGRUN_WAIT_READS) {
-            longrun_reads = reads;
+#if 0
+        inline void trigger_longrun_wait(uint8_t status) {
+            longrun_cycle_target = clock->get_cycles() + WAIT_CYCLES; // set up trigger
             pending_status = status;
         }
 
-        void process_handshake_hold() {
-            if (handshake_hold_reads == 0) {
-                return;
-            }
-            handshake_hold_reads--;
-            if (handshake_hold_reads != 0) {
-                return;
-            }
-            if (command_step) {
-                command_step++;
-                execute_command();
-            }
-        }
-
         void command_longrun_status() {
-            if (longrun_reads == 0) {
-                return;
-            }
-            longrun_reads--;
-            if (longrun_reads != 0) {
-                return;
-            }
-            reg_handshake = pending_status;
-            longrun_reads = 0;
-            pending_status = 0;
-            if (command_step) {
-                command_step++;
-                execute_command();
+            if (longrun_cycle_target && (longrun_cycle_target < clock->get_cycles())) {
+                reg_handshake = pending_status;
+                longrun_cycle_target = 0;
+                if (command_step) {
+                    command_step++;
+                    execute_command(); // TODO: having this here is icky.
+                }
             }
         }
-
+#endif
+        inline void trigger_longrun_wait(uint8_t status) {
+            longrun_cycle_target = 2;
+            pending_status = status;
+        }
+        void command_longrun_status() {
+            if (longrun_cycle_target) {
+                longrun_cycle_target--;
+                if (longrun_cycle_target == 0) {
+                    reg_handshake = pending_status;
+                    longrun_cycle_target = 0;
+                    if (command_step) {
+                        command_step++;
+                        execute_command(); // TODO: having this here is icky.
+                    }
+                }
+            }
+        }
         uint8_t read_handshake() {
-            process_handshake_hold();
             command_longrun_status();
 
-            return reg_handshake;
+            uint8_t value;
+            value = reg_handshake;
+            return value;
         }
 
         void write_cmd(uint8_t value) {
@@ -1240,7 +1136,8 @@ class SecondSight {
                 return;
             }
 
-            clear_handshake_timers();
+            longrun_cycle_target = 0;
+            pending_status = 0x00;
             active_command = value;
             cmd_buffer[0] = value;
             //cmd_length = cmd_lengths[value]-1;
@@ -1302,9 +1199,6 @@ class SecondSight {
             }
             if (!display_enabled) {
                 return true; // we control frame, but have nothing to draw.
-            }
-            if (ss_mode == SS_MODE_PPU) {
-                return frame_ppu();
             }
             const uint8_t *display_base = frame_buffer + screen_base_addr;
             if (is_text_mode()) {
@@ -1435,7 +1329,6 @@ class SecondSight {
 
         void debug(DebugFormatter *df) {
             df->addLine("VGA Active: %d", vga_active);
-            df->addLine("Display Mode: %s (%d)", ss_mode_label(ss_mode), (int)ss_mode);
             df->addLine("VGA Mode Num: %02X", vga_mode_num);
             if (text_font_index == 0xFF) {
                 df->addLine("TextFont: (not set)");
@@ -1448,28 +1341,7 @@ class SecondSight {
             df->addLine("CRT Addr Scale: %u bytes/unit", crtc_bytes_per_address_unit());
             df->addLine("FB Pitch: %d", fb_pitch);
             df->addLine("Res X/Y @ Depth: %d/%d @ %d", res_x, res_y, current_vga_mode.color_depth);
-            if (ss_mode == SS_MODE_PPU) {
-                const uint8_t *regs = a2_ram ? a2_ram + SS_PPU_REGS_ADDR : nullptr;
-                if (regs) {
-                    df->addLine("PPU scroll: %u,%u bg=%02X split=%02X (reserved)",
-                        ss_ppu_read_reg16(regs, SS_PPU_REG_SCROLL_X),
-                        ss_ppu_read_reg16(regs, SS_PPU_REG_SCROLL_Y),
-                        regs[SS_PPU_REG_BG_COLOR],
-                        regs[SS_PPU_REG_SPLIT]);
-                } else {
-                    df->addLine("PPU scroll: (no A2 RAM)");
-                }
-                df->addLine("PPU VRAM FB page1 @ %05X page2 @ %05X tile0 @ %05X tile1 @ %05X",
-                    SS_PPU_FB_PAGE1_ADDR, SS_PPU_FB_PAGE2_ADDR,
-                    SS_PPU_TILESET0_ADDR, SS_PPU_TILESET1_ADDR);
-                df->addLine("PPU A2 ns0 @ %04X ns1 @ %04X pal @ %04X oam @ %04X regs @ %04X",
-                    SS_PPU_NS0_ADDR, SS_PPU_NS1_ADDR, SS_PPU_PALETTE_ADDR, SS_PPU_OAM_ADDR,
-                    SS_PPU_REGS_ADDR);
-            }
             df->addLine("Active command: %d", active_command);
-            uint32_t dma_address_offset = dma_address ? dma_address - frame_buffer : 0;
-            df->addLine("Current DMA address: %06X  length: %04X  remain: %06X", dma_address_offset, dma_length,
-                dma_length_remaining);
             debug_upload_log(df);
             if (z180_sram != nullptr) {
                 df->addLine("Z180 $F000[0..3]: %02X %02X %02X %02X",
