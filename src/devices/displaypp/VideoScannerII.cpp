@@ -181,7 +181,7 @@ void VideoScannerII::set_video_mode()
     vmode |= hires ? F_HIRES : 0;
     vmode |= page2 ? F_PAGE2 : 0;
     vmode |= sw80col ? F_80COL : 0;
-    vmode |= dblres ? F_DBLRES : 0;
+    //vmode |= dblres ? F_DBLRES : 0; // doesn't exist on II, II+
     vmode |= mixed ? F_MIXED : 0;
     vmode |= shr ? F_SHR : 0;
 
