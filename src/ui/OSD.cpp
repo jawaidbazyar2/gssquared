@@ -45,6 +45,9 @@
 #include "paths.hpp"
 #include "util/MenuInterface.h"
 #include "platform-specific/menu.h"
+#if defined(__EMSCRIPTEN__)
+#include "platform-specific/emscripten/web_file_dialog.hpp"
+#endif
 #include "systemconfig.hpp"
 #include "SelectButton.hpp"
 #include "DrivesHUD.hpp"
@@ -116,6 +119,10 @@ void OSD::open_file_dialog(storage_key_t key) {
     data->osd = this;
     data->key = key;
 
+#if defined(__EMSCRIPTEN__)
+    web_open_file_dialog(menu_file_dialog_callback, data,
+        ".do,.po,.woz,.dsk,.hdv,.2mg,.img");
+#else
     const std::string& last_path = Paths::get_last_file_dialog_dir();
     SDL_ShowOpenFileDialog(menu_file_dialog_callback,
         data,
@@ -124,6 +131,7 @@ void OSD::open_file_dialog(storage_key_t key) {
         sizeof(filters)/sizeof(SDL_DialogFileFilter),
         last_path.empty() ? nullptr : last_path.c_str(),
         false);
+#endif
 }
 
 void handle_disk_toggle(computer_t *computer, OSD *osd, storage_key_t key) {
@@ -161,6 +169,10 @@ void bazfast_button_click(void *userdata) {
     };
 
     printf("unidisk button clicked\n");
+#if defined(__EMSCRIPTEN__)
+    web_open_file_dialog(file_dialog_callback, userdata,
+        ".po,.dsk,.hdv,.2mg,.img,.pmap");
+#else
     const std::string& last_path = Paths::get_last_file_dialog_dir();
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
@@ -169,6 +181,7 @@ void bazfast_button_click(void *userdata) {
         sizeof(filters)/sizeof(SDL_DialogFileFilter),
         last_path.empty() ? nullptr : last_path.c_str(),
         false);
+#endif
 }
 
 /** -------------------------------------------------------------------------------------------------- */
@@ -495,14 +508,32 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         }
         // Raise our window to the top. After a DD I would expect to be able to just go back to doing stuff in the app.
         SDL_RaiseWindow(window);
+#if defined(__EMSCRIPTEN__)
+        // On the web, DROP_FILE arrives asynchronously *after* DROP_COMPLETE,
+        // so we do the deferred panel close here (the COMPLETE handler is a
+        // no-op on web). slideStatusBeforeDrop holds the pre-drag state.
+        if (web_drag_active) {
+            if (slideStatusBeforeDrop == SLIDE_OUT) {
+                close_panel();
+            }
+            web_drag_active = false;
+        }
+#endif
         return true;
     });
 
     computer->sys_event->registerHandler(SDL_EVENT_DROP_COMPLETE, [this](const SDL_Event &event) {
+#if defined(__EMSCRIPTEN__)
+        // The synchronous DROP_COMPLETE fires before the async DROP_FILE on the
+        // web; closing the panel now would collapse the hover target before the
+        // file lands. The DROP_FILE handler performs the close instead.
+        return true;
+#else
         if (slideStatusBeforeDrop == SLIDE_OUT) {
             close_panel();
         }
         return true;
+#endif
     });
 }
 
@@ -807,6 +838,19 @@ bool OSD::event(const SDL_Event &event) {
             }
             break;
         case SDL_EVENT_DROP_POSITION: {
+#if defined(__EMSCRIPTEN__)
+                // The web backend never sends DROP_BEGIN, so synthesize it on
+                // the first position event of a drag: snapshot the panel state
+                // and slide it out so a drive button can be hovered.
+                if (!web_drag_active) {
+                    web_drag_active = true;
+                    SDL_RaiseWindow(window);
+                    slideStatusBeforeDrop = currentSlideStatus;
+                    if (currentSlideStatus == SLIDE_OUT) {
+                        open_panel();
+                    }
+                }
+#endif
                 // the specific buttons that can drag/drop need to handle this event.
                 for (Container_t* container : containers) {
                     container->handle_mouse_event(event);

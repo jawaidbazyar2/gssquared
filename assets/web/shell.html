@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GSSquared - Apple II Emulator</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      color: #ddd;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+    #app {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+    /* The canvas must have no border or padding or SDL/Emscripten mouse
+       coordinates and sizing break. The default GSSquared window is 1288x928
+       (see (BASE_WIDTH+border)*SCALE in src/videosystem.cpp); keep that aspect
+       ratio so the SelectSystem screen (which lays out a fixed 1024x768 area
+       read from the window size) has enough room and isn't squished square. */
+    canvas.emscripten {
+      border: 0 none;
+      padding: 0;
+      background: #000;
+      display: block;
+      aspect-ratio: 1288 / 928;
+      width: auto;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+    }
+    #overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.85);
+      cursor: pointer;
+      z-index: 10;
+      text-align: center;
+    }
+    #overlay h1 { font-weight: 500; margin: 0 0 0.5em; }
+    #overlay p  { opacity: 0.7; margin: 0.25em; }
+    #status {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      font-size: 12px;
+      opacity: 0.6;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 36px; height: 36px; margin-top: 1em;
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top-color: #6cf;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1" width="1288" height="928"></canvas>
+  </div>
+
+  <div id="overlay">
+    <h1>GSSquared</h1>
+    <p>Apple II Emulator</p>
+    <p id="overlay-hint">Loading&hellip;</p>
+    <div class="spinner" id="overlay-spinner"></div>
+  </div>
+
+  <div id="status">initializing&hellip;</div>
+
+  <script type="text/javascript">
+    var statusElement  = document.getElementById('status');
+    var overlayElement = document.getElementById('overlay');
+    var overlayHint    = document.getElementById('overlay-hint');
+    var overlaySpinner = document.getElementById('overlay-spinner');
+    var runtimeReady   = false;
+
+    var Module = {
+      canvas: (function () {
+        var canvas = document.getElementById('canvas');
+        // Reload the page if WebGL context is lost.
+        canvas.addEventListener('webglcontextlost', function (e) {
+          alert('WebGL context lost. You will need to reload the page.');
+          e.preventDefault();
+        }, false);
+        return canvas;
+      })(),
+      // SDL's Emscripten backend manages a /tmp/filedrop directory for HTML5
+      // drag-and-drop with unguarded FS.mkdir/FS.rmdir calls. SDL re-registers
+      // the window's event handlers (e.g. when the window is recreated during
+      // setup), so mkdir runs twice and the second throws EEXIST, which unwinds
+      // out of SDL_CreateWindow and leaves a black canvas. We can't patch
+      // vendored SDL, so make these two FS ops idempotent at the runtime level
+      // (EEXIST on mkdir / ENOENT on rmdir become no-ops). Emscripten errno:
+      // EEXIST = 20, ENOENT = 44.
+      preRun: [function () {
+        var origMkdir = FS.mkdir.bind(FS);
+        FS.mkdir = function (path, mode) {
+          try { return origMkdir(path, mode); }
+          catch (e) { if (e && e.errno === 20) return undefined; throw e; }
+        };
+        var origRmdir = FS.rmdir.bind(FS);
+        FS.rmdir = function (path) {
+          try { return origRmdir(path); }
+          catch (e) { if (e && e.errno === 44) return undefined; throw e; }
+        };
+      }],
+      print: function (text) { console.log(text); },
+      printErr: function (text) { console.error(text); },
+      setStatus: function (text) {
+        if (statusElement) statusElement.textContent = text;
+        if (text === '') {
+          // Runtime is up; let the user click to start (audio gesture).
+          runtimeReady = true;
+          overlaySpinner.style.display = 'none';
+          overlayHint.textContent = 'Click to start';
+        }
+      },
+      totalDependencies: 0,
+      monitorRunDependencies: function (left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        Module.setStatus(left ?
+          'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' :
+          '');
+      }
+    };
+    Module.setStatus('Downloading...');
+
+    // SDL's Emscripten backend only treats the window as keyboard-focused when
+    // the canvas is document.activeElement. After Alt-Tab the browser returns
+    // focus to <body>, not the canvas, so keyboard input silently dies. Keep the
+    // canvas focused on (re)focus and on any click. This listener is registered
+    // at page-parse time, i.e. BEFORE SDL adds its own window 'focus' handler,
+    // so the canvas is already the activeElement when SDL checks.
+    function focusCanvas() {
+      if (Module.canvas && typeof Module.canvas.focus === 'function') {
+        Module.canvas.focus();
+      }
+    }
+    window.addEventListener('focus', focusCanvas);
+    document.addEventListener('click', focusCanvas);
+
+    // The browser blocks audio until a user gesture. Hide the overlay on the
+    // first click once the runtime is ready, and focus the canvas for keyboard.
+    overlayElement.addEventListener('click', function () {
+      if (!runtimeReady) return;
+      overlayElement.style.display = 'none';
+      focusCanvas();
+    });
+
+    window.onerror = function (msg) {
+      Module.setStatus('Exception thrown, see JavaScript console');
+    };
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>

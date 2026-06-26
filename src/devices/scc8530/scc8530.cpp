@@ -6,8 +6,12 @@
 #include "util/DebugFormatter.hpp"
 #include "serial_devices/SerialDevice.hpp"
 #include "serial_devices/echo/EchoDevice.hpp"
-#include "serial_devices/modem/ModemDevice.hpp"
 #include "serial_devices/file/FileDevice.hpp"
+#if !defined(__EMSCRIPTEN__)
+// ModemDevice pulls in SDL_net, which has no Emscripten backend (and the browser
+// sandbox blocks raw TCP anyway). Exclude it from the web build.
+#include "serial_devices/modem/ModemDevice.hpp"
+#endif
 
 constexpr uint32_t SCCBREG = 0xC038;
 constexpr uint32_t SCCAREG = 0xC039;
@@ -94,7 +98,12 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
     // let the devices name themselves mostly. But we can, too if we like..
     st->channel_a_device = new FileDevice(nullptr, "A");
     st->scc->set_device_channel(SCC_CHANNEL_A, st->channel_a_device);
+#if defined(__EMSCRIPTEN__)
+    // No SDL_net/modem on the web; use a file device so channel B is still valid.
+    st->channel_b_device = new FileDevice(nullptr, "B");
+#else
     st->channel_b_device = new ModemDevice(nullptr, "B");
+#endif
     st->scc->set_device_channel(SCC_CHANNEL_B, st->channel_b_device);
 
     computer->register_shutdown_handler([st]() {

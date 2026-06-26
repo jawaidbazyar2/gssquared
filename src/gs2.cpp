@@ -185,6 +185,12 @@ void frame_video_update(computer_t *computer, bool force_full_frame = false) {
 
 void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per_frame)
     /* uint64_t frame_count) */ {
+#ifdef __EMSCRIPTEN__
+    // In the browser the main thread must return promptly so requestAnimationFrame
+    // can drive the next SDL_AppIterate. Busy-waiting / sleeping here would hang the
+    // tab, so we let vsync (RAF) pace the frame instead.
+    return;
+#endif
     if (gs2_app_values.modal_tracking) return;
 
     uint64_t wakeup_time = last_cycle_time + ns_per_frame; /*  + (frame_count & 1); */ // even frames have 16688154, odd frames have 16688154 + 1
@@ -342,8 +348,11 @@ bool run_one_frame(computer_t *computer) {
         }
 
         // sleep for 1/60th second ish, without updating frame counts etc.
+        // On the web, RAF paces the loop; blocking here would hang the tab.
+#ifndef __EMSCRIPTEN__
         uint64_t wakeup_time = computer->last_cycle_time + 16667000;
         SDL_DelayPrecise(wakeup_time - SDL_GetTicksNS());
+#endif
         
     } else if ((computer->execution_mode == EXEC_NORMAL) && (clock->get_clock_mode() != CLOCK_FREE_RUN)) {
 
@@ -569,8 +578,19 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
     computer_t *computer = state->computer;
     video_system_t *vs = computer->video_system;
 
+    // The system selector renders through a LETTERBOX logical presentation; the
+    // emulator draws in real output pixels, so clear it before emulation starts.
+    SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+
     // Emulation manages its own timing, so turn off vsync.
+    // On the web we keep vsync on so SDL's Emscripten backend drives
+    // SDL_AppIterate via requestAnimationFrame (the frame_sleep busy-wait
+    // is disabled there — see frame_sleep()).
+#ifdef __EMSCRIPTEN__
+    SDL_SetRenderVSync(vs->renderer, 1);
+#else
     SDL_SetRenderVSync(vs->renderer, 0);
+#endif
 
     SystemConfig_t *system_config = get_system_config(system_id);
     state->platform_id = system_config->platform_id;
@@ -972,7 +992,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         if (system_id >= 0) {
             transition_to_emulation(state, system_id);
         }
+        // On the web, vsync paces the selection UI; blocking would hang the tab.
+#ifndef __EMSCRIPTEN__
         SDL_Delay(16);
+#endif
         return SDL_APP_CONTINUE;
     }
 

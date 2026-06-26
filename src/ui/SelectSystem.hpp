@@ -17,6 +17,8 @@ protected:
     TextRenderer *text_renderer;
     int selected_system = SELECT_PENDING;
     int window_width, window_height;
+    int design_width = 1288;
+    int design_height = 928;
     AssetAtlas_t *aa;
     UIContext ui_ctx;
 

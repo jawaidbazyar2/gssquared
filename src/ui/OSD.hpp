@@ -123,6 +123,12 @@ protected:
 
     int slideStatusBeforeDrop = SLIDE_NONE;
 
+    // Web (Emscripten) drag-and-drop: the SDL Emscripten backend sends no
+    // DROP_BEGIN and delivers DROP_FILE asynchronously (after DROP_COMPLETE),
+    // so we synthesize the "begin" on the first DROP_POSITION and defer the
+    // panel close until the file actually arrives. Harmless/unused elsewhere.
+    bool web_drag_active = false;
+
     const std::map<int, int> monitor_asset =  {
         {MONITOR_COMPOSITE, ColorDisplayButton},
         {MONITOR_GS_RGB, RGBDisplayButton},

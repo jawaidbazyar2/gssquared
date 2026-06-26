@@ -33,9 +33,30 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 
     container = new Container_t(&ui_ctx, CS);
 
+    // Lay out the selector against a fixed "design" resolution rather than the
+    // live window/canvas size. At render time we map this design space onto the
+    // actual output with SDL_SetRenderLogicalPresentation(... LETTERBOX), so the
+    // aspect ratio is always preserved and all content stays on-screen no matter
+    // how big the window/canvas is (important on the web, where the canvas
+    // drawable size doesn't necessarily match the window size at startup).
+    design_width = vs->window_width  > 0 ? vs->window_width  : 1288;
+    design_height = vs->window_height > 0 ? vs->window_height : 928;
+    window_width = design_width;
+    window_height = design_height;
+
     container->size(1024, 768);
-    SDL_GetWindowSize(vs->window, &window_width, &window_height);
-    container->set_position((window_width - 1024) / 2, (window_height - 768) / 2);
+    container->set_position((design_width - 1024) / 2, (design_height - 768) / 2);
+
+    // Render the selector through a fixed design-resolution logical presentation.
+    // LETTERBOX keeps the aspect ratio correct and all content on-screen no
+    // matter the real window/canvas size. We set it for the whole lifetime of
+    // the selector (not just inside render()) because SDL fills the letterbox
+    // bars with black during SDL_RenderPresent() ONLY while this mode is active
+    // — and present() happens in the app's iterate callback, after render()
+    // returns. It is reset back to DISABLED in transition_to_emulation() so the
+    // emulator/OSD/debugger don't inherit our transform.
+    SDL_SetRenderLogicalPresentation(vs->renderer, design_width, design_height,
+                                     SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
     selected_system = SELECT_PENDING;
 
@@ -69,7 +90,26 @@ bool SelectSystem::event(const SDL_Event &event) {
         selected_system = SELECT_QUIT;
         return true;
     }
-    container->handle_mouse_event(event);
+
+    // The window/canvas was resized (or the browser changed the canvas
+    // drawable size). Our layout is in fixed design coordinates, so nothing
+    // needs to move, but we must repaint: the renderer only redraws on
+    // updated==true, and on the web a resize blanks the WebGL backing buffer.
+    if (event.type == SDL_EVENT_WINDOW_RESIZED ||
+        event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED ||
+        event.type == SDL_EVENT_WINDOW_EXPOSED) {
+        updated = true;
+        return false;
+    }
+
+    // Mouse coordinates arrive in window space; convert them into the renderer's
+    // logical (design) space so hit-testing matches what we draw. The renderer's
+    // LETTERBOX logical presentation is left active for the selector's lifetime
+    // (see constructor), so the conversion uses the same mapping as rendering.
+    SDL_Event ev = event;
+    SDL_ConvertEventToRenderCoordinates(vs->renderer, &ev);
+
+    container->handle_mouse_event(ev);
     if ((event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) ||
         (event.type == SDL_EVENT_MOUSE_BUTTON_UP) || 
         (event.type == SDL_EVENT_MOUSE_MOTION)) {
@@ -88,17 +128,14 @@ bool SelectSystem::update() {
 
 void SelectSystem::render() {
     if (updated) {
-        float scale_x, scale_y;
-        //SDL_GetRenderScale(vs->renderer, &scale_x, &scale_y);
-        //SDL_SetRenderScale(vs->renderer, 1, 1);
-
+        // The LETTERBOX logical presentation is already active (set in the
+        // constructor). Draw everything in design coordinates; SDL maps it onto
+        // the real output and fills the letterbox bars with black at present().
         container->render();
 
         text_renderer->set_color(255,255,255,255);
-        text_renderer->render("Choose your retro experience", (window_width / 2), 50, TEXT_ALIGN_CENTER);
+        text_renderer->render("Choose your retro experience", (design_width / 2), 50, TEXT_ALIGN_CENTER);
 
-        //SDL_SetRenderScale(vs->renderer, scale_x, scale_y);
-        //updated = false;
         ui_ctx.color(0x000000FF); // set back to 0. Someone isn't correctly setting color elsewhere..
         updated = false;
     }

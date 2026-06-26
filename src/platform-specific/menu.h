@@ -40,8 +40,9 @@ void initMenu(SDL_Window* window);
 void setMenuTrackingCallback(MenuIterateCallback callback, void *appstate);
 
 // Called from SDL_AppEvent; returns true if the event was consumed by the menu.
-// On non-Linux platforms this is a no-op returning false.
-#if defined(__linux__)
+// Linux and Emscripten use the Dear ImGui menu (real implementations below);
+// other platforms get no-ops.
+#if defined(__linux__) || defined(__EMSCRIPTEN__)
 bool handleMenuEvent(const SDL_Event *event);
 void renderMenuOverlay(SDL_Renderer *renderer, int win_w, int win_h);
 void pumpMenuEvents();

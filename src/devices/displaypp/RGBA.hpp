@@ -33,8 +33,8 @@ struct RGBA_t {
     }
 };
 #define PIXEL_FORMAT SDL_PIXELFORMAT_ABGR8888
-#elif defined(__linux__) || defined(__FreeBSD__)
-// Linux - RGBA
+#elif defined(__linux__) || defined(__FreeBSD__) || defined(__EMSCRIPTEN__)
+// Linux / Emscripten (wasm is little-endian) - RGBA
 struct RGBA_t {
     union {
         struct {
