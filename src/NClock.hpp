@@ -355,6 +355,10 @@ protected:
                 video_scanner->video_cycle();
                 video_cycles++;
                 
+                for (auto &cycle_handler : cycle_handlers) {
+                    cycle_handler();
+                }
+                
                 vidlinecycles++;
             }
             if (vidlinecycles >= 65) {  // end of scanline
