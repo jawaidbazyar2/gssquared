@@ -25,6 +25,12 @@ struct ensoniq_state_t {
     InterruptController *irq_control = nullptr;
     NClockII *clock = nullptr;
     uint64_t doc_read_complete_time = 0;
+
+    // Fast-forward / catch-up state. Samples and oscillator IRQs are advanced to
+    // the current 14M-clock time on every register/RAM access and on the periodic
+    // cycle handler, rather than only once per video frame.
+    uint64_t last_catchup_c14m = 0;  // 14M timestamp of the last generated sample boundary
+    uint64_t c14m_accum = 0;         // fractional-c14m remainder carried between catch-ups
 };
 
 void init_ensoniq_slot(computer_t *computer, SlotType_t slot);

@@ -97,7 +97,7 @@ public:
     std::function<uint8_t()> m_adc_callback;
     
     // Helper methods
-    void halt_osc(int onum, int type, uint32_t *accumulator, int resshift);
+    void halt_osc(int onum, int type, uint32_t *accumulator, int resshift, uint8_t newCtrl);
     uint8_t read_wave_byte(uint32_t address);
     void update_sdl_stream_rate();
     int update_irq_status();

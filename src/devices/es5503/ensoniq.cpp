@@ -106,7 +106,7 @@ void ES5503::update_sdl_stream_rate() {
     printf("updated sdl stream rate to %u Hz\n", es5503_output_rate);
 }
 
-void ES5503::halt_osc(int onum, int type, uint32_t *accumulator, int resshift) {
+void ES5503::halt_osc(int onum, int type, uint32_t *accumulator, int resshift, uint8_t newCtrl) {
     Oscillator *pOsc = &m_oscillators[onum];
     Oscillator *pPartner = &m_oscillators[onum ^ 1];
     int mode = (pOsc->control >> 1) & 3;
@@ -152,11 +152,14 @@ void ES5503::halt_osc(int onum, int type, uint32_t *accumulator, int resshift) {
 
     // IRQ enabled for this voice?
     if (pOsc->control & 0x08) {
-        pOsc->irqpend = 1;
-        int irq_osc = update_irq_status();
-        /* if (m_irq_callback) {
-            m_irq_callback(true);
+        // MAME 2.4.1: when the halt is coming from a CPU write (type == 0), only fire
+        // the IRQ if the newly written control value also has IRQ enabled. This avoids
+        // spurious IRQs (e.g. the Bard's Tale IIgs crash after the intro screen).
+        /* if ((type == 0) && !(newCtrl & 0x08)) {
+            return;
         } */
+        pOsc->irqpend = 1;
+        update_irq_status();
     }
 }
 
@@ -200,7 +203,7 @@ void ES5503::generate_samples(int16_t *buffer, int num_samples) {
                     data = (int32_t)read_wave_byte(ramptr + wtptr) ^ 0x80;
 
                     if (read_wave_byte(ramptr + wtptr) == 0x00) {
-                        halt_osc(osc, 1, &acc, resshift);
+                        halt_osc(osc, 1, &acc, resshift, pOsc->control);
                         // Update ctrl from pOsc->control since halt_osc may have modified it
                         ctrl = pOsc->control;
                     } else {
@@ -235,7 +238,7 @@ void ES5503::generate_samples(int16_t *buffer, int num_samples) {
                         // Calculate new position after incrementing to detect boundary crossing
                         uint32_t new_altram = acc >> resshift;
                         if (new_altram > wtsize) {
-                            halt_osc(osc, 0, &acc, resshift);
+                            halt_osc(osc, 0, &acc, resshift, pOsc->control);
                             // Update ctrl from pOsc->control since halt_osc may have modified it
                             ctrl = pOsc->control;
                         }
@@ -328,57 +331,37 @@ uint8_t ES5503::read(uint8_t offset) {
         // Global registers
         switch (offset) {
             case 0xe0:  { // Interrupt status
-                // TODO: if there is no pending IRQ does the osc number remain unchanged?
-                int irq_osc = update_irq_status();
-                
-                
-                // Clear IRQ line immediately on read
-                /* if (m_irq_callback) {
-                    m_irq_callback(false);
-                } */
-                m_oscillators[irq_osc].irqpend = 0;
-                return m_rege0;
+                // Follows MAME es5503_device::read(0xe0): report and clear the first
+                // pending oscillator, and re-assert the IRQ line if any others remain.
+                retval = m_rege0;
 
-                // Scan all oscillators, find first one with IRQ
-                /* bool found_interrupt = false;
+                // Reading the status register deasserts the IRQ line.
+                if (m_irq_callback) {
+                    m_irq_callback(false);
+                }
+
+                // Scan all oscillators; report & clear the first with a pending IRQ.
                 for (int i = 0; i < m_oscsenabled; i++) {
                     if (m_oscillators[i].irqpend) {
-                        // Signal this oscillator has an interrupt
-                        // IR bit is active-low: bit 7 = 0 means interrupt asserted                        
                         retval = (i << 1);
-                        
-                        // Clear this oscillator's pending flag
+                        m_rege0 = retval | 0x80;
                         m_oscillators[i].irqpend = 0;
-                        found_interrupt = true;
                         break;
                     }
-                } */
+                }
 
-                // Check if any oscillators still need servicing
-                /* bool has_more_pending = false;
+                // If any oscillators still need servicing, re-assert IRQ immediately.
                 for (int i = 0; i < m_oscsenabled; i++) {
                     if (m_oscillators[i].irqpend) {
-                        has_more_pending = true;
                         if (m_irq_callback) {
                             m_irq_callback(true);
                         }
                         break;
                     }
-                } */
-                
-                // IR bit is active-low: bit 7 = 0 means interrupt asserted, bit 7 = 1 means no interrupt
-                /* if (!has_more_pending) {
-                    // No more pending interrupts: set IR bit to 1 (no interrupt)
-                    m_rege0 |= 0x80;  // Set bit 7 (IR bit = 1 = no interrupt)
-                    retval |= 0x80;   // Also set in return value
-                } else if (found_interrupt) {
-                    // We found an interrupt and there are more: keep IR bit clear (interrupt asserted)
-                    m_rege0 &= ~0x80;  // Clear bit 7 (IR bit = 0 = interrupt asserted)
-                    retval &= ~0x80;    // Also clear in return value
                 }
-                m_rege0 = retval | 0x41; // bits 0 and 6 are always set, plus oscillator number and IR bit
-                // Return value: bits 0 and 6 are always set, plus oscillator number and IR bit
-                return m_rege0; */
+
+                // Bits 0 and 6 are always set, plus oscillator number and IR bit.
+                return retval | 0x41;
             }
             case 0xe1:  // Oscillator enable
                 return m_rege1;
@@ -430,7 +413,7 @@ void ES5503::write(uint8_t offset, uint8_t data) {
                 // Handle CPU halting with swap mode
                 if (!(m_oscillators[osc].control & 1) && ((data & 1)) && ((data >> 1) & 1)) {
                     halt_osc(osc, 0, &m_oscillators[osc].accumulator, 
-                            resshifts[m_oscillators[osc].resolution]);
+                            resshifts[m_oscillators[osc].resolution], data);
                 }
                 m_oscillators[osc].control = data;
                 break;

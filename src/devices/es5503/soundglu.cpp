@@ -12,6 +12,70 @@
 #include "NClock.hpp"
 
 //==============================================================================
+// Fast-forward / catch-up
+//==============================================================================
+
+/* Advance ES5503 sample generation (and therefore oscillator IRQ delivery) up to
+   the supplied 14M-clock time. This is the equivalent of MAME's m_stream->update():
+   it is invoked on every register/RAM access and from the periodic cycle handler so
+   that oscillator state and interrupts are caught up to "now" rather than only at the
+   end of a video frame.
+
+   Timing identity: one ES5503 output sample takes 16 * (oscsenabled + 2) 14M cycles
+   (16 14M per ~895 kHz DOC cycle, (oscs+2) DOC cycles per sample). generate_samples()
+   raises IRQs inside halt_osc()->update_irq_status()->m_irq_callback as oscillators
+   halt, so generating the right number of samples also fires IRQs at the right time. */
+static void ensoniq_catch_up(ensoniq_state_t *st, uint64_t now_c14m) {
+    if (!st->chip || !st->stream) {
+        return;
+    }
+
+    // Only generate during normal execution. While paused / single-stepping (or in
+    // CLOCK_FREE_RUN, where c_14M is frozen) we just keep the time base pinned to "now"
+    // so that resuming does not try to render a huge backlog of samples.
+    if (st->computer->execution_mode != EXEC_NORMAL) {
+        st->last_catchup_c14m = now_c14m;
+        st->c14m_accum = 0;
+        return;
+    }
+
+    // Guard against the clock going backwards (e.g. after a reset/resync).
+    if (now_c14m <= st->last_catchup_c14m) {
+        st->last_catchup_c14m = now_c14m;
+        return;
+    }
+
+    st->c14m_accum += (now_c14m - st->last_catchup_c14m);
+    st->last_catchup_c14m = now_c14m;
+
+    const uint32_t c14m_per_sample = 16u * (st->chip->get_oscsenabled() + 2u);
+    if (c14m_per_sample == 0) {
+        return;
+    }
+
+    uint64_t samples_due = st->c14m_accum / c14m_per_sample;
+    st->c14m_accum -= samples_due * c14m_per_sample;
+
+    if (samples_due == 0) {
+        return;
+    }
+
+    // Clamp pathological backlogs to the audio buffer size so we never overrun it.
+    const uint64_t MAX_SAMPLES = 16384;
+    if (samples_due > MAX_SAMPLES) {
+        samples_due = MAX_SAMPLES;
+    }
+
+    const uint32_t BATCH = 1024;
+    while (samples_due > 0) {
+        uint32_t n = (samples_due > BATCH) ? BATCH : (uint32_t)samples_due;
+        st->chip->generate_samples(st->audio_buffer, n);
+        SDL_PutAudioStreamData(st->stream, st->audio_buffer, n * sizeof(int16_t));
+        samples_due -= n;
+    }
+}
+
+//==============================================================================
 // Apple IIgs Interface (C03C-C03F)
 //==============================================================================
 
@@ -46,7 +110,11 @@ void ensoniq_doc_data_read(ensoniq_state_t *st) {
 uint8_t ensoniq_read_C0xx(void *context, uint32_t address) {
     ensoniq_state_t *st = (ensoniq_state_t *)context;
     if (!st->chip) return 0;
-    
+
+    // Fast-forward to now so register reads (esp. E0 IRQ status) and deferred
+    // DOC/RAM reads observe up-to-date oscillator state. Mirrors MAME read().
+    ensoniq_catch_up(st, st->clock->get_c14m());
+
     switch (address) {
         case 0xC03C:  // Sound Control
             ensoniq_update_transaction(st); // update on every soundglu access
@@ -92,7 +160,12 @@ uint8_t ensoniq_read_C0xx(void *context, uint32_t address) {
 void ensoniq_write_C0xx(void *context, uint32_t address, uint8_t data) {
     ensoniq_state_t *st = (ensoniq_state_t *)context;
     if (!st->chip) return;
-    
+
+    // Fast-forward to now BEFORE applying the write, so prior samples are rendered
+    // with the old register/RAM state. Mirrors MAME write(). Covers both DOC
+    // register writes and DOC RAM writes.
+    ensoniq_catch_up(st, st->clock->get_c14m());
+
     switch (address) {
         case 0xC03C:  // Sound Control
             // bit 7 (busy bit) is readonly
@@ -114,6 +187,15 @@ void ensoniq_write_C0xx(void *context, uint32_t address, uint8_t data) {
             } else {
                 // Register mode - use only low byte
                 st->chip->write(st->soundadrl, data);
+                // Writing the oscillator-enable register (0xE1) changes the number of
+                // enabled oscillators and thus the output sample rate (chip->write()
+                // already updated the SDL stream rate). The pre-write catch_up rendered
+                // the backlog at the OLD rate; drop the stale fractional remainder and
+                // re-base time here so subsequent samples use the NEW rate cleanly.
+                if (st->soundadrl == 0xE1) {
+                    st->c14m_accum = 0;
+                    st->last_catchup_c14m = st->clock->get_c14m();
+                }
             }
             
             // Auto-increment if bit 5 is set
@@ -143,29 +225,12 @@ void generate_ensoniq_frame(ensoniq_state_t *st) {
     if (!st->chip || !st->stream) {
         return;
     }
-    // TODO: is there a way to only generate an audio frame samples when we have actually finished a video frame?
-    if (st->computer->execution_mode != EXEC_NORMAL) {
-        return;
-    }
-    // Calculate samples per frame based on ES5503 output rate and frame rate
-    uint32_t es5503_output_rate = st->chip->calculate_output_rate();
-    float samples_per_frame_float = (float)es5503_output_rate / st->frame_rate;
-    
-    // Handle fractional samples per frame (like other audio devices)
-    st->samples_accumulated += (samples_per_frame_float - (int)samples_per_frame_float);
-    uint32_t samples_this_frame = (uint32_t)samples_per_frame_float;
-    if (st->samples_accumulated >= 1.0f) {
-        samples_this_frame++;
-        st->samples_accumulated -= 1.0f;
-    }
-    
-    // Ensure we don't exceed buffer size
-    if (samples_this_frame > 16384) {
-        samples_this_frame = 16384;
-    }
-    
-    st->chip->generate_samples(st->audio_buffer, samples_this_frame);
-    SDL_PutAudioStreamData(st->stream, st->audio_buffer, samples_this_frame * sizeof(int16_t));
+    // Samples are now generated incrementally via ensoniq_catch_up() on every
+    // register/RAM access and from the per-video-cycle clock handler. Here we just
+    // perform a final catch-up to the current 14M time so the SDL stream stays fed
+    // through the end of the frame (it will normally render ~0 samples, since the
+    // cycle handler has already advanced to frame end).
+    ensoniq_catch_up(st, st->clock->get_c14m());
 }
 
 DebugFormatter * debug_ensoniq(ensoniq_state_t *st) {
@@ -236,6 +301,10 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     // Set the stream pointer in the chip so it can update the rate when oscillators change
     st->chip->set_sdl_stream(st->stream);
 
+    // Initialize the catch-up time base to "now".
+    st->last_catchup_c14m = computer->clock->get_c14m();
+    st->c14m_accum = 0;
+
 #if 0
     SDL_AudioSpec spec;
     spec.freq = es5503_output_rate;
@@ -252,6 +321,14 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     // Set the stream pointer in the chip so it can update the rate when oscillators change
     st->chip->set_sdl_stream(stream);
 #endif
+
+    // Periodic catch-up: fires once per video cycle (~895 kHz DOC / ~1 MHz video),
+    // delivering oscillator IRQs between register accesses. This is the equivalent of
+    // MAME's delayed_stream_update timer. It is cheap when fewer than one sample is due
+    // (just a delta/divide/compare). Requires the NClockIIgs cycle-handler dispatch.
+    computer->clock->set_cycle_handler([st]() {
+        ensoniq_catch_up(st, st->clock->get_c14m());
+    });
 
     // register a frame processor for the mockingboard.
     computer->device_frame_dispatcher->registerHandler([st]() {
@@ -270,6 +347,9 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     computer->register_reset_handler([st](bool cold_start) {
         // this caused the audio to get badly delayed / out of sync. added calculate_output_rate() to reset() to fix.
         st->chip->reset();
+        // Re-base the catch-up time so we don't render a backlog after reset.
+        st->last_catchup_c14m = st->clock->get_c14m();
+        st->c14m_accum = 0;
         return true;
     });
 }
