@@ -218,11 +218,17 @@ void ImGui_ImplSDL3_NewFrame()
     IM_ASSERT(bd != nullptr && "Did you call ImGui_ImplSDL3_Init*?");
     ImGuiIO& io = ImGui::GetIO();
 
-    // Window size (in pixels)
+    // Window size (in points) and the backbuffer's pixel density. On a high-DPI
+    // window the pixel size is larger than the point size, so derive the
+    // framebuffer scale from their ratio instead of assuming 1.0.
     int w, h;
     SDL_GetWindowSize(bd->Window, &w, &h);
+    int pixel_w = w, pixel_h = h;
+    SDL_GetWindowSizeInPixels(bd->Window, &pixel_w, &pixel_h);
     io.DisplaySize = ImVec2((float)w, (float)h);
-    io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+    io.DisplayFramebufferScale = ImVec2(
+        w > 0 ? (float)pixel_w / (float)w : 1.0f,
+        h > 0 ? (float)pixel_h / (float)h : 1.0f);
 
     // Delta time
     Uint64 frequency = SDL_GetPerformanceFrequency();

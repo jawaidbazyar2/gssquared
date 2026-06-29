@@ -32,7 +32,7 @@ video_system_t::video_system_t(computer_t *computer) {
         "GSSquared - Apple ][ Emulator", 
         (BASE_WIDTH + border_width*2) * SCALE_X, 
         (BASE_HEIGHT + border_height*2) * SCALE_Y, 
-        SDL_WINDOW_RESIZABLE
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY
     );
 
     if (!window) {
@@ -78,9 +78,13 @@ video_system_t::video_system_t(computer_t *computer) {
 
     SDL_RaiseWindow(window);
 
-    calculate_target_rect(window_width, window_height);
+    update_target_from_output();
 
     computer->dispatch->registerHandler(SDL_EVENT_WINDOW_RESIZED, [this](const SDL_Event &event) {
+        window_resize(event);
+        return true;
+    });
+    computer->dispatch->registerHandler(SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED, [this](const SDL_Event &event) {
         window_resize(event);
         return true;
     });
@@ -223,11 +227,19 @@ void video_system_t::calculate_target_rect(int new_w, int new_h) {
     printf("calculate_target_rect: (%f, %f) [%f x %f] @ %f\n", target.x, target.y, target.w, target.h, (float)target.w/target.h);
 }
 
+void video_system_t::update_target_from_output() {
+    int pixel_w = 0, pixel_h = 0;
+    SDL_GetCurrentRenderOutputSize(renderer, &pixel_w, &pixel_h);
+    calculate_target_rect(pixel_w, pixel_h);
+}
+
 void video_system_t::window_resize(const SDL_Event &event) {
     if (event.window.windowID != SDL_GetWindowID(window)) {
         return;
     }
-    calculate_target_rect(event.window.data1, event.window.data2);
+    // The emulator renders in real output pixels, so size the target from the
+    // renderer's pixel output rather than the event's point dimensions.
+    update_target_from_output();
 }
 
 display_fullscreen_mode_t video_system_t::get_window_fullscreen() {

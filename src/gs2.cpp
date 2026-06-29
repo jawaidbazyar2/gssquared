@@ -176,11 +176,22 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
  * Update window
  */
 void frame_video_update(computer_t *computer, bool force_full_frame = false) {
+    video_system_t *vs = computer->video_system;
 
-    computer->video_system->update_display(force_full_frame);    
+    vs->update_display(force_full_frame);
+
+    // The OSD and its modals/HUD are authored in window-point coordinates. On a
+    // high-DPI backbuffer the renderer output is in real pixels, so render the UI
+    // through a points-sized logical presentation to keep its layout correct, then
+    // restore the emulator's "draw in real output pixels" convention (DISABLED).
+    int points_w = 0, points_h = 0;
+    SDL_GetWindowSize(vs->window, &points_w, &points_h);
+    SDL_SetRenderLogicalPresentation(vs->renderer, points_w, points_h, SDL_LOGICAL_PRESENTATION_STRETCH);
     osd->render();
+    SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+
     computer->debug_window->render();
-    computer->video_system->present();
+    vs->present();
 }
 
 void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per_frame)

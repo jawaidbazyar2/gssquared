@@ -84,6 +84,9 @@ struct video_system_t {
 
 protected:
     void calculate_target_rect(int new_w, int new_h);
+    // Recompute the target rect from the renderer's real pixel output size
+    // (not window points), so the emulator image is sized for the high-DPI backbuffer.
+    void update_target_from_output();
 
 public:
     video_system_t(computer_t *computer);
