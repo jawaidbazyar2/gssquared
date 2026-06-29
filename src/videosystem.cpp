@@ -236,24 +236,17 @@ display_fullscreen_mode_t video_system_t::get_window_fullscreen() {
 
 void video_system_t::set_window_fullscreen(display_fullscreen_mode_t mode) {
     if (mode == DISPLAY_FULLSCREEN_MODE) {
-        SDL_DisplayMode *selected_mode;
-
-        SDL_DisplayID did = SDL_GetDisplayForWindow(window);
-        int num_modes;
-        SDL_DisplayMode **modes = SDL_GetFullscreenDisplayModes(did, &num_modes);
-        for (int i = 0; i < num_modes; i++) {
-            printf("Mode %d: %dx%d\n", i, modes[i]->w, modes[i]->h);
-        }
-        selected_mode = modes[0];
-
+        // Borderless "fullscreen desktop": a NULL fullscreen mode tells SDL not to
+        // change the display's video mode, so the window simply covers the desktop
+        // at its current resolution. This avoids the slow monitor re-sync / macOS
+        // Space transition that an exclusive mode switch incurs.
         SDL_SetWindowAspectRatio(window, 0.0f, 0.0f);
-        SDL_SetWindowFullscreenMode(window, selected_mode);
+        SDL_SetWindowFullscreenMode(window, NULL);
         SDL_SetWindowBordered(window, false);
-        SDL_SetWindowFullscreen(window, display_fullscreen_mode);
-        SDL_free(modes);
+        SDL_SetWindowFullscreen(window, true);
     } else {
         // Reapply window size and aspect ratio constraints in reverse order from above.
-        SDL_SetWindowFullscreen(window, display_fullscreen_mode);
+        SDL_SetWindowFullscreen(window, false);
         SDL_SetWindowBordered(window, true);
         sync_window();
         SDL_SetWindowAspectRatio(window, aspect_ratio, aspect_ratio);
