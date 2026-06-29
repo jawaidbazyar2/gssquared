@@ -1,4 +1,8 @@
 CMakeFiles/
+.emcache/
+.emcache/*
+build-web/
+build-web/*
 .cache/
 .cache/*
 build/
