@@ -671,6 +671,19 @@ void debug_window_t::trace_scroll(float y) {
     }
 }
 bool debug_window_t::handle_event(SDL_Event &event) {
+#if defined(__EMSCRIPTEN__)
+    // Emscripten supports only one window, so the debugger has no separate OS
+    // window of its own. Its window_id collides with the main window's events
+    // (and with focusless windowID==0 events), which would swallow every
+    // keystroke meant for the emulator. The debugger isn't usable on the web
+    // anyway, so disable its event handling entirely here.
+    (void)event;
+    return false;
+#else
+    // If the debugger's own OS window doesn't exist, never claim events.
+    if (!window || window_id == 0) {
+        return false;
+    }
     if (event.window.windowID == window_id) {
         if (handle_pane_event_monitor(event)) {
             return true;
@@ -770,6 +783,7 @@ bool debug_window_t::handle_event(SDL_Event &event) {
         }
     }
     return false;
+#endif
 }
 
 bool debug_window_t::is_open() {

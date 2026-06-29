@@ -47,7 +47,11 @@ const std::string& get_base_path(bool console_mode) {
         return base_path;
     }
 
-#if defined(GS2_GNU_INSTALL_DIRS)
+#if defined(__EMSCRIPTEN__)
+    // Resources are preloaded into the WASM filesystem at /resources
+    // (see the --preload-file flag in CMakeLists.txt).
+    base_path = "/resources/";
+#elif defined(GS2_GNU_INSTALL_DIRS)
     base_path = SDL_GetBasePath();
     base_path += "../share/GSSquared/";
 #elif defined(__APPLE__)
@@ -81,7 +85,10 @@ const std::string& get_pref_path(void) {
         return pref_path;
     }
 
-#if defined(GS2_PROGRAM_FILES)
+#if defined(__EMSCRIPTEN__)
+    // MEMFS root; not persisted across reloads (could mount IDBFS later).
+    pref_path = "/";
+#elif defined(GS2_PROGRAM_FILES)
     pref_path = "./";
 #else
     pref_path = SDL_GetPrefPath("jawaidbazyar2", "GSSquared");

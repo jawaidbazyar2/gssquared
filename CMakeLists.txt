@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.10)
 
 # Prefer Clang over GCC on Linux/Mac. Must happen before project() so CMake
 # hasn't already detected and cached the default system compiler.
-if(NOT WIN32)
+# Skip entirely when a toolchain file is in use (e.g. Emscripten via emcmake),
+# otherwise we'd FORCE the host clang into the cache ahead of emcc.
+if(NOT WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     find_program(CLANG_EXECUTABLE NAMES clang)
     find_program(CLANGPP_EXECUTABLE NAMES clang++)
 
@@ -170,21 +172,46 @@ add_custom_command(
 add_custom_target(assemble_resources ALL DEPENDS "${GS2_RESOURCES_STAMP}")
 
 function(configure_sdl_builds)
-    set(BUILD_SHARED_LIBS ON)
+    if(EMSCRIPTEN)
+        # Emscripten cannot build/link shared libraries; build SDL statically.
+        set(BUILD_SHARED_LIBS OFF)
+        set(SDL_SHARED OFF)
+        set(SDL_STATIC ON)
+        set(SDL_TEST OFF)
+        set(SDLIMAGE_VENDORED ON)
+        set(SDLTTF_VENDORED ON)
+        # We only need PNG (atlas / IBM_VGA font). Disable the heavy optional
+        # decoders, in particular AVIF, whose vendored dav1d does not support
+        # the wasm architecture.
+        set(SDLIMAGE_PNG ON)
+        set(SDLIMAGE_AVIF OFF)
+        set(SDLIMAGE_JXL OFF)
+        set(SDLIMAGE_TIF OFF)
+        set(SDLIMAGE_WEBP OFF)
+        set(SDLIMAGE_JPG OFF)
+        set(SDLIMAGE_BMP ON)
+    else()
+        set(BUILD_SHARED_LIBS ON)
 
-    # Force SDL to build with the correct SDK
-    if(APPLE)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Deployment target" FORCE)
+        # Force SDL to build with the correct SDK
+        if(APPLE)
+            set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Deployment target" FORCE)
+        endif()
+
+        set(SDL_SHARED ON)
+        set(SDLTTF_VENDORED ON)
     endif()
-
-    set(SDL_SHARED ON)
-    set(SDLTTF_VENDORED ON)
 
     # Force rebuild SDL with these settings
     add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL)
     add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_image)
     add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_ttf)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_net)
+    # SDL_net has no Emscripten backend (its interface-enumeration code is a hard
+    # #error for unknown platforms). It is only used by the modem device, which
+    # we exclude from the web build, so skip building it entirely there.
+    if(NOT EMSCRIPTEN)
+        add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_net)
+    endif()
     set(BUILD_SHARED_LIBS OFF)
 endfunction()
 
@@ -201,7 +228,30 @@ set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# The whole web build (SDL, the gs2_* libs, and the executable) must be compiled
+# with atomics/shared-memory enabled, otherwise wasm-ld refuses to link a
+# pthreads binary against objects built without them. Set this before any
+# targets (including the vendored SDL subdirectories) are created.
+if(EMSCRIPTEN)
+    add_compile_options(-pthread)
+    add_link_options(-pthread)
+endif()
+
 configure_sdl_builds()
+
+# SDL target names differ between the shared (native) and static (Emscripten)
+# builds. Use these variables everywhere instead of hard-coding the suffix.
+if(EMSCRIPTEN)
+    set(GS2_SDL3 SDL3::SDL3-static)
+    set(GS2_SDL3_IMAGE SDL3_image::SDL3_image-static)
+    set(GS2_SDL3_TTF SDL3_ttf::SDL3_ttf-static)
+    set(GS2_SDL3_NET "")   # SDL_net is not built for the web (see configure_sdl_builds)
+else()
+    set(GS2_SDL3 SDL3::SDL3-shared)
+    set(GS2_SDL3_IMAGE SDL3_image::SDL3_image-shared)
+    set(GS2_SDL3_TTF SDL3_ttf::SDL3_ttf-shared)
+    set(GS2_SDL3_NET SDL3_net::SDL3_net-shared)
+endif()
 
 # When CMAKE_INSTALL_PREFIX points inside the build tree, CMake's RPATH_CHECK
 # deletes the source .so before file(INSTALL) can copy it (source == destination).
@@ -244,7 +294,7 @@ target_include_directories(gs2_headers
 )
 
 # all following targets will link to SDL3
-link_libraries(gs2_headers SDL3::SDL3-shared SDL3_net::SDL3_net-shared)
+link_libraries(gs2_headers ${GS2_SDL3} ${GS2_SDL3_NET})
 
 add_library(gs2_devices_game src/devices/game/gamecontroller.cpp src/devices/game/mousewheel.cpp )
 
@@ -294,7 +344,7 @@ add_library(gs2_devices_secondsight
     src/devices/secondsight/vga_render_text_9x16.cpp
     src/devices/secondsight/vga_render_text_9x16_present.cpp
 )
-target_link_libraries(gs2_devices_secondsight PRIVATE SDL3_image::SDL3_image-shared)
+target_link_libraries(gs2_devices_secondsight PRIVATE ${GS2_SDL3_IMAGE})
 
 add_library(gs2_devices_iwm src/devices/iwm/iwm_device.cpp)
 
@@ -380,31 +430,36 @@ target_link_libraries(gs2_video_scanner PUBLIC gs2_displaypp)
 
 add_library(gs2_devices_rtc_pram src/devices/rtc/rtc_pram.cpp)
 
-target_link_libraries(gs2_ui SDL3_image::SDL3_image-shared SDL3_ttf::SDL3_ttf-shared)
-target_link_libraries(gs2_debugger gs2_trace gs2_util SDL3_ttf::SDL3_ttf-shared)
-target_link_libraries(gs2_util SDL3_ttf::SDL3_ttf-shared)
-target_link_libraries(gs2_computer SDL3_ttf::SDL3_ttf-shared)
+target_link_libraries(gs2_ui ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF})
+target_link_libraries(gs2_debugger gs2_trace gs2_util ${GS2_SDL3_TTF})
+target_link_libraries(gs2_util ${GS2_SDL3_TTF})
+target_link_libraries(gs2_computer ${GS2_SDL3_TTF})
 target_link_libraries(gs2_cpu gs2_trace)
 target_link_libraries(gs2_mmu gs2_trace gs2_cpu)
 target_link_libraries(gs2_devices_adb gs2_util)
 target_link_libraries(gs2_devices_iwm gs2_devices_floppy_woz)
 target_link_libraries(gs2_devices_diskii_woz gs2_devices_floppy_woz gs2_util)
 
-# Add the executable
+# Add the executable. The .icns is only meaningful as a macOS bundle resource;
+# leave it out on other targets (Emscripten would try to compile it).
+set(GS2_PLATFORM_SOURCES "")
+if(APPLE)
+    list(APPEND GS2_PLATFORM_SOURCES ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns)
+endif()
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
     src/display/display.cpp
     src/platforms.cpp
     src/devices.cpp src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
     src/util/AudioSystem.cpp
-    ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns
+    ${GS2_PLATFORM_SOURCES}
     )
 
 # Link SDL3 and required frameworks
 target_link_libraries(GSSquared PRIVATE 
-    SDL3::SDL3-shared
-    SDL3_image::SDL3_image-shared
-    SDL3_net::SDL3_net-shared
+    ${GS2_SDL3}
+    ${GS2_SDL3_IMAGE}
+    ${GS2_SDL3_NET}
 )
 if(WIN32)
     # We'll bundle the MinGW runtime DLLs instead of static linking
@@ -457,51 +512,54 @@ target_link_libraries(GSSquared
 # Ensure building just GSSquared still triggers the resource assembly step.
 add_dependencies(GSSquared assemble_resources)
 
-add_subdirectory(apps/adbtest)
+# The auxiliary apps are developer tools and are not part of the web build.
+if(NOT EMSCRIPTEN)
+    add_subdirectory(apps/adbtest)
 
-add_subdirectory(apps/mbtest)
+    add_subdirectory(apps/mbtest)
 
-#add_subdirectory(apps/nibblizer)
-#add_subdirectory(apps/denibblizer)
-add_subdirectory(apps/vgatext)
+    #add_subdirectory(apps/nibblizer)
+    #add_subdirectory(apps/denibblizer)
+    add_subdirectory(apps/vgatext)
 
-add_subdirectory(apps/ssppu)
+    add_subdirectory(apps/ssppu)
 
-add_subdirectory(apps/diskid)
+    add_subdirectory(apps/diskid)
 
-# Temporary disabled, need to refactor it to match new nibblizer API.
-add_subdirectory(apps/wozutil)
+    # Temporary disabled, need to refactor it to match new nibblizer API.
+    add_subdirectory(apps/wozutil)
 
-#add_subdirectory(apps/speaker) # Temporarily remove until I make a "fake computer" interface.
+    #add_subdirectory(apps/speaker) # Temporarily remove until I make a "fake computer" interface.
 
-add_subdirectory(apps/gstrace)
+    add_subdirectory(apps/gstrace)
 
-add_subdirectory(apps/iigsmmutest)
+    add_subdirectory(apps/iigsmmutest)
 
-add_subdirectory(apps/mmutest)
+    add_subdirectory(apps/mmutest)
 
-add_subdirectory(apps/cputest)
+    add_subdirectory(apps/cputest)
 
-add_subdirectory(apps/montest)
+    add_subdirectory(apps/montest)
 
-add_subdirectory(apps/cycletest)
+    add_subdirectory(apps/cycletest)
 
-#add_subdirectory(apps/dpp)
-add_subdirectory(apps/vpp)
+    #add_subdirectory(apps/dpp)
+    add_subdirectory(apps/vpp)
 
-add_subdirectory(apps/iieromcsum)
+    add_subdirectory(apps/iieromcsum)
 
-add_subdirectory(apps/binprint)
+    add_subdirectory(apps/binprint)
 
-add_subdirectory(apps/cpu816test)
+    add_subdirectory(apps/cpu816test)
 
-add_subdirectory(apps/ui)
+    add_subdirectory(apps/ui)
 
-add_subdirectory(apps/rtctest)
+    add_subdirectory(apps/rtctest)
 
-add_subdirectory(apps/doc)
+    add_subdirectory(apps/doc)
 
-add_subdirectory(apps/mousebugtest)
+    add_subdirectory(apps/mousebugtest)
+endif()
 
 ################################################################################
 #### Platform Specific Code
@@ -514,18 +572,25 @@ if(APPLE)
     )
 endif()
 
-if(UNIX AND NOT APPLE)
+# Linux and Emscripten both use the portable Dear ImGui menu (linux/menu.cpp is
+# pure ImGui + the SDL3 renderer backend, with no GTK/X11 dependency).
+if((UNIX AND NOT APPLE) OR EMSCRIPTEN)
     set(GS2_USE_IMGUI ON)
 
-    add_library(platform_specific
-        src/platform-specific/linux/menu.cpp
-    )
+    set(GS2_PLATFORM_SPECIFIC_SOURCES src/platform-specific/linux/menu.cpp)
+    if(EMSCRIPTEN)
+        # Browser file picker used in place of SDL_ShowOpenFileDialog.
+        list(APPEND GS2_PLATFORM_SPECIFIC_SOURCES
+            src/platform-specific/emscripten/web_file_dialog.cpp)
+    endif()
+
+    add_library(platform_specific ${GS2_PLATFORM_SPECIFIC_SOURCES})
 
     target_include_directories(platform_specific PRIVATE
         src/imgui
     )
     target_link_libraries(platform_specific PRIVATE
-        SDL3::SDL3-shared
+        ${GS2_SDL3}
         gs2_imgui
     )
 endif()
@@ -534,7 +599,7 @@ if(WIN32)
     add_library(platform_specific src/platform-specific/windows/menu.cpp)
 
     target_link_libraries(platform_specific PRIVATE
-        SDL3::SDL3-shared
+        ${GS2_SDL3}
     )
 endif()
 
@@ -548,7 +613,7 @@ if(GS2_USE_IMGUI)
         src/imgui/backends/imgui_impl_sdlrenderer3.cpp
     )
     target_include_directories(gs2_imgui PUBLIC src/imgui)
-    target_link_libraries(gs2_imgui PRIVATE SDL3::SDL3-shared)
+    target_link_libraries(gs2_imgui PRIVATE ${GS2_SDL3})
 endif()
 
 ################################################################################
@@ -727,7 +792,7 @@ if(WIN32)
 endif()
 
 # Non-Apple UNIX-specific configuration here
-if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
     if(GS2_PROGRAM_FILES)
         # TODO: Make this work for MSYS; no more hard-coded Linux stuff
         # PROGRAM FILES: Build bare executable, everything goes to build/ directory
@@ -982,3 +1047,45 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 configure_file(src/build_config.hpp.in "${CMAKE_BINARY_DIR}/cfg/build_config.hpp" @ONLY)
+
+################################################################################
+#### Emscripten (WebAssembly) build configuration
+################################################################################
+if(EMSCRIPTEN)
+    message(STATUS "Configuring Emscripten web build")
+
+    # Note: -pthread (compile + link) is applied globally above so SDL and the
+    # gs2_* libraries are built with atomics/shared-memory. COOP/COEP headers
+    # are required when serving (SharedArrayBuffer).
+
+    # Resources are assembled into ${CMAKE_BINARY_DIR}/resources by the
+    # assemble_resources target; preload them into the WASM filesystem at
+    # /resources so SDL_GetBasePath()-relative loads (see src/paths.cpp) work.
+    set(GS2_WEB_PRELOAD "${CMAKE_BINARY_DIR}/resources@/resources")
+
+    target_link_options(GSSquared PRIVATE
+        -pthread
+        -sPTHREAD_POOL_SIZE=8
+        -sALLOW_MEMORY_GROWTH=1
+        -sMAXIMUM_MEMORY=1gb
+        -sINITIAL_MEMORY=268435456          # 256 MB headroom for IIgs RAM + textures
+        -sSTACK_SIZE=4mb
+        -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,FS,stringToNewUTF8,UTF8ToString
+        -sFORCE_FILESYSTEM=1
+        --preload-file ${GS2_WEB_PRELOAD}
+        --shell-file ${CMAKE_SOURCE_DIR}/assets/web/shell.html
+    )
+
+    # Optional: keep symbol names + runtime assertions for debugging the web
+    # build (readable JS/wasm stack traces, clearer FS/abort messages).
+    option(GS2_WEB_DEBUG "Build the web target with symbols and assertions" ON)
+    if(GS2_WEB_DEBUG)
+        target_link_options(GSSquared PRIVATE -g2 -sASSERTIONS=1)
+    endif()
+
+    # Emit GSSquared.html (+ .js/.wasm/.data) instead of a bare executable.
+    set_target_properties(GSSquared PROPERTIES SUFFIX ".html")
+
+    # The preload step must run after resources are assembled.
+    add_dependencies(GSSquared assemble_resources)
+endif()

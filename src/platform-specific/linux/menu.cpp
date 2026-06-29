@@ -1,4 +1,6 @@
-#ifdef __linux__
+// Portable Dear ImGui menu shared by the Linux and Emscripten (web) builds.
+// It only uses ImGui + the SDL3 renderer backend; nothing GTK/X11-specific.
+#if defined(__linux__) || defined(__EMSCRIPTEN__)
 
 #include <SDL3/SDL.h>
 
@@ -361,4 +363,4 @@ void renderMenuOverlay(SDL_Renderer *renderer, int /*win_w*/, int /*win_h*/)
     ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
 }
 
-#endif // __linux__
+#endif // __linux__ || __EMSCRIPTEN__
