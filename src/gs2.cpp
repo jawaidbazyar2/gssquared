@@ -182,11 +182,20 @@ void frame_video_update(computer_t *computer, bool force_full_frame = false) {
 
     // The OSD and its modals/HUD are authored in window-point coordinates. On a
     // high-DPI backbuffer the renderer output is in real pixels, so render the UI
-    // through a points-sized logical presentation to keep its layout correct, then
-    // restore the emulator's "draw in real output pixels" convention (DISABLED).
+    // through a logical presentation to keep its layout correct, then restore the
+    // emulator's "draw in real output pixels" convention (DISABLED).
+    //
+    // We divide the logical size by the window's content/display scale so the UI is
+    // drawn larger on dense displays (e.g. a 4K monitor at 200%). SDL_GetWindowDisplayScale
+    // folds in both the pixel density and the desktop's content scale, so this honors
+    // the user's scaling preference on X11, Wayland, and macOS alike.
     int points_w = 0, points_h = 0;
     SDL_GetWindowSize(vs->window, &points_w, &points_h);
-    SDL_SetRenderLogicalPresentation(vs->renderer, points_w, points_h, SDL_LOGICAL_PRESENTATION_STRETCH);
+    float ui_scale = SDL_GetWindowDisplayScale(vs->window);
+    if (ui_scale <= 0.0f) ui_scale = 1.0f;
+    SDL_SetRenderLogicalPresentation(vs->renderer,
+        (int)(points_w / ui_scale), (int)(points_h / ui_scale),
+        SDL_LOGICAL_PRESENTATION_STRETCH);
     osd->render();
     SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
 

@@ -78,6 +78,17 @@ video_system_t::video_system_t(computer_t *computer) {
 
     SDL_RaiseWindow(window);
 
+    {
+        int point_w = 0, point_h = 0;
+        int pixel_w = 0, pixel_h = 0;
+        SDL_GetWindowSize(window, &point_w, &point_h);
+        SDL_GetWindowSizeInPixels(window, &pixel_w, &pixel_h);
+        float display_scale = SDL_GetWindowDisplayScale(window);
+        float pixel_density = SDL_GetWindowPixelDensity(window);
+        printf("Display: %dx%d points, %dx%d pixels, display_scale=%.3f, pixel_density=%.3f\n",
+            point_w, point_h, pixel_w, pixel_h, display_scale, pixel_density);
+    }
+
     update_target_from_output();
 
     computer->dispatch->registerHandler(SDL_EVENT_WINDOW_RESIZED, [this](const SDL_Event &event) {
