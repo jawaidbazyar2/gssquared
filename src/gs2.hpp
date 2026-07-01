@@ -35,6 +35,9 @@ typedef struct gs2_app_t {
     bool console_mode = false;
    /*  bool disk_accelerator = false; */
     bool sleep_mode = false;
+    // When true, attempt to create the SDL GPU-backed renderer (enables custom
+    // post-process shaders). Default false: use the classic SDL 2D renderer.
+    bool gpu_render = false;
     bool right_mouse_accelerate = true;
     uint32_t menu_event_type = 0;
     bool modal_tracking = false;  // true while macOS menu/resize modal loop owns the run loop
