@@ -44,6 +44,7 @@ public:
 	void toggleSleepMode();
 	void toggleAudioDecorrelation();
 	void toggleRightMouseAccel();
+	void toggleCrtShader();
 	void displayFullScreen();
 	void editCopyScreen();
 	void editPasteText();
@@ -57,6 +58,8 @@ public:
 	bool getSleepMode();
 	bool getAudioDecorrelation();
 	bool getRightMouseAccel();
+	bool getCrtShader();
+	bool getCrtShaderAvailable();
 	bool isEmulationRunning();
 	bool isPaused();
 	bool isMouseCaptured();

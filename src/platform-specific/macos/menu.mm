@@ -120,6 +120,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)monitorMonoAmber:(id)sender;
 - (void)monitorMonoWhite:(id)sender;
 - (void)displayFullScreen:(id)sender;
+- (void)toggleCrtShader:(id)sender;
 - (void)editCopyScreen:(id)sender;
 - (void)editPasteText:(id)sender;
 - (void)diskToggleDrive:(id)sender;
@@ -151,6 +152,10 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	if (menuItem.action == @selector(controllerMode:)) {
 		int current = getMenuInterface()->getCurrentControllerMode();
 		[menuItem setState:([menuItem tag] == current) ? NSControlStateValueOn : NSControlStateValueOff];
+	}
+	if (menuItem.action == @selector(toggleCrtShader:)) {
+		[menuItem setState:getMenuInterface()->getCrtShader() ? NSControlStateValueOn : NSControlStateValueOff];
+		return getMenuInterface()->isEmulationRunning() && getMenuInterface()->getCrtShaderAvailable();
 	}
 	// Help items are always available regardless of emulation state
 	if (menuItem.action == @selector(helpOpenDocs:)) {
@@ -185,6 +190,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)monitorMonoAmber:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_AMBER); (void)sender; }
 - (void)monitorMonoWhite:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_WHITE); (void)sender; }
 - (void)displayFullScreen:(id)sender { getMenuInterface()->displayFullScreen(); (void)sender; }
+- (void)toggleCrtShader:(id)sender   { getMenuInterface()->toggleCrtShader(); (void)sender; }
 - (void)editCopyScreen:(id)sender    { getMenuInterface()->editCopyScreen(); (void)sender; }
 - (void)editPasteText:(id)sender     { getMenuInterface()->editPasteText(); (void)sender; }
 
@@ -562,6 +568,13 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[fullScreenItem setTarget:sMenuHandler];
 	[displayMenu addItem:fullScreenItem];
+
+	NSMenuItem *crtShaderItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"CRT Shader", nil)
+		       action:@selector(toggleCrtShader:)
+		keyEquivalent:@""] autorelease];
+	[crtShaderItem setTarget:sMenuHandler];
+	[displayMenu addItem:crtShaderItem];
 
 	// Docs menu — intentionally NOT named "Help" to prevent macOS from
 	// injecting its search bar (which requires an Apple Help Book bundle)
