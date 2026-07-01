@@ -5,6 +5,7 @@
 class VideoScannerIIgs : public VideoScannerII
 {
 protected:
+    inline virtual bool supports_dblres() const override { return true; }
     uint8_t palette_index = 0;
 public:
     VideoScannerIIgs(MMU_II *mmu);
