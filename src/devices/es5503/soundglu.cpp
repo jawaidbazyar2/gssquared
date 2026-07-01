@@ -118,7 +118,7 @@ uint8_t ensoniq_read_C0xx(void *context, uint32_t address) {
     switch (address) {
         case 0xC03C:  // Sound Control
             ensoniq_update_transaction(st); // update on every soundglu access
-            return st->soundctl;
+            return st->soundctl | 0xF; // this reg is write-only, low 4 bits are always 1111 on read
             
         case 0xC03D: { // Sound Data
             uint16_t full_address = (st->soundadrh << 8) | st->soundadrl;
