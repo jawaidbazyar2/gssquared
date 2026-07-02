@@ -43,6 +43,7 @@
 #include "devices/adb/keygloo.hpp"
 #include "agent/Agent.hpp"
 #include "agent/Protocol.hpp"
+#include "mcp/McpServer.hpp"
 #include "mmus/mmu_ii.hpp"
 #include "mmus/mmu_iie.hpp"
 #include "mmus/mmu_iigs.hpp"
@@ -292,6 +293,11 @@ bool run_one_frame(computer_t *computer) {
     NClock *clock = computer->clock;
     speaker_state_t *speaker_state = (speaker_state_t *)computer->cached_speaker_state;
     display_state_t *ds = (display_state_t *)computer->cached_display_state;
+
+    // Drain any queued MCP tool commands here on the emulator thread, where
+    // touching cpu_state / MMU is race-free. Runs even when paused/halted so
+    // introspection tools work while the CPU is stopped.
+    if (computer->mcp != nullptr) computer->mcp->pump();
 
     if (cpu->halt == HLT_USER) { // top of frame.
         return false;

@@ -30,6 +30,7 @@
 #include "util/printf_helper.hpp"
 #include "slots.hpp"
 #include "agent/Agent.hpp"
+#include "mcp/McpServer.hpp"
 
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
@@ -269,6 +270,22 @@ computer_t::computer_t(NClockII *clock) {
             cpu->agent = agent;
         }
     }
+
+    // Optional MCP server. Enable by setting GS2_MCP_SOCKET to a UNIX
+    // socket path in the environment, e.g.
+    //   GS2_MCP_SOCKET=/tmp/gs2-mcp.sock build/GSSquared -p apple2gs
+    // Then bridge stdio to it from an MCP client (see Docs/MCP.md). Stays
+    // nullptr otherwise. Independent of the agent above.
+    if (const char *p = std::getenv("GS2_MCP_SOCKET");
+        p != nullptr && p[0] != '\0') {
+        mcp::McpServer::Config cfg;
+        cfg.socket_path = p;
+        mcp = new mcp::McpServer(cfg, this);
+        if (!mcp->enabled()) {
+            delete mcp;
+            mcp = nullptr;
+        }
+    }
 }
 
 computer_t::~computer_t() {
@@ -276,6 +293,9 @@ computer_t::~computer_t() {
     for (auto& handler : shutdown_handlers) {
         handler();
     }
+    // Stop the MCP server first: its destructor joins the IO thread, so no
+    // tool command can be pumped against state we're about to tear down.
+    delete mcp;
     delete cpu;
     delete sound_effect;
     delete audio_system;

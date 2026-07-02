@@ -228,6 +228,18 @@ set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# nlohmann/json for the MCP server (src/mcp/). Prefer an installed package
+# (e.g. `brew install nlohmann-json`); fall back to fetching the single
+# header so contributors don't need it pre-installed. Matches the JSON lib
+# used by the verilogapple MCP server.
+find_package(nlohmann_json 3.2.0 QUIET)
+if(NOT nlohmann_json_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(nlohmann_json
+        URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
+    FetchContent_MakeAvailable(nlohmann_json)
+endif()
+
 # The whole web build (SDL, the gs2_* libs, and the executable) must be compiled
 # with atomics/shared-memory enabled, otherwise wasm-ld refuses to link a
 # pthreads binary against objects built without them. Set this before any
@@ -378,6 +390,11 @@ add_library(gs2_agent
     src/agent/UnixSocketTransport.cpp
 )
 
+# MCP (Model Context Protocol) server. Sibling to the agent; drives the
+# debugger / cpu_state / MMU and exposes them as JSON-RPC tools.
+add_library(gs2_mcp src/mcp/McpServer.cpp)
+target_link_libraries(gs2_mcp nlohmann_json::nlohmann_json)
+
 add_library(gs2_serial_devices src/serial_devices/SerialDevice.cpp
 )
 add_library(gs2_util src/util/media.cpp src/util/ResourceFile.cpp src/util/dialog.cpp src/util/mount.cpp 
@@ -440,7 +457,7 @@ add_library(gs2_devices_rtc_pram src/devices/rtc/rtc_pram.cpp)
 target_link_libraries(gs2_ui ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF})
 target_link_libraries(gs2_debugger gs2_trace gs2_util ${GS2_SDL3_TTF})
 target_link_libraries(gs2_util ${GS2_SDL3_TTF})
-target_link_libraries(gs2_computer ${GS2_SDL3_TTF})
+target_link_libraries(gs2_computer ${GS2_SDL3_TTF} gs2_mcp)
 target_link_libraries(gs2_cpu gs2_trace)
 target_link_libraries(gs2_mmu gs2_trace gs2_cpu gs2_agent)
 target_link_libraries(gs2_cpu_new gs2_agent)
@@ -509,6 +526,7 @@ target_link_libraries(GSSquared
     gs2_ui
     gs2_event_dispatcher
     gs2_agent
+    gs2_mcp
     gs2_displaypp
     gs2_message_bus
     gs2_paths

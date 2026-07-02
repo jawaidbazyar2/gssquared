@@ -31,6 +31,7 @@ class VideoScannerII;
 class ResetController;
 
 namespace agent { class Agent; }
+namespace mcp { class McpServer; }
 
 enum execution_modes_t {
     EXEC_NORMAL = 0,
@@ -75,6 +76,11 @@ struct computer_t {
     // Optional emulator → host agent. Allocated only when GS2_AGENT env var
     // is set; nullptr otherwise. See src/agent/Agent.hpp.
     agent::Agent *agent = nullptr;
+
+    // Optional MCP (Model Context Protocol) server. Allocated only when
+    // GS2_MCP_SOCKET is set; nullptr otherwise. Sibling to the agent and
+    // independent of it. See src/mcp/McpServer.hpp.
+    mcp::McpServer *mcp = nullptr;
 
     video_system_t *video_system = nullptr;
     debug_window_t *debug_window = nullptr;
