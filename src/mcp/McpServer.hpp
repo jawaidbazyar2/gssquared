@@ -92,6 +92,8 @@ private:
     json tool_disasm(uint32_t addr, uint32_t count);
     json tool_screen_text();
     json tool_mem_diff(const std::string &action, uint32_t addr, uint32_t len);
+    json tool_setreg(const std::string &reg, uint32_t value);
+    json tool_type(const std::string &text);
     json tool_set_mode(int mode);  // 0=run, 1=step, 2=paused
 
     // mem_diff snapshot state. Only touched from emulator-thread closures

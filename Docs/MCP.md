@@ -145,8 +145,11 @@ All confirmed to have existing backing code unless marked NEW.
 `src/mcp/McpServer.{hpp,cpp}` is in the tree and building. It exposes a
 newline-delimited JSON-RPC 2.0 server over a UNIX socket, with tools:
 `regs`, `peek`, `poke`, `reset`, `step`, `until_pc`, `disasm`,
-`screen_text`, `mem_diff`, `pause`, `resume`, plus the MCP `initialize` /
-`tools/list` / `ping` handshake. `disasm` reuses the existing
+`screen_text`, `mem_diff`, `setreg`, `type`, `pause`, `resume`, plus the
+MCP `initialize` / `tools/list` / `ping` handshake. `setreg` sets a CPU
+register (e.g. jump PC to Applesoft cold-start $E000); `type` injects
+keystrokes via the keyboard latch, driving the CPU so the ROM input loop
+consumes each key. `disasm` reuses the existing
 `Disassembler`; `until_pc`/`step` reuse the debugger's
 `execution_mode`/`instructions_left`; `screen_text` decodes the 40-col
 text page; `mem_diff` snapshots a range then reports changed bytes.

@@ -29,7 +29,9 @@
 #include "computer.hpp"
 #include "cpu.hpp"
 #include "debugger/disasm.hpp"
+#include "devices/keyboard/keyboard.hpp"
 #include "mmus/mmu.hpp"
+#include "Module_ID.hpp"
 
 namespace mcp {
 
@@ -244,6 +246,20 @@ json McpServer::tools_catalogue() {
                          {"addr", {{"type", "integer"}, {"description", "range start (snapshot only)"}}},
                          {"len", {{"type", "integer"}, {"description", "range length (snapshot only)"}}}}},
                        {"required", json::array({"action"})}}}});
+    tools.push_back({{"name", "setreg"},
+                     {"description", "Set a CPU register: pc, a, x, y, sp, p, d, pb, db."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"reg", {{"type", "string"}}},
+                         {"value", {{"type", "integer"}}}}},
+                       {"required", json::array({"reg", "value"})}}}});
+    tools.push_back({{"name", "type"},
+                     {"description", "Type text on the emulated keyboard (\\n -> Return). Drives the CPU so each key is consumed."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties", {{"text", {{"type", "string"}}}}},
+                       {"required", json::array({"text"})}}}});
     tools.push_back({{"name", "pause"},
                      {"description", "Pause CPU execution."},
                      {"inputSchema", {{"type", "object"}, {"properties", json::object()}}}});
@@ -292,6 +308,13 @@ json McpServer::handle_tool_call(const std::string &name, const json &args) {
         uint32_t addr = args.value("addr", 0u);
         uint32_t len = args.value("len", 256u);
         body = [this, action, addr, len]() { return tool_mem_diff(action, addr, len); };
+    } else if (name == "setreg") {
+        std::string reg = args.value("reg", "");
+        uint32_t value = args.value("value", 0u);
+        body = [this, reg, value]() { return tool_setreg(reg, value); };
+    } else if (name == "type") {
+        std::string text = args.value("text", "");
+        body = [this, text]() { return tool_type(text); };
     } else if (name == "pause") {
         body = [this]() { return tool_set_mode(2); };
     } else if (name == "resume") {
@@ -468,6 +491,54 @@ json McpServer::tool_mem_diff(const std::string &action, uint32_t addr, uint32_t
         }
     }
     return {{"addr", snap_addr_}, {"len", snap_.size()}, {"changed", changes.size()}, {"changes", changes}};
+}
+
+json McpServer::tool_setreg(const std::string &reg, uint32_t value) {
+    cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
+    if (!cpu) return {{"error", "no cpu"}};
+    if (reg == "pc") cpu->full_pc = value & 0xFFFFFF;
+    else if (reg == "a") cpu->a = value & 0xFFFF;
+    else if (reg == "x") cpu->x = value & 0xFFFF;
+    else if (reg == "y") cpu->y = value & 0xFFFF;
+    else if (reg == "sp") cpu->sp = value & 0xFFFF;
+    else if (reg == "p") cpu->p = value & 0xFF;
+    else if (reg == "d") cpu->d = value & 0xFFFF;
+    else if (reg == "pb") cpu->pb = value & 0xFF;
+    else if (reg == "db") cpu->db = value & 0xFF;
+    else return {{"error", "unknown register: " + reg}};
+    return {{"reg", reg}, {"value", value}, {"full_pc", cpu->full_pc}};
+}
+
+json McpServer::tool_type(const std::string &text) {
+    cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
+    if (!cpu || !cpu->cpun) return {{"error", "no cpu"}};
+    auto *kb = static_cast<keyboard_state_t *>(computer_->get_module_state(MODULE_KEYBOARD));
+    if (!kb) return {{"error", "no keyboard module"}};
+
+    // Drive the CPU ourselves so each injected key is read + strobe-cleared by
+    // the ROM's input loop before we inject the next one. Put the machine in
+    // step mode so run_one_frame doesn't also free-run it, then leave it
+    // running (EXEC_NORMAL) afterward so any launched program continues.
+    computer_->execution_mode = EXEC_STEP_INTO;
+    computer_->instructions_left = 0;
+
+    size_t typed = 0;
+    for (char c : text) {
+        uint8_t ascii = static_cast<uint8_t>(c);
+        if (ascii == '\n') ascii = 0x0D;  // Apple II uses CR for Return
+        kb->kb_key_strobe = ascii | 0x80;  // load latch (bit 7 = key available)
+        // Run until the ROM consumes it (strobe bit 7 cleared) or we give up.
+        int guard = 0;
+        while ((kb->kb_key_strobe & 0x80) && guard < 500000 && cpu->halt == 0) {
+            (cpu->cpun->execute_next)(cpu);
+            ++guard;
+        }
+        ++typed;
+    }
+    // Let any launched program run in real time from here on.
+    computer_->execution_mode = EXEC_NORMAL;
+    computer_->instructions_left = 0;
+    return {{"typed", typed}, {"full_pc", cpu->full_pc}};
 }
 
 json McpServer::tool_set_mode(int mode) {
