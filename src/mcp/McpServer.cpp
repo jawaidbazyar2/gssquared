@@ -541,36 +541,28 @@ json McpServer::tool_type(const std::string &text) {
     auto *kb = static_cast<keyboard_state_t *>(computer_->get_module_state(MODULE_KEYBOARD));
     if (!kb) return {{"error", "no keyboard module"}};
 
-    // Drive the CPU ourselves so each injected key is read + strobe-cleared by
-    // the ROM's input loop before we inject the next one. Put the machine in
-    // step mode so run_one_frame doesn't also free-run it, then leave it
-    // running (EXEC_NORMAL) afterward so any launched program continues.
+    // Feed the text through the keyboard device's paste buffer: the ROM
+    // pulls one char from it each time it polls an empty keyboard
+    // (kb_read_C00X), so characters arrive at the ROM's own pace with no
+    // injection-timing races — this handles GETLN, DOS's hooked input, the
+    // first keystroke, and the terminating Return uniformly. ('\n' -> '\r'
+    // is handled inside kb_read_C00X.)
+    kb->paste_buffer += text;
+
+    // Drive the CPU (step mode so run_one_frame doesn't also free-run it)
+    // until the buffer drains — i.e. until the text has actually been typed.
     computer_->execution_mode = EXEC_STEP_INTO;
     computer_->instructions_left = 0;
-
-    // Settle: run a bit so the ROM input routine (e.g. GETLN) reaches its
-    // keyboard poll and gets past its initial strobe-clear, otherwise the
-    // first injected key can be wiped before it's read.
-    kb->kb_key_strobe &= 0x7F;
-    for (int g = 0; g < 20000 && cpu->halt == 0; ++g) (cpu->cpun->execute_next)(cpu);
-
-    size_t typed = 0;
-    for (char c : text) {
-        uint8_t ascii = static_cast<uint8_t>(c);
-        if (ascii == '\n') ascii = 0x0D;  // Apple II uses CR for Return
-        kb->kb_key_strobe = ascii | 0x80;  // load latch (bit 7 = key available)
-        // Run until the ROM consumes it (strobe bit 7 cleared) or we give up.
-        int guard = 0;
-        while ((kb->kb_key_strobe & 0x80) && guard < 500000 && cpu->halt == 0) {
-            (cpu->cpun->execute_next)(cpu);
-            ++guard;
-        }
-        ++typed;
+    long guard = 0;
+    const long kMax = 20'000'000;  // generous bound; ~each key costs a few K instrs
+    while (!kb->paste_buffer.empty() && guard < kMax && cpu->halt == 0) {
+        (cpu->cpun->execute_next)(cpu);
+        ++guard;
     }
     // Let any launched program run in real time from here on.
     computer_->execution_mode = EXEC_NORMAL;
     computer_->instructions_left = 0;
-    return {{"typed", typed}, {"full_pc", cpu->full_pc}};
+    return {{"typed", text.size()}, {"drained", kb->paste_buffer.empty()}, {"full_pc", cpu->full_pc}};
 }
 
 json McpServer::tool_mount_disk(int slot, int drive, const std::string &filename) {
