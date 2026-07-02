@@ -7,7 +7,7 @@
 #include "ui/Clipboard.hpp"
 #include <cmath>
 #include "util/dialog.hpp"
-#include "display/shaders/crt.frag.msl.h"
+#include "display/shaders/GpuShaderLoader.hpp"
 
 video_system_t::video_system_t(computer_t *computer) {
 
@@ -193,18 +193,14 @@ bool video_system_t::init_crt_shader() {
         return false;
     }
 
-    SDL_GPUShaderCreateInfo info;
-    SDL_zero(info);
-    info.format = SDL_GPU_SHADERFORMAT_MSL;
-    info.code = testgpu_effects_CRT_frag_msl;
-    info.code_size = testgpu_effects_CRT_frag_msl_len;
-    info.num_samplers = 1;
-    info.num_uniform_buffers = 1;
-    info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
-
-    crt_shader = SDL_CreateGPUShader(gpu_device, &info);
+    crt_shader = create_gpu_shader_from_resource(
+        gpu_device,
+        "shaders/crt.frag.metal",
+        SDL_GPU_SHADERSTAGE_FRAGMENT,
+        1,
+        1,
+        nullptr);
     if (!crt_shader) {
-        printf("CRT shader: SDL_CreateGPUShader failed: %s\n", SDL_GetError());
         return false;
     }
 
