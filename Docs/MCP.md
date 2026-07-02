@@ -144,8 +144,10 @@ All confirmed to have existing backing code unless marked NEW.
 
 `src/mcp/McpServer.{hpp,cpp}` is in the tree and building. It exposes a
 newline-delimited JSON-RPC 2.0 server over a UNIX socket, with tools:
-`regs`, `peek`, `reset`, `step`, `pause`, `resume`, plus the MCP
-`initialize` / `tools/list` / `ping` handshake. Emulator-touching tools
+`regs`, `peek`, `poke`, `reset`, `step`, `until_pc`, `disasm`, `pause`,
+`resume`, plus the MCP `initialize` / `tools/list` / `ping` handshake.
+`disasm` reuses the existing `Disassembler`; `until_pc`/`step` reuse the
+debugger's `execution_mode`/`instructions_left`. Emulator-touching tools
 are marshalled to the emulator thread by `pump()` (called from
 `run_one_frame`); IO/parse lives on a dedicated thread.
 

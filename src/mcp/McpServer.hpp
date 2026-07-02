@@ -83,8 +83,11 @@ private:
     // -- Tool bodies. These run on the emulator thread only. --
     json tool_regs();
     json tool_peek(uint32_t addr, uint32_t len);
+    json tool_poke(uint32_t addr, const std::vector<uint8_t> &bytes);
     json tool_reset(bool cold);
     json tool_step(uint32_t count);
+    json tool_until_pc(uint32_t target, uint64_t max_insns);
+    json tool_disasm(uint32_t addr, uint32_t count);
     json tool_set_mode(int mode);  // 0=run, 1=step, 2=paused
 
     Config cfg_;

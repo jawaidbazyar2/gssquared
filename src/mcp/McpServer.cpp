@@ -28,6 +28,7 @@
 
 #include "computer.hpp"
 #include "cpu.hpp"
+#include "debugger/disasm.hpp"
 #include "mmus/mmu.hpp"
 
 namespace mcp {
@@ -197,6 +198,14 @@ json McpServer::tools_catalogue() {
                         {{"addr", {{"type", "integer"}, {"description", "24-bit address"}}},
                          {"len", {{"type", "integer"}, {"description", "byte count (default 16)"}}}}},
                        {"required", json::array({"addr"})}}}});
+    tools.push_back({{"name", "poke"},
+                     {"description", "Write bytes into the CPU's address space."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"addr", {{"type", "integer"}, {"description", "24-bit address"}}},
+                         {"bytes", {{"type", "array"}, {"items", {{"type", "integer"}}}, {"description", "byte values"}}}}},
+                       {"required", json::array({"addr", "bytes"})}}}});
     tools.push_back({{"name", "reset"},
                      {"description", "Reset the machine."},
                      {"inputSchema",
@@ -208,6 +217,21 @@ json McpServer::tools_catalogue() {
                      {"inputSchema",
                       {{"type", "object"},
                        {"properties", {{"count", {{"type", "integer"}}}}}}}});
+    tools.push_back({{"name", "until_pc"},
+                     {"description", "Run instructions until the full 24-bit PC reaches addr (bounded)."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"addr", {{"type", "integer"}, {"description", "24-bit target PC"}}},
+                         {"max", {{"type", "integer"}, {"description", "max instructions (default 1000000)"}}}}},
+                       {"required", json::array({"addr"})}}}});
+    tools.push_back({{"name", "disasm"},
+                     {"description", "Disassemble N instructions starting at addr (default PC, count 8)."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"addr", {{"type", "integer"}, {"description", "start address; omit for current PC"}}},
+                         {"count", {{"type", "integer"}}}}}}}});
     tools.push_back({{"name", "pause"},
                      {"description", "Pause CPU execution."},
                      {"inputSchema", {{"type", "object"}, {"properties", json::object()}}}});
@@ -227,12 +251,28 @@ json McpServer::handle_tool_call(const std::string &name, const json &args) {
         uint32_t addr = args.value("addr", 0u);
         uint32_t len = args.value("len", 16u);
         body = [this, addr, len]() { return tool_peek(addr, len); };
+    } else if (name == "poke") {
+        uint32_t addr = args.value("addr", 0u);
+        std::vector<uint8_t> bytes;
+        if (args.contains("bytes") && args["bytes"].is_array()) {
+            for (const auto &b : args["bytes"]) bytes.push_back(static_cast<uint8_t>(b.get<int>() & 0xFF));
+        }
+        body = [this, addr, bytes]() { return tool_poke(addr, bytes); };
     } else if (name == "reset") {
         bool cold = args.value("cold", false);
         body = [this, cold]() { return tool_reset(cold); };
     } else if (name == "step") {
         uint32_t count = args.value("count", 1u);
         body = [this, count]() { return tool_step(count); };
+    } else if (name == "until_pc") {
+        uint32_t target = args.value("addr", 0u);
+        uint64_t max_insns = args.value("max", static_cast<uint64_t>(1000000));
+        body = [this, target, max_insns]() { return tool_until_pc(target, max_insns); };
+    } else if (name == "disasm") {
+        // 0xFFFFFFFF sentinel = "use current PC" (resolved on the emulator thread).
+        uint32_t addr = args.value("addr", 0xFFFFFFFFu);
+        uint32_t count = args.value("count", 8u);
+        body = [this, addr, count]() { return tool_disasm(addr, count); };
     } else if (name == "pause") {
         body = [this]() { return tool_set_mode(2); };
     } else if (name == "resume") {
@@ -299,6 +339,49 @@ json McpServer::tool_peek(uint32_t addr, uint32_t len) {
         bytes.push_back(cpu->mmu->read((addr + i) & 0xFFFFFF));
     }
     return {{"addr", addr}, {"len", len}, {"bytes", bytes}};
+}
+
+json McpServer::tool_poke(uint32_t addr, const std::vector<uint8_t> &bytes) {
+    cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
+    if (!cpu || !cpu->mmu) return {{"error", "no cpu/mmu"}};
+    for (size_t i = 0; i < bytes.size(); ++i) {
+        cpu->mmu->write((addr + i) & 0xFFFFFF, bytes[i]);
+    }
+    return {{"addr", addr}, {"wrote", bytes.size()}};
+}
+
+json McpServer::tool_until_pc(uint32_t target, uint64_t max_insns) {
+    cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
+    if (!cpu || !cpu->cpun) return {{"error", "no cpu"}};
+    // Step synchronously on the emulator thread until the PC lands on the
+    // target or we hit the instruction budget / a halt. Bounded so a bad
+    // target can't wedge the emulator thread.
+    computer_->execution_mode = EXEC_STEP_INTO;
+    computer_->instructions_left = 0;
+    target &= 0xFFFFFF;
+    uint64_t executed = 0;
+    bool hit = (cpu->full_pc & 0xFFFFFF) == target;
+    while (!hit && executed < max_insns) {
+        if (cpu->halt != 0) break;
+        (cpu->cpun->execute_next)(cpu);
+        ++executed;
+        hit = (cpu->full_pc & 0xFFFFFF) == target;
+    }
+    return {{"hit", hit}, {"executed", executed}, {"full_pc", cpu->full_pc}, {"halt", cpu->halt}};
+}
+
+json McpServer::tool_disasm(uint32_t addr, uint32_t count) {
+    cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
+    if (!cpu || !cpu->mmu) return {{"error", "no cpu/mmu"}};
+    if (addr == 0xFFFFFFFFu) addr = cpu->full_pc & 0xFFFFFF;
+    if (count == 0) count = 1;
+    if (count > 256) count = 256;
+    Disassembler dis(cpu->mmu, cpu->cpu_type);
+    dis.setAddress(addr & 0xFFFFFF);
+    std::vector<std::string> lines = dis.disassemble(static_cast<int>(count));
+    json out = json::array();
+    for (auto &l : lines) out.push_back(l);
+    return {{"addr", addr}, {"lines", out}};
 }
 
 json McpServer::tool_reset(bool cold) {
