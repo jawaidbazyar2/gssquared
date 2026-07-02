@@ -371,6 +371,13 @@ add_library(gs2_computer src/computer.cpp )
 
 add_library(gs2_event_dispatcher src/util/EventDispatcher.cpp )
 
+add_library(gs2_agent
+    src/agent/EventQueue.cpp
+    src/agent/Protocol.cpp
+    src/agent/Agent.cpp
+    src/agent/UnixSocketTransport.cpp
+)
+
 add_library(gs2_serial_devices src/serial_devices/SerialDevice.cpp
 )
 add_library(gs2_util src/util/media.cpp src/util/ResourceFile.cpp src/util/dialog.cpp src/util/mount.cpp 
@@ -435,7 +442,11 @@ target_link_libraries(gs2_debugger gs2_trace gs2_util ${GS2_SDL3_TTF})
 target_link_libraries(gs2_util ${GS2_SDL3_TTF})
 target_link_libraries(gs2_computer ${GS2_SDL3_TTF})
 target_link_libraries(gs2_cpu gs2_trace)
-target_link_libraries(gs2_mmu gs2_trace gs2_cpu)
+target_link_libraries(gs2_mmu gs2_trace gs2_cpu gs2_agent)
+target_link_libraries(gs2_cpu_new gs2_agent)
+# Agent calls SDL_PushEvent for compositor-driven input injection, so it
+# needs SDL3 directly in addition to the protocol/queue/transport pieces.
+target_link_libraries(gs2_agent SDL3::SDL3-shared)
 target_link_libraries(gs2_devices_adb gs2_util)
 target_link_libraries(gs2_devices_iwm gs2_devices_floppy_woz)
 target_link_libraries(gs2_devices_diskii_woz gs2_devices_floppy_woz gs2_util)
@@ -497,6 +508,7 @@ target_link_libraries(GSSquared
     gs2_util_audio
     gs2_ui
     gs2_event_dispatcher
+    gs2_agent
     gs2_displaypp
     gs2_message_bus
     gs2_paths

@@ -1,10 +1,40 @@
 #include <SDL3/SDL.h>
 
-#include "computer.hpp"
+#include <cstdio>
 
+#include "computer.hpp"
+#include "videosystem.hpp"
+
+#include "agent/Protocol.hpp"        // AGENT_MOUSEID, AGENT_USER_SET_MOUSE_MODE
 #include "devices/adb/keygloo.hpp"
 #include "util/DebugHandlerIDs.hpp"
+#include "util/Event.hpp"
 #include "debug.hpp"
+
+namespace {
+
+// Returns true if this SDL event was synthesized by the agent (i.e.
+// stamped with AGENT_MOUSEID in its `which` field). We only need to
+// inspect mouse events; key events flow through unchanged in all modes.
+bool is_agent_mouse_event(const SDL_Event &event) {
+    switch (event.type) {
+        case SDL_EVENT_MOUSE_MOTION:
+            return event.motion.which == agent::protocol::AGENT_MOUSEID;
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
+            return event.button.which == agent::protocol::AGENT_MOUSEID;
+        default:
+            return false;
+    }
+}
+
+bool is_mouse_event(const SDL_Event &event) {
+    return event.type == SDL_EVENT_MOUSE_MOTION ||
+           event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
+           event.type == SDL_EVENT_MOUSE_BUTTON_UP;
+}
+
+}  // namespace
 
 
 void keygloo_update_interrupt_status(keygloo_state_t *kb_state, KeyGloo *kg ) {
@@ -83,10 +113,104 @@ void keygloo_write_C027(void *context, uint32_t address, uint8_t value) {
 
 bool keygloo_process_event(keygloo_state_t *kb_state, const SDL_Event &event) {
     KeyGloo *kg = kb_state->kg;
+
+    // Mouse-mode filtering. In DISABLED mode the IIgs only sees events
+    // the agent injected (AGENT_MOUSEID-tagged). In FOLLOW_HOST/CAPTURE
+    // both real and agent events flow through. Key events are never
+    // filtered here. We still return true so the dispatcher considers
+    // the event consumed — letting it fall through would just hand
+    // it to the next handler, which is rarely what we want.
+    if (is_mouse_event(event) &&
+        kb_state->mouse_mode == MOUSE_MODE_DISABLED &&
+        !is_agent_mouse_event(event)) {
+        return true;
+    }
+
     SDL_Event event_copy = event;
     kg->process_event(event_copy);
     keygloo_update_interrupt_status(kb_state, kg); // could have IRQ after event..
     return true;
+}
+
+// ---- Mode plumbing -----------------------------------------------------
+//
+// All functions below run on the main (SDL event) thread. Lookups via
+// computer->get_module_state(MODULE_KEYGLOO) are non-locking; the agent's
+// reader thread doesn't touch keygloo_state_t directly — it pushes a
+// AGENT_USER_SET_MOUSE_MODE custom event whose handler (in gs2.cpp's
+// SDL_AppEvent) calls keygloo_set_mouse_mode on the main thread.
+
+const char *keygloo_mouse_mode_name(MouseMode mode) {
+    switch (mode) {
+        case MOUSE_MODE_FOLLOW_HOST: return "follow host";
+        case MOUSE_MODE_CAPTURE:     return "capture";
+        case MOUSE_MODE_DISABLED:    return "disabled (agent only)";
+        default:                     return "?";
+    }
+}
+
+// EVENT_SHOW_MESSAGE's Event ctor stashes the char* as a uint64_t
+// without copying (see util/Event.cpp), so we MUST hand it a string
+// with static lifetime. Building one with snprintf into a stack buffer
+// corrupts the OSD as soon as the calling frame returns. These literals
+// are the per-mode toasts; use the function rather than building strings
+// at the call site.
+static const char *toast_for_mode(MouseMode mode) {
+    switch (mode) {
+        case MOUSE_MODE_FOLLOW_HOST: return "Mouse mode: follow host";
+        case MOUSE_MODE_CAPTURE:     return "Mouse mode: capture";
+        case MOUSE_MODE_DISABLED:    return "Mouse mode: disabled (agent only)";
+        default:                     return "Mouse mode: ?";
+    }
+}
+
+static keygloo_state_t *keygloo_state(computer_t *computer) {
+    if (computer == nullptr) return nullptr;
+    return (keygloo_state_t *)computer->get_module_state(MODULE_KEYGLOO);
+}
+
+void keygloo_set_mouse_mode(computer_t *computer, MouseMode mode) {
+    keygloo_state_t *kb_state = keygloo_state(computer);
+    if (kb_state == nullptr) return;
+    if (mode < 0 || mode >= MOUSE_MODE_COUNT) return;
+
+    const MouseMode previous = kb_state->mouse_mode;
+    kb_state->mouse_mode = mode;
+
+    // SDL relative mouse mode is the only side-effect that touches
+    // host state — only flip it when entering or leaving CAPTURE.
+    const bool was_capture = (previous == MOUSE_MODE_CAPTURE);
+    const bool now_capture = (mode == MOUSE_MODE_CAPTURE);
+    if (was_capture != now_capture &&
+        computer != nullptr && computer->video_system != nullptr) {
+        computer->video_system->display_capture_mouse(now_capture);
+    }
+
+    // Surface the change to the user via the on-screen message overlay
+    // (the same path F1's existing "Mouse Captured" toast uses) and to
+    // stderr for the agent log.
+    if (computer != nullptr && computer->video_system != nullptr &&
+        computer->video_system->event_queue != nullptr) {
+        computer->video_system->event_queue->addEvent(
+            new Event(EVENT_SHOW_MESSAGE, 0, toast_for_mode(mode)));
+    }
+    std::fprintf(stderr, "[keygloo] mouse mode: %s -> %s\n",
+                 keygloo_mouse_mode_name(previous),
+                 keygloo_mouse_mode_name(mode));
+}
+
+void keygloo_cycle_mouse_mode(computer_t *computer) {
+    keygloo_state_t *kb_state = keygloo_state(computer);
+    if (kb_state == nullptr) return;
+    const MouseMode next = static_cast<MouseMode>(
+        (static_cast<int>(kb_state->mouse_mode) + 1) % MOUSE_MODE_COUNT);
+    keygloo_set_mouse_mode(computer, next);
+}
+
+MouseMode keygloo_get_mouse_mode(computer_t *computer) {
+    keygloo_state_t *kb_state = keygloo_state(computer);
+    if (kb_state == nullptr) return MOUSE_MODE_FOLLOW_HOST;
+    return kb_state->mouse_mode;
 }
 
 DebugFormatter *debug_keygloo(keygloo_state_t *kb_state) {

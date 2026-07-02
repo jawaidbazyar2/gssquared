@@ -18,6 +18,10 @@
  #include "cpu_traits.hpp"
  #include "base_6502.cpp"  // Include the template implementation
  #include <memory>
+ #include <cstdint>
+ #include "agent/Agent.hpp"
+ #include "agent/Protocol.hpp"
+ #include "mmus/mmu.hpp"
 
 class CPU65816 : public BaseCPU {
 private:
@@ -70,6 +74,23 @@ public:
     int execute_next(cpu_state* cpu) override {
         // Check for mode changes (REP/SEP instructions, CLC/XCE)
         update_current_core_if_needed(cpu); // these should be done inside the cores in REP/SEP/XCE somehow rather than impact every instruction.
+
+        // Toolbox dispatcher entry / exit hooks. Agent disabled is one
+        // null-check per instruction. With agent enabled, two scalar
+        // compares per instruction — both branch-predictor friendly:
+        //   - PC == $E10000           → tool call entered
+        //   - PC == next_tool_return_pc → topmost in-flight tool returned
+        // The agent reads stack bytes via cpu->mmu, builds a packet,
+        // and manages the call-frame stack so nested calls pair up.
+        if (cpu->agent != nullptr) {
+            const uint32_t pc24 = cpu->full_pc & 0x00FFFFFFu;
+            if (pc24 == 0x00E10000u) {
+                cpu->agent->on_tool_call_entry(cpu);
+            } else if (pc24 == cpu->next_tool_return_pc) {
+                cpu->agent->on_tool_return(cpu);
+            }
+        }
+
         return current_core->execute_next(cpu);
     }
     void reset(cpu_state* cpu) override {

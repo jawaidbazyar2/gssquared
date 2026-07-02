@@ -3,6 +3,36 @@
 #include "devices/languagecard/languagecard.hpp"
 #include "mmus/mmu.hpp"
 #include "memoryspecs.hpp"
+#include "agent/Agent.hpp"
+
+// Inline filter helpers used by bank_e0_write / bank_e1_write /
+// bank_shadow_write below. Agent observation is the high-volume piece — we
+// early-out on a null pointer in the disabled case (one predictable branch
+// per write) and we filter address ranges so only video-relevant writes
+// ever produce a packet.
+
+static inline bool agent_is_video_e0_offset(uint32_t off16) {
+    // Bank $E0 backs Mega II text/hires:
+    //   $0400-$07FF text page 1
+    //   $0800-$0BFF text page 2 (ROM03)
+    //   $2000-$3FFF hires page 1
+    //   $4000-$5FFF hires page 2
+    //
+    // $E0/$6000-$9FFF is *not* a video page — verified empirically:
+    // GS/OS allocates slow-RAM heap blocks there for tool buffers,
+    // and that traffic showed up at ~600K writes in a 160s capture
+    // with no display correlation. Earlier defensive widening to
+    // include this range was based on a misremember of the LINEARIZE
+    // interleave; that interleave is bank-internal to $E1 (low half
+    // <-> high half), which the $E1 filter already covers.
+    return ((off16 >= 0x0400 && off16 < 0x0C00) ||
+            (off16 >= 0x2000 && off16 < 0x6000));
+}
+
+static inline bool agent_is_video_e1_offset(uint32_t off16) {
+    // Bank $E1: $2000-$9FFF is the SHR buffer.
+    return (off16 >= 0x2000 && off16 < 0xA000);
+}
 
 uint8_t float_area_read(void *context, uint32_t address) {
     if (DEBUG(DEBUG_MMUGS)) printf("Float area read at address %06X\n", address);
@@ -20,6 +50,13 @@ inline uint8_t bank_e0_read(void *context, uint32_t address) {
 inline void bank_e0_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
+
+    if (mmu_iigs->agent != nullptr) {
+        const uint32_t off16 = address & 0xFFFF;
+        if (agent_is_video_e0_offset(off16)) {
+            mmu_iigs->agent->emit_mem_write(0x00E00000u | off16, value);
+        }
+    }
 
     //if ((address & 0xFF00) == 0xC000) {mmu_iigs->write_c0xx(address, value); return;} // MegaII will call back to us
     mmu_iigs->megaii->write(address & 0xFFFF, value);
@@ -46,14 +83,21 @@ inline void bank_e1_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
 
+    if (mmu_iigs->agent != nullptr) {
+        const uint32_t off16 = address & 0xFFFF;
+        if (agent_is_video_e1_offset(off16)) {
+            mmu_iigs->agent->emit_mem_write(0x00E10000u | off16, value);
+        }
+    }
+
     if ((address & 0xF000) == 0xC000) mmu_iigs->megaii->write(address & 0xFFFF, value); // mmu_iigs->write_c0xx(address, value);
 
     if (!mmu_iigs->is_bank_latch()) {
         mmu_iigs->megaii->write(address & 0xFFFF, value);
-    } else 
+    } else
     {
         uint8_t *ram = mmu_iigs->megaii->get_memory_base();
-        ram[address & 0x1FFFF] = value;   
+        ram[address & 0x1FFFF] = value;
     }
 }
 
@@ -78,6 +122,19 @@ inline void MMU_IIgs::set_intcxrom(bool value) {
 }
 
 inline void MMU_IIgs::write_c0xx(uint16_t address, uint8_t value) {
+
+    if (agent != nullptr) {
+        // Forward every $C0xx softswitch write to the agent. Volume is low
+        // (single-digit per second under typical activity) and the
+        // compositor needs to track video-mode-affecting switches like
+        // $C029 (NEWVIDEO), $C034 (BORDER), $C035 (SHADOW), $C036 (SPEED).
+        // Cheaper to send them all than to enumerate the relevant ones here.
+        //
+        // Address normalized to bank $E0 — that's where the slot card
+        // (and the megaii dispatcher) actually sees softswitch I/O on
+        // the slow bus, regardless of which program bank issued the write.
+        agent->emit_mem_write(0x00E00000u | (address & 0xFFFFu), value);
+    }
 
     switch (address) {
         case 0xC000: g_80store = false; break;
@@ -593,6 +650,20 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
     if ( mmu_iigs->shadow_is_enabled(address)) {
         // Shadowed
         mmu_iigs->megaiiWrite(address & 0x1'FFFF, value); // this will cover case of writing to bank 01 -> shadow to E1
+
+        // Mirror the shadow to the agent. Address mask `& 0x1FFFF` keeps
+        // the bank-select bit (bit 16, 0=$E0, 1=$E1) plus the 16-bit
+        // offset, so OR'ing with $E00000 produces the canonical
+        // $E0xxxx / $E1xxxx form the receiver expects.
+        if (mmu_iigs->agent != nullptr) {
+            const uint32_t shadowed = address & 0x1FFFFu;
+            const uint32_t off16 = shadowed & 0xFFFFu;
+            const bool aux = (shadowed & 0x10000u) != 0;
+            if (aux ? agent_is_video_e1_offset(off16)
+                    : agent_is_video_e0_offset(off16)) {
+                mmu_iigs->agent->emit_mem_write(0x00E00000u | shadowed, value);
+            }
+        }
     }
     if (DEBUG(DEBUG_MMUGS)) printf("Write: Effective address: %06X\n", address);
     // goes to RAM
@@ -785,4 +856,24 @@ uint8_t MMU_IIgs::vp_read(uint32_t address) {
     } else {
         return read(address);
     }
+}
+
+void MMU_IIgs::dump_video_memory_to_agent(agent::Agent *out) {
+    if (out == nullptr || megaii == nullptr) return;
+
+    // Bank $E1 lives in megaii's 128K buffer at offsets $10000-$1FFFF
+    // (bank-latch bit set). The SHR shadow + SCBs + palettes occupy
+    // offsets $12000-$19FFF within that, i.e. 32K starting at
+    // megaii_base[0x12000]. See bank_e1_read above for the canonical
+    // read path; we read the buffer directly because we want a bulk
+    // contiguous copy rather than 32K individual reads.
+    constexpr std::uint32_t SHR_BLOB_LEN  = 0x8000;          // 32K
+    constexpr std::uint32_t SHR_E1_OFFSET = 0x12000;         // bank-1 + $2000
+    constexpr std::uint32_t SHR_DEST_ADDR = 0x00E12000u;     // wire-canonical
+
+    const std::uint8_t *base = megaii->get_memory_base();
+    if (base == nullptr) return;
+    out->emit_mem_blob(SHR_DEST_ADDR, base + SHR_E1_OFFSET, SHR_BLOB_LEN);
+    std::fprintf(stderr,
+                 "[mmu] sent SHR snapshot (32K) to agent on client connect\n");
 }

@@ -7,6 +7,7 @@
 #include "computer.hpp"
 #include "util/AudioSystem.hpp"
 #include "util/mount.hpp"
+#include "devices/adb/keygloo.hpp"
 #include "devices/game/gamecontroller.hpp"
 #include "Module_ID.hpp"
 
@@ -21,6 +22,7 @@ void MenuInterface::machineReset()       { pushMenuEvent(MENU_MACHINE_RESET); }
 void MenuInterface::machineRestart()     { pushMenuEvent(MENU_MACHINE_RESTART); }
 void MenuInterface::machinePauseResume() { pushMenuEvent(MENU_MACHINE_PAUSE_RESUME); }
 void MenuInterface::machineCaptureMouse(){ pushMenuEvent(MENU_MACHINE_CAPTURE_MOUSE); }
+void MenuInterface::machineCycleMouseMode(){ pushMenuEvent(MENU_MACHINE_CYCLE_MOUSE_MODE); }
 
 void MenuInterface::setSpeed(int speed_id) {
 	switch (speed_id) {
@@ -115,6 +117,11 @@ bool MenuInterface::isPaused() {
 
 bool MenuInterface::isMouseCaptured() {
 	return SDL_GetWindowRelativeMouseMode(computer_->video_system->window);
+}
+
+const char *MenuInterface::getCurrentMouseModeLabel() {
+	if (!computer_) return keygloo_mouse_mode_name(MOUSE_MODE_FOLLOW_HOST);
+	return keygloo_mouse_mode_name(keygloo_get_mouse_mode(computer_));
 }
 
 void MenuInterface::setControllerMode(int mode) {

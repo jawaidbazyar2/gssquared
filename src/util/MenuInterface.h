@@ -39,6 +39,12 @@ public:
 	void machineRestart();
 	void machinePauseResume();
 	void machineCaptureMouse();
+	// Cycle the mouse-input mode (FOLLOW_HOST → CAPTURE → DISABLED).
+	// Round-robins; same path as F1 / middle-click. The current label
+	// for the menu UI comes from getCurrentMouseModeLabel() — that
+	// string includes the mode name, so callers can render an item
+	// whose title updates dynamically.
+	void machineCycleMouseMode();
 	void setSpeed(int speed_id);
 	void setMonitor(int monitor_id);
 	void toggleSleepMode();
@@ -63,6 +69,9 @@ public:
 	bool isEmulationRunning();
 	bool isPaused();
 	bool isMouseCaptured();
+	// Short human label for the current mouse mode, e.g. "follow host".
+	// Used to build dynamic menu item titles like "Mouse Mode: capture".
+	const char *getCurrentMouseModeLabel();
 	int  getCurrentControllerMode();
 	std::vector<MenuDriveInfo> getDriveList();
 };

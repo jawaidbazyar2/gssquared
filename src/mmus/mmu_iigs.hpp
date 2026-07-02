@@ -7,6 +7,8 @@
 #include "NClock.hpp"
 #include "devices/languagecard/LanguageCardLogic.hpp"
 
+namespace agent { class Agent; }
+
 class MMU_IIgs : public MMU {
     protected:
         uint32_t ram_banks;
@@ -69,6 +71,21 @@ class MMU_IIgs : public MMU {
     public:
         MMU_IIe *megaii = nullptr;
         LanguageCardLogic ll;
+
+        // Optional emulator → host agent observer. Set by gs2.cpp at startup
+        // when GS2_AGENT_SOCKET is configured. nullptr means no observer; the
+        // hooks in bank_e0_write / bank_e1_write / bank_shadow_write /
+        // write_c0xx short-circuit on the null check.
+        agent::Agent *agent = nullptr;
+
+        // Snapshot bank $E1/2000-9FFF (the SHR shadow + SCBs + palettes) and
+        // emit it as a single TAG_MEM_BLOB to `out`. Used by the agent's
+        // post-HELLO callback so a mid-run-attaching compositor sees the
+        // current screen state immediately rather than waiting for the
+        // IIgs to repaint everything. Reads megaii's bank-1 buffer
+        // directly; the race with the CPU thread is benign for an init
+        // snapshot — any inconsistency is fixed by subsequent live writes.
+        void dump_video_memory_to_agent(agent::Agent *out);
 
         MMU_IIgs(size_t num_banks, int ram_size, uint32_t rom_size, uint8_t *rom, MMU_IIe *mmu_iie) : MMU(num_banks, BANK_SIZE), megaii(mmu_iie) {
             ram_banks = ram_size / BANK_SIZE;

@@ -26,6 +26,7 @@
 #include "display.hpp"
 #include "platforms.hpp"
 
+#include "agent/Agent.hpp"
 #include "util/dialog.hpp"
 
 #include "display/ntsc.hpp"
@@ -699,6 +700,27 @@ void scanner_iigs_handler(void *context, VideoScannerEvent event) {
     }
 }
 
+// Wrapper used when an Agent is attached. Notifies the agent of every
+// VS_EVENT_* before delegating to the original scanner_iigs_handler so the
+// IIgs's IRQ delivery is unaffected.
+struct agent_chained_irq_ctx {
+    display_state_t *ds;
+    agent::Agent *agent;
+};
+
+static void agent_chained_scanner_iigs_handler(void *context, VideoScannerEvent event) {
+    auto *c = static_cast<agent_chained_irq_ctx *>(context);
+    if (event == VS_EVENT_VBL) {
+        c->agent->emit_vbl();
+    }
+    // VS_EVENT_QTR and VS_EVENT_SCB_INTERRUPT are deliberately not forwarded
+    // to the agent: the compositor only needs one tick per frame, and the
+    // SCB interrupt is sub-frame timing the compositor has no use for. They
+    // continue to drive IIgs IRQ delivery via scanner_iigs_handler below.
+    scanner_iigs_handler(c->ds, event);
+}
+
+
 /*
  in a real IIgs, the one second trigger comes out of the realtime clock, on UG3.1 to UH2.57.
  This is probably a signal that ticks high for a bit when the RTC ticks over to a new second,
@@ -815,7 +837,15 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         case Scanner_AppleIIgs:
             ds->video_scanner = new VideoScannerIIgs(mmu);
             ds->video_scanner->initialize();
-            ds->video_scanner->set_irq_handler({scanner_iigs_handler, ds});
+            if (computer->agent != nullptr) {
+                // Install the agent-aware wrapping handler. The chained ctx
+                // outlives the scanner (display lives for the program); we
+                // intentionally don't track it for free.
+                auto *cc = new agent_chained_irq_ctx{ds, computer->agent};
+                ds->video_scanner->set_irq_handler({agent_chained_scanner_iigs_handler, cc});
+            } else {
+                ds->video_scanner->set_irq_handler({scanner_iigs_handler, ds});
+            }
             break;
         case Scanner_AppleIIePAL:
             ds->video_scanner = new VideoScannerIIePAL(mmu);

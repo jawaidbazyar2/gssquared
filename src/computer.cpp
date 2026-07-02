@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
 
 #include "PlatformIDs.hpp"
 #include "SDL3/SDL_keycode.h"
@@ -12,6 +14,7 @@
 #include "videosystem.hpp"
 #include "util/mount.hpp"
 #include "platforms.hpp"
+#include "devices/adb/keygloo.hpp"
 #include "mbus/MessageBus.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/applekeys.hpp"
@@ -26,6 +29,7 @@
 #include "util/SoundEffect.hpp"
 #include "util/printf_helper.hpp"
 #include "slots.hpp"
+#include "agent/Agent.hpp"
 
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
@@ -154,6 +158,9 @@ computer_t::computer_t(NClockII *clock) {
             case MENU_MACHINE_CAPTURE_MOUSE:
                 video_system->display_capture_mouse_message(true);
                 return true;
+            case MENU_MACHINE_CYCLE_MOUSE_MODE:
+                keygloo_cycle_mouse_mode(this);
+                return true;
             case MENU_SPEED_1_0:
                 speed_new = CLOCK_1_024MHZ; speed_shift = true;
                 send_clock_mode_message(speed_new);
@@ -238,6 +245,30 @@ computer_t::computer_t(NClockII *clock) {
         }
     );
 
+    // Optional emulator → host agent. Enable by setting GS2_AGENT_SOCKET
+    // to a UNIX socket path in the environment, e.g.
+    //   GS2_AGENT_SOCKET=/tmp/iigs-agent.sock build/GSSquared
+    // Stays nullptr otherwise — every integration point checks for that.
+    if (const char *p = std::getenv("GS2_AGENT_SOCKET");
+        p != nullptr && p[0] != '\0') {
+        agent::Agent::Config cfg;
+        cfg.socket_path = p;
+        // Sized for the memory write-snoop firehose: peak ~200K writes/sec
+        // on slow-bus shadow paths. 64K capacity gives ~300ms of buffering
+        // headroom before drop-oldest kicks in if the IO thread stalls.
+        cfg.queue_capacity = 65536;
+        agent = new agent::Agent(cfg);
+        if (!agent->enabled()) {
+            // listen failed; agent is a dead object, drop it.
+            delete agent;
+            agent = nullptr;
+        } else if (cpu != nullptr) {
+            // Wire the agent into the CPU so the Toolbox-call hook in
+            // CPU65816::execute_next can find it without a back-pointer to
+            // computer_t.
+            cpu->agent = agent;
+        }
+    }
 }
 
 computer_t::~computer_t() {
@@ -256,6 +287,7 @@ computer_t::~computer_t() {
     delete sys_event;
     delete dispatch;
     delete device_frame_dispatcher;
+    delete agent;
 }
 
 void computer_t::set_frame_start_cycle() {

@@ -40,6 +40,9 @@
 #include "videosystem.hpp"
 #include "debugger/debugwindow.hpp"
 #include "computer.hpp"
+#include "devices/adb/keygloo.hpp"
+#include "agent/Agent.hpp"
+#include "agent/Protocol.hpp"
 #include "mmus/mmu_ii.hpp"
 #include "mmus/mmu_iie.hpp"
 #include "mmus/mmu_iigs.hpp"
@@ -669,6 +672,26 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
             state->mmu_iie = new MMU_IIe(256, 128*1024, /* (uint8_t *) */rd->main_rom_data + 0x1'C000);
             state->mmu_iigs = new MMU_IIgs(256, 8*1024*1024, 128*1024, /* (uint8_t *) */rd->main_rom_data, state->mmu_iie);
             state->mmu_iigs->init_map();
+            // Wire the agent observer in so the bank_*_write hooks and
+            // write_c0xx can find it. nullptr if GS2_AGENT_SOCKET wasn't set.
+            state->mmu_iigs->agent = computer->agent;
+            // Register a post-HELLO callback so a newly-connected
+            // compositor receives:
+            //   - a 32K snapshot of bank $E1/2000-9FFF (SHR pixels +
+            //     SCBs + palettes) so it doesn't start with all-zero
+            //     palettes and render everything as black; and
+            //   - a request to walk the IIgs WindMgr's window list at
+            //     the next observed FrontWindow tool-return so panels
+            //     for windows that existed before the compositor
+            //     attached get populated too.
+            if (computer->agent != nullptr) {
+                MMU_IIgs *mmu = state->mmu_iigs;
+                computer->agent->set_on_client_connect(
+                    [mmu](agent::Agent& a) {
+                        mmu->dump_video_memory_to_agent(&a);
+                        a.request_window_snapshot();
+                    });
+            }
             computer->cpu->set_mmu(state->mmu_iigs); // cpu gets FPI
             computer->set_mmu(state->mmu_iie); // everything else gets the Mega II
             computer->debug_window->set_mmu(state->mmu_iigs);
@@ -965,6 +988,32 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     GS2AppState *state = (GS2AppState *)appstate;
+
+    // [agent-debug] log injected mouse events on the way through.
+    if (event->type == SDL_EVENT_MOUSE_MOTION ||
+        event->type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
+        event->type == SDL_EVENT_MOUSE_BUTTON_UP) {
+        std::fprintf(stderr,
+            "[agent-debug] SDL_AppEvent type=0x%x button=%u down=%d (%g,%g)\n",
+            event->type,
+            event->button.button,
+            event->button.down,
+            event->button.x, event->button.y);
+    }
+
+    // Agent-issued mode-change requests arrive as SDL_EVENT_USER on the
+    // main thread (the agent's reader thread can't safely touch
+    // keygloo_state_t directly — see Agent.cpp's TAG_SET_MOUSE_MODE
+    // case). The mode wire value is stuffed into user.data1 as a
+    // pointer-sized integer.
+    if (event->type == SDL_EVENT_USER &&
+        event->user.code == agent::protocol::AGENT_USER_SET_MOUSE_MODE &&
+        state->phase == PHASE_EMULATION) {
+        const auto mode = static_cast<MouseMode>(
+            reinterpret_cast<std::uintptr_t>(event->user.data1));
+        keygloo_set_mouse_mode(state->computer, mode);
+        return SDL_APP_CONTINUE;
+    }
 
     // Let the platform menu consume the event first (Linux hamburger/right-click)
     if (handleMenuEvent(event)) return SDL_APP_CONTINUE;

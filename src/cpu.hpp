@@ -29,6 +29,8 @@
 
 class MMU;
 
+namespace agent { class Agent; }
+
 #define MAX_CPUS 1
 
 // Emulation mode / 6502 Vectors
@@ -197,7 +199,21 @@ struct cpu_state {
     bool rdy = false; /* if set, the RDY signal is asserted */
 
     MMU *mmu = nullptr; // cpu only needs to know about base interface with read() and write().
-    
+
+    // Optional emulator → host agent observer. Set by computer_t at startup
+    // when GS2_AGENT_SOCKET is configured. nullptr means no observer; the
+    // hook in CPU65816::execute_next short-circuits on the null check, so
+    // disabled is effectively free in the hot path.
+    agent::Agent *agent = nullptr;
+
+    // Cached return-PC of the topmost in-flight Toolbox call, so the
+    // execute_next hot path can compare a single scalar to detect tool
+    // exit. Maintained by Agent::observe_tool_call_entry / observe_tool_return.
+    // 0xFFFFFFFF (or any value no real 24-bit PC will hit) means "no
+    // outstanding call". Lives on cpu_state because the hot path needs
+    // to test it without a function call.
+    uint32_t next_tool_return_pc = 0xFFFFFFFFu;
+
     processor_type cpu_type = PROCESSOR_6502;
 
     std::unique_ptr<BaseCPU> cpun; // CPU instance.

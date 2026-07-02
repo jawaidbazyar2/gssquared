@@ -38,13 +38,23 @@ TextRenderer::~TextRenderer() {
     TTF_Quit();
 }
 
+// Width of SDL_RenderDebugText's built-in 8x8 monospace bitmap font.
+// Used as a fallback when TTF_OpenFont failed in the constructor and
+// `use_debug_font` is set; matches the dimensions assumed by render().
+static constexpr int kDebugFontGlyphWidth = 8;
+
 int TextRenderer::char_width(char c) {
+    (void)c;
+    if (use_debug_font || !font) return kDebugFontGlyphWidth;
     int charWidth, charHeight;
     TTF_GetStringSize(font, &c, 1, &charWidth, &charHeight);
     return charWidth;
 }
 
 int TextRenderer::string_width(const std::string &text) {
+    if (use_debug_font || !font) {
+        return static_cast<int>(text.length()) * kDebugFontGlyphWidth;
+    }
     int charWidth, charHeight;
     TTF_GetStringSize(font, text.c_str(), text.length(), &charWidth, &charHeight);
     return charWidth;

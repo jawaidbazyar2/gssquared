@@ -72,6 +72,7 @@ nav:
     - CPU Refactor Notes: CPURefactor.md
     - State Refactor Notes: StateRefactor.md
     - UI Notes: UI.md
+    - Emulator Agent: Agent.md
 
   - Misc:
     - User Interface: UserInterface.md

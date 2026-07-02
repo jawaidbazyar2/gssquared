@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ADB_Device.hpp"
+#include "agent/Protocol.hpp"   // AGENT_MOUSEID — used to detect injected events
 
 /*
 * Mouse Register 0
@@ -21,6 +22,19 @@ class ADB_Mouse : public ADB_Device
         uint8_t button_1_down = 0x80;
         bool has_data = false;
         uint8_t handler = 1; // default to low resolution mouse
+
+        // Pending motion accumulator. Pre-fix, process_event() wrote
+        // the current frame's xrel/yrel directly into registers[0],
+        // which means a second motion event arriving before the IIgs
+        // ADB poll consumed the first would clobber it. With the
+        // accumulator we sum incoming deltas here and only materialize
+        // them into registers[0] when talk() is called (i.e. when the
+        // IIgs actually polls). Cleared on read. Stored as int so the
+        // accumulator can hold a few hundred SDL pixels without
+        // overflowing 16 bits — clamp to ±63 only at the boundary
+        // when packing into the 6-bit ADB register field.
+        int pending_xrel = 0;
+        int pending_yrel = 0;
 
     public:
     ADB_Mouse(uint8_t id = 0x03) : ADB_Device(id) {
@@ -57,10 +71,69 @@ class ADB_Mouse : public ADB_Device
         }
     }
     ADB_Register talk(uint8_t command, uint8_t reg) override {
-
         ADB_Register reg_result = {0};
-        if (has_data) {
-            reg_result = registers[0];
+        if (!has_data) {
+            return reg_result;
+        }
+
+        // Pack accumulated motion into registers[0] at poll time.
+        //
+        // The IIgs ADB mouse register encodes the per-axis delta as
+        // SIGNED two's complement in bits 5-0 (sign bit = bit 5),
+        // despite the file-top comment suggesting bits 5-0 are an
+        // unsigned magnitude with bit 6 as a direction flag. Real-world
+        // testing confirms the signed interpretation: sending
+        // xrel=+50 to the IIgs ADB mouse register encodes as 0x32,
+        // which the IIgs reads as -14 (because bit 5 is set), not +50
+        // — and the cursor does in fact move that way. Safe range is
+        // therefore [-32, +31]; we clamp at ±31 to avoid the
+        // +32-wraps-to-itself-as-negative-32 edge case. The original
+        // ±63 clamp was wrong but never bit real users because the
+        // 0.3 host-mouse scale factor kept per-poll deltas well under
+        // 32 in normal use.
+        //
+        // Anything past the clamp is *carried* into pending_xrel for
+        // the next poll, so long fast moves don't lose ground.
+        constexpr int CLAMP = 31;
+        int xrel = pending_xrel;
+        int yrel = pending_yrel;
+        if (xrel > CLAMP) {
+            pending_xrel = xrel - CLAMP;
+            xrel = CLAMP;
+        } else if (xrel < -CLAMP) {
+            pending_xrel = xrel + CLAMP;
+            xrel = -CLAMP;
+        } else {
+            pending_xrel = 0;
+        }
+        if (yrel > CLAMP) {
+            pending_yrel = yrel - CLAMP;
+            yrel = CLAMP;
+        } else if (yrel < -CLAMP) {
+            pending_yrel = yrel + CLAMP;
+            yrel = -CLAMP;
+        } else {
+            pending_yrel = 0;
+        }
+
+        const bool moved_right = (xrel < 0);
+        const bool moved_up    = (yrel < 0);
+        registers[0].size = 2;
+        registers[0].data[0] = (uint8_t)(xrel & 0x3F) | (moved_right ? 0x40 : 0x00);
+        registers[0].data[1] = (uint8_t)(yrel & 0x3F) | (moved_up    ? 0x40 : 0x00);
+        update_button_down();
+
+        std::fprintf(stderr,
+            "[agent-debug] ADB_Mouse::talk drained=(%d,%d) carry=(%d,%d) bytes=%02x %02x\n",
+            xrel, yrel, pending_xrel, pending_yrel,
+            registers[0].data[0], registers[0].data[1]);
+
+        reg_result = registers[0];
+        // Only mark "no more data" if the accumulator is fully drained
+        // AND there's no pending button-state change to report. The
+        // button-down handlers set has_data=true and zero the motion
+        // bits; if we still have residue we want to keep flagging.
+        if (pending_xrel == 0 && pending_yrel == 0) {
             has_data = false;
         }
         return reg_result;
@@ -106,52 +179,50 @@ class ADB_Mouse : public ADB_Device
             status = true;
         }
         if (event.type == SDL_EVENT_MOUSE_MOTION) {
-            // TODO: determine if we need to do any kind of scaling
-            // it's also possible we need to accumulate motion values 
-            // until the register is actually read.
-            // alternatively, to buffer them.
-            float scale = handler == 1 ? MOUSE_MOTION_SCALE_SLOW : MOUSE_MOTION_SCALE_FAST;
+            // Real host SDL events arrive in host pixel deltas and need
+            // GSSquared's mouse-feel scale (0.3 SLOW / 0.6 FAST). Agent-
+            // injected events arrive in IIgs cursor-coord deltas already
+            // (the inject tool / compositor pre-scaled them), so we
+            // bypass the scale to avoid the per-step int-truncation
+            // accuracy loss that turned a 320-px traversal into ~306 px.
+            // The .which sentinel — set by the agent before SDL_PushEvent
+            // — is how we tell them apart. See agent/Protocol.hpp.
+            const bool from_agent =
+                (event.motion.which == agent::protocol::AGENT_MOUSEID);
+            const float scale = from_agent
+                ? 1.0f
+                : (handler == 1 ? MOUSE_MOTION_SCALE_SLOW
+                                : MOUSE_MOTION_SCALE_FAST);
             int xrel = (int)(event.motion.xrel * scale);
             int yrel = (int)(event.motion.yrel * scale);
-            
-            // if there was any motion, minimum motion after scale is 1.
-            if (xrel == 0 && event.motion.xrel > 0) xrel = 1;
-            if (xrel == 0 && event.motion.xrel < 0) xrel = -1;
-            if (yrel == 0 && event.motion.yrel > 0) yrel = 1;
-            if (yrel == 0 && event.motion.yrel < 0) yrel = -1;
+            std::fprintf(stderr,
+                "[agent-debug] ADB_Mouse::motion abs=(%g,%g) rel=(%g,%g) which=0x%x agent=%d scale=%g scaled=(%d,%d) accum_before=(%d,%d)\n",
+                event.motion.x, event.motion.y,
+                event.motion.xrel, event.motion.yrel,
+                (unsigned)event.motion.which, (int)from_agent, scale,
+                xrel, yrel, pending_xrel, pending_yrel);
 
-            bool moved_right, moved_up;
+            // Preserve "minimum motion of 1 in the requested direction"
+            // for sub-pixel scaled deltas, but only when nothing is
+            // already pending in that axis — otherwise we'd corrupt
+            // the accumulator's running total with rounding nudges.
+            if (xrel == 0 && pending_xrel == 0 && event.motion.xrel > 0) xrel =  1;
+            if (xrel == 0 && pending_xrel == 0 && event.motion.xrel < 0) xrel = -1;
+            if (yrel == 0 && pending_yrel == 0 && event.motion.yrel > 0) yrel =  1;
+            if (yrel == 0 && pending_yrel == 0 && event.motion.yrel < 0) yrel = -1;
 
-            if (xrel < 0) {
-                moved_right = true;
-            } else {
-                moved_right = false;
-            }
+            pending_xrel += xrel;
+            pending_yrel += yrel;
+            // Cap the accumulator to a sane range so a runaway burst
+            // can't grow without bound. ±4095 ≈ 65 polls of full-tilt
+            // motion in one direction; way past anything realistic.
+            if (pending_xrel >  4095) pending_xrel =  4095;
+            if (pending_xrel < -4095) pending_xrel = -4095;
+            if (pending_yrel >  4095) pending_yrel =  4095;
+            if (pending_yrel < -4095) pending_yrel = -4095;
 
-            if (yrel < 0) {
-                moved_up = true;
-            } else {
-                moved_up = false;
-            }
-
-            // set motion bits, and make positive if negative
-            /* if (xrel > 0) moved_right = 1;
-            else xrel = -xrel;
-            if (yrel < 0) { moved_up = 1; yrel = -yrel; } */
-
-            // clamp to 0 .. 63
-            if (xrel > 63) xrel = 63;
-            if (yrel > 63) yrel = 63;
-
-            // negative values are 2's complement.
-            registers[0].size = 2;
-            registers[0].data[0] = (uint8_t)(xrel & 0x3F) | (moved_right ? 0x40 : 0x00);
-            registers[0].data[1] = (uint8_t)(yrel & 0x3F) | (moved_up ? 0x40 : 0x00);
-            update_button_down();
             has_data = true;
             status = true;
-
-            //printf("MS> Mouse motion: x: %f, y: %f, xrel_abs: %d, yrel_abs: %d, moved_right: %d, moved_up: %d data0: %02X, data1: %02X\n", event.motion.x, event.motion.y, xrel, yrel, moved_right, moved_up, registers[0].data[0], registers[0].data[1]);
         }
         //if (status) print_registers();
         return status;

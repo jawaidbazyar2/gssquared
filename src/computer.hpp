@@ -30,6 +30,8 @@ class EventTimer;
 class VideoScannerII;
 class ResetController;
 
+namespace agent { class Agent; }
+
 enum execution_modes_t {
     EXEC_NORMAL = 0,
     EXEC_STEP_INTO,
@@ -69,6 +71,10 @@ struct computer_t {
 
     EventDispatcher *sys_event = nullptr;
     EventDispatcher *dispatch = nullptr;
+
+    // Optional emulator → host agent. Allocated only when GS2_AGENT env var
+    // is set; nullptr otherwise. See src/agent/Agent.hpp.
+    agent::Agent *agent = nullptr;
 
     video_system_t *video_system = nullptr;
     debug_window_t *debug_window = nullptr;

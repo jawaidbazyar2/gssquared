@@ -40,3 +40,7 @@ cfg/*
 src/devices/es5503/es5503.hpp
 src/devices/es5503/mame5503.cpp
 src/devices/es5503/comparison_report.md
+tools/captures/
+tools/__pycache__/
+gs2-bram.bin
+test.txt

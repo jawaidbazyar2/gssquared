@@ -106,6 +106,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)machineRestart:(id)sender;
 - (void)machinePauseResume:(id)sender;
 - (void)machineCaptureMouse:(id)sender;
+- (void)machineCycleMouseMode:(id)sender;
 - (void)speed1_0:(id)sender;
 - (void)speed2_8:(id)sender;
 - (void)speed7_1:(id)sender;
@@ -149,6 +150,14 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	if (menuItem.action == @selector(machinePauseResume:)) {
 		[menuItem setState:getMenuInterface()->isPaused() ? NSControlStateValueOn : NSControlStateValueOff];
 	}
+	if (menuItem.action == @selector(machineCycleMouseMode:)) {
+		// Live-update the title to show the current mouse mode. Activating
+		// the item cycles to the next mode; the next pull-down re-reads
+		// state and refreshes again.
+		NSString *label = [NSString stringWithFormat:@"Mouse Mode: %s (F1)",
+		                   getMenuInterface()->getCurrentMouseModeLabel()];
+		[menuItem setTitle:label];
+	}
 	if (menuItem.action == @selector(controllerMode:)) {
 		int current = getMenuInterface()->getCurrentControllerMode();
 		[menuItem setState:([menuItem tag] == current) ? NSControlStateValueOn : NSControlStateValueOff];
@@ -169,6 +178,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)machineRestart:(id)sender     { getMenuInterface()->machineRestart(); (void)sender; }
 - (void)machinePauseResume:(id)sender { getMenuInterface()->machinePauseResume(); (void)sender; }
 - (void)machineCaptureMouse:(id)sender{ getMenuInterface()->machineCaptureMouse(); (void)sender; }
+- (void)machineCycleMouseMode:(id)sender{ getMenuInterface()->machineCycleMouseMode(); (void)sender; }
 
 - (void)speed1_0:(id)sender  { getMenuInterface()->setSpeed(SPEED_1_0); (void)sender; }
 - (void)speed2_8:(id)sender  { getMenuInterface()->setSpeed(SPEED_2_8); (void)sender; }
@@ -445,6 +455,15 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[captureMouseItem setTarget:sMenuHandler];
 	[machineMenu addItem:captureMouseItem];
+
+	// Mouse-mode cycle. Title is replaced in validateMenuItem with the
+	// current mode, so this string is just the initial placeholder.
+	NSMenuItem *cycleMouseModeItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Mouse Mode (F1)", nil)
+		       action:@selector(machineCycleMouseMode:)
+		keyEquivalent:@""] autorelease];
+	[cycleMouseModeItem setTarget:sMenuHandler];
+	[machineMenu addItem:cycleMouseModeItem];
 
 	// Settings menu
 	sSettingsMenuDelegate = [[SettingsMenuDelegate alloc] init];

@@ -4,6 +4,8 @@
 
 #include <SDL3/SDL.h>
 
+#include <string>
+
 #include <imgui.h>
 #include "imgui/backends/imgui_impl_sdl3.h"
 #include "imgui/backends/imgui_impl_sdlrenderer3.h"
@@ -142,6 +144,13 @@ static void build_menu_bar()
         if (ImGui::MenuItem("Pause / Resume")) mi->machinePauseResume();
         ImGui::Separator();
         if (ImGui::MenuItem("Capture Mouse")) mi->machineCaptureMouse();
+        // Cycle through mouse-input modes. Build label dynamically so
+        // it shows the current mode; clicking advances to the next.
+        {
+            std::string label = std::string("Mouse Mode: ") +
+                                mi->getCurrentMouseModeLabel() + " (F1)";
+            if (ImGui::MenuItem(label.c_str())) mi->machineCycleMouseMode();
+        }
         if (!running) ImGui::EndDisabled();
         ImGui::EndMenu();
     }

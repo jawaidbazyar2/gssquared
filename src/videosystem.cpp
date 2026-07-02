@@ -3,6 +3,7 @@
 #include "SDL3/SDL_mouse.h"
 #include "computer.hpp"
 #include "videosystem.hpp"
+#include "devices/adb/keygloo.hpp"
 #include "display/display.hpp"
 #include "ui/Clipboard.hpp"
 #include <cmath>
@@ -120,8 +121,13 @@ video_system_t::video_system_t(computer_t *computer) {
             toggle_fullscreen();
             return true;
         }
-        if (key == SDLK_F1) { // release or capture mouse
-            display_capture_mouse_message(!mouse_captured);
+        if (key == SDLK_F1) {
+            // F1 round-robins through MouseMode: FOLLOW_HOST -> CAPTURE
+            // -> DISABLED -> FOLLOW_HOST. Replaces the older binary
+            // capture toggle. The mode-set helper handles the SDL
+            // relative-mode flip when entering or leaving CAPTURE and
+            // shows an on-screen toast for the new mode.
+            keygloo_cycle_mouse_mode(computer);
             return true;
         }
         if (key == SDLK_F5) {
@@ -157,9 +163,9 @@ video_system_t::video_system_t(computer_t *computer) {
                 return false;
         }
     });
-    computer->sys_event->registerHandler(SDL_EVENT_MOUSE_BUTTON_DOWN, [this](const SDL_Event &event) {
+    computer->sys_event->registerHandler(SDL_EVENT_MOUSE_BUTTON_DOWN, [this, computer](const SDL_Event &event) {
         if (event.button.button == SDL_BUTTON_MIDDLE) {
-            display_capture_mouse_message(!mouse_captured);
+            keygloo_cycle_mouse_mode(computer);
         }
         return false;
     });

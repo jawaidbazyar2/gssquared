@@ -7,6 +7,9 @@ enum MenuEventCode {
 	MENU_MACHINE_RESTART,
 	MENU_MACHINE_PAUSE_RESUME,
 	MENU_MACHINE_CAPTURE_MOUSE,
+	// Cycle through MouseMode (FOLLOW_HOST → CAPTURE → DISABLED → ...).
+	// Same dispatch path as the F1 hotkey and middle-click; menu wraps it.
+	MENU_MACHINE_CYCLE_MOUSE_MODE,
 
 	MENU_SPEED_1_0 = 100,
 	MENU_SPEED_2_8,
