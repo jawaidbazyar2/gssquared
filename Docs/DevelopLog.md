@@ -12216,3 +12216,25 @@ counter (16-bit); state ID; true or false for turn on or turn off.
 ok, that becomes very clean and straightforward. Display asks VideoScanner to change state; VS decides when to apply that request.
 
 re SecondSight support, I am not really happy with how the delay stuff is working. I'm currently checking for cycles, and, had to bump it up to 60 cycles because Cogito had the odd hang on handshaking. Perhaps instead of cycles, I Could count a certain number of handshake reads. 
+
+## July 1, 2026
+
+thinking about external debug interface so llms can help me debug the emulator more easily, and, to assist users with debugging software they are writing with LLMs.
+
+there is the existing remote debugger interface uses by Cyrene. I should examine that in some detail.
+
+I'm not sure where the docs are, or if there are docs. I had composer make docs. that is likely "close enough" to get an understanding.
+
+ah I need to fix the debugger VideoScanner bug where we trigger interrupts in GS mode drawing the screen - also the weird update effect.
+
+let's fix the interrupt triggering first.
+
+in debug single step mode, gs2 makes a call to update the video frame by calling video_cycle 17,030 times then calling VideoScanGenerator.
+
+however in GS mode (videoscanner_iigs) this causes interrupts to fire, causing single step mode to basically constantly fire interrupts and execute the IRQ handler.
+
+so we need to prevent that from happening when we generate the full video frame in debug. 
+
+however, we do need to also execute video_cycle to get interrupts when we WANT them. 
+
+So, this is where I need to read back the current frame (or maintain it?) and do a partial update, then display that.
