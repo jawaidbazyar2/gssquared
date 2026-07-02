@@ -146,10 +146,12 @@ All confirmed to have existing backing code unless marked NEW.
 newline-delimited JSON-RPC 2.0 server over a UNIX socket, with tools:
 `regs`, `peek`, `poke`, `reset`, `step`, `until_pc`, `disasm`,
 `screen_text`, `mem_diff`, `setreg`, `type`, `pause`, `resume`, plus the
-MCP `initialize` / `tools/list` / `ping` handshake. `setreg` sets a CPU
-register (e.g. jump PC to Applesoft cold-start $E000); `type` injects
-keystrokes via the keyboard latch, driving the CPU so the ROM input loop
-consumes each key. `disasm` reuses the existing
+MCP `initialize` / `tools/list` / `ping` handshake, plus `mount_disk` /
+`unmount_disk`. `setreg` sets a CPU register (e.g. jump PC to Applesoft
+cold-start $E000); `type` injects keystrokes via the keyboard latch,
+driving the CPU so the ROM input loop consumes each key; `mount_disk`
+inserts an image (1-based drive, like the -d CLI) and the disk then boots
+via a cold reset or a jump to the Disk II boot ROM ($C600). `disasm` reuses the existing
 `Disassembler`; `until_pc`/`step` reuse the debugger's
 `execution_mode`/`instructions_left`; `screen_text` decodes the 40-col
 text page; `mem_diff` snapshots a range then reports changed bytes.

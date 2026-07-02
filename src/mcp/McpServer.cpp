@@ -31,6 +31,7 @@
 #include "debugger/disasm.hpp"
 #include "devices/keyboard/keyboard.hpp"
 #include "mmus/mmu.hpp"
+#include "util/mount.hpp"
 #include "Module_ID.hpp"
 
 namespace mcp {
@@ -260,6 +261,22 @@ json McpServer::tools_catalogue() {
                       {{"type", "object"},
                        {"properties", {{"text", {{"type", "string"}}}}},
                        {"required", json::array({"text"})}}}});
+    tools.push_back({{"name", "mount_disk"},
+                     {"description", "Mount a disk image into a drive (e.g. slot 6 drive 1), then reset to boot it."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"slot", {{"type", "integer"}, {"description", "slot (default 6)"}}},
+                         {"drive", {{"type", "integer"}, {"description", "drive 1 or 2 (default 1)"}}},
+                         {"filename", {{"type", "string"}, {"description", "path to .dsk/.do/.po/.2mg/.nib/.woz image"}}}}},
+                       {"required", json::array({"filename"})}}}});
+    tools.push_back({{"name", "unmount_disk"},
+                     {"description", "Unmount the disk in a drive."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"slot", {{"type", "integer"}, {"description", "slot (default 6)"}}},
+                         {"drive", {{"type", "integer"}, {"description", "drive (default 1)"}}}}}}}});
     tools.push_back({{"name", "pause"},
                      {"description", "Pause CPU execution."},
                      {"inputSchema", {{"type", "object"}, {"properties", json::object()}}}});
@@ -315,6 +332,15 @@ json McpServer::handle_tool_call(const std::string &name, const json &args) {
     } else if (name == "type") {
         std::string text = args.value("text", "");
         body = [this, text]() { return tool_type(text); };
+    } else if (name == "mount_disk") {
+        int slot = args.value("slot", 6);
+        int drive = args.value("drive", 1);
+        std::string filename = args.value("filename", "");
+        body = [this, slot, drive, filename]() { return tool_mount_disk(slot, drive, filename); };
+    } else if (name == "unmount_disk") {
+        int slot = args.value("slot", 6);
+        int drive = args.value("drive", 1);
+        body = [this, slot, drive]() { return tool_unmount_disk(slot, drive); };
     } else if (name == "pause") {
         body = [this]() { return tool_set_mode(2); };
     } else if (name == "resume") {
@@ -539,6 +565,31 @@ json McpServer::tool_type(const std::string &text) {
     computer_->execution_mode = EXEC_NORMAL;
     computer_->instructions_left = 0;
     return {{"typed", typed}, {"full_pc", cpu->full_pc}};
+}
+
+json McpServer::tool_mount_disk(int slot, int drive, const std::string &filename) {
+    if (!computer_ || !computer_->mounts) return {{"error", "no mount subsystem"}};
+    // `drive` is 1-based (drive 1 = the boot drive), matching the -d CLI
+    // convention; internally drives are 0-based.
+    if (drive < 1) drive = 1;
+    disk_mount_t dm;
+    dm.slot = static_cast<uint16_t>(slot);
+    dm.drive = static_cast<uint16_t>(drive - 1);
+    dm.filename = filename;
+    bool ok = computer_->mounts->mount_media(dm);
+    return {{"mounted", ok}, {"slot", slot}, {"drive", drive}, {"filename", filename}};
+}
+
+json McpServer::tool_unmount_disk(int slot, int drive) {
+    if (!computer_ || !computer_->mounts) return {{"error", "no mount subsystem"}};
+    if (drive < 1) drive = 1;
+    storage_key_t key;
+    key.slot = static_cast<uint16_t>(slot);
+    key.drive = static_cast<uint16_t>(drive - 1);
+    key.partition = 0;
+    key.subunit = 0;
+    bool ok = computer_->mounts->unmount_media(key, SAVE_AND_UNMOUNT);
+    return {{"unmounted", ok}, {"slot", slot}, {"drive", drive}};
 }
 
 json McpServer::tool_set_mode(int mode) {

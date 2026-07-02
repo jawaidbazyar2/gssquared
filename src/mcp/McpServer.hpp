@@ -94,6 +94,8 @@ private:
     json tool_mem_diff(const std::string &action, uint32_t addr, uint32_t len);
     json tool_setreg(const std::string &reg, uint32_t value);
     json tool_type(const std::string &text);
+    json tool_mount_disk(int slot, int drive, const std::string &filename);
+    json tool_unmount_disk(int slot, int drive);
     json tool_set_mode(int mode);  // 0=run, 1=step, 2=paused
 
     // mem_diff snapshot state. Only touched from emulator-thread closures
