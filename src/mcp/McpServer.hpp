@@ -107,6 +107,11 @@ private:
     Config cfg_;
     computer_t *computer_;
     int listen_fd_ = -1;
+    // fd of the currently-connected client, or -1. Atomic so the destructor
+    // can shutdown() it to interrupt a blocking recv() in the IO thread —
+    // closing the listen socket alone does not unblock an accepted client,
+    // so without this a teardown while a client is attached hangs on join().
+    std::atomic<int> client_fd_{-1};
     std::thread io_thread_;
     std::atomic<bool> enabled_{false};
     std::atomic<bool> shutdown_{false};

@@ -94,6 +94,11 @@ McpServer::~McpServer() {
         ::close(listen_fd_);
         listen_fd_ = -1;
     }
+    // Interrupt a blocking recv() on a connected client so the IO thread
+    // notices shutdown_ and the join() below doesn't hang. (We only
+    // shutdown() it here; the IO thread still owns the close().)
+    int c = client_fd_.load(std::memory_order_acquire);
+    if (c >= 0) ::shutdown(c, SHUT_RDWR);
     if (io_thread_.joinable()) io_thread_.join();
     if (!cfg_.socket_path.empty()) ::unlink(cfg_.socket_path.c_str());
 }
@@ -106,7 +111,9 @@ void McpServer::io_thread_main() {
             continue;
         }
         std::fprintf(stderr, "[mcp] client connected\n");
+        client_fd_.store(client_fd, std::memory_order_release);
         serve_client(client_fd);
+        client_fd_.store(-1, std::memory_order_release);
         ::close(client_fd);
         std::fprintf(stderr, "[mcp] client disconnected\n");
     }
