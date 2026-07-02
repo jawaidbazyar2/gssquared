@@ -548,6 +548,12 @@ json McpServer::tool_type(const std::string &text) {
     computer_->execution_mode = EXEC_STEP_INTO;
     computer_->instructions_left = 0;
 
+    // Settle: run a bit so the ROM input routine (e.g. GETLN) reaches its
+    // keyboard poll and gets past its initial strobe-clear, otherwise the
+    // first injected key can be wiped before it's read.
+    kb->kb_key_strobe &= 0x7F;
+    for (int g = 0; g < 20000 && cpu->halt == 0; ++g) (cpu->cpun->execute_next)(cpu);
+
     size_t typed = 0;
     for (char c : text) {
         uint8_t ascii = static_cast<uint8_t>(c);
