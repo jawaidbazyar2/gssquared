@@ -232,6 +232,18 @@ json McpServer::tools_catalogue() {
                        {"properties",
                         {{"addr", {{"type", "integer"}, {"description", "start address; omit for current PC"}}},
                          {"count", {{"type", "integer"}}}}}}}});
+    tools.push_back({{"name", "screen_text"},
+                     {"description", "Read the 40-column text page 1 as 24 rows of decoded ASCII."},
+                     {"inputSchema", {{"type", "object"}, {"properties", json::object()}}}});
+    tools.push_back({{"name", "mem_diff"},
+                     {"description", "Snapshot a memory range, then later diff it to see which bytes changed."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"action", {{"type", "string"}, {"description", "'snapshot' or 'diff'"}}},
+                         {"addr", {{"type", "integer"}, {"description", "range start (snapshot only)"}}},
+                         {"len", {{"type", "integer"}, {"description", "range length (snapshot only)"}}}}},
+                       {"required", json::array({"action"})}}}});
     tools.push_back({{"name", "pause"},
                      {"description", "Pause CPU execution."},
                      {"inputSchema", {{"type", "object"}, {"properties", json::object()}}}});
@@ -273,6 +285,13 @@ json McpServer::handle_tool_call(const std::string &name, const json &args) {
         uint32_t addr = args.value("addr", 0xFFFFFFFFu);
         uint32_t count = args.value("count", 8u);
         body = [this, addr, count]() { return tool_disasm(addr, count); };
+    } else if (name == "screen_text") {
+        body = [this]() { return tool_screen_text(); };
+    } else if (name == "mem_diff") {
+        std::string action = args.value("action", "diff");
+        uint32_t addr = args.value("addr", 0u);
+        uint32_t len = args.value("len", 256u);
+        body = [this, action, addr, len]() { return tool_mem_diff(action, addr, len); };
     } else if (name == "pause") {
         body = [this]() { return tool_set_mode(2); };
     } else if (name == "resume") {
@@ -404,6 +423,51 @@ json McpServer::tool_step(uint32_t count) {
         (cpu->cpun->execute_next)(cpu);
     }
     return {{"stepped", done}, {"pc", cpu->pc}, {"pb", cpu->pb}, {"full_pc", cpu->full_pc}};
+}
+
+json McpServer::tool_screen_text() {
+    cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
+    if (!cpu || !cpu->mmu) return {{"error", "no cpu/mmu"}};
+    // 40-column text page 1. The 24 rows are interleaved in memory:
+    // base(row) = $0400 + (row & 7)*$80 + (row >> 3)*$28.
+    json rows = json::array();
+    for (int r = 0; r < 24; ++r) {
+        uint32_t base = 0x0400 + (r & 7) * 0x80 + (r >> 3) * 0x28;
+        std::string line;
+        for (int c = 0; c < 40; ++c) {
+            uint8_t b = cpu->mmu->read(base + c);
+            // Map the Apple II character set to plain ASCII (uppercase),
+            // ignoring normal/inverse/flash: low 6 bits, control range -> @..
+            uint8_t low6 = b & 0x3F;
+            char ch = (low6 < 0x20) ? static_cast<char>(low6 + 0x40) : static_cast<char>(low6);
+            line += ch;
+        }
+        rows.push_back(line);
+    }
+    return {{"rows", rows}};
+}
+
+json McpServer::tool_mem_diff(const std::string &action, uint32_t addr, uint32_t len) {
+    cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
+    if (!cpu || !cpu->mmu) return {{"error", "no cpu/mmu"}};
+    if (action == "snapshot") {
+        if (len == 0) len = 1;
+        if (len > 65536) len = 65536;
+        snap_addr_ = addr & 0xFFFFFF;
+        snap_.resize(len);
+        for (uint32_t i = 0; i < len; ++i) snap_[i] = cpu->mmu->read((snap_addr_ + i) & 0xFFFFFF);
+        return {{"snapshot", true}, {"addr", snap_addr_}, {"len", len}};
+    }
+    // diff against the last snapshot
+    if (snap_.empty()) return {{"error", "no snapshot taken yet"}};
+    json changes = json::array();
+    for (size_t i = 0; i < snap_.size(); ++i) {
+        uint8_t cur = cpu->mmu->read((snap_addr_ + i) & 0xFFFFFF);
+        if (cur != snap_[i]) {
+            changes.push_back({{"addr", snap_addr_ + static_cast<uint32_t>(i)}, {"was", snap_[i]}, {"now", cur}});
+        }
+    }
+    return {{"addr", snap_addr_}, {"len", snap_.size()}, {"changed", changes.size()}, {"changes", changes}};
 }
 
 json McpServer::tool_set_mode(int mode) {

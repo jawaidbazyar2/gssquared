@@ -1,9 +1,9 @@
 {
   "mcpServers": {
     "gssquared": {
-      "command": "socat",
-      "args": ["-", "UNIX-CONNECT:/tmp/gs2-mcp.sock"],
-      "comment": "Launch the emulator first: GS2_MCP_SOCKET=/tmp/gs2-mcp.sock build/GSSquared -p 1  (see Docs/MCP.md). This socat bridge relays the MCP client's stdio to that socket."
+      "command": "tools/mcp_launch.sh",
+      "args": [],
+      "comment": "Launches a headless GSSquared (if not already running) and bridges stdio<->its MCP socket. Override GS2_BIN/GS2_PLATFORM/GS2_MCP_SOCKET as needed. See Docs/MCP.md."
     }
   }
 }

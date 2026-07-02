@@ -18,11 +18,13 @@
 #pragma once
 
 #include <atomic>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
@@ -88,7 +90,14 @@ private:
     json tool_step(uint32_t count);
     json tool_until_pc(uint32_t target, uint64_t max_insns);
     json tool_disasm(uint32_t addr, uint32_t count);
+    json tool_screen_text();
+    json tool_mem_diff(const std::string &action, uint32_t addr, uint32_t len);
     json tool_set_mode(int mode);  // 0=run, 1=step, 2=paused
+
+    // mem_diff snapshot state. Only touched from emulator-thread closures
+    // (which run serially via pump), so no extra locking is needed.
+    uint32_t snap_addr_ = 0;
+    std::vector<std::uint8_t> snap_;
 
     Config cfg_;
     computer_t *computer_;

@@ -144,12 +144,14 @@ All confirmed to have existing backing code unless marked NEW.
 
 `src/mcp/McpServer.{hpp,cpp}` is in the tree and building. It exposes a
 newline-delimited JSON-RPC 2.0 server over a UNIX socket, with tools:
-`regs`, `peek`, `poke`, `reset`, `step`, `until_pc`, `disasm`, `pause`,
-`resume`, plus the MCP `initialize` / `tools/list` / `ping` handshake.
-`disasm` reuses the existing `Disassembler`; `until_pc`/`step` reuse the
-debugger's `execution_mode`/`instructions_left`. Emulator-touching tools
-are marshalled to the emulator thread by `pump()` (called from
-`run_one_frame`); IO/parse lives on a dedicated thread.
+`regs`, `peek`, `poke`, `reset`, `step`, `until_pc`, `disasm`,
+`screen_text`, `mem_diff`, `pause`, `resume`, plus the MCP `initialize` /
+`tools/list` / `ping` handshake. `disasm` reuses the existing
+`Disassembler`; `until_pc`/`step` reuse the debugger's
+`execution_mode`/`instructions_left`; `screen_text` decodes the 40-col
+text page; `mem_diff` snapshots a range then reports changed bytes.
+Emulator-touching tools are marshalled to the emulator thread by `pump()`
+(called from `run_one_frame`); IO/parse lives on a dedicated thread.
 
 **Verified end-to-end** against a running headless emulator (Apple II+):
 the JSON-RPC handshake and every tool return correct real state — e.g.
@@ -184,9 +186,12 @@ python3 tools/mcp_smoke.py /tmp/gs2-mcp.sock
   GS2_MCP_SOCKET=/tmp/gs2-mcp.sock build/GSSquared -p 1
   ```
 
-- `.mcp.json` (repo root) registers a `socat` stdio↔socket bridge so an
-  MCP client (Claude Code) can attach. The emulator must be running first.
-- Manual smoke test without an MCP client (server must be running):
+- `.mcp.json` (repo root) registers `tools/mcp_launch.sh`, which starts a
+  headless emulator (if one isn't already listening) and bridges the MCP
+  client's stdio to the socket with `socat`. So an MCP client (Claude
+  Code) can attach with no manual pre-launch. Override
+  `GS2_BIN`/`GS2_PLATFORM`/`GS2_MCP_SOCKET` as needed.
+- Manual smoke test against a running server:
 
   ```sh
   python3 tools/mcp_smoke.py /tmp/gs2-mcp.sock
@@ -199,8 +204,7 @@ python3 tools/mcp_smoke.py /tmp/gs2-mcp.sock
 
 ## Next
 
-- Interactive end-to-end verification of the tools (needs the GUI run).
-- `step_inst` semantics review; then extend toward the fuller
-  verilogapple surface (`until_pc`, `screen_text`, `mem_diff`,
-  `trace_capture`, `mount_disk`) and the Agent-backed GUI tools
+- Verify the **GUI (non-headless) path** on a real display before pushing
+  (unchanged by construction, but not runnable in a headless env).
+- `trace_capture` / `mount_disk`, then the Agent-backed GUI tools
   (`screenshot`, `list_windows`, `send_click`).
