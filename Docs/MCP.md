@@ -1,10 +1,84 @@
-# MCP Server (design)
+# MCP Server
 
-> Status: **Agent ported + building; MCP module not yet written.** Branch
-> `mcp-uplift` (off current `origin/main`) now carries the Agent module,
-> compositor excluded, and builds clean. The `src/mcp/` module is designed
-> (below) and blocked only on one dependency decision (see "Resolved
-> decisions / remaining gate"). Modelled on `~/src/verilogapple`'s MCP.
+> Status: **Implemented and tested (headless).** `src/mcp/` is built into
+> GSSquared and drives it over JSON-RPC 2.0 — 16 tools, plus a sleep-free
+> end-to-end test at 10/10 (`tools/mcp_test.py`). The GUI (non-headless)
+> path is unchanged by construction (all changes gated behind
+> `GS2_HEADLESS`) but not yet verified on a display. Getting Started is
+> below; the design notes and history follow it.
+
+## Getting Started
+
+### Prerequisites
+- A working GSSquared build (CMake, a C++17 compiler; SDL is vendored).
+- **nlohmann/json** — resolved automatically by CMake (`find_package`, else
+  `FetchContent`). `brew install nlohmann-json` avoids the network fetch.
+- **socat** — only for the `.mcp.json` client launcher: `brew install socat`.
+- **Python 3** — for the driving/test scripts (no extra packages).
+
+### Build
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug   # first time only
+cmake --build build --parallel
+```
+
+### Run the MCP server (headless)
+Launch the emulator with a socket; `-p 1` is an Apple II+ (auto-launches,
+no window needed):
+```sh
+GS2_HEADLESS=1 GS2_MCP_SOCKET=/tmp/gs2-mcp.sock build/GSSquared -p 1
+# -> [mcp] listening on /tmp/gs2-mcp.sock
+```
+
+### Verify
+```sh
+python3 tools/mcp_test.py     # spawns its own headless instance; expects 10/10
+```
+
+### Attach an MCP client (e.g. Claude Code)
+The repo ships `.mcp.json`, which registers `tools/mcp_launch.sh`: it starts
+a headless emulator (if none is listening) and bridges the client's stdio to
+the socket via `socat`. Open the repo in an MCP-capable client and the
+`gssquared` server appears — no manual launch. Override `GS2_BIN`,
+`GS2_PLATFORM`, or `GS2_MCP_SOCKET` in `.mcp.json`'s `env` if your layout
+differs. To poke the socket by hand instead, use `python3
+tools/mcp_smoke.py /tmp/gs2-mcp.sock` against a running server.
+
+### First session — the deterministic pattern
+Every wait is **`wait_input`** (it triggers on the machine's own
+keyboard-poll behaviour, so it holds at any emulation speed), never a sleep.
+
+Enter and run a BASIC program:
+
+| step | tool call |
+|---|---|
+| cold reset | `reset {"cold": true}` |
+| jump into Applesoft | `setreg {"reg": "pc", "value": 57344}`  *(57344 = $E000)* |
+| wait for the `]` prompt | `wait_input` → `{"ready": true}` |
+| type a program | `type {"text": "10 PRINT \"HELLO, WORLD\"\n"}` |
+| wait for the prompt | `wait_input` |
+| run it | `type {"text": "RUN\n"}` |
+| wait until it finishes | `wait_input` |
+| read the screen | `screen_text` → rows including `HELLO, WORLD` |
+
+Boot a real disk instead:
+
+| step | tool call |
+|---|---|
+| insert a disk in drive 1 | `mount_disk {"filename": "/path/to/game.dsk"}` |
+| cold-boot it | `reset {"cold": true}` |
+| settle at a prompt/menu | `wait_input` |
+| read the screen | `screen_text` |
+
+Full tool set: `regs`, `peek`, `poke`, `reset`, `step`, `until_pc`,
+`disasm`, `screen_text`, `mem_diff`, `setreg`, `type`, `wait_input`,
+`mount_disk`, `unmount_disk`, `pause`, `resume` (details in the sections
+below).
+
+---
+
+*The rest of this document is design notes and history.* Modelled on
+`~/src/verilogapple`'s MCP server.
 
 ## Resolved decisions / remaining gate
 
