@@ -49,6 +49,7 @@ struct video_system_t {
 
     SDL_Window *window; // primary emulated display window
     SDL_Renderer* renderer;
+    SDL_Surface *headless_surface = nullptr; // offscreen target when headless (no window)
     // Non-null when the renderer is the SDL GPU-backed renderer (required for
     // custom fragment-shader post-processing). Null means we fell back to the
     // classic renderer and shader effects are unavailable.

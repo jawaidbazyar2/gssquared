@@ -151,13 +151,27 @@ debugger's `execution_mode`/`instructions_left`. Emulator-touching tools
 are marshalled to the emulator thread by `pump()` (called from
 `run_one_frame`); IO/parse lives on a dedicated thread.
 
-Verified: compiles + links into GSSquared; the server constructs from
-`GS2_MCP_SOCKET` and binds+listens. NOT yet exercised end-to-end (the
-JSON-RPC round-trip + the emulator tools) because that needs a real GUI
-session — `computer_t`'s ctor builds `video_system` (opens the SDL
-window) and aborts via a modal dialog if a renderer can't be created, so
-the app can't reach a running-emulation state from a headless/background
-shell.
+**Verified end-to-end** against a running headless emulator (Apple II+):
+the JSON-RPC handshake and every tool return correct real state — e.g.
+`peek $FFFC` returns the `$FA62` reset vector, `disasm` shows the Disk II
+boot loop, `poke`+`peek` roundtrips, `until_pc` bounds correctly. See the
+headless note below.
+
+### Headless mode (`GS2_HEADLESS`)
+
+The emulator is normally a GUI app: `computer_t`'s ctor builds
+`video_system`, which opens the SDL window and (on a machine with no
+display) aborts. `GS2_HEADLESS=1` runs it with **no window** — the video
+system renders to an offscreen software surface, and the frame-present
+path is skipped — so the CPU + MCP loop runs without a display (for
+MCP/CI/automation). It auto-launches a platform (default Apple II+, or
+`-p`). The normal GUI path is untouched: every change is gated behind the
+flag, which is false by default.
+
+```sh
+GS2_HEADLESS=1 GS2_MCP_SOCKET=/tmp/gs2-mcp.sock build/GSSquared -p 1
+python3 tools/mcp_smoke.py /tmp/gs2-mcp.sock
+```
 
 ## Build / run
 

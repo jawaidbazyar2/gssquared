@@ -30,10 +30,25 @@ video_system_t::video_system_t(computer_t *computer) {
     window_height = (BASE_HEIGHT + border_height*2) * SCALE_Y;
     aspect_ratio = (float)window_width / (float)window_height;
 
+    if (gs2_app_values.headless) {
+        // Headless: no window. Render to an offscreen software surface so all
+        // the downstream texture/render code works unchanged, without a
+        // display or GPU. Nothing is ever presented to a screen.
+        window = nullptr;
+        headless_surface = SDL_CreateSurface(window_width, window_height, PIXEL_FORMAT);
+        if (!headless_surface) {
+            fprintf(stderr, "Headless surface could not be created! SDL_Error: %s\n", SDL_GetError());
+        }
+        renderer = SDL_CreateSoftwareRenderer(headless_surface);
+        if (!renderer) {
+            fprintf(stderr, "Headless software renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+        }
+        printf("Renderer: headless software (no window)\n");
+    } else {
     window = SDL_CreateWindow(
-        "GSSquared - Apple ][ Emulator", 
-        (BASE_WIDTH + border_width*2) * SCALE_X, 
-        (BASE_HEIGHT + border_height*2) * SCALE_Y, 
+        "GSSquared - Apple ][ Emulator",
+        (BASE_WIDTH + border_width*2) * SCALE_X,
+        (BASE_HEIGHT + border_height*2) * SCALE_Y,
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY
     );
 
@@ -44,9 +59,10 @@ video_system_t::video_system_t(computer_t *computer) {
     // Set minimum and maximum window sizes to maintain reasonable dimensions
     SDL_SetWindowMinimumSize(window, window_width / 2, window_height / 2);  // Half size
     //SDL_SetWindowMaximumSize(window, window_width * 2, window_height * 2);  // 4x size
-    
+
     // Set the window's aspect ratio to match the Apple II display (560:384)
     SDL_SetWindowAspectRatio(window, aspect_ratio, aspect_ratio);
+    } // !headless
 
     /* for (int i = 0; i < SDL_GetNumRenderDrivers(); i++) {
         const char *name = SDL_GetRenderDriver(i);
@@ -92,6 +108,7 @@ video_system_t::video_system_t(computer_t *computer) {
     clear();
     present();
 
+    if (!gs2_app_values.headless) {
     SDL_RaiseWindow(window);
 
     {
@@ -106,6 +123,7 @@ video_system_t::video_system_t(computer_t *computer) {
     }
 
     update_target_from_output();
+    } // !headless
 
     computer->dispatch->registerHandler(SDL_EVENT_WINDOW_RESIZED, [this](const SDL_Event &event) {
         window_resize(event);
@@ -234,6 +252,7 @@ void video_system_t::present() {
 }
 
 void video_system_t::set_window_title(const char *title) {
+    if (!window) return;  // headless
     SDL_SetWindowTitle(window, title);
 }
 
@@ -272,6 +291,7 @@ void video_system_t::clear() {
 }
 
 void video_system_t::raise() {
+    if (!window) return;  // headless
     SDL_RaiseWindow(window);
 }
 void video_system_t::raise(SDL_Window *windowp) {
@@ -489,6 +509,7 @@ void video_system_t::register_frame_processor(int weight, FrameHandler handler) 
 }
 
 void video_system_t::update_display(bool force_full_frame) {
+    if (gs2_app_values.headless) return;  // no display to draw
     // When the CRT shader is active, draw the emulator frame into the offscreen
     // scene_target so it can be post-processed during present_scene(). Otherwise
     // draw straight to the swapchain exactly as before.

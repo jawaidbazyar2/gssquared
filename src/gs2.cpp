@@ -180,6 +180,7 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
  * Update window
  */
 void frame_video_update(computer_t *computer, bool force_full_frame = false) {
+    if (gs2_app_values.headless) return;  // no display to update
     video_system_t *vs = computer->video_system;
 
     vs->update_display(force_full_frame);
@@ -881,6 +882,17 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     if (isatty(fileno(stdin))) {
         gs2_app_values.console_mode = true;
     }
+
+    // Headless mode (GS2_HEADLESS): run with no window, rendering to an
+    // offscreen software surface, so the emulation can run without a display
+    // (for MCP/CI/automation). Force console-mode arg parsing on so -p works
+    // even when launched detached, and pick the dummy video backend so
+    // SDL_INIT_VIDEO succeeds without a display server.
+    if (const char *h = std::getenv("GS2_HEADLESS"); h != nullptr && h[0] != '\0') {
+        gs2_app_values.headless = true;
+        gs2_app_values.console_mode = true;
+        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "dummy");
+    }
     Paths::initialize(gs2_app_values.console_mode);
 
     gs2_app_values.base_path = get_base_path(gs2_app_values.console_mode);
@@ -970,8 +982,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     // If the caller passed `-p PLATFORM`, skip the system-selector UI
     // and jump straight into emulation using the first builtin system
-    // whose platform_id matches.
-    if (platform_explicit) {
+    // whose platform_id matches. Headless mode always auto-launches (there
+    // is no selector UI to interact with), defaulting to platform_id above.
+    if (platform_explicit || gs2_app_values.headless) {
         const int system_id = find_first_system_for_platform(platform_id);
         if (system_id >= 0) {
             std::cout << "Auto-launching system_id=" << system_id

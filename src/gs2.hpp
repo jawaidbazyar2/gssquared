@@ -38,6 +38,10 @@ typedef struct gs2_app_t {
     // When true, attempt to create the SDL GPU-backed renderer (enables custom
     // post-process shaders). Default false: use the classic SDL 2D renderer.
     bool gpu_render = false;
+    // Headless mode (GS2_HEADLESS): no window; the video system renders to an
+    // offscreen software surface so the emulation can run without a display.
+    // Intended for MCP/CI/automation. The normal GUI path is unaffected.
+    bool headless = false;
     bool right_mouse_accelerate = true;
     uint32_t menu_event_type = 0;
     bool modal_tracking = false;  // true while macOS menu/resize modal loop owns the run loop
