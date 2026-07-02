@@ -123,11 +123,6 @@ class ADB_Mouse : public ADB_Device
         registers[0].data[1] = (uint8_t)(yrel & 0x3F) | (moved_up    ? 0x40 : 0x00);
         update_button_down();
 
-        std::fprintf(stderr,
-            "[agent-debug] ADB_Mouse::talk drained=(%d,%d) carry=(%d,%d) bytes=%02x %02x\n",
-            xrel, yrel, pending_xrel, pending_yrel,
-            registers[0].data[0], registers[0].data[1]);
-
         reg_result = registers[0];
         // Only mark "no more data" if the accumulator is fully drained
         // AND there's no pending button-state change to report. The
@@ -195,12 +190,6 @@ class ADB_Mouse : public ADB_Device
                                 : MOUSE_MOTION_SCALE_FAST);
             int xrel = (int)(event.motion.xrel * scale);
             int yrel = (int)(event.motion.yrel * scale);
-            std::fprintf(stderr,
-                "[agent-debug] ADB_Mouse::motion abs=(%g,%g) rel=(%g,%g) which=0x%x agent=%d scale=%g scaled=(%d,%d) accum_before=(%d,%d)\n",
-                event.motion.x, event.motion.y,
-                event.motion.xrel, event.motion.yrel,
-                (unsigned)event.motion.which, (int)from_agent, scale,
-                xrel, yrel, pending_xrel, pending_yrel);
 
             // Preserve "minimum motion of 1 in the requested direction"
             // for sub-pixel scaled deltas, but only when nothing is

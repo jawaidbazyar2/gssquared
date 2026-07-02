@@ -1008,18 +1008,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     GS2AppState *state = (GS2AppState *)appstate;
 
-    // [agent-debug] log injected mouse events on the way through.
-    if (event->type == SDL_EVENT_MOUSE_MOTION ||
-        event->type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
-        event->type == SDL_EVENT_MOUSE_BUTTON_UP) {
-        std::fprintf(stderr,
-            "[agent-debug] SDL_AppEvent type=0x%x button=%u down=%d (%g,%g)\n",
-            event->type,
-            event->button.button,
-            event->button.down,
-            event->button.x, event->button.y);
-    }
-
     // Agent-issued mode-change requests arrive as SDL_EVENT_USER on the
     // main thread (the agent's reader thread can't safely touch
     // keygloo_state_t directly — see Agent.cpp's TAG_SET_MOUSE_MODE
