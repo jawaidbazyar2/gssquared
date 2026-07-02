@@ -147,11 +147,31 @@ newline-delimited JSON-RPC 2.0 server over a UNIX socket, with tools:
 `regs`, `peek`, `poke`, `reset`, `step`, `until_pc`, `disasm`,
 `screen_text`, `mem_diff`, `setreg`, `type`, `pause`, `resume`, plus the
 MCP `initialize` / `tools/list` / `ping` handshake, plus `mount_disk` /
-`unmount_disk`. `setreg` sets a CPU register (e.g. jump PC to Applesoft
-cold-start $E000); `type` injects keystrokes via the keyboard latch,
-driving the CPU so the ROM input loop consumes each key; `mount_disk`
-inserts an image (1-based drive, like the -d CLI) and the disk then boots
-via a cold reset or a jump to the Disk II boot ROM ($C600). `disasm` reuses the existing
+`unmount_disk` and `wait_input`. `setreg` sets a CPU register (e.g. jump PC
+to Applesoft cold-start $E000); `type` feeds text through the keyboard
+device's paste buffer so the ROM consumes each key at its own pace (no
+injection-timing races); `mount_disk` inserts an image (1-based drive, like
+the -d CLI) and the disk then boots via a cold reset or a jump to the Disk
+II boot ROM ($C600).
+
+### Determinism (no wall-clock waits)
+
+Driving the machine is grounded in **machine behaviour**, not sleeps, so it
+holds at any emulation speed and never loses time to fixed delays:
+
+- The keyboard device counts "empty" polls — reads of `$C000` that hand
+  back no key (`keyboard_state_t::kb_poll_empty`). A dense burst of these is
+  the exact signal that the machine is parked in an input-wait loop
+  (GETLN/KEYIN).
+- **`wait_input`** runs the CPU until that burst appears (machine is waiting
+  for input) or an instruction budget is spent. Use it instead of sleeping
+  after a reset/boot or a command. It also *discriminates*: a running
+  program that isn't reading the keyboard reports `ready: false`.
+- **`type`** returns when the paste buffer is drained and the last key has
+  been read out of the latch (a state condition, not a timeout).
+- At the RPC layer, `call_on_emulator` uses a pump **heartbeat** to tell a
+  live emulation loop from a dead one, then waits with no wall-clock cap —
+  so long CPU-driving tools are bounded only by their instruction budget. `disasm` reuses the existing
 `Disassembler`; `until_pc`/`step` reuse the debugger's
 `execution_mode`/`instructions_left`; `screen_text` decodes the 40-col
 text page; `mem_diff` snapshots a range then reports changed bytes.

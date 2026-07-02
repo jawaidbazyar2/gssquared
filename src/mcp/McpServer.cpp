@@ -261,6 +261,12 @@ json McpServer::tools_catalogue() {
                       {{"type", "object"},
                        {"properties", {{"text", {{"type", "string"}}}}},
                        {"required", json::array({"text"})}}}});
+    tools.push_back({{"name", "wait_input"},
+                     {"description", "Run until the machine is waiting for keyboard input (parked in an input-poll loop), or the instruction budget is spent. Deterministic — independent of emulation speed. Use instead of sleeping."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"max_insns", {{"type", "integer"}, {"description", "instruction budget (default 50000000)"}}}}}}}});
     tools.push_back({{"name", "mount_disk"},
                      {"description", "Mount a disk image into a drive (e.g. slot 6 drive 1), then reset to boot it."},
                      {"inputSchema",
@@ -332,6 +338,9 @@ json McpServer::handle_tool_call(const std::string &name, const json &args) {
     } else if (name == "type") {
         std::string text = args.value("text", "");
         body = [this, text]() { return tool_type(text); };
+    } else if (name == "wait_input") {
+        uint64_t max_insns = args.value("max_insns", static_cast<uint64_t>(50000000));
+        body = [this, max_insns]() { return tool_wait_input(max_insns); };
     } else if (name == "mount_disk") {
         int slot = args.value("slot", 6);
         int drive = args.value("drive", 1);
@@ -358,22 +367,51 @@ json McpServer::handle_tool_call(const std::string &name, const json &args) {
     return text_result(out.dump(2));
 }
 
-bool McpServer::call_on_emulator(std::function<json()> fn, json &out, int timeout_ms) {
+bool McpServer::call_on_emulator(std::function<json()> fn, json &out, int liveness_ms) {
     auto prom = std::make_shared<std::promise<json>>();
+    auto started = std::make_shared<std::atomic<bool>>(false);
     std::future<json> fut = prom->get_future();
     {
         std::lock_guard<std::mutex> lk(queue_mu_);
         if (shutdown_.load(std::memory_order_acquire)) return false;
-        queue_.push_back([fn = std::move(fn), prom]() { prom->set_value(fn()); });
+        queue_.push_back([fn = std::move(fn), prom, started]() {
+            started->store(true, std::memory_order_release);
+            prom->set_value(fn());
+        });
     }
-    if (fut.wait_for(std::chrono::milliseconds(timeout_ms)) != std::future_status::ready) {
-        return false;
+
+    // Phase 1: confirm an emulation loop is actually running before we commit
+    // to waiting. If pump() isn't advancing (no session / selector screen),
+    // give up after `liveness_ms` of no frames. This is a liveness probe, NOT
+    // an execution cap — it never fires once the closure has begun.
+    std::uint64_t last = pump_beats_.load(std::memory_order_acquire);
+    int idle_ms = 0;
+    while (!started->load(std::memory_order_acquire)) {
+        if (fut.wait_for(std::chrono::milliseconds(25)) == std::future_status::ready) {
+            out = fut.get();
+            return true;
+        }
+        if (shutdown_.load(std::memory_order_acquire)) return false;
+        std::uint64_t b = pump_beats_.load(std::memory_order_acquire);
+        if (b == last) {
+            idle_ms += 25;
+            if (idle_ms >= liveness_ms) return false;  // no frames -> no session
+        } else {
+            last = b;
+            idle_ms = 0;
+        }
     }
+
+    // Phase 2: the closure is executing on the emulator thread and is bounded
+    // by its own instruction budget, so wait for it with no wall-clock limit.
     out = fut.get();
     return true;
 }
 
 void McpServer::pump() {
+    // Heartbeat: advances every frame regardless of queue contents, so
+    // call_on_emulator can detect a live emulation loop.
+    pump_beats_.fetch_add(1, std::memory_order_release);
     std::deque<std::function<void()>> local;
     {
         std::lock_guard<std::mutex> lk(queue_mu_);
@@ -550,19 +588,58 @@ json McpServer::tool_type(const std::string &text) {
     kb->paste_buffer += text;
 
     // Drive the CPU (step mode so run_one_frame doesn't also free-run it)
-    // until the buffer drains — i.e. until the text has actually been typed.
+    // until every character has actually been consumed by the machine:
+    // paste buffer empty AND the last pulled key read out of the latch
+    // (strobe bit 7 clear). This is a state condition, not a timeout, so it
+    // is exact at any emulation speed. The instruction cap is only a
+    // safety net against a machine that never reads the keyboard.
     computer_->execution_mode = EXEC_STEP_INTO;
     computer_->instructions_left = 0;
     long guard = 0;
-    const long kMax = 20'000'000;  // generous bound; ~each key costs a few K instrs
-    while (!kb->paste_buffer.empty() && guard < kMax && cpu->halt == 0) {
+    const long kSafetyCap = 50'000'000;
+    while ((!kb->paste_buffer.empty() || (kb->kb_key_strobe & 0x80)) &&
+           guard < kSafetyCap && cpu->halt == 0) {
         (cpu->cpun->execute_next)(cpu);
         ++guard;
     }
     // Let any launched program run in real time from here on.
     computer_->execution_mode = EXEC_NORMAL;
     computer_->instructions_left = 0;
-    return {{"typed", text.size()}, {"drained", kb->paste_buffer.empty()}, {"full_pc", cpu->full_pc}};
+    bool consumed = kb->paste_buffer.empty() && ((kb->kb_key_strobe & 0x80) == 0);
+    return {{"typed", text.size()}, {"consumed", consumed}, {"full_pc", cpu->full_pc}};
+}
+
+json McpServer::tool_wait_input(uint64_t max_insns) {
+    cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
+    if (!cpu || !cpu->cpun) return {{"error", "no cpu"}};
+    auto *kb = static_cast<keyboard_state_t *>(computer_->get_module_state(MODULE_KEYBOARD));
+    if (!kb) return {{"error", "no keyboard module"}};
+
+    // Deterministic "is the machine waiting for input?" detector. Run in
+    // fixed instruction windows and watch how many empty keyboard polls
+    // occur per window. An input-poll loop (GETLN/KEYIN) does an empty poll
+    // every few instructions, so a genuine wait produces a dense burst;
+    // a running program that never (or only occasionally) checks the
+    // keyboard does not. This triggers on machine behaviour, so it holds at
+    // any emulation speed and never "loses minutes" to a fixed sleep.
+    constexpr int kWindow = 4000;
+    constexpr uint64_t kPollsToConfirm = 256;  // dense polling within one window
+    computer_->execution_mode = EXEC_STEP_INTO;
+    computer_->instructions_left = 0;
+
+    uint64_t ran = 0;
+    bool ready = false;
+    while (ran < max_insns && cpu->halt == 0) {
+        uint64_t before = kb->kb_poll_empty;
+        for (int g = 0; g < kWindow && cpu->halt == 0; ++g) {
+            (cpu->cpun->execute_next)(cpu);
+            ++ran;
+        }
+        if (kb->kb_poll_empty - before >= kPollsToConfirm) { ready = true; break; }
+    }
+    computer_->execution_mode = EXEC_NORMAL;
+    computer_->instructions_left = 0;
+    return {{"ready", ready}, {"instructions", ran}, {"full_pc", cpu->full_pc}};
 }
 
 json McpServer::tool_mount_disk(int slot, int drive, const std::string &filename) {

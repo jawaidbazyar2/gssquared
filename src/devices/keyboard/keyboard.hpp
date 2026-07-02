@@ -27,12 +27,18 @@
 #define KB_CLEAR_LATCH_ADDRESS 0xC010
 
 struct keyboard_state_t {
-    uint8_t kb_key_strobe = 0x41; 
+    uint8_t kb_key_strobe = 0x41;
     std::string paste_buffer;
     message_keyboard_t *mk = nullptr;
     MMU_II *mmu = nullptr;
     ResetController *reset_control = nullptr;
     int key_down_count = 0;
+    // Monotonic count of "empty" keyboard polls: reads of $C000 that returned
+    // no key (bit 7 clear). A rapidly rising count is the deterministic
+    // signal that the machine is spinning in an input-wait loop (GETLN/KEYIN)
+    // — used to trigger on machine behaviour rather than wall-clock time, so
+    // it holds at any emulation speed. Read-only outside the keyboard device.
+    uint64_t kb_poll_empty = 0;
 } ;
 
 /* uint8_t kb_memory_read(uint16_t address);

@@ -94,6 +94,7 @@ private:
     json tool_mem_diff(const std::string &action, uint32_t addr, uint32_t len);
     json tool_setreg(const std::string &reg, uint32_t value);
     json tool_type(const std::string &text);
+    json tool_wait_input(uint64_t max_insns);
     json tool_mount_disk(int slot, int drive, const std::string &filename);
     json tool_unmount_disk(int slot, int drive);
     json tool_set_mode(int mode);  // 0=run, 1=step, 2=paused
@@ -112,6 +113,13 @@ private:
 
     std::mutex queue_mu_;
     std::deque<std::function<void()>> queue_;
+
+    // Incremented once per pump() (i.e. per emulated frame). Used by
+    // call_on_emulator to tell "the emulation loop is alive" from "no
+    // session / stalled" without imposing a wall-clock cap on how long a
+    // tool may run — long CPU-driving tools are bounded by their own
+    // instruction budget instead.
+    std::atomic<std::uint64_t> pump_beats_{0};
 };
 
 }  // namespace mcp

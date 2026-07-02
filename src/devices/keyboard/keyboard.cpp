@@ -66,6 +66,10 @@ uint8_t kb_read_C00X(void *context, uint32_t address) {
         }
     }
     uint8_t key = kb_state->kb_key_strobe;
+    // Deterministic input-wait signal: a read that hands back no key means
+    // the program asked for input and none was available. A tight spike in
+    // this count == the machine is parked in an input-poll loop.
+    if ((key & 0x80) == 0) kb_state->kb_poll_empty++;
     return key;
 }
 

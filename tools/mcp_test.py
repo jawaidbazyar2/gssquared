@@ -76,18 +76,30 @@ def main():
         dis = tool("disasm", {"addr": 0xFA62, "count": 1})["lines"]
         check("disasm returns a line", len(dis) == 1 and dis[0].startswith("FA62"), str(dis))
 
-        # Full BASIC program run.
-        tool("reset", {"cold": True}); time.sleep(0.2)
-        tool("setreg", {"reg": "pc", "value": 0xE000}); time.sleep(0.6)
+        # Full BASIC program run — driven deterministically with wait_input,
+        # no wall-clock sleeps (holds at any emulation speed).
+        tool("reset", {"cold": True})
+        tool("setreg", {"reg": "pc", "value": 0xE000})
+        w = tool("wait_input")
+        check("wait_input reaches the Applesoft prompt", w.get("ready") is True, str(w))
         rows = screen()
         check("reset into Applesoft (] prompt)", any(r.startswith("]") for r in rows), str([r for r in rows if r.strip()]))
 
-        tool("type", {"text": '10 PRINT "HELLO, WORLD"\n20 GOTO 10\n'})
-        tool("type", {"text": 'RUN\n'}); time.sleep(0.4)
-        tool("pause")
+        tool("type", {"text": '10 PRINT "HELLO, WORLD"\n'})
+        tool("wait_input")
+        tool("type", {"text": 'RUN\n'})
+        tool("wait_input")   # returns when the program finishes and re-parks at the prompt
         rows = screen()
         check("BASIC program output present", any("HELLO, WORLD" in r for r in rows),
-              str([r for r in rows if r.strip()][:3]))
+              str([r for r in rows if r.strip()][:4]))
+
+        # Discrimination: an infinite PRINT loop is *not* input-waiting, so
+        # wait_input must run out its (small) budget and report ready=False.
+        tool("type", {"text": '20 GOTO 10\nRUN\n'})
+        busy = tool("wait_input", {"max_insns": 2000000})
+        check("wait_input reports a running program as not-ready",
+              busy.get("ready") is False, str(busy))
+        tool("pause")
 
         print(f"\n{sum(results)}/{len(results)} checks passed")
         return 0 if all(results) else 1
