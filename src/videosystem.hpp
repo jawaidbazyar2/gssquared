@@ -47,8 +47,8 @@ struct video_system_t {
 
     std::multimap<int, FrameHandler, std::greater<int>> frame_handlers;
 
-    SDL_Window *window; // primary emulated display window
-    SDL_Renderer* renderer;
+    SDL_Window *window = nullptr; // primary emulated display window
+    SDL_Renderer* renderer = nullptr;
     SDL_Surface *headless_surface = nullptr; // offscreen target when headless (no window)
     // Non-null when the renderer is the SDL GPU-backed renderer (required for
     // custom fragment-shader post-processing). Null means we fell back to the
