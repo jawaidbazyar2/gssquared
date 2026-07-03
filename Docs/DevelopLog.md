@@ -12238,3 +12238,31 @@ so we need to prevent that from happening when we generate the full video frame 
 however, we do need to also execute video_cycle to get interrupts when we WANT them. 
 
 So, this is where I need to read back the current frame (or maintain it?) and do a partial update, then display that.
+
+## July 2, 2026
+
+ok so have a crt shader in this thing! it's enabled with -g on the command line, then F7. It's just a demo CRT shader example in the SDL3 repo, but it doesn't look awful. 
+
+I am also looking at this one, which has a zillion knobs and is highly respected.
+
+https://github.com/artzox/CRT-Standalone/blob/main/CRT-Standalone.fx
+
+there is also the postprocessing shader that is in written by rikkles. it looks pretty good, though by default it is pretty dim and you have to crank the brightness up. there are quite a few knobs, so maybe that can be worked around.
+
+The demo shader works "out of the box" with one issue, which is that bloom effect is too pronounced. I need to make that much more subtle, but that involves compiling sdl3's shadercross and making it available to the build. I don't want to make casual builders have to install all that, so will likely separate out into separate project like I did with firmware / Merlin32.
+
+Two issues. maybe 3. ha!
+
+2. in the e character, there's a "scanline" in the middle of the middle stroke. also a.
+3. vertical dithering / blending (e.g. in Kareteka) is messed up, vertical scaling is not 
+maybe these are the same thing. 
+theories: 1) maybe the scanlines are just not in the right place compared to my overall scaling factor. there is a number of scanlines setting, so perhaps that needs to be adjusted.
+
+also, made changes to the debugger so that it updates display cycle by cycle, or optionally, shows the older style "whatever is on video memory right now" mode. not sure which should be default. probably the "memory" mode, as that is most natural for folks debugging normal software. (cycle mode is if you want to debug cycle-accurate demos and such).
+
+Also considering an external debugger interface. emdeejay wants to take a swing at it, and I'll let him. I gave him some guidance based on my own research - essentially, a binary protocol to run over a local socket. write a library in python (or some non-dumb language) to provide a tool for LLMs to debug the emulator as well as regular guest applications.
+
+I evaluated using Cyrene's method, but there are two drawbacks I see to that. The first is it currently is windows-specific, which doesn't help me as I don't want to do emulator debugging on windows. second is it uses shared memory, which prevents debugging over a network. 
+perhaps a protocol converter could be made for Cyrene, to let it manage GS2 across a network. (I don't know how much data it's moving typically, it may still need to be local). 
+
+I came to that thought because I was dreading further debugging on senseiplay. back and forth through chat. would be much simpler if the thing had a tool to drive debugging itself.
