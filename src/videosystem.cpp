@@ -504,18 +504,18 @@ void video_system_t::present_scene() {
     if (!(crt_shader_enabled && crt_state && scene_target)) {
         return; // shader disabled/unavailable: update_display drew to the swapchain.
     }
-    // Feed the CRT shader the resolution it samples against.
-    //   x  -> phosphor mask frequency: keep at output pixels so the grille
-    //         stays a crisp few-pixel cell.
-    //   y  -> scanline frequency: the shader produces resolution.y/2 bands, so
-    //         drive it off the emulated visible line count (not the pixel
-    //         height) to get ~one scanline per source line. Apple II shows ~192
-    //         visible lines; *2 gives one bright band per line. Bump/lower this
-    //         constant to taste (smaller = fatter, more visible scanlines).
-    const float source_lines = 192.0f;
+    // Feed the CRT shader a resolution that matches the emulated source texture
+    // mapped into scene_target. The shader tiles resolution.y/2 bands across the
+    // full texture; scale Y by the content-to-source ratio so each band aligns
+    // with one source scanline (last_srcrect.h lines in target.h pixels).
+    // Scale X similarly so the RGB grille tracks source pixels.
+    const float content_w = target.w > 0.0f ? target.w : (float)scene_target_w;
+    const float content_h = target.h > 0.0f ? target.h : (float)scene_target_h;
+    const float src_w = last_srcrect.w > 0.0f ? last_srcrect.w : content_w;
+    const float src_h = last_srcrect.h > 0.0f ? last_srcrect.h : content_h;
     crt_uniforms_t uniforms;
-    uniforms.texture_width = (float)scene_target_w;
-    uniforms.texture_height = source_lines * 2.0f;
+    uniforms.texture_width = (float)scene_target_w * src_w / content_w;
+    uniforms.texture_height = 2.0f * (float)scene_target_h * src_h / content_h;
     SDL_SetGPURenderStateFragmentUniforms(crt_state, 0, &uniforms, sizeof(uniforms));
 
     // Blit the offscreen scene onto the swapchain 1:1 through the CRT shader.
