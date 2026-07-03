@@ -764,6 +764,10 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
     }
 
     run_cpus_init(computer);
+    vs->set_crt_shader_enabled(false, false);
+    if (gs2_app_values.crt_shader_at_boot) {
+        vs->set_crt_shader_enabled(true, true);
+    }
     state->phase = PHASE_EMULATION;
 }
 
@@ -892,7 +896,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     gs2_app_values.sleep_mode = true;
                     break;
                 case 'g':
-                    gs2_app_values.gpu_render = true;
+                    gs2_app_values.crt_shader_at_boot = true;
                     break;
                 default:
                     std::cerr << "Usage: " << argv[0] << " [-p platform] [-dsXdY=filename] [-s] [-g]\n";
@@ -907,8 +911,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     std::cerr << "        Drives are 1-indexed; e.g. -ds6d1=foo.dsk for the\n";
                     std::cerr << "        first drive of the controller in slot 6.\n";
                     std::cerr << "  -s: sleep mode (don't busy-wait, sleep)\n";
-                    std::cerr << "  -g: use the GPU-backed renderer (enables post-process\n";
-                    std::cerr << "        shaders). Default is the classic SDL 2D renderer.\n";
+                    std::cerr << "  -g: enable CRT post-process shader when guest emulation\n";
+                    std::cerr << "        starts (same as pressing F7 with shader off).\n";
                     return SDL_APP_FAILURE;
             }
         }
