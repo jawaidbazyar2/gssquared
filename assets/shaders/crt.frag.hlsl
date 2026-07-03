@@ -21,10 +21,10 @@ static const float PI = 3.14159265f;
 
 // These could be turned into uniforms if you wanted to tweak them
 static const float scan_line_amount = 0.5; // Range 0-1
-static const float warp_amount = 0.05; // Range 0-1
-static const float vignette_amount = 0.5; // Range 0-1
+static const float warp_amount = 0.20; // Range 0-1
+static const float vignette_amount = 0.1; // Range 0-1
 static const float vignette_intensity = 0.3; // Range 0-1
-static const float grille_amount = 0.05; // Range 0-1
+static const float grille_amount = 0.20; // Range 0-1
 static const float brightness_boost = 1.2; // Range 1-2
 
 PSOutput main(PSInput input) {
