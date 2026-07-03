@@ -110,6 +110,7 @@ protected:
     // Create/recreate the offscreen scene_target to match (w x h) pixels. No-op
     // when the CRT shader is unavailable. Called at init and on resize.
     void ensure_scene_target(int w, int h);
+    void show_crt_shader_unavailable();
 
 public:
     video_system_t(computer_t *computer);
@@ -139,6 +140,7 @@ public:
     // True when the CRT post-process shader is available to be used.
     bool crt_shader_available() const { return crt_state != nullptr; }
     bool get_crt_shader_enabled() const { return crt_shader_enabled; }
+    void set_crt_shader_enabled(bool enabled, bool show_message = false);
     void toggle_crt_shader();
     void register_frame_processor(int weight, FrameHandler handler);
     void update_display(bool force_full_frame = false);

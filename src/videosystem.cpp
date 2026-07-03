@@ -52,16 +52,14 @@ video_system_t::video_system_t(computer_t *computer) {
         printf("Render driver %d: %s\n", i, name);
     } */
 
-    // Optionally use the SDL GPU-backed renderer so we can attach custom
-    // fragment shaders (CRT post-processing). On macOS this maps to Metal/MSL.
-    // This is opt-in via the -g command-line flag because it changes high-DPI
-    // backbuffer behavior; the default is the classic SDL 2D renderer.
-    if (gs2_app_values.gpu_render) {
-        renderer = SDL_CreateGPURenderer(window, SDL_GPU_SHADERFORMAT_MSL, &gpu_device);
-        if (!renderer) {
-            printf("GPU renderer unavailable (%s); falling back to classic renderer\n", SDL_GetError());
-            gpu_device = nullptr;
-        }
+    // Prefer the SDL GPU-backed renderer so we can attach custom fragment
+    // shaders (CRT post-processing). On macOS this maps to Metal/MSL. If it
+    // is unavailable, fall back to the classic renderer; gpu_device stays null
+    // and CRT shader effects are disabled.
+    renderer = SDL_CreateGPURenderer(window, SDL_GPU_SHADERFORMAT_MSL, &gpu_device);
+    if (!renderer) {
+        printf("GPU renderer unavailable (%s); falling back to classic renderer\n", SDL_GetError());
+        gpu_device = nullptr;
     }
     if (!renderer) {
         renderer = SDL_CreateRenderer(window, NULL);
@@ -149,6 +147,7 @@ video_system_t::video_system_t(computer_t *computer) {
             case SDLK_F5:
             case SDLK_F2:
             case SDLK_F6:
+            case SDLK_F7:
                 return true; // eat the keydown
             case SDLK_PRINTSCREEN:
                 copy_screen();
@@ -449,15 +448,38 @@ void video_system_t::flip_display_scale_mode() {
     }
 }
 
-void video_system_t::toggle_crt_shader() {
+void video_system_t::set_crt_shader_enabled(bool enabled, bool show_message) {
     if (!crt_shader_available()) {
-        event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
-            "CRT Shader unavailable (start with -g for GPU rendering)"));
+        if (show_message) {
+            show_crt_shader_unavailable();
+        }
         return;
     }
-    crt_shader_enabled = !crt_shader_enabled;
-    event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
-        crt_shader_enabled ? "CRT Shader On" : "CRT Shader Off"));
+    crt_shader_enabled = enabled;
+    if (show_message) {
+        event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
+            crt_shader_enabled ? "CRT Shader On" : "CRT Shader Off"));
+    }
+}
+
+void video_system_t::show_crt_shader_unavailable() {
+    const char *message;
+    if (!gpu_device) {
+        message = "CRT Shader unavailable (GPU renderer could not be initialized)";
+    } else if (!crt_shader) {
+        message = "CRT Shader unavailable (failed to load shader source)";
+    } else {
+        message = "CRT Shader unavailable (failed to create shader render state)";
+    }
+    event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, message));
+}
+
+void video_system_t::toggle_crt_shader() {
+    if (!crt_shader_available()) {
+        show_crt_shader_unavailable();
+        return;
+    }
+    set_crt_shader_enabled(!crt_shader_enabled, true);
 }
 
 void video_system_t::copy_screen() {
