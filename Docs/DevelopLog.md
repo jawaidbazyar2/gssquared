@@ -12216,3 +12216,20 @@ counter (16-bit); state ID; true or false for turn on or turn off.
 ok, that becomes very clean and straightforward. Display asks VideoScanner to change state; VS decides when to apply that request.
 
 re SecondSight support, I am not really happy with how the delay stuff is working. I'm currently checking for cycles, and, had to bump it up to 60 cycles because Cogito had the odd hang on handshaking. Perhaps instead of cycles, I Could count a certain number of handshake reads. 
+
+
+## Jun 24, 2026
+
+well you know what's been going on. Big ow.
+
+trying to debug the boot loop in Jason's odds.po image.
+boot with pr#7: boot loop.
+boot with ctrl-oa-reset: no boot loop.
+
+does NOT reproduce on my boot.
+odds: system 6.0.4
+mine: system 6.0.1
+
+Clod doesn't think the issue is with pdblock3, because the block commands are identical up to the point of reset.
+
+oh FFS, the reboot loop also happens in KEGS. NOT MY PROBLEM. I should have tried that first. Derp.
