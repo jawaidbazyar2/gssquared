@@ -199,6 +199,14 @@ public:
     void open_panel();
     void close_panel();
 
+    bool is_control_panel_active() const {
+        return currentSlideStatus == SLIDE_IN || slideStatus != SLIDE_NONE;
+    }
+
+    bool requires_host_cursor() const {
+        return is_control_panel_active() || !mstack.stack.empty();
+    }
+
     void set_clock(NClock *clock) { this->clock = clock; }
 
     bool check_for_dirty_disks();
