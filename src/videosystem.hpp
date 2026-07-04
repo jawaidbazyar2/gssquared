@@ -74,6 +74,8 @@ struct video_system_t {
     display_pixel_mode_t display_pixel_mode = DM_PIXEL_FUZZ;
 
     SDL_FRect target = { 0.0f, 0.0f, 0.0f, 0.0f };
+    // Guest-visible screen area within the render target (excludes bezel borders).
+    SDL_FRect content = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     int border_width = BORDER_WIDTH;
     int border_height = BORDER_HEIGHT;
@@ -89,6 +91,8 @@ struct video_system_t {
 
     bool mouse_captured = false;
     bool old_mouse_captured = false;
+    // True while the OSD control panel or a modal dialog needs the host cursor visible.
+    bool osd_control_panel_open = false;
     
     SDL_Texture *last_texture = nullptr;
     SDL_FRect last_srcrect = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -121,7 +125,8 @@ public:
     void set_window_fullscreen(display_fullscreen_mode_t mode);
     display_fullscreen_mode_t get_window_fullscreen();
     void sync_window();
-    void render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_FRect *dstadj, bool respect_mode = true );
+    void render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_FRect *dstadj, bool respect_mode = true,
+        const SDL_FRect *content_inset_src = nullptr);
     void clear();
     void present();
     bool display_capture_mouse(bool capture);

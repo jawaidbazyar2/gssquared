@@ -226,7 +226,8 @@ void video_system_t::set_window_title(const char *title) {
     SDL_SetWindowTitle(window, title);
 }
 
-void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_FRect *dstadj, bool respect_mode) {
+void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_FRect *dstadj, bool respect_mode,
+        const SDL_FRect *content_inset_src) {
 
     SDL_FRect adj_target;
     if (dstadj) {
@@ -241,6 +242,17 @@ void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_
         adj_target.h = target.h - yadj*2;
     } else {
         adj_target = target;
+    }
+
+    if (content_inset_src && srcrect->w > 0.0f && srcrect->h > 0.0f) {
+        const float scale_x = adj_target.w / srcrect->w;
+        const float scale_y = adj_target.h / srcrect->h;
+        content.x = adj_target.x + content_inset_src->x * scale_x;
+        content.y = adj_target.y + content_inset_src->y * scale_y;
+        content.w = content_inset_src->w * scale_x;
+        content.h = content_inset_src->h * scale_y;
+    } else {
+        content = adj_target;
     }
 
     if (respect_mode) {
