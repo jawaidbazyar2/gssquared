@@ -159,6 +159,7 @@ protected:
     device_irq_handler_s irq_handler = {nullptr, nullptr};
     mode_table_t calc_video_mode_x(uint8_t vmode);
     virtual void init_mode_table();
+    inline virtual bool supports_dblres() const { return false; }
 
     uint8_t current_scb = 0;
     uint16_t h_counter = 0;

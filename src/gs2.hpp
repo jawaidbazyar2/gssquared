@@ -35,6 +35,9 @@ typedef struct gs2_app_t {
     bool console_mode = false;
    /*  bool disk_accelerator = false; */
     bool sleep_mode = false;
+    // When true, enable the CRT post-process shader when guest emulation starts
+    // (same effect as pressing F7 with the shader off).
+    bool crt_shader_at_boot = false;
     bool right_mouse_accelerate = true;
     uint32_t menu_event_type = 0;
     bool modal_tracking = false;  // true while macOS menu/resize modal loop owns the run loop

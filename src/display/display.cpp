@@ -318,6 +318,7 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
         return true;
     }
     // TODO: get rid of these for production
+#if 0
     if (key == SDLK_F7) {
         if (mod & SDL_KMOD_CTRL) {
             // dump hires image page 1
@@ -330,6 +331,7 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
             return true;
         }
     }
+#endif
     if (key == SDLK_F8) {
         ds->vsg->setDumpNextFrame(true);
         return true;
@@ -881,7 +883,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     });
     computer->sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [ds](const SDL_Event &event) {
         int key = event.key.key;
-        if ((key == SDLK_F7) || (key == SDLK_F8) || (key == SDLK_KP_PLUS) || (key == SDLK_KP_MINUS)) {
+        if (/* (key == SDLK_F7) ||  */(key == SDLK_F8) || (key == SDLK_KP_PLUS) || (key == SDLK_KP_MINUS)) {
             return true; // eat the keydown
         }
         return false;

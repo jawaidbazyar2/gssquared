@@ -180,13 +180,23 @@ void frame_video_update(computer_t *computer, bool force_full_frame = false) {
 
     vs->update_display(force_full_frame);
 
-    // The OSD and its modals/HUD are authored in window-point coordinates. On a
-    // high-DPI backbuffer the renderer output is in real pixels, so render the UI
-    // through a points-sized logical presentation to keep its layout correct, then
-    // restore the emulator's "draw in real output pixels" convention (DISABLED).
+    // If the CRT post-process shader is active, composite the offscreen scene
+    // onto the swapchain (through the shader) before the OSD is drawn on top.
+    vs->present_scene();
+
+    // The OSD and its modals/HUD are authored in window-point coordinates (the
+    // OSD lays out against SDL_GetWindowSize, which returns points). On a high-DPI
+    // backbuffer the renderer output is in real pixels, so render the UI through a
+    // points-sized logical presentation to keep its layout correct, then restore
+    // the emulator's "draw in real output pixels" convention (DISABLED).
+    //
+    // The logical size MUST match the point coordinate space the OSD uses; scaling
+    // it by the display scale here would desync the layout and make the UI render
+    // oversized (the STRETCH already maps points onto the full pixel backbuffer).
     int points_w = 0, points_h = 0;
     SDL_GetWindowSize(vs->window, &points_w, &points_h);
-    SDL_SetRenderLogicalPresentation(vs->renderer, points_w, points_h, SDL_LOGICAL_PRESENTATION_STRETCH);
+    SDL_SetRenderLogicalPresentation(vs->renderer, points_w, points_h,
+        SDL_LOGICAL_PRESENTATION_STRETCH);
     osd->render();
     SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
 
@@ -754,6 +764,10 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
     }
 
     run_cpus_init(computer);
+    vs->set_crt_shader_enabled(false, false);
+    if (gs2_app_values.crt_shader_at_boot) {
+        vs->set_crt_shader_enabled(true, true);
+    }
     state->phase = PHASE_EMULATION;
 }
 
@@ -851,7 +865,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     if (gs2_app_values.console_mode) {
         // parse command line optionss
-        while ((opt = getopt(argc, argv, "sxp:d:")) != -1) {
+        while ((opt = getopt(argc, argv, "sxgp:d:")) != -1) {
             switch (opt) {
                 case 'p':
                     platform_id = std::stoi(optarg);
@@ -881,8 +895,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 case 's':
                     gs2_app_values.sleep_mode = true;
                     break;
+                case 'g':
+                    gs2_app_values.crt_shader_at_boot = true;
+                    break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [-p platform] [-dsXdY=filename] [-s]\n";
+                    std::cerr << "Usage: " << argv[0] << " [-p platform] [-dsXdY=filename] [-s] [-g]\n";
                     std::cerr << "  -p N: skip the system-selector UI and auto-launch the\n";
                     std::cerr << "        first builtin system that matches the given platform.\n";
                     std::cerr << "        Closing the emulator window then quits the app rather\n";
@@ -894,6 +911,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     std::cerr << "        Drives are 1-indexed; e.g. -ds6d1=foo.dsk for the\n";
                     std::cerr << "        first drive of the controller in slot 6.\n";
                     std::cerr << "  -s: sleep mode (don't busy-wait, sleep)\n";
+                    std::cerr << "  -g: enable CRT post-process shader when guest emulation\n";
+                    std::cerr << "        starts (same as pressing F7 with shader off).\n";
                     return SDL_APP_FAILURE;
             }
         }

@@ -5,6 +5,7 @@
 class VideoScannerIIe : public VideoScannerII
 {
 protected:
+    inline virtual bool supports_dblres() const override { return true; }
 
 public:
     VideoScannerIIe(MMU_II *mmu);

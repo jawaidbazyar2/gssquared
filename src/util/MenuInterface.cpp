@@ -61,6 +61,10 @@ void MenuInterface::toggleRightMouseAccel() {
 	gs2_app_values.right_mouse_accelerate = !gs2_app_values.right_mouse_accelerate;
 }
 
+void MenuInterface::toggleCrtShader() {
+	if (computer_ && computer_->video_system) computer_->video_system->toggle_crt_shader();
+}
+
 int MenuInterface::getCurrentSpeed() {
 	if (!computer_ || !computer_->clock) return -1;
 	return (int)computer_->clock->get_clock_mode();
@@ -91,6 +95,14 @@ bool MenuInterface::getAudioDecorrelation() {
 
 bool MenuInterface::getRightMouseAccel() {
 	return gs2_app_values.right_mouse_accelerate;
+}
+
+bool MenuInterface::getCrtShader() {
+	return computer_ && computer_->video_system ? computer_->video_system->get_crt_shader_enabled() : false;
+}
+
+bool MenuInterface::getCrtShaderAvailable() {
+	return computer_ && computer_->video_system ? computer_->video_system->crt_shader_available() : false;
 }
 
 bool MenuInterface::isEmulationRunning() {

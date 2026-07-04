@@ -8,6 +8,7 @@ class VideoScannerIIePAL : public VideoScannerII
         const uint32_t SCANNER_CYCLES = (65 * 312);
         
 protected:
+    inline virtual bool supports_dblres() const override { return true; }
 
 public:
     VideoScannerIIePAL(MMU_II *mmu);
