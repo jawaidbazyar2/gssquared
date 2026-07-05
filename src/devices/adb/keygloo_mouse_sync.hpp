@@ -12,6 +12,7 @@
 #include "debug.hpp"
 
 #include "devices/adb/keygloo_state.hpp"
+#include "devices/adb/ADB_Micro.hpp"
 
 namespace keygloo_mouse_sync {
 
@@ -246,25 +247,6 @@ inline void KeyGloo::seed_reported_from_em() {
     }
 }
 
-inline void KeyGloo::on_em_c024_x_read() {
-    if (!host_ctx || !reported_valid) {
-        return;
-    }
-    keygloo_mouse_sync::write_em_axis(host_ctx, keygloo_mouse_sync::EM_MOUSE_X_LO,
-        keygloo_mouse_sync::EM_MOUSE_X_HI, keygloo_mouse_sync::EM_MOUSE_X_LO_BANK,
-        keygloo_mouse_sync::EM_MOUSE_X_HI_BANK, reported_x);
-    reported_x += pending_dx;
-}
-
-inline void KeyGloo::on_em_c024_y_read() {
-    if (!host_ctx || !reported_valid) {
-        return;
-    }
-    keygloo_mouse_sync::write_em_axis(host_ctx, keygloo_mouse_sync::EM_MOUSE_Y_LO,
-        keygloo_mouse_sync::EM_MOUSE_Y_HI, keygloo_mouse_sync::EM_MOUSE_Y_LO_BANK,
-        keygloo_mouse_sync::EM_MOUSE_Y_HI_BANK, reported_y);
-    reported_y += pending_dy;
-}
 
 inline void KeyGloo::step_em_closed_loop() {
     if (!keygloo_mouse_sync::closed_loop_enabled()) {
@@ -360,35 +342,6 @@ inline void KeyGloo::drain_motion_queue() {
         printf("KeyGloo sync: inject chunk (%d,%d) queue_remain=%zu mouse_data=(%02X,%02X)\n",
             chunk.dx, chunk.dy, motion_queue.size(), mouse_data[0], mouse_data[1]);
     }
-}
-
-inline void KeyGloo::queue_motion_toward_target() {
-    if (!host_ctx || !em_active || mouse_data_full) {
-        return;
-    }
-    if (!reported_valid) {
-        seed_reported_from_em();
-    }
-
-    int total_dx = target_x - reported_x;
-    int total_dy = target_y - reported_y;
-    if (total_dx == 0 && total_dy == 0) {
-        motion_queue.clear();
-        return;
-    }
-
-    motion_queue = keygloo_mouse_sync::split_motion_delta(total_dx, total_dy);
-
-    if (keygloo_mouse_sync::sync_trace_enabled()) {
-        printf("KeyGloo sync: queue A2 target (%d,%d) reported (%d,%d) delta (%d,%d) chunks=%zu:",
-            target_x, target_y, reported_x, reported_y, total_dx, total_dy, motion_queue.size());
-        for (size_t i = 0; i < motion_queue.size(); i++) {
-            printf(" (%d,%d)", motion_queue[i].dx, motion_queue[i].dy);
-        }
-        printf("\n");
-    }
-
-    drain_motion_queue();
 }
 
 inline void KeyGloo::restore_em_host_cursor() {
@@ -506,21 +459,13 @@ inline uint8_t KeyGloo::read_mouse_data() {
     const bool closed_loop = keygloo_mouse_sync::closed_loop_enabled();
 
     if (mouse_x_available == MOUSE_Y) {
-        if (em_active && !closed_loop) {
-            on_em_c024_y_read();
-        }
         mouse_data_full = false;
         mouse_x_available = MOUSE_X;
         update_interrupt_status();
-        if (em_active && !closed_loop) {
-            queue_motion_toward_target();
-        }
+
         return mouse_data[0];
     }
 
-    if (em_active && !closed_loop) {
-        on_em_c024_x_read();
-    }
     mouse_x_available = MOUSE_Y;
     update_interrupt_status();
     return mouse_data[1];

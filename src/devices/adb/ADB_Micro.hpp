@@ -212,8 +212,8 @@ class KeyGloo
         void seed_reported_from_em();
         void update_em_host_cursor(float wx, float wy);
         void restore_em_host_cursor();
-        void on_em_c024_x_read();
-        void on_em_c024_y_read();
+        /* void on_em_c024_x_read();
+        void on_em_c024_y_read(); */
         void step_em_closed_loop();
     
         // zero out 0x51 to force a power-on reset.
