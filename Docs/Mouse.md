@@ -20,3 +20,12 @@ To release Mouse Capture, you must press **F1**, or Alt-Tab to switch windows. (
 Opening the Control Panel via **F4** or the Control Panel button will also temporarily release Mouse Capture. When you close the Control Panel, the original Mouse Capture state will be restored.
 
 Mouse capture also turns off the "mouse movement shows on-screen controls" feature. It locks you into that keyboard-oriented Apple II experience.
+
+
+## IIgs - GS/OS Mouse Tracking
+
+When you boot a GS/OS image, or other application that starts the IIgs Event Manager, GSSquared detects this and changes how it processes mouse movement events. It will calculate the mouse movement that the IIgs needs to see, in order to match where the Host (your computer) mouse . Then it synthesizes the appropriate events to get the cursor there.
+
+This provides seamless movement of the mouse cursor in and out of the IIgs desktop, making the mouse work much more naturally, and avoiding the need for Mouse Capture mode with IIgs desktop apps.
+
+You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.
