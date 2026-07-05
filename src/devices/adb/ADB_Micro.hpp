@@ -87,6 +87,13 @@ class KeyGloo
         bool em_host_cursor_hidden = false;
         std::vector<MotionChunk> motion_queue;
 
+        // Closed-loop injection stepper state (used when closed_loop_enabled()).
+        bool pending_target = false;
+        int em_snapshot_x = 0;
+        int em_snapshot_y = 0;
+        bool step_outstanding = false;
+        int stale_frames = 0;
+
         uint8_t rom[3072];
 
         union {
@@ -207,6 +214,7 @@ class KeyGloo
         void restore_em_host_cursor();
         void on_em_c024_x_read();
         void on_em_c024_y_read();
+        void step_em_closed_loop();
     
         // zero out 0x51 to force a power-on reset.
         void zero_0x51() {
@@ -896,6 +904,9 @@ class KeyGloo
                 float wy = 0.0f;
                 SDL_GetMouseState(&wx, &wy);
                 update_em_host_cursor(wx, wy);
+                if (em_active) {
+                    step_em_closed_loop();
+                }
             }
             if (vars.dncntr) { // if there is a pending...
                 vars.dncntr--;

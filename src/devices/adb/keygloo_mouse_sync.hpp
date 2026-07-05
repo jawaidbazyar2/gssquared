@@ -20,14 +20,23 @@ namespace keygloo_mouse_sync {
 #define KEYGLOO_MOUSE_SYNC_TRACE 0
 #endif
 
-// Set to 1 to skip direct writes to EM coordinate globals ($047C etc.) and test
-// injection-only sync via ADB/$C024. Internal reported_x/y tracking still runs.
+// Set to 1 to select the closed-loop injection sync path: instead of patching EM
+// coordinate globals ($047C etc.), the guest's live EM position is read back each
+// frame as feedback and a single bounded ADB relative-motion step is injected until
+// it converges on the host-derived target. Flag off keeps the original KEGS-style
+// MMU-write (dead-reckoning) path.
 #ifndef KEYGLOO_MOUSE_SYNC_INJECTION_ONLY
-#define KEYGLOO_MOUSE_SYNC_INJECTION_ONLY 0
+#define KEYGLOO_MOUSE_SYNC_INJECTION_ONLY 1
 #endif
 
 inline bool sync_trace_enabled() {
     return KEYGLOO_MOUSE_SYNC_TRACE || DEBUG(DEBUG_MOUSE);
+}
+
+// Closed-loop injection path is active when the flag is set; otherwise the KEGS
+// MMU-write path (em_memory_patch_enabled) is used.
+inline bool closed_loop_enabled() {
+    return KEYGLOO_MOUSE_SYNC_INJECTION_ONLY != 0;
 }
 
 inline bool em_memory_patch_enabled() {
@@ -203,13 +212,22 @@ inline void KeyGloo::detect_and_update_em_active() {
         if (new_active != prev) {
         printf("KeyGloo: Event Manager %s\n", new_active ? "active" : "inactive");
         if (new_active) {
-            seed_reported_from_em();
-            if (!keygloo_mouse_sync::em_memory_patch_enabled()) {
-                printf("KeyGloo: EM sync injection-only (no MMU coordinate patches)\n");
+            if (keygloo_mouse_sync::closed_loop_enabled()) {
+                // Closed-loop stepper reads live EM position each frame; just
+                // clear any stale stepper state on activation.
+                pending_target = false;
+                step_outstanding = false;
+                stale_frames = 0;
+                printf("KeyGloo: EM sync closed-loop injection (no MMU coordinate patches)\n");
+            } else {
+                seed_reported_from_em();
             }
         } else {
             reported_valid = false;
             motion_queue.clear();
+            pending_target = false;
+            step_outstanding = false;
+            stale_frames = 0;
             restore_em_host_cursor();
         }
     }
@@ -246,6 +264,72 @@ inline void KeyGloo::on_em_c024_y_read() {
         keygloo_mouse_sync::EM_MOUSE_Y_HI, keygloo_mouse_sync::EM_MOUSE_Y_LO_BANK,
         keygloo_mouse_sync::EM_MOUSE_Y_HI_BANK, reported_y);
     reported_y += pending_dy;
+}
+
+inline void KeyGloo::step_em_closed_loop() {
+    if (!keygloo_mouse_sync::closed_loop_enabled()) {
+        return;
+    }
+    if (!host_ctx || !em_active || !pending_target || !adb_mouse) {
+        return;
+    }
+
+    static constexpr int DEADBAND = 1;
+    static constexpr int STALE_LIMIT = 4;
+
+    int ex = 0;
+    int ey = 0;
+    keygloo_mouse_sync::read_em_mouse_pos(host_ctx->mmu, ex, ey);
+
+    // Converged: within the deadband of the target, stop stepping.
+    if (std::abs(target_x - ex) <= DEADBAND && std::abs(target_y - ey) <= DEADBAND) {
+        pending_target = false;
+        step_outstanding = false;
+        stale_frames = 0;
+        return;
+    }
+
+    // The previous injected event has not been fully read by the guest yet.
+    if (mouse_data_full) {
+        return;
+    }
+
+    // Wait for the guest EM to actually post the previous step before injecting
+    // again, otherwise we would over-inject against a stale position (overshoot).
+    if (step_outstanding && ex == em_snapshot_x && ey == em_snapshot_y) {
+        stale_frames++;
+        if (stale_frames < STALE_LIMIT) {
+            return;
+        }
+        // Gave up waiting: assume the step was dropped/no-op and re-inject.
+    }
+
+    int dx = keygloo_mouse_sync::clamp_int(target_x - ex,
+        -keygloo_mouse_sync::MOTION_CHUNK_MAX, keygloo_mouse_sync::MOTION_CHUNK_MAX);
+    int dy = keygloo_mouse_sync::clamp_int(target_y - ey,
+        -keygloo_mouse_sync::MOTION_CHUNK_MAX, keygloo_mouse_sync::MOTION_CHUNK_MAX);
+    if (dx == 0 && dy == 0) {
+        pending_target = false;
+        step_outstanding = false;
+        stale_frames = 0;
+        return;
+    }
+
+    em_snapshot_x = ex;
+    em_snapshot_y = ey;
+    stale_frames = 0;
+    step_outstanding = true;
+
+    if (!adb_mouse->inject_relative_motion(dx, dy)) {
+        step_outstanding = false;
+        return;
+    }
+    deliver_mouse_reg0();
+
+    if (keygloo_mouse_sync::sync_trace_enabled()) {
+        printf("KeyGloo sync: closed-loop step EM (%d,%d) target (%d,%d) inject (%d,%d)\n",
+            ex, ey, target_x, target_y, dx, dy);
+    }
 }
 
 inline void KeyGloo::deliver_mouse_reg0() {
@@ -370,6 +454,17 @@ inline void KeyGloo::handle_em_mouse_motion(float wx, float wy) {
 
     keygloo_mouse_sync::host_to_a2(host_ctx->computer, rx, ry, target_x, target_y);
 
+    if (keygloo_mouse_sync::closed_loop_enabled()) {
+        // Closed-loop mode only records the target here; the per-frame stepper
+        // (step_em_closed_loop) reads the guest's live EM position and injects.
+        pending_target = true;
+        if (keygloo_mouse_sync::sync_trace_enabled()) {
+            printf("KeyGloo sync: closed-loop target (%d,%d) from SDL (%.0f,%.0f)\n",
+                target_x, target_y, wx, wy);
+        }
+        return;
+    }
+
     if (mouse_data_full) {
         if (keygloo_mouse_sync::sync_trace_enabled()) {
             printf("KeyGloo sync: SDL window (%.0f,%.0f) render (%.0f,%.0f) "
@@ -408,20 +503,22 @@ inline void KeyGloo::handle_em_mouse_motion(float wx, float wy) {
 }
 
 inline uint8_t KeyGloo::read_mouse_data() {
+    const bool closed_loop = keygloo_mouse_sync::closed_loop_enabled();
+
     if (mouse_x_available == MOUSE_Y) {
-        if (em_active) {
+        if (em_active && !closed_loop) {
             on_em_c024_y_read();
         }
         mouse_data_full = false;
         mouse_x_available = MOUSE_X;
         update_interrupt_status();
-        if (em_active) {
+        if (em_active && !closed_loop) {
             queue_motion_toward_target();
         }
         return mouse_data[0];
     }
 
-    if (em_active) {
+    if (em_active && !closed_loop) {
         on_em_c024_x_read();
     }
     mouse_x_available = MOUSE_Y;
