@@ -71,6 +71,32 @@ class ADB_Mouse : public ADB_Device
         registers[0].data[1] = button_0_down | (registers[0].data[1] & 0x7F);
     }
 
+    bool encode_relative_motion(int xrel, int yrel) {
+        if (xrel == 0 && yrel == 0) {
+            return false;
+        }
+
+        bool moved_right = (xrel < 0);
+        bool moved_up = (yrel < 0);
+
+        if (xrel > 63) xrel = 63;
+        else if (xrel < -63) xrel = -63;
+        if (yrel > 63) yrel = 63;
+        else if (yrel < -63) yrel = -63;
+
+        registers[0].size = 2;
+        registers[0].data[0] = (uint8_t)(xrel & 0x3F) | (moved_right ? 0x40 : 0x00);
+        registers[0].data[1] = (uint8_t)(yrel & 0x3F) | (moved_up ? 0x40 : 0x00);
+        update_button_down();
+        has_data = true;
+        return true;
+    }
+
+    // Inject relative motion directly (EM sync chunks are already in A2 units).
+    bool inject_relative_motion(int xrel, int yrel) {
+        return encode_relative_motion(xrel, yrel);
+    }
+
     bool process_event(SDL_Event &event) override {
         bool status = false;
         /* Track mouse button up and down events. In ADB Land, the button up/down status 
@@ -106,52 +132,17 @@ class ADB_Mouse : public ADB_Device
             status = true;
         }
         if (event.type == SDL_EVENT_MOUSE_MOTION) {
-            // TODO: determine if we need to do any kind of scaling
-            // it's also possible we need to accumulate motion values 
-            // until the register is actually read.
-            // alternatively, to buffer them.
             float scale = handler == 1 ? MOUSE_MOTION_SCALE_SLOW : MOUSE_MOTION_SCALE_FAST;
             int xrel = (int)(event.motion.xrel * scale);
             int yrel = (int)(event.motion.yrel * scale);
-            
+
             // if there was any motion, minimum motion after scale is 1.
             if (xrel == 0 && event.motion.xrel > 0) xrel = 1;
             if (xrel == 0 && event.motion.xrel < 0) xrel = -1;
             if (yrel == 0 && event.motion.yrel > 0) yrel = 1;
             if (yrel == 0 && event.motion.yrel < 0) yrel = -1;
 
-            bool moved_right, moved_up;
-
-            if (xrel < 0) {
-                moved_right = true;
-            } else {
-                moved_right = false;
-            }
-
-            if (yrel < 0) {
-                moved_up = true;
-            } else {
-                moved_up = false;
-            }
-
-            // set motion bits, and make positive if negative
-            /* if (xrel > 0) moved_right = 1;
-            else xrel = -xrel;
-            if (yrel < 0) { moved_up = 1; yrel = -yrel; } */
-
-            // clamp to 0 .. 63
-            if (xrel > 63) xrel = 63;
-            if (yrel > 63) yrel = 63;
-
-            // negative values are 2's complement.
-            registers[0].size = 2;
-            registers[0].data[0] = (uint8_t)(xrel & 0x3F) | (moved_right ? 0x40 : 0x00);
-            registers[0].data[1] = (uint8_t)(yrel & 0x3F) | (moved_up ? 0x40 : 0x00);
-            update_button_down();
-            has_data = true;
-            status = true;
-
-            //printf("MS> Mouse motion: x: %f, y: %f, xrel_abs: %d, yrel_abs: %d, moved_right: %d, moved_up: %d data0: %02X, data1: %02X\n", event.motion.x, event.motion.y, xrel, yrel, moved_right, moved_up, registers[0].data[0], registers[0].data[1]);
+            status = encode_relative_motion(xrel, yrel);
         }
         //if (status) print_registers();
         return status;

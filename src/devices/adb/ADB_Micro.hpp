@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 #include <cstdio>
+#include <vector>
 
 #include "device_reset_id.hpp"
 #include "util/ResourceFile.hpp"
@@ -62,10 +63,29 @@ struct uc_vars_t {
     uint8_t xkeys;
 };
 
+#include "devices/adb/keygloo_state.hpp"
+
+struct MotionChunk {
+    int dx;
+    int dy;
+};
+
 class KeyGloo
 {
     private:
         ADB_Host * adb_host = nullptr;
+        ADB_Mouse * adb_mouse = nullptr;
+        keygloo_state_t *host_ctx = nullptr;
+        bool em_active = false;
+        bool reported_valid = false;
+        int target_x = 0;
+        int target_y = 0;
+        int reported_x = 0;
+        int reported_y = 0;
+        int pending_dx = 0;
+        int pending_dy = 0;
+        bool em_host_cursor_hidden = false;
+        std::vector<MotionChunk> motion_queue;
 
         uint8_t rom[3072];
 
@@ -167,13 +187,26 @@ class KeyGloo
             memset(ram, 0, sizeof(ram));
             adb_host = new ADB_Host();
             adb_host->add_device(0x02, new ADB_Keyboard());
-            adb_host->add_device(0x03, new ADB_Mouse());
+            adb_mouse = new ADB_Mouse();
+            adb_host->add_device(0x03, adb_mouse);
             //status = 0;
 
             reset();
 
         };
         ~KeyGloo();
+
+        void set_host_context(keygloo_state_t *ctx);
+        void detect_and_update_em_active();
+        void handle_em_mouse_motion(float wx, float wy);
+        void queue_motion_toward_target();
+        void drain_motion_queue();
+        void deliver_mouse_reg0();
+        void seed_reported_from_em();
+        void update_em_host_cursor(float wx, float wy);
+        void restore_em_host_cursor();
+        void on_em_c024_x_read();
+        void on_em_c024_y_read();
     
         // zero out 0x51 to force a power-on reset.
         void zero_0x51() {
@@ -748,19 +781,7 @@ class KeyGloo
             }
         }
 
-        // toggle between returning the X data, and the Y data.
-        uint8_t read_mouse_data() {
-            if (mouse_x_available == MOUSE_Y) {
-                mouse_data_full = false;
-                mouse_x_available = MOUSE_X; // means X is now available. Cortland doc contradicts IIgs HW Ref. (x=0, y=1)
-                update_interrupt_status();
-                return mouse_data[0];
-            } else { // mouse_x_available == MOUSE_X}
-                mouse_x_available = MOUSE_Y; // true means Y is now avail (switching back to Y)
-                update_interrupt_status();
-                return mouse_data[1];
-            }
-        }
+        uint8_t read_mouse_data();
 
         void start_repeat() {
             uint8_t dlyval = (vars.dlyrpt & 0xF0) >> 4;
@@ -772,9 +793,17 @@ class KeyGloo
         }
 
         bool process_event(SDL_Event &event) {
-            
+
             // if key event, and it's a repeat, ignore it.
             if ((event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP) && (event.key.repeat)) return true; // ignore ANY repeated key events.
+
+            if (event.type == SDL_EVENT_MOUSE_MOTION && host_ctx) {
+                detect_and_update_em_active();
+                if (em_active) {
+                    handle_em_mouse_motion(event.motion.x, event.motion.y);
+                    return true;
+                }
+            }
 
             // TODO: need to track which keys are down in this function.
             // TODO: after processing event, check keyboard register for new key event and read it here.
@@ -851,35 +880,23 @@ class KeyGloo
                 //print_keyboard();
 
             } else if (status && (event.type == SDL_EVENT_MOUSE_MOTION || event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_UP)) {
-                ADB_Register reg;
-                adb_host->talk(0x03, 0b11, 0, reg);
-                /*
-                    * Mouse Register 0
-                    * Bit 15: Button Pressed
-                    * Bit 14: Moved Up
-                    * Bit 13-8: Y move value
-                    * Bit 7: always 1
-                    * Bit 6: Moved right
-                    * Bit 5-0: X move value
-                */
-                /* uint8_t mouse_status = (reg.data[1] & 0x80);
-                uint8_t mouse_x = (reg.data[0] & 0x7F);
-                uint8_t mouse_y = (reg.data[1] & 0x7F);
-                mouse_data[0] = mouse_y | mouse_status;
-                mouse_data[1] = mouse_x | mouse_status; */
-                mouse_data[0] = reg.data[1];
-                mouse_data[1] = reg.data[0];
-                mouse_data_full = true;
-                mouse_x_available = MOUSE_X;
-                //print_mouse();
-                update_interrupt_status();
+                deliver_mouse_reg0();
+                if (em_active) {
+                    drain_motion_queue();
+                }
             }
 
             return status;
         }
 
         void frame_handler() {
-            // TODO: implement this.
+            if (host_ctx) {
+                detect_and_update_em_active();
+                float wx = 0.0f;
+                float wy = 0.0f;
+                SDL_GetMouseState(&wx, &wy);
+                update_em_host_cursor(wx, wy);
+            }
             if (vars.dncntr) { // if there is a pending...
                 vars.dncntr--;
                 if (vars.dncntr == 0) {
@@ -941,8 +958,12 @@ class KeyGloo
             }
             df->addLine("  mods: %s", key_mods_str);
             df->addLine("MouseData: (%d) X=%02X, Y=%02X", mouse_data_full, mouse_data[0], mouse_data[1]);
+            df->addLine("EM active: %d  target: (%d, %d)  reported: (%d, %d)  queue: %zu",
+                em_active, target_x, target_y, reported_x, reported_y, motion_queue.size());
 
             adb_host->debug_display(df);
 
         }
     };
+
+#include "devices/adb/keygloo_mouse_sync.hpp"
