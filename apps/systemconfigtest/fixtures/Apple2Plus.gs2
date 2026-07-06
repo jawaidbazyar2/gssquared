@@ -1,0 +1,53 @@
+gs2_version = 1
+name = "Apple ][+"
+description = "64K RAM (incl Lang Card); Disk II; Clock; Parallel Port; VIDEX 80-col; Mockingboard"
+platform = "apple2plus"
+clock = "ntsc"
+scanner = "apple2"
+
+[[cards]]
+slot = 0
+card = "language_card"
+
+[[cards]]
+slot = 1
+card = "parallel"
+
+[[cards]]
+slot = 2
+card = "prodos_clock"
+
+[[cards]]
+slot = 3
+card = "videx"
+
+[[cards]]
+slot = 4
+card = "mockingboard"
+
+[[cards]]
+slot = 5
+card = "bazfast3"
+
+[[cards]]
+slot = 6
+card = "disk_ii"
+
+[[cards]]
+slot = 7
+card = "mem_expansion"
+
+[[storage]]
+slot = 5
+drive = 1
+image = "volumes/ProDOS_32MB.po"
+
+[[storage]]
+slot = 6
+drive = 1
+image = "disks/BASIC SYSTEM.woz"
+
+[[storage]]
+slot = 6
+drive = 2
+image = "disks/empty.woz"

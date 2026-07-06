@@ -1,0 +1,7 @@
+gs2_version = 1
+name = "Apple IIe 65816"
+platform = "apple2e_65816"
+
+[[cards]]
+slot = 6
+card = "disk_ii"

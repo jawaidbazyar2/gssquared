@@ -1,0 +1,7 @@
+gs2_version = 1
+name = "Apple II Plus"
+platform = "apple2plus"
+
+[[cards]]
+slot = 6
+card = "disk_ii"
