@@ -45,6 +45,8 @@ void MenuInterface::diskToggle(storage_key_t key) {
 	SDL_PushEvent(&event);
 }
 
+void MenuInterface::openSystemConfig() { pushMenuEvent(MENU_OPEN_CONFIG); }
+
 void MenuInterface::displayFullScreen() { pushMenuEvent(MENU_DISPLAY_FULLSCREEN); }
 void MenuInterface::editCopyScreen()   { pushMenuEvent(MENU_EDIT_COPY_SCREEN); }
 void MenuInterface::editPasteText()    { pushMenuEvent(MENU_EDIT_PASTE_TEXT); }

@@ -21,6 +21,7 @@
 #include <time.h>
 #include <getopt.h>
 #include <regex>
+#include <memory>
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
 
@@ -34,7 +35,11 @@
 #include "platforms.hpp"
 #include "util/dialog.hpp"
 #include "util/mount.hpp"
+#include "util/SystemConfig.hpp"
 #include "ui/OSD.hpp"
+#if defined(__EMSCRIPTEN__)
+#include "platform-specific/emscripten/web_file_dialog.hpp"
+#endif
 #include "systemconfig.hpp"
 #include "slots.hpp"
 #include "videosystem.hpp"
@@ -570,8 +575,9 @@ struct GS2AppState {
     // Parsed from command line (persistent across system-select cycles)
     int platform_id = PLATFORM_APPLE_II_PLUS;
     std::vector<disk_mount_t> disks_to_mount;
+    std::unique_ptr<SystemConfig> loaded_config;
 
-    // True when the user gave -p PLATFORM and we skipped the system
+    // True when the user gave -p PLATFORM or -c file.gs2 and we skipped the system
     // selector at startup. In that mode, closing the emulator window
     // quits the app (rather than bouncing back to the selector) — the
     // user expressly asked for one specific machine and there's no
@@ -591,11 +597,73 @@ struct GS2AppState {
     MMU_IIgs *mmu_iigs = nullptr;
 };
 
+void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_config, int builtin_system_id);
+
+static bool apply_system_config_file(GS2AppState *state, const std::string& path, std::string& error_out) {
+    state->loaded_config = std::make_unique<SystemConfig>();
+    if (!state->loaded_config->load(path, error_out)) {
+        state->loaded_config.reset();
+        return false;
+    }
+    state->disks_to_mount = state->loaded_config->mounts();
+    state->platform_id = state->loaded_config->config().platform_id;
+    return true;
+}
+
+struct open_config_dialog_data_t {
+    GS2AppState *state;
+};
+
+static void system_config_dialog_callback(void *userdata, const char *const *filelist, int /*filter*/) {
+    auto *data = static_cast<open_config_dialog_data_t *>(userdata);
+    GS2AppState *state = data->state;
+    delete data;
+
+    if (!filelist || !filelist[0]) {
+        return;
+    }
+
+    Paths::set_last_file_dialog_dir(filelist[0]);
+
+    std::string error;
+    if (!apply_system_config_file(state, filelist[0], error)) {
+        std::string diag = "Failed to load system config '" + std::string(filelist[0]) + "':\n" + error;
+        std::cerr << diag << "\n";
+        system_diag(diag.data());
+        return;
+    }
+
+    transition_to_emulation(state, &state->loaded_config->config(), -1);
+}
+
+static void open_system_config_dialog(GS2AppState *state) {
+    static const SDL_DialogFileFilter filters[] = {
+        { "GS2 System Config", "gs2" },
+        { "All files", "*" }
+    };
+
+    auto *data = new open_config_dialog_data_t{ state };
+
+#if defined(__EMSCRIPTEN__)
+    web_open_file_dialog(system_config_dialog_callback, data, ".gs2");
+#else
+    const std::string& last_path = Paths::get_last_file_dialog_dir();
+    SDL_ShowOpenFileDialog(
+        system_config_dialog_callback,
+        data,
+        state->computer->video_system->window,
+        filters,
+        sizeof(filters) / sizeof(SDL_DialogFileFilter),
+        last_path.empty() ? nullptr : last_path.c_str(),
+        false);
+#endif
+}
+
 /*
  * Configure the selected system and transition from system-select to emulation.
  * This is the code that was between select_system->select() and run_cpus() in old main().
  */
-void transition_to_emulation(GS2AppState *state, int system_id) {
+void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_config, int builtin_system_id = -1) {
     computer_t *computer = state->computer;
     video_system_t *vs = computer->video_system;
 
@@ -613,7 +681,6 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
     SDL_SetRenderVSync(vs->renderer, 0);
 #endif
 
-    SystemConfig_t *system_config = get_system_config(system_id);
     state->platform_id = system_config->platform_id;
 
     platform_info* platform = get_platform(state->platform_id);
@@ -635,7 +702,13 @@ void transition_to_emulation(GS2AppState *state, int system_id) {
 
     computer->set_platform(platform);
     computer->set_video_scanner(system_config->scanner_type);
-    computer->set_system_id(system_id);
+    if (state->loaded_config) {
+        computer->set_system_id(-1);
+        computer->set_system_config(&state->loaded_config->config());
+    } else {
+        computer->set_system_id(builtin_system_id);
+        computer->set_system_config(nullptr);
+    }
     
     // TODO: load platform roms - this info should get stored in the 'computer'
     rom_data *rd = load_platform_roms(platform);
@@ -789,6 +862,7 @@ void transition_to_shutdown(GS2AppState *state) {
 
     platform_info *platform = computer->platform;
     getMenuInterface()->setComputer(nullptr);
+    computer->set_system_config(nullptr);
     delete computer;
     state->computer = nullptr;
 
@@ -830,6 +904,10 @@ void transition_to_shutdown(GS2AppState *state) {
     // Let vsync throttle the selection UI instead of spinning.
     SDL_SetRenderVSync(vs->renderer, 1);
     state->phase = PHASE_SYSTEM_SELECT;
+
+    state->loaded_config.reset();
+    state->disks_to_mount.clear();
+    state->auto_launched = false;
 }
 
 /* ========================================================================
@@ -850,8 +928,20 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     
     int platform_id = PLATFORM_APPLE_II_PLUS;  // default to Apple II Plus
     bool platform_explicit = false;            // true when -p was given on CLI
+    std::string config_path;
+    std::vector<disk_mount_t> cli_mounts;
     int opt;
     int slot, drive;
+
+    auto upsert_mount = [](std::vector<disk_mount_t>& mounts, const disk_mount_t& mount) {
+        for (auto& existing : mounts) {
+            if (existing.slot == mount.slot && existing.drive == mount.drive) {
+                existing = mount;
+                return;
+            }
+        }
+        mounts.push_back(mount);
+    };
 
     if (isatty(fileno(stdin))) {
         gs2_app_values.console_mode = true;
@@ -865,11 +955,14 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     if (gs2_app_values.console_mode) {
         // parse command line optionss
-        while ((opt = getopt(argc, argv, "sxgp:d:")) != -1) {
+        while ((opt = getopt(argc, argv, "sxgp:d:c:")) != -1) {
             switch (opt) {
                 case 'p':
                     platform_id = std::stoi(optarg);
                     platform_explicit = true;
+                    break;
+                case 'c':
+                    config_path = optarg;
                     break;
                 case 'd':
                     {
@@ -883,9 +976,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                             slot = std::stoi(matches[1]);
                             drive = std::stoi(matches[2]) - 1;
                             filename = matches[3];
-                            //std::cout << std::format("Mounting disk {} in slot {} drive {}\n", filename, slot, drive) << std::endl;
                             std::cout << "Mounting disk " << filename << " in slot " << slot << " drive " << drive << std::endl;
-                            state->disks_to_mount.push_back({ (uint16_t)slot, (uint16_t)drive, filename});
+                            upsert_mount(cli_mounts, { (uint16_t)slot, (uint16_t)drive, filename});
                         }
                     }
                     break;
@@ -899,7 +991,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     gs2_app_values.crt_shader_at_boot = true;
                     break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [-p platform] [-dsXdY=filename] [-s] [-g]\n";
+                    std::cerr << "Usage: " << argv[0] << " [-c file.gs2] [-p platform] [-dsXdY=filename] [-s] [-g]\n";
+                    std::cerr << "  -c file.gs2: load system configuration from a .gs2 TOML file,\n";
+                    std::cerr << "        skip the system-selector UI, and auto-launch that system.\n";
+                    std::cerr << "        Closing the emulator window then quits the app rather\n";
+                    std::cerr << "        than returning to the selector.\n";
                     std::cerr << "  -p N: skip the system-selector UI and auto-launch the\n";
                     std::cerr << "        first builtin system that matches the given platform.\n";
                     std::cerr << "        Closing the emulator window then quits the app rather\n";
@@ -910,6 +1006,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     std::cerr << "  -dsXdY=filename: mount disk image `filename` in slot X drive Y.\n";
                     std::cerr << "        Drives are 1-indexed; e.g. -ds6d1=foo.dsk for the\n";
                     std::cerr << "        first drive of the controller in slot 6.\n";
+                    std::cerr << "        Overrides a [[storage]] entry from -c for the same slot/drive.\n";
                     std::cerr << "  -s: sleep mode (don't busy-wait, sleep)\n";
                     std::cerr << "  -g: enable CRT post-process shader when guest emulation\n";
                     std::cerr << "        starts (same as pressing F7 with shader off).\n";
@@ -918,9 +1015,24 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         }
     }
 
-    gs2_app_values.menu_event_type = SDL_RegisterEvents(1);
+    if (!config_path.empty()) {
+        std::string error;
+        if (!apply_system_config_file(state, config_path, error)) {
+            std::string diag = "Failed to load system config '" + config_path + "':\n" + error;
+            std::cerr << diag << "\n";
+            system_diag(diag.data());
+            delete state;
+            return SDL_APP_FAILURE;
+        }
+        for (const auto& mount : cli_mounts) {
+            upsert_mount(state->disks_to_mount, mount);
+        }
+    } else {
+        state->disks_to_mount = std::move(cli_mounts);
+        state->platform_id = platform_id;
+    }
 
-    state->platform_id = platform_id;
+    gs2_app_values.menu_event_type = SDL_RegisterEvents(1);
 
     // Debug print mounted media
     std::cout << "Mounted Media (" << state->disks_to_mount.size() << " disks):" << std::endl;
@@ -943,15 +1055,21 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SDL_SetRenderVSync(vs->renderer, 1);
     state->phase = PHASE_SYSTEM_SELECT;
 
-    // If the caller passed `-p PLATFORM`, skip the system-selector UI
-    // and jump straight into emulation using the first builtin system
-    // whose platform_id matches.
-    if (platform_explicit) {
+    // If the caller passed `-c file.gs2`, skip the system-selector UI and
+    // jump straight into emulation using the loaded configuration.
+    if (state->loaded_config) {
+        std::cout << "Auto-launching system config: " << config_path << std::endl;
+        transition_to_emulation(state, &state->loaded_config->config(), -1);
+        state->auto_launched = true;
+    } else if (platform_explicit) {
+        // If the caller passed `-p PLATFORM`, skip the system-selector UI
+        // and jump straight into emulation using the first builtin system
+        // whose platform_id matches.
         const int system_id = find_first_system_for_platform(platform_id);
         if (system_id >= 0) {
             std::cout << "Auto-launching system_id=" << system_id
                       << " for platform_id=" << platform_id << std::endl;
-            transition_to_emulation(state, system_id);
+            transition_to_emulation(state, get_system_config(system_id), system_id);
             state->auto_launched = true;
         } else {
             std::cerr << "No system config matches platform_id=" << platform_id
@@ -974,6 +1092,11 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     if (handleMenuEvent(event)) return SDL_APP_CONTINUE;
 
     if (state->phase == PHASE_SYSTEM_SELECT) {
+        if (event->type == gs2_app_values.menu_event_type
+            && event->user.code == MENU_OPEN_CONFIG) {
+            open_system_config_dialog(state);
+            return SDL_APP_CONTINUE;
+        }
         state->select_system->event(*event);
         if (event->type == SDL_EVENT_QUIT) {
             return SDL_APP_SUCCESS; // clean exit
@@ -1012,6 +1135,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
             vs->clear();
             state->select_system->render();
+            renderMenuOverlay(vs->renderer, vs->window_width, vs->window_height);
             vs->present();
         }
 
@@ -1020,7 +1144,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             return SDL_APP_SUCCESS; // user closed window during selection
         }
         if (system_id >= 0) {
-            transition_to_emulation(state, system_id);
+            transition_to_emulation(state, get_system_config(system_id), system_id);
         }
         // On the web, vsync paces the selection UI; blocking would hang the tab.
 #ifndef __EMSCRIPTEN__

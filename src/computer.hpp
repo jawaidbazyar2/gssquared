@@ -88,6 +88,7 @@ struct computer_t {
 
     // For use by OSD.
     int system_id = -1;
+    const SystemConfig_t *system_config_override = nullptr;
 
     std::vector<ResetHandler> reset_handlers;
     std::vector<ShutdownHandler> shutdown_handlers;
@@ -135,7 +136,12 @@ struct computer_t {
     void set_cpu(cpu_state *cpu) { this->cpu = cpu; }
     void set_platform(platform_info *platform) { this->platform = platform; }
     void set_system_id(int system_id) { this->system_id = system_id; }
-    inline SystemConfig_t *get_system() { return get_system_config(system_id); }
+    void set_system_config(const SystemConfig_t *system_config) { this->system_config_override = system_config; }
+    inline SystemConfig_t *get_system() {
+        return system_config_override
+            ? const_cast<SystemConfig_t *>(system_config_override)
+            : get_system_config(system_id);
+    }
     void set_video_scanner(video_scanner_t video_scanner) { this->video_scanner = video_scanner; }
     video_scanner_t get_video_scanner() { return video_scanner; }
     void reset(bool cold_start);

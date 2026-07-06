@@ -425,6 +425,44 @@ add_library(gs2_message_bus src/mbus/MessageBus.cpp)
 
 add_library(gs2_paths src/paths.cpp)
 
+set(GS2_DEVICE_REGISTRY_LIBS
+    gs2_devices_tcp
+    gs2_devices_keyboard
+    gs2_devices_languagecard
+    gs2_devices_prodos_clock
+    gs2_devices_speaker
+    gs2_devices_cassette
+    gs2_devices_vidhd
+    gs2_devices_game
+    gs2_devices_memexp
+    gs2_devices_parallel
+    gs2_devices_videx
+    gs2_devices_pdblock2
+    gs2_devices_pdblock3
+    gs2_devices_mockingboard
+    gs2_devices_iiememory
+    gs2_devices_ensoniq
+    gs2_devices_scc8530
+    gs2_devices_secondsight
+    gs2_devices_iwm
+    gs2_devices_mouse
+    gs2_devices_rtc_pram
+    gs2_devices_adb
+    gs2_devices_diskii_woz
+    gs2_displaypp
+    gs2_video_scanner
+    gs2_computer
+)
+
+add_library(gs2_device_registry
+    src/devices.cpp
+    src/display/display.cpp
+)
+target_link_libraries(gs2_device_registry PUBLIC ${GS2_DEVICE_REGISTRY_LIBS})
+
+add_library(gs2_systemconfig src/util/SystemConfig.cpp)
+target_link_libraries(gs2_systemconfig PUBLIC gs2_paths)
+
 add_library(gs2_video_scanner 
     src/devices/displaypp/ScanBuffer.cpp
     src/devices/displaypp/VideoScannerII.cpp 
@@ -456,9 +494,8 @@ if(APPLE)
     list(APPEND GS2_PLATFORM_SOURCES ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns)
 endif()
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
-    src/display/display.cpp
     src/platforms.cpp
-    src/devices.cpp src/slots.cpp src/systemconfig.cpp
+    src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
     src/util/AudioSystem.cpp
     ${GS2_PLATFORM_SOURCES}
@@ -515,6 +552,8 @@ target_link_libraries(GSSquared
     gs2_devices_adb
     #gs2_diskii
     gs2_devices_diskii_woz
+    gs2_device_registry
+    gs2_systemconfig
     platform_specific
 )
 
@@ -523,6 +562,8 @@ add_dependencies(GSSquared assemble_resources)
 
 # The auxiliary apps are developer tools and are not part of the web build.
 if(NOT EMSCRIPTEN)
+    enable_testing()
+
     add_subdirectory(apps/adbtest)
 
     add_subdirectory(apps/mbtest)
@@ -568,6 +609,8 @@ if(NOT EMSCRIPTEN)
     add_subdirectory(apps/doc)
 
     add_subdirectory(apps/mousebugtest)
+
+    add_subdirectory(apps/systemconfigtest)
 endif()
 
 ################################################################################

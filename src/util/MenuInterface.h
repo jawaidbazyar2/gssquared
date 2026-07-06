@@ -50,6 +50,7 @@ public:
 	void editPasteText();
 	void openDebugWindow();
 	void diskToggle(storage_key_t key);
+	void openSystemConfig();
 
 	void setControllerMode(int mode);
 

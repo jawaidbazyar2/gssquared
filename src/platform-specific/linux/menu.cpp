@@ -108,21 +108,33 @@ static void build_menu_bar()
 
     // ── File ─────────────────────────────────────────────────────────────────
     if (ImGui::BeginMenu("File")) {
-        if (ImGui::BeginMenu("Drives")) {
-            render_drives_menu();
-            ImGui::EndMenu();
-        }
-        ImGui::Separator();
-        if (ImGui::MenuItem("Close Emulation")) {
-            SDL_Event ev = {};
-            ev.type = SDL_EVENT_QUIT;
-            SDL_PushEvent(&ev);
-        }
-        ImGui::Separator();
-        if (ImGui::MenuItem("Quit")) {
-            SDL_Event ev = {};
-            ev.type = SDL_EVENT_QUIT;
-            SDL_PushEvent(&ev);
+        if (!running) {
+            if (ImGui::MenuItem("Open Config...")) {
+                mi->openSystemConfig();
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Quit")) {
+                SDL_Event ev = {};
+                ev.type = SDL_EVENT_QUIT;
+                SDL_PushEvent(&ev);
+            }
+        } else {
+            if (ImGui::BeginMenu("Drives")) {
+                render_drives_menu();
+                ImGui::EndMenu();
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Close Emulation")) {
+                SDL_Event ev = {};
+                ev.type = SDL_EVENT_QUIT;
+                SDL_PushEvent(&ev);
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Quit")) {
+                SDL_Event ev = {};
+                ev.type = SDL_EVENT_QUIT;
+                SDL_PushEvent(&ev);
+            }
         }
         ImGui::EndMenu();
     }
