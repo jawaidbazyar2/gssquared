@@ -638,7 +638,8 @@ static void system_config_dialog_callback(void *userdata, const char *const *fil
 
 static void open_system_config_dialog(GS2AppState *state) {
     static const SDL_DialogFileFilter filters[] = {
-        { "GS2 System Config", "gs2" },
+        { "GS2 System Config (.gs2)", "gs2" },
+        { "Profiles Settings (.txt)", "txt" },
         { "All files", "*" }
     };
 
@@ -991,9 +992,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     gs2_app_values.crt_shader_at_boot = true;
                     break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [-c file.gs2] [-p platform] [-dsXdY=filename] [-s] [-g]\n";
-                    std::cerr << "  -c file.gs2: load system configuration from a .gs2 TOML file,\n";
-                    std::cerr << "        skip the system-selector UI, and auto-launch that system.\n";
+                    std::cerr << "Usage: " << argv[0] << " [-c file.gs2|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g]\n";
+                    std::cerr << "  -c file.gs2|*Settings.txt: load system configuration from a .gs2 TOML file\n";
+                    std::cerr << "        or Neil Profiles Settings.txt file, skip the system-selector UI,\n";
+                    std::cerr << "        and auto-launch that system.\n";
                     std::cerr << "        Closing the emulator window then quits the app rather\n";
                     std::cerr << "        than returning to the selector.\n";
                     std::cerr << "  -p N: skip the system-selector UI and auto-launch the\n";
@@ -1055,7 +1057,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SDL_SetRenderVSync(vs->renderer, 1);
     state->phase = PHASE_SYSTEM_SELECT;
 
-    // If the caller passed `-c file.gs2`, skip the system-selector UI and
+    // If the caller passed `-c file.gs2` or `*Settings.txt`, skip the system-selector UI and
     // jump straight into emulation using the loaded configuration.
     if (state->loaded_config) {
         std::cout << "Auto-launching system config: " << config_path << std::endl;

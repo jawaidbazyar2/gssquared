@@ -460,7 +460,7 @@ add_library(gs2_device_registry
 )
 target_link_libraries(gs2_device_registry PUBLIC ${GS2_DEVICE_REGISTRY_LIBS})
 
-add_library(gs2_systemconfig src/util/SystemConfig.cpp)
+add_library(gs2_systemconfig src/util/SystemConfig.cpp src/util/SettingsConfig.cpp)
 target_link_libraries(gs2_systemconfig PUBLIC gs2_paths)
 
 add_library(gs2_video_scanner 

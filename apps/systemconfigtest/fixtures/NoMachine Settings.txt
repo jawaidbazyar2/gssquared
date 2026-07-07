@@ -1,0 +1,2 @@
+profile.name No Machine Default
+gssquared.description Tests default platform when machine key is omitted

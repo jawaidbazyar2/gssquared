@@ -1,0 +1,4 @@
+profile.name Slot 7 Taken
+machine APPLE2PLUS
+
+slot7 mockingboard

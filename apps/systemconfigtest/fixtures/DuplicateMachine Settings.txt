@@ -1,0 +1,5 @@
+profile.name Duplicate Machine
+machine APPLE2E
+machine A2GS
+
+slot7 bazfast3

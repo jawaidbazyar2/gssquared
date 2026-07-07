@@ -21,6 +21,7 @@
 #include <iosfwd>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "../systemconfig.hpp"
@@ -40,19 +41,34 @@ struct connection_config_t {
     std::string remote_url;
 };
 
+enum class ConfigFileKind {
+    Gs2,
+    Settings,
+    Profiles,
+    Unknown,
+};
+
+ConfigFileKind detect_config_file_kind(const std::string& path);
+
 class SystemConfig {
     std::string path_;
     std::string name_;
     std::string description_;
     int gs2_version_ = 0;
+    bool settings_source_ = false;
     SystemConfig_t config_data_{};
     std::vector<disk_mount_t> mounts_;
     std::vector<connection_config_t> connections_;
     std::vector<card_extra_t> card_extras_;
     std::vector<std::string> warnings_;
+    std::vector<std::pair<std::string, std::string>> extensions_;
 
     void sync_config_pointers();
     void clear();
+    bool load_gs2(const std::string& path, std::string& error_out);
+    bool load_settings(const std::string& path, std::string& error_out);
+    bool fallback_to_settings(const std::string& path, std::string& error_out);
+    bool finalize_load(std::string& error_out);
 
 public:
     SystemConfig() = default;
@@ -64,7 +80,9 @@ public:
     const std::vector<connection_config_t>& connections() const { return connections_; }
     const std::vector<card_extra_t>& card_extras() const { return card_extras_; }
     const std::vector<std::string>& warnings() const { return warnings_; }
+    const std::vector<std::pair<std::string, std::string>>& extensions() const { return extensions_; }
     int gs2_version() const { return gs2_version_; }
+    bool is_settings_source() const { return settings_source_; }
     const std::string& path() const { return path_; }
 
     void dump(std::ostream& out) const;

@@ -16,7 +16,7 @@
 uint64_t debug_level = 0;
 
 static void print_usage(const char* prog) {
-    std::cerr << "Usage: " << prog << " [--self-test] [-q] <file.gs2>\n";
+    std::cerr << "Usage: " << prog << " [--self-test] [-q] <file.gs2|*Settings.txt>\n";
     std::cerr << "  --self-test  Run built-in fixture tests\n";
     std::cerr << "  -q           Load only; exit 0 on success\n";
 }
@@ -185,6 +185,141 @@ static bool test_errors() {
     CHECK(test_load_fails("videx_on_gs.gs2", "not allowed"), "videx on gs");
     CHECK(test_load_fails("pal_on_gs.gs2", "pal"), "pal on gs");
     CHECK(test_load_fails("dup_storage.gs2", "Duplicate storage"), "dup storage");
+    CHECK(test_load_fails("bad_settings_name.txt", "Not a .gs2 or Settings.txt"), "bad settings name");
+    return true;
+}
+
+static bool test_settings_choplifter() {
+    const auto path = fixture_dir() / "Choplifter Settings.txt";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "Choplifter load: " << error);
+    CHECK(config.is_settings_source(), "settings source flag");
+    CHECK(config.gs2_version() == 0, "no gs2_version");
+    CHECK(std::string(config.config().name) == "Choplifter", "profile.name");
+    CHECK(config.config().platform_id == PLATFORM_APPLE_IIGS, "machine A2GS");
+    CHECK(config.config().slot_devices[7] == DEVICE_ID_PD_BLOCK3, "bazfast3 slot 7");
+    CHECK(config.mounts().size() == 3, "three disk mounts");
+    bool found_zaxxon = false;
+    for (const auto& mount : config.mounts()) {
+        if (mount.filename.find("zaxxon.dsk") != std::string::npos) {
+            found_zaxxon = true;
+            CHECK(mount.slot == 7, "smartport on slot 7");
+        }
+    }
+    CHECK(found_zaxxon, "smartport path");
+    return true;
+}
+
+static bool test_settings_global() {
+    const auto path = fixture_dir() / "Global Settings.txt";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "Global load: " << error);
+    CHECK(config.config().platform_id == PLATFORM_APPLE_II_PLUS, "machine APPLE2PLUS");
+    CHECK(std::string(config.config().name) == "Global Defaults", "profile.name");
+    CHECK(config.config().slot_devices[7] == DEVICE_ID_PD_BLOCK3, "default bazfast3 slot 7");
+    return true;
+}
+
+static bool test_settings_no_machine_default() {
+    const auto path = fixture_dir() / "NoMachine Settings.txt";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "NoMachine load: " << error);
+    CHECK(config.config().platform_id == PLATFORM_APPLE_IIE_ENHANCED, "default APPLE2E_ENHANCED");
+    bool saw_default_warning = false;
+    for (const auto& warning : config.warnings()) {
+        if (warning.find("APPLE2E_ENHANCED") != std::string::npos) {
+            saw_default_warning = true;
+        }
+    }
+    CHECK(saw_default_warning, "default machine warning");
+    return true;
+}
+
+static bool test_settings_slot7_not_overridden() {
+    const auto path = fixture_dir() / "Slot7Occupied Settings.txt";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "Slot7Occupied load: " << error);
+    CHECK(config.config().slot_devices[7] == DEVICE_ID_MOCKINGBOARD, "slot7 keeps specified card");
+    bool saw_default_warning = false;
+    for (const auto& warning : config.warnings()) {
+        if (warning.find("Default smartport") != std::string::npos) {
+            saw_default_warning = true;
+        }
+    }
+    CHECK(!saw_default_warning, "no default bazfast when slot7 specified");
+    return true;
+}
+
+static bool test_settings_machine_multi() {
+    const auto path = fixture_dir() / "MultiMachine Settings.txt";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "MultiMachine load: " << error);
+    CHECK(config.config().platform_id == PLATFORM_APPLE_II_PLUS, "first supported machine");
+    bool warned_apple2c = false;
+    for (const auto& warning : config.warnings()) {
+        if (warning.find("APPLE2C") != std::string::npos) {
+            warned_apple2c = true;
+        }
+    }
+    CHECK(warned_apple2c, "warn about APPLE2C");
+    return true;
+}
+
+static bool test_settings_machine_unsupported() {
+    const auto path = fixture_dir() / "UnsupportedMachine Settings.txt";
+    SystemConfig config;
+    std::string error;
+    CHECK(!config.load(path.string(), error), "unsupported machine should fail");
+    CHECK(error.find("supported") != std::string::npos, "supported machine error");
+    return true;
+}
+
+static bool test_settings_filename_gate() {
+    SystemConfig config;
+    std::string error;
+    const auto path = fixture_dir() / "bad_settings_name.txt";
+    CHECK(!config.load(path.string(), error), "wrong filename should fail");
+    CHECK(error.find("Not a .gs2 or Settings.txt") != std::string::npos, "filename gate error");
+    return true;
+}
+
+static bool test_detect_config_kind() {
+    using Kind = ConfigFileKind;
+    CHECK(detect_config_file_kind("Apple2Plus.gs2") == Kind::Gs2, "detect .gs2");
+    CHECK(detect_config_file_kind("Choplifter Settings.txt") == Kind::Settings, "detect Settings.txt");
+    CHECK(detect_config_file_kind("choplifter settings.TXT") == Kind::Settings, "detect settings icase");
+    CHECK(detect_config_file_kind("Profiles.txt") == Kind::Profiles, "detect Profiles.txt");
+    CHECK(detect_config_file_kind("bad.txt") == Kind::Unknown, "detect unknown");
+    return true;
+}
+
+static bool test_settings_duplicate_key() {
+    const auto path = fixture_dir() / "DuplicateMachine Settings.txt";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "DuplicateMachine load: " << error);
+    CHECK(config.config().platform_id == PLATFORM_APPLE_IIGS, "last machine wins");
+    return true;
+}
+
+static bool test_settings_unknown_keys_warn() {
+    const auto path = fixture_dir() / "Foo Settings.txt";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "Foo Settings load: " << error);
+    CHECK(config.config().slot_devices[6] == DEVICE_ID_DISK_II, "slot6 disk_ii");
+    bool saw_unknown = false;
+    for (const auto& warning : config.warnings()) {
+        if (warning.find("Unknown settings key") != std::string::npos) {
+            saw_unknown = true;
+        }
+    }
+    CHECK(saw_unknown, "unknown key warning");
     return true;
 }
 
@@ -204,6 +339,16 @@ static bool run_self_tests() {
         {"parallel_output", test_parallel_output},
         {"connections", test_connections},
         {"errors", test_errors},
+        {"settings_choplifter", test_settings_choplifter},
+        {"settings_global", test_settings_global},
+        {"settings_no_machine_default", test_settings_no_machine_default},
+        {"settings_slot7_not_overridden", test_settings_slot7_not_overridden},
+        {"settings_machine_multi", test_settings_machine_multi},
+        {"settings_machine_unsupported", test_settings_machine_unsupported},
+        {"settings_filename_gate", test_settings_filename_gate},
+        {"detect_config_kind", test_detect_config_kind},
+        {"settings_duplicate_key", test_settings_duplicate_key},
+        {"settings_unknown_keys_warn", test_settings_unknown_keys_warn},
     };
 
     int passed = 0;

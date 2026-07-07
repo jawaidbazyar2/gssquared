@@ -17,6 +17,7 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_filesystem.h>
+#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
@@ -179,6 +180,21 @@ bool Paths::is_directory(const std::string& filename) {
 bool Paths::ends_with(std::string_view s, std::string_view suffix) noexcept {
     return s.size() >= suffix.size() &&
            s.compare(s.size() - suffix.size(), std::string_view::npos, suffix) == 0;
+}
+
+bool Paths::ends_with_icase(std::string_view s, std::string_view suffix) noexcept {
+    if (s.size() < suffix.size()) {
+        return false;
+    }
+    const size_t offset = s.size() - suffix.size();
+    for (size_t i = 0; i < suffix.size(); ++i) {
+        const unsigned char a = static_cast<unsigned char>(s[offset + i]);
+        const unsigned char b = static_cast<unsigned char>(suffix[i]);
+        if (std::tolower(a) != std::tolower(b)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 std::string Paths::get_directory(const std::string& filename) {

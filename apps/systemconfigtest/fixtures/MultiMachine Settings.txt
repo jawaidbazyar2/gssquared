@@ -1,0 +1,5 @@
+profile.name Multi Machine
+machine APPLE2C, APPLE2PLUS
+
+slot6 disk_ii
+floppy.disk1 disks/boot.woz

@@ -19,6 +19,7 @@
 
 #include <cctype>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <unordered_map>
@@ -398,7 +399,74 @@ bool validate_connections(PlatformId_t platform,
     return true;
 }
 
+std::string trim(std::string s) {
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) {
+        s.erase(s.begin());
+    }
+    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) {
+        s.pop_back();
+    }
+    return s;
+}
+
+bool is_valid_settings_key(const std::string& key) {
+    if (key.empty()) {
+        return false;
+    }
+    for (char c : key) {
+        if (!std::isalnum(static_cast<unsigned char>(c)) && c != '.') {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool looks_like_settings_file(const std::string& path) {
+    const std::string basename = std::filesystem::path(path).filename().string();
+    if (Paths::ends_with_icase(basename, "Settings.txt")) {
+        return true;
+    }
+
+    std::ifstream in(path);
+    if (!in) {
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(in, line)) {
+        const size_t comment = line.find('#');
+        if (comment != std::string::npos) {
+            line = line.substr(0, comment);
+        }
+        line = trim(line);
+        if (line.empty()) {
+            continue;
+        }
+        if (line.rfind("gs2_version", 0) == 0) {
+            return false;
+        }
+        const size_t split = line.find_first_of(" \t");
+        if (split == std::string::npos) {
+            return false;
+        }
+        const std::string key = trim(line.substr(0, split));
+        const std::string value = trim(line.substr(split + 1));
+        return is_valid_settings_key(key) && !value.empty();
+    }
+    return false;
+}
+
 } // namespace
+
+bool SystemConfig::fallback_to_settings(const std::string& path, std::string& error_out) {
+    if (!looks_like_settings_file(path)) {
+        return false;
+    }
+    clear();
+    path_ = path;
+    settings_source_ = true;
+    return load_settings(path, error_out);
+}
 
 void SystemConfig::sync_config_pointers() {
     config_data_.name = name_.c_str();
@@ -410,11 +478,13 @@ void SystemConfig::clear() {
     name_.clear();
     description_.clear();
     gs2_version_ = 0;
+    settings_source_ = false;
     config_data_ = {};
     mounts_.clear();
     connections_.clear();
     card_extras_.clear();
     warnings_.clear();
+    extensions_.clear();
     for (int i = 0; i < NUM_SLOTS; ++i) {
         config_data_.slot_devices[i] = DEVICE_ID_NONE;
     }
@@ -422,20 +492,71 @@ void SystemConfig::clear() {
     sync_config_pointers();
 }
 
+ConfigFileKind detect_config_file_kind(const std::string& path) {
+    const std::string basename = std::filesystem::path(path).filename().string();
+    if (Paths::ends_with_icase(basename, "Profiles.txt")) {
+        return ConfigFileKind::Profiles;
+    }
+    if (Paths::ends_with_icase(basename, "Settings.txt")) {
+        return ConfigFileKind::Settings;
+    }
+    if (Paths::ends_with_icase(basename, ".gs2")) {
+        return ConfigFileKind::Gs2;
+    }
+    return ConfigFileKind::Unknown;
+}
+
 bool SystemConfig::load(const std::string& path, std::string& error_out) {
     clear();
     path_ = path;
 
+    switch (detect_config_file_kind(path)) {
+        case ConfigFileKind::Gs2:
+            return load_gs2(path, error_out);
+        case ConfigFileKind::Settings:
+            settings_source_ = true;
+            return load_settings(path, error_out);
+        case ConfigFileKind::Profiles:
+            error_out = "Profiles.txt is a catalog file, not a system configuration";
+            return false;
+        case ConfigFileKind::Unknown:
+            error_out = "Not a .gs2 or Settings.txt file";
+            return false;
+    }
+    error_out = "Unknown config file type";
+    return false;
+}
+
+bool SystemConfig::finalize_load(std::string& error_out) {
+    if (!validate_cards(config_data_, config_data_.platform_id, card_extras_, warnings_, error_out)) {
+        return false;
+    }
+    if (!validate_storage(mounts_, error_out)) {
+        return false;
+    }
+    if (!validate_connections(config_data_.platform_id, connections_, error_out)) {
+        return false;
+    }
+    return true;
+}
+
+bool SystemConfig::load_gs2(const std::string& path, std::string& error_out) {
     toml::table table;
     try {
         table = toml::parse_file(path);
     } catch (const toml::parse_error& err) {
+        if (fallback_to_settings(path, error_out)) {
+            return true;
+        }
         error_out = std::string("TOML parse error: ") + err.what();
         return false;
     }
 
     const auto version_node = table["gs2_version"];
     if (!version_node.is_integer()) {
+        if (fallback_to_settings(path, error_out)) {
+            return true;
+        }
         error_out = "Missing or invalid gs2_version";
         return false;
     }
@@ -624,21 +745,12 @@ bool SystemConfig::load(const std::string& path, std::string& error_out) {
         }
     }
 
-    if (!validate_cards(config_data_, config_data_.platform_id, card_extras_, warnings_, error_out)) {
-        return false;
-    }
-    if (!validate_storage(mounts_, error_out)) {
-        return false;
-    }
-    if (!validate_connections(config_data_.platform_id, connections_, error_out)) {
-        return false;
-    }
-
-    return true;
+    return finalize_load(error_out);
 }
 
 void SystemConfig::dump(std::ostream& out) const {
     out << "SystemConfig: " << path_ << "\n";
+    out << "  source: " << (settings_source_ ? "settings.txt" : "gs2") << "\n";
     out << "  gs2_version: " << gs2_version_ << "\n";
     out << "  name: " << name_ << "\n";
     out << "  description: " << description_ << "\n";
@@ -690,6 +802,13 @@ void SystemConfig::dump(std::ostream& out) const {
         out << "  warnings:\n";
         for (const auto& warning : warnings_) {
             out << "    " << warning << "\n";
+        }
+    }
+
+    if (!extensions_.empty()) {
+        out << "  extensions (" << extensions_.size() << "):\n";
+        for (const auto& [key, value] : extensions_) {
+            out << "    " << key << " = " << value << "\n";
         }
     }
 }

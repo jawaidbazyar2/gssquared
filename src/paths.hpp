@@ -18,6 +18,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 const std::string& get_base_path(bool console_mode);
 const std::string& get_pref_path(void);
@@ -41,6 +42,7 @@ class Paths {
         static void set_last_file_dialog_dir(const std::string& selected_path);
         static bool is_directory(const std::string& filename);
         static bool ends_with(std::string_view s, std::string_view suffix) noexcept;
+        static bool ends_with_icase(std::string_view s, std::string_view suffix) noexcept;
         static std::string get_directory(const std::string& filename);
         static bool is_absolute(const std::string& filename);
 };
