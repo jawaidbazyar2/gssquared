@@ -12282,3 +12282,45 @@ I evaluated using Cyrene's method, but there are two drawbacks I see to that. Th
 perhaps a protocol converter could be made for Cyrene, to let it manage GS2 across a network. (I don't know how much data it's moving typically, it may still need to be local). 
 
 I came to that thought because I was dreading further debugging on senseiplay. back and forth through chat. would be much simpler if the thing had a tool to drive debugging itself.
+
+## July 5, 2026
+
+made good progess - mouse tracking for GS/OS is implemented. when event manager is active (determined by sneakily peeking through memory) instead of passing through the actual mouse events direct from SDL, we inject simulated events to move the emulated mouse to the correct EM position. This is done through a series of steps, if necessary (since IIgs mouse has max 64 mouse movement) with ongoing feedback reading the EM position. The mouse gracefully returns when the cursor leaves the edge of the content area, making it easy to reach the menu and sidebar buttons, all without needing mouse capture. Mouse Capture is still recommended for applications that don't use event manager.
+
+Looking at integrating the Host FST. There are a few things with this.
+1. the linux support isn't quite complete
+2. it uses WDM xx to trigger the paravirtual calls. I don't want to do this, because this will never work on hardware, and, there is no registry to mediate the use of this opcode in emulators.
+3. I mention hardware in 2, because in theory you could use this to provide network file access via any number of real network file server protocols, in addition to host access.
+4. So, I would move this to a slot card I/O registers, and use something like the BazFast interface. In GS2, we will actually use the BazFast interface with a new pdblock v3 format.
+5. We need to make sure people use the right driver. So we'll have a menu item that mounts an included "driver disk" with initially the bare driver, and later an installer to install the driver, for our new version of the Host FST. Will be the same except adds support for our new way of invoking the PV.
+
+So this is a fairly involved project with a lot of pieces, but entirely worth doing. Have in the 0.10 release.
+
+Since we've knocked a few other roadmap items out (mouse tracking, CRT shader) that sort of leaves a choice - issue 0.9 as-is (it's been delayed due to my neck) or go ahead and do one more thing, which is the edit / load / select system config feature.
+
+I think a solid roadmap for this would be a phased approach:
+Phase 1: allow open pre-edited configs from disk. Folder icon, open 
+
+This tests the loader - and lets us iterate on the format and loader code before getting into generating it.
+
+Phase 2: allow saving current session as a config - i.e., user can open existing config, but with disks attached etc.
+
+Phase 3; finalize the SelectSystem "create profile" editor.
+
+And Mike's Profiles thing ties in here too. A button for triggering the profiles browser. 
+
+So that's 3 extra buttons on the UI there: + (to create), folder (to open), profile (to browse profiles)
+
+and I can remove four buttons from the current select system and store them as configs on disk instead. e.g. pal. 
+
+So we'll have:
+
+First row:
+Apple II
+Apple II+
+Apple IIe
+Apple IIe Enh
+2nd row: Apple IIgs
+
+then the four most recent configs loaded from disk can fill out the 12 buttons. and be displayed between IIgs and the 3 generic buttons.
+We could use different, smaller buttons for +, folder, profile. at the bottom under the 12. then we could show the most recent 7 disk-loaded profiles.
