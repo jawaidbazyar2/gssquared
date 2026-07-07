@@ -337,6 +337,7 @@ add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
 add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp src/devices/es5503/soundglu.cpp)
 
 add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
+target_link_libraries(gs2_devices_scc8530 PUBLIC gs2_serial_devices)
 
 add_library(gs2_devices_secondsight
     src/devices/secondsight/secondsight.cpp
@@ -458,7 +459,7 @@ add_library(gs2_device_registry
     src/devices.cpp
     src/display/display.cpp
 )
-target_link_libraries(gs2_device_registry PUBLIC ${GS2_DEVICE_REGISTRY_LIBS})
+target_link_libraries(gs2_device_registry PUBLIC ${GS2_DEVICE_REGISTRY_LIBS} gs2_ntsc)
 
 add_library(gs2_systemconfig src/util/SystemConfig.cpp src/util/SettingsConfig.cpp)
 target_link_libraries(gs2_systemconfig PUBLIC gs2_paths)
