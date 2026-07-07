@@ -55,6 +55,7 @@ static constexpr uint32_t EM_MOUSE_X_LO_BANK = 0x10190;
 static constexpr uint32_t EM_MOUSE_X_HI_BANK = 0x10192;
 static constexpr uint32_t EM_MOUSE_Y_LO_BANK = 0x10191;
 static constexpr uint32_t EM_MOUSE_Y_HI_BANK = 0x10193;
+static constexpr uint32_t SHR_SCB_LINE0 = 0x19D00;
 static constexpr int MOTION_CHUNK_MAX = 63;
 
 inline int clamp_int(int value, int lo, int hi) {
@@ -63,6 +64,14 @@ inline int clamp_int(int value, int lo, int hi) {
 
 inline uint8_t read_megaii_linear(MMU_II *megaii, uint32_t addr) {
     return megaii->get_memory_base()[addr & 0x1FFFF];
+}
+
+inline bool shr_320_mode(MMU_II *megaii) {
+    if (!megaii) {
+        return false;
+    }
+    // KEGS adb_update_mouse(): line 0 SCB bit 7 clear => 320-column SHR desktop.
+    return (read_megaii_linear(megaii, SHR_SCB_LINE0) & 0x80) == 0;
 }
 
 inline void read_em_mouse_pos(MMU_II *mmu, int &x, int &y) {
@@ -132,6 +141,9 @@ inline void host_to_a2(computer_t *computer, float render_x, float render_y, int
     py = clamp_int(py, 0, 399);
     ay = py >> 1;
     ax = px;
+    if (computer && computer->mmu && shr_320_mode(computer->mmu)) {
+        ax = ax >> 1;
+    }
 }
 
 inline void window_to_render_coords(video_system_t *vs, float wx, float wy, float &rx, float &ry) {
