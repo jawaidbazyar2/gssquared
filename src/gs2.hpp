@@ -42,6 +42,9 @@ typedef struct gs2_app_t {
     // offscreen software surface so the emulation can run without a display.
     // Intended for MCP/CI/automation. The normal GUI path is unaffected.
     bool headless = false;
+    // When true, enable the CRT post-process shader when guest emulation starts
+    // (same effect as pressing F7 with the shader off).
+    bool crt_shader_at_boot = false;
     bool right_mouse_accelerate = true;
     uint32_t menu_event_type = 0;
     bool modal_tracking = false;  // true while macOS menu/resize modal loop owns the run loop

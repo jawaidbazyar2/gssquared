@@ -1,0 +1,22 @@
+gs2_version = 1
+name = "BazFast Volumes"
+platform = "apple2gs"
+
+[[cards]]
+slot = 7
+card = "bazfast3"
+
+[[storage]]
+slot = 7
+drive = 1
+image = "volumes/GSOS.po"
+
+[[storage]]
+slot = 7
+drive = 2
+image = "volumes/Games1.po"
+
+[[storage]]
+slot = 7
+drive = 3
+image = "volumes/Games2.po"

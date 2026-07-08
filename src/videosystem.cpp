@@ -9,7 +9,7 @@
 #include "ui/Clipboard.hpp"
 #include <cmath>
 #include "util/dialog.hpp"
-#include "display/shaders/crt.frag.msl.h"
+#include "display/shaders/GpuShaderLoader.hpp"
 
 video_system_t::video_system_t(computer_t *computer) {
 
@@ -74,23 +74,28 @@ video_system_t::video_system_t(computer_t *computer) {
         printf("Render driver %d: %s\n", i, name);
     } */
 
-    // Optionally use the SDL GPU-backed renderer so we can attach custom
-    // fragment shaders (CRT post-processing). On macOS this maps to Metal/MSL.
-    // This is opt-in via the -g command-line flag because it changes high-DPI
-    // backbuffer behavior; the default is the classic SDL 2D renderer.
-    if (gs2_app_values.gpu_render) {
+    // Headless already created a software renderer over headless_surface
+    // above; only the windowed path builds a GPU/classic renderer here.
+    // (A GPU/classic renderer needs a real window — passing the null
+    // headless window makes SDL_CreateRenderer fail with "Parameter
+    // 'window' is invalid" and clobbers the software renderer.)
+    if (!gs2_app_values.headless) {
+        // Prefer the SDL GPU-backed renderer so we can attach custom fragment
+        // shaders (CRT post-processing). On macOS this maps to Metal/MSL. If it
+        // is unavailable, fall back to the classic renderer; gpu_device stays null
+        // and CRT shader effects are disabled.
         renderer = SDL_CreateGPURenderer(window, SDL_GPU_SHADERFORMAT_MSL, &gpu_device);
         if (!renderer) {
             printf("GPU renderer unavailable (%s); falling back to classic renderer\n", SDL_GetError());
             gpu_device = nullptr;
         }
-    }
-    if (!renderer) {
-        renderer = SDL_CreateRenderer(window, NULL);
-    }
+        if (!renderer) {
+            renderer = SDL_CreateRenderer(window, NULL);
+        }
 
-    if (!renderer) {
-        fprintf(stderr, "Error creating renderer: %s\n", SDL_GetError());
+        if (!renderer) {
+            fprintf(stderr, "Error creating renderer: %s\n", SDL_GetError());
+        }
     }
 
     const char *rname = SDL_GetRendererName(renderer);
@@ -178,6 +183,7 @@ video_system_t::video_system_t(computer_t *computer) {
             case SDLK_F5:
             case SDLK_F2:
             case SDLK_F6:
+            case SDLK_F7:
                 return true; // eat the keydown
             case SDLK_PRINTSCREEN:
                 copy_screen();
@@ -222,18 +228,14 @@ bool video_system_t::init_crt_shader() {
         return false;
     }
 
-    SDL_GPUShaderCreateInfo info;
-    SDL_zero(info);
-    info.format = SDL_GPU_SHADERFORMAT_MSL;
-    info.code = testgpu_effects_CRT_frag_msl;
-    info.code_size = testgpu_effects_CRT_frag_msl_len;
-    info.num_samplers = 1;
-    info.num_uniform_buffers = 1;
-    info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
-
-    crt_shader = SDL_CreateGPUShader(gpu_device, &info);
+    crt_shader = create_gpu_shader_from_resource(
+        gpu_device,
+        "shaders/crt.frag.metal",
+        SDL_GPU_SHADERSTAGE_FRAGMENT,
+        1,
+        1,
+        nullptr);
     if (!crt_shader) {
-        printf("CRT shader: SDL_CreateGPUShader failed: %s\n", SDL_GetError());
         return false;
     }
 
@@ -261,7 +263,8 @@ void video_system_t::set_window_title(const char *title) {
     SDL_SetWindowTitle(window, title);
 }
 
-void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_FRect *dstadj, bool respect_mode) {
+void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_FRect *dstadj, bool respect_mode,
+        const SDL_FRect *content_inset_src) {
 
     SDL_FRect adj_target;
     if (dstadj) {
@@ -276,6 +279,17 @@ void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_
         adj_target.h = target.h - yadj*2;
     } else {
         adj_target = target;
+    }
+
+    if (content_inset_src && srcrect->w > 0.0f && srcrect->h > 0.0f) {
+        const float scale_x = adj_target.w / srcrect->w;
+        const float scale_y = adj_target.h / srcrect->h;
+        content.x = adj_target.x + content_inset_src->x * scale_x;
+        content.y = adj_target.y + content_inset_src->y * scale_y;
+        content.w = content_inset_src->w * scale_x;
+        content.h = content_inset_src->h * scale_y;
+    } else {
+        content = adj_target;
     }
 
     if (respect_mode) {
@@ -484,15 +498,38 @@ void video_system_t::flip_display_scale_mode() {
     }
 }
 
-void video_system_t::toggle_crt_shader() {
+void video_system_t::set_crt_shader_enabled(bool enabled, bool show_message) {
     if (!crt_shader_available()) {
-        event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
-            "CRT Shader unavailable (start with -g for GPU rendering)"));
+        if (show_message) {
+            show_crt_shader_unavailable();
+        }
         return;
     }
-    crt_shader_enabled = !crt_shader_enabled;
-    event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
-        crt_shader_enabled ? "CRT Shader On" : "CRT Shader Off"));
+    crt_shader_enabled = enabled;
+    if (show_message) {
+        event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
+            crt_shader_enabled ? "CRT Shader On" : "CRT Shader Off"));
+    }
+}
+
+void video_system_t::show_crt_shader_unavailable() {
+    const char *message;
+    if (!gpu_device) {
+        message = "CRT Shader unavailable (GPU renderer could not be initialized)";
+    } else if (!crt_shader) {
+        message = "CRT Shader unavailable (failed to load shader source)";
+    } else {
+        message = "CRT Shader unavailable (failed to create shader render state)";
+    }
+    event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, message));
+}
+
+void video_system_t::toggle_crt_shader() {
+    if (!crt_shader_available()) {
+        show_crt_shader_unavailable();
+        return;
+    }
+    set_crt_shader_enabled(!crt_shader_enabled, true);
 }
 
 void video_system_t::copy_screen() {
@@ -572,18 +609,18 @@ void video_system_t::present_scene() {
     if (!(crt_shader_enabled && crt_state && scene_target)) {
         return; // shader disabled/unavailable: update_display drew to the swapchain.
     }
-    // Feed the CRT shader the resolution it samples against.
-    //   x  -> phosphor mask frequency: keep at output pixels so the grille
-    //         stays a crisp few-pixel cell.
-    //   y  -> scanline frequency: the shader produces resolution.y/2 bands, so
-    //         drive it off the emulated visible line count (not the pixel
-    //         height) to get ~one scanline per source line. Apple II shows ~192
-    //         visible lines; *2 gives one bright band per line. Bump/lower this
-    //         constant to taste (smaller = fatter, more visible scanlines).
-    const float source_lines = 192.0f;
+    // Feed the CRT shader a resolution that matches the emulated source texture
+    // mapped into scene_target. The shader tiles resolution.y/2 bands across the
+    // full texture; scale Y by the content-to-source ratio so each band aligns
+    // with one source scanline (last_srcrect.h lines in target.h pixels).
+    // Scale X similarly so the RGB grille tracks source pixels.
+    const float content_w = target.w > 0.0f ? target.w : (float)scene_target_w;
+    const float content_h = target.h > 0.0f ? target.h : (float)scene_target_h;
+    const float src_w = last_srcrect.w > 0.0f ? last_srcrect.w : content_w;
+    const float src_h = last_srcrect.h > 0.0f ? last_srcrect.h : content_h;
     crt_uniforms_t uniforms;
-    uniforms.texture_width = (float)scene_target_w;
-    uniforms.texture_height = source_lines * 2.0f;
+    uniforms.texture_width = (float)scene_target_w * src_w / content_w;
+    uniforms.texture_height = 2.0f * (float)scene_target_h * src_h / content_h;
     SDL_SetGPURenderStateFragmentUniforms(crt_state, 0, &uniforms, sizeof(uniforms));
 
     // Blit the offscreen scene onto the swapchain 1:1 through the CRT shader.

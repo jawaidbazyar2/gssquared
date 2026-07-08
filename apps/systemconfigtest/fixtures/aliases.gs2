@@ -1,0 +1,11 @@
+gs2_version = 1
+name = "Alias Test"
+platform = "apple2plus"
+
+[[cards]]
+slot = 5
+card = "smartport"
+
+[[cards]]
+slot = 7
+card = "pdblock2"

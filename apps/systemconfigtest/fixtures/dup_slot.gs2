@@ -1,0 +1,11 @@
+gs2_version = 1
+name = "Duplicate Slot"
+platform = "apple2plus"
+
+[[cards]]
+slot = 6
+card = "disk_ii"
+
+[[cards]]
+slot = 6
+card = "mockingboard"

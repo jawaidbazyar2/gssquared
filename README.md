@@ -238,6 +238,10 @@ https://github.com/openemulator/openemulator/blob/master/AUTHORS
 
 I also shamelessly copied the Disk II sound files from OpenEmulator.
 
+## KEGS
+
+The mouse tracking code is based in part on the technique used in KEGS, written by Geoff Weiss, though I use a different approach for causing updates to the emulated mouse position. GPL 2.0.
+
 ## Mike Neil
 
 for the lookup table approach to the new DisplayNG code.
@@ -246,9 +250,14 @@ for the lookup table approach to the new DisplayNG code.
 
 for cycle-accurate video!
 
+## Kelvin Sherlock
+
+Kelvin wrote the Host FST and associated support code for the GSPlus emulator. GPL 2.0.
+
 ## Wyatt Wong
 
 for helping test in different build environments, and providing MacOS-Intel builds.
+
 
 ## SDL
 

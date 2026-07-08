@@ -1,0 +1,9 @@
+gs2_version = 1
+name = "Apple IIe Enhanced / PAL"
+platform = "apple2e_enhanced"
+clock = "pal"
+scanner = "apple2e_pal"
+
+[[cards]]
+slot = 6
+card = "disk_ii"

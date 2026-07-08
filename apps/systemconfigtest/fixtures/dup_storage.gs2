@@ -1,0 +1,17 @@
+gs2_version = 1
+name = "Duplicate Storage"
+platform = "apple2plus"
+
+[[cards]]
+slot = 6
+card = "disk_ii"
+
+[[storage]]
+slot = 6
+drive = 1
+image = "a.po"
+
+[[storage]]
+slot = 6
+drive = 1
+image = "b.po"

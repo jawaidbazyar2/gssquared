@@ -137,6 +137,7 @@ file(GLOB_RECURSE GS2_ASSET_FILES CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/assets/roms/*"
     "${CMAKE_SOURCE_DIR}/assets/sounds/*"
     "${CMAKE_SOURCE_DIR}/assets/fonts/*"
+    "${CMAKE_SOURCE_DIR}/assets/shaders/*"
 )
 list(APPEND GS2_ASSET_FILES
     "${CMAKE_SOURCE_DIR}/assets/img/atlas.png"
@@ -154,6 +155,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/sounds
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/img
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/fonts
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/shaders
 
     # Copy static resources
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/atlas.png ${CMAKE_BINARY_DIR}/resources/img/atlas.png
@@ -162,6 +164,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/roms ${CMAKE_BINARY_DIR}/resources/roms
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/sounds ${CMAKE_BINARY_DIR}/resources/sounds
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/fonts ${CMAKE_BINARY_DIR}/resources/fonts
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/shaders ${CMAKE_BINARY_DIR}/resources/shaders
 
     COMMAND ${CMAKE_COMMAND} -E touch "${GS2_RESOURCES_STAMP}"
     DEPENDS ${GS2_ASSET_FILES}
@@ -346,6 +349,7 @@ add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
 add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp src/devices/es5503/soundglu.cpp)
 
 add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
+target_link_libraries(gs2_devices_scc8530 PUBLIC gs2_serial_devices)
 
 add_library(gs2_devices_secondsight
     src/devices/secondsight/secondsight.cpp
@@ -414,7 +418,13 @@ add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Butt
 
 add_library(gs2_displaypp src/devices/displaypp/frame/frame_bit.cpp src/devices/displaypp/frame/frame_byte.cpp src/devices/displaypp/CharRom.cpp src/devices/displaypp/AppleIIgsColors.cpp)
 
-add_library(gs2_ntsc src/display/ntsc.cpp src/display/Matrix3x3.cpp src/display/OEVector.cpp src/display/filters.cpp )
+add_library(gs2_ntsc
+    src/display/ntsc.cpp
+    src/display/Matrix3x3.cpp
+    src/display/OEVector.cpp
+    src/display/filters.cpp
+    src/display/shaders/GpuShaderLoader.cpp
+)
 
 #add_library(gs2_diskii src/devices/diskii/ndiskii.cpp)
 
@@ -439,6 +449,44 @@ add_library(gs2_devices_diskii_woz
 add_library(gs2_message_bus src/mbus/MessageBus.cpp)
 
 add_library(gs2_paths src/paths.cpp)
+
+set(GS2_DEVICE_REGISTRY_LIBS
+    gs2_devices_tcp
+    gs2_devices_keyboard
+    gs2_devices_languagecard
+    gs2_devices_prodos_clock
+    gs2_devices_speaker
+    gs2_devices_cassette
+    gs2_devices_vidhd
+    gs2_devices_game
+    gs2_devices_memexp
+    gs2_devices_parallel
+    gs2_devices_videx
+    gs2_devices_pdblock2
+    gs2_devices_pdblock3
+    gs2_devices_mockingboard
+    gs2_devices_iiememory
+    gs2_devices_ensoniq
+    gs2_devices_scc8530
+    gs2_devices_secondsight
+    gs2_devices_iwm
+    gs2_devices_mouse
+    gs2_devices_rtc_pram
+    gs2_devices_adb
+    gs2_devices_diskii_woz
+    gs2_displaypp
+    gs2_video_scanner
+    gs2_computer
+)
+
+add_library(gs2_device_registry
+    src/devices.cpp
+    src/display/display.cpp
+)
+target_link_libraries(gs2_device_registry PUBLIC ${GS2_DEVICE_REGISTRY_LIBS} gs2_ntsc)
+
+add_library(gs2_systemconfig src/util/SystemConfig.cpp src/util/SettingsConfig.cpp)
+target_link_libraries(gs2_systemconfig PUBLIC gs2_paths)
 
 add_library(gs2_video_scanner 
     src/devices/displaypp/ScanBuffer.cpp
@@ -475,9 +523,8 @@ if(APPLE)
     list(APPEND GS2_PLATFORM_SOURCES ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns)
 endif()
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
-    src/display/display.cpp
     src/platforms.cpp
-    src/devices.cpp src/slots.cpp src/systemconfig.cpp
+    src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
     src/util/AudioSystem.cpp
     ${GS2_PLATFORM_SOURCES}
@@ -536,6 +583,8 @@ target_link_libraries(GSSquared
     gs2_devices_adb
     #gs2_diskii
     gs2_devices_diskii_woz
+    gs2_device_registry
+    gs2_systemconfig
     platform_specific
 )
 
@@ -544,6 +593,8 @@ add_dependencies(GSSquared assemble_resources)
 
 # The auxiliary apps are developer tools and are not part of the web build.
 if(NOT EMSCRIPTEN)
+    enable_testing()
+
     add_subdirectory(apps/adbtest)
 
     add_subdirectory(apps/mbtest)
@@ -589,6 +640,8 @@ if(NOT EMSCRIPTEN)
     add_subdirectory(apps/doc)
 
     add_subdirectory(apps/mousebugtest)
+
+    add_subdirectory(apps/systemconfigtest)
 endif()
 
 ################################################################################

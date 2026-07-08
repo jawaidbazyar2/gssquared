@@ -1,0 +1,11 @@
+gs2_version = 1
+name = "Dual Mockingboard"
+platform = "apple2e_enhanced"
+
+[[cards]]
+slot = 4
+card = "mockingboard"
+
+[[cards]]
+slot = 7
+card = "mockingboard"

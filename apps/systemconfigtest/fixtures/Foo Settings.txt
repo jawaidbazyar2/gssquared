@@ -1,0 +1,6 @@
+profile.name Foo Profile
+machine APPLE2PLUS
+
+custom.key some-value
+slot6 disk_ii
+video.mode COLOR

@@ -39,6 +39,16 @@ In the OSD, there are buttons to change the display engine - NTSC, RGB, and Mono
 
 These are matters of personal preference, so you get to pick the one you like best.
 
+## CRT Effect / Shader
+
+GS2 has a "CRT Shader" option under the Display menu, that turns on a "CRT Emulation" effect.
+
+The effect modifies the normal display output, applying a "shadow mask" and some other enhancements to attempt to emulate the way pixels appear on an 80s-era CRT display.
+
+Currently, this feature is available only on MacOS, works best on Retina displays but works pretty well on other monitors such as 27" e.g. 1440p (2560 x 1440).
+
+The shader mode can be activated with Displays > CRT Shader menu, or by pressing F7.
+
 ## Pixel Modes
 
 GS2 has two Pixel Modes:

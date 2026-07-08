@@ -1,0 +1,16 @@
+gs2_version = 1
+name = "My GS Workstation"
+platform = "apple2gs"
+
+[[cards]]
+slot = 7
+card = "bazfast3"
+
+[[connections]]
+port = "a"
+device = "file"
+path = "captures/port_a.bin"
+
+[[connections]]
+port = "b"
+device = "modem"

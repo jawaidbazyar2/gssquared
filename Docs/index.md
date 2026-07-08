@@ -17,3 +17,5 @@
 * [Joysticks](Joysticks.md)
 
 * [Serial/Modem](Serial_Modem.md)
+
+* [Writing Config Files](ConfigFiles.md)

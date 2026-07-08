@@ -1,0 +1,4 @@
+gs2_version = 1
+name = "PAL GS"
+platform = "apple2gs"
+clock = "pal"

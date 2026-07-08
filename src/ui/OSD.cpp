@@ -624,6 +624,8 @@ void OSD::update() {
     for (Container_t* container : ncontainers) {
         container->update();
     }
+
+    computer->video_system->osd_control_panel_open = requires_host_cursor();
 }
 
 void OSD::set_heads_up_message(const std::string &text, int count) {
@@ -760,6 +762,7 @@ bool OSD::is_mouse_captured() {
 bool OSD::event(const SDL_Event &event) {
     if (event.type == SDL_EVENT_QUIT) {
         mstack.stack.push(new QuitModal_t(&ui_ctx, "Are you sure you want to quit?", ModalStyle, event_queue, computer->mounts, mstack));
+        computer->video_system->osd_control_panel_open = true;
         return true;
     }
 
@@ -874,6 +877,7 @@ void OSD::open_panel() {
     slideStatus = SLIDE_IN; // slide it in right to the top
     slidePosition = -slidePositionMax;
     slidePositionDelta = slidePositionDeltaMax;
+    computer->video_system->osd_control_panel_open = true;
     computer->video_system->push_mouse_capture(false);
 }
 
@@ -888,6 +892,7 @@ void OSD::close_panel() {
 void OSD::show_diskii_modal(storage_key_t key, uint64_t data) {
     ModalContainer_t *diskii_save_con = new DirtyDiskSave_t(&ui_ctx, nullptr, ModalStyle, key, computer->mounts, mstack);
     mstack.stack.push(diskii_save_con);
+    computer->video_system->osd_control_panel_open = true;
     diskii_save_con->set_key(key);
     diskii_save_con->set_data(data);
 }

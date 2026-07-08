@@ -76,6 +76,20 @@ class ADB_Mouse : public ADB_Device
             return reg_result;
         }
 
+        // Two producers feed this device:
+        //   - process_event() (host + agent SDL motion) accumulates into
+        //     pending_xrel/yrel and relies on us to drain it below.
+        //   - inject_relative_motion() (KeyGloo EM/composer closed-loop
+        //     sync) encodes a chunk straight into registers[0] and expects
+        //     the very next poll to return it verbatim. When nothing is
+        //     accumulated, pass that pre-encoded register through unchanged
+        //     rather than overwriting it with an empty accumulator.
+        if (pending_xrel == 0 && pending_yrel == 0) {
+            reg_result = registers[0];
+            has_data = false;
+            return reg_result;
+        }
+
         // Pack accumulated motion into registers[0] at poll time.
         //
         // The IIgs ADB mouse register encodes the per-axis delta as
@@ -137,6 +151,32 @@ class ADB_Mouse : public ADB_Device
     void update_button_down() {
         registers[0].data[0] = button_1_down | (registers[0].data[0] & 0x7F);
         registers[0].data[1] = button_0_down | (registers[0].data[1] & 0x7F);
+    }
+
+    bool encode_relative_motion(int xrel, int yrel) {
+        if (xrel == 0 && yrel == 0) {
+            return false;
+        }
+
+        bool moved_right = (xrel < 0);
+        bool moved_up = (yrel < 0);
+
+        if (xrel > 63) xrel = 63;
+        else if (xrel < -63) xrel = -63;
+        if (yrel > 63) yrel = 63;
+        else if (yrel < -63) yrel = -63;
+
+        registers[0].size = 2;
+        registers[0].data[0] = (uint8_t)(xrel & 0x3F) | (moved_right ? 0x40 : 0x00);
+        registers[0].data[1] = (uint8_t)(yrel & 0x3F) | (moved_up ? 0x40 : 0x00);
+        update_button_down();
+        has_data = true;
+        return true;
+    }
+
+    // Inject relative motion directly (EM sync chunks are already in A2 units).
+    bool inject_relative_motion(int xrel, int yrel) {
+        return encode_relative_motion(xrel, yrel);
     }
 
     bool process_event(SDL_Event &event) override {

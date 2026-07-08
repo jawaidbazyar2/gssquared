@@ -1,0 +1,15 @@
+# Choplifter profile (Profiles spec example, adapted for GS2 / A2GS)
+profile.name Choplifter
+machine A2GS
+
+# SmartPort volumes (bazfast3 auto-installed in slot 7)
+smartport.disk1 disks/zaxxon.dsk
+
+# Built-in IWM 5.25" drives on IIgs
+floppy.disk1 disks/zork.woz
+floppy.disk2 disks/zork2.woz
+
+# Preferences (stored, not applied in Phase 1)
+machine.speed 2800000
+video.mode MONO
+video.scanlines OFF

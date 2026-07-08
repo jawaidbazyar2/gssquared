@@ -1,0 +1,8 @@
+gs2_version = 1
+name = "Parallel Printer"
+platform = "apple2plus"
+
+[[cards]]
+slot = 1
+card = "parallel"
+output = "printouts/session.txt"

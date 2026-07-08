@@ -1,0 +1,6 @@
+# Global-style settings
+profile.name Global Defaults
+machine APPLE2PLUS
+
+networking.wifi OFF
+networking.wifi.ssid TestNet

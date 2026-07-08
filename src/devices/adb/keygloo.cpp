@@ -7,6 +7,7 @@
 
 #include "agent/Protocol.hpp"        // AGENT_MOUSEID, AGENT_USER_SET_MOUSE_MODE
 #include "devices/adb/keygloo.hpp"
+#include "devices/adb/ADB_Micro.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/Event.hpp"
 #include "debug.hpp"
@@ -78,6 +79,7 @@ uint8_t keygloo_read_C025(void *context, uint32_t address) {
 uint8_t keygloo_read_C024(void *context, uint32_t address) {
     keygloo_state_t *kb_state = (keygloo_state_t *)context;
     KeyGloo *kg = kb_state->kg;
+    kg->detect_and_update_em_active();
     uint8_t data = kg->read_mouse_data();
     keygloo_update_interrupt_status(kb_state, kg); // could have IRQ after event..
     return data;
@@ -231,6 +233,7 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
 
     KeyGloo *kg = new KeyGloo(kb_state->reset_control);
     kb_state->kg = kg;
+    kg->set_host_context(kb_state);
 
     computer->dispatch->registerHandler(SDL_EVENT_KEY_DOWN, [kb_state](const SDL_Event &event) {
         return keygloo_process_event(kb_state, event);
@@ -251,7 +254,6 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
     for (int i = 0xC000; i <= 0xC00F; i++) { // should mirror C000 like //e
         computer->mmu->set_C0XX_read_handler(i, { keygloo_read_C000, kb_state });
     }
-    //computer->mmu->set_C0XX_read_handler(0xC000, { keygloo_read_C000, kb_state });
     computer->mmu->set_C0XX_read_handler(0xC010, { keygloo_read_C010, kb_state });
     computer->mmu->set_C0XX_write_handler(0xC010, { keygloo_write_C010, kb_state });
     computer->mmu->set_C0XX_read_handler(0xC025, { keygloo_read_C025, kb_state });

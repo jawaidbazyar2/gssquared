@@ -12216,3 +12216,111 @@ counter (16-bit); state ID; true or false for turn on or turn off.
 ok, that becomes very clean and straightforward. Display asks VideoScanner to change state; VS decides when to apply that request.
 
 re SecondSight support, I am not really happy with how the delay stuff is working. I'm currently checking for cycles, and, had to bump it up to 60 cycles because Cogito had the odd hang on handshaking. Perhaps instead of cycles, I Could count a certain number of handshake reads. 
+
+## Jun 24, 2026
+
+well you know what's been going on. Big ow.
+
+trying to debug the boot loop in Jason's odds.po image.
+boot with pr#7: boot loop.
+boot with ctrl-oa-reset: no boot loop.
+
+does NOT reproduce on my boot.
+odds: system 6.0.4
+mine: system 6.0.1
+
+Clod doesn't think the issue is with pdblock3, because the block commands are identical up to the point of reset.
+
+oh FFS, the reboot loop also happens in KEGS. NOT MY PROBLEM. I should have tried that first. Derp.
+
+## July 1, 2026
+
+thinking about external debug interface so llms can help me debug the emulator more easily, and, to assist users with debugging software they are writing with LLMs.
+
+there is the existing remote debugger interface uses by Cyrene. I should examine that in some detail.
+
+I'm not sure where the docs are, or if there are docs. I had composer make docs. that is likely "close enough" to get an understanding.
+
+ah I need to fix the debugger VideoScanner bug where we trigger interrupts in GS mode drawing the screen - also the weird update effect.
+
+let's fix the interrupt triggering first.
+
+in debug single step mode, gs2 makes a call to update the video frame by calling video_cycle 17,030 times then calling VideoScanGenerator.
+
+however in GS mode (videoscanner_iigs) this causes interrupts to fire, causing single step mode to basically constantly fire interrupts and execute the IRQ handler.
+
+so we need to prevent that from happening when we generate the full video frame in debug. 
+
+however, we do need to also execute video_cycle to get interrupts when we WANT them. 
+
+So, this is where I need to read back the current frame (or maintain it?) and do a partial update, then display that.
+
+## July 2, 2026
+
+ok so have a crt shader in this thing! it's enabled with -g on the command line, then F7. It's just a demo CRT shader example in the SDL3 repo, but it doesn't look awful. 
+
+I am also looking at this one, which has a zillion knobs and is highly respected.
+
+https://github.com/artzox/CRT-Standalone/blob/main/CRT-Standalone.fx
+
+there is also the postprocessing shader that is in written by rikkles. it looks pretty good, though by default it is pretty dim and you have to crank the brightness up. there are quite a few knobs, so maybe that can be worked around.
+
+The demo shader works "out of the box" with one issue, which is that bloom effect is too pronounced. I need to make that much more subtle, but that involves compiling sdl3's shadercross and making it available to the build. I don't want to make casual builders have to install all that, so will likely separate out into separate project like I did with firmware / Merlin32.
+
+Two issues. maybe 3. ha!
+
+2. in the e character, there's a "scanline" in the middle of the middle stroke. also a.
+3. vertical dithering / blending (e.g. in Kareteka) is messed up, vertical scaling is not 
+maybe these are the same thing. 
+theories: 1) maybe the scanlines are just not in the right place compared to my overall scaling factor. there is a number of scanlines setting, so perhaps that needs to be adjusted.
+
+also, made changes to the debugger so that it updates display cycle by cycle, or optionally, shows the older style "whatever is on video memory right now" mode. not sure which should be default. probably the "memory" mode, as that is most natural for folks debugging normal software. (cycle mode is if you want to debug cycle-accurate demos and such).
+
+Also considering an external debugger interface. emdeejay wants to take a swing at it, and I'll let him. I gave him some guidance based on my own research - essentially, a binary protocol to run over a local socket. write a library in python (or some non-dumb language) to provide a tool for LLMs to debug the emulator as well as regular guest applications.
+
+I evaluated using Cyrene's method, but there are two drawbacks I see to that. The first is it currently is windows-specific, which doesn't help me as I don't want to do emulator debugging on windows. second is it uses shared memory, which prevents debugging over a network. 
+perhaps a protocol converter could be made for Cyrene, to let it manage GS2 across a network. (I don't know how much data it's moving typically, it may still need to be local). 
+
+I came to that thought because I was dreading further debugging on senseiplay. back and forth through chat. would be much simpler if the thing had a tool to drive debugging itself.
+
+## July 5, 2026
+
+made good progess - mouse tracking for GS/OS is implemented. when event manager is active (determined by sneakily peeking through memory) instead of passing through the actual mouse events direct from SDL, we inject simulated events to move the emulated mouse to the correct EM position. This is done through a series of steps, if necessary (since IIgs mouse has max 64 mouse movement) with ongoing feedback reading the EM position. The mouse gracefully returns when the cursor leaves the edge of the content area, making it easy to reach the menu and sidebar buttons, all without needing mouse capture. Mouse Capture is still recommended for applications that don't use event manager.
+
+Looking at integrating the Host FST. There are a few things with this.
+1. the linux support isn't quite complete
+2. it uses WDM xx to trigger the paravirtual calls. I don't want to do this, because this will never work on hardware, and, there is no registry to mediate the use of this opcode in emulators.
+3. I mention hardware in 2, because in theory you could use this to provide network file access via any number of real network file server protocols, in addition to host access.
+4. So, I would move this to a slot card I/O registers, and use something like the BazFast interface. In GS2, we will actually use the BazFast interface with a new pdblock v3 format.
+5. We need to make sure people use the right driver. So we'll have a menu item that mounts an included "driver disk" with initially the bare driver, and later an installer to install the driver, for our new version of the Host FST. Will be the same except adds support for our new way of invoking the PV.
+
+So this is a fairly involved project with a lot of pieces, but entirely worth doing. Have in the 0.10 release.
+
+Since we've knocked a few other roadmap items out (mouse tracking, CRT shader) that sort of leaves a choice - issue 0.9 as-is (it's been delayed due to my neck) or go ahead and do one more thing, which is the edit / load / select system config feature.
+
+I think a solid roadmap for this would be a phased approach:
+Phase 1: allow open pre-edited configs from disk. Folder icon, open 
+
+This tests the loader - and lets us iterate on the format and loader code before getting into generating it.
+
+Phase 2: allow saving current session as a config - i.e., user can open existing config, but with disks attached etc.
+
+Phase 3; finalize the SelectSystem "create profile" editor.
+
+And Mike's Profiles thing ties in here too. A button for triggering the profiles browser. 
+
+So that's 3 extra buttons on the UI there: + (to create), folder (to open), profile (to browse profiles)
+
+and I can remove four buttons from the current select system and store them as configs on disk instead. e.g. pal. 
+
+So we'll have:
+
+First row:
+Apple II
+Apple II+
+Apple IIe
+Apple IIe Enh
+2nd row: Apple IIgs
+
+then the four most recent configs loaded from disk can fill out the 12 buttons. and be displayed between IIgs and the 3 generic buttons.
+We could use different, smaller buttons for +, folder, profile. at the bottom under the 12. then we could show the most recent 7 disk-loaded profiles.

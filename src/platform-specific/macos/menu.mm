@@ -138,6 +138,11 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	(void)sender;
 }
 
+- (void)fileOpenConfig:(id)sender {
+	getMenuInterface()->openSystemConfig();
+	(void)sender;
+}
+
 - (void)appQuit:(id)sender {
 	[NSApp terminate:nil];
 	(void)sender;
@@ -169,6 +174,9 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	// Help items are always available regardless of emulation state
 	if (menuItem.action == @selector(helpOpenDocs:)) {
 		return YES;
+	}
+	if (menuItem.action == @selector(fileOpenConfig:)) {
+		return !getMenuInterface()->isEmulationRunning();
 	}
 	// All other items (File, Edit, Machine, Settings, Display) require emulation
 	return getMenuInterface()->isEmulationRunning();
@@ -385,6 +393,15 @@ static void setupMenus(void) {
 
 	// File menu
 	NSMenu *fileMenu = addMenu(NSLocalizedString(@"File", nil));
+
+	NSMenuItem *openConfigItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Open Config...", nil)
+		       action:@selector(fileOpenConfig:)
+		keyEquivalent:@""] autorelease];
+	[openConfigItem setTarget:sMenuHandler];
+	[fileMenu addItem:openConfigItem];
+
+	[fileMenu addItem:[NSMenuItem separatorItem]];
 
 	// Drives submenu — populated dynamically by DrivesMenuDelegate on each pull-down
 	NSMenu *drivesMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Drives", nil)] autorelease];

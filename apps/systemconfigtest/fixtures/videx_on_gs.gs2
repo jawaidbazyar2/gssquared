@@ -1,0 +1,7 @@
+gs2_version = 1
+name = "Videx on GS"
+platform = "apple2gs"
+
+[[cards]]
+slot = 3
+card = "videx"
