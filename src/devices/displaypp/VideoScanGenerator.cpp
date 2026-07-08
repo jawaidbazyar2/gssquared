@@ -152,9 +152,10 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
                     vcount_real++;
                     vcount = vcount_real-1;
                     //vcount++;
-                    if (vcount >= 263) { // todo: tweak this with new approach to hsync..
-                        assert(1);
-                    }
+                    // Safety net: a misaligned scan stream (e.g. a VSYNC lost
+                    // to a mid-frame ScanBuffer clear after an MCP batch) can
+                    // march vcount past the frame. Never index out of bounds.
+                    if (vcount >= frame_byte->max_height()) vcount = frame_byte->max_height() - 1;
                     modeChecks = true;
                     frame_byte->set_line(vcount);
                     if (border != nullptr) {

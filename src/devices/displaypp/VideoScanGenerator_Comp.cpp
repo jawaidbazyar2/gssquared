@@ -128,6 +128,10 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     lastByte = 0x00; // for hires
                     hcount = 0; if (sawdata) vcount++;
                     beam_h = 0; beam_v++;
+                    // Safety net: a misaligned scan stream (e.g. a VSYNC lost
+                    // to a mid-frame ScanBuffer clear after an MCP batch) can
+                    // march vcount past the frame. Never index out of bounds.
+                    if (vcount >= frame_byte->max_height()) vcount = frame_byte->max_height() - 1;
                     frame_byte->set_line(vcount);
                     modeChecks = true;
 
