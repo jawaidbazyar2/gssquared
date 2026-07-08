@@ -180,7 +180,10 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
  * Update window
  */
 void frame_video_update(computer_t *computer, bool force_full_frame = false) {
-    if (gs2_app_values.headless) return;  // no display to update
+    // Headless has no window to draw to per frame; the `screenshot` MCP tool
+    // renders on demand into the offscreen software surface instead (keeps the
+    // headless fast path free of per-frame rendering).
+    if (gs2_app_values.headless) return;
     video_system_t *vs = computer->video_system;
 
     vs->update_display(force_full_frame);

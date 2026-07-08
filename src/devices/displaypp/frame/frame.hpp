@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <new>
 #include <stdexcept>
 #include <type_traits>
@@ -189,7 +190,7 @@ public:
     
     void clear(bs_t clr) {
         if (texture != nullptr) return;
-    
+
         for (size_t i = 0; i < HEIGHT; ++i) {
             for (size_t j = 0; j < WIDTH; ++j) {
                 stream[i][j] = clr;
@@ -197,6 +198,19 @@ public:
         }
         scanline = 0;
         hloc = 0;
+    }
+
+    // Clear the pixel buffer regardless of storage kind. Valid for texture
+    // storage only while the texture is open()'d (stream points at the locked
+    // pixels). Unlike clear(), this does not reset scanline/hloc. Fills one row
+    // then memcpy's it to the rest — far cheaper than a per-pixel double loop
+    // (which is a hot per-frame cost under an -O0/ASan build).
+    void clear_stream(bs_t clr) {
+        if (stream == nullptr) return;
+        for (size_t j = 0; j < WIDTH; ++j) stream[0][j] = clr;
+        for (size_t i = 1; i < HEIGHT; ++i) {
+            std::memcpy(stream[i], stream[0], WIDTH * sizeof(bs_t));
+        }
     }
 
     // Getters for template parameters

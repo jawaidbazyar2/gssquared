@@ -193,7 +193,18 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
         //printf("Warning: no data in ScanBuffer\n");
         return;
     }
-    
+
+    // Start each frame from a clean, top-aligned slate. This generator paints
+    // directly into the persistent frame_vsg texture and only resets its row
+    // (beam_v) on VM_VSYNC, so if it is ever handed a partial / phase-shifted
+    // buffer (e.g. after an MCP tool clears the scan buffer mid-frame), the
+    // rows it doesn't reach would retain the previous frame's pixels and stack
+    // into ghost copies. Clearing + resetting the row here makes every render
+    // self-contained. frame_vsg is open()'d (locked) by the caller.
+    frame_vsg->clear_stream(RGBA_t::make(0x00, 0x00, 0x00, 0xFF));
+    beam_v = 0;
+    frame_vsg->set_line(0);
+
     if (dump_next_frame) {
         frame_scan->saveToFile("scan_buffer.txt");
         dump_next_frame = false;

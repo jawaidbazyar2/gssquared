@@ -235,6 +235,7 @@ void VideoScannerII::video_cycle()
         scan.mainbyte = 0;
         scan.flags = mode_flags;
         frame_scan->push(scan);
+        vsync_count++;
     }
     if (sa.flags & SA_FLAG_HSYNC) {
         scan.mode = (uint8_t)VM_HSYNC;

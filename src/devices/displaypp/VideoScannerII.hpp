@@ -126,6 +126,10 @@ protected:
 
     ScanBuffer *frame_scan = nullptr;
     uint32_t scan_index = 0;
+    // Monotonic count of VM_VSYNC samples emitted — a frame boundary marker
+    // (a frame == one VSYNC-to-VSYNC span, which is what the scan generators
+    // delimit on). Consumers watch this to align on-demand renders.
+    uint64_t vsync_count = 0;
 
     // floating bus video data
     uint8_t   video_byte;
@@ -179,6 +183,7 @@ public:
 
     virtual void video_cycle();
     uint32_t get_scan_cycle() { return scan_index; }
+    uint64_t get_vsync_count() { return vsync_count; }
     virtual void init_video_addresses();
 
     inline bool is_hbl()     { return (scan_index % 65) < 25;   }

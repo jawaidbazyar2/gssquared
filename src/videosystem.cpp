@@ -1,4 +1,5 @@
 #include "gs2.hpp"
+#include <SDL3_image/SDL_image.h>
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_mouse.h"
 #include "computer.hpp"
@@ -43,6 +44,10 @@ video_system_t::video_system_t(computer_t *computer) {
         if (!renderer) {
             fprintf(stderr, "Headless software renderer could not be created! SDL_Error: %s\n", SDL_GetError());
         }
+        // No window means no resize event ever computes the draw rect, so the
+        // emulator frame would be blitted into a 0x0 target (black capture).
+        // Size it to the offscreen surface here.
+        calculate_target_rect(window_width, window_height);
         printf("Renderer: headless software (no window)\n");
     } else {
     window = SDL_CreateWindow(
@@ -504,12 +509,44 @@ void video_system_t::copy_screen() {
     SDL_DestroySurface(surface);
 }
 
+bool video_system_t::capture_png(const char *path) {
+    if (renderer == nullptr || last_texture == nullptr) {
+        fprintf(stderr, "[mcp] capture_png: no %s\n", renderer ? "frame yet" : "renderer");
+        return false;
+    }
+    // Re-blit the most recently rendered emulator frame (frame_vsg, recorded by
+    // render_frame during the run loop's update_display) 1:1 onto the render
+    // target, then read it back. The 1:1 blit of the content source rect avoids
+    // aspect stretching; RenderReadPixels also forces the software renderer to
+    // flush (a bare IMG_SavePNG of headless_surface comes back blank). Works in
+    // both modes — headed reads the window backbuffer, headless the offscreen
+    // software surface.
+    int cw = (int)last_srcrect.w, ch = (int)last_srcrect.h;
+    if (cw <= 0 || ch <= 0) { cw = window_width; ch = window_height; }
+    SDL_SetRenderTarget(renderer, nullptr);
+    clear();
+    SDL_FRect dst = { 0.0f, 0.0f, (float)cw, (float)ch };
+    SDL_RenderTexture(renderer, last_texture, &last_srcrect, &dst);
+    SDL_Rect readrect = { 0, 0, cw, ch };
+    SDL_Surface *surface = SDL_RenderReadPixels(renderer, &readrect);
+    if (surface == nullptr) {
+        fprintf(stderr, "[mcp] capture_png: SDL_RenderReadPixels failed: %s\n", SDL_GetError());
+        return false;
+    }
+    bool ok = IMG_SavePNG(surface, path);
+    if (!ok) fprintf(stderr, "[mcp] capture_png: IMG_SavePNG(%s) failed: %s\n", path, SDL_GetError());
+    SDL_DestroySurface(surface);
+    return ok;
+}
+
 void video_system_t::register_frame_processor(int weight, FrameHandler handler) {
     frame_handlers.insert({weight, handler});
 }
 
 void video_system_t::update_display(bool force_full_frame) {
-    if (gs2_app_values.headless) return;  // no display to draw
+    // Headless still renders — into the offscreen software surface — so the
+    // scan buffer is drained every frame and last_texture stays current for
+    // the MCP `screenshot` tool. Nothing is presented to a screen.
     // When the CRT shader is active, draw the emulator frame into the offscreen
     // scene_target so it can be post-processed during present_scene(). Otherwise
     // draw straight to the swapchain exactly as before.

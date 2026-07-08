@@ -29,6 +29,7 @@
 #include <nlohmann/json.hpp>
 
 struct computer_t;
+struct cpu_state;
 
 namespace mcp {
 
@@ -98,6 +99,37 @@ private:
     json tool_mount_disk(int slot, int drive, const std::string &filename);
     json tool_unmount_disk(int slot, int drive);
     json tool_set_mode(int mode);  // 0=run, 1=step, 2=paused
+
+    // Render the current frame to a PNG file and return its path. Works in
+    // both headed and headless modes (headless uses the software renderer).
+    json tool_screenshot(const std::string &path);
+    // Inject mouse/keyboard input the way the agent socket does — by pushing
+    // SDL events stamped with the agent sentinel id so keygloo/ADB consume
+    // them. Work in both modes.
+    json tool_mouse_move(int dx, int dy);
+    json tool_mouse_button(int button, bool down);
+    json tool_mouse_mode(int mode);  // 0=follow_host, 1=capture, 2=disabled
+
+    // Inject an SDL key-down/up event (via keygloo -> ADB keyboard) so machines
+    // without a classic keyboard module (Apple IIgs) can be typed on.
+    void push_key_event(int scancode, bool shift, bool down);
+    // `type` fallback for keygloo/ADB machines: map ASCII to SDL scancodes and
+    // inject key events.
+    json type_via_sdl_keys(const std::string &text);
+
+    // Drive the CPU until the scanner emits its next VSYNC (frame boundary).
+    // Used by the screenshot tool to render complete, aligned frames on demand.
+    bool drive_to_next_vsync();
+
+    // Execute exactly one instruction the way the normal run loop does:
+    // service due timers, then let the CPU core advance the clock/scanner.
+    void drive_one(cpu_state *cpu);
+
+    // Finish a synchronous CPU-driving tool. MCP can run many emulated
+    // frames inside one host frame, so discard stale scan samples before the
+    // GUI renderer consumes them and catch the clock's frame window up to the
+    // current emulated time.
+    void finish_driven_batch();
 
     // mem_diff snapshot state. Only touched from emulator-thread closures
     // (which run serially via pump), so no extra locking is needed.

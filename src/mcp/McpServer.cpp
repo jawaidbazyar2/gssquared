@@ -28,9 +28,13 @@
 
 #include "computer.hpp"
 #include "cpu.hpp"
+#include "NClock.hpp"
+#include "videosystem.hpp"
+#include "agent/Protocol.hpp"
 #include "debugger/disasm.hpp"
 #include "devices/keyboard/keyboard.hpp"
 #include "mmus/mmu.hpp"
+#include "util/EventTimer.hpp"
 #include "util/mount.hpp"
 #include "Module_ID.hpp"
 
@@ -296,6 +300,40 @@ json McpServer::tools_catalogue() {
     tools.push_back({{"name", "resume"},
                      {"description", "Resume CPU execution at normal speed."},
                      {"inputSchema", {{"type", "object"}, {"properties", json::object()}}}});
+    tools.push_back({{"name", "screenshot"},
+                     {"description", "Render the current video frame to a PNG file and return its path. "
+                                     "Works headless and headed (SHR/lores/text). Use to SEE the screen and "
+                                     "to verify the effect of input."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"path", {{"type", "string"}, {"description", "output PNG path (default /tmp/gs2-screenshot.png)"}}}}}}}});
+    tools.push_back({{"name", "mouse_move"},
+                     {"description", "Move the emulated mouse by a relative delta (ADB is relative). "
+                                     "To reach an absolute spot: home into a corner with a large negative "
+                                     "delta, then step. Pair with screenshot to close the loop."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"dx", {{"type", "integer"}, {"description", "x delta (pixels)"}}},
+                         {"dy", {{"type", "integer"}, {"description", "y delta (pixels)"}}}}},
+                       {"required", json::array({"dx", "dy"})}}}});
+    tools.push_back({{"name", "mouse_button"},
+                     {"description", "Press or release a mouse button (1=left,2=middle,3=right)."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties",
+                        {{"button", {{"type", "integer"}, {"description", "1=left (default), 2=middle, 3=right"}}},
+                         {"down", {{"type", "boolean"}, {"description", "true=press, false=release"}}}}},
+                       {"required", json::array({"down"})}}}});
+    tools.push_back({{"name", "mouse_mode"},
+                     {"description", "Set the emulated mouse-input mode: 0=follow_host, 1=capture, 2=disabled "
+                                     "(2 = only injected events reach the machine; use so agent input isn't "
+                                     "fought by the host cursor)."},
+                     {"inputSchema",
+                      {{"type", "object"},
+                       {"properties", {{"mode", {{"type", "integer"}}}}},
+                       {"required", json::array({"mode"})}}}});
     return {{"tools", tools}};
 }
 
@@ -361,6 +399,20 @@ json McpServer::handle_tool_call(const std::string &name, const json &args) {
         body = [this]() { return tool_set_mode(2); };
     } else if (name == "resume") {
         body = [this]() { return tool_set_mode(0); };
+    } else if (name == "screenshot") {
+        std::string path = args.value("path", std::string("/tmp/gs2-screenshot.png"));
+        body = [this, path]() { return tool_screenshot(path); };
+    } else if (name == "mouse_move") {
+        int dx = args.value("dx", 0);
+        int dy = args.value("dy", 0);
+        body = [this, dx, dy]() { return tool_mouse_move(dx, dy); };
+    } else if (name == "mouse_button") {
+        int button = args.value("button", 1);
+        bool down = args.value("down", false);
+        body = [this, button, down]() { return tool_mouse_button(button, down); };
+    } else if (name == "mouse_mode") {
+        int mode = args.value("mode", 0);
+        body = [this, mode]() { return tool_mouse_mode(mode); };
     } else {
         return text_result("unknown tool: " + name, /*is_error=*/true);
     }
@@ -430,6 +482,209 @@ void McpServer::pump() {
 
 // ---- Tool bodies (emulator thread only) ----
 
+void McpServer::drive_one(cpu_state *cpu) {
+    if (computer_ != nullptr && computer_->clock != nullptr) {
+        NClock *clock = computer_->clock;
+        if (computer_->event_timer != nullptr &&
+            computer_->event_timer->isEventPassed(clock->get_c14m())) {
+            computer_->event_timer->processEvents(clock->get_c14m());
+        }
+        if (computer_->vid_event_timer != nullptr &&
+            computer_->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
+            computer_->vid_event_timer->processEvents(clock->get_vid_cycles());
+        }
+        if (computer_->cpu_event_timer != nullptr &&
+            computer_->cpu_event_timer->isEventPassed(clock->get_cycles())) {
+            computer_->cpu_event_timer->processEvents(clock->get_cycles());
+        }
+    }
+    (cpu->cpun->execute_next)(cpu);
+}
+
+void McpServer::finish_driven_batch() {
+    if (computer_ == nullptr || computer_->clock == nullptr) return;
+
+    NClock *clock = computer_->clock;
+    VideoScannerII *vs = clock->get_video_scanner();
+    if (vs != nullptr) {
+        vs->get_frame_scan()->clear();
+    }
+
+    while (clock->get_c14m() >= clock->get_frame_end_c14M()) {
+        clock->next_frame();
+    }
+    computer_->last_start_frame_c14m = clock->get_frame_start_c14M();
+    computer_->set_frame_start_cycle();
+}
+
+// Drive the CPU until the scanner emits its next VM_VSYNC (a frame boundary —
+// what the scan generators delimit on). Returns false on halt / safety cap.
+bool McpServer::drive_to_next_vsync() {
+    cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
+    if (cpu == nullptr || computer_ == nullptr || computer_->clock == nullptr) return false;
+    VideoScannerII *vs = computer_->clock->get_video_scanner();
+    if (vs == nullptr) return false;
+    const uint64_t target = vs->get_vsync_count() + 1;
+    const uint64_t cap = 4'000'000;  // one frame is ~5k-17k instructions
+    uint64_t spun = 0;
+    while (spun < cap && cpu->halt == 0) {
+        drive_one(cpu);
+        ++spun;
+        if (vs->get_vsync_count() >= target) return true;
+    }
+    return false;
+}
+
+json McpServer::tool_screenshot(const std::string &path) {
+    if (computer_ == nullptr || computer_->video_system == nullptr) {
+        return {{"error", "no video system"}};
+    }
+    // Produce ONE clean, complete image on demand. The force-full render path
+    // (update_display_apple2) re-scans a fresh 17030-cycle frame into the scan
+    // buffer itself, then generates. The IIgs SHR generator returns on the
+    // first VSYNC, so that re-scan must START at a frame boundary or it renders
+    // a phase-shifted partial frame. So: advance the scanner just past a VSYNC,
+    // clear the buffer (the re-scan appends; leftovers would overflow the ring
+    // and corrupt alignment), then force-render — the re-scan now yields one
+    // VSYNC-aligned frame, and the generator's top-of-frame clear keeps it
+    // stack-free.
+    VideoScannerII *vs = computer_->clock ? computer_->clock->get_video_scanner() : nullptr;
+    if (vs != nullptr) {
+        drive_to_next_vsync();            // align scanner just past a VSYNC
+        vs->get_frame_scan()->clear();     // clear so the re-scan starts clean
+    }
+    computer_->video_system->update_display(/*force_full_frame=*/true);
+    finish_driven_batch();
+    bool ok = computer_->video_system->capture_png(path.c_str());
+    return {{"ok", ok},
+            {"path", path},
+            {"width", computer_->video_system->window_width},
+            {"height", computer_->video_system->window_height}};
+}
+
+json McpServer::tool_mouse_move(int dx, int dy) {
+    // Relative motion — mirrors the agent's TAG_INPUT_MOUSE_REL path
+    // (Agent.cpp). Stamp .which with the agent sentinel id so keygloo treats
+    // it as injected input and applies the right mouse-mode filtering.
+    SDL_Event ev;
+    std::memset(&ev, 0, sizeof(ev));
+    ev.type = SDL_EVENT_MOUSE_MOTION;
+    ev.motion.timestamp = SDL_GetTicksNS();
+    ev.motion.which = agent::protocol::AGENT_MOUSEID;
+    ev.motion.x = 0.0f;
+    ev.motion.y = 0.0f;
+    ev.motion.xrel = static_cast<float>(dx);
+    ev.motion.yrel = static_cast<float>(dy);
+    bool pushed = SDL_PushEvent(&ev);
+    return {{"pushed", pushed}, {"dx", dx}, {"dy", dy}};
+}
+
+json McpServer::tool_mouse_button(int button, bool down) {
+    SDL_Event ev;
+    std::memset(&ev, 0, sizeof(ev));
+    ev.type = down ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
+    ev.button.timestamp = SDL_GetTicksNS();
+    ev.button.which = agent::protocol::AGENT_MOUSEID;
+    ev.button.button = static_cast<Uint8>(button);
+    ev.button.down = down;
+    ev.button.clicks = 1;
+    ev.button.x = 0.0f;
+    ev.button.y = 0.0f;
+    bool pushed = SDL_PushEvent(&ev);
+    return {{"pushed", pushed}, {"button", button}, {"down", down}};
+}
+
+json McpServer::tool_mouse_mode(int mode) {
+    // Marshal to the main thread the same way the agent does: a SDL_EVENT_USER
+    // with code AGENT_USER_SET_MOUSE_MODE, handled in gs2.cpp.
+    SDL_Event ev;
+    std::memset(&ev, 0, sizeof(ev));
+    ev.type = SDL_EVENT_USER;
+    ev.user.timestamp = SDL_GetTicksNS();
+    ev.user.code = agent::protocol::AGENT_USER_SET_MOUSE_MODE;
+    ev.user.data1 = reinterpret_cast<void *>(static_cast<std::uintptr_t>(mode & 0xFF));
+    bool pushed = SDL_PushEvent(&ev);
+    return {{"pushed", pushed}, {"mode", mode}};
+}
+
+// Map a printable ASCII char to an SDL scancode + whether Shift is needed.
+// Returns false for chars we don't have a mapping for.
+static bool ascii_to_scancode(char c, SDL_Scancode &sc, bool &shift) {
+    shift = false;
+    if (c >= 'a' && c <= 'z') { sc = (SDL_Scancode)(SDL_SCANCODE_A + (c - 'a')); return true; }
+    if (c >= 'A' && c <= 'Z') { sc = (SDL_Scancode)(SDL_SCANCODE_A + (c - 'A')); shift = true; return true; }
+    if (c >= '1' && c <= '9') { sc = (SDL_Scancode)(SDL_SCANCODE_1 + (c - '1')); return true; }
+    switch (c) {
+        case '0': sc = SDL_SCANCODE_0; return true;
+        case ' ': sc = SDL_SCANCODE_SPACE; return true;
+        case '\n': case '\r': sc = SDL_SCANCODE_RETURN; return true;
+        case '\t': sc = SDL_SCANCODE_TAB; return true;
+        case '\b': sc = SDL_SCANCODE_BACKSPACE; return true;
+        case '.': sc = SDL_SCANCODE_PERIOD; return true;
+        case ',': sc = SDL_SCANCODE_COMMA; return true;
+        case '/': sc = SDL_SCANCODE_SLASH; return true;
+        case ';': sc = SDL_SCANCODE_SEMICOLON; return true;
+        case '\'': sc = SDL_SCANCODE_APOSTROPHE; return true;
+        case '-': sc = SDL_SCANCODE_MINUS; return true;
+        case '=': sc = SDL_SCANCODE_EQUALS; return true;
+        case '[': sc = SDL_SCANCODE_LEFTBRACKET; return true;
+        case ']': sc = SDL_SCANCODE_RIGHTBRACKET; return true;
+        case '\\': sc = SDL_SCANCODE_BACKSLASH; return true;
+        case '`': sc = SDL_SCANCODE_GRAVE; return true;
+        // shifted symbols
+        case '!': sc = SDL_SCANCODE_1; shift = true; return true;
+        case '@': sc = SDL_SCANCODE_2; shift = true; return true;
+        case '#': sc = SDL_SCANCODE_3; shift = true; return true;
+        case '$': sc = SDL_SCANCODE_4; shift = true; return true;
+        case '%': sc = SDL_SCANCODE_5; shift = true; return true;
+        case '^': sc = SDL_SCANCODE_6; shift = true; return true;
+        case '&': sc = SDL_SCANCODE_7; shift = true; return true;
+        case '*': sc = SDL_SCANCODE_8; shift = true; return true;
+        case '(': sc = SDL_SCANCODE_9; shift = true; return true;
+        case ')': sc = SDL_SCANCODE_0; shift = true; return true;
+        case '?': sc = SDL_SCANCODE_SLASH; shift = true; return true;
+        case ':': sc = SDL_SCANCODE_SEMICOLON; shift = true; return true;
+        case '"': sc = SDL_SCANCODE_APOSTROPHE; shift = true; return true;
+        case '<': sc = SDL_SCANCODE_COMMA; shift = true; return true;
+        case '>': sc = SDL_SCANCODE_PERIOD; shift = true; return true;
+        case '_': sc = SDL_SCANCODE_MINUS; shift = true; return true;
+        case '+': sc = SDL_SCANCODE_EQUALS; shift = true; return true;
+        case '{': sc = SDL_SCANCODE_LEFTBRACKET; shift = true; return true;
+        case '}': sc = SDL_SCANCODE_RIGHTBRACKET; shift = true; return true;
+        case '|': sc = SDL_SCANCODE_BACKSLASH; shift = true; return true;
+        case '~': sc = SDL_SCANCODE_GRAVE; shift = true; return true;
+        default: return false;
+    }
+}
+
+void McpServer::push_key_event(int scancode, bool shift, bool down) {
+    SDL_Event ev;
+    std::memset(&ev, 0, sizeof(ev));
+    ev.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
+    ev.key.timestamp = SDL_GetTicksNS();
+    ev.key.scancode = (SDL_Scancode)scancode;
+    ev.key.mod = shift ? SDL_KMOD_SHIFT : SDL_KMOD_NONE;
+    ev.key.down = down;
+    ev.key.repeat = false;
+    SDL_PushEvent(&ev);
+}
+
+// Type into a machine whose keyboard is behind keygloo/ADB (Apple IIgs) by
+// injecting SDL key-down/up events. keygloo consumes them into the ADB
+// keyboard queue; the OS drains that queue at its own pace, so no CPU driving
+// or timing is needed here.
+json McpServer::type_via_sdl_keys(const std::string &text) {
+    int typed = 0, skipped = 0;
+    for (char c : text) {
+        SDL_Scancode sc; bool shift;
+        if (!ascii_to_scancode(c, sc, shift)) { ++skipped; continue; }
+        push_key_event((int)sc, shift, true);
+        push_key_event((int)sc, shift, false);
+        ++typed;
+    }
+    return {{"typed", typed}, {"skipped", skipped}, {"via", "keygloo/adb"}};
+}
+
 json McpServer::tool_regs() {
     cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
     if (!cpu) return {{"error", "no cpu"}};
@@ -476,10 +731,11 @@ json McpServer::tool_until_pc(uint32_t target, uint64_t max_insns) {
     bool hit = (cpu->full_pc & 0xFFFFFF) == target;
     while (!hit && executed < max_insns) {
         if (cpu->halt != 0) break;
-        (cpu->cpun->execute_next)(cpu);
+        drive_one(cpu);
         ++executed;
         hit = (cpu->full_pc & 0xFFFFFF) == target;
     }
+    finish_driven_batch();
     return {{"hit", hit}, {"executed", executed}, {"full_pc", cpu->full_pc}, {"halt", cpu->halt}};
 }
 
@@ -514,8 +770,9 @@ json McpServer::tool_step(uint32_t count) {
     uint32_t done = 0;
     for (; done < count; ++done) {
         if (cpu->halt != 0) break;
-        (cpu->cpun->execute_next)(cpu);
+        drive_one(cpu);
     }
+    finish_driven_batch();
     return {{"stepped", done}, {"pc", cpu->pc}, {"pb", cpu->pb}, {"full_pc", cpu->full_pc}};
 }
 
@@ -584,7 +841,12 @@ json McpServer::tool_type(const std::string &text) {
     cpu_state *cpu = computer_ ? computer_->cpu : nullptr;
     if (!cpu || !cpu->cpun) return {{"error", "no cpu"}};
     auto *kb = static_cast<keyboard_state_t *>(computer_->get_module_state(MODULE_KEYBOARD));
-    if (!kb) return {{"error", "no keyboard module"}};
+    if (!kb) {
+        // No classic keyboard module — e.g. the Apple IIgs, whose ADB keyboard
+        // lives behind keygloo. Inject SDL key events instead; keygloo consumes
+        // them into the ADB keyboard queue and GS/OS reads them at its own pace.
+        return type_via_sdl_keys(text);
+    }
 
     // Feed the text through the keyboard device's paste buffer: the ROM
     // pulls one char from it each time it polls an empty keyboard
@@ -606,12 +868,13 @@ json McpServer::tool_type(const std::string &text) {
     const long kSafetyCap = 50'000'000;
     while ((!kb->paste_buffer.empty() || (kb->kb_key_strobe & 0x80)) &&
            guard < kSafetyCap && cpu->halt == 0) {
-        (cpu->cpun->execute_next)(cpu);
+        drive_one(cpu);
         ++guard;
     }
     // Let any launched program run in real time from here on.
     computer_->execution_mode = EXEC_NORMAL;
     computer_->instructions_left = 0;
+    finish_driven_batch();
     bool consumed = kb->paste_buffer.empty() && ((kb->kb_key_strobe & 0x80) == 0);
     return {{"typed", text.size()}, {"consumed", consumed}, {"full_pc", cpu->full_pc}};
 }
@@ -639,13 +902,14 @@ json McpServer::tool_wait_input(uint64_t max_insns) {
     while (ran < max_insns && cpu->halt == 0) {
         uint64_t before = kb->kb_poll_empty;
         for (int g = 0; g < kWindow && cpu->halt == 0; ++g) {
-            (cpu->cpun->execute_next)(cpu);
+            drive_one(cpu);
             ++ran;
         }
         if (kb->kb_poll_empty - before >= kPollsToConfirm) { ready = true; break; }
     }
     computer_->execution_mode = EXEC_NORMAL;
     computer_->instructions_left = 0;
+    finish_driven_batch();
     return {{"ready", ready}, {"instructions", ran}, {"full_pc", cpu->full_pc}};
 }
 
