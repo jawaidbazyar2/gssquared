@@ -63,6 +63,27 @@ static bool test_minimal() {
     return true;
 }
 
+static bool test_save_roundtrip() {
+    const auto path = fixture_dir() / "Apple2Plus.gs2";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "load for save: " << error);
+
+    const auto tmp = std::filesystem::temp_directory_path() / "gssquared_save_roundtrip.gs2";
+    CHECK(config.save(tmp.string(), error), "save: " << error);
+
+    SystemConfig reloaded;
+    CHECK(reloaded.load(tmp.string(), error), "reload: " << error);
+    CHECK(std::string(reloaded.config().name) == std::string(config.config().name), "name roundtrip");
+    CHECK(reloaded.config().platform_id == config.config().platform_id, "platform roundtrip");
+    CHECK(reloaded.config().slot_devices[0] == config.config().slot_devices[0], "slot0 roundtrip");
+    CHECK(reloaded.config().slot_devices[5] == config.config().slot_devices[5], "slot5 roundtrip");
+    CHECK(reloaded.config().slot_devices[6] == config.config().slot_devices[6], "slot6 roundtrip");
+    CHECK(reloaded.mounts().size() == config.mounts().size(), "mount count roundtrip");
+    std::filesystem::remove(tmp);
+    return true;
+}
+
 static bool test_apple2plus() {
     const auto path = fixture_dir() / "Apple2Plus.gs2";
     SystemConfig config;
@@ -349,6 +370,7 @@ static bool run_self_tests() {
         {"detect_config_kind", test_detect_config_kind},
         {"settings_duplicate_key", test_settings_duplicate_key},
         {"settings_unknown_keys_warn", test_settings_unknown_keys_warn},
+        {"save_roundtrip", test_save_roundtrip},
     };
 
     int passed = 0;

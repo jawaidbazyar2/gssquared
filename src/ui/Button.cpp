@@ -110,10 +110,12 @@ void Button_t::render() {
     // Restore original background color
     style.background_color = original_bg_color;
 
-    // Draw button-specific content (text or image)
+    // Draw button-specific content (text or image).
+    // Use estyle (set by calc_style in Tile_t::render) so SelectButton can
+    // pair per-state backgrounds with contrasting text colors.
     if (buttonType == BT_Text) {
         if (ctx->text_render == nullptr) {
-            uint32_t color = opaque(style.text_color);
+            uint32_t color = opaque(estyle.text_color);
             ctx->debug_text(text.c_str(), tp.x + cp.x, tp.y + cp.y, color);
         } else {
             /* if (cp.w == -1) {
@@ -121,7 +123,7 @@ void Button_t::render() {
                 cp.h = 
             } */
 
-            ctx->text_render->set_color((style.text_color >> 24) & 0xFF, (style.text_color >> 16) & 0xFF, (style.text_color >> 8) & 0xFF, calc_opacity(style.text_color)); 
+            ctx->text_render->set_color((estyle.text_color >> 24) & 0xFF, (estyle.text_color >> 16) & 0xFF, (estyle.text_color >> 8) & 0xFF, calc_opacity(estyle.text_color));
             ctx->text_render->render(text, tp.x +cp.x, tp.y + cp.y, TEXT_ALIGN_LEFT);
         }
     } else if (buttonType == BT_Atlas) {

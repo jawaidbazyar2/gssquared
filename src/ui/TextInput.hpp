@@ -7,8 +7,8 @@ class TextInput_t : public Tile_t {
 public:
     TextInput_t(UIContext *ctx, const std::string& text, const Style_t& style = Style_t());
     void render() override;
-    inline uint32_t dim(uint32_t color, float level);
-    //void on_click(const SDL_Event& event) override;
+    void update() override;
+    static uint32_t dim(uint32_t color, float level);
     void set_text_renderer(TextRenderer* text_renderer);
     void set_text(const std::string& text);
     std::string get_text() const;
@@ -19,22 +19,27 @@ public:
     bool is_edit_active() const { return edit_active; }
     void set_enter_handler(EventHandler handler);
     void clear_edit();
+    /** True while editing (hosts that skip idle frames should keep redrawing for blink). */
+    bool needs_redraw() const { return edit_active; }
 
 protected:
+    using EventHandler = std::function<bool(const SDL_Event&)>;
+
     void test_truncate();
     void calc_cursor_pixel_position();
     void set_cursor_position_by_pixel(int pixel_pos);
+    void reset_cursor_blink();
+    uint32_t cursor_color() const;
 
     std::string text;
     int cursor_position = 0;
     int cursor_pixel_pos = 0;
-    int cursor_state = 0;
+    bool cursor_visible = true;
+    Uint64 cursor_blink_ms = 0;
+    static constexpr Uint64 kCursorBlinkPeriodMs = 530;
     TextRenderer* text_renderer = nullptr;
     int font_line_height = 0;
     int max_length = 0; // 0 default means no limit
     bool edit_active = false;
     EventHandler enter_handler = nullptr;
-
-    using EventHandler = std::function<bool(const SDL_Event&)>;
-
 };

@@ -66,36 +66,6 @@ PlatformFlags_t platform_flag(PlatformId_t platform) {
     }
 }
 
-const char* platform_name(PlatformId_t platform) {
-    switch (platform) {
-        case PLATFORM_APPLE_II: return "apple2";
-        case PLATFORM_APPLE_II_PLUS: return "apple2plus";
-        case PLATFORM_APPLE_IIE: return "apple2e";
-        case PLATFORM_APPLE_IIE_ENHANCED: return "apple2e_enhanced";
-        case PLATFORM_APPLE_IIE_65816: return "apple2e_65816";
-        case PLATFORM_APPLE_IIGS: return "apple2gs";
-        default: return "unknown";
-    }
-}
-
-const char* clock_name(clock_set_t clock_set) {
-    switch (clock_set) {
-        case CLOCK_SET_US: return "ntsc";
-        case CLOCK_SET_PAL: return "pal";
-        default: return "unknown";
-    }
-}
-
-const char* scanner_name(video_scanner_t scanner) {
-    switch (scanner) {
-        case Scanner_AppleII: return "apple2";
-        case Scanner_AppleIIe: return "apple2e";
-        case Scanner_AppleIIePAL: return "apple2e_pal";
-        case Scanner_AppleIIgs: return "apple2gs";
-        default: return "unknown";
-    }
-}
-
 std::optional<PlatformId_t> parse_platform(const std::string& value, std::string& error_out) {
     static const std::unordered_map<std::string, PlatformId_t> map = {
         {"apple2", PLATFORM_APPLE_II},
@@ -192,26 +162,6 @@ std::optional<device_id> parse_card_type(const std::string& value, std::string& 
         return std::nullopt;
     }
     return it->second;
-}
-
-const char* card_type_name(device_id id) {
-    switch (id) {
-        case DEVICE_ID_LANGUAGE_CARD: return "language_card";
-        case DEVICE_ID_PRODOS_BLOCK: return "prodos_block"; // TODO: deprecated
-        case DEVICE_ID_PRODOS_CLOCK: return "prodos_clock";
-        case DEVICE_ID_DISK_II: return "disk_ii";
-        case DEVICE_ID_MEM_EXPANSION: return "mem_expansion";
-        case DEVICE_ID_THUNDER_CLOCK: return "thunder_clock";
-        case DEVICE_ID_PD_BLOCK2: return "prodos_block2"; // TODO: deprecated
-        case DEVICE_ID_PARALLEL: return "parallel";
-        case DEVICE_ID_VIDEX: return "videx";
-        case DEVICE_ID_MOCKINGBOARD: return "mockingboard";
-        case DEVICE_ID_MOUSE: return "mouse";
-        case DEVICE_ID_VIDHD: return "vidhd";
-        case DEVICE_ID_PD_BLOCK3: return "bazfast3";
-        case DEVICE_ID_SECOND_SIGHT: return "second_sight";
-        default: return "none";
-    }
 }
 
 struct device_validation_t {
@@ -457,6 +407,211 @@ bool looks_like_settings_file(const std::string& path) {
 }
 
 } // namespace
+
+const char* platform_name(PlatformId_t platform) {
+    switch (platform) {
+        case PLATFORM_APPLE_II: return "apple2";
+        case PLATFORM_APPLE_II_PLUS: return "apple2plus";
+        case PLATFORM_APPLE_IIE: return "apple2e";
+        case PLATFORM_APPLE_IIE_ENHANCED: return "apple2e_enhanced";
+        case PLATFORM_APPLE_IIE_65816: return "apple2e_65816";
+        case PLATFORM_APPLE_IIGS: return "apple2gs";
+        default: return "unknown";
+    }
+}
+
+const char* clock_name(clock_set_t clock_set) {
+    switch (clock_set) {
+        case CLOCK_SET_US: return "ntsc";
+        case CLOCK_SET_PAL: return "pal";
+        default: return "unknown";
+    }
+}
+
+const char* scanner_name(video_scanner_t scanner) {
+    switch (scanner) {
+        case Scanner_AppleII: return "apple2";
+        case Scanner_AppleIIe: return "apple2e";
+        case Scanner_AppleIIePAL: return "apple2e_pal";
+        case Scanner_AppleIIgs: return "apple2gs";
+        default: return "unknown";
+    }
+}
+
+const char* card_type_name(device_id id) {
+    switch (id) {
+        case DEVICE_ID_LANGUAGE_CARD: return "language_card";
+        case DEVICE_ID_PRODOS_BLOCK: return "prodos_block";
+        case DEVICE_ID_PRODOS_CLOCK: return "prodos_clock";
+        case DEVICE_ID_DISK_II: return "disk_ii";
+        case DEVICE_ID_MEM_EXPANSION: return "mem_expansion";
+        case DEVICE_ID_THUNDER_CLOCK: return "thunder_clock";
+        case DEVICE_ID_PD_BLOCK2: return "prodos_block2";
+        case DEVICE_ID_PARALLEL: return "parallel";
+        case DEVICE_ID_VIDEX: return "videx";
+        case DEVICE_ID_MOCKINGBOARD: return "mockingboard";
+        case DEVICE_ID_MOUSE: return "mouse";
+        case DEVICE_ID_VIDHD: return "vidhd";
+        case DEVICE_ID_PD_BLOCK3: return "bazfast3";
+        case DEVICE_ID_SECOND_SIGHT: return "second_sight";
+        default: return "none";
+    }
+}
+
+static const char* card_display_name(device_id id) {
+    switch (id) {
+        case DEVICE_ID_LANGUAGE_CARD: return "Language Card";
+        case DEVICE_ID_PRODOS_BLOCK: return "ProDOS Block";
+        case DEVICE_ID_PRODOS_CLOCK: return "ProDOS Clock";
+        case DEVICE_ID_DISK_II: return "Disk II Controller";
+        case DEVICE_ID_MEM_EXPANSION: return "Memory Expansion";
+        case DEVICE_ID_THUNDER_CLOCK: return "Thunder Clock";
+        case DEVICE_ID_PD_BLOCK2: return "ProDOS Block 2";
+        case DEVICE_ID_PARALLEL: return "Parallel Interface";
+        case DEVICE_ID_VIDEX: return "Videx VideoTerm";
+        case DEVICE_ID_MOCKINGBOARD: return "Mockingboard";
+        case DEVICE_ID_MOUSE: return "Apple Mouse";
+        case DEVICE_ID_VIDHD: return "VIDHD";
+        case DEVICE_ID_PD_BLOCK3: return "BazFast 3";
+        case DEVICE_ID_SECOND_SIGHT: return "Second Sight";
+        default: return "None";
+    }
+}
+
+std::vector<slot_card_choice_t> cards_allowed_for_slot(PlatformId_t platform, int slot) {
+    // Mirrors lookup_device_validation() / slot_allows_device() in the anonymous namespace.
+    struct entry_t {
+        device_id id;
+        uint8_t slots_allowed;
+        uint32_t platform_flags;
+    };
+    static const entry_t kDevices[] = {
+        {DEVICE_ID_LANGUAGE_CARD, 0b00000001, PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS},
+        {DEVICE_ID_PRODOS_BLOCK, 0b11111110, PLATFLAG_ALL},
+        {DEVICE_ID_PRODOS_CLOCK, 0b11111110,
+            PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS | PLATFLAG_APPLE_IIE
+            | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
+        {DEVICE_ID_DISK_II, 0b11111110, PLATFLAG_ALL},
+        {DEVICE_ID_MEM_EXPANSION, 0b11111110, PLATFLAG_ALL},
+        {DEVICE_ID_THUNDER_CLOCK, 0b11111110,
+            PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS | PLATFLAG_APPLE_IIE
+            | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
+        {DEVICE_ID_PD_BLOCK2, 0b11111110, PLATFLAG_ALL},
+        {DEVICE_ID_PARALLEL, 0b11111110, PLATFLAG_ALL},
+        {DEVICE_ID_VIDEX, 0b00001000, PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS},
+        {DEVICE_ID_MOCKINGBOARD, 0b11111110, PLATFLAG_ALL},
+        {DEVICE_ID_MOUSE, 0b11111110,
+            PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS | PLATFLAG_APPLE_IIE
+            | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
+        {DEVICE_ID_VIDHD, 0b11111110, PLATFLAG_APPLE_IIE_65816},
+        {DEVICE_ID_PD_BLOCK3, 0b11111110, PLATFLAG_ALL},
+        {DEVICE_ID_SECOND_SIGHT, 0, PLATFLAG_APPLE_IIGS},
+    };
+
+    PlatformFlags_t flag = PLATFLAG_NONE;
+    switch (platform) {
+        case PLATFORM_APPLE_II: flag = PLATFLAG_APPLE_II; break;
+        case PLATFORM_APPLE_II_PLUS: flag = PLATFLAG_APPLE_II_PLUS; break;
+        case PLATFORM_APPLE_IIE: flag = PLATFLAG_APPLE_IIE; break;
+        case PLATFORM_APPLE_IIE_ENHANCED: flag = PLATFLAG_APPLE_IIE_ENHANCED; break;
+        case PLATFORM_APPLE_IIE_65816: flag = PLATFLAG_APPLE_IIE_65816; break;
+        case PLATFORM_APPLE_IIGS: flag = PLATFLAG_APPLE_IIGS; break;
+        default: break;
+    }
+
+    std::vector<slot_card_choice_t> out;
+    if (slot < 0 || slot >= NUM_SLOTS) return out;
+    for (const auto& device : kDevices) {
+        if ((device.platform_flags & flag) == 0) continue;
+        if (device.slots_allowed != 0 && (device.slots_allowed & (1u << slot)) == 0) continue;
+        out.push_back({device.id, card_type_name(device.id), card_display_name(device.id)});
+    }
+    return out;
+}
+
+static std::string toml_escape(const std::string& s) {
+    std::string out;
+    out.reserve(s.size() + 8);
+    for (char c : s) {
+        if (c == '\\' || c == '"') {
+            out.push_back('\\');
+            out.push_back(c);
+        } else if (c == '\n') {
+            out += "\\n";
+        } else if (c == '\t') {
+            out += "\\t";
+        } else {
+            out.push_back(c);
+        }
+    }
+    return out;
+}
+
+void SystemConfig::set_from_parts(const SystemConfig_t& config, const std::vector<disk_mount_t>& mounts) {
+    clear();
+    name_ = config.name ? config.name : "";
+    description_ = config.description ? config.description : "";
+    config_data_ = config;
+    config_data_.builtin = false;
+    mounts_ = mounts;
+    gs2_version_ = 1;
+    sync_config_pointers();
+}
+
+bool SystemConfig::save(const std::string& path, std::string& error_out) const {
+    if (name_.empty() && !(config_data_.name && config_data_.name[0])) {
+        error_out = "name must not be empty";
+        return false;
+    }
+    const std::string& name_to_write = !name_.empty() ? name_ : std::string(config_data_.name);
+
+    std::ofstream out(path);
+    if (!out) {
+        error_out = "Failed to open file for writing: " + path;
+        return false;
+    }
+
+    out << "gs2_version = 1\n";
+    out << "name = \"" << toml_escape(name_to_write) << "\"\n";
+    if (!description_.empty()) {
+        out << "description = \"" << toml_escape(description_) << "\"\n";
+    }
+    out << "platform = \"" << platform_name(config_data_.platform_id) << "\"\n";
+    out << "clock = \"" << clock_name(config_data_.clock_set) << "\"\n";
+    out << "scanner = \"" << scanner_name(config_data_.scanner_type) << "\"\n";
+    out << "builtin = false\n";
+
+    for (int slot = 0; slot < NUM_SLOTS; ++slot) {
+        const device_id id = config_data_.slot_devices[slot];
+        if (id == DEVICE_ID_NONE) continue;
+        out << "\n[[cards]]\n";
+        out << "slot = " << slot << "\n";
+        out << "card = \"" << card_type_name(id) << "\"\n";
+    }
+
+    const std::string base_dir = Paths::get_directory(path);
+    for (const auto& mount : mounts_) {
+        out << "\n[[storage]]\n";
+        out << "slot = " << mount.slot << "\n";
+        out << "drive = " << (mount.drive + 1) << "\n";
+        std::string image = mount.filename;
+        // Prefer relative path when image is under the config directory.
+        if (!base_dir.empty() && image.rfind(base_dir, 0) == 0) {
+            std::string rel = image.substr(base_dir.size());
+            while (!rel.empty() && (rel[0] == '/' || rel[0] == '\\')) {
+                rel.erase(rel.begin());
+            }
+            if (!rel.empty()) image = rel;
+        }
+        out << "image = \"" << toml_escape(image) << "\"\n";
+    }
+
+    if (!out) {
+        error_out = "Write failed: " + path;
+        return false;
+    }
+    return true;
+}
 
 bool SystemConfig::fallback_to_settings(const std::string& path, std::string& error_out) {
     if (!looks_like_settings_file(path)) {

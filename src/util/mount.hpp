@@ -52,6 +52,13 @@ struct drive_info_t {
     drive_status_t status;     // motor, track, mounted, etc.
 };
 
+/** Spec for building a storage UI button (live OSD or config editor). */
+struct drive_spec_t {
+    storage_key_t key;
+    drive_type_t drive_type;
+    drive_status_t status = {};
+};
+
 enum unmount_action_t {
     UNMOUNT_ACTION_NONE,
     SAVE_AND_UNMOUNT,

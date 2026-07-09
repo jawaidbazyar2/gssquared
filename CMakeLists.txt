@@ -390,6 +390,8 @@ add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Butt
     src/ui/LabeledButton.cpp src/ui/FadeContainer.cpp src/ui/SlotButton.cpp src/ui/StatusMessage.cpp src/ui/DrivesHUD.cpp
     src/ui/SpeedSelect.cpp src/ui/HoverControls.cpp src/ui/DisplaySelect.cpp src/ui/DrivesOSD.cpp src/ui/HD20SC_Button.cpp
     src/ui/DirtyDiskSave.cpp src/ui/QuitModal.cpp
+    src/ui/StorageButtonFactory.cpp src/ui/SlotsPanel.cpp src/ui/SystemBadge.cpp src/ui/ConfigSelectors.cpp
+    src/ui/EditSystem.cpp
 )
 
 add_library(gs2_displaypp src/devices/displaypp/frame/frame_bit.cpp src/devices/displaypp/frame/frame_byte.cpp src/devices/displaypp/CharRom.cpp src/devices/displaypp/AppleIIgsColors.cpp)
@@ -461,7 +463,7 @@ add_library(gs2_device_registry
 )
 target_link_libraries(gs2_device_registry PUBLIC ${GS2_DEVICE_REGISTRY_LIBS} gs2_ntsc)
 
-add_library(gs2_systemconfig src/util/SystemConfig.cpp src/util/SettingsConfig.cpp)
+add_library(gs2_systemconfig src/util/SystemConfig.cpp src/util/SettingsConfig.cpp src/util/ConfigDraft.cpp)
 target_link_libraries(gs2_systemconfig PUBLIC gs2_paths)
 
 add_library(gs2_video_scanner 

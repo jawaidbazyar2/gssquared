@@ -37,6 +37,8 @@
 #include "SelectButton.hpp"
 #include "StatusMessage.hpp"
 #include "DrivesOSD.hpp"
+#include "SlotsPanel.hpp"
+#include "SystemBadge.hpp"
 
 #define SLIDE_IN 1
 #define SLIDE_OUT 2
@@ -95,7 +97,9 @@ protected:
 
     // System badge
     SystemConfig_t *system_config = nullptr;
-    Button_t *system_badge = nullptr;
+    SystemBadge_t *system_badge = nullptr;
+
+    SlotsPanel_t *slot_container = nullptr;
     
     std::vector<Container_t *> containers;
     std::vector<Container_t *> ncontainers;

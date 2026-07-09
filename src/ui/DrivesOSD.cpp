@@ -1,5 +1,6 @@
 
 #include "DrivesOSD.hpp"
+#include "StorageButtonFactory.hpp"
 
 
 /**
@@ -75,4 +76,37 @@ void DrivesOSD_t::layout() {
 
     }
     
+}
+
+DrivesOSD_t::DrivesOSD_t(UIContext *ctx, const Style_t& initial_style)
+    : Container_t(ctx, initial_style), button_style(initial_style) {}
+
+DrivesOSD_t::~DrivesOSD_t() {
+    // Tiles are owned by Container_t; only clear our alias list.
+    buttons.clear();
+}
+
+void DrivesOSD_t::rebuild(const std::vector<drive_spec_t>& drives) {
+    // Delete previous buttons (they are also in tiles[]).
+    for (StorageButton *button : buttons) {
+        delete button;
+    }
+    buttons.clear();
+    remove_all_tiles();
+
+    for (const auto& drive : drives) {
+        StorageButton *button = create_storage_button(ctx, drive.drive_type, button_style);
+        button->set_drive_type(drive.drive_type);
+        button->set_key(drive.key);
+        button->set_disk_status(drive.status);
+        if (click_handler) {
+            button->on_click([this, button](const SDL_Event& event) -> bool {
+                click_handler(button, event);
+                return true;
+            });
+        }
+        buttons.push_back(button);
+        add(button);
+    }
+    layout();
 }

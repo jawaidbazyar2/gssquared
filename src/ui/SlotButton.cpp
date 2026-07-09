@@ -1,7 +1,5 @@
-#include "slots.hpp"
 #include "Button.hpp"
 #include "SlotButton.hpp"
-#include "devices.hpp"
 
 const Style_t SlotButton_Style = {
     .background_color = 0x0084C6FF,
@@ -12,15 +10,17 @@ const Style_t SlotButton_Style = {
     .text_color = 0xFFFFFFFF,
 };
 
-SlotButton::SlotButton(UIContext *ctx, int assetID, int group, int slot_number, SlotManager_t *slot_manager) 
+SlotButton::SlotButton(UIContext *ctx, int assetID, int group, int slot_number, const std::string& device_name)
   : Button_t(ctx, "", SlotButton_Style, group) {
     this->slot_number = slot_number;
-    this->slot_manager = slot_manager;
-    this->device = slot_manager->get_device((SlotType_t)slot_number);
+    this->slot_type = (SlotType_t)slot_number;
     this->slot_string = std::to_string(slot_number);
-    this->slot_device_name = device->name;
+    this->slot_device_name = device_name;
 }
 
+void SlotButton::set_device_name(const std::string& name) {
+    slot_device_name = name;
+}
 
 void SlotButton::render() {
     

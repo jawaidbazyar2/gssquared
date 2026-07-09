@@ -6,8 +6,10 @@
 #include "UIContext.hpp"
 #include "videosystem.hpp"
 
-#define SELECT_PENDING -2
-#define SELECT_QUIT    -1
+#define SELECT_PENDING   -2
+#define SELECT_QUIT      -1
+#define SELECT_NEW       -3
+#define SELECT_OPEN_EDIT -4
 
 class SelectSystem {
 protected:
@@ -55,4 +57,7 @@ public:
     void set_raise_window();
 
     int get_selected_system();
+
+    /** Reset selection back to pending (after consuming NEW / OPEN_EDIT). */
+    void clear_selection() { selected_system = SELECT_PENDING; }
 };

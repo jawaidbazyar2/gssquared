@@ -23,13 +23,7 @@
 
 #include "SDL3/SDL_events.h"
 #include "computer.hpp"
-#include "DiskII_Button.hpp"
-//#include "Unidisk_Button.hpp"
-#include "HD20SC_Button.hpp"
-#include "AppleDisk_525_Button.hpp"
-#include "AppleDisk_35_Button.hpp"
 #include "LabeledButton.hpp"
-#include "SlotButton.hpp"
 #include "Container.hpp"
 #include "AssetAtlas.hpp"
 #include "Style.hpp"
@@ -55,6 +49,8 @@
 #include "HoverControls.hpp"
 #include "DirtyDiskSave.hpp"
 #include "QuitModal.hpp"
+#include "ConfigSelectors.hpp"
+#include "StorageButtonFactory.hpp"
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
 // comes back later, we know which drive this was for.
@@ -254,56 +250,24 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     };
 
     // Create a container for our drive buttons
-    //drive_container = new Container_t(&ui_ctx, DC);
-    drive_container = new DrivesOSD_t(&ui_ctx, DC); // just container with special layout logic.
+    drive_container = new DrivesOSD_t(&ui_ctx, DC);
     drive_container->set_position(600, 140);
     drive_container->size(400, 575);
-    containers.push_back(drive_container);
+    drive_container->set_button_style(DS);
+    drive_container->set_click_handler([this](StorageButton *button, const SDL_Event&) {
+        const storage_key_t key = button->get_key();
+        void (*click_fn)(void*) = (button->get_drive_type() == DRIVE_TYPE_PRODOS_BLOCK)
+            ? bazfast_button_click
+            : diskii_button_click;
+        click_fn(new diskii_callback_data_t{this, key});
+    });
 
-    // New Mounts-based button creation
-    // Get all registered drives from the Mounts system
-    const std::vector<drive_info_t>& drives = computer->mounts->get_all_drives();
-    
-    bool has_hud_drives = false;
-    
-    // Create buttons for each registered drive
-    for (const auto& drive : drives) {
-        uint8_t slot = drive.key.slot;
-        uint8_t drive_num = drive.key.drive;
-        StorageButton *button;
-
-        // Create the appropriate button type based on drive_type
-        void (*click_fn)(void*) = nullptr;
-        switch (drive.drive_type) {
-            case DRIVE_TYPE_DISKII:
-                button = new DiskII_Button_t(&ui_ctx, DS);
-                click_fn = diskii_button_click;
-                break;
-            case DRIVE_TYPE_APPLEDISK_525:
-                button = new AppleDisk_525_Button_t(&ui_ctx, DS);
-                click_fn = diskii_button_click;
-                break;
-            case DRIVE_TYPE_APPLEDISK_35:
-                button = new AppleDisk_35_Button_t(&ui_ctx, DS);
-                click_fn = diskii_button_click;
-                break;
-            case DRIVE_TYPE_PRODOS_BLOCK:
-                button = new HD20SC_Button_t(&ui_ctx, DS);
-                click_fn = bazfast_button_click;
-                break;
-            default:
-                throw std::runtime_error(std::string("Unknown drive type: ") + std::to_string(drive.drive_type));
-        }
-        const storage_key_t key = drive.key;
-        button->on_click([this, key, click_fn](const SDL_Event&) -> bool {
-            click_fn(new diskii_callback_data_t{this, key});
-            return true;
-        });
-        button->set_key(key);
-        drive_container->add(button);
+    std::vector<drive_spec_t> drive_specs;
+    for (const auto& drive : computer->mounts->get_all_drives()) {
+        drive_specs.push_back({drive.key, drive.drive_type, drive.status});
     }
-    // Initial layout for drive container
-    drive_container->layout();
+    drive_container->rebuild(drive_specs);
+    containers.push_back(drive_container);
 
     /*
      instead of creating whole new buttons, we insert the same buttons into this container.
@@ -314,104 +278,58 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     hud_drive_container->size(420, 120);
     ncontainers.push_back(hud_drive_container);
 
-    // Create another container, this one for slots.
-    Container_t *slot_container = new Container_t(&ui_ctx, SC);
+    slot_container = new SlotsPanel_t(&ui_ctx, SC, slot_manager_name_resolver(slot_manager));
     slot_container->set_position(30, 140);
     slot_container->size(320, 304);
-
-    for (int i = 7; i >= 0; i--) {
-        char slot_text[128];
-        snprintf(slot_text, sizeof(slot_text), "Slot %d: %s", i, slot_manager->get_device(static_cast<SlotType_t>(i))->name);
-        SlotButton *slot = new SlotButton(&ui_ctx, 0, 0, i, slot_manager);
-        slot->size(300, 30);
-        slot_container->add(slot);    // Add in reverse order (7 to 0)
-    }
     slot_container->layout();
     containers.push_back(slot_container);
+
+    Style_t CB = config_selector_button_style();
 
     mon_color_con = new Container_t(&ui_ctx, SC);
     mon_color_con->set_position(30, 550);
     mon_color_con->size(320, 65);
     containers.push_back(mon_color_con);
-
-    Style_t CB = {
-        .background_color = 0x00000000,
-        .border_color = 0x000000FF,
-        .hover_color = 0x00C0C0FF,
-        .padding = 2,
-        .border_width = 1,        
-    };
-
-    SelectButton_t *mc1 = new SelectButton_t(&ui_ctx, ColorDisplayButton, CB, MONITOR_COMPOSITE);
-    SelectButton_t *mc2 = new SelectButton_t(&ui_ctx, RGBDisplayButton, CB, MONITOR_GS_RGB);
-    SelectButton_t *mc3 = new SelectButton_t(&ui_ctx, GreenDisplayButton, CB, MONITOR_MONO_GREEN);
-    SelectButton_t *mc4 = new SelectButton_t(&ui_ctx, AmberDisplayButton, CB, MONITOR_MONO_AMBER);
-    SelectButton_t *mc5 = new SelectButton_t(&ui_ctx, WhiteDisplayButton, CB, MONITOR_MONO_WHITE);
-    display_state_t *ds = (display_state_t *)computer->get_module_state(MODULE_DISPLAY);
-    mc1->on_click([ds](const SDL_Event& event) -> bool {
-        getMenuInterface()->setMonitor(MONITOR_COMPOSITE);
-        return true;
-    });
-    mc2->on_click([ds](const SDL_Event& event) -> bool {
-        getMenuInterface()->setMonitor(MONITOR_GS_RGB);
-        return true;
-    });
-    mc3->on_click([ds](const SDL_Event& event) -> bool {
-        getMenuInterface()->setMonitor(MONITOR_MONO_GREEN);
-        return true;
-    });
-    mc4->on_click([ds](const SDL_Event& event) -> bool {
-        getMenuInterface()->setMonitor(MONITOR_MONO_AMBER);
-        return true;
-    });
-    mc5->on_click([ds](const SDL_Event& event) -> bool {
-        getMenuInterface()->setMonitor(MONITOR_MONO_WHITE);
-        return true;
-    });
-    mon_color_con->add(mc1);
-    mon_color_con->add(mc2);
-    mon_color_con->add(mc3);
-    mon_color_con->add(mc4);
-    mon_color_con->add(mc5);
-    mon_color_con->layout();
+    populate_display_selector(mon_color_con, &ui_ctx, CB);
+    for (size_t i = 0; i < mon_color_con->count(); i++) {
+        Tile_t *tile = mon_color_con->get_tile(i);
+        tile->on_click([tile](const SDL_Event&) -> bool {
+            getMenuInterface()->setMonitor(static_cast<int>(tile->value()));
+            return true;
+        });
+    }
 
     speed_con = new Container_t(&ui_ctx, SC);
     speed_con->set_position(30, 475);
     speed_con->size(320, 65);
     containers.push_back(speed_con);
-
-    speed_btn_10 = new SelectButton_t(&ui_ctx, MHz1_0Button, CB, CLOCK_1_024MHZ);
-    speed_btn_28 = new SelectButton_t(&ui_ctx, MHz2_8Button, CB, CLOCK_2_8MHZ);
-    speed_btn_71 = new SelectButton_t(&ui_ctx, MHz7_159Button, CB, CLOCK_7_159MHZ);
-    speed_btn_14 = new SelectButton_t(&ui_ctx, MHz14_318Button, CB, CLOCK_14_3MHZ);
-    speed_btn_8 = new SelectButton_t(&ui_ctx, MHzInfinityButton, CB, CLOCK_FREE_RUN);
-    
-    speed_btn_10->on_click([this](const SDL_Event& event) -> bool {
+    SelectButton_t *speed_btns[5] = {};
+    populate_speed_selector(speed_con, &ui_ctx, CB, speed_btns);
+    speed_btn_10 = speed_btns[0];
+    speed_btn_28 = speed_btns[1];
+    speed_btn_71 = speed_btns[2];
+    speed_btn_14 = speed_btns[3];
+    speed_btn_8 = speed_btns[4];
+    speed_btn_10->on_click([this](const SDL_Event&) -> bool {
         this->clock->set_clock_mode(CLOCK_1_024MHZ);
         return true;
     });
-    speed_btn_28->on_click([this](const SDL_Event& event) -> bool {
+    speed_btn_28->on_click([this](const SDL_Event&) -> bool {
         this->clock->set_clock_mode(CLOCK_2_8MHZ);
         return true;
     });
-    speed_btn_71->on_click([this](const SDL_Event& event) -> bool {
+    speed_btn_71->on_click([this](const SDL_Event&) -> bool {
         this->clock->set_clock_mode(CLOCK_7_159MHZ);
         return true;
     });
-    speed_btn_14->on_click([this](const SDL_Event& event) -> bool {
+    speed_btn_14->on_click([this](const SDL_Event&) -> bool {
         this->clock->set_clock_mode(CLOCK_14_3MHZ);
         return true;
     });
-    speed_btn_8->on_click([this](const SDL_Event& event) -> bool {
+    speed_btn_8->on_click([this](const SDL_Event&) -> bool {
         this->clock->set_clock_mode(CLOCK_FREE_RUN);
         return true;
     });
-    speed_con->add(speed_btn_10);
-    speed_con->add(speed_btn_28);
-    speed_con->add(speed_btn_71);
-    speed_con->add(speed_btn_14);
-    speed_con->add(speed_btn_8);
-    speed_con->layout();
 
     // Create text buttons for the disk save dialog
     Style_t TextButtonCfg;
@@ -448,7 +366,9 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     ncontainers.push_back(hover_controls_con);
 
     system_config = computer->get_system();
-    system_badge = new Button_t(&ui_ctx, computer->platform->image_id, SB);
+    system_badge = new SystemBadge_t(&ui_ctx, computer->platform->image_id, SB,
+        system_config->name ? system_config->name : "",
+        system_config->description ? system_config->description : "");
     system_badge->set_position(30, 65);
 
     status_message = new StatusMessage_t(&ui_ctx);
@@ -532,6 +452,7 @@ OSD::~OSD() {
     SDL_DestroyTexture(cpTexture);
     delete text_render;
     delete title_trender;
+    delete system_badge;
     for (Container_t* container : containers) {
         delete container;
     }
@@ -668,9 +589,6 @@ void OSD::render() {
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
         system_badge->render();
-        text_render->set_color(0, 0, 0, 0xFF);
-        text_render->render(system_config->name, 220, 70, TEXT_ALIGN_LEFT);
-        text_render->render(system_config->description, 220, 90, TEXT_ALIGN_LEFT);
 
         close_btn->render();
 

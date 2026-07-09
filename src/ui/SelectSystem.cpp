@@ -5,6 +5,7 @@
 #include "util/TextRenderer.hpp"
 #include "AssetAtlas.hpp"
 #include "SystemButton.hpp"
+#include "Button.hpp"
 
 SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     : vs(vs), aa(aa) {
@@ -75,6 +76,30 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
         container->add(button);
     }
 
+    Style_t ActionStyle = {
+        .background_color = 0x404040FF,
+        .border_color = 0xFFFFFFFF,
+        .hover_color = 0x008C4AFF,
+        .padding = 10,
+        .border_width = 1,
+        .text_color = 0xFFFFFFFF,
+    };
+    Button_t *new_btn = new Button_t(&ui_ctx, "+", ActionStyle);
+    new_btn->size(200, 200);
+    new_btn->on_click([this](const SDL_Event&) -> bool {
+        selected_system = SELECT_NEW;
+        return true;
+    });
+    container->add(new_btn);
+
+    Button_t *edit_btn = new Button_t(&ui_ctx, "Edit...", ActionStyle);
+    edit_btn->size(200, 200);
+    edit_btn->on_click([this](const SDL_Event&) -> bool {
+        selected_system = SELECT_OPEN_EDIT;
+        return true;
+    });
+    container->add(edit_btn);
+
     container->layout();
 
     updated = true;
@@ -115,7 +140,9 @@ bool SelectSystem::event(const SDL_Event &event) {
         (event.type == SDL_EVENT_MOUSE_MOTION)) {
         updated = true;
     }
-    return (selected_system >= 0);
+    return (selected_system >= 0) ||
+           (selected_system == SELECT_NEW) ||
+           (selected_system == SELECT_OPEN_EDIT);
 }
 
 int SelectSystem::get_selected_system() {

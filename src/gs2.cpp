@@ -50,6 +50,7 @@
 #include "mmus/mmu_iigs.hpp"
 #include "util/EventTimer.hpp"
 #include "ui/SelectSystem.hpp"
+#include "ui/EditSystem.hpp"
 #include "ui/MainAtlas.hpp"
 #include "cpus/cpu_implementations.hpp"
 #include "version.h"
@@ -564,6 +565,7 @@ gs2_app_t gs2_app_values;
 
 enum AppPhase {
     PHASE_SYSTEM_SELECT,
+    PHASE_EDIT_SYSTEM,
     PHASE_EMULATION,
     PHASE_SHUTTING_DOWN,
 };
@@ -584,8 +586,9 @@ struct GS2AppState {
     // "back" to return to.
     bool auto_launched = false;
 
-    // System selection
+    // System selection / config editor
     SelectSystem *select_system = nullptr;
+    EditSystem *edit_system = nullptr;
     AssetAtlas_t *aa = nullptr;
 
     // Emulation state
@@ -612,11 +615,29 @@ static bool apply_system_config_file(GS2AppState *state, const std::string& path
 
 struct open_config_dialog_data_t {
     GS2AppState *state;
+    bool edit_mode = false;
 };
+
+static void transition_to_edit_system(GS2AppState *state) {
+    delete state->edit_system;
+    state->edit_system = new EditSystem(state->computer->video_system, state->aa);
+    state->phase = PHASE_EDIT_SYSTEM;
+}
+
+static void leave_edit_system(GS2AppState *state) {
+    delete state->edit_system;
+    state->edit_system = nullptr;
+    // Restore SelectSystem letterbox presentation.
+    video_system_t *vs = state->computer->video_system;
+    delete state->select_system;
+    state->select_system = new SelectSystem(vs, state->aa);
+    state->phase = PHASE_SYSTEM_SELECT;
+}
 
 static void system_config_dialog_callback(void *userdata, const char *const *filelist, int /*filter*/) {
     auto *data = static_cast<open_config_dialog_data_t *>(userdata);
     GS2AppState *state = data->state;
+    bool edit_mode = data->edit_mode;
     delete data;
 
     if (!filelist || !filelist[0]) {
@@ -633,17 +654,23 @@ static void system_config_dialog_callback(void *userdata, const char *const *fil
         return;
     }
 
+    if (edit_mode) {
+        transition_to_edit_system(state);
+        state->edit_system->start_from_config(*state->loaded_config);
+        return;
+    }
+
     transition_to_emulation(state, &state->loaded_config->config(), -1);
 }
 
-static void open_system_config_dialog(GS2AppState *state) {
+static void open_system_config_dialog(GS2AppState *state, bool edit_mode = false) {
     static const SDL_DialogFileFilter filters[] = {
         { "GS2 System Config (.gs2)", "gs2" },
         { "Profiles Settings (.txt)", "txt" },
         { "All files", "*" }
     };
 
-    auto *data = new open_config_dialog_data_t{ state };
+    auto *data = new open_config_dialog_data_t{ state, edit_mode };
 
 #if defined(__EMSCRIPTEN__)
     web_open_file_dialog(system_config_dialog_callback, data, ".gs2");
@@ -1096,12 +1123,20 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     if (state->phase == PHASE_SYSTEM_SELECT) {
         if (event->type == gs2_app_values.menu_event_type
             && event->user.code == MENU_OPEN_CONFIG) {
-            open_system_config_dialog(state);
+            open_system_config_dialog(state, false);
             return SDL_APP_CONTINUE;
         }
         state->select_system->event(*event);
         if (event->type == SDL_EVENT_QUIT) {
             return SDL_APP_SUCCESS; // clean exit
+        }
+        return SDL_APP_CONTINUE;
+    }
+
+    if (state->phase == PHASE_EDIT_SYSTEM) {
+        state->edit_system->event(*event);
+        if (event->type == SDL_EVENT_QUIT) {
+            return SDL_APP_SUCCESS;
         }
         return SDL_APP_CONTINUE;
     }
@@ -1145,10 +1180,44 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         if (system_id == SELECT_QUIT) {
             return SDL_APP_SUCCESS; // user closed window during selection
         }
+        if (system_id == SELECT_NEW) {
+            state->select_system->clear_selection();
+            transition_to_edit_system(state);
+            state->edit_system->start_new();
+            return SDL_APP_CONTINUE;
+        }
+        if (system_id == SELECT_OPEN_EDIT) {
+            state->select_system->clear_selection();
+            open_system_config_dialog(state, true);
+            return SDL_APP_CONTINUE;
+        }
         if (system_id >= 0) {
             transition_to_emulation(state, get_system_config(system_id), system_id);
         }
         // On the web, vsync paces the selection UI; blocking would hang the tab.
+#ifndef __EMSCRIPTEN__
+        SDL_Delay(16);
+#endif
+        return SDL_APP_CONTINUE;
+    }
+
+    if (state->phase == PHASE_EDIT_SYSTEM) {
+        video_system_t *vs = state->computer->video_system;
+        if (state->edit_system->update()) {
+            SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
+            vs->clear();
+            state->edit_system->render();
+            renderMenuOverlay(vs->renderer, vs->window_width, vs->window_height);
+            vs->present();
+        }
+
+        int edit_result = state->edit_system->get_result();
+        if (edit_result == EDIT_QUIT) {
+            return SDL_APP_SUCCESS;
+        }
+        if (edit_result == EDIT_CANCEL || edit_result == EDIT_SAVED) {
+            leave_edit_system(state);
+        }
 #ifndef __EMSCRIPTEN__
         SDL_Delay(16);
 #endif
@@ -1196,6 +1265,7 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     delete state->mmu_iie;
     delete state->mmu_iigs;
 
+    delete state->edit_system;
     delete state->select_system;
     delete state->aa;
     delete state;

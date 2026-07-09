@@ -50,6 +50,20 @@ enum class ConfigFileKind {
 
 ConfigFileKind detect_config_file_kind(const std::string& path);
 
+const char* platform_name(PlatformId_t platform);
+const char* clock_name(clock_set_t clock_set);
+const char* scanner_name(video_scanner_t scanner);
+const char* card_type_name(device_id id);
+
+struct slot_card_choice_t {
+    device_id id;
+    const char* toml_name;
+    const char* display_name;
+};
+
+/** Cards allowed in this slot on this platform (for the editor picker). */
+std::vector<slot_card_choice_t> cards_allowed_for_slot(PlatformId_t platform, int slot);
+
 class SystemConfig {
     std::string path_;
     std::string name_;
@@ -74,6 +88,15 @@ public:
     SystemConfig() = default;
 
     bool load(const std::string& path, std::string& error_out);
+
+    /** Write a .gs2 TOML file from the current in-memory config + mounts. */
+    bool save(const std::string& path, std::string& error_out) const;
+
+    /**
+     * Populate this object from a SystemConfig_t + mounts (e.g. editor draft)
+     * so save() can write it. Owned strings are copied.
+     */
+    void set_from_parts(const SystemConfig_t& config, const std::vector<disk_mount_t>& mounts);
 
     const SystemConfig_t& config() const { return config_data_; }
     const std::vector<disk_mount_t>& mounts() const { return mounts_; }

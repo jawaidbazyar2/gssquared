@@ -1,10 +1,7 @@
 #include "Container.hpp"
 #include "DrivesHUD.hpp"
-#include "DiskII_Button.hpp"
-#include "AppleDisk_525_Button.hpp"
-#include "AppleDisk_35_Button.hpp"
-#include "HD20SC_Button.hpp"
 #include "StorageButton.hpp"
+#include "StorageButtonFactory.hpp"
 #include "util/mount.hpp"
 
 DrivesHUD_t::DrivesHUD_t(UIContext *ctx, const Style_t& style, Mounts *mounts) : Container_t(ctx, style), mounts(mounts) {
@@ -15,20 +12,7 @@ DrivesHUD_t::DrivesHUD_t(UIContext *ctx, const Style_t& style, Mounts *mounts) :
 
     // Create buttons for each registered drive
     for (const auto& drive : drives) {
-        uint8_t slot = drive.key.slot;
-        uint8_t drive_num = drive.key.drive;
-        StorageButton *button;
-
-        // Create the appropriate button type based on drive_type
-        if (drive.drive_type == DRIVE_TYPE_DISKII) {
-            button = new DiskII_Button_t(ctx, style);
-        } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_525) {
-            button = new AppleDisk_525_Button_t(ctx, style);
-        } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_35) {
-            button = new AppleDisk_35_Button_t(ctx, style);
-        } else if (drive.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-            button = new HD20SC_Button_t(ctx, style);
-        }
+        StorageButton *button = create_storage_button(ctx, drive.drive_type, style);
         button->set_drive_type(drive.drive_type);
         button->set_key(drive.key);
         buttons.push_back(button);

@@ -2,16 +2,15 @@
 #include "UIContext.hpp"
 #include "SlotData.hpp"
 
-class SlotManager_t;
-class Device_t;
+#include <string>
 
 class SlotButton : public Button_t {
     public:
-        SlotButton(UIContext *ctx, int assetID, int group = 0, int slot_number = 0, SlotManager_t *slot_manager = nullptr);
+        SlotButton(UIContext *ctx, int assetID, int group, int slot_number, const std::string& device_name);
         void render() override;
+        void set_device_name(const std::string& name);
+        int get_slot_number() const { return slot_number; }
     private:
-        SlotManager_t *slot_manager;
-        Device_t *device;
         int slot_number;
         SlotType_t slot_type;
         std::string slot_string;
