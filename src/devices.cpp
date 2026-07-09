@@ -16,6 +16,7 @@
  */
 
 #include "devices.hpp"
+#include "device_info.hpp"
 
 #include "devices/keyboard/keyboard.hpp"
 #include "devices/speaker/speaker.hpp"
@@ -42,7 +43,24 @@
 #include "devices/iwm/iwm_device.hpp"
 #include "devices/secondsight/secondsight.hpp"
 
-#include "PlatformIDs.hpp"
+namespace {
+
+Device_t make_device(device_id id,
+                     void (*power_on)(computer_t *, SlotType_t),
+                     void (*power_off)(void *)) {
+    const DeviceInfo_t *info = get_device_info(id);
+    return {
+        info->id,
+        info->name,
+        info->multipleInstances,
+        info->slots_allowed,
+        info->platform_flags,
+        power_on,
+        power_off,
+    };
+}
+
+} // namespace
 
 Device_t NoDevice = {
         DEVICE_ID_END,
@@ -55,240 +73,32 @@ Device_t NoDevice = {
     };
 
 Device_t Devices[NUM_DEVICE_IDS] = {
-    {
-        DEVICE_ID_KEYBOARD_IIPLUS,
-        "Apple II Plus Keyboard",
-        false,
-        0,
-        PLATFLAG_APPLE_II_PLUS,
-        init_mb_iiplus_keyboard,
-        NULL
-    },
-    {
-        DEVICE_ID_KEYBOARD_IIE,
-        "Apple IIe Keyboard",
-        false,
-        0,
-        PLATFLAG_APPLE_IIE|PLATFLAG_APPLE_IIE_ENHANCED|PLATFLAG_APPLE_IIE_65816,
-        init_mb_iie_keyboard,
-        NULL
-    },
-    {
-        DEVICE_ID_SPEAKER,
-        "Speaker",
-        false,
-        0,
-        PLATFLAG_ALL,
-        init_mb_speaker,
-        NULL
-    },
-    {
-        DEVICE_ID_DISPLAY,
-        "Display",
-        false,
-        0,
-        PLATFLAG_ALL,
-        init_mb_device_display,
-        NULL
-    },
-    {
-        DEVICE_ID_GAMECONTROLLER,
-        "Game Controller",  
-        false,
-        0,
-        PLATFLAG_ALL,
-        init_mb_game_controller,
-        NULL
-    },
-    {
-        DEVICE_ID_LANGUAGE_CARD,
-        "II/II+ Language Card",
-        false,
-        0b00000001, // only slot 0
-        PLATFLAG_APPLE_II|PLATFLAG_APPLE_II_PLUS,
-        init_slot_languagecard,
-        NULL
-    },
-    {
-        DEVICE_ID_PRODOS_BLOCK,
-        "Generic ProDOS Block",
-        true,
-        0b11111110,
-        PLATFLAG_ALL,
-        NULL, //init_prodos_block,
-        NULL
-    },
-    {
-        DEVICE_ID_PRODOS_CLOCK,
-        "Generic ProDOS Clock",
-        false,
-        0b11111110,
-        PLATFLAG_APPLE_II|PLATFLAG_APPLE_II_PLUS|PLATFLAG_APPLE_IIE|PLATFLAG_APPLE_IIE_ENHANCED|PLATFLAG_APPLE_IIE_65816,
-        init_slot_prodosclock,
-        NULL
-    },
-    {
-        DEVICE_ID_DISK_II,
-        "Disk II Controller",
-        true,
-        0b11111110,
-        PLATFLAG_ALL,
-        init_slot_ndiskII_woz,
-        NULL
-    },
-    {
-        DEVICE_ID_MEM_EXPANSION,
-        "Memory Expansion (Slinky)",
-        true,
-        0b11111110,
-        PLATFLAG_ALL,
-        init_slot_memexp,
-        NULL
-    },
-    {
-        DEVICE_ID_THUNDER_CLOCK,
-        "Thunder Clock Plus",
-        false,
-        0b11111110,
-        PLATFLAG_APPLE_II|PLATFLAG_APPLE_II_PLUS|PLATFLAG_APPLE_IIE|PLATFLAG_APPLE_IIE_ENHANCED|PLATFLAG_APPLE_IIE_65816,
-        init_slot_thunderclock,
-        NULL
-    },
-    {
-        DEVICE_ID_PD_BLOCK2,
-        "Generic ProDOS Block 2",
-        true,
-        0b11111110,
-        PLATFLAG_ALL,
-        init_pdblock2,
-        NULL
-    },
-    {
-        DEVICE_ID_PARALLEL,
-        "Apple II Parallel Interface",
-        true,
-        0b11111110,
-        PLATFLAG_ALL,
-        init_slot_parallel,
-        NULL
-    },
-    {
-        DEVICE_ID_VIDEX,
-        "Videx VideoTerm",
-        false,
-        0b00001000,
-        PLATFLAG_APPLE_II|PLATFLAG_APPLE_II_PLUS,
-        init_slot_videx,
-        NULL
-    },
-    {
-        DEVICE_ID_MOCKINGBOARD,
-        "Mockingboard",
-        true,
-        0b11111110,
-        PLATFLAG_ALL,
-        init_slot_mockingboard,
-        NULL
-    },
-    {
-        DEVICE_ID_IIE_MEMORY,
-        "IIe Memory",
-        false,
-        0,
-        PLATFLAG_APPLE_IIE|PLATFLAG_APPLE_IIE_ENHANCED|PLATFLAG_APPLE_IIE_65816,
-        init_iiememory,
-        NULL
-    },
-    {
-        DEVICE_ID_MOUSE,
-        "Apple Mouse II",
-        false,
-        0b11111110,
-        PLATFLAG_APPLE_II|PLATFLAG_APPLE_II_PLUS|PLATFLAG_APPLE_IIE|PLATFLAG_APPLE_IIE_ENHANCED|PLATFLAG_APPLE_IIE_65816,
-        init_mouse,
-        NULL
-    },
-    {
-        DEVICE_ID_CASSETTE,
-        "Cassette",
-        false,
-        0,
-        PLATFLAG_ALL,
-        init_mb_cassette,
-        NULL
-    },
-    {
-        DEVICE_ID_VIDHD,
-        "VIDHD",
-        false,
-        0b11111110,
-        PLATFLAG_APPLE_IIE_65816,
-        init_slot_vidhd,
-        NULL
-    },
-    {
-        DEVICE_ID_RTC_PRAM,
-        "RTC (Clock + Battery RAM)",
-        false,
-        0,
-        PLATFLAG_APPLE_IIGS,
-        init_slot_rtc_pram,
-        NULL
-    },
-    {
-        DEVICE_ID_KEYGLOO,
-        "ADB (KeyGloo)",
-        false,
-        0,
-        PLATFLAG_APPLE_IIGS,
-        init_slot_keygloo,
-        NULL
-    },
-    {
-        DEVICE_ID_ENSONIQ,
-        "Ensoniq",
-        false,
-        0,
-        PLATFLAG_APPLE_IIGS,
-        init_ensoniq_slot,
-        NULL
-    },
-    {
-        DEVICE_ID_SCC8530,
-        "SCC8530",
-        false,
-        0,
-        PLATFLAG_APPLE_IIGS,
-        init_scc8530_slot,
-        NULL
-    },
-    {
-        DEVICE_ID_IWM,
-        "IWM",
-        false,
-        0,
-        PLATFLAG_APPLE_IIGS,
-        init_iwm_slot,
-        NULL
-    },
-    {
-        DEVICE_ID_PD_BLOCK3,
-        "BazFast 3 (DMA Storage)",
-        true,
-        0b11111110,
-        PLATFLAG_ALL,
-        init_pdblock3,
-        NULL
-    },
-    {
-        DEVICE_ID_SECOND_SIGHT,
-        "Second Sight",
-        false,
-        0,
-        PLATFLAG_APPLE_IIGS,
-        init_secondsight,
-        NULL
-    },
+    make_device(DEVICE_ID_KEYBOARD_IIPLUS, init_mb_iiplus_keyboard, NULL),
+    make_device(DEVICE_ID_KEYBOARD_IIE, init_mb_iie_keyboard, NULL),
+    make_device(DEVICE_ID_SPEAKER, init_mb_speaker, NULL),
+    make_device(DEVICE_ID_DISPLAY, init_mb_device_display, NULL),
+    make_device(DEVICE_ID_GAMECONTROLLER, init_mb_game_controller, NULL),
+    make_device(DEVICE_ID_LANGUAGE_CARD, init_slot_languagecard, NULL),
+    make_device(DEVICE_ID_PRODOS_BLOCK, NULL, NULL),
+    make_device(DEVICE_ID_PRODOS_CLOCK, init_slot_prodosclock, NULL),
+    make_device(DEVICE_ID_DISK_II, init_slot_ndiskII_woz, NULL),
+    make_device(DEVICE_ID_MEM_EXPANSION, init_slot_memexp, NULL),
+    make_device(DEVICE_ID_THUNDER_CLOCK, init_slot_thunderclock, NULL),
+    make_device(DEVICE_ID_PD_BLOCK2, init_pdblock2, NULL),
+    make_device(DEVICE_ID_PARALLEL, init_slot_parallel, NULL),
+    make_device(DEVICE_ID_VIDEX, init_slot_videx, NULL),
+    make_device(DEVICE_ID_MOCKINGBOARD, init_slot_mockingboard, NULL),
+    make_device(DEVICE_ID_IIE_MEMORY, init_iiememory, NULL),
+    make_device(DEVICE_ID_MOUSE, init_mouse, NULL),
+    make_device(DEVICE_ID_CASSETTE, init_mb_cassette, NULL),
+    make_device(DEVICE_ID_VIDHD, init_slot_vidhd, NULL),
+    make_device(DEVICE_ID_RTC_PRAM, init_slot_rtc_pram, NULL),
+    make_device(DEVICE_ID_KEYGLOO, init_slot_keygloo, NULL),
+    make_device(DEVICE_ID_ENSONIQ, init_ensoniq_slot, NULL),
+    make_device(DEVICE_ID_SCC8530, init_scc8530_slot, NULL),
+    make_device(DEVICE_ID_IWM, init_iwm_slot, NULL),
+    make_device(DEVICE_ID_PD_BLOCK3, init_pdblock3, NULL),
+    make_device(DEVICE_ID_SECOND_SIGHT, init_secondsight, NULL),
 };
 
 Device_t *get_device(device_id id) {

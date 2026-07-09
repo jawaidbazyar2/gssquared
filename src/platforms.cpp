@@ -102,7 +102,7 @@ static  platform_info platforms[] = {
      },
      {
         PLATFORM_APPLE_IIE_65816,
-        "Apple IIe Enhanced 65816",
+        "Apple IIe Enh+65816",
         "apple2e_enh",
         PROCESSOR_65816,
         0xC7C9C7FF,

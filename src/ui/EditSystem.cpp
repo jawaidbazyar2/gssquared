@@ -406,7 +406,8 @@ void EditSystem::show_card_picker(int slot) {
     };
 
     add_choice(DEVICE_ID_NONE, "None");
-    for (const auto& choice : cards_allowed_for_slot(draft.config().platform_id, slot)) {
+    for (const auto& choice :
+         cards_allowed_for_slot(draft.config().platform_id, slot, draft.config().slot_devices)) {
         add_choice(choice.id, choice.display_name);
     }
 
@@ -471,9 +472,14 @@ std::string EditSystem::default_save_path() const {
 
 bool EditSystem::write_draft_to_path(const std::string& path) {
     commit_text_fields();
+    std::string error;
+    if (!validate_slot_devices(draft.config(), error)) {
+        status_text = "Save failed: " + error;
+        updated = true;
+        return false;
+    }
     SystemConfig writer;
     writer.set_from_parts(draft.config(), draft.mounts());
-    std::string error;
     if (!writer.save(path, error)) {
         status_text = "Save failed: " + error;
         updated = true;
