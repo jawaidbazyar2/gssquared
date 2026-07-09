@@ -18,4 +18,6 @@
 
 * [Serial/Modem](Serial_Modem.md)
 
-* [Writing Config Files](ConfigFiles.md)
+* [Creating Custom System Configs](ConfigEditor.md)
+
+* [Writing Config Files Manually](ConfigFiles.md)
