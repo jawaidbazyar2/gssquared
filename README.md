@@ -100,7 +100,7 @@ If you just want to do a standard build that will result in a Mac App Bundle,
 
 ```
 cmake -DGS2_PROGRAM_FILES=OFF  -DCMAKE_BUILD_TYPE=Release -S . -B build
-cmake --build build
+cmake --build build --parallel
 cmake --install build
 ```
 
