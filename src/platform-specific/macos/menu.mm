@@ -385,7 +385,7 @@ static void setupMenus(void) {
 	NSMenu *fileMenu = addMenu(NSLocalizedString(@"File", nil));
 
 	NSMenuItem *openConfigItem = [[[NSMenuItem alloc]
-		initWithTitle:NSLocalizedString(@"Open Config...", nil)
+		initWithTitle:NSLocalizedString(@"Launch Config...", nil)
 		       action:@selector(fileOpenConfig:)
 		keyEquivalent:@""] autorelease];
 	[openConfigItem setTarget:sMenuHandler];

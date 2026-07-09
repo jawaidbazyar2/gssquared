@@ -109,7 +109,7 @@ static void build_menu_bar()
     // ── File ─────────────────────────────────────────────────────────────────
     if (ImGui::BeginMenu("File")) {
         if (!running) {
-            if (ImGui::MenuItem("Open Config...")) {
+            if (ImGui::MenuItem("Launch Config...")) {
                 mi->openSystemConfig();
             }
             ImGui::Separator();

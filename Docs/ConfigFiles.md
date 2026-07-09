@@ -21,15 +21,16 @@ There is also **`Profiles.txt`**, which is a **catalog** listing available profi
 
 ## Opening a config
 
-- **System Select screen** — click the folder icon and choose a `.gs2` or `… Settings.txt` file.
-- **Command line** — pass `-c` with the file path:
+- **System Select screen** — use **Launch Config…** (or the folder icon) and choose a `.gs2` or `… Settings.txt` file.
+- **macOS Finder** — double-click a `.gs2` file (or Open With GSSquared). If the System Select screen is showing, GSSquared loads and launches that config. If emulation is already running, it shows a short message asking you to quit emulation first.
+- **Command line** — pass the file path as a positional argument:
 
   ```bash
-  gssquared -c ~/Documents/MyIIe.gs2
-  gssquared -c "Choplifter Settings.txt"
+  gssquared ~/Documents/MyIIe.gs2
+  gssquared "Choplifter Settings.txt"
   ```
 
-When you use `-c`, GSSquared skips the System Select screen and boots straight into that configuration.
+When you launch with a config file path, GSSquared skips the System Select screen and boots straight into that configuration.
 
 **Save System** (writing your current session back to disk) is planned but not fully wired up yet. For now, create configs by editing a `.gs2` file in a text editor.
 

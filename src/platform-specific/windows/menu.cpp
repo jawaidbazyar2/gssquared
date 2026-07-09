@@ -132,9 +132,9 @@ static void updatePopupState(HMENU popup)
 
     // ── File ────────────────────────────────────────────────────────────────
     if (popup == g_filePopup) {
-        // pos 0 = Open Config, pos 1 = sep, pos 2 = Drives, pos 3 = sep,
+        // pos 0 = Launch Config, pos 1 = sep, pos 2 = Drives, pos 3 = sep,
         // pos 4 = Close Emulation, pos 5 = sep, pos 6 = Quit
-        setItemEnable(g_filePopup, 0, !running);  // Open Config
+        setItemEnable(g_filePopup, 0, !running);  // Launch Config
         setItemEnable(g_filePopup, 2, running);   // Drives
         setItemEnable(g_filePopup, 4, running);   // Close Emulation
         setItemEnable(g_filePopup, 6, !running);  // Quit (only when not running)
@@ -360,7 +360,7 @@ static void setupMenus()
     g_filePopup  = CreatePopupMenu();
     g_drivesMenu = CreatePopupMenu();
     // pos 0
-    AppendMenuW(g_filePopup, MF_STRING, IDM_FILE_OPEN_CONFIG, L"Open Config...");
+    AppendMenuW(g_filePopup, MF_STRING, IDM_FILE_OPEN_CONFIG, L"Launch Config...");
     // pos 1
     AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
     // pos 2

@@ -38,6 +38,7 @@
 #include "util/printf_helper.hpp"
 #include "paths.hpp"
 #include "util/MenuInterface.h"
+#include "util/SystemConfig.hpp"
 #include "platform-specific/menu.h"
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
@@ -384,6 +385,13 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     });
     computer->sys_event->registerHandler(SDL_EVENT_DROP_FILE, [this,computer](const SDL_Event &event) {
         printf("SDL_EVENT_DROP_FILE: %s\n", event.drop.data);
+        if (event.drop.data) {
+            const ConfigFileKind kind = detect_config_file_kind(event.drop.data);
+            if (kind == ConfigFileKind::Gs2 || kind == ConfigFileKind::Settings) {
+                computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Quit emulation first"));
+                return true;
+            }
+        }
 #if 0
         // Identify the media type to help control what buttons we allow to highlight.
         // TODO: there's little point in doing this here, the intention was to filter based on drive type but SDL can't do that yet.

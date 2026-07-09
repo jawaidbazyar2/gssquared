@@ -579,8 +579,8 @@ struct GS2AppState {
     std::vector<disk_mount_t> disks_to_mount;
     std::unique_ptr<SystemConfig> loaded_config;
 
-    // True when the user gave -p PLATFORM or -c file.gs2 and we skipped the system
-    // selector at startup. In that mode, closing the emulator window
+    // True when the user gave -p PLATFORM or a config file path and we skipped
+    // the system selector at startup. In that mode, closing the emulator window
     // quits the app (rather than bouncing back to the selector) — the
     // user expressly asked for one specific machine and there's no
     // "back" to return to.
@@ -982,15 +982,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     printf("pref_path: %s\n", gs2_app_values.pref_path.c_str());
 
     if (gs2_app_values.console_mode) {
-        // parse command line optionss
-        while ((opt = getopt(argc, argv, "sxgp:d:c:")) != -1) {
+        // parse command line options
+        while ((opt = getopt(argc, argv, "sxgp:d:")) != -1) {
             switch (opt) {
                 case 'p':
                     platform_id = std::stoi(optarg);
                     platform_explicit = true;
-                    break;
-                case 'c':
-                    config_path = optarg;
                     break;
                 case 'd':
                     {
@@ -1019,8 +1016,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     gs2_app_values.crt_shader_at_boot = true;
                     break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [-c file.gs2|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g]\n";
-                    std::cerr << "  -c file.gs2|*Settings.txt: load system configuration from a .gs2 TOML file\n";
+                    std::cerr << "Usage: " << argv[0] << " [file.gs2|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g]\n";
+                    std::cerr << "  file.gs2|*Settings.txt: load system configuration from a .gs2 TOML file\n";
                     std::cerr << "        or Neil Profiles Settings.txt file, skip the system-selector UI,\n";
                     std::cerr << "        and auto-launch that system.\n";
                     std::cerr << "        Closing the emulator window then quits the app rather\n";
@@ -1035,12 +1032,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     std::cerr << "  -dsXdY=filename: mount disk image `filename` in slot X drive Y.\n";
                     std::cerr << "        Drives are 1-indexed; e.g. -ds6d1=foo.dsk for the\n";
                     std::cerr << "        first drive of the controller in slot 6.\n";
-                    std::cerr << "        Overrides a [[storage]] entry from -c for the same slot/drive.\n";
+                    std::cerr << "        Overrides a [[storage]] entry from the config file for the same slot/drive.\n";
                     std::cerr << "  -s: sleep mode (don't busy-wait, sleep)\n";
                     std::cerr << "  -g: enable CRT post-process shader when guest emulation\n";
                     std::cerr << "        starts (same as pressing F7 with shader off).\n";
                     return SDL_APP_FAILURE;
             }
+        }
+        if (optind < argc) {
+            config_path = argv[optind];
         }
     }
 
@@ -1084,12 +1084,13 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SDL_SetRenderVSync(vs->renderer, 1);
     state->phase = PHASE_SYSTEM_SELECT;
 
-    // If the caller passed `-c file.gs2` or `*Settings.txt`, skip the system-selector UI and
+    // If the caller passed a config file path, skip the system-selector UI and
     // jump straight into emulation using the loaded configuration.
     if (state->loaded_config) {
         std::cout << "Auto-launching system config: " << config_path << std::endl;
         transition_to_emulation(state, &state->loaded_config->config(), -1);
         state->auto_launched = true;
+        vs->raise();
     } else if (platform_explicit) {
         // If the caller passed `-p PLATFORM`, skip the system-selector UI
         // and jump straight into emulation using the first builtin system
@@ -1125,6 +1126,23 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
             && event->user.code == MENU_OPEN_CONFIG) {
             open_system_config_dialog(state, false);
             return SDL_APP_CONTINUE;
+        }
+        if (event->type == SDL_EVENT_DROP_FILE && event->drop.data) {
+            const ConfigFileKind kind = detect_config_file_kind(event->drop.data);
+            if (kind == ConfigFileKind::Gs2 || kind == ConfigFileKind::Settings) {
+                std::string error;
+                if (!apply_system_config_file(state, event->drop.data, error)) {
+                    std::string diag = "Failed to load system config '" + std::string(event->drop.data) + "':\n" + error;
+                    std::cerr << diag << "\n";
+                    system_diag(diag.data());
+                    return SDL_APP_CONTINUE;
+                }
+                std::cout << "Auto-launching system config: " << event->drop.data << std::endl;
+                transition_to_emulation(state, &state->loaded_config->config(), -1);
+                state->auto_launched = true;
+                state->computer->video_system->raise();
+                return SDL_APP_CONTINUE;
+            }
         }
         state->select_system->event(*event);
         if (event->type == SDL_EVENT_QUIT) {
@@ -1234,7 +1252,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             // so the trace buffer is saved and the computer/MMUs are
             // properly destroyed. Then either go back to the selector
             // (interactive flow) or exit the app (we auto-launched
-            // via -p PLATFORM and have no selector to return to).
+            // via -p / config file and have no selector to return to).
             transition_to_shutdown(state);
             if (state->auto_launched) {
                 return SDL_APP_SUCCESS;
