@@ -81,9 +81,10 @@ void Floppy525_woz::set_phase(uint8_t phase, uint8_t onoff) {
 
     // Schedule the actual detent resolution roughly 0.5 ms out so rapid
     // multi-phase toggles (typical DOS head-step sequence) collapse into
-    // a single head-settling event.
+    // a single head-settling event. instanceID is unique per slot/drive so
+    // concurrent Disk II / IWM 5.25 drives do not steal each other's events.
     event_timer->scheduleEvent(clock->get_cycles() + 520, phase_change_callback,
-                               0xABAB0001, this);
+                               instanceID, this);
 }
 
 uint8_t Floppy525_woz::read_sense() {

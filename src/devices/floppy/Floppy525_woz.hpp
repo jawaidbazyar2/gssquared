@@ -37,6 +37,11 @@ class Floppy525_woz : public Floppy_woz {
     // Inclusive max quarter-track index from max(140, WOZ TMAP span); default 139.
     int16_t  max_tracks  = 139;
 
+    // Unique EventTimer key for phase-settle events. Must be unique across all
+    // Floppy525_woz instances sharing a timer (multi Disk II + IWM drive pairs).
+    // Layout: 0xABAB0000 | (slot << 8) | drive  — distinct from Floppy35's 0xABAC*.
+    uint64_t instanceID = 0;
+
     void update_track();
     static void phase_change_callback(uint64_t instanceID, void *userData);
 
@@ -50,8 +55,10 @@ protected:
     int      current_tmap_index()     const override { return track; }
 
 public:
-    Floppy525_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer)
+    Floppy525_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer,
+                  uint16_t slot, uint16_t drive)
         : Floppy_woz(sound_effect, clock, event_timer) {
+            instanceID = 0xABAB0000ull | (static_cast<uint64_t>(slot) << 8) | drive;
         }
 
     bool mount(uint64_t key, media_descriptor *media) override;

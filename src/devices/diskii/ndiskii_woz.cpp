@@ -84,7 +84,7 @@ void init_slot_ndiskII_woz(computer_t *computer, SlotType_t slot) {
     computer->mmu->set_slot_rom(slot, rom_data, "DISK2_ROM");
 
     DiskII_WOZ_Controller *dc = new DiskII_WOZ_Controller(
-        computer->sound_effect, computer->clock, computer->cpu_event_timer);
+        computer->sound_effect, computer->clock, computer->cpu_event_timer, slot);
     diskII_d->dc = dc;
 
     drive_type_t drive_type;

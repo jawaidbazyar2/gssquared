@@ -175,8 +175,9 @@ class IWM : public StorageDevice {
             drives_35 {Floppy35_woz (sound_effect, clock, event_timer),
                        Floppy35_woz (sound_effect, clock, event_timer)} */
         {
-            drives[0][0] = new Floppy525_woz(sound_effect, clock, event_timer);
-            drives[0][1] = new Floppy525_woz(sound_effect, clock, event_timer);
+            // Slot 6 is the IWM's 5.25" pair (matches Mounts registration).
+            drives[0][0] = new Floppy525_woz(sound_effect, clock, event_timer, 6, 0);
+            drives[0][1] = new Floppy525_woz(sound_effect, clock, event_timer, 6, 1);
             drives[1][0] = new Floppy35_woz(sound_effect, clock, event_timer,0 );
             drives[1][1] = new Floppy35_woz(sound_effect, clock, event_timer,1 );
             reset();
