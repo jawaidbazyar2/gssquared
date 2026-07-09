@@ -19,6 +19,7 @@
 
 #include <SDL3/SDL.h>
 #include "Button.hpp"
+#include "MainAtlas.hpp"
 #include "StorageButton.hpp"
 
 /**
@@ -30,8 +31,8 @@
  */
 class Unidisk_Button_t : public StorageButton {
 public:
-    // Inherit constructors from Button_t
-    using StorageButton::StorageButton;
+    Unidisk_Button_t(UIContext *ctx, const Style_t& style = Style_t())
+        : StorageButton(ctx, Unidisk_Face, style) {}
 
     // Override render to add disk-specific rendering
     void render() override;

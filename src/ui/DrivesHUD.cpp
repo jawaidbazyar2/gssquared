@@ -21,15 +21,13 @@ DrivesHUD_t::DrivesHUD_t(UIContext *ctx, const Style_t& style, Mounts *mounts) :
 
         // Create the appropriate button type based on drive_type
         if (drive.drive_type == DRIVE_TYPE_DISKII) {
-            button = new DiskII_Button_t(ctx, 0, style);
+            button = new DiskII_Button_t(ctx, style);
         } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_525) {
-            button = new AppleDisk_525_Button_t(ctx, 0, style);
+            button = new AppleDisk_525_Button_t(ctx, style);
         } else if (drive.drive_type == DRIVE_TYPE_APPLEDISK_35) {
-            // Phase 1: reuse the 5.25 AppleDisk button asset for 3.5 drives.
-            // A distinct 3.5 button asset is a follow-up.
-            button = new AppleDisk_35_Button_t(ctx, 0, style);
+            button = new AppleDisk_35_Button_t(ctx, style);
         } else if (drive.drive_type == DRIVE_TYPE_PRODOS_BLOCK) {
-            button = new HD20SC_Button_t(ctx, 0, style);
+            button = new HD20SC_Button_t(ctx, style);
         }
         button->set_drive_type(drive.drive_type);
         button->set_key(drive.key);

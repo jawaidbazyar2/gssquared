@@ -245,7 +245,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         .border_color = 0xFFFFFFFF,
         .hover_color = 0x008080FF,
         .padding = 4,
-        .border_width = 2,
+        .border_width = 0,
     };
     Style_t HUD = {
         .background_color = 0x00000000,
@@ -256,8 +256,8 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     // Create a container for our drive buttons
     //drive_container = new Container_t(&ui_ctx, DC);
     drive_container = new DrivesOSD_t(&ui_ctx, DC); // just container with special layout logic.
-    drive_container->set_position(600, 70);
-    drive_container->size(415, 600);
+    drive_container->set_position(600, 140);
+    drive_container->size(400, 575);
     containers.push_back(drive_container);
 
     // New Mounts-based button creation
@@ -273,42 +273,33 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         StorageButton *button;
 
         // Create the appropriate button type based on drive_type
+        void (*click_fn)(void*) = nullptr;
         switch (drive.drive_type) {
-
             case DRIVE_TYPE_DISKII:
-                button = new DiskII_Button_t(&ui_ctx, DiskII_Open, DS);
-                button->on_click([this, drive](const SDL_Event& event) -> bool {
-                    diskii_button_click(new diskii_callback_data_t{this, drive.key});
-                    return true;
-                });
+                button = new DiskII_Button_t(&ui_ctx, DS);
+                click_fn = diskii_button_click;
                 break;
             case DRIVE_TYPE_APPLEDISK_525:
-                button = new AppleDisk_525_Button_t(&ui_ctx, AppleDisk_525_Open, DS);
-                button->on_click([this, drive](const SDL_Event& event) -> bool {
-                    diskii_button_click(new diskii_callback_data_t{this, drive.key});
-                    return true;
-                });
+                button = new AppleDisk_525_Button_t(&ui_ctx, DS);
+                click_fn = diskii_button_click;
                 break;
             case DRIVE_TYPE_APPLEDISK_35:
-                // Phase 1: reuse the 5.25 AppleDisk button asset for 3.5 drives.
-                // A distinct 3.5 button asset is a follow-up.
-                button = new AppleDisk_35_Button_t(&ui_ctx, AppleDisk_Face, DS);
-                button->on_click([this, drive](const SDL_Event& event) -> bool {
-                    diskii_button_click(new diskii_callback_data_t{this, drive.key});
-                    return true;
-                });
+                button = new AppleDisk_35_Button_t(&ui_ctx, DS);
+                click_fn = diskii_button_click;
                 break;
             case DRIVE_TYPE_PRODOS_BLOCK:
-                button = new HD20SC_Button_t(&ui_ctx, Apple_HD20SC, DS);
-                button->on_click([this, drive](const SDL_Event& event) -> bool {
-                    bazfast_button_click(new diskii_callback_data_t{this, drive.key});
-                    return true;
-                });
+                button = new HD20SC_Button_t(&ui_ctx, DS);
+                click_fn = bazfast_button_click;
                 break;
             default:
                 throw std::runtime_error(std::string("Unknown drive type: ") + std::to_string(drive.drive_type));
         }
-        button->set_key(drive.key);
+        const storage_key_t key = drive.key;
+        button->on_click([this, key, click_fn](const SDL_Event&) -> bool {
+            click_fn(new diskii_callback_data_t{this, key});
+            return true;
+        });
+        button->set_key(key);
         drive_container->add(button);
     }
     // Initial layout for drive container
@@ -339,7 +330,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     containers.push_back(slot_container);
 
     mon_color_con = new Container_t(&ui_ctx, SC);
-    mon_color_con->set_position(100, 510);
+    mon_color_con->set_position(30, 550);
     mon_color_con->size(320, 65);
     containers.push_back(mon_color_con);
 
@@ -385,7 +376,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     mon_color_con->layout();
 
     speed_con = new Container_t(&ui_ctx, SC);
-    speed_con->set_position(100, 450);
+    speed_con->set_position(30, 475);
     speed_con->size(320, 65);
     containers.push_back(speed_con);
 
@@ -657,14 +648,14 @@ void OSD::render() {
 
         // make the background opaque and black.
         ui_ctx.fill_rect({0, 0, (float)window_w, (float)window_h}, 0x00000000);
-        /* SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
-        SDL_RenderFillRect(renderer, NULL); */
-
+ 
         // Draw CP background with some opacity
         SDL_FRect rect = {0, 50, (float)(window_w-100), (float)(window_h-100)};
         //ui_ctx.fill_rect(rect, 0xFFFFFFE0);
         ui_ctx.fill_rect(rect, computer->platform->case_color & 0xFFFFFF00 | 0xE0);
       
+        ui_ctx.fill_rect({0, 130, (float)(window_w-100), 3}, 0x000000FF);
+
         /* ----- */
 
         SDL_FRect cpTargetRect = {

@@ -17,23 +17,24 @@
 
  #pragma once
 
- #include <SDL3/SDL.h>
- #include "Button.hpp"
- #include "StorageButton.hpp"
- #include "util/mount.hpp"
- 
- /**
-  * @brief A specialized button class for DiskII drive interface.
-  * 
-  * DiskII_Button_t extends Button_t to provide specific functionality for
-  * disk drive controls, including disk mounting state and drive activity
-  * indicators.
-  */
- class AppleDisk_525_Button_t : public StorageButton {
- public:
-     // Inherit constructors from Button_t
-     using StorageButton::StorageButton;
- 
-     // Override render to add disk-specific rendering
-     void render() override;
- }; 
+#include <SDL3/SDL.h>
+#include "Button.hpp"
+#include "MainAtlas.hpp"
+#include "StorageButton.hpp"
+#include "util/mount.hpp"
+
+/**
+ * @brief A specialized button class for DiskII drive interface.
+ * 
+ * DiskII_Button_t extends Button_t to provide specific functionality for
+ * disk drive controls, including disk mounting state and drive activity
+ * indicators.
+ */
+class AppleDisk_525_Button_t : public StorageButton {
+public:
+    AppleDisk_525_Button_t(UIContext *ctx, const Style_t& style = Style_t())
+        : StorageButton(ctx, AppleDisk_525_Open, style) {}
+
+    // Override render to add disk-specific rendering
+    void render() override;
+}; 

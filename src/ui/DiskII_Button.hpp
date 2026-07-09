@@ -19,6 +19,7 @@
 
 #include <SDL3/SDL.h>
 #include "Button.hpp"
+#include "MainAtlas.hpp"
 #include "StorageButton.hpp"
 
 /**
@@ -30,9 +31,9 @@
  */
 class DiskII_Button_t : public StorageButton {
 public:
-    // Inherit constructors from StorageButton
-    using StorageButton::StorageButton;
-    
+    DiskII_Button_t(UIContext *ctx, const Style_t& style = Style_t())
+        : StorageButton(ctx, DiskII_Open, style) {}
+
     // Override render to add disk-specific rendering
     void render() override;
 }; 
