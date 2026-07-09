@@ -120,7 +120,7 @@ card = "bazfast3"
 Rules that bite people:
 
 - **One card per slot.** Do not list the same slot twice.
-- **Some cards only fit certain slots or machines.** Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight is IIgs-only.
+- **Some cards only fit certain slots or machines.** Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight is IIgs-only and slot 3 only.
 - **Most cards allow only one instance.** Mockingboard and Disk II are exceptions — you can have two Mockingboards in different slots.
 
 ### Card types
@@ -136,8 +136,8 @@ Rules that bite people:
 | `"mouse"` | Apple Mouse II |
 | `"videx"` | Videx 80-column (II / II+ only, slot 3) |
 | `"mem_expansion"` | RAM expansion (Slinky-style) |
-| `"prodos_block"` | Generic ProDOS block device |
-| `"prodos_block2"` | ProDOS block device (variant 2) |
+| `"prodos_block"` | Deprecated - do not use |
+| `"prodos_block2"` | Deprecated - do not use |
 | `"bazfast3"` | SmartPort / hard-disk controller (also accepts `"smartport"` or `"pdblock3"`) |
 | `"vidhd"` | VIDHD (65816 //e only) |
 | `"second_sight"` | Second Sight (IIgs only) |

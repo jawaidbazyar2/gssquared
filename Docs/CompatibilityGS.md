@@ -33,6 +33,8 @@ On a real GS, if we read C000 w/o clearing strobe, it does change as we type cha
 
 So what the hell does the GS do? ah ha!!! By default, GS has keyboard buffering DISABLED. When I ENABLE it, it behaves the same as GS2. So I need to respect the "buffer yes/no" bit and do the right thing.
 
+GS now respects "buffer disable/enable" modes_byte flags and this now works correctly.
+
 ## Taxman
 
 TAXMAN loads switches to text page 2 and I got no other display..  hit reset, and then it starts working.. ?  ctrl-c switches back to text page 2. huh..  WE'RE NOT SHADOWING PAGE 2, HA HA  

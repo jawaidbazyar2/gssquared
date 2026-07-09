@@ -119,7 +119,7 @@ If omitted, derive from `platform` and `clock` (e.g. PAL //e → `"apple2e_pal"`
 
 ## Card types
 
-String enum → `device_id` (`src/Device_ID.hpp`). These are the values allowed in `[[cards]].card` and validated against `Devices[]` in `src/devices.cpp` (`slots_allowed`, `platform_flags`, `multipleInstances`).
+String enum → `device_id` (`src/Device_ID.hpp`). Slot/platform/multiplicity rules live only in `DeviceInfos[]` (`src/device_info.cpp`: `slots_allowed`, `platform_flags`, `multipleInstances`); `Devices[]` derives from that table. Load, editor save, and computer composition all validate against it. `slots_allowed == 0` means motherboard/non-slot (not assignable via `[[cards]]`).
 
 The TOML key **`device`** is reserved for `[[connections]]` — the virtual peripheral attached to a serial port (`file`, `modem`, `echo`, `none`). It MUST NOT be used as the card-type field.
 
@@ -140,7 +140,7 @@ The TOML key **`device`** is reserved for `[[connections]]` — the virtual peri
 | `"mouse"` | `DEVICE_ID_MOUSE` | Apple Mouse II | |
 | `"vidhd"` | `DEVICE_ID_VIDHD` | VIDHD | 65816 //e only |
 | `"bazfast3"` | `DEVICE_ID_PD_BLOCK3` | BazFast 3 (DMA Storage) | Multiple instances allowed |
-| `"second_sight"` | `DEVICE_ID_SECOND_SIGHT` | Second Sight | IIgs only |
+| `"second_sight"` | `DEVICE_ID_SECOND_SIGHT` | Second Sight | IIgs only, slot 3 only |
 
 Aliases (optional, loader MAY accept):
 
@@ -193,9 +193,10 @@ Every `[[cards]]` entry:
 | `slot` | integer | yes | Expansion slot `0`–`7` |
 | `card` | string | yes | Card type; see [Card types](#card-types) |
 
-Validation (loader responsibility, mirroring `Devices[]`):
+Validation (against `DeviceInfos[]` in `src/device_info.cpp`):
 
 - Each `slot` appears at most once.
+- Card type must be a slot card (`slots_allowed != 0`).
 - Card type must be allowed on the chosen `platform` (`platform_flags`).
 - Card type must be legal in that slot number (`slots_allowed` bitmask).
 - At most one instance unless `multipleInstances` is true (e.g. two `"mockingboard"` cards in slots 4 and 7).
