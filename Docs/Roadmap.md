@@ -73,14 +73,14 @@
 
 ## Release 0.9
 
-[ ] Edit, Save, Load custom hw config. (Click "+ Custom"). (load is complete)
+[X] Edit, Save, Load custom hw config. (Click "+ Custom"). (load, edit, save from inside editor is complete)
 [X] Mouse tracking for GS/OS  
 [X] CRT Effects
 
 ## Release 0.10
 
 [ ] Host FST
-[ ] Built-in RO Disk with drivers (e.g. Host FST driver) mount/unmount with menu item
+[ ] Built-in RO Disk with drivers (e.g. Host FST driver) mount/unmount with menu item; PPU mode demo; various other things.
 [ ] Integrate with Cyrene Debugger  
 
 ## Release 1.0
