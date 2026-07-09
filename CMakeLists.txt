@@ -620,11 +620,36 @@ endif()
 #### Platform Specific Code
 ################################################################################
 if(APPLE)
-    add_library(platform_specific src/platform-specific/macos/menu.mm)
+    add_library(platform_specific
+        src/platform-specific/macos/menu.mm
+        src/platform-specific/macos/gs2_save_dialog.mm
+    )
+
+    target_include_directories(platform_specific PUBLIC
+        ${CMAKE_SOURCE_DIR}/src
+    )
 
     target_link_libraries(platform_specific PRIVATE
+        ${GS2_SDL3}
         "-framework Cocoa"
     )
+
+    # Bare (PROGRAM_FILES) builds still need the UTI from Info.plist so Launch
+    # Services / NSSavePanel recognize .gs2 as our declared type.
+    if(GS2_PROGRAM_FILES)
+        target_link_options(GSSquared PRIVATE
+            "LINKER:-sectcreate,__TEXT,__info_plist,${PROJECT_BINARY_DIR}/generated/Info.plist"
+        )
+        # Keep a stub .app Info.plist current for Finder / lsregister (optional).
+        add_custom_command(TARGET GSSquared POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+                "${PROJECT_BINARY_DIR}/GSSquared.app/Contents"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${PROJECT_BINARY_DIR}/generated/Info.plist"
+                "${PROJECT_BINARY_DIR}/GSSquared.app/Contents/Info.plist"
+            COMMENT "Updating GSSquared.app Info.plist (.gs2 UTI)"
+        )
+    endif()
 endif()
 
 # Linux and Emscripten both use the portable Dear ImGui menu (linux/menu.cpp is
@@ -748,6 +773,26 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/"
             DESTINATION "${CPACK_BUNDLE_NAME}.app/Contents/Resources"
             COMPONENT Runtime)
+
+        # Linker ad-hoc signing leaves Info.plist unbound. Re-sign so the bundle
+        # identifier / exported UTIs in Info.plist are properly associated with
+        # this app for Launch Services (Finder Open). Does not affect NSSavePanel
+        # file enablement — save panels always show existing files gray on macOS.
+        add_custom_command(TARGET GSSquared POST_BUILD
+            COMMAND codesign --force --deep -s - "$<TARGET_BUNDLE_DIR:GSSquared>"
+            COMMENT "Ad-hoc codesign GSSquared.app (bind Info.plist)"
+        )
+        # cmake --install copies Frameworks after the build-tree bundle exists;
+        # re-sign the installed app so Info.plist stays bound there too.
+        install(CODE [[
+            execute_process(
+                COMMAND codesign --force --deep -s - "${CMAKE_INSTALL_PREFIX}/GSSquared.app"
+                RESULT_VARIABLE _gs2_codesign_rc
+            )
+            if(NOT _gs2_codesign_rc EQUAL 0)
+                message(WARNING "codesign of installed GSSquared.app failed (rc=${_gs2_codesign_rc})")
+            endif()
+        ]] COMPONENT Runtime)
 
         # Optional: Configure DMG creation
         set(CPACK_DMG_VOLUME_NAME "GSSquared")

@@ -28,5 +28,43 @@
     <string>GSSquared @PROJECT_VERSION@ (build @GIT_HASH@)</string>
     <key>NSHumanReadableDescription</key>
     <string>Apple II, II+ and IIe Emulator, version @PROJECT_VERSION@</string>
+    <!-- Declare .gs2 so macOS save/open panels treat existing configs as allowed
+         (not grayed "other" types that are still clickable via allowsOtherFileTypes). -->
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>GS2 System Configuration</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.bazyar.gs2.config</string>
+            </array>
+        </dict>
+    </array>
+    <key>UTExportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key>
+            <string>com.bazyar.gs2.config</string>
+            <key>UTTypeDescription</key>
+            <string>GS2 System Configuration</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.text</string>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>gs2</string>
+                </array>
+            </dict>
+        </dict>
+    </array>
 </dict>
 </plist> 

@@ -17,6 +17,8 @@
 
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
+#elif defined(__APPLE__)
+#include "platform-specific/macos/gs2_save_dialog.hpp"
 #endif
 
 namespace {
@@ -484,9 +486,10 @@ bool EditSystem::write_draft_to_path(const std::string& path) {
 }
 
 void EditSystem::begin_save() {
+    // Only .gs2 — with the UTI exported in Info.plist, existing .gs2 files match
+    // the allowed type and are not shown grayed (macOS "other file types" look).
     static const SDL_DialogFileFilter filters[] = {
         {"GS2 System Config (.gs2)", "gs2"},
-        {"All files", "*"},
     };
 
     // Keep default path alive for the async dialog lifetime.
@@ -523,6 +526,11 @@ void EditSystem::begin_save() {
         result = EDIT_SAVED;
     }
     delete cb_data;
+#elif defined(__APPLE__)
+    // Use UTI-aware panel so existing .gs2 files are not grayed out.
+    (void)filters;
+    gs2_show_save_gs2_dialog(save_callback, cb_data, vs->window,
+                             cb_data->default_path.c_str());
 #else
     SDL_ShowSaveFileDialog(save_callback, cb_data, vs->window, filters,
                            sizeof(filters) / sizeof(SDL_DialogFileFilter),
