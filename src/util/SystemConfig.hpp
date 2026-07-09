@@ -61,8 +61,15 @@ struct slot_card_choice_t {
     const char* display_name;
 };
 
-/** Cards allowed in this slot on this platform (for the editor picker). */
-std::vector<slot_card_choice_t> cards_allowed_for_slot(PlatformId_t platform, int slot);
+/**
+ * Cards allowed in this slot on this platform (for the editor picker).
+ * If occupied_slots is non-null, omit !multipleInstances cards already used in another slot.
+ */
+std::vector<slot_card_choice_t> cards_allowed_for_slot(
+    PlatformId_t platform, int slot, const device_id occupied_slots[NUM_SLOTS] = nullptr);
+
+/** Validate slot_devices[] against Devices[] (slot, platform, multiplicity). */
+bool validate_slot_devices(const SystemConfig_t& config, std::string& error_out);
 
 class SystemConfig {
     std::string path_;

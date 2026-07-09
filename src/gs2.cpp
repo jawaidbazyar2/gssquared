@@ -804,6 +804,13 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
         device->power_on(computer, SLOT_NONE);
     }
 
+    std::string slot_error;
+    if (!validate_slot_devices(*system_config, slot_error)) {
+        printf("Invalid slot configuration: %s\n", slot_error.c_str());
+        system_failure(slot_error.c_str());
+        return;
+    }
+
     // Iterate through SystemConfig Slot Devices and create/register/initialize the devices.
     for (int i = 0; i < NUM_SLOTS; i++) {
         device_id id = system_config->slot_devices[i];

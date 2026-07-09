@@ -457,14 +457,16 @@ set(GS2_DEVICE_REGISTRY_LIBS
     gs2_computer
 )
 
+add_library(gs2_device_info src/device_info.cpp)
+
 add_library(gs2_device_registry
     src/devices.cpp
     src/display/display.cpp
 )
-target_link_libraries(gs2_device_registry PUBLIC ${GS2_DEVICE_REGISTRY_LIBS} gs2_ntsc)
+target_link_libraries(gs2_device_registry PUBLIC ${GS2_DEVICE_REGISTRY_LIBS} gs2_ntsc gs2_device_info)
 
 add_library(gs2_systemconfig src/util/SystemConfig.cpp src/util/SettingsConfig.cpp src/util/ConfigDraft.cpp)
-target_link_libraries(gs2_systemconfig PUBLIC gs2_paths)
+target_link_libraries(gs2_systemconfig PUBLIC gs2_paths gs2_device_info)
 
 add_library(gs2_video_scanner 
     src/devices/displaypp/ScanBuffer.cpp

@@ -25,6 +25,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "device_info.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
 #include "paths.hpp"
 #include "util/toml.hpp"
@@ -164,58 +165,22 @@ std::optional<device_id> parse_card_type(const std::string& value, std::string& 
     return it->second;
 }
 
-struct device_validation_t {
-    device_id id;
-    bool multiple_instances;
-    uint8_t slots_allowed;
-    uint32_t platform_flags;
-};
-
-const device_validation_t* lookup_device_validation(device_id id) {
-    static const device_validation_t kDevices[] = {
-        {DEVICE_ID_LANGUAGE_CARD, false, 0b00000001, PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS},
-        {DEVICE_ID_PRODOS_BLOCK, true, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_PRODOS_CLOCK, false, 0b11111110,
-            PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS | PLATFLAG_APPLE_IIE
-            | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
-        {DEVICE_ID_DISK_II, true, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_MEM_EXPANSION, true, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_THUNDER_CLOCK, false, 0b11111110,
-            PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS | PLATFLAG_APPLE_IIE
-            | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
-        {DEVICE_ID_PD_BLOCK2, true, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_PARALLEL, true, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_VIDEX, false, 0b00001000, PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS},
-        {DEVICE_ID_MOCKINGBOARD, true, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_MOUSE, false, 0b11111110,
-            PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS | PLATFLAG_APPLE_IIE
-            | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
-        {DEVICE_ID_VIDHD, false, 0b11111110, PLATFLAG_APPLE_IIE_65816},
-        {DEVICE_ID_PD_BLOCK3, true, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_SECOND_SIGHT, false, 0, PLATFLAG_APPLE_IIGS},
-    };
-    for (const auto& device : kDevices) {
-        if (device.id == id) {
-            return &device;
-        }
-    }
-    return nullptr;
-}
-
-bool slot_allows_device(int slot, const device_validation_t* device) {
+bool slot_allows_device(int slot, const DeviceInfo_t* device) {
     if (slot < 0 || slot >= NUM_SLOTS) {
         return false;
     }
+    // slots_allowed == 0 means motherboard / non-slot device, not "any slot".
     if (device->slots_allowed == 0) {
-        return true;
+        return false;
     }
     return (device->slots_allowed & (1u << slot)) != 0;
 }
 
 bool validate_cards(const SystemConfig_t& config, PlatformId_t platform,
-                    const std::vector<card_extra_t>& card_extras,
-                    std::vector<std::string>& warnings, std::string& error_out) {
+                    const std::vector<card_extra_t>* card_extras,
+                    std::vector<std::string>* warnings, std::string& error_out) {
     std::unordered_map<device_id, int> instance_counts;
+    const PlatformFlags_t flag = platform_flag(platform);
 
     for (int slot = 0; slot < NUM_SLOTS; ++slot) {
         const device_id id = config.slot_devices[slot];
@@ -223,13 +188,18 @@ bool validate_cards(const SystemConfig_t& config, PlatformId_t platform,
             continue;
         }
 
-        const device_validation_t* device = lookup_device_validation(id);
+        const DeviceInfo_t* device = get_device_info(id);
         if (device == nullptr) {
             error_out = "Invalid device id in slot " + std::to_string(slot);
             return false;
         }
 
-        const PlatformFlags_t flag = platform_flag(platform);
+        if (device->slots_allowed == 0) {
+            error_out = "Device " + std::string(device->name) + " is not a slot card (slot "
+                        + std::to_string(slot) + ")";
+            return false;
+        }
+
         if ((device->platform_flags & flag) == 0) {
             error_out = "Card " + std::string(card_type_name(id)) + " is not allowed on platform "
                         + std::string(platform_name(platform));
@@ -243,20 +213,22 @@ bool validate_cards(const SystemConfig_t& config, PlatformId_t platform,
         }
 
         instance_counts[id]++;
-        if (!device->multiple_instances && instance_counts[id] > 1) {
+        if (!device->multipleInstances && instance_counts[id] > 1) {
             error_out = "Multiple instances of card " + std::string(card_type_name(id))
                         + " are not allowed";
             return false;
         }
     }
 
-    for (const auto& extra : card_extras) {
-        if (extra.slot < 0 || extra.slot >= NUM_SLOTS) {
-            continue;
-        }
-        if (config.slot_devices[extra.slot] != DEVICE_ID_PARALLEL) {
-            warnings.push_back("parallel output on slot " + std::to_string(extra.slot)
-                               + " ignored: card is not parallel");
+    if (card_extras != nullptr && warnings != nullptr) {
+        for (const auto& extra : *card_extras) {
+            if (extra.slot < 0 || extra.slot >= NUM_SLOTS) {
+                continue;
+            }
+            if (config.slot_devices[extra.slot] != DEVICE_ID_PARALLEL) {
+                warnings->push_back("parallel output on slot " + std::to_string(extra.slot)
+                                    + " ignored: card is not parallel");
+            }
         }
     }
 
@@ -478,55 +450,45 @@ static const char* card_display_name(device_id id) {
     }
 }
 
-std::vector<slot_card_choice_t> cards_allowed_for_slot(PlatformId_t platform, int slot) {
-    // Mirrors lookup_device_validation() / slot_allows_device() in the anonymous namespace.
-    struct entry_t {
-        device_id id;
-        uint8_t slots_allowed;
-        uint32_t platform_flags;
-    };
-    static const entry_t kDevices[] = {
-        {DEVICE_ID_LANGUAGE_CARD, 0b00000001, PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS},
-        {DEVICE_ID_PRODOS_BLOCK, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_PRODOS_CLOCK, 0b11111110,
-            PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS | PLATFLAG_APPLE_IIE
-            | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
-        {DEVICE_ID_DISK_II, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_MEM_EXPANSION, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_THUNDER_CLOCK, 0b11111110,
-            PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS | PLATFLAG_APPLE_IIE
-            | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
-        {DEVICE_ID_PD_BLOCK2, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_PARALLEL, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_VIDEX, 0b00001000, PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS},
-        {DEVICE_ID_MOCKINGBOARD, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_MOUSE, 0b11111110,
-            PLATFLAG_APPLE_II | PLATFLAG_APPLE_II_PLUS | PLATFLAG_APPLE_IIE
-            | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
-        {DEVICE_ID_VIDHD, 0b11111110, PLATFLAG_APPLE_IIE_65816},
-        {DEVICE_ID_PD_BLOCK3, 0b11111110, PLATFLAG_ALL},
-        {DEVICE_ID_SECOND_SIGHT, 0, PLATFLAG_APPLE_IIGS},
-    };
-
-    PlatformFlags_t flag = PLATFLAG_NONE;
-    switch (platform) {
-        case PLATFORM_APPLE_II: flag = PLATFLAG_APPLE_II; break;
-        case PLATFORM_APPLE_II_PLUS: flag = PLATFLAG_APPLE_II_PLUS; break;
-        case PLATFORM_APPLE_IIE: flag = PLATFLAG_APPLE_IIE; break;
-        case PLATFORM_APPLE_IIE_ENHANCED: flag = PLATFLAG_APPLE_IIE_ENHANCED; break;
-        case PLATFORM_APPLE_IIE_65816: flag = PLATFLAG_APPLE_IIE_65816; break;
-        case PLATFORM_APPLE_IIGS: flag = PLATFLAG_APPLE_IIGS; break;
-        default: break;
+std::vector<slot_card_choice_t> cards_allowed_for_slot(
+    PlatformId_t platform, int slot, const device_id occupied_slots[NUM_SLOTS]) {
+    std::vector<slot_card_choice_t> out;
+    if (slot < 0 || slot >= NUM_SLOTS) {
+        return out;
     }
 
-    std::vector<slot_card_choice_t> out;
-    if (slot < 0 || slot >= NUM_SLOTS) return out;
-    for (const auto& device : kDevices) {
-        if ((device.platform_flags & flag) == 0) continue;
-        if (device.slots_allowed != 0 && (device.slots_allowed & (1u << slot)) == 0) continue;
-        out.push_back({device.id, card_type_name(device.id), card_display_name(device.id)});
+    const PlatformFlags_t flag = platform_flag(platform);
+    for (int i = 1; i < NUM_DEVICE_IDS; ++i) {
+        const device_id id = static_cast<device_id>(i);
+        const DeviceInfo_t* device = get_device_info(id);
+        if (device == nullptr || device->slots_allowed == 0) {
+            continue; // motherboard / non-slot device
+        }
+        if ((device->platform_flags & flag) == 0) {
+            continue;
+        }
+        if ((device->slots_allowed & (1u << slot)) == 0) {
+            continue;
+        }
+        if (occupied_slots != nullptr && !device->multipleInstances) {
+            bool used_elsewhere = false;
+            for (int s = 0; s < NUM_SLOTS; ++s) {
+                if (s != slot && occupied_slots[s] == id) {
+                    used_elsewhere = true;
+                    break;
+                }
+            }
+            if (used_elsewhere) {
+                continue;
+            }
+        }
+        out.push_back({id, card_type_name(id), card_display_name(id)});
     }
     return out;
+}
+
+bool validate_slot_devices(const SystemConfig_t& config, std::string& error_out) {
+    return validate_cards(config, config.platform_id, nullptr, nullptr, error_out);
 }
 
 static std::string toml_escape(const std::string& s) {
@@ -683,7 +645,7 @@ bool SystemConfig::load(const std::string& path, std::string& error_out) {
 }
 
 bool SystemConfig::finalize_load(std::string& error_out) {
-    if (!validate_cards(config_data_, config_data_.platform_id, card_extras_, warnings_, error_out)) {
+    if (!validate_cards(config_data_, config_data_.platform_id, &card_extras_, &warnings_, error_out)) {
         return false;
     }
     if (!validate_storage(mounts_, error_out)) {
