@@ -9,7 +9,6 @@ build/
 build/*
 gs2.dSYM/
 hw.dSYM/
-gs2
 testdev/
 CMakeCache.txt
 **/cmake_install.cmake
