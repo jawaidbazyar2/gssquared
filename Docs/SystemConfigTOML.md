@@ -37,6 +37,7 @@ struct SystemConfig_t {
     clock_set_t clock_set;
     video_scanner_t scanner_type;
     const char *description;
+    const char *id;                 // machine identity (UUID)
     device_id slot_devices[NUM_SLOTS];  // slots 0–7, derived from [[cards]]
 };
 
@@ -50,6 +51,7 @@ typedef struct {
 | TOML key | Type | Required | Maps to | Notes |
 |----------|------|----------|---------|-------|
 | `gs2_version` | integer | yes | — | Format version (currently `1`) |
+| `id` | string | no* | `id` | Machine identity (UUID). See [Machine identity](#machine-identity) |
 | `name` | string | yes | `name` | Display name on System Select tile |
 | `description` | string | no | `description` | Short subtitle / tooltip text |
 | `platform` | string | yes | `platform_id` | See [Platform](#platform) |
@@ -59,6 +61,25 @@ typedef struct {
 | `[[cards]]` | array of tables | no | `slot_devices[]` + per-card config | Hardware only; see [Cards](#cards) |
 | `[[storage]]` | array of tables | no | `disk_mount_t[]` | All pre-mounted disks; see [Storage](#storage) |
 | `[[connections]]` | array of tables | no | serial port attachments | Virtual devices on serial ports; see [Connections](#connections) |
+
+\*If `id` is missing on load, GSSquared mints a UUID and rewrites the file when writable. After load, every config has an `id`.
+
+### Machine identity
+
+`id` is a stable UUID that identifies the *machine*, not the filename. Apple IIgs battery RAM (Control Panel / NVRAM) is stored at:
+
+`PrefPath/bram/<id>.bin`
+
+(e.g. `~/Library/Application Support/jawaidbazyar2/GSSquared/bram/<id>.bin` on macOS).
+
+| Behavior | Result |
+|----------|--------|
+| Rename / move `.gs2` | Same `id` → same BRAM |
+| Save As (different path in editor) | New `id` → separate BRAM |
+| Copy `id` into another `.gs2` | Shared BRAM (same machine) |
+| Reseed shipped default from assets | Same preassigned `id` → BRAM survives |
+
+Shipped configs under `assets/gs2/` and builtin selector tiles have fixed UUIDs.
 
 Motherboard-resident devices (keyboard, display, speaker, IIe memory, IIgs ADB/RTC/Ensoniq/SCC/IWM, etc.) are composed automatically from `platform` during `transition_to_emulation()`, matching current built-in behavior. Only slot cards appear in `[[cards]]`.
 

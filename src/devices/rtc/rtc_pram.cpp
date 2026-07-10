@@ -4,6 +4,11 @@
 #include "rtc_pram.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "debug.hpp"
+#include "paths.hpp"
+
+#include <filesystem>
+#include <iostream>
+#include <string>
 
 void rtc_pram_write_C033(void *context, uint32_t address, uint8_t value) {
     rtc_pram_state_t *st = (rtc_pram_state_t *)context;
@@ -42,7 +47,23 @@ DebugFormatter *rtc_pram_debug_display(void *context) {
 void init_slot_rtc_pram(computer_t *computer, SlotType_t slot) {
 
     rtc_pram_state_t *st = new rtc_pram_state_t();
-    st->rtc = new RTC();
+
+    std::string bram_path;
+    const std::string& mid = computer->get_machine_id();
+    if (!mid.empty()) {
+        Paths::calc_pref(bram_path, "bram/" + mid + ".bin");
+    } else {
+        Paths::calc_pref(bram_path, "bram/default.bin");
+    }
+    {
+        namespace fs = std::filesystem;
+        std::error_code ec;
+        fs::create_directories(fs::path(bram_path).parent_path(), ec);
+        if (ec) {
+            std::cerr << "Failed to create bram directory: " << ec.message() << std::endl;
+        }
+    }
+    st->rtc = new RTC(bram_path);
     
     computer->mmu->set_C0XX_write_handler(0xC033, { rtc_pram_write_C033, st });
     computer->mmu->set_C0XX_read_handler(0xC033, { rtc_pram_read_C033, st });

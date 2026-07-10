@@ -735,9 +735,11 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     if (state->loaded_config) {
         computer->set_system_id(-1);
         computer->set_system_config(&state->loaded_config->config());
+        computer->set_machine_id(state->loaded_config->id());
     } else {
         computer->set_system_id(builtin_system_id);
         computer->set_system_config(nullptr);
+        computer->set_machine_id(system_config->id ? system_config->id : "");
     }
     
     // TODO: load platform roms - this info should get stored in the 'computer'

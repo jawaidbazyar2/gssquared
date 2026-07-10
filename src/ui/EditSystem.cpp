@@ -14,6 +14,7 @@
 #include "paths.hpp"
 #include "platforms.hpp"
 #include "util/SystemConfig.hpp"
+#include "util/uuid.hpp"
 
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
@@ -477,6 +478,10 @@ bool EditSystem::write_draft_to_path(const std::string& path) {
         status_text = "Save failed: " + error;
         updated = true;
         return false;
+    }
+    // Save As (different path) → new machine identity / separate BRAM.
+    if (!draft.path().empty() && path != draft.path()) {
+        draft.set_id(generate_uuid_v4());
     }
     SystemConfig writer;
     writer.set_from_parts(draft.config(), draft.mounts());

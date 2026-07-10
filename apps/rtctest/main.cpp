@@ -91,7 +91,7 @@ void write_bram(RTC &rtc, uint8_t address, uint8_t value) {
 }
 
 int main(int argc, char **argv) {
-    RTC rtc;
+    RTC rtc("gs2-bram.bin");
     
     uint8_t val = read_register(rtc, "RD seconds_lo", RTC_RD_SECS_LO);
     uint8_t val2 = read_register(rtc, "RD seconds_next_to_lo", RTC_RD_SECS_NEXT_TO_LO);

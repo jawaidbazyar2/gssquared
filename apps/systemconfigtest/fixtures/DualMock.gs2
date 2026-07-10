@@ -1,6 +1,10 @@
 gs2_version = 1
+id = "8aac49d1-3c27-4887-bf75-a6a5880dbceb"
 name = "Dual Mockingboard"
 platform = "apple2e_enhanced"
+clock = "ntsc"
+scanner = "apple2e"
+builtin = false
 
 [[cards]]
 slot = 4

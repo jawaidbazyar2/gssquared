@@ -141,6 +141,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         CLOCK_SET_US,
         Scanner_AppleII,
         "48K RAM; Disk II",
+        "6b2f0c1a-8e4d-4a91-9c3b-1f7e2d4a5b01",
         {
             DEVICE_ID_LANGUAGE_CARD,
             DEVICE_ID_PARALLEL,
@@ -160,6 +161,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         CLOCK_SET_US,
         Scanner_AppleII,
         "64K RAM (incl Lang Card); Disk II; Clock; Parallel Port; VIDEX 80-col; Mockingboard",
+        "6b2f0c1a-8e4d-4a91-9c3b-1f7e2d4a5b02",
         {
             DEVICE_ID_LANGUAGE_CARD,
             DEVICE_ID_PARALLEL,
@@ -179,6 +181,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         CLOCK_SET_US,
         Scanner_AppleIIe,
         "128K RAM; Disk II; Mouse; Mockingboard",
+        "6b2f0c1a-8e4d-4a91-9c3b-1f7e2d4a5b03",
         {
             DEVICE_ID_NONE,
             DEVICE_ID_NONE,
@@ -198,6 +201,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         CLOCK_SET_US,
         Scanner_AppleIIe,
         "128K RAM; Disk II; Clock; Parallel Port; Mockingboard",
+        "6b2f0c1a-8e4d-4a91-9c3b-1f7e2d4a5b04",
         {
             DEVICE_ID_NONE,
             DEVICE_ID_PRODOS_CLOCK,
@@ -220,6 +224,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         CLOCK_SET_US,
         Scanner_AppleIIgs,
         "Apple IIgs 8MB RAM",
+        "6b2f0c1a-8e4d-4a91-9c3b-1f7e2d4a5b05",
         {
             DEVICE_ID_NONE,
             DEVICE_ID_NONE,

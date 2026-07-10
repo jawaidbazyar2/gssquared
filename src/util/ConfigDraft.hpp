@@ -29,6 +29,7 @@ class ConfigDraft {
     std::string name_;
     std::string description_;
     std::string path_;
+    std::string id_;
     SystemConfig_t config_{};
     std::vector<disk_mount_t> mounts_;
 
@@ -53,10 +54,12 @@ public:
     const std::string& name() const { return name_; }
     const std::string& description() const { return description_; }
     const std::string& path() const { return path_; }
+    const std::string& id() const { return id_; }
 
     void set_name(const std::string& name);
     void set_description(const std::string& description);
     void set_path(const std::string& path);
+    void set_id(const std::string& id);
 
     void set_platform(PlatformId_t platform_id);
     void set_slot_device(int slot, device_id id);

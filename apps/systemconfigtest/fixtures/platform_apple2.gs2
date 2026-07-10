@@ -1,6 +1,10 @@
 gs2_version = 1
+id = "66070e3e-ac40-4eb8-85e3-30c6610371d2"
 name = "Apple II"
 platform = "apple2"
+clock = "ntsc"
+scanner = "apple2"
+builtin = false
 
 [[cards]]
 slot = 6
