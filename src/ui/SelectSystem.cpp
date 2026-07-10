@@ -1,11 +1,16 @@
 #include "SelectSystem.hpp"
 #include "Container.hpp"
 #include "systemconfig.hpp"
+#include "platforms.hpp"
 #include "Style.hpp"
 #include "util/TextRenderer.hpp"
+#include "util/SystemConfig.hpp"
+#include "util/SystemSettings.hpp"
 #include "AssetAtlas.hpp"
 #include "SystemButton.hpp"
 #include "Button.hpp"
+
+#include <iostream>
 
 SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     : vs(vs), aa(aa) {
@@ -30,6 +35,8 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     int num_configs = NUM_SYSTEM_CONFIGS;
 
     text_renderer = new TextRenderer(vs->renderer, "fonts/OpenSans-Regular.ttf", 24);
+    // ~33% smaller than the title/hover font for custom tile name labels.
+    name_renderer = new TextRenderer(vs->renderer, "fonts/OpenSans-Regular.ttf", 16.0f);
     ui_ctx = { vs->renderer, vs->window, text_renderer, nullptr, aa };
 
     container = new Container_t(&ui_ctx, CS);
@@ -100,6 +107,37 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     });
     container->add(edit_btn);
 
+    // Recent custom configs: MRU + up to 4 by usage score.
+    for (const auto& entry : SystemSettings::instance().display_entries()) {
+        auto loaded = std::make_unique<SystemConfig>();
+        std::string error;
+        if (!loaded->load(entry.path, error)) {
+            std::cerr << "SelectSystem: skip recent config '" << entry.path
+                      << "': " << error << std::endl;
+            continue;
+        }
+
+        platform_info* platform = get_platform(loaded->config().platform_id);
+        if (platform == nullptr) {
+            continue;
+        }
+
+        recent_loaded_.push_back(std::move(loaded));
+        recent_paths_.push_back(entry.path);
+        const int recent_index = static_cast<int>(recent_paths_.size()) - 1;
+        const SystemConfig_t* cfg = &recent_loaded_.back()->config();
+
+        SystemButton *button = new SystemButton(&ui_ctx, cfg, platform->image_id, BS, true, name_renderer);
+        button->size(200, 200);
+        button->position_content(CP_CENTER, CP_CENTER);
+        button->style.background_color = platform->case_color;
+        button->on_click([this, recent_index](const SDL_Event&) -> bool {
+            selected_system = SELECT_RECENT_BASE + recent_index;
+            return true;
+        });
+        container->add(button);
+    }
+
     container->layout();
 
     updated = true;
@@ -108,6 +146,7 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 SelectSystem::~SelectSystem() {
     delete container;
     delete text_renderer;
+    delete name_renderer;
 }
 
 bool SelectSystem::event(const SDL_Event &event) {
@@ -147,6 +186,15 @@ bool SelectSystem::event(const SDL_Event &event) {
 
 int SelectSystem::get_selected_system() {
     return selected_system;
+}
+
+const std::string& SelectSystem::get_recent_path(int selection_id) const {
+    static const std::string empty;
+    const int index = selection_id - SELECT_RECENT_BASE;
+    if (index < 0 || index >= static_cast<int>(recent_paths_.size())) {
+        return empty;
+    }
+    return recent_paths_[static_cast<size_t>(index)];
 }
 
 bool SelectSystem::update() {

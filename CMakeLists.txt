@@ -468,8 +468,18 @@ add_library(gs2_device_registry
 )
 target_link_libraries(gs2_device_registry PUBLIC ${GS2_DEVICE_REGISTRY_LIBS} gs2_ntsc gs2_device_info)
 
-add_library(gs2_systemconfig src/util/SystemConfig.cpp src/util/SettingsConfig.cpp src/util/ConfigDraft.cpp)
-target_link_libraries(gs2_systemconfig PUBLIC gs2_paths gs2_device_info)
+add_library(gs2_toml src/util/toml_impl.cpp)
+target_compile_definitions(gs2_toml PUBLIC TOML_HEADER_ONLY=0)
+target_compile_definitions(gs2_toml PRIVATE TOML_IMPLEMENTATION)
+target_include_directories(gs2_toml PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+add_library(gs2_systemconfig
+    src/util/SystemConfig.cpp
+    src/util/SettingsConfig.cpp
+    src/util/ConfigDraft.cpp
+    src/util/SystemSettings.cpp
+)
+target_link_libraries(gs2_systemconfig PUBLIC gs2_paths gs2_device_info gs2_toml)
 
 add_library(gs2_video_scanner 
     src/devices/displaypp/ScanBuffer.cpp
@@ -485,7 +495,7 @@ target_link_libraries(gs2_video_scanner PUBLIC gs2_displaypp)
 
 add_library(gs2_devices_rtc_pram src/devices/rtc/rtc_pram.cpp)
 
-target_link_libraries(gs2_ui ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF})
+target_link_libraries(gs2_ui ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF} gs2_systemconfig)
 target_link_libraries(gs2_debugger gs2_trace gs2_util ${GS2_SDL3_TTF})
 target_link_libraries(gs2_util ${GS2_SDL3_TTF})
 target_link_libraries(gs2_computer ${GS2_SDL3_TTF})

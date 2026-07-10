@@ -36,6 +36,7 @@
 #include "util/dialog.hpp"
 #include "util/mount.hpp"
 #include "util/SystemConfig.hpp"
+#include "util/SystemSettings.hpp"
 #include "ui/OSD.hpp"
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
@@ -610,6 +611,7 @@ static bool apply_system_config_file(GS2AppState *state, const std::string& path
     }
     state->disks_to_mount = state->loaded_config->mounts();
     state->platform_id = state->loaded_config->config().platform_id;
+    SystemSettings::instance().record_use(path);
     return true;
 }
 
@@ -989,6 +991,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     printf("pref_path: %s\n", gs2_app_values.pref_path.c_str());
 
     SystemConfig::ensure_default_system_configs();
+    SystemSettings::instance().load();
 
     if (gs2_app_values.console_mode) {
         // parse command line options
@@ -1216,6 +1219,22 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         if (system_id == SELECT_OPEN_EDIT) {
             state->select_system->clear_selection();
             open_system_config_dialog(state, true);
+            return SDL_APP_CONTINUE;
+        }
+        if (system_id >= SELECT_RECENT_BASE) {
+            const std::string& path = state->select_system->get_recent_path(system_id);
+            state->select_system->clear_selection();
+            if (path.empty()) {
+                return SDL_APP_CONTINUE;
+            }
+            std::string error;
+            if (!apply_system_config_file(state, path, error)) {
+                std::string diag = "Failed to load system config '" + path + "':\n" + error;
+                std::cerr << diag << "\n";
+                system_diag(diag.data());
+                return SDL_APP_CONTINUE;
+            }
+            transition_to_emulation(state, &state->loaded_config->config(), -1);
             return SDL_APP_CONTINUE;
         }
         if (system_id >= 0) {
