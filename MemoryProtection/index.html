@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../KeyboardShortcuts/">
-      
-      
-        <link rel="next" href="../Joysticks/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Using a Mouse - GSSquared Documentation</title>
+        <title>GSSquared MMU Architecture & Specification (Phase 1) - GSSquared Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mouse" class="md-skip">
+        <a href="#gssquared-mmu-architecture-specification-phase-1" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Using a Mouse
+              GSSquared MMU Architecture &amp; Specification (Phase 1)
             
           </span>
         </div>
@@ -257,12 +253,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href=".." class="md-tabs__link">
           
   
@@ -477,31 +471,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -519,7 +508,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -674,37 +663,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Using a Mouse
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
         
   
   
@@ -720,48 +682,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mouse Capture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        IIgs - GS/OS Mouse Tracking
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2632,10 +2552,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
+  <a href="#reference-design-for-65816-based-apple-iigs-compatible-systems" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mouse Capture
+        Reference Design for 65816-based Apple IIgs Compatible Systems
       
     </span>
   </a>
@@ -2643,13 +2563,247 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
+  <a href="#1-architectural-overview-core-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        IIgs - GS/OS Mouse Tracking
+        1. Architectural Overview &amp; Core Parameters
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="1. Architectural Overview &amp; Core Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-in-memory-data-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. In-Memory Data Structures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. In-Memory Data Structures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-page-table-size-overhead" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Page Table Size Overhead
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-page-table-entry-pte-format-32-bit-word" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Page Table Entry (PTE) Format (32-bit Word)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.2 Page Table Entry (PTE) Format (32-bit Word)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#field-descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Field Descriptions:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-variable-page-size-via-pte-splatting-method-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Variable Page Size via PTE Splatting (Method 1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-translation-lookaside-buffer-tlb-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Translation Lookaside Buffer (TLB) Specification
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Translation Lookaside Buffer (TLB) Specification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-tlb-entry-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 TLB Entry Layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-hardware-page-table-walker-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Hardware Page Table Walker Logic
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-memory-protection-fault-handling-abort" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Memory Protection &amp; Fault Handling (/ABORT)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-configuration-register-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Configuration &amp; Register Interface
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Configuration &amp; Register Interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#register-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register Layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-legacy-apple-ii-compatibility-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Legacy Apple II Compatibility Mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-implementation-plan-gssquared-software-realization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Implementation Plan: GSSquared Software Realization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Implementation Plan: GSSquared Software Realization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-key-conclusions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 Key Conclusions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-target-architecture-two-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 Target Architecture (Two Layers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-phased-work-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 Phased Work Items
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74-open-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 Open Decisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2673,24 +2827,268 @@
   
 
 
-<h1 id="mouse">Mouse<a class="headerlink" href="#mouse" title="Permanent link">&para;</a></h1>
-<p>As the Apple II series progressed in time, mouse support became more and more integrated into the platform until in the //gs it became an indispensible base part of the system.</p>
-<p>GS2 supports a Mouse in two ways:</p>
+<h1 id="gssquared-mmu-architecture-specification-phase-1">GSSquared MMU Architecture &amp; Specification (Phase 1)<a class="headerlink" href="#gssquared-mmu-architecture-specification-phase-1" title="Permanent link">&para;</a></h1>
+<h2 id="reference-design-for-65816-based-apple-iigs-compatible-systems">Reference Design for 65816-based Apple IIgs Compatible Systems<a class="headerlink" href="#reference-design-for-65816-based-apple-iigs-compatible-systems" title="Permanent link">&para;</a></h2>
+<p>This document specifies the software design for the Memory Management Unit (MMU) of the <strong>GSSquared</strong> emulator. The architecture is optimized for a low-overhead software implementation while remaining strictly implementable in hardware (e.g., FPGA) to interface with a physical 65816 processor.</p>
+<hr />
+<h2 id="1-architectural-overview-core-parameters">1. Architectural Overview &amp; Core Parameters<a class="headerlink" href="#1-architectural-overview-core-parameters" title="Permanent link">&para;</a></h2>
+<p>The 65816 processor natively exposes a 24-bit address space (16 MB). This MMU translates 24-bit virtual addresses (VA) into a broader 32-bit physical address space (PA), facilitating expansion up to 4 GB of physical memory, I/O devices, and expanded buffers. </p>
+<p>Instead of rigid, hardwired memory shadowing for backward compatibility, this architecture utilizes a flexible page translation strategy to map legacy Apple II environments cleanly.</p>
+<h3 id="core-parameters">Core Parameters<a class="headerlink" href="#core-parameters" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Via Mouse Card on Apple //e</li>
-<li>Via ADB (Apple Desktop Bus) mouse on Apple IIgs</li>
+<li><strong>Virtual Address Space:</strong> 24-bit (16 MB total, formatted as <code>Bank:Address</code>).</li>
+<li><strong>Physical Address Space:</strong> 32-bit (4 GB total).</li>
+<li><strong>Page Sizes Supported:</strong> <ul>
+<li><strong>Standard Page:</strong> 4 KB (4096 bytes).</li>
+<li><strong>Large Page:</strong> 64 KB (65536 bytes) — corresponds exactly to a native 65816 memory bank.</li>
 </ul>
-<h2 id="mouse-capture">Mouse Capture<a class="headerlink" href="#mouse-capture" title="Permanent link">&para;</a></h2>
-<p>When you're using emulated Mouse software, you will probably want to turn on Mouse Capture.</p>
-<p>Do this by using the Mouse Capture menu, Mouse Capture button, or by pressing F1.</p>
-<p>When you enter Mouse Capture, a helpful message will appear at the top of the screen for a few seconds reminding you how to exit Mouse Capture.</p>
-<p>To release Mouse Capture, you must press <strong>F1</strong>, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)</p>
-<p>Opening the Control Panel via <strong>F4</strong> or the Control Panel button will also temporarily release Mouse Capture. When you close the Control Panel, the original Mouse Capture state will be restored.</p>
-<p>Mouse capture also turns off the "mouse movement shows on-screen controls" feature. It locks you into that keyboard-oriented Apple II experience.</p>
-<h2 id="iigs-gsos-mouse-tracking">IIgs - GS/OS Mouse Tracking<a class="headerlink" href="#iigs-gsos-mouse-tracking" title="Permanent link">&para;</a></h2>
-<p>When you boot a GS/OS image, or other application that starts the IIgs Event Manager, GSSquared detects this and changes how it processes mouse movement events. It will calculate the mouse movement that the IIgs needs to see, in order to match where the Host (your computer) mouse . Then it synthesizes the appropriate events to get the cursor there.</p>
-<p>This provides seamless movement of the mouse cursor in and out of the IIgs desktop, making the mouse work much more naturally, and avoiding the need for Mouse Capture mode with IIgs desktop apps.</p>
-<p>You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.</p>
+</li>
+<li><strong>Address Translation Breakdown (4 KB Standard Page):</strong><ul>
+<li><code>VA[23:12]</code> (12 bits) = Virtual Page Number (VPN).</li>
+<li><code>VA[11:0]</code> (12 bits) = Page Offset.</li>
+<li><code>PA[31:12]</code> (20 bits) = Physical Page Number (PPN).</li>
+<li><code>PA[11:0]</code> (12 bits) = Physical Offset (identical to Virtual Offset).</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2 id="2-in-memory-data-structures">2. In-Memory Data Structures<a class="headerlink" href="#2-in-memory-data-structures" title="Permanent link">&para;</a></h2>
+<p>To keep the hardware/emulator page table walker as simple as possible, the MMU uses a single-level flat page table per process. A complete 16 MB address space is fully defined by an array of 4,096 Page Table Entries (PTEs).</p>
+<h3 id="21-page-table-size-overhead">2.1 Page Table Size Overhead<a class="headerlink" href="#21-page-table-size-overhead" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Entries per Table:</strong> 4,096</li>
+<li><strong>Size per Entry:</strong> 4 bytes (32-bit word)</li>
+<li><strong>Total Footprint per Process Table:</strong> 16 KB ($4096 \times 4\text{ bytes}$).</li>
+</ul>
+<h3 id="22-page-table-entry-pte-format-32-bit-word">2.2 Page Table Entry (PTE) Format (32-bit Word)<a class="headerlink" href="#22-page-table-entry-pte-format-32-bit-word" title="Permanent link">&para;</a></h3>
+<p>31                                 12 11        7 6   5   4   3   2   1   0
++-------------------------------------+-----------+---+---+---+---+---+---+
+|       Physical Page Number (PPN)     | Reserved  | L |PID| X | W | R | V |
+|               20 bits               |  5 bits   |Siz|Mch|Exc|Wrt|Red|Val|
++-------------------------------------+-----------+---+---+---+---+---+---+</p>
+<h4 id="field-descriptions">Field Descriptions:<a class="headerlink" href="#field-descriptions" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>PPN (Bits 31-12):</strong> The 20-bit target base address in physical memory. For a 64 KB page alignment, the lower 4 bits of this field (<code>PPN[3:0]</code>) must be written as 0 by the kernel.</li>
+<li><strong>Reserved (Bits 11-7):</strong> Reserved for future hardware expansion. Must be written as 0.</li>
+<li><strong>L / Size (Bit 6):</strong> Large Page Identifier.<ul>
+<li><code>0</code> = Standard 4 KB Page.</li>
+<li><code>1</code> = Large 64 KB Page.</li>
+</ul>
+</li>
+<li><strong>PID_MATCH (Bit 5):</strong> Process ID Match flag.<ul>
+<li><code>1</code> = Enforces strict PID verification against the MMU's active PID register.</li>
+<li><code>0</code> = Global Page. Visible across all process contexts (useful for shared system vectors and the GS/OS kernel).</li>
+</ul>
+</li>
+<li><strong>X / Execute (Bit 4):</strong> Instruction fetch permission. Enforces that cycles where the 65816 asserts code execution signals (e.g., <code>VPA</code> &amp; <code>VDA</code> high simultaneously) are valid.</li>
+<li><strong>W / Write (Bit 3):</strong> Write permission (<code>1</code> = Read/Write, <code>0</code> = Read-Only).</li>
+<li><strong>R / Read (Bit 2):</strong> Read permission (<code>1</code> = Readable, <code>0</code> = No-Access).</li>
+<li><strong>V / Valid (Bit 1-0):</strong> Validity and cache characteristics.<ul>
+<li><code>00</code> = Invalid (Triggers fault).</li>
+<li><code>01</code> = Valid, Cacheable (Standard RAM).</li>
+<li><code>10</code> = Valid, Non-Cacheable (Dedicated I/O pages like <code>$00C000–$00CFFF</code>).</li>
+</ul>
+</li>
+</ul>
+<h3 id="23-variable-page-size-via-pte-splatting-method-1">2.3 Variable Page Size via PTE Splatting (Method 1)<a class="headerlink" href="#23-variable-page-size-via-pte-splatting-method-1" title="Permanent link">&para;</a></h3>
+<p>To prevent the hardware page table walker from needing complex multi-step lookup logic, Large Pages (64 KB) are handled via <strong>PTE Splatting</strong>:
+1.  When allocating a 64 KB Large Page (e.g., mapping a full 65816 bank), the kernel fills <strong>16 consecutive entries</strong> in the flat page table with the exact same 32-bit PTE value.
+2.  The <code>L</code> bit (Bit 6) is set to <code>1</code> in all 16 entries.
+3.  When the hardware page walker fetches a entry on a TLB miss, it reads a single entry. If <code>L = 1</code>, it instructs the TLB to load the entry as a unified 64 KB masked translation.</p>
+<hr />
+<h2 id="3-translation-lookaside-buffer-tlb-specification">3. Translation Lookaside Buffer (TLB) Specification<a class="headerlink" href="#3-translation-lookaside-buffer-tlb-specification" title="Permanent link">&para;</a></h2>
+<p>The TLB caches active address translations within the emulator and hardware layers to avoid a 16 KB memory walk on every clock cycle.</p>
+<h3 id="31-tlb-entry-layout">3.1 TLB Entry Layout<a class="headerlink" href="#31-tlb-entry-layout" title="Permanent link">&para;</a></h3>
+<p>Each entry in the TLB consists of a Tag match evaluation field and a Data translation field:</p>
+<ul>
+<li><strong>Tag:</strong> <ul>
+<li><code>VPN</code> (12 bits)</li>
+<li><code>PID</code> (16 bits)</li>
+<li><code>Valid</code> (1 bit)</li>
+</ul>
+</li>
+<li><strong>Mask:</strong><ul>
+<li><code>Size_Mask</code> (12 bits): Evaluated during lookup.<ul>
+<li>If <code>L = 0</code>: Mask is <code>0xFFF</code> (All 12 bits of VPN must match).</li>
+<li>If <code>L = 1</code>: Mask is <code>0xFF0</code> (Only the upper 8 bits—the Bank—must match).</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Data:</strong><ul>
+<li><code>PPN</code> (20 bits)</li>
+<li><code>Flags</code> (X, W, R, Valid status)</li>
+</ul>
+</li>
+</ul>
+<h3 id="32-hardware-page-table-walker-logic">3.2 Hardware Page Table Walker Logic<a class="headerlink" href="#32-hardware-page-table-walker-logic" title="Permanent link">&para;</a></h3>
+<p>On a TLB miss, the hardware/emulator performs a single atomic memory read:
+1.  Compute entry physical address: <code>PTE_Address = Page_Table_Root_Pointer + (VA[23:12] &lt;&lt; 2)</code>.
+2.  Fetch the 32-bit word from <code>PTE_Address</code>.
+3.  Evaluate the entry:
+    *   If <code>V == 00</code> or permissions fail, assert the processor <code>/ABORT</code> pin.
+    *   If valid, inject the entry into the TLB. If <code>L == 1</code>, set the TLB entry mask to <code>0xFF0</code> so that any subsequent hits inside this 64 KB bank resolve instantly.</p>
+<hr />
+<h2 id="4-memory-protection-fault-handling-abort">4. Memory Protection &amp; Fault Handling (<code>/ABORT</code>)<a class="headerlink" href="#4-memory-protection-fault-handling-abort" title="Permanent link">&para;</a></h2>
+<p>The 65816 <code>/ABORT</code> pin is leveraged strictly for <strong>Memory Protection and Application Sandboxing</strong>. </p>
+<ol>
+<li><strong>Violation Detection:</strong> If an active application (<code>PID != 0</code>) attempts to execute an invalid operation (e.g., writing to a page marked Read-Only, executing from a non-X page, or accessing a non-global page assigned to a different PID), the MMU drives the <code>/ABORT</code> line low before the conclusion of the clock cycle.</li>
+<li><strong>Instruction Abort:</strong> The current bus cycle is prevented from modifying memory or internal registers.</li>
+<li><strong>Kernel Intervention:</strong> The 65816 traps through the hardware <code>/ABORT</code> vector. Because <code>PID 0</code> handles the exception, the system safely captures the fault, identifies the offending PID, cleans up its memory allocation tables, and terminates the application context without destabilizing the rest of the GS/OS environment.</li>
+</ol>
+<hr />
+<h2 id="5-configuration-register-interface">5. Configuration &amp; Register Interface<a class="headerlink" href="#5-configuration-register-interface" title="Permanent link">&para;</a></h2>
+<p>The MMU configuration interface is memory-mapped into a reserved window within the standard Apple II I/O space at <strong><code>$00C0B0–$00C0BF</code></strong>. 
+TODO: this is a bad choice. it looks like it wants 10 bytes. </p>
+<blockquote>
+<p><strong>Access Control Rule:</strong> These registers are strictly privileged. The physical hardware/emulator will ignore writes or return zeroed reads for any operation attempted while the active PID register is not set to <code>0x0000</code>.</p>
+</blockquote>
+<h3 id="register-layout">Register Layout<a class="headerlink" href="#register-layout" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Address</th>
+<th style="text-align: left;">Register Name</th>
+<th style="text-align: left;">Access</th>
+<th style="text-align: left;">Width</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>$00C0B0</code></td>
+<td style="text-align: left;"><code>MMU_CTRL</code></td>
+<td style="text-align: left;">R/W</td>
+<td style="text-align: left;">8-bit</td>
+<td style="text-align: left;">Bit 0: MMU Enable (<code>1</code> = On, <code>0</code> = Off/Bypass)<br>Bits 1-7: Reserved</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>$00C0B2</code></td>
+<td style="text-align: left;"><code>MMU_ACTIVE_PID</code></td>
+<td style="text-align: left;">R/W</td>
+<td style="text-align: left;">16-bit</td>
+<td style="text-align: left;">Holds the currently executing Process ID.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>$00C0B4</code></td>
+<td style="text-align: left;"><code>MMU_PTR_LOW</code></td>
+<td style="text-align: left;">R/W</td>
+<td style="text-align: left;">16-bit</td>
+<td style="text-align: left;">Bits [15:0] of the Physical Page Table Root Pointer.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>$00C0B6</code></td>
+<td style="text-align: left;"><code>MMU_PTR_HIGH</code></td>
+<td style="text-align: left;">R/W</td>
+<td style="text-align: left;">16-bit</td>
+<td style="text-align: left;">Bits [31:16] of the Physical Page Table Root Pointer.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>$00C0B8</code></td>
+<td style="text-align: left;"><code>MMU_TLB_FLUSH</code></td>
+<td style="text-align: left;">Write</td>
+<td style="text-align: left;">16-bit</td>
+<td style="text-align: left;"><strong>TLB Invalidate Page:</strong> Writing a 16-bit Virtual Address (<code>Bank:Page</code>) to this register instantly flushes that translation from the TLB.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>$00C0BA</code></td>
+<td style="text-align: left;"><code>MMU_TLB_PURGE</code></td>
+<td style="text-align: left;">Write</td>
+<td style="text-align: left;">8-bit</td>
+<td style="text-align: left;"><strong>Global TLB Purge:</strong> Writing any value to this register completely flushes all non-global entries from the TLB.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-legacy-apple-ii-compatibility-mapping">6. Legacy Apple II Compatibility Mapping<a class="headerlink" href="#6-legacy-apple-ii-compatibility-mapping" title="Permanent link">&para;</a></h2>
+<p>To maintain full compatibility with Apple II environments, banks <code>$E0</code> and <code>$E1</code> are explicitly retained for legacy Mega II emulation and sound graphics architectures. </p>
+<p>Instead of routing these through rigid alternative hardware logic blocks, the <code>PID 0</code> operating system initialization routine handles this natively via the MMU by populating the master page tables to map virtual banks <code>$E0</code> and <code>$E1</code> directly to their respective dedicated legacy controller locations within the 32-bit physical space. The <code>$00C000–$00CFFF</code> page is mapped with the <code>V</code> bits set to <code>10</code> (Valid, Non-Cacheable) to guarantee hardware soft-switches bypass any TLB caching loops.</p>
+<hr />
+<h2 id="7-implementation-plan-gssquared-software-realization">7. Implementation Plan: GSSquared Software Realization<a class="headerlink" href="#7-implementation-plan-gssquared-software-realization" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>Status:</strong> Design agreed; not yet implemented. This section is the actionable plan for adding the Advanced MMU to the emulator and reconciling it with the existing FPI/Mega II model. It supersedes the hardware-centric framing above wherever the two differ for the <em>software</em> implementation.</p>
+</blockquote>
+<h3 id="71-key-conclusions">7.1 Key Conclusions<a class="headerlink" href="#71-key-conclusions" title="Permanent link">&para;</a></h3>
+<ol>
+<li>
+<p><strong>The existing <code>MMU_IIgs</code> is the FPI model, not this spec.</strong> It is a software model of the real Apple IIgs FPI (shadowing, main/aux, language card, soft switches) at 64K granularity. The MegaII is a separate instance of MMU_IIe, contained by MMU_IIgs, which has a 256-byte page granularity to support legacy Apple II semantics. Its <code>page_table[]</code> is the <em>decoded output</em> of soft-switch state. This document's Advanced MMU is a <strong>separate, additive subsystem</strong> for 16-bit 65816-native, OS-managed multitasking — not a replacement for the FPI model.</p>
+</li>
+<li>
+<p><strong>No TLB in v1.</strong> A hardware TLB exists to avoid a slow page-table walk and to avoid storing a full decoded map on-die. The emulator has neither constraint. Because the V→P table is <strong>single-level and flat</strong>, the "walk" (§3.2) is literally <em>one indexed load</em>, cheap enough to perform on every access. A TLB would be a cache in front of something already as fast as the cache, plus invalidation risk. The TLB programming model (registers in §5) is retained on paper for FPGA/ABI parity, but in the emulator those registers drive eager recompute, not a cache. A real decoded cache is a <em>later, profiling-driven optimization only</em>.</p>
+</li>
+</ol>
+<p>2a. HOWEVER even given 2 above, we may want to require guest management of a TLB (which we would not use in GS2 emulation) so when we do eventually implement in hardware, guest OS code will already be set up for it.</p>
+<ol>
+<li>
+<p><strong>Walk, don't pre-decode per PID.</strong> Resolution reads the compact 4-byte PTE directly from emulated RAM. There is no fat host-side decoded array per process.</p>
+</li>
+<li>
+<p><strong>Two-object MMU + pointer swap, not a per-access <code>if</code>.</strong> The CPU already dispatches every access through a single <code>virtual</code> call on <code>cpu_state.mmu</code> (see <code>src/cpu.hpp</code>), and CPU cores never cache a page base pointer (verified in <code>src/cpus/base_6502.cpp</code> — all access goes through <code>cpu-&gt;mmu-&gt;read()/write()</code>). Therefore mode is selected by swapping the <code>MMU *</code> object, giving each mode a straight-line <code>read</code>/<code>write</code> with <strong>zero per-access mode branches</strong>.</p>
+</li>
+<li>
+<p><strong>Partition by virtual-RAM-vs-physical-hardware, not by bank number.</strong> Bank <code>$00</code> (65816 stack + direct page are always bank 0) and <code>$01</code> and an app's code/data banks are <strong>per-process virtual RAM</strong>. <code>$E0</code>/<code>$E1</code> (Mega II) and <code>$Cxxx</code> I/O are <strong>shared physical hardware</strong> potentially reachable identically from every PID. The legacy shadowed mapping is just <em>one address space's flavor</em>, not a global mode — this is what makes per-process multitasking (private bank <code>$00</code>) possible.</p>
+</li>
+</ol>
+<h3 id="72-target-architecture-two-layers">7.2 Target Architecture (Two Layers)<a class="headerlink" href="#72-target-architecture-two-layers" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Layer</th>
+<th style="text-align: left;">Structure</th>
+<th style="text-align: left;">Scope</th>
+<th style="text-align: left;">Owner</th>
+<th style="text-align: left;">Size</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Virtual → Physical</strong></td>
+<td style="text-align: left;">Flat 4-byte PTE table (§2), 4,096 entries</td>
+<td style="text-align: left;"><strong>Per-PID</strong></td>
+<td style="text-align: left;">Guest OS, in emulated RAM, rooted by <code>MMU_PTR_*</code></td>
+<td style="text-align: left;">16 KB / PID</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Physical → Host</strong></td>
+<td style="text-align: left;">Fat <code>page_table_entry_t</code> (<code>read_p</code>/<code>write_p</code>/handlers)</td>
+<td style="text-align: left;"><strong>Machine-wide (shared)</strong></td>
+<td style="text-align: left;">Emulator</td>
+<td style="text-align: left;">Sized to installed physical memory (a few thousand entries)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Per-access path (<code>MMU_Advanced::read</code>/<code>write</code>):</strong></p>
+<pre><code>pte   = phys_ram[ pt_root + (vpn &lt;&lt; 2) ]        // load the 4-byte guest PTE
+if (!V || permission check fails) -&gt; assert /ABORT
+pa    = (pte.PPN &lt;&lt; 12) | (va &amp; 0xFFF)
+entry = phys_map[ pa &gt;&gt; 12 ]                     // PA -&gt; host (RAM ptr or device handler)
+byte  = entry.read_p ? entry.read_p[pa &amp; 0xFFF] : entry.read_h(...)
+</code></pre>
+<ul>
+<li><strong>PID switch:</strong> set <code>pt_root</code> (offset into guest physical RAM) + active PID. One store. Zero recompose, zero per-PID host allocation.</li>
+<li><strong>Mode switch (FPI ↔ Advanced):</strong> <code>cpu-&gt;set_mmu(fpi_or_advanced)</code>. One store; safe mid-stream (no stale page-pointer cache).</li>
+<li><strong>Shared hardware:</strong> <code>$E0</code>/<code>$E1</code> and <code>$Cxxx</code> are ordinary entries in the shared physical map carrying the existing Mega II handlers (<code>bank_e0_*</code>, <code>megaii_c0xx_*</code>). Native PIDs simply do not map <code>$Cxxx</code> into their virtual space (or map it to a protected/abort page).</li>
+</ul>
+<h3 id="73-phased-work-items">7.3 Phased Work Items<a class="headerlink" href="#73-phased-work-items" title="Permanent link">&para;</a></h3>
+<p><strong>Phase 1 — Mapping only (no protection):</strong>
+- [ ] Add <code>MMU_Advanced : public MMU</code>, sharing the backing store (RAM/ROM) and the same Mega II object with <code>MMU_IIgs</code>.
+- [ ] Build the <strong>shared physical map</strong> (machine-wide <code>page_table_entry_t</code> array): RAM pages → host pointers; ROM → read-only; <code>$E0</code>/<code>$E1</code>/<code>$Cxxx</code> physical pages → Mega II handlers.
+- [ ] Implement the two-load walk in <code>MMU_Advanced::read</code>/<code>write</code> reading the 4-byte PTE from emulated RAM.
+- [ ] Implement <code>$C0Bx</code> register handlers (<code>MMU_CTRL</code>, <code>MMU_ACTIVE_PID</code>, <code>MMU_PTR_LOW/HIGH</code>) that call into a machine/owner object to <code>cpu-&gt;set_mmu()</code> and to set <code>pt_root</code>/PID. (Note §5 TODO: pick a better register window than <code>$C0B0–$C0BF</code>.)
+- [ ] Decode <code>L</code>-bit large pages (64 KB) per §2.3 splatting semantics during the walk.</p>
+<p><strong>Phase 2 — Protection &amp; sandboxing:</strong>
+- [ ] Extend the walk with <code>R</code>/<code>W</code>/<code>X</code>/<code>PID_MATCH</code>/<code>V</code> checks; route violations to a handler that asserts the 65816 <code>/ABORT</code> (§4).
+- [ ] <strong>Prerequisite:</strong> the CPU core must distinguish opcode fetch from data read (VPA/VDA-equivalent) to enforce the <code>X</code> bit. Confirm/extend <code>base_6502.cpp</code> to signal access type to the MMU.
+- [ ] Implement <code>MMU_TLB_FLUSH</code>/<code>MMU_TLB_PURGE</code> as recompute/invalidate hooks (no-ops for the walk model in v1; wired for the optional cache in Phase 3).</p>
+<p><strong>Phase 3 — Optional performance cache (only if profiling justifies):</strong>
+- [ ] Add a small decoded cache (the actual "TLB") in front of the walk, invalidated by <code>TLB_FLUSH</code>/<code>PURGE</code>. Consider a fully-decoded host map or a SIMD/struct-of-arrays associative buffer if a finite TLB is desired for fidelity.</p>
+<h3 id="74-open-decisions">7.4 Open Decisions<a class="headerlink" href="#74-open-decisions" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Register window:</strong> replace <code>$C0B0–$C0BF</code> (§5 TODO) with a cleaner privileged window.</li>
+<li><strong>Global vs hybrid scope at boot:</strong> whether the entire space resolves through PTEs once enabled (doc §6, <code>PID 0</code> replicates legacy mapping in PTEs) or legacy banks remain on the FPI model until the OS opts a region into Advanced mode.</li>
+<li><strong>Granularity reconciliation:</strong> Advanced uses 4 KB pages; FPI uses 64KByte, MegaII 256-byte.</li>
+<li><strong>Physical map representation:</strong> flat array sized to installed RAM vs sparse/region-allocated for a large 32-bit PA space. (Probably flat space; even allocating a 64MB or 128MB chunk to a IIgs would be powerful).</li>
+</ul>
 
 
 

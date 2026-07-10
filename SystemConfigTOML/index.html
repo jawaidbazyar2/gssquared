@@ -1,0 +1,4057 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>System Config TOML (.gs2) - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#system-config-toml-gs2" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              System Config TOML (.gs2)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../UserInterface/" class="md-tabs__link">
+          
+  
+  
+  Misc
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Misc
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Misc
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File identity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#top-level-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Top-level schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#platform" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Platform
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clock" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clock
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#video-scanner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Video scanner
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#card-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Card types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Card types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#slot-assignable-card-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Slot-assignable card types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#motherboard-devices-not-in-cards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Motherboard devices (not in [[cards]])
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cards
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common properties
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#per-card-type-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-card-type properties
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Per-card-type properties">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parallel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mockingboard-mouse-videx-language_card-clocks-storage-cards-serial-cards-etc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mockingboard, mouse, videx, language_card, clocks, storage cards, serial cards, etc.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#connections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connections
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Connections">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#device-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        device values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#port-addressing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Port addressing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-stays-on-cards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What stays on cards
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Storage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#path-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Path resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#drive-map-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Drive map (reference)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complete-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Complete examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#apple-matches-built-in-apple" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple ][+ — matches built-in "Apple ][+"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enhanced-e-with-dual-mockingboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enhanced //e with dual Mockingboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apple-iigs-with-second-sight-and-smartport-volumes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple IIgs with Second Sight and SmartPort volumes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pal-enhanced-e" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PAL Enhanced //e
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#load-save-behavior-proposed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load / save behavior (proposed)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#minimal-valid-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimal valid file
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-profiles-toml-and-arqyv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture: profiles, TOML, and arqyv
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture: profiles, TOML, and arqyv">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-internal-model-several-entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One internal model, several entry points
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#canonical-profile-struct-planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Canonical Profile struct (planned)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#machine-config-vs-preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine config vs preferences
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arqyv-collaboration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arqyv collaboration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-phasing-gs2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation phasing (GS2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="system-config-toml-gs2">System Config TOML (<code>.gs2</code>)<a class="headerlink" href="#system-config-toml-gs2" title="Permanent link">&para;</a></h1>
+<p>Proposed on-disk format for user-created system configurations. Maps to <code>SystemConfig_t</code> in <code>src/systemconfig.hpp</code>, slot device IDs in <code>src/Device_ID.hpp</code> / <code>src/devices.cpp</code>, and initial disk mounts handled by <code>Mounts::mount_media()</code> in <code>src/util/mount.cpp</code>.</p>
+<p>This is a <strong>design proposal</strong> — not yet implemented.</p>
+<h2 id="file-identity">File identity<a class="headerlink" href="#file-identity" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Extension</td>
+<td><code>.gs2</code></td>
+</tr>
+<tr>
+<td>Format</td>
+<td>TOML 1.0</td>
+</tr>
+<tr>
+<td>Default location</td>
+<td>User config directory (e.g. <code>~/Library/Application Support/GSSquared/systems/</code> on macOS)</td>
+</tr>
+<tr>
+<td>Related formats</td>
+<td>Project X files (arqyv-generated) are a separate, forward-compatible format</td>
+</tr>
+</tbody>
+</table>
+<p>Every file MUST begin with a format version so future loaders can migrate or reject old files:</p>
+<pre><code class="language-toml">gs2_version = 1
+</code></pre>
+<p>Unknown <code>gs2_version</code> values are a hard error. Loaders MAY accept a range of versions if they implement migration.</p>
+<p>TODO: on the first invocation of GS2 copy some default extra configs into the local user systems folder.</p>
+<hr />
+<h2 id="top-level-schema">Top-level schema<a class="headerlink" href="#top-level-schema" title="Permanent link">&para;</a></h2>
+<p>Corresponds to <code>SystemConfig_t</code> plus per-card configuration and disk mounts:</p>
+<pre><code class="language-c">struct SystemConfig_t {
+    const char *name;
+    PlatformId_t platform_id;
+    bool builtin;
+    clock_set_t clock_set;
+    video_scanner_t scanner_type;
+    const char *description;
+    device_id slot_devices[NUM_SLOTS];  // slots 0–7, derived from [[cards]]
+};
+
+typedef struct {
+    uint16_t slot;
+    uint16_t drive;
+    std::string filename;
+} disk_mount_t;
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>TOML key</th>
+<th>Type</th>
+<th>Required</th>
+<th>Maps to</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gs2_version</code></td>
+<td>integer</td>
+<td>yes</td>
+<td>—</td>
+<td>Format version (currently <code>1</code>)</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>name</code></td>
+<td>Display name on System Select tile</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>description</code></td>
+<td>Short subtitle / tooltip text</td>
+</tr>
+<tr>
+<td><code>platform</code></td>
+<td>string</td>
+<td>yes</td>
+<td><code>platform_id</code></td>
+<td>See <a href="#platform">Platform</a></td>
+</tr>
+<tr>
+<td><code>clock</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>clock_set</code></td>
+<td>Default from platform if omitted</td>
+</tr>
+<tr>
+<td><code>scanner</code></td>
+<td>string</td>
+<td>no</td>
+<td><code>scanner_type</code></td>
+<td>Default from platform if omitted</td>
+</tr>
+<tr>
+<td><code>builtin</code></td>
+<td>boolean</td>
+<td>no</td>
+<td><code>builtin</code></td>
+<td>Always <code>false</code> for user files; omit or set explicitly</td>
+</tr>
+<tr>
+<td><code>[[cards]]</code></td>
+<td>array of tables</td>
+<td>no</td>
+<td><code>slot_devices[]</code> + per-card config</td>
+<td>Hardware only; see <a href="#cards">Cards</a></td>
+</tr>
+<tr>
+<td><code>[[storage]]</code></td>
+<td>array of tables</td>
+<td>no</td>
+<td><code>disk_mount_t[]</code></td>
+<td>All pre-mounted disks; see <a href="#storage">Storage</a></td>
+</tr>
+<tr>
+<td><code>[[connections]]</code></td>
+<td>array of tables</td>
+<td>no</td>
+<td>serial port attachments</td>
+<td>Virtual devices on serial ports; see <a href="#connections">Connections</a></td>
+</tr>
+</tbody>
+</table>
+<p>Motherboard-resident devices (keyboard, display, speaker, IIe memory, IIgs ADB/RTC/Ensoniq/SCC/IWM, etc.) are composed automatically from <code>platform</code> during <code>transition_to_emulation()</code>, matching current built-in behavior. Only slot cards appear in <code>[[cards]]</code>.</p>
+<p><strong>Separation of concerns:</strong></p>
+<ul>
+<li><code>[[cards]]</code> — what hardware is installed.</li>
+<li><code>[[storage]]</code> — what disk images are mounted (<code>slot</code> + <code>drive</code>), matching <code>Mounts</code>.</li>
+<li><code>[[connections]]</code> — what virtual device is attached to each serial port (<code>port</code> or <code>slot</code> + <code>port</code>), matching however serial ports register at runtime (same pattern as <code>Mounts</code> for disks).</li>
+</ul>
+<p>There is no storage- or serial-attachment data on card entries (except <code>parallel</code> <code>output</code>, which is a printer sink rather than a serial connection).</p>
+<hr />
+<h2 id="platform">Platform<a class="headerlink" href="#platform" title="Permanent link">&para;</a></h2>
+<p>String enum → <code>PlatformId_t</code> (<code>src/PlatformIDs.hpp</code>):</p>
+<table>
+<thead>
+<tr>
+<th>TOML value</th>
+<th>C enum</th>
+<th>Typical use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"apple2"</code></td>
+<td><code>PLATFORM_APPLE_II</code></td>
+<td>Original Apple ][</td>
+</tr>
+<tr>
+<td><code>"apple2plus"</code></td>
+<td><code>PLATFORM_APPLE_II_PLUS</code></td>
+<td>Apple ][+</td>
+</tr>
+<tr>
+<td><code>"apple2e"</code></td>
+<td><code>PLATFORM_APPLE_IIE</code></td>
+<td>Apple IIe</td>
+</tr>
+<tr>
+<td><code>"apple2e_enhanced"</code></td>
+<td><code>PLATFORM_APPLE_IIE_ENHANCED</code></td>
+<td>Enhanced //e</td>
+</tr>
+<tr>
+<td><code>"apple2e_65816"</code></td>
+<td><code>PLATFORM_APPLE_IIE_65816</code></td>
+<td>//e with 65816 accelerator</td>
+</tr>
+<tr>
+<td><code>"apple2gs"</code></td>
+<td><code>PLATFORM_APPLE_IIGS</code></td>
+<td>Apple IIgs</td>
+</tr>
+</tbody>
+</table>
+<p>Loaders SHOULD reject <code>clock = "pal"</code> on <code>"apple2gs"</code> (PAL clock is not applicable to GS in current code).</p>
+<hr />
+<h2 id="clock">Clock<a class="headerlink" href="#clock" title="Permanent link">&para;</a></h2>
+<p>String enum → <code>clock_set_t</code> (<code>src/NClock.hpp</code>):</p>
+<table>
+<thead>
+<tr>
+<th>TOML value</th>
+<th>C enum</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"ntsc"</code></td>
+<td><code>CLOCK_SET_US</code></td>
+</tr>
+<tr>
+<td><code>"pal"</code></td>
+<td><code>CLOCK_SET_PAL</code></td>
+</tr>
+</tbody>
+</table>
+<p>If omitted, use <code>"ntsc"</code>.</p>
+<hr />
+<h2 id="video-scanner">Video scanner<a class="headerlink" href="#video-scanner" title="Permanent link">&para;</a></h2>
+<p>String enum → <code>video_scanner_t</code> (<code>src/devices/displaypp/VideoScanner.hpp</code>):</p>
+<table>
+<thead>
+<tr>
+<th>TOML value</th>
+<th>C enum</th>
+<th>Typical platform</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"apple2"</code></td>
+<td><code>Scanner_AppleII</code></td>
+<td>II, II+</td>
+</tr>
+<tr>
+<td><code>"apple2e"</code></td>
+<td><code>Scanner_AppleIIe</code></td>
+<td>IIe, Enhanced //e</td>
+</tr>
+<tr>
+<td><code>"apple2e_pal"</code></td>
+<td><code>Scanner_AppleIIePAL</code></td>
+<td>PAL //e</td>
+</tr>
+<tr>
+<td><code>"apple2gs"</code></td>
+<td><code>Scanner_AppleIIgs</code></td>
+<td>IIgs, 65816 //e</td>
+</tr>
+</tbody>
+</table>
+<p>If omitted, derive from <code>platform</code> and <code>clock</code> (e.g. PAL //e → <code>"apple2e_pal"</code>).</p>
+<hr />
+<h2 id="card-types">Card types<a class="headerlink" href="#card-types" title="Permanent link">&para;</a></h2>
+<p>String enum → <code>device_id</code> (<code>src/Device_ID.hpp</code>). These are the values allowed in <code>[[cards]].card</code> and validated against <code>Devices[]</code> in <code>src/devices.cpp</code> (<code>slots_allowed</code>, <code>platform_flags</code>, <code>multipleInstances</code>).</p>
+<p>The TOML key <strong><code>device</code></strong> is reserved for <code>[[connections]]</code> — the virtual peripheral attached to a serial port (<code>file</code>, <code>modem</code>, <code>echo</code>, <code>none</code>). It MUST NOT be used as the card-type field.</p>
+<h3 id="slot-assignable-card-types">Slot-assignable card types<a class="headerlink" href="#slot-assignable-card-types" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>TOML value</th>
+<th>C enum</th>
+<th>Human name</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"language_card"</code></td>
+<td><code>DEVICE_ID_LANGUAGE_CARD</code></td>
+<td>II/II+ Language Card</td>
+<td>Slot 0 only</td>
+</tr>
+<tr>
+<td><code>"prodos_block"</code></td>
+<td><code>DEVICE_ID_PRODOS_BLOCK</code></td>
+<td>Generic ProDOS Block</td>
+<td>Multiple instances allowed</td>
+</tr>
+<tr>
+<td><code>"prodos_clock"</code></td>
+<td><code>DEVICE_ID_PRODOS_CLOCK</code></td>
+<td>Generic ProDOS Clock</td>
+<td></td>
+</tr>
+<tr>
+<td><code>"disk_ii"</code></td>
+<td><code>DEVICE_ID_DISK_II</code></td>
+<td>Disk II Controller</td>
+<td>Multiple instances allowed</td>
+</tr>
+<tr>
+<td><code>"mem_expansion"</code></td>
+<td><code>DEVICE_ID_MEM_EXPANSION</code></td>
+<td>Memory Expansion (Slinky)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>"thunder_clock"</code></td>
+<td><code>DEVICE_ID_THUNDER_CLOCK</code></td>
+<td>Thunder Clock Plus</td>
+<td></td>
+</tr>
+<tr>
+<td><code>"prodos_block2"</code></td>
+<td><code>DEVICE_ID_PD_BLOCK2</code></td>
+<td>Generic ProDOS Block 2</td>
+<td></td>
+</tr>
+<tr>
+<td><code>"parallel"</code></td>
+<td><code>DEVICE_ID_PARALLEL</code></td>
+<td>Apple II Parallel Interface</td>
+<td></td>
+</tr>
+<tr>
+<td><code>"videx"</code></td>
+<td><code>DEVICE_ID_VIDEX</code></td>
+<td>Videx VideoTerm</td>
+<td>Slot 3 only; II / II+ only</td>
+</tr>
+<tr>
+<td><code>"mockingboard"</code></td>
+<td><code>DEVICE_ID_MOCKINGBOARD</code></td>
+<td>Mockingboard</td>
+<td>Multiple instances allowed</td>
+</tr>
+<tr>
+<td><code>"mouse"</code></td>
+<td><code>DEVICE_ID_MOUSE</code></td>
+<td>Apple Mouse II</td>
+<td></td>
+</tr>
+<tr>
+<td><code>"vidhd"</code></td>
+<td><code>DEVICE_ID_VIDHD</code></td>
+<td>VIDHD</td>
+<td>65816 //e only</td>
+</tr>
+<tr>
+<td><code>"bazfast3"</code></td>
+<td><code>DEVICE_ID_PD_BLOCK3</code></td>
+<td>BazFast 3 (DMA Storage)</td>
+<td>Multiple instances allowed</td>
+</tr>
+<tr>
+<td><code>"second_sight"</code></td>
+<td><code>DEVICE_ID_SECOND_SIGHT</code></td>
+<td>Second Sight</td>
+<td>IIgs only</td>
+</tr>
+</tbody>
+</table>
+<p>Aliases (optional, loader MAY accept):</p>
+<table>
+<thead>
+<tr>
+<th>Alias</th>
+<th>Canonical</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"pdblock3"</code>, <code>"smartport"</code></td>
+<td><code>"bazfast3"</code></td>
+</tr>
+<tr>
+<td><code>"pdblock2"</code></td>
+<td><code>"prodos_block2"</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="motherboard-devices-not-in-cards">Motherboard devices (not in <code>[[cards]]</code>)<a class="headerlink" href="#motherboard-devices-not-in-cards" title="Permanent link">&para;</a></h3>
+<p>Present automatically per platform; listed for reference:</p>
+<table>
+<thead>
+<tr>
+<th>TOML value</th>
+<th>C enum</th>
+<th>Platform(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"keyboard_iiplus"</code></td>
+<td><code>DEVICE_ID_KEYBOARD_IIPLUS</code></td>
+<td>II, II+</td>
+</tr>
+<tr>
+<td><code>"keyboard_iie"</code></td>
+<td><code>DEVICE_ID_KEYBOARD_IIE</code></td>
+<td>IIe family</td>
+</tr>
+<tr>
+<td><code>"speaker"</code></td>
+<td><code>DEVICE_ID_SPEAKER</code></td>
+<td>All</td>
+</tr>
+<tr>
+<td><code>"display"</code></td>
+<td><code>DEVICE_ID_DISPLAY</code></td>
+<td>All</td>
+</tr>
+<tr>
+<td><code>"game_controller"</code></td>
+<td><code>DEVICE_ID_GAMECONTROLLER</code></td>
+<td>All</td>
+</tr>
+<tr>
+<td><code>"iie_memory"</code></td>
+<td><code>DEVICE_ID_IIE_MEMORY</code></td>
+<td>IIe family</td>
+</tr>
+<tr>
+<td><code>"cassette"</code></td>
+<td><code>DEVICE_ID_CASSETTE</code></td>
+<td>All</td>
+</tr>
+<tr>
+<td><code>"rtc_pram"</code></td>
+<td><code>DEVICE_ID_RTC_PRAM</code></td>
+<td>IIgs</td>
+</tr>
+<tr>
+<td><code>"adb"</code></td>
+<td><code>DEVICE_ID_KEYGLOO</code></td>
+<td>IIgs</td>
+</tr>
+<tr>
+<td><code>"ensoniq"</code></td>
+<td><code>DEVICE_ID_ENSONIQ</code></td>
+<td>IIgs</td>
+</tr>
+<tr>
+<td><code>"scc8530"</code></td>
+<td><code>DEVICE_ID_SCC8530</code></td>
+<td>IIgs</td>
+</tr>
+<tr>
+<td><code>"iwm"</code></td>
+<td><code>DEVICE_ID_IWM</code></td>
+<td>IIgs</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="cards">Cards<a class="headerlink" href="#cards" title="Permanent link">&para;</a></h2>
+<p>Expansion hardware is described as an array of card entries. Each entry occupies one slot and may carry type-specific properties (parallel output path, etc.). <strong>Disk images and serial attachments are not specified here</strong> — use <code>[[storage]]</code> and <code>[[connections]]</code>.</p>
+<pre><code class="language-toml">[[cards]]
+slot = 6
+card = &quot;disk_ii&quot;
+
+[[cards]]
+slot = 7
+card = &quot;bazfast3&quot;
+</code></pre>
+<h3 id="common-properties">Common properties<a class="headerlink" href="#common-properties" title="Permanent link">&para;</a></h3>
+<p>Every <code>[[cards]]</code> entry:</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>slot</code></td>
+<td>integer</td>
+<td>yes</td>
+<td>Expansion slot <code>0</code>–<code>7</code></td>
+</tr>
+<tr>
+<td><code>card</code></td>
+<td>string</td>
+<td>yes</td>
+<td>Card type; see <a href="#card-types">Card types</a></td>
+</tr>
+</tbody>
+</table>
+<p>Validation (loader responsibility, mirroring <code>Devices[]</code>):</p>
+<ul>
+<li>Each <code>slot</code> appears at most once.</li>
+<li>Card type must be allowed on the chosen <code>platform</code> (<code>platform_flags</code>).</li>
+<li>Card type must be legal in that slot number (<code>slots_allowed</code> bitmask).</li>
+<li>At most one instance unless <code>multipleInstances</code> is true (e.g. two <code>"mockingboard"</code> cards in slots 4 and 7).</li>
+</ul>
+<p>The loader builds <code>slot_devices[NUM_SLOTS]</code> from <code>[[cards]]</code>: unlisted slots are empty (<code>DEVICE_ID_NONE</code>).</p>
+<hr />
+<h2 id="per-card-type-properties">Per-card-type properties<a class="headerlink" href="#per-card-type-properties" title="Permanent link">&para;</a></h2>
+<p>Each card type defines which additional keys are valid on its <code>[[cards]]</code> entry. Unknown keys for a card type SHOULD produce a warning; loaders MAY reject them.</p>
+<p>Storage card types (<code>disk_ii</code>, <code>prodos_block</code>, <code>prodos_block2</code>, <code>bazfast3</code>) have <strong>no</strong> card-level storage properties. Mount disks via <code>[[storage]]</code> after the card is installed.</p>
+<p>Serial-capable slot cards (e.g. future Super Serial Card) have <strong>no</strong> connection properties on the card entry. Attach virtual devices via <code>[[connections]]</code>.</p>
+<h3 id="parallel"><code>parallel</code><a class="headerlink" href="#parallel" title="Permanent link">&para;</a></h3>
+<p>Parallel printer interface. Optional output destination:</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>output</code></td>
+<td>string</td>
+<td><code>"parallel.out"</code></td>
+<td>File that receives printed bytes</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-toml">[[cards]]
+slot = 1
+card = &quot;parallel&quot;
+output = &quot;printouts/session.txt&quot;
+</code></pre>
+<h3 id="mockingboard-mouse-videx-language_card-clocks-storage-cards-serial-cards-etc"><code>mockingboard</code>, <code>mouse</code>, <code>videx</code>, <code>language_card</code>, clocks, storage cards, serial cards, etc.<a class="headerlink" href="#mockingboard-mouse-videx-language_card-clocks-storage-cards-serial-cards-etc" title="Permanent link">&para;</a></h3>
+<p>No additional v1 properties beyond <code>slot</code> and <code>card</code>. Card presence and slot are sufficient.</p>
+<hr />
+<h2 id="connections">Connections<a class="headerlink" href="#connections" title="Permanent link">&para;</a></h2>
+<p>All serial port attachments use <code>[[connections]]</code>, whether the port is on a slot card or built into the IIgs motherboard (SCC8530). Each serial port registers with the runtime the same way storage devices register with <code>Mounts</code>; the config file only names the port and what is plugged into it.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>device</code></td>
+<td>string</td>
+<td>yes</td>
+<td>Virtual peripheral: <code>file</code>, <code>modem</code>, <code>echo</code>, <code>none</code></td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td>string</td>
+<td>yes*</td>
+<td>Port channel: <code>"a"</code> or <code>"b"</code></td>
+</tr>
+<tr>
+<td><code>slot</code></td>
+<td>integer</td>
+<td>no</td>
+<td>Slot number when the port is on a slot card; omit for IIgs built-in SCC</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td>string</td>
+<td>no</td>
+<td>Host file when <code>device = "file"</code></td>
+</tr>
+<tr>
+<td><code>remote_url</code></td>
+<td>string</td>
+<td>no</td>
+<td>Remote URL when <code>device = "modem"</code> (future) e.g. telnet://1.2.3.4:5566</td>
+</tr>
+</tbody>
+</table>
+<p>* For a single-port slot card, <code>port</code> MAY be omitted and defaults to <code>"a"</code>.</p>
+<h3 id="device-values"><code>device</code> values<a class="headerlink" href="#device-values" title="Permanent link">&para;</a></h3>
+<p>Aligned with <code>src/serial_devices/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"none"</code></td>
+<td>No attachment</td>
+</tr>
+<tr>
+<td><code>"file"</code></td>
+<td>Read/write through a host file (<code>path</code> required)</td>
+</tr>
+<tr>
+<td><code>"echo"</code></td>
+<td>Loopback for testing</td>
+</tr>
+<tr>
+<td><code>"modem"</code></td>
+<td>Hayes-compatible virtual modem (native builds only)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="port-addressing">Port addressing<a class="headerlink" href="#port-addressing" title="Permanent link">&para;</a></h3>
+<p><strong>IIgs built-in SCC</strong> — omit <code>slot</code>, set <code>port</code> to <code>"a"</code> (modem/printer) or <code>"b"</code>:</p>
+<pre><code class="language-toml">[[connections]]
+port = &quot;a&quot;
+device = &quot;file&quot;
+path = &quot;captures/port_a.bin&quot;
+
+[[connections]]
+port = &quot;b&quot;
+device = &quot;modem&quot;
+</code></pre>
+<p>These map to <code>SCC_CHANNEL_A</code> / <code>SCC_CHANNEL_B</code> after <code>init_scc8530_slot()</code> composes the motherboard. Same attachment model as today’s hard-coded <code>FileDevice</code> / <code>ModemDevice</code> setup in <code>scc8530.cpp</code>, but driven from config.</p>
+<p><strong>Slot serial card</strong> (future Super Serial Card, etc.) — set <code>slot</code> to the card’s slot; <code>port</code> defaults to <code>"a"</code> for single-port cards:</p>
+<pre><code class="language-toml">[[cards]]
+slot = 2
+card = &quot;super_serial&quot;
+
+[[connections]]
+slot = 2
+device = &quot;modem&quot;
+</code></pre>
+<h3 id="rules">Rules<a class="headerlink" href="#rules" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Each <code>(slot, port)</code> pair appears at most once. Built-in SCC ports use <code>(no slot, "a"|"b")</code>.</li>
+<li>Omit <code>[[connections]]</code> entirely to use platform defaults (IIgs: port A → file, port B → modem on native builds).</li>
+<li>After hardware is composed, the loader SHOULD warn on or reject entries whose port is not registered.</li>
+<li>Built-in <code>port = "a"|"b"</code> entries are valid only when <code>platform = "apple2gs"</code>.</li>
+</ul>
+<h3 id="what-stays-on-cards">What stays on cards<a class="headerlink" href="#what-stays-on-cards" title="Permanent link">&para;</a></h3>
+<p><strong>Parallel</strong> printer output is not a serial connection — it remains a card property (<code>output</code> on the <code>parallel</code> card entry). If other non-serial sinks appear later, they can stay on the card or gain their own top-level section; serial and serial-like comm ports use <code>[[connections]]</code>.</p>
+<hr />
+<h2 id="storage">Storage<a class="headerlink" href="#storage" title="Permanent link">&para;</a></h2>
+<p>All pre-mounted disk images use <code>[[storage]]</code>, regardless of whether the drive belongs to a slot card or to built-in IIgs IWM hardware. Every storage controller — Disk II, block devices, and IIgs IWM — registers drives with <code>Mounts</code> using the same <code>slot</code>/<code>drive</code> keys, so one format covers all of them.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>slot</code></td>
+<td>integer</td>
+<td>yes</td>
+<td>Slot number of the storage controller</td>
+</tr>
+<tr>
+<td><code>drive</code></td>
+<td>integer</td>
+<td>yes</td>
+<td>Drive unit <code>1</code>–<code>6</code> (1-based, matching Control Panel / CLI convention)</td>
+</tr>
+<tr>
+<td><code>image</code></td>
+<td>string</td>
+<td>yes</td>
+<td>Path to disk image file</td>
+</tr>
+</tbody>
+</table>
+<p>Each entry maps directly to <code>Mounts::mount_media({ slot, drive - 1, image })</code>.</p>
+<p>Rules:</p>
+<ul>
+<li>One <code>image</code> per <code>slot</code>/<code>drive</code> pair. Each <code>slot</code>/<code>drive</code> combination appears at most once.</li>
+<li>Omit <code>[[storage]]</code> entirely for configs with no pre-mounted disks.</li>
+<li>After hardware is composed, the loader SHOULD warn on or reject <code>[[storage]]</code> entries whose <code>slot</code>/<code>drive</code> has no registered storage device.</li>
+</ul>
+<h3 id="path-resolution">Path resolution<a class="headerlink" href="#path-resolution" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Absolute paths</strong> are used as-is.</li>
+<li><strong>Relative paths</strong> are resolved relative to the directory containing the <code>.gs2</code> file (recommended for portable configs).</li>
+</ul>
+<p>Supported image types are whatever <code>identify_media()</code> accepts (<code>.po</code>, <code>.dsk</code>, <code>.woz</code>, <code>.2mg</code>, <code>.hdv</code>, <code>.pmap</code> etc.).</p>
+<h3 id="drive-map-reference">Drive map (reference)<a class="headerlink" href="#drive-map-reference" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Hardware</th>
+<th><code>slot</code></th>
+<th><code>drive</code> values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Disk II controller</td>
+<td>card slot (typically <code>6</code>)</td>
+<td><code>1</code>, <code>2</code></td>
+</tr>
+<tr>
+<td>ProDOS Block / Block 2 / BazFast 3</td>
+<td>card slot</td>
+<td><code>1</code>–<code>6</code> (BazFast registers six units)</td>
+</tr>
+<tr>
+<td>IIgs built-in 5.25" (IWM)</td>
+<td><code>6</code></td>
+<td><code>1</code>, <code>2</code></td>
+</tr>
+<tr>
+<td>IIgs built-in 3.5" (IWM)</td>
+<td><code>5</code></td>
+<td><code>1</code>, <code>2</code></td>
+</tr>
+</tbody>
+</table>
+<p>On Apple IIgs, slot <code>6</code> is the motherboard IWM 5.25" drives — not a Disk II card. On II/II+/IIe, slot <code>6</code> is typically a Disk II card. That difference is invisible to <code>[[storage]]</code>: IWM registers its drives with <code>Mounts</code> the same way slot cards do, and images mount with the same <code>{ slot, drive, image }</code> triple. Validation only needs to check that the composed system has a registered device at that address.</p>
+<p>Multi-volume BazFast mounts are multiple rows on the same slot:</p>
+<pre><code class="language-toml">[[storage]]
+slot = 7
+drive = 1
+image = &quot;volumes/GSOS.po&quot;
+
+[[storage]]
+slot = 7
+drive = 2
+image = &quot;volumes/Games1.po&quot;
+
+[[storage]]
+slot = 7
+drive = 3
+image = &quot;volumes/Games2.po&quot;
+</code></pre>
+<hr />
+<h2 id="complete-examples">Complete examples<a class="headerlink" href="#complete-examples" title="Permanent link">&para;</a></h2>
+<h3 id="apple-matches-built-in-apple">Apple ][+ — matches built-in "Apple ][+"<a class="headerlink" href="#apple-matches-built-in-apple" title="Permanent link">&para;</a></h3>
+<p><code>Apple2Plus.gs2</code>:</p>
+<pre><code class="language-toml">gs2_version = 1
+name = &quot;Apple ][+&quot;
+description = &quot;64K RAM (incl Lang Card); Disk II; Clock; Parallel Port; VIDEX 80-col; Mockingboard&quot;
+platform = &quot;apple2plus&quot;
+clock = &quot;ntsc&quot;
+scanner = &quot;apple2&quot;
+
+[[cards]]
+slot = 0
+card = &quot;language_card&quot;
+
+[[cards]]
+slot = 1
+card = &quot;parallel&quot;
+
+[[cards]]
+slot = 2
+card = &quot;prodos_clock&quot;
+
+[[cards]]
+slot = 3
+card = &quot;videx&quot;
+
+[[cards]]
+slot = 4
+card = &quot;mockingboard&quot;
+
+[[cards]]
+slot = 5
+card = &quot;bazfast3&quot;
+
+[[cards]]
+slot = 6
+card = &quot;disk_ii&quot;
+
+[[cards]]
+slot = 7
+card = &quot;mem_expansion&quot;
+
+[[storage]]
+slot = 5
+drive = 1
+image = &quot;volumes/ProDOS_32MB.po&quot;
+
+[[storage]]
+slot = 6
+drive = 1
+image = &quot;disks/BASIC SYSTEM.woz&quot;
+
+[[storage]]
+slot = 6
+drive = 2
+image = &quot;disks/empty.woz&quot;
+</code></pre>
+<h3 id="enhanced-e-with-dual-mockingboard">Enhanced //e with dual Mockingboard<a class="headerlink" href="#enhanced-e-with-dual-mockingboard" title="Permanent link">&para;</a></h3>
+<p><code>DualMock.gs2</code>:</p>
+<pre><code class="language-toml">gs2_version = 1
+name = &quot;Apple IIe Enhanced Dual Mockingboard&quot;
+description = &quot;128K RAM; Disk II; Clock; DUAL Mockingboard&quot;
+platform = &quot;apple2e_enhanced&quot;
+clock = &quot;ntsc&quot;
+scanner = &quot;apple2e&quot;
+
+[[cards]]
+slot = 4
+card = &quot;mockingboard&quot;
+
+[[cards]]
+slot = 5
+card = &quot;bazfast3&quot;
+
+[[cards]]
+slot = 6
+card = &quot;disk_ii&quot;
+
+[[cards]]
+slot = 7
+card = &quot;mockingboard&quot;
+
+[[storage]]
+slot = 6
+drive = 1
+image = &quot;disks/BASIC SYSTEM.woz&quot;
+</code></pre>
+<h3 id="apple-iigs-with-second-sight-and-smartport-volumes">Apple IIgs with Second Sight and SmartPort volumes<a class="headerlink" href="#apple-iigs-with-second-sight-and-smartport-volumes" title="Permanent link">&para;</a></h3>
+<p><code>MyGS.gs2</code>:</p>
+<pre><code class="language-toml">gs2_version = 1
+name = &quot;My GS Workstation&quot;
+description = &quot;Apple IIgs 8MB RAM; Second Sight; boot + games volumes&quot;
+platform = &quot;apple2gs&quot;
+clock = &quot;ntsc&quot;
+scanner = &quot;apple2gs&quot;
+
+[[cards]]
+slot = 3
+card = &quot;second_sight&quot;
+
+[[cards]]
+slot = 7
+card = &quot;bazfast3&quot;
+
+[[storage]]
+slot = 5
+drive = 1
+image = &quot;images/SystemTools_800k.2mg&quot;
+
+[[storage]]
+slot = 6
+drive = 1
+image = &quot;disks/BASIC SYSTEM.woz&quot;
+
+[[storage]]
+slot = 7
+drive = 1
+image = &quot;volumes/GSOS.po&quot;
+
+[[storage]]
+slot = 7
+drive = 2
+image = &quot;volumes/Games1.po&quot;
+
+[[storage]]
+slot = 7
+drive = 3
+image = &quot;volumes/Games2.po&quot;
+
+[[connections]]
+port = &quot;a&quot;
+device = &quot;file&quot;
+path = &quot;captures/printer.bin&quot;
+
+[[connections]]
+port = &quot;b&quot;
+device = &quot;modem&quot;
+</code></pre>
+<h3 id="pal-enhanced-e">PAL Enhanced //e<a class="headerlink" href="#pal-enhanced-e" title="Permanent link">&para;</a></h3>
+<p><code>IIe_PAL.gs2</code>:</p>
+<pre><code class="language-toml">gs2_version = 1
+name = &quot;Apple IIe Enhanced / PAL&quot;
+description = &quot;PAL Video; 128K RAM; Disk II; Clock; Mockingboard&quot;
+platform = &quot;apple2e_enhanced&quot;
+clock = &quot;pal&quot;
+scanner = &quot;apple2e_pal&quot;
+
+[[cards]]
+slot = 2
+card = &quot;mem_expansion&quot;
+
+[[cards]]
+slot = 4
+card = &quot;mockingboard&quot;
+
+[[cards]]
+slot = 5
+card = &quot;bazfast3&quot;
+
+[[cards]]
+slot = 6
+card = &quot;disk_ii&quot;
+
+[[cards]]
+slot = 7
+card = &quot;mouse&quot;
+</code></pre>
+<hr />
+<h2 id="load-save-behavior-proposed">Load / save behavior (proposed)<a class="headerlink" href="#load-save-behavior-proposed" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Parse</strong> TOML → in-memory <code>SystemConfig_t</code> + per-card config + <code>[[storage]]</code> + <code>[[connections]]</code>.</li>
+<li><strong>Validate</strong> platform, cards, slot assignments, and device compatibility.</li>
+<li><strong>Select</strong> config on System Select screen or via File → Open System.</li>
+<li><strong>Compose</strong> system: platform motherboard devices + slot cards (existing <code>transition_to_emulation()</code> path).</li>
+<li><strong>Apply</strong> card-specific settings (parallel <code>output</code>, etc.) and <code>[[connections]]</code> during or after device init.</li>
+<li><strong>Mount</strong> disks from <code>[[storage]]</code> after storage devices register (same order as CLI <code>-dsXdY=</code> handling in <code>gs2.cpp</code>).</li>
+</ol>
+<p><strong>Save System</strong> / <strong>Save As System</strong> (from <code>Docs/UserInterface.md</code>):</p>
+<ul>
+<li>Writes <code>[[cards]]</code> and metadata from the current config.</li>
+<li>Writes one <code>[[storage]]</code> row per mounted drive (slot, drive, image path).</li>
+<li>Writes one <code>[[connections]]</code> row per configured serial port (port or slot+port, device, paths).</li>
+<li>Sets <code>builtin = false</code>.</li>
+<li>Omits <code>[[storage]]</code> rows for empty drives; omits <code>[[connections]]</code> rows that match platform defaults (optional).</li>
+</ul>
+<hr />
+<h2 id="minimal-valid-file">Minimal valid file<a class="headerlink" href="#minimal-valid-file" title="Permanent link">&para;</a></h2>
+<pre><code class="language-toml">gs2_version = 1
+name = &quot;Blank IIe&quot;
+platform = &quot;apple2e_enhanced&quot;
+
+[[cards]]
+slot = 6
+card = &quot;disk_ii&quot;
+</code></pre>
+<p>All other fields use platform defaults; no disks pre-mounted.</p>
+<hr />
+<h2 id="open-questions">Open questions<a class="headerlink" href="#open-questions" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Serial port registry:</strong> Implement a <code>Connections</code> (or extend device init) so SCC and slot serial cards register addressable ports the same way <code>Mounts</code> registers drives — then loader, OSD, and save/load all share one model.</li>
+<li><strong>Super Serial Card:</strong> Not yet in <code>devices.cpp</code>; <code>[[connections]]</code> with <code>slot</code> is specified for when it is added.</li>
+<li><strong>Built-in migration:</strong> Ship current <code>BuiltinSystemConfigs[]</code> as <code>.gs2</code> files and load all configs through one code path?</li>
+<li><strong>Profile preferences:</strong> Add <code>[display]</code>, <code>[speed]</code>, <code>[input]</code>, <code>[audio]</code> (or equivalent) for menu-controlled settings; map Neil <code>video.*</code> / <code>machine.speed</code> on import.</li>
+</ul>
+<hr />
+<h2 id="architecture-profiles-toml-and-arqyv">Architecture: profiles, TOML, and arqyv<a class="headerlink" href="#architecture-profiles-toml-and-arqyv" title="Permanent link">&para;</a></h2>
+<p>This section records design intent from ongoing work with <strong>Profiles Specification v0.81</strong> (Michael Neil, June 2026) and the arqyv curated-profile effort. It is not part of the v1 <code>.gs2</code> file format itself.</p>
+<h3 id="one-internal-model-several-entry-points">One internal model, several entry points<a class="headerlink" href="#one-internal-model-several-entry-points" title="Permanent link">&para;</a></h3>
+<p><strong>Profiles are a UI and packaging concept</strong>, not a second machine-configuration system inside GS2. When the user launches a configuration — from any source — the loader fills the <strong>same in-memory structures</strong> this document describes, then <code>transition_to_emulation()</code> runs as today.</p>
+<pre><code>Profiles browser (arqyv) ──┐
+Open .gs2 (folder icon)  ──┼──► Profile loader ──► Profile struct ──► compose + mount + apply prefs
+Built-in select tiles    ──┘         ▲
+Save System / editor     ──────────────┘ (TOML serialize / deserialize)
+</code></pre>
+<ul>
+<li><strong><code>.gs2</code> TOML</strong> — native save/edit format for local user configs (Save System, Create Profile editor, shipped built-ins on disk).</li>
+<li><strong>Profiles browser</strong> — System Select UI for discovering curated packs published via arqyv (catalog + assets); selecting a profile invokes the loader on the backing Settings bundle.</li>
+<li><strong>Mike’s Profiles <code>Settings.txt</code></strong> — interchange format arqyv (and hardware) may ship; GS2 parses it into the same struct shape as <code>.gs2</code>, not a parallel runtime path.</li>
+</ul>
+<h3 id="canonical-profile-struct-planned">Canonical <code>Profile</code> struct (planned)<a class="headerlink" href="#canonical-profile-struct-planned" title="Permanent link">&para;</a></h3>
+<p>The loader targets one aggregate type (names provisional):</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Contents</th>
+<th>This doc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Metadata</strong></td>
+<td><code>name</code>, <code>description</code>, tile image, help URL, source URL</td>
+<td>top-level <code>name</code>, <code>description</code>; image not in v1 TOML yet</td>
+</tr>
+<tr>
+<td><strong>Machine</strong></td>
+<td><code>platform</code>, <code>clock</code>, <code>scanner</code>, cards</td>
+<td><code>platform</code>, <code>clock</code>, <code>scanner</code>, <code>[[cards]]</code></td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td>Pre-mounted disks</td>
+<td><code>[[storage]]</code></td>
+</tr>
+<tr>
+<td><strong>Connections</strong></td>
+<td>Serial port attachments</td>
+<td><code>[[connections]]</code></td>
+</tr>
+<tr>
+<td><strong>Preferences</strong></td>
+<td>Display, CPU speed, joystick mode, audio</td>
+<td>not in v1 TOML yet; fields exist scattered in <code>video_system_t</code>, <code>NClock</code>, <code>gamec_state_t</code>, <code>AudioSystem</code></td>
+</tr>
+<tr>
+<td><strong>Extensions</strong></td>
+<td>Unmapped Neil / <code>gssquared.*</code> keys</td>
+<td>round-trip for forward compatibility</td>
+</tr>
+</tbody>
+</table>
+<p>Built-in System Select tiles, user <code>.gs2</code> files, and arqyv profile packages all converge on this struct.</p>
+<h3 id="machine-config-vs-preferences">Machine config vs preferences<a class="headerlink" href="#machine-config-vs-preferences" title="Permanent link">&para;</a></h3>
+<p><strong>In the profile (hardware truth):</strong> <code>platform</code>, <code>clock_set</code>, <code>scanner</code>, <code>[[cards]]</code>, <code>[[storage]]</code>, <code>[[connections]]</code> — what Mike’s <code>slotN</code>, <code>smartport.disk*</code>, and slot serial settings describe, plus GS2-specific platform/scanner fields.</p>
+<p><strong>In preferences (how the user runs it):</strong> monitor type (NTSC / RGB / mono), mono color, CRT shader, emulated CPU speed, game-controller mode, volume, etc. — Mike’s <code>machine.speed</code>, <code>video.*</code>, and similar. These apply to motherboard/host-facing subsystems after compose, analogous to how <code>[[storage]]</code> applies after devices register.</p>
+<p><strong>App-global (not per profile):</strong> e.g. sleep/busy-wait, CRT-at-boot default, paths — Mike’s <code>Global Settings.txt</code> layer; lives in <code>gs2_app_t</code>, not in <code>.gs2</code>.</p>
+<h3 id="arqyv-collaboration">arqyv collaboration<a class="headerlink" href="#arqyv-collaboration" title="Permanent link">&para;</a></h3>
+<p>arqyv publishes <strong>profile packages</strong>: catalog (<code>Profiles.txt</code>), Settings file(s), disk images, and tile artwork. GS2’s Profiles button is the front door; <strong>launch</strong> parses the package into <code>Profile</code>, then boots. Curation and publishing stay in arqyv/Mike’s format; GS2 implements import mapping and the shared internal model.</p>
+<p>Collaboration with Mike should define: card-type names, <code>smartport.diskN</code> / <code>floppy*.diskN</code> → <code>[[storage]] slot</code>/<code>drive</code> mapping, required keys for a minimal playable profile, and optional <code>gssquared.*</code> extensions.</p>
+<h3 id="implementation-phasing-gs2">Implementation phasing (GS2)<a class="headerlink" href="#implementation-phasing-gs2" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Load</strong> — parse <code>.gs2</code> and Neil <code>Settings.txt</code> into <code>Profile</code>; folder icon + Profiles browser stub.</li>
+<li><strong>Save</strong> — Save System writes <code>.gs2</code> from current <code>Profile</code> (including mounted disks and connections).</li>
+<li><strong>Editor + catalog</strong> — Create Profile UI; arqyv sync, recent tiles, <code>profile.image</code> on System Select.</li>
+</ol>
+<p>Phase 1 validates the loader and mapping with real arqyv packs before investing in the full editor.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

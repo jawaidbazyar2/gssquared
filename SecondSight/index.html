@@ -1,0 +1,3222 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>SecondSight - Leave This out of the Repo for now. - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#secondsight-leave-this-out-of-the-repo-for-now" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              SecondSight - Leave This out of the Repo for now.
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../UserInterface/" class="md-tabs__link">
+          
+  
+  
+  Misc
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Misc
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Misc
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#base-ss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Base SS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tilesprite-engine-1-console8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tile+Sprite Engine 1: Console8
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#console16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Console16
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="secondsight-leave-this-out-of-the-repo-for-now">SecondSight - Leave This out of the Repo for now.<a class="headerlink" href="#secondsight-leave-this-out-of-the-repo-for-now" title="Permanent link">&para;</a></h1>
+<p>So Brutal Deluxe made a game that uses Second Sight!! I had no idea. And it does not require running Z180 code. However, if we wanted to go to that length, there is this:
+https://github.com/mtdev79/z180emu</p>
+<h2 id="base-ss">Base SS<a class="headerlink" href="#base-ss" title="Permanent link">&para;</a></h2>
+<p>Doing it with a Z180 emulation would be a completely different approach vs working to the API. Cogito 2 only uses the API. I seem to remember someone (Ian?) did some work with Z180 code loaded on the board, perhaps to implement sprites or some such. </p>
+<p>So let's look at a "naive" API-only implementation. there's the handshake and commands and register setting etc. I've dug up all the docs for that. Oh, and someone disassembled the ROM already if I have questions. </p>
+<p>In the emu, this will work like the Videx. I.e., when SS is put into one of the VGA modes, our frame handler draws frames and short-cuts the display frame stack. </p>
+<p>So we'll allocate 1MB of memory for the frame buffer. We need to support a variety of interpretations of the frame buffer. It supports:</p>
+<ul>
+<li>8, 16, 24-bit pixels</li>
+<li>8-bit pixels: palette of 24-bit colors; 640x400; 640x480; 800x600; 1024x768 resolution.</li>
+<li>16-bit pixels have 15 bits of color, or 32768 direct colors; 640x400; 640x480, 800x600</li>
+<li>true color: 640x400; 640x480</li>
+</ul>
+<p>There's also a variety of text modes.</p>
+<p>These are selected by programming the VGA registers in a certain way. So we'll need to 'decode' those appropriately, to generate: 
+    frame dimensions
+    color depth</p>
+<p>So the above tells us how to draw the frame buffer to our window. We can basically go directly from FB to window. Perhaps, we do FB -&gt; Texture -&gt; Window. ok, sure.</p>
+<p>But this brings up interesting possibilities for the future: supporting SS compatibility on the various hardware cards that are coming out, e.g. Project X, VidHD2, etc etc could be doable (as long as these have enough RAM for the frame buffer!) </p>
+<p>Could extend the API to support 'hardware sprites'. PacMan suddenly becomes easier with 800x600: 224 x 288 doubled = 448 x 576. Fits easily (perfectly) into 800x600. Boojah. Hm, what if we could program a mode to give us 224 x 288 exactly? I don't know if that's a viable VGA mode. </p>
+<p>The 640x400 mode is for compatibility with AppleColor displays.
+Here's another thought: we can also support memory-mapping the frame buffer directly into the 65816 address space, per Apple IIx documentation. So we have the API for setting the modes and palettes BUT then the 816 can write directly to the FB, which would speed things up. The more I delve here, the more I realize the FB approach is likely useful only/mostly to the GS. Regular IIs just don't have the RAM, typically.</p>
+<p>The "API" is going to require supporting all the various VGA and OAK I/O registers. So we'll need to "calculate" the correct video mode from the register settings. But perhaps define a new API call to set mode line so we don't have every programmer having to bang the VGA/OAK registers directly.</p>
+<p>Allocate three textures, one each for 8, 15, and 24 bit. Do at startup so we're not allocating/deallocating them at runtime.</p>
+<p>OK, this works. Cards that have the resources (CPU, and memory) to implement VGA framebuffers can do the above. And, for future Apple IIx, the framebuffer can be mapped into 65816 address space. And, for tile+sprites, we extend the SS API and leverage shadowing to get data into the card faster than the regular SS interface (though that interface is not at all bad). </p>
+<p>Platforms I know that could handle at least some feature sets: Appletini; SS itself; Project X could up to 64K (small buffer but good for Apple II+/e also); MISTer; of course any emulator; AppleSqueezer (probably); </p>
+<h2 id="tilesprite-engine-1-console8">Tile+Sprite Engine 1: Console8<a class="headerlink" href="#tilesprite-engine-1-console8" title="Permanent link">&para;</a></h2>
+<p>been reading up on how the NES works. There are two 1024 byte regions called namespaces that can be stacked horizontally or vertically, depending on the type of directional scrolling you're into. And then there is a pixel-granularity X and Y offset (they call it scroll). So if for instance you do them horizontally, You increment X by one, the display shifts by one pixel. The new needed pixel comes from the first column of tiles in the 2nd namespace. Once you've gone 8 pixels (a full tile), you can start to replace tiles in the other namespace. So each scroll only requires you to write 30 bytes to change a whole column of the screen.</p>
+<p>You could "shake" the whole world by manipulating Y and X . </p>
+<p>Now the point of this isn't to exactly replicate the NES, because that is 40 year old hardware. We don't have to be constrained by the same cost limitations that platform was. But, a goal is to enable writing games in a -similar- manner.</p>
+<p>For instance, we don't HAVE to use the same limited palette system. We could let the user define tiles and sprites using 24-bit pixel values. Tiles and sprites don't HAVE to be purely 8x8; sprites esp could be bigger. But we know that for purposes of porting NES game, that would be sufficient.</p>
+<p>So the thing that jumps into my mind immediately is: a namespace is analagous to an Apple II text page. So that is one approach.</p>
+<p>the NES PPU has 16K of RAM for everything. </p>
+<p>A tile set is 256 elements of 16 bytes each = 4K. The sprite config for 64 sprites is 256 bytes.
+So now we can pack all this into one hires page and still have almost 2K left over. And could then "page flip" potentially to use the other hires page. That could be for memory layout purposes; it could be for rapidly switching tile sets for special effects or level changes or title screens what-have-you.</p>
+<p>So we could support:
+2K namespace - this also contains palettes
+4K tileset - this could be anywhere in the two Hires pages, so you could conceivably have up to 4 full separate tilesets.
+256 bytes sprite control - this is called the object attribute memory or OAM. There are separate registers for controlling these. Guess this can be in the hires page too. </p>
+<p>The goal is to make what we're doing -at least as- expressive as the NES. More is better.</p>
+<p>OK. So let the application author determine where each of these things is by programming 16 bit registers for everything.
+So:
+* namespace address register (16 bit)
+* sprite control register (16 bit)
+* tileset register (16 bit)</p>
+<p>So they're not fixed to any one scheme.
+There are various registers to program as well; scroll, etc. Memory map those also? perhaps fix those to one particular bank? So pattern to configure is:</p>
+<p>Query SS for capability
+load all the assets into RAM
+set up initial screen data
+configure the register address register via SS API
+Enable Tile mode via SS API
+<strong>pretty screen</strong></p>
+<p>ok, so that covers NES.
+We could support higher resolutions: bigger namespace; or, same namespace and bigger tiles; hicolor tiles </p>
+<p>However, this is getting into an area where you need more memory to handle all this stuff: and so maybe this is Apple IIgs area.</p>
+<p>Let's be clear, the NES stuff was <strong>very</strong> capable for an 8-bit system.</p>
+<p>So then there's a second capability set ...</p>
+<h2 id="console16">Console16<a class="headerlink" href="#console16" title="Permanent link">&para;</a></h2>
+<p>So this will support more colors (perhaps 256 colors chosen from 15-bit hicolor); 
+Tiles can be 8x8 or 16x16. 
+Tilemap entries are 16 bit now, not 8 bit.
+Generally, the resolution is almost the same as NES, 256x224. (maybe two tiles shorter?)
+There were -some- that used a double resolution up to 512x448 or whatever. Perhaps in combo with the 16x16 tiles.</p>
+<h1 id="marketplace-methodology">Marketplace Methodology<a class="headerlink" href="#marketplace-methodology" title="Permanent link">&para;</a></h1>
+<p>By defining capabilities from the application perspective, we can hopefully drive adoption by developers, then users and hardware designers.</p>
+<p>Ideas can be tested in emulation first before the harder/more expensive hardware gets involved.</p>
+<p>Mike's Input:</p>
+<ol>
+<li>
+<p>IO addresses.  What you outline below with the four registers is a pretty typical IO address pattern.   I think something like this will be part of any design.  It provides a “two way street” where data can be sent to the device (emulated or physical) and responded to.  It can also be expended with interrupts (not required, but removes polling).   It is good for “status” or “programming”, but isn’t as good for dealing with bulk data.  Moving sprite data or large bitmaps through this mechanism is slow (everything goes through a 1 byte window).</p>
+</li>
+<li>
+<p>Memory mapped data:  Physical devices and emulators can “mirror/shadow/snoop” memory accesses (only E0/E1 on GS) to keep a shadow copy of the A2’s memory.  This is how A2DVI works, it just watches all the 6502 memory accesses, keeps a copy and uses that data for video generation.   This makes it very efficient for dealing with large memory items (bitmaps, etc).  But it is a “one way” street.  Generally, it can't modify the data being read by the 6502 in these memory locations (assuming they are backed by RAM or MB resources).</p>
+</li>
+</ol>
+<p>My input is to focus on a combination of #1 and #2.   Use shadowed RAM for bulk data (screen bitmaps, sprites, location information,render lists,  etc) and use IO addresses to direct the “rendering engine” to do work with concise “commands” and responses.</p>
+<p>Example:
+In shadowed memory create a Display List (a list of commands) at $ZZZZ:  ($2000 say)
+1. Clear screen command
+2. Draw Text at X, Y with string “S” at shadowed address $WWWW
+3. Draw Rectangle at X, Y to X1,Y2
+4. Scroll screen at X,Y to X1,Y1 up 0, -10
+5. End Display List</p>
+<p>Use the mechanism you described for IO:
+1. Tell the card to execute a display list at $WWWW
+2. Wait for the command list to be completed (polling or IRQ).
+3. Modify the command list at $WWWW or create a new one at some other location
+4. Loop to 1.</p>
+<p>If there's enough RAM you could do double-buffering a'la modern GPU to prevent screen tear. ('Present'). </p>
+<h2 id="render-list-commands">Render List Commands<a class="headerlink" href="#render-list-commands" title="Permanent link">&para;</a></h2>
+<p>Draw Text
+Rectangle (filled, hollow, pixel value)
+Blit Rectangle (src texture, dst texture or screen)
+Present</p>
+<h2 id="primitive-evaluation-6502-context">Primitive Evaluation (6502 Context)<a class="headerlink" href="#primitive-evaluation-6502-context" title="Permanent link">&para;</a></h2>
+<p>All drawing commands target the card's <strong>linear framebuffer</strong> (VGA-style: <code>address = y × pitch + x</code>). The host never writes pixels directly into that buffer over the bus; it issues commands and uploads bulk data via shadowed memory or texture uploads.</p>
+<p>On a 1 MHz 6502, the card's value proposition is bus bandwidth: anything that would otherwise require the CPU to push lots of bytes or do lots of per-pixel work. Every primitive should be evaluated against one question — <strong>does this save the CPU from touching pixels or doing per-pixel math?</strong></p>
+<p>Even with a linear layout, the host still pays one slow bus transaction per pixel if it draws itself. The card runs the inner loops in fast local RAM.</p>
+<h3 id="recommended-primitives-by-bang-for-buck">Recommended Primitives (by bang-for-buck)<a class="headerlink" href="#recommended-primitives-by-bang-for-buck" title="Permanent link">&para;</a></h3>
+<h4 id="line-drawing">Line drawing<a class="headerlink" href="#line-drawing" title="Permanent link">&para;</a></h4>
+<p>Bresenham on a 1 MHz 6502 is still painful: integer math, branching, and one bus write per pixel. Address calculation in a linear buffer is trivial (<code>y × pitch + x</code>), but the loop itself is not — and every pixel still crosses the bus. A <code>DrawLine(x0, y0, x1, y1, color)</code> command is perhaps the single biggest CPU saver after blits. Extend to <code>DrawPolyline</code> (list of points) to amortize command overhead.</p>
+<h4 id="filled-and-outlined-polygon-triangle">Filled and outlined polygon / triangle<a class="headerlink" href="#filled-and-outlined-polygon-triangle" title="Permanent link">&para;</a></h4>
+<p>Once you have lines, a triangle rasterizer opens the door to vector-style games (Elite, Star Raiders 2D). Even convex polygon fill alone is a huge win — span-filling is exactly what the host CPU is worst at, and a linear framebuffer makes span writes straightforward on the card side.</p>
+<h4 id="circle-ellipse-filled-and-outlined">Circle / ellipse (filled and outlined)<a class="headerlink" href="#circle-ellipse-filled-and-outlined" title="Permanent link">&para;</a></h4>
+<p>Common enough in UI and games that a dedicated primitive beats decomposing into lines. Midpoint circle is trivial in hardware, brutal on a 6502.</p>
+<h4 id="sprite-blit-with-transparency-color-key">Sprite blit with transparency / color key<a class="headerlink" href="#sprite-blit-with-transparency-color-key" title="Permanent link">&para;</a></h4>
+<p>The current Blit Rectangle is presumably a straight copy. A masked blit (skip pixels matching a key color) is what games actually need. Worth making this a separate command rather than a flag — the inner loop differs.</p>
+<h4 id="sprite-blit-with-transforms">Sprite blit with transforms<a class="headerlink" href="#sprite-blit-with-transforms" title="Permanent link">&para;</a></h4>
+<p>At minimum: horizontal flip, vertical flip, 90° rotations. On a linear framebuffer these are nearly free in hardware (stride and step sign changes only) and save the host from storing 4× the sprite data. Arbitrary rotation and scaling are stretch goals — much more silicon, but transformative for what's possible.</p>
+<h4 id="scrolling-viewport-offset">Scrolling / viewport offset<a class="headerlink" href="#scrolling-viewport-offset" title="Permanent link">&para;</a></h4>
+<p><code>SetScrollOrigin(x, y)</code> for a tilemap or framebuffer region. Because the card owns a linear framebuffer, scrolling is just shifting the readout origin — no host-side pixel copying, no per-frame blit of the whole screen. Hardware scrolling is essentially free.</p>
+<h4 id="tilemap-blit">Tilemap blit<a class="headerlink" href="#tilemap-blit" title="Permanent link">&para;</a></h4>
+<p><code>DrawTilemap(tileset_texture, map_data, tile_w, tile_h, dst_rect)</code>. Given a tile index array and a tilesheet texture, the card renders a whole background into the linear framebuffer. This is the single biggest win for platformers and RPGs — the host updates map indices, never touches pixels.</p>
+<h4 id="flood-fill-pattern-fill">Flood fill / pattern fill<a class="headerlink" href="#flood-fill-pattern-fill" title="Permanent link">&para;</a></h4>
+<p>Fill a bounded region with a color or a repeating pattern texture. Useful for paint programs and filled vector graphics where you'd otherwise need polygon decomposition.</p>
+<h4 id="pattern-dithered-rectangle">Pattern / dithered rectangle<a class="headerlink" href="#pattern-dithered-rectangle" title="Permanent link">&para;</a></h4>
+<p>A variant of filled rect that takes an 8×8 (or 16×16) pattern instead of a solid color. Cheap to add, very useful for retro aesthetic where dithering substitutes for color depth.</p>
+<h4 id="copy-region-intra-framebuffer-blit">Copy region (intra-framebuffer blit)<a class="headerlink" href="#copy-region-intra-framebuffer-blit" title="Permanent link">&para;</a></h4>
+<p>Blit from one region of the card's linear framebuffer to another, ideally with overlap handling. Enables soft-scrolling fallback, double-buffering tricks, and save/restore-background patterns for sprites — all without a round trip over the slow bus.</p>
+<h4 id="palette-color-operations-8-bit-indexed-modes">Palette / color operations (8-bit indexed modes)<a class="headerlink" href="#palette-color-operations-8-bit-indexed-modes" title="Permanent link">&para;</a></h4>
+<p><code>SetPalette</code>, <code>SetPaletteEntry</code>, <code>PaletteCycle(range, direction)</code>. For 8-bit indexed framebuffer modes, palette-cycling animations cost the host nothing if the card handles them.</p>
+<h4 id="clipping-rectangle-state-not-a-draw-command">Clipping rectangle (state, not a draw command)<a class="headerlink" href="#clipping-rectangle-state-not-a-draw-command" title="Permanent link">&para;</a></h4>
+<p><code>SetClipRect</code> — every subsequent primitive is clipped to it. Hugely simplifies windowed UIs and saves the host from pre-clipping geometry.</p>
+<h4 id="texture-management-commands">Texture management commands<a class="headerlink" href="#texture-management-commands" title="Permanent link">&para;</a></h4>
+<p><code>UploadTexture</code>, <code>FreeTexture</code>, ideally <code>UploadTextureCompressed</code> (RLE is plenty for this era's art). Bus bandwidth is the scarcest resource, so efficient uploads — and letting assets live in card RAM across frames — is foundational. RLE decode on the card side means the host pushes far fewer bytes per asset.</p>
+<h4 id="double-buffering-control">Double buffering control<a class="headerlink" href="#double-buffering-control" title="Permanent link">&para;</a></h4>
+<p><code>Present</code> implies this exists, but make it explicit: <code>SetRenderTarget(buffer_id)</code> so you can draw to offscreen buffers in card RAM, then blit or flip. Enables composite scenes built up across frames.</p>
+<h4 id="draw-text-with-formatting">Draw text with formatting<a class="headerlink" href="#draw-text-with-formatting" title="Permanent link">&para;</a></h4>
+<p>The current DrawText is probably a single string at a position. Worth supporting: font selection (multiple uploaded font textures), proportional spacing, and a background-fill flag. Maybe a <code>DrawTextBox(rect, string, wrap)</code> for UI.</p>
+<h3 id="defer-or-skip">Defer or skip<a class="headerlink" href="#defer-or-skip" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Primitive</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Per-pixel <code>SetPixel</code></td>
+<td>Defeats the whole point — if you're talking to the card per pixel, the bus is the bottleneck again. Batch into a <code>DrawPoints</code> list instead.</td>
+</tr>
+<tr>
+<td>Gradient fills</td>
+<td>Rarely needed in this era's aesthetic; synthesizable from pattern fills.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="meta-suggestion-display-list-command-buffer-mode">Meta-suggestion: display list / command buffer mode<a class="headerlink" href="#meta-suggestion-display-list-command-buffer-mode" title="Permanent link">&para;</a></h3>
+<p>Upload a batch of commands once and trigger them with a single short command, possibly looping. For static or semi-static scenes (UI, background layers), this collapses many bus transactions into one and is essentially free to implement on the card side.</p>
+<h1 id="z180-memory-map">Z180 Memory Map<a class="headerlink" href="#z180-memory-map" title="Permanent link">&para;</a></h1>
+<p>$00/0000 - $01/FFFF - 128K SRAM</p>
+<p>IIgs Video Shadowing; program storage</p>
+<p>$04/0000 - $05/FFFF</p>
+<p>A softswitch; do not modify</p>
+<p>$06/0000 - $07/FFFF</p>
+<p>128K EPROM</p>
+<p>$08/0000 - $0F/FFFF</p>
+<p>VGA Video Memory. This is 512K here, and this is banked.</p>
+<h2 id="handshaking">Handshaking<a class="headerlink" href="#handshaking" title="Permanent link">&para;</a></h2>
+<p>Pattern 1: DMA Data Transfer Commands
+These use 0x01 → 0x00 handshake:</p>
+<p>get_status:</p>
+<p>ROM_BEEF.asm
+Lines 1558-1560
+                ld      a, #0
+                out0    (0xA0), a
+                ret
+upload_chunk (used by upload_data):</p>
+<p>ROM_BEEF.asm
+Lines 1867-1869
+                ld      a, #0
+                out0    (0xA0), a
+                ret
+copy_api_data_chunk (used by set_palette):</p>
+<p>ROM_BEEF.asm
+Lines 1909-1911
+                ld      a, #0
+                out0    (0xA0), a
+                ret</p>
+<p>Workflow:</p>
+<p>Write 0x01 before DMA starts
+Apple II reads/writes data via C0B1/C0B2
+Write 0x00 when DMA completes
+Return immediately
+Pattern 2: Long-Running Processing Commands
+These use 0xA5 (success) / 0xA6 (error) handshake:</p>
+<p>scroll_screen:</p>
+<p>ROM_BEEF.asm
+Lines 2032-2034
+                ld      a, #0xA5
+                out0    (0xA0), a
+                ret
+clear_screen:</p>
+<p>ROM_BEEF.asm
+Lines 2282-2284
+                ld      a, #0xA5
+                out0    (0xA0), a
+                ret
+set_video_mode (success):</p>
+<p>ROM_BEEF.asm
+Lines 3129-3130
+                ld      a, #0xA5
+                out0    (0xA0), a
+set_video_mode (error):</p>
+<p>ROM_BEEF.asm
+Lines 3137-3138
+                ld      a, #0xA6
+                out0    (0xA0), a
+Pattern 3: Immediate Commands
+These return no explicit handshake:</p>
+<p>set_mode:</p>
+<p>ROM_BEEF.asm
+Lines 830-831
+                ret
+; End of function set_mode
+Why the Different Patterns?
+Pattern Handshake   Purpose
+DMA Transfer
+0x01→0x00
+Signals when to start/stop reading/writing data
+Long Operation
+0xA5/0xA6
+Indicates operation completion and success/failure
+Immediate
+None
+Returns immediately, no waiting needed
+Apple II Workflow Differences:
+For DMA commands (upload_data, get_status, set_palette):</p>
+<ol>
+<li>Write command → C0B0</li>
+<li>Poll C0B8 until = 0x01 (ready for data)</li>
+<li>Read/write data via C0B2/C0B1</li>
+<li>Poll C0B8 until = 0x00 (transfer complete)</li>
+<li>
+<p>Done
+For long-running commands (scroll_screen, clear_screen):</p>
+</li>
+<li>
+<p>Write command → C0B0  </p>
+</li>
+<li>Poll C0B8 until = 0xA5 (success) or 0xA6 (error)</li>
+<li>
+<p>Done
+For immediate commands (screen_on, screen_off):</p>
+</li>
+<li>
+<p>Write command → C0B0</p>
+</li>
+<li>Done (no polling needed)
+So no, not all commands use 0xA5/0xA6. DMA operations use the 0x01/0x00 pattern for flow control, while long-running operations use 0xA5/0xA6 for completion status</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>command with args</th>
+<th>command with output</th>
+<th>bare cmd</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>get command</td>
+<td>get command</td>
+<td>get command</td>
+</tr>
+<tr>
+<td>set up read dma to get args</td>
+<td>execute</td>
+<td>execute</td>
+</tr>
+<tr>
+<td>execute command hook after dma complete</td>
+<td>set up DMA to write results</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="getting-more-out-of-secondsight-card">Getting more out of SecondSight Card<a class="headerlink" href="#getting-more-out-of-secondsight-card" title="Permanent link">&para;</a></h2>
+<p>https://apple2infinitum.slack.com/archives/CPSGNGE05/p1712906967818249</p>
+<h2 id="vga-text-modes">VGA Text Modes<a class="headerlink" href="#vga-text-modes" title="Permanent link">&para;</a></h2>
+<p>This site has all the various oldskool fonts (This is the real deal, INT10H is garbage)</p>
+<p>https://github.com/spacerace/romfont/blob/master/font-images/IBM_VGA_8x16.png</p>
+<p>These cells are 9x18, but it's largely just blank spacing?
+When the font is loaded, fill in the 9th column. </p>
+<p>Spectrum 2.5.3 detects the SecondSight and puts it into this mode:</p>
+<p>VGA Mode: 03
+Screen base: 0
+crt start: 0000
+crt hdisplay end: 09
+crt addr scale: 4 bytes/unit
+fb pitch: 0
+res x/y @ depth: 80/25 @ 4</p>
+<h3 id="mode-03h-rom-modetable-vga_text80x25">Mode 03h — ROM modetable <code>vga_text80x25</code><a class="headerlink" href="#mode-03h-rom-modetable-vga_text80x25" title="Permanent link">&para;</a></h3>
+<p>The Second Sight firmware uses a fixed register block (disassembly label <code>vga_text80x25</code>, 84 bytes). The emulator loads <a href="../src/devices/secondsight/vga_mode_tables.hpp"><code>vga_mode_tables.hpp</code></a> <code>SS_ROM_VGA_TEXT_80X25</code> on SetMode <code>$03</code>. Key values:</p>
+<table>
+<thead>
+<tr>
+<th>Register</th>
+<th>Value</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Misc</td>
+<td><code>0x67</code></td>
+<td>VGA enable, clock select</td>
+</tr>
+<tr>
+<td>Seq 02 / 04</td>
+<td><code>0x03</code> / <code>0x02</code></td>
+<td>Map mask, chain-4 odd/even (text)</td>
+</tr>
+<tr>
+<td>CRT 01</td>
+<td><code>0x4F</code></td>
+<td>80 character clocks</td>
+</tr>
+<tr>
+<td>CRT 09</td>
+<td><code>0x4F</code></td>
+<td>16 scan lines per character row</td>
+</tr>
+<tr>
+<td>CRT 13</td>
+<td><code>0x28</code></td>
+<td>Offset → <strong>160</strong> byte line pitch</td>
+</tr>
+<tr>
+<td>GDC 05 / 06</td>
+<td><code>0x10</code> / <code>0x0E</code></td>
+<td>Text mode, memory map</td>
+</tr>
+<tr>
+<td>Attr 10</td>
+<td><code>0x0C</code></td>
+<td>Text mode, blink</td>
+</tr>
+</tbody>
+</table>
+<h3 id="mode-03h-memory-map-oak-oti-087-ibm-vga">Mode 03h memory map (Oak OTI-087 / IBM VGA)<a class="headerlink" href="#mode-03h-memory-map-oak-oti-087-ibm-vga" title="Permanent link">&para;</a></h3>
+<p>The OTI-087 is IBM VGA compatible. In <strong>mode 03h (80×25, 9×16)</strong> the host-visible text buffer matches the usual <strong>0xB800</strong> layout:</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cell format</td>
+<td>byte0 = character, byte1 = attribute (interleaved)</td>
+</tr>
+<tr>
+<td>Bytes per cell</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Bytes per scanline</td>
+<td>160 (80 cells × 2)</td>
+</tr>
+<tr>
+<td>CRTC reg 0x01</td>
+<td>0x4F (80 character clocks − 1)</td>
+</tr>
+<tr>
+<td>CRTC reg 0x13 (offset)</td>
+<td>0x28 → line pitch = 4 × offset = <strong>160</strong> bytes</td>
+</tr>
+</tbody>
+</table>
+<p>Physically, VRAM uses <strong>planes</strong> (plane 0 = chars, plane 1 = attrs); the CPU still sees interleaved bytes. A linear framebuffer dump may alternatively use <strong>planar split</strong> (chars at base, attrs at base+0x2000, 80 bytes/row per plane).</p>
+<p>The debug line “crt addr scale: N bytes/unit” is <code>fb_pitch / char_clocks</code> (CRTC addressing), not cell size. For mode 03h with correct regs that is 160/80 = <strong>2</strong> bytes per character clock, not 4 bytes per cell.</p>
+<h3 id="settextfont-command-0f-and-upload-routing">SetTextFont (command <code>$0F</code>) and upload routing<a class="headerlink" href="#settextfont-command-0f-and-upload-routing" title="Permanent link">&para;</a></h3>
+<p>Per API docs / <code>ROM_BEEF.asm</code>:</p>
+<table>
+<thead>
+<tr>
+<th>SetTextFont <code>$01</code></th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td>Standard ROM font</td>
+</tr>
+<tr>
+<td><code>$01</code></td>
+<td>Alternate ROM font</td>
+</tr>
+<tr>
+<td><code>$02</code></td>
+<td>Standard PC ANSI font (ROM <code>copy_font</code> copies <code>font_table_8x16</code> into <strong>Z180 SRAM <code>$F000</code></strong>, not VGA VRAM)</td>
+</tr>
+<tr>
+<td><code>$03</code></td>
+<td>User font at <strong>Z180 <code>$F000</code></strong> (upload with code flag <code>$00</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><code>upload_data</code> (<code>ROM_BEEF.asm</code> <code>upload_chunk</code>): <strong><code>$01</code> flag = 0</strong> → Z180 address space (SRAM/code); <strong><code>$01</code> flag = 1</strong> → VGA linear framebuffer. Fonts belong in Z180; <strong>80×25 text cells</strong> belong in VRAM at the CRTC screen base.</p>
+<p>Bulk data always arrives as a <strong>DMA byte stream</strong> on C0B1/C0B2 (the 65816 reads the host address in the command packet and writes each byte to the card). The Z180 never reads Apple II memory directly.</p>
+<p>The emulator logs each upload start/complete to stdout and shows the last 8 in the <code>ss</code> debug panel (<code>TextFont</code>, upload log, Z180 <code>$F000</code> peek).</p>
+<h1 id="new-mode-definitions">New Mode Definitions<a class="headerlink" href="#new-mode-definitions" title="Permanent link">&para;</a></h1>
+<p>SetMode byte $02, is "emulation flag". Currently:
+* $00: Apple II mode emulation mode
+* $01: VGA mode</p>
+<p>I think we add:
+* $02: PPU mode
+* $03: GPU mode</p>
+<p>PPU mode is where we render PPU style like a NES.
+GPU mode is where we process a command language. and render </p>
+<p>Since all addon video cards (from SecondSight in 1995 to the present day) shadow Apple II video memory writes to the cards, and store in card memory, that is a fast and convenient way to put data into the cards. The PPU buffers just need to be mapped.</p>
+<p>Allow the mappings to be user-defined to provide flexibility in memory layout depending on the program.</p>
+<p>Areas do not HAVE to be mapped to Apple II shadow memory. For instance you could load 16 large tile sets into card memory then switch between them by using the </p>
+<h2 id="ppu-mode">PPU Mode<a class="headerlink" href="#ppu-mode" title="Permanent link">&para;</a></h2>
+<h3 id="namespace-tilemaps">namespace / tilemaps<a class="headerlink" href="#namespace-tilemaps" title="Permanent link">&para;</a></h3>
+<p>Use hires page 1 in main memory. Each namespace is 1024 bytes, enough for a 32x30 tilemap with 64 bytes left over for palette assignment; alternatively, enough for a 32x32 tilemap (256x256 pixels).</p>
+<p>The tilemaps can be configured for horizontal or vertical alignment.</p>
+<h3 id="backgroundborder-color">background/border color<a class="headerlink" href="#backgroundborder-color" title="Permanent link">&para;</a></h3>
+<p>8 bit value of the palette entry to use for border/overscan/background color.</p>
+<h3 id="xy-scroll">X/Y Scroll<a class="headerlink" href="#xy-scroll" title="Permanent link">&para;</a></h3>
+<p>16-bit registers indicating the X and Y scroll offsets.
+Only 9 bits of each register are used.
+These registers are latched. They can be set any time, but only take effect at the start of the next VBL period.</p>
+<p>Rough offset is a whole tile and offsets through the tilemaps in whole tiles.
+Fine offset (0-7) offsets individual pixels.
+e.g. if X scroll is 1 then we'll start the scanline on the 2nd pixel of tile X=0, and end by displaying the first pixel of tile X=32 (which is in the other tilemap).</p>
+<h3 id="vbl">VBL<a class="headerlink" href="#vbl" title="Permanent link">&para;</a></h3>
+<p>we need to present a register somewhere that tells when we're in VBL, so Apple II code can sync to the card's VBL signal and do tilemap and register updates.</p>
+<p>SecondSight (and probably a number of other cards) can't IRQ the II.</p>
+<p>First idea: have _ReadVBL and _WaitVBL commands. _ReadVBL just returns current VBL status. But each call generates a Z180 interrupt and by the time you get your response back you might have missed a fair bit of VBL time.</p>
+<p>WaitVBL just has the Z180 wait to provide the "command complete handshake" until a new VGA VBL has occurred. So it will sit in a tight loop just reading VBL and waiting for completion.</p>
+<p>So, there are several things that need to occur related to VBL.
+1. Apple II starts updating the namespace/tilemap.
+2. Tells card to start rendering tilemap. This could take a while.
+3. We need to avoid tearing in both the namespace, and in the rendering steps.</p>
+<p>So, think about this double-buffering approach:
+1. Apple II executes game logic.
+2. Apple II sets tilemap (writes to HGR page 1)
+3. .. and sets sprite tiles/positions.
+4. Calls _RenderPPU.
+5. does WaitVBL.
+6. Calls Present to switch to the new buffer (which does a WaitVBL internally)</p>
+<p>At WaitVBL, we <em>switch buffers</em> to the buffer rendered by RenderPPU. The next RenderPPU will render into the OTHER buffer.
+So here we avoid: tearing of the tilemap, because RenderPPU only renders when the Apple II confirms it is no longer modifying the tilemap/sprites. Then we WaitVBL. The Apple II does NOT have to busy-wait, though that is perhaps the normal option. It just has to switch the VGA frame pointer before VBL ends.</p>
+<p>The II can thus do game logic any time, but normally it will do it before calculating tilemap updates and sprite updates.</p>
+<p>What does this impose on card requirements: card needs two 64K (320x200) frame buffers to handle the double-buffering. No problem on SS or many other cards.</p>
+<p>A2DVI cards don't have much frame buffer (accurate?). They could do the following at Present time: copy the tilemap to a buffer and render from that. So the tilemap is double-buffered. It's only 2K, a 150MHz ARM should be able to do that w/o any trouble.</p>
+<p>If an Apple II misses a VBL, it's no big deal, it will just wait until the next VBL and "drop a frame".</p>
+<p>But Apple II can also be updating game state while the video card is rendering. </p>
+<h3 id="tile-data">Tile data<a class="headerlink" href="#tile-data" title="Permanent link">&para;</a></h3>
+<p>data for 256 tiles / sprites:</p>
+<p>With 2 Bpp, the tile data is 256 * 8 * 8 * 2 = 4 KByte.
+Also use a palette index (so there's a 2-level palette basically, just like PPU)</p>
+<p>With 4 bpp, tile data is 256 * 8 * 8 * 4 bits or 8KByte.</p>
+<p>With 8 bpp, the tile data is 256 * 8 * 8 = 16 KByte. 
+here, every pixel is an index into 256 palette, with 0 = transparent to background/whatever's underneath.</p>
+<p>The NES has TWO tile sets, set 0 and set 1, and typically background uses one and sprites the other. (Configurable).</p>
+<p>There is also a mode where sprites can become 8x16 and the low bit of the tile number decides which tile set is used for the double-high sprite.</p>
+<p>For legacy SecondSight cards, the tile data needs to reside in video memory to take advantage of Mode X acceleration.</p>
+<h3 id="split-screen-register">Split Screen Register<a class="headerlink" href="#split-screen-register" title="Permanent link">&para;</a></h3>
+<p>specified in tile heights: 0 for no split screen; 1-n for split screen after the Nth.
+Tiles before the split do not have X/Y scroll applied. Tiles after do. Locks the "hud" area (area above split) to tilemap 0.</p>
+<p>By default, sprites can be displayed over the HUD area, as it's just normal display. Perhaps have an optional </p>
+<h3 id="sprite-data">Sprite Data<a class="headerlink" href="#sprite-data" title="Permanent link">&para;</a></h3>
+<p>256 bytes, 64 sprites, numbered from 0 to 63 and in that order.</p>
+<p>Unlike NES, there is no 8 sprite limit per scanline.</p>
+<ul>
+<li>tile number - pointer to tile for this sprite</li>
+<li>attributes - h/v flip bits; in front of background; or behind background.</li>
+<li>X, Y - coordinates to draw on screen.</li>
+</ul>
+<p>Unsure how to implement sprite-behind-background on Z180+VGA.</p>
+<h3 id="palette-data">Palette Data<a class="headerlink" href="#palette-data" title="Permanent link">&para;</a></h3>
+<p>we could choose either 512 bytes (15bit color) or 768 bytes (24 bit color)</p>
+<h3 id="transparency">Transparency<a class="headerlink" href="#transparency" title="Permanent link">&para;</a></h3>
+<p>For both tiles and sprites, palette index $00 denotes transparency. </p>
+<p>Background tile: If a background tile pixel is $00, the PPU renders the global background/border color.
+Sprite: if a sprite tile pixel is $00, the PPU draws nothing (lets background show through).</p>
+<h3 id="location-registers">Location Registers<a class="headerlink" href="#location-registers" title="Permanent link">&para;</a></h3>
+<p>Programmed via SS API</p>
+<p>Don't use text pages because peripherals may get confused if their screen hole data is overwritten. That would be sad :()</p>
+<p>24-bit registers to define where in memory the following lives:
+* tile map 0 (1K) - default hgr page 1 shadow memory
+* tile map 1 (1K) - default gfr page 1 shadow memory
+* sprite table (256 bytes) - default hires page 1
+* palette data (512 or 768 bytes) - default hires page 1</p>
+<p>So far this is only 3K of 8K in hires page1.</p>
+<p>The tile sets aren't directly mapped, because they need to live in the VRAM area for SS/Z180 Mode X compatibility.</p>
+<ul>
+<li>tile set 0 (4K, or 16K) </li>
+<li>tile set 1 (4K, or 16K)</li>
+</ul>
+<p>So there is a API SetTileSet(TileSetIndex, Address)
+The card processes the data from wherever you uploaded it, and then copies into the place it needs in VRAM.
+This lets the Apple II re-use the hires page memory for program data/logic after loading the tile sets.
+(Alternatively, we can just have an API LoadTileSet, which honestly might be simpler.)</p>
+<h3 id="card-compatibility">Card Compatibility<a class="headerlink" href="#card-compatibility" title="Permanent link">&para;</a></h3>
+<p>Cards must support:
+* Read and Write I/O registers (for config)
+* Automatically shadow Apple II video memory into card
+* Have enough RAM for storing two 64K frames; or, two 2K tilemap frames (alternative implementation);</p>
+<p>Cards I <em>think</em> may be able to do this:
+* A2Pico
+* Mystery Card X
+* A2DVI version 4 cards and up
+* SecondSight (aiming for that anyway)</p>
+<h2 id="quickdraw-acceleration">Quickdraw Acceleration<a class="headerlink" href="#quickdraw-acceleration" title="Permanent link">&para;</a></h2>
+<p>This will involve handling various drawing primitives so as to offload responsibility for display manipulation off the 65816 on the motherboard which no matter how fast we eventually make it, will be relatively slow.
+This especially includes things like: font rendering; line/rect/roundrect; colors; bitmap blitting</p>
+<p>We want to be able to support current 2bpp, 4bpp as well as open up 8bpp and 15bpp modes. Interestingly, many of the color values you can pass into QD are word (2 bytes). I.e., you could probably specify 8bpp or 15bpp values directly.</p>
+<p>Some info:</p>
+<p>standard fb is "E1/2000-9FFF".
+high res fb is 640x400 4bpp; works just like QD; or, 640x480 
+onboard fb is one memory-mapped into the GS memory. Fine for emulators or applesqueezer (or, potentially, a memory expansion + video card), but can't work with regular slot video cards.
+offboard fb is one not memory-mapped into GS memory.</p>
+<p>slot card: limited to 1MHz and shadowing at 1MHz
+memory expansion + video: limited to 2.5MHz
+offboard: connects via 1MHz bus, however, you load assets in at 1mhz and then rendering and FB manipulation takes place at GPU speed. Easier to work with 8-bit IIs.
+I suppose we could combine offboard + memory expansion to get 2.5MHz bandwidth in/out of GPU. (But would only work on IIgs).</p>
+<h3 id="jump-into-ludicrous-speed">Jump into Ludicrous Speed<a class="headerlink" href="#jump-into-ludicrous-speed" title="Permanent link">&para;</a></h3>
+<p>Jump to Ludicrous speed for calls into the quickdraw tool set(s).</p>
+<p>This may or may not work. It would require at a minimum fixing so video scanner works right in LS.</p>
+<p>Compatibility: standard fb
+1Mhz bottleneck: yes</p>
+<p>Alternative: just run GS stuff at 56MHz and up (ah, but video memory is still just 1MHz)</p>
+<h3 id="paravirtualize-quickdraw">ParaVirtualize QuickDraw<a class="headerlink" href="#paravirtualize-quickdraw" title="Permanent link">&para;</a></h3>
+<p>Intercept QD calls and have them executed by the emulator in native code instead.</p>
+<p>Compatibility: standard fb; highres fb memory-mapped
+1Mhz bottleneck: no</p>
+<h3 id="paravirtualize-quickdraw-gpu-offboard">ParaVirtualize QuickDraw + GPU (Offboard)<a class="headerlink" href="#paravirtualize-quickdraw-gpu-offboard" title="Permanent link">&para;</a></h3>
+<p>Similar to PV QuickDraw, but generates a more "generic GPU" surface; creates a render list structure (list of drawing commands); calls "GPU" to render them. Can work with offboard frame buffer (i.e., not memory mapped at all) - to avoid 1MHz bottleneck.</p>
+<p>Does not intercept QD calls so much as completely reimplement them a different way.</p>
+<p>Data movement can be implemented with:
+   dma
+   register interface
+   paravirtualization</p>
+<h3 id="pv-quickdraw-gpu-onboard-mm">PV QuickDraw + GPU + Onboard (MM)<a class="headerlink" href="#pv-quickdraw-gpu-onboard-mm" title="Permanent link">&para;</a></h3>
+<p>This would work for emulators and memory-card expansion. Particularly in emulator, it would allow 56MHz + access to the frame buffer, and still allow acceleration by GPU. So things like bitmaps will be fast, everything else lightning speed.</p>
+<h2 id="gpu-mode">GPU Mode<a class="headerlink" href="#gpu-mode" title="Permanent link">&para;</a></h2>
+<p>GPU Mode provides software the ability to more generically than PPU:</p>
+<ul>
+<li>upload textures</li>
+<li>execute drawing and rendering primitives, including blitting from textures</li>
+</ul>
+<p>Helps apps avoid cost of 1MHz bus by moving all this stuff to a high speed device.</p>
+<p>The quickdraw acceleration above, where it refers to GPU, is referring to this.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

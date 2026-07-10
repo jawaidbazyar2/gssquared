@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../KeyboardShortcuts/">
-      
-      
-        <link rel="next" href="../Joysticks/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Using a Mouse - GSSquared Documentation</title>
+        <title>GS2 Change Log — Release 0.9 - GSSquared Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mouse" class="md-skip">
+        <a href="#gs2-change-log-release-09" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Using a Mouse
+              GS2 Change Log — Release 0.9
             
           </span>
         </div>
@@ -257,12 +253,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href=".." class="md-tabs__link">
           
   
@@ -477,31 +471,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -519,7 +508,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -674,37 +663,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Using a Mouse
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
         
   
   
@@ -720,48 +682,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mouse Capture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        IIgs - GS/OS Mouse Tracking
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2632,10 +2552,93 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
+  <a href="#major-changes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mouse Capture
+        Major Changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Major Changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#toml-and-settingstxt-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TOML and Settings.txt configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gsos-mouse-tracking-keygloo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GS/OS mouse tracking (KeyGloo)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#crt-gpu-shader-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CRT GPU shader pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secondsight-card-emulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SecondSight card emulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#emscripten-web-build-proof-of-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Emscripten / web build (proof of concept)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#high-dpi-display-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High-DPI display support
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug Fixes
       
     </span>
   </a>
@@ -2643,10 +2646,82 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
+  <a href="#other-improvements" class="md-nav__link">
     <span class="md-ellipsis">
       
-        IIgs - GS/OS Mouse Tracking
+        Other Improvements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Other Improvements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#audio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Audio
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#video-display" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Video / display
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ui-ux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UI / UX
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internals-tooling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Internals / tooling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commit-timeline-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commit Timeline (summary)
       
     </span>
   </a>
@@ -2673,24 +2748,162 @@
   
 
 
-<h1 id="mouse">Mouse<a class="headerlink" href="#mouse" title="Permanent link">&para;</a></h1>
-<p>As the Apple II series progressed in time, mouse support became more and more integrated into the platform until in the //gs it became an indispensible base part of the system.</p>
-<p>GS2 supports a Mouse in two ways:</p>
+<h1 id="gs2-change-log-release-09">GS2 Change Log — Release 0.9<a class="headerlink" href="#gs2-change-log-release-09" title="Permanent link">&para;</a></h1>
+<p>Covers development from <strong>2026-05-19</strong> through <strong>2026-07-07</strong> (67 commits).</p>
+<p>Release 0.9 focuses on configurable hardware profiles, GS/OS mouse tracking, CRT post-processing effects, SecondSight card emulation, and groundwork for a web build.</p>
+<hr />
+<h2 id="major-changes">Major Changes<a class="headerlink" href="#major-changes" title="Permanent link">&para;</a></h2>
+<h3 id="toml-and-settingstxt-configuration">TOML and Settings.txt configuration<a class="headerlink" href="#toml-and-settingstxt-configuration" title="Permanent link">&para;</a></h3>
+<p>A new configuration system replaces ad-hoc platform setup with declarative config files.</p>
 <ul>
-<li>Via Mouse Card on Apple //e</li>
-<li>Via ADB (Apple Desktop Bus) mouse on Apple IIgs</li>
+<li><strong>TOML config files (<code>.gs2</code>).</strong> Full parsing, loading, and execution of machine profiles: platform, slots, storage, video, and aliases. Integrated into the main app and platform menus. Documented in <code>SystemConfigTOML.md</code> and <code>ConfigFiles.md</code>.</li>
+<li><strong>Settings.txt loader.</strong> Reader/loader for Mike's legacy <code>Settings.txt</code> format, with conversion into the new system config layer.</li>
+<li><strong>Test harness.</strong> <code>apps/systemconfigtest</code> with fixture files for both TOML and Settings.txt validation.</li>
 </ul>
-<h2 id="mouse-capture">Mouse Capture<a class="headerlink" href="#mouse-capture" title="Permanent link">&para;</a></h2>
-<p>When you're using emulated Mouse software, you will probably want to turn on Mouse Capture.</p>
-<p>Do this by using the Mouse Capture menu, Mouse Capture button, or by pressing F1.</p>
-<p>When you enter Mouse Capture, a helpful message will appear at the top of the screen for a few seconds reminding you how to exit Mouse Capture.</p>
-<p>To release Mouse Capture, you must press <strong>F1</strong>, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)</p>
-<p>Opening the Control Panel via <strong>F4</strong> or the Control Panel button will also temporarily release Mouse Capture. When you close the Control Panel, the original Mouse Capture state will be restored.</p>
-<p>Mouse capture also turns off the "mouse movement shows on-screen controls" feature. It locks you into that keyboard-oriented Apple II experience.</p>
-<h2 id="iigs-gsos-mouse-tracking">IIgs - GS/OS Mouse Tracking<a class="headerlink" href="#iigs-gsos-mouse-tracking" title="Permanent link">&para;</a></h2>
-<p>When you boot a GS/OS image, or other application that starts the IIgs Event Manager, GSSquared detects this and changes how it processes mouse movement events. It will calculate the mouse movement that the IIgs needs to see, in order to match where the Host (your computer) mouse . Then it synthesizes the appropriate events to get the cursor there.</p>
-<p>This provides seamless movement of the mouse cursor in and out of the IIgs desktop, making the mouse work much more naturally, and avoiding the need for Mouse Capture mode with IIgs desktop apps.</p>
-<p>You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.</p>
+<h3 id="gsos-mouse-tracking-keygloo">GS/OS mouse tracking (KeyGloo)<a class="headerlink" href="#gsos-mouse-tracking-keygloo" title="Permanent link">&para;</a></h3>
+<p>Mouse synchronization for GS/OS via the KeyGloo ADB path.</p>
+<ul>
+<li>Content-area tracking: the display pipeline now computes and remembers the inset "content" rectangle so mouse coordinates map correctly when the CRT bezel or letterboxing is present.</li>
+<li>Closed-loop injection support for accurate pointer sync without writing into guest memory.</li>
+<li>Helper routines to detect when the Control Panel or a modal dialog is open, so mouse handling can defer appropriately.</li>
+</ul>
+<h3 id="crt-gpu-shader-pipeline">CRT GPU shader pipeline<a class="headerlink" href="#crt-gpu-shader-pipeline" title="Permanent link">&para;</a></h3>
+<p>Post-processing CRT effects rendered on the GPU.</p>
+<ul>
+<li>New GPU shader pipeline with HLSL and Metal backends; shader source loaded from files at runtime (<code>assets/shaders/</code>).</li>
+<li>Resolution-aware parameter scaling; option to enable the shader at boot with fallback when the GPU renderer is unavailable.</li>
+<li>Documented in <code>Displays.md</code>.</li>
+</ul>
+<h3 id="secondsight-card-emulation">SecondSight card emulation<a class="headerlink" href="#secondsight-card-emulation" title="Permanent link">&para;</a></h3>
+<p>Initial emulation of the SecondSight VGA card for Apple IIgs.</p>
+<ul>
+<li>Core device with debug handler and nearly complete API command set (except <code>run_code</code>).</li>
+<li>VGA text mode (9×16) and 8/16/24-bit graphics renderers, refactored into separate files.</li>
+<li>PPU (Picture Processing Unit) mode with a Mario test harness (<code>apps/ssppu</code>).</li>
+<li>Handshake timing, multibank framebuffer upload, and interleaved char/attribute data matching real VGA layout.</li>
+</ul>
+<h3 id="emscripten-web-build-proof-of-concept">Emscripten / web build (proof of concept)<a class="headerlink" href="#emscripten-web-build-proof-of-concept" title="Permanent link">&para;</a></h3>
+<p>Initial work toward running GS2 in the browser.</p>
+<ul>
+<li>CMake and build scaffolding for Emscripten.</li>
+<li>Web shell HTML, local serve script, and a web file-dialog implementation.</li>
+<li>Documented in <code>Emscripten.md</code>; PPU mode spec added in <code>PPU.md</code>.</li>
+</ul>
+<h3 id="high-dpi-display-support">High-DPI display support<a class="headerlink" href="#high-dpi-display-support" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Retina / high-DPI mode with correct scaling of the OSD and ImGui elements.</li>
+<li>Display metrics logging; borderless-window fullscreen instead of exclusive mode.</li>
+</ul>
+<hr />
+<h2 id="bug-fixes">Bug Fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>#119</strong></td>
+<td><code>cold_start</code> now propagates from <code>computer::reset</code> to all registered reset handlers; KeyGloo forces ADB Micro RAM <code>0x51</code> to 0 so the GS ROM runs its power-on reset routine.</td>
+</tr>
+<tr>
+<td><strong>#120</strong></td>
+<td>Renamed <code>modal_stack</code> to <code>mstack</code> to avoid name conflicts.</td>
+</tr>
+<tr>
+<td><strong>#121</strong></td>
+<td>AudioSystem now reports the correct SpeakerFX volume setting; plumbing added for audio device change events.</td>
+</tr>
+<tr>
+<td><strong>#122</strong></td>
+<td>On audio device change, clear the audio buffer to prevent a runaway "too much data" reset loop.</td>
+</tr>
+<tr>
+<td><strong>#127</strong></td>
+<td>Ensoniq <code>soundctl</code> register: low 4 bits are write-only and now return <code>0xF</code> on read.</td>
+</tr>
+<tr>
+<td><strong>#102, #107</strong></td>
+<td>Ensoniq interrupt handling and change-during-frame behavior corrected.</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Fixed DHGR regression introduced by the II+ delay-color fix in <code>VideoScannerII</code>.</td>
+</tr>
+<tr>
+<td>—</td>
+<td>II/II+ video scanner now ignores the <code>dblres</code> flag (not applicable on those machines).</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Fixed PDBLOCK3 ROM checksum write using <code>,X</code> instead of <code>,Y</code>, which stomped guest memory.</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Fixed double-lo-res switch display label.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="other-improvements">Other Improvements<a class="headerlink" href="#other-improvements" title="Permanent link">&para;</a></h2>
+<h3 id="audio">Audio<a class="headerlink" href="#audio" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Audio device change events routed through <code>AudioSystem</code>; buffer management on hot-plug.</li>
+</ul>
+<h3 id="video-display">Video / display<a class="headerlink" href="#video-display" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>cycle_handler</code> support added to <code>clock_iigs</code> for tighter timing integration.</li>
+<li>Drive HUD: AppleDisk icon on IIe and later, Disk II on II+ and below; fractional track display made more readable.</li>
+</ul>
+<h3 id="ui-ux">UI / UX<a class="headerlink" href="#ui-ux" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Drive icons repositioned slightly in the HUD.</li>
+</ul>
+<h3 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h3>
+<ul>
+<li>New or expanded docs: <code>ConfigFiles.md</code>, <code>SystemConfigTOML.md</code>, <code>SecondSight.md</code>, <code>Emscripten.md</code>, <code>PPU.md</code>, <code>ExternalDebugInterface.md</code>, <code>MemoryProtection.md</code>, <code>Mouse.md</code>, <code>CompatibilityGS.md</code>.</li>
+<li>Ongoing developer notes in <code>DevelopLog.md</code> and roadmap updates for 0.9 milestones.</li>
+</ul>
+<h3 id="internals-tooling">Internals / tooling<a class="headerlink" href="#internals-tooling" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>apps/vgatext</code> shader and VGA text rendering test harnesses with ARM NEON optimizations.</li>
+<li>Deprecated KeyGloo mouse-sync routines removed after the closed-loop rewrite.</li>
+<li>Version bumped to <strong>0.8</strong> on 2026-05-19 (<code>CMakeLists.txt</code>); 0.9 features landed on top of that baseline.</li>
+</ul>
+<hr />
+<h2 id="commit-timeline-summary">Commit Timeline (summary)<a class="headerlink" href="#commit-timeline-summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Theme</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>May 19–21</strong></td>
+<td>0.8 release baseline; drive HUD polish; audio and reset bug fixes (#119–#122)</td>
+</tr>
+<tr>
+<td><strong>May 26–Jun 7</strong></td>
+<td>SecondSight card emulation, VGA renderers, PPU mode</td>
+</tr>
+<tr>
+<td><strong>Jun 26–29</strong></td>
+<td>Emscripten PoC; high-DPI; Ensoniq fixes</td>
+</tr>
+<tr>
+<td><strong>Jun 30–Jul 4</strong></td>
+<td>CRT GPU shaders; KeyGloo mouse sync</td>
+</tr>
+<tr>
+<td><strong>Jul 6–7</strong></td>
+<td>TOML config system; Settings.txt loader; config documentation</td>
+</tr>
+</tbody>
+</table>
 
 
 

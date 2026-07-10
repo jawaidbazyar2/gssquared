@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../KeyboardShortcuts/">
-      
-      
-        <link rel="next" href="../Joysticks/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Using a Mouse - GSSquared Documentation</title>
+        <title>PPU - GSSquared Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mouse" class="md-skip">
+        <a href="#ppu" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Using a Mouse
+              PPU
             
           </span>
         </div>
@@ -257,12 +253,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href=".." class="md-tabs__link">
           
   
@@ -477,31 +471,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -519,7 +508,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -674,37 +663,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Using a Mouse
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
         
   
   
@@ -720,48 +682,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mouse Capture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        IIgs - GS/OS Mouse Tracking
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2632,10 +2552,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
+  <a href="#tile-map" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mouse Capture
+        Tile map
       
     </span>
   </a>
@@ -2643,10 +2563,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
+  <a href="#palette" class="md-nav__link">
     <span class="md-ellipsis">
       
-        IIgs - GS/OS Mouse Tracking
+        palette
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sprite-config-oam" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sprite config (OAM)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tile-sets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tile sets
       
     </span>
   </a>
@@ -2673,24 +2615,29 @@
   
 
 
-<h1 id="mouse">Mouse<a class="headerlink" href="#mouse" title="Permanent link">&para;</a></h1>
-<p>As the Apple II series progressed in time, mouse support became more and more integrated into the platform until in the //gs it became an indispensible base part of the system.</p>
-<p>GS2 supports a Mouse in two ways:</p>
-<ul>
-<li>Via Mouse Card on Apple //e</li>
-<li>Via ADB (Apple Desktop Bus) mouse on Apple IIgs</li>
-</ul>
-<h2 id="mouse-capture">Mouse Capture<a class="headerlink" href="#mouse-capture" title="Permanent link">&para;</a></h2>
-<p>When you're using emulated Mouse software, you will probably want to turn on Mouse Capture.</p>
-<p>Do this by using the Mouse Capture menu, Mouse Capture button, or by pressing F1.</p>
-<p>When you enter Mouse Capture, a helpful message will appear at the top of the screen for a few seconds reminding you how to exit Mouse Capture.</p>
-<p>To release Mouse Capture, you must press <strong>F1</strong>, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)</p>
-<p>Opening the Control Panel via <strong>F4</strong> or the Control Panel button will also temporarily release Mouse Capture. When you close the Control Panel, the original Mouse Capture state will be restored.</p>
-<p>Mouse capture also turns off the "mouse movement shows on-screen controls" feature. It locks you into that keyboard-oriented Apple II experience.</p>
-<h2 id="iigs-gsos-mouse-tracking">IIgs - GS/OS Mouse Tracking<a class="headerlink" href="#iigs-gsos-mouse-tracking" title="Permanent link">&para;</a></h2>
-<p>When you boot a GS/OS image, or other application that starts the IIgs Event Manager, GSSquared detects this and changes how it processes mouse movement events. It will calculate the mouse movement that the IIgs needs to see, in order to match where the Host (your computer) mouse . Then it synthesizes the appropriate events to get the cursor there.</p>
-<p>This provides seamless movement of the mouse cursor in and out of the IIgs desktop, making the mouse work much more naturally, and avoiding the need for Mouse Capture mode with IIgs desktop apps.</p>
-<p>You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.</p>
+<h1 id="ppu">PPU<a class="headerlink" href="#ppu" title="Permanent link">&para;</a></h1>
+<p>Dictionaries</p>
+<h2 id="tile-map">Tile map<a class="headerlink" href="#tile-map" title="Permanent link">&para;</a></h2>
+<p>config: H and V dimensions (in tiles)</p>
+<p>2048 bytes</p>
+<p>2 x 1024 bytes
+horizontal, or vertical maps</p>
+<p>Can be mapped in shadow memory, or in VRAM, but usually shadow memory</p>
+<h2 id="palette">palette<a class="headerlink" href="#palette" title="Permanent link">&para;</a></h2>
+<p>3 bytes x 256 entries
+color 0 is always transparent</p>
+<p>can be mapped in shadow memory, or in VRAM</p>
+<h2 id="sprite-config-oam">Sprite config (OAM)<a class="headerlink" href="#sprite-config-oam" title="Permanent link">&para;</a></h2>
+<p>config: sprite dimensions (h/v, h multiple of 4 pixel); </p>
+<p>256 bytes of sprite data (64 sprits x 4 bytes)</p>
+<p>can be mapped in shadow memory, or in VRAM</p>
+<h2 id="tile-sets">tile sets<a class="headerlink" href="#tile-sets" title="Permanent link">&para;</a></h2>
+<p>Up to four tile sets;</p>
+<p>config per set: number of tiles (max 256); h/v dimensions per tile in 8 bit pixels. (so 8x8 tile is 64 bytes); tiles must be multiple of 4 pixels wide.</p>
+<p>Uploaded wherever - card might need to process these and put in a final place internally.</p>
+<h1 id="api-calls">API Calls<a class="headerlink" href="#api-calls" title="Permanent link">&para;</a></h1>
+<h2 id="getmemorymap">GetMemoryMap<a class="headerlink" href="#getmemorymap" title="Permanent link">&para;</a></h2>
+<p>Get details on how much / where memory ranges are available for application use</p>
 
 
 

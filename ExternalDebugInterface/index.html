@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../KeyboardShortcuts/">
-      
-      
-        <link rel="next" href="../Joysticks/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Using a Mouse - GSSquared Documentation</title>
+        <title>ExternalDebugInterface - GSSquared Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mouse" class="md-skip">
+        <a href="#dsl-vs-api-clarifying-the-earlier-proposal" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Using a Mouse
+              ExternalDebugInterface
             
           </span>
         </div>
@@ -257,12 +253,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href=".." class="md-tabs__link">
           
   
@@ -477,31 +471,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -519,7 +508,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -674,37 +663,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Using a Mouse
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
         
   
   
@@ -720,48 +682,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mouse Capture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        IIgs - GS/OS Mouse Tracking
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2622,8 +2542,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -2632,10 +2550,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
+  <a href="#dsl-vs-api-clarifying-the-earlier-proposal" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mouse Capture
+        DSL vs API (clarifying the earlier proposal)
       
     </span>
   </a>
@@ -2643,10 +2561,137 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
+  <a href="#script-at-startup-vs-dynamic-llm-tools" class="md-nav__link">
     <span class="md-ellipsis">
       
-        IIgs - GS/OS Mouse Tracking
+        Script-at-startup vs dynamic LLM tools
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ring-buffer-architecture-concrete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ring buffer architecture (concrete)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives-to-lua-if-you-want-something-embeddable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternatives to Lua (if you want something embeddable)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Alternatives to Lua (if you want something embeddable)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-no-embedded-language-json-lines-host-python-best-for-llm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. No embedded language — JSON lines + host Python (best for LLM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-gdb-remote-serial-protocol-rsp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. GDB remote serial protocol (RSP)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-python-embedded-in-gs2-if-you-want-in-process-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Python embedded in GS2 (if you want in-process scripts)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-quickjs-duktape-lua-like-but-js" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. QuickJS / Duktape (Lua-like but JS)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-wasm-guest-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. WASM guest modules
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-llm-should-actually-call-minimal-stable-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the LLM should actually call (minimal stable surface)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-a-script-still-makes-sense" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When a “script” still makes sense
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-cursor-integration-how-i-would-use-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP / Cursor integration (how I would use it)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#direct-answer-to-your-architecture-question" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Direct answer to your architecture question
       
     </span>
   </a>
@@ -2673,24 +2718,225 @@
   
 
 
-<h1 id="mouse">Mouse<a class="headerlink" href="#mouse" title="Permanent link">&para;</a></h1>
-<p>As the Apple II series progressed in time, mouse support became more and more integrated into the platform until in the //gs it became an indispensible base part of the system.</p>
-<p>GS2 supports a Mouse in two ways:</p>
+  <h1>ExternalDebugInterface</h1>
+
+<p><strong>User</strong></p>
+<p>I'm wondering, MAME offers Lua for external scriptable debug access. what you're proposing above looks like a DSL (domain specific language), which I think I'd like to avoid. I am not necessarily a big fan of LUA though, so I'm wondering if there are some other options that would work well. </p>
+<p>I envision the architecture being something like this:
+from CLI, start gssquared with a -debug option or something similar
+this then would launch a debug thread at startup. the debug thread would communicate commands to the main thread using a thread-safe ring buffer. the main thread would process commands off the ring buffer as part of its execution loop.</p>
+<p>would the debug thread run a specific debug script, generated by the LLM, and the debug script is executed by gs2 debug thread, then llm inspects output and interacts in that manner? Or would it be better to give the LLM a tool that it could use to dynamically and dynamically interact with the machine state through the debug thread?</p>
+<hr />
+<p><strong>Cursor</strong></p>
+<p>Your ring-buffer split (debug thread ↔ main emulation thread) is the right shape. The main design choice is not really “Lua vs DSL” — it is <strong>batch script vs interactive tool API</strong>, and whether the “language” lives in GS2 or on the host.</p>
+<hr />
+<h2 id="dsl-vs-api-clarifying-the-earlier-proposal">DSL vs API (clarifying the earlier proposal)<a class="headerlink" href="#dsl-vs-api-clarifying-the-earlier-proposal" title="Permanent link">&para;</a></h2>
+<p>What I described before was closer to <strong>QMP-style JSON-RPC</strong> — a fixed vocabulary of methods (<code>read_memory</code>, <code>pause</code>, <code>sound_get_state</code>), not a DSL with expressions like <code>wait_until pc() in range</code>. You can keep that shape and still avoid a DSL entirely:</p>
 <ul>
-<li>Via Mouse Card on Apple //e</li>
-<li>Via ADB (Apple Desktop Bus) mouse on Apple IIgs</li>
+<li><strong>No expression language inside GS2</strong></li>
+<li><strong>No <code>wait_stuck</code> mini-language</strong></li>
+<li>Just ~20–30 imperative commands with plain arguments</li>
 </ul>
-<h2 id="mouse-capture">Mouse Capture<a class="headerlink" href="#mouse-capture" title="Permanent link">&para;</a></h2>
-<p>When you're using emulated Mouse software, you will probably want to turn on Mouse Capture.</p>
-<p>Do this by using the Mouse Capture menu, Mouse Capture button, or by pressing F1.</p>
-<p>When you enter Mouse Capture, a helpful message will appear at the top of the screen for a few seconds reminding you how to exit Mouse Capture.</p>
-<p>To release Mouse Capture, you must press <strong>F1</strong>, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)</p>
-<p>Opening the Control Panel via <strong>F4</strong> or the Control Panel button will also temporarily release Mouse Capture. When you close the Control Panel, the original Mouse Capture state will be restored.</p>
-<p>Mouse capture also turns off the "mouse movement shows on-screen controls" feature. It locks you into that keyboard-oriented Apple II experience.</p>
-<h2 id="iigs-gsos-mouse-tracking">IIgs - GS/OS Mouse Tracking<a class="headerlink" href="#iigs-gsos-mouse-tracking" title="Permanent link">&para;</a></h2>
-<p>When you boot a GS/OS image, or other application that starts the IIgs Event Manager, GSSquared detects this and changes how it processes mouse movement events. It will calculate the mouse movement that the IIgs needs to see, in order to match where the Host (your computer) mouse . Then it synthesizes the appropriate events to get the cursor there.</p>
-<p>This provides seamless movement of the mouse cursor in and out of the IIgs desktop, making the mouse work much more naturally, and avoiding the need for Mouse Capture mode with IIgs desktop apps.</p>
-<p>You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.</p>
+<p>Anything “smart” (conditions, loops, “if osc31 stalled for 500ms then…”) runs in <strong>Python or the LLM agent on the host</strong>, not inside the emulator.</p>
+<p>That matters for your Lua question: MAME Lua is powerful because the <em>host</em> logic runs in a real language. You do not need to embed that in GS2 if the debug thread only exposes primitives.</p>
+<hr />
+<h2 id="script-at-startup-vs-dynamic-llm-tools">Script-at-startup vs dynamic LLM tools<a class="headerlink" href="#script-at-startup-vs-dynamic-llm-tools" title="Permanent link">&para;</a></h2>
+<p><strong>For LLM debugging, dynamic tools win.</strong> A one-shot debug script is a good supplement, not the primary interface.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Generated debug script (runs to completion)</th>
+<th>Dynamic tools (pause → inspect → act → repeat)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fits LLM workflow</td>
+<td>Poor — one shot, no mid-course correction</td>
+<td>Good — matches observe / hypothesize / test</td>
+</tr>
+<tr>
+<td>Handles surprises</td>
+<td>Bad — wrong menu state, wrong bank, timing</td>
+<td>Good — read screen, re-navigate</td>
+</tr>
+<tr>
+<td>Repro / CI</td>
+<td>Excellent — same script every run</td>
+<td>Needs wrapper script on host</td>
+</tr>
+<tr>
+<td>Token cost</td>
+<td>Low round trips, high upfront script size</td>
+<td>More round trips, smaller steps</td>
+</tr>
+<tr>
+<td>Failure mode</td>
+<td>Silent wrong conclusion at end</td>
+<td>Visible at each step</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Recommended hybrid:</strong></p>
+<ol>
+<li><strong>Primary:</strong> LLM (or Cursor) calls tools like <code>gs2_pause</code>, <code>gs2_read_mem</code>, <code>gs2_sound_state</code>, <code>gs2_key</code> one at a time.</li>
+<li><strong>Secondary:</strong> Host-side Python (or a JSON list of tool calls) for CI: “boot, pick first song, assert osc31 count increases for 2s.”</li>
+<li><strong>Not recommended:</strong> GS2 executes an LLM-authored <em>program</em> with conditionals and loops inside the emulator — that becomes a DSL whether you call it Lua or not.</li>
+</ol>
+<p>So: the debug thread should <strong>not</strong> mainly “run a script generated by the LLM.” It should <strong>service a command queue</strong>; the LLM (or a Python driver) is the script.</p>
+<pre><code>┌─────────────┐     tool calls      ┌──────────────┐   ring buffer   ┌─────────────┐
+│ LLM / agent │ ──────────────────► │ debug thread │ ◄──────────────► │ main thread │
+│ or Python   │ ◄── structured JSON │ (I/O only)   │   responses     │ (6502/DOC)  │
+└─────────────┘                     └──────────────┘                 └─────────────┘
+</code></pre>
+<p>The debug thread’s job: socket/pipe/MCP, parse requests, enqueue to main, block until response. It should not interpret “wait until playing == 0” — the agent does that by polling <code>read_mem</code> in a loop with timeouts.</p>
+<hr />
+<h2 id="ring-buffer-architecture-concrete">Ring buffer architecture (concrete)<a class="headerlink" href="#ring-buffer-architecture-concrete" title="Permanent link">&para;</a></h2>
+<p><strong>Command record (fixed size, no strings in the hot path for simple ops):</strong></p>
+<pre><code class="language-c">typedef enum { CMD_PAUSE, CMD_RUN, CMD_STEP, CMD_READ_MEM, CMD_WRITE_MEM,
+               CMD_GET_REGS, CMD_INJECT_KEY, CMD_GET_SOUND, ... } cmd_type;
+
+typedef struct {
+    uint32_t seq;           // request id
+    cmd_type op;
+    uint64_t arg0, arg1, arg2;  // addr, len, keycode, etc.
+    // bulk write data follows in separate slot if needed
+} debug_cmd;
+</code></pre>
+<p><strong>Main thread processing:</strong> drain the command ring at a <strong>safe point</strong> — ideally once per emulated instruction when debugger attached, or when explicitly paused. Never handle <code>READ_MEM</code> mid-instruction unless you document that as best-effort.</p>
+<p><strong>Important command classes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Instant peek</td>
+<td><code>read_mem</code>, <code>get_regs</code>, <code>sound_snapshot</code> — OK while running (document consistency)</td>
+</tr>
+<tr>
+<td>Must pause</td>
+<td><code>write_mem</code>, <code>break_set</code>, <code>step</code> — main thread pauses first, then executes</td>
+</tr>
+<tr>
+<td>Run control</td>
+<td><code>run</code>, <code>run_cycles(N)</code> — main thread runs until pause condition</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Responses:</strong> same <code>seq</code>, status, small inline payload or offset into a shared response blob arena (for screen dumps, disassembly).</p>
+<p>This keeps the debug thread dumb and thread-safe; all machine access stays on the main thread.</p>
+<hr />
+<h2 id="alternatives-to-lua-if-you-want-something-embeddable">Alternatives to Lua (if you want <em>something</em> embeddable)<a class="headerlink" href="#alternatives-to-lua-if-you-want-something-embeddable" title="Permanent link">&para;</a></h2>
+<p>If the goal is “external scriptability without inventing a DSL,” ranked for your use case:</p>
+<h3 id="1-no-embedded-language-json-lines-host-python-best-for-llm">1. No embedded language — JSON lines + host Python (best for LLM)<a class="headerlink" href="#1-no-embedded-language-json-lines-host-python-best-for-llm" title="Permanent link">&para;</a></h3>
+<p>GS2 exposes only the ring-buffer protocol over stdin or a Unix socket. A tiny Python library wraps it. The LLM uses tools that call Python (or calls the socket directly).</p>
+<ul>
+<li>No Lua, no DSL, no expression parser in C++</li>
+<li>CI and agents share the same API</li>
+<li>Fits Cursor MCP naturally (<code>gs2_read_memory</code>, etc.)</li>
+</ul>
+<h3 id="2-gdb-remote-serial-protocol-rsp">2. GDB remote serial protocol (RSP)<a class="headerlink" href="#2-gdb-remote-serial-protocol-rsp" title="Permanent link">&para;</a></h3>
+<p>Implement enough of RSP for memory, registers, breakpoints, continue/step. Then:</p>
+<ul>
+<li><code>lldb</code>, <code>gdb</code>, or Python <code>pygdb</code> can attach</li>
+<li>LLM tools wrap standard debugger commands</li>
+<li>Zero custom language; huge existing ecosystem</li>
+</ul>
+<p>Downside: no built-in Ensoniq/sound concepts — you add <strong>custom RSP packets</strong> or a side channel for <code>sound_get_state</code> anyway.</p>
+<h3 id="3-python-embedded-in-gs2-if-you-want-in-process-scripts">3. Python embedded in GS2 (if you want in-process scripts)<a class="headerlink" href="#3-python-embedded-in-gs2-if-you-want-in-process-scripts" title="Permanent link">&para;</a></h3>
+<p>Pybind11 module on the debug thread; callbacks enqueue commands to main thread (never touch emulation state from Python directly).</p>
+<ul>
+<li>LLMs are good at Python</li>
+<li>Scripts are real code, not a DSL</li>
+<li>Heavier dependency than JSON lines</li>
+</ul>
+<h3 id="4-quickjs-duktape-lua-like-but-js">4. QuickJS / Duktape (Lua-like but JS)<a class="headerlink" href="#4-quickjs-duktape-lua-like-but-js" title="Permanent link">&para;</a></h3>
+<p>Same model as MAME Lua, different syntax. Only worth it if you want plugins/user mods. For <em>your</em> LLM-driven workflow, inferior to host Python.</p>
+<h3 id="5-wasm-guest-modules">5. WASM guest modules<a class="headerlink" href="#5-wasm-guest-modules" title="Permanent link">&para;</a></h3>
+<p>Sandboxed, language-agnostic. Overkill unless you expect third-party debug extensions.</p>
+<p><strong>Practical pick:</strong> <strong>JSON-line protocol on the debug thread + optional Python shim.</strong> Skip embedded Lua unless you want user-facing mod scripting unrelated to the LLM.</p>
+<hr />
+<h2 id="what-the-llm-should-actually-call-minimal-stable-surface">What the LLM should actually call (minimal stable surface)<a class="headerlink" href="#what-the-llm-should-actually-call-minimal-stable-surface" title="Permanent link">&para;</a></h2>
+<p>Keep the command set small and orthogonal — ~25 commands, no composition inside GS2:</p>
+<p><strong>Execution:</strong> <code>pause</code>, <code>run</code>, <code>step</code>, <code>step_over</code>, <code>reset</code>, <code>run_cycles</code><br />
+<strong>CPU:</strong> <code>get_regs</code>, <code>set_regs</code>, <code>disasm</code><br />
+<strong>Memory:</strong> <code>read</code>, <code>write</code> (bank/offset or 24-bit)<br />
+<strong>Break:</strong> <code>break_add</code>, <code>break_del</code>, <code>break_list</code><br />
+<strong>Input / UI:</strong> <code>key_down</code>, <code>key_up</code>, <code>read_text_page</code> (main/aux)<br />
+<strong>Sound (GS2-specific):</strong> <code>sound_state</code>, <code>irq_trace_start</code>, <code>irq_trace_read</code>, <code>doc_trace_start</code><br />
+<strong>Meta:</strong> <code>version</code>, <code>image_info</code>, <code>cycle_count</code></p>
+<p>The agent composes workflows:</p>
+<pre><code class="language-text">pause → read_text_page → key RETURN → run_cycles 1e9 → pause → sound_state → read E1002C 4
+</code></pre>
+<p>If osc31 count did not increase → hypothesis: timer IRQ. If PC in NTP busy-wait → hypothesis: DOC busy bit.</p>
+<p>No in-emulator <code>wait_until</code>; the agent loop is:</p>
+<pre><code class="language-python">for _ in range(100):
+    st = sound_state()
+    if st[&quot;irq_count&quot;][&quot;osc31&quot;] &gt; prev + 10:
+        break
+    run_cycles(100_000)
+else:
+    report(&quot;osc31 stalled&quot;)
+</code></pre>
+<p>That is easier for an LLM to reason about than a 200-line script that failed at line 47.</p>
+<hr />
+<h2 id="when-a-script-still-makes-sense">When a “script” still makes sense<a class="headerlink" href="#when-a-script-still-makes-sense" title="Permanent link">&para;</a></h2>
+<p>Use <strong>host-side</strong> scripts, not GS2-internal:</p>
+<table>
+<thead>
+<tr>
+<th>Use case</th>
+<th>Where script lives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CI regression: “play 5s without doc_busy hang”</td>
+<td>Python in repo</td>
+</tr>
+<tr>
+<td>Share repro with human</td>
+<td>Python or JSON array of API calls</td>
+</tr>
+<tr>
+<td>One-shot LLM investigation</td>
+<td>Agent tool sequence in chat (dynamic)</td>
+</tr>
+<tr>
+<td>User macro “always boot to /senseiplay”</td>
+<td>Shell + <code>gs2ctl</code></td>
+</tr>
+</tbody>
+</table>
+<p>A JSON “script” that is literally <code>[[ "key", "RETURN" ], [ "run_cycles", 500000000 ], ...]</code> is fine — it is data, not a DSL, and the interpreter is 50 lines of Python.</p>
+<hr />
+<h2 id="mcp-cursor-integration-how-i-would-use-it">MCP / Cursor integration (how I would use it)<a class="headerlink" href="#mcp-cursor-integration-how-i-would-use-it" title="Permanent link">&para;</a></h2>
+<p>Expose GS2 as an MCP server (or subprocess tools) mapping 1:1 to ring-buffer commands:</p>
+<ul>
+<li><code>gs2_pause</code></li>
+<li><code>gs2_read_memory(bank, offset, len) → hex</code></li>
+<li><code>gs2_sound_state() → json</code></li>
+<li><code>gs2_inject_key(name)</code></li>
+<li><code>gs2_disassemble(addr, count)</code></li>
+</ul>
+<p>Then I boot with <code>gssquared -debug /tmp/gs2.sock</code>, connect tools, and debug SenseiPlay interactively — same as debugging a live process, not running a prebaked script.</p>
+<p>For CI, a Python test harness calls the same MCP server or socket without an LLM.</p>
+<hr />
+<h2 id="direct-answer-to-your-architecture-question">Direct answer to your architecture question<a class="headerlink" href="#direct-answer-to-your-architecture-question" title="Permanent link">&para;</a></h2>
+<p><strong>Would the debug thread run an LLM-generated script, or should the LLM use dynamic tools?</strong></p>
+<p><strong>Dynamic tools through the debug thread</strong>, with the main thread executing commands from the ring buffer each emulation step (or while paused).</p>
+<ul>
+<li>The debug thread: I/O, framing, sequencing, timeouts — <strong>not</strong> program execution.</li>
+<li>The LLM: writes the “program” as a series of tool calls, adapting after each observation.</li>
+<li>Optional: Python on the host for repeatable regression scripts using the <strong>same</strong> commands.</li>
+</ul>
+<p>Avoid embedding Lua or a custom DSL in GS2 unless you have a separate goal (user plugins). For automated SenseiPlay / Ensoniq investigation, <strong>a thin command protocol + host-side Python + MCP tools</strong> is simpler, more testable, and matches how LLM agents actually debug.</p>
+<p>If you want a next step in-repo, I can sketch the JSON request/response schema and a <code>debug/senseiplay_repro.py</code> that uses only those primitives to detect the osc31-stall hang — no GS2-side language at all.</p>
 
 
 
