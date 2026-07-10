@@ -1,5 +1,7 @@
 # GSSquared - A Complete Apple II Series Emulator.
 
+(For the new GSSquared Web Site, check out https://gssquared.net)
+
 GSSquared is a complete emulator for the Apple II series of computers.
 
 GSSquared has three primary design goals: support both 8- and 16-bit Apple IIs; be cross-platform; have a simple, intuitive user interface and be packaged 100% ready to go.
