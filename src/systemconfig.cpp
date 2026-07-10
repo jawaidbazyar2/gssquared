@@ -200,13 +200,13 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         "128K RAM; Disk II; Clock; Parallel Port; Mockingboard",
         {
             DEVICE_ID_NONE,
-            DEVICE_ID_NONE,
+            DEVICE_ID_PRODOS_CLOCK,
             DEVICE_ID_MEM_EXPANSION,
             DEVICE_ID_NONE,
             DEVICE_ID_MOCKINGBOARD,
-            DEVICE_ID_PD_BLOCK3,
-            DEVICE_ID_DISK_II,
             DEVICE_ID_MOUSE,
+            DEVICE_ID_DISK_II,
+            DEVICE_ID_PD_BLOCK3
         },
     },
     {
