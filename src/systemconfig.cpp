@@ -178,7 +178,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
-        "128K RAM; Disk II; Clock; Parallel Port; Mockingboard",
+        "128K RAM; Disk II; Mouse; Mockingboard",
         {
             DEVICE_ID_NONE,
             DEVICE_ID_NONE,
