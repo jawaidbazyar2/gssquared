@@ -19,7 +19,7 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 // be cheap right now and do a text button.
     Style_t CS = {
         .background_color = 0x000000FF,
-        .padding = 25,
+        .padding = 16,
         .border_width = 0,
     };
 
@@ -51,11 +51,15 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     design_height = vs->window_height > 0 ? vs->window_height : 928;
     window_width = design_width;
     window_height = design_height;
+    // Leave room under the tile grid for a small action bar, then the footer hint.
     ui_ctx.description_x = design_width / 2.0f;
-    ui_ctx.description_y = 825.0f;
+    ui_ctx.description_y = 880.0f;
 
-    container->size(1024, 768);
-    container->set_position((design_width - 1024) / 2, (design_height - 768) / 2);
+    // Slightly shorter than the old full-bleed grid so +/Edit sit below tiles, not in them.
+    const int grid_w = 1024;
+    const int grid_h = 700;
+    container->size(grid_w, grid_h);
+    container->set_position((design_width - grid_w) / 2, 70);
 
     // Render the selector through a fixed design-resolution logical presentation.
     // LETTERBOX keeps the aspect ratio correct and all content on-screen no
@@ -84,32 +88,6 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
         });
         container->add(button);
     }
-
-    Style_t ActionStyle = {
-        .background_color = 0x404040FF,
-        .border_color = 0xFFFFFFFF,
-        .hover_color = 0x008C4AFF,
-        .padding = 10,
-        .border_width = 1,
-        .text_color = 0xFFFFFFFF,
-    };
-    Button_t *new_btn = new Button_t(&ui_ctx, "+", ActionStyle);
-    new_btn->size(200, 200);
-    new_btn->on_click([this](const SDL_Event&) -> bool {
-        selected_system = SELECT_NEW;
-        return true;
-    });
-    container->add(new_btn);
-    new_btn_ = new_btn;
-
-    Button_t *edit_btn = new Button_t(&ui_ctx, "Edit...", ActionStyle);
-    edit_btn->size(200, 200);
-    edit_btn->on_click([this](const SDL_Event&) -> bool {
-        selected_system = SELECT_OPEN_EDIT;
-        return true;
-    });
-    container->add(edit_btn);
-    edit_btn_ = edit_btn;
 
     // Recent custom configs: MRU + up to 4 by usage score.
     for (const auto& entry : SystemSettings::instance().display_entries()) {
@@ -144,10 +122,57 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 
     container->layout();
 
+    // Compact action bar under the system tiles (not mixed into the gallery).
+    Style_t ActionBarCS = {
+        .background_color = 0x000000FF,
+        .padding = 8,
+        .border_width = 0,
+    };
+    Style_t ActionStyle = {
+        .background_color = 0x404040FF,
+        .border_color = 0xFFFFFFFF,
+        .hover_color = 0x008C4AFF,
+        .padding = 6,
+        .border_width = 1,
+        .text_color = 0xFFFFFFFF,
+    };
+    action_con_ = new Container_t(&ui_ctx, ActionBarCS);
+
+    Button_t *new_btn = new Button_t(&ui_ctx, "+ New", ActionStyle);
+    new_btn->size(120, 36);
+    new_btn->on_click([this](const SDL_Event&) -> bool {
+        selected_system = SELECT_NEW;
+        return true;
+    });
+    action_con_->add(new_btn);
+    new_btn_ = new_btn;
+
+    Button_t *edit_btn = new Button_t(&ui_ctx, "Edit...", ActionStyle);
+    edit_btn->size(120, 36);
+    edit_btn->on_click([this](const SDL_Event&) -> bool {
+        selected_system = SELECT_OPEN_EDIT;
+        return true;
+    });
+    action_con_->add(edit_btn);
+    edit_btn_ = edit_btn;
+
+    const float action_w = 280.0f;
+    const float action_h = 52.0f;
+    SDL_FRect tile_bounds = container->get_effective_bounds();
+    float action_x = (design_width - action_w) / 2.0f;
+    float action_y = tile_bounds.y + tile_bounds.h + 16.0f;
+    if (action_y + action_h > ui_ctx.description_y - 12.0f) {
+        action_y = ui_ctx.description_y - 12.0f - action_h;
+    }
+    action_con_->size(action_w, action_h);
+    action_con_->set_position(action_x, action_y);
+    action_con_->layout();
+
     updated = true;
 }
 
 SelectSystem::~SelectSystem() {
+    delete action_con_;
     delete container;
     delete text_renderer;
     delete name_renderer;
@@ -177,6 +202,9 @@ bool SelectSystem::event(const SDL_Event &event) {
     SDL_Event ev = event;
     SDL_ConvertEventToRenderCoordinates(vs->renderer, &ev);
 
+    if (action_con_) {
+        action_con_->handle_mouse_event(ev);
+    }
     container->handle_mouse_event(ev);
     if ((event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) ||
         (event.type == SDL_EVENT_MOUSE_BUTTON_UP) || 
@@ -211,9 +239,12 @@ void SelectSystem::render() {
         // constructor). Draw everything in design coordinates; SDL maps it onto
         // the real output and fills the letterbox bars with black at present().
         container->render();
+        if (action_con_) {
+            action_con_->render();
+        }
 
         text_renderer->set_color(255,255,255,255);
-        text_renderer->render("Choose your retro experience", (design_width / 2), 50, TEXT_ALIGN_CENTER);
+        text_renderer->render("Choose your retro experience", (design_width / 2), 20, TEXT_ALIGN_CENTER);
 
         // Same footer position as SystemButton config descriptions.
         const char *hint = nullptr;

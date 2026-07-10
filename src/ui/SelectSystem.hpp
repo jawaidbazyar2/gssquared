@@ -36,7 +36,9 @@ protected:
     std::vector<std::unique_ptr<SystemConfig>> recent_loaded_;
     std::vector<std::string> recent_paths_;
 
-    /** Owned by container; kept for hover hint text in render(). */
+    /** Action bar below the system tiles (+ New / Edit...). Owns the buttons. */
+    Container_t *action_con_ = nullptr;
+    /** Owned by action_con_; kept for hover hint text in render(). */
     class Button_t *new_btn_ = nullptr;
     class Button_t *edit_btn_ = nullptr;
 
