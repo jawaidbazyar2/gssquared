@@ -51,6 +51,8 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     design_height = vs->window_height > 0 ? vs->window_height : 928;
     window_width = design_width;
     window_height = design_height;
+    ui_ctx.description_x = design_width / 2.0f;
+    ui_ctx.description_y = 825.0f;
 
     container->size(1024, 768);
     container->set_position((design_width - 1024) / 2, (design_height - 768) / 2);
@@ -98,6 +100,7 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
         return true;
     });
     container->add(new_btn);
+    new_btn_ = new_btn;
 
     Button_t *edit_btn = new Button_t(&ui_ctx, "Edit...", ActionStyle);
     edit_btn->size(200, 200);
@@ -106,6 +109,7 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
         return true;
     });
     container->add(edit_btn);
+    edit_btn_ = edit_btn;
 
     // Recent custom configs: MRU + up to 4 by usage score.
     for (const auto& entry : SystemSettings::instance().display_entries()) {
@@ -210,6 +214,21 @@ void SelectSystem::render() {
 
         text_renderer->set_color(255,255,255,255);
         text_renderer->render("Choose your retro experience", (design_width / 2), 50, TEXT_ALIGN_CENTER);
+
+        // Same footer position as SystemButton config descriptions.
+        const char *hint = nullptr;
+        if (new_btn_ && new_btn_->is_mouse_hovering()) {
+            hint = "Create a new system configuration";
+        } else if (edit_btn_ && edit_btn_->is_mouse_hovering()) {
+            hint = "Open an existing config file to edit";
+        }
+        if (hint) {
+            text_renderer->set_color(0xFF, 0xFF, 0xFF, 0xFF);
+            text_renderer->render(hint,
+                                  static_cast<int>(ui_ctx.description_x),
+                                  static_cast<int>(ui_ctx.description_y),
+                                  TEXT_ALIGN_CENTER);
+        }
 
         ui_ctx.color(0x000000FF); // set back to 0. Someone isn't correctly setting color elsewhere..
         updated = false;

@@ -68,9 +68,15 @@ void SystemButton::render() {
     // draw the system description
     if (is_hovering && system_config && system_config->description && system_config->description[0]) {
         ctx->text_render->set_color(0xFF, 0xFF, 0xFF, 0xFF);
-        ctx->text_render->render(system_config->description, (1120.0f+60.0f)/2.0f, 800, TEXT_ALIGN_CENTER);
+        ctx->text_render->render(system_config->description,
+                                 static_cast<int>(ctx->description_x),
+                                 static_cast<int>(ctx->description_y),
+                                 TEXT_ALIGN_CENTER);
     } else if (is_hovering && system_config && system_config->name && system_config->name[0]) {
         ctx->text_render->set_color(0xFF, 0xFF, 0xFF, 0xFF);
-        ctx->text_render->render(system_config->name, (1120.0f+60.0f)/2.0f, 800, TEXT_ALIGN_CENTER);
+        ctx->text_render->render(system_config->name,
+                                 static_cast<int>(ctx->description_x),
+                                 static_cast<int>(ctx->description_y),
+                                 TEXT_ALIGN_CENTER);
     }
 }

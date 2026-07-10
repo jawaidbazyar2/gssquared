@@ -36,6 +36,10 @@ struct UIContext {
     TextRenderer *title_trender = nullptr;
     AssetAtlas_t *asset_atlas   = nullptr;
 
+    /** Footer hover-description anchor (SelectSystem sets these in design coords). */
+    float description_x = 0.0f;
+    float description_y = 825.0f;  // former 800 + 25
+
     // In UIContext (or a companion DrawCtx helper)
 
     inline void color(uint32_t rgba) {
