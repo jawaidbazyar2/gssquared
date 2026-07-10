@@ -1,0 +1,25 @@
+gs2_version = 1
+name = "Apple IIe 65816 w/Mouse"
+description = "128K RAM; Disk II; Clock; Mouse; 65816"
+platform = "apple2e_65816"
+scanner = "apple2gs"
+
+[[cards]]
+slot = 2
+card = "mem_expansion"
+
+[[cards]]
+slot = 4
+card = "mouse"
+
+[[cards]]
+slot = 5
+card = "bazfast3"
+
+[[cards]]
+slot = 6
+card = "disk_ii"
+
+[[cards]]
+slot = 7
+card = "vidhd"

@@ -138,6 +138,7 @@ file(GLOB_RECURSE GS2_ASSET_FILES CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/assets/sounds/*"
     "${CMAKE_SOURCE_DIR}/assets/fonts/*"
     "${CMAKE_SOURCE_DIR}/assets/shaders/*"
+    "${CMAKE_SOURCE_DIR}/assets/gs2/*"
 )
 list(APPEND GS2_ASSET_FILES
     "${CMAKE_SOURCE_DIR}/assets/img/atlas.png"
@@ -156,6 +157,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/img
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/fonts
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/shaders
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/gs2
 
     # Copy static resources
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/atlas.png ${CMAKE_BINARY_DIR}/resources/img/atlas.png
@@ -165,6 +167,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/sounds ${CMAKE_BINARY_DIR}/resources/sounds
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/fonts ${CMAKE_BINARY_DIR}/resources/fonts
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/shaders ${CMAKE_BINARY_DIR}/resources/shaders
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/gs2 ${CMAKE_BINARY_DIR}/resources/gs2
 
     COMMAND ${CMAKE_COMMAND} -E touch "${GS2_RESOURCES_STAMP}"
     DEPENDS ${GS2_ASSET_FILES}
@@ -1002,6 +1005,10 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
             COMPONENT Runtime
         )
         install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/fonts"
+            DESTINATION "${GS2_INSTALL_DATADIR}"
+            COMPONENT Runtime
+        )
+        install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/gs2"
             DESTINATION "${GS2_INSTALL_DATADIR}"
             COMPONENT Runtime
         )

@@ -1,0 +1,26 @@
+gs2_version = 1
+name = "Apple IIe Enhanced / PAL"
+description = "PAL Video; 128K RAM; Disk II; Clock; Parallel Port; Mockingboard"
+platform = "apple2e_enhanced"
+clock = "pal"
+scanner = "apple2e_pal"
+
+[[cards]]
+slot = 2
+card = "mem_expansion"
+
+[[cards]]
+slot = 4
+card = "mockingboard"
+
+[[cards]]
+slot = 5
+card = "bazfast3"
+
+[[cards]]
+slot = 6
+card = "disk_ii"
+
+[[cards]]
+slot = 7
+card = "mouse"

@@ -75,9 +75,11 @@ const std::string& get_base_path(bool console_mode) {
 }
 
 /**
- * For GNU install directories or Mac bundle builds, we can't expect to be able
- * to write files into the working directory, though that is a fair expectation
- * for program files builds.
+ * User-writable prefs directory. Always SDL_GetPrefPath except on Emscripten
+ * (MEMFS). Typical locations:
+ *   macOS:   ~/Library/Application Support/jawaidbazyar2/GSSquared/
+ *   Windows: %APPDATA%\\jawaidbazyar2\\GSSquared\\
+ *   Linux:   ~/.local/share/jawaidbazyar2/GSSquared/
  */
 
 const std::string& get_pref_path(void) {
@@ -89,8 +91,6 @@ const std::string& get_pref_path(void) {
 #if defined(__EMSCRIPTEN__)
     // MEMFS root; not persisted across reloads (could mount IDBFS later).
     pref_path = "/";
-#elif defined(GS2_PROGRAM_FILES)
-    pref_path = "./";
 #else
     pref_path = SDL_GetPrefPath("jawaidbazyar2", "GSSquared");
 #endif
@@ -150,6 +150,10 @@ void Paths::set_last_file_dialog_dir(const std::string& selected_path) {
     }
     // SDL_ShowOpenFileDialog default_location is a folder; store directory only, not the file name.
     std::filesystem::path p(selected_path);
+    if (std::filesystem::is_directory(p)) {
+        last_file_dialog_dir = p.lexically_normal().string();
+        return;
+    }
     std::filesystem::path dir = p.parent_path();
     if (dir.empty()) {
         std::error_code ec;
@@ -160,6 +164,13 @@ void Paths::set_last_file_dialog_dir(const std::string& selected_path) {
         return;
     }
     last_file_dialog_dir = dir.lexically_normal().string();
+}
+
+void Paths::set_file_dialog_dir_if_unset(const std::string& dir) {
+    if (!last_file_dialog_dir.empty() || dir.empty()) {
+        return;
+    }
+    last_file_dialog_dir = std::filesystem::path(dir).lexically_normal().string();
 }
 
 bool Paths::is_directory(const std::string& filename) {

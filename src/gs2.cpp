@@ -988,6 +988,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     gs2_app_values.pref_path = get_pref_path();
     printf("pref_path: %s\n", gs2_app_values.pref_path.c_str());
 
+    SystemConfig::ensure_default_system_configs();
+
     if (gs2_app_values.console_mode) {
         // parse command line options
         while ((opt = getopt(argc, argv, "sxgp:d:")) != -1) {

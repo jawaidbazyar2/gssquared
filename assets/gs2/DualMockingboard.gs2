@@ -1,0 +1,20 @@
+gs2_version = 1
+name = "Apple IIe Enhanced Dual Mockingboard"
+description = "128K RAM; Disk II; Clock; DUAL Mockingboard"
+platform = "apple2e_enhanced"
+
+[[cards]]
+slot = 4
+card = "mockingboard"
+
+[[cards]]
+slot = 5
+card = "bazfast3"
+
+[[cards]]
+slot = 6
+card = "disk_ii"
+
+[[cards]]
+slot = 7
+card = "mockingboard"

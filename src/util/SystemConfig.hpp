@@ -116,4 +116,11 @@ public:
     const std::string& path() const { return path_; }
 
     void dump(std::ostream& out) const;
+
+    /**
+     * Copy shipped default .gs2 configs from resources/gs2 into PrefPath/SystemConfigs
+     * when those files are not already present. Creates SystemConfigs if needed, and
+     * sets the Launch Config dialog start folder there if unset.
+     */
+    static void ensure_default_system_configs();
 };

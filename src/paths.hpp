@@ -40,6 +40,8 @@ class Paths {
         static const std::string& get_last_file_dialog_dir();
         /** Directory of the last SDL_ShowOpenFileDialog selection (not the file name). */
         static void set_last_file_dialog_dir(const std::string& selected_path);
+        /** Set the file-dialog start folder only if none has been chosen yet. */
+        static void set_file_dialog_dir_if_unset(const std::string& dir);
         static bool is_directory(const std::string& filename);
         static bool ends_with(std::string_view s, std::string_view suffix) noexcept;
         static bool ends_with_icase(std::string_view s, std::string_view suffix) noexcept;

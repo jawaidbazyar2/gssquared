@@ -1,0 +1,4 @@
+gs2_version = 1
+name = "Apple IIgs / Disk II"
+description = "Apple IIgs 8MB RAM, Only 5.25 Drives"
+platform = "apple2gs"

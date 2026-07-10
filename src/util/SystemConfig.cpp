@@ -929,3 +929,56 @@ void SystemConfig::dump(std::ostream& out) const {
         }
     }
 }
+
+void SystemConfig::ensure_default_system_configs() {
+    namespace fs = std::filesystem;
+
+    std::string dest_str;
+    Paths::calc_pref(dest_str, "SystemConfigs");
+    const fs::path dest_dir(dest_str);
+
+    std::error_code ec;
+    fs::create_directories(dest_dir, ec);
+    if (ec) {
+        std::cerr << "Failed to create SystemConfigs directory '" << dest_dir.string()
+                  << "': " << ec.message() << std::endl;
+        return;
+    }
+
+    Paths::set_file_dialog_dir_if_unset(dest_dir.string());
+
+    std::string src_str;
+    Paths::calc_base(src_str, "gs2");
+    const fs::path src_dir(src_str);
+    if (!fs::is_directory(src_dir)) {
+        return;
+    }
+
+    for (const auto& entry : fs::directory_iterator(src_dir, ec)) {
+        if (ec) {
+            std::cerr << "Failed to read shipped configs in '" << src_dir.string()
+                      << "': " << ec.message() << std::endl;
+            return;
+        }
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+        if (entry.path().extension() != ".gs2") {
+            continue;
+        }
+
+        const fs::path dest = dest_dir / entry.path().filename();
+        if (fs::exists(dest)) {
+            continue;
+        }
+
+        ec.clear();
+        fs::copy_file(entry.path(), dest, ec);
+        if (ec) {
+            std::cerr << "Failed to copy default system config '" << entry.path().filename().string()
+                      << "' to '" << dest.string() << "': " << ec.message() << std::endl;
+        } else {
+            std::cout << "Installed default system config: " << dest.string() << std::endl;
+        }
+    }
+}
