@@ -892,7 +892,7 @@ void transition_to_shutdown(GS2AppState *state) {
     // save cpu trace buffer, then exit.
     // TODO: move this to the trace buffer destructor.
     std::string tracepath;
-    Paths::calc_docs(tracepath, "trace.bin");
+    Paths::calc_docs(tracepath, "gssquared-trace.bin");
     computer->cpu->trace_buffer->save_to_file(tracepath);
 
     // deallocate stuff.
