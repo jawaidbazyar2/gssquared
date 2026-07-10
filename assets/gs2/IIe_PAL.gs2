@@ -1,5 +1,5 @@
 gs2_version = 1
-name = "Apple IIe Enhanced / PAL"
+name = "IIe Enh-PAL"
 description = "PAL Video; 128K RAM; Disk II; Clock; Parallel Port; Mockingboard"
 platform = "apple2e_enhanced"
 clock = "pal"

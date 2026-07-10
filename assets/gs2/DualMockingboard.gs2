@@ -1,5 +1,5 @@
 gs2_version = 1
-name = "Apple IIe Enhanced Dual Mockingboard"
+name = "IIe Enh Dual Mockingboard"
 description = "128K RAM; Disk II; Clock; DUAL Mockingboard"
 platform = "apple2e_enhanced"
 
