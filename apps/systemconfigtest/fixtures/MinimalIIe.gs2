@@ -1,6 +1,10 @@
 gs2_version = 1
+id = "6c956c0f-ace4-4149-aafc-fd834a44b6ac"
 name = "Blank IIe"
 platform = "apple2e_enhanced"
+clock = "ntsc"
+scanner = "apple2e"
+builtin = false
 
 [[cards]]
 slot = 6

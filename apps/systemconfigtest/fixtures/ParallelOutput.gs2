@@ -1,8 +1,11 @@
 gs2_version = 1
+id = "61cadfb6-ad60-4d96-85c5-9a54ad68dfac"
 name = "Parallel Printer"
 platform = "apple2plus"
+clock = "ntsc"
+scanner = "apple2"
+builtin = false
 
 [[cards]]
 slot = 1
 card = "parallel"
-output = "printouts/session.txt"

@@ -478,6 +478,7 @@ add_library(gs2_systemconfig
     src/util/SettingsConfig.cpp
     src/util/ConfigDraft.cpp
     src/util/SystemSettings.cpp
+    src/util/uuid.cpp
 )
 target_link_libraries(gs2_systemconfig PUBLIC gs2_paths gs2_device_info gs2_toml)
 
@@ -494,6 +495,7 @@ add_library(gs2_video_scanner
 target_link_libraries(gs2_video_scanner PUBLIC gs2_displaypp)
 
 add_library(gs2_devices_rtc_pram src/devices/rtc/rtc_pram.cpp)
+target_link_libraries(gs2_devices_rtc_pram PUBLIC gs2_paths)
 
 target_link_libraries(gs2_ui ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF} gs2_systemconfig)
 target_link_libraries(gs2_debugger gs2_trace gs2_util ${GS2_SDL3_TTF})

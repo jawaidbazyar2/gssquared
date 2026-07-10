@@ -27,6 +27,7 @@
 #include <unordered_set>
 
 #include "paths.hpp"
+#include "util/uuid.hpp"
 
 namespace {
 
@@ -544,6 +545,12 @@ bool SystemConfig::load_settings(const std::string& path, std::string& error_out
         }
         extensions_.emplace_back(key, value);
         warnings_.push_back("Unknown settings key: " + key);
+    }
+
+    // Ephemeral machine id for Settings.txt (not persisted).
+    if (id_.empty()) {
+        id_ = generate_uuid_v4();
+        sync_config_pointers();
     }
 
     return finalize_load(error_out);

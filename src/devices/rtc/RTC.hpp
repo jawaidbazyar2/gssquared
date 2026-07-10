@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <ctime>
 #include <cassert>
+#include <string>
 
 #include "util/DebugFormatter.hpp"
 #include "debug.hpp"
@@ -60,20 +61,20 @@ class RTC {
     uint8_t transaction_step_count = 0;
     RTC_State state = RTC_STATE_AWAIT_COMMAND;
 
-    const char *bram_filename = "gs2-bram.bin";
+    std::string bram_filename;
 public:
-    RTC() {
+    explicit RTC(std::string bram_path) : bram_filename(std::move(bram_path)) {
         // preload with gibberish
         for (int i = 0; i < 256; i++) {
             bram[i] = i;
         }
-        load_bram_from_file(bram_filename);
+        load_bram_from_file(bram_filename.c_str());
         last_seconds = 0; // initialize. First time through update_seconds, will set last_seconds and time to current time, same value
         seconds = 0;
         update_seconds();
     };
     ~RTC() {
-        save_bram_to_file(bram_filename);
+        save_bram_to_file(bram_filename.c_str());
     };
 
     inline uint8_t get_bram_value(uint8_t address) {

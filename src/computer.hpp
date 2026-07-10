@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include "mmus/mmu_ii.hpp"
 #include "Module_ID.hpp"
@@ -89,6 +90,7 @@ struct computer_t {
     // For use by OSD.
     int system_id = -1;
     const SystemConfig_t *system_config_override = nullptr;
+    std::string machine_id;  // UUID from .gs2 / builtin; keys PrefPath/bram/<id>.bin
 
     std::vector<ResetHandler> reset_handlers;
     std::vector<ShutdownHandler> shutdown_handlers;
@@ -137,6 +139,8 @@ struct computer_t {
     void set_platform(platform_info *platform) { this->platform = platform; }
     void set_system_id(int system_id) { this->system_id = system_id; }
     void set_system_config(const SystemConfig_t *system_config) { this->system_config_override = system_config; }
+    void set_machine_id(const std::string& id) { machine_id = id; }
+    const std::string& get_machine_id() const { return machine_id; }
     inline SystemConfig_t *get_system() {
         return system_config_override
             ? const_cast<SystemConfig_t *>(system_config_override)

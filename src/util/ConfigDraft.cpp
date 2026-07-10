@@ -9,6 +9,7 @@
 
 #include "devices/displaypp/VideoScanner.hpp"
 #include "util/SystemConfig.hpp"
+#include "util/uuid.hpp"
 
 namespace {
 
@@ -100,6 +101,7 @@ std::vector<drive_spec_t> derive_drives_from_config(PlatformId_t platform_id,
 void ConfigDraft::sync_pointers() {
     config_.name = name_.c_str();
     config_.description = description_.c_str();
+    config_.id = id_.c_str();
 }
 
 ConfigDraft::ConfigDraft() {
@@ -120,6 +122,7 @@ void ConfigDraft::reset_for_platform(PlatformId_t platform_id) {
 
     name_ = std::string("New ") + platform_name(platform_id);
     description_ = "Custom system configuration";
+    id_ = generate_uuid_v4();
 
     if (platform_id != PLATFORM_APPLE_IIGS) {
         config_.slot_devices[6] = DEVICE_ID_DISK_II;
@@ -132,6 +135,10 @@ void ConfigDraft::load_from(const SystemConfig& config) {
     path_ = config.path();
     name_ = config.config().name ? config.config().name : "";
     description_ = config.config().description ? config.config().description : "";
+    id_ = config.id();
+    if (id_.empty()) {
+        id_ = generate_uuid_v4();
+    }
     config_ = config.config();
     mounts_ = config.mounts();
     sync_pointers();
@@ -141,6 +148,7 @@ void ConfigDraft::load_from_builtin(const SystemConfig_t& config) {
     path_.clear();
     name_ = config.name ? config.name : "";
     description_ = config.description ? config.description : "";
+    id_ = generate_uuid_v4();
     config_ = config;
     config_.builtin = false;
     mounts_.clear();
@@ -159,6 +167,11 @@ void ConfigDraft::set_description(const std::string& description) {
 
 void ConfigDraft::set_path(const std::string& path) {
     path_ = path;
+}
+
+void ConfigDraft::set_id(const std::string& id) {
+    id_ = id;
+    sync_pointers();
 }
 
 void ConfigDraft::set_platform(PlatformId_t platform_id) {

@@ -1,6 +1,10 @@
 gs2_version = 1
+id = "5cd3999a-10cf-4a14-be5a-2e4b2ca3c87b"
 name = "BazFast Volumes"
 platform = "apple2gs"
+clock = "ntsc"
+scanner = "apple2gs"
+builtin = false
 
 [[cards]]
 slot = 7

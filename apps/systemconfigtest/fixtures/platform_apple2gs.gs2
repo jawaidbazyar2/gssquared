@@ -1,6 +1,10 @@
 gs2_version = 1
+id = "e267bcfe-3a96-4e4b-843f-32e2763958c5"
 name = "Apple IIgs"
 platform = "apple2gs"
+clock = "ntsc"
+scanner = "apple2gs"
+builtin = false
 
 [[cards]]
 slot = 7

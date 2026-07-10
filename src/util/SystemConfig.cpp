@@ -29,6 +29,7 @@
 #include "devices/displaypp/VideoScanner.hpp"
 #include "paths.hpp"
 #include "util/toml.hpp"
+#include "util/uuid.hpp"
 
 namespace {
 
@@ -513,6 +514,10 @@ void SystemConfig::set_from_parts(const SystemConfig_t& config, const std::vecto
     clear();
     name_ = config.name ? config.name : "";
     description_ = config.description ? config.description : "";
+    id_ = config.id ? config.id : "";
+    if (id_.empty()) {
+        id_ = generate_uuid_v4();
+    }
     config_data_ = config;
     config_data_.builtin = false;
     mounts_ = mounts;
@@ -520,10 +525,14 @@ void SystemConfig::set_from_parts(const SystemConfig_t& config, const std::vecto
     sync_config_pointers();
 }
 
-bool SystemConfig::save(const std::string& path, std::string& error_out) const {
+bool SystemConfig::save(const std::string& path, std::string& error_out) {
     if (name_.empty() && !(config_data_.name && config_data_.name[0])) {
         error_out = "name must not be empty";
         return false;
+    }
+    if (id_.empty()) {
+        id_ = generate_uuid_v4();
+        sync_config_pointers();
     }
     const std::string& name_to_write = !name_.empty() ? name_ : std::string(config_data_.name);
 
@@ -534,6 +543,7 @@ bool SystemConfig::save(const std::string& path, std::string& error_out) const {
     }
 
     out << "gs2_version = 1\n";
+    out << "id = \"" << toml_escape(id_) << "\"\n";
     out << "name = \"" << toml_escape(name_to_write) << "\"\n";
     if (!description_.empty()) {
         out << "description = \"" << toml_escape(description_) << "\"\n";
@@ -588,12 +598,14 @@ bool SystemConfig::fallback_to_settings(const std::string& path, std::string& er
 void SystemConfig::sync_config_pointers() {
     config_data_.name = name_.c_str();
     config_data_.description = description_.c_str();
+    config_data_.id = id_.c_str();
 }
 
 void SystemConfig::clear() {
     path_.clear();
     name_.clear();
     description_.clear();
+    id_.clear();
     gs2_version_ = 0;
     settings_source_ = false;
     config_data_ = {};
@@ -696,6 +708,10 @@ bool SystemConfig::load_gs2(const std::string& path, std::string& error_out) {
 
     if (const auto desc_node = table["description"]; desc_node.is_string()) {
         description_ = std::string(*desc_node.value<std::string>());
+    }
+
+    if (const auto id_node = table["id"]; id_node.is_string()) {
+        id_ = std::string(*id_node.value<std::string>());
     }
 
     const auto platform_node = table["platform"];
@@ -862,13 +878,31 @@ bool SystemConfig::load_gs2(const std::string& path, std::string& error_out) {
         }
     }
 
-    return finalize_load(error_out);
+    bool minted_id = false;
+    if (id_.empty()) {
+        id_ = generate_uuid_v4();
+        minted_id = true;
+    }
+    sync_config_pointers();
+
+    if (!finalize_load(error_out)) {
+        return false;
+    }
+
+    if (minted_id) {
+        std::string save_err;
+        if (!save(path, save_err)) {
+            std::cerr << "Failed to persist machine id to '" << path << "': " << save_err << std::endl;
+        }
+    }
+    return true;
 }
 
 void SystemConfig::dump(std::ostream& out) const {
     out << "SystemConfig: " << path_ << "\n";
     out << "  source: " << (settings_source_ ? "settings.txt" : "gs2") << "\n";
     out << "  gs2_version: " << gs2_version_ << "\n";
+    out << "  id: " << id_ << "\n";
     out << "  name: " << name_ << "\n";
     out << "  description: " << description_ << "\n";
     out << "  platform: " << platform_name(config_data_.platform_id)

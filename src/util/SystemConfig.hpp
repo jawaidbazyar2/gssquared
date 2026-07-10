@@ -75,6 +75,7 @@ class SystemConfig {
     std::string path_;
     std::string name_;
     std::string description_;
+    std::string id_;
     int gs2_version_ = 0;
     bool settings_source_ = false;
     SystemConfig_t config_data_{};
@@ -97,7 +98,7 @@ public:
     bool load(const std::string& path, std::string& error_out);
 
     /** Write a .gs2 TOML file from the current in-memory config + mounts. */
-    bool save(const std::string& path, std::string& error_out) const;
+    bool save(const std::string& path, std::string& error_out);
 
     /**
      * Populate this object from a SystemConfig_t + mounts (e.g. editor draft)
@@ -114,6 +115,7 @@ public:
     int gs2_version() const { return gs2_version_; }
     bool is_settings_source() const { return settings_source_; }
     const std::string& path() const { return path_; }
+    const std::string& id() const { return id_; }
 
     void dump(std::ostream& out) const;
 
