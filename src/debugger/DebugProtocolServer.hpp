@@ -41,6 +41,12 @@ private:
     bool send_frame(int fd, uint32_t type, uint32_t seq, const void *payload, uint32_t length);
     bool send_error(int fd, uint32_t seq, uint32_t code, const char *message);
 
+    /** Send a protocol error. Returns true if the connection is dead (caller should return). */
+    bool reject(int fd, uint32_t seq, uint32_t code, const char *message);
+
+    /** Map a bridge error code to a client-facing message. domain is for READMEM/WRITEMEM. */
+    const char *bridge_error_message(uint32_t err, uint32_t domain = 0);
+
     /**
      * Submit a main-thread command and wait for reply.
      * On success, error_code_out==0 and reply holds the payload.

@@ -397,8 +397,32 @@ bool DebugProtocolServer::send_error(int fd, uint32_t seq, uint32_t code, const 
     return send_frame(fd, kTypeError, seq, payload.data(), static_cast<uint32_t>(payload.size()));
 }
 
+bool DebugProtocolServer::reject(int fd, uint32_t seq, uint32_t code, const char *message) {
+    return !send_error(fd, seq, code, message);
+}
+
+const char *DebugProtocolServer::bridge_error_message(uint32_t err, uint32_t domain) {
+    if (err == kEBusy) {
+        return "busy";
+    }
+    if (err == kEInternal) {
+        std::lock_guard<std::mutex> lock(bridge_mu_);
+        if (bridge_timed_out_) {
+            return "timeout waiting for main thread";
+        }
+        if (domain != kMemMain) {
+            return "unsupported domain";
+        }
+        return "no machine";
+    }
+    return "internal error";
+}
+
 void DebugProtocolServer::serve_client(int client_fd) {
     bool handshaked = false;
+
+    // Reject request with an error frame; disconnect on write failure, else next request.
+#define REJECT(...) do { if (reject(__VA_ARGS__)) return; continue; } while (0)
 
     while (!stop_) {
         FrameHeader hdr{};
@@ -419,27 +443,22 @@ void DebugProtocolServer::serve_client(int client_fd) {
         }
 
         if ((hdr.type & 0xFF000000u) != 0) {
-            if (!send_error(client_fd, hdr.seq, kEUnknownType, "flags must be zero on requests")) {
-                return;
-            }
-            continue;
+            REJECT(client_fd, hdr.seq, kEUnknownType, "flags must be zero on requests");
+        }
+
+        if (!handshaked && hdr.type != kTypeHello) {
+            REJECT(client_fd, hdr.seq, kENotHandshaked, "HELLO required first");
         }
 
         switch (hdr.type) {
         case kTypeHello: {
             if (hdr.length != 8) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "HELLO requires 8-byte payload")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "HELLO requires 8-byte payload");
             }
             uint32_t client_version = 0;
             std::memcpy(&client_version, payload.data(), 4);
             if (client_version != kProtoVersion) {
-                if (!send_error(client_fd, hdr.seq, kEBadVersion, "unsupported protocol version")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadVersion, "unsupported protocol version");
             }
             uint8_t reply[12];
             uint32_t version = kProtoVersion;
@@ -455,17 +474,8 @@ void DebugProtocolServer::serve_client(int client_fd) {
             break;
         }
         case kTypePing: {
-            if (!handshaked) {
-                if (!send_error(client_fd, hdr.seq, kENotHandshaked, "HELLO required first")) {
-                    return;
-                }
-                continue;
-            }
             if (hdr.length != 0) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "PING requires empty payload")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "PING requires empty payload");
             }
             if (!send_frame(client_fd, kTypePing, hdr.seq, nullptr, 0)) {
                 return;
@@ -473,17 +483,8 @@ void DebugProtocolServer::serve_client(int client_fd) {
             break;
         }
         case kTypeGetStatus: {
-            if (!handshaked) {
-                if (!send_error(client_fd, hdr.seq, kENotHandshaked, "HELLO required first")) {
-                    return;
-                }
-                continue;
-            }
             if (hdr.length != 0) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "GET_STATUS requires empty payload")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "GET_STATUS requires empty payload");
             }
             std::vector<uint8_t> reply;
             uint32_t err = 0;
@@ -493,23 +494,10 @@ void DebugProtocolServer::serve_client(int client_fd) {
                 return;
             }
             if (err != 0) {
-                const char *msg = "internal error";
-                if (err == kEBusy) {
-                    msg = "busy";
-                } else if (err == kEInternal) {
-                    std::lock_guard<std::mutex> lock(bridge_mu_);
-                    msg = bridge_timed_out_ ? "timeout waiting for main thread" : "no machine";
-                }
-                if (!send_error(client_fd, hdr.seq, err, msg)) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
             }
             if (reply.size() != 8) {
-                if (!send_error(client_fd, hdr.seq, kEInternal, "bad status reply")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEInternal, "bad status reply");
             }
             if (!send_frame(client_fd, kTypeGetStatus, hdr.seq, reply.data(), 8)) {
                 return;
@@ -517,25 +505,13 @@ void DebugProtocolServer::serve_client(int client_fd) {
             break;
         }
         case kTypeReset: {
-            if (!handshaked) {
-                if (!send_error(client_fd, hdr.seq, kENotHandshaked, "HELLO required first")) {
-                    return;
-                }
-                continue;
-            }
             if (hdr.length != 4) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "RESET requires 4-byte payload")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "RESET requires 4-byte payload");
             }
             uint32_t cold_start = 0;
             std::memcpy(&cold_start, payload.data(), 4);
             if (cold_start != 0 && cold_start != 1) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "RESET cold_start must be 0 or 1")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "RESET cold_start must be 0 or 1");
             }
 
             std::vector<uint8_t> reply;
@@ -546,23 +522,10 @@ void DebugProtocolServer::serve_client(int client_fd) {
                 return;
             }
             if (err != 0) {
-                const char *msg = "internal error";
-                if (err == kEBusy) {
-                    msg = "busy";
-                } else if (err == kEInternal) {
-                    std::lock_guard<std::mutex> lock(bridge_mu_);
-                    msg = bridge_timed_out_ ? "timeout waiting for main thread" : "no machine";
-                }
-                if (!send_error(client_fd, hdr.seq, err, msg)) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
             }
             if (!reply.empty()) {
-                if (!send_error(client_fd, hdr.seq, kEInternal, "bad reset reply")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEInternal, "bad reset reply");
             }
             if (!send_frame(client_fd, kTypeReset, hdr.seq, nullptr, 0)) {
                 return;
@@ -570,17 +533,8 @@ void DebugProtocolServer::serve_client(int client_fd) {
             break;
         }
         case kTypeReadMem: {
-            if (!handshaked) {
-                if (!send_error(client_fd, hdr.seq, kENotHandshaked, "HELLO required first")) {
-                    return;
-                }
-                continue;
-            }
             if (hdr.length != 12) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "READMEM requires 12-byte payload")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "READMEM requires 12-byte payload");
             }
             uint32_t domain = 0, address = 0, length = 0;
             std::memcpy(&domain, payload.data() + 0, 4);
@@ -588,22 +542,13 @@ void DebugProtocolServer::serve_client(int client_fd) {
             std::memcpy(&length, payload.data() + 8, 4);
 
             if (length == 0 || length > kMaxReadMem) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "READMEM length out of range")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "READMEM length out of range");
             }
             if (address > std::numeric_limits<uint32_t>::max() - length) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "READMEM address wrap")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "READMEM address wrap");
             }
             if (domain != kMemMain && domain != kMemMegaII && domain != kMemEnsoniq && domain != kMemAdbMicro) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "READMEM invalid domain")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "READMEM invalid domain");
             }
 
             std::vector<uint8_t> reply;
@@ -614,29 +559,10 @@ void DebugProtocolServer::serve_client(int client_fd) {
                 return;
             }
             if (err != 0) {
-                const char *msg = "internal error";
-                if (err == kEBusy) {
-                    msg = "busy";
-                } else if (err == kEInternal) {
-                    std::lock_guard<std::mutex> lock(bridge_mu_);
-                    if (bridge_timed_out_) {
-                        msg = "timeout waiting for main thread";
-                    } else if (domain != kMemMain) {
-                        msg = "unsupported domain";
-                    } else {
-                        msg = "no machine";
-                    }
-                }
-                if (!send_error(client_fd, hdr.seq, err, msg)) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err, domain));
             }
             if (reply.size() != length) {
-                if (!send_error(client_fd, hdr.seq, kEInternal, "bad readmem reply")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEInternal, "bad readmem reply");
             }
             if (!send_frame(client_fd, kTypeReadMem, hdr.seq, reply.data(), length)) {
                 return;
@@ -644,17 +570,8 @@ void DebugProtocolServer::serve_client(int client_fd) {
             break;
         }
         case kTypeWriteMem: {
-            if (!handshaked) {
-                if (!send_error(client_fd, hdr.seq, kENotHandshaked, "HELLO required first")) {
-                    return;
-                }
-                continue;
-            }
             if (hdr.length < 12) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "WRITEMEM payload too short")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "WRITEMEM payload too short");
             }
             uint32_t domain = 0, address = 0, length = 0;
             std::memcpy(&domain, payload.data() + 0, 4);
@@ -662,28 +579,16 @@ void DebugProtocolServer::serve_client(int client_fd) {
             std::memcpy(&length, payload.data() + 8, 4);
 
             if (length == 0 || length > kMaxWriteMem) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "WRITEMEM length out of range")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "WRITEMEM length out of range");
             }
             if (hdr.length != 12 + length) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "WRITEMEM payload length mismatch")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "WRITEMEM payload length mismatch");
             }
             if (address > std::numeric_limits<uint32_t>::max() - length) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "WRITEMEM address wrap")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "WRITEMEM address wrap");
             }
             if (domain != kMemMain && domain != kMemMegaII && domain != kMemEnsoniq && domain != kMemAdbMicro) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "WRITEMEM invalid domain")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "WRITEMEM invalid domain");
             }
 
             std::vector<uint8_t> request_data(payload.begin() + 12, payload.end());
@@ -694,29 +599,10 @@ void DebugProtocolServer::serve_client(int client_fd) {
                 return;
             }
             if (err != 0) {
-                const char *msg = "internal error";
-                if (err == kEBusy) {
-                    msg = "busy";
-                } else if (err == kEInternal) {
-                    std::lock_guard<std::mutex> lock(bridge_mu_);
-                    if (bridge_timed_out_) {
-                        msg = "timeout waiting for main thread";
-                    } else if (domain != kMemMain) {
-                        msg = "unsupported domain";
-                    } else {
-                        msg = "no machine";
-                    }
-                }
-                if (!send_error(client_fd, hdr.seq, err, msg)) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err, domain));
             }
             if (!reply.empty()) {
-                if (!send_error(client_fd, hdr.seq, kEInternal, "bad writemem reply")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEInternal, "bad writemem reply");
             }
             if (!send_frame(client_fd, kTypeWriteMem, hdr.seq, nullptr, 0)) {
                 return;
@@ -724,17 +610,8 @@ void DebugProtocolServer::serve_client(int client_fd) {
             break;
         }
         case kTypeKeyEvent: {
-            if (!handshaked) {
-                if (!send_error(client_fd, hdr.seq, kENotHandshaked, "HELLO required first")) {
-                    return;
-                }
-                continue;
-            }
             if (hdr.length != 12) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "KEYEVENT requires 12-byte payload")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "KEYEVENT requires 12-byte payload");
             }
             uint32_t down = 0, scancode = 0, mod = 0;
             std::memcpy(&down, payload.data() + 0, 4);
@@ -742,10 +619,7 @@ void DebugProtocolServer::serve_client(int client_fd) {
             std::memcpy(&mod, payload.data() + 8, 4);
 
             if (down != 0 && down != 1) {
-                if (!send_error(client_fd, hdr.seq, kEBadLength, "KEYEVENT down must be 0 or 1")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEBadLength, "KEYEVENT down must be 0 or 1");
             }
 
             SDL_Event ev{};
@@ -757,10 +631,7 @@ void DebugProtocolServer::serve_client(int client_fd) {
             ev.key.repeat = false;
 
             if (!SDL_PushEvent(&ev)) {
-                if (!send_error(client_fd, hdr.seq, kEInternal, "SDL_PushEvent failed")) {
-                    return;
-                }
-                continue;
+                REJECT(client_fd, hdr.seq, kEInternal, "SDL_PushEvent failed");
             }
             if (!send_frame(client_fd, kTypeKeyEvent, hdr.seq, nullptr, 0)) {
                 return;
@@ -768,17 +639,10 @@ void DebugProtocolServer::serve_client(int client_fd) {
             break;
         }
         default: {
-            if (!handshaked && hdr.type != kTypeHello) {
-                if (!send_error(client_fd, hdr.seq, kENotHandshaked, "HELLO required first")) {
-                    return;
-                }
-                continue;
-            }
-            if (!send_error(client_fd, hdr.seq, kEUnknownType, "unknown type")) {
-                return;
-            }
-            break;
+            REJECT(client_fd, hdr.seq, kEUnknownType, "unknown type");
         }
         }
     }
+
+#undef REJECT
 }
