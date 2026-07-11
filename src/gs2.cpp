@@ -1218,6 +1218,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             state->edit_system->start_new();
             return SDL_APP_CONTINUE;
         }
+        if (system_id == SELECT_OPEN_LAUNCH) {
+            state->select_system->clear_selection();
+            open_system_config_dialog(state, false);
+            return SDL_APP_CONTINUE;
+        }
         if (system_id == SELECT_OPEN_EDIT) {
             state->select_system->clear_selection();
             open_system_config_dialog(state, true);
