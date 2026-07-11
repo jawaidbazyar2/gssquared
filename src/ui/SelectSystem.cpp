@@ -147,6 +147,15 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     action_con_->add(new_btn);
     new_btn_ = new_btn;
 
+    Button_t *launch_btn = new Button_t(&ui_ctx, "Launch", ActionStyle);
+    launch_btn->size(120, 36);
+    launch_btn->on_click([this](const SDL_Event&) -> bool {
+        selected_system = SELECT_OPEN_LAUNCH;
+        return true;
+    });
+    action_con_->add(launch_btn);
+    launch_btn_ = launch_btn;
+
     Button_t *edit_btn = new Button_t(&ui_ctx, "Edit...", ActionStyle);
     edit_btn->size(120, 36);
     edit_btn->on_click([this](const SDL_Event&) -> bool {
@@ -156,7 +165,7 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     action_con_->add(edit_btn);
     edit_btn_ = edit_btn;
 
-    const float action_w = 280.0f;
+    const float action_w = 420.0f;
     const float action_h = 52.0f;
     SDL_FRect tile_bounds = container->get_effective_bounds();
     float action_x = (design_width - action_w) / 2.0f;
@@ -213,6 +222,7 @@ bool SelectSystem::event(const SDL_Event &event) {
     }
     return (selected_system >= 0) ||
            (selected_system == SELECT_NEW) ||
+           (selected_system == SELECT_OPEN_LAUNCH) ||
            (selected_system == SELECT_OPEN_EDIT);
 }
 
@@ -250,6 +260,8 @@ void SelectSystem::render() {
         const char *hint = nullptr;
         if (new_btn_ && new_btn_->is_mouse_hovering()) {
             hint = "Create a new system configuration";
+        } else if (launch_btn_ && launch_btn_->is_mouse_hovering()) {
+            hint = "Open an existing config file to launch";
         } else if (edit_btn_ && edit_btn_->is_mouse_hovering()) {
             hint = "Open an existing config file to edit";
         }
