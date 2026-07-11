@@ -52,6 +52,7 @@
 #include "QuitModal.hpp"
 #include "ConfigSelectors.hpp"
 #include "StorageButtonFactory.hpp"
+#include "version.h"
 
 // we need to use data passed to us, and pass it to the ShowOpenFileDialog, so when the file select event
 // comes back later, we know which drive this was for.
@@ -607,6 +608,14 @@ void OSD::render() {
         SDL_SetRenderTarget(renderer, cpTexture);
         for (Container_t* container : containers) {
             container->render();
+        }
+
+        // Build version near bottom-left of the control panel slide-out
+        {
+            const int version_x = 20;
+            const int version_y = window_h - 50 - text_render->get_font_line_height() - 8;
+            text_render->set_color(0x00, 0x00, 0x00, 0xC0);
+            text_render->render(VERSION_STRING, version_x, version_y, TEXT_ALIGN_LEFT);
         }
 
         if (!mstack.stack.empty()) {

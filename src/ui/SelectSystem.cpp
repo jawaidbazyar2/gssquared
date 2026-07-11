@@ -9,11 +9,17 @@
 #include "AssetAtlas.hpp"
 #include "SystemButton.hpp"
 #include "Button.hpp"
+#include "version.h"
 
 #include <iostream>
+#include <cstdio>
 
 SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     : vs(vs), aa(aa) {
+
+    char title[64];
+    snprintf(title, sizeof(title), "GSSquared - Apple ][ Emulator - %s", VERSION_STRING);
+    vs->set_window_title(title);
 
 // create container with tiles for each system.
 // be cheap right now and do a text button.
