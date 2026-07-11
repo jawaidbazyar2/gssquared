@@ -45,6 +45,7 @@
 #include "slots.hpp"
 #include "videosystem.hpp"
 #include "debugger/debugwindow.hpp"
+#include "debugger/DebugProtocolServer.hpp"
 #include "computer.hpp"
 #include "mmus/mmu_ii.hpp"
 #include "mmus/mmu_iie.hpp"
@@ -595,6 +596,9 @@ struct GS2AppState {
     // Emulation state
     computer_t *computer = nullptr;
 
+    // External debug protocol (optional; started via --debug / -D)
+    std::unique_ptr<DebugProtocolServer> debug_protocol;
+
     // MMU pointers tracked for cleanup
     MMU_II *mmu_ii = nullptr;
     MMU_IIe *mmu_iie = nullptr;
@@ -968,6 +972,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     int platform_id = PLATFORM_APPLE_II_PLUS;  // default to Apple II Plus
     bool platform_explicit = false;            // true when -p was given on CLI
     std::string config_path;
+    std::string debug_socket_path;
     std::vector<disk_mount_t> cli_mounts;
     int opt;
     int slot, drive;
@@ -982,7 +987,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         mounts.push_back(mount);
     };
 
-    if (isatty(fileno(stdin))) {
+    if (isatty(fileno(stdin)) || argc > 1) {
+        // argc>1: scripted/CLI launch (often no TTY) still needs program-files
+        // resource paths (…/resources/) so fonts and ROMs resolve.
         gs2_app_values.console_mode = true;
     }
     Paths::initialize(gs2_app_values.console_mode);
@@ -995,9 +1002,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SystemConfig::ensure_default_system_configs();
     SystemSettings::instance().load();
 
-    if (gs2_app_values.console_mode) {
+    // Parse CLI whenever there are arguments. console_mode (isatty) is still used
+    // elsewhere; without this, scripted launches (no TTY) would ignore --debug / -p / etc.
+    if (gs2_app_values.console_mode || argc > 1) {
         // parse command line options
-        while ((opt = getopt(argc, argv, "sxgp:d:")) != -1) {
+        static struct option long_options[] = {
+            {"debug", required_argument, nullptr, 'D'},
+            {nullptr, 0, nullptr, 0}
+        };
+        while ((opt = getopt_long(argc, argv, "sxgp:d:D:", long_options, nullptr)) != -1) {
             switch (opt) {
                 case 'p':
                     platform_id = std::stoi(optarg);
@@ -1029,8 +1042,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 case 'g':
                     gs2_app_values.crt_shader_at_boot = true;
                     break;
+                case 'D':
+                    debug_socket_path = optarg;
+                    std::cerr << "Debug protocol socket: " << debug_socket_path << "\n";
+                    break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [file.gs2|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g]\n";
+                    std::cerr << "Usage: " << argv[0] << " [file.gs2|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH]\n";
                     std::cerr << "  file.gs2|*Settings.txt: load system configuration from a .gs2 TOML file\n";
                     std::cerr << "        or Neil Profiles Settings.txt file, skip the system-selector UI,\n";
                     std::cerr << "        and auto-launch that system.\n";
@@ -1050,6 +1067,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     std::cerr << "  -s: sleep mode (don't busy-wait, sleep)\n";
                     std::cerr << "  -g: enable CRT post-process shader when guest emulation\n";
                     std::cerr << "        starts (same as pressing F7 with shader off).\n";
+                    std::cerr << "  -D PATH, --debug PATH: listen for external debug protocol on\n";
+                    std::cerr << "        Unix-domain socket PATH (see Docs/DebugProtocol.md).\n";
                     return SDL_APP_FAILURE;
             }
         }
@@ -1084,6 +1103,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     }
 
     state->computer = new computer_t(nullptr); // We'll set the clock later.
+
+    // Start debug protocol after computer exists so GET_STATUS can read execution_mode.
+    if (!debug_socket_path.empty()) {
+        state->debug_protocol = std::make_unique<DebugProtocolServer>(debug_socket_path);
+        if (!state->debug_protocol->start()) {
+            std::cerr << "Failed to start debug protocol server on " << debug_socket_path << "\n";
+            delete state->computer;
+            state->computer = nullptr;
+            delete state;
+            return SDL_APP_FAILURE;
+        }
+    }
 
     video_system_t *vs = state->computer->video_system;
 
@@ -1195,6 +1226,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     // Pump any pending GTK/GDK events (Linux menu). Called here rather than
     // in SDL_AppEvent to avoid blocking SDL's X11 connection (deadlock risk).
     pumpMenuEvents();
+
+    // Drain main-thread debug commands every frame (including while paused / on selector).
+    if (state->debug_protocol) {
+        state->debug_protocol->process_main_thread(state->computer);
+    }
 
     if (state->phase == PHASE_SYSTEM_SELECT) {
         /* Render the selection UI (one frame). Events already dispatched by SDL_AppEvent. */
@@ -1321,6 +1357,10 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     delete state->edit_system;
     delete state->select_system;
     delete state->aa;
+    if (state->debug_protocol) {
+        state->debug_protocol->stop();
+        state->debug_protocol.reset();
+    }
     delete state;
     // SDL_Quit() is called automatically by SDL after this returns.
 }

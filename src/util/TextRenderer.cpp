@@ -33,18 +33,28 @@ TextRenderer::TextRenderer(SDL_Renderer *renderer, const std::string &font_path,
 }
 
 TextRenderer::~TextRenderer() {
-    TTF_DestroyRendererTextEngine(engine);
-    TTF_CloseFont(font);
+    if (engine) {
+        TTF_DestroyRendererTextEngine(engine);
+    }
+    if (font) {
+        TTF_CloseFont(font);
+    }
     TTF_Quit();
 }
 
 int TextRenderer::char_width(char c) {
+    if (use_debug_font || !font) {
+        return 8;
+    }
     int charWidth, charHeight;
     TTF_GetStringSize(font, &c, 1, &charWidth, &charHeight);
     return charWidth;
 }
 
 int TextRenderer::string_width(const std::string &text) {
+    if (use_debug_font || !font) {
+        return static_cast<int>(text.size()) * 8;
+    }
     int charWidth, charHeight;
     TTF_GetStringSize(font, text.c_str(), text.length(), &charWidth, &charHeight);
     return charWidth;

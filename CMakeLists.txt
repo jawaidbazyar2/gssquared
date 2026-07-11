@@ -363,8 +363,9 @@ add_library(gs2_devices_adb     src/devices/adb/keygloo.cpp )
 
 add_library(gs2_trace src/debugger/trace.cpp src/debugger/trace_opcodes.cpp)
 
-add_library(gs2_debugger  src/debugger/debugwindow.cpp src/debugger/MonitorCommand.cpp 
-    src/debugger/ExecuteCommand.cpp src/debugger/MemoryWatch.cpp src/debugger/disasm.cpp)
+add_library(gs2_debugger  src/debugger/debugwindow.cpp src/debugger/MonitorCommand.cpp
+    src/debugger/ExecuteCommand.cpp src/debugger/MemoryWatch.cpp src/debugger/disasm.cpp
+    src/debugger/DebugProtocolServer.cpp)
 
 add_library(gs2_mmu src/mmus/mmu.cpp src/mmus/mmu_ii.cpp src/mmus/mmu_iie.cpp src/mmus/mmu_iigs.cpp)
 
@@ -498,7 +499,7 @@ add_library(gs2_devices_rtc_pram src/devices/rtc/rtc_pram.cpp)
 target_link_libraries(gs2_devices_rtc_pram PUBLIC gs2_paths)
 
 target_link_libraries(gs2_ui ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF} gs2_systemconfig)
-target_link_libraries(gs2_debugger gs2_trace gs2_util ${GS2_SDL3_TTF})
+target_link_libraries(gs2_debugger gs2_trace gs2_util ${GS2_SDL3} ${GS2_SDL3_TTF})
 target_link_libraries(gs2_util ${GS2_SDL3_TTF})
 target_link_libraries(gs2_computer ${GS2_SDL3_TTF})
 target_link_libraries(gs2_cpu gs2_trace)
