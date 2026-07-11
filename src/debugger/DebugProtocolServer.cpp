@@ -33,6 +33,7 @@ constexpr uint32_t kTypeHello     = 0x00000001;
 constexpr uint32_t kTypePing      = 0x00000002;
 constexpr uint32_t kTypeError     = 0x00000003;
 constexpr uint32_t kTypeGetStatus = 0x00000101;
+constexpr uint32_t kTypeReset     = 0x00000102;
 constexpr uint32_t kTypeReadMem   = 0x00000301;
 constexpr uint32_t kTypeWriteMem  = 0x00000302;
 constexpr uint32_t kTypeKeyEvent  = 0x00000501;
@@ -183,8 +184,19 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             bridge_error_ = kEInternal;
         } else {
             uint32_t mode = static_cast<uint32_t>(computer->execution_mode);
-            bridge_reply_.resize(4);
-            std::memcpy(bridge_reply_.data(), &mode, 4);
+            uint32_t platform_id = computer->platform
+                ? static_cast<uint32_t>(computer->platform->id)
+                : 0xFFFFFFFFu;
+            bridge_reply_.resize(8);
+            std::memcpy(bridge_reply_.data() + 0, &mode, 4);
+            std::memcpy(bridge_reply_.data() + 4, &platform_id, 4);
+        }
+    } else if (bridge_type_ == kTypeReset) {
+        const uint32_t cold_start = bridge_arg0_;
+        if (!computer) {
+            bridge_error_ = kEInternal;
+        } else {
+            computer->reset(cold_start != 0);
         }
     } else if (bridge_type_ == kTypeReadMem) {
         const uint32_t domain = bridge_arg0_;
@@ -493,13 +505,66 @@ void DebugProtocolServer::serve_client(int client_fd) {
                 }
                 continue;
             }
-            if (reply.size() != 4) {
+            if (reply.size() != 8) {
                 if (!send_error(client_fd, hdr.seq, kEInternal, "bad status reply")) {
                     return;
                 }
                 continue;
             }
-            if (!send_frame(client_fd, kTypeGetStatus, hdr.seq, reply.data(), 4)) {
+            if (!send_frame(client_fd, kTypeGetStatus, hdr.seq, reply.data(), 8)) {
+                return;
+            }
+            break;
+        }
+        case kTypeReset: {
+            if (!handshaked) {
+                if (!send_error(client_fd, hdr.seq, kENotHandshaked, "HELLO required first")) {
+                    return;
+                }
+                continue;
+            }
+            if (hdr.length != 4) {
+                if (!send_error(client_fd, hdr.seq, kEBadLength, "RESET requires 4-byte payload")) {
+                    return;
+                }
+                continue;
+            }
+            uint32_t cold_start = 0;
+            std::memcpy(&cold_start, payload.data(), 4);
+            if (cold_start != 0 && cold_start != 1) {
+                if (!send_error(client_fd, hdr.seq, kEBadLength, "RESET cold_start must be 0 or 1")) {
+                    return;
+                }
+                continue;
+            }
+
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeReset, hdr.seq, cold_start, 0, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                const char *msg = "internal error";
+                if (err == kEBusy) {
+                    msg = "busy";
+                } else if (err == kEInternal) {
+                    std::lock_guard<std::mutex> lock(bridge_mu_);
+                    msg = bridge_timed_out_ ? "timeout waiting for main thread" : "no machine";
+                }
+                if (!send_error(client_fd, hdr.seq, err, msg)) {
+                    return;
+                }
+                continue;
+            }
+            if (!reply.empty()) {
+                if (!send_error(client_fd, hdr.seq, kEInternal, "bad reset reply")) {
+                    return;
+                }
+                continue;
+            }
+            if (!send_frame(client_fd, kTypeReset, hdr.seq, nullptr, 0)) {
                 return;
             }
             break;

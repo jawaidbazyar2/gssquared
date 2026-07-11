@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Boot wait, Control+Reset (Ctrl+F12), then type a short Applesoft program on IIe.
+"""Boot wait, protocol RESET, then type a short Applesoft program on IIe.
 
 Usage:
-  ./build/GSSquared --debug /tmp/gs2.sock -p 1
+  ./build/GSSquared --debug /tmp/gs2.sock -p 2
   PYTHONPATH=clients/python/src python3 clients/python/examples/type_basic_iie.py /tmp/gs2.sock
 """
 
@@ -14,25 +14,22 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from gs2debug import (
-    KMOD_CTRL,
-    KMOD_LCTRL,
-    SCANCODE_F12,
-    SCANCODE_LCTRL,
-    Client,
-    ProtocolError,
-)
+from gs2debug import Client, ProtocolError
 
-PROGRAM = '10 PRINT "BOOGERS"\n20 END\nRUN\n'
-
-
-def control_reset(client: Client) -> None:
-    """Hold Control, press F12 (Reset), release — matches IIe keyboard.cpp."""
-    client.key_down(SCANCODE_LCTRL, KMOD_LCTRL)
-    client.key_down(SCANCODE_F12, KMOD_CTRL)
-    time.sleep(1.0)
-    client.key_up(SCANCODE_F12, KMOD_CTRL)
-    client.key_up(SCANCODE_LCTRL, 0)
+# HCOLOR=5 is orange on HGR. Circle via COS/SIN + HPLOT / HPLOT TO.
+PROGRAM = """\
+NEW
+10 HGR
+20 HCOLOR=5
+30 CX=140:CY=96:R=70
+40 A=0
+50 X=INT(CX+R*COS(A)):Y=INT(CY+R*SIN(A)):HPLOT X,Y
+60 FOR A=0.03 TO 6.28 STEP 0.03
+70 X=INT(CX+R*COS(A)):Y=INT(CY+R*SIN(A)):HPLOT TO X,Y
+80 NEXT
+90 GOTO 90
+RUN
+"""
 
 
 def main() -> int:
@@ -47,12 +44,12 @@ def main() -> int:
         print(f"HELLO ok: version={info.version} max_payload={info.max_payload:#x}")
         print("waiting 5s for boot...")
         time.sleep(5.0)
-        print("Control+Reset (Ctrl+F12)...")
-        control_reset(client)
+        print("RESET (warm)...")
+        client.reset(cold_start=False)
         print("waiting 2s for BASIC prompt...")
         time.sleep(2.0)
         print(f"typing program:\n{PROGRAM}")
-        client.type_text(PROGRAM, delay_s=0.08)
+        client.type_text(PROGRAM, delay_s=0.1)
         print("done")
     return 0
 

@@ -2,7 +2,7 @@
 """HELLO / GET_STATUS / PING smoke test against a running GSSquared debug socket.
 
 Usage:
-  ./build/GSSquared --debug /tmp/gs2.sock -p 1
+  ./build/GSSquared --debug /tmp/gs2.sock -p 2
   PYTHONPATH=clients/python/src python3 clients/python/examples/hello_ping.py /tmp/gs2.sock
 """
 
@@ -22,6 +22,15 @@ _MODE_NAMES = {
     2: "PAUSED",
 }
 
+_PLATFORM_NAMES = {
+    0: "Apple II",
+    1: "Apple II Plus",
+    2: "Apple IIe",
+    3: "Apple IIe Enhanced",
+    4: "Apple IIe 65816",
+    5: "Apple IIgs",
+}
+
 
 def main() -> int:
     if len(sys.argv) != 2:
@@ -33,9 +42,13 @@ def main() -> int:
         client.connect(path)
         info = client.hello()
         print(f"HELLO ok: version={info.version} flags={info.flags} max_payload={info.max_payload:#x}")
-        mode = client.get_status()
-        name = _MODE_NAMES.get(mode, "UNKNOWN")
-        print(f"GET_STATUS ok: execution_mode={mode} ({name})")
+        status = client.get_status()
+        mode_name = _MODE_NAMES.get(status.execution_mode, "UNKNOWN")
+        plat_name = _PLATFORM_NAMES.get(status.platform_id, "UNKNOWN")
+        print(
+            f"GET_STATUS ok: execution_mode={status.execution_mode} ({mode_name}) "
+            f"platform_id={status.platform_id} ({plat_name})"
+        )
         client.ping()
         print("PING ok")
     return 0

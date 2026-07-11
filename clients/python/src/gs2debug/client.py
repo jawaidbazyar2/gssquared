@@ -20,6 +20,7 @@ from .types import (
     PING,
     PROTOCOL_VERSION,
     READMEM,
+    RESET,
     WRITEMEM,
 )
 
@@ -29,6 +30,12 @@ class HelloInfo:
     version: int
     flags: int
     max_payload: int
+
+
+@dataclass(frozen=True)
+class StatusInfo:
+    execution_mode: int
+    platform_id: int
 
 
 EventHandler = Callable[[int, int, bytes], None]
@@ -78,14 +85,24 @@ class Client:
         if reply:
             raise ProtocolError(0, f"PING reply not empty ({len(reply)} bytes)")
 
-    def get_status(self) -> int:
-        """Return execution_mode: 0=NORMAL, 1=STEP_INTO, 2=PAUSED."""
+    def get_status(self) -> StatusInfo:
+        """Return execution_mode and platform_id (PlatformId_t / -p N)."""
         if not self._handshaked:
             raise RuntimeError("hello() required before get_status()")
         reply = self.request(GET_STATUS, b"")
-        if len(reply) != 4:
-            raise ProtocolError(0, f"GET_STATUS reply length {len(reply)}, expected 4")
-        return struct.unpack("<I", reply)[0]
+        if len(reply) != 8:
+            raise ProtocolError(0, f"GET_STATUS reply length {len(reply)}, expected 8")
+        mode, platform_id = struct.unpack("<II", reply)
+        return StatusInfo(execution_mode=mode, platform_id=platform_id)
+
+    def reset(self, cold_start: bool = False) -> None:
+        """Call computer_t::reset(cold_start) on the main thread."""
+        if not self._handshaked:
+            raise RuntimeError("hello() required before reset()")
+        payload = struct.pack("<I", 1 if cold_start else 0)
+        reply = self.request(RESET, payload)
+        if reply:
+            raise ProtocolError(0, f"RESET reply not empty ({len(reply)} bytes)")
 
     def read_mem(self, domain: int, address: int, length: int) -> bytes:
         """Send READMEM; return `length` bytes from domain/address (MAIN=0 implemented)."""
@@ -125,25 +142,34 @@ class Client:
     def key_up(self, scancode: int, mod: int = 0) -> None:
         self.key_event(False, scancode, mod)
 
-    def tap_key(self, scancode: int, mod: int = 0) -> None:
+    def tap_key(self, scancode: int, mod: int = 0, *, hold_s: float = 0.02) -> None:
         """Send keydown then keyup with the same scancode/mod."""
         self.key_down(scancode, mod)
+        if hold_s > 0:
+            time.sleep(hold_s)
         self.key_up(scancode, mod)
 
-    def type_text(self, text: str, *, delay_s: float = 0.05) -> None:
-        """Type printable ASCII (US layout). Newline becomes Return; shift held per glyph."""
+    def type_text(self, text: str, *, delay_s: float = 0.05, hold_s: float = 0.02) -> None:
+        """Type printable ASCII (US layout). Newline becomes Return; shift held per glyph.
+
+        delay_s: pause after each character (extra 2x after Return).
+        hold_s: pause between keydown and keyup so the guest can see the strobe.
+        """
         if not self._handshaked:
             raise RuntimeError("hello() required before type_text()")
         for ch in text:
             scancode, needs_shift = ascii_to_key(ch)
             if needs_shift:
                 self.key_down(SCANCODE_LSHIFT, KMOD_LSHIFT)
-                self.tap_key(scancode, KMOD_LSHIFT)
+                self.tap_key(scancode, KMOD_LSHIFT, hold_s=hold_s)
                 self.key_up(SCANCODE_LSHIFT, 0)
             else:
-                self.tap_key(scancode, 0)
-            if delay_s > 0:
-                time.sleep(delay_s)
+                self.tap_key(scancode, 0, hold_s=hold_s)
+            pause = delay_s
+            if ch in "\n\r" and delay_s > 0:
+                pause = delay_s * 3
+            if pause > 0:
+                time.sleep(pause)
 
     def request(
         self,

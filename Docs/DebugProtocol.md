@@ -2,7 +2,7 @@
 
 Wire protocol for host-driven debugging of GSSquared. External tools (CLI, Python, LLM agents) speak this framing over a local byte stream; the emulator does not embed a scripting language or parse JSON.
 
-This document is the source of truth for the wire format. Exploratory notes in `ExternalDebugInterface.md` are historical and not normative. Host-side library sketch and client concerns: [DebugClient.md](DebugClient.md).
+This document is the source of truth for the wire format. Exploratory notes in `ExternalDebugInterface.md` are historical and not normative. Host-side library: [DebugClient.md](DebugClient.md). **Agent cookbook:** [gs2debug.md](gs2debug.md).
 
 ## Goals
 
@@ -17,7 +17,7 @@ This document is the source of truth for the wire format. Exploratory notes in `
 - TCP listen/connect (frame is ready; transport comes later).
 - Required request pipelining (header supports it; implementation may allow only one outstanding request).
 - MCP, GDB RSP, or an embedded script runtime.
-- Full debug command set (`pause`, …) — session meta plus GET_STATUS / READMEM / WRITEMEM (MAIN) / KEYEVENT below.
+- Full debug command set (`pause`, …) — session meta plus GET_STATUS / RESET / READMEM / WRITEMEM (MAIN) / KEYEVENT below.
 
 ---
 
@@ -167,6 +167,16 @@ Rules:
 | `ERROR` | 0 | 3 | `0x00000003` | server reply only — when a request fails or is unknown |
 | `EVENT` | 0 | 4 | `0x00000004` | server → client only — unsolicited notification |
 
+### Type IDs (implemented non-meta)
+
+| Name | `main` | `sub` | `type` | Thread | Reply payload |
+|------|--------|-------|--------|--------|---------------|
+| `GET_STATUS` | 1 | 1 | `0x00000101` | main | 8 bytes: `execution_mode`, `platform_id` |
+| `RESET` | 1 | 2 | `0x00000102` | main | empty |
+| `READMEM` | 3 | 1 | `0x00000301` | main | `length` data bytes |
+| `WRITEMEM` | 3 | 2 | `0x00000302` | main | empty |
+| `KEYEVENT` | 5 | 1 | `0x00000501` | protocol (`SDL_PushEvent`) | empty |
+
 ### Protocol version
 
 Current protocol version: **1**.
@@ -241,17 +251,32 @@ Commands in this family are executed on the **main emulation thread** (via a req
 
 #### `GET_STATUS` — main 1, sub 1 (`0x00000101`)
 
-Read-only snapshot of run-control state.
+Read-only snapshot of run-control and platform identity.
 
 **Request payload:** empty (`length == 0`). Requires successful `HELLO`.
 
-**Success reply** (same `type=GET_STATUS`, echoed `seq`), payload (4 bytes):
+**Success reply** (same `type=GET_STATUS`, echoed `seq`), payload (8 bytes):
 
 | Offset | Size | Field | Description |
 |--------|------|-------|-------------|
 | 0 | 4 | `execution_mode` | `uint32` matching emulator `execution_modes_t`: `0=NORMAL`, `1=STEP_INTO`, `2=PAUSED`. |
+| 4 | 4 | `platform_id` | `uint32` matching `PlatformId_t` / CLI `-p N`: `0=II`, `1=II Plus`, `2=IIe`, `3=IIe Enhanced`, `4=IIe 65816`, `5=IIgs`. `0xFFFFFFFF` if unknown. |
 
 If no machine (`computer_t`) is available yet, server replies `ERROR` with `E_INTERNAL` and message `no machine`.
+
+#### `RESET` — main 1, sub 2 (`0x00000102`)
+
+Invoke `computer_t::reset(cold_start)` on the main thread.
+
+**Request payload** (4 bytes):
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `cold_start` | `uint32`: `0` = warm reset, `1` = cold start (clears `$3F2`–`$3F4` before reset). |
+
+**Success reply** (same `type=RESET`, echoed `seq`): empty payload.
+
+**Bounds:** handshake required; payload exactly 4 bytes; `cold_start` must be `0` or `1`; no machine → `E_INTERNAL` / `no machine`.
 
 ### Memory (`main == 3`)
 
@@ -354,7 +379,7 @@ Client connects, then:
 1. Request: `type=HELLO`, `seq=1`, `length=8`, payload `version=1`, `flags=0`.
 2. Reply: `type=HELLO`, `seq=1`, `length=12`, payload `version=1`, `flags=0`, `max_payload=0x00100000`.
 3. Request: `type=GET_STATUS`, `seq=2`, `length=0`.
-4. Reply: `type=GET_STATUS`, `seq=2`, `length=4`, payload `execution_mode=0` (NORMAL).
+4. Reply: `type=GET_STATUS`, `seq=2`, `length=8`, payload `execution_mode=0` (NORMAL), `platform_id=…`.
 5. Request: `type=READMEM`, `seq=3`, `length=12`, payload `domain=MAIN`, `address=0x0400`, `length=0x28`.
 6. Reply: `type=READMEM`, `seq=3`, `length=0x28`, payload = 40 memory bytes.
 7. Request: `type=WRITEMEM`, `seq=4`, `length=12+0x28`, payload `domain=MAIN`, `address=0x0400`, `length=0x28`, then 40 data bytes.

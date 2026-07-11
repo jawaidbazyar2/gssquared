@@ -1,4 +1,6 @@
 
+> **Not normative.** Implemented docs: [DebugProtocol.md](DebugProtocol.md) (wire), [gs2debug.md](gs2debug.md) (Python/agent API), [DebugClient.md](DebugClient.md). This file is historical brainstorming.
+
 **User**
 
 I'm wondering, MAME offers Lua for external scriptable debug access. what you're proposing above looks like a DSL (domain specific language), which I think I'd like to avoid. I am not necessarily a big fan of LUA though, so I'm wondering if there are some other options that would work well. 

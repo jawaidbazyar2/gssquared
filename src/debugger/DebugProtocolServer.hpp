@@ -13,7 +13,7 @@ struct computer_t;
 
 /**
  * External debug protocol driver (AF_UNIX).
- * HELLO / PING / KEYEVENT on the protocol thread; GET_STATUS / READMEM / WRITEMEM via main-thread bridge.
+ * HELLO / PING / KEYEVENT on the protocol thread; GET_STATUS / RESET / READMEM / WRITEMEM via main-thread bridge.
  * See Docs/DebugProtocol.md.
  */
 class DebugProtocolServer {

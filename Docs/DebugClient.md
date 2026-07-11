@@ -4,6 +4,8 @@ Host-side client library for [DebugProtocol.md](DebugProtocol.md). Wire format l
 
 Python package lives under [`clients/python/`](../clients/python/) (`gs2debug`). Wire format: [DebugProtocol.md](DebugProtocol.md).
 
+**Agent / script cookbook (preferred entry point):** [gs2debug.md](gs2debug.md).
+
 ## Language: Python 3
 
 **Python 3.10+** is the first (and primary) client language.
@@ -24,12 +26,12 @@ You do not need deep Python experience to use the library; agents and the packag
 | Layer | Owns |
 |-------|------|
 | [DebugProtocol.md](DebugProtocol.md) | Frame bytes, type IDs, payload layouts |
-| Client library (`gs2debug`) | Connect, framing read/write, seq allocation, HELLO, request/reply matching, ERROR → exception, EVENT demux |
-| Agent / script | Workflows (pause → read → …), timeouts, retries, policy |
+| Client library (`gs2debug`) | Connect, framing read/write, seq allocation, HELLO, request/reply matching, ERROR → exception, EVENT demux, thin helpers (`read_mem`, `reset`, `type_text`, …) |
+| Agent / script | Workflows (reset → type → peek → …), timeouts, retries, policy |
 
-The emulator owns machine state. The client peeks/pokes memory via READMEM / WRITEMEM.
+The emulator owns machine state. The client peeks/pokes memory via READMEM / WRITEMEM, resets via RESET, and injects keys via KEYEVENT.
 
-## Proposed package layout
+## Package layout
 
 ```
 clients/python/
@@ -37,17 +39,19 @@ clients/python/
   pyproject.toml          # package name gs2debug, requires-python >= 3.10, no runtime deps
   src/gs2debug/
     __init__.py
-    types.py              # HELLO / PING / ERROR / EVENT constants, main/sub helpers
+    types.py              # HELLO / PING / GET_STATUS / RESET / READMEM / … constants
+    keys.py               # SDL scancodes / keymods + ASCII→key map for type_text
     frame.py              # pack / unpack 12-byte header + payload
-    client.py             # Client class
+    client.py             # Client, HelloInfo, StatusInfo
     errors.py             # ProtocolError from ERROR frames
+  examples/               # hello_ping, read/write text40, type_to_emu, …
   tests/
     test_frame.py         # encode/decode roundtrips (no socket server needed)
 ```
 
 Stdlib only: `socket`, `struct`. Optional later: `threading` / `selectors` for a background event reader.
 
-## Client API (v1 meta only)
+## Client API
 
 ```python
 from collections.abc import Callable
@@ -58,6 +62,11 @@ class HelloInfo:
     version: int
     flags: int
     max_payload: int
+
+@dataclass
+class StatusInfo:
+    execution_mode: int  # 0=NORMAL, 1=STEP_INTO, 2=PAUSED
+    platform_id: int     # PlatformId_t / -p N (0=II … 5=IIgs)
 
 class Client:
     def connect(self, path: str) -> None:
@@ -72,9 +81,13 @@ class Client:
     def ping(self) -> None:
         """Send PING; succeed if empty PING reply arrives."""
 
-    def get_status(self) -> int:
-        """Send GET_STATUS; return execution_mode (0=NORMAL, 1=STEP_INTO, 2=PAUSED).
-        Handled on the emulator main thread."""
+    def get_status(self) -> StatusInfo:
+        """Send GET_STATUS; return execution_mode and platform_id.
+        Handled on the emulator main thread. Reply is 8 bytes on the wire."""
+
+    def reset(self, cold_start: bool = False) -> None:
+        """Send RESET; call computer_t::reset(cold_start) on the main thread.
+        cold_start=True clears $3F2–$3F4 before reset."""
 
     def read_mem(self, domain: int, address: int, length: int) -> bytes:
         """Send READMEM; return `length` bytes from the given domain/address.
@@ -95,11 +108,12 @@ class Client:
     def key_up(self, scancode: int, mod: int = 0) -> None:
         """KEYEVENT up."""
 
-    def tap_key(self, scancode: int, mod: int = 0) -> None:
-        """keydown then keyup with the same scancode/mod."""
+    def tap_key(self, scancode: int, mod: int = 0, *, hold_s: float = 0.02) -> None:
+        """keydown, optional hold, then keyup with the same scancode/mod."""
 
-    def type_text(self, text: str, *, delay_s: float = 0.05) -> None:
-        """Type printable ASCII (US layout); newline → Return. Shift held per glyph as needed."""
+    def type_text(self, text: str, *, delay_s: float = 0.05, hold_s: float = 0.02) -> None:
+        """Type printable ASCII (US layout); newline → Return.
+        hold_s between down/up; delay_s after each char (3× after Return)."""
 
     def request(
         self,
@@ -161,14 +175,14 @@ Implementers and agents must handle these; do not reinvent per script:
 
 **Once the debug socket exists:**
 
-1. Start GSSquared with `--debug PATH` (or `-D PATH`).
-2. `Client().connect(path)` → `hello()` → memory / `key_event` / `type_text` → `ping()`.
-3. Assert caps; optionally Control-Reset (Ctrl+F12) then type BASIC on IIe (`-p 1`).
+1. Start GSSquared with `--debug PATH` (or `-D PATH`), e.g. `-p 2` for IIe.
+2. `Client().connect(path)` → `hello()` → `get_status()` (check `platform_id`) → `reset()` / `read_mem` / `type_text` → `ping()`.
+3. Assert caps and that `platform_id` matches the launched `-p N`.
 
 ## Non-goals (this sketch)
 
 - MCP wrapper, async API, pipelining, TCP connect
-- High-level debug commands beyond HELLO / PING / GET_STATUS / READMEM / WRITEMEM / KEYEVENT (`pause`, …)
+- High-level debug commands beyond HELLO / PING / GET_STATUS / RESET / READMEM / WRITEMEM / KEYEVENT (`pause`, …)
 
 ## Flow
 
@@ -184,13 +198,15 @@ sequenceDiagram
   Emu-->>Gs2debug: HELLO seq=1 caps
   Note over Gs2debug: may deliver EVENT frames to handler first
   Gs2debug-->>Script: HelloInfo
-  Script->>Gs2debug: ping()
-  Gs2debug->>Emu: PING seq=2
-  Emu-->>Gs2debug: PING seq=2
+  Script->>Gs2debug: get_status()
+  Gs2debug->>Emu: GET_STATUS seq=2
+  Emu-->>Gs2debug: mode + platform_id
+  Gs2debug-->>Script: StatusInfo
 ```
 
 # Example Commands
 
 ```
- PYTHONPATH=clients/python/src python3 clients/python/examples/hello_ping.py /tmp/gs2.sock
+./build/GSSquared --debug /tmp/gs2.sock -p 2
+PYTHONPATH=clients/python/src python3 clients/python/examples/hello_ping.py /tmp/gs2.sock
 ```

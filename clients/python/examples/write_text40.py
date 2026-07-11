@@ -4,7 +4,7 @@
 Each line shows the written pattern with '+' if readback matches, '-' if not.
 
 Usage:
-  ./build/GSSquared --debug /tmp/gs2.sock -p 1
+  ./build/GSSquared --debug /tmp/gs2.sock -p 2
   PYTHONPATH=clients/python/src python3 clients/python/examples/write_text40.py /tmp/gs2.sock
 """
 

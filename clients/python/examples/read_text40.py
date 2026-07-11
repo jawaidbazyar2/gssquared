@@ -2,7 +2,7 @@
 """Dump Apple II text page 1 row 0 ($0400..$0427) once per second.
 
 Usage:
-  ./build/GSSquared --debug /tmp/gs2.sock -p 1
+  ./build/GSSquared --debug /tmp/gs2.sock -p 2
   PYTHONPATH=clients/python/src python3 clients/python/examples/read_text40.py /tmp/gs2.sock
 """
 

@@ -4,7 +4,7 @@
 Meant to be called as a tool from scripts or agents.
 
 Usage:
-  ./build/GSSquared --debug /tmp/gs2.sock -p 1
+  ./build/GSSquared --debug /tmp/gs2.sock -p 2
 
   # Type a string (Return appended unless --no-return)
   PYTHONPATH=clients/python/src python3 clients/python/examples/type_to_emu.py /tmp/gs2.sock \\
@@ -17,7 +17,7 @@ Usage:
 RUN
 EOF
 
-  # Control+Reset first, then type
+  # Protocol RESET first, then type
   PYTHONPATH=clients/python/src python3 clients/python/examples/type_to_emu.py /tmp/gs2.sock \\
     --reset --wait 2 --file program.bas
 """
@@ -31,22 +31,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from gs2debug import (
-    KMOD_CTRL,
-    KMOD_LCTRL,
-    SCANCODE_F12,
-    SCANCODE_LCTRL,
-    Client,
-    ProtocolError,
-)
-
-
-def control_reset(client: Client) -> None:
-    client.key_down(SCANCODE_LCTRL, KMOD_LCTRL)
-    client.key_down(SCANCODE_F12, KMOD_CTRL)
-    time.sleep(1.0)
-    client.key_up(SCANCODE_F12, KMOD_CTRL)
-    client.key_up(SCANCODE_LCTRL, 0)
+from gs2debug import Client, ProtocolError
 
 
 def main() -> int:
@@ -54,9 +39,14 @@ def main() -> int:
     p.add_argument("socket", help="Unix-domain debug socket path (e.g. /tmp/gs2.sock)")
     p.add_argument("--text", "-t", action="append", default=[], help="Text to type (repeatable)")
     p.add_argument("--file", "-f", help="Read text from file")
-    p.add_argument("--reset", action="store_true", help="Control+Reset (Ctrl+F12) before typing")
+    p.add_argument(
+        "--reset",
+        action="store_true",
+        help="Protocol RESET (warm) before typing",
+    )
+    p.add_argument("--cold", action="store_true", help="With --reset, use cold_start=True")
     p.add_argument("--wait", type=float, default=0.0, help="Seconds to sleep after connect/reset")
-    p.add_argument("--delay", type=float, default=0.06, help="Delay between keystrokes (seconds)")
+    p.add_argument("--delay", type=float, default=0.1, help="Delay between keystrokes (seconds)")
     p.add_argument(
         "--no-return",
         action="store_true",
@@ -81,8 +71,9 @@ def main() -> int:
         info = client.hello()
         print(f"HELLO ok: version={info.version} max_payload={info.max_payload:#x}", flush=True)
         if args.reset:
-            print("Control+Reset...", flush=True)
-            control_reset(client)
+            cold = bool(args.cold)
+            print(f"RESET (cold_start={cold})...", flush=True)
+            client.reset(cold_start=cold)
         if args.wait > 0:
             print(f"waiting {args.wait}s...", flush=True)
             time.sleep(args.wait)
