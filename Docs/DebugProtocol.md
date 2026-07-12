@@ -301,11 +301,11 @@ Peek bytes from a memory domain.
 | Value | Name | Source | Status |
 |-------|------|--------|--------|
 | 0 | `MAIN` | CPU view: `computer->cpu->mmu->read(addr)` (II/IIe MMU, or IIgs FPI / banked MMU) | Implemented |
-| 1 | `MEGAII` | Mega II / shadowed IIe space (`computer->mmu` on IIgs) | Reserved |
+| 1 | `MEGAII` | Mega II / IIe-view MMU: `computer->mmu->read(addr)` | Implemented (Apple IIgs only) |
 | 2 | `ENSONIQ` | DOC / sound RAM | Reserved |
 | 3 | `ADBMICRO` | ADB microcontroller memory | Reserved |
 
-On IIgs, `computer->mmu` is Mega II while `cpu->mmu` is the FPI; `MAIN` uses the CPU MMU.
+On IIgs, `computer->mmu` is Mega II while `cpu->mmu` is the FPI; `MAIN` uses the CPU MMU. Addresses for `MEGAII` are passed through as-is (typically `0x0000`–`0xFFFF`, e.g. text `$0400`).
 
 **Bounds:**
 
@@ -314,7 +314,8 @@ On IIgs, `computer->mmu` is Mega II while `cpu->mmu` is the FPI; `MAIN` uses the
 - `length` capped at **65536** (and never above frame `max_payload`).
 - Reject if `address + length` wraps `uint32`.
 - Unimplemented domain → `E_INTERNAL` with message `unsupported domain`.
-- No machine / no `cpu->mmu` → `E_INTERNAL` / `no machine`.
+- `MEGAII` on a non-IIgs platform → `E_INTERNAL` / `MEGAII only on Apple IIgs`.
+- No machine / no MMU for the domain → `E_INTERNAL` / `no machine`.
 
 Unmapped addresses still succeed: MMU `read()` returns floating-bus data as usual.
 
@@ -333,7 +334,7 @@ Poke bytes into a memory domain.
 
 **Success reply** (same `type=WRITEMEM`, echoed `seq`): empty payload.
 
-**Domains:** same as READMEM. Only `MAIN` is implemented (`computer->cpu->mmu->write(addr, byte)`).
+**Domains:** same as READMEM. `MAIN` and `MEGAII` (IIgs only) are implemented (`write` on the corresponding MMU).
 
 **Bounds:**
 
@@ -342,7 +343,8 @@ Poke bytes into a memory domain.
 - `length` capped at **65536** (and never above frame `max_payload`).
 - Reject if `address + length` wraps `uint32`.
 - Unimplemented domain → `E_INTERNAL` with message `unsupported domain`.
-- No machine / no `cpu->mmu` → `E_INTERNAL` / `no machine`.
+- `MEGAII` on a non-IIgs platform → `E_INTERNAL` / `MEGAII only on Apple IIgs`.
+- No machine / no MMU for the domain → `E_INTERNAL` / `no machine`.
 
 ### Input (`main == 5`)
 

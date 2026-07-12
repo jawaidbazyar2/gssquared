@@ -47,8 +47,8 @@ Import path: `clients/python/src` on `PYTHONPATH`, or `pip install -e clients/py
 | `ping()` | Liveness; empty reply |
 | `get_status()` → `StatusInfo` | `.execution_mode` (`0=NORMAL`, `1=STEP_INTO`, `2=PAUSED`), `.platform_id` (`PlatformId_t` / `-p N`) |
 | `reset(cold_start=False)` | `computer_t::reset(cold_start)` on main thread |
-| `read_mem(domain, address, length)` → `bytes` | Peek (MAIN only today) |
-| `write_mem(domain, address, data)` | Poke (MAIN only); `data` non-empty |
+| `read_mem(domain, address, length)` → `bytes` | Peek (`MEM_MAIN`; `MEM_MEGAII` on IIgs) |
+| `write_mem(domain, address, data)` | Poke (`MEM_MAIN`; `MEM_MEGAII` on IIgs); `data` non-empty |
 | `key_event(down, scancode, mod=0)` | One SDL key down/up |
 | `key_down` / `key_up` | Same, for modifiers |
 | `tap_key(scancode, mod=0, hold_s=0.02)` | Down, optional hold, then up |
@@ -64,14 +64,15 @@ From `gs2debug` / `gs2debug.keys` / `gs2debug.types`:
 
 | Name | Value / meaning |
 |------|-----------------|
-| `MEM_MAIN` | `0` — CPU MMU view (`cpu->mmu`). Use this. |
-| `MEM_MEGAII` / `MEM_ENSONIQ` / `MEM_ADBMICRO` | Reserved (ERROR `unsupported domain`) |
+| `MEM_MAIN` | `0` — CPU MMU view (`cpu->mmu`) |
+| `MEM_MEGAII` | `1` — Mega II / IIe-view MMU (`computer->mmu`); **IIgs only** |
+| `MEM_ENSONIQ` / `MEM_ADBMICRO` | Reserved (ERROR `unsupported domain`) |
 | `PLATFORM_APPLE_II` … `PLATFORM_APPLE_IIGS` | `0`…`5` — same as `-p` / `StatusInfo.platform_id` |
 | `SCANCODE_LCTRL`, `SCANCODE_F12`, `SCANCODE_RETURN`, … | SDL3 scancodes (see `keys.py`) |
 | `KMOD_LCTRL`, `KMOD_CTRL`, `KMOD_LSHIFT`, … | SDL keymod bits for the **event’s** `mod` field |
 | `ProtocolError.code` / `.message` | `E_*` from protocol (`E_BAD_LENGTH=2`, `E_INTERNAL=6`, …) |
 
-Addresses are linear `uint32`. IIe text page 1 row 0: `0x0400`. IIgs bank `$E0` text: `0xE00400`.
+Addresses are linear `uint32`. IIe / Mega II text page 1 row 0: `0x0400` (`MEM_MAIN` on II/IIe, or `MEM_MEGAII` on IIgs). IIgs bank `$E0` text via FPI: `MEM_MAIN` at `0xE00400`.
 
 ## Recipes
 
@@ -88,7 +89,8 @@ print(status.execution_mode, status.platform_id)
 row = c.read_mem(MEM_MAIN, 0x0400, 0x28)          # II / IIe
 c.write_mem(MEM_MAIN, 0x0400, os.urandom(0x28))
 assert c.read_mem(MEM_MAIN, 0x0400, 0x28) == data  # verify
-# IIgs: use 0xE00400 instead of 0x0400
+# IIgs FPI (MAIN): use 0xE00400
+# IIgs Mega II:     c.read_mem(MEM_MEGAII, 0x0400, 0x28)
 ```
 
 ### Machine reset
@@ -147,8 +149,8 @@ IIe-only soft-switch **status** reads (`$C01A` TEXT, `$C01D` HIRES, …) are inv
 1. **Separate terminal** for the emulator — Ctrl-C in the same shell/process group can kill GSSquared.
 2. **Typing too fast drops keys** (e.g. line `60` becomes line `0`). Use `delay_s≥0.1` and rely on `hold_s`; Return already gets a longer pause.
 3. **Shifted glyphs** (`"`, uppercase, …): library holds Shift for that tap; do not put Control/Alt in `type_text` — use `key_down` / `key_up`.
-4. **Only MAIN** memory domain is implemented.
-5. **IIgs MAIN** is the FPI/banked CPU MMU; Mega II shadow is a different domain (unimplemented).
+4. **MAIN and MEGAII** memory domains are implemented; ENSONIQ / ADBMICRO are not.
+5. **IIgs MAIN** is the FPI/banked CPU MMU; **MEGAII** is `computer->mmu` (IIe-view). Non-GS + MEGAII → ERROR `MEGAII only on Apple IIgs`.
 6. Disconnecting the client does **not** quit the emulator; it accepts a new client.
 
 ## Example scripts
@@ -157,7 +159,8 @@ IIe-only soft-switch **status** reads (`$C01A` TEXT, `$C01D` HIRES, …) are inv
 |--------|------|
 | `examples/hello_ping.py` | HELLO / GET_STATUS (mode + platform) / PING |
 | `examples/read_text40.py` | Loop-read II/IIe `$0400` |
-| `examples/read_text40_iigs.py` | Loop-read IIgs `$E0/0400` |
+| `examples/read_text40_iigs.py` | Loop-read IIgs `$E0/0400` via MAIN |
+| `examples/read_text40_megaii.py` | Loop-read IIgs `$0400` via MEGAII |
 | `examples/write_text40.py` | Random write + readback `+/-` (II/IIe) |
 | `examples/write_text40_iigs.py` | Same for `$E0/0400` |
 | `examples/type_basic_iie.py` | Boot wait, protocol RESET, demo Applesoft |

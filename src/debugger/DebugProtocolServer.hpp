@@ -79,6 +79,7 @@ private:
     uint32_t bridge_arg2_{0};
     uint32_t bridge_error_{0};
     bool bridge_timed_out_{false};
+    bool bridge_megaii_platform_reject_{false};
     std::vector<uint8_t> bridge_request_;
     std::vector<uint8_t> bridge_reply_;
 };

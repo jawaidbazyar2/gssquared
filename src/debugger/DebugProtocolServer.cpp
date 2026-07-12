@@ -12,6 +12,7 @@
 #include "computer.hpp"
 #include "cpu.hpp"
 #include "mmus/mmu.hpp"
+#include "PlatformIDs.hpp"
 
 #if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
 #include <sys/socket.h>
@@ -178,6 +179,7 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
     bridge_reply_.clear();
     bridge_error_ = 0;
     bridge_timed_out_ = false;
+    bridge_megaii_platform_reject_ = false;
 
     if (bridge_type_ == kTypeGetStatus) {
         if (!computer) {
@@ -203,34 +205,66 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
         const uint32_t address = bridge_arg1_;
         const uint32_t length = bridge_arg2_;
 
-        if (domain != kMemMain) {
-            bridge_error_ = kEInternal;
-            // Message chosen in serve_client from error code + type
-        } else if (!computer || !computer->cpu || !computer->cpu->mmu) {
-            bridge_error_ = kEInternal;
-        } else {
-            MMU *mmu = computer->cpu->mmu;
-            bridge_reply_.resize(length);
-            for (uint32_t i = 0; i < length; ++i) {
-                bridge_reply_[i] = mmu->read(address + i);
+        if (domain == kMemMain) {
+            if (!computer || !computer->cpu || !computer->cpu->mmu) {
+                bridge_error_ = kEInternal;
+            } else {
+                MMU *mmu = computer->cpu->mmu;
+                bridge_reply_.resize(length);
+                for (uint32_t i = 0; i < length; ++i) {
+                    bridge_reply_[i] = mmu->read(address + i);
+                }
             }
+        } else if (domain == kMemMegaII) {
+            if (!computer || !computer->platform
+                || computer->platform->id != PLATFORM_APPLE_IIGS) {
+                bridge_error_ = kEInternal;
+                bridge_megaii_platform_reject_ = true;
+            } else if (!computer->mmu) {
+                bridge_error_ = kEInternal;
+            } else {
+                MMU *mmu = computer->mmu;
+                bridge_reply_.resize(length);
+                for (uint32_t i = 0; i < length; ++i) {
+                    bridge_reply_[i] = mmu->read(address + i);
+                }
+            }
+        } else {
+            bridge_error_ = kEInternal;
         }
     } else if (bridge_type_ == kTypeWriteMem) {
         const uint32_t domain = bridge_arg0_;
         const uint32_t address = bridge_arg1_;
         const uint32_t length = bridge_arg2_;
 
-        if (domain != kMemMain) {
-            bridge_error_ = kEInternal;
-        } else if (!computer || !computer->cpu || !computer->cpu->mmu) {
-            bridge_error_ = kEInternal;
-        } else if (bridge_request_.size() != length) {
-            bridge_error_ = kEInternal;
-        } else {
-            MMU *mmu = computer->cpu->mmu;
-            for (uint32_t i = 0; i < length; ++i) {
-                mmu->write(address + i, bridge_request_[i]);
+        if (domain == kMemMain) {
+            if (!computer || !computer->cpu || !computer->cpu->mmu) {
+                bridge_error_ = kEInternal;
+            } else if (bridge_request_.size() != length) {
+                bridge_error_ = kEInternal;
+            } else {
+                MMU *mmu = computer->cpu->mmu;
+                for (uint32_t i = 0; i < length; ++i) {
+                    mmu->write(address + i, bridge_request_[i]);
+                }
             }
+        } else if (domain == kMemMegaII) {
+            if (!computer || !computer->platform
+                || computer->platform->id != PLATFORM_APPLE_IIGS) {
+                bridge_error_ = kEInternal;
+                bridge_megaii_platform_reject_ = true;
+            } else if (!computer->mmu) {
+                bridge_error_ = kEInternal;
+            } else if (bridge_request_.size() != length) {
+                bridge_error_ = kEInternal;
+            } else {
+                MMU *mmu = computer->mmu;
+                for (uint32_t i = 0; i < length; ++i) {
+                    mmu->write(address + i, bridge_request_[i]);
+                }
+            }
+        } else {
+            bridge_error_ = kEInternal;
         }
     } else {
         bridge_error_ = kEInternal;
@@ -255,6 +289,7 @@ bool DebugProtocolServer::submit_and_wait(uint32_t type, uint32_t seq,
     bridge_pending_ = true;
     bridge_done_ = false;
     bridge_timed_out_ = false;
+    bridge_megaii_platform_reject_ = false;
     bridge_type_ = type;
     bridge_seq_ = seq;
     bridge_arg0_ = arg0;
@@ -410,7 +445,10 @@ const char *DebugProtocolServer::bridge_error_message(uint32_t err, uint32_t dom
         if (bridge_timed_out_) {
             return "timeout waiting for main thread";
         }
-        if (domain != kMemMain) {
+        if (bridge_megaii_platform_reject_) {
+            return "MEGAII only on Apple IIgs";
+        }
+        if (domain != kMemMain && domain != kMemMegaII) {
             return "unsupported domain";
         }
         return "no machine";
