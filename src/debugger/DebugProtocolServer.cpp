@@ -43,6 +43,8 @@ constexpr uint32_t kMemMain    = 0;
 constexpr uint32_t kMemMegaII  = 1;
 constexpr uint32_t kMemEnsoniq = 2;
 constexpr uint32_t kMemAdbMicro = 3;
+constexpr uint32_t kMemMainRaw = 4;
+constexpr uint32_t kMemMegaIIRaw = 5;
 
 constexpr uint32_t kEUnknownType   = 1;
 constexpr uint32_t kEBadLength     = 2;
@@ -229,6 +231,40 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
                     bridge_reply_[i] = mmu->read(address + i);
                 }
             }
+        } else if (domain == kMemMainRaw) {
+            if (!computer || !computer->cpu || !computer->cpu->mmu) {
+                bridge_error_ = kEInternal;
+            } else {
+                MMU *mmu = computer->cpu->mmu;
+                uint8_t *base = mmu->get_memory_base();
+                uint32_t size = mmu->get_memory_size();
+                if (!base || size == 0) {
+                    bridge_error_ = kEInternal;
+                } else if (address > size || length > size - address) {
+                    bridge_error_ = kEBadLength;
+                } else {
+                    bridge_reply_.assign(base + address, base + address + length);
+                }
+            }
+        } else if (domain == kMemMegaIIRaw) {
+            if (!computer || !computer->platform
+                || computer->platform->id != PLATFORM_APPLE_IIGS) {
+                bridge_error_ = kEInternal;
+                bridge_megaii_platform_reject_ = true;
+            } else if (!computer->mmu) {
+                bridge_error_ = kEInternal;
+            } else {
+                MMU *mmu = computer->mmu;
+                uint8_t *base = mmu->get_memory_base();
+                uint32_t size = mmu->get_memory_size();
+                if (!base || size == 0) {
+                    bridge_error_ = kEInternal;
+                } else if (address > size || length > size - address) {
+                    bridge_error_ = kEBadLength;
+                } else {
+                    bridge_reply_.assign(base + address, base + address + length);
+                }
+            }
         } else {
             bridge_error_ = kEInternal;
         }
@@ -261,6 +297,44 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
                 MMU *mmu = computer->mmu;
                 for (uint32_t i = 0; i < length; ++i) {
                     mmu->write(address + i, bridge_request_[i]);
+                }
+            }
+        } else if (domain == kMemMainRaw) {
+            if (!computer || !computer->cpu || !computer->cpu->mmu) {
+                bridge_error_ = kEInternal;
+            } else if (bridge_request_.size() != length) {
+                bridge_error_ = kEInternal;
+            } else {
+                MMU *mmu = computer->cpu->mmu;
+                uint8_t *base = mmu->get_memory_base();
+                uint32_t size = mmu->get_memory_size();
+                if (!base || size == 0) {
+                    bridge_error_ = kEInternal;
+                } else if (address > size || length > size - address) {
+                    bridge_error_ = kEBadLength;
+                } else {
+                    std::memcpy(base + address, bridge_request_.data(), length);
+                }
+            }
+        } else if (domain == kMemMegaIIRaw) {
+            if (!computer || !computer->platform
+                || computer->platform->id != PLATFORM_APPLE_IIGS) {
+                bridge_error_ = kEInternal;
+                bridge_megaii_platform_reject_ = true;
+            } else if (!computer->mmu) {
+                bridge_error_ = kEInternal;
+            } else if (bridge_request_.size() != length) {
+                bridge_error_ = kEInternal;
+            } else {
+                MMU *mmu = computer->mmu;
+                uint8_t *base = mmu->get_memory_base();
+                uint32_t size = mmu->get_memory_size();
+                if (!base || size == 0) {
+                    bridge_error_ = kEInternal;
+                } else if (address > size || length > size - address) {
+                    bridge_error_ = kEBadLength;
+                } else {
+                    std::memcpy(base + address, bridge_request_.data(), length);
                 }
             }
         } else {
@@ -440,6 +514,9 @@ const char *DebugProtocolServer::bridge_error_message(uint32_t err, uint32_t dom
     if (err == kEBusy) {
         return "busy";
     }
+    if (err == kEBadLength) {
+        return "out of range";
+    }
     if (err == kEInternal) {
         std::lock_guard<std::mutex> lock(bridge_mu_);
         if (bridge_timed_out_) {
@@ -448,7 +525,8 @@ const char *DebugProtocolServer::bridge_error_message(uint32_t err, uint32_t dom
         if (bridge_megaii_platform_reject_) {
             return "MEGAII only on Apple IIgs";
         }
-        if (domain != kMemMain && domain != kMemMegaII) {
+        if (domain != kMemMain && domain != kMemMegaII
+            && domain != kMemMainRaw && domain != kMemMegaIIRaw) {
             return "unsupported domain";
         }
         return "no machine";
@@ -585,7 +663,8 @@ void DebugProtocolServer::serve_client(int client_fd) {
             if (address > std::numeric_limits<uint32_t>::max() - length) {
                 REJECT(client_fd, hdr.seq, kEBadLength, "READMEM address wrap");
             }
-            if (domain != kMemMain && domain != kMemMegaII && domain != kMemEnsoniq && domain != kMemAdbMicro) {
+            if (domain != kMemMain && domain != kMemMegaII && domain != kMemEnsoniq
+                && domain != kMemAdbMicro && domain != kMemMainRaw && domain != kMemMegaIIRaw) {
                 REJECT(client_fd, hdr.seq, kEBadLength, "READMEM invalid domain");
             }
 
@@ -625,7 +704,8 @@ void DebugProtocolServer::serve_client(int client_fd) {
             if (address > std::numeric_limits<uint32_t>::max() - length) {
                 REJECT(client_fd, hdr.seq, kEBadLength, "WRITEMEM address wrap");
             }
-            if (domain != kMemMain && domain != kMemMegaII && domain != kMemEnsoniq && domain != kMemAdbMicro) {
+            if (domain != kMemMain && domain != kMemMegaII && domain != kMemEnsoniq
+                && domain != kMemAdbMicro && domain != kMemMainRaw && domain != kMemMegaIIRaw) {
                 REJECT(client_fd, hdr.seq, kEBadLength, "WRITEMEM invalid domain");
             }
 

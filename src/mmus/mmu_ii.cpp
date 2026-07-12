@@ -34,6 +34,7 @@ void MMU_II::power_on_randomize(uint8_t *ram, int ram_size) {
 MMU_II::MMU_II(int page_table_size, int ram_amount, uint8_t *rom_pointer) : MMU(256, GS2_PAGE_SIZE) {
     //ram_pages = ram_amount / GS2_PAGE_SIZE;
     ram_pages = (48 * 1024) / GS2_PAGE_SIZE; // should be 48k worth of pages or 192 pages.
+    ram_size_ = static_cast<uint32_t>(ram_amount);
     main_ram = new uint8_t[ram_amount];
     power_on_randomize(main_ram, ram_amount);
     

@@ -99,6 +99,10 @@ class MMU {
             delete[] page_table;
         }
 
+        /** Contiguous RAM allocation, if any. Linear offsets for MAIN_RAW / MEGAII_RAW. */
+        virtual uint8_t *get_memory_base() { return nullptr; }
+        virtual uint32_t get_memory_size() { return 0; }
+
         // Raw. Do not trigger cycles or do the IO bus stuff
         uint8_t read_raw(uint32_t address) {
             uint16_t page = address >> page_size_bits; // / GS2_PAGE_SIZE;

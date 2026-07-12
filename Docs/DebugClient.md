@@ -91,12 +91,12 @@ class Client:
 
     def read_mem(self, domain: int, address: int, length: int) -> bytes:
         """Send READMEM; return `length` bytes from the given domain/address.
-        Domain 0=MAIN (implemented). Domain 1=MEGAII (implemented on Apple IIgs).
+        Domains: MAIN, MAIN_RAW; MEGAII / MEGAII_RAW on Apple IIgs.
         ENSONIQ/ADBMICRO reserved. Handled on the emulator main thread."""
 
     def write_mem(self, domain: int, address: int, data: bytes) -> None:
         """Send WRITEMEM; poke `data` at domain/address.
-        Domain 0=MAIN (implemented). Domain 1=MEGAII (implemented on Apple IIgs).
+        Domains: MAIN, MAIN_RAW; MEGAII / MEGAII_RAW on Apple IIgs.
         ENSONIQ/ADBMICRO reserved. Handled on the emulator main thread. Success reply is empty."""
 
     def key_event(self, down: bool, scancode: int, mod: int = 0) -> None:

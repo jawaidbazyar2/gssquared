@@ -13,6 +13,7 @@ struct C8XX_handler_t {
 class MMU_II : public MMU {
     protected:
         int ram_pages;
+        uint32_t ram_size_ = 0;
         uint8_t *main_ram = nullptr;
         //uint8_t *main_io_4 = nullptr;
         uint8_t *main_rom_D0 = nullptr;
@@ -43,7 +44,8 @@ class MMU_II : public MMU {
         
         virtual void call_C8xx_handler(SlotType_t slot);
         virtual uint8_t *get_rom_base();
-        virtual uint8_t *get_memory_base() { return main_ram; };
+        uint8_t *get_memory_base() override { return main_ram; }
+        uint32_t get_memory_size() override { return ram_size_; }
         virtual void init_map();
         virtual void set_default_C8xx_map();
         virtual void set_slot_rom(SlotType_t slot, uint8_t *rom, const char *name);

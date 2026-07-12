@@ -105,7 +105,8 @@ class Client:
             raise ProtocolError(0, f"RESET reply not empty ({len(reply)} bytes)")
 
     def read_mem(self, domain: int, address: int, length: int) -> bytes:
-        """Send READMEM; return `length` bytes from domain/address (MAIN=0 implemented)."""
+        """Send READMEM; return `length` bytes from domain/address.
+        Domains: MAIN, MEGAII (IIgs), MAIN_RAW, MEGAII_RAW (IIgs)."""
         if not self._handshaked:
             raise RuntimeError("hello() required before read_mem()")
         if length < 0:
@@ -117,7 +118,8 @@ class Client:
         return reply
 
     def write_mem(self, domain: int, address: int, data: bytes) -> None:
-        """Send WRITEMEM; poke `data` at domain/address (MAIN=0 implemented)."""
+        """Send WRITEMEM; poke `data` at domain/address.
+        Domains: MAIN, MEGAII (IIgs), MAIN_RAW, MEGAII_RAW (IIgs)."""
         if not self._handshaked:
             raise RuntimeError("hello() required before write_mem()")
         if not data:

@@ -47,8 +47,8 @@ Import path: `clients/python/src` on `PYTHONPATH`, or `pip install -e clients/py
 | `ping()` | Liveness; empty reply |
 | `get_status()` → `StatusInfo` | `.execution_mode` (`0=NORMAL`, `1=STEP_INTO`, `2=PAUSED`), `.platform_id` (`PlatformId_t` / `-p N`) |
 | `reset(cold_start=False)` | `computer_t::reset(cold_start)` on main thread |
-| `read_mem(domain, address, length)` → `bytes` | Peek (`MEM_MAIN`; `MEM_MEGAII` on IIgs) |
-| `write_mem(domain, address, data)` | Poke (`MEM_MAIN`; `MEM_MEGAII` on IIgs); `data` non-empty |
+| `read_mem(domain, address, length)` → `bytes` | Peek (`MEM_MAIN` / `MEM_MAIN_RAW`; `MEM_MEGAII` / `MEM_MEGAII_RAW` on IIgs) |
+| `write_mem(domain, address, data)` | Poke (same domains); `data` non-empty |
 | `key_event(down, scancode, mod=0)` | One SDL key down/up |
 | `key_down` / `key_up` | Same, for modifiers |
 | `tap_key(scancode, mod=0, hold_s=0.02)` | Down, optional hold, then up |
@@ -64,15 +64,17 @@ From `gs2debug` / `gs2debug.keys` / `gs2debug.types`:
 
 | Name | Value / meaning |
 |------|-----------------|
-| `MEM_MAIN` | `0` — CPU MMU view (`cpu->mmu`) |
+| `MEM_MAIN` | `0` — CPU MMU view (`cpu->mmu->read` / `write`) |
 | `MEM_MEGAII` | `1` — Mega II / IIe-view MMU (`computer->mmu`); **IIgs only** |
 | `MEM_ENSONIQ` / `MEM_ADBMICRO` | Reserved (ERROR `unsupported domain`) |
+| `MEM_MAIN_RAW` | `4` — physical `cpu->mmu->get_memory_base()[addr]` (no MMU/bus) |
+| `MEM_MEGAII_RAW` | `5` — physical Mega II buffer; **IIgs only** |
 | `PLATFORM_APPLE_II` … `PLATFORM_APPLE_IIGS` | `0`…`5` — same as `-p` / `StatusInfo.platform_id` |
 | `SCANCODE_LCTRL`, `SCANCODE_F12`, `SCANCODE_RETURN`, … | SDL3 scancodes (see `keys.py`) |
 | `KMOD_LCTRL`, `KMOD_CTRL`, `KMOD_LSHIFT`, … | SDL keymod bits for the **event’s** `mod` field |
 | `ProtocolError.code` / `.message` | `E_*` from protocol (`E_BAD_LENGTH=2`, `E_INTERNAL=6`, …) |
 
-Addresses are linear `uint32`. IIe / Mega II text page 1 row 0: `0x0400` (`MEM_MAIN` on II/IIe, or `MEM_MEGAII` on IIgs). IIgs bank `$E0` text via FPI: `MEM_MAIN` at `0xE00400`.
+Addresses are linear `uint32`. IIe / Mega II text page 1 row 0: `0x0400` (`MEM_MAIN` on II/IIe, or `MEM_MEGAII` on IIgs). IIgs bank `$E0` text via FPI: `MEM_MAIN` at `0xE00400`. `MEM_*_RAW` uses buffer offsets (IIgs FPI: banks 0–127 in 8 MB; Mega II: 128 KB including aux at `+0x10000`) — not CPU `$E0xxxx` addresses.
 
 ## Recipes
 
@@ -91,6 +93,8 @@ c.write_mem(MEM_MAIN, 0x0400, os.urandom(0x28))
 assert c.read_mem(MEM_MAIN, 0x0400, 0x28) == data  # verify
 # IIgs FPI (MAIN): use 0xE00400
 # IIgs Mega II:     c.read_mem(MEM_MEGAII, 0x0400, 0x28)
+# Physical buffers: c.read_mem(MEM_MAIN_RAW, 0x0400, 0x28)
+#                   c.read_mem(MEM_MEGAII_RAW, 0x0400, 0x28)  # IIgs
 ```
 
 ### Machine reset
@@ -149,8 +153,8 @@ IIe-only soft-switch **status** reads (`$C01A` TEXT, `$C01D` HIRES, …) are inv
 1. **Separate terminal** for the emulator — Ctrl-C in the same shell/process group can kill GSSquared.
 2. **Typing too fast drops keys** (e.g. line `60` becomes line `0`). Use `delay_s≥0.1` and rely on `hold_s`; Return already gets a longer pause.
 3. **Shifted glyphs** (`"`, uppercase, …): library holds Shift for that tap; do not put Control/Alt in `type_text` — use `key_down` / `key_up`.
-4. **MAIN and MEGAII** memory domains are implemented; ENSONIQ / ADBMICRO are not.
-5. **IIgs MAIN** is the FPI/banked CPU MMU; **MEGAII** is `computer->mmu` (IIe-view). Non-GS + MEGAII → ERROR `MEGAII only on Apple IIgs`.
+4. **MAIN / MAIN_RAW / MEGAII / MEGAII_RAW** are implemented; ENSONIQ / ADBMICRO are not.
+5. **IIgs MAIN** is the FPI/banked CPU MMU; **MEGAII** is `computer->mmu`. `*_RAW` indexes `get_memory_base()` (buffer offsets, not `$E0xxxx`). Non-GS + MEGAII/_RAW → ERROR `MEGAII only on Apple IIgs`.
 6. Disconnecting the client does **not** quit the emulator; it accepts a new client.
 
 ## Example scripts

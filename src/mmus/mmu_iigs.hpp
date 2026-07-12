@@ -196,7 +196,8 @@ class MMU_IIgs : public MMU {
         uint8_t read_c0xx(uint16_t address);
         
         virtual uint8_t *get_rom_base() { return main_rom; };
-        virtual uint8_t *get_memory_base() { return main_ram; };
+        uint8_t *get_memory_base() override { return main_ram; }
+        uint32_t get_memory_size() override { return ram_banks * BANK_SIZE; }
         virtual void init_map();
         virtual void reset() override;
         void debug_dump(DebugFormatter *df);
