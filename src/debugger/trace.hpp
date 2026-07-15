@@ -39,6 +39,7 @@ struct system_trace_entry_t {
             uint8_t f_irq: 1;
             uint8_t f_op_sz : 2; // 0 = 0 byte (implied), otherwise # bytes of operand.
             uint8_t f_data_sz : 1; // 0 = 8bit, 1 = 16bit
+            uint8_t f_write : 1; // 1 = last operand access was a write (for DATA/IO breakpoints)
         };
         uint16_t flags;
     };

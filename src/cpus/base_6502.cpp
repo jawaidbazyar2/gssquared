@@ -406,6 +406,7 @@ inline uint8_t fetch_pc(cpu_state *cpu) {
 /* read_data - read either 1 or 2 bytes from memory depending on width of the type T. */
 template<typename T>
 inline void read_data(cpu_state *cpu, uint32_t eaddr, T &reg) {
+    TRACE(cpu->trace_entry.f_write = 0;)
     if constexpr (is_byte<T>) {
         reg = bus_read(cpu, eaddr);
     }
@@ -419,7 +420,7 @@ inline void read_data(cpu_state *cpu, uint32_t eaddr, T &reg) {
 /* write_data - write either 1 or 2 bytes to memory depending on width of the type T. */
 template<typename T>
 inline void write_data(cpu_state *cpu, uint32_t eaddr, T &reg) {
-
+    TRACE(cpu->trace_entry.f_write = 1;)
     if constexpr (is_byte<T>) {
         bus_write(cpu, eaddr, reg);
     }
@@ -434,7 +435,7 @@ inline void write_data(cpu_state *cpu, uint32_t eaddr, T &reg) {
 /* Same as write_data but writes hi byte first then lo byte - used by rmw */
 template<typename T>
 inline void write_tada(cpu_state *cpu, uint32_t eaddr, T &reg) {
-
+    TRACE(cpu->trace_entry.f_write = 1;)
     if constexpr (is_byte<T>) {
         bus_write(cpu, eaddr, reg);
     }
@@ -447,6 +448,7 @@ inline void write_tada(cpu_state *cpu, uint32_t eaddr, T &reg) {
 /** Direct Mode Helpers */
 template<typename T>
 inline void read_data_direct(cpu_state *cpu, uint16_t eaddr_16, T &reg) {
+    TRACE(cpu->trace_entry.f_write = 0;)
     if constexpr (is_byte<T>) {
         reg = bus_read(cpu, eaddr_16);  // cycle 4
     }
@@ -459,6 +461,7 @@ inline void read_data_direct(cpu_state *cpu, uint16_t eaddr_16, T &reg) {
 
 template<typename T>
 inline void write_data_direct(cpu_state *cpu, uint16_t eaddr_16, T &reg) {
+    TRACE(cpu->trace_entry.f_write = 1;)
     if constexpr (is_byte<T>) {
         bus_write(cpu, eaddr_16, reg); // cycle 4
     }
@@ -471,6 +474,7 @@ inline void write_data_direct(cpu_state *cpu, uint16_t eaddr_16, T &reg) {
 
 template<typename T>
 inline void write_tada_direct(cpu_state *cpu, uint16_t eaddr_16, T &reg) {
+    TRACE(cpu->trace_entry.f_write = 1;)
     if constexpr (is_byte<T>) {
         bus_write(cpu, eaddr_16, reg); // cycle 4
     }
@@ -937,7 +941,7 @@ inline void read_direct_x_ind(cpu_state *cpu, T &reg, U &index ) {
 
     read_data(cpu, eaddr, reg);
 
-    TRACE(cpu->trace_entry.eaddr = eaddr_16; cpu->trace_entry.data = reg; cpu->trace_entry.f_data_sz = sizeof(T)-1;)
+    TRACE(cpu->trace_entry.eaddr = eaddr; cpu->trace_entry.data = reg; cpu->trace_entry.f_data_sz = sizeof(T)-1;)
 }
 
 /** Address Mode: 11. Direct Indexed Indirect (d,x) (Write) */
@@ -959,7 +963,7 @@ inline void write_direct_x_ind(cpu_state *cpu, T &reg, U &index ) {
 
     write_data(cpu, eaddr, reg);
 
-    TRACE(cpu->trace_entry.eaddr = eaddr_16; cpu->trace_entry.data = reg; cpu->trace_entry.f_data_sz = sizeof(T)-1;)
+    TRACE(cpu->trace_entry.eaddr = eaddr; cpu->trace_entry.data = reg; cpu->trace_entry.f_data_sz = sizeof(T)-1;)
 }
 
 /** 12. Direct Indirect         (d) */
@@ -2141,6 +2145,8 @@ int execute_next(cpu_state *cpu) override {
     }
     system_trace_entry_t *tb = &cpu->trace_entry;
     TRACE(
+    // Clear access flags every insn so DATA/IO breakpoints see a fresh f_write.
+    tb->flags = 0;
     if (cpu->trace) {
         tb->cycle = clock->get_cycles();
         tb->pc = cpu->pc;
@@ -2153,7 +2159,6 @@ int execute_next(cpu_state *cpu) override {
         tb->db = cpu->db;
         tb->pb = cpu->pb;
         tb->eaddr = 0;
-        tb->flags = 0; // tb->p & (TRACE_FLAG_M | TRACE_FLAG_X);
         tb->unused = 0;
     }
     )
