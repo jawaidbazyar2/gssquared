@@ -44,8 +44,53 @@ class IWM : public StorageDevice {
         Floppy35_woz  *drives_35[2]; */
         Floppy_woz *drives[2][2] = { {nullptr, nullptr}, {nullptr, nullptr} };
 
-        uint64_t mark_cycles_turnoff = 0; // when DRIVES OFF, set this to current cpu cycles. Then don't actually set motor=0 until one second (1M cycles) has passed. Then reset this to 0.
-        bool enable_asserted = false;
+        // ── /ENBL model ─────────────────────────────────────────────────────
+        //
+        // Sources (per the IWM Device Specification as transcribed in
+        // Docs/IWM.md, and the 3.5-interface PAL equations there):
+        //
+        //   "The drive we 'select' is determined by: dr_enable35 and
+        //    iwm_select and iwm_enable AND the 555 timer. This makes the
+        //    motor_on signal."
+        //
+        // i.e. the IWM asserts exactly ONE hardware /ENBL output at a time,
+        // derived combinationally from raw inputs:
+        //
+        //   /ENBL is asserted  <=>  iwm_enable == 1
+        //                           OR the MC14536 motor-off timer is still
+        //                           running (MODE.M == 0 arms a ~1 s holdover
+        //                           started when iwm_enable transitions 1->0;
+        //                           MODE.M == 1 means no holdover)
+        //
+        //   /ENBL is routed to      drives[dr_enable35][iwm_select]
+        //                           (DISKREG bit 6 picks the family, the
+        //                           SELECT softswitch picks the unit).
+        //                           Every other drive sees /ENBL deasserted.
+        //
+        // What /ENBL *means* differs per family and is the drive's business,
+        // not the IWM's: on a 5.25 Shugart /ENBL is also the spindle motor;
+        // on a 3.5 Sony it is only "selected" (LED / disk locked) and the
+        // spindle is a drive-internal latch commanded by CONT35 $4/$C (with
+        // its own in-drive ~0.5 s spin-down, see Floppy35_woz).
+        //
+        // Representation: the raw inputs below are the ONLY stored state.
+        //   - iwm_enable            (switches[4], written only by decode())
+        //   - mark_cycles_turnoff   (14M deadline; nonzero = holdover armed)
+        //   - dr_enable35 / iwm_select (routing)
+        // Everything else is derived on demand:
+        //   - enbl_asserted()       = the /ENBL line level (combinational)
+        //   - sync_drive_enables()  = pushes the routing + line level into
+        //     the four Floppy_woz::enable latches; called after ANY mutation
+        //     of the raw inputs. Consumers (lss_active(), the status
+        //     register's bit 5, the MODE-register write gate, sound effects)
+        //     all read enbl_asserted() or the synced drive state — there is
+        //     no separately-maintained "enable_asserted" latch to fall out
+        //     of step. (A previous latch of that name desynced from the
+        //     per-drive flags whenever SELECT/EN35 changed during a
+        //     holdover window, which is exactly what hung the IIgs ROM03
+        //     POST disk self-test — see system-settings-gs/docs/HARNESS.md.)
+        uint64_t mark_cycles_turnoff = 0; // 14M deadline while the MC14536
+                                          // /ENBL holdover runs; 0 = idle.
         //int drive_select = 0;
 
         int running_chunknumber = 0;
@@ -134,38 +179,59 @@ class IWM : public StorageDevice {
             "sounds/shugart-close.wav",
         };
 
-        // 5.25 ENABLE'-off schedules spindle-off ~1s later (MC14536 timer).
-        // 3.5 has no equivalent latch: its spindle is commanded directly by
-        // CONT35 $4/$C strobes inside Floppy35_woz, so on 3.5 we simply do
-        // nothing and let the drive itself handle spindle state.
-        void request_enable_off() {
-            //if (dr_enable35) return;
-            if (!mr_motorofftimer) { // class 5.25 "wait 1 second to turn off motor" timer behavior.
-                mark_cycles_turnoff = clock->get_c14m() + clock->get_c14m_per_second();
-            } else {
-                drives[dr_enable35][iwm_select]->set_enable(false);
-                mark_cycles_turnoff = 0;
-                enable_asserted = false;
+        // The /ENBL line level, derived combinationally from the raw inputs
+        // (see the model comment at mark_cycles_turnoff above). This is the
+        // ONLY definition of "enable is asserted" — every consumer calls it.
+        bool enbl_asserted() {
+            if (iwm_enable) return true;
+            return mark_cycles_turnoff != 0 &&
+                   clock->get_c14m() <= mark_cycles_turnoff;
+        }
+
+        // Push the /ENBL routing + level into the four drives' enable
+        // latches: exactly the selected drive sees the line level, everyone
+        // else sees deasserted. Idempotent (only edges are forwarded, so
+        // Floppy35_woz's own motor-off scheduling still keys off real 1->0
+        // transitions). Call after ANY mutation of iwm_enable /
+        // mark_cycles_turnoff / dr_enable35 / iwm_select.
+        void sync_drive_enables() {
+            const bool level = enbl_asserted();
+            for (int fam = 0; fam < 2; fam++) {
+                for (int unit = 0; unit < 2; unit++) {
+                    const bool want =
+                        (fam == dr_enable35 && unit == iwm_select) ? level : false;
+                    if (drives[fam][unit]->get_enable() != want) {
+                        drives[fam][unit]->set_enable(want);
+                    }
+                }
             }
         }
 
-        // 5.25 ENABLE'-on starts the spindle immediately; cancels any pending
-        // off-timer. 3.5 ENABLE' just lights the LED / locks the disk — the
-        // drive's own set_enable() does that — and never spins the motor.
-        void request_enable_on() {
-            //if (dr_enable35) return;
-            mark_cycles_turnoff = 0;
-            enable_asserted = true;
-            //drives_525[iwm_select]->set_enable(true);
-            drives[dr_enable35][iwm_select]->set_enable(true);
+        // ENABLE softswitch edge handling (decode() calls this after
+        // updating switches[]): a 1->0 transition with MODE.M == 0 arms the
+        // MC14536 ~1 s /ENBL holdover; any assertion cancels it. Repeated
+        // accesses at the same level are not transitions and leave a
+        // running holdover untouched.
+        void enable_switch_changed(uint8_t prev_enable) {
+            if (iwm_enable) {
+                mark_cycles_turnoff = 0;  // asserted: cancel any holdover
+            } else if (prev_enable && !mr_motorofftimer) {
+                mark_cycles_turnoff =
+                    clock->get_c14m() + clock->get_c14m_per_second();
+            } else if (prev_enable) {
+                mark_cycles_turnoff = 0;  // MODE.M=1: off immediately
+            }
+            sync_drive_enables();
         }
 
-        // Unified "LSS should advance" predicate. For 5.25 this is the
-        // request_enable_on/off latched `motor` flag; for 3.5 it's the
-        // currently-selected drive's spindle state.
+        // Unified "LSS should advance" predicate. For 5.25 the spindle IS
+        // the /ENBL line; for 3.5 it's the currently-selected drive's
+        // internal spindle latch (CONT35 $4/$C). Note the drive-level
+        // fast_forward() additionally gates on its own (synced) enable, so
+        // 3.5 bits flow only when selected AND spinning.
         bool lss_active() {
             if (dr_enable35) return drives[1][iwm_select]->get_motor_on();
-            return enable_asserted;
+            return enbl_asserted();
         }
 
     public:
@@ -198,12 +264,6 @@ class IWM : public StorageDevice {
         void reset() {
             memset(switches, 0, sizeof(switches));
             disk_register = 0;
-            
-            drives[0][0]->set_enable(false);
-            drives[0][1]->set_enable(false);
-            drives[1][0]->set_enable(false);
-            drives[1][1]->set_enable(false);
-        
             mark_cycles_turnoff = 0;
             reg_mode = 0;
             reg_handshake = 0;
@@ -211,16 +271,19 @@ class IWM : public StorageDevice {
             async_shift_reg          = 0;
             async_bits_remaining     = 0;
             sequencer_state          = false;
-            enable_asserted = false;
+            // iwm_enable == 0 and no holdover => /ENBL deasserted everywhere.
+            sync_drive_enables();
         }
 
+        // Frame-time tidy-up for the MC14536 /ENBL holdover: when the
+        // deadline passes, clear it and re-sync the drive latches.
+        // (enbl_asserted() already compares against the live clock, so the
+        // status register / LSS see the drop immediately; this just brings
+        // the per-drive enable flags along at frame granularity.)
         void check_motor_off_timer() {
-            // 5.25 MC14536 off-timer: unchanged.
-            // 3.5 - uses this if mr_motorofftimer is clear.
             if (mark_cycles_turnoff != 0 && (clock->get_c14m() > mark_cycles_turnoff)) {
-                drives[dr_enable35][iwm_select]->set_enable(false);
-                enable_asserted = false;
                 mark_cycles_turnoff = 0;
+                sync_drive_enables();
             }
         }
 
@@ -246,34 +309,19 @@ class IWM : public StorageDevice {
             disk_register = data;
 
             if (dr_enable35 != prev_en35) {
-                // /ENBL goes away from both drives in the previous family.
-                // Without this, the prior 3.5 drive's `enable` latch (and the
-                // matching 5.25 latch when going the other way) sticks on
-                // forever, leaving lss_disk_spinning() true and any debug /
-                // background paths that touch the drive observing a "still
-                // selected" state long after DISKREG moved on.
-                //
-                // 3.5 spindle state is internally latched in the Sony
-                // mechanism (CONT35 $4/$C), so toggling EN35 doesn't stop a
-                // spinning motor — the schedule_motor_off timer started by
-                // set_enable(false) handles that the same way an explicit
-                // SELECT change would.
-                drives[prev_en35][0]->set_enable(false);
-                drives[prev_en35][1]->set_enable(false);
-
-                // The new family's iwm_select drive picks up whatever /ENBL
-                // is currently asserted. If iwm_enable is off, set_enable(false)
-                // here is the right no-op-ish call — it normalises state and
-                // (for 3.5) lets the drive schedule its own motor-off.
-                drives[dr_enable35][iwm_select]->set_hdsel(dr_hdsel);
-                drives[dr_enable35][iwm_select]->set_enable(enable_asserted);
+                // EN35 is a routing input to the /ENBL model: re-syncing
+                // moves the asserted /ENBL (if any) from the old family's
+                // selected drive to the new family's. 3.5 spindle state is
+                // internally latched in the Sony mechanism (CONT35 $4/$C),
+                // so losing /ENBL doesn't hard-stop a spinning motor — the
+                // drive's own set_enable(false) schedules its ~0.5 s
+                // spin-down, same as an explicit SELECT change would.
+                sync_drive_enables();
             }
 
-            if (dr_hdsel != prev_sel) {
-                // SEL change without an EN35 change: just push HDSEL into both
-                // 3.5 drives so whichever is later selected sees the right
-                // sense bit. (The EN35-change branch above already pushed
-                // HDSEL into the newly-selected drive.)
+            if (dr_hdsel != prev_sel || dr_enable35 != prev_en35) {
+                // Push HDSEL into both 3.5 drives so whichever is selected
+                // sees the right sense bit.
                 drives[1][0]->set_hdsel(dr_hdsel);
                 drives[1][1]->set_hdsel(dr_hdsel);
             }
@@ -286,10 +334,10 @@ class IWM : public StorageDevice {
             /* uint8_t sense = dr_enable35 ? drives[dr_enable35][iwm_select]->read_sense()
                                         : drives[0][iwm_select]->read_sense(); */
             uint8_t sense = drives[dr_enable35][iwm_select]->read_sense();
-            uint8_t motor_bit = lss_active() ? 1 : 0;
-            //return (reg_mode & 0b000'11111) | (motor_bit << 5) | (sense << 7); // TODO: I don't there is a motor signal back, so "enable" has to be whatever signal we're providing out?
-            //return (reg_mode & 0b000'11111) | (iwm_enable << 5) | (sense << 7);
-            return (reg_mode & 0b000'11111) | (enable_asserted << 5) | (sense << 7);
+            // Bit 5 is the IWM's own /ENBL output state (incl. the MC14536
+            // holdover): the ROM's SELIWM loop polls it to know when the
+            // MODE register becomes writable.
+            return (reg_mode & 0b000'11111) | ((enbl_asserted() ? 1 : 0) << 5) | (sense << 7);
         }
 
         void fast_forward() {
@@ -332,8 +380,23 @@ class IWM : public StorageDevice {
         void fast_forward_impl(/* uint64_t now, */ Floppy_woz *drive) {
             uint64_t bits_to_sim = drive->fast_forward(/* now */);
 
-            const bool latch_read = dr_enable35 && mr_latch;
-            const bool async_wr   = dr_enable35 && mr_hsprotocol;
+            // L (latch) and H (handshake protocol) are independent,
+            // firmware-settable bits of the IWM's MODE register ($C03F
+            // write) — see Docs/IWM.md's transcription of the IWM Device
+            // Specification: "Should be 0 for 5.25 and 1 for 3.5", i.e.
+            // firmware chooses these per the drive it intends to talk to;
+            // they are not physically wired to DISKREG's EN35 (drive
+            // family select) bit. Previously both were gated by
+            // `dr_enable35 &&`, so a self-test/probe that set MODE.H=1
+            // (async/handshake) before flipping EN35 to 3.5 would never
+            // see `reg_handshake` update — the IIgs ROM03 power-on disk
+            // self-test does exactly this, and hangs forever polling a
+            // handshake bit that can now never be set. Confirmed via
+            // runtime trace (mr_hsprotocol=1, dr_enable35=0) while
+            // gssquared spun on this loop under MCP control; see M0 boot
+            // notes in system-settings-gs/docs/HARNESS.md.
+            const bool latch_read = mr_latch;
+            const bool async_wr   = mr_hsprotocol;
 
             for (uint64_t i = 0; i < bits_to_sim; i++) {
                 if (iwm_q7 == 0 && iwm_q6 == 0) {
@@ -432,83 +495,51 @@ class IWM : public StorageDevice {
     public:
 
         inline void decode(uint16_t reg) {
-            // Remember the pre-write SELECT state so we can detect a change
-            // and flip which physical drive is "selected" below.
+            // Remember pre-write ENABLE/SELECT so transitions can be
+            // detected after the switch-state update below.
             const uint8_t prev_select = iwm_select;
+            const uint8_t prev_enable = iwm_enable;
 
             // Update the switch state.
             switches[reg>>1] = reg & 0x01;
 
-            if (dr_enable35) {
-                switch (reg) {
-                    case IWM_CA0_OFF:
-                    case IWM_CA0_ON:
-                    case IWM_CA1_OFF:
-                    case IWM_CA1_ON:
-                    case IWM_CA2_OFF:
-                    case IWM_CA2_ON:
-                    case IWM_LSTRB_OFF:
-                    case IWM_LSTRB_ON:
-                        // CA0-CA2 and LSTRB are state/control selectors for
-                        // the 3.5 drive. The drive decodes them internally;
-                        // IWM just forwards the raw bit.
-                        drives[dr_enable35][iwm_select]->set_phase(reg >> 1, reg & 0x01);
-                        break;
-                    case IWM_ENABLE_ON:
-                        // 3.5 ENABLE' = LED on / disk locked. Does NOT start
-                        // the spindle (that's CONT35 $4).
-                        //drives[dr_enable35][iwm_select]->set_enable(true);
-                        request_enable_on();
-                        break;
-                    case IWM_ENABLE_OFF:
-                        //drives[dr_enable35][iwm_select]->set_enable(false);
-                        request_enable_off();
-                        break;
-                    case IWM_SELECT_ON:
-                    case IWM_SELECT_OFF:
-                        if (iwm_select != prev_select) {
-                            // De-select the previously-active drive and
-                            // hand the LED + CA/SEL state to the new one.
-                            drives[dr_enable35][prev_select]->set_enable(false);
-                            // Re-push HDSEL so the newly-selected drive's
-                            // sense output reflects the current SEL line.
-                            drives[dr_enable35][iwm_select]->set_hdsel(dr_hdsel);
-                            drives[dr_enable35][iwm_select]->set_enable(iwm_enable);
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            } else {
-                // 5.25 drive motor on/off handled differently.
-                switch (reg) {
-                    case IWM_CA0_OFF:
-                    case IWM_CA0_ON:
-                    case IWM_CA1_OFF:
-                    case IWM_CA1_ON:
-                    case IWM_CA2_OFF:
-                    case IWM_CA2_ON:
-                    case IWM_LSTRB_OFF:
-                    case IWM_LSTRB_ON:
-                        drives[dr_enable35][iwm_select]->set_phase(reg>>1,reg&0x01);
-                        break;
-                    case IWM_ENABLE_ON:
-                        request_enable_on();
-                        break;
-                    case IWM_ENABLE_OFF:
-                        request_enable_off();
-                        break;
-                    case IWM_SELECT_ON:
-                        drives[dr_enable35][1-iwm_select]->set_enable(false); // de-select
-                        drives[dr_enable35][iwm_select]->set_enable(iwm_enable /* motor */);
-                        break;
-                    case IWM_SELECT_OFF:
-                        drives[dr_enable35][1-iwm_select]->set_enable(false); // de-select
-                        drives[dr_enable35][iwm_select]->set_enable(iwm_enable /* motor */);
-                        break;
-                    default:
-                        break;
-                }
+            switch (reg) {
+                case IWM_CA0_OFF:
+                case IWM_CA0_ON:
+                case IWM_CA1_OFF:
+                case IWM_CA1_ON:
+                case IWM_CA2_OFF:
+                case IWM_CA2_ON:
+                case IWM_LSTRB_OFF:
+                case IWM_LSTRB_ON:
+                    // CA0-CA2 and LSTRB go to the selected drive. The drive
+                    // decodes them itself (5.25: stepper phases; 3.5: the
+                    // 16-way status/control selector + strobe).
+                    drives[dr_enable35][iwm_select]->set_phase(reg >> 1, reg & 0x01);
+                    break;
+                case IWM_ENABLE_ON:
+                case IWM_ENABLE_OFF:
+                    // /ENBL level input changed (or was re-written at the
+                    // same level): update the holdover timer state and
+                    // re-sync. What /ENBL means (5.25 spindle vs. 3.5
+                    // LED/lock) is the drive's business.
+                    enable_switch_changed(prev_enable);
+                    break;
+                case IWM_SELECT_ON:
+                case IWM_SELECT_OFF:
+                    // Routing input changed: /ENBL (if asserted) moves to
+                    // the newly-selected unit; sync handles de-selecting
+                    // the old one. HDSEL is re-pushed so the newly-selected
+                    // 3.5 drive's sense output reflects the current SEL
+                    // line.
+                    if (iwm_select != prev_select) {
+                        drives[1][0]->set_hdsel(dr_hdsel);
+                        drives[1][1]->set_hdsel(dr_hdsel);
+                        sync_drive_enables();
+                    }
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -564,16 +595,14 @@ class IWM : public StorageDevice {
             must be repeatedly written until the status register indicates
             the desired changes have taken effect. See the ROM's SELIWM loop.
             */
-            //if (!lss_active() && address_odd(reg) && iwm_q6 && iwm_q7) {
-            if (!enable_asserted && address_odd(reg) && iwm_q6 && iwm_q7) {
+            if (!enbl_asserted() && address_odd(reg) && iwm_q6 && iwm_q7) {
                 reg_mode = data;
             }
             /* Data-register write: Q6+Q7 on, odd address, motor running.
             5.25 sync: LSS consumes data_register each WRITESHIFT step.
             3.5 async (H=1): bytes queue into async_shift_reg; handshake
             clears until another byte is needed (Neil Parker write sequence). */
-            //else if (lss_active() && address_odd(reg) && iwm_q6 && iwm_q7) {
-            else if (enable_asserted && address_odd(reg) && iwm_q6 && iwm_q7) {
+            else if (enbl_asserted() && address_odd(reg) && iwm_q6 && iwm_q7) {
                 data_register = data;
                 if (dr_enable35 && mr_hsprotocol) {
                     async_buffer_register = data;
@@ -649,15 +678,15 @@ class IWM : public StorageDevice {
             queue less at a time, as long as the stream doesn't run dry.  */
     
         /* If sound state changed, reset the stream */
-        if (diskii_running_last && !enable_asserted) {
+        if (diskii_running_last && !enbl_asserted()) {
             diskii_running_last = false;
             /* Clear the audio stream when transitioning to disabled state */
             sound_effect->flush(SE_SHUGART_DRIVE);
         }
-        
+
         /* Only queue audio data if sound is enabled */
         //static int running_chunknumber = 0;
-        if (enable_asserted) {
+        if (enbl_asserted()) {
             int dl = (int) sounds[SE_SHUGART_DRIVE].si->wav_data_len / 10;
             if (SDL_GetAudioStreamQueued(sounds[SE_SHUGART_DRIVE].si->stream) < dl) {
                 SDL_PutAudioStreamData(sounds[SE_SHUGART_DRIVE].si->stream, sounds[SE_SHUGART_DRIVE].si->wav_data + dl * running_chunknumber, dl);
@@ -688,7 +717,7 @@ class IWM : public StorageDevice {
         }
     }
 
-    bool get_motor() { return enable_asserted; }
+    bool get_motor() { return enbl_asserted(); }
 
 
     bool mount(storage_key_t key, std::vector<media_descriptor *> media_list) {

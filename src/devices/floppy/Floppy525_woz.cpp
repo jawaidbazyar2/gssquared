@@ -88,6 +88,16 @@ void Floppy525_woz::set_phase(uint8_t phase, uint8_t onoff) {
 }
 
 uint8_t Floppy525_woz::read_sense() {
+    // A real Disk II's write-protect sense is an LED/phototransistor pair
+    // that shines through the disk's WP notch cutout. With no disk in the
+    // drive there's nothing to block the beam, so the sensor reads exactly
+    // as if a write-protected disk were inserted: sense = 1. Without this,
+    // an emulated empty drive reports "not protected" (0) forever, and any
+    // firmware/self-test that polls this line waiting for it to go high
+    // (e.g. the Apple IIgs ROM's disk-drive presence probe during power-on
+    // self-test) spins forever when no 5.25" media is mounted. See M0 boot
+    // notes in system-settings-gs/docs/HARNESS.md.
+    if (!is_mounted) return 1;
     return write_protect;
 }
 
