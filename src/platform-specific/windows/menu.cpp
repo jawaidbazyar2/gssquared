@@ -21,6 +21,7 @@
 #define IDM_SETTINGS_RMB_ACCEL    804
 #define IDM_FILE_OPEN_CONFIG      805
 #define IDM_HELP_OPEN_DOCS        900
+#define IDM_HELP_DONATE           901
 
 // DEPRECATED: see commented-out WM_ENTERMENULOOP/WM_EXITMENULOOP/WM_TIMER block below.
 // #define MENU_TIMER_ID   1
@@ -285,6 +286,9 @@ static void dispatchCommand(UINT id)
     case IDM_HELP_OPEN_DOCS:
         SDL_OpenURL("https://jawaidbazyar2.github.io/gssquared/");
         return;
+    case IDM_HELP_DONATE:
+        SDL_OpenURL("https://gssquared.net/support");
+        return;
 
     // Game Controller
     case MENU_CONTROLLER_GAMEPAD: mi->setControllerMode(0); return;
@@ -438,6 +442,7 @@ static void setupMenus()
     // ── Docs ─────────────────────────────────────────────────────────────────
     g_helpPopup = CreatePopupMenu();
     AppendMenuW(g_helpPopup, MF_STRING, IDM_HELP_OPEN_DOCS, L"Online Documentation");
+    AppendMenuW(g_helpPopup, MF_STRING, IDM_HELP_DONATE, L"Donate");
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_helpPopup), L"Docs");
 

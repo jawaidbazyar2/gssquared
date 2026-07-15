@@ -248,6 +248,8 @@ static void build_menu_bar()
     if (ImGui::BeginMenu("Docs")) {
         if (ImGui::MenuItem("Online Documentation"))
             SDL_OpenURL("https://jawaidbazyar2.github.io/gssquared/");
+        if (ImGui::MenuItem("Donate"))
+            SDL_OpenURL("https://gssquared.net/support");
         ImGui::EndMenu();
     }
 }

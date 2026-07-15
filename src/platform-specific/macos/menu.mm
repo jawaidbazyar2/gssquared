@@ -125,6 +125,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)editPasteText:(id)sender;
 - (void)diskToggleDrive:(id)sender;
 - (void)helpOpenDocs:(id)sender;
+- (void)helpDonate:(id)sender;
 @end
 
 @implementation MenuActionHandler
@@ -163,7 +164,8 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 		return getMenuInterface()->isEmulationRunning() && getMenuInterface()->getCrtShaderAvailable();
 	}
 	// Help items are always available regardless of emulation state
-	if (menuItem.action == @selector(helpOpenDocs:)) {
+	if (menuItem.action == @selector(helpOpenDocs:) ||
+	    menuItem.action == @selector(helpDonate:)) {
 		return YES;
 	}
 	if (menuItem.action == @selector(fileOpenConfig:)) {
@@ -211,6 +213,11 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 - (void)helpOpenDocs:(id)sender {
 	SDL_OpenURL("https://jawaidbazyar2.github.io/gssquared/");
+	(void)sender;
+}
+
+- (void)helpDonate:(id)sender {
+	SDL_OpenURL("https://gssquared.net/support");
 	(void)sender;
 }
 @end
@@ -605,6 +612,13 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[onlineDocsItem setTarget:sMenuHandler];
 	[helpMenu addItem:onlineDocsItem];
+
+	NSMenuItem *donateItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Donate", nil)
+		       action:@selector(helpDonate:)
+		keyEquivalent:@""] autorelease];
+	[donateItem setTarget:sMenuHandler];
+	[helpMenu addItem:donateItem];
 }
 
 void initMenu(SDL_Window *window) {
