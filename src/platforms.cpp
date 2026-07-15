@@ -140,6 +140,31 @@ static  platform_info platforms[] = {
             DEVICE_ID_END
         }
      },
+     {
+        // Same hardware as the ROM 01 Apple IIgs above, but loads a 256K
+        // ROM 03 image (roms/apple2gs_rom3/main.rom). The MMU derives the
+        // bank $FF offset from the ROM size, so the larger image maps
+        // correctly. Drop a ROM 03 dump in assets/roms/apple2gs_rom3/.
+        PLATFORM_APPLE_IIGS_ROM3,
+        "Apple IIgs (ROM 3)",
+        "apple2gs_rom3",
+        PROCESSOR_65816,
+        0xC7C9C7FF,    //0xD2D0C8FF,
+        Badge_IIGS,
+        CLOCK_2_8MHZ,
+        MMU_MMU_IIGS,
+        {
+            DEVICE_ID_SPEAKER,     // speaker must be before display so iigs can override some things?? Still a thing?
+            DEVICE_ID_DISPLAY,
+            DEVICE_ID_KEYGLOO,     // Keyboard should be before IIGS_MEMORY
+            DEVICE_ID_RTC_PRAM,
+            DEVICE_ID_GAMECONTROLLER,
+            DEVICE_ID_ENSONIQ,
+            DEVICE_ID_SCC8530,
+            DEVICE_ID_IWM,
+            DEVICE_ID_END
+        }
+     },
     // Add more platforms as needed:
     // { "Apple IIc",         "apple2c" },
     // { "Apple IIc Plus",    "apple2c_plus" },

@@ -236,6 +236,27 @@ SystemConfig_t BuiltinSystemConfigs[] = {
             DEVICE_ID_PD_BLOCK3,
         }
     },
+    {
+        "Apple IIgs (ROM 3)",
+        PLATFORM_APPLE_IIGS_ROM3,
+        //DeviceMap_IIGS,
+        //Badge_IIGS,
+        true,
+        CLOCK_SET_US,
+        Scanner_AppleIIgs,
+        "Apple IIgs (ROM 3) 8MB RAM",
+        "ec541ad4-f57c-4889-96b8-9c854b11dd10",
+        {
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_SECOND_SIGHT,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_PD_BLOCK3,
+        }
+    },
 /*     {
         "Apple IIc",
         PLATFORM_APPLE_IIC,

@@ -9,6 +9,7 @@ typedef enum PlatformId_t {
     PLATFORM_APPLE_IIE_ENHANCED,
     PLATFORM_APPLE_IIE_65816,
     PLATFORM_APPLE_IIGS,
+    PLATFORM_APPLE_IIGS_ROM3,
     PLATFORM_END
 } PlatformId_t;
 
@@ -20,4 +21,5 @@ const PlatformFlags_t PLATFLAG_APPLE_IIE = 1 << 2;
 const PlatformFlags_t PLATFLAG_APPLE_IIE_ENHANCED = 1 << 3;
 const PlatformFlags_t PLATFLAG_APPLE_IIE_65816 = 1 << 4;
 const PlatformFlags_t PLATFLAG_APPLE_IIGS = 1 << 5;
+const PlatformFlags_t PLATFLAG_APPLE_IIGS_ROM3 = 1 << 6;
 const PlatformFlags_t PLATFLAG_ALL = 0xFFFFFFFF;
