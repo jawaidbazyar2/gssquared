@@ -7,6 +7,7 @@
 #include "NClock.hpp"
 #include "computer.hpp"
 #include "debugger/debugwindow.hpp"
+#include "debugger/BreakpointTable.hpp"
 #include "util/EventDispatcher.hpp"
 #include "util/EventTimer.hpp"
 #include "videosystem.hpp"
@@ -29,6 +30,7 @@
 
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
+    breakpoints = new BreakpointTable();
 
     // initialize module store to nullptr.
     for (int i = 0; i < MODULE_NUM_MODULES; i++) {
@@ -252,6 +254,7 @@ computer_t::~computer_t() {
     delete reset_control;
     delete video_system;
     delete debug_window;
+    delete breakpoints;
     delete event_timer;
     delete sys_event;
     delete dispatch;

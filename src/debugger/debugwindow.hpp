@@ -10,6 +10,7 @@
 #include "ui/UIContext.hpp"
 #include "ui/TextInput.hpp"
 #include "debugger/MemoryWatch.hpp"
+#include "debugger/BreakpointTable.hpp"
 #include "debugger/disasm.hpp"
 
 struct computer_t;
@@ -44,7 +45,6 @@ struct debug_window_t {
     std::vector<Container_t *> containers;
     Container_t *tab_container, *step_container;
     MemoryWatch memory_watches;
-    MemoryWatch breaks;
     uint32_t stepover_bp = 0;
     bool step_out_active = false;
     
@@ -84,8 +84,9 @@ struct debug_window_t {
     int num_lines_in_pane(debug_panel_t pane);
     void event_pane_monitor(SDL_Event &event);
     bool handle_pane_event_monitor(SDL_Event &event);
-    bool check_pre_breakpoint(cpu_state *cpu);
-    bool check_post_breakpoint(system_trace_entry_t *entry);
+    bool check_pre_breakpoint(cpu_state *cpu, StopHit *hit_out = nullptr);
+    bool check_post_breakpoint(cpu_state *cpu, system_trace_entry_t *entry, StopHit *hit_out = nullptr);
+    bool needs_breakpoint_checks() const;
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
 
 protected:

@@ -8,11 +8,13 @@
 #include "debugger/trace.hpp"
 #include <algorithm>
 
-ExecuteCommand::ExecuteCommand(MMU *mmu, MonitorCommand *cmd, MemoryWatch *watches, MemoryWatch *breaks, Disassembler *disasm, std::vector<std::string> *debug_displays, system_trace_buffer *trace_buffer) {
+ExecuteCommand::ExecuteCommand(MMU *mmu, MonitorCommand *cmd, MemoryWatch *watches, BreakpointTable *breakpoints,
+                               Disassembler *disasm, std::vector<std::string> *debug_displays,
+                               system_trace_buffer *trace_buffer) {
     this->mmu = mmu;
     this->cmd = cmd;
     this->memory_watches = watches;
-    this->breaks = breaks;
+    this->breakpoints = breakpoints;
     this->disasm = disasm;
     this->debug_displays = debug_displays;
     this->trace_buffer = trace_buffer;
@@ -131,33 +133,64 @@ void ExecuteCommand::execute() {
             addOutput("Error: expected address as first argument");
         }
     }
-    if (breaks && (node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_BP)) {
-        // set memory monitor
+    if (breakpoints && (node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_BP)) {
         if (cmd->nodes.size() < 2) {
             addOutput("Current breakpoints:");
-            for (MemoryWatch::iterator watch = breaks->begin(); watch != breaks->end(); ++watch) {
+            for (const auto &e : breakpoints->entries()) {
                 std::ostringstream line;
-                line << " >> " << std::hex << std::uppercase << std::setfill('0') 
-                     << std::setw(4) << watch->start << " - " 
-                     << std::setw(4) << watch->end;
+                line << " >> id=" << e.id << " kind=" << (int)e.kind << " "
+                     << std::hex << std::uppercase << std::setfill('0')
+                     << std::setw(6) << e.address << " len=" << e.length
+                     << " flags=0x" << std::setw(2) << (int)e.flags;
                 addOutput(line.str());
             }
             return;
         }
         auto &node1 = cmd->nodes[1];
+        bp_entry_t e{};
+        e.kind = BP_KIND_EXEC;
+        e.flags = BP_FLAG_ENABLED;
+        e.access = BP_ACCESS_NONE;
+        e.domain = 0;
+        e.addr_mask = 0xFFFFFFFF;
+        e.data_mask = 0xFF;
         if (node1.type == MON_NODE_TYPE_RANGE) {
-            breaks->add(node1.val_range.lo, node1.val_range.hi);
+            e.address = node1.val_range.lo;
+            e.length = (node1.val_range.hi >= node1.val_range.lo)
+                           ? (node1.val_range.hi - node1.val_range.lo + 1)
+                           : 1;
         } else if (node1.type == MON_NODE_TYPE_NUMBER) {
-            breaks->add(node1.val_number, node1.val_number);
+            e.address = node1.val_number;
+            e.length = 1;
         } else {
             addOutput("Error: expected range as first argument");
+            return;
+        }
+        const char *err = nullptr;
+        uint32_t id = breakpoints->add(e, &err);
+        if (!id) {
+            addFormattedOutput("Error: %s", err ? err : "failed to set breakpoint");
+        } else {
+            addFormattedOutput("Breakpoint id=%u set", id);
         }
     }
-    if (breaks && (node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_NOBP)) {
-        // clear memory monitor
+    if (breakpoints && (node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_NOBP)) {
         auto &node1 = cmd->nodes[1];
         if (node1.type == MON_NODE_TYPE_NUMBER) {
-            breaks->remove(node1.val_number);
+            // Prefer clear by id; if not found, clear any EXEC whose address matches.
+            if (!breakpoints->clear_id(node1.val_number)) {
+                bool removed = false;
+                for (const auto &e : breakpoints->entries()) {
+                    if (e.kind == BP_KIND_EXEC && e.address == node1.val_number) {
+                        breakpoints->clear_id(e.id);
+                        removed = true;
+                        break;
+                    }
+                }
+                if (!removed) {
+                    addOutput("Error: unknown breakpoint id/address");
+                }
+            }
         } else {
             addOutput("Error: expected address as first argument");
         }

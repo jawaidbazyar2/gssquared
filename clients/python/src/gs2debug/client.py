@@ -12,15 +12,41 @@ from .errors import ProtocolError
 from .frame import HEADER_SIZE, Frame, pack_frame, unpack_header
 from .keys import KMOD_LSHIFT, SCANCODE_LSHIFT, ascii_to_key
 from .types import (
+    BP_ACCESS_NONE,
+    BP_ACCESS_R,
+    BP_ACCESS_RW,
+    BP_ACCESS_W,
+    BP_CLEAR,
+    BP_CLEAR_ALL,
+    BP_ENABLE,
+    BP_FLAG_ENABLED,
+    BP_KIND_DATA,
+    BP_KIND_EXEC,
+    BP_KIND_IO,
+    BP_LIST,
+    BP_SET,
+    CONTINUE,
     ERROR,
     EVENT,
+    EVT_RUN_STATE,
+    EVT_STOPPED,
+    EXEC_NORMAL,
+    EXEC_PAUSED,
+    EXEC_STEP_INTO,
     GET_STATUS,
     HELLO,
     KEYEVENT,
+    PAUSE,
     PING,
     PROTOCOL_VERSION,
+    QUIT,
     READMEM,
     RESET,
+    STOP_BP_DATA,
+    STOP_BP_EXEC,
+    STOP_BP_IO,
+    STOP_PAUSE,
+    STOP_STEP,
     WRITEMEM,
 )
 
@@ -36,6 +62,35 @@ class HelloInfo:
 class StatusInfo:
     execution_mode: int
     platform_id: int
+
+
+@dataclass(frozen=True)
+class BpInfo:
+    id: int
+    hit_count: int
+    kind: int
+    flags: int
+    access: int
+    domain: int
+    address: int
+    length: int
+    addr_mask: int
+    data_value: int
+    data_mask: int
+    ignore_count: int
+
+
+@dataclass(frozen=True)
+class StoppedEvent:
+    reason: int
+    bp_id: int
+    pc: int
+    eaddr: int
+    value: int
+    access: int
+    kind: int
+    execution_mode: int
+    trace: bytes
 
 
 EventHandler = Callable[[int, int, bytes], None]
@@ -85,6 +140,19 @@ class Client:
         if reply:
             raise ProtocolError(0, f"PING reply not empty ({len(reply)} bytes)")
 
+    def quit(self) -> None:
+        """Force-quit the emulator (skips QuitModal / dirty-disk prompts).
+
+        Prefer this over killing the process; SIGTERM still becomes SDL_EVENT_QUIT
+        and shows the confirm dialog unless GSSquared was started with
+        ``--no-quit-confirm``.
+        """
+        if not self._handshaked:
+            raise RuntimeError("hello() required before quit()")
+        reply = self.request(QUIT, b"")
+        if reply:
+            raise ProtocolError(0, f"QUIT reply not empty ({len(reply)} bytes)")
+
     def get_status(self) -> StatusInfo:
         """Return execution_mode and platform_id (PlatformId_t / -p N)."""
         if not self._handshaked:
@@ -103,6 +171,161 @@ class Client:
         reply = self.request(RESET, payload)
         if reply:
             raise ProtocolError(0, f"RESET reply not empty ({len(reply)} bytes)")
+
+    def pause(self) -> None:
+        if not self._handshaked:
+            raise RuntimeError("hello() required before pause()")
+        reply = self.request(PAUSE, b"")
+        if reply:
+            raise ProtocolError(0, f"PAUSE reply not empty ({len(reply)} bytes)")
+
+    def continue_(self) -> None:
+        """Resume execution (CONTINUE)."""
+        if not self._handshaked:
+            raise RuntimeError("hello() required before continue_()")
+        reply = self.request(CONTINUE, b"")
+        if reply:
+            raise ProtocolError(0, f"CONTINUE reply not empty ({len(reply)} bytes)")
+
+    def bp_set(
+        self,
+        *,
+        kind: int,
+        address: int,
+        length: int = 1,
+        flags: int = BP_FLAG_ENABLED,
+        access: int = BP_ACCESS_NONE,
+        domain: int = 0,
+        addr_mask: int = 0xFFFFFFFF,
+        data_value: int = 0,
+        data_mask: int = 0xFF,
+        ignore_count: int = 0,
+    ) -> int:
+        if not self._handshaked:
+            raise RuntimeError("hello() required before bp_set()")
+        payload = struct.pack(
+            "<BBBBIIIIIII",
+            kind & 0xFF,
+            flags & 0xFF,
+            access & 0xFF,
+            0,
+            domain,
+            address,
+            length,
+            addr_mask,
+            data_value,
+            data_mask,
+            ignore_count,
+        )
+        reply = self.request(BP_SET, payload)
+        if len(reply) != 4:
+            raise ProtocolError(0, f"BP_SET reply length {len(reply)}, expected 4")
+        (bp_id,) = struct.unpack("<I", reply)
+        return bp_id
+
+    def bp_clear(self, bp_id: int) -> None:
+        if not self._handshaked:
+            raise RuntimeError("hello() required before bp_clear()")
+        reply = self.request(BP_CLEAR, struct.pack("<I", bp_id))
+        if reply:
+            raise ProtocolError(0, f"BP_CLEAR reply not empty ({len(reply)} bytes)")
+
+    def bp_clear_all(self) -> None:
+        if not self._handshaked:
+            raise RuntimeError("hello() required before bp_clear_all()")
+        reply = self.request(BP_CLEAR_ALL, b"")
+        if reply:
+            raise ProtocolError(0, f"BP_CLEAR_ALL reply not empty ({len(reply)} bytes)")
+
+    def bp_enable(self, bp_id: int, enabled: bool = True) -> None:
+        if not self._handshaked:
+            raise RuntimeError("hello() required before bp_enable()")
+        reply = self.request(BP_ENABLE, struct.pack("<II", bp_id, 1 if enabled else 0))
+        if reply:
+            raise ProtocolError(0, f"BP_ENABLE reply not empty ({len(reply)} bytes)")
+
+    def bp_list(self) -> list[BpInfo]:
+        if not self._handshaked:
+            raise RuntimeError("hello() required before bp_list()")
+        reply = self.request(BP_LIST, b"")
+        if len(reply) < 4:
+            raise ProtocolError(0, f"BP_LIST reply too short ({len(reply)})")
+        (count,) = struct.unpack_from("<I", reply, 0)
+        need = 4 + 40 * count
+        if len(reply) != need:
+            raise ProtocolError(0, f"BP_LIST reply length {len(reply)}, expected {need}")
+        out: list[BpInfo] = []
+        for i in range(count):
+            off = 4 + 40 * i
+            bp_id, hit_count = struct.unpack_from("<II", reply, off)
+            kind, flags, access, _pad = struct.unpack_from("<BBBB", reply, off + 8)
+            domain, address, length, addr_mask, data_value, data_mask, ignore_count = (
+                struct.unpack_from("<IIIIIII", reply, off + 12)
+            )
+            out.append(
+                BpInfo(
+                    id=bp_id,
+                    hit_count=hit_count,
+                    kind=kind,
+                    flags=flags,
+                    access=access,
+                    domain=domain,
+                    address=address,
+                    length=length,
+                    addr_mask=addr_mask,
+                    data_value=data_value,
+                    data_mask=data_mask,
+                    ignore_count=ignore_count,
+                )
+            )
+        return out
+
+    def wait_event(self, *, timeout: float | None = 5.0) -> tuple[int, int, bytes]:
+        """Block until an EVENT frame arrives. Returns (event_id, seq, data)."""
+        if self._busy:
+            raise RuntimeError("cannot wait_event while a request is outstanding")
+        deadline = None if timeout is None else time.monotonic() + timeout
+        while True:
+            remaining = None
+            if deadline is not None:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError("wait_event timed out")
+            frame = self._recv_frame(timeout=remaining)
+            if frame.type != EVENT:
+                raise ProtocolError(
+                    0, f"unexpected non-EVENT frame type 0x{frame.type:08x} while waiting"
+                )
+            if len(frame.payload) < 4:
+                raise ProtocolError(0, "EVENT payload too short")
+            (event_id,) = struct.unpack_from("<I", frame.payload, 0)
+            data = frame.payload[4:]
+            self._dispatch_event(frame)
+            return event_id, frame.seq, data
+
+    def wait_stopped(self, *, timeout: float | None = 5.0) -> StoppedEvent:
+        """Wait for EVT_STOPPED and parse the payload."""
+        while True:
+            event_id, _seq, data = self.wait_event(timeout=timeout)
+            if event_id != EVT_STOPPED:
+                continue
+            if len(data) < 32:
+                raise ProtocolError(0, f"EVT_STOPPED data too short ({len(data)})")
+            reason, bp_id, pc, eaddr, value = struct.unpack_from("<IIIII", data, 0)
+            access, kind = data[20], data[21]
+            execution_mode, trace_size = struct.unpack_from("<II", data, 24)
+            trace = data[32 : 32 + trace_size] if trace_size else b""
+            return StoppedEvent(
+                reason=reason,
+                bp_id=bp_id,
+                pc=pc,
+                eaddr=eaddr,
+                value=value,
+                access=access,
+                kind=kind,
+                execution_mode=execution_mode,
+                trace=trace,
+            )
 
     def read_mem(self, domain: int, address: int, length: int) -> bytes:
         """Send READMEM; return `length` bytes from domain/address.

@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 #include "debugger/MemoryWatch.hpp"
+#include "debugger/BreakpointTable.hpp"
 #include "debugger/disasm.hpp"
 #include "debugger/trace.hpp"
 
@@ -14,7 +15,7 @@ class ExecuteCommand {
     MMU *mmu = nullptr;
     std::vector<std::string> output_buffer;
     MemoryWatch *memory_watches = nullptr;
-    MemoryWatch *breaks = nullptr;
+    BreakpointTable *breakpoints = nullptr;
     Disassembler *disasm = nullptr;
     std::vector<std::string> *debug_displays;
     system_trace_buffer *trace_buffer = nullptr;
@@ -29,7 +30,6 @@ class ExecuteCommand {
     template<typename... Args>
     void addFormattedOutput(const char* format, Args... args) {
         std::ostringstream oss;
-        // For printf-style formatting, we'll use a temporary buffer
         constexpr size_t buffer_size = 1024;
         char buffer[buffer_size];
         snprintf(buffer, buffer_size, format, args...);
@@ -37,7 +37,9 @@ class ExecuteCommand {
     }
 
     public:
-        ExecuteCommand(MMU *mmu, MonitorCommand *cmd, MemoryWatch *watches, MemoryWatch *breaks, Disassembler *disasm, std::vector<std::string> *debug_displays, system_trace_buffer *trace_buffer);
+        ExecuteCommand(MMU *mmu, MonitorCommand *cmd, MemoryWatch *watches, BreakpointTable *breakpoints,
+                       Disassembler *disasm, std::vector<std::string> *debug_displays,
+                       system_trace_buffer *trace_buffer);
         ~ExecuteCommand();
         const std::vector<std::string>& getOutput() const;
         void clearOutput();

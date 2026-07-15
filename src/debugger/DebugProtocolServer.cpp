@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <deque>
 #include <limits>
 #include <vector>
 
@@ -11,10 +12,13 @@
 
 #include "computer.hpp"
 #include "cpu.hpp"
+#include "gs2.hpp"
 #include "mmus/mmu.hpp"
 #include "PlatformIDs.hpp"
 
 #if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
+#include <fcntl.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -33,11 +37,26 @@ constexpr uint32_t kMaxWriteMem = 65536;
 constexpr uint32_t kTypeHello     = 0x00000001;
 constexpr uint32_t kTypePing      = 0x00000002;
 constexpr uint32_t kTypeError     = 0x00000003;
+constexpr uint32_t kTypeEvent     = 0x00000004;
+constexpr uint32_t kTypeQuit      = 0x00000005;
 constexpr uint32_t kTypeGetStatus = 0x00000101;
 constexpr uint32_t kTypeReset     = 0x00000102;
+constexpr uint32_t kTypePause     = 0x00000103;
+constexpr uint32_t kTypeContinue  = 0x00000104;
 constexpr uint32_t kTypeReadMem   = 0x00000301;
 constexpr uint32_t kTypeWriteMem  = 0x00000302;
+constexpr uint32_t kTypeBpSet     = 0x00000401;
+constexpr uint32_t kTypeBpClear   = 0x00000402;
+constexpr uint32_t kTypeBpClearAll = 0x00000403;
+constexpr uint32_t kTypeBpEnable  = 0x00000404;
+constexpr uint32_t kTypeBpList    = 0x00000405;
 constexpr uint32_t kTypeKeyEvent  = 0x00000501;
+
+constexpr uint32_t kEvtStopped   = 1;
+constexpr uint32_t kEvtRunState  = 2;
+
+constexpr uint32_t kBpSetPayloadSize = 32;
+constexpr uint32_t kBpListRecordSize = 40;
 
 constexpr uint32_t kMemMain    = 0;
 constexpr uint32_t kMemMegaII  = 1;
@@ -64,6 +83,61 @@ struct FrameHeader {
 #pragma pack(pop)
 
 static_assert(sizeof(FrameHeader) == 12, "FrameHeader must be 12 bytes");
+static_assert(sizeof(system_trace_entry_t) == 40, "system_trace_entry_t wire size must be 40");
+
+/** Last stop reason for Policy A on CONTINUE (single server instance). */
+uint32_t g_last_stop_reason = 0;
+
+void pack_bp_fields(uint8_t *out32, const bp_entry_t &e) {
+    out32[0] = e.kind;
+    out32[1] = e.flags;
+    out32[2] = e.access;
+    out32[3] = e.pad;
+    std::memcpy(out32 + 4, &e.domain, 4);
+    std::memcpy(out32 + 8, &e.address, 4);
+    std::memcpy(out32 + 12, &e.length, 4);
+    std::memcpy(out32 + 16, &e.addr_mask, 4);
+    std::memcpy(out32 + 20, &e.data_value, 4);
+    std::memcpy(out32 + 24, &e.data_mask, 4);
+    std::memcpy(out32 + 28, &e.ignore_count, 4);
+}
+
+bool parse_bp_set_request(const std::vector<uint8_t> &payload, bp_entry_t &out) {
+    if (payload.size() != kBpSetPayloadSize) {
+        return false;
+    }
+    out = {};
+    out.kind = payload[0];
+    out.flags = payload[1];
+    out.access = payload[2];
+    out.pad = payload[3];
+    std::memcpy(&out.domain, payload.data() + 4, 4);
+    std::memcpy(&out.address, payload.data() + 8, 4);
+    std::memcpy(&out.length, payload.data() + 12, 4);
+    std::memcpy(&out.addr_mask, payload.data() + 16, 4);
+    std::memcpy(&out.data_value, payload.data() + 20, 4);
+    std::memcpy(&out.data_mask, payload.data() + 24, 4);
+    std::memcpy(&out.ignore_count, payload.data() + 28, 4);
+    if (out.addr_mask == 0) {
+        out.addr_mask = 0xFFFFFFFFu;
+    }
+    return true;
+}
+
+uint32_t map_bp_add_error(const char *msg) {
+    if (!msg) {
+        return kEInternal;
+    }
+    if (std::strcmp(msg, "too many breakpoints") == 0
+        || std::strcmp(msg, "length == 0") == 0
+        || std::strcmp(msg, "out of range") == 0
+        || std::strcmp(msg, "bad kind") == 0
+        || std::strcmp(msg, "bad flags") == 0
+        || std::strcmp(msg, "bad access") == 0) {
+        return kEBadLength;
+    }
+    return kEInternal;
+}
 
 } // namespace
 
@@ -180,6 +254,7 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
 
     bridge_reply_.clear();
     bridge_error_ = 0;
+    bridge_error_text_.clear();
     bridge_timed_out_ = false;
     bridge_megaii_platform_reject_ = false;
 
@@ -201,6 +276,15 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             bridge_error_ = kEInternal;
         } else {
             computer->reset(cold_start != 0);
+        }
+    } else if (bridge_type_ == kTypeQuit) {
+        // Force-quit: skip QuitModal / dirty-disk prompts, halt, exit process.
+        // Do not SDL_PushEvent(QUIT) — that races with AppQuit when the debug
+        // thread is still finishing the QUIT reply.
+        gs2_app_values.no_quit_confirm = true;
+        gs2_app_values.force_app_exit = true;
+        if (computer && computer->cpu) {
+            computer->cpu->halt = HLT_USER;
         }
     } else if (bridge_type_ == kTypeReadMem) {
         const uint32_t domain = bridge_arg0_;
@@ -340,6 +424,91 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
         } else {
             bridge_error_ = kEInternal;
         }
+    } else if (bridge_type_ == kTypePause) {
+        if (!computer) {
+            bridge_error_ = kEInternal;
+        } else {
+            const execution_modes_t prev = computer->execution_mode;
+            computer->execution_mode = EXEC_PAUSED;
+            g_last_stop_reason = STOP_PAUSE;
+            emit_stopped_pause(computer);
+            emit_run_state(static_cast<uint32_t>(EXEC_PAUSED), static_cast<uint32_t>(prev));
+        }
+    } else if (bridge_type_ == kTypeContinue) {
+        if (!computer) {
+            bridge_error_ = kEInternal;
+        } else {
+            const execution_modes_t prev = computer->execution_mode;
+            computer->execution_mode = EXEC_NORMAL;
+            if (computer->breakpoints && computer->cpu) {
+                if (prev == EXEC_STEP_INTO || g_last_stop_reason == STOP_BP_EXEC) {
+                    computer->breakpoints->arm_exec_suppress(computer->cpu->full_pc);
+                }
+            }
+            g_last_stop_reason = 0;
+            emit_run_state(static_cast<uint32_t>(EXEC_NORMAL), static_cast<uint32_t>(prev));
+        }
+    } else if (bridge_type_ == kTypeBpSet) {
+        if (!computer || !computer->breakpoints) {
+            bridge_error_ = kEInternal;
+        } else if (bridge_request_.size() != kBpSetPayloadSize) {
+            bridge_error_ = kEBadLength;
+        } else {
+            bp_entry_t req{};
+            if (!parse_bp_set_request(bridge_request_, req)) {
+                bridge_error_ = kEBadLength;
+            } else {
+                const char *add_err = nullptr;
+                const uint32_t id = computer->breakpoints->add(req, &add_err);
+                if (id == 0) {
+                    bridge_error_ = map_bp_add_error(add_err);
+                    if (add_err) {
+                        bridge_error_text_ = add_err;
+                    }
+                } else {
+                    bridge_reply_.resize(4);
+                    std::memcpy(bridge_reply_.data(), &id, 4);
+                }
+            }
+        }
+    } else if (bridge_type_ == kTypeBpClear) {
+        if (!computer || !computer->breakpoints) {
+            bridge_error_ = kEInternal;
+        } else if (!computer->breakpoints->clear_id(bridge_arg0_)) {
+            bridge_error_ = kEInternal;
+            bridge_error_text_ = "unknown id";
+        }
+    } else if (bridge_type_ == kTypeBpClearAll) {
+        if (!computer || !computer->breakpoints) {
+            bridge_error_ = kEInternal;
+        } else {
+            computer->breakpoints->clear_all();
+        }
+    } else if (bridge_type_ == kTypeBpEnable) {
+        if (!computer || !computer->breakpoints) {
+            bridge_error_ = kEInternal;
+        } else if (bridge_arg1_ != 0 && bridge_arg1_ != 1) {
+            bridge_error_ = kEBadLength;
+        } else if (!computer->breakpoints->set_enabled(bridge_arg0_, bridge_arg1_ != 0)) {
+            bridge_error_ = kEInternal;
+            bridge_error_text_ = "unknown id";
+        }
+    } else if (bridge_type_ == kTypeBpList) {
+        if (!computer || !computer->breakpoints) {
+            bridge_error_ = kEInternal;
+        } else {
+            const auto &entries = computer->breakpoints->entries();
+            const uint32_t count = static_cast<uint32_t>(entries.size());
+            bridge_reply_.resize(4 + count * kBpListRecordSize);
+            std::memcpy(bridge_reply_.data(), &count, 4);
+            for (uint32_t i = 0; i < count; ++i) {
+                const bp_entry_t &e = entries[i];
+                uint8_t *rec = bridge_reply_.data() + 4 + i * kBpListRecordSize;
+                std::memcpy(rec + 0, &e.id, 4);
+                std::memcpy(rec + 4, &e.hit_count, 4);
+                pack_bp_fields(rec + 8, e);
+            }
+        }
     } else {
         bridge_error_ = kEInternal;
     }
@@ -364,6 +533,7 @@ bool DebugProtocolServer::submit_and_wait(uint32_t type, uint32_t seq,
     bridge_done_ = false;
     bridge_timed_out_ = false;
     bridge_megaii_platform_reject_ = false;
+    bridge_error_text_.clear();
     bridge_type_ = type;
     bridge_seq_ = seq;
     bridge_arg0_ = arg0;
@@ -396,6 +566,124 @@ bool DebugProtocolServer::submit_and_wait(uint32_t type, uint32_t seq,
     bridge_pending_ = false;
     bridge_done_ = false;
     return true;
+}
+
+void DebugProtocolServer::enqueue_event(uint32_t event_id, const std::vector<uint8_t> &data) {
+    std::vector<uint8_t> item(4 + data.size());
+    std::memcpy(item.data(), &event_id, 4);
+    if (!data.empty()) {
+        std::memcpy(item.data() + 4, data.data(), data.size());
+    }
+    std::lock_guard<std::mutex> lock(event_mu_);
+    event_queue_.push_back(std::move(item));
+}
+
+void DebugProtocolServer::fill_live_trace(computer_t *computer, system_trace_entry_t *out) {
+    if (!out) {
+        return;
+    }
+    std::memset(out, 0, sizeof(*out));
+    if (!computer || !computer->cpu) {
+        return;
+    }
+    cpu_state *cpu = computer->cpu;
+    if (computer->clock) {
+        out->cycle = computer->clock->get_cycles();
+    }
+    out->pc = cpu->pc;
+    out->pb = cpu->pb;
+    out->db = cpu->db;
+    out->a = cpu->a;
+    out->x = cpu->x;
+    out->y = cpu->y;
+    out->sp = cpu->sp;
+    out->d = cpu->d;
+    out->p = cpu->p;
+    out->unused = 0;
+    if (cpu->mmu) {
+        out->opcode = cpu->mmu->read(cpu->full_pc);
+    }
+}
+
+void DebugProtocolServer::pack_stopped_event(std::vector<uint8_t> &out, const StopHit &hit,
+                                             uint32_t execution_mode, const system_trace_entry_t &trace) {
+    constexpr uint32_t kHeaderSize = 32;
+    constexpr uint32_t kTraceSize = 40;
+    out.resize(kHeaderSize + kTraceSize);
+
+    const uint32_t trace_size = kTraceSize;
+    const uint16_t pad16 = 0;
+
+    std::memcpy(out.data() + 0, &hit.reason, 4);
+    std::memcpy(out.data() + 4, &hit.bp_id, 4);
+    std::memcpy(out.data() + 8, &hit.pc, 4);
+    std::memcpy(out.data() + 12, &hit.eaddr, 4);
+    std::memcpy(out.data() + 16, &hit.value, 4);
+    out[20] = hit.access;
+    out[21] = hit.kind;
+    std::memcpy(out.data() + 22, &pad16, 2);
+    std::memcpy(out.data() + 24, &execution_mode, 4);
+    std::memcpy(out.data() + 28, &trace_size, 4);
+    std::memcpy(out.data() + kHeaderSize, &trace, kTraceSize);
+}
+
+void DebugProtocolServer::emit_stopped(computer_t *computer, const StopHit &hit) {
+    g_last_stop_reason = hit.reason;
+    system_trace_entry_t trace{};
+    if (hit.reason == STOP_BP_EXEC || hit.reason == STOP_PAUSE) {
+        fill_live_trace(computer, &trace);
+    } else if (computer && computer->cpu) {
+        trace = computer->cpu->trace_entry;
+    }
+    const uint32_t mode = computer
+        ? static_cast<uint32_t>(computer->execution_mode)
+        : static_cast<uint32_t>(EXEC_PAUSED);
+    std::vector<uint8_t> data;
+    pack_stopped_event(data, hit, mode, trace);
+    enqueue_event(kEvtStopped, data);
+}
+
+void DebugProtocolServer::emit_stopped_pause(computer_t *computer) {
+    StopHit hit{};
+    hit.reason = STOP_PAUSE;
+    if (computer && computer->cpu) {
+        hit.pc = computer->cpu->full_pc;
+    }
+    g_last_stop_reason = STOP_PAUSE;
+    system_trace_entry_t trace{};
+    fill_live_trace(computer, &trace);
+    const uint32_t mode = computer
+        ? static_cast<uint32_t>(computer->execution_mode)
+        : static_cast<uint32_t>(EXEC_PAUSED);
+    std::vector<uint8_t> data;
+    pack_stopped_event(data, hit, mode, trace);
+    enqueue_event(kEvtStopped, data);
+}
+
+void DebugProtocolServer::emit_run_state(uint32_t new_mode, uint32_t prev_mode) {
+    std::vector<uint8_t> data(8);
+    std::memcpy(data.data() + 0, &new_mode, 4);
+    std::memcpy(data.data() + 4, &prev_mode, 4);
+    enqueue_event(kEvtRunState, data);
+}
+
+bool DebugProtocolServer::flush_events(int fd) {
+#if GS2_DEBUG_PROTO_UNIX
+    std::deque<std::vector<uint8_t>> pending;
+    {
+        std::lock_guard<std::mutex> lock(event_mu_);
+        pending.swap(event_queue_);
+    }
+    for (const auto &item : pending) {
+        if (!send_frame(fd, kTypeEvent, event_seq_++, item.data(), static_cast<uint32_t>(item.size()))) {
+            return false;
+        }
+    }
+    return true;
+#else
+    (void)fd;
+    return true;
+#endif
 }
 
 int SDLCALL DebugProtocolServer::thread_entry(void *userdata) {
@@ -446,6 +734,28 @@ bool DebugProtocolServer::read_full(int fd, void *buf, size_t n) {
             if (errno == EINTR) {
                 continue;
             }
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                struct pollfd pfd{};
+                pfd.fd = fd;
+                pfd.events = POLLIN;
+                const int pr = poll(&pfd, 1, 50);
+                if (pr < 0) {
+                    if (errno == EINTR) {
+                        continue;
+                    }
+                    return false;
+                }
+                if (pr == 0) {
+                    if (stop_) {
+                        return false;
+                    }
+                    continue;
+                }
+                if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                    return false;
+                }
+                continue;
+            }
             return false;
         }
         got += static_cast<size_t>(r);
@@ -472,6 +782,31 @@ bool DebugProtocolServer::write_full(int fd, const void *buf, size_t n) {
             if (errno == EINTR) {
                 continue;
             }
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                struct pollfd pfd{};
+                pfd.fd = fd;
+                pfd.events = POLLOUT;
+                const int pr = poll(&pfd, 1, 50);
+                if (pr < 0) {
+                    if (errno == EINTR) {
+                        continue;
+                    }
+                    return false;
+                }
+                if (pr == 0) {
+                    if (stop_) {
+                        return false;
+                    }
+                    continue;
+                }
+                if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                    return false;
+                }
+                continue;
+            }
+            return false;
+        }
+        if (w == 0) {
             return false;
         }
         sent += static_cast<size_t>(w);
@@ -514,6 +849,12 @@ const char *DebugProtocolServer::bridge_error_message(uint32_t err, uint32_t dom
     if (err == kEBusy) {
         return "busy";
     }
+    if (err == kEBadLength || err == kEInternal) {
+        std::lock_guard<std::mutex> lock(bridge_mu_);
+        if (!bridge_error_text_.empty()) {
+            return bridge_error_text_.c_str();
+        }
+    }
     if (err == kEBadLength) {
         return "out of range";
     }
@@ -535,12 +876,55 @@ const char *DebugProtocolServer::bridge_error_message(uint32_t err, uint32_t dom
 }
 
 void DebugProtocolServer::serve_client(int client_fd) {
+#if GS2_DEBUG_PROTO_UNIX
+    const int flags = fcntl(client_fd, F_GETFL, 0);
+    if (flags >= 0) {
+        fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
+    }
+#endif
     bool handshaked = false;
 
     // Reject request with an error frame; disconnect on write failure, else next request.
-#define REJECT(...) do { if (reject(__VA_ARGS__)) return; continue; } while (0)
+    // Use `continue` via a statement expression carefully: REJECT must continue the
+    // serve_client loop, not a do-while(0) wrapper (continue would bind to that).
+#define REJECT(...) do { if (reject(__VA_ARGS__)) return; goto next_request; } while (0)
+#define REPLY_OK(type, seq, payload_ptr, payload_len) do { \
+        if (!send_frame(client_fd, (type), (seq), (payload_ptr), (payload_len))) { \
+            return; \
+        } \
+        if (!flush_events(client_fd)) { \
+            return; \
+        } \
+    } while (0)
 
     while (!stop_) {
+next_request:
+        if (!flush_events(client_fd)) {
+            return;
+        }
+
+#if GS2_DEBUG_PROTO_UNIX
+        struct pollfd pfd{};
+        pfd.fd = client_fd;
+        pfd.events = POLLIN;
+        const int pr = poll(&pfd, 1, 50);
+        if (pr < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return;
+        }
+        if (pr == 0) {
+            continue;
+        }
+        if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            return;
+        }
+        if (!(pfd.revents & POLLIN)) {
+            continue;
+        }
+#endif
+
         FrameHeader hdr{};
         if (!read_full(client_fd, &hdr, sizeof(hdr))) {
             return;
@@ -583,9 +967,7 @@ void DebugProtocolServer::serve_client(int client_fd) {
             std::memcpy(reply + 0, &version, 4);
             std::memcpy(reply + 4, &flags, 4);
             std::memcpy(reply + 8, &max_payload, 4);
-            if (!send_frame(client_fd, kTypeHello, hdr.seq, reply, 12)) {
-                return;
-            }
+            REPLY_OK(kTypeHello, hdr.seq, reply, 12);
             handshaked = true;
             break;
         }
@@ -593,9 +975,25 @@ void DebugProtocolServer::serve_client(int client_fd) {
             if (hdr.length != 0) {
                 REJECT(client_fd, hdr.seq, kEBadLength, "PING requires empty payload");
             }
-            if (!send_frame(client_fd, kTypePing, hdr.seq, nullptr, 0)) {
+            REPLY_OK(kTypePing, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypeQuit: {
+            if (hdr.length != 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "QUIT requires empty payload");
+            }
+            // Reply before scheduling halt so the client gets ACK while the
+            // socket is still alive. AppQuit (same frame as halt) stops the
+            // protocol thread and would otherwise race the reply.
+            REPLY_OK(kTypeQuit, hdr.seq, nullptr, 0);
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeQuit, hdr.seq, 0, 0, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
                 return;
             }
+            // Ignore bridge errors after ACK — process may already be exiting.
             break;
         }
         case kTypeGetStatus: {
@@ -615,9 +1013,7 @@ void DebugProtocolServer::serve_client(int client_fd) {
             if (reply.size() != 8) {
                 REJECT(client_fd, hdr.seq, kEInternal, "bad status reply");
             }
-            if (!send_frame(client_fd, kTypeGetStatus, hdr.seq, reply.data(), 8)) {
-                return;
-            }
+            REPLY_OK(kTypeGetStatus, hdr.seq, reply.data(), 8);
             break;
         }
         case kTypeReset: {
@@ -643,9 +1039,47 @@ void DebugProtocolServer::serve_client(int client_fd) {
             if (!reply.empty()) {
                 REJECT(client_fd, hdr.seq, kEInternal, "bad reset reply");
             }
-            if (!send_frame(client_fd, kTypeReset, hdr.seq, nullptr, 0)) {
+            REPLY_OK(kTypeReset, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypePause: {
+            if (hdr.length != 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "PAUSE requires empty payload");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypePause, hdr.seq, 0, 0, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
                 return;
             }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (!reply.empty()) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad pause reply");
+            }
+            REPLY_OK(kTypePause, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypeContinue: {
+            if (hdr.length != 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "CONTINUE requires empty payload");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeContinue, hdr.seq, 0, 0, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (!reply.empty()) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad continue reply");
+            }
+            REPLY_OK(kTypeContinue, hdr.seq, nullptr, 0);
             break;
         }
         case kTypeReadMem: {
@@ -681,9 +1115,7 @@ void DebugProtocolServer::serve_client(int client_fd) {
             if (reply.size() != length) {
                 REJECT(client_fd, hdr.seq, kEInternal, "bad readmem reply");
             }
-            if (!send_frame(client_fd, kTypeReadMem, hdr.seq, reply.data(), length)) {
-                return;
-            }
+            REPLY_OK(kTypeReadMem, hdr.seq, reply.data(), length);
             break;
         }
         case kTypeWriteMem: {
@@ -722,9 +1154,120 @@ void DebugProtocolServer::serve_client(int client_fd) {
             if (!reply.empty()) {
                 REJECT(client_fd, hdr.seq, kEInternal, "bad writemem reply");
             }
-            if (!send_frame(client_fd, kTypeWriteMem, hdr.seq, nullptr, 0)) {
+            REPLY_OK(kTypeWriteMem, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypeBpSet: {
+            if (hdr.length != kBpSetPayloadSize) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "BP_SET requires 32-byte payload");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            if (!submit_and_wait(kTypeBpSet, hdr.seq, 0, 0, 0, payload, reply, err,
+                                 kMainThreadTimeoutMs)) {
                 return;
             }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (reply.size() != 4) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad bp_set reply");
+            }
+            REPLY_OK(kTypeBpSet, hdr.seq, reply.data(), 4);
+            break;
+        }
+        case kTypeBpClear: {
+            if (hdr.length != 4) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "BP_CLEAR requires 4-byte payload");
+            }
+            uint32_t id = 0;
+            std::memcpy(&id, payload.data(), 4);
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeBpClear, hdr.seq, id, 0, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (!reply.empty()) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad bp_clear reply");
+            }
+            REPLY_OK(kTypeBpClear, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypeBpClearAll: {
+            if (hdr.length != 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "BP_CLEAR_ALL requires empty payload");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeBpClearAll, hdr.seq, 0, 0, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (!reply.empty()) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad bp_clear_all reply");
+            }
+            REPLY_OK(kTypeBpClearAll, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypeBpEnable: {
+            if (hdr.length != 8) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "BP_ENABLE requires 8-byte payload");
+            }
+            uint32_t id = 0;
+            uint32_t enabled = 0;
+            std::memcpy(&id, payload.data() + 0, 4);
+            std::memcpy(&enabled, payload.data() + 4, 4);
+            if (enabled != 0 && enabled != 1) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "BP_ENABLE enabled must be 0 or 1");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeBpEnable, hdr.seq, id, enabled, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (!reply.empty()) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad bp_enable reply");
+            }
+            REPLY_OK(kTypeBpEnable, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypeBpList: {
+            if (hdr.length != 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "BP_LIST requires empty payload");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeBpList, hdr.seq, 0, 0, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (reply.size() < 4) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad bp_list reply");
+            }
+            uint32_t count = 0;
+            std::memcpy(&count, reply.data(), 4);
+            if (reply.size() != 4 + count * kBpListRecordSize) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad bp_list reply");
+            }
+            REPLY_OK(kTypeBpList, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
             break;
         }
         case kTypeKeyEvent: {
@@ -751,9 +1294,7 @@ void DebugProtocolServer::serve_client(int client_fd) {
             if (!SDL_PushEvent(&ev)) {
                 REJECT(client_fd, hdr.seq, kEInternal, "SDL_PushEvent failed");
             }
-            if (!send_frame(client_fd, kTypeKeyEvent, hdr.seq, nullptr, 0)) {
-                return;
-            }
+            REPLY_OK(kTypeKeyEvent, hdr.seq, nullptr, 0);
             break;
         }
         default: {
@@ -762,5 +1303,6 @@ void DebugProtocolServer::serve_client(int client_fd) {
         }
     }
 
+#undef REPLY_OK
 #undef REJECT
 }

@@ -17,7 +17,7 @@ This document is the source of truth for the wire format. Exploratory notes in `
 - TCP listen/connect (frame is ready; transport comes later).
 - Required request pipelining (header supports it; implementation may allow only one outstanding request).
 - MCP, GDB RSP, or an embedded script runtime.
-- Full debug command set (`pause`, …) — session meta plus GET_STATUS / RESET / READMEM / WRITEMEM (MAIN) / KEYEVENT below.
+- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / READMEM / WRITEMEM / BP_* / KEYEVENT / QUIT below.
 
 ---
 
@@ -152,7 +152,7 @@ Rules:
 2. **Main emulation loop stays non-blocking** w.r.t. this interface: no `recv` / `send` / `accept` on the main thread. Only a cheap non-blocking drain of a thread-safe command ring (and enqueue of replies) at a safe point.
 3. Protocol thread **must not** read or write emulated machine state. Peeks, pokes, and run-control go through the ring to the main thread.
 4. Main thread posts results to a response ring (or equivalent). Protocol thread frames them and writes to the socket. Socket backpressure is absorbed on the protocol thread, not the emu loop.
-5. Meta commands that need no machine state (`HELLO`, `PING`) **may** be answered entirely on the protocol thread so handshake does not depend on the emu loop ticking.
+5. Meta commands that need no machine state (`HELLO`, `PING`) **may** be answered entirely on the protocol thread so handshake does not depend on the emu loop ticking. `QUIT` runs on the main thread (force-halt).
 
 ---
 
@@ -166,6 +166,7 @@ Rules:
 | `PING` | 0 | 2 | `0x00000002` | client request; server reply uses same `type` |
 | `ERROR` | 0 | 3 | `0x00000003` | server reply only — when a request fails or is unknown |
 | `EVENT` | 0 | 4 | `0x00000004` | server → client only — unsolicited notification |
+| `QUIT` | 0 | 5 | `0x00000005` | client request; force-quit (skips QuitModal) |
 
 ### Type IDs (implemented non-meta)
 
@@ -173,8 +174,15 @@ Rules:
 |------|--------|-------|--------|--------|---------------|
 | `GET_STATUS` | 1 | 1 | `0x00000101` | main | 8 bytes: `execution_mode`, `platform_id` |
 | `RESET` | 1 | 2 | `0x00000102` | main | empty |
+| `PAUSE` | 1 | 3 | `0x00000103` | main | empty |
+| `CONTINUE` | 1 | 4 | `0x00000104` | main | empty |
 | `READMEM` | 3 | 1 | `0x00000301` | main | `length` data bytes |
 | `WRITEMEM` | 3 | 2 | `0x00000302` | main | empty |
+| `BP_SET` | 4 | 1 | `0x00000401` | main | 4 bytes: `id` |
+| `BP_CLEAR` | 4 | 2 | `0x00000402` | main | empty |
+| `BP_CLEAR_ALL` | 4 | 3 | `0x00000403` | main | empty |
+| `BP_ENABLE` | 4 | 4 | `0x00000404` | main | empty |
+| `BP_LIST` | 4 | 5 | `0x00000405` | main | `count` + records |
 | `KEYEVENT` | 5 | 1 | `0x00000501` | protocol (`SDL_PushEvent`) | empty |
 
 ### Protocol version
@@ -209,6 +217,16 @@ Liveness check. May be handled on the protocol thread.
 **Request payload:** empty (`length == 0`).
 
 **Success reply** (same `type=PING`, echoed `seq`): empty payload.
+
+### `QUIT` — main 0, sub 5 (`0x00000005`)
+
+Force-quit the emulator process without the QuitModal confirmation or dirty-disk save prompts. Runs on the main thread (sets `no_quit_confirm`, posts `HLT_USER` / `SDL_EVENT_QUIT`). Prefer this over killing the process from test harnesses.
+
+Also available as CLI: `--no-quit-confirm` (same skip for any `SDL_EVENT_QUIT`, including SIGTERM mapped by SDL).
+
+**Request payload:** empty (`length == 0`). Requires successful `HELLO`.
+
+**Success reply** (same `type=QUIT`, echoed `seq`): empty payload. The socket may close shortly after.
 
 ### `ERROR` — main 0, sub 3 (server → client only)
 
@@ -404,3 +422,469 @@ Client connects, then:
 ## Future commands
 
 Main numbers 1–6 are reserved for execution, CPU, memory, breakpoints, input, and sound (up to 256 subs each). Beyond documented commands, any type outside the documented set yields `ERROR` with `E_UNKNOWN_TYPE`.
+
+---
+
+# Breakpoint semantics reference
+
+The following section documents breakpoint / watchpoint behavior for the implemented `main == 4` commands and related events.
+
+---
+
+## Breakpoints and watchpoints (`main == 4`)
+
+Status: **implemented** (commands listed under Initial command set). This section is the semantic reference.
+
+### Design principles
+
+1. **GS2 is a typed stop engine.** Match address / range / access class / optional fixed value / ignore-count / **address mask**. No expression language, symbols, or source lines inside the emulator.
+2. **Host evaluates fancy conditions.** On `EVENT`, the client may `READMEM` / (future) read regs and `CONTINUE` if the stop is uninteresting. Thrashing is mitigated with ignore-count and temporary breakpoints, not with host round-trips on every instruction.
+3. **Stop reason is an unsolicited `EVENT`.** Setting a breakpoint is a request/reply; hitting it is never a reply to `CONTINUE`.
+4. **Same memory domains as `READMEM` / `WRITEMEM`.** Watchpoints name a domain explicitly (IIgs FPI vs Mega II vs raw buffers). Address validity and domain errors follow the same rules as memory ops (see Errors below).
+5. **Opaque breakpoint IDs.** Clients address entries by `id` returned from `BP_SET`, not by “remove this address,” so overlapping ranges and temporary BPs do not collide.
+6. **Step helpers stay under `main == 1`.** Step-into / over / out and “run to address” may install internal temporary stops, but they are execution-control ops; user breakpoints live under `main == 4`.
+7. **`RESET` does not clear breakpoints.** Warm/cold reset leaves the breakpoint table intact. Clients that want a clean slate call `BP_CLEAR_ALL` (or clear by `id`).
+
+### Built-in debugger today (reference, not wire)
+
+The in-window debugger is roughly:
+
+- **Pre-instruction:** if `(full_pc & 0xFFFF)` is in a breakpoint range → pause.
+- **Post-instruction:** if `(eaddr & 0xFFFF)` is in a breakpoint range → pause.
+- Step-over via a one-shot PC; step-out via RTS/RTL opcode check.
+- No R vs W distinction; no banked PC on the wire; no remote stop-reason payload.
+
+The draft below is the remote semantics we want, not a 1:1 export of that UI.
+
+### Shared stop list (**decided: shared**)
+
+**Decision:** one process-wide breakpoint table. Monitor `bp` / the built-in UI and protocol `BP_*` read and write the same entries. Pre/post checks consult that one table whenever any breakpoint is armed.
+
+Tradeoff accepted: UI and remote client can interfere (`BP_CLEAR_ALL` wipes interactive breakpoints; either side can enable/disable/clear by `id` or address once the UI grows ids). That is preferable for now to maintaining two lists with divergent address/mask rules. Connection drop does **not** clear the table (same as `RESET`). If interference becomes painful in practice, split later without changing match semantics.
+
+Background (why not protocol-only): a separate socket list avoids clobbering the UI but duplicates the stop engine and invites the old “mask to 16 bits on one path only” class of bugs.
+
+### Kinds
+
+| Kind | Value | When checked | Trigger |
+|------|-------|--------------|---------|
+| `EXEC` | `1` | Before the instruction at PC runs (pre) | Masked PC in range (see Address match) |
+| `DATA` | `2` | After the access (post), when effective address is known | Masked access address in range, filtered by access flags |
+| `IO` | `3` | Same as `DATA` (post) | Soft-switch / I/O space: offset in range **and** bank ∈ `{0x00, 0x01, 0xE0, 0xE1}` (see I/O kind). Not “every bank’s `$C0xx`.” |
+
+Optional later kinds (out of scope until needed): IRQ/NMI entry, tracepoints that do not stop.
+
+**Why `IO` is not `DATA` + `addr_mask`:** `addr_mask = 0x0000FFFF` would match `$C0xx` in **every** bank (`$02C030`, `$80C000`, …), which is far broader than real Apple II / IIgs I/O mirrors and fires on noise. Without a general expression language, the fixed bank set `{00,01,E0,E1}` belongs in a dedicated kind. Keep `addr_mask` on `EXEC` / `DATA` for other uses.
+
+### Flags and fields (logical model)
+
+Each breakpoint / watchpoint entry:
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `id` | `uint32` | Server-assigned; unique until cleared. `0` reserved / invalid. |
+| `kind` | `uint8` | `1=EXEC`, `2=DATA`, `3=IO`. |
+| `flags` | `uint8` | Bitfield, see below. |
+| `domain` | `uint32` | Same domain table as `READMEM`. For `EXEC` / `DATA` / `IO`, typically `MAIN` (CPU view). |
+| `address` | `uint32` | Base address. `EXEC`: full PC. `DATA`: domain address. `IO`: offset base in `$C000`–`$C0FF` (e.g. `0xC000` or `0x00C000`; bank bits in `address` are ignored — bank filter is fixed). |
+| `length` | `uint32` | Byte span; `1` = single location. `length == 0` invalid. For `IO`, span is on the **16-bit offset**. |
+| `addr_mask` | `uint32` | Bits participating in the address compare for `EXEC` / `DATA`. `0xFFFFFFFF` = all bits (default). **Ignored for `IO`** (bank whitelist + offset range replace mask). |
+| `access` | `uint8` | `DATA` / `IO`: `1=R`, `2=W`, `3=RW`. Ignored for `EXEC`. |
+| `data_value` | `uint32` | Optional; meaningful when `FLAG_DATA_MATCH` set (`DATA` / `IO`). |
+| `data_mask` | `uint32` | With `FLAG_DATA_MATCH`: low-byte match (see Data-match rules). |
+| `ignore_count` | `uint32` | Skip this many hits before pausing; decremented on each match that would otherwise stop. `0` = stop on first hit. |
+| `hit_count` | `uint32` | (List / event only) times matched since set; informational. |
+
+**`flags` bits:**
+
+| Bit | Name | Meaning |
+|-----|------|---------|
+| 0 | `FLAG_ENABLED` | Cleared = retained but inactive. |
+| 1 | `FLAG_TEMPORARY` | Auto-clear after the hit that causes a pause. |
+| 2 | `FLAG_DATA_MATCH` | `DATA` / `IO`: require value match (`data_value` / `data_mask`). |
+| 3–7 | reserved | Must be 0 until defined. |
+
+### Address match (range + mask — not an expression language)
+
+Applies to **`EXEC` and `DATA`**. (`IO` has its own rule below.)
+
+Still a fixed bitwise filter, in the same spirit as `data_mask`: no predicates, no OR of arbitrary addresses, no host-side callback per access.
+
+For an observed address `A` (full PC for `EXEC`, domain effective address for `DATA`):
+
+```
+masked_A    = A & addr_mask
+masked_base = address & addr_mask
+hit         = (masked_base <= masked_A) && (masked_A < masked_base + length)
+```
+
+The range is a **half-open** interval on the masked address space: `[masked_base, masked_base + length)`. `length == 0` is empty and rejected at `BP_SET` (`E_BAD_LENGTH`). `length == 1` matches a single masked location; larger `length` spans consecutive masked addresses.
+
+Then apply `access` / `FLAG_DATA_MATCH` / `ignore_count` as usual.
+
+**Which bits participate is entirely `addr_mask`.** Bits cleared in the mask are ignored in both `A` and `address`. Bits set in the mask must agree (within the length window).
+
+Concrete case — break only at bank 0 offset 0 (`$00/0000`), not at `$04/0000`:
+
+| | Value |
+|--|-------|
+| `address` | `0x00000000` (`$00/0000`) |
+| `length` | `1` |
+| `addr_mask` | `0xFFFFFFFF` (full; bank bits **included**) |
+
+| Observed `A` | `A & mask` | Hit? |
+|--------------|------------|------|
+| `$00/0000` (`0x00000000`) | `0` | yes — `masked_base == 0`, window `[0, 1)` |
+| `$04/0000` (`0x00040000`) | `0x00040000` | **no** — not equal to `0` |
+
+Same `address` / `length`, but mask `$00/FFFF` (`0x0000FFFF`, bank bits **cleared**):
+
+| Observed `A` | `A & mask` | Hit? |
+|--------------|------------|------|
+| `$00/0000` | `0` | yes |
+| `$04/0000` | `0` | **yes** — bank ignored; both collapse to offset `$0000` |
+
+`addr_mask = 0x0000FFFF` is useful when you **intentionally** want the same offset in every bank. It is the **wrong** tool for soft-switches (too broad — see `IO` kind).
+
+**`masked_base == 0` is not “no breakpoint”.** For `address = $00/0000`, `address & addr_mask` is often `0`. That zero is the compare key for a real location. Implementations must not treat `(address & addr_mask) == 0` or `(A & addr_mask) == 0` as failure / unset. (Breakpoint **`id` `0`** is a different namespace — reserved/invalid. **`length == 0`** is the empty/invalid span.)
+
+Examples (`EXEC` / `DATA`):
+
+| Want | `address` | `length` | `addr_mask` | `$00/0000` | `$04/0000` |
+|------|-----------|----------|-------------|------------|------------|
+| Only `$00/0000` | `0x00000000` | `1` | `0xFFFFFFFF` | hit | miss |
+| Offset `$0000`, any bank | `0x00000000` | `1` | `0x0000FFFF` | hit | hit |
+
+| `addr_mask` | Effect |
+|-------------|--------|
+| `0xFFFFFFFF` | Full compare; bank matters. Default. |
+| `0x0000FFFF` (`$00/FFFF`) | Ignore bank. Same offset in every bank matches. |
+
+**Why not “just truncate to 16 bits always”?** That is what the built-in debugger does today, and it is wrong for `EXEC` on IIgs (bank matters for code). Mask defaults to full-width; clients opt into ignore-bank only when they mean it.
+
+### I/O kind (`BP_KIND_IO`)
+
+Apple II / IIgs soft-switches live at offsets `$C000`–`$C0FF` and are mirrored in a **small** set of banks, not in all 256 banks.
+
+**Bank whitelist (fixed in the protocol):** `0x00`, `0x01`, `0xE0`, `0xE1`.
+
+For observed effective address `A`:
+
+```
+bank   = (A >> 16) & 0xFF
+offset = A & 0xFFFF
+base   = address & 0xFFFF          // bank nibble in `address` ignored
+if bank not in {0x00, 0x01, 0xE0, 0xE1}:
+    miss
+else:
+    hit = (base <= offset) && (offset < base + length)
+```
+
+Then apply `access` / `FLAG_DATA_MATCH` / `ignore_count` as usual. `addr_mask` is **ignored** (clients should send `0xFFFFFFFF`).
+
+On 8-bit machines (no bank byte), treat `bank` as `0x00` so `IO` still matches `$C0xx` accesses.
+
+**Bounds:** `base + length` must not wrap the 16-bit offset space; prefer requiring the watch to lie within `$C000`–`$C0FF` (`base >= 0xC000` and `base + length <= 0xC100`) so “I/O” cannot be used as a sneaky any-bank RAM watch — reject otherwise with `E_BAD_LENGTH`.
+
+Example — whole soft-switch page in the real mirror banks only:
+
+| Field | Value |
+|-------|-------|
+| `kind` | `IO` |
+| `domain` | `MAIN` |
+| `address` | `0xC000` |
+| `length` | `0x100` |
+| `addr_mask` | `0xFFFFFFFF` (ignored) |
+| `access` | `RW` (or `R` / `W`) |
+
+| Observed `A` | Hit? |
+|--------------|------|
+| `$00/C030` | yes |
+| `$E0/C000` | yes |
+| `$02/C030` | **no** (bank not in whitelist) |
+| `$00/D000` | **no** (offset outside range) |
+
+Narrower watches (e.g. only `$C030`) use `address = 0xC030`, `length = 1`.
+
+**Data-match rules (**decided: byte only**):**
+
+- Only for `DATA` / `IO` with `FLAG_DATA_MATCH`.
+- The emulated data path is treated as **8-bit** for watchpoint purposes (6502 and 65816). Match one byte: `(observed_byte & (data_mask & 0xFF)) == ((data_value & 0xFF) & (data_mask & 0xFF))`. High bytes of `data_value` / `data_mask` on the wire are ignored (send `0`).
+- Multi-byte 65816 transfers are not a special case: if both bytes of a word access should be watched, use a `length` covering both addresses (or two watches). No page-wrap word semantics.
+
+**Address / domain rules (draft):**
+
+- Prefer **full PC** for `EXEC` on 65816 / IIgs (`0xE10000` style), not truncated `$xxxx`.
+- `DATA` addresses follow the same domain conventions as `READMEM`.
+- `IO` compares 16-bit offset + bank whitelist as above.
+- Cap `length` like memory ops (**65536**), except `IO` which is capped by the `$C000`–`$C0FF` window.
+
+### Scale and performance (guidance)
+
+Checks run on the **hot path** (pre-PC and post-`eaddr` once per instruction) whenever any breakpoint is armed — same cost class as today’s debug-window loop.
+
+Rough budget (order-of-magnitude, not a guarantee):
+
+| Active entries (linear scan) | Expectation |
+|------------------------------|-------------|
+| `0` | Free: skip checks entirely (required fast path). |
+| tens (`≤ ~32–64`) | Negligible vs `execute_next` on a modern host at 1 MHz–class emulation. |
+| low hundreds (`~128–256`) | Usually fine; may show up if the debug path is already heavy (UI + ludicrous speed). |
+| thousands | Noticeable: prefer a denser structure or raise the cost deliberately for “debug build” use. |
+
+**Draft protocol cap:** **256** armed entries (`BP_SET` → `E_BAD_LENGTH` / message `too many breakpoints` when exceeded). Enough for agents and UI; keeps worst-case linear scan bounded. Revisit if real workloads need more.
+
+**Alternate structures** (implementation, not wire):
+
+| Structure | Good for | Weak for |
+|-----------|----------|----------|
+| `vector` of ranges (start with this) | Few BPs; arbitrary `length` + `addr_mask`; simple | Large N |
+| Bitset / byte map (e.g. 64 KiB = 8 KiB RAM per bankless 16-bit space; or per-bank maps) | Dense exact addresses, full `addr_mask` | Ranges; ignore-bank masks (unless OR’d carefully); 24-bit full maps are large (~2 MiB/bit-per-byte) |
+| Page map (e.g. bit per 256-byte page) + vector of BPs in hot pages | Many scattered exact BPs | Still need list walk inside a hot page |
+| Hash set of exact addresses | Many single-byte full-mask BPs | Ranges and masks |
+
+Practical approach: **vector + empty fast-out** for v1; add a 16-bit or page bitmap later if profiling says N hurts. Masked / ranged / `IO` watches stay on the vector (or a short “slow list”) even if exact BPs move to a map.
+
+### Errors
+
+Do **not** invent breakpoint-specific `E_*` codes when an existing code already matches the failure class. Align with `READMEM` / `WRITEMEM`:
+
+| Situation | Error |
+|-----------|-------|
+| Wrong payload size; `length == 0`; `address + length` wraps; raw domain out of `get_memory_size()`; more than **256** breakpoints; `IO` range outside `$C000`–`$C0FF` | `E_BAD_LENGTH` (same messages as memory ops where applicable, e.g. `out of range`; cap → `too many breakpoints`) |
+| Unknown / unimplemented `domain`; Mega II on non-IIgs; no machine | `E_INTERNAL` + same messages as memory ops (`unsupported domain`, `MEGAII only on Apple IIgs`, `no machine`, …) |
+| Bad `kind` / `access` / reserved flag bits | `E_BAD_LENGTH` if it is a payload-validity issue; else `E_INTERNAL` + short message |
+| Unknown `id` on clear/enable | `E_INTERNAL` + message such as `unknown id` (no new code) |
+| Handshake / busy / unknown type | Existing `E_NOT_HANDSHAKED` / `E_BUSY` / `E_UNKNOWN_TYPE` |
+
+Setting a breakpoint on an address that would be rejected for a peek/poke in that domain must fail the same way as that peek/poke. Domains that accept floating-bus reads for unmapped addresses (e.g. `MAIN`) likewise accept breakpoints there.
+
+### Proposed commands (`main == 4`)
+
+| Name | `sub` | `type` | Purpose |
+|------|-------|--------|---------|
+| `BP_SET` | 1 | `0x00000401` | Create; reply returns `id` |
+| `BP_CLEAR` | 2 | `0x00000402` | Delete by `id` |
+| `BP_CLEAR_ALL` | 3 | `0x00000403` | Delete all user breakpoints / watchpoints |
+| `BP_ENABLE` | 4 | `0x00000404` | Set/clear `FLAG_ENABLED` by `id` |
+| `BP_LIST` | 5 | `0x00000405` | Snapshot of current entries |
+
+All run on the **main emulation thread**. Handshake required.
+
+#### Constants
+
+| Name | Value |
+|------|-------|
+| `BP_KIND_EXEC` | `1` |
+| `BP_KIND_DATA` | `2` |
+| `BP_KIND_IO` | `3` |
+| `BP_ACCESS_NONE` | `0` (EXEC) |
+| `BP_ACCESS_R` | `1` |
+| `BP_ACCESS_W` | `2` |
+| `BP_ACCESS_RW` | `3` |
+| `BP_FLAG_ENABLED` | `1 << 0` |
+| `BP_FLAG_TEMPORARY` | `1 << 1` |
+| `BP_FLAG_DATA_MATCH` | `1 << 2` |
+| `BP_MAX_ENTRIES` | `256` |
+| `BP_IO_BANKS` | `0x00`, `0x01`, `0xE0`, `0xE1` (fixed whitelist) |
+
+#### `BP_SET` — main 4, sub 1 (`0x00000401`)
+
+**Request payload:** exactly **32** bytes, little-endian, packed:
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 1 | `kind` | `BP_KIND_EXEC`, `BP_KIND_DATA`, or `BP_KIND_IO` |
+| 1 | 1 | `flags` | `BP_FLAG_*` (unknown bits → error) |
+| 2 | 1 | `access` | `DATA` / `IO`: `R`/`W`/`RW`; `EXEC`: `0` |
+| 3 | 1 | `pad` | `0` |
+| 4 | 4 | `domain` | Same as `READMEM` |
+| 8 | 4 | `address` | Base (full PC, domain address, or I/O offset) |
+| 12 | 4 | `length` | Byte span; `≥ 1` (`IO`: within `$C000`–`$C0FF`) |
+| 16 | 4 | `addr_mask` | Default `0xFFFFFFFF`; **ignored for `IO`** |
+| 20 | 4 | `data_value` | Low 8 bits used if `FLAG_DATA_MATCH`; else ignored |
+| 24 | 4 | `data_mask` | Low 8 bits used if `FLAG_DATA_MATCH`; else ignored (`0xFF` = compare all value bits) |
+| 28 | 4 | `ignore_count` | `0` = stop on first hit |
+
+**Success reply:** exactly **4** bytes: `id` (`uint32`, non-zero).
+
+#### `BP_CLEAR` — main 4, sub 2 (`0x00000402`)
+
+**Request:** exactly **4** bytes: `id`.
+
+**Success reply:** empty.
+
+#### `BP_CLEAR_ALL` — main 4, sub 3 (`0x00000403`)
+
+**Request / reply:** empty. Does not run on `RESET`. Clears the shared table (UI and protocol).
+
+#### `BP_ENABLE` — main 4, sub 4 (`0x00000404`)
+
+**Request:** exactly **8** bytes:
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `id` |
+| 4 | 4 | `enabled` (`0` or `1`) |
+
+**Success reply:** empty. Sets/clears `BP_FLAG_ENABLED` only.
+
+#### `BP_LIST` — main 4, sub 5 (`0x00000405`)
+
+**Request:** empty.
+
+**Success reply:** `4 + 40 * count` bytes:
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `count` (`uint32`) |
+| 4 | `40 * count` | records |
+
+Each **record** is exactly **40** bytes:
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `id` |
+| 4 | 4 | `hit_count` |
+| 8 | 32 | same layout as `BP_SET` request (`kind`…`ignore_count`) |
+
+### Events
+
+Unsolicited `EVENT` frames. Clients ignore unknown `event_id`s.
+
+| `event_id` | Name | When |
+|------------|------|------|
+| `1` | `EVT_STOPPED` | Entered a stopped/paused state (breakpoint, step done, explicit `PAUSE`, …) |
+| `2` | `EVT_RUN_STATE` | `execution_mode` changed, including **resume / started running** after `CONTINUE` / run, and transitions into `STEP_*` if useful to the client |
+
+#### `EVT_STOPPED` (`event_id = 1`)
+
+**`data` layout:** **32**-byte header + **40**-byte CPU snapshot (`system_trace_entry_t` wire image) = **72** bytes total.
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `reason` | See table below |
+| 4 | 4 | `bp_id` | User bp `id`, or `0` if not a user bp |
+| 8 | 4 | `pc` | Full PC at stop (real address; may be `0`) |
+| 12 | 4 | `eaddr` | Unmasked effective address for `DATA`; unused for pure `EXEC` — do not use `0` as N/A sentinel; use `reason`/`kind` |
+| 16 | 4 | `value` | Observed **byte** for `DATA` when available (low 8 bits); else `0` |
+| 20 | 1 | `access` | `R`/`W`/`0` |
+| 21 | 1 | `kind` | `EXEC`/`DATA`/`IO`/`0` |
+| 22 | 2 | `pad` | `0` |
+| 24 | 4 | `execution_mode` | Mode after stop (expect paused / step) |
+| 28 | 4 | `trace_size` | Size of following snapshot in bytes; **`40`** in this draft. `0` = no snapshot appended (compat) |
+| 32 | 40 | `trace` | CPU / instruction snapshot (see below) |
+
+**`reason` values:**
+
+| Value | Name | Meaning |
+|-------|------|---------|
+| 1 | `STOP_BP_EXEC` | User `EXEC` breakpoint |
+| 2 | `STOP_BP_DATA` | User `DATA` watchpoint |
+| 3 | `STOP_BP_IO` | User `IO` (soft-switch) watchpoint |
+| 4 | `STOP_STEP` | Step-into / over / out completed |
+| 5 | `STOP_PAUSE` | Explicit `PAUSE` from host |
+
+**Including a trace / CPU snapshot — yes, valuable.** At a stop the host almost always wants registers, opcode, effective address, and data byte without a racey follow-up `READMEM` / future `GET_REGS`. GS2 already fills `cpu->trace_entry` on the instruction path; copying that blob into the event is cheap vs socket I/O.
+
+Wire image matches `system_trace_entry_t` (**40** bytes, little-endian, natural C layout / `sizeof == 40` today):
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 8 | `cycle` |
+| 8 | 4 | `operand` |
+| 12 | 1 | `opcode` |
+| 13 | 1 | `p` |
+| 14 | 1 | `db` |
+| 15 | 1 | `pb` |
+| 16 | 2 | `pc` |
+| 18 | 2 | `a` |
+| 20 | 2 | `x` |
+| 22 | 2 | `y` |
+| 24 | 2 | `sp` |
+| 26 | 2 | `d` |
+| 28 | 2 | `data` |
+| 30 | 2 | `(pad for align)` — must be `0` on the wire if the in-memory struct has padding here; prefer documenting the packed offsets clients use |
+| 32 | 4 | `eaddr` |
+| 36 | 2 | `flags` (`f_irq`, `f_op_sz`, `f_data_sz` in low bits as today) |
+| 38 | 2 | `unused` |
+
+*(If in-memory padding ever drifts, the protocol freeze is this 40-byte map, not a blind `memcpy` of a future struct — implementers should serialize field-by-field or `static_assert(sizeof == 40)` against this layout.)*
+
+**Population rules:**
+
+| `reason` | Snapshot content |
+|----------|------------------|
+| `STOP_BP_DATA`, `STOP_BP_IO`, `STOP_STEP` (after insn) | Copy the just-completed `trace_entry` (regs **before** that insn, `eaddr`/`data` for that access) — ideal fit. |
+| `STOP_BP_EXEC` | Pre-instruction stop: fill from **live** CPU state at the about-to-execute PC (`pb`/`pc`/`a`/…); `opcode`/`operand` may be peeked from memory or left 0; `eaddr`/`data` typically unused. Do **not** pass off the *previous* instruction’s `trace_entry` as the current stop without labeling — prefer a live snapshot. |
+| `STOP_PAUSE` | Live CPU snapshot at pause. |
+
+Header `pc` / `eaddr` / `value` remain for quick filtering; `trace` is the authoritative register picture.
+
+#### `EVT_RUN_STATE` (`event_id = 2`)
+
+Emitted when execution leaves or enters run-like states so clients can sync UI / agents without polling `GET_STATUS`. Includes **started running** after `CONTINUE` / run.
+
+**`data` layout:** **8** bytes:
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `execution_mode` | New mode (`NORMAL`, `STEP_INTO`, `PAUSED`, …) |
+| 4 | 4 | `prev_execution_mode` | Previous mode |
+
+Emit at least on: pause→run (`NORMAL`), run→pause, and step-mode transitions. Exact set can be tightened when `CONTINUE` is specified.
+
+### Execution control dependency (`main == 1`)
+
+Breakpoints assume these exist (names provisional; not specified in full here):
+
+| Command | Role |
+|---------|------|
+| `PAUSE` | Enter paused; `EVT_STOPPED` / `EVT_RUN_STATE` |
+| `CONTINUE` / `RUN` | Leave pause; `EVT_RUN_STATE` (started); arm checks again |
+| `STEP_INTO` / `STEP_OVER` / `STEP_OUT` | One-shot control-flow stops; `EVT_STOPPED` with `STOP_STEP` |
+
+While paused, breakpoint checks do not run.
+
+### Re-hit / “step off” policy (**decided: Policy A**)
+
+**Problem.** Suppose an `EXEC` breakpoint is armed at PC=`P`, execution stops there (`EVT_STOPPED`, still sitting at `P`), and the host sends `CONTINUE` without clearing the bp. The next pre-check sees PC=`P` again and pauses immediately. No instruction retires; the machine makes no progress.
+
+**Policy A (required).** When leaving pause after an `EXEC` stop at `P`, the stop engine ignores `EXEC` matches for address `P` until either:
+
+1. PC becomes something other than `P` (normal case after the instruction at `P` runs), or
+2. One instruction at `P` has retired (equivalent for straight-line code),
+
+whichever the implementation can do cheaply. Then the breakpoint is armed again, so a loop that returns to `P` still stops on the next visit. (`P` may be `0` — same rules; zero is a normal PC.)
+
+This is “step off the breakpoint” / continue-from-breakpoint. It applies to `EXEC` (and to step helpers that land on a user `EXEC` bp). It does **not** suppress `DATA` / `IO` watches. Spell the same text under the resume command when that command is specified. Temporary (`FLAG_TEMPORARY`) breakpoints avoid the issue by deleting themselves on the hit that paused.
+
+### Host vs emulator split
+
+| In GS2 | On the host |
+|--------|-------------|
+| `EXEC` / `DATA` / **`IO`**, R/W, range, domain, **`addr_mask`** (non-`IO`) | Symbol → address |
+| Fixed I/O bank whitelist `{00,01,E0,E1}` | Choosing which soft-switch offsets to watch |
+| Temporary, enable/disable, ignore-count | Source line breakpoints |
+| Optional fixed **byte** value/mask | Arbitrary predicates (regs, “after boot”, OR of unrelated sites) |
+| `EVT_STOPPED` (+ trace snapshot) / `EVT_RUN_STATE` | Re-arm, conditional continue, logging UX |
+
+`IO` is in GS2 because the soft-switch bank set is platform structure, not a general expression. `addr_mask` remains for other aliasing needs; it is not the soft-switch mechanism.
+
+### Implementation notes (non-normative)
+
+- Start with a vector + “count == 0 → skip checks.”
+- Soft-switches: `BP_KIND_IO` + offset range in `$C000`–`$C0FF`.
+- Serialize `EVT_STOPPED.trace` to the frozen 40-byte map (or `static_assert` on `system_trace_entry_t`).
+
+### Open questions
+
+1. ~~Cap~~ → **decided:** soft expectation tens–low hundreds; **hard cap 256**; vector first, denser structures if needed.
+2. ~~Shared vs protocol-only list~~ → **decided: shared.**
+3. ~~Wire layouts~~ → **decided:** `BP_SET` 32-byte request; list records 40 bytes; see above.
+4. ~~Error codes~~ → **decided:** reuse existing `E_*`.
+5. ~~`RESET` clears breakpoints?~~ → **decided: no.**
+6. ~~Word / 65816 bus width~~ → **decided:** byte (or byte range) only; data bus treated as 8-bit for watches.
+7. ~~Events beyond stop~~ → **decided:** `EVT_RUN_STATE` including started/running after continue.
+8. ~~Re-hit policy~~ → **decided: Policy A.**
+9. ~~Trace blob on stop?~~ → **decided: yes** — append 40-byte `system_trace_entry_t` image on `EVT_STOPPED`.

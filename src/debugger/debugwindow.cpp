@@ -153,41 +153,66 @@ debug_window_t::~debug_window_t() {
     if (step_disasm) delete step_disasm;
 }
 
-bool debug_window_t::check_pre_breakpoint(cpu_state *cpu) {
-    // Check if current instruction is the "stepover" breakpoint.
-    // this actually executed the next instruction 
+#include "debugger/BreakpointTable.hpp"
+#include "debugger/DebugProtocolServer.hpp"
+
+bool debug_window_t::check_pre_breakpoint(cpu_state *cpu, StopHit *hit_out) {
     uint32_t fullpc = cpu->full_pc;
     if (stepover_bp && (fullpc == stepover_bp)) {
-        stepover_bp = 0; // clear it.
+        stepover_bp = 0;
+        if (hit_out) {
+            *hit_out = StopHit{STOP_STEP, 0, 0, 0, fullpc, 0, 0};
+        }
         return true;
     }
-    
-    // TODO: if we're on a set breakpoint, and we try to STEP OVER a jsr, we are catching here again. We need to ignore current PC in that case.
-    // check if the current instruction is a breakpoint.
-    for (MemoryWatch::iterator watch = breaks.begin(); watch != breaks.end(); ++watch) {
-        uint16_t pc16 = fullpc & 0xFFFF;
-        if (pc16 >= watch->start && pc16 <= watch->end) {
+
+    if (computer && computer->breakpoints) {
+        auto hit = computer->breakpoints->check_pre(cpu);
+        if (hit) {
+            if (hit_out) {
+                *hit_out = *hit;
+            }
             return true;
         }
     }
     return false;
 }
 
-bool debug_window_t::check_post_breakpoint(system_trace_entry_t *entry) {
-    // check if the current instruction is a breakpoint.
+bool debug_window_t::check_post_breakpoint(cpu_state *cpu, system_trace_entry_t *entry, StopHit *hit_out) {
     if (step_out_active) {
         if ((entry->opcode == 0x60) || (entry->opcode == 0x6B)) {
             step_out_active = false;
-            return true;
-        }
-    }
-    for (MemoryWatch::iterator watch = breaks.begin(); watch != breaks.end(); ++watch) {
-        uint16_t eaddr16 = entry->eaddr & 0xFFFF;
-        if ((eaddr16 >= watch->start && eaddr16 <= watch->end)) {
+            if (hit_out) {
+                uint32_t pc = (static_cast<uint32_t>(entry->pb) << 16) | entry->pc;
+                *hit_out = StopHit{STOP_STEP, 0, 0, 0, pc, entry->eaddr,
+                                   static_cast<uint32_t>(entry->data & 0xFF)};
+            }
             return true;
         }
     }
 
+    if (computer && computer->breakpoints) {
+        auto hit = computer->breakpoints->check_post(cpu, entry);
+        if (hit) {
+            if (hit_out) {
+                *hit_out = *hit;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool debug_window_t::needs_breakpoint_checks() const {
+    if (window_open) {
+        return true;
+    }
+    if (stepover_bp || step_out_active) {
+        return true;
+    }
+    if (computer && computer->breakpoints && computer->breakpoints->has_enabled()) {
+        return true;
+    }
     return false;
 }
 
@@ -197,7 +222,8 @@ void debug_window_t::execute_command(const std::string& command) {
 
     int num_mem_watches = memory_watches.size();
     int num_debug_displays = debug_displays.size();
-    ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, &memory_watches, &breaks, disasm, &debug_displays, cpu->trace_buffer);
+    ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, &memory_watches, computer->breakpoints, disasm,
+                                              &debug_displays, cpu->trace_buffer);
     exec->execute();
     
     mon_history.push_back(command); // put into the scrollback

@@ -30,6 +30,8 @@ class Mounts;
 class EventTimer;
 class VideoScannerII;
 class ResetController;
+class BreakpointTable;
+class DebugProtocolServer;
 
 enum execution_modes_t {
     EXEC_NORMAL = 0,
@@ -73,6 +75,8 @@ struct computer_t {
 
     video_system_t *video_system = nullptr;
     debug_window_t *debug_window = nullptr;
+    BreakpointTable *breakpoints = nullptr;
+    DebugProtocolServer *debug_protocol = nullptr;
 
     AudioSystem *audio_system = nullptr;
     SoundEffect *sound_effect = nullptr;

@@ -45,8 +45,13 @@ Import path: `clients/python/src` on `PYTHONPATH`, or `pip install -e clients/py
 | `connect(path)` / `close()` | AF_UNIX connect; also context-manager |
 | `hello()` → `HelloInfo` | Handshake; sets `version`, `flags`, `max_payload` |
 | `ping()` | Liveness; empty reply |
+| `quit()` | Force-quit emu (skips QuitModal); prefer over kill/SIGTERM |
 | `get_status()` → `StatusInfo` | `.execution_mode` (`0=NORMAL`, `1=STEP_INTO`, `2=PAUSED`), `.platform_id` (`PlatformId_t` / `-p N`) |
 | `reset(cold_start=False)` | `computer_t::reset(cold_start)` on main thread |
+| `pause()` / `continue_()` | Run-control; emits `EVT_STOPPED` / `EVT_RUN_STATE` |
+| `bp_set(...)` → `id` | Create EXEC/DATA/IO breakpoint (see DebugProtocol.md) |
+| `bp_clear(id)` / `bp_clear_all()` / `bp_enable(id, enabled)` / `bp_list()` | Breakpoint table |
+| `wait_event()` / `wait_stopped()` | Block for unsolicited EVENT / parse `EVT_STOPPED` |
 | `read_mem(domain, address, length)` → `bytes` | Peek (`MEM_MAIN` / `MEM_MAIN_RAW`; `MEM_MEGAII` / `MEM_MEGAII_RAW` on IIgs) |
 | `write_mem(domain, address, data)` | Poke (same domains); `data` non-empty |
 | `key_event(down, scancode, mod=0)` | One SDL key down/up |
@@ -150,7 +155,7 @@ IIe-only soft-switch **status** reads (`$C01A` TEXT, `$C01D` HIRES, …) are inv
 
 ## Gotchas
 
-1. **Separate terminal** for the emulator — Ctrl-C in the same shell/process group can kill GSSquared.
+1. **Separate terminal** for the emulator — Ctrl-C in the same shell/process group can kill GSSquared. Prefer `c.quit()` (or start with `--no-quit-confirm` if the harness must SIGTERM).
 2. **Typing too fast drops keys** (e.g. line `60` becomes line `0`). Use `delay_s≥0.1` and rely on `hold_s`; Return already gets a longer pause.
 3. **Shifted glyphs** (`"`, uppercase, …): library holds Shift for that tap; do not put Control/Alt in `type_text` — use `key_down` / `key_up`.
 4. **MAIN / MAIN_RAW / MEGAII / MEGAII_RAW** are implemented; ENSONIQ / ADBMICRO are not.
@@ -169,5 +174,37 @@ IIe-only soft-switch **status** reads (`$C01A` TEXT, `$C01D` HIRES, …) are inv
 | `examples/write_text40_iigs.py` | Same for `$E0/0400` |
 | `examples/type_basic_iie.py` | Boot wait, protocol RESET, demo Applesoft |
 | `examples/type_to_emu.py` | Generic typer tool for agents |
+| `examples/test_breakpoints.py` | PAUSE/CONTINUE + EXEC/IO breakpoints (IIe Enhanced `-p 3` and IIgs `-p 5`) |
 
 All under `clients/python/`. Each file’s header has concrete Usage lines.
+
+### Breakpoints (IIe Enhanced and IIgs)
+
+```bash
+# Terminal A — IIe Enhanced
+./build/GSSquared --debug /tmp/gs2-iie.sock -p 3
+
+# Terminal B
+PYTHONPATH=clients/python/src python3 clients/python/examples/test_breakpoints.py /tmp/gs2-iie.sock 3
+```
+
+```bash
+# Terminal A — IIgs
+./build/GSSquared --debug /tmp/gs2-gs.sock -p 5
+
+# Terminal B
+PYTHONPATH=clients/python/src python3 clients/python/examples/test_breakpoints.py /tmp/gs2-gs.sock 5
+```
+
+```python
+from gs2debug import Client, BP_KIND_EXEC, BP_FLAG_ENABLED
+
+with Client() as c:
+    c.connect("/tmp/gs2.sock")
+    c.hello()
+    bp = c.bp_set(kind=BP_KIND_EXEC, address=0xFA62, flags=BP_FLAG_ENABLED)
+    c.continue_()
+    hit = c.wait_stopped()
+    assert hit.bp_id == bp
+    c.continue_()  # Policy A steps off the EXEC bp
+```

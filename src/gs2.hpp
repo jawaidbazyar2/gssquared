@@ -39,6 +39,10 @@ typedef struct gs2_app_t {
     // (same effect as pressing F7 with the shader off).
     bool crt_shader_at_boot = false;
     bool right_mouse_accelerate = true;
+    /** Skip QuitModal / dirty-disk prompts on SDL_EVENT_QUIT (tests / --no-quit-confirm). */
+    bool no_quit_confirm = false;
+    /** After HLT_USER / shutdown, exit the process instead of returning to the selector. */
+    bool force_app_exit = false;
     uint32_t menu_event_type = 0;
     bool modal_tracking = false;  // true while macOS menu/resize modal loop owns the run loop
 } gs2_app_t;

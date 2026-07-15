@@ -46,6 +46,7 @@
 #include "videosystem.hpp"
 #include "debugger/debugwindow.hpp"
 #include "debugger/DebugProtocolServer.hpp"
+#include "debugger/BreakpointTable.hpp"
 #include "computer.hpp"
 #include "mmus/mmu_ii.hpp"
 #include "mmus/mmu_iie.hpp"
@@ -387,7 +388,7 @@ bool run_one_frame(computer_t *computer) {
 
         computer->set_frame_start_cycle();
 
-        if (computer->debug_window->window_open) {
+        if (computer->debug_window->needs_breakpoint_checks()) {
             while (clock->get_c14m() < clock->get_frame_end_c14M()) { // 1/60th second.
                 if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                     computer->event_timer->processEvents(clock->get_c14m());
@@ -398,19 +399,32 @@ bool run_one_frame(computer_t *computer) {
                 if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
                     computer->cpu_event_timer->processEvents(clock->get_cycles());
                 }
-                // do the pre check.
-                if (computer->debug_window->check_pre_breakpoint(cpu)) {
+                StopHit hit{};
+                if (computer->debug_window->check_pre_breakpoint(cpu, &hit)) {
+                    uint32_t prev = computer->execution_mode;
                     computer->execution_mode = EXEC_STEP_INTO;
                     computer->instructions_left = 0;
+                    if (computer->debug_protocol) {
+                        computer->debug_protocol->emit_stopped(computer, hit);
+                        computer->debug_protocol->emit_run_state(EXEC_STEP_INTO, prev);
+                    }
                     break;
                 }
 
+                uint32_t pc_before = cpu->full_pc;
                 (cpu->cpun->execute_next)(cpu);
-                
-                // Do the post check.
-                if (computer->debug_window->check_post_breakpoint(&cpu->trace_entry)) {
+                if (computer->breakpoints) {
+                    computer->breakpoints->on_instruction_retired(pc_before);
+                }
+
+                if (computer->debug_window->check_post_breakpoint(cpu, &cpu->trace_entry, &hit)) {
+                    uint32_t prev = computer->execution_mode;
                     computer->execution_mode = EXEC_STEP_INTO;
                     computer->instructions_left = 0;
+                    if (computer->debug_protocol) {
+                        computer->debug_protocol->emit_stopped(computer, hit);
+                        computer->debug_protocol->emit_run_state(EXEC_STEP_INTO, prev);
+                    }
                     break;
                 }
                 if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
@@ -418,7 +432,7 @@ bool run_one_frame(computer_t *computer) {
                     computer->instructions_left = 0;
                     break;
                 }
-            
+
             }
         } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts 
             while (clock->get_c14m() < clock->get_frame_end_c14M()) {
@@ -477,7 +491,7 @@ bool run_one_frame(computer_t *computer) {
 
         computer->last_start_frame_c14m = clock->get_frame_start_c14M();
         
-        if (computer->debug_window->window_open) {
+        if (computer->debug_window->needs_breakpoint_checks()) {
             while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
                 if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                     computer->event_timer->processEvents(clock->get_c14m());
@@ -488,17 +502,32 @@ bool run_one_frame(computer_t *computer) {
                 if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
                     computer->cpu_event_timer->processEvents(clock->get_cycles());
                 }
-                if (computer->debug_window->check_pre_breakpoint(cpu)) {
+                StopHit hit{};
+                if (computer->debug_window->check_pre_breakpoint(cpu, &hit)) {
+                    uint32_t prev = computer->execution_mode;
                     computer->execution_mode = EXEC_STEP_INTO;
                     computer->instructions_left = 0;
+                    if (computer->debug_protocol) {
+                        computer->debug_protocol->emit_stopped(computer, hit);
+                        computer->debug_protocol->emit_run_state(EXEC_STEP_INTO, prev);
+                    }
                     break;
                 }
 
+                uint32_t pc_before = cpu->full_pc;
                 (cpu->cpun->execute_next)(cpu);
-                
-                if (computer->debug_window->check_post_breakpoint(&cpu->trace_entry)) {
+                if (computer->breakpoints) {
+                    computer->breakpoints->on_instruction_retired(pc_before);
+                }
+
+                if (computer->debug_window->check_post_breakpoint(cpu, &cpu->trace_entry, &hit)) {
+                    uint32_t prev = computer->execution_mode;
                     computer->execution_mode = EXEC_STEP_INTO;
                     computer->instructions_left = 0;
+                    if (computer->debug_protocol) {
+                        computer->debug_protocol->emit_stopped(computer, hit);
+                        computer->debug_protocol->emit_run_state(EXEC_STEP_INTO, prev);
+                    }
                     break;
                 }
                 if (cpu->trace_entry.opcode == 0x00) { // catch a BRK and stop execution.
@@ -506,7 +535,7 @@ bool run_one_frame(computer_t *computer) {
                     computer->instructions_left = 0;
                     break;
                 }
-            
+
             }
         } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts (GO FAST MODE)
             while (SDL_GetTicksNS() < next_frame_time) { // run emulated frame, but of course we don't sleep in this loop so we'll Go Fast.
@@ -1006,8 +1035,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     // elsewhere; without this, scripted launches (no TTY) would ignore --debug / -p / etc.
     if (gs2_app_values.console_mode || argc > 1) {
         // parse command line options
+        enum { OPT_NO_QUIT_CONFIRM = 1000 };
         static struct option long_options[] = {
             {"debug", required_argument, nullptr, 'D'},
+            {"no-quit-confirm", no_argument, nullptr, OPT_NO_QUIT_CONFIRM},
             {nullptr, 0, nullptr, 0}
         };
         while ((opt = getopt_long(argc, argv, "sxgp:d:D:", long_options, nullptr)) != -1) {
@@ -1046,8 +1077,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     debug_socket_path = optarg;
                     std::cerr << "Debug protocol socket: " << debug_socket_path << "\n";
                     break;
+                case OPT_NO_QUIT_CONFIRM:
+                    gs2_app_values.no_quit_confirm = true;
+                    break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [file.gs2|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH]\n";
+                    std::cerr << "Usage: " << argv[0] << " [file.gs2|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm]\n";
                     std::cerr << "  file.gs2|*Settings.txt: load system configuration from a .gs2 TOML file\n";
                     std::cerr << "        or Neil Profiles Settings.txt file, skip the system-selector UI,\n";
                     std::cerr << "        and auto-launch that system.\n";
@@ -1069,6 +1103,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     std::cerr << "        starts (same as pressing F7 with shader off).\n";
                     std::cerr << "  -D PATH, --debug PATH: listen for external debug protocol on\n";
                     std::cerr << "        Unix-domain socket PATH (see Docs/DebugProtocol.md).\n";
+                    std::cerr << "  --no-quit-confirm: skip QuitModal / dirty-disk prompts on\n";
+                    std::cerr << "        SDL_EVENT_QUIT (useful for tests that SIGTERM/kill the process).\n";
                     return SDL_APP_FAILURE;
             }
         }
@@ -1114,6 +1150,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
             delete state;
             return SDL_APP_FAILURE;
         }
+        state->computer->debug_protocol = state->debug_protocol.get();
     }
 
     video_system_t *vs = state->computer->video_system;
@@ -1319,15 +1356,18 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         osd->update();
 
         if (!run_one_frame(computer)) {
-            // User requested halt. Always run transition_to_shutdown
-            // so the trace buffer is saved and the computer/MMUs are
-            // properly destroyed. Then either go back to the selector
-            // (interactive flow) or exit the app (we auto-launched
-            // via -p / config file and have no selector to return to).
-            transition_to_shutdown(state);
-            if (state->auto_launched) {
+            // User requested halt. Snapshot before transition_to_shutdown
+            // clears auto_launched. When exiting the process, skip selector
+            // recreation — SDL_AppQuit tears down; recreating first leaks
+            // SDL objects and can hang on an assertion dialog.
+            const bool exit_app = state->auto_launched || gs2_app_values.force_app_exit;
+            if (exit_app) {
+                std::string tracepath;
+                Paths::calc_docs(tracepath, "gssquared-trace.bin");
+                computer->cpu->trace_buffer->save_to_file(tracepath);
                 return SDL_APP_SUCCESS;
             }
+            transition_to_shutdown(state);
         }
         return SDL_APP_CONTINUE;
     }
@@ -1339,6 +1379,16 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     //(void)result;
     GS2AppState *state = (GS2AppState *)appstate;
     if (!state) return;
+
+    // Stop the debug protocol thread before tearing down computer/SDL objects;
+    // otherwise the bridge thread can race AppQuit and trip SDL object asserts.
+    if (state->debug_protocol) {
+        if (state->computer) {
+            state->computer->debug_protocol = nullptr;
+        }
+        state->debug_protocol->stop();
+        state->debug_protocol.reset();
+    }
 
     if (osd) {
         delete osd;
@@ -1357,10 +1407,6 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     delete state->edit_system;
     delete state->select_system;
     delete state->aa;
-    if (state->debug_protocol) {
-        state->debug_protocol->stop();
-        state->debug_protocol.reset();
-    }
     delete state;
     // SDL_Quit() is called automatically by SDL after this returns.
 }

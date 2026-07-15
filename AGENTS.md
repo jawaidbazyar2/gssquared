@@ -33,3 +33,14 @@ cmake -DGS2_PROGRAM_FILES=OFF  -DCMAKE_BUILD_TYPE=Release -S . -B build
 cmake --build build --parallel
 cmake --install build
 ```
+
+## Debug-protocol smoke tests
+
+When launching GSSquared for scripted tests over `--debug SOCKET`:
+
+- Prefer **`c.quit()`** (protocol `QUIT`) to stop the emu. Do **not** `kill`/`SIGTERM` the process unless necessary — SDL turns those into `SDL_EVENT_QUIT`, which opens the QuitModal (“Are you sure?”) and leaves tests hung or racing a broken pipe.
+- If a harness must signal-kill, start the emu with **`--no-quit-confirm`** so `SDL_EVENT_QUIT` exits without the modal / dirty-disk prompts.
+- Example (IIe Enhanced / IIgs): start `./build/GSSquared --debug /tmp/gs2-….sock -p 3` (or `-p 5`), wait for the socket, then:
+  `PYTHONPATH=clients/python/src python3 clients/python/examples/test_breakpoints.py /tmp/gs2-….sock 3`
+  The example ends with `c.quit()`; wait for the emu process to exit (expect exit 0) instead of killing it.
+- Cookbook: `Docs/gs2debug.md`. Wire protocol: `Docs/DebugProtocol.md`.

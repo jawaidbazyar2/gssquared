@@ -23,6 +23,7 @@
 
 #include "SDL3/SDL_events.h"
 #include "computer.hpp"
+#include "gs2.hpp"
 #include "LabeledButton.hpp"
 #include "Container.hpp"
 #include "AssetAtlas.hpp"
@@ -687,6 +688,11 @@ bool OSD::is_mouse_captured() {
 
 bool OSD::event(const SDL_Event &event) {
     if (event.type == SDL_EVENT_QUIT) {
+        if (gs2_app_values.no_quit_confirm) {
+            // Tests / automation: exit without confirmation or dirty-disk prompts.
+            event_queue->addEvent(new Event(EVENT_QUIT, 0u, (uint64_t)0));
+            return true;
+        }
         mstack.stack.push(new QuitModal_t(&ui_ctx, "Are you sure you want to quit?", ModalStyle, event_queue, computer->mounts, mstack));
         computer->video_system->osd_control_panel_open = true;
         return true;
