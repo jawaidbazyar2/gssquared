@@ -43,6 +43,7 @@ constexpr uint32_t kTypeGetStatus = 0x00000101;
 constexpr uint32_t kTypeReset     = 0x00000102;
 constexpr uint32_t kTypePause     = 0x00000103;
 constexpr uint32_t kTypeContinue  = 0x00000104;
+constexpr uint32_t kTypeStepInto  = 0x00000105;
 constexpr uint32_t kTypeReadMem   = 0x00000301;
 constexpr uint32_t kTypeWriteMem  = 0x00000302;
 constexpr uint32_t kTypeBpSet     = 0x00000401;
@@ -448,6 +449,19 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             g_last_stop_reason = 0;
             emit_run_state(static_cast<uint32_t>(EXEC_NORMAL), static_cast<uint32_t>(prev));
         }
+    } else if (bridge_type_ == kTypeStepInto) {
+        if (!computer) {
+            bridge_error_ = kEInternal;
+        } else if (bridge_arg0_ == 0) {
+            bridge_error_ = kEBadLength;
+            bridge_error_text_ = "STEP_INTO count must be >= 1";
+        } else {
+            const execution_modes_t prev = computer->execution_mode;
+            computer->execution_mode = EXEC_STEP_INTO;
+            computer->instructions_left = bridge_arg0_;
+            g_last_stop_reason = 0;
+            emit_run_state(static_cast<uint32_t>(EXEC_STEP_INTO), static_cast<uint32_t>(prev));
+        }
     } else if (bridge_type_ == kTypeBpSet) {
         if (!computer || !computer->breakpoints) {
             bridge_error_ = kEInternal;
@@ -655,6 +669,25 @@ void DebugProtocolServer::emit_stopped_pause(computer_t *computer) {
     const uint32_t mode = computer
         ? static_cast<uint32_t>(computer->execution_mode)
         : static_cast<uint32_t>(EXEC_PAUSED);
+    std::vector<uint8_t> data;
+    pack_stopped_event(data, hit, mode, trace);
+    enqueue_event(kEvtStopped, data);
+}
+
+void DebugProtocolServer::emit_stopped_step(computer_t *computer) {
+    StopHit hit{};
+    hit.reason = STOP_STEP;
+    system_trace_entry_t trace{};
+    if (computer && computer->cpu) {
+        trace = computer->cpu->trace_entry;
+        hit.pc = (static_cast<uint32_t>(trace.pb) << 16) | trace.pc;
+        hit.eaddr = trace.eaddr;
+        hit.value = static_cast<uint32_t>(trace.data & 0xFF);
+    }
+    g_last_stop_reason = STOP_STEP;
+    const uint32_t mode = computer
+        ? static_cast<uint32_t>(computer->execution_mode)
+        : static_cast<uint32_t>(EXEC_STEP_INTO);
     std::vector<uint8_t> data;
     pack_stopped_event(data, hit, mode, trace);
     enqueue_event(kEvtStopped, data);
@@ -1080,6 +1113,31 @@ next_request:
                 REJECT(client_fd, hdr.seq, kEInternal, "bad continue reply");
             }
             REPLY_OK(kTypeContinue, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypeStepInto: {
+            if (hdr.length != 4) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "STEP_INTO requires 4-byte payload");
+            }
+            uint32_t count = 0;
+            std::memcpy(&count, payload.data(), 4);
+            if (count == 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "STEP_INTO count must be >= 1");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeStepInto, hdr.seq, count, 0, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (!reply.empty()) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad step_into reply");
+            }
+            REPLY_OK(kTypeStepInto, hdr.seq, nullptr, 0);
             break;
         }
         case kTypeReadMem: {

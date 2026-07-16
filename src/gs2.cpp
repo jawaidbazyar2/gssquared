@@ -336,6 +336,7 @@ bool run_one_frame(computer_t *computer) {
     if (computer->execution_mode == EXEC_STEP_INTO) {
 
         /* This will run about 60fps, primarily waiting on user input in the debugger window. */
+        const bool had_work = computer->instructions_left > 0;
         while (computer->instructions_left) {
             if (computer->event_timer->isEventPassed(clock->get_c14m())) {
                 computer->event_timer->processEvents(clock->get_c14m());
@@ -348,6 +349,9 @@ bool run_one_frame(computer_t *computer) {
             }
             (cpu->cpun->execute_next)(cpu);
             computer->instructions_left--;
+        }
+        if (had_work && computer->debug_protocol) {
+            computer->debug_protocol->emit_stopped_step(computer);
         }
 
         MEASURE(computer->event_times, frame_event(computer, cpu));

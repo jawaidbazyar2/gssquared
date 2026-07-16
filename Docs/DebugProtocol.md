@@ -17,7 +17,7 @@ This document is the source of truth for the wire format. Exploratory notes in `
 - TCP listen/connect (frame is ready; transport comes later).
 - Required request pipelining (header supports it; implementation may allow only one outstanding request).
 - MCP, GDB RSP, or an embedded script runtime.
-- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / READMEM / WRITEMEM / BP_* / KEYEVENT / QUIT below.
+- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / READMEM / WRITEMEM / BP_* / KEYEVENT / QUIT below.
 
 ---
 
@@ -176,6 +176,7 @@ Rules:
 | `RESET` | 1 | 2 | `0x00000102` | main | empty |
 | `PAUSE` | 1 | 3 | `0x00000103` | main | empty |
 | `CONTINUE` | 1 | 4 | `0x00000104` | main | empty |
+| `STEP_INTO` | 1 | 5 | `0x00000105` | main | empty |
 | `READMEM` | 3 | 1 | `0x00000301` | main | `length` data bytes |
 | `WRITEMEM` | 3 | 2 | `0x00000302` | main | empty |
 | `BP_SET` | 4 | 1 | `0x00000401` | main | 4 bytes: `id` |
@@ -295,6 +296,36 @@ Invoke `computer_t::reset(cold_start)` on the main thread.
 **Success reply** (same `type=RESET`, echoed `seq`): empty payload.
 
 **Bounds:** handshake required; payload exactly 4 bytes; `cold_start` must be `0` or `1`; no machine → `E_INTERNAL` / `no machine`.
+
+#### `PAUSE` — main 1, sub 3 (`0x00000103`)
+
+Enter `EXEC_PAUSED`. Emits `EVT_STOPPED` (`STOP_PAUSE`) and `EVT_RUN_STATE`.
+
+**Request payload:** empty. **Success reply:** empty.
+
+#### `CONTINUE` — main 1, sub 4 (`0x00000104`)
+
+Resume `EXEC_NORMAL` from pause / step. Emits `EVT_RUN_STATE`. Applies Policy A when leaving an `EXEC` / step stop (see breakpoint semantics).
+
+**Request payload:** empty. **Success reply:** empty.
+
+#### `STEP_INTO` — main 1, sub 5 (`0x00000105`)
+
+Arm the existing emulator step path: set `execution_mode = EXEC_STEP_INTO` and `instructions_left = count`. The next emulation frame runs `count` instructions (same as the built-in debugger’s step-into), then idles in `EXEC_STEP_INTO` with `instructions_left == 0`.
+
+**Request payload** (4 bytes):
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `count` | `uint32` instruction count (`instructions_left`). Must be `>= 1`. |
+
+**Success reply** (same `type=STEP_INTO`, echoed `seq`): empty payload. The request only arms the step; it does **not** wait for completion.
+
+**On completion** (after the instruction batch finishes on the main thread): unsolicited `EVENT` `EVT_STOPPED` with `reason = STOP_STEP` and the post-instruction `system_trace_entry_t` snapshot (same 72-byte layout as breakpoint stops). Also emits `EVT_RUN_STATE` when entering `EXEC_STEP_INTO` from another mode.
+
+**Bounds:** handshake required; payload exactly 4 bytes; `count == 0` → `E_BAD_LENGTH` / `STEP_INTO count must be >= 1`; no machine → `E_INTERNAL` / `no machine`.
+
+Breakpoint checks are **not** performed while executing the step batch (same as UI step-into).
 
 ### Memory (`main == 3`)
 
@@ -842,7 +873,7 @@ Breakpoints assume these exist (names provisional; not specified in full here):
 |---------|------|
 | `PAUSE` | Enter paused; `EVT_STOPPED` / `EVT_RUN_STATE` |
 | `CONTINUE` / `RUN` | Leave pause; `EVT_RUN_STATE` (started); arm checks again |
-| `STEP_INTO` / `STEP_OVER` / `STEP_OUT` | One-shot control-flow stops; `EVT_STOPPED` with `STOP_STEP` |
+| `STEP_INTO` | Run `count` instructions via `instructions_left`; `EVT_STOPPED` with `STOP_STEP` + trace when the batch finishes |
 
 While paused, breakpoint checks do not run.
 

@@ -41,6 +41,8 @@ public:
 
     void emit_stopped(computer_t *computer, const StopHit &hit);
     void emit_stopped_pause(computer_t *computer);
+    /** After an instructions_left batch completes (STOP_STEP + post-insn trace). */
+    void emit_stopped_step(computer_t *computer);
     void emit_run_state(uint32_t new_mode, uint32_t prev_mode);
 
     const std::string& socket_path() const { return socket_path_; }

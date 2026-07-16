@@ -49,6 +49,7 @@ Import path: `clients/python/src` on `PYTHONPATH`, or `pip install -e clients/py
 | `get_status()` → `StatusInfo` | `.execution_mode` (`0=NORMAL`, `1=STEP_INTO`, `2=PAUSED`), `.platform_id` (`PlatformId_t` / `-p N`) |
 | `reset(cold_start=False)` | `computer_t::reset(cold_start)` on main thread |
 | `pause()` / `continue_()` | Run-control; emits `EVT_STOPPED` / `EVT_RUN_STATE` |
+| `step_into(count=1)` | Arm N-instruction step; empty reply; `EVT_STOPPED` (`STOP_STEP`) + trace when done |
 | `bp_set(...)` → `id` | Create EXEC/DATA/IO breakpoint (see DebugProtocol.md) |
 | `bp_clear(id)` / `bp_clear_all()` / `bp_enable(id, enabled)` / `bp_list()` | Breakpoint table |
 | `wait_event()` / `wait_stopped()` | Block for unsolicited EVENT / parse `EVT_STOPPED` |
@@ -206,5 +207,9 @@ with Client() as c:
     c.continue_()
     hit = c.wait_stopped()
     assert hit.bp_id == bp
-    c.continue_()  # Policy A steps off the EXEC bp
+    c.step_into(1)
+    stepped = c.wait_stopped()
+    assert stepped.reason == 4  # STOP_STEP
+    assert len(stepped.trace) == 40
+    c.continue_()  # Policy A steps off if still on EXEC bp
 ```

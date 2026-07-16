@@ -39,6 +39,7 @@ from gs2debug.types import (
     STOP_BP_EXEC,
     STOP_BP_IO,
     STOP_PAUSE,
+    STOP_STEP,
 )
 
 
@@ -143,6 +144,21 @@ def test_io_bp(c: Client, platform_id: int) -> None:
     c.bp_clear(bp_id)
 
 
+def test_step_into(c: Client) -> None:
+    c.bp_clear_all()
+    c.pause()
+    paused = c.wait_stopped(timeout=2.0)
+    assert paused.reason == STOP_PAUSE
+    c.step_into(1)
+    stepped = c.wait_stopped(timeout=3.0)
+    assert stepped.reason == STOP_STEP, stepped
+    assert stepped.execution_mode == EXEC_STEP_INTO, stepped
+    assert len(stepped.trace) == 40, len(stepped.trace)
+    print(f"  STEP_INTO ok pc=${stepped.pc:06X} trace={len(stepped.trace)}B")
+    c.continue_()
+    drain_events(c, 0.2)
+
+
 def test_reset_keeps_bps(c: Client) -> None:
     c.bp_clear_all()
     bp_id = c.bp_set(kind=BP_KIND_EXEC, address=0xFF69, length=1)
@@ -193,6 +209,7 @@ def main() -> int:
         test_pause_continue(c)
         test_exec_bp(c)
         test_io_bp(c, want_platform)
+        test_step_into(c)
         test_reset_keeps_bps(c)
         test_cap(c)
         print("PASS", flush=True)

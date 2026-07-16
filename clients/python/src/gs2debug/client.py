@@ -42,6 +42,7 @@ from .types import (
     QUIT,
     READMEM,
     RESET,
+    STEP_INTO,
     STOP_BP_DATA,
     STOP_BP_EXEC,
     STOP_BP_IO,
@@ -186,6 +187,20 @@ class Client:
         reply = self.request(CONTINUE, b"")
         if reply:
             raise ProtocolError(0, f"CONTINUE reply not empty ({len(reply)} bytes)")
+
+    def step_into(self, count: int = 1) -> None:
+        """Arm EXEC_STEP_INTO for `count` instructions (instructions_left).
+
+        Reply is empty; when the batch finishes the emu emits EVT_STOPPED
+        (STOP_STEP) with the post-instruction CPU trace. count must be >= 1.
+        """
+        if not self._handshaked:
+            raise RuntimeError("hello() required before step_into()")
+        if count < 1:
+            raise ValueError("step_into count must be >= 1")
+        reply = self.request(STEP_INTO, struct.pack("<I", count))
+        if reply:
+            raise ProtocolError(0, f"STEP_INTO reply not empty ({len(reply)} bytes)")
 
     def bp_set(
         self,

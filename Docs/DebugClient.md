@@ -129,6 +129,10 @@ class Client:
     def continue_(self) -> None:
         """CONTINUE: resume from PAUSE or STEP_INTO (EXEC_NORMAL)."""
 
+    def step_into(self, count: int = 1) -> None:
+        """STEP_INTO: run `count` instructions (instructions_left); empty reply.
+        When the batch finishes: EVT_STOPPED STOP_STEP + CPU trace. count >= 1."""
+
     def bp_set(
         self,
         *,
@@ -224,7 +228,7 @@ Constants (`BP_KIND_*`, `BP_ACCESS_*`, `BP_FLAG_*`, `EVT_*`, `STOP_*`, `EXEC_*`,
 4. **EVENT while waiting.** If an `EVENT` frame arrives before the reply, invoke `on_event` (if set), then keep waiting for the reply. Events must not break request/reply pairing. Prefer `wait_stopped()` when idle for stop notifications.
 5. **Timeouts.** `request(..., timeout=seconds)` / `wait_event` / `wait_stopped` raise `TimeoutError` on deadline. Connection failures raise clearly (`OSError`).
 6. **Threading (v1).** Sync API on the caller thread. A background reader for events while idle is a later enhancement.
-7. **Breakpoint hit → STEP_INTO.** A DATA/IO/EXEC hit (and PAUSE) leaves the emu in `EXEC_STEP_INTO` or `EXEC_PAUSED` until `continue_()` (or further step UI). Scripts that want a visible pause must delay before `continue_()`.
+7. **Breakpoint hit → STEP_INTO.** A DATA/IO/EXEC hit (and PAUSE) leaves the emu in `EXEC_STEP_INTO` or `EXEC_PAUSED` until `continue_()` or `step_into(n)`. Scripts that want a visible pause must delay before resume. `step_into(n)` arms N instructions and delivers `STOP_STEP` when done.
 8. **Quit cleanly.** Prefer `quit()` over killing the process (SDL maps SIGTERM to QuitModal unless `--no-quit-confirm`).
 
 ### Errors
