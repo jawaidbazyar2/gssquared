@@ -155,6 +155,13 @@ def test_step_into(c: Client) -> None:
     assert stepped.execution_mode == EXEC_STEP_INTO, stepped
     assert len(stepped.trace) == 40, len(stepped.trace)
     print(f"  STEP_INTO ok pc=${stepped.pc:06X} trace={len(stepped.trace)}B")
+
+    tw = c.get_trace(ago=0, count=16)
+    assert tw.available >= 1, tw
+    assert len(tw.entries) >= 1, tw
+    assert all(len(e) == 40 for e in tw.entries), [len(e) for e in tw.entries]
+    print(f"  GET_TRACE ok available={tw.available} returned={len(tw.entries)}")
+
     c.continue_()
     drain_events(c, 0.2)
 

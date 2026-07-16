@@ -1,6 +1,6 @@
 """GSSquared external debug protocol client."""
 
-from .client import BpInfo, Client, HelloInfo, StatusInfo, StoppedEvent
+from .client import BpInfo, Client, HelloInfo, StatusInfo, StoppedEvent, TraceWindow
 from .errors import ProtocolError
 from .keys import (
     KMOD_CTRL,
@@ -39,6 +39,7 @@ from .types import (
     EXEC_PAUSED,
     EXEC_STEP_INTO,
     GET_STATUS,
+    GET_TRACE,
     HELLO,
     KEYEVENT,
     MEM_ADBMICRO,
@@ -75,6 +76,7 @@ __all__ = [
     "StatusInfo",
     "BpInfo",
     "StoppedEvent",
+    "TraceWindow",
     "ProtocolError",
     "HELLO",
     "PING",
@@ -86,6 +88,7 @@ __all__ = [
     "PAUSE",
     "CONTINUE",
     "STEP_INTO",
+    "GET_TRACE",
     "READMEM",
     "WRITEMEM",
     "BP_SET",

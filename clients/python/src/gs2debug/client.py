@@ -34,6 +34,7 @@ from .types import (
     EXEC_PAUSED,
     EXEC_STEP_INTO,
     GET_STATUS,
+    GET_TRACE,
     HELLO,
     KEYEVENT,
     PAUSE,
@@ -92,6 +93,14 @@ class StoppedEvent:
     kind: int
     execution_mode: int
     trace: bytes
+
+
+@dataclass(frozen=True)
+class TraceWindow:
+    """GET_TRACE reply: ring size and packed 40-byte system_trace_entry_t blobs."""
+
+    available: int
+    entries: list[bytes]  # oldest → newest; each len == 40
 
 
 EventHandler = Callable[[int, int, bytes], None]
@@ -201,6 +210,31 @@ class Client:
         reply = self.request(STEP_INTO, struct.pack("<I", count))
         if reply:
             raise ProtocolError(0, f"STEP_INTO reply not empty ({len(reply)} bytes)")
+
+    def get_trace(self, ago: int = 0, count: int = 100) -> TraceWindow:
+        """Read a window from the instruction trace ring buffer.
+
+        ``ago`` is how many instructions before the newest completed entry
+        to place the window's newest end (0 = most recent). ``count`` is how
+        many records to return extending into the past (clamped by available).
+        """
+        if not self._handshaked:
+            raise RuntimeError("hello() required before get_trace()")
+        if ago < 0:
+            raise ValueError("get_trace ago must be >= 0")
+        if count < 1:
+            raise ValueError("get_trace count must be >= 1")
+        reply = self.request(GET_TRACE, struct.pack("<II", ago, count))
+        if len(reply) < 8:
+            raise ProtocolError(0, f"GET_TRACE reply too short ({len(reply)} bytes)")
+        available, returned = struct.unpack_from("<II", reply, 0)
+        expect = 8 + returned * 40
+        if len(reply) != expect:
+            raise ProtocolError(
+                0, f"GET_TRACE reply length {len(reply)}, expected {expect}"
+            )
+        entries = [reply[8 + i * 40 : 8 + (i + 1) * 40] for i in range(returned)]
+        return TraceWindow(available=available, entries=entries)
 
     def bp_set(
         self,

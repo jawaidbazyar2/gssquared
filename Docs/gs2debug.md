@@ -50,6 +50,7 @@ Import path: `clients/python/src` on `PYTHONPATH`, or `pip install -e clients/py
 | `reset(cold_start=False)` | `computer_t::reset(cold_start)` on main thread |
 | `pause()` / `continue_()` | Run-control; emits `EVT_STOPPED` / `EVT_RUN_STATE` |
 | `step_into(count=1)` | Arm N-instruction step; empty reply; `EVT_STOPPED` (`STOP_STEP`) + trace when done |
+| `get_trace(ago=0, count=100)` → `TraceWindow` | Instruction ring window; `.available`, `.entries` (40-byte blobs, oldest→newest) |
 | `bp_set(...)` → `id` | Create EXEC/DATA/IO breakpoint (see DebugProtocol.md) |
 | `bp_clear(id)` / `bp_clear_all()` / `bp_enable(id, enabled)` / `bp_list()` | Breakpoint table |
 | `wait_event()` / `wait_stopped()` | Block for unsolicited EVENT / parse `EVT_STOPPED` |

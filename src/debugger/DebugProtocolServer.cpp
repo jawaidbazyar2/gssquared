@@ -44,6 +44,7 @@ constexpr uint32_t kTypeReset     = 0x00000102;
 constexpr uint32_t kTypePause     = 0x00000103;
 constexpr uint32_t kTypeContinue  = 0x00000104;
 constexpr uint32_t kTypeStepInto  = 0x00000105;
+constexpr uint32_t kTypeGetTrace  = 0x00000201;
 constexpr uint32_t kTypeReadMem   = 0x00000301;
 constexpr uint32_t kTypeWriteMem  = 0x00000302;
 constexpr uint32_t kTypeBpSet     = 0x00000401;
@@ -58,6 +59,8 @@ constexpr uint32_t kEvtRunState  = 2;
 
 constexpr uint32_t kBpSetPayloadSize = 32;
 constexpr uint32_t kBpListRecordSize = 40;
+constexpr uint32_t kTraceEntrySize = 40;
+constexpr uint32_t kMaxTraceRecords = 16384;
 
 constexpr uint32_t kMemMain    = 0;
 constexpr uint32_t kMemMegaII  = 1;
@@ -461,6 +464,36 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             computer->instructions_left = bridge_arg0_;
             g_last_stop_reason = 0;
             emit_run_state(static_cast<uint32_t>(EXEC_STEP_INTO), static_cast<uint32_t>(prev));
+        }
+    } else if (bridge_type_ == kTypeGetTrace) {
+        if (!computer || !computer->cpu || !computer->cpu->trace_buffer) {
+            bridge_error_ = kEInternal;
+        } else {
+            const uint32_t ago = bridge_arg0_;
+            const uint32_t want = bridge_arg1_;
+            system_trace_buffer *tb = computer->cpu->trace_buffer;
+            const uint32_t available = static_cast<uint32_t>(tb->count);
+            uint32_t returned = 0;
+            if (ago < available && want > 0) {
+                const uint32_t max_from_ago = available - ago;
+                returned = want < max_from_ago ? want : max_from_ago;
+            }
+            bridge_reply_.resize(8 + static_cast<size_t>(returned) * kTraceEntrySize);
+            std::memcpy(bridge_reply_.data() + 0, &available, 4);
+            std::memcpy(bridge_reply_.data() + 4, &returned, 4);
+            if (returned > 0) {
+                const size_t sz = tb->size;
+                size_t idx = (tb->head + sz - static_cast<size_t>(ago) - static_cast<size_t>(returned)) % sz;
+                uint8_t *out = bridge_reply_.data() + 8;
+                for (uint32_t i = 0; i < returned; ++i) {
+                    std::memcpy(out + static_cast<size_t>(i) * kTraceEntrySize,
+                                &tb->entries[idx], kTraceEntrySize);
+                    idx++;
+                    if (idx >= sz) {
+                        idx = 0;
+                    }
+                }
+            }
         }
     } else if (bridge_type_ == kTypeBpSet) {
         if (!computer || !computer->breakpoints) {
@@ -1138,6 +1171,40 @@ next_request:
                 REJECT(client_fd, hdr.seq, kEInternal, "bad step_into reply");
             }
             REPLY_OK(kTypeStepInto, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypeGetTrace: {
+            if (hdr.length != 8) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "GET_TRACE requires 8-byte payload");
+            }
+            uint32_t ago = 0, count = 0;
+            std::memcpy(&ago, payload.data() + 0, 4);
+            std::memcpy(&count, payload.data() + 4, 4);
+            if (count == 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "GET_TRACE count must be >= 1");
+            }
+            if (count > kMaxTraceRecords) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "GET_TRACE count out of range");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeGetTrace, hdr.seq, ago, count, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (reply.size() < 8) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad get_trace reply");
+            }
+            uint32_t returned = 0;
+            std::memcpy(&returned, reply.data() + 4, 4);
+            if (reply.size() != 8 + static_cast<size_t>(returned) * kTraceEntrySize) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad get_trace reply");
+            }
+            REPLY_OK(kTypeGetTrace, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
             break;
         }
         case kTypeReadMem: {

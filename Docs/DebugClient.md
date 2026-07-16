@@ -43,7 +43,7 @@ clients/python/
                           # READMEM / WRITEMEM / BP_* / KEYEVENT / EVT_* / STOP_* / MEM_* constants
     keys.py               # SDL scancodes / keymods + ASCII→key map for type_text
     frame.py              # pack / unpack 12-byte header + payload
-    client.py             # Client, HelloInfo, StatusInfo, BpInfo, StoppedEvent
+    client.py             # Client, HelloInfo, StatusInfo, BpInfo, StoppedEvent, TraceWindow
     errors.py             # ProtocolError from ERROR frames
   examples/               # hello_ping, read/write text40, type_to_emu, test_breakpoints,
                           # watch_data_iigs, watch_c010_iie, …
@@ -97,6 +97,11 @@ class StoppedEvent:
     execution_mode: int
     trace: bytes         # 40-byte system_trace_entry_t snapshot when present
 
+@dataclass(frozen=True)
+class TraceWindow:
+    available: int       # entries currently in the ring
+    entries: list[bytes] # oldest → newest; each len == 40
+
 class Client:
     def connect(self, path: str) -> None:
         """Connect to a Unix-domain socket at path. TCP later."""
@@ -132,6 +137,10 @@ class Client:
     def step_into(self, count: int = 1) -> None:
         """STEP_INTO: run `count` instructions (instructions_left); empty reply.
         When the batch finishes: EVT_STOPPED STOP_STEP + CPU trace. count >= 1."""
+
+    def get_trace(self, ago: int = 0, count: int = 100) -> TraceWindow:
+        """GET_TRACE: ring window. ago=0 is newest; count extends into the past.
+        Returns TraceWindow(available, entries) — each entry is 40 raw bytes."""
 
     def bp_set(
         self,

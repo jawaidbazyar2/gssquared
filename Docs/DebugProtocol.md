@@ -17,7 +17,7 @@ This document is the source of truth for the wire format. Exploratory notes in `
 - TCP listen/connect (frame is ready; transport comes later).
 - Required request pipelining (header supports it; implementation may allow only one outstanding request).
 - MCP, GDB RSP, or an embedded script runtime.
-- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / READMEM / WRITEMEM / BP_* / KEYEVENT / QUIT below.
+- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / READMEM / WRITEMEM / BP_* / KEYEVENT / QUIT below.
 
 ---
 
@@ -177,6 +177,7 @@ Rules:
 | `PAUSE` | 1 | 3 | `0x00000103` | main | empty |
 | `CONTINUE` | 1 | 4 | `0x00000104` | main | empty |
 | `STEP_INTO` | 1 | 5 | `0x00000105` | main | empty |
+| `GET_TRACE` | 2 | 1 | `0x00000201` | main | 8-byte header + `N×40` entries |
 | `READMEM` | 3 | 1 | `0x00000301` | main | `length` data bytes |
 | `WRITEMEM` | 3 | 2 | `0x00000302` | main | empty |
 | `BP_SET` | 4 | 1 | `0x00000401` | main | 4 bytes: `id` |
@@ -326,6 +327,35 @@ Arm the existing emulator step path: set `execution_mode = EXEC_STEP_INTO` and `
 **Bounds:** handshake required; payload exactly 4 bytes; `count == 0` → `E_BAD_LENGTH` / `STEP_INTO count must be >= 1`; no machine → `E_INTERNAL` / `no machine`.
 
 Breakpoint checks are **not** performed while executing the step batch (same as UI step-into).
+
+### CPU / trace (`main == 2`)
+
+Commands in this family run on the **main emulation thread**.
+
+#### `GET_TRACE` — main 2, sub 1 (`0x00000201`)
+
+Read a window from the CPU instruction trace ring buffer (`cpu->trace_buffer`, capacity 100000, 40-byte `system_trace_entry_t` records — same layout as `EVT_STOPPED.trace`).
+
+**Request payload** (8 bytes):
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `ago` | `uint32`: how many instructions **before the newest** completed entry to place the window’s newest end. `0` = most recent entry. |
+| 4 | 4 | `count` | `uint32`: number of records to return, extending **into the past** from that end. Must be `>= 1` and `<= 16384`. |
+
+**Window:** logical indices `[newest − ago − count + 1, newest − ago]` (inclusive), clamped to what exists. If `ago >= available`, `returned = 0`. Empty ring → `returned = 0`.
+
+**Success reply** (same `type=GET_TRACE`, echoed `seq`):
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `available` | Total entries currently in the ring (`uint32`). |
+| 4 | 4 | `returned` | `N` — may be less than requested `count` (`uint32`). |
+| 8 | `N × 40` | entries | Packed `system_trace_entry_t` blobs, **oldest → newest**. |
+
+Allowed anytime (like `READMEM`). Snapshot is consistent for that bridge call; while the guest is running, `head` may advance between calls. Host pages older history with a larger `ago`.
+
+**Bounds:** handshake required; payload exactly 8 bytes; `count == 0` or `count > 16384` → `E_BAD_LENGTH`; no CPU / trace buffer → `E_INTERNAL` / `no machine`.
 
 ### Memory (`main == 3`)
 
