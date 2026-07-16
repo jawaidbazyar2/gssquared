@@ -1,10 +1,12 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 #include <string>
 
 #include "mmus/mmu_ii.hpp"
 #include "Module_ID.hpp"
+#include "Device_ID.hpp"
 #include "SlotData.hpp"
 #include "util/EventDispatcher.hpp"
 #include "util/EventQueue.hpp"
@@ -40,13 +42,22 @@ enum execution_modes_t {
     //EXEC_STEP_OVER // no longer used?
 };
 
+/** Ops for register_device_debug / call_device_debug (protocol STATE_GET, …). */
+enum : uint32_t {
+    DEVOP_STATE_GET = 1,
+};
 
 struct computer_t {
 
     using ResetHandler = std::function<bool (bool cold_start)>;
     using ShutdownHandler = std::function<bool ()>;
     using DebugDisplayHandler = std::function<DebugFormatter *()>;
-    
+    using DeviceDebugHandler = std::function<bool(
+        uint32_t op,
+        const std::vector<uint8_t> &req,
+        std::vector<uint8_t> &reply,
+        std::string &err)>;
+
     struct DebugDisplayHandlerInfo {
         std::string name;
         uint64_t id;
@@ -99,7 +110,8 @@ struct computer_t {
     std::vector<ResetHandler> reset_handlers;
     std::vector<ShutdownHandler> shutdown_handlers;
     std::vector<DebugDisplayHandlerInfo> debug_display_handlers;
-    
+    DeviceDebugHandler device_debug_handlers[NUM_DEVICE_IDS]{};
+
     void *module_store[MODULE_NUM_MODULES];
 
     // Status, Statistics, etc.
@@ -161,6 +173,12 @@ struct computer_t {
     void register_shutdown_handler(ShutdownHandler handler);
     void register_debug_display_handler(std::string name, uint64_t id, DebugDisplayHandler handler);
     DebugFormatter *call_debug_display_handler(std::string name);
+
+    void register_device_debug(device_id id, DeviceDebugHandler handler);
+    bool call_device_debug(device_id id, uint32_t op,
+                          const std::vector<uint8_t> &req,
+                          std::vector<uint8_t> &reply,
+                          std::string &err);
 
     void *get_module_state( module_id_t module_id);
     void set_module_state( module_id_t module_id, void *state);

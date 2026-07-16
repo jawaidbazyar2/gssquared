@@ -51,6 +51,7 @@ Import path: `clients/python/src` on `PYTHONPATH`, or `pip install -e clients/py
 | `pause()` / `continue_()` | Run-control; emits `EVT_STOPPED` / `EVT_RUN_STATE` |
 | `step_into(count=1)` | Arm N-instruction step; empty reply; `EVT_STOPPED` (`STOP_STEP`) + trace when done |
 | `get_trace(ago=0, count=100)` → `TraceWindow` | Instruction ring window; `.available`, `.entries` (40-byte blobs, oldest→newest) |
+| `state_get(device_id)` → `bytes` | Device snapshot blob (`DEVICE_ID_ENSONIQ`, …) |
 | `bp_set(...)` → `id` | Create EXEC/DATA/IO breakpoint (see DebugProtocol.md) |
 | `bp_clear(id)` / `bp_clear_all()` / `bp_enable(id, enabled)` / `bp_list()` | Breakpoint table |
 | `wait_event()` / `wait_stopped()` | Block for unsolicited EVENT / parse `EVT_STOPPED` |
@@ -73,7 +74,10 @@ From `gs2debug` / `gs2debug.keys` / `gs2debug.types`:
 |------|-----------------|
 | `MEM_MAIN` | `0` — CPU MMU view (`cpu->mmu->read` / `write`) |
 | `MEM_MEGAII` | `1` — Mega II / IIe-view MMU (`computer->mmu`); **IIgs only** |
-| `MEM_ENSONIQ` / `MEM_ADBMICRO` | Reserved (ERROR `unsupported domain`) |
+| `MEM_ENSONIQ` | `2` — DOC RAM (IIgs only); address = DOC offset |
+| `MEM_ADBMICRO` | Reserved (ERROR `unsupported domain`) |
+| `DEVICE_ID_ENSONIQ` | `22` — for `state_get` (784-byte v1 blob; see DebugProtocol.md) |
+| `STATE_GET` | `0x00000601` |
 | `MEM_MAIN_RAW` | `4` — physical `cpu->mmu->get_memory_base()[addr]` (no MMU/bus) |
 | `MEM_MEGAII_RAW` | `5` — physical Mega II buffer; **IIgs only** |
 | `PLATFORM_APPLE_II` … `PLATFORM_APPLE_IIGS` | `0`…`5` — same as `-p` / `StatusInfo.platform_id` |

@@ -12,8 +12,11 @@
 
 #include "computer.hpp"
 #include "cpu.hpp"
+#include "Device_ID.hpp"
+#include "devices/es5503/soundglu.hpp"
 #include "gs2.hpp"
 #include "mmus/mmu.hpp"
+#include "Module_ID.hpp"
 #include "PlatformIDs.hpp"
 
 #if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
@@ -47,6 +50,7 @@ constexpr uint32_t kTypeStepInto  = 0x00000105;
 constexpr uint32_t kTypeGetTrace  = 0x00000201;
 constexpr uint32_t kTypeReadMem   = 0x00000301;
 constexpr uint32_t kTypeWriteMem  = 0x00000302;
+constexpr uint32_t kTypeStateGet  = 0x00000601;
 constexpr uint32_t kTypeBpSet     = 0x00000401;
 constexpr uint32_t kTypeBpClear   = 0x00000402;
 constexpr uint32_t kTypeBpClearAll = 0x00000403;
@@ -61,6 +65,7 @@ constexpr uint32_t kBpSetPayloadSize = 32;
 constexpr uint32_t kBpListRecordSize = 40;
 constexpr uint32_t kTraceEntrySize = 40;
 constexpr uint32_t kMaxTraceRecords = 16384;
+constexpr uint32_t kDocRamSize = 0x10000;
 
 constexpr uint32_t kMemMain    = 0;
 constexpr uint32_t kMemMegaII  = 1;
@@ -353,6 +358,21 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
                     bridge_reply_.assign(base + address, base + address + length);
                 }
             }
+        } else if (domain == kMemEnsoniq) {
+            if (!computer || !computer->platform
+                || computer->platform->id != PLATFORM_APPLE_IIGS) {
+                bridge_error_ = kEInternal;
+            } else {
+                auto *st = static_cast<ensoniq_state_t *>(computer->module_store[MODULE_ENSONIQ]);
+                if (!st || !st->doc_ram) {
+                    bridge_error_ = kEInternal;
+                    bridge_error_text_ = "no ensoniq";
+                } else if (address > kDocRamSize || length > kDocRamSize - address) {
+                    bridge_error_ = kEBadLength;
+                } else {
+                    bridge_reply_.assign(st->doc_ram + address, st->doc_ram + address + length);
+                }
+            }
         } else {
             bridge_error_ = kEInternal;
         }
@@ -425,6 +445,23 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
                     std::memcpy(base + address, bridge_request_.data(), length);
                 }
             }
+        } else if (domain == kMemEnsoniq) {
+            if (!computer || !computer->platform
+                || computer->platform->id != PLATFORM_APPLE_IIGS) {
+                bridge_error_ = kEInternal;
+            } else if (bridge_request_.size() != length) {
+                bridge_error_ = kEInternal;
+            } else {
+                auto *st = static_cast<ensoniq_state_t *>(computer->module_store[MODULE_ENSONIQ]);
+                if (!st || !st->doc_ram) {
+                    bridge_error_ = kEInternal;
+                    bridge_error_text_ = "no ensoniq";
+                } else if (address > kDocRamSize || length > kDocRamSize - address) {
+                    bridge_error_ = kEBadLength;
+                } else {
+                    std::memcpy(st->doc_ram + address, bridge_request_.data(), length);
+                }
+            }
         } else {
             bridge_error_ = kEInternal;
         }
@@ -493,6 +530,17 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
                         idx = 0;
                     }
                 }
+            }
+        }
+    } else if (bridge_type_ == kTypeStateGet) {
+        if (!computer) {
+            bridge_error_ = kEInternal;
+        } else {
+            const auto id = static_cast<device_id>(bridge_arg0_);
+            std::string err;
+            if (!computer->call_device_debug(id, DEVOP_STATE_GET, bridge_request_, bridge_reply_, err)) {
+                bridge_error_ = kEInternal;
+                bridge_error_text_ = err.empty() ? "unknown device" : err;
             }
         }
     } else if (bridge_type_ == kTypeBpSet) {
@@ -1205,6 +1253,25 @@ next_request:
                 REJECT(client_fd, hdr.seq, kEInternal, "bad get_trace reply");
             }
             REPLY_OK(kTypeGetTrace, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
+            break;
+        }
+        case kTypeStateGet: {
+            if (hdr.length != 4) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "STATE_GET requires 4-byte payload");
+            }
+            uint32_t device_id_u = 0;
+            std::memcpy(&device_id_u, payload.data(), 4);
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeStateGet, hdr.seq, device_id_u, 0, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            REPLY_OK(kTypeStateGet, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
             break;
         }
         case kTypeReadMem: {

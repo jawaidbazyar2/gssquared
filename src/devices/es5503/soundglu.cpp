@@ -1,8 +1,11 @@
 #include <cstdint>
 #include <cassert>
+#include <cstring>
 #include <SDL3/SDL.h>
 #include "computer.hpp"
 #include "devices/es5503/ensoniq.hpp"
+#include "Device_ID.hpp"
+#include "Module_ID.hpp"
 
 #include "soundglu.hpp"
 #include "util/DebugFormatter.hpp"
@@ -254,12 +257,58 @@ DebugFormatter * debug_ensoniq(ensoniq_state_t *st) {
     return df;
 }
 
+bool pack_ensoniq_state(ensoniq_state_t *st, std::vector<uint8_t> &out, std::string &err) {
+    if (!st || !st->chip) {
+        err = "no ensoniq";
+        return false;
+    }
+    constexpr uint32_t kVersion = 1;
+    constexpr size_t kHeaderSize = 16;
+    constexpr size_t kOscSize = 24;
+    constexpr size_t kBlobSize = kHeaderSize + 32 * kOscSize;
+    out.assign(kBlobSize, 0);
+
+    ES5503 *chip = st->chip;
+    const uint32_t output_rate = chip->calculate_output_rate();
+    std::memcpy(out.data() + 0, &kVersion, 4);
+    out[4] = st->soundctl;
+    out[5] = st->sounddata;
+    out[6] = st->soundadrl;
+    out[7] = st->soundadrh;
+    out[8] = chip->get_rege0();
+    out[9] = chip->get_rege1();
+    out[10] = chip->get_oscsenabled();
+    out[11] = 0;
+    std::memcpy(out.data() + 12, &output_rate, 4);
+
+    for (int o = 0; o < 32; ++o) {
+        Oscillator *osc = chip->get_oscillator(o);
+        uint8_t *rec = out.data() + kHeaderSize + static_cast<size_t>(o) * kOscSize;
+        std::memcpy(rec + 0, &osc->freq, 2);
+        std::memcpy(rec + 2, &osc->wtsize, 2);
+        rec[4] = osc->control;
+        rec[5] = osc->vol;
+        rec[6] = osc->data;
+        rec[7] = 0;
+        std::memcpy(rec + 8, &osc->wavetblpointer, 4);
+        rec[12] = osc->wavetblsize;
+        rec[13] = osc->resolution;
+        rec[14] = osc->irqpend;
+        rec[15] = 0;
+        std::memcpy(rec + 16, &osc->accumulator, 4);
+        // bytes 20–23 already zero
+    }
+    return true;
+}
+
 void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     ensoniq_state_t *st = new ensoniq_state_t();
     
     // Allocate 64KB DOC RAM
     st->doc_ram = new uint8_t[0x10000];
     std::memset(st->doc_ram, 0, 0x10000);
+
+    computer->set_module_state(MODULE_ENSONIQ, st);
 
     st->audio_system = computer->audio_system;
 
@@ -343,6 +392,16 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
             return debug_ensoniq(st);
         }
     );
+
+    computer->register_device_debug(DEVICE_ID_ENSONIQ,
+        [st](uint32_t op, const std::vector<uint8_t> & /*req*/,
+             std::vector<uint8_t> &reply, std::string &err) {
+            if (op != DEVOP_STATE_GET) {
+                err = "unsupported op";
+                return false;
+            }
+            return pack_ensoniq_state(st, reply, err);
+        });
 
     computer->register_reset_handler([st](bool cold_start) {
         // this caused the audio to get badly delayed / out of sync. added calculate_output_rate() to reset() to fix.

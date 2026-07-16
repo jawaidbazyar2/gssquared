@@ -142,6 +142,9 @@ class Client:
         """GET_TRACE: ring window. ago=0 is newest; count extends into the past.
         Returns TraceWindow(available, entries) — each entry is 40 raw bytes."""
 
+    def state_get(self, device_id: int) -> bytes:
+        """STATE_GET: opaque device snapshot for DEVICE_ID_* (e.g. DEVICE_ID_ENSONIQ)."""
+
     def bp_set(
         self,
         *,

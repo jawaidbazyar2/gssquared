@@ -286,6 +286,29 @@ DebugFormatter *computer_t::call_debug_display_handler(std::string name) {
     return 0;
 }
 
+void computer_t::register_device_debug(device_id id, DeviceDebugHandler handler) {
+    if (id <= DEVICE_ID_NONE || id >= NUM_DEVICE_IDS) {
+        return;
+    }
+    device_debug_handlers[id] = std::move(handler);
+}
+
+bool computer_t::call_device_debug(device_id id, uint32_t op,
+                                  const std::vector<uint8_t> &req,
+                                  std::vector<uint8_t> &reply,
+                                  std::string &err) {
+    if (id <= DEVICE_ID_NONE || id >= NUM_DEVICE_IDS) {
+        err = "unknown device";
+        return false;
+    }
+    DeviceDebugHandler &handler = device_debug_handlers[id];
+    if (!handler) {
+        err = "unknown device";
+        return false;
+    }
+    return handler(op, req, reply, err);
+}
+
 void computer_t::reset(bool cold_start) {
     last_reset = clock->get_cycles(); // catch this here (assert or instantaneous)
     if (cold_start) {

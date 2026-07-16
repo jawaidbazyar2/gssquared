@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <vector>
+
 #include "util/AudioSystem.hpp"
 #include "ensoniq.hpp"
 #include "util/InterruptController.hpp"
@@ -34,3 +37,6 @@ struct ensoniq_state_t {
 };
 
 void init_ensoniq_slot(computer_t *computer, SlotType_t slot);
+
+/** Pack Ensoniq STATE_GET v1 blob (784 bytes). Returns false on error. */
+bool pack_ensoniq_state(ensoniq_state_t *st, std::vector<uint8_t> &out, std::string &err);

@@ -17,7 +17,7 @@ This document is the source of truth for the wire format. Exploratory notes in `
 - TCP listen/connect (frame is ready; transport comes later).
 - Required request pipelining (header supports it; implementation may allow only one outstanding request).
 - MCP, GDB RSP, or an embedded script runtime.
-- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / READMEM / WRITEMEM / BP_* / KEYEVENT / QUIT below.
+- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / READMEM / WRITEMEM / BP_* / KEYEVENT / STATE_GET / QUIT below.
 
 ---
 
@@ -186,6 +186,7 @@ Rules:
 | `BP_ENABLE` | 4 | 4 | `0x00000404` | main | empty |
 | `BP_LIST` | 4 | 5 | `0x00000405` | main | `count` + records |
 | `KEYEVENT` | 5 | 1 | `0x00000501` | protocol (`SDL_PushEvent`) | empty |
+| `STATE_GET` | 6 | 1 | `0x00000601` | main | device-specific blob |
 
 ### Protocol version
 
@@ -381,7 +382,7 @@ Peek bytes from a memory domain.
 |-------|------|--------|--------|
 | 0 | `MAIN` | CPU view: `computer->cpu->mmu->read(addr)` (II/IIe MMU, or IIgs FPI / banked MMU) | Implemented |
 | 1 | `MEGAII` | Mega II / IIe-view MMU: `computer->mmu->read(addr)` | Implemented (Apple IIgs only) |
-| 2 | `ENSONIQ` | DOC / sound RAM | Reserved |
+| 2 | `ENSONIQ` | DOC RAM (`ensoniq_state_t::doc_ram`), address = DOC offset `0`–`0xFFFF` | Implemented (Apple IIgs only) |
 | 3 | `ADBMICRO` | ADB microcontroller memory | Reserved |
 | 4 | `MAIN_RAW` | Physical RAM: `cpu->mmu->get_memory_base()[addr]` | Implemented |
 | 5 | `MEGAII_RAW` | Physical Mega II RAM: `computer->mmu->get_memory_base()[addr]` | Implemented (Apple IIgs only) |
@@ -433,7 +434,11 @@ Poke bytes into a memory domain.
 - `MAIN_RAW` / `MEGAII_RAW`: reject if `address + length` exceeds `get_memory_size()` → `E_BAD_LENGTH` / `out of range`.
 - Unimplemented domain → `E_INTERNAL` with message `unsupported domain`.
 - `MEGAII` / `MEGAII_RAW` on a non-IIgs platform → `E_INTERNAL` / `MEGAII only on Apple IIgs`.
+- `ENSONIQ` on a non-IIgs platform or with no Ensoniq → `E_INTERNAL` (`unsupported domain` / `no ensoniq`).
+- `ENSONIQ`: reject if `address + length` exceeds `0x10000` → `E_BAD_LENGTH`.
 - No machine / no MMU for the domain → `E_INTERNAL` / `no machine`.
+
+`ENSONIQ` peeks/pokes DOC RAM with raw `memcpy` (no Sound GLU side effects).
 
 ### Input (`main == 5`)
 
@@ -461,6 +466,40 @@ Server fills `event.key.key` via `SDL_GetKeyFromScancode(scancode, mod, false)`,
 
 Clients must set `mod` to the desired modifier mask **on that event**. Control-Reset on macOS/Windows: Control key-down, then F12 key-down with `mod` including `SDL_KMOD_CTRL` (handlers check `event.key.mod` on the Reset key itself).
 
+### Devices (`main == 6`)
+
+Generic device ops. Devices register in-process handlers via `computer_t::register_device_debug(device_id, …)`; the protocol server routes by `device_id` and does not interpret device blobs.
+
+#### `STATE_GET` — main 6, sub 1 (`0x00000601`)
+
+**Request payload** (4 bytes):
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `device_id` | `uint32` matching `device_id` / `DEVICE_ID_*` (e.g. `DEVICE_ID_ENSONIQ` = 22). |
+
+**Success reply:** opaque device blob (layout owned by the device; versioned).
+
+**Bounds:** handshake required; payload exactly 4 bytes; unknown / unregistered device → `E_INTERNAL` / `unknown device` (or handler message).
+
+##### Ensoniq `STATE_GET` blob (v1) — 784 bytes
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `version` = `1` |
+| 4 | 1 | `soundctl` |
+| 5 | 1 | `sounddata` |
+| 6 | 1 | `soundadrl` |
+| 7 | 1 | `soundadrh` |
+| 8 | 1 | `rege0` |
+| 9 | 1 | `rege1` |
+| 10 | 1 | `oscsenabled` |
+| 11 | 1 | pad `0` |
+| 12 | 4 | `output_rate_hz` |
+| 16 | 32 × 24 | oscillators |
+
+Per-oscillator (24 bytes): `freq` u16, `wtsize` u16, `control` u8, `vol` u8, `data` u8, pad, `wavetblpointer` u32, `wavetblsize` u8, `resolution` u8, `irqpend` u8, pad, `accumulator` u32, pad u32.
+
 ---
 
 ## Example exchange
@@ -482,7 +521,7 @@ Client connects, then:
 
 ## Future commands
 
-Main numbers 1–6 are reserved for execution, CPU, memory, breakpoints, input, and sound (up to 256 subs each). Beyond documented commands, any type outside the documented set yields `ERROR` with `E_UNKNOWN_TYPE`.
+Main numbers 1–6 are reserved for execution, CPU, memory, breakpoints, input, and devices (up to 256 subs each). Beyond documented commands, any type outside the documented set yields `ERROR` with `E_UNKNOWN_TYPE`.
 
 ---
 

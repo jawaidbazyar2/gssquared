@@ -43,6 +43,7 @@ from .types import (
     QUIT,
     READMEM,
     RESET,
+    STATE_GET,
     STEP_INTO,
     STOP_BP_DATA,
     STOP_BP_EXEC,
@@ -235,6 +236,12 @@ class Client:
             )
         entries = [reply[8 + i * 40 : 8 + (i + 1) * 40] for i in range(returned)]
         return TraceWindow(available=available, entries=entries)
+
+    def state_get(self, device_id: int) -> bytes:
+        """STATE_GET: device snapshot blob for ``device_id`` (DEVICE_ID_*)."""
+        if not self._handshaked:
+            raise RuntimeError("hello() required before state_get()")
+        return self.request(STATE_GET, struct.pack("<I", device_id))
 
     def bp_set(
         self,
