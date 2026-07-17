@@ -73,6 +73,9 @@ void ES5503::reset() {
         osc.accumulator = 0;
         osc.irqpend = 0;
     }
+    // Drop the system IRQ line as well — clearing irqpend alone leaves
+    // InterruptController's SOUNDGLU assert stuck until the next $E0 read.
+    update_irq_status();
     update_sdl_stream_rate();
 }
 
