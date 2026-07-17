@@ -8,11 +8,15 @@ from .keys import (
     KMOD_LSHIFT,
     KMOD_NONE,
     KMOD_SHIFT,
+    SCANCODE_DOWN,
     SCANCODE_F12,
     SCANCODE_LCTRL,
+    SCANCODE_LEFT,
     SCANCODE_LSHIFT,
     SCANCODE_RETURN,
+    SCANCODE_RIGHT,
     SCANCODE_SPACE,
+    SCANCODE_UP,
 )
 from .types import (
     BP_ACCESS_NONE,
@@ -141,6 +145,10 @@ __all__ = [
     "SCANCODE_LCTRL",
     "SCANCODE_LSHIFT",
     "SCANCODE_F12",
+    "SCANCODE_UP",
+    "SCANCODE_DOWN",
+    "SCANCODE_LEFT",
+    "SCANCODE_RIGHT",
     "SCANCODE_RETURN",
     "SCANCODE_SPACE",
 ]
