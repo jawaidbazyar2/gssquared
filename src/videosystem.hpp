@@ -7,6 +7,7 @@
 #include "util/EventQueue.hpp"
 #include "display/types.hpp"
 #include "ui/Clipboard.hpp"
+#include "ui/ScreenshotWriter.hpp"
 #include "devices/displaypp/RGBA.hpp"
 
 // somewhere calculate the window size properly (42+49, and 19+21)
@@ -88,6 +89,7 @@ struct video_system_t {
     EventQueue *event_queue = nullptr;
 
     ClipboardImage *clip = nullptr;
+    ScreenshotWriter *screenshot_writer = nullptr;
 
     bool mouse_captured = false;
     bool old_mouse_captured = false;
@@ -115,6 +117,8 @@ protected:
     // when the CRT shader is unavailable. Called at init and on resize.
     void ensure_scene_target(int w, int h);
     void show_crt_shader_unavailable();
+    // GPU readback of the last presented guest frame (+ borders). Caller owns the surface.
+    SDL_Surface *capture_screen_surface();
 
 public:
     video_system_t(computer_t *computer);
@@ -141,6 +145,7 @@ public:
     void set_display_engine(display_color_engine_t mode);
     void set_display_mono_color(display_mono_color_t mode);
     void copy_screen();
+    void save_screenshot();
     void flip_display_scale_mode();
     // True when the CRT post-process shader is available to be used.
     bool crt_shader_available() const { return crt_state != nullptr; }

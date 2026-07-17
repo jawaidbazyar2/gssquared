@@ -15,6 +15,7 @@ GSSquared provides a top menu bar appropriate to your platform. A top menu bar f
   * Open System (only when machine is off)
   * Save System
   * Save As System
+  * Save Screenshot
 
 New Disk Image creates a new disk image of the specified size and type. You will be prompted for a folder and filename to save the new image to.
 
@@ -24,11 +25,13 @@ Open System can be exercised when you're at the System Select screen ("Choose yo
 
 Save System / Save As System let you save the current system configuration. This does not include any machine state except what disk images are mounted.
 
+Save Screenshot writes the current display (with borders) to a PNG on your Desktop, named like `GS2 Screenshot YYYY-MM-DD HH.MM.SS.png`. Shortcut: Shift+PrintScreen. Only one screenshot write can be in progress at a time.
+
 ### Edit
   * Copy Screen
   * Paste Text
 
-Copy Screen copies the current display - with borders - into your computer's copy/paste buffer, where you can easily paste it into documents, Slack, Facebook, Twitter, etc.
+Copy Screen copies the current display - with borders - into your computer's copy/paste buffer, where you can easily paste it into documents, Slack, Facebook, Twitter, etc. Shortcut: PrintScreen.
 
 Paste Text pastes text in your computer's copy/paste buffer into the emulated Apple, as if you were typing it.
 

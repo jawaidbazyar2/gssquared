@@ -197,6 +197,9 @@ computer_t::computer_t(NClockII *clock) {
             case MENU_EDIT_COPY_SCREEN:
                 video_system->copy_screen();
                 return true;
+            case MENU_FILE_SAVE_SCREENSHOT:
+                video_system->save_screenshot();
+                return true;
             case MENU_EDIT_PASTE_TEXT: {
                 keyboard_state_t *kb = (keyboard_state_t *)get_module_state(MODULE_KEYBOARD);
                 if (kb) {

@@ -19,6 +19,7 @@
 #include <SDL3/SDL_filesystem.h>
 #include <cctype>
 #include <cstdlib>
+#include <ctime>
 #include <filesystem>
 #include <iostream>
 #include <string_view>
@@ -32,6 +33,7 @@ std::string Paths::base_path;
 std::string Paths::pref_path;
 std::string Paths::home_folder;
 std::string Paths::docs_folder;
+std::string Paths::desktop_folder;
 std::string Paths::last_file_dialog_dir;
 
 /**
@@ -116,6 +118,13 @@ void Paths::initialize(bool console_mode) {
     } else {
         docs_folder = home_folder;
     }
+
+    const char *desktop = SDL_GetUserFolder(SDL_FOLDER_DESKTOP);
+    if (desktop && desktop[0]) {
+        desktop_folder = desktop;
+    } else {
+        desktop_folder = home_folder;
+    }
 }
 
 void Paths::calc_base(std::string& return_path, std::string file) {
@@ -132,6 +141,25 @@ void Paths::calc_home(std::string& return_path, std::string file) {
 
 void Paths::calc_docs(std::string& return_path, std::string file) {
     return_path = docs_folder + file;
+}
+
+void Paths::calc_desktop(std::string& return_path, std::string file) {
+    return_path = desktop_folder + file;
+}
+
+std::string Paths::make_screenshot_path() {
+    std::time_t t = std::time(nullptr);
+    std::tm tm_local{};
+#if defined(_WIN32)
+    localtime_s(&tm_local, &t);
+#else
+    localtime_r(&t, &tm_local);
+#endif
+    char name[128];
+    std::strftime(name, sizeof(name), "GS2 Screenshot %Y-%m-%d %H.%M.%S.png", &tm_local);
+    std::string path;
+    calc_desktop(path, name);
+    return path;
 }
 
 const std::string& Paths::get_last_file_dialog_dir() {

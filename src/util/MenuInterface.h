@@ -48,6 +48,7 @@ public:
 	void displayFullScreen();
 	void editCopyScreen();
 	void editPasteText();
+	void fileSaveScreenshot();
 	void openDebugWindow();
 	void diskToggle(storage_key_t key);
 	void openSystemConfig();

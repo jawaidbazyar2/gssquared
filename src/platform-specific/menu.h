@@ -29,6 +29,7 @@ enum MenuEventCode {
 	MENU_DISK_TOGGLE = 600,  // user.data1 = storage_key_t cast to void*
 
 	MENU_OPEN_CONFIG = 650,
+	MENU_FILE_SAVE_SCREENSHOT,
 
 	MENU_CONTROLLER_GAMEPAD = 700,
 	MENU_CONTROLLER_MOUSE,

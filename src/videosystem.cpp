@@ -5,6 +5,9 @@
 #include "videosystem.hpp"
 #include "display/display.hpp"
 #include "ui/Clipboard.hpp"
+#include "ui/ScreenshotWriter.hpp"
+#include "paths.hpp"
+#include "util/Event.hpp"
 #include <cmath>
 #include "util/dialog.hpp"
 #include "display/shaders/GpuShaderLoader.hpp"
@@ -16,6 +19,7 @@ video_system_t::video_system_t(computer_t *computer) {
     }
 
     clip = new ClipboardImage();
+    screenshot_writer = new ScreenshotWriter();
 
     display_color_engine = DM_ENGINE_NTSC;
     display_mono_color = DM_MONO_GREEN;
@@ -135,7 +139,11 @@ video_system_t::video_system_t(computer_t *computer) {
             return true;
         }
         if (key == SDLK_PRINTSCREEN) {
-            copy_screen();
+            if (event.key.mod & SDL_KMOD_SHIFT) {
+                save_screenshot();
+            } else {
+                copy_screen();
+            }
         }
         return false;
     });
@@ -150,7 +158,11 @@ video_system_t::video_system_t(computer_t *computer) {
             case SDLK_F7:
                 return true; // eat the keydown
             case SDLK_PRINTSCREEN:
-                copy_screen();
+                if (event.key.mod & SDL_KMOD_SHIFT) {
+                    save_screenshot();
+                } else {
+                    copy_screen();
+                }
                 return true;
             default:
                 return false;
@@ -165,6 +177,10 @@ video_system_t::video_system_t(computer_t *computer) {
 }
 
 video_system_t::~video_system_t() {
+    if (screenshot_writer) {
+        delete screenshot_writer;
+        screenshot_writer = nullptr;
+    }
     if (scene_target) SDL_DestroyTexture(scene_target);
     if (crt_state) SDL_DestroyGPURenderState(crt_state);
     if (crt_shader && gpu_device) SDL_ReleaseGPUShader(gpu_device, crt_shader);
@@ -219,6 +235,10 @@ bool video_system_t::init_crt_shader() {
 }
 
 void video_system_t::present() {
+    // Drain screenshot worker status on the main thread (SPSC ring → EventQueue).
+    if (screenshot_writer) {
+        screenshot_writer->poll(event_queue);
+    }
     SDL_RenderPresent(renderer);
 }
 
@@ -494,17 +514,46 @@ void video_system_t::toggle_crt_shader() {
     set_crt_shader_enabled(!crt_shader_enabled, true);
 }
 
-void video_system_t::copy_screen() {
+SDL_Surface *video_system_t::capture_screen_surface() {
+    if (!last_texture || !screencap_texture) {
+        return nullptr;
+    }
     SDL_Rect srect = { (int)last_srcrect.x, (int)last_srcrect.y, (int)last_srcrect.w, (int)last_srcrect.h };
     SDL_FRect trect = { last_srcrect.x, last_srcrect.y, last_srcrect.w, last_srcrect.h };
-    //SDL_SetTextureBlendMode(screencap_texture, SDL_BLENDMODE_NONE);
     SDL_SetRenderTarget(renderer, screencap_texture);
     SDL_SetTextureBlendMode(last_texture, SDL_BLENDMODE_NONE);
-    // oops, this is scaling the image.
     SDL_RenderTexture(renderer, last_texture, &trect, &trect); // ensure no scaling.
     SDL_Surface *surface = SDL_RenderReadPixels(renderer, &srect);
     SDL_SetRenderTarget(renderer, nullptr);
+    return surface;
+}
+
+void video_system_t::copy_screen() {
+    SDL_Surface *surface = capture_screen_surface();
+    if (!surface) {
+        return;
+    }
     clip->Clip(surface);
+    SDL_DestroySurface(surface);
+}
+
+void video_system_t::save_screenshot() {
+    if (!screenshot_writer) {
+        return;
+    }
+    if (screenshot_writer->is_pending()) {
+        event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Screenshot busy"));
+        return;
+    }
+    SDL_Surface *surface = capture_screen_surface();
+    if (!surface) {
+        event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Screenshot capture failed"));
+        return;
+    }
+    const std::string path = Paths::make_screenshot_path();
+    if (!screenshot_writer->try_submit(surface, path)) {
+        event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Screenshot busy"));
+    }
     SDL_DestroySurface(surface);
 }
 

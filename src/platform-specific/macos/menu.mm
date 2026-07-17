@@ -101,6 +101,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 @interface MenuActionHandler : NSObject <NSMenuItemValidation>
 - (void)fileClose:(id)sender;
+- (void)fileSaveScreenshot:(id)sender;
 - (void)appQuit:(id)sender;
 - (void)machineReset:(id)sender;
 - (void)machineRestart:(id)sender;
@@ -140,6 +141,11 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 - (void)fileOpenConfig:(id)sender {
 	getMenuInterface()->openSystemConfig();
+	(void)sender;
+}
+
+- (void)fileSaveScreenshot:(id)sender {
+	getMenuInterface()->fileSaveScreenshot();
 	(void)sender;
 }
 
@@ -410,6 +416,15 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[drivesMenuItem setSubmenu:drivesMenu];
 	[fileMenu addItem:drivesMenuItem];
+
+	[fileMenu addItem:[NSMenuItem separatorItem]];
+
+	NSMenuItem *saveScreenshotItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Save Screenshot", nil)
+		       action:@selector(fileSaveScreenshot:)
+		keyEquivalent:@""] autorelease];
+	[saveScreenshotItem setTarget:sMenuHandler];
+	[fileMenu addItem:saveScreenshotItem];
 
 	[fileMenu addItem:[NSMenuItem separatorItem]];
 

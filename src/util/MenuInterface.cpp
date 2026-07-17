@@ -50,6 +50,7 @@ void MenuInterface::openSystemConfig() { pushMenuEvent(MENU_OPEN_CONFIG); }
 void MenuInterface::displayFullScreen() { pushMenuEvent(MENU_DISPLAY_FULLSCREEN); }
 void MenuInterface::editCopyScreen()   { pushMenuEvent(MENU_EDIT_COPY_SCREEN); }
 void MenuInterface::editPasteText()    { pushMenuEvent(MENU_EDIT_PASTE_TEXT); }
+void MenuInterface::fileSaveScreenshot() { pushMenuEvent(MENU_FILE_SAVE_SCREENSHOT); }
 
 void MenuInterface::toggleSleepMode() {
 	gs2_app_values.sleep_mode = !gs2_app_values.sleep_mode;

@@ -124,6 +124,10 @@ static void build_menu_bar()
                 ImGui::EndMenu();
             }
             ImGui::Separator();
+            if (ImGui::MenuItem("Save Screenshot", "Shift+PrintScreen")) {
+                mi->fileSaveScreenshot();
+            }
+            ImGui::Separator();
             if (ImGui::MenuItem("Close Emulation")) {
                 SDL_Event ev = {};
                 ev.type = SDL_EVENT_QUIT;

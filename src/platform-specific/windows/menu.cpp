@@ -134,11 +134,13 @@ static void updatePopupState(HMENU popup)
     // ── File ────────────────────────────────────────────────────────────────
     if (popup == g_filePopup) {
         // pos 0 = Launch Config, pos 1 = sep, pos 2 = Drives, pos 3 = sep,
-        // pos 4 = Close Emulation, pos 5 = sep, pos 6 = Quit
+        // pos 4 = Save Screenshot, pos 5 = sep, pos 6 = Close Emulation,
+        // pos 7 = sep, pos 8 = Quit
         setItemEnable(g_filePopup, 0, !running);  // Launch Config
         setItemEnable(g_filePopup, 2, running);   // Drives
-        setItemEnable(g_filePopup, 4, running);   // Close Emulation
-        setItemEnable(g_filePopup, 6, !running);  // Quit (only when not running)
+        setItemEnable(g_filePopup, 4, running);   // Save Screenshot
+        setItemEnable(g_filePopup, 6, running);   // Close Emulation
+        setItemEnable(g_filePopup, 8, !running);  // Quit (only when not running)
         return;
     }
 
@@ -273,9 +275,10 @@ static void dispatchCommand(UINT id)
     // Display
     case MENU_DISPLAY_FULLSCREEN: mi->displayFullScreen(); return;
 
-    // Edit
-    case MENU_EDIT_COPY_SCREEN: mi->editCopyScreen(); return;
-    case MENU_EDIT_PASTE_TEXT:  mi->editPasteText();  return;
+    // Edit / File
+    case MENU_EDIT_COPY_SCREEN:      mi->editCopyScreen();      return;
+    case MENU_EDIT_PASTE_TEXT:       mi->editPasteText();       return;
+    case MENU_FILE_SAVE_SCREENSHOT:  mi->fileSaveScreenshot();  return;
 
     // Settings
     case IDM_SETTINGS_SLEEP:        mi->toggleSleepMode();         return;
@@ -373,10 +376,14 @@ static void setupMenus()
     // pos 3
     AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
     // pos 4
-    AppendMenuW(g_filePopup, MF_STRING, IDM_FILE_CLOSE, L"Close Emulation");
+    AppendMenuW(g_filePopup, MF_STRING, MENU_FILE_SAVE_SCREENSHOT, L"Save Screenshot");
     // pos 5
     AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
     // pos 6
+    AppendMenuW(g_filePopup, MF_STRING, IDM_FILE_CLOSE, L"Close Emulation");
+    // pos 7
+    AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
+    // pos 8
     AppendMenuW(g_filePopup, MF_STRING, IDM_APP_QUIT, L"Quit");
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_filePopup), L"File");

@@ -29,6 +29,7 @@ class Paths {
     static std::string pref_path;
     static std::string docs_folder;
     static std::string home_folder;
+    static std::string desktop_folder;
     static std::string last_file_dialog_dir;
 
     public:
@@ -37,6 +38,9 @@ class Paths {
         static void calc_pref(std::string& return_path, std::string file) ;
         static void calc_docs(std::string& return_path, std::string file) ;
         static void calc_home(std::string& return_path, std::string file) ;
+        static void calc_desktop(std::string& return_path, std::string file);
+        /** Full Desktop path for a new screenshot, e.g. ".../GS2 Screenshot 2026-07-17 14.30.05.png". */
+        static std::string make_screenshot_path();
         static const std::string& get_last_file_dialog_dir();
         /** Directory of the last SDL_ShowOpenFileDialog selection (not the file name). */
         static void set_last_file_dialog_dir(const std::string& selected_path);
