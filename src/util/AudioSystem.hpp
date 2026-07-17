@@ -51,6 +51,8 @@ public:
     void flush_stream(SDL_AudioStream *stream) { SDL_FlushAudioStream(stream); }
 
     SDL_AudioDeviceID get_audio_device_id();
+    /** Native playback device sample rate (Hz). Falls back to 48000. */
+    uint32_t get_device_sample_rate();
 
     uint16_t get_stream_count();
     

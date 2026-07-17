@@ -85,25 +85,9 @@ uint8_t ES5503::read_wave_byte(uint32_t address) {
 }
 
 void ES5503::update_sdl_stream_rate() {
-    if (!m_sdl_stream) {
-        return;
-    }
-    
-    uint32_t es5503_output_rate = calculate_output_rate();
-    
-    SDL_AudioSpec src_spec;
-    src_spec.freq = es5503_output_rate;
-    src_spec.format = SDL_AUDIO_S16LE;
-    src_spec.channels = m_output_channels;
-    
-    // NULL destination means use device's native rate
-    if (!SDL_SetAudioStreamFormat(m_sdl_stream, &src_spec, NULL)) {
-        // Log error but don't fail
-        printf("Warning: Failed to update ES5503 SDL stream rate to %u Hz: %s\n", 
-               es5503_output_rate, SDL_GetError());
-        assert(false);
-    }
-    printf("updated sdl stream rate to %u Hz\n", es5503_output_rate);
+    // SDL stream is fixed at the host device rate. DOC output rate changes only
+    // affect Sound GLU's per-frame resampler — do not call SDL_SetAudioStreamFormat
+    // here (that resets SDL's resampler and was a live-only glitch source).
 }
 
 void ES5503::halt_osc(int onum, int type, uint32_t *accumulator, int resshift, uint8_t newCtrl) {
@@ -128,13 +112,11 @@ void ES5503::halt_osc(int onum, int type, uint32_t *accumulator, int resshift, u
     if ((mode != MODE_FREE) || (type != 0)) {
         pOsc->control |= 1;
     } else {
-        // Preserve the relative phase of the oscillator when looping
-        const uint16_t wtsize = pOsc->wtsize;
-        if ((*accumulator >> resshift) < wtsize) {
-            *accumulator -= ((*accumulator >> resshift) << resshift);
-        } else {
-            *accumulator -= (wtsize << resshift);
-        }
+        // Preserve fractional phase when looping (MAME / Peter Ferrie).
+        // Subtract (wtsize - 1) << resshift — not full wtsize, and not "zero the
+        // integer index". Wrong wrap skips/jumps within the waveform.
+        const uint16_t wtsize_m1 = pOsc->wtsize - 1;
+        *accumulator -= ((uint32_t)wtsize_m1 << resshift);
     }
 
     // If we're in swap mode, start the partner
@@ -152,12 +134,12 @@ void ES5503::halt_osc(int onum, int type, uint32_t *accumulator, int resshift, u
 
     // IRQ enabled for this voice?
     if (pOsc->control & 0x08) {
-        // MAME 2.4.1: when the halt is coming from a CPU write (type == 0), only fire
+        // MAME: when the halt is coming from a CPU write (type == 0), only fire
         // the IRQ if the newly written control value also has IRQ enabled. This avoids
-        // spurious IRQs (e.g. the Bard's Tale IIgs crash after the intro screen).
-        /* if ((type == 0) && !(newCtrl & 0x08)) {
+        // spurious IRQs after NTPstop / Bard's Tale (CPU halt with IE cleared).
+        if ((type == 0) && !(newCtrl & 0x08)) {
             return;
-        } */
+        }
         pOsc->irqpend = 1;
         update_irq_status();
     }
@@ -234,10 +216,9 @@ void ES5503::generate_samples(int16_t *buffer, int num_samples) {
                         }
                         mixp += m_output_channels;
 
-                        // Check if we've reached or exceeded the wavetable size
-                        // Calculate new position after incrementing to detect boundary crossing
-                        uint32_t new_altram = acc >> resshift;
-                        if (new_altram > wtsize) {
+                        // MAME: wrap/halt when pre-increment position reaches end
+                        // (wtsize here is already pOsc->wtsize - 1).
+                        if (altram >= wtsize) {
                             halt_osc(osc, 0, &acc, resshift, pOsc->control);
                             // Update ctrl from pOsc->control since halt_osc may have modified it
                             ctrl = pOsc->control;

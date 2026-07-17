@@ -186,6 +186,7 @@ Plays very well with keyboard. (It does not support joystick) Does support SNESM
 there was a MMU bug involving RAMRD/RAMWRT and direct access to bank 1. (we were adding an extra 0x1'0000 erroneously).
 It now starts but then hits a BRK; it plays music for a while; then dies with a "RESTART SYSTEM". Could be Ensoniq IRQ or another memory issue.
 2/18/26: gets a little further now before crashing, it displays a 3d Ball pyramid.
+7/16/26: working well with latest round of Ensoniq fixes.
 
 ## Senseiplay
 
@@ -276,6 +277,8 @@ with ensoniq interrupt fix, it's not crashing out any more. however, there are a
 ### Apple IIgs Sales Demo
 
 with ensoniq interrupt fix, now is running correctly mostly. the intro jazz music is good. 
+
+After 7/16/26, the digitized speech playback "Introducing the Apple IIgs" is now working.
 
 ### Revenge of the Bobs
 

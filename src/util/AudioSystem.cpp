@@ -79,6 +79,14 @@ SDL_AudioDeviceID AudioSystem::get_audio_device_id() {
     return device_id;
 }
 
+uint32_t AudioSystem::get_device_sample_rate() {
+    SDL_AudioSpec spec{};
+    if (device_id && SDL_GetAudioDeviceFormat(device_id, &spec, nullptr) && spec.freq > 0) {
+        return (uint32_t)spec.freq;
+    }
+    return 48000;
+}
+
 /* returns true if successful, false if not */
 SDL_AudioStream *AudioSystem::create_stream(int sample_rate, int channels, SDL_AudioFormat sample_format, bool apply_volume) {
     SDL_AudioSpec spec = {
