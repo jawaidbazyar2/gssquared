@@ -7,6 +7,7 @@
 #include "computer.hpp"
 #include "util/AudioSystem.hpp"
 #include "util/mount.hpp"
+#include "util/SystemSettings.hpp"
 #include "devices/game/gamecontroller.hpp"
 #include "Module_ID.hpp"
 
@@ -68,6 +69,18 @@ void MenuInterface::toggleCrtShader() {
 	if (computer_ && computer_->video_system) computer_->video_system->toggle_crt_shader();
 }
 
+void MenuInterface::toggleHudStats() {
+	SystemSettings::instance().toggle_hud_stats();
+}
+
+void MenuInterface::toggleHudDrives() {
+	SystemSettings::instance().toggle_hud_drives();
+}
+
+void MenuInterface::toggleDisconnectedWhenNoGamepad() {
+	SystemSettings::instance().toggle_disconnected_when_no_gamepad();
+}
+
 int MenuInterface::getCurrentSpeed() {
 	if (!computer_ || !computer_->clock) return -1;
 	return (int)computer_->clock->get_clock_mode();
@@ -106,6 +119,18 @@ bool MenuInterface::getCrtShader() {
 
 bool MenuInterface::getCrtShaderAvailable() {
 	return computer_ && computer_->video_system ? computer_->video_system->crt_shader_available() : false;
+}
+
+bool MenuInterface::getHudStats() {
+	return SystemSettings::instance().hud_stats();
+}
+
+bool MenuInterface::getHudDrives() {
+	return SystemSettings::instance().hud_drives();
+}
+
+bool MenuInterface::getDisconnectedWhenNoGamepad() {
+	return SystemSettings::instance().disconnected_when_no_gamepad();
 }
 
 bool MenuInterface::isEmulationRunning() {

@@ -13,7 +13,7 @@
 #include "util/MenuInterface.h"
 
 // ── Local command IDs (items not in MenuEventCode) ────────────────────────────
-// Ranges already occupied: 1-4, 100-103, 200-204, 300, 400-401, 501, 600-6xx, 700-702
+// Ranges already occupied: 1-4, 100-103, 200-204, 300-302, 400-401, 501, 600-6xx, 700-703
 #define IDM_FILE_CLOSE       800
 #define IDM_APP_QUIT         801
 #define IDM_SETTINGS_SLEEP        802
@@ -35,6 +35,8 @@ static HMENU g_settingsPopup  = NULL;
 static HMENU g_speedMenu      = NULL;
 static HMENU g_controllerMenu = NULL;
 static HMENU g_monitorMenu    = NULL;
+static HMENU g_hudMenu        = NULL;
+static HMENU g_displayPopup   = NULL;
 static HMENU g_helpPopup      = NULL;
 static std::vector<storage_key_t> g_driveKeys;
 
@@ -174,13 +176,44 @@ static void updatePopupState(HMENU popup)
     // ── Game Controller ──────────────────────────────────────────────────────
     if (popup == g_controllerMenu) {
         int current = mi->getCurrentControllerMode(); // 0..2
+        bool absentDisconnected = mi->getDisconnectedWhenNoGamepad();
         int n = GetMenuItemCount(g_controllerMenu);
         for (int i = 0; i < n; ++i) {
-            // IDs: MENU_CONTROLLER_GAMEPAD(700), MOUSE(701), JOYPORT(702)
-            int mode = static_cast<int>(getItemId(g_controllerMenu, i))
-                     - static_cast<int>(MENU_CONTROLLER_GAMEPAD);
-            setItemCheck(g_controllerMenu,  i, mode == current);
-            setItemEnable(g_controllerMenu, i, running);
+            MENUITEMINFOW mii = {};
+            mii.cbSize = sizeof(mii);
+            mii.fMask  = MIIM_FTYPE | MIIM_ID;
+            GetMenuItemInfoW(g_controllerMenu, static_cast<UINT>(i), TRUE, &mii);
+            if (mii.fType & MFT_SEPARATOR) {
+                continue;
+            }
+            UINT id = mii.wID;
+            if (id == static_cast<UINT>(MENU_CONTROLLER_ABSENT_DISCONNECTED)) {
+                setItemCheck(g_controllerMenu,  i, absentDisconnected);
+                setItemEnable(g_controllerMenu, i, running);
+            } else {
+                // IDs: MENU_CONTROLLER_GAMEPAD(700), MOUSE(701), JOYPORT(702)
+                int mode = static_cast<int>(id) - static_cast<int>(MENU_CONTROLLER_GAMEPAD);
+                setItemCheck(g_controllerMenu,  i, mode == current);
+                setItemEnable(g_controllerMenu, i, running);
+            }
+        }
+        return;
+    }
+
+    // ── HUD ──────────────────────────────────────────────────────────────────
+    if (popup == g_hudMenu) {
+        bool stats_on  = mi->getHudStats();
+        bool drives_on = mi->getHudDrives();
+        int n = GetMenuItemCount(g_hudMenu);
+        for (int i = 0; i < n; ++i) {
+            UINT id = getItemId(g_hudMenu, i);
+            if (id == static_cast<UINT>(MENU_HUD_STATS)) {
+                setItemCheck(g_hudMenu,  i, stats_on);
+                setItemEnable(g_hudMenu, i, running);
+            } else if (id == static_cast<UINT>(MENU_HUD_DRIVES)) {
+                setItemCheck(g_hudMenu,  i, drives_on);
+                setItemEnable(g_hudMenu, i, running);
+            }
         }
         return;
     }
@@ -274,6 +307,8 @@ static void dispatchCommand(UINT id)
 
     // Display
     case MENU_DISPLAY_FULLSCREEN: mi->displayFullScreen(); return;
+    case MENU_HUD_STATS:          mi->toggleHudStats();    return;
+    case MENU_HUD_DRIVES:         mi->toggleHudDrives();   return;
 
     // Edit / File
     case MENU_EDIT_COPY_SCREEN:      mi->editCopyScreen();      return;
@@ -297,6 +332,7 @@ static void dispatchCommand(UINT id)
     case MENU_CONTROLLER_GAMEPAD: mi->setControllerMode(0); return;
     case MENU_CONTROLLER_MOUSE:   mi->setControllerMode(1); return;
     case MENU_CONTROLLER_JOYPORT: mi->setControllerMode(2); return;
+    case MENU_CONTROLLER_ABSENT_DISCONNECTED: mi->toggleDisconnectedWhenNoGamepad(); return;
 
     default:
         // Drive toggle: IDs [MENU_DISK_TOGGLE, MENU_DISK_TOGGLE + N)
@@ -420,6 +456,9 @@ static void setupMenus()
     AppendMenuW(g_controllerMenu, MF_STRING, MENU_CONTROLLER_GAMEPAD, L"Joystick - Gamepad");
     AppendMenuW(g_controllerMenu, MF_STRING, MENU_CONTROLLER_MOUSE,   L"Joystick - Mouse");
     AppendMenuW(g_controllerMenu, MF_STRING, MENU_CONTROLLER_JOYPORT, L"Sirius / Atari Joyport");
+    AppendMenuW(g_controllerMenu, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(g_controllerMenu, MF_STRING, MENU_CONTROLLER_ABSENT_DISCONNECTED,
+                L"Disconnected When No Gamepad");
     AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_controllerMenu), L"Game Controller");
 
@@ -431,20 +470,26 @@ static void setupMenus()
                 reinterpret_cast<UINT_PTR>(g_settingsPopup), L"Settings");
 
     // ── Display ─────────────────────────────────────────────────────────────
-    HMENU displayPopup = CreatePopupMenu();
-    g_monitorMenu      = CreatePopupMenu();
+    g_displayPopup = CreatePopupMenu();
+    g_monitorMenu  = CreatePopupMenu();
+    g_hudMenu      = CreatePopupMenu();
 
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_COMPOSITE,  L"Composite");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_GS_RGB,     L"GS RGB");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_MONO_GREEN, L"Monochrome - Green");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_MONO_AMBER, L"Monochrome - Amber");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_MONO_WHITE, L"Monochrome - White");
-    AppendMenuW(displayPopup, MF_STRING | MF_POPUP,
+    AppendMenuW(g_displayPopup, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_monitorMenu), L"Monitor");
 
-    AppendMenuW(displayPopup, MF_STRING, MENU_DISPLAY_FULLSCREEN, L"Full Screen");
+    AppendMenuW(g_hudMenu, MF_STRING, MENU_HUD_STATS,  L"Stats");
+    AppendMenuW(g_hudMenu, MF_STRING, MENU_HUD_DRIVES, L"Drives");
+    AppendMenuW(g_displayPopup, MF_STRING | MF_POPUP,
+                reinterpret_cast<UINT_PTR>(g_hudMenu), L"HUD");
+
+    AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_FULLSCREEN, L"Full Screen");
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,
-                reinterpret_cast<UINT_PTR>(displayPopup), L"Display");
+                reinterpret_cast<UINT_PTR>(g_displayPopup), L"Display");
 
     // ── Docs ─────────────────────────────────────────────────────────────────
     g_helpPopup = CreatePopupMenu();

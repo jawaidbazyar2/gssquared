@@ -196,6 +196,10 @@ static void build_menu_bar()
                 if (ImGui::MenuItem(c.label, nullptr, checked))
                     mi->setControllerMode(c.mode);
             }
+            ImGui::Separator();
+            bool absent_disconnected = mi->getDisconnectedWhenNoGamepad();
+            if (ImGui::MenuItem("Disconnected When No Gamepad", nullptr, absent_disconnected))
+                mi->toggleDisconnectedWhenNoGamepad();
             ImGui::EndMenu();
         }
 
@@ -238,6 +242,16 @@ static void build_menu_bar()
                 if (ImGui::MenuItem(m.label, nullptr, checked))
                     mi->setMonitor(m.id);
             }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("HUD")) {
+            bool stats_on = mi->getHudStats();
+            if (ImGui::MenuItem("Stats", nullptr, stats_on))
+                mi->toggleHudStats();
+            bool drives_on = mi->getHudDrives();
+            if (ImGui::MenuItem("Drives", nullptr, drives_on))
+                mi->toggleHudDrives();
             ImGui::EndMenu();
         }
 

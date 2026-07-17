@@ -12,6 +12,12 @@ GS2 supports up to two (2) Gamepad or joystick devices. These can be USB, Blueto
 
 GS2 will detect and activate multiple Gamepads if present.
 
+### No gamepad attached
+
+When **Joystick - Gamepad** mode is selected but no gamepad is connected, GSSquared by default still reports a **centered** stick (paddles at mid-range). That keeps software such as Total Replay from hiding joystick-only titles just because a controller was not plugged in at that moment.
+
+If you prefer hardware-accurate behavior — paddle timers that never expire, so the machine looks like no joystick is connected — enable **Settings → Game Controller → Disconnected When No Gamepad**. The preference is stored in the app-level `system_settings.toml` file and persists across sessions.
+
 Gamepad support: I have and have tested a 8BitDo Pro2 Gamepad. However, the underlying SDL library is known to work with hundreds of Gamepad models.
 
 Joystick axes and buttons are mapped like so:

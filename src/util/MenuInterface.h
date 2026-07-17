@@ -45,6 +45,9 @@ public:
 	void toggleAudioDecorrelation();
 	void toggleRightMouseAccel();
 	void toggleCrtShader();
+	void toggleHudStats();
+	void toggleHudDrives();
+	void toggleDisconnectedWhenNoGamepad();
 	void displayFullScreen();
 	void editCopyScreen();
 	void editPasteText();
@@ -62,6 +65,9 @@ public:
 	bool getRightMouseAccel();
 	bool getCrtShader();
 	bool getCrtShaderAvailable();
+	bool getHudStats();
+	bool getHudDrives();
+	bool getDisconnectedWhenNoGamepad();
 	bool isEmulationRunning();
 	bool isPaused();
 	bool isMouseCaptured();

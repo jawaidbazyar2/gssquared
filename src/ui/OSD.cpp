@@ -529,7 +529,8 @@ void OSD::update() {
         }
     }
 
-    hud_drive_container->set_visible((currentSlideStatus == SLIDE_OUT) ? true : false);
+    hud_drive_container->set_visible(
+        currentSlideStatus == SLIDE_OUT && getMenuInterface()->getHudDrives());
 
     speed_con->selected_value(getMenuInterface()->getCurrentSpeed());
     //hov_speed->set_assetID(speed_asset.at(getMenuInterface()->getCurrentSpeed()));
@@ -653,7 +654,7 @@ void OSD::render() {
         //hover_controls_con->render();
 
         // display the MHz at the bottom of the screen.
-        {
+        if (getMenuInterface()->getHudStats()) {
             char hud_str[150];
             snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f / Idle: %5.1f%%", computer->e_mhz, computer->fps, computer->get_idle_percent());
             SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);

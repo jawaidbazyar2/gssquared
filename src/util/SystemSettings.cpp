@@ -88,6 +88,10 @@ void SystemSettings::prune_missing() {
 
 bool SystemSettings::load() {
     recent_.clear();
+    hud_stats_ = false;
+    hud_drives_ = true;
+    disconnected_when_no_gamepad_ = false;
+
     const std::string path = settings_path();
     if (!file_exists(path)) {
         return true;
@@ -119,6 +123,15 @@ bool SystemSettings::load() {
                 }
             }
         }
+
+        if (const auto* hud = table["hud"].as_table()) {
+            hud_stats_ = (*hud)["stats"].value_or(false);
+            hud_drives_ = (*hud)["drives"].value_or(true);
+        }
+        if (const auto* gc = table["game_controller"].as_table()) {
+            disconnected_when_no_gamepad_ =
+                (*gc)["disconnected_when_no_gamepad"].value_or(false);
+        }
     } catch (const toml::parse_error& err) {
         std::cerr << "Failed to parse system_settings.toml: " << err.what() << std::endl;
         recent_.clear();
@@ -143,6 +156,15 @@ bool SystemSettings::save() const {
     }
     table.insert("recent_configs", std::move(arr));
 
+    toml::table hud;
+    hud.insert("stats", hud_stats_);
+    hud.insert("drives", hud_drives_);
+    table.insert("hud", std::move(hud));
+
+    toml::table game_controller;
+    game_controller.insert("disconnected_when_no_gamepad", disconnected_when_no_gamepad_);
+    table.insert("game_controller", std::move(game_controller));
+
     const std::string path = settings_path();
     try {
         std::ofstream out(path);
@@ -156,6 +178,45 @@ bool SystemSettings::save() const {
         std::cerr << "Failed to write system_settings.toml: " << ex.what() << std::endl;
         return false;
     }
+}
+
+void SystemSettings::set_hud_stats(bool enabled) {
+    if (hud_stats_ == enabled) {
+        return;
+    }
+    hud_stats_ = enabled;
+    save();
+}
+
+void SystemSettings::set_hud_drives(bool enabled) {
+    if (hud_drives_ == enabled) {
+        return;
+    }
+    hud_drives_ = enabled;
+    save();
+}
+
+void SystemSettings::set_disconnected_when_no_gamepad(bool enabled) {
+    if (disconnected_when_no_gamepad_ == enabled) {
+        return;
+    }
+    disconnected_when_no_gamepad_ = enabled;
+    save();
+}
+
+void SystemSettings::toggle_hud_stats() {
+    hud_stats_ = !hud_stats_;
+    save();
+}
+
+void SystemSettings::toggle_hud_drives() {
+    hud_drives_ = !hud_drives_;
+    save();
+}
+
+void SystemSettings::toggle_disconnected_when_no_gamepad() {
+    disconnected_when_no_gamepad_ = !disconnected_when_no_gamepad_;
+    save();
 }
 
 void SystemSettings::record_use(const std::string& path) {

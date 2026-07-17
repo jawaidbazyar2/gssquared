@@ -29,10 +29,15 @@ struct RecentConfigEntry {
 
 /**
  * App-level settings (PrefPath/system_settings.toml). Distinct from SystemConfig
- * machine profiles. Currently tracks recently/frequently opened config files.
+ * machine profiles. Tracks recently/frequently opened config files and HUD /
+ * game-controller preferences.
  */
 class SystemSettings {
     std::vector<RecentConfigEntry> recent_;
+
+    bool hud_stats_ = false;
+    bool hud_drives_ = true;
+    bool disconnected_when_no_gamepad_ = false;
 
     SystemSettings() = default;
 
@@ -66,4 +71,16 @@ public:
     std::vector<RecentConfigEntry> display_entries() const;
 
     const std::vector<RecentConfigEntry>& recent() const { return recent_; }
+
+    bool hud_stats() const { return hud_stats_; }
+    bool hud_drives() const { return hud_drives_; }
+    bool disconnected_when_no_gamepad() const { return disconnected_when_no_gamepad_; }
+
+    void set_hud_stats(bool enabled);
+    void set_hud_drives(bool enabled);
+    void set_disconnected_when_no_gamepad(bool enabled);
+
+    void toggle_hud_stats();
+    void toggle_hud_drives();
+    void toggle_disconnected_when_no_gamepad();
 };

@@ -34,6 +34,19 @@
 #include "util/DebugHandlerIDs.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/printf_helper.hpp"
+#include "util/SystemSettings.hpp"
+
+#include <cstdint>
+
+namespace {
+
+bool paddles_report_disconnected(const gamec_state_t *ds) {
+    return ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD
+        && ds->gps[0].gamepad == nullptr
+        && SystemSettings::instance().disconnected_when_no_gamepad();
+}
+
+}  // namespace
 
 /**
  * this is a relatively naive implementation of game controller,
@@ -130,12 +143,27 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
         }
         if (DEBUG(DEBUG_GAME)) fprintf(stdout, "Strobe game inputs: %f, %f: %llu, %llu\n", mouse_x, mouse_y, u64_t(ds->game_input_trigger_0), u64_t(ds->game_input_trigger_1));
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD /* ds->gps[0].game_type == GAME_INPUT_TYPE_GAMEPAD */) {
-        // Scale the axes larger, to get the corners to full extent
-        
-        int32_t axis0 = SDL_GetGamepadAxis(ds->gps[0].gamepad, SDL_GAMEPAD_AXIS_LEFTX);
-        int32_t axis1 = SDL_GetGamepadAxis(ds->gps[0].gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+        JoystickValues jv;
+        if (ds->gps[0].gamepad == nullptr) {
+            if (SystemSettings::instance().disconnected_when_no_gamepad()) {
+                // Never expire: classic "no paddle connected" (bit 7 stays set).
+                ds->game_input_trigger_0 = UINT64_MAX;
+                ds->game_input_trigger_1 = UINT64_MAX;
+                ds->game_input_trigger_2 = UINT64_MAX;
+                ds->game_input_trigger_3 = UINT64_MAX;
+                ds->last_jv = {0, 0};
+                return ds->mmu->floating_bus_read();
+            }
+            // Default: fake a centered stick so software (e.g. Total Replay) still
+            // treats a joystick as present when no gamepad is attached.
+            jv = {128, 128};
+        } else {
+            // Scale the axes larger, to get the corners to full extent
+            int32_t axis0 = SDL_GetGamepadAxis(ds->gps[0].gamepad, SDL_GAMEPAD_AXIS_LEFTX);
+            int32_t axis1 = SDL_GetGamepadAxis(ds->gps[0].gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+            jv = convertJoystickValues(axis0, axis1);
+        }
 
-        JoystickValues jv = convertJoystickValues(axis0, axis1);
         ds->last_jv = jv;
         uint64_t x_trigger = ds->clock->get_c14m() + ((GAME_INPUT_DECAY_TIME * jv.x) / 255);
         uint64_t y_trigger = ds->clock->get_c14m() + ((GAME_INPUT_DECAY_TIME * jv.y) / 255);
@@ -153,7 +181,7 @@ void strobe_game_inputs_w(void *context, uint32_t address, uint8_t value) {
 uint8_t read_game_input_0(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
     uint8_t val;
-    if (ds->game_input_trigger_0 > ds->clock->get_c14m()) {
+    if (paddles_report_disconnected(ds) || ds->game_input_trigger_0 > ds->clock->get_c14m()) {
         val = 0x80;
     } else {
         val = 0x00;
@@ -165,7 +193,7 @@ uint8_t read_game_input_1(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
     
     uint8_t val;
-    if (ds->game_input_trigger_1 > ds->clock->get_c14m()) {   
+    if (paddles_report_disconnected(ds) || ds->game_input_trigger_1 > ds->clock->get_c14m()) {   
         val = 0x80;
     } else {
         val = 0x00;
@@ -177,7 +205,7 @@ uint8_t read_game_input_2(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
 
     uint8_t val;
-    if (ds->game_input_trigger_2 > ds->clock->get_c14m()) {
+    if (paddles_report_disconnected(ds) || ds->game_input_trigger_2 > ds->clock->get_c14m()) {
         val = 0x80;
     } else {
         val = 0x00;
@@ -189,7 +217,7 @@ uint8_t read_game_input_3(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
     
     uint8_t val;
-    if (ds->game_input_trigger_3 > ds->clock->get_c14m()) {
+    if (paddles_report_disconnected(ds) || ds->game_input_trigger_3 > ds->clock->get_c14m()) {
         val = 0x80;
     } else {
         val = 0x00;
@@ -201,10 +229,13 @@ uint8_t read_game_switch_0(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
     
     if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->computer->last_reset + 100000)) { // reverse polarity for atari
-        bool val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
+        bool val = ds->gps[0].gamepad
+            && SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
         return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);    
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
-        if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
+        if (ds->gps[0].gamepad == nullptr) {
+            ds->game_switch_0 = 0;
+        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
             ds->game_switch_0 = 1;
         } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
             ds->game_switch_0 = 1;
@@ -234,17 +265,21 @@ uint8_t read_game_switch_1(void *context, uint32_t address) {
         bool val = false;
 
         bool anc_1 = ds->annunciators[1];
-        if (anc_1) { // up-1 
-            val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP);
-        } else { // left-1
-            val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+        if (ds->gps[0].gamepad) {
+            if (anc_1) { // up-1
+                val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP);
+            } else { // left-1
+                val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+            }
         }
         if (SDL_GetModState() & KEYMOD_CLOSEDAPPLE) { // TODO: restrict to Apple IIe
             val = true;
         }
         return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
-        if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_SOUTH)) {
+        if (ds->gps[0].gamepad == nullptr) {
+            ds->game_switch_1 = 0;
+        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_SOUTH)) {
             ds->game_switch_1 = 1;
         } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_WEST)) {
             ds->game_switch_1 = 1;
@@ -273,14 +308,18 @@ uint8_t read_game_switch_2(void *context, uint32_t address) {
         bool val = false;
 
         bool anc_1 = ds->annunciators[1];
-        if (anc_1) { // down-1 
-            val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
-        } else { // right-1
-            val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+        if (ds->gps[0].gamepad) {
+            if (anc_1) { // down-1
+                val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+            } else { // right-1
+                val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+            }
         }
         return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
-        if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
+        if (ds->gps[1].gamepad == nullptr) {
+            ds->game_switch_2 = 0;
+        } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
             ds->game_switch_2 = 1;
         } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
             ds->game_switch_2 = 1;
