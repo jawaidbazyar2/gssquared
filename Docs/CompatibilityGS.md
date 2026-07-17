@@ -143,6 +143,8 @@ tries to load stuff off slot 6 for a while then crashes. is likely expecting IWM
 
 Even with WOZ 3.5 it's dying looking for a disk over and over. Weird.
 
+ah, you have to load both disks in the set when you boot it up. With the latest DOC fixes (7-16-26) is now good to go.
+
 ## Qix
 
 sometimes we have a crash booting GS/OS, and then a reboot, and it works.
