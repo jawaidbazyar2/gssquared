@@ -1,6 +1,5 @@
 #include <SDL3/SDL.h>
-#include "debugger/MonitorCommand.hpp"
-#include "debugger/ExecuteCommand.hpp"
+#include "debugger/Monitor.hpp"
 #include <iostream>
 
 
@@ -35,26 +34,21 @@ int main(int argc, char **argv) {
 
     Disassembler *disasm = new Disassembler(mmu, PROCESSOR_6502);
     std::vector<std::string> debug_displays;
+    MemoryWatch watches;
+    BreakpointTable breakpoints;
+
+    Monitor monitor;
+    monitor.bind(mmu, &watches, &breakpoints, disasm, &debug_displays, nullptr);
 
     std::string command;
     while (1) {
         std::getline(std::cin, command);
         std::cout << "command: " << command << std::endl;
 
-        MonitorCommand *cmd = new MonitorCommand(command);
-        cmd->print();
-        
-        ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, nullptr, nullptr, disasm, &debug_displays, nullptr);
-        exec->execute();
-        
-        // Print the output buffer to stdout (you can remove this or redirect as needed)
-        const auto& output = exec->getOutput();
-        for (const auto& line : output) {
+        const auto &output = monitor.execute(command);
+        for (const auto &line : output) {
             std::cout << line << std::endl;
         }
-        
-        delete exec;
-        delete cmd;
     }
     return 0;
 }

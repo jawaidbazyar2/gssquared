@@ -363,8 +363,8 @@ add_library(gs2_devices_adb     src/devices/adb/keygloo.cpp )
 
 add_library(gs2_trace src/debugger/trace.cpp src/debugger/trace_opcodes.cpp)
 
-add_library(gs2_debugger  src/debugger/debugwindow.cpp src/debugger/MonitorCommand.cpp
-    src/debugger/ExecuteCommand.cpp src/debugger/MemoryWatch.cpp src/debugger/disasm.cpp
+add_library(gs2_debugger  src/debugger/debugwindow.cpp src/debugger/Monitor.cpp
+    src/debugger/MemoryWatch.cpp src/debugger/disasm.cpp
     src/debugger/DebugProtocolServer.cpp src/debugger/BreakpointTable.cpp)
 
 add_library(gs2_mmu src/mmus/mmu.cpp src/mmus/mmu_ii.cpp src/mmus/mmu_iie.cpp src/mmus/mmu_iigs.cpp)

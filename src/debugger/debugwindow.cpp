@@ -13,8 +13,6 @@
 #include "ui/UIContext.hpp"
 #include "ui/Button.hpp"
 #include "ui/TextInput.hpp"
-#include "debugger/ExecuteCommand.hpp"
-#include "debugger/MonitorCommand.hpp"
 #include "debugger/disasm.hpp"
 
 debug_window_t::debug_window_t(computer_t *computer) {
@@ -216,16 +214,19 @@ bool debug_window_t::needs_breakpoint_checks() const {
     return false;
 }
 
-void debug_window_t::execute_command(const std::string& command) {
-    MonitorCommand *cmd = new MonitorCommand(command);
-    cmd->print();
+void debug_window_t::set_mmu(MMU *mmu) {
+    this->mmu = mmu;
+    monitor_.bind(mmu, &memory_watches, computer->breakpoints, disasm, &debug_displays,
+                  cpu ? cpu->trace_buffer : nullptr);
+}
 
+void debug_window_t::execute_command(const std::string& command) {
     int num_mem_watches = memory_watches.size();
     int num_debug_displays = debug_displays.size();
-    ExecuteCommand *exec = new ExecuteCommand(mmu, cmd, &memory_watches, computer->breakpoints, disasm,
-                                              &debug_displays, cpu->trace_buffer);
-    exec->execute();
-    
+
+    monitor_.bind(mmu, &memory_watches, computer->breakpoints, disasm, &debug_displays, cpu->trace_buffer);
+    const auto &output = monitor_.execute(command);
+
     mon_history.push_back(command); // put into the scrollback
     if (mon_history.size() > 10) {
         mon_history.erase(mon_history.begin());
@@ -234,15 +235,11 @@ void debug_window_t::execute_command(const std::string& command) {
 
     mon_display_buffer.push_back("> " + command);
 
-    // Print the output buffer to stdout (you can remove this or redirect as needed)
-    const auto& output = exec->getOutput();
-    for (const auto& line : output) {
+    for (const auto &line : output) {
         std::cout << line << std::endl;
         mon_display_buffer.push_back(line);
     }
     mon_textinput->clear_edit();
-    delete exec;
-    delete cmd;
 
     if (num_mem_watches != memory_watches.size()) {
         // memory watch list changed, so we need to re-render the memory pane
@@ -586,6 +583,10 @@ void debug_window_t::render() {
 
     // end of update
 
+    // Step controls belong to the Trace pane; hide them when Trace is off
+    // so they don't draw into whatever pane is to the right.
+    step_container->set_visible(panel_visible[DEBUG_PANEL_TRACE] != 0);
+
     ui_ctx.color(0x000000FF);
     SDL_RenderClear(renderer);
 
@@ -819,6 +820,7 @@ bool debug_window_t::is_open() {
 void debug_window_t::set_open() {
     disasm = new Disassembler(mmu, cpu->cpu_type); // used in monitor pane
     step_disasm = new Disassembler(mmu, cpu->cpu_type); // used in trace pane
+    monitor_.bind(mmu, &memory_watches, computer->breakpoints, disasm, &debug_displays, cpu->trace_buffer);
     window_open = true;
     computer->video_system->show(window);
     computer->video_system->raise(window);
@@ -834,6 +836,7 @@ void debug_window_t::set_closed() {
     disasm = nullptr;
     delete step_disasm;
     step_disasm = nullptr;
+    monitor_.bind(mmu, &memory_watches, computer->breakpoints, nullptr, &debug_displays, cpu->trace_buffer);
 }
 
 void debug_window_t::resize_window() {
