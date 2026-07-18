@@ -27,6 +27,8 @@ enum mon_cmd_type_t {
     MON_CMD_NOWATCH,
     MON_CMD_HELP,
     MON_CMD_BP,
+    MON_CMD_BPD,
+    MON_CMD_BPI,
     MON_CMD_NOBP,
     MON_CMD_LIST,
     MON_CMD_MAP,

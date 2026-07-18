@@ -58,6 +58,8 @@ mon_cmd_type_t MonitorCommand::lookup_cmd(const std::string &cmd) {
     if (cmd == "nowatch") return MON_CMD_NOWATCH;
     if (cmd == "help") return MON_CMD_HELP;
     if (cmd == "bp") return MON_CMD_BP;
+    if (cmd == "bpd") return MON_CMD_BPD;
+    if (cmd == "bpi") return MON_CMD_BPI;
     if (cmd == "nobp") return MON_CMD_NOBP;
     if (cmd == "list") return MON_CMD_LIST;
     if (cmd == "l") return MON_CMD_LIST;

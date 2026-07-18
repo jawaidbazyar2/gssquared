@@ -8,6 +8,45 @@
 #include "debugger/trace.hpp"
 #include <algorithm>
 
+namespace {
+
+bool parse_bp_addr_len(const mon_node_entry_t &node, uint32_t *address, uint32_t *length) {
+    if (node.type == MON_NODE_TYPE_RANGE) {
+        *address = node.val_range.lo;
+        *length = (node.val_range.hi >= node.val_range.lo)
+                      ? (node.val_range.hi - node.val_range.lo + 1)
+                      : 1;
+        return true;
+    }
+    if (node.type == MON_NODE_TYPE_NUMBER) {
+        *address = node.val_number;
+        *length = 1;
+        return true;
+    }
+    return false;
+}
+
+bool parse_bp_access(const mon_node_entry_t &node, uint8_t *access) {
+    if (node.type != MON_NODE_TYPE_COMMAND) {
+        return false;
+    }
+    if (node.val_string == "r") {
+        *access = BP_ACCESS_R;
+        return true;
+    }
+    if (node.val_string == "w") {
+        *access = BP_ACCESS_W;
+        return true;
+    }
+    if (node.val_string == "rw") {
+        *access = BP_ACCESS_RW;
+        return true;
+    }
+    return false;
+}
+
+} // namespace
+
 ExecuteCommand::ExecuteCommand(MMU *mmu, MonitorCommand *cmd, MemoryWatch *watches, BreakpointTable *breakpoints,
                                Disassembler *disasm, std::vector<std::string> *debug_displays,
                                system_trace_buffer *trace_buffer) {
@@ -137,35 +176,82 @@ void ExecuteCommand::execute() {
         if (cmd->nodes.size() < 2) {
             addOutput("Current breakpoints:");
             for (const auto &e : breakpoints->entries()) {
+                const char *kind_name = "?";
+                if (e.kind == BP_KIND_EXEC) {
+                    kind_name = "exec";
+                } else if (e.kind == BP_KIND_DATA) {
+                    kind_name = "data";
+                } else if (e.kind == BP_KIND_IO) {
+                    kind_name = "io";
+                }
                 std::ostringstream line;
-                line << " >> id=" << e.id << " kind=" << (int)e.kind << " "
-                     << std::hex << std::uppercase << std::setfill('0')
-                     << std::setw(6) << e.address << " len=" << e.length
-                     << " flags=0x" << std::setw(2) << (int)e.flags;
+                line << "[" << e.id << "] " << kind_name << " "
+                     << std::hex << std::uppercase << e.address;
+                if (e.length > 1) {
+                    line << "." << (e.address + e.length - 1);
+                }
+                if (e.kind == BP_KIND_DATA || e.kind == BP_KIND_IO) {
+                    if (e.access == BP_ACCESS_R) {
+                        line << " r";
+                    } else if (e.access == BP_ACCESS_W) {
+                        line << " w";
+                    } else if (e.access == BP_ACCESS_RW) {
+                        line << " rw";
+                    }
+                }
                 addOutput(line.str());
             }
             return;
         }
-        auto &node1 = cmd->nodes[1];
+        uint32_t address = 0;
+        uint32_t length = 0;
+        if (!parse_bp_addr_len(cmd->nodes[1], &address, &length)) {
+            addOutput("Error: expected range as first argument");
+            return;
+        }
         bp_entry_t e{};
         e.kind = BP_KIND_EXEC;
         e.flags = BP_FLAG_ENABLED;
         e.access = BP_ACCESS_NONE;
         e.domain = 0;
+        e.address = address;
+        e.length = length;
         e.addr_mask = 0xFFFFFFFF;
         e.data_mask = 0xFF;
-        if (node1.type == MON_NODE_TYPE_RANGE) {
-            e.address = node1.val_range.lo;
-            e.length = (node1.val_range.hi >= node1.val_range.lo)
-                           ? (node1.val_range.hi - node1.val_range.lo + 1)
-                           : 1;
-        } else if (node1.type == MON_NODE_TYPE_NUMBER) {
-            e.address = node1.val_number;
-            e.length = 1;
+        const char *err = nullptr;
+        uint32_t id = breakpoints->add(e, &err);
+        if (!id) {
+            addFormattedOutput("Error: %s", err ? err : "failed to set breakpoint");
         } else {
+            addFormattedOutput("Breakpoint id=%u set", id);
+        }
+    }
+    if (breakpoints && (node0.type == MON_NODE_TYPE_COMMAND)
+        && (node0.val_cmd == MON_CMD_BPD || node0.val_cmd == MON_CMD_BPI)) {
+        if (cmd->nodes.size() < 3) {
+            addOutput("Error: expected address/range and access (r|w|rw)");
+            return;
+        }
+        uint32_t address = 0;
+        uint32_t length = 0;
+        uint8_t access = BP_ACCESS_NONE;
+        if (!parse_bp_addr_len(cmd->nodes[1], &address, &length)) {
             addOutput("Error: expected range as first argument");
             return;
         }
+        if (!parse_bp_access(cmd->nodes[2], &access)) {
+            addOutput("Error: expected access r|w|rw");
+            return;
+        }
+        bp_entry_t e{};
+        e.kind = (node0.val_cmd == MON_CMD_BPD) ? BP_KIND_DATA : BP_KIND_IO;
+        e.flags = BP_FLAG_ENABLED;
+        e.access = access;
+        e.domain = 0;
+        e.address = address;
+        e.length = length;
+        e.addr_mask = 0xFFFFFFFF;
+        e.data_mask = 0xFF;
         const char *err = nullptr;
         uint32_t id = breakpoints->add(e, &err);
         if (!id) {
@@ -206,10 +292,12 @@ void ExecuteCommand::execute() {
         addOutput(disasm->disassemble(30));
     }
     if ((node0.type == MON_NODE_TYPE_COMMAND) && (node0.val_cmd == MON_CMD_HELP)) {
-        addOutput("watch range_lo:range_hi      - watch memory range");
+        addOutput("watch range_lo.range_hi      - watch memory range");
         addOutput("watch                        - list watches");
         addOutput("nowatch address              - remove watch");
-        addOutput("bp range_lo:range_hi         - set breakpoint");
+        addOutput("bp range_lo.range_hi         - set exec breakpoint");
+        addOutput("bpd addr|lo.hi r|w|rw        - data breakpoint");
+        addOutput("bpi addr|lo.hi r|w|rw        - I/O breakpoint ($C0xx)");
         addOutput("bp                           - list breakpoints");
         addOutput("nobp address                 - remove breakpoint");
         addOutput("set address value [value...] - set memory values");
