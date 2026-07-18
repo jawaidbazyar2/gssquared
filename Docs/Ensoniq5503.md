@@ -17,7 +17,7 @@ Oscillators can be paired in different way:
 * tag-team (payback alternating back and forth between the two oscillators)
 * etc.
 
-Oscillators are mapped to channels / voices, and to one of 8 analog output channels. These are time division multiplexed using CA0-CA2 pins. The apple iigs built-in sound squashed this into one mono channel; there are stereo cards and 4-ch quadrophonic cards available. Nothiing with 8. So effectively, we will target two channel and likely divide using CA0 (lowest bit) of channel assignment.
+Oscillators are mapped to channels / voices, and to one of 8 analog output channels. These are time division multiplexed using CA0-CA2 pins. The apple iigs built-in sound squashed this into one mono channel; there are stereo cards and 4-ch quadrophonic cards available. Nothing with 8. We target two-channel stereo-card output and decode with CA0 (lowest bit of channel assignment), per Apple IIgs Tech Note #19: odd DOC channels → left, even → right (software should use channel 0 for right and channel 1 for left).
 
 The other thing here is that we might be modifying sound RAM during playback. This implies a per-cycle generation of output audio.
 

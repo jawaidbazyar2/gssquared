@@ -19,14 +19,16 @@ struct ensoniq_state_t {
     uint8_t soundadrl = 0;  // DOC register address (only low byte used)
     uint8_t soundadrh = 0;  // High byte (stored but not used for DOC addressing)
     int16_t *audio_buffer = nullptr;
-    // DOC samples accumulate here; flushed to SDL once per video frame after
-    // resampling to the device rate (avoids SDL chunk-resampling 27117→48k).
+    // Interleaved DOC frames (L,R,...) accumulate here; flushed to SDL once per
+    // video frame after resampling to the device rate (avoids SDL chunk-
+    // resampling 27117→48k).
     int16_t *sdl_staging = nullptr;
-    uint32_t sdl_staging_count = 0;
-    static constexpr uint32_t SDL_STAGING_CAP = 16384; // >1 frame even at max DOC rate
+    uint32_t sdl_staging_count = 0;  // staged DOC frames (not int16 samples)
+    static constexpr int CHANNELS = 2; // TN #19 stereo card (odd=L, even=R)
+    static constexpr uint32_t SDL_STAGING_CAP = 16384; // frames; >1 frame even at max DOC rate
     int16_t *sdl_resample_buf = nullptr;
     uint32_t sdl_device_rate = 48000;
-    double resample_pos = 0.0;       // fractional DOC-sample index carried across frames
+    double resample_pos = 0.0;       // fractional DOC-frame index carried across frames
     AudioSystem *audio_system = nullptr;
     SDL_AudioStream *stream = nullptr;
     double frame_rate = 59.9227;  // Apple II frame rate

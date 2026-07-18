@@ -19,16 +19,58 @@
 // Fast-forward / catch-up
 //==============================================================================
 
-// Resample staged DOC samples to the host device rate and hand them to SDL in a
-// single Put (normally once per video frame). Feeding SDL small chunks at the raw
-// DOC rate (e.g. 27117 Hz) made SDL's internal chunk resampler glitch audibly, so
-// the stream runs 1:1 at the device rate and we do the rate conversion here.
+// Stereo-card path maps even DOC channels → right and odd → left (TN #19).
+// Mono software usually parks every voice on one channel (often 0 / right), so
+// only one SDL side gets energy. If all non-halted enabled oscillators share the
+// same CA0, mirror that side onto both L and R.
+static void ensoniq_mirror_mono_to_stereo(ensoniq_state_t *st, uint32_t n_frames) {
+    constexpr int ch = ensoniq_state_t::CHANNELS;
+    if (ch != 2 || !st->chip || !st->audio_buffer || n_frames == 0) {
+        return;
+    }
+
+    const int oscs = st->chip->get_oscsenabled();
+    int seen = 0;
+    int ca0 = 0;
+    for (int o = 0; o < oscs; o++) {
+        Oscillator *osc = st->chip->get_oscillator(o);
+        if (osc->control & 1) {
+            continue; // halted
+        }
+        const int osc_ca0 = (osc->control >> 4) & 1;
+        if (seen == 0) {
+            ca0 = osc_ca0;
+            seen = 1;
+        } else if (osc_ca0 != ca0) {
+            return; // true stereo — leave L/R alone
+        }
+    }
+    if (seen == 0) {
+        return; // silence
+    }
+
+    // Same flip as ES5503::generate_samples: odd→L(0), even→R(1).
+    const int live = ca0 ^ 1;
+    for (uint32_t i = 0; i < n_frames; i++) {
+        const int16_t s = st->audio_buffer[i * ch + live];
+        st->audio_buffer[i * ch + 0] = s;
+        st->audio_buffer[i * ch + 1] = s;
+    }
+}
+
+// Resample staged DOC stereo frames to the host device rate and hand them to SDL
+// in a single Put (normally once per video frame). Feeding SDL small chunks at
+// the raw DOC rate (e.g. 27117 Hz) made SDL's internal chunk resampler glitch
+// audibly, so the stream runs 1:1 at the device rate and we do the rate
+// conversion here. Staging/resample counts are in frames; buffers are interleaved
+// [L,R,L,R,...].
 static void ensoniq_flush_sdl_staging(ensoniq_state_t *st) {
     if (!st->stream || !st->sdl_staging || st->sdl_staging_count == 0) {
         return;
     }
 
-    const uint32_t src_n = st->sdl_staging_count;
+    constexpr int ch = ensoniq_state_t::CHANNELS;
+    const uint32_t src_n = st->sdl_staging_count; // DOC frames
     const uint32_t src_rate = st->chip->calculate_output_rate();
     const uint32_t dst_rate = st->sdl_device_rate ? st->sdl_device_rate : 48000;
     if (src_rate == 0 || dst_rate == 0 || !st->sdl_resample_buf) {
@@ -42,12 +84,12 @@ static void ensoniq_flush_sdl_staging(ensoniq_state_t *st) {
     // 1024 frames); if the queue dips below that, the callback pads with silence,
     // which is an audible dropout. Prefill on (re)start, then trim the resample
     // ratio ±0.5% to hold the target depth.
-    const int target_bytes = (int)(dst_rate * sizeof(int16_t) * 60 / 1000);
+    const int target_bytes = (int)(dst_rate * ch * sizeof(int16_t) * 60 / 1000);
     if (queued_now == 0) {
-        uint32_t pre = dst_rate / 20;  // 50ms of silence
+        uint32_t pre = dst_rate / 20;  // 50ms of silence (frames)
         if (pre > ensoniq_state_t::SDL_STAGING_CAP) pre = ensoniq_state_t::SDL_STAGING_CAP;
-        std::memset(st->sdl_resample_buf, 0, pre * sizeof(int16_t));
-        SDL_PutAudioStreamData(st->stream, st->sdl_resample_buf, pre * sizeof(int16_t));
+        std::memset(st->sdl_resample_buf, 0, pre * ch * sizeof(int16_t));
+        SDL_PutAudioStreamData(st->stream, st->sdl_resample_buf, (int)(pre * ch * sizeof(int16_t)));
     }
     double err = (double)(target_bytes - queued_now) / (double)target_bytes;
     if (err > 1.0) err = 1.0;
@@ -56,17 +98,21 @@ static void ensoniq_flush_sdl_staging(ensoniq_state_t *st) {
 
     // Linear resample DOC→device; fractional read position carries across frames.
     const double step = (double)src_rate / ((double)dst_rate * ratio);
-    uint32_t out_n = 0;
+    uint32_t out_n = 0; // output frames
     const uint32_t out_cap = ensoniq_state_t::SDL_STAGING_CAP;
     double pos = st->resample_pos;
 
     while (out_n < out_cap && pos < (double)src_n) {
         const uint32_t i0 = (uint32_t)pos;
         const double frac = pos - (double)i0;
-        const int16_t s0 = st->sdl_staging[i0];
-        const int16_t s1 = (i0 + 1 < src_n) ? st->sdl_staging[i0 + 1] : s0;
-        st->sdl_resample_buf[out_n++] =
-            (int16_t)((double)s0 + ((double)s1 - (double)s0) * frac);
+        const uint32_t i1 = (i0 + 1 < src_n) ? i0 + 1 : i0;
+        for (int c = 0; c < ch; c++) {
+            const int16_t s0 = st->sdl_staging[i0 * ch + c];
+            const int16_t s1 = st->sdl_staging[i1 * ch + c];
+            st->sdl_resample_buf[out_n * ch + c] =
+                (int16_t)((double)s0 + ((double)s1 - (double)s0) * frac);
+        }
+        out_n++;
         pos += step;
     }
     st->resample_pos = pos - (double)src_n;
@@ -75,7 +121,8 @@ static void ensoniq_flush_sdl_staging(ensoniq_state_t *st) {
     }
 
     if (out_n > 0) {
-        SDL_PutAudioStreamData(st->stream, st->sdl_resample_buf, out_n * sizeof(int16_t));
+        SDL_PutAudioStreamData(st->stream, st->sdl_resample_buf,
+                               (int)(out_n * ch * sizeof(int16_t)));
     }
     st->sdl_staging_count = 0;
 }
@@ -133,11 +180,18 @@ static void ensoniq_catch_up(ensoniq_state_t *st, uint64_t now_c14m) {
     }
     st->c14m_accum -= samples_due * c14m_per_sample;
 
+    constexpr int ch = ensoniq_state_t::CHANNELS;
     const uint32_t BATCH = 256;
     while (samples_due > 0) {
         uint32_t n = (samples_due > BATCH) ? BATCH : (uint32_t)samples_due;
         st->chip->generate_samples(st->audio_buffer, n);
+        ensoniq_mirror_mono_to_stereo(st, n);
 
+        // TEMP (MAME-like / stereo-card test): do not apply $C03C volume to DOC
+        // output. Real motherboard amp uses this nibble; stereo cards tap DOC
+        // channels pre-volume, and Alien Mind stereo sets the nibble to 0.
+        // Also avoids double attenuation with host volume. Restore easily.
+#if 0
         // Apply the $C03C volume nibble at emulated time. Routing it through
         // SDL_SetAudioStreamGain applied volume changes to whole ~23ms callback
         // chunks at playback time, smearing sub-ms hardware volume dips into
@@ -145,6 +199,7 @@ static void ensoniq_catch_up(ensoniq_state_t *st, uint64_t now_c14m) {
         // firmware/demos flip the nibble (e.g. 15→5→15 for 0.6–7.7ms) around DOC
         // access bursts, and applying that instantly chops the waveform into
         // low-frequency distortion; the real analog volume path smooths it.
+        // One gain step per DOC frame; same gain applied to L and R.
         {
             const float target = (float)st->audio_system->get_volume(); // 0..15
             if (st->vol_smooth < 0.0f) st->vol_smooth = target;
@@ -153,14 +208,19 @@ static void ensoniq_catch_up(ensoniq_state_t *st, uint64_t now_c14m) {
             float g = st->vol_smooth;
             for (uint32_t i = 0; i < n; i++) {
                 g += alpha * (target - g);
-                st->audio_buffer[i] = (int16_t)((float)st->audio_buffer[i] * g * (1.0f / 16.0f));
+                const float scale = g * (1.0f / 16.0f);
+                for (int c = 0; c < ch; c++) {
+                    st->audio_buffer[i * ch + c] =
+                        (int16_t)((float)st->audio_buffer[i * ch + c] * scale);
+                }
             }
             st->vol_smooth = g;
         }
+#endif
 
-        // Queue DOC samples only — SDL is fed once per frame in generate_ensoniq_frame.
+        // Queue DOC frames only — SDL is fed once per frame in generate_ensoniq_frame.
         if (st->sdl_staging) {
-            uint32_t off = 0;
+            uint32_t off = 0; // frames into audio_buffer
             while (off < n) {
                 uint32_t space = ensoniq_state_t::SDL_STAGING_CAP - st->sdl_staging_count;
                 if (space == 0) {
@@ -171,13 +231,14 @@ static void ensoniq_catch_up(ensoniq_state_t *st, uint64_t now_c14m) {
                 }
                 uint32_t take = n - off;
                 if (take > space) take = space;
-                std::memcpy(st->sdl_staging + st->sdl_staging_count,
-                            st->audio_buffer + off, take * sizeof(int16_t));
+                std::memcpy(st->sdl_staging + st->sdl_staging_count * ch,
+                            st->audio_buffer + off * ch, take * ch * sizeof(int16_t));
                 st->sdl_staging_count += take;
                 off += take;
             }
         } else {
-            SDL_PutAudioStreamData(st->stream, st->audio_buffer, n * sizeof(int16_t));
+            SDL_PutAudioStreamData(st->stream, st->audio_buffer,
+                                   (int)(n * ch * sizeof(int16_t)));
         }
         samples_due -= n;
     }
@@ -418,17 +479,18 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
 
     st->audio_system = computer->audio_system;
 
-    // Allocate buffer large enough for maximum samples per frame
-    // Max rate ~298kHz at 59.92 fps = ~4972 samples, add some headroom
-    st->audio_buffer = new int16_t[16384];
-    st->sdl_staging = new int16_t[ensoniq_state_t::SDL_STAGING_CAP];
-    st->sdl_resample_buf = new int16_t[ensoniq_state_t::SDL_STAGING_CAP];
+    // Allocate buffers for interleaved stereo frames (L,R). Cap is in frames;
+    // max DOC rate ~298kHz at 59.92 fps ≈ 4972 frames/frame, with headroom.
+    constexpr int ch = ensoniq_state_t::CHANNELS;
+    st->audio_buffer = new int16_t[16384 * ch];
+    st->sdl_staging = new int16_t[ensoniq_state_t::SDL_STAGING_CAP * ch];
+    st->sdl_resample_buf = new int16_t[ensoniq_state_t::SDL_STAGING_CAP * ch];
     st->sdl_staging_count = 0;
     st->resample_pos = 0.0;
     
-    // Create and initialize ES5503 chip
+    // Create and initialize ES5503 chip (2 host channels = TN #19 stereo card)
     st->chip = new ES5503();
-    st->chip->init(7159090, 48000, 1);  // Apple IIgs clock rate, 48kHz stereo
+    st->chip->init(7159090, 48000, ch);
     st->chip->set_wave_memory(st->doc_ram);
     st->computer = computer;
     st->clock = computer->clock;
@@ -458,7 +520,7 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     // apply_volume=false: the $C03C volume is applied per-sample at generation
     // time in ensoniq_catch_up (SDL stream gain acts at playback time, which
     // smears sub-ms hardware volume dips across whole callback buffers).
-    st->stream = st->audio_system->create_stream(st->sdl_device_rate, 1, SDL_AUDIO_S16LE, false);
+    st->stream = st->audio_system->create_stream(st->sdl_device_rate, ch, SDL_AUDIO_S16LE, false);
     st->chip->set_sdl_stream(st->stream);
 
     // Initialize the catch-up time base to "now".
@@ -469,7 +531,7 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     SDL_AudioSpec spec;
     spec.freq = es5503_output_rate;
     spec.format = SDL_AUDIO_S16LE;
-    spec.channels = 1;
+    spec.channels = ch;
 
     SDL_AudioStream *stream = SDL_CreateAudioStream(&spec, NULL);
     if (!stream) {

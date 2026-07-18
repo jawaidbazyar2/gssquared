@@ -163,8 +163,14 @@ void ES5503::generate_samples(int16_t *buffer, int num_samples) {
         for (int osc = 0; osc < m_oscsenabled; osc++) {
             Oscillator *pOsc = &m_oscillators[osc];
 
-            // Check if oscillator is enabled and assigned to this channel
-            if (!(pOsc->control & 1) && ((pOsc->control >> 4) & (m_output_channels - 1)) == chan) {
+            // Channel select is control[7:4] (CA0–CA3). With 2 host outputs we
+            // decode CA0 only. Apple TN #19 stereo cards: odd → left, even → right
+            // (interleaved [L,R]), so flip CA0 when mapping to the mix index.
+            int assigned = (pOsc->control >> 4) & (m_output_channels - 1);
+            if (m_output_channels == 2) {
+                assigned ^= 1;
+            }
+            if (!(pOsc->control & 1) && assigned == chan) {
                 uint32_t wtptr = pOsc->wavetblpointer & wavemasks[pOsc->wavetblsize];
                 uint32_t acc = pOsc->accumulator;
                 const uint16_t wtsize = pOsc->wtsize - 1;
