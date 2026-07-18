@@ -46,7 +46,9 @@ enum adb_keycode_t {
     ADB_X = 0x07,
     ADB_C = 0x08,
     ADB_V = 0x09,
-    // 0x0A unused
+    // ISO 105 key right of Left Shift (HID 0x64 / SDL_SCANCODE_NONUSBACKSLASH).
+    // Not a classic ADB code; used so host <> is distinct from top-left grave (@/#).
+    ADB_ISO_102 = 0x0A,
     ADB_B = 0x0B,
     ADB_Q = 0x0C,
     ADB_W = 0x0D,
@@ -429,8 +431,8 @@ class ADB_Keyboard : public ADB_Device
         sdl_to_adb_key_map[KEY_COMMAND_L] = ADB_COMMAND;
         sdl_to_adb_key_map[KEY_COMMAND_R] = ADB_COMMAND;
         sdl_to_adb_key_map[KEY_RESET&(SDL_SCANCODE_COUNT-1)] = ADB_POWER;
-        // ISO AZERTY <> key; IIgs French puts <> on the US-grave ADB position.
-        sdl_to_adb_key_map[SDL_SCANCODE_NONUSBACKSLASH] = ADB_GRAVE;
+        // ISO <> key (HID 0x64). Distinct from GRAVE (pos 1,1 → @/# on French).
+        sdl_to_adb_key_map[SDL_SCANCODE_NONUSBACKSLASH] = ADB_ISO_102;
     }
 
     void reset(uint8_t cmd, uint8_t reg) override { }

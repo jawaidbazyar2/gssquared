@@ -347,6 +347,7 @@ class KeyGloo
                         case '.': ascii = '>'; break;
                         case '/': ascii = '?'; break;
                         case '`': ascii = '~'; break;
+                        case '<': ascii = '>'; break; // ISO 102 (HID 0x64)
                     }
                 }
             } 
@@ -366,6 +367,8 @@ class KeyGloo
             }
             if (mods.shift) {
                 if (ascii >= 'a' && ascii <= 'z') ascii = ascii - 'a' + 'A';
+                else if (code == ADB_GRAVE) ascii = '#'; // pos 1,1 (@/#); '@'==à byte in FR charset
+                else if (code == ADB_ISO_102) ascii = '>'; // HID 0x64
                 else {
                     switch (ascii) {
                         case '&': ascii = '1'; break;
@@ -377,7 +380,7 @@ class KeyGloo
                         case ADB_FR_E_GRAVE: ascii = '7'; break; // è
                         case '!': ascii = '8'; break;
                         case ADB_FR_C_CEDILLA: ascii = '9'; break; // ç
-                        case ADB_FR_A_GRAVE: ascii = '0'; break; // à
+                        case ADB_FR_A_GRAVE: ascii = '0'; break; // à (number row)
                         case ')': ascii = ADB_FR_DEGREE; break; // °
                         case '-': ascii = '_'; break;
                         case '^': ascii = ADB_FR_DIAERESIS; break; // ¨
@@ -387,7 +390,6 @@ class KeyGloo
                         case ';': ascii = '.'; break;
                         case ':': ascii = '/'; break;
                         case '=': ascii = '+'; break;
-                        case '<': ascii = '>'; break;
                         case '`': ascii = ADB_FR_POUND; break; // £
                     }
                 }

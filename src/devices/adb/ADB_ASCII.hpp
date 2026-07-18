@@ -27,7 +27,7 @@ const uint8_t adb_ascii_us[256] = {
     'x', //ADB_X = 0x07,
     'c', //ADB_C = 0x08,
     'v', //ADB_V = 0x09,
-    0x00, // 0x0A unused
+    '<', // ADB_ISO_102 = 0x0A (HID 0x64; unused on ANSI)
     'b', //ADB_B = 0x0B,
     'q', //ADB_Q = 0x0C,
     'w', //ADB_W = 0x0D,
@@ -127,7 +127,7 @@ const uint8_t adb_ascii_fr[256] = {
     'x', // ADB_X = 0x07,
     'c', // ADB_C = 0x08,
     'v', // ADB_V = 0x09,
-    0x00, // 0x0A unused
+    '<', // ADB_ISO_102 = 0x0A (HID 0x64 → < / >)
     'b', // ADB_B = 0x0B,
     'a', // ADB_Q = 0x0C (US Q position → French A)
     'z', // ADB_W = 0x0D (US W position → French Z)
@@ -168,7 +168,7 @@ const uint8_t adb_ascii_fr[256] = {
     ':', // ADB_PERIOD = 0x2F, : / /
     0x09, // ADB_TAB = 0x30,
     ' ', // ADB_SPACE = 0x31,
-    '<', // ADB_GRAVE = 0x32, < / >
+    '@', // ADB_GRAVE = 0x32, host pos 1,1 → @ / #
     0x7F, // ADB_DELETE = 0x33,
     0x00, // 0x34 unused
     0x1B, // ADB_ESCAPE = 0x35,
