@@ -28,6 +28,7 @@
 #include "device_info.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
 #include "paths.hpp"
+#include "util/SystemSettings.hpp"
 #include "util/toml.hpp"
 #include "util/uuid.hpp"
 
@@ -979,7 +980,8 @@ void SystemConfig::ensure_default_system_configs() {
         return;
     }
 
-    Paths::set_file_dialog_dir_if_unset(dest_dir.string());
+    SystemSettings::instance().set_file_dialog_dir_if_unset(FileDialogKind::Config,
+                                                            dest_dir.string());
 
     std::string src_str;
     Paths::calc_base(src_str, "gs2");

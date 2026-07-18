@@ -683,7 +683,7 @@ static void system_config_dialog_callback(void *userdata, const char *const *fil
         return;
     }
 
-    Paths::set_last_file_dialog_dir(filelist[0]);
+    SystemSettings::instance().remember_file_dialog_selection(FileDialogKind::Config, filelist[0]);
 
     std::string error;
     if (!apply_system_config_file(state, filelist[0], error)) {
@@ -714,7 +714,8 @@ static void open_system_config_dialog(GS2AppState *state, bool edit_mode = false
 #if defined(__EMSCRIPTEN__)
     web_open_file_dialog(system_config_dialog_callback, data, ".gs2");
 #else
-    const std::string& last_path = Paths::get_last_file_dialog_dir();
+    const std::string last_path =
+        SystemSettings::instance().get_file_dialog_default_location(FileDialogKind::Config);
     SDL_ShowOpenFileDialog(
         system_config_dialog_callback,
         data,
@@ -1032,8 +1033,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     gs2_app_values.pref_path = get_pref_path();
     printf("pref_path: %s\n", gs2_app_values.pref_path.c_str());
 
-    SystemConfig::ensure_default_system_configs();
+    // Load app settings before seeding defaults so dialog-path seed cannot overwrite
+    // an existing system_settings.toml with empty in-memory state.
     SystemSettings::instance().load();
+    SystemConfig::ensure_default_system_configs();
 
     // Parse CLI whenever there are arguments. console_mode (isatty) is still used
     // elsewhere; without this, scripted launches (no TTY) would ignore --debug / -p / etc.

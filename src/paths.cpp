@@ -34,7 +34,44 @@ std::string Paths::pref_path;
 std::string Paths::home_folder;
 std::string Paths::docs_folder;
 std::string Paths::desktop_folder;
-std::string Paths::last_file_dialog_dir;
+
+namespace {
+
+/** Directory portion of a stored path (file → parent; directory → itself). */
+std::string path_as_directory(const std::string& stored) {
+    if (stored.empty()) {
+        return {};
+    }
+    std::error_code ec;
+    std::filesystem::path p(stored);
+    if (std::filesystem::is_directory(p, ec)) {
+        return p.lexically_normal().string();
+    }
+    std::filesystem::path dir = p.parent_path();
+    if (dir.empty()) {
+        p = std::filesystem::weakly_canonical(std::filesystem::absolute(p, ec), ec);
+        dir = p.parent_path();
+    }
+    if (dir.empty()) {
+        return {};
+    }
+    return dir.lexically_normal().string();
+}
+
+#if defined(_WIN32)
+std::string ensure_trailing_sep(std::string dir) {
+    if (dir.empty()) {
+        return dir;
+    }
+    const char last = dir.back();
+    if (last != '\\' && last != '/') {
+        dir.push_back('\\');
+    }
+    return dir;
+}
+#endif
+
+}  // namespace
 
 /**
  * On a Mac, running as a bundle, the base path is BundlePath/Resources. 
@@ -162,43 +199,36 @@ std::string Paths::make_screenshot_path() {
     return path;
 }
 
-const std::string& Paths::get_last_file_dialog_dir() {
-    // If never set, return documents folder as a reasonable default
-#if defined(__linux__)
-    if (last_file_dialog_dir.empty()) {
-        return docs_folder;
+std::string Paths::adapt_open_dialog_location(const std::string& stored_path) {
+    if (stored_path.empty()) {
+        return {};
     }
+
+#if defined(_WIN32)
+    // Windows: full file path pre-fills the name; directory-only needs a trailing sep.
+    std::error_code ec;
+    if (std::filesystem::is_directory(std::filesystem::path(stored_path), ec) ||
+        stored_path.back() == '\\' || stored_path.back() == '/') {
+        return ensure_trailing_sep(path_as_directory(stored_path));
+    }
+    return stored_path;
+#else
+    // macOS / Linux open dialogs take a folder.
+    return path_as_directory(stored_path);
 #endif
-    return last_file_dialog_dir;
 }
 
-void Paths::set_last_file_dialog_dir(const std::string& selected_path) {
-    if (selected_path.empty()) {
-        return;
-    }
-    // SDL_ShowOpenFileDialog default_location is a folder; store directory only, not the file name.
-    std::filesystem::path p(selected_path);
-    if (std::filesystem::is_directory(p)) {
-        last_file_dialog_dir = p.lexically_normal().string();
-        return;
-    }
-    std::filesystem::path dir = p.parent_path();
+std::string Paths::make_save_dialog_location(const std::string& last_config_path,
+                                            const std::string& suggested_filename) {
+    std::string dir = path_as_directory(last_config_path);
     if (dir.empty()) {
-        std::error_code ec;
-        p = std::filesystem::weakly_canonical(std::filesystem::absolute(p), ec);
-        dir = p.parent_path();
+        dir = ".";
     }
-    if (dir.empty()) {
-        return;
+    std::string name = suggested_filename;
+    if (name.empty()) {
+        name = "system.gs2";
     }
-    last_file_dialog_dir = dir.lexically_normal().string();
-}
-
-void Paths::set_file_dialog_dir_if_unset(const std::string& dir) {
-    if (!last_file_dialog_dir.empty() || dir.empty()) {
-        return;
-    }
-    last_file_dialog_dir = std::filesystem::path(dir).lexically_normal().string();
+    return (std::filesystem::path(dir) / name).lexically_normal().string();
 }
 
 bool Paths::is_directory(const std::string& filename) {

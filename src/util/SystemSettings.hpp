@@ -27,6 +27,9 @@ struct RecentConfigEntry {
     int64_t last_used = 0;  // unix seconds
 };
 
+/** Kind of file dialog whose last path is tracked in SystemSettings. */
+enum class FileDialogKind { Config, Disk };
+
 /**
  * App-level settings (PrefPath/system_settings.toml). Distinct from SystemConfig
  * machine profiles. Tracks recently/frequently opened config files and HUD /
@@ -38,6 +41,11 @@ class SystemSettings {
     bool hud_stats_ = false;
     bool hud_drives_ = true;
     bool disconnected_when_no_gamepad_ = false;
+
+    /** Last .gs2 open/save selection (full file path when known). */
+    std::string last_config_path_;
+    /** Last disk-image open selection (full file path when known). */
+    std::string last_disk_path_;
 
     SystemSettings() = default;
 
@@ -83,4 +91,25 @@ public:
     void toggle_hud_stats();
     void toggle_hud_drives();
     void toggle_disconnected_when_no_gamepad();
+
+    const std::string& last_config_path() const { return last_config_path_; }
+    const std::string& last_disk_path() const { return last_disk_path_; }
+
+    void set_last_config_path(const std::string& path);
+    void set_last_disk_path(const std::string& path);
+
+    /**
+     * Platform-adjusted default_location for SDL open dialogs.
+     * Falls back to Documents on Linux for Disk when unset.
+     */
+    std::string get_file_dialog_default_location(FileDialogKind kind) const;
+
+    /** Save-dialog default: last config directory + suggested_filename. */
+    std::string get_file_dialog_save_default_location(const std::string& suggested_filename) const;
+
+    /** Persist full selected/saved path for the given dialog kind. */
+    void remember_file_dialog_selection(FileDialogKind kind, const std::string& selected_path);
+
+    /** Seed a dialog kind with a directory only if that kind has no path yet. */
+    void set_file_dialog_dir_if_unset(FileDialogKind kind, const std::string& dir);
 };

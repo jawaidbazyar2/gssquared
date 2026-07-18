@@ -11,9 +11,9 @@
 #include "SelectButton.hpp"
 #include "Style.hpp"
 #include "TextInput.hpp"
-#include "paths.hpp"
 #include "platforms.hpp"
 #include "util/SystemConfig.hpp"
+#include "util/SystemSettings.hpp"
 #include "util/uuid.hpp"
 
 #if defined(__EMSCRIPTEN__)
@@ -441,7 +441,8 @@ void EditSystem::open_premount_dialog(storage_key_t key) {
         storage_key_t key = d->key;
         delete d;
         if (!filelist || !filelist[0]) return;
-        Paths::set_last_file_dialog_dir(filelist[0]);
+        SystemSettings::instance().remember_file_dialog_selection(FileDialogKind::Disk,
+                                                                  filelist[0]);
         editor->draft.set_mount(key.slot, key.drive, filelist[0]);
         editor->rebuild_ui_from_draft();
     };
@@ -449,7 +450,8 @@ void EditSystem::open_premount_dialog(storage_key_t key) {
 #if defined(__EMSCRIPTEN__)
     web_open_file_dialog(callback, data, ".do,.po,.woz,.dsk,.hdv,.2mg,.img");
 #else
-    const std::string& last_path = Paths::get_last_file_dialog_dir();
+    const std::string last_path =
+        SystemSettings::instance().get_file_dialog_default_location(FileDialogKind::Disk);
     SDL_ShowOpenFileDialog(callback, data, vs->window, filters,
                            sizeof(filters) / sizeof(SDL_DialogFileFilter),
                            last_path.empty() ? nullptr : last_path.c_str(), false);
@@ -460,15 +462,13 @@ std::string EditSystem::default_save_path() const {
     if (!draft.path().empty()) {
         return draft.path();
     }
-    const std::string& last = Paths::get_last_file_dialog_dir();
-    std::string dir = last.empty() ? std::string(".") : Paths::get_directory(last);
-    if (dir.empty()) dir = ".";
     std::string filename = draft.name();
     for (char& c : filename) {
         if (c == ' ') c = '_';
     }
     if (filename.empty()) filename = "system";
-    return dir + "/" + filename + ".gs2";
+    filename += ".gs2";
+    return SystemSettings::instance().get_file_dialog_save_default_location(filename);
 }
 
 bool EditSystem::write_draft_to_path(const std::string& path) {
@@ -525,8 +525,9 @@ void EditSystem::begin_save() {
         if (path.size() < 4 || path.substr(path.size() - 4) != ".gs2") {
             path += ".gs2";
         }
-        Paths::set_last_file_dialog_dir(path.c_str());
         if (editor->write_draft_to_path(path)) {
+            SystemSettings::instance().remember_file_dialog_selection(FileDialogKind::Config,
+                                                                      path);
             editor->result = EDIT_SAVED;
         }
     };
@@ -534,6 +535,8 @@ void EditSystem::begin_save() {
 #if defined(__EMSCRIPTEN__)
     // No browser save-dialog helper yet; write to the default path directly.
     if (write_draft_to_path(cb_data->default_path)) {
+        SystemSettings::instance().remember_file_dialog_selection(FileDialogKind::Config,
+                                                                  cb_data->default_path);
         result = EDIT_SAVED;
     }
     delete cb_data;

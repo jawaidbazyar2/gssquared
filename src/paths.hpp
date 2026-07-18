@@ -30,7 +30,6 @@ class Paths {
     static std::string docs_folder;
     static std::string home_folder;
     static std::string desktop_folder;
-    static std::string last_file_dialog_dir;
 
     public:
         static void initialize(bool console_mode);
@@ -41,11 +40,25 @@ class Paths {
         static void calc_desktop(std::string& return_path, std::string file);
         /** Full Desktop path for a new screenshot, e.g. ".../GS2 Screenshot 2026-07-17 14.30.05.png". */
         static std::string make_screenshot_path();
-        static const std::string& get_last_file_dialog_dir();
-        /** Directory of the last SDL_ShowOpenFileDialog selection (not the file name). */
-        static void set_last_file_dialog_dir(const std::string& selected_path);
-        /** Set the file-dialog start folder only if none has been chosen yet. */
-        static void set_file_dialog_dir_if_unset(const std::string& dir);
+
+        /**
+         * Platform-adjusted default_location for SDL open dialogs given a stored
+         * last path (file or directory). Empty input → empty output.
+         * Windows: full file path when known; directory with trailing sep otherwise.
+         * macOS/Linux: directory only.
+         */
+        static std::string adapt_open_dialog_location(const std::string& stored_path);
+
+        /**
+         * Build a save-dialog default path from a last config path (file or dir)
+         * and a suggested filename (e.g. "My_System.gs2").
+         */
+        static std::string make_save_dialog_location(const std::string& last_config_path,
+                                                    const std::string& suggested_filename);
+
+        /** Documents folder (set by initialize). */
+        static const std::string& documents_folder() { return docs_folder; }
+
         static bool is_directory(const std::string& filename);
         static bool ends_with(std::string_view s, std::string_view suffix) noexcept;
         static bool ends_with_icase(std::string_view s, std::string_view suffix) noexcept;

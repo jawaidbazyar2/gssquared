@@ -91,6 +91,8 @@ bool SystemSettings::load() {
     hud_stats_ = false;
     hud_drives_ = true;
     disconnected_when_no_gamepad_ = false;
+    last_config_path_.clear();
+    last_disk_path_.clear();
 
     const std::string path = settings_path();
     if (!file_exists(path)) {
@@ -132,6 +134,14 @@ bool SystemSettings::load() {
             disconnected_when_no_gamepad_ =
                 (*gc)["disconnected_when_no_gamepad"].value_or(false);
         }
+        if (const auto* fd = table["file_dialogs"].as_table()) {
+            if (const auto p = (*fd)["last_config_path"].value<std::string>()) {
+                last_config_path_ = *p;
+            }
+            if (const auto p = (*fd)["last_disk_path"].value<std::string>()) {
+                last_disk_path_ = *p;
+            }
+        }
     } catch (const toml::parse_error& err) {
         std::cerr << "Failed to parse system_settings.toml: " << err.what() << std::endl;
         recent_.clear();
@@ -164,6 +174,11 @@ bool SystemSettings::save() const {
     toml::table game_controller;
     game_controller.insert("disconnected_when_no_gamepad", disconnected_when_no_gamepad_);
     table.insert("game_controller", std::move(game_controller));
+
+    toml::table file_dialogs;
+    file_dialogs.insert("last_config_path", last_config_path_);
+    file_dialogs.insert("last_disk_path", last_disk_path_);
+    table.insert("file_dialogs", std::move(file_dialogs));
 
     const std::string path = settings_path();
     try {
@@ -217,6 +232,74 @@ void SystemSettings::toggle_hud_drives() {
 void SystemSettings::toggle_disconnected_when_no_gamepad() {
     disconnected_when_no_gamepad_ = !disconnected_when_no_gamepad_;
     save();
+}
+
+void SystemSettings::set_last_config_path(const std::string& path) {
+    const std::string normalized = normalize_path(path);
+    if (normalized.empty() || last_config_path_ == normalized) {
+        return;
+    }
+    last_config_path_ = normalized;
+    save();
+}
+
+void SystemSettings::set_last_disk_path(const std::string& path) {
+    const std::string normalized = normalize_path(path);
+    if (normalized.empty() || last_disk_path_ == normalized) {
+        return;
+    }
+    last_disk_path_ = normalized;
+    save();
+}
+
+std::string SystemSettings::get_file_dialog_default_location(FileDialogKind kind) const {
+    std::string stored =
+        kind == FileDialogKind::Config ? last_config_path_ : last_disk_path_;
+    if (stored.empty()) {
+#if defined(__linux__)
+        if (kind == FileDialogKind::Disk) {
+            stored = Paths::documents_folder();
+        }
+#endif
+        if (stored.empty()) {
+            return {};
+        }
+    }
+    return Paths::adapt_open_dialog_location(stored);
+}
+
+std::string SystemSettings::get_file_dialog_save_default_location(
+    const std::string& suggested_filename) const {
+    return Paths::make_save_dialog_location(last_config_path_, suggested_filename);
+}
+
+void SystemSettings::remember_file_dialog_selection(FileDialogKind kind,
+                                                   const std::string& selected_path) {
+    if (selected_path.empty()) {
+        return;
+    }
+    if (kind == FileDialogKind::Config) {
+        set_last_config_path(selected_path);
+    } else {
+        set_last_disk_path(selected_path);
+    }
+}
+
+void SystemSettings::set_file_dialog_dir_if_unset(FileDialogKind kind, const std::string& dir) {
+    if (dir.empty()) {
+        return;
+    }
+    const std::string& current =
+        kind == FileDialogKind::Config ? last_config_path_ : last_disk_path_;
+    if (!current.empty()) {
+        return;
+    }
+    const std::string normalized = std::filesystem::path(dir).lexically_normal().string();
+    if (kind == FileDialogKind::Config) {
+        set_last_config_path(normalized);
+    } else {
+        set_last_disk_path(normalized);
+    }
 }
 
 void SystemSettings::record_use(const std::string& path) {

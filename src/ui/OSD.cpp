@@ -37,9 +37,9 @@
 #include "ModalContainer.hpp"
 #include "UIContext.hpp"
 #include "util/printf_helper.hpp"
-#include "paths.hpp"
 #include "util/MenuInterface.h"
 #include "util/SystemConfig.hpp"
+#include "util/SystemSettings.hpp"
 #include "platform-specific/menu.h"
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
@@ -85,7 +85,7 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     // a disk image file.
     printf("file_dialog_callback: %s\n", filelist[0]);
 
-    Paths::set_last_file_dialog_dir(filelist[0]);
+    SystemSettings::instance().remember_file_dialog_selection(FileDialogKind::Disk, filelist[0]);
     
     // 1. unmount current image (if present).
     // 2. mount new image.
@@ -122,7 +122,8 @@ void OSD::open_file_dialog(storage_key_t key) {
     web_open_file_dialog(menu_file_dialog_callback, data,
         ".do,.po,.woz,.dsk,.hdv,.2mg,.img");
 #else
-    const std::string& last_path = Paths::get_last_file_dialog_dir();
+    const std::string last_path =
+        SystemSettings::instance().get_file_dialog_default_location(FileDialogKind::Disk);
     SDL_ShowOpenFileDialog(menu_file_dialog_callback,
         data,
         get_window(),
@@ -172,7 +173,8 @@ void bazfast_button_click(void *userdata) {
     web_open_file_dialog(file_dialog_callback, userdata,
         ".po,.dsk,.hdv,.2mg,.img,.pmap");
 #else
-    const std::string& last_path = Paths::get_last_file_dialog_dir();
+    const std::string last_path =
+        SystemSettings::instance().get_file_dialog_default_location(FileDialogKind::Disk);
     SDL_ShowOpenFileDialog(file_dialog_callback, 
         userdata, 
         osd->get_window(),
