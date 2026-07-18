@@ -353,6 +353,58 @@ class KeyGloo
             return ascii;
         }
 
+        // French AZERTY (IIgs Figure B-4). Ctrl uses French letter identity (ADB_Q → Ctrl-A).
+        // Dead keys (^ ¨) emit the accent character; no compose in v1.
+        uint8_t map_fr(uint8_t code, adb_mod_key_t mods) {
+            uint8_t ascii = adb_ascii_fr[code];
+            if (mods.ctrl) {
+                if (ascii >= 'a' && ascii <= 'z') ascii = ascii - 'a' + 1;
+                return ascii;
+            }
+            if (mods.caps) {
+                if (ascii >= 'a' && ascii <= 'z') ascii = ascii - 'a' + 'A';
+            }
+            if (mods.shift) {
+                if (ascii >= 'a' && ascii <= 'z') ascii = ascii - 'a' + 'A';
+                else {
+                    switch (ascii) {
+                        case '&': ascii = '1'; break;
+                        case ADB_FR_E_ACUTE: ascii = '2'; break; // é
+                        case '"': ascii = '3'; break;
+                        case '\'': ascii = '4'; break;
+                        case '(': ascii = '5'; break;
+                        case ADB_FR_SECTION: ascii = '6'; break; // §
+                        case ADB_FR_E_GRAVE: ascii = '7'; break; // è
+                        case '!': ascii = '8'; break;
+                        case ADB_FR_C_CEDILLA: ascii = '9'; break; // ç
+                        case ADB_FR_A_GRAVE: ascii = '0'; break; // à
+                        case ')': ascii = ADB_FR_DEGREE; break; // °
+                        case '-': ascii = '_'; break;
+                        case '^': ascii = ADB_FR_DIAERESIS; break; // ¨
+                        case '$': ascii = '*'; break;
+                        case ADB_FR_U_GRAVE: ascii = '%'; break; // ù
+                        case ',': ascii = '?'; break;
+                        case ';': ascii = '.'; break;
+                        case ':': ascii = '/'; break;
+                        case '=': ascii = '+'; break;
+                        case '<': ascii = '>'; break;
+                        case '`': ascii = ADB_FR_POUND; break; // £
+                    }
+                }
+            }
+            return ascii;
+        }
+
+        // Layout lang from KeyGLU config byte1 low nibble (not LANGSEL display).
+        // 0=US, 1=UK, 2=French, 3=Danish, 4=Spanish, 5=Italian,
+        // 6=German, 7=Swedish, 8=Dvorak, 9=French Canadian.
+        uint8_t map_key(uint8_t lang, uint8_t code, adb_mod_key_t mods) {
+            switch (lang) {
+                case 2: return map_fr(code, mods);
+                default: return map_us(code, mods);
+            }
+        }
+
         /*
           For certain (based on expectation in Wolf3D), the keymicro processes modifier key state updates based on keyboard messages; 
           in normal mode, when keygloo auto-polls. In SRQ mode, when the application sends a TALK to the
@@ -481,7 +533,7 @@ class KeyGloo
                         uint8_t kpflag = 0;
                         // TODO: this also needs to update currmod.keypad if a keypad key is being held down?
                         if (keycode >= 0x43 && keycode <= 0x5C) kpflag = 0x10;
-                        store_key_to_buffer(map_us(keycode, (adb_mod_key_t){0}), kpflag); // TODO: update modifiers.
+                        store_key_to_buffer(map_key(vars.lang, keycode, (adb_mod_key_t){0}), kpflag); // TODO: update modifiers.
                     } 
 
                     break;
@@ -892,7 +944,6 @@ class KeyGloo
                     if (keyupdown) keysdown++;
                     else keysdown--;
 
-                    // TODO: Map the keycode here through a mapper based on the language setting.
                     if ((keycode == ADB_DELETE) && vars.currmod.ctrl && vars.currmod.open) flush_buffer();
                     else if ((keycode == ADB_ESCAPE) && vars.currmod.ctrl && vars.currmod.open) {
                         if (!keyupdown) { // only assert on key down.
@@ -906,7 +957,7 @@ class KeyGloo
                         uint8_t kpflag = 0;
                         // TODO: this also needs to update currmod.keypad if a keypad key is being held down?
                         if (keycode >= 0x43 && keycode <= 0x5C) kpflag = 0x10;
-                        last_key_down = map_us(keycode, vars.currmod);
+                        last_key_down = map_key(vars.lang, keycode, vars.currmod);
                         if (keyupdown) store_key_to_buffer(last_key_down, vars.currmod.value | kpflag); // TODO: update modifiers.
                         if (!keyupdown) stop_repeat();
                         else start_repeat(); // delay to repeat

@@ -429,7 +429,8 @@ class ADB_Keyboard : public ADB_Device
         sdl_to_adb_key_map[KEY_COMMAND_L] = ADB_COMMAND;
         sdl_to_adb_key_map[KEY_COMMAND_R] = ADB_COMMAND;
         sdl_to_adb_key_map[KEY_RESET&(SDL_SCANCODE_COUNT-1)] = ADB_POWER;
-        
+        // ISO AZERTY <> key; IIgs French puts <> on the US-grave ADB position.
+        sdl_to_adb_key_map[SDL_SCANCODE_NONUSBACKSLASH] = ADB_GRAVE;
     }
 
     void reset(uint8_t cmd, uint8_t reg) override { }
