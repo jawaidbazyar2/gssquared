@@ -301,9 +301,11 @@ It asks if I have a mb; then displays hires garbage, but playing music; hit a ke
 
 trying to read from mouse using I/O hooks which I don't support yet.
 
+Works now with new Mouse card brought in from A2Pico project.
+
 ## Xtra8bit
 
-looks like it's trying to in#4 to read mouse.
+looks like it's trying to in#4 to read mouse. Works now with new Mouse card.
 
 # Total Replay
 
