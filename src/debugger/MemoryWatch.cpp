@@ -1,28 +1,27 @@
 #include "debugger/MemoryWatch.hpp"
 
-MemoryWatch::MemoryWatch() {
-    // Initialize empty watch list
-}
-
-void MemoryWatch::add(uint32_t start, uint32_t end) {
-    // Create new watch entry
-    watch_entry_t entry = {start, end};
-    
-    // Add to vector
+uint32_t MemoryWatch::add(uint32_t start, uint32_t end) {
+    watch_entry_t entry{};
+    entry.id = next_id_++;
+    if (next_id_ == 0) {
+        next_id_ = 1;
+    }
+    entry.start = start;
+    entry.end = end;
     watches.push_back(entry);
+    return entry.id;
 }
 
-void MemoryWatch::remove(uint32_t start) {
-    // Remove any watches whose first address matches start
+bool MemoryWatch::remove(uint32_t id) {
     for (auto it = watches.begin(); it != watches.end(); ++it) {
-        if (it->start == start) {
+        if (it->id == id) {
             watches.erase(it);
-            break;
+            return true;
         }
     }
+    return false;
 }
 
 void MemoryWatch::clear() {
-    // Clear all watches
     watches.clear();
 }

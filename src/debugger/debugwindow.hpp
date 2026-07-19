@@ -9,8 +9,10 @@
 #include "ui/Container.hpp"
 #include "ui/UIContext.hpp"
 #include "ui/TextInput.hpp"
+#include "ui/ScrollBar.hpp"
 #include "debugger/MemoryWatch.hpp"
 #include "debugger/BreakpointTable.hpp"
+#include "debugger/Monitor.hpp"
 #include "debugger/disasm.hpp"
 
 struct computer_t;
@@ -45,6 +47,7 @@ struct debug_window_t {
     std::vector<Container_t *> containers;
     Container_t *tab_container, *step_container;
     MemoryWatch memory_watches;
+    Monitor monitor_;
     uint32_t stepover_bp = 0;
     bool step_out_active = false;
     
@@ -56,11 +59,23 @@ struct debug_window_t {
     SDL_Rect pane_area[DEBUG_PANEL_COUNT];
 
     TextInput_t* mon_textinput;
+    ScrollBar_t *trace_scroll_ = nullptr;
+    ScrollBar_t *mon_scroll_ = nullptr;
     std::vector<std::string> mon_display_buffer;
     std::vector<std::string> mon_history;
     int mon_history_position = 0;
+    int mon_view_position = 0;
 
     MMU *mmu = nullptr;
+
+    static constexpr size_t kTraceDisasmLineCount = 10;
+    void sync_trace_scrollbar();
+    void apply_trace_scroll_position();
+    void monitor_layout_metrics(int &base_line, int &buf_area_lines, int &textarea_pos) const;
+    void sync_monitor_scrollbar();
+    void apply_monitor_scroll_position();
+    void mon_scroll_by(int lines);
+    bool point_in_panel(debug_panel_t pane, float x, float y) const;
 
     debug_window_t(computer_t *computer);
     ~debug_window_t();
@@ -80,14 +95,14 @@ struct debug_window_t {
     void render_pane_memory();
     void render_pane_devices();
     void set_panel_visible(debug_panel_t panel, bool visible);
-    bool is_pane_first(debug_panel_t pane);
+    bool is_pane_first(debug_panel_t pane) const;
     int num_lines_in_pane(debug_panel_t pane);
     void event_pane_monitor(SDL_Event &event);
     bool handle_pane_event_monitor(SDL_Event &event);
     bool check_pre_breakpoint(cpu_state *cpu, StopHit *hit_out = nullptr);
     bool check_post_breakpoint(cpu_state *cpu, system_trace_entry_t *entry, StopHit *hit_out = nullptr);
     bool needs_breakpoint_checks() const;
-    void set_mmu(MMU *mmu) { this->mmu = mmu; }
+    void set_mmu(MMU *mmu);
 
 protected:
     void execute_command(const std::string& command);
