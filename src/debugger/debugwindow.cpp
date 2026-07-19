@@ -1,4 +1,5 @@
 #include <SDL3/SDL.h>
+#include <algorithm>
 #include <iostream>
 
 #include "debugwindow.hpp"
@@ -138,6 +139,17 @@ debug_window_t::debug_window_t(computer_t *computer) {
         execute_command(mon_textinput->get_text());
         return true;
     });
+
+    Style_t scroll_style;
+    scroll_style.background_color = 0x00000000;
+    scroll_style.border_color = 0x00FFFFFF;
+    scroll_style.border_width = 1;
+    scroll_style.padding = 0;
+    trace_scroll_ = new ScrollBar_t(&ui_ctx, scroll_style);
+    trace_scroll_->on_change([this](int pos) { view_position = pos; });
+    mon_scroll_ = new ScrollBar_t(&ui_ctx, scroll_style);
+    mon_scroll_->on_change([this](int pos) { mon_view_position = pos; });
+
     resize_window(); // first time we need to calculate the pane locations and window size.
 }
 
@@ -147,6 +159,8 @@ debug_window_t::~debug_window_t() {
     delete text_renderer;
     delete tab_container;
     delete mon_textinput;
+    delete trace_scroll_;
+    delete mon_scroll_;
     if (disasm) delete disasm;
     if (step_disasm) delete step_disasm;
 }
@@ -239,6 +253,10 @@ void debug_window_t::execute_command(const std::string& command) {
         std::cout << line << std::endl;
         mon_display_buffer.push_back(line);
     }
+    // Stick to live end when already there; otherwise keep scroll offset (clamped on sync).
+    if (mon_view_position == 0 && mon_scroll_) {
+        mon_scroll_->set_position(0);
+    }
     mon_textinput->clear_edit();
 
     if (num_mem_watches != memory_watches.size()) {
@@ -265,7 +283,7 @@ void debug_window_t::draw_text(debug_panel_t pane, int x,int y, const char *text
     text_renderer->render(textToShow, window_margin + pane_area[pane].x, y*font_line_height);
 }
 
-bool debug_window_t::is_pane_first(debug_panel_t pane) {
+bool debug_window_t::is_pane_first(debug_panel_t pane) const {
     for (int i = 0; i < pane; i++) {
         if (panel_visible[i]) {
             return false;
@@ -302,21 +320,19 @@ void debug_window_t::render_pane_trace() {
     size_t trace_size = cpu->trace_buffer->size;
     size_t trace_count = cpu->trace_buffer->count;
     
-    // if we're single-stepping, we need to leave room for 10 lines of disassembly
-    constexpr size_t disasm_line_count = 10;
-    //size_t data_size = trace_size + disasm_line_count;
+    // if we're single-stepping, we need to leave room for proactive disassembly
+    constexpr size_t disasm_line_count = kTraceDisasmLineCount;
     size_t start_idx;
 
     size_t disasm_displayed;
     size_t trace_displayed;
-    // TODO: In the HOME handler we need to add another 10 lines to make this line up right, it works as is but won't ever show the first 10 lines of trace.
     if (single_step) {
         // THIS WORKS but is complex.
         if (trace_count < view_size-disasm_line_count) {
             trace_displayed = trace_count;
             start_idx = cpu->trace_buffer->tail;
             disasm_displayed = disasm_line_count;
-        } else if (view_position < disasm_line_count) {
+        } else if (view_position < (int)disasm_line_count) {
             disasm_displayed = disasm_line_count - view_position;
             trace_displayed = view_size - disasm_displayed;
             start_idx = (trace_head - trace_displayed ) % trace_size;
@@ -361,7 +377,9 @@ void debug_window_t::render_pane_trace() {
     }
     text_renderer->set_color(255, 255, 255, 255);
     separator_line(DEBUG_PANEL_TRACE, 3);
-    snprintf(buffer, sizeof(buffer), "T)race: %s  SPACE: Step  RETURN: Run  Up/Dn/PgUp/PgDn/Home/End: Scroll", cpu->trace ? "ON " : "OFF");
+    snprintf(buffer, sizeof(buffer),
+             "T)race: %s  SPACE: Step  RETURN: Run  Up/Dn/PgUp/PgDn/Home/End",
+             cpu->trace ? "ON " : "OFF");
     draw_text(DEBUG_PANEL_TRACE, x, 3, buffer);
   
     separator_line(DEBUG_PANEL_TRACE, 4);
@@ -409,19 +427,97 @@ void debug_window_t::render_pane_trace() {
     separator_line(DEBUG_PANEL_TRACE, 8);
     ui_ctx.line(w + x -1.0f, 0, w + x -1.0f, window_height, 0xFFFFFFFF);
 
-    // draw location bar (not exactly a scrollbar)
-    // Calculate number of lines entries distance of view_position is from tail
-    size_t buffer_size = cpu->trace_buffer->count;
-    // view_position is position of bottom line of view area. 0 = head. -size = tail basically.
-    float bar_height = window_height - control_area_height;
-    float bar_fraction = 1 - (float)view_position / buffer_size; // it's the inverse of the fraction since we want it to be at the bottom
-    float bar_divider = (bar_fraction * bar_height);
-    SDL_FRect bar_rect = {w + x - 10.0f, (float)control_area_height, 10.0f, bar_height};
-    ui_ctx.draw_rect(bar_rect, 0x00FFFFFF);
+    sync_trace_scrollbar();
+    if (trace_scroll_) {
+        trace_scroll_->render();
+    }
+}
 
-    bar_rect.y = control_area_height + bar_divider;
-    bar_rect.h = bar_height - bar_divider;
-    ui_ctx.fill_rect(bar_rect, 0x00FFFFFF);
+void debug_window_t::sync_trace_scrollbar() {
+    if (!trace_scroll_ || !cpu || !cpu->trace_buffer) {
+        return;
+    }
+
+    const bool single_step = computer->execution_mode == EXEC_STEP_INTO;
+    const int trace_count = static_cast<int>(cpu->trace_buffer->count);
+    const int view_size = (window_height - control_area_height) / font_line_height;
+    const int content_size =
+        single_step ? (trace_count + static_cast<int>(kTraceDisasmLineCount)) : trace_count;
+    const int page_size = std::max(1, view_size);
+
+    const int x = pane_area[DEBUG_PANEL_TRACE].x;
+    const int w = pane_area[DEBUG_PANEL_TRACE].w;
+    trace_scroll_->set_visible(panel_visible[DEBUG_PANEL_TRACE] != 0);
+    trace_scroll_->set_position(static_cast<float>(x + w - 10), static_cast<float>(control_area_height));
+    trace_scroll_->size(10.0f, static_cast<float>(window_height - control_area_height));
+    trace_scroll_->set_range(content_size, page_size);
+    trace_scroll_->set_position(view_position);
+    view_position = trace_scroll_->position();
+}
+
+void debug_window_t::apply_trace_scroll_position() {
+    if (trace_scroll_) {
+        view_position = trace_scroll_->position();
+    }
+}
+
+void debug_window_t::monitor_layout_metrics(int &base_line, int &buf_area_lines, int &textarea_pos) const {
+    textarea_pos = (window_height / font_line_height) - 1;
+    if (is_pane_first(DEBUG_PANEL_MONITOR)) { // make room for buttons at the top
+        base_line = 3;
+        buf_area_lines = textarea_pos - 3;
+    } else {
+        base_line = 0;
+        buf_area_lines = textarea_pos;
+    }
+    if (buf_area_lines < 1) {
+        buf_area_lines = 1;
+    }
+}
+
+void debug_window_t::sync_monitor_scrollbar() {
+    if (!mon_scroll_) {
+        return;
+    }
+
+    int base_line = 0;
+    int buf_area_lines = 1;
+    int textarea_pos = 0;
+    monitor_layout_metrics(base_line, buf_area_lines, textarea_pos);
+
+    const int x = pane_area[DEBUG_PANEL_MONITOR].x;
+    const int w = pane_area[DEBUG_PANEL_MONITOR].w;
+    const float bar_y = static_cast<float>(base_line * font_line_height);
+    const float bar_h = static_cast<float>((textarea_pos - base_line) * font_line_height);
+
+    mon_scroll_->set_visible(panel_visible[DEBUG_PANEL_MONITOR] != 0);
+    mon_scroll_->set_position(static_cast<float>(x + w - 10), bar_y);
+    mon_scroll_->size(10.0f, std::max(1.0f, bar_h));
+    mon_scroll_->set_range(static_cast<int>(mon_display_buffer.size()), buf_area_lines);
+    mon_scroll_->set_position(mon_view_position);
+    mon_view_position = mon_scroll_->position();
+}
+
+void debug_window_t::apply_monitor_scroll_position() {
+    if (mon_scroll_) {
+        mon_view_position = mon_scroll_->position();
+    }
+}
+
+void debug_window_t::mon_scroll_by(int lines) {
+    sync_monitor_scrollbar();
+    if (mon_scroll_) {
+        mon_scroll_->scroll_by(lines);
+        apply_monitor_scroll_position();
+    }
+}
+
+bool debug_window_t::point_in_panel(debug_panel_t pane, float px, float py) const {
+    if (!panel_visible[pane]) {
+        return false;
+    }
+    const SDL_Rect &r = pane_area[pane];
+    return px >= r.x && px < r.x + r.w && py >= 0 && py < window_height;
 }
 
 void debug_window_t::render_pane_monitor() {
@@ -431,36 +527,37 @@ void debug_window_t::render_pane_monitor() {
     }
 
     int x = pane_area[DEBUG_PANEL_MONITOR].x;
-    int y = pane_area[DEBUG_PANEL_MONITOR].y;
-    int base_line, buf_area_lines;
-    
-    int textarea_pos = (window_height / font_line_height) - 1;
-    if (is_pane_first(DEBUG_PANEL_MONITOR)) { // make room for buttons at the top
-        base_line = 3;
-        buf_area_lines = textarea_pos - 3; 
-    } else {
-        base_line = 0;
-        buf_area_lines = textarea_pos;
-    }
-    //int buf_area_lines = num_lines_in_pane(DEBUG_PANEL_MONITOR) - 3;
-    
+    int base_line = 0;
+    int buf_area_lines = 1;
+    int textarea_pos = 0;
+    monitor_layout_metrics(base_line, buf_area_lines, textarea_pos);
+
+    sync_monitor_scrollbar();
+
     separator_line(DEBUG_PANEL_MONITOR, textarea_pos);
-    char buffer[256] = {' '};
     draw_text(DEBUG_PANEL_MONITOR, x, textarea_pos, ">");
     mon_textinput->set_position(x + 20, (textarea_pos * font_line_height));
     mon_textinput->render();
 
-    // get number of lines in mon_display_buffer
-    int bufferlines = mon_display_buffer.size();
+    const int bufferlines = static_cast<int>(mon_display_buffer.size());
     int startline = 0;
     int dolines = 0;
     if (bufferlines > buf_area_lines) {
-        startline = bufferlines - buf_area_lines;
+        startline = std::max(0, bufferlines - buf_area_lines - mon_view_position);
         dolines = buf_area_lines;
-    } else dolines = bufferlines;
+        if (startline + dolines > bufferlines) {
+            dolines = bufferlines - startline;
+        }
+    } else {
+        dolines = bufferlines;
+    }
 
     for (int i = 0; i < dolines; i++) {
-        draw_text(DEBUG_PANEL_MONITOR, x, base_line + i, mon_display_buffer[i+startline].c_str());
+        draw_text(DEBUG_PANEL_MONITOR, x, base_line + i, mon_display_buffer[i + startline].c_str());
+    }
+
+    if (mon_scroll_) {
+        mon_scroll_->render();
     }
 }
 
@@ -583,9 +680,15 @@ void debug_window_t::render() {
 
     // end of update
 
-    // Step controls belong to the Trace pane; hide them when Trace is off
+    // Step controls / scrollbar belong to the Trace pane; hide them when Trace is off
     // so they don't draw into whatever pane is to the right.
     step_container->set_visible(panel_visible[DEBUG_PANEL_TRACE] != 0);
+    if (trace_scroll_) {
+        trace_scroll_->set_visible(panel_visible[DEBUG_PANEL_TRACE] != 0);
+    }
+    if (mon_scroll_) {
+        mon_scroll_->set_visible(panel_visible[DEBUG_PANEL_MONITOR] != 0);
+    }
 
     ui_ctx.color(0x000000FF);
     SDL_RenderClear(renderer);
@@ -617,20 +720,25 @@ void debug_window_t::resize(int width, int height) {
 }
 
 bool debug_window_t::handle_pane_event_monitor(SDL_Event &event) {
-    if (event.type == SDL_EVENT_KEY_DOWN) {
-        if (event.key.key == SDLK_UP && mon_textinput->is_edit_active()) {
+    if (event.type == SDL_EVENT_KEY_DOWN && mon_textinput->is_edit_active()) {
+        int base_line = 0;
+        int buf_area_lines = 1;
+        int textarea_pos = 0;
+        monitor_layout_metrics(base_line, buf_area_lines, textarea_pos);
+
+        if (event.key.key == SDLK_UP) {
             if (mon_history.size() > 0) {
                 mon_history_position--;
                 if (mon_history_position < 0) {
                     mon_history_position = mon_history.size() - 1;
-                } 
+                }
                 if (mon_history_position < 0) mon_history_position = 0;
                 mon_textinput->set_text(mon_history[mon_history_position]);
                 mon_textinput->set_cursor_position(mon_textinput->get_text().size());
             }
             return true;
         }
-        if (event.key.key == SDLK_DOWN && mon_textinput->is_edit_active()) {
+        if (event.key.key == SDLK_DOWN) {
             if (mon_history.size() > 0) {
                 mon_history_position++;
                 if (mon_history_position >= mon_history.size()) {
@@ -638,6 +746,30 @@ bool debug_window_t::handle_pane_event_monitor(SDL_Event &event) {
                 }
                 mon_textinput->set_text(mon_history[mon_history_position]);
                 mon_textinput->set_cursor_position(mon_textinput->get_text().size());
+            }
+            return true;
+        }
+        if (event.key.key == SDLK_PAGEUP) {
+            mon_scroll_by(buf_area_lines);
+            return true;
+        }
+        if (event.key.key == SDLK_PAGEDOWN) {
+            mon_scroll_by(-buf_area_lines);
+            return true;
+        }
+        if (event.key.key == SDLK_HOME) {
+            sync_monitor_scrollbar();
+            if (mon_scroll_) {
+                mon_scroll_->scroll_to_home();
+                apply_monitor_scroll_position();
+            }
+            return true;
+        }
+        if (event.key.key == SDLK_END) {
+            sync_monitor_scrollbar();
+            if (mon_scroll_) {
+                mon_scroll_->scroll_to_end();
+                apply_monitor_scroll_position();
             }
             return true;
         }
@@ -681,20 +813,38 @@ void debug_window_t::step_out() {
     computer->execution_mode = EXEC_NORMAL;
 }
 void debug_window_t::trace_scroll_up(int lines) {
-    view_position += lines;
+    sync_trace_scrollbar();
+    if (trace_scroll_) {
+        trace_scroll_->scroll_by(lines);
+        apply_trace_scroll_position();
+    } else {
+        view_position += lines;
+    }
 }
 void debug_window_t::trace_scroll_down(int lines) {
-    view_position -= lines;
-    if (view_position < 0) {
-        view_position = 0;
+    sync_trace_scrollbar();
+    if (trace_scroll_) {
+        trace_scroll_->scroll_by(-lines);
+        apply_trace_scroll_position();
+    } else {
+        view_position -= lines;
+        if (view_position < 0) {
+            view_position = 0;
+        }
     }
 }
 void debug_window_t::trace_scroll(float y) {
     if (y < 0 && y > -1) y = -1;
     if (y > 0 && y < 1) y = 1;
-    view_position += y;
-    if (view_position < 0) {
-        view_position = 0;
+    sync_trace_scrollbar();
+    if (trace_scroll_) {
+        trace_scroll_->scroll_by(static_cast<int>(y));
+        apply_trace_scroll_position();
+    } else {
+        view_position += static_cast<int>(y);
+        if (view_position < 0) {
+            view_position = 0;
+        }
     }
 }
 bool debug_window_t::handle_event(SDL_Event &event) {
@@ -726,10 +876,21 @@ bool debug_window_t::handle_event(SDL_Event &event) {
             case SDL_EVENT_WINDOW_RESIZED:
                 resize(event.window.data1, event.window.data2);
                 break;
-            case SDL_EVENT_MOUSE_WHEEL:
-                trace_scroll(event.wheel.y);
+            case SDL_EVENT_MOUSE_WHEEL: {
+                float mx = 0, my = 0;
+                SDL_GetMouseState(&mx, &my);
+                float wy = event.wheel.y;
+                if (wy < 0 && wy > -1) wy = -1;
+                if (wy > 0 && wy < 1) wy = 1;
+                if (point_in_panel(DEBUG_PANEL_MONITOR, mx, my)) {
+                    mon_scroll_by(static_cast<int>(wy));
+                } else if (panel_visible[DEBUG_PANEL_TRACE]) {
+                    trace_scroll(event.wheel.y);
+                }
                 break;
-            case SDL_EVENT_KEY_DOWN:
+            }
+            case SDL_EVENT_KEY_DOWN: {
+                const bool mod_nav = (event.key.mod & (SDL_KMOD_ALT | SDL_KMOD_GUI)) != 0;
                 switch (event.key.key) {
                     case SDLK_SPACE: step_one(); break;
                     case SDLK_F10: 
@@ -743,56 +904,67 @@ bool debug_window_t::handle_event(SDL_Event &event) {
                     case SDLK_RETURN: resume(); break;
                     case SDLK_O: step_over(); break;
                     case SDLK_R: step_out(); break;
-                    case SDLK_UP: trace_scroll_up(1); break;
-                    case SDLK_DOWN: trace_scroll_down(1); break;
+                    case SDLK_UP:
+                        if (mod_nav) {
+                            trace_scroll_up(lines_in_view_area);
+                        } else {
+                            trace_scroll_up(1);
+                        }
+                        break;
+                    case SDLK_DOWN:
+                        if (mod_nav) {
+                            trace_scroll_down(lines_in_view_area);
+                        } else {
+                            trace_scroll_down(1);
+                        }
+                        break;
+                    case SDLK_LEFT:
+                        if (mod_nav) {
+                            sync_trace_scrollbar();
+                            if (trace_scroll_) {
+                                trace_scroll_->scroll_to_home();
+                                apply_trace_scroll_position();
+                            }
+                        }
+                        break;
+                    case SDLK_RIGHT:
+                        if (mod_nav) {
+                            sync_trace_scrollbar();
+                            if (trace_scroll_) {
+                                trace_scroll_->scroll_to_end();
+                                apply_trace_scroll_position();
+                            }
+                        }
+                        break;
                     case SDLK_PAGEUP: trace_scroll_up(lines_in_view_area); break;
                     case SDLK_PAGEDOWN: trace_scroll_down(lines_in_view_area); break;
-                    case SDLK_HOME: view_position = cpu->trace_buffer->count - lines_in_view_area; break;
-                    case SDLK_END: view_position = 0; break;
+                    case SDLK_HOME:
+                        sync_trace_scrollbar();
+                        if (trace_scroll_) {
+                            trace_scroll_->scroll_to_home();
+                            apply_trace_scroll_position();
+                        }
+                        break;
+                    case SDLK_END:
+                        sync_trace_scrollbar();
+                        if (trace_scroll_) {
+                            trace_scroll_->scroll_to_end();
+                            apply_trace_scroll_position();
+                        }
+                        break;
                     case SDLK_T: cpu->trace = !cpu->trace; break;
                 }
                 return true; // consume the key down.
-
-        
-                // TODO: add Step over MLI call here for Joshua Bell
-                // check jsr target to see if it's MLI. MGTK (etc) use the same calling convention but a different entry point so... a key is great, or configurable list.
-
-                // Step Up / Out - run until an RTS or RTL has executed. (R for 'Return')
-
-                /* if (event.key.key == SDLK_RETURN && event.key.mod & SDL_KMOD_CTRL) {
-                    if (window_open) {
-                        set_closed();
-                    } else {
-                        set_open();
-                    }
-                } */
-                /* if (event.key.key == SDLK_UP) {
-                    trace_scroll_up();
-                } */
-                /* if (event.key.key == SDLK_DOWN) {
-                    trace_scroll_down();
-                }
-                if (event.key.key == SDLK_PAGEUP) {
-                    view_position += lines_in_view_area;
-                } */
-                /* if (event.key.key == SDLK_PAGEDOWN) {
-                    
-                    view_position -= lines_in_view_area;
-                    if (view_position < 0) {
-                        view_position = 0;
-                    }
-                } */
-                /* if (event.key.key == SDLK_HOME) {
-                    view_position = cpu->trace_buffer->count - lines_in_view_area;
-                }
-                if (event.key.key == SDLK_END) {
-                    view_position = 0;
-                }
-                if (event.key.key == SDLK_T) {
-                    cpu->trace = !cpu->trace;
-                } */
-                break;
+            }
             default:
+                if (mon_scroll_ && panel_visible[DEBUG_PANEL_MONITOR]
+                    && mon_scroll_->handle_mouse_event(event)) {
+                    break;
+                }
+                if (trace_scroll_ && panel_visible[DEBUG_PANEL_TRACE]
+                    && trace_scroll_->handle_mouse_event(event)) {
+                    break;
+                }
                 for (Container_t *container : containers) {
                     container->handle_mouse_event(event);
                 }
