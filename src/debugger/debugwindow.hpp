@@ -7,6 +7,7 @@
 #include "cpu.hpp"
 #include "util/TextRenderer.hpp"
 #include "ui/Container.hpp"
+#include "ui/WrapContainer.hpp"
 #include "ui/UIContext.hpp"
 #include "ui/TextInput.hpp"
 #include "ui/ScrollBar.hpp"
@@ -46,6 +47,7 @@ struct debug_window_t {
     int font_line_height = 14;
     std::vector<Container_t *> containers;
     Container_t *tab_container, *step_container;
+    WrapContainer_t *debug_display_container = nullptr;
     MemoryWatch memory_watches;
     Monitor monitor_;
     uint32_t stepover_bp = 0;
@@ -97,6 +99,10 @@ struct debug_window_t {
     void set_panel_visible(debug_panel_t panel, bool visible);
     bool is_pane_first(debug_panel_t pane) const;
     int num_lines_in_pane(debug_panel_t pane);
+    void sync_debug_display_buttons();
+    void layout_debug_display_container();
+    void toggle_debug_display(const std::string &name);
+    int memory_pane_base_line() const;
     void event_pane_monitor(SDL_Event &event);
     bool handle_pane_event_monitor(SDL_Event &event);
     bool check_pre_breakpoint(cpu_state *cpu, StopHit *hit_out = nullptr);

@@ -11,6 +11,7 @@
 #include "computer.hpp"
 #include "videosystem.hpp"
 #include "ui/Container.hpp"
+#include "ui/WrapContainer.hpp"
 #include "ui/UIContext.hpp"
 #include "ui/Button.hpp"
 #include "ui/TextInput.hpp"
@@ -53,6 +54,11 @@ debug_window_t::debug_window_t(computer_t *computer) {
     step_container->set_position(600, 15);
     step_container->size(400, 35);
     containers.push_back(step_container);
+    debug_display_container = new WrapContainer_t(&ui_ctx, CS);
+    debug_display_container->set_position(25, 15);
+    debug_display_container->size(600, 70);
+    debug_display_container->set_visible(false);
+    containers.push_back(debug_display_container);
 
     Style_t SS;
     //SS.background_color = 0x00A1F0FF; // active (20% brighter)
@@ -158,6 +164,8 @@ debug_window_t::~debug_window_t() {
     SDL_DestroyRenderer(renderer);
     delete text_renderer;
     delete tab_container;
+    delete step_container;
+    delete debug_display_container;
     delete mon_textinput;
     delete trace_scroll_;
     delete mon_scroll_;
@@ -583,6 +591,100 @@ void debug_window_t::render_pane_devices() {
 }
 
 
+int debug_window_t::memory_pane_base_line() const {
+    // Reserve space for the debug-display toggle strip at the top of Watch.
+    if (!debug_display_container || !debug_display_container->is_visible()) {
+        return is_pane_first(DEBUG_PANEL_MEMORY) ? 3 : 0;
+    }
+    float x = 0, y = 0, w = 0, h = 0;
+    debug_display_container->get_tile_position(x, y);
+    debug_display_container->get_tile_size(&w, &h);
+    (void)x;
+    (void)w;
+    const int bottom = static_cast<int>(y + h) + 4;
+    return (bottom + font_line_height - 1) / font_line_height;
+}
+
+void debug_window_t::toggle_debug_display(const std::string &name) {
+    auto it = std::find(debug_displays.begin(), debug_displays.end(), name);
+    if (it != debug_displays.end()) {
+        debug_displays.erase(it);
+    } else {
+        debug_displays.push_back(name);
+    }
+}
+
+void debug_window_t::sync_debug_display_buttons() {
+    if (!debug_display_container || !computer) {
+        return;
+    }
+
+    const auto &handlers = computer->debug_display_handlers;
+    const size_t handler_count = handlers.size();
+
+    if (debug_display_container->count() != handler_count) {
+        // remove_all_tiles() does not delete; free tiles ourselves before rebuild.
+        std::vector<Tile_t *> old_tiles = debug_display_container->get_tiles();
+        for (Tile_t *tile : old_tiles) {
+            delete tile;
+        }
+        debug_display_container->remove_all_tiles();
+
+        Style_t SS;
+        SS.background_color = 0x00426340;
+        SS.border_color = 0xFFFFFFFF;
+        SS.hover_color = 0x606060FF;
+        SS.text_color = 0xFFFFFFFF;
+        SS.padding = 4;
+        SS.border_width = 1;
+
+        for (const auto &handler : handlers) {
+            const std::string name = handler.name;
+            Button_t *btn = new Button_t(&ui_ctx, name, SS);
+            const int text_w = text_renderer->string_width(name);
+            btn->size(static_cast<float>(std::max(text_w + 16, 50)), 22.0f);
+            btn->on_click([this, name](const SDL_Event &event) -> bool {
+                (void)event;
+                toggle_debug_display(name);
+                return true;
+            });
+            debug_display_container->add(btn);
+        }
+    }
+
+    for (size_t i = 0; i < handler_count; i++) {
+        Button_t *btn = static_cast<Button_t *>(debug_display_container->get_tile(i));
+        if (!btn) {
+            continue;
+        }
+        const bool active = std::find(debug_displays.begin(), debug_displays.end(), handlers[i].name)
+                            != debug_displays.end();
+        btn->style.background_color = active ? 0x00A1F0FF : 0x00426340;
+    }
+}
+
+void debug_window_t::layout_debug_display_container() {
+    if (!debug_display_container) {
+        return;
+    }
+
+    const bool watch_visible = panel_visible[DEBUG_PANEL_MEMORY] != 0;
+    debug_display_container->set_visible(watch_visible);
+    if (!watch_visible) {
+        return;
+    }
+
+    const int x = pane_area[DEBUG_PANEL_MEMORY].x + 10;
+    // Sit below the pane-toggle tabs when Watch is the leftmost pane.
+    const int y = is_pane_first(DEBUG_PANEL_MEMORY) ? 50 : 15;
+    const float pane_w = static_cast<float>(pane_area[DEBUG_PANEL_MEMORY].w - 20);
+
+    // Width is fixed to the Watch pane; WrapContainer_t::layout sets height to fit.
+    debug_display_container->set_position(static_cast<float>(x), static_cast<float>(y));
+    debug_display_container->size(pane_w, 1.0f);
+    debug_display_container->layout();
+}
+
 void debug_window_t::render_pane_memory() {
 
     if (!panel_visible[DEBUG_PANEL_MEMORY]) {
@@ -592,10 +694,7 @@ void debug_window_t::render_pane_memory() {
     // just for testing, display the text page memory.
     int x = pane_area[DEBUG_PANEL_MEMORY].x;
     int y = pane_area[DEBUG_PANEL_MEMORY].y;
-    int base_line = 0;
-    if (is_pane_first(DEBUG_PANEL_MEMORY)) {
-        base_line = 3;
-    }
+    int base_line = memory_pane_base_line();
 
     char buffer[256] = {' '};
 
@@ -689,6 +788,10 @@ void debug_window_t::render() {
     if (mon_scroll_) {
         mon_scroll_->set_visible(panel_visible[DEBUG_PANEL_MONITOR] != 0);
     }
+
+    // Watch-pane debug-display toggles (handlers register after debugger construction).
+    sync_debug_display_buttons();
+    layout_debug_display_container();
 
     ui_ctx.color(0x000000FF);
     SDL_RenderClear(renderer);
@@ -1034,6 +1137,7 @@ void debug_window_t::resize_window() {
         window_width = TRACE_WIDTH;
     }
     SDL_SetWindowSize(window, window_width, window_height);
+    layout_debug_display_container();
 }
 
 void debug_window_t::toggle_panel(debug_panel_t panel) {
