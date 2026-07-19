@@ -51,6 +51,7 @@ constexpr uint32_t kTypeGetTrace  = 0x00000201;
 constexpr uint32_t kTypeReadMem   = 0x00000301;
 constexpr uint32_t kTypeWriteMem  = 0x00000302;
 constexpr uint32_t kTypeStateGet  = 0x00000601;
+constexpr uint32_t kTypeStateSet  = 0x00000602;
 constexpr uint32_t kTypeBpSet     = 0x00000401;
 constexpr uint32_t kTypeBpClear   = 0x00000402;
 constexpr uint32_t kTypeBpClearAll = 0x00000403;
@@ -539,6 +540,17 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             const auto id = static_cast<device_id>(bridge_arg0_);
             std::string err;
             if (!computer->call_device_debug(id, DEVOP_STATE_GET, bridge_request_, bridge_reply_, err)) {
+                bridge_error_ = kEInternal;
+                bridge_error_text_ = err.empty() ? "unknown device" : err;
+            }
+        }
+    } else if (bridge_type_ == kTypeStateSet) {
+        if (!computer) {
+            bridge_error_ = kEInternal;
+        } else {
+            const auto id = static_cast<device_id>(bridge_arg0_);
+            std::string err;
+            if (!computer->call_device_debug(id, DEVOP_STATE_SET, bridge_request_, bridge_reply_, err)) {
                 bridge_error_ = kEInternal;
                 bridge_error_text_ = err.empty() ? "unknown device" : err;
             }
@@ -1272,6 +1284,25 @@ next_request:
                 REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
             }
             REPLY_OK(kTypeStateGet, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
+            break;
+        }
+        case kTypeStateSet: {
+            if (hdr.length < 4) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "STATE_SET requires device_id + blob");
+            }
+            uint32_t device_id_u = 0;
+            std::memcpy(&device_id_u, payload.data(), 4);
+            std::vector<uint8_t> request_data(payload.begin() + 4, payload.end());
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            if (!submit_and_wait(kTypeStateSet, hdr.seq, device_id_u, 0, 0, request_data, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            REPLY_OK(kTypeStateSet, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
             break;
         }
         case kTypeReadMem: {

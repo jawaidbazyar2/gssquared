@@ -16,7 +16,6 @@
 #include "devices/videx/videx.hpp"
 #include "devices/mockingboard/mb.hpp"
 #include "devices/iiememory/iiememory.hpp"
-#include "devices/applemouseii/mouse.hpp"
 #include "devices/cassette/cassette.hpp"
 #include "devices/vidhd/vidhd.hpp"
 #include "devices/rtc/rtc_pram.hpp"

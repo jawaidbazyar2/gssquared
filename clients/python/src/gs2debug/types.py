@@ -22,6 +22,7 @@ BP_ENABLE = 0x00000404
 BP_LIST = 0x00000405
 KEYEVENT = 0x00000501
 STATE_GET = 0x00000601
+STATE_SET = 0x00000602
 
 # READMEM / WRITEMEM domains (Docs/DebugProtocol.md)
 MEM_MAIN = 0
@@ -31,9 +32,12 @@ MEM_ADBMICRO = 3
 MEM_MAIN_RAW = 4
 MEM_MEGAII_RAW = 5
 
-# device_id (src/Device_ID.hpp) — values used by STATE_GET
+# device_id (src/Device_ID.hpp) — values used by STATE_GET / STATE_SET
 DEVICE_ID_DISK_II = 9
+DEVICE_ID_MOUSE = 17
 DEVICE_ID_ENSONIQ = 22
+# Deprecated alias — same as DEVICE_ID_MOUSE (Apple Mouse III implementation).
+DEVICE_ID_APPLEMOUSEIII = DEVICE_ID_MOUSE
 
 BP_KIND_EXEC = 1
 BP_KIND_DATA = 2

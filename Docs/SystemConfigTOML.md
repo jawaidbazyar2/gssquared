@@ -158,7 +158,7 @@ The TOML key **`device`** is reserved for `[[connections]]` — the virtual peri
 | `"parallel"` | `DEVICE_ID_PARALLEL` | Apple II Parallel Interface | |
 | `"videx"` | `DEVICE_ID_VIDEX` | Videx VideoTerm | Slot 3 only; II / II+ only |
 | `"mockingboard"` | `DEVICE_ID_MOCKINGBOARD` | Mockingboard | Multiple instances allowed |
-| `"mouse"` | `DEVICE_ID_MOUSE` | Apple Mouse II | |
+| `"mouse"` | `DEVICE_ID_MOUSE` | Apple Mouse III (PIA+6805 / Apple ROM). Alias: `"applemouseiii"`. | |
 | `"vidhd"` | `DEVICE_ID_VIDHD` | VIDHD | 65816 //e only |
 | `"bazfast3"` | `DEVICE_ID_PD_BLOCK3` | BazFast 3 (DMA Storage) | Multiple instances allowed |
 | `"second_sight"` | `DEVICE_ID_SECOND_SIGHT` | Second Sight | IIgs only, slot 3 only |

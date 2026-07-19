@@ -1,7 +1,7 @@
 gs2_version = 1
 id = "7c3a1d2b-9f5e-4b82-ad4c-2e8f3c5b6c02"
 name = "Apple IIe 65816 w/Mouse"
-description = "128K RAM; Disk II; Clock; Mouse; 65816"
+description = "128K RAM; Disk II; Clock; AppleMouse III; 65816"
 platform = "apple2e_65816"
 scanner = "apple2gs"
 

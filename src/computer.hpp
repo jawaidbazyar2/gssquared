@@ -42,9 +42,10 @@ enum execution_modes_t {
     //EXEC_STEP_OVER // no longer used?
 };
 
-/** Ops for register_device_debug / call_device_debug (protocol STATE_GET, …). */
+/** Ops for register_device_debug / call_device_debug (protocol STATE_GET / STATE_SET, …). */
 enum : uint32_t {
     DEVOP_STATE_GET = 1,
+    DEVOP_STATE_SET = 2,
 };
 
 struct computer_t {

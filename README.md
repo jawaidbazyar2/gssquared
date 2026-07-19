@@ -244,6 +244,10 @@ I also shamelessly copied the Disk II sound files from OpenEmulator.
 
 The mouse tracking code is based in part on the technique used in KEGS, written by Geoff Weiss, though I use a different approach for causing updates to the emulated mouse position. GPL 2.0.
 
+## Apple Mouse III card
+
+The Apple Mouse II Interface Card emulation (PIA + 6805 protocol) is adapted from the [A2Pico mouse-interface](https://github.com/oliverschmidt/mouse-interface) firmware by Thorsten Brehm and Oliver Schmidt (MIT License).
+
 ## Mike Neil
 
 for the lookup table approach to the new DisplayNG code.

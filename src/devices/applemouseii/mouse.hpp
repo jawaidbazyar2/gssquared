@@ -1,5 +1,9 @@
 #pragma once
 
+/*
+ * DEPRECATED: BazMouse. Not built; see src/devices/applemouseiii/.
+ */
+
 #include <cstdint>
 #include "computer.hpp"
 #include "NClock.hpp"

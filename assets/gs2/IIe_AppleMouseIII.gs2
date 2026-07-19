@@ -1,0 +1,21 @@
+gs2_version = 1
+id = "a3b8c1d2-4e5f-6789-abcd-ef0123456789"
+name = "IIe Enh AppleMouse III"
+description = "IIe Enhanced; Disk II; AppleMouse III in slot 4 (IN#4)"
+platform = "apple2e_enhanced"
+
+[[cards]]
+slot = 4
+card = "mouse"
+
+[[cards]]
+slot = 6
+card = "disk_ii"
+
+[[cards]]
+slot = 7
+card = "bazfast3"
+
+[[cards]]
+slot = 2
+card = "mem_expansion"

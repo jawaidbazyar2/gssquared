@@ -133,7 +133,7 @@ Rules that bite people:
 | `"thunder_clock"` | Thunder Clock Plus |
 | `"parallel"` | Parallel printer interface |
 | `"mockingboard"` | Mockingboard sound |
-| `"mouse"` | Apple Mouse II |
+| `"mouse"` | Apple Mouse III (PIA+6805 / Apple ROM); `"applemouseiii"` is an alias | |
 | `"videx"` | Videx 80-column (II / II+ only, slot 3) |
 | `"mem_expansion"` | RAM expansion (Slinky-style) |
 | `"prodos_block"` | Deprecated - do not use |

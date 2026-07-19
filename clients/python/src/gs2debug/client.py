@@ -44,6 +44,7 @@ from .types import (
     READMEM,
     RESET,
     STATE_GET,
+    STATE_SET,
     STEP_INTO,
     STOP_BP_DATA,
     STOP_BP_EXEC,
@@ -242,6 +243,12 @@ class Client:
         if not self._handshaked:
             raise RuntimeError("hello() required before state_get()")
         return self.request(STATE_GET, struct.pack("<I", device_id))
+
+    def state_set(self, device_id: int, blob: bytes) -> bytes:
+        """STATE_SET: apply device-specific blob for ``device_id`` (DEVICE_ID_*)."""
+        if not self._handshaked:
+            raise RuntimeError("hello() required before state_set()")
+        return self.request(STATE_SET, struct.pack("<I", device_id) + blob)
 
     def bp_set(
         self,

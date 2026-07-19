@@ -444,7 +444,7 @@ static const char* card_display_name(device_id id) {
         case DEVICE_ID_PARALLEL: return "Parallel Interface";
         case DEVICE_ID_VIDEX: return "Videx VideoTerm";
         case DEVICE_ID_MOCKINGBOARD: return "Mockingboard";
-        case DEVICE_ID_MOUSE: return "Apple Mouse";
+        case DEVICE_ID_MOUSE: return "Apple Mouse II";
         case DEVICE_ID_VIDHD: return "VIDHD";
         case DEVICE_ID_PD_BLOCK3: return "BazFast 3";
         case DEVICE_ID_SECOND_SIGHT: return "Second Sight";

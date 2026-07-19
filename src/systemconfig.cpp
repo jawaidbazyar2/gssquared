@@ -180,7 +180,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
-        "128K RAM; Disk II; Mouse; Mockingboard",
+        "128K RAM; Disk II; AppleMouse II; Mockingboard",
         "6b2f0c1a-8e4d-4a91-9c3b-1f7e2d4a5b03",
         {
             DEVICE_ID_NONE,
@@ -200,7 +200,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
-        "128K RAM; Disk II; Clock; Parallel Port; Mockingboard",
+        "128K RAM; Disk II; Clock; AppleMouse II; Mockingboard",
         "6b2f0c1a-8e4d-4a91-9c3b-1f7e2d4a5b04",
         {
             DEVICE_ID_NONE,

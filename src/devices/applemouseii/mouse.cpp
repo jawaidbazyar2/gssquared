@@ -1,3 +1,9 @@
+/*
+ * DEPRECATED: BazMouse (paravirtual Apple Mouse II softswitches).
+ * Not built. The shipping card type "mouse" is Apple Mouse III
+ * (src/devices/applemouseiii/) — PIA + 6805 protocol + Apple ROM.
+ */
+
 #include "SDL3/SDL_events.h"
 #include "gs2.hpp"
 #include "cpu.hpp"

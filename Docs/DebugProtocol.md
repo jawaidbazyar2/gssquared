@@ -17,7 +17,7 @@ This document is the source of truth for the wire format. Exploratory notes in `
 - TCP listen/connect (frame is ready; transport comes later).
 - Required request pipelining (header supports it; implementation may allow only one outstanding request).
 - MCP, GDB RSP, or an embedded script runtime.
-- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / READMEM / WRITEMEM / BP_* / KEYEVENT / STATE_GET / QUIT below.
+- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / READMEM / WRITEMEM / BP_* / KEYEVENT / STATE_GET / STATE_SET / QUIT below.
 
 ---
 
@@ -187,6 +187,7 @@ Rules:
 | `BP_LIST` | 4 | 5 | `0x00000405` | main | `count` + records |
 | `KEYEVENT` | 5 | 1 | `0x00000501` | protocol (`SDL_PushEvent`) | empty |
 | `STATE_GET` | 6 | 1 | `0x00000601` | main | device-specific blob |
+| `STATE_SET` | 6 | 2 | `0x00000602` | main | empty (or device ack) |
 
 ### Protocol version
 
@@ -519,6 +520,57 @@ Per-oscillator (24 bytes): `freq` u16, `wtsize` u16, `control` u8, `vol` u8, `da
 | 44 | 16 | drive 1 |
 
 Per-drive (16 bytes): `track` i16 (quarter-tracks), `max_tracks` i16, `phase0`…`phase3` u8 each, `enable` u8, `write_protect` u8, `mounted` u8, pad×5.
+
+##### Apple Mouse III `STATE_GET` blob (v1) — 32 bytes (`DEVICE_ID_MOUSE` = 17)
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `version` = `1` |
+| 4 | 1 | `slot` |
+| 5 | 1 | `rom_bank` (0–7) |
+| 6 | 1 | `operating_mode` |
+| 7 | 1 | `int_state` |
+| 8 | 1 | `irq_asserted` |
+| 9 | 1 | `button0` |
+| 10 | 1 | `button1` |
+| 11 | 1 | pad `0` |
+| 12 | 2 | `x` (i16) |
+| 14 | 2 | `y` (i16) |
+| 16 | 2 | `clamp_min_x` (i16) |
+| 18 | 2 | `clamp_min_y` (i16) |
+| 20 | 2 | `clamp_max_x` (i16) |
+| 22 | 2 | `clamp_max_y` (i16) |
+| 24 | 1 | PIA `ORA` |
+| 25 | 1 | PIA `ORB` |
+| 26 | 1 | PIA `DDRA` |
+| 27 | 1 | PIA `DDRB` |
+| 28 | 1 | PIA `CRA` |
+| 29 | 1 | PIA `CRB` |
+| 30 | 1 | PIA `IA` |
+| 31 | 1 | PIA `IB` |
+
+#### `STATE_SET` — main 6, sub 2 (`0x00000602`)
+
+**Request payload:**
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `device_id` | `uint32` matching `DEVICE_ID_*` |
+| 4 | N | blob | device-specific (versioned) |
+
+**Success reply:** empty (or a small device ack blob).
+
+**Bounds:** handshake required; payload at least 4 bytes; unknown / unregistered device → `E_INTERNAL`.
+
+##### AppleMouse III `STATE_SET` blob (v1) — 8 bytes (after `device_id`)
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `version` = `1` |
+| 4 | 1 | `flags` — bit0 apply relative motion (`dx`/`dy`); bit1 set buttons |
+| 5 | 1 | `dx` (i8) |
+| 6 | 1 | `dy` (i8) |
+| 7 | 1 | `buttons` — bit0 button0, bit1 button1 |
 
 ---
 
