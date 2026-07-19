@@ -74,6 +74,7 @@ class MMU_IIgs : public MMU {
             ram_banks = ram_size / BANK_SIZE;
             main_ram = new uint8_t[ram_banks * BANK_SIZE];
             rom_banks = rom_size / BANK_SIZE;
+            is_rom03 = rom_banks >= 4;
             main_rom = rom;
             map_initialized = false;
             reset();

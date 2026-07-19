@@ -12,4 +12,5 @@ your own dumps:
 Drop both files here and select **Apple IIgs (ROM 3)** in the machine
 picker. The IIgs MMU derives the bank `$FF` offset from the ROM size, so
 the 256K image maps correctly (the stock `apple2gs` machine uses a 128K
-ROM 01 image).
+ROM 01 image). ROM 03-specific hardware behavior is implemented
+incrementally; this profile starts from the existing Apple IIgs device map.
