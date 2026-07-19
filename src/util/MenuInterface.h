@@ -52,6 +52,7 @@ public:
 	void editCopyScreen();
 	void editPasteText();
 	void fileSaveScreenshot();
+	void toggleMountDrivers();
 	void openDebugWindow();
 	void diskToggle(storage_key_t key);
 	void openSystemConfig();
@@ -71,6 +72,8 @@ public:
 	bool isEmulationRunning();
 	bool isPaused();
 	bool isMouseCaptured();
+	bool hasBazFast();
+	bool getMountDrivers();
 	int  getCurrentControllerMode();
 	std::vector<MenuDriveInfo> getDriveList();
 };

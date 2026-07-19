@@ -78,7 +78,7 @@ protected:
 
 public:
     Mounts() {}
-    bool mount_media(disk_mount_t disk_mount);
+    bool mount_media(disk_mount_t disk_mount, bool force_write_protected = false);
     bool unmount_media(storage_key_t key, unmount_action_t action);
     drive_status_t media_status(storage_key_t key);
     const std::vector<drive_info_t>& get_all_drives();

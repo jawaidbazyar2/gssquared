@@ -102,6 +102,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 @interface MenuActionHandler : NSObject <NSMenuItemValidation>
 - (void)fileClose:(id)sender;
 - (void)fileSaveScreenshot:(id)sender;
+- (void)toggleMountDrivers:(id)sender;
 - (void)appQuit:(id)sender;
 - (void)machineReset:(id)sender;
 - (void)machineRestart:(id)sender;
@@ -152,6 +153,11 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	(void)sender;
 }
 
+- (void)toggleMountDrivers:(id)sender {
+	getMenuInterface()->toggleMountDrivers();
+	(void)sender;
+}
+
 - (void)appQuit:(id)sender {
 	[NSApp terminate:nil];
 	(void)sender;
@@ -180,6 +186,10 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	if (menuItem.action == @selector(toggleCrtShader:)) {
 		[menuItem setState:getMenuInterface()->getCrtShader() ? NSControlStateValueOn : NSControlStateValueOff];
 		return getMenuInterface()->isEmulationRunning() && getMenuInterface()->getCrtShaderAvailable();
+	}
+	if (menuItem.action == @selector(toggleMountDrivers:)) {
+		[menuItem setState:getMenuInterface()->getMountDrivers() ? NSControlStateValueOn : NSControlStateValueOff];
+		return getMenuInterface()->isEmulationRunning() && getMenuInterface()->hasBazFast();
 	}
 	// Help items are always available regardless of emulation state
 	if (menuItem.action == @selector(helpOpenDocs:) ||
@@ -464,6 +474,13 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[drivesMenuItem setSubmenu:drivesMenu];
 	[fileMenu addItem:drivesMenuItem];
+
+	NSMenuItem *mountDriversItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Mount Drivers", nil)
+		       action:@selector(toggleMountDrivers:)
+		keyEquivalent:@""] autorelease];
+	[mountDriversItem setTarget:sMenuHandler];
+	[fileMenu addItem:mountDriversItem];
 
 	[fileMenu addItem:[NSMenuItem separatorItem]];
 

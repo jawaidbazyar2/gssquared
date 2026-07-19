@@ -29,7 +29,7 @@
 
 // this and umount should work on the basis of a disk device registering callbacks for mount, unmount, status, whatever else.
 
-bool Mounts::mount_media(disk_mount_t disk_mount) {
+bool Mounts::mount_media(disk_mount_t disk_mount, bool force_write_protected) {
     //uint64_t key = (disk_mount.slot << 8) | disk_mount.drive;
     storage_key_t key;
     key.slot = disk_mount.slot;
@@ -62,7 +62,8 @@ bool Mounts::mount_media(disk_mount_t disk_mount) {
                 delete media;
                 continue;
                 //return false;
-            }        
+            }
+            if (force_write_protected) media->write_protected = true;
             media_list.push_back(media);
         }
         if (media_list.empty()) {
@@ -83,6 +84,7 @@ bool Mounts::mount_media(disk_mount_t disk_mount) {
             delete media;
             return false;
         }
+        if (force_write_protected) media->write_protected = true;
         if (!it->second.device->mount(key, {media})) {
             delete media;
             return false;

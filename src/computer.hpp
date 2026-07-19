@@ -3,6 +3,7 @@
 #include <functional>
 #include <vector>
 #include <string>
+#include <optional>
 
 #include "mmus/mmu_ii.hpp"
 #include "Module_ID.hpp"
@@ -20,6 +21,7 @@
 //#include "util/ResetController.hpp"
 #include "util/AudioSystem.hpp"
 #include "util/SoundEffect.hpp"
+#include "util/StorageDevice.hpp"
 #include "systemconfig.hpp"
 #include "device_reset_id.hpp"
 
@@ -102,6 +104,9 @@ struct computer_t {
     DeviceFrameDispatcher *device_frame_dispatcher = nullptr;
 
     Mounts *mounts = nullptr;
+
+    /** UI drive key used by File > Mount Drivers (BazFast 3 + drivers.hdv). */
+    std::optional<storage_key_t> drivers_mount_key;
 
     // For use by OSD.
     int system_id = -1;
@@ -188,4 +193,8 @@ struct computer_t {
     void frame_status_update();
 
     void send_full_screen_message();
+
+    bool has_bazfast();
+    bool is_drivers_mounted();
+    void toggle_mount_drivers();
 };

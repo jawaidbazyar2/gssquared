@@ -123,6 +123,15 @@ static void build_menu_bar()
                 render_drives_menu();
                 ImGui::EndMenu();
             }
+            {
+                bool drivers_on = mi->getMountDrivers();
+                bool can_mount  = mi->hasBazFast();
+                if (!can_mount) ImGui::BeginDisabled();
+                if (ImGui::MenuItem("Mount Drivers", nullptr, drivers_on)) {
+                    mi->toggleMountDrivers();
+                }
+                if (!can_mount) ImGui::EndDisabled();
+            }
             ImGui::Separator();
             if (ImGui::MenuItem("Save Screenshot", "Shift+PrintScreen")) {
                 mi->fileSaveScreenshot();

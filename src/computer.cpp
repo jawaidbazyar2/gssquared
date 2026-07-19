@@ -26,6 +26,7 @@
 #include "util/AudioSystem.hpp"
 #include "util/SoundEffect.hpp"
 #include "util/printf_helper.hpp"
+#include "paths.hpp"
 #include "slots.hpp"
 
 computer_t::computer_t(NClockII *clock) {
@@ -199,6 +200,9 @@ computer_t::computer_t(NClockII *clock) {
                 return true;
             case MENU_FILE_SAVE_SCREENSHOT:
                 video_system->save_screenshot();
+                return true;
+            case MENU_FILE_MOUNT_DRIVERS:
+                toggle_mount_drivers();
                 return true;
             case MENU_EDIT_PASTE_TEXT: {
                 keyboard_state_t *kb = (keyboard_state_t *)get_module_state(MODULE_KEYBOARD);
@@ -399,4 +403,79 @@ void computer_t::frame_status_update() {
             status_count = 0;
         }
     }
+}
+
+bool computer_t::has_bazfast() {
+    SystemConfig_t *config = get_system();
+    if (!config) return false;
+    for (int slot = 0; slot < NUM_SLOTS; ++slot) {
+        if (config->slot_devices[slot] == DEVICE_ID_PD_BLOCK3) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool computer_t::is_drivers_mounted() {
+    if (!drivers_mount_key.has_value() || !mounts) {
+        return false;
+    }
+    if (!mounts->media_status(*drivers_mount_key).is_mounted) {
+        drivers_mount_key.reset();
+        return false;
+    }
+    return true;
+}
+
+void computer_t::toggle_mount_drivers() {
+    if (!mounts || !has_bazfast()) {
+        return;
+    }
+
+    if (is_drivers_mounted()) {
+        mounts->unmount_media(*drivers_mount_key, DISCARD);
+        drivers_mount_key.reset();
+        return;
+    }
+
+    SystemConfig_t *config = get_system();
+    if (!config) return;
+
+    int bazfast_slot = -1;
+    for (int slot = 0; slot < NUM_SLOTS; ++slot) {
+        if (config->slot_devices[slot] == DEVICE_ID_PD_BLOCK3) {
+            bazfast_slot = slot;
+            break;
+        }
+    }
+    if (bazfast_slot < 0) return;
+
+    // BazFast 3 exposes 6 UI drive icons (PDB3_MAX_DEVICES).
+    storage_key_t key;
+    key.slot = static_cast<uint16_t>(bazfast_slot);
+    key.partition = 0;
+    key.subunit = 0;
+    int empty_drive = -1;
+    for (uint16_t drive = 0; drive < 6; ++drive) {
+        key.drive = drive;
+        if (!mounts->media_status(key).is_mounted) {
+            empty_drive = static_cast<int>(drive);
+            break;
+        }
+    }
+    if (empty_drive < 0) {
+        std::cerr << "Mount Drivers: no empty BazFast 3 drive available\n";
+        return;
+    }
+
+    std::string path;
+    Paths::calc_base(path, "vdisk/drivers.hdv");
+
+    key.drive = static_cast<uint16_t>(empty_drive);
+    disk_mount_t dm{ key.slot, key.drive, path };
+    if (!mounts->mount_media(dm, true /* force write-protected */)) {
+        std::cerr << "Mount Drivers: failed to mount " << path << "\n";
+        return;
+    }
+    drivers_mount_key = key;
 }
