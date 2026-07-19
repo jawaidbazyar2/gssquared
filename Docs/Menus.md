@@ -15,6 +15,7 @@ GSSquared provides a top menu bar appropriate to your platform. A top menu bar f
   * Open System (only when machine is off)
   * Save System
   * Save As System
+  * Mount Drivers
   * Save Screenshot
 
 New Disk Image creates a new disk image of the specified size and type. You will be prompted for a folder and filename to save the new image to.
@@ -24,6 +25,8 @@ Open Disk Image lets you select the storage device, then you will select the dis
 Open System can be exercised when you're at the System Select screen ("Choose your retro experience"). This lets you load a system configuration you have previously defined and saved.
 
 Save System / Save As System let you save the current system configuration. This does not include any machine state except what disk images are mounted.
+
+Mount Drivers is a checkable item that mounts or unmounts the built-in `/GS2.DRIVERS` volume on BazFast (write-protected). Grayed out when BazFast is not in the current machine. See [Storage & Disks](Storage.md#mount-drivers).
 
 Save Screenshot writes the current display (with borders) to a PNG on your Desktop, named like `GS2 Screenshot YYYY-MM-DD HH.MM.SS.png`. Shortcut: Shift+PrintScreen. Only one screenshot write can be in progress at a time.
 

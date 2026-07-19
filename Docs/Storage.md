@@ -35,7 +35,13 @@ Once done, Close the OSD (F4 again or the OSD Button).
 
 ### Menus
 
-You can choose a storage device from the menu, and mount/unmount images to the device the same as above.
+You can choose a storage device from the menu (**File → Drives**), and mount/unmount images to the device the same as above.
+
+### Mount Drivers
+
+**File → Mount Drivers** mounts GSSquared’s built-in drivers disk (`/GS2.DRIVERS`) onto an empty BazFast drive. Check the menu item to mount; uncheck it to unmount that same drive.
+
+The image is write-protected. It currently includes the Host FST driver (see [Host FST](#host-fst) below). The menu item is grayed out if the current machine has no BazFast card, or if emulation is not running. If all six BazFast icons already have media mounted, Mount Drivers does nothing until you free a drive.
 
 ### Drag and Drop
 
@@ -82,6 +88,21 @@ G_Games with Path Mods.hdv
 ```
 
 If you mount this pmap on a BazFast device, all 7 images will be mounted at once, a big time-saver for those with complex setups, multi-disk collections like What Is the AppleIIgs or Golden Orchard.
+
+## Host FST
+
+Host FST lets GS/OS on an Apple IIgs see a folder on your real computer as a GS/OS volume named **`:Host`** (or `/Host` under ProDOS 16). Copy files between the host and the emulated machine without packing them into a disk image first.
+
+Host FST is built into every Apple IIgs configuration in GSSquared (it is not a slot card). To use it:
+
+1. Boot GS/OS with BazFast available.
+2. Use **File → Mount Drivers** to attach `/GS2.DRIVERS`, then install or copy the Host FST from that volume into your GS/OS setup (see the `HOST.FST` folder on the drivers disk).
+2a. Host.FST should go into System/FSTs
+2b. Host.Driver should go into System/Drivers
+3. Open the Control Panel (**F4**) and click **Host Folder…** to choose which host directory is shared. If you never pick one, GSSquared uses your Documents folder. The choice is remembered in settings.
+4. After the FST is active under GS/OS, the shared folder appears as the `:Host` volume.
+
+Changing the host folder while GS/OS is running remounts the Host volume to the new path. Host FST is IIgs / GS/OS oriented; the folder picker is not available in the web (Emscripten) build.
 
 ## Write-protection
 

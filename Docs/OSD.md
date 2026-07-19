@@ -35,6 +35,8 @@ You can see Disk drive status here (also see [Disk Drive Status](#disk-drive-sta
 
 See [Storage](Storage.md) for more details on managing mounted disk images.
 
+On Apple IIgs systems, **Host Folder…** chooses which real-computer directory is shared through Host FST (volume `:Host`). See [Host FST](Storage.md#host-fst).
+
 ## OSD Buttons
 
 These buttons allow you to control various aspects of the system: speed, display type, full screen, etc.
