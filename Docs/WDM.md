@@ -5,7 +5,7 @@ This is to document users of WDM $XX opcodes / signature bytes.
 | Signature | Emulator | Description |
 |-|-|-|
 | C7 | KEGS | Call to smartport emulation (C and V determine function) |
-| FF | GSPlus | Interface with Host FST logic |
+| FF | GSPlus / GSSquared | Interface with Host FST logic |
 | ?? | Michael Guidero | debugging |
 
 

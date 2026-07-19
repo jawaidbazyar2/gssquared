@@ -84,6 +84,9 @@ protected:
 
     Container_t *mon_color_con = nullptr;
 
+    Container_t *host_fst_con = nullptr;
+    Button_t *host_fst_btn = nullptr;
+
     Button_t *save_btn = nullptr;
     Button_t *save_as_btn = nullptr;
     Button_t *discard_btn = nullptr;
@@ -193,6 +196,8 @@ public:
     void set_raise_window();
 
     void open_file_dialog(storage_key_t key);
+    void open_host_fst_folder_dialog();
+    void refresh_host_fst_button();
 
     void show_diskii_modal(storage_key_t key, uint64_t data);
 

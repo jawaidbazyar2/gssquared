@@ -367,6 +367,30 @@ add_library(gs2_devices_vidhd     src/devices/vidhd/vidhd.cpp )
 
 add_library(gs2_devices_adb     src/devices/adb/keygloo.cpp )
 
+# Host FST (GSPlus / Kelvin Sherlock) — full Unix/macOS; stub elsewhere
+set(GS2_HOSTFST_SOURCES
+    src/devices/hostfst/hostfst.cpp
+    src/devices/hostfst/hostfst_engine.cpp
+)
+if(NOT WIN32 AND NOT EMSCRIPTEN)
+    list(APPEND GS2_HOSTFST_SOURCES
+        src/devices/hostfst/host_fst.c
+        src/devices/hostfst/host_common.c
+        src/devices/hostfst/unix_host_common.c
+    )
+endif()
+add_library(gs2_devices_hostfst ${GS2_HOSTFST_SOURCES})
+target_include_directories(gs2_devices_hostfst PRIVATE ${CMAKE_SOURCE_DIR}/src/devices/hostfst)
+target_link_libraries(gs2_devices_hostfst PUBLIC gs2_systemconfig gs2_paths gs2_cpu gs2_mmu)
+if(NOT WIN32 AND NOT EMSCRIPTEN)
+    set_source_files_properties(
+        src/devices/hostfst/host_fst.c
+        src/devices/hostfst/host_common.c
+        src/devices/hostfst/unix_host_common.c
+        PROPERTIES LANGUAGE C
+    )
+endif()
+
 add_library(gs2_trace src/debugger/trace.cpp src/debugger/trace_opcodes.cpp)
 
 add_library(gs2_debugger  src/debugger/debugwindow.cpp src/debugger/Monitor.cpp
@@ -462,6 +486,7 @@ set(GS2_DEVICE_REGISTRY_LIBS
     gs2_devices_rtc_pram
     gs2_devices_adb
     gs2_devices_diskii_woz
+    gs2_devices_hostfst
     gs2_displaypp
     gs2_video_scanner
     gs2_computer
@@ -504,7 +529,7 @@ target_link_libraries(gs2_video_scanner PUBLIC gs2_displaypp)
 add_library(gs2_devices_rtc_pram src/devices/rtc/rtc_pram.cpp)
 target_link_libraries(gs2_devices_rtc_pram PUBLIC gs2_paths)
 
-target_link_libraries(gs2_ui ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF} gs2_systemconfig)
+target_link_libraries(gs2_ui ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF} gs2_systemconfig gs2_devices_hostfst)
 target_link_libraries(gs2_debugger gs2_trace gs2_util ${GS2_SDL3} ${GS2_SDL3_TTF})
 target_link_libraries(gs2_util ${GS2_SDL3_TTF})
 target_link_libraries(gs2_computer ${GS2_SDL3_TTF})

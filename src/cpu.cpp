@@ -53,6 +53,10 @@ void cpu_state::reset() {
     core->reset(this);
 }
 
+void cpu_state::set_wdm_handler(uint8_t operand, wdm_handler_t handler) {
+    wdm_handlers[operand] = handler;
+}
+
 cpu_state::~cpu_state() {
     if (trace_buffer != nullptr) {
         delete trace_buffer;

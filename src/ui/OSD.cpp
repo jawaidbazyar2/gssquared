@@ -48,6 +48,9 @@
 #include "SelectButton.hpp"
 #include "DrivesHUD.hpp"
 #include "SpeedSelect.hpp"
+#include "devices/hostfst/hostfst.hpp"
+#include "PlatformIDs.hpp"
+#include "paths.hpp"
 #include "HoverControls.hpp"
 #include "DirtyDiskSave.hpp"
 #include "QuitModal.hpp"
@@ -131,6 +134,58 @@ void OSD::open_file_dialog(storage_key_t key) {
         sizeof(filters)/sizeof(SDL_DialogFileFilter),
         last_path.empty() ? nullptr : last_path.c_str(),
         false);
+#endif
+}
+
+namespace {
+
+struct host_fst_dialog_data_t {
+    OSD *osd = nullptr;
+};
+
+void host_fst_folder_dialog_callback(void *userdata, const char *const *filelist, int /*filter*/) {
+    auto *data = static_cast<host_fst_dialog_data_t *>(userdata);
+    OSD *osd = data ? data->osd : nullptr;
+    delete data;
+
+    if (osd == nullptr) {
+        return;
+    }
+    osd->set_raise_window();
+
+    if (filelist == nullptr || filelist[0] == nullptr) {
+        return;
+    }
+
+    hostfst_apply_dir(filelist[0]);
+    osd->refresh_host_fst_button();
+    osd->set_heads_up_message("Host FST folder updated", 120);
+}
+
+}  // namespace
+
+void OSD::refresh_host_fst_button() {
+    if (status_message == nullptr) {
+        return;
+    }
+    const std::string dir = hostfst_resolved_dir();
+    if (!dir.empty()) {
+        set_heads_up_message(std::string("Host: ") + dir, 180);
+    }
+}
+
+void OSD::open_host_fst_folder_dialog() {
+#if defined(__EMSCRIPTEN__)
+    set_heads_up_message("Host FST folder picker unavailable", 120);
+#else
+    auto *data = new host_fst_dialog_data_t{this};
+    const std::string current = hostfst_resolved_dir();
+    const std::string loc = Paths::adapt_open_dialog_location(current);
+    SDL_ShowOpenFolderDialog(host_fst_folder_dialog_callback,
+                             data,
+                             get_window(),
+                             loc.empty() ? nullptr : loc.c_str(),
+                             false);
 #endif
 }
 
@@ -335,6 +390,29 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         this->clock->set_clock_mode(CLOCK_FREE_RUN);
         return true;
     });
+
+    if (computer->platform && computer->platform->id == PLATFORM_APPLE_IIGS) {
+        Style_t hostFstBtnStyle;
+        hostFstBtnStyle.background_color = 0xE0E0FFFF;
+        hostFstBtnStyle.text_color = 0x000000FF;
+        hostFstBtnStyle.border_width = 1;
+        hostFstBtnStyle.border_color = 0x000000FF;
+        hostFstBtnStyle.padding = 2;
+
+        host_fst_con = new Container_t(&ui_ctx, SC);
+        host_fst_con->set_position(30, 630);
+        host_fst_con->size(320, 50);
+        containers.push_back(host_fst_con);
+
+        host_fst_btn = new Button_t(&ui_ctx, "Host Folder…", hostFstBtnStyle);
+        host_fst_btn->size(300, 36);
+        host_fst_btn->on_click([this](const SDL_Event&) -> bool {
+            open_host_fst_folder_dialog();
+            return true;
+        });
+        host_fst_con->add(host_fst_btn);
+        host_fst_con->layout();
+    }
 
     // Create text buttons for the disk save dialog
     Style_t TextButtonCfg;
@@ -553,7 +631,10 @@ void OSD::update() {
     computer->video_system->osd_control_panel_open = requires_host_cursor();
 }
 
-void OSD::set_heads_up_message(const std::string &text, int count) {
+void OSD::set_heads_up_message(const std::string &text, int /*count*/) {
+    if (status_message == nullptr) {
+        return;
+    }
     status_message->trigger(text);
 }
 

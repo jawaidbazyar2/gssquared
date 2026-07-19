@@ -3970,8 +3970,11 @@ int execute_next(cpu_state *cpu) override {
         case OP_INOP_42: /* INOP 42 */ /* OP_WDM_IMP */
             if constexpr (CPUTraits::has_65816_ops) {
                 uint8_t N = fetch_pc(cpu); // cycle 2
-                // otherwise do nothing
                 TRACE(cpu->trace_entry.operand = N; cpu->trace_entry.f_data_sz = 1;)
+                wdm_handler_t &wdm = cpu->wdm_handlers[N];
+                if (wdm.handler) {
+                    wdm.handler(cpu, wdm.context);
+                }
             } else if constexpr (CPUTraits::has_65c02_ops) {
                 invalid_nop(cpu, 2, 2);
             } else invalid_opcode(cpu, opcode);

@@ -47,6 +47,9 @@ class SystemSettings {
     /** Last disk-image open selection (full file path when known). */
     std::string last_disk_path_;
 
+    /** Host FST shared folder (empty = Documents). */
+    std::string host_fst_dir_;
+
     SystemSettings() = default;
 
     static std::string settings_path();
@@ -94,9 +97,11 @@ public:
 
     const std::string& last_config_path() const { return last_config_path_; }
     const std::string& last_disk_path() const { return last_disk_path_; }
+    const std::string& host_fst_dir() const { return host_fst_dir_; }
 
     void set_last_config_path(const std::string& path);
     void set_last_disk_path(const std::string& path);
+    void set_host_fst_dir(const std::string& path);
 
     /**
      * Platform-adjusted default_location for SDL open dialogs.

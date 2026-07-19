@@ -42,6 +42,7 @@
 #include "devices/scc8530/scc8530.hpp"
 #include "devices/iwm/iwm_device.hpp"
 #include "devices/secondsight/secondsight.hpp"
+#include "devices/hostfst/hostfst.hpp"
 
 namespace {
 
@@ -99,6 +100,7 @@ Device_t Devices[NUM_DEVICE_IDS] = {
     make_device(DEVICE_ID_IWM, init_iwm_slot, NULL),
     make_device(DEVICE_ID_PD_BLOCK3, init_pdblock3, NULL),
     make_device(DEVICE_ID_SECOND_SIGHT, init_secondsight, NULL),
+    make_device(DEVICE_ID_HOST_FST, init_hostfst, NULL),
 };
 
 Device_t *get_device(device_id id) {

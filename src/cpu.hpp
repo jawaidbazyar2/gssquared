@@ -47,6 +47,14 @@ class MMU;
 #define N_COP_VECTOR    0xFFE4
 
 class BaseCPU;
+struct cpu_state;
+
+typedef void (*wdm_handler_func)(cpu_state *cpu, void *context);
+
+struct wdm_handler_t {
+    wdm_handler_func handler = nullptr;
+    void *context = nullptr;
+};
 
 struct cpu_state {
     union {
@@ -209,6 +217,9 @@ struct cpu_state {
     system_trace_buffer *trace_buffer = nullptr;
     system_trace_entry_t trace_entry;
 
+    /* WDM ($42) operand dispatch — 256 handlers keyed by signature byte */
+    wdm_handler_t wdm_handlers[256] = {};
+
     cpu_state(processor_type cpu_type);
     ~cpu_state();
 
@@ -216,6 +227,7 @@ struct cpu_state {
     void reset();
     
     void set_mmu(MMU *mmu) { this->mmu = mmu; }
+    void set_wdm_handler(uint8_t operand, wdm_handler_t handler);
 };
 
 #define HLT_INSTRUCTION 1

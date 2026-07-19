@@ -229,7 +229,7 @@ Convert a disk image file (140K 5.25 .do, .po, .dsk) to nibblized format (e.g. .
 
 ## gstrace
 
-
+Decodes a stored CPU trace file.
 
 # Acknowledgements
 

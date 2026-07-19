@@ -93,6 +93,7 @@ bool SystemSettings::load() {
     disconnected_when_no_gamepad_ = false;
     last_config_path_.clear();
     last_disk_path_.clear();
+    host_fst_dir_.clear();
 
     const std::string path = settings_path();
     if (!file_exists(path)) {
@@ -142,6 +143,11 @@ bool SystemSettings::load() {
                 last_disk_path_ = *p;
             }
         }
+        if (const auto* hf = table["host_fst"].as_table()) {
+            if (const auto p = (*hf)["dir"].value<std::string>()) {
+                host_fst_dir_ = *p;
+            }
+        }
     } catch (const toml::parse_error& err) {
         std::cerr << "Failed to parse system_settings.toml: " << err.what() << std::endl;
         recent_.clear();
@@ -179,6 +185,10 @@ bool SystemSettings::save() const {
     file_dialogs.insert("last_config_path", last_config_path_);
     file_dialogs.insert("last_disk_path", last_disk_path_);
     table.insert("file_dialogs", std::move(file_dialogs));
+
+    toml::table host_fst;
+    host_fst.insert("dir", host_fst_dir_);
+    table.insert("host_fst", std::move(host_fst));
 
     const std::string path = settings_path();
     try {
@@ -249,6 +259,23 @@ void SystemSettings::set_last_disk_path(const std::string& path) {
         return;
     }
     last_disk_path_ = normalized;
+    save();
+}
+
+void SystemSettings::set_host_fst_dir(const std::string& path) {
+    if (path.empty()) {
+        if (host_fst_dir_.empty()) {
+            return;
+        }
+        host_fst_dir_.clear();
+        save();
+        return;
+    }
+    const std::string normalized = normalize_path(path);
+    if (normalized.empty() || host_fst_dir_ == normalized) {
+        return;
+    }
+    host_fst_dir_ = normalized;
     save();
 }
 
