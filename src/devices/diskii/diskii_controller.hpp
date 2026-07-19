@@ -17,6 +17,10 @@
 
 #pragma once
 
+#include <cstring>
+#include <string>
+#include <vector>
+
 #include "NClock.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/media.hpp"
@@ -339,5 +343,44 @@ public:
         f->addLine("Mark Cycles Turnoff: %llu", mark_cycles_turnoff);
         drives[diskii_select].debug(f);
         return f;
+    }
+
+    /** Pack Disk II STATE_GET v1 blob (60 bytes). See Docs/DebugProtocol.md. */
+    bool pack_state(std::vector<uint8_t> &out, std::string &err) {
+        (void)err;
+        constexpr uint32_t kVersion = 1;
+        constexpr size_t kBlobSize = 60;
+        constexpr size_t kDriveSize = 16;
+        out.assign(kBlobSize, 0);
+
+        std::memcpy(out.data() + 0, &kVersion, 4);
+        out[4] = diskii_select;
+        out[5] = motor_on;
+        out[6] = diskii_enable;
+        out[7] = diskii_q6;
+        out[8] = diskii_q7;
+        out[9] = data_register;
+        out[10] = sequencer_state ? 1 : 0;
+        out[11] = 0;
+        std::memcpy(out.data() + 12, &mark_cycles_turnoff, 8);
+        const uint64_t cycles = clock ? clock->get_cycles() : 0;
+        std::memcpy(out.data() + 20, &cycles, 8);
+
+        for (int d = 0; d < 2; ++d) {
+            uint8_t *rec = out.data() + 28 + static_cast<size_t>(d) * kDriveSize;
+            const int16_t track = static_cast<int16_t>(drives[d].get_track());
+            const int16_t max_t = drives[d].get_max_tracks();
+            std::memcpy(rec + 0, &track, 2);
+            std::memcpy(rec + 2, &max_t, 2);
+            rec[4] = drives[d].get_phase(0);
+            rec[5] = drives[d].get_phase(1);
+            rec[6] = drives[d].get_phase(2);
+            rec[7] = drives[d].get_phase(3);
+            rec[8] = drives[d].get_enable() ? 1 : 0;
+            rec[9] = drives[d].get_write_protect();
+            rec[10] = drives[d].get_is_mounted() ? 1 : 0;
+            // 11–15 pad
+        }
+        return true;
     }
 };

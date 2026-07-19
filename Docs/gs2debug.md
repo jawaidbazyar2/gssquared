@@ -76,6 +76,7 @@ From `gs2debug` / `gs2debug.keys` / `gs2debug.types`:
 | `MEM_MEGAII` | `1` — Mega II / IIe-view MMU (`computer->mmu`); **IIgs only** |
 | `MEM_ENSONIQ` | `2` — DOC RAM (IIgs only); address = DOC offset |
 | `MEM_ADBMICRO` | Reserved (ERROR `unsupported domain`) |
+| `DEVICE_ID_DISK_II` | `9` — for `state_get` (60-byte v1 blob; see DebugProtocol.md) |
 | `DEVICE_ID_ENSONIQ` | `22` — for `state_get` (784-byte v1 blob; see DebugProtocol.md) |
 | `STATE_GET` | `0x00000601` |
 | `MEM_MAIN_RAW` | `4` — physical `cpu->mmu->get_memory_base()[addr]` (no MMU/bus) |

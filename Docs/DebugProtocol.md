@@ -500,6 +500,26 @@ Generic device ops. Devices register in-process handlers via `computer_t::regist
 
 Per-oscillator (24 bytes): `freq` u16, `wtsize` u16, `control` u8, `vol` u8, `data` u8, pad, `wavetblpointer` u32, `wavetblsize` u8, `resolution` u8, `irqpend` u8, pad, `accumulator` u32, pad u32.
 
+##### Disk II `STATE_GET` blob (v1) — 60 bytes (`DEVICE_ID_DISK_II` = 9)
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `version` = `1` |
+| 4 | 1 | `select` (drive 0/1) |
+| 5 | 1 | `motor_on` (physical / 555 grace) |
+| 6 | 1 | `motor_latch` (`diskii_enable`) |
+| 7 | 1 | `q6` |
+| 8 | 1 | `q7` |
+| 9 | 1 | `data_register` |
+| 10 | 1 | `sequencer_state` |
+| 11 | 1 | pad `0` |
+| 12 | 8 | `mark_cycles_turnoff` (c14m deadline, or 0) |
+| 20 | 8 | `cpu_cycles` |
+| 28 | 16 | drive 0 |
+| 44 | 16 | drive 1 |
+
+Per-drive (16 bytes): `track` i16 (quarter-tracks), `max_tracks` i16, `phase0`…`phase3` u8 each, `enable` u8, `write_protect` u8, `mounted` u8, pad×5.
+
 ---
 
 ## Example exchange

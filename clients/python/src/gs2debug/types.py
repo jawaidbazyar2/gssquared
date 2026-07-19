@@ -32,6 +32,7 @@ MEM_MAIN_RAW = 4
 MEM_MEGAII_RAW = 5
 
 # device_id (src/Device_ID.hpp) — values used by STATE_GET
+DEVICE_ID_DISK_II = 9
 DEVICE_ID_ENSONIQ = 22
 
 BP_KIND_EXEC = 1

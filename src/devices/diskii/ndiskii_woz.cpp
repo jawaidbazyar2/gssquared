@@ -133,4 +133,14 @@ void init_slot_ndiskII_woz(computer_t *computer, SlotType_t slot) {
             return diskII_d->dc->debug();
         }
     );
+
+    computer->register_device_debug(DEVICE_ID_DISK_II,
+        [diskII_d](uint32_t op, const std::vector<uint8_t> & /*req*/,
+                   std::vector<uint8_t> &reply, std::string &err) {
+            if (op != DEVOP_STATE_GET) {
+                err = "unsupported op";
+                return false;
+            }
+            return diskII_d->dc->pack_state(reply, err);
+        });
 }

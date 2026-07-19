@@ -365,7 +365,7 @@ int identify_media(media_descriptor& md) {
         md.interleave = INTERLEAVE_PO;
         md.data_offset = 0;
         //md.write_protected = false /*true*/;
-        md.dos33_volume = 0x01; // might want to try to snag this from the DOS33 VTOC
+        md.dos33_volume = 254; // match .dsk/.do and CiderPress; ProDOS FX XRW treats V=1 as stepping×1
     } else if (compare_suffix(md.filename, ".nib")) {
         md.media_type = MEDIA_PRENYBBLE;
         md.file_size = get_file_size(md.filename);

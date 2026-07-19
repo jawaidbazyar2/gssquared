@@ -69,6 +69,20 @@ public:
     virtual void set_phase(uint8_t phase, uint8_t onoff) override;
 
     virtual int get_track() override { return track; }
+
+    int16_t get_max_tracks() const { return max_tracks; }
+
+    uint8_t get_phase(uint8_t phase) const {
+        switch (phase) {
+            case 0: return phase0;
+            case 1: return phase1;
+            case 2: return phase2;
+            case 3: return phase3;
+            default: return 0;
+        }
+    }
+
+    bool get_is_mounted() const { return is_mounted; }
    
     virtual int get_side() override { return 0; }
 
