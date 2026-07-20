@@ -91,6 +91,8 @@ void VideoScannerIIePAL::init_video_addresses()
 
 void VideoScannerIIePAL::video_cycle()
 {
+    apply_due_mode_changes();
+
     scan_address_t &sa = video_addresses[scan_index];
     uint16_t address = sa.addr;
 
@@ -125,5 +127,5 @@ void VideoScannerIIePAL::video_cycle()
 
 VideoScannerIIePAL::VideoScannerIIePAL(MMU_II *mmu) : VideoScannerII(mmu)
 {
-    cycles_per_frame = SCANNER_CYCLES;  
+    cycles_per_frame = SCANNER_CYCLES;
 }

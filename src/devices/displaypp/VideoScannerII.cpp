@@ -206,8 +206,104 @@ void VideoScannerII::set_video_mode()
     mode_flags = flags;
 }
 
+void VideoScannerII::clear_mode_change_queue()
+{
+    mode_q_head = 0;
+    mode_q_tail = 0;
+    mode_q_count = 0;
+}
+
+void VideoScannerII::apply_mode_change(vs_mode_switch_t sw, uint8_t value)
+{
+    const bool on = value != 0;
+    switch (sw) {
+        case vs_mode_switch_t::TEXT_GRAF: graf = on; break;
+        case vs_mode_switch_t::MIXED:     mixed = on; break;
+        case vs_mode_switch_t::PAGE2:     page2 = on; break;
+        case vs_mode_switch_t::HIRES:     hires = on; break;
+        case vs_mode_switch_t::STORE80:   f_80store = on; break;
+        case vs_mode_switch_t::COL80:     sw80col = on; break;
+        case vs_mode_switch_t::ALTCHAR:   altchrset = on; break;
+        case vs_mode_switch_t::DBLRES:    dblres = on; break;
+        case vs_mode_switch_t::SHR:       shr = on; break;
+        case vs_mode_switch_t::COUNT:     break;
+    }
+}
+
+void VideoScannerII::cancel_pending_mode_change(vs_mode_switch_t sw)
+{
+    if (!mode_q_count) {
+        return;
+    }
+    uint8_t idx = mode_q_head;
+    for (uint8_t i = 0; i < mode_q_count; i++) {
+        if (mode_q[idx].sw == sw) {
+            // Remove entry at idx by shifting subsequent entries forward.
+            uint8_t src = idx;
+            for (uint8_t j = i + 1; j < mode_q_count; j++) {
+                uint8_t next = static_cast<uint8_t>((src + 1) & (MODE_Q_SIZE - 1));
+                mode_q[src] = mode_q[next];
+                src = next;
+            }
+            mode_q_tail = static_cast<uint8_t>((mode_q_tail + MODE_Q_SIZE - 1) & (MODE_Q_SIZE - 1));
+            mode_q_count--;
+            return;
+        }
+        idx = static_cast<uint8_t>((idx + 1) & (MODE_Q_SIZE - 1));
+    }
+}
+
+void VideoScannerII::queue_mode_change(vs_mode_switch_t sw, uint8_t value)
+{
+    const uint8_t delay = mode_change_delay(sw);
+
+    // Delay 0 (some switch/platform combos): apply now; drop any stale pending entry.
+    if (delay == 0) {
+        cancel_pending_mode_change(sw);
+        apply_mode_change(sw, value);
+        set_video_mode();
+        return;
+    }
+
+    // Supersede any pending change for the same softswitch.
+    cancel_pending_mode_change(sw);
+
+    if (mode_q_count >= MODE_Q_SIZE) {
+        // Queue full: apply oldest entry immediately so we never drop a mode bit.
+        apply_mode_change(mode_q[mode_q_head].sw, mode_q[mode_q_head].value);
+        set_video_mode();
+        mode_q_head = static_cast<uint8_t>((mode_q_head + 1) & (MODE_Q_SIZE - 1));
+        mode_q_count--;
+    }
+
+    uint16_t apply_at = static_cast<uint16_t>(scan_index + delay);
+    if (apply_at >= cycles_per_frame) {
+        apply_at = static_cast<uint16_t>(apply_at - cycles_per_frame);
+    }
+
+    mode_q[mode_q_tail] = { apply_at, sw, value };
+    mode_q_tail = static_cast<uint8_t>((mode_q_tail + 1) & (MODE_Q_SIZE - 1));
+    mode_q_count++;
+}
+
+void VideoScannerII::drain_due_mode_changes()
+{
+    bool need_mode_update = false;
+    while (mode_q_count && mode_q[mode_q_head].apply_at == scan_index) {
+        apply_mode_change(mode_q[mode_q_head].sw, mode_q[mode_q_head].value);
+        mode_q_head = static_cast<uint8_t>((mode_q_head + 1) & (MODE_Q_SIZE - 1));
+        mode_q_count--;
+        need_mode_update = true;
+    }
+    if (need_mode_update) {
+        set_video_mode();
+    }
+}
+
 void VideoScannerII::video_cycle()
 {
+    apply_due_mode_changes();
+
     scan_address_t &sa = video_addresses[scan_index];
 
     uint16_t address = sa.addr;

@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <cstdint>
@@ -88,9 +87,34 @@ typedef struct mode_table_t {
 
 typedef scan_address_t scanner_lut_t[SCANNER_LUT_SIZE];
 
+// Softswitches whose display effect may be delayed by N video cycles.
+enum class vs_mode_switch_t : uint8_t {
+    TEXT_GRAF = 0, // C050/C051 (graf)
+    MIXED,         // C052/C053
+    PAGE2,         // C054/C055
+    HIRES,         // C056/C057
+    STORE80,       // C000/C001
+    COL80,         // C00C/C00D
+    ALTCHAR,       // C00E/C00F
+    DBLRES,        // C05E/C05F AN3
+    SHR,           // C029 NEWVIDEO
+    COUNT
+};
+
+struct mode_change_t {
+    uint16_t apply_at; // scan_index when change takes effect
+    vs_mode_switch_t sw;
+    uint8_t value;     // 0/1
+};
+
 class VideoScannerII
 {
 protected:
+    static constexpr uint8_t MODE_Q_SIZE = 8;
+    static constexpr uint8_t delay_lut_ii[static_cast<uint8_t>(vs_mode_switch_t::COUNT)] = {
+        1, 1, 0, 0, 1, 1, 1, 1, 1
+    };
+
     // LUTs for video addresses
     /* alignas(64) scanner_lut_t lores_p1;
     alignas(64) scanner_lut_t lores_p2;
@@ -164,6 +188,30 @@ protected:
     uint8_t current_scb = 0;
     uint16_t h_counter = 0;
 
+    // Delayed softswitch → display mode pipeline
+    mode_change_t mode_q[MODE_Q_SIZE];
+    uint8_t mode_q_head = 0;
+    uint8_t mode_q_tail = 0;
+    uint8_t mode_q_count = 0;
+
+    void apply_mode_change(vs_mode_switch_t sw, uint8_t value);
+    void cancel_pending_mode_change(vs_mode_switch_t sw);
+    void queue_mode_change(vs_mode_switch_t sw, uint8_t value);
+    void drain_due_mode_changes();
+    void clear_mode_change_queue();
+
+    // Per-platform latency; override in IIe / IIgs / PAL.
+    inline virtual uint8_t mode_change_delay(vs_mode_switch_t sw) const {
+        return delay_lut_ii[static_cast<uint8_t>(sw)];
+    }
+
+    // Hot path: empty queue is the common case — avoid the out-of-line call.
+    inline void apply_due_mode_changes() {
+        if (mode_q_count) {
+            drain_due_mode_changes();
+        }
+    }
+
 public:
 //uint32_t  hcount;       // use separate hcount and vcount in order
 //uint32_t  vcount;       // to simplify IIgs scanline interrupts
@@ -175,7 +223,11 @@ public:
     virtual void initialize() { init_video_addresses(); }
     virtual void allocate();
 
-    virtual void reset() { frame_scan->clear(); /* hcount = 0; */ scan_index = 0 /* (65*243) */; };
+    virtual void reset() {
+        frame_scan->clear();
+        scan_index = 0;
+        clear_mode_change_queue();
+    };
 
     virtual void video_cycle();
     uint32_t get_scan_cycle() { return scan_index; }
@@ -203,16 +255,16 @@ public:
     }
 
     virtual void set_video_mode();
-    inline void set_page_1() { page2 = false; set_video_mode(); }
-    inline void set_page_2() { page2 = true;  set_video_mode(); }
-    inline void set_full()   { mixed = false; set_video_mode(); }
-    inline void set_mixed()  { mixed = true;  set_video_mode(); }
-    inline void set_lores()  { hires = false; set_video_mode(); }
-    inline void set_hires()  { hires = true;  set_video_mode(); }
-    inline void set_text()   { graf  = false; set_video_mode(); }
-    inline void set_graf()   { graf  = true;  set_video_mode(); }
-    inline void set_80store(bool fl) { f_80store = fl; set_video_mode(); }
-    inline void set_shr() { shr = true; set_video_mode(); }
+    inline void set_page_1() { queue_mode_change(vs_mode_switch_t::PAGE2, 0); }
+    inline void set_page_2() { queue_mode_change(vs_mode_switch_t::PAGE2, 1); }
+    inline void set_full()   { queue_mode_change(vs_mode_switch_t::MIXED, 0); }
+    inline void set_mixed()  { queue_mode_change(vs_mode_switch_t::MIXED, 1); }
+    inline void set_lores()  { queue_mode_change(vs_mode_switch_t::HIRES, 0); }
+    inline void set_hires()  { queue_mode_change(vs_mode_switch_t::HIRES, 1); }
+    inline void set_text()   { queue_mode_change(vs_mode_switch_t::TEXT_GRAF, 0); }
+    inline void set_graf()   { queue_mode_change(vs_mode_switch_t::TEXT_GRAF, 1); }
+    inline void set_80store(bool fl) { queue_mode_change(vs_mode_switch_t::STORE80, fl ? 1 : 0); }
+    inline void set_shr() { queue_mode_change(vs_mode_switch_t::SHR, 1); }
 
     inline bool is_page_1() { return !page2; }
     inline bool is_page_2() { return  page2; }
@@ -227,17 +279,17 @@ public:
     inline bool is_altchrset()    { return altchrset; }
     inline bool is_dblres()       { return dblres; }
 
-    inline void set_80col()       { sw80col   = true;  set_video_mode(); }
-    inline void set_altchrset()   { altchrset = true;  set_video_mode(); }
-    inline void set_dblres()      { dblres    = true;  set_video_mode(); }
-    inline void set_dblres_f(bool fl) { dblres    = fl;  set_video_mode(); }
-    inline void set_80col_f(bool fl) { sw80col   = fl;  set_video_mode(); }
-    inline void set_altchrset_f(bool fl) { altchrset = fl;  set_video_mode(); }
+    inline void set_80col()       { queue_mode_change(vs_mode_switch_t::COL80, 1); }
+    inline void set_altchrset()   { queue_mode_change(vs_mode_switch_t::ALTCHAR, 1); }
+    inline void set_dblres()      { queue_mode_change(vs_mode_switch_t::DBLRES, 1); }
+    inline void set_dblres_f(bool fl) { queue_mode_change(vs_mode_switch_t::DBLRES, fl ? 1 : 0); }
+    inline void set_80col_f(bool fl) { queue_mode_change(vs_mode_switch_t::COL80, fl ? 1 : 0); }
+    inline void set_altchrset_f(bool fl) { queue_mode_change(vs_mode_switch_t::ALTCHAR, fl ? 1 : 0); }
 
-    inline void reset_80col()     { sw80col   = false; set_video_mode(); }
-    inline void reset_altchrset() { altchrset = false; set_video_mode(); }
-    inline void reset_dblres()    { dblres    = false; set_video_mode(); }
-    inline void reset_shr()       { shr       = false; set_video_mode(); }
+    inline void reset_80col()     { queue_mode_change(vs_mode_switch_t::COL80, 0); }
+    inline void reset_altchrset() { queue_mode_change(vs_mode_switch_t::ALTCHAR, 0); }
+    inline void reset_dblres()    { queue_mode_change(vs_mode_switch_t::DBLRES, 0); }
+    inline void reset_shr()       { queue_mode_change(vs_mode_switch_t::SHR, 0); }
 
     inline void set_text_bg(uint16_t bg) { text_bg = bg; text_color = text_fg << 4 | text_bg; }
     inline void set_text_fg(uint16_t fg) { text_fg = fg; text_color = text_fg << 4 | text_bg; }

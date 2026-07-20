@@ -144,6 +144,8 @@ void VideoScannerIIgs::dump_cycles()
 
 void VideoScannerIIgs::video_cycle()
 {
+    apply_due_mode_changes();
+
     scan_address_t &sa = video_addresses[scan_index];
     uint16_t address = sa.addr;
 
