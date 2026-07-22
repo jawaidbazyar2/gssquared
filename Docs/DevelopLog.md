@@ -12324,3 +12324,31 @@ Apple IIe Enh
 
 then the four most recent configs loaded from disk can fill out the 12 buttons. and be displayed between IIgs and the 3 generic buttons.
 We could use different, smaller buttons for +, folder, profile. at the bottom under the 12. then we could show the most recent 7 disk-loaded profiles.
+
+## July 20, 2026
+
+so I believe there's been an issue in the system this whole time, which is that in the cpu we have called mmu->read/write and  THEN incr_cycles - and THEN the video routines.
+
+In a real apple, the video fetch happens first. Having it reversed, there are several effects:
+1. a write to a video softswitch takes effect on the immediate cycle, and affects the video output that cycle; whereas on a real II it would happen on the -next- cycle. 
+
+You can see this effect in deater megademo re the separator line between lores/hires early on.
+
+2. this caused calculations related to the mockingboard timers to be off one cycle compared to the cpu access. All that stuff is incredibly timing sensitive. 
+
+I have a branch cycletimingfix that seeks to address this. HOWEVER. There are some things to discuss.
+
+First, the mockingboard 6522 timer code had to change, as it had the previous order baked in. I got opus to get through modifying the MB code and it's passing the mb-audit tests again.
+
+A further issue is going to be GS cycle timing. Currently, the mmu read or write sets the cycle type after it's decoded everything - but reversed, we're affecting how the -next- cycle will time which isn't right. So somehow we need to split the cycle-timing decode.
+
+Is there a way we can efficiently classify an access just by the address? We need to know Fast-rom, fast-ram, and slow.
+
+There is a different approach to fix, which is in the issue124 branch. This was looking to peek back in the video buffer and alter the flags for 0-latency modifications. That may be required regardless of the approach:
+
+the alt char set flag is "0 cycle latency". which means it gets set somehow in the current cycle before the lookup occurs? With the current test ordering (video-before-mmu) the vidsync tests are all either -1, 0, or 1. -1 being, for instance, ALTCHAR. this implies a lookback. let's retest this with the orig code
+Huh, altchar is still phase -1. how is that possible.
+
+ok Grokky says it's because the way the syncs are timed the relative offset between sync and altchar isn't changing. that makes a certain sense.
+
+So now what.. video-before-mmu is in some sense "more right" but it's going to drive a lot of changes maybe I don't want to do before version 1.0.  And ALTCHAR (and others) have to lookback in either case.
