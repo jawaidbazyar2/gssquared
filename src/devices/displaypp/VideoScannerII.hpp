@@ -88,6 +88,8 @@ typedef struct mode_table_t {
 typedef scan_address_t scanner_lut_t[SCANNER_LUT_SIZE];
 
 // Softswitches whose display effect may be delayed by N video cycles.
+// Per-platform LUT latencies: 0 = patch prior ScanBuffer entry (same cycle),
+// 1 or 2 = take effect at scan_index + N on the next video_cycle drain(s).
 enum class vs_mode_switch_t : uint8_t {
     TEXT_GRAF = 0, // C050/C051 (graf)
     MIXED,         // C052/C053

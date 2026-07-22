@@ -19,5 +19,17 @@ public:
     inline uint32_t get_count() const noexcept { return (write_pos - read_pos) & BUFFER_MASK; };
     inline void clear() noexcept { write_pos = 0; read_pos = 0; };
     inline Scan_t get(uint32_t index) const noexcept { return buffer[(read_pos + index) & BUFFER_MASK]; };
+
+    // Delay-0 softswitches: revise flags on the most recently pushed sample.
+    // Bus order is softswitch then video_cycle, so that sample is this CPU cycle's
+    // video byte. Do not rewrite mode — turning VM_BLANK into TEXT/HIRES overflows
+    // the visible Frame560 during generate_frame.
+    inline void update_last_flags(uint8_t flags) noexcept {
+        if (write_pos == read_pos) {
+            return;
+        }
+        buffer[(write_pos - 1) & BUFFER_MASK].flags = flags;
+    }
+
     void saveToFile(const char *filename);
 };

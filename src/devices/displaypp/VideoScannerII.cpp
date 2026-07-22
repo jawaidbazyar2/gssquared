@@ -255,13 +255,19 @@ void VideoScannerII::cancel_pending_mode_change(vs_mode_switch_t sw)
 
 void VideoScannerII::queue_mode_change(vs_mode_switch_t sw, uint8_t value)
 {
+    // LUT latency: 0 = same-cycle (retro-patch last Scan_t); 1 or 2 = apply at
+    // scan_index + delay at the start of that video_cycle.
     const uint8_t delay = mode_change_delay(sw);
 
-    // Delay 0 (some switch/platform combos): apply now; drop any stale pending entry.
+    // Delay 0: apply now for the upcoming video_cycle, and revise the sample just
+    // emitted — 0-cycle switches affect the video byte of the same CPU cycle.
     if (delay == 0) {
         cancel_pending_mode_change(sw);
         apply_mode_change(sw, value);
         set_video_mode();
+        if (frame_scan) {
+            frame_scan->update_last_flags(mode_flags);
+        }
         return;
     }
 
