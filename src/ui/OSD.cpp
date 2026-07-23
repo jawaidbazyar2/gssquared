@@ -391,7 +391,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         return true;
     });
 
-    if (computer->platform && computer->platform->id == PLATFORM_APPLE_IIGS) {
+    if (computer->platform && platform_is_iigs(computer->platform->id)) {
         Style_t hostFstBtnStyle;
         hostFstBtnStyle.background_color = 0xE0E0FFFF;
         hostFstBtnStyle.text_color = 0x000000FF;

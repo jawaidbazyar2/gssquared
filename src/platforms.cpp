@@ -162,6 +162,7 @@ static  platform_info platforms[] = {
             DEVICE_ID_ENSONIQ,
             DEVICE_ID_SCC8530,
             DEVICE_ID_IWM,
+            DEVICE_ID_HOST_FST,
             DEVICE_ID_END
         }
      },
