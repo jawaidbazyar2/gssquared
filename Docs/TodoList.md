@@ -54,9 +54,9 @@ From [Documentation.md](Documentation.md), [AppleIIgs.md](AppleIIgs.md), [AppleI
 - [ ] Apple IIc / IIc+ platform support
 - [ ] Apple II Rev 0 / j-plus (not planned as high priority; still listed as unsupported)
 - [ ] IIgs ROM03
-- [ ] Finish Ensoniq DOC (marked in-progress / ~half done)
+- [X] Finish Ensoniq DOC (marked in-progress / ~half done)
 - [ ] Finish / harden Zilog SCC 8530 (modem exists; control signals, reset cleanup, file device, etc. still open in [SCC8530_Serial.md](SCC8530_Serial.md))
-- [ ] RAMfast SCSI Interface (not started)
+- [-] RAMfast SCSI Interface (not started)
 - [ ] Shift-key mod and Lowercase Character Generator (II+)
 - [X] Crisp Lo-Res / Double Lo-Res special case in IIgs RGB mode ([AppleIIgs.md](AppleIIgs.md))
 - [ ] Passport MIDI card + FluidSynth ([MIDI.md](MIDI.md))
@@ -131,16 +131,16 @@ From [DevelopLog.md](DevelopLog.md), [AppleIIgs.md](AppleIIgs.md), [Compatibilit
 From [Documentation.md](Documentation.md), [MockingboardBugAnalysis.md](MockingboardBugAnalysis.md), [DevelopLog.md](DevelopLog.md), [Compatibility.md](Compatibility.md):
 
 - [X] Finish Ensoniq fidelity (SenseiPlay / some demos still imperfect; see also Ensoniq notes)
-- [ ] Mockingboard mixer AND-gate (tone+noise) if still using addition ([MockingboardBugAnalysis.md](MockingboardBugAnalysis.md) Bug 5)
+- [-] Mockingboard mixer AND-gate (tone+noise) if still using addition ([MockingboardBugAnalysis.md](MockingboardBugAnalysis.md) Bug 5)
 - [ ] Verify other MockingboardBugAnalysis findings are fixed in tree (bipolar mix, silent when both disabled, tone period/duty)
 - [ ] Noise vs tone amplitude balance on Mockingboard
-- [ ] Mad Effects #2 still wrong (MB interrupt / VBL timing specifics)
+- [X] Mad Effects #2 still wrong (MB interrupt / VBL timing specifics)
 - [ ] Speaker output delay
 - [ ] Configurable speaker output rate
 - [ ] Mute / drain disk sound-effect queues in Ludicrous Speed (or on ctrl-reset)
 - [ ] Pause / mute audio when emulator window minimized
 - [ ] Chiptunes (Skull Island, Crazy Cycles 2): stop unending warning/spam streams
-- [ ] Add Mockingboard cycle hook into `NClockIIgs`
+- [X] Add Mockingboard cycle hook into `NClockIIgs`
 - [ ] Rescue Raiders speech synth (or don't advertise speech chip) ([Compatibility.md](Compatibility.md))
 
 ---
@@ -151,7 +151,7 @@ From [ADB.md](ADB.md), [UserInterface.md](UserInterface.md), [Networking.md](Net
 
 - [ ] Mouse interrupts only during VBL, max ~60 Hz
 - [ ] Cap mouse delta (±63 counts / ~0.8")
-- [ ] Button 1 support / correct XY+button read order
+- [X] Button 1 support / correct XY+button read order
 - [ ] At RESET, disable mouse interrupts
 - [ ] GS AKD bug: hold G then H, release H → AKD still set (real GS clears)
 - [ ] ADB vs gamecontroller modifier keymap conflict (Alt/Win)
@@ -180,9 +180,9 @@ From [Roadmap.md](Roadmap.md), [DebugProtocol.md](DebugProtocol.md), [DevelopLog
 - [ ] Monitor command to display stack
 - [ ] Address parser support for `/`
 - [ ] Disassembler: set/track M/X widths (REP/SEP)
-- [ ] Breakpoints: PC-only / MEM-only / BOTH; value match; “write value to address”
-- [ ] BP on 0 must not fire on immediates like `LDA #1`
-- [ ] Debug frame-step: don't consume/modify normal frame-end path; interrupts shouldn't fire while CPU frozen
+- [X] Breakpoints: PC-only / MEM-only / BOTH; value match; “write value to address”
+- [X] BP on 0 must not fire on immediates like `LDA #1`
+- [X] Debug frame-step: don't consume/modify normal frame-end path; interrupts shouldn't fire while CPU frozen
 - [ ] Debug window near screen edge + flash → runaway flash / slow debug updates
 - [ ] Store `e` bit in trace flags; polish immediate-operand display
 - [ ] STP / WAI; abort/IRQ/NMI/RES stack paths if still incomplete ([65816.md](65816.md))
@@ -193,10 +193,10 @@ From [Roadmap.md](Roadmap.md), [DebugProtocol.md](DebugProtocol.md), [DevelopLog
 
 From [UserInterface.md](UserInterface.md), [SystemConfigTOML.md](SystemConfigTOML.md), [DevelopLog.md](DevelopLog.md):
 
-- [ ] Manage slots in Control Panel (only when system off)
+- [X] Manage slots in Control Panel (only when system off)
 - [ ] Show / manage devices on serial ports
-- [ ] Create / Save / Load system configs from UI (File menu + Select screen `+` / folder) — verify vs current Config Editor
-- [ ] On first run, copy default extra configs into user systems folder
+- [X] Create / Save / Load system configs from UI (File menu + Select screen `+` / folder) — verify vs current Config Editor
+- [X] On first run, copy default extra configs into user systems folder
 - [ ] Cache Control Panel template texture (static chrome vs dynamic widgets)
 - [ ] Platform specifies allowed CPU speed settings in OSD
 - [ ] Remove "IIgs with 5.25 only" test config tile
@@ -249,22 +249,22 @@ From [CPUs.md](CPUs.md), [DevelopLog.md](DevelopLog.md), [Documentation.md](Docu
 From [Compatibility.md](Compatibility.md) and [CompatibilityGS.md](CompatibilityGS.md) (items that still read as open at last doc update):
 
 ### Apple II
-- [ ] Mad Effects #2 (Mockingboard / VBL timing)
-- [ ] keywin.2mg (800K) does not boot
+- [X] Mad Effects #2 (Mockingboard / VBL timing)
+- [X] keywin.2mg (800K) does not boot
 - [ ] Locksmith nibble copying / quarter-track cases
 - [ ] ProTerm 2.2: loops asking for keyboard after "confirm hardware"
 - [ ] Wizardry + Videx: shows only Videx screen on II+ (fine on //e)
 
 ### Apple IIgs
 - [ ] Zany Golf: black playfield once in a level
-- [ ] Bard's Tale I/II: re-verify current status (had Ensoniq / SmartPort issues)
-- [ ] A2Desktop text editor/viewer crash (AUX/MAIN?)
-- [ ] A2Desktop with floppies enabled: hang reading floppies
-- [ ] SenseiPlay: songs still incorrect after Ensoniq IRQ fix
+- [X] Bard's Tale I/II: re-verify current status (had Ensoniq / SmartPort issues)
+- [X] A2Desktop text editor/viewer crash (AUX/MAIN?)
+- [X] A2Desktop with floppies enabled: hang reading floppies
+- [X] SenseiPlay: songs still incorrect after Ensoniq IRQ fix
 - [ ] Megademo: non-responsive after menu; fillmode defects on first screen
-- [ ] Nucleus / Sales Demo-class instrument artifacts (if still present)
+- [X] Nucleus / Sales Demo-class instrument artifacts (if still present)
 - [ ] Photonix: direct 3.5 access / "Non bootable disk" loop
-- [ ] Airheart standalone on GS vs //e (5.25 bootloader / `C0EC` loop)
+- [X] Airheart standalone on GS vs //e (5.25 bootloader / `C0EC` loop)
 - [ ] DreamVoir (Golden Orchard variant) BRK after splash
 
 ---

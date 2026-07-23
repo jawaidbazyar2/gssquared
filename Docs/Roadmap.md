@@ -85,6 +85,7 @@
 
 ## Release 1.0
 
+[ ] implement shaders on windows/linux
 [ ] Fix all known / pending bugs  
 
 
