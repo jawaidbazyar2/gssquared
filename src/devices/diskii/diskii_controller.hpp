@@ -146,8 +146,13 @@ public:
     bool diskii_running_last = false;
     int  tracknumber_last    = 0;
 
+    static SoundChannel channel_for_drive(uint8_t drive_select) {
+        return drive_select == 0 ? SoundChannel::Left : SoundChannel::Right;
+    }
+
     void soundeffects_update() {
         int tracknumber = drives[diskii_select].get_track();
+        const SoundChannel ch = channel_for_drive(diskii_select);
 
         if (diskii_running_last && !motor_on) {
             diskii_running_last = false;
@@ -155,10 +160,10 @@ public:
         }
 
         if (motor_on) {
+            // Mono chunk size from WAV; stream queues stereo (2×) after expand.
             int dl = (int) sounds[SE_SHUGART_DRIVE].si->wav_data_len / 10;
-            if (SDL_GetAudioStreamQueued(sounds[SE_SHUGART_DRIVE].si->stream) < dl) {
-                SDL_PutAudioStreamData(sounds[SE_SHUGART_DRIVE].si->stream,
-                    sounds[SE_SHUGART_DRIVE].si->wav_data + dl * running_chunknumber, dl);
+            if (sound_effect->get_queued(SE_SHUGART_DRIVE) < dl * 2) {
+                sound_effect->play_specific(SE_SHUGART_DRIVE, dl * running_chunknumber, dl, ch);
                 running_chunknumber++;
                 if (running_chunknumber > 8) running_chunknumber = 0;
             }
@@ -169,7 +174,7 @@ public:
             int len = ((int)(200 * 2) * std::abs(tracknumber_last - tracknumber));
             if (ind + len > sounds[SE_SHUGART_HEAD].si->wav_data_len)
                 len = sounds[SE_SHUGART_HEAD].si->wav_data_len - ind;
-            sound_effect->play_specific(SE_SHUGART_HEAD, ind, len);
+            sound_effect->play_specific(SE_SHUGART_HEAD, ind, len, ch);
 
             if (start_track_movement == -1) start_track_movement = tracknumber_last;
             tracknumber_last = tracknumber;

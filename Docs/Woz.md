@@ -443,8 +443,8 @@ For that matter, are we writing out ANY non-woz files?
 
 [ ] make all the 74LS259 Addressible Latch registers be bools
 
-[ ] Have Soundeffects support stereo
-[ ] have drive 1 play through left channel, drive 2 play through right channel.  
+[X] Have Soundeffects support stereo
+[X] have drive 1 play through left channel, drive 2 play through right channel.  
 
 
 

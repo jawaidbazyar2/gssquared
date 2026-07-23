@@ -629,6 +629,11 @@ class IWM : public StorageDevice {
   
     bool diskii_running_last = false;
     int tracknumber_last = 0;
+
+    static SoundChannel channel_for_drive(uint8_t drive_select) {
+        return drive_select == 0 ? SoundChannel::Left : SoundChannel::Right;
+    }
+
     void soundeffects_update() {
         // Shugart sound effects are 5.25-specific. When the IWM is in
         // 3.5 mode, skip queueing spindle / head sounds so we don't play
@@ -641,6 +646,7 @@ class IWM : public StorageDevice {
             return;
         }
         int tracknumber = drives[0][iwm_select]->get_track();
+        const SoundChannel ch = channel_for_drive(iwm_select);
 
         //printf("diskii_running: %d, tracknumber: %d / %d\n", diskii_running, tracknumber, tracknumber_last);
     
@@ -658,9 +664,10 @@ class IWM : public StorageDevice {
         /* Only queue audio data if sound is enabled */
         //static int running_chunknumber = 0;
         if (enable_asserted) {
+            // Mono chunk size from WAV; stream queues stereo (2×) after expand.
             int dl = (int) sounds[SE_SHUGART_DRIVE].si->wav_data_len / 10;
-            if (SDL_GetAudioStreamQueued(sounds[SE_SHUGART_DRIVE].si->stream) < dl) {
-                SDL_PutAudioStreamData(sounds[SE_SHUGART_DRIVE].si->stream, sounds[SE_SHUGART_DRIVE].si->wav_data + dl * running_chunknumber, dl);
+            if (sound_effect->get_queued(SE_SHUGART_DRIVE) < dl * 2) {
+                sound_effect->play_specific(SE_SHUGART_DRIVE, dl * running_chunknumber, dl, ch);
                 running_chunknumber++;
                 if (running_chunknumber > 8) {
                     running_chunknumber = 0;
@@ -678,7 +685,7 @@ class IWM : public StorageDevice {
             if (ind + len > sounds[SE_SHUGART_HEAD].si->wav_data_len) {
                 len = sounds[SE_SHUGART_HEAD].si->wav_data_len - ind;
             }
-            sound_effect->play_specific(SE_SHUGART_HEAD, ind, len);
+            sound_effect->play_specific(SE_SHUGART_HEAD, ind, len, ch);
 
             if (start_track_movement == -1) start_track_movement = tracknumber_last;
             tracknumber_last = tracknumber;
