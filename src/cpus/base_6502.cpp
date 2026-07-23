@@ -2167,6 +2167,9 @@ int execute_next(cpu_state *cpu) override {
     //if (!cpu->I && (cpu->irq_pipe & 0x02)) { // T1: look back 2 cycles for IRQ assertion
     if (cpu->irq_pipe & 0x02) { // T2: look back 2 cycles for IRQ assertion AND I
         if constexpr ((CPUTraits::has_65816_ops)) {
+            // Discarded opcode fetch: native IRQ is 8 cycles (incl. push PB),
+            // e-mode is 7. Without this, both are one cycle short.
+            phantom_read_ign(cpu, make_pc_long(cpu, cpu->pc));
             if constexpr (!CPUTraits::e_mode) push_byte(cpu, cpu->pb);
             push_word(cpu, cpu->pc); // push current PC
             
@@ -2182,6 +2185,10 @@ int execute_next(cpu_state *cpu) override {
             cpu->pb = 0x00;
             incr_cycles(cpu);
         } else {
+            // 6502 IRQ is 7 cycles. push_word (2) + push_byte (1) + vector (2)
+            // + trailing incr (1) = 6; add discarded opcode fetch for the 7th.
+            // (Mad Effect INT_ROUT1 T1C jitter pad depends on this full count.)
+            phantom_read_ign(cpu, make_pc_long(cpu, cpu->pc));
             push_word(cpu, cpu->pc); // push current PC
             push_byte(cpu, (cpu->p & ~FLAG_B) | FLAG_UNUSED); // break flag = 0, Unused bit set to 1.
             cpu->I = 1; // interrupt disable flag set to 1.
@@ -2190,7 +2197,6 @@ int execute_next(cpu_state *cpu) override {
             }
             cpu->pc = read_word_bank0(cpu,IRQ_VECTOR);
             incr_cycles(cpu);
-            //incr_cycles(cpu); // todo might be one too many, we're at 8, refs say it's 7. push_byte takes an extra cycle now?
         }
         
         cpu->rdy = false;
