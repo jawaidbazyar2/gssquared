@@ -75,10 +75,17 @@ inline bool shr_320_mode(MMU_II *megaii) {
 }
 
 inline void read_em_mouse_pos(MMU_II *mmu, int &x, int &y) {
-    uint8_t x_lo = read_megaii_linear(mmu, EM_MOUSE_X_LO);
-    uint8_t x_hi = read_megaii_linear(mmu, EM_MOUSE_X_HI);
-    uint8_t y_lo = read_megaii_linear(mmu, EM_MOUSE_Y_LO);
-    uint8_t y_hi = read_megaii_linear(mmu, EM_MOUSE_Y_HI);
+    // Read the $E1/0190-0193 bank globals, not the $E0 text-page screen
+    // holes ($047C/...): observed live against GS/OS 6.0.1 (ROM 03 boot),
+    // the Event Manager maintains its cursor position only in the bank
+    // globals — the screen-hole copies stay 0. Reading the holes made the
+    // closed-loop stepper's feedback stick at (0,0), so it never saw its
+    // steps land and drove the cursor to the bottom-right corner
+    // (stale_frames re-injects after 4 frames) instead of converging.
+    uint8_t x_lo = read_megaii_linear(mmu, EM_MOUSE_X_LO_BANK);
+    uint8_t x_hi = read_megaii_linear(mmu, EM_MOUSE_X_HI_BANK);
+    uint8_t y_lo = read_megaii_linear(mmu, EM_MOUSE_Y_LO_BANK);
+    uint8_t y_hi = read_megaii_linear(mmu, EM_MOUSE_Y_HI_BANK);
     x = x_lo | (x_hi << 8);
     y = y_lo | (y_hi << 8);
 }
