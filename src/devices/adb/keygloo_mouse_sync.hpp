@@ -74,20 +74,27 @@ inline bool shr_320_mode(MMU_II *megaii) {
     return (read_megaii_linear(megaii, SHR_SCB_LINE0) & 0x80) == 0;
 }
 
-inline void read_em_mouse_pos(MMU_II *mmu, int &x, int &y) {
-    // Read the $E1/0190-0193 bank globals, not the $E0 text-page screen
-    // holes ($047C/...): observed live against GS/OS 6.0.1 (ROM 03 boot),
-    // the Event Manager maintains its cursor position only in the bank
-    // globals — the screen-hole copies stay 0. Reading the holes made the
-    // closed-loop stepper's feedback stick at (0,0), so it never saw its
-    // steps land and drove the cursor to the bottom-right corner
-    // (stale_frames re-injects after 4 frames) instead of converging.
-    uint8_t x_lo = read_megaii_linear(mmu, EM_MOUSE_X_LO_BANK);
-    uint8_t x_hi = read_megaii_linear(mmu, EM_MOUSE_X_HI_BANK);
-    uint8_t y_lo = read_megaii_linear(mmu, EM_MOUSE_Y_LO_BANK);
-    uint8_t y_hi = read_megaii_linear(mmu, EM_MOUSE_Y_HI_BANK);
+inline void read_em_mouse_pos(MMU_II *mmu, int &x, int &y, bool rom03) {
+    // ROM 03 / GS/OS 6.0.1: Event Manager keeps the live cursor in the
+    // $E1/0190-0193 bank globals; the $E0 text-page screen holes ($047C/...)
+    // stay 0. Reading the holes stuck closed-loop feedback at (0,0).
+    // ROM 01: the holes are the working copy — bank globals are not the
+    // right feedback source there.
+    const uint32_t x_lo_addr = rom03 ? EM_MOUSE_X_LO_BANK : EM_MOUSE_X_LO;
+    const uint32_t x_hi_addr = rom03 ? EM_MOUSE_X_HI_BANK : EM_MOUSE_X_HI;
+    const uint32_t y_lo_addr = rom03 ? EM_MOUSE_Y_LO_BANK : EM_MOUSE_Y_LO;
+    const uint32_t y_hi_addr = rom03 ? EM_MOUSE_Y_HI_BANK : EM_MOUSE_Y_HI;
+    uint8_t x_lo = read_megaii_linear(mmu, x_lo_addr);
+    uint8_t x_hi = read_megaii_linear(mmu, x_hi_addr);
+    uint8_t y_lo = read_megaii_linear(mmu, y_lo_addr);
+    uint8_t y_hi = read_megaii_linear(mmu, y_hi_addr);
     x = x_lo | (x_hi << 8);
     y = y_lo | (y_hi << 8);
+}
+
+inline bool em_mouse_pos_from_bank_globals(computer_t *computer) {
+    return computer && computer->platform &&
+        computer->platform->id == PLATFORM_APPLE_IIGS_ROM3;
 }
 
 inline void write_em_axis(keygloo_state_t *kb_state, uint32_t lo, uint32_t hi,
@@ -258,7 +265,9 @@ inline void KeyGloo::seed_reported_from_em() {
     if (!host_ctx) {
         return;
     }
-    keygloo_mouse_sync::read_em_mouse_pos(host_ctx->mmu, reported_x, reported_y);
+    keygloo_mouse_sync::read_em_mouse_pos(
+        host_ctx->mmu, reported_x, reported_y,
+        keygloo_mouse_sync::em_mouse_pos_from_bank_globals(host_ctx->computer));
     reported_valid = true;
     motion_queue.clear();
     if (keygloo_mouse_sync::sync_trace_enabled()) {
@@ -280,7 +289,9 @@ inline void KeyGloo::step_em_closed_loop() {
 
     int ex = 0;
     int ey = 0;
-    keygloo_mouse_sync::read_em_mouse_pos(host_ctx->mmu, ex, ey);
+    keygloo_mouse_sync::read_em_mouse_pos(
+        host_ctx->mmu, ex, ey,
+        keygloo_mouse_sync::em_mouse_pos_from_bank_globals(host_ctx->computer));
 
     // Converged: within the deadband of the target, stop stepping.
     if (std::abs(target_x - ex) <= DEADBAND && std::abs(target_y - ey) <= DEADBAND) {
