@@ -159,6 +159,12 @@ class IWM : public StorageDevice {
         uint8_t async_shift_reg      = 0;
         uint8_t async_bits_remaining = 0;
         uint8_t async_buffer_register = 0;
+        // True only after a CPU data-register write in async mode. Without this,
+        // reset leaves hr_register_ready=0 ("busy"), and the LSS treats that as
+        // a queued byte — shifting stale async_buffer_register onto a mounted
+        // track during the ROM03 write-handshake self-test and marking the
+        // disk dirty even though firmware never wrote data.
+        bool async_buffer_valid = false;
 
         // LSS QA-hold sub-state: tracks whether we are in the first or second
         // bit-cell after bit 7 of the working shift register went high.
@@ -266,10 +272,16 @@ class IWM : public StorageDevice {
             disk_register = 0;
             mark_cycles_turnoff = 0;
             reg_mode = 0;
-            reg_handshake = 0;
+            // Handshake bit7=1 means buffer empty / ready for CPU data.
+            // Reset must start ready; ready=0 is only set when the CPU loads
+            // the buffer (see write() below). Starting at 0 made the LSS
+            // believe a byte was queued and emit write_pulse during POST.
+            update_handshake_ready(true, true);
             internal_data_register = 0;
             async_shift_reg          = 0;
             async_bits_remaining     = 0;
+            async_buffer_register    = 0;
+            async_buffer_valid       = false;
             sequencer_state          = false;
             // iwm_enable == 0 and no holdover => /ENBL deasserted everywhere.
             sync_drive_enables();
@@ -439,9 +451,15 @@ class IWM : public StorageDevice {
                 } else if (iwm_q7 == 1) {
                     if (async_wr) {
                         if (async_bits_remaining == 0) {
-                            if (hr_register_ready == 0) { // there is data, transfer it.
+                            if (hr_register_ready == 0 && async_buffer_valid) {
+                                // CPU has queued a byte; transfer to shift reg.
                                 async_shift_reg = async_buffer_register;
                                 async_bits_remaining = 8;
+                                async_buffer_valid = false;
+                                update_handshake_ready(true, true);
+                            } else if (hr_register_ready == 0) {
+                                // Busy with no valid buffer (should not happen
+                                // after reset init); do not mutate the surface.
                                 update_handshake_ready(true, true);
                             } else {
                                 update_handshake_ready(true, false); // there was no data, flag underrun
@@ -606,6 +624,7 @@ class IWM : public StorageDevice {
                 data_register = data;
                 if (dr_enable35 && mr_hsprotocol) {
                     async_buffer_register = data;
+                    async_buffer_valid = true;
                     /* async_shift_reg      = data;
                     async_bits_remaining = 8; */
                     update_handshake_ready(false, true); // mark busy (i.e. loaded)

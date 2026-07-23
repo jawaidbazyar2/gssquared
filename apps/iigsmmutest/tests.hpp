@@ -70,9 +70,11 @@ struct Test {
     int number;
     std::string description;
     std::vector<Operation> operations;
+    // Text page 2 shadowing exists only on ROM 03 hardware (is_rom03 from 256K ROM).
+    bool requires_rom03 = false;
     
-    Test(int n, std::string desc, std::initializer_list<Operation> ops)
-        : number(n), description(std::move(desc)), operations(ops) {}
+    Test(int n, std::string desc, std::initializer_list<Operation> ops, bool rom03 = false)
+        : number(n), description(std::move(desc)), operations(ops), requires_rom03(rom03) {}
 };
 
 /**
@@ -106,6 +108,50 @@ inline const std::vector<Test> ALL_TESTS = {
             AssertOp{0xE0'0400, {0x00, 0x00}},
             WriteOp{0xE0'c029, 0x01},
             WriteOp{0xE0'c035, 0x08},
+        }
+    },
+    // ROM03-only: text page 2 ($0800-$0BFF) shadows when SHADOW_INH_TEXT2 is clear.
+    Test{
+        202,
+        "ROM03 text page 2 video shadowing",
+        {
+            WriteOp{0xE0'0800, {0x00, 0x00}},
+            WriteOp{0xE0'c029, 0x01},
+            WriteOp{0xE0'c035, 0x08}, // SHR inhibit only; TEXT2 shadow enabled
+            WriteOp{0xE0'c036, 0x84},
+            WriteOp{0x00'0800, {0x12, 0x34}},
+            AssertOp{0xE0'0800, {0x12, 0x34}},
+            WriteOp{0xE0'c029, 0x01},
+        },
+        true
+    },
+    Test{
+        203,
+        "ROM03 text page 2 shadowing inhibited",
+        {
+            WriteOp{0xE0'0800, {0x00, 0x00}},
+            WriteOp{0xE0'c029, 0x01},
+            WriteOp{0xE0'c035, 0x08 | SHADOW_INH_TEXT2},
+            WriteOp{0xE0'c036, 0x84},
+            WriteOp{0x00'0800, {0x12, 0x34}},
+            AssertOp{0xE0'0800, {0x00, 0x00}},
+            WriteOp{0xE0'c029, 0x01},
+            WriteOp{0xE0'c035, 0x08},
+        },
+        true
+    },
+    // ROM01 (128K): same write must NOT shadow — is_rom03 is false.
+    Test{
+        204,
+        "ROM01 text page 2 does not shadow",
+        {
+            WriteOp{0xE0'0800, {0x00, 0x00}},
+            WriteOp{0xE0'c029, 0x01},
+            WriteOp{0xE0'c035, 0x08},
+            WriteOp{0xE0'c036, 0x84},
+            WriteOp{0x00'0800, {0x12, 0x34}},
+            AssertOp{0xE0'0800, {0x00, 0x00}},
+            WriteOp{0xE0'c029, 0x01},
         }
     },
     Test{

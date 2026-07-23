@@ -1,5 +1,8 @@
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <unistd.h>
+#include <vector>
 #include "AsmFile.hpp"
 #include "tests.hpp"
 
@@ -247,10 +250,20 @@ void liveTest(const MMUTest::Test& test, MMU_IIgs *mmu_iigs) {
     }
 }
 
+static FILE *open_rom_file(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (f) return f;
+    // When launched from build/, assets live one level up.
+    char alt[512];
+    snprintf(alt, sizeof(alt), "../%s", path);
+    return fopen(alt, "rb");
+}
+
 void printUsage(const char *progname) {
-    printf("Usage: %s [-a] [-l] [-p]\n", progname);
+    printf("Usage: %s [-a] [-l] [-3] [-p] [testnum]\n", progname);
     printf("  -a  Emit assembly output (test.asm)\n");
-    printf("  -l  Run live test against MMU module\n");
+    printf("  -l  Run live test against MMU module (ROM01 128K by default)\n");
+    printf("  -3  With -l: use ROM03 256K image (enables is_rom03 / text page 2 shadow)\n");
     printf("  -p  Print the tests\n");
     printf("\nIf no flags are specified, all operations are performed.\n");
 }
@@ -260,11 +273,12 @@ int main(int argc, char *argv[])
     bool emit_assembly = false;
     bool live_test = false;
     bool print_tests = false;
+    bool use_rom03 = false;
     bool any_flag_set = false;
     int testNumber = -1;
 
     int opt;
-    while ((opt = getopt(argc, argv, "alph")) != -1) {
+    while ((opt = getopt(argc, argv, "al3ph")) != -1) {
         switch (opt) {
             case 'a':
                 emit_assembly = true;
@@ -272,6 +286,10 @@ int main(int argc, char *argv[])
                 break;
             case 'l':
                 live_test = true;
+                any_flag_set = true;
+                break;
+            case '3':
+                use_rom03 = true;
                 any_flag_set = true;
                 break;
             case 'p':
@@ -293,7 +311,7 @@ int main(int argc, char *argv[])
     }
 
     if (!any_flag_set) {
-        printf("Usage: %s [-a] [-l] [-p]\n", argv[0]);
+        printUsage(argv[0]);
         return 1;
     }
 
@@ -321,18 +339,41 @@ int main(int argc, char *argv[])
 
     // Run the tests against our iigs mmu module
     if (live_test) {
-        uint8_t *rom = new uint8_t[128*1024];
-        // load ROM file into here.
-        FILE *rom_file = fopen("/Users/bazyar/src/GSROM/APPLE2GS.ROM", "rb");
-        fread(rom, 1, 128*1024, rom_file);
+        const char *rom_path = use_rom03
+            ? "assets/roms/apple2gs_rom3/main.rom"
+            : "assets/roms/apple2gs/main.rom";
+        const size_t rom_size = use_rom03 ? (256 * 1024) : (128 * 1024);
+
+        FILE *rom_file = open_rom_file(rom_path);
+        if (!rom_file) {
+            fprintf(stderr, "Failed to open ROM: %s (also tried ../%s)\n", rom_path, rom_path);
+            return 1;
+        }
+        std::vector<uint8_t> rom(rom_size);
+        if (fread(rom.data(), 1, rom_size, rom_file) != rom_size) {
+            fprintf(stderr, "Failed to read %zu bytes from %s\n", rom_size, rom_path);
+            fclose(rom_file);
+            return 1;
+        }
         fclose(rom_file);
-        
-        MMU_IIe *mmu_iie = new MMU_IIe(256, 128*1024, rom + 0x1'D000);
-        MMU_IIgs *mmu_iigs = new MMU_IIgs(256, 8*1024*1024, 128*1024, rom, mmu_iie);
+
+        const size_t rom_bank_ff_offset = rom_size - 65536;
+        printf("Live MMU: %s (%zu bytes), is_rom03 expected=%d\n\n",
+               rom_path, rom_size, use_rom03 ? 1 : 0);
+
+        MMU_IIe *mmu_iie = new MMU_IIe(256, 128*1024, rom.data() + rom_bank_ff_offset + 0xC000);
+        MMU_IIgs *mmu_iigs = new MMU_IIgs(256, 8*1024*1024, (uint32_t)rom_size, rom.data(), mmu_iie);
         mmu_iigs->init_map();
-        //mmu_iigs->dump_page_table();
         for (const auto& test : MMUTest::ALL_TESTS) {
             if (testNumber != -1 && test.number != testNumber) continue;
+            if (test.requires_rom03 && !use_rom03) {
+                printf("Skipping: %d - %s (requires ROM03 / -3)\n\n", test.number, test.description.c_str());
+                continue;
+            }
+            if (!test.requires_rom03 && use_rom03 && test.number == 204) {
+                printf("Skipping: %d - %s (ROM01-only negative case)\n\n", test.number, test.description.c_str());
+                continue;
+            }
             liveTest(test, mmu_iigs);
         }
         delete mmu_iigs;

@@ -97,7 +97,13 @@ uint8_t Floppy525_woz::read_sense() {
     // (e.g. the Apple IIgs ROM's disk-drive presence probe during power-on
     // self-test) spins forever when no 5.25" media is mounted. See M0 boot
     // notes in system-settings-gs/docs/HARNESS.md.
-    if (!is_mounted) return 1;
+    //
+    // The WP switch does not terminate at GND — it returns through PHASE1.
+    // When PHASE1 is driven high, the WP circuit is forced open and sense
+    // always reads 1, regardless of the notch. ROM 03 POST uses that probe
+    // (set PHASE1, wait for WP high); without it, a mounted writable disk
+    // hangs the same BMI loop that empty-drive→1 fixed for the empty case.
+    if (!is_mounted || phase1) return 1;
     return write_protect;
 }
 
