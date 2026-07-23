@@ -68,6 +68,7 @@ typedef struct format_2mg_t {
     uint32_t flag;
     uint32_t image_format;
     uint32_t block_count;
+    uint32_t data_offset; /* bytes from start of file to disk data */
     uint32_t bytes_count;
     uint32_t comment_offset;
     uint32_t comment_length;

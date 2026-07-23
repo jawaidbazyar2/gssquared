@@ -95,6 +95,7 @@ int read_2mg_header(format_2mg_t &hdr_out, const std::string& filename) {
     
     // Verify magic number "2IMG"
     if (memcmp(raw.id, "2IMG", 4) != 0) {
+        fclose(fp);
         return -1;
     }
     
@@ -107,14 +108,19 @@ int read_2mg_header(format_2mg_t &hdr_out, const std::string& filename) {
     // Convert little-endian fields
     hdr_out.header_size = le16_to_cpu(raw.header_size);
     hdr_out.version = le16_to_cpu(raw.version);
-    hdr_out.flag = le32_to_cpu(raw.image_format);
+    hdr_out.image_format = le32_to_cpu(raw.image_format);
+    // Flags are four little-endian bytes immediately after image_format.
+    hdr_out.flag = raw.flag_byte
+                 | (uint32_t(raw.flag_type) << 8)
+                 | (uint32_t(raw.flag_byte2) << 16)
+                 | (uint32_t(raw.flag_byte3) << 24);
     hdr_out.block_count = le32_to_cpu(raw.block_count);
+    hdr_out.data_offset = le32_to_cpu(raw.data_offset);
     hdr_out.bytes_count = le32_to_cpu(raw.data_length);
     hdr_out.comment_offset = le32_to_cpu(raw.comment_offset);
     hdr_out.comment_length = le32_to_cpu(raw.comment_length);
     hdr_out.creator_data = le32_to_cpu(raw.creator_data);
     hdr_out.creator_data_length = le32_to_cpu(raw.creator_data_length);
-    hdr_out.image_format = le32_to_cpu(raw.image_format);
 
     if (hdr_out.comment_offset != 0 && hdr_out.comment_length > 0) {
         fseek(fp, hdr_out.comment_offset, SEEK_SET);
@@ -197,8 +203,10 @@ int display_2mg_header(format_2mg_t& hdr) {
     std::cout << "  Creator: " << hdr.creator << " (" << get_2mg_creator_name(hdr.creator) << ")" << std::endl;
     std::cout << "  Header Size: " << hdr.header_size << std::endl;
     std::cout << "  Version: " << hdr.version << std::endl;
-    std::cout << "  Image Format: " << hdr.flag << std::endl;
+    std::cout << "  Image Format: " << hdr.image_format << std::endl;
+    std::cout << "  Flags: 0x" << std::hex << hdr.flag << std::dec << std::endl;
     std::cout << "  Block Count: " << hdr.block_count << std::endl;
+    std::cout << "  Data Offset: " << hdr.data_offset << std::endl;
     std::cout << "  Bytes Count: " << hdr.bytes_count << std::endl;
     std::cout << "  Comment Offset: " << hdr.comment_offset << std::endl;
     std::cout << "  Comment Length: " << hdr.comment_length << std::endl;
@@ -321,7 +329,9 @@ int identify_media(media_descriptor& md) {
         md.block_count = hdr.block_count;
         md.block_size = hdr.bytes_count / hdr.block_count;
         md.data_size = hdr.bytes_count;
-        md.data_offset = hdr.header_size;
+        // Prefer the explicit data_offset field. Some creators (e.g. "pdos")
+        // set header_size to 52 while still placing disk data at offset 64.
+        md.data_offset = hdr.data_offset ? hdr.data_offset : hdr.header_size;
         md.write_protected = md.write_protected || (hdr.flag & FLAG_LOCKED) != 0;
         md.dos33_volume = (hdr.flag & FLAG_DOS33) != 0 ? (hdr.flag & FLAG_DOS33_VOL_MASK) : 254; // if not set, then 254
 
