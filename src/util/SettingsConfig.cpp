@@ -146,6 +146,7 @@ video_scanner_t derive_scanner(PlatformId_t platform, clock_set_t clock_set) {
         case PLATFORM_APPLE_II_PLUS:
             return Scanner_AppleII;
         case PLATFORM_APPLE_IIGS:
+        case PLATFORM_APPLE_IIGS_ROM3:
             return Scanner_AppleIIgs;
         case PLATFORM_APPLE_IIE:
         case PLATFORM_APPLE_IIE_ENHANCED:
@@ -415,8 +416,8 @@ bool SystemConfig::load_settings(const std::string& path, std::string& error_out
     }
     config_data_.clock_set = clock_set;
 
-    if (config_data_.platform_id == PLATFORM_APPLE_IIGS && clock_set == CLOCK_SET_PAL) {
-        error_out = "clock=pal is not valid for platform apple2gs";
+    if (platform_is_iigs(config_data_.platform_id) && clock_set == CLOCK_SET_PAL) {
+        error_out = "clock=pal is not valid for Apple IIgs platforms";
         return false;
     }
 
@@ -502,7 +503,7 @@ bool SystemConfig::load_settings(const std::string& path, std::string& error_out
                                     + ": no matching floppy controller; using slot "
                                     + std::to_string(slot));
             }
-        } else if (config_data_.platform_id == PLATFORM_APPLE_IIGS) {
+        } else if (platform_is_iigs(config_data_.platform_id)) {
             slot = 6;
         } else {
             warnings_.push_back(prefix + ".disk" + std::to_string(drive_1based)

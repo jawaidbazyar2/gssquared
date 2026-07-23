@@ -809,8 +809,21 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
             computer->debug_window->set_mmu(state->mmu_iie);
             break;
         case MMU_MMU_IIGS:
-            state->mmu_iie = new MMU_IIe(256, 128*1024, /* (uint8_t *) */rd->main_rom_data + 0x1'C000);
-            state->mmu_iigs = new MMU_IIgs(256, 8*1024*1024, 128*1024, /* (uint8_t *) */rd->main_rom_data, state->mmu_iie);
+        {
+            // Bank $FF (the IIe-compatibility ROM the emulation-mode 6502
+            // core runs, and the source for the LC-area/IOLC ROM overlay
+            // reads inside MMU_IIgs) is always the *last* 64K bank of the
+            // ROM image, wherever that falls for the actual ROM size --
+            // NOT a hardcoded 128KB-ROM (ROM01) assumption. ROM01 is 128KB
+            // (bank $FF at file offset 0x10000); ROM03 is 256KB (0x30000).
+            // Previously hardcoded to 0x1'C000 / 128*1024, which silently
+            // only worked for a 128KB ROM01 image and scrambled the bank
+            // layout (and the emulation-mode reset vector) for ROM03.
+            const size_t main_rom_size = rd->main_rom_file->size();
+            const size_t rom_bank_ff_offset = main_rom_size - 65536;
+            state->mmu_iie = new MMU_IIe(256, 128*1024, /* (uint8_t *) */rd->main_rom_data + rom_bank_ff_offset + 0xC000);
+            state->mmu_iigs = new MMU_IIgs(256, 8*1024*1024, (uint32_t) main_rom_size, /* (uint8_t *) */rd->main_rom_data, state->mmu_iie);
+        }
             state->mmu_iigs->init_map();
             computer->cpu->set_mmu(state->mmu_iigs); // cpu gets FPI
             computer->set_mmu(state->mmu_iie); // everything else gets the Mega II

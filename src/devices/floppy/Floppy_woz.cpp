@@ -80,6 +80,10 @@ bool Floppy_woz::unmount(uint64_t key) {
     read_position = 0;
     head_position = 0;
     last_cycle    = 0;
+    // Recomputed lazily by fast_forward() against the now-blank Woz (whose
+    // optimal_bit_timing is the standard default), so an empty spinning
+    // drive keeps clocking noise bits at a sane rate.
+    advance_per_cycle = 0;
 
     is_mounted = false;
     media_d    = nullptr;
@@ -199,6 +203,20 @@ uint64_t Floppy_woz::fast_forward(/* uint64_t now */) {
     // drives one bit per iteration, so after MAX_BITS_TO_SIM iterations
     // read_position lands exactly on (head_position >> 3).
     constexpr uint64_t MAX_BITS_TO_SIM = 32;
+
+    // advance_per_cycle is normally (re)computed at mount time, but a drive
+    // can spin with NO media mounted — a real spindle turns regardless, and
+    // the read chain sees noise (the no-track branch below synthesizes
+    // random bits). Left at its initial 0, an empty drive's head would never
+    // advance, the LSS would never clock, and firmware that runs the IWM
+    // write-handshake protocol against an empty drive (the IIgs ROM03 POST
+    // disk self-test does exactly this) polls a handshake bit that can never
+    // update. A fresh/blank Woz's optimal_bit_timing defaults to the
+    // standard 5.25 value (32), so the subclass hook is safe to call while
+    // unmounted.
+    if (advance_per_cycle == 0) {
+        advance_per_cycle = head_advance_per_cycle();
+    }
 
     // Always advance head_position so angular position stays consistent,
     // including across no-track periods. update_track_ptr() rescales /

@@ -141,6 +141,30 @@ static  platform_info platforms[] = {
             DEVICE_ID_END
         }
      },
+     {
+        // ROM 03 firmware profile. It shares the current Apple IIgs device
+        // map, loads a 256K image (roms/apple2gs_rom3/main.rom), and lets
+        // the MMU enable ROM 03-specific behavior from the ROM size.
+        PLATFORM_APPLE_IIGS_ROM3,
+        "Apple IIgs (ROM 3)",
+        "apple2gs_rom3",
+        PROCESSOR_65816,
+        0xC7C9C7FF,    //0xD2D0C8FF,
+        Badge_IIGS,
+        CLOCK_2_8MHZ,
+        MMU_MMU_IIGS,
+        {
+            DEVICE_ID_SPEAKER,     // speaker must be before display so iigs can override some things?? Still a thing?
+            DEVICE_ID_DISPLAY,
+            DEVICE_ID_KEYGLOO,     // Keyboard should be before IIGS_MEMORY
+            DEVICE_ID_RTC_PRAM,
+            DEVICE_ID_GAMECONTROLLER,
+            DEVICE_ID_ENSONIQ,
+            DEVICE_ID_SCC8530,
+            DEVICE_ID_IWM,
+            DEVICE_ID_END
+        }
+     },
     // Add more platforms as needed:
     // { "Apple IIc",         "apple2c" },
     // { "Apple IIc Plus",    "apple2c_plus" },

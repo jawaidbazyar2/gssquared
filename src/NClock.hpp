@@ -392,6 +392,7 @@ class NClockFactory {
             case PLATFORM_APPLE_IIE_65816:
                 return new NClockII(clock_set);
             case PLATFORM_APPLE_IIGS:
+            case PLATFORM_APPLE_IIGS_ROM3:
                 return new NClockIIgs(clock_set);
             default:
                 assert(false && "Unknown platform in NClockFactory::create_clock");

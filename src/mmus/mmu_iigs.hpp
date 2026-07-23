@@ -74,6 +74,7 @@ class MMU_IIgs : public MMU {
             ram_banks = ram_size / BANK_SIZE;
             main_ram = new uint8_t[ram_banks * BANK_SIZE];
             rom_banks = rom_size / BANK_SIZE;
+            is_rom03 = rom_banks >= 4;
             main_rom = rom;
             map_initialized = false;
             reset();
@@ -196,6 +197,15 @@ class MMU_IIgs : public MMU {
         uint8_t read_c0xx(uint16_t address);
         
         virtual uint8_t *get_rom_base() { return main_rom; };
+
+        // Byte offset within main_rom of the start of virtual bank $FF (the
+        // top bank, always the *last* physical bank in the ROM image
+        // regardless of total ROM size). ROM01 is 2 banks (128KB) -> 0x10000;
+        // ROM03 is 4 banks (256KB) -> 0x30000. Fixed-offset lookups (LC-area
+        // ROM overlay reads, the $C100-$CFFF slot-firmware mapping, the
+        // embedded IIe-compat ROM pointer) key off bank $FF and used to
+        // hardcode 0x10000, silently only correct for a 128KB ROM.
+        inline uint32_t rom_bank_ff_offset() const { return (rom_banks - 1) * BANK_SIZE; }
         uint8_t *get_memory_base() override { return main_ram; }
         uint32_t get_memory_size() override { return ram_banks * BANK_SIZE; }
         virtual void init_map();

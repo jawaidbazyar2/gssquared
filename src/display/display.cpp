@@ -853,14 +853,11 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     ds->vsgc = new VideoScanGenerator_Comp(charrom, false, ds->frame_vsg);
     ds->vsgc->set_render(&ds->mon_ntsc);
 
-    switch (computer->platform->id) {
-        case PLATFORM_APPLE_IIE_65816:
-        case PLATFORM_APPLE_IIGS:
-            ds->vsg = ds->vsgr;
-            break;
-        default:
-            ds->vsg = ds->vsgc;
-            break;
+    if (computer->platform->id == PLATFORM_APPLE_IIE_65816
+        || platform_is_iigs(computer->platform->id)) {
+        ds->vsg = ds->vsgr;
+    } else {
+        ds->vsg = ds->vsgc;
     }
 
     ds->char_rom = charrom;
@@ -908,7 +905,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     });
 
     computer->register_reset_handler([ds](bool cold_start) {
-        if (ds->computer->platform->id == PLATFORM_APPLE_IIGS) {
+        if (platform_is_iigs(ds->computer->platform->id)) {
             display_write_c041(ds, 0xC041, 0x00);
             // TODO: this is the cleanest way to do it for now, but it feels a little hacky, as if
             // reset handler in mmu and here should each be responsible for clearing their own bits.
@@ -953,7 +950,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     });
 
     if (computer->platform->id == PLATFORM_APPLE_IIE || computer->platform->id == PLATFORM_APPLE_IIE_ENHANCED
-    || computer->platform->id == PLATFORM_APPLE_IIE_65816 || computer->platform->id == PLATFORM_APPLE_IIGS) {
+    || computer->platform->id == PLATFORM_APPLE_IIE_65816 || platform_is_iigs(computer->platform->id)) {
         ds->f_altcharset = false;
 
         mmu->set_C0XX_write_handler(0xC000, { ds_bus_write_C00X, ds });
@@ -977,7 +974,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         mmu->set_C0XX_read_handler(0xC019, { display_read_vbl, ds });
 
     }
-    if (computer->platform->id == PLATFORM_APPLE_IIGS) {
+    if (platform_is_iigs(computer->platform->id)) {
         mmu->set_C0XX_write_handler(0xC023, { display_write_c023, ds });
         mmu->set_C0XX_read_handler(0xC023, { display_read_c023, ds });
         mmu->set_C0XX_write_handler(0xC041, { display_write_c041, ds });
@@ -990,7 +987,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         mmu->set_C0XX_read_handler(0xC02B, { display_read_C02B, ds });
     }
 
-    if (computer->platform->id == PLATFORM_APPLE_IIE_65816 || computer->platform->id == PLATFORM_APPLE_IIGS) {
+    if (computer->platform->id == PLATFORM_APPLE_IIE_65816 || platform_is_iigs(computer->platform->id)) {
         mmu->set_C0XX_read_handler(0xC02E, { display_read_C02EF, ds });
         mmu->set_C0XX_read_handler(0xC02F, { display_read_C02EF, ds });
         //no display_read_C021;  actually floating bus all the time.
