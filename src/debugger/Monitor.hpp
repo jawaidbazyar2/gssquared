@@ -77,6 +77,7 @@ private:
 
     std::vector<mon_node_entry_t> nodes_;
     std::vector<std::string> output_;
+    uint8_t last_bank_ = 0; // sticky IIgs monitor bank (BB in BB/AAAA)
 
     void parse(const std::string &line);
     void dump_nodes() const;
@@ -94,7 +95,20 @@ private:
         output_.push_back(std::string(buffer));
     }
 
-    static bool parse_bp_addr_len(const mon_node_entry_t &node, uint32_t *address, uint32_t *length);
+    static bool is_hex(const std::string &s);
+    /** Format 24-bit address as BB/AAAA. */
+    static std::string format_addr(uint32_t addr);
+    /** Format range as BB/AAAA.ZZZZ (same bank) or BB/AAAA.CC/ZZZZ if banks differ. */
+    static std::string format_range(uint32_t lo, uint32_t hi);
+    /** Parse BB/AAAA or bare hex. On BB/, updates last_bank_ and stores full 24-bit.
+     *  Bare hex is stored literally (no sticky). Returns false on malformed token. */
+    bool parse_addr_token(const std::string &tok, uint32_t *out);
+    /** Parse BB/AAAA.ZZZZ or AAAA.ZZZZ. Incomplete forms fold sticky bank into lo/hi. */
+    bool parse_range_token(const std::string &tok, mon_range_t *out);
+    /** Resolve a bare NUMBER used as an address: ≤0xFFFF gets sticky bank. */
+    uint32_t as_address(uint32_t v) const;
+
+    bool parse_bp_addr_len(const mon_node_entry_t &node, uint32_t *address, uint32_t *length) const;
     static bool parse_bp_access(const mon_node_entry_t &node, uint8_t *access);
 
     void peek_byte();

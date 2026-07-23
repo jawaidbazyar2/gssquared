@@ -81,6 +81,111 @@ void Monitor::dump_nodes() const {
     }
 }
 
+bool Monitor::is_hex(const std::string &s) {
+    return !s.empty() && std::all_of(s.begin(), s.end(), [](char c) { return std::isxdigit(static_cast<unsigned char>(c)); });
+}
+
+std::string Monitor::format_addr(uint32_t addr) {
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%02X/%04X", (addr >> 16) & 0xFF, addr & 0xFFFF);
+    return std::string(buf);
+}
+
+std::string Monitor::format_range(uint32_t lo, uint32_t hi) {
+    char buf[32];
+    uint8_t lo_bank = (lo >> 16) & 0xFF;
+    uint8_t hi_bank = (hi >> 16) & 0xFF;
+    if (lo_bank == hi_bank) {
+        snprintf(buf, sizeof(buf), "%02X/%04X.%04X", lo_bank, lo & 0xFFFF, hi & 0xFFFF);
+    } else {
+        snprintf(buf, sizeof(buf), "%02X/%04X.%02X/%04X", lo_bank, lo & 0xFFFF, hi_bank, hi & 0xFFFF);
+    }
+    return std::string(buf);
+}
+
+uint32_t Monitor::as_address(uint32_t v) const {
+    if (v <= 0xFFFF) {
+        return (static_cast<uint32_t>(last_bank_) << 16) | v;
+    }
+    return v;
+}
+
+bool Monitor::parse_addr_token(const std::string &tok, uint32_t *out) {
+    if (tok.empty() || out == nullptr) {
+        return false;
+    }
+    size_t slash = tok.find('/');
+    if (slash != std::string::npos) {
+        std::string bank_str = tok.substr(0, slash);
+        std::string addr_str = tok.substr(slash + 1);
+        if (!is_hex(bank_str) || !is_hex(addr_str)) {
+            return false;
+        }
+        uint32_t bank = static_cast<uint32_t>(std::stoul(bank_str, nullptr, 16));
+        uint32_t addr = static_cast<uint32_t>(std::stoul(addr_str, nullptr, 16));
+        if (bank > 0xFF || addr > 0xFFFF) {
+            return false;
+        }
+        last_bank_ = static_cast<uint8_t>(bank);
+        *out = (bank << 16) | addr;
+        return true;
+    }
+    if (!is_hex(tok)) {
+        return false;
+    }
+    *out = static_cast<uint32_t>(std::stoul(tok, nullptr, 16));
+    return true;
+}
+
+bool Monitor::parse_range_token(const std::string &tok, mon_range_t *out) {
+    if (tok.empty() || out == nullptr) {
+        return false;
+    }
+    size_t dot = tok.find('.');
+    if (dot == std::string::npos) {
+        return false;
+    }
+    std::string lo_part = tok.substr(0, dot);
+    std::string hi_str = tok.substr(dot + 1);
+    if (!is_hex(hi_str)) {
+        return false;
+    }
+    uint32_t hi_off = static_cast<uint32_t>(std::stoul(hi_str, nullptr, 16));
+    if (hi_off > 0xFFFF) {
+        return false;
+    }
+
+    size_t slash = lo_part.find('/');
+    if (slash != std::string::npos) {
+        std::string bank_str = lo_part.substr(0, slash);
+        std::string lo_str = lo_part.substr(slash + 1);
+        if (!is_hex(bank_str) || !is_hex(lo_str)) {
+            return false;
+        }
+        uint32_t bank = static_cast<uint32_t>(std::stoul(bank_str, nullptr, 16));
+        uint32_t lo_off = static_cast<uint32_t>(std::stoul(lo_str, nullptr, 16));
+        if (bank > 0xFF || lo_off > 0xFFFF) {
+            return false;
+        }
+        last_bank_ = static_cast<uint8_t>(bank);
+        out->lo = (bank << 16) | lo_off;
+        out->hi = (bank << 16) | hi_off;
+        return true;
+    }
+
+    if (!is_hex(lo_part)) {
+        return false;
+    }
+    uint32_t lo_off = static_cast<uint32_t>(std::stoul(lo_part, nullptr, 16));
+    if (lo_off > 0xFFFF) {
+        // Absolute-style incomplete range is not supported; require 16-bit offsets.
+        return false;
+    }
+    out->lo = (static_cast<uint32_t>(last_bank_) << 16) | lo_off;
+    out->hi = (static_cast<uint32_t>(last_bank_) << 16) | hi_off;
+    return true;
+}
+
 void Monitor::parse(const std::string &line) {
     std::istringstream iss(line);
     std::vector<std::string> tokens;
@@ -113,55 +218,62 @@ void Monitor::parse(const std::string &line) {
 
         if (t.empty()) continue;
 
-        if (t.front() == '"' && t.back() == '"') {
-            node.type = MON_NODE_TYPE_STRING;
-            node.val_string = t.substr(1, t.length() - 2);
-        } else if (t.back() == ':') {
-            node.type = MON_NODE_TYPE_ADDRESS_SET;
-            std::string addr_str = t.substr(0, t.length() - 1);
-            node.val_address = static_cast<uint32_t>(std::stoul(addr_str, nullptr, 16));
-        } else if (t.find('.') != std::string::npos) {
-            size_t dot_pos = t.find('.');
-            std::string lo_str = t.substr(0, dot_pos);
-            std::string hi_str = t.substr(dot_pos + 1);
-            bool lo_valid =
-                !lo_str.empty() && std::all_of(lo_str.begin(), lo_str.end(), [](char c) { return std::isxdigit(c); });
-            bool hi_valid =
-                !hi_str.empty() && std::all_of(hi_str.begin(), hi_str.end(), [](char c) { return std::isxdigit(c); });
-            if (lo_valid && hi_valid) {
-                node.type = MON_NODE_TYPE_RANGE;
-                node.val_range.lo = static_cast<uint32_t>(std::stoul(lo_str, nullptr, 16));
-                node.val_range.hi = static_cast<uint32_t>(std::stoul(hi_str, nullptr, 16));
-            } else {
-                node.type = MON_NODE_TYPE_COMMAND;
-                std::string lower_t = t;
-                std::transform(lower_t.begin(), lower_t.end(), lower_t.begin(), ::tolower);
-                node.val_string = lower_t;
-                node.val_cmd = lookup_cmd(lower_t);
-            }
-        } else if (std::all_of(t.begin(), t.end(), [](char c) { return std::isxdigit(c); })) {
-            node.type = MON_NODE_TYPE_NUMBER;
-            node.val_number = static_cast<uint32_t>(std::stoul(t, nullptr, 16));
-        } else {
+        auto make_unknown = [&]() {
             node.type = MON_NODE_TYPE_COMMAND;
             std::string lower_t = t;
             std::transform(lower_t.begin(), lower_t.end(), lower_t.begin(), ::tolower);
             node.val_string = lower_t;
             node.val_cmd = lookup_cmd(lower_t);
+        };
+
+        if (t.front() == '"' && t.back() == '"') {
+            node.type = MON_NODE_TYPE_STRING;
+            node.val_string = t.substr(1, t.length() - 2);
+        } else if (t.back() == ':') {
+            std::string addr_str = t.substr(0, t.length() - 1);
+            uint32_t addr = 0;
+            if (!parse_addr_token(addr_str, &addr)) {
+                make_unknown();
+            } else {
+                node.type = MON_NODE_TYPE_ADDRESS_SET;
+                // Incomplete (no BB/): fold sticky bank at parse. BB/ already full.
+                node.val_address = (addr_str.find('/') != std::string::npos) ? addr : as_address(addr);
+            }
+        } else if (t.find('.') != std::string::npos) {
+            mon_range_t range{};
+            if (parse_range_token(t, &range)) {
+                node.type = MON_NODE_TYPE_RANGE;
+                node.val_range = range;
+            } else {
+                make_unknown();
+            }
+        } else if (t.find('/') != std::string::npos) {
+            uint32_t addr = 0;
+            if (parse_addr_token(t, &addr)) {
+                node.type = MON_NODE_TYPE_NUMBER;
+                node.val_number = addr; // already full 24-bit; sticky updated
+            } else {
+                make_unknown();
+            }
+        } else if (is_hex(t)) {
+            node.type = MON_NODE_TYPE_NUMBER;
+            node.val_number = static_cast<uint32_t>(std::stoul(t, nullptr, 16));
+        } else {
+            make_unknown();
         }
 
         nodes_.push_back(node);
     }
 }
 
-bool Monitor::parse_bp_addr_len(const mon_node_entry_t &node, uint32_t *address, uint32_t *length) {
+bool Monitor::parse_bp_addr_len(const mon_node_entry_t &node, uint32_t *address, uint32_t *length) const {
     if (node.type == MON_NODE_TYPE_RANGE) {
         *address = node.val_range.lo;
         *length = (node.val_range.hi >= node.val_range.lo) ? (node.val_range.hi - node.val_range.lo + 1) : 1;
         return true;
     }
     if (node.type == MON_NODE_TYPE_NUMBER) {
-        *address = node.val_number;
+        *address = as_address(node.val_number);
         *length = 1;
         return true;
     }
@@ -276,16 +388,16 @@ void Monitor::dispatch() {
 }
 
 void Monitor::peek_byte() {
-    uint32_t address = nodes_[0].val_number;
-    addFormattedOutput("%06X: %02x", address, mmu_->read(address));
+    uint32_t address = as_address(nodes_[0].val_number);
+    addFormattedOutput("%s: %02X", format_addr(address).c_str(), mmu_->read(address));
 }
 
 void Monitor::poke_bytes() {
-    uint32_t address = nodes_[0].val_address;
+    uint32_t address = nodes_[0].val_address; // already bank-resolved at parse
     for (size_t i = 1; i < nodes_.size(); i++) {
         const auto &node = nodes_[i];
         if (node.type == MON_NODE_TYPE_NUMBER) {
-            mmu_->write(address, node.val_number);
+            mmu_->write(address, static_cast<uint8_t>(node.val_number));
             address++;
         } else {
             addFormattedOutput("Error: unexpected value type: %d", node.type);
@@ -298,17 +410,17 @@ void Monitor::dump_range() {
     uint32_t address = nodes_[0].val_range.lo;
     while (address <= nodes_[0].val_range.hi) {
         std::ostringstream line;
-        line << std::hex << std::uppercase;
-        line << std::setfill('0') << std::setw(4) << address << ": ";
+        line << format_addr(address) << ": ";
+        line << std::hex << std::uppercase << std::setfill('0');
 
         for (int i = 0; i < 16; i++) {
             if (address + i <= nodes_[0].val_range.hi) {
-                line << std::setfill('0') << std::setw(2) << (int)mmu_->read(address + i) << " ";
+                line << std::setw(2) << (int)mmu_->read(address + i) << " ";
             } else {
                 line << "   ";
             }
         }
-        line << "  ";
+        line << " ";
 
         for (int i = 0; i < 16; i++) {
             if (address + i <= nodes_[0].val_range.hi) {
@@ -338,9 +450,11 @@ void Monitor::cmd_watch() {
         addOutput("Current memory watches:");
         for (const auto &watch : *watches_) {
             std::ostringstream line;
-            line << "[" << watch.id << "] " << std::hex << std::uppercase << watch.start;
+            line << "[" << watch.id << "] ";
             if (watch.end != watch.start) {
-                line << "." << watch.end;
+                line << format_range(watch.start, watch.end);
+            } else {
+                line << format_addr(watch.start);
             }
             addOutput(line.str());
         }
@@ -351,7 +465,8 @@ void Monitor::cmd_watch() {
     if (node1.type == MON_NODE_TYPE_RANGE) {
         id = watches_->add(node1.val_range.lo, node1.val_range.hi);
     } else if (node1.type == MON_NODE_TYPE_NUMBER) {
-        id = watches_->add(node1.val_number, node1.val_number);
+        uint32_t address = as_address(node1.val_number);
+        id = watches_->add(address, address);
     } else {
         addOutput("Error: expected range as first argument");
         return;
@@ -393,9 +508,11 @@ void Monitor::cmd_bp() {
                 kind_name = "io";
             }
             std::ostringstream line;
-            line << "[" << e.id << "] " << kind_name << " " << std::hex << std::uppercase << e.address;
+            line << "[" << e.id << "] " << kind_name << " ";
             if (e.length > 1) {
-                line << "." << (e.address + e.length - 1);
+                line << format_range(e.address, e.address + e.length - 1);
+            } else {
+                line << format_addr(e.address);
             }
             if (e.kind == BP_KIND_DATA || e.kind == BP_KIND_IO) {
                 if (e.access == BP_ACCESS_R) {
@@ -478,9 +595,10 @@ void Monitor::cmd_nobp() {
     const auto &node1 = nodes_[1];
     if (node1.type == MON_NODE_TYPE_NUMBER) {
         if (!breakpoints_->clear_id(node1.val_number)) {
+            uint32_t address = as_address(node1.val_number);
             bool removed = false;
             for (const auto &e : breakpoints_->entries()) {
-                if (e.kind == BP_KIND_EXEC && e.address == node1.val_number) {
+                if (e.kind == BP_KIND_EXEC && e.address == address) {
                     breakpoints_->clear_id(e.id);
                     removed = true;
                     break;
@@ -502,13 +620,15 @@ void Monitor::cmd_list() {
     if (nodes_.size() == 2) {
         const auto &node1 = nodes_[1];
         if (node1.type == MON_NODE_TYPE_NUMBER) {
-            disasm_->setAddress(node1.val_number);
+            disasm_->setAddress(as_address(node1.val_number));
         }
     }
     addOutput(disasm_->disassemble(30));
 }
 
 void Monitor::cmd_help() {
+    addOutput("Addresses: BB/AAAA or BB/AAAA.ZZZZ (bank sticky across commands)");
+    addOutput("  Incomplete AAAA / AAAA.ZZZZ reuse last BB; 5+ hex digits = absolute");
     addOutput("watch range_lo.range_hi      - watch memory range");
     addOutput("watch                        - list watches");
     addOutput("nowatch id                   - remove watch");
@@ -531,11 +651,11 @@ void Monitor::cmd_help() {
 
 void Monitor::cmd_set() {
     const auto &node1 = nodes_[1];
-    uint32_t address = node1.val_number;
+    uint32_t address = as_address(node1.val_number);
     for (size_t i = 2; i < nodes_.size(); i++) {
         const auto &node = nodes_[i];
         if (node.type == MON_NODE_TYPE_NUMBER) {
-            mmu_->write(address, node.val_number);
+            mmu_->write(address, static_cast<uint8_t>(node.val_number));
             address++;
         } else {
             addFormattedOutput("Error: unexpected value type: %d", node.type);
@@ -582,7 +702,7 @@ void Monitor::cmd_load() {
     }
     const auto &node2 = nodes_[2];
     if (node2.type == MON_NODE_TYPE_NUMBER) {
-        uint32_t address = node2.val_number;
+        uint32_t address = as_address(node2.val_number);
         FILE *file = fopen(filename.c_str(), "rb");
         int i = 0;
         if (file) {
@@ -593,7 +713,8 @@ void Monitor::cmd_load() {
                 i++;
             }
             fclose(file);
-            addFormattedOutput("Loaded %d bytes from %s to %04X - %04X", i, filename.c_str(), address, address + i - 1);
+            addFormattedOutput("Loaded %d bytes from %s to %s - %s", i, filename.c_str(),
+                               format_addr(address).c_str(), format_addr(address + i - 1).c_str());
         } else {
             addFormattedOutput("Error: could not open file: %s", filename.c_str());
         }
@@ -624,7 +745,8 @@ void Monitor::cmd_slookup() {
         addOutput("Error: expected number as first argument");
         return;
     }
-    addFormattedOutput("%06X: %s", node1.val_number, trace_->get_label(node1.val_number));
+    uint32_t address = as_address(node1.val_number);
+    addFormattedOutput("%s: %s", format_addr(address).c_str(), trace_->get_label(address));
 }
 
 void Monitor::cmd_sclear() {
@@ -676,11 +798,12 @@ void Monitor::cmd_move() {
         addOutput("Error: expected address as second argument");
         return;
     }
+    uint32_t dest = as_address(node2.val_number);
     for (uint32_t i = node1.val_range.lo; i <= node1.val_range.hi; i++) {
-        mmu_->write(node2.val_number + (i - node1.val_range.lo), mmu_->read(i));
+        mmu_->write(dest + (i - node1.val_range.lo), mmu_->read(i));
     }
-    addFormattedOutput("Moved %d bytes from %04X to %04X", node1.val_range.hi - node1.val_range.lo + 1,
-                       node1.val_range.lo, node2.val_number);
+    addFormattedOutput("Moved %d bytes from %s to %s", node1.val_range.hi - node1.val_range.lo + 1,
+                       format_addr(node1.val_range.lo).c_str(), format_addr(dest).c_str());
 }
 
 void Monitor::cmd_debug() {

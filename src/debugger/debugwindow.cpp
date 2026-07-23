@@ -707,7 +707,7 @@ void debug_window_t::render_pane_memory() {
         for (uint32_t i = watch->start; i <= watch->end; i++) {
             if (index == 0) {
                 decode_hex_addr(buffer, i);
-                ptr += 6;
+                ptr += 7; // BB/AAAA
                 *ptr++ = ':';
                 *ptr++ = ' ';
             }
