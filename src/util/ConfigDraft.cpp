@@ -19,6 +19,7 @@ video_scanner_t draft_derive_scanner(PlatformId_t platform, clock_set_t clock_se
         case PLATFORM_APPLE_II_PLUS:
             return Scanner_AppleII;
         case PLATFORM_APPLE_IIGS:
+        case PLATFORM_APPLE_IIGS_ROM3:
             return Scanner_AppleIIgs;
         case PLATFORM_APPLE_IIE:
         case PLATFORM_APPLE_IIE_ENHANCED:
@@ -62,7 +63,7 @@ std::vector<drive_spec_t> derive_drives_from_config(PlatformId_t platform_id,
                                                     const device_id slot_devices[NUM_SLOTS]) {
     std::vector<drive_spec_t> out;
 
-    if (platform_id == PLATFORM_APPLE_IIGS) {
+    if (platform_is_iigs(platform_id)) {
         push_drive(out, 6, 0, DRIVE_TYPE_APPLEDISK_525);
         push_drive(out, 6, 1, DRIVE_TYPE_APPLEDISK_525);
         push_drive(out, 5, 0, DRIVE_TYPE_APPLEDISK_35);
@@ -124,7 +125,7 @@ void ConfigDraft::reset_for_platform(PlatformId_t platform_id) {
     description_ = "Custom system configuration";
     id_ = generate_uuid_v4();
 
-    if (platform_id != PLATFORM_APPLE_IIGS) {
+    if (!platform_is_iigs(platform_id)) {
         config_.slot_devices[6] = DEVICE_ID_DISK_II;
     }
 
@@ -176,7 +177,7 @@ void ConfigDraft::set_id(const std::string& id) {
 
 void ConfigDraft::set_platform(PlatformId_t platform_id) {
     config_.platform_id = platform_id;
-    if (platform_id == PLATFORM_APPLE_IIGS) {
+    if (platform_is_iigs(platform_id)) {
         config_.clock_set = CLOCK_SET_US;
     }
     config_.scanner_type = draft_derive_scanner(platform_id, config_.clock_set);
@@ -190,7 +191,7 @@ void ConfigDraft::set_platform(PlatformId_t platform_id) {
         }
     }
 
-    if (platform_id == PLATFORM_APPLE_IIGS && config_.slot_devices[6] == DEVICE_ID_DISK_II) {
+    if (platform_is_iigs(platform_id) && config_.slot_devices[6] == DEVICE_ID_DISK_II) {
         config_.slot_devices[6] = DEVICE_ID_NONE;
         clear_mounts_for_slot(6);
     }

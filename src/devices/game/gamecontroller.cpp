@@ -488,7 +488,7 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
         computer->mmu->set_C0XX_read_handler(GAME_SWITCH_2 + i, { read_game_switch_2, ds }); 
     }
     // the reset strobe apparently responds at 0xC070-7F.
-    for (int i = 0x00; i <= (computer->platform->id == PLATFORM_APPLE_IIGS ? 0x00 : 0x0F); i++) { // GS only at $C070
+    for (int i = 0x00; i <= (platform_is_iigs(computer->platform->id) ? 0x00 : 0x0F); i++) { // GS only at $C070
         computer->mmu->set_C0XX_read_handler(GAME_ANALOG_RESET + i, { strobe_game_inputs, ds });
         computer->mmu->set_C0XX_write_handler(GAME_ANALOG_RESET + i, { strobe_game_inputs_w, ds });
     }

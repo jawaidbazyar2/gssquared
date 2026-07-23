@@ -64,6 +64,7 @@ PlatformFlags_t platform_flag(PlatformId_t platform) {
         case PLATFORM_APPLE_IIE_ENHANCED: return PLATFLAG_APPLE_IIE_ENHANCED;
         case PLATFORM_APPLE_IIE_65816: return PLATFLAG_APPLE_IIE_65816;
         case PLATFORM_APPLE_IIGS: return PLATFLAG_APPLE_IIGS;
+        case PLATFORM_APPLE_IIGS_ROM3: return PLATFLAG_APPLE_IIGS_ROM3;
         default: return PLATFLAG_NONE;
     }
 }
@@ -76,6 +77,7 @@ std::optional<PlatformId_t> parse_platform(const std::string& value, std::string
         {"apple2e_enhanced", PLATFORM_APPLE_IIE_ENHANCED},
         {"apple2e_65816", PLATFORM_APPLE_IIE_65816},
         {"apple2gs", PLATFORM_APPLE_IIGS},
+        {"apple2gs_rom3", PLATFORM_APPLE_IIGS_ROM3},
     };
     const auto it = map.find(value);
     if (it == map.end()) {
@@ -98,6 +100,7 @@ video_scanner_t derive_scanner(PlatformId_t platform, clock_set_t clock_set) {
         case PLATFORM_APPLE_II_PLUS:
             return Scanner_AppleII;
         case PLATFORM_APPLE_IIGS:
+        case PLATFORM_APPLE_IIGS_ROM3:
             return Scanner_AppleIIgs;
         case PLATFORM_APPLE_IIE:
         case PLATFORM_APPLE_IIE_ENHANCED:
@@ -285,8 +288,8 @@ bool validate_connections(PlatformId_t platform,
     std::unordered_set<conn_key, conn_hash> seen;
 
     for (const auto& conn : connections) {
-        if (!conn.slot.has_value() && platform != PLATFORM_APPLE_IIGS) {
-            error_out = "Built-in serial port connections require platform apple2gs";
+        if (!conn.slot.has_value() && !platform_is_iigs(platform)) {
+            error_out = "Built-in serial port connections require an Apple IIgs platform";
             return false;
         }
 
@@ -389,6 +392,7 @@ const char* platform_name(PlatformId_t platform) {
         case PLATFORM_APPLE_IIE_ENHANCED: return "apple2e_enhanced";
         case PLATFORM_APPLE_IIE_65816: return "apple2e_65816";
         case PLATFORM_APPLE_IIGS: return "apple2gs";
+        case PLATFORM_APPLE_IIGS_ROM3: return "apple2gs_rom3";
         default: return "unknown";
     }
 }
@@ -735,8 +739,8 @@ bool SystemConfig::load_gs2(const std::string& path, std::string& error_out) {
     }
     config_data_.clock_set = clock_set;
 
-    if (config_data_.platform_id == PLATFORM_APPLE_IIGS && clock_set == CLOCK_SET_PAL) {
-        error_out = "clock=pal is not valid for platform apple2gs";
+    if (platform_is_iigs(config_data_.platform_id) && clock_set == CLOCK_SET_PAL) {
+        error_out = "clock=pal is not valid for Apple IIgs platforms";
         return false;
     }
 

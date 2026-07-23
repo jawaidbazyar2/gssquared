@@ -146,10 +146,20 @@ list(APPEND GS2_ASSET_FILES
     "${CMAKE_SOURCE_DIR}/assets/img/IBM_VGA_8x16.png"
 )
 
-set(GS2_RESOURCES_STAMP "${CMAKE_BINARY_DIR}/resources/.assembled.stamp")
+# Per-directory stamps: if a tree is deleted (e.g. build/resources/roms), its
+# stamp vanishes and the copy rule re-runs. A single top-level stamp alone
+# stays "up to date" even when a subdirectory is missing.
+set(GS2_RESOURCES_STAMPS
+    "${CMAKE_BINARY_DIR}/resources/roms/.assembled.stamp"
+    "${CMAKE_BINARY_DIR}/resources/sounds/.assembled.stamp"
+    "${CMAKE_BINARY_DIR}/resources/fonts/.assembled.stamp"
+    "${CMAKE_BINARY_DIR}/resources/shaders/.assembled.stamp"
+    "${CMAKE_BINARY_DIR}/resources/gs2/.assembled.stamp"
+    "${CMAKE_BINARY_DIR}/resources/img/.assembled.stamp"
+)
 
 add_custom_command(
-    OUTPUT "${GS2_RESOURCES_STAMP}"
+    OUTPUT ${GS2_RESOURCES_STAMPS}
     # Create resources directory structure
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/roms
@@ -169,13 +179,13 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/shaders ${CMAKE_BINARY_DIR}/resources/shaders
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/gs2 ${CMAKE_BINARY_DIR}/resources/gs2
 
-    COMMAND ${CMAKE_COMMAND} -E touch "${GS2_RESOURCES_STAMP}"
+    COMMAND ${CMAKE_COMMAND} -E touch ${GS2_RESOURCES_STAMPS}
     DEPENDS ${GS2_ASSET_FILES}
     COMMENT "Assembling resources into build/resources/"
     VERBATIM
 )
 
-add_custom_target(assemble_resources ALL DEPENDS "${GS2_RESOURCES_STAMP}")
+add_custom_target(assemble_resources ALL DEPENDS ${GS2_RESOURCES_STAMPS})
 
 function(configure_sdl_builds)
     if(EMSCRIPTEN)

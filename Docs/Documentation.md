@@ -9,6 +9,7 @@ Keep reading for Project Status, Design, and development journals.
 
 * [Project Status](#project-status-as-of-2026-03-10)
 * [Code Organization](#code-organization)
+* [Intentionally Unimplemented](Unimplemented.md) — features left out by choice (not open todos)
 
 # Project Status (as of 2026-03-10)
 
@@ -83,7 +84,7 @@ RGB is an accurate (exact) Apple IIgs RGB presentation.
 
 | Type | Status |
 |------|--------|
-| Cassette | No support planned. |
+| Cassette | No support planned. See [Unimplemented.md](Unimplemented.md). |
 | Disk II Controller Card | ✅ |
 | ProDOS Block-Device Interface | ✅ |
 | SmartPort / ProDOS Block-Device Interface | ✅ |

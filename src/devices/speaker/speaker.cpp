@@ -186,7 +186,7 @@ void init_mb_speaker(computer_t *computer,  SlotType_t slot) {
     speaker_state->sp->prebuffer();
 
     if (DEBUG(DEBUG_SPEAKER)) fprintf(stdout, "init_speaker\n");
-    uint16_t speaker_addr_max = (computer->platform->id == PLATFORM_APPLE_IIGS) ? 0xC030 : 0xC03F; // IIGS, speaker is ONLY at C030
+    uint16_t speaker_addr_max = platform_is_iigs(computer->platform->id) ? 0xC030 : 0xC03F; // IIGS, speaker is ONLY at C030
     for (uint16_t addr = 0xC030; addr <= speaker_addr_max; addr++) {
         computer->mmu->set_C0XX_read_handler(addr, { speaker_memory_read, speaker_state });
         computer->mmu->set_C0XX_write_handler(addr, { speaker_memory_write, speaker_state });

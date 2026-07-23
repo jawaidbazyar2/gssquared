@@ -219,7 +219,7 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             }
         } else if (domain == kMemMegaII) {
             if (!computer || !computer->platform
-                || computer->platform->id != PLATFORM_APPLE_IIGS) {
+                || !platform_is_iigs(computer->platform->id)) {
                 bridge_error_ = kEInternal;
                 bridge_megaii_platform_reject_ = true;
             } else if (!computer->mmu) {
@@ -248,7 +248,7 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             }
         } else if (domain == kMemMegaIIRaw) {
             if (!computer || !computer->platform
-                || computer->platform->id != PLATFORM_APPLE_IIGS) {
+                || !platform_is_iigs(computer->platform->id)) {
                 bridge_error_ = kEInternal;
                 bridge_megaii_platform_reject_ = true;
             } else if (!computer->mmu) {
@@ -286,7 +286,7 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             }
         } else if (domain == kMemMegaII) {
             if (!computer || !computer->platform
-                || computer->platform->id != PLATFORM_APPLE_IIGS) {
+                || !platform_is_iigs(computer->platform->id)) {
                 bridge_error_ = kEInternal;
                 bridge_megaii_platform_reject_ = true;
             } else if (!computer->mmu) {
@@ -318,7 +318,7 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
             }
         } else if (domain == kMemMegaIIRaw) {
             if (!computer || !computer->platform
-                || computer->platform->id != PLATFORM_APPLE_IIGS) {
+                || !platform_is_iigs(computer->platform->id)) {
                 bridge_error_ = kEInternal;
                 bridge_megaii_platform_reject_ = true;
             } else if (!computer->mmu) {
