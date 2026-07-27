@@ -404,6 +404,27 @@ if(NOT WIN32 AND NOT EMSCRIPTEN)
     )
 endif()
 
+# Uthernet II + libslirp (stubbed on Emscripten)
+if(NOT EMSCRIPTEN)
+    include(${CMAKE_SOURCE_DIR}/vendored/libslirp_cmake/CMakeLists.txt)
+    add_library(gs2_devices_uthernet2
+        src/devices/uthernet2/uthernet2.cpp
+        src/devices/uthernet2/w5100_chip.cpp
+        src/devices/uthernet2/net_worker.cpp
+        src/devices/uthernet2/slirp_backend.cpp
+        src/devices/uthernet2/slirp_netpick.cpp
+    )
+    target_link_libraries(gs2_devices_uthernet2 PUBLIC gs2_libslirp gs2_mmu gs2_cpu)
+    target_include_directories(gs2_devices_uthernet2 PRIVATE
+        ${CMAKE_SOURCE_DIR}/src/devices/uthernet2
+        ${CMAKE_SOURCE_DIR}/src/devices/uthernet2/glib_compat
+    )
+else()
+    add_library(gs2_devices_uthernet2 src/devices/uthernet2/uthernet2.cpp)
+    target_compile_definitions(gs2_devices_uthernet2 PRIVATE GS2_UTHERNET2_STUB=1)
+    target_link_libraries(gs2_devices_uthernet2 PUBLIC gs2_mmu gs2_cpu)
+endif()
+
 add_library(gs2_trace src/debugger/trace.cpp src/debugger/trace_opcodes.cpp)
 
 add_library(gs2_debugger  src/debugger/debugwindow.cpp src/debugger/Monitor.cpp
@@ -500,6 +521,7 @@ set(GS2_DEVICE_REGISTRY_LIBS
     gs2_devices_adb
     gs2_devices_diskii_woz
     gs2_devices_hostfst
+    gs2_devices_uthernet2
     gs2_displaypp
     gs2_video_scanner
     gs2_computer

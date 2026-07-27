@@ -162,6 +162,7 @@ The TOML key **`device`** is reserved for `[[connections]]` — the virtual peri
 | `"vidhd"` | `DEVICE_ID_VIDHD` | VIDHD | 65816 //e only |
 | `"bazfast3"` | `DEVICE_ID_PD_BLOCK3` | BazFast 3 (DMA Storage) | Multiple instances allowed |
 | `"second_sight"` | `DEVICE_ID_SECOND_SIGHT` | Second Sight | IIgs only, slot 3 only |
+| `"uthernet2"` | `DEVICE_ID_UTHERNET2` | Uthernet II | IIe + IIgs; slots 1–7; multiple instances allowed; see `Docs/Networking.md` |
 
 Aliases (optional, loader MAY accept):
 

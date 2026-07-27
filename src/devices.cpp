@@ -43,6 +43,7 @@
 #include "devices/iwm/iwm_device.hpp"
 #include "devices/secondsight/secondsight.hpp"
 #include "devices/hostfst/hostfst.hpp"
+#include "devices/uthernet2/uthernet2.hpp"
 
 namespace {
 
@@ -101,6 +102,7 @@ Device_t Devices[NUM_DEVICE_IDS] = {
     make_device(DEVICE_ID_PD_BLOCK3, init_pdblock3, NULL),
     make_device(DEVICE_ID_SECOND_SIGHT, init_secondsight, NULL),
     make_device(DEVICE_ID_HOST_FST, init_hostfst, NULL),
+    make_device(DEVICE_ID_UTHERNET2, init_slot_uthernet2, NULL),
 };
 
 Device_t *get_device(device_id id) {

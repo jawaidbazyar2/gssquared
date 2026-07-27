@@ -208,6 +208,7 @@ std::optional<device_id> parse_card_type(const std::string& value, std::string& 
         {"vidhd", DEVICE_ID_VIDHD},
         {"bazfast3", DEVICE_ID_PD_BLOCK3},
         {"second_sight", DEVICE_ID_SECOND_SIGHT},
+        {"uthernet2", DEVICE_ID_UTHERNET2},
     };
     const std::string canonical = canonical_card_name(value);
     const auto it = map.find(canonical);

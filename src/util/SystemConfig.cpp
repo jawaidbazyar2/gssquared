@@ -160,6 +160,7 @@ std::optional<device_id> parse_card_type(const std::string& value, std::string& 
         {"vidhd", DEVICE_ID_VIDHD},
         {"bazfast3", DEVICE_ID_PD_BLOCK3},
         {"second_sight", DEVICE_ID_SECOND_SIGHT},
+        {"uthernet2", DEVICE_ID_UTHERNET2},
     };
     const std::string canonical = canonical_card_name(value);
     const auto it = map.find(canonical);
@@ -432,6 +433,7 @@ const char* card_type_name(device_id id) {
         case DEVICE_ID_VIDHD: return "vidhd";
         case DEVICE_ID_PD_BLOCK3: return "bazfast3";
         case DEVICE_ID_SECOND_SIGHT: return "second_sight";
+        case DEVICE_ID_UTHERNET2: return "uthernet2";
         default: return "none";
     }
 }
@@ -452,6 +454,7 @@ static const char* card_display_name(device_id id) {
         case DEVICE_ID_VIDHD: return "VIDHD";
         case DEVICE_ID_PD_BLOCK3: return "BazFast 3";
         case DEVICE_ID_SECOND_SIGHT: return "Second Sight";
+        case DEVICE_ID_UTHERNET2: return "Uthernet II";
         default: return "None";
     }
 }

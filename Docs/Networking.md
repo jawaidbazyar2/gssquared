@@ -8,9 +8,28 @@ Several forms of networking are contemplated:
 
 ## Uthernet II
 
-There is a reference that this card has a chip with a built-in TCP stack, and the Uthernet manual discusses programming Socket Registers etc. However you can also do "mac raw sockets" so it's unclear if application software uses the hw TCP or its own.
+Selectable slot card (`card = "uthernet2"`) on Apple IIe and Apple IIgs platforms (slots 1–7).
 
-Assuming applications use BOTH, then we have to emulate both a raw packet interface as well as TCP and UDP sockets. While there are a fair number of moving parts, the chip's interface seems rational and clean and it shouldn't be hard to deliver a correct solution.
+Emulates the W5100-based Uthernet II (register model aligned with AppleWin):
+
+- **MACRAW / IPRAW:** guest ethernet frames go through [libslirp](https://gitlab.com/qemu-project/libslirp/) (user-space NAT). No pcap/npcap, no root, works on macOS / Linux / Windows.
+- **TCP / UDP offload:** host BSD sockets (non-blocking), on a dedicated worker thread so the emulator never blocks on network I/O.
+- Slirp virtual `/24` is chosen at init so it does **not** overlap any host IPv4 interface (prefers `10.0.2.0/24` when free). Guest DHCP (MACRAW stacks such as Marinetti / IP65) sees that subnet; DNS is slirp’s `vnameserver` (typically `.3`).
+
+**Limits (slirp NAT):** no LAN broadcast / SMB discovery on the real network; guest is double-NAT’d relative to the host’s LAN. In practice HTTP browsing works; FTP (active and often passive) tends to fail under that double NAT. A future pcap backend could be added if needed.
+
+libslirp is vendored under `vendored/libslirp` and built with CMake plus a small in-tree `glib_compat` shim (no system GLib dependency).
+
+### Contiki (Enhanced IIe)
+
+Contiki does **not** auto-detect the card. Stock `contiki.cfg` ships pointed at the old Uthernet (`cs8900a.eth` at a bogus `$0003`). On each Contiki disk, run **`ETHCONFI.SYSTEM`** once:
+
+1. Choose **Uthernet II** (driver `w5100.eth`, I/O base `$C0x4` where `x = 8 + slot`).
+2. Choose the **same slot** as in your `.gs2` config (e.g. slot 3 → `$C0B4`).
+
+Then run **`IPCONFIG.SYSTEM`** (manual IPs or DHCP). Contiki probes the W5100 Retry Time Register (`$0017` = `$07D0`); a slot mismatch shows as `w5100.eth: No hardware`.
+
+With DHCP, Contiki should receive an address from slirp’s pool (typically starting at `.15` on the auto-picked `/24`, gateway `.2`, DNS `.3`).
 
 ## Serial-to-telnet
 
