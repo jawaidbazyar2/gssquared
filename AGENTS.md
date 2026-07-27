@@ -44,3 +44,11 @@ When launching GSSquared for scripted tests over `--debug SOCKET`:
   `PYTHONPATH=clients/python/src python3 clients/python/examples/test_breakpoints.py /tmp/gs2-….sock 3`
   The example ends with `c.quit()`; wait for the emu process to exit (expect exit 0) instead of killing it.
 - Cookbook: `Docs/gs2debug.md`. Wire protocol: `Docs/DebugProtocol.md`.
+
+## Disk Images
+
+To inspect Apple II disk images and their contents, use CiderPress2:
+
+```
+cp2='~/src/cp2_1.0.5_osx-x64_sc/cp2'
+```
