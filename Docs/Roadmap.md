@@ -81,6 +81,8 @@
 
 [X] Host FST
 [X] Built-in RO Disk with drivers (e.g. Host FST driver) mount/unmount with menu item; PPU mode demo; various other things.
+[X] Uthernet II support (via SLIRP)
+[ ] Optional pcap Uthernet path (slirp double-NAT; FTP fails, HTTP works)  
 [ ] Provide flexible AI-drivable binary protocol debugger interface  
 
 ## Release 1.0

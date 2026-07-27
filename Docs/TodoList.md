@@ -174,11 +174,11 @@ From [Roadmap.md](Roadmap.md), [DebugProtocol.md](DebugProtocol.md), [DevelopLog
 
 - [ ] Ship flexible AI-drivable binary debug protocol (roadmap 0.10)
 - [ ] Trace option: hide raw bytes (`PCPC: LDA $xxxx` only)
-- [ ] Scrollable text widget + clickable scrollbar (click-to-jump position)
+- [X] Scrollable text widget + clickable scrollbar (click-to-jump position)
 - [ ] Trace cursor → show regs / P decode for that record
 - [ ] Monitor remembers bank like IIgs monitor
 - [ ] Monitor command to display stack
-- [ ] Address parser support for `/`
+- [X] Address parser support for `/`
 - [ ] Disassembler: set/track M/X widths (REP/SEP)
 - [X] Breakpoints: PC-only / MEM-only / BOTH; value match; “write value to address”
 - [X] BP on 0 must not fire on immediates like `LDA #1`
@@ -218,9 +218,10 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 - [ ] Refactor parallel card onto threads; connect to file or ImageWriter
 - [ ] Parallel: flush/close after inactivity; reopen on write; close on ctrl-reset
 - [ ] Full printer→PDF pipeline (libHaru / preview window) beyond raw dump
-- [ ] Uthernet II emulation
 - [ ] Serial-to-telnet / Hayes path hardening as needed
 - [ ] Optional FujiNet-PC / NetSIO bridge
+- [x] Uthernet II emulation
+- [ ] Optional pcap/bpf Uthernet backend (slirp double-NAT breaks FTP; HTTP OK — see Networking.md)
 - [ ] SMB FST via Uthernet (noted as preferred home-network path)
 
 ---

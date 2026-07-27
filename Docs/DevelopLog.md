@@ -12352,3 +12352,24 @@ Huh, altchar is still phase -1. how is that possible.
 ok Grokky says it's because the way the syncs are timed the relative offset between sync and altchar isn't changing. that makes a certain sense.
 
 So now what.. video-before-mmu is in some sense "more right" but it's going to drive a lot of changes maybe I don't want to do before version 1.0.  And ALTCHAR (and others) have to lookback in either case.
+
+## July 26, 2026
+
+Researching guest network services (e.g. Uthernet). The key challenge is: raw packet access is simple in terms of API, but hard in terms of UX. Requires: root access on linux; installing pcap driver into Windows; getting a developer entitlement from Apple.
+
+Alternatively, there is this approach: libslirp as practiced by QEMU. This implements essentially a NAT router that runs inside your own program. The guest can do its pretend ethernet between itself and slirp; then slirp initiates NATed 
+
+https://gitlab.com/qemu-project/libslirp/
+https://github.com/virtualsquare/libvdeslirp
+
+I think this is a pretty clean approach for most user applications. However, it does prevent certain things from working:
+SMB discovery;
+anything else requiring broadcast to the real network;
+another potential con is this is basically double NAT - though Apple II applications are not likely to have a problem with this.
+libslirp works on mac/linux/windows.
+
+So I think there could be two implementations of this (eventually). First, slirp for all platforms. Then, could add pcap/bpf if there is demand. (Could just have two different Uthernet II card types).
+
+## July 27, 2026
+
+Uthernet II (slirp) is in and working on IIe + IIgs: Contiki DHCP, HTTP browsing, etc. Confirmed double-NAT pain: HTTP is fine; FTP does not work reliably (active/passive). Note left in Networking.md; pcap backend still the escape hatch if we care.
