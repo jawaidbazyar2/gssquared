@@ -233,7 +233,7 @@ Each card type defines which additional keys are valid on its `[[cards]]` entry.
 
 Storage card types (`disk_ii`, `prodos_block`, `prodos_block2`, `bazfast3`) have **no** card-level storage properties. Mount disks via `[[storage]]` after the card is installed.
 
-Serial-capable slot cards (e.g. future Super Serial Card) have **no** connection properties on the card entry. Attach virtual devices via `[[connections]]`.
+Serial-capable slot cards (e.g. Super Serial Card) have **no** connection properties on the card entry. Attach virtual devices via `[[connections]]`.
 
 ### `parallel`
 
@@ -298,7 +298,7 @@ device = "modem"
 
 These map to `SCC_CHANNEL_A` / `SCC_CHANNEL_B` after `init_scc8530_slot()` composes the motherboard. Same attachment model as today’s hard-coded `FileDevice` / `ModemDevice` setup in `scc8530.cpp`, but driven from config.
 
-**Slot serial card** (future Super Serial Card, etc.) — set `slot` to the card’s slot; `port` defaults to `"a"` for single-port cards:
+**Slot serial card** (Super Serial Card, etc.) — set `slot` to the card’s slot; `port` defaults to `"a"` for single-port cards:
 
 ```toml
 [[cards]]
@@ -604,7 +604,7 @@ All other fields use platform defaults; no disks pre-mounted.
 ## Open questions
 
 - **Serial port registry:** Implement a `Connections` (or extend device init) so SCC and slot serial cards register addressable ports the same way `Mounts` registers drives — then loader, OSD, and save/load all share one model.
-- **Super Serial Card:** Not yet in `devices.cpp`; `[[connections]]` with `slot` is specified for when it is added.
+- **Super Serial Card:** Implemented as `card = "super_serial"` (see [SSC.md](SSC.md)). v1 hard-codes ModemDevice (FileDevice on Emscripten); `[[connections]]` with `slot` is still not applied at runtime (same as IIgs SCC).
 - **Built-in migration:** Ship current `BuiltinSystemConfigs[]` as `.gs2` files and load all configs through one code path?
 - **Profile preferences:** Add `[display]`, `[speed]`, `[input]`, `[audio]` (or equivalent) for menu-controlled settings; map Neil `video.*` / `machine.speed` on import.
 

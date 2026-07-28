@@ -361,6 +361,9 @@ add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp src/devices/es550
 add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
 target_link_libraries(gs2_devices_scc8530 PUBLIC gs2_serial_devices)
 
+add_library(gs2_devices_ssc src/devices/ssc/ssc.cpp)
+target_link_libraries(gs2_devices_ssc PUBLIC gs2_serial_devices)
+
 add_library(gs2_devices_secondsight
     src/devices/secondsight/secondsight.cpp
     src/devices/secondsight/ppu_render.cpp
@@ -514,6 +517,7 @@ set(GS2_DEVICE_REGISTRY_LIBS
     gs2_devices_iiememory
     gs2_devices_ensoniq
     gs2_devices_scc8530
+    gs2_devices_ssc
     gs2_devices_secondsight
     gs2_devices_iwm
     gs2_devices_mouse
@@ -622,6 +626,7 @@ target_link_libraries(GSSquared
     gs2_devices_iiememory
     gs2_devices_ensoniq
     gs2_devices_scc8530
+    gs2_devices_ssc
     gs2_devices_secondsight
     gs2_devices_iwm
     gs2_serial_devices

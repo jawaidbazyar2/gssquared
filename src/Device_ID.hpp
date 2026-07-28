@@ -31,5 +31,6 @@ typedef enum device_id {
     DEVICE_ID_SECOND_SIGHT,
     DEVICE_ID_HOST_FST,
     DEVICE_ID_UTHERNET2,
+    DEVICE_ID_SUPER_SERIAL,
     NUM_DEVICE_IDS
 } device_id;
