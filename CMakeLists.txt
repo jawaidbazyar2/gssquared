@@ -341,6 +341,7 @@ add_library(gs2_devices_speaker     src/devices/speaker/speaker.cpp )
 add_library(gs2_devices_memexp     src/devices/memoryexpansion/memexp.cpp )
 
 add_library(gs2_devices_parallel     src/devices/parallel/parallel.cpp )
+target_link_libraries(gs2_devices_parallel PUBLIC gs2_serial_devices)
 
 add_library(gs2_devices_videx     src/devices/videx/videx.cpp src/devices/videx/videx_80x24.cpp )
 

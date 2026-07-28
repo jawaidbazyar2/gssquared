@@ -8,6 +8,7 @@ enum serial_message_type_t {
     MESSAGE_DATA,
     MESSAGE_BREAK_ON,
     MESSAGE_BREAK_OFF,
+    MESSAGE_CLOSE,
     MESSAGE_SHUTDOWN,
 };
 

@@ -96,11 +96,11 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
     );
 
     // let the devices name themselves mostly. But we can, too if we like..
-    st->channel_a_device = new FileDevice(nullptr, "A");
+    st->channel_a_device = new FileDevice(computer->event_queue, computer->device_frame_dispatcher, "A");
     st->scc->set_device_channel(SCC_CHANNEL_A, st->channel_a_device);
 #if defined(__EMSCRIPTEN__)
     // No SDL_net/modem on the web; use a file device so channel B is still valid.
-    st->channel_b_device = new FileDevice(nullptr, "B");
+    st->channel_b_device = new FileDevice(computer->event_queue, computer->device_frame_dispatcher, "B");
 #else
     st->channel_b_device = new ModemDevice(nullptr, "B");
 #endif

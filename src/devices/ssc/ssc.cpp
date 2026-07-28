@@ -173,7 +173,7 @@ void init_slot_ssc(computer_t *computer, SlotType_t slot) {
 
     snprintf(st->port_id, sizeof(st->port_id), "SSC%d", static_cast<int>(slot));
 #if defined(__EMSCRIPTEN__)
-    st->serial_device = new FileDevice(nullptr, st->port_id);
+    st->serial_device = new FileDevice(computer->event_queue, computer->device_frame_dispatcher, st->port_id);
 #else
     st->serial_device = new ModemDevice(nullptr, st->port_id);
 #endif

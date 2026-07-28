@@ -214,11 +214,11 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 - [ ] Clear SCC queues on reset
 - [ ] Implement "file" serial device (complete path)
 - [ ] ImageWriter II emulation
-- [ ] OSD gizmo when a capture file finishes writing (path toast)
-- [ ] Refactor parallel card onto threads; connect to file or ImageWriter
-- [ ] Parallel: flush/close after inactivity; reopen on write; close on ctrl-reset
+- [x] OSD gizmo when a capture file finishes writing (path toast)
+- [x] Refactor parallel card onto threads; connect to file (ImageWriter later)
+- [x] Parallel: flush/close after inactivity; reopen on write; close on ctrl-reset (via FileDevice)
 - [ ] Full printer→PDF pipeline (libHaru / preview window) beyond raw dump
-- [ ] Serial-to-telnet / Hayes path hardening as needed
+- [X] Serial-to-telnet / Hayes path hardening as needed
 - [x] Super Serial Card (`super_serial`) — 6551 + ROM + Modem/File attach; see [SSC.md](SSC.md)
 - [ ] Apply `[[connections]]` at runtime for SCC and SSC
 - [ ] Optional FujiNet-PC / NetSIO bridge
