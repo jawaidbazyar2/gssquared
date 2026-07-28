@@ -212,7 +212,7 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 
 - [ ] Simulate SCC modem control signals (CTS/RTS/DSR/DTR, etc.)
 - [ ] Clear SCC queues on reset
-- [ ] Implement "file" serial device (complete path)
+- [X] Implement "file" serial device (complete path)
 - [ ] ImageWriter II emulation
 - [x] OSD gizmo when a capture file finishes writing (path toast)
 - [x] Refactor parallel card onto threads; connect to file (ImageWriter later)
@@ -223,7 +223,7 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 - [ ] Apply `[[connections]]` at runtime for SCC and SSC
 - [ ] Optional FujiNet-PC / NetSIO bridge
 - [x] Uthernet II emulation
-- [ ] Optional pcap/bpf Uthernet backend (slirp double-NAT breaks FTP; HTTP OK — see Networking.md)
+- [ ] Optional pcap/bpf Uthernet backend
 - [ ] SMB FST via Uthernet (noted as preferred home-network path)
 
 ---
