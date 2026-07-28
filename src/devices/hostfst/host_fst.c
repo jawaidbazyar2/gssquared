@@ -427,6 +427,9 @@ static word32 fst_shutdown(void) {
     free_fd(head);
     head = next;
   }
+  /* Must clear: otherwise a second $8002 (or open after P8 switch) walks
+   * freed nodes and free()s garbage ("pointer being freed was not allocated"). */
+  fd_head = NULL;
   //host_shutdown();
   return 0;
 }
