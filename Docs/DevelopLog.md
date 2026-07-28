@@ -12372,4 +12372,6 @@ So I think there could be two implementations of this (eventually). First, slirp
 
 ## July 27, 2026
 
-Uthernet II (slirp) is in and working on IIe + IIgs: Contiki DHCP, HTTP browsing, etc. Confirmed double-NAT pain: HTTP is fine; FTP does not work reliably (active/passive). Note left in Networking.md; pcap backend still the escape hatch if we care.
+Uthernet II (slirp) is in and working on IIe + IIgs: Contiki DHCP, HTTP browsing, etc. Double NAT remains: HTTP is fine; FTP with **SAFE2 (latest) in PASV mode** works; active FTP / older clients still struggle. Note in Networking.md; pcap backend still the escape hatch for full LAN/FTP fidelity.
+
+Upgraded to latest SAFE2 FTP client, and PASV is working correctly now!

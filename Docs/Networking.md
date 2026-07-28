@@ -16,7 +16,7 @@ Emulates the W5100-based Uthernet II (register model aligned with AppleWin):
 - **TCP / UDP offload:** host BSD sockets (non-blocking), on a dedicated worker thread so the emulator never blocks on network I/O.
 - Slirp virtual `/24` is chosen at init so it does **not** overlap any host IPv4 interface (prefers `10.0.2.0/24` when free). Guest DHCP (MACRAW stacks such as Marinetti / IP65) sees that subnet; DNS is slirp’s `vnameserver` (typically `.3`).
 
-**Limits (slirp NAT):** no LAN broadcast / SMB discovery on the real network; guest is double-NAT’d relative to the host’s LAN. In practice HTTP browsing works; FTP (active and often passive) tends to fail under that double NAT. A future pcap backend could be added if needed.
+**Limits (slirp NAT):** no LAN broadcast / SMB discovery on the real network; guest is double-NAT’d relative to the host’s LAN. HTTP browsing works. FTP is mixed: **SAFE2** (latest) works in **PASV** mode; active FTP and some older clients still fail under double NAT. A future pcap backend could be added if needed.
 
 libslirp is vendored under `vendored/libslirp` and built with CMake plus a small in-tree `glib_compat` shim (no system GLib dependency).
 
