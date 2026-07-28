@@ -33,12 +33,20 @@ With DHCP, Contiki should receive an address from slirp’s pool (typically star
 
 ## Serial-to-telnet
 
-In some ways this is quite a lot simpler. What needs to be emulated here is two things:
+Emulates two pieces:
 
-1) a super serial card
-2) a hayes-compatible modem that is a telnet client (&/or server)
+1. **Super Serial Card** — selectable slot card (`card = "super_serial"`). See [SSC.md](SSC.md).
+2. **Hayes-compatible modem** as a telnet client — the same `ModemDevice` used by IIgs SCC port B. See [Serial_Modem.md](Serial_Modem.md).
 
-This is a pretty simple one.
+Example:
+
+```toml
+[[cards]]
+slot = 2
+card = "super_serial"
+```
+
+v1 attaches a ModemDevice by default on native builds. `[[connections]]` with `slot` is reserved for choosing file/modem/echo later (not applied at runtime yet).
 
 
 ## FujiNet

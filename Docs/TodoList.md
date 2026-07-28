@@ -219,6 +219,8 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 - [ ] Parallel: flush/close after inactivity; reopen on write; close on ctrl-reset
 - [ ] Full printer→PDF pipeline (libHaru / preview window) beyond raw dump
 - [ ] Serial-to-telnet / Hayes path hardening as needed
+- [x] Super Serial Card (`super_serial`) — 6551 + ROM + Modem/File attach; see [SSC.md](SSC.md)
+- [ ] Apply `[[connections]]` at runtime for SCC and SSC
 - [ ] Optional FujiNet-PC / NetSIO bridge
 - [x] Uthernet II emulation
 - [ ] Optional pcap/bpf Uthernet backend (slirp double-NAT breaks FTP; HTTP OK — see Networking.md)

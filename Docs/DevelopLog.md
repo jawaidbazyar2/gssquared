@@ -12375,3 +12375,7 @@ So I think there could be two implementations of this (eventually). First, slirp
 Uthernet II (slirp) is in and working on IIe + IIgs: Contiki DHCP, HTTP browsing, etc. Double NAT remains: HTTP is fine; FTP with **SAFE2 (latest) in PASV mode** works; active FTP / older clients still struggle. Note in Networking.md; pcap backend still the escape hatch for full LAN/FTP fidelity.
 
 Upgraded to latest SAFE2 FTP client, and PASV is working correctly now!
+
+## July 27, 2026 (evening)
+
+Super Serial Card v1: `card = "super_serial"`, MOS 6551 from datasheet, stock `341-0065-A.bin` (Cn page at file `$700`), DIP defaults for modem 9600/8N1 Communications, ModemDevice attach (FileDevice on Emscripten). Docs: SSC.md. `[[connections]]` still not applied (shared with SCC).
