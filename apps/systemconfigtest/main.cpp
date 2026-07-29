@@ -178,9 +178,34 @@ static bool test_connections() {
     std::string error;
     CHECK(config.load(path.string(), error), "MyGS load: " << error);
     CHECK(config.connections().size() == 2, "two connections");
-    CHECK(!config.connections()[0].slot.has_value(), "builtin SCC A");
+    // Legacy port a/b normalize to firmware slots 1/2.
+    CHECK(config.connections()[0].slot.has_value(), "SCC A has slot");
+    CHECK(*config.connections()[0].slot == 1, "SCC A → slot 1");
     CHECK(config.connections()[0].port == "a", "port a");
-    CHECK(config.connections()[1].port == "b", "port b");
+    CHECK(config.connections()[0].device == "file", "device file");
+    CHECK(config.connections()[1].slot.has_value(), "SCC B has slot");
+    CHECK(*config.connections()[1].slot == 2, "SCC B → slot 2");
+    CHECK(config.connections()[1].device == "modem", "device modem");
+    return true;
+}
+
+static bool test_connections_save_roundtrip() {
+    const auto path = fixture_dir() / "MyGS.gs2";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "MyGS load: " << error);
+
+    const auto tmp = std::filesystem::temp_directory_path() / "gs2_conn_roundtrip.gs2";
+    CHECK(config.save(tmp.string(), error), "save: " << error);
+
+    SystemConfig reloaded;
+    CHECK(reloaded.load(tmp.string(), error), "reload: " << error);
+    CHECK(reloaded.connections().size() == 2, "roundtrip two connections");
+    CHECK(reloaded.connections()[0].slot.has_value() && *reloaded.connections()[0].slot == 1,
+          "roundtrip slot 1");
+    CHECK(reloaded.connections()[1].slot.has_value() && *reloaded.connections()[1].slot == 2,
+          "roundtrip slot 2");
+    std::filesystem::remove(tmp);
     return true;
 }
 
@@ -359,6 +384,7 @@ static bool run_self_tests() {
         {"storage_multivolume", test_storage_multivolume},
         {"parallel_output", test_parallel_output},
         {"connections", test_connections},
+        {"connections_save_roundtrip", test_connections_save_roundtrip},
         {"errors", test_errors},
         {"settings_choplifter", test_settings_choplifter},
         {"settings_global", test_settings_global},

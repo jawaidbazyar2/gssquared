@@ -28,7 +28,7 @@ OSD is On Screen Display, which refers generally to the way we composit controls
 * [X] Show Platform Type and Logo / Icon (done)
 * [X] Show slots
 * [ ] Manage slots (only when system off)
-* [ ] Show / Manage devices connected to serial ports
+* [X] Show / Manage devices connected to serial ports
 * [X] Manage Hard Disk Partitions on SmartPort
 * [X] Drag and drop mount disks - if CP not open, slide it open as drag enters our window, and the reverse
 * When system is off will need info about what drives, just for display. They can mount disks and re-save after starting.
@@ -41,7 +41,7 @@ OSD is On Screen Display, which refers generally to the way we composit controls
 * Consider using higher-resolution assets and scaling down as necessary (will look better on high-res screens)
 * OSD background color chosen to match system case color. 
 
-we're going to need a "register serial port" concept for OSD to talk to ports.
+Serial ports register with `Connections` (Mounts analogue) for OSD / EditSystem.
 
 ## Hover Controls
 

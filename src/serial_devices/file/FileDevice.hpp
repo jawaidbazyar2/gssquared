@@ -10,7 +10,6 @@
 #include "util/DeviceFrameDispatcher.hpp"
 #include "util/Event.hpp"
 #include "util/EventQueue.hpp"
-#include "util/printf_helper.hpp"
 
 /** Status message from FileDevice worker → main. Copied by value into the SPSC ring. */
 struct FileCloseStatusMsg {
@@ -155,38 +154,30 @@ class FileDevice : public SerialDevice {
         void device_loop() override {
             while (true) {
                 SDL_Delay(10);
-                uint64_t bytes_received = 0;
-                uint64_t bytes_in_q = q_host.get_count();
 
                 if (file && last_write_ticks != 0 &&
                     (SDL_GetTicks() - last_write_ticks) >= idle_close_ms) {
                     close_file();
                 }
 
-                if (bytes_in_q > 0) {
-                    printf("FileDevice: %llu bytes in q\n", u64_t(bytes_in_q));
-                    while (!q_host.is_empty()) {
-                        SerialMessage msg = q_host.get();
-                        switch (msg.type) {
-                            case MESSAGE_SHUTDOWN:
-                                // we're done, just return
-                                printf("FileDevice: shutting down\n");
-                                return;
-                            case MESSAGE_CLOSE:
-                                close_file();
-                                break;
-                            case MESSAGE_DATA:
-                                if (!file) open_file();
-                                if (file) {
-                                    fwrite(&msg.data, 1, 1, file);
-                                    mark_write();
-                                }
-                                break;
-                            default:
-                                break;
-                        }
+                while (!q_host.is_empty()) {
+                    SerialMessage msg = q_host.get();
+                    switch (msg.type) {
+                        case MESSAGE_SHUTDOWN:
+                            return;
+                        case MESSAGE_CLOSE:
+                            close_file();
+                            break;
+                        case MESSAGE_DATA:
+                            if (!file) open_file();
+                            if (file) {
+                                fwrite(&msg.data, 1, 1, file);
+                                mark_write();
+                            }
+                            break;
+                        default:
+                            break;
                     }
-                    printf("EchoDevice: %llu bytes received\n", u64_t(bytes_received));
                 }
             }
         }

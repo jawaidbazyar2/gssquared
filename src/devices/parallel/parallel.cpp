@@ -4,7 +4,7 @@
 #include "parallel.hpp"
 
 #include "Device_ID.hpp"
-#include "serial_devices/file/FileDevice.hpp"
+#include "util/Connections.hpp"
 
 void parallel_write_C0x0(void *context, uint32_t addr, uint8_t data) {
     parallel_data * parallel_d = (parallel_data *)context;
@@ -48,8 +48,18 @@ void init_slot_parallel(computer_t *computer, SlotType_t slot) {
     computer->mmu->set_slot_rom(slot, rom_data, "PARL_ROM");
 
     snprintf(parallel_d->port_id, sizeof(parallel_d->port_id), "PARL%d", static_cast<int>(slot));
-    parallel_d->serial_device = new FileDevice(computer->event_queue, computer->device_frame_dispatcher,
-                                               parallel_d->port_id);
+
+    char display_name[32];
+    snprintf(display_name, sizeof(display_name), "Parallel Slot %d", static_cast<int>(slot));
+    computer->connections->register_port(
+        connection_key_t{static_cast<int>(slot), "a"},
+        display_name,
+        connection_port_kind_t::PARALLEL,
+        connection_device_type_t::FILE,
+        [parallel_d](SerialDevice *dev) {
+            parallel_d->serial_device = dev;
+        },
+        parallel_d->port_id);
 
     computer->register_reset_handler(
         [parallel_d](bool cold_start) {
@@ -59,7 +69,7 @@ void init_slot_parallel(computer_t *computer, SlotType_t slot) {
         });
 
     computer->register_shutdown_handler([parallel_d]() {
-        delete parallel_d->serial_device;
+        // SerialDevice owned by Connections.
         parallel_d->serial_device = nullptr;
         delete parallel_d->rom;
         parallel_d->rom = nullptr;

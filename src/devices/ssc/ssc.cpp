@@ -12,10 +12,7 @@
 #include "computer.hpp"
 #include "device_irq_id.hpp"
 #include "serial_devices/SerialDevice.hpp"
-#include "serial_devices/file/FileDevice.hpp"
-#if !defined(__EMSCRIPTEN__)
-#include "serial_devices/modem/ModemDevice.hpp"
-#endif
+#include "util/Connections.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/ResourceFile.hpp"
@@ -172,12 +169,26 @@ void init_slot_ssc(computer_t *computer, SlotType_t slot) {
     }
 
     snprintf(st->port_id, sizeof(st->port_id), "SSC%d", static_cast<int>(slot));
+
 #if defined(__EMSCRIPTEN__)
-    st->serial_device = new FileDevice(computer->event_queue, computer->device_frame_dispatcher, st->port_id);
+    const connection_device_type_t ssc_default = connection_device_type_t::FILE;
 #else
-    st->serial_device = new ModemDevice(nullptr, st->port_id);
+    const connection_device_type_t ssc_default = connection_device_type_t::MODEM;
 #endif
-    st->acia->set_device(st->serial_device);
+    char display_name[32];
+    snprintf(display_name, sizeof(display_name), "SSC Slot %d", static_cast<int>(slot));
+    computer->connections->register_port(
+        connection_key_t{static_cast<int>(slot), "a"},
+        display_name,
+        connection_port_kind_t::SERIAL,
+        ssc_default,
+        [st](SerialDevice *dev) {
+            st->serial_device = dev;
+            if (st->acia) {
+                st->acia->set_device(dev);
+            }
+        },
+        st->port_id);
 
     computer->register_debug_display_handler(
         "ssc", DH_SSC,
@@ -200,7 +211,7 @@ void init_slot_ssc(computer_t *computer, SlotType_t slot) {
     });
 
     computer->register_shutdown_handler([st]() {
-        delete st->serial_device;
+        // SerialDevice owned by Connections.
         st->serial_device = nullptr;
         delete st->acia;
         st->acia = nullptr;

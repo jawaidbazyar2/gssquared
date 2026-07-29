@@ -31,6 +31,7 @@ struct cpu_state;
 struct debug_window_t; // don't bring in debugwindow.hpp, it would create a depedence on SDL.
 struct video_system_t; // same.
 class Mounts;
+class Connections;
 class EventTimer;
 class VideoScannerII;
 class ResetController;
@@ -104,6 +105,7 @@ struct computer_t {
     DeviceFrameDispatcher *device_frame_dispatcher = nullptr;
 
     Mounts *mounts = nullptr;
+    Connections *connections = nullptr;
 
     /** UI drive key used by File > Mount Drivers (BazFast 3 + drivers.hdv). */
     std::optional<storage_key_t> drivers_mount_key;

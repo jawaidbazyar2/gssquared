@@ -55,6 +55,8 @@
 #include "DirtyDiskSave.hpp"
 #include "QuitModal.hpp"
 #include "ConfigSelectors.hpp"
+#include "SerialPortsOSD.hpp"
+#include "util/Connections.hpp"
 #include "StorageButtonFactory.hpp"
 #include "version.h"
 
@@ -329,6 +331,33 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     drive_container->rebuild(drive_specs);
     containers.push_back(drive_container);
 
+    // Serial / parallel ports between slots and storage.
+    Style_t SP = {
+        .background_color = 0x00000040,
+        .border_color = 0xFFFFFF80,
+        .hover_color = 0x008080FF,
+        .padding = 4,
+        .border_width = 2,
+    };
+    // Match SlotButton readability: mid blue fill, white text.
+    Style_t SPB = {
+        .background_color = 0x2E86ABFF,
+        .border_color = 0xF0F7FAFF,
+        .hover_color = 0x3D9BC4FF,
+        .padding = 4,
+        .border_width = 1,
+        .text_color = 0xFFFFFFFF,
+    };
+    serial_ports_container = new SerialPortsOSD_t(&ui_ctx, SP);
+    serial_ports_container->set_position(360, 140);
+    serial_ports_container->size(220, 304);
+    serial_ports_container->set_button_style(SPB);
+    serial_ports_container->set_click_handler([this](SerialPortButton *button, const SDL_Event&) {
+        show_connection_picker(button->get_key(), button->get_kind());
+    });
+    refresh_serial_ports();
+    containers.push_back(serial_ports_container);
+
     /*
      instead of creating whole new buttons, we insert the same buttons into this container.
      this needs to be dynamic, based on which slot is active at any given time.
@@ -539,6 +568,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
 }
 
 OSD::~OSD() {
+    dismiss_connection_picker();
     SDL_DestroyTexture(cpTexture);
     delete text_render;
     delete title_trender;
@@ -552,6 +582,81 @@ OSD::~OSD() {
     //delete diskii_save_con;
     delete close_btn;
     delete open_btn;
+}
+
+void OSD::refresh_serial_ports() {
+    if (!serial_ports_container || !computer || !computer->connections) return;
+    std::vector<connection_port_spec_t> specs;
+    for (const auto &info : computer->connections->get_all_ports()) {
+        connection_port_spec_t spec;
+        spec.key = info.key;
+        spec.display_name = info.display_name;
+        spec.kind = info.kind;
+        spec.device = info.device;
+        specs.push_back(std::move(spec));
+    }
+    serial_ports_container->rebuild(specs);
+}
+
+void OSD::dismiss_connection_picker() {
+    delete connection_picker;
+    connection_picker = nullptr;
+}
+
+void OSD::show_connection_picker(connection_key_t key, connection_port_kind_t kind) {
+    dismiss_connection_picker();
+    picking_connection_key_ = key;
+
+    // Dark slate panel; choice buttons use white text on ocean blue (not black-on-purple).
+    Style_t MS{
+        .background_color = 0x1A2332FF,
+        .border_color = 0x7EB8D8FF,
+        .hover_color = 0x243044FF,
+        .padding = 8,
+        .border_width = 3,
+    };
+    Style_t btn_style{
+        .background_color = 0x2E86ABFF,
+        .border_color = 0xF0F7FAFF,
+        .hover_color = 0xE36414FF,
+        .padding = 4,
+        .border_width = 1,
+        .text_color = 0xFFFFFFFF,
+    };
+    connection_picker = new Container_t(&ui_ctx, MS);
+    connection_picker->set_position(380, 160);
+
+    constexpr float kBtnW = 180.0f;
+    constexpr float kBtnH = 28.0f;
+    constexpr float kPanelW = 220.0f;
+
+    auto add_choice = [this, btn_style](connection_device_type_t type, const char *label) {
+        Button_t *b = new Button_t(&ui_ctx, label, btn_style);
+        b->size(kBtnW, kBtnH);
+        b->on_click([this, type](const SDL_Event&) -> bool {
+            if (computer && computer->connections) {
+                computer->connections->attach(picking_connection_key_, type);
+                refresh_serial_ports();
+            }
+            dismiss_connection_picker();
+            return true;
+        });
+        connection_picker->add(b);
+    };
+
+    for (connection_device_type_t type : connection_allowed_devices(kind)) {
+        const char *label = "Nothing";
+        if (type == connection_device_type_t::FILE) label = "File";
+        else if (type == connection_device_type_t::MODEM) label = "Modem";
+        add_choice(type, label);
+    }
+
+    const size_t n = connection_picker->count();
+    const float pad = static_cast<float>(MS.padding);
+    const float cell_h = kBtnH + pad * 2;
+    const float panel_h = pad * 2 + n * cell_h + static_cast<float>(MS.border_width) * 2;
+    connection_picker->size(kPanelW, panel_h);
+    connection_picker->layout();
 }
 
 void OSD::update() {
@@ -695,6 +800,10 @@ void OSD::render() {
             container->render();
         }
 
+        if (connection_picker) {
+            connection_picker->render();
+        }
+
         // Build version near bottom-left of the control panel slide-out
         {
             const int version_x = 20;
@@ -803,14 +912,16 @@ bool OSD::event(const SDL_Event &event) {
         } */
         return true;
     }
-    /* if (activeModal) {
-        activeModal->handle_mouse_event(event);
-        if (activeModal->is_completed()) {
-            delete activeModal;
-            activeModal = nullptr;
+
+    if (connection_picker) {
+        if (connection_picker->handle_mouse_event(event)) {
+            return true;
         }
-        return true;
-    } */
+        if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            dismiss_connection_picker();
+            return true;
+        }
+    }
 
     if (active) {
         close_btn->handle_mouse_event(event);

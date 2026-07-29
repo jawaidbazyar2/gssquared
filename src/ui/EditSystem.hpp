@@ -13,12 +13,14 @@
 #include "AssetAtlas.hpp"
 #include "Container.hpp"
 #include "DrivesOSD.hpp"
+#include "SerialPortsOSD.hpp"
 #include "ModalContainer.hpp"
 #include "SlotsPanel.hpp"
 #include "SystemBadge.hpp"
 #include "TextInput.hpp"
 #include "UIContext.hpp"
 #include "util/ConfigDraft.hpp"
+#include "util/Connections.hpp"
 #include "util/TextRenderer.hpp"
 #include "videosystem.hpp"
 
@@ -51,6 +53,7 @@ protected:
     TextInput_t *desc_input = nullptr;
     SlotsPanel_t *slots_panel = nullptr;
     DrivesOSD_t *drives_panel = nullptr;
+    SerialPortsOSD_t *serial_ports_panel = nullptr;
     Container_t *speed_con = nullptr;
     Container_t *display_con = nullptr;
     Container_t *platform_con = nullptr;
@@ -61,6 +64,9 @@ protected:
     modal_stack mstack;
     int picking_slot = -1;
     Container_t *card_picker = nullptr;
+    connection_key_t picking_connection_key_{};
+    connection_port_kind_t picking_connection_kind_ = connection_port_kind_t::SERIAL;
+    Container_t *connection_picker = nullptr;
 
     std::string status_text;
     storage_key_t pending_mount_key{};
@@ -71,6 +77,8 @@ protected:
     bool handle_text_field_event(const SDL_Event& ev);
     void show_card_picker(int slot);
     void dismiss_card_picker();
+    void show_connection_picker(connection_key_t key, connection_port_kind_t kind);
+    void dismiss_connection_picker();
     void open_premount_dialog(storage_key_t key);
     /** Open save dialog; on success sets EDIT_SAVED, on cancel stays in editor. */
     void begin_save();

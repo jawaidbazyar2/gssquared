@@ -9,3 +9,12 @@ builtin = false
 [[cards]]
 slot = 7
 card = "bazfast3"
+
+[[connections]]
+port = "a"
+device = "file"
+path = "captures/printer.bin"
+
+[[connections]]
+port = "b"
+device = "modem"

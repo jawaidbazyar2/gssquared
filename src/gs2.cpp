@@ -35,6 +35,7 @@
 #include "platforms.hpp"
 #include "util/dialog.hpp"
 #include "util/mount.hpp"
+#include "util/Connections.hpp"
 #include "util/SystemConfig.hpp"
 #include "util/SystemSettings.hpp"
 #include "ui/OSD.hpp"
@@ -889,6 +890,19 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     for (const auto& disk_mount : state->disks_to_mount) {
         computer->mounts->mount_media(disk_mount);
     }
+
+    // Apply serial/parallel [[connections]] after ports register during device init.
+    if (state->loaded_config) {
+        for (const auto& conn : state->loaded_config->connections()) {
+            const connection_key_t key = normalize_connection_key(conn.slot, conn.port);
+            const connection_device_type_t dtype = connection_device_type_from_string(conn.device);
+            if (!computer->connections->attach(key, dtype)) {
+                printf("Warning: connection slot %d device=%s not applied (port not registered?)\n",
+                       key.slot, conn.device.c_str());
+            }
+        }
+    }
+    computer->connections->apply_defaults();
 
     osd = new OSD(computer, vs->renderer, vs->window, computer->slot_manager, 1120, 768, state->aa);
 

@@ -37,6 +37,7 @@
 #include "SelectButton.hpp"
 #include "StatusMessage.hpp"
 #include "DrivesOSD.hpp"
+#include "SerialPortsOSD.hpp"
 #include "SlotsPanel.hpp"
 #include "SystemBadge.hpp"
 
@@ -74,6 +75,9 @@ protected:
     
     //Container_t *drive_container = nullptr;
     DrivesOSD_t *drive_container = nullptr;
+    SerialPortsOSD_t *serial_ports_container = nullptr;
+    Container_t *connection_picker = nullptr;
+    connection_key_t picking_connection_key_{};
 
     Container_t *speed_con = nullptr;
     SelectButton_t *speed_btn_10 = nullptr;
@@ -198,6 +202,10 @@ public:
     void open_file_dialog(storage_key_t key);
     void open_host_fst_folder_dialog();
     void refresh_host_fst_button();
+
+    void show_connection_picker(connection_key_t key, connection_port_kind_t kind);
+    void dismiss_connection_picker();
+    void refresh_serial_ports();
 
     void show_diskii_modal(storage_key_t key, uint64_t data);
 

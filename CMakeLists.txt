@@ -449,7 +449,8 @@ add_library(gs2_event_dispatcher src/util/EventDispatcher.cpp )
 
 add_library(gs2_serial_devices src/serial_devices/SerialDevice.cpp
 )
-add_library(gs2_util src/util/media.cpp src/util/ResourceFile.cpp src/util/dialog.cpp src/util/mount.cpp 
+add_library(gs2_util src/util/media.cpp src/util/ResourceFile.cpp src/util/dialog.cpp src/util/mount.cpp
+    src/util/Connections.cpp
     #src/util/soundeffects.cpp 
     src/util/SoundEffect.cpp
     src/util/EventQueue.cpp src/util/Event.cpp src/util/EventTimer.cpp src/util/TextRenderer.cpp
@@ -464,6 +465,7 @@ add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Butt
     src/ui/DirtyDiskSave.cpp src/ui/QuitModal.cpp src/ui/ScrollBar.cpp src/ui/WrapContainer.cpp
     src/ui/StorageButtonFactory.cpp src/ui/SlotsPanel.cpp src/ui/SystemBadge.cpp src/ui/ConfigSelectors.cpp
     src/ui/EditSystem.cpp
+    src/ui/SerialPortButton.cpp src/ui/SerialPortsOSD.cpp
 )
 
 add_library(gs2_displaypp src/devices/displaypp/frame/frame_bit.cpp src/devices/displaypp/frame/frame_byte.cpp src/devices/displaypp/CharRom.cpp src/devices/displaypp/AppleIIgsColors.cpp)

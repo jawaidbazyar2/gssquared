@@ -175,9 +175,9 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         .border_width = 2,
     };
     drives_panel = new DrivesOSD_t(&ui_ctx, DC);
-    drives_panel->set_position(400 + layout_dx, 140 + body_dy);
+    drives_panel->set_position(600 + layout_dx, 140 + body_dy);
     // Tall enough that Platform (below) can sit with its bottom on the Save/Cancel line.
-    drives_panel->size(500, 450);
+    drives_panel->size(400, 450);
     drives_panel->set_button_style(drive_style());
     drives_panel->set_click_handler([this](StorageButton *button, const SDL_Event&) {
         storage_key_t key = button->get_key();
@@ -187,6 +187,22 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         } else {
             open_premount_dialog(key);
         }
+    });
+
+    Style_t SPB{
+        .background_color = 0x2E86ABFF,
+        .border_color = 0xF0F7FAFF,
+        .hover_color = 0x3D9BC4FF,
+        .padding = 4,
+        .border_width = 1,
+        .text_color = 0xFFFFFFFF,
+    };
+    serial_ports_panel = new SerialPortsOSD_t(&ui_ctx, DC);
+    serial_ports_panel->set_position(360 + layout_dx, 140 + body_dy);
+    serial_ports_panel->size(220, 450);
+    serial_ports_panel->set_button_style(SPB);
+    serial_ports_panel->set_click_handler([this](SerialPortButton *button, const SDL_Event&) {
+        show_connection_picker(button->get_key(), button->get_kind());
     });
 
     Style_t CB = config_selector_button_style();
@@ -218,8 +234,8 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
 
     platform_con = new Container_t(&ui_ctx, SC);
     // Bottom aligns with action_con (y=655, h=50 → 705) before body_dy.
-    platform_con->set_position(400 + layout_dx, 625 + body_dy);
-    platform_con->size(500, 80);
+    platform_con->set_position(600 + layout_dx, 625 + body_dy);
+    platform_con->size(400, 80);
     for (int p = 0; p < PLATFORM_END; p++) {
         platform_info *plat = get_platform(p);
         if (!plat) continue;
@@ -260,11 +276,13 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
 
 EditSystem::~EditSystem() {
     dismiss_card_picker();
+    dismiss_connection_picker();
     delete badge;
     delete name_input;
     delete desc_input;
     delete slots_panel;
     delete drives_panel;
+    delete serial_ports_panel;
     delete speed_con;
     delete display_con;
     delete platform_con;
@@ -365,6 +383,9 @@ void EditSystem::rebuild_ui_from_draft() {
     slots_panel->set_name_resolver([this](int slot) { return draft.slot_device_name(slot); });
     slots_panel->refresh_names();
     drives_panel->rebuild(draft.drive_specs());
+    if (serial_ports_panel) {
+        serial_ports_panel->rebuild(draft.port_specs());
+    }
     platform_con->selected_value(draft.config().platform_id);
     refresh_badge();
     updated = true;
@@ -376,7 +397,62 @@ void EditSystem::dismiss_card_picker() {
     picking_slot = -1;
 }
 
+void EditSystem::dismiss_connection_picker() {
+    delete connection_picker;
+    connection_picker = nullptr;
+}
+
+void EditSystem::show_connection_picker(connection_key_t key, connection_port_kind_t kind) {
+    dismiss_connection_picker();
+    dismiss_card_picker();
+    picking_connection_key_ = key;
+    picking_connection_kind_ = kind;
+
+    // Dark slate panel; choice buttons keep white text (card_picker_btn_style).
+    Style_t MS{
+        .background_color = 0x1A2332FF,
+        .border_color = 0x7EB8D8FF,
+        .hover_color = 0x243044FF,
+        .padding = 8,
+        .border_width = 3,
+    };
+    connection_picker = new Container_t(&ui_ctx, MS);
+    connection_picker->set_position(380 + layout_dx, 160 + body_dy);
+
+    constexpr float kBtnW = 180.0f;
+    constexpr float kBtnH = 28.0f;
+    constexpr float kPanelW = 220.0f;
+
+    auto add_choice = [this](connection_device_type_t type, const char *label) {
+        Button_t *b = new Button_t(&ui_ctx, label, card_picker_btn_style());
+        b->size(kBtnW, kBtnH);
+        b->on_click([this, type](const SDL_Event&) -> bool {
+            draft.set_connection(picking_connection_key_, type);
+            dismiss_connection_picker();
+            rebuild_ui_from_draft();
+            return true;
+        });
+        connection_picker->add(b);
+    };
+
+    for (connection_device_type_t type : connection_allowed_devices(kind)) {
+        const char *label = "Nothing";
+        if (type == connection_device_type_t::FILE) label = "File";
+        else if (type == connection_device_type_t::MODEM) label = "Modem";
+        add_choice(type, label);
+    }
+
+    const size_t n = connection_picker->count();
+    const float pad = static_cast<float>(MS.padding);
+    const float cell_h = kBtnH + pad * 2;
+    const float panel_h = pad * 2 + n * cell_h + static_cast<float>(MS.border_width) * 2;
+    connection_picker->size(kPanelW, panel_h);
+    connection_picker->layout();
+    updated = true;
+}
+
 void EditSystem::show_card_picker(int slot) {
+    dismiss_connection_picker();
     dismiss_card_picker();
     picking_slot = slot;
 
@@ -484,7 +560,7 @@ bool EditSystem::write_draft_to_path(const std::string& path) {
         draft.set_id(generate_uuid_v4());
     }
     SystemConfig writer;
-    writer.set_from_parts(draft.config(), draft.mounts());
+    writer.set_from_parts(draft.config(), draft.mounts(), draft.connections());
     if (!writer.save(path, error)) {
         status_text = "Save failed: " + error;
         updated = true;
@@ -581,6 +657,7 @@ void EditSystem::render() {
     if (name_input) name_input->render();
     if (desc_input) desc_input->render();
     slots_panel->render();
+    if (serial_ports_panel) serial_ports_panel->render();
     drives_panel->render();
     speed_con->render();
     display_con->render();
@@ -589,10 +666,11 @@ void EditSystem::render() {
 
     text_renderer->set_color(0, 0, 0, 0xFF);
     text_renderer->render("Slots", 30 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
-    text_renderer->render("Storage (pre-mount)", 400 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
+    text_renderer->render("Serial", 360 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
+    text_renderer->render("Storage (pre-mount)", 600 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Speed (not saved)", 30 + layout_dx, 455 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Display (not saved)", 30 + layout_dx, 550 + body_dy, TEXT_ALIGN_LEFT);
-    text_renderer->render("Platform", 400 + layout_dx, 600 + body_dy, TEXT_ALIGN_LEFT);
+    text_renderer->render("Platform", 600 + layout_dx, 600 + body_dy, TEXT_ALIGN_LEFT);
 
     if (!status_text.empty()) {
         text_renderer->render(status_text, 30 + layout_dx, design_height - 40, TEXT_ALIGN_LEFT);
@@ -604,6 +682,11 @@ void EditSystem::render() {
         text_renderer->set_color(0xFF, 0xFF, 0xFF, 0xFF);
         text_renderer->render(title, 370 + layout_dx, 140 + body_dy, TEXT_ALIGN_LEFT);
         card_picker->render();
+    }
+    if (connection_picker) {
+        text_renderer->set_color(0xFF, 0xFF, 0xFF, 0xFF);
+        text_renderer->render("Attach device", 390 + layout_dx, 140 + body_dy, TEXT_ALIGN_LEFT);
+        connection_picker->render();
     }
 
     ui_ctx.color(0x000000FF);
@@ -637,12 +720,24 @@ bool EditSystem::event(const SDL_Event &event) {
             return true;
         }
     }
+    if (connection_picker) {
+        if (connection_picker->handle_mouse_event(ev)) {
+            updated = true;
+            return true;
+        }
+        if (ev.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            dismiss_connection_picker();
+            updated = true;
+            return true;
+        }
+    }
 
     if (handle_text_field_event(ev)) {
         return true;
     }
 
     if (slots_panel->handle_mouse_event(ev)) { updated = true; return true; }
+    if (serial_ports_panel && serial_ports_panel->handle_mouse_event(ev)) { updated = true; return true; }
     if (drives_panel->handle_mouse_event(ev)) { updated = true; return true; }
     if (speed_con->handle_mouse_event(ev)) { updated = true; return true; }
     if (display_con->handle_mouse_event(ev)) { updated = true; return true; }

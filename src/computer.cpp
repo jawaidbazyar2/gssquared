@@ -28,6 +28,8 @@
 #include "util/printf_helper.hpp"
 #include "paths.hpp"
 #include "slots.hpp"
+#include "util/Connections.hpp"
+#include "util/mount.hpp"
 
 computer_t::computer_t(NClockII *clock) {
     this->clock = clock;
@@ -86,6 +88,7 @@ computer_t::computer_t(NClockII *clock) {
 
     slot_manager = new SlotManager_t();
     mounts = new Mounts();
+    connections = new Connections(event_queue, device_frame_dispatcher);
 
     video_system = new video_system_t(this);
     debug_window = new debug_window_t(this);
@@ -250,10 +253,17 @@ computer_t::computer_t(NClockII *clock) {
 }
 
 computer_t::~computer_t() {
-    // TODO: call shutdown() handlers on all devices that registered one.
+    // Unwire and destroy SerialDevices while chip/card state is still alive.
+    if (connections) {
+        connections->clear();
+    }
     for (auto& handler : shutdown_handlers) {
         handler();
     }
+    delete connections;
+    connections = nullptr;
+    delete mounts;
+    mounts = nullptr;
     delete cpu;
     delete sound_effect;
     delete audio_system;

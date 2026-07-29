@@ -28,6 +28,7 @@
 #include "device_info.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
 #include "paths.hpp"
+#include "util/Connections.hpp"
 #include "util/SystemSettings.hpp"
 #include "util/toml.hpp"
 #include "util/uuid.hpp"
@@ -302,15 +303,11 @@ bool validate_connections(PlatformId_t platform,
             return false;
         }
 
-        const int slot_key = conn.slot.value_or(-1);
-        const conn_key key{slot_key, port};
+        // Normalize so legacy port=a/b and slot=1/2 collide correctly.
+        const connection_key_t nk = normalize_connection_key(conn.slot, port);
+        const conn_key key{nk.slot, nk.port};
         if (seen.count(key)) {
-            if (conn.slot.has_value()) {
-                error_out = "Duplicate connection for slot " + std::to_string(*conn.slot)
-                            + " port " + port;
-            } else {
-                error_out = "Duplicate connection for built-in port " + port;
-            }
+            error_out = "Duplicate connection for slot " + std::to_string(nk.slot);
             return false;
         }
         seen.insert(key);
@@ -320,10 +317,7 @@ bool validate_connections(PlatformId_t platform,
             error_out = "Unknown connection device: " + conn.device;
             return false;
         }
-        if (device == "file" && conn.path.empty()) {
-            error_out = "Connection device=file requires path";
-            return false;
-        }
+        // path is optional for device=file (runtime may auto-generate capture names).
     }
     return true;
 }
@@ -521,7 +515,9 @@ static std::string toml_escape(const std::string& s) {
     return out;
 }
 
-void SystemConfig::set_from_parts(const SystemConfig_t& config, const std::vector<disk_mount_t>& mounts) {
+void SystemConfig::set_from_parts(const SystemConfig_t& config,
+                                  const std::vector<disk_mount_t>& mounts,
+                                  const std::vector<connection_config_t>& connections) {
     clear();
     name_ = config.name ? config.name : "";
     description_ = config.description ? config.description : "";
@@ -532,6 +528,7 @@ void SystemConfig::set_from_parts(const SystemConfig_t& config, const std::vecto
     config_data_ = config;
     config_data_.builtin = false;
     mounts_ = mounts;
+    connections_ = connections;
     gs2_version_ = 1;
     sync_config_pointers();
 }
@@ -587,6 +584,27 @@ bool SystemConfig::save(const std::string& path, std::string& error_out) {
             if (!rel.empty()) image = rel;
         }
         out << "image = \"" << toml_escape(image) << "\"\n";
+    }
+
+    for (const auto& conn : connections_) {
+        out << "\n[[connections]]\n";
+        const connection_key_t nk = normalize_connection_key(conn.slot, conn.port);
+        out << "slot = " << nk.slot << "\n";
+        out << "device = \"" << toml_escape(to_lower(conn.device)) << "\"\n";
+        if (!conn.path.empty()) {
+            std::string cpath = conn.path;
+            if (!base_dir.empty() && cpath.rfind(base_dir, 0) == 0) {
+                std::string rel = cpath.substr(base_dir.size());
+                while (!rel.empty() && (rel[0] == '/' || rel[0] == '\\')) {
+                    rel.erase(rel.begin());
+                }
+                if (!rel.empty()) cpath = rel;
+            }
+            out << "path = \"" << toml_escape(cpath) << "\"\n";
+        }
+        if (!conn.remote_url.empty()) {
+            out << "remote_url = \"" << toml_escape(conn.remote_url) << "\"\n";
+        }
     }
 
     if (!out) {
@@ -885,6 +903,10 @@ bool SystemConfig::load_gs2(const std::string& path, std::string& error_out) {
                 conn.remote_url = std::string(*url_node.value<std::string>());
             }
 
+            // Canonicalize to firmware slot form (IIgs A→1, B→2; cards keep their slot).
+            const connection_key_t nk = normalize_connection_key(conn.slot, conn.port);
+            conn.slot = nk.slot;
+            conn.port = nk.port;
             connections_.push_back(conn);
         }
     }
@@ -937,7 +959,7 @@ void SystemConfig::dump(std::ostream& out) const {
             << " image: " << mount.filename << "\n";
     }
 
-    out << "  connections (" << connections_.size() << ", not applied at runtime):\n";
+    out << "  connections (" << connections_.size() << "):\n";
     for (const auto& conn : connections_) {
         out << "    ";
         if (conn.slot.has_value()) {

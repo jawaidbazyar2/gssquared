@@ -101,10 +101,12 @@ public:
     bool save(const std::string& path, std::string& error_out);
 
     /**
-     * Populate this object from a SystemConfig_t + mounts (e.g. editor draft)
+     * Populate this object from a SystemConfig_t + mounts + connections (e.g. editor draft)
      * so save() can write it. Owned strings are copied.
      */
-    void set_from_parts(const SystemConfig_t& config, const std::vector<disk_mount_t>& mounts);
+    void set_from_parts(const SystemConfig_t& config,
+                        const std::vector<disk_mount_t>& mounts,
+                        const std::vector<connection_config_t>& connections = {});
 
     const SystemConfig_t& config() const { return config_data_; }
     const std::vector<disk_mount_t>& mounts() const { return mounts_; }

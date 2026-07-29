@@ -89,7 +89,7 @@ Motherboard-resident devices (keyboard, display, speaker, IIe memory, IIgs ADB/R
 - `[[storage]]` — what disk images are mounted (`slot` + `drive`), matching `Mounts`.
 - `[[connections]]` — what virtual device is attached to each serial port (`port` or `slot` + `port`), matching however serial ports register at runtime (same pattern as `Mounts` for disks).
 
-There is no storage- or serial-attachment data on card entries (except `parallel` `output`, which is a printer sink rather than a serial connection).
+There is no storage- or serial-attachment data on card entries (except legacy parallel `output`, which is parsed but unused; prefer `[[connections]]`).
 
 ---
 
@@ -237,19 +237,21 @@ Serial-capable slot cards (e.g. Super Serial Card) have **no** connection proper
 
 ### `parallel`
 
-Parallel printer interface. Optional output destination:
+Parallel printer interface. Attach a file sink via `[[connections]]` (slot + `device = "file"`). Legacy:
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `output` | string | `"parallel.out"` | File that receives printed bytes |
+| `output` | string | — | Legacy; parsed but not applied |
 
 ```toml
 [[cards]]
 slot = 1
 card = "parallel"
-output = "printouts/session.txt"
-```
 
+[[connections]]
+slot = 1
+device = "file"
+```
 ### `mockingboard`, `mouse`, `videx`, `language_card`, clocks, storage cards, serial cards, etc.
 
 No additional v1 properties beyond `slot` and `card`. Card presence and slot are sufficient.
@@ -258,17 +260,17 @@ No additional v1 properties beyond `slot` and `card`. Card presence and slot are
 
 ## Connections
 
-All serial port attachments use `[[connections]]`, whether the port is on a slot card or built into the IIgs motherboard (SCC8530). Each serial port registers with the runtime the same way storage devices register with `Mounts`; the config file only names the port and what is plugged into it.
+All serial and parallel port attachments use `[[connections]]`, whether the port is on a slot card, a parallel card, or the IIgs built-in SCC8530. Each port registers with a runtime `Connections` registry the same way storage devices register with `Mounts`; the config file only names the port and what is plugged into it.
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
 | `device` | string | yes | Virtual peripheral: `file`, `modem`, `echo`, `none` |
-| `port` | string | yes* | Port channel: `"a"` or `"b"` |
-| `slot` | integer | no | Slot number when the port is on a slot card; omit for IIgs built-in SCC |
-| `path` | string | no | Host file when `device = "file"` |
+| `slot` | integer | yes* | Firmware/expansion slot: IIgs SCC A=`1`, B=`2`; cards use their slot |
+| `port` | string | no | Channel `"a"` or `"b"` (defaults to `"a"`; legacy bare `port` without `slot` still loads) |
+| `path` | string | no | Optional host file when `device = "file"` (runtime may auto-generate capture names) |
 | `remote_url` | string | no | Remote URL when `device = "modem"` (future) e.g. telnet://1.2.3.4:5566 |
 
-\* For a single-port slot card, `port` MAY be omitted and defaults to `"a"`.
+\* Preferred form always includes `slot`. Legacy IIgs entries may omit `slot` and use `port = "a"|"b"`; the loader normalizes those to slots 1 and 2.
 
 ### `device` values
 
@@ -277,28 +279,39 @@ Aligned with `src/serial_devices/`:
 | Value | Description |
 |-------|-------------|
 | `"none"` | No attachment |
-| `"file"` | Read/write through a host file (`path` required) |
-| `"echo"` | Loopback for testing |
-| `"modem"` | Hayes-compatible virtual modem (native builds only) |
+| `"file"` | Capture / file sink (`path` optional) |
+| `"echo"` | Loopback for testing (schema only; not offered in UI) |
+| `"modem"` | Hayes-compatible virtual modem (native builds; serial ports only) |
+
+**Allowed devices by port kind:** serial (SCC, SSC) → none / file / modem; parallel → none / file only.
 
 ### Port addressing
 
-**IIgs built-in SCC** — omit `slot`, set `port` to `"a"` (modem/printer) or `"b"`:
+**IIgs built-in SCC** — firmware maps Port A to slot 1 and Port B to slot 2. Preferred TOML:
+
+```toml
+[[connections]]
+slot = 1
+device = "file"
+
+[[connections]]
+slot = 2
+device = "modem"
+```
+
+Legacy form (still accepted; normalized on load):
 
 ```toml
 [[connections]]
 port = "a"
 device = "file"
-path = "captures/port_a.bin"
 
 [[connections]]
 port = "b"
 device = "modem"
 ```
 
-These map to `SCC_CHANNEL_A` / `SCC_CHANNEL_B` after `init_scc8530_slot()` composes the motherboard. Same attachment model as today’s hard-coded `FileDevice` / `ModemDevice` setup in `scc8530.cpp`, but driven from config.
-
-**Slot serial card** (Super Serial Card, etc.) — set `slot` to the card’s slot; `port` defaults to `"a"` for single-port cards:
+**Slot serial card** (Super Serial Card) or **parallel card** — set `slot` to the card’s slot:
 
 ```toml
 [[cards]]
@@ -308,19 +321,26 @@ card = "super_serial"
 [[connections]]
 slot = 2
 device = "modem"
+
+[[cards]]
+slot = 1
+card = "parallel"
+
+[[connections]]
+slot = 1
+device = "file"
 ```
 
 ### Rules
 
-- Each `(slot, port)` pair appears at most once. Built-in SCC ports use `(no slot, "a"|"b")`.
-- Omit `[[connections]]` entirely to use platform defaults (IIgs: port A → file, port B → modem on native builds).
-- After hardware is composed, the loader SHOULD warn on or reject entries whose port is not registered.
-- Built-in `port = "a"|"b"` entries are valid only when `platform = "apple2gs"`.
+- Each canonical `(slot, "a")` pair appears at most once.
+- Omit `[[connections]]` entirely to use platform defaults (IIgs: slot 1 → file, slot 2 → modem on native builds; SSC → modem; parallel → file).
+- After hardware is composed, unregistered connection rows are warned and skipped; remaining ports get defaults.
+- Built-in slot 1/2 SCC entries are valid only when `platform` is Apple IIgs.
 
-### What stays on cards
+### Legacy card `output`
 
-**Parallel** printer output is not a serial connection — it remains a card property (`output` on the `parallel` card entry). If other non-serial sinks appear later, they can stay on the card or gain their own top-level section; serial and serial-like comm ports use `[[connections]]`.
-
+Parallel card `output = "..."` on `[[cards]]` is still parsed for backward compatibility but is **not applied**; use `[[connections]]` with `device = "file"` instead.
 ---
 
 ## Storage
@@ -603,8 +623,8 @@ All other fields use platform defaults; no disks pre-mounted.
 
 ## Open questions
 
-- **Serial port registry:** Implement a `Connections` (or extend device init) so SCC and slot serial cards register addressable ports the same way `Mounts` registers drives — then loader, OSD, and save/load all share one model.
-- **Super Serial Card:** Implemented as `card = "super_serial"` (see [SSC.md](SSC.md)). v1 hard-codes ModemDevice (FileDevice on Emscripten); `[[connections]]` with `slot` is still not applied at runtime (same as IIgs SCC).
+- **Serial port registry:** Implemented as `Connections` (`src/util/Connections.hpp`); SCC, SSC, and parallel register ports; loader/OSD/EditSystem share the model.
+- **Super Serial Card:** `card = "super_serial"`; `[[connections]]` with `slot` is applied at runtime (same as IIgs SCC).
 - **Built-in migration:** Ship current `BuiltinSystemConfigs[]` as `.gs2` files and load all configs through one code path?
 - **Profile preferences:** Add `[display]`, `[speed]`, `[input]`, `[audio]` (or equivalent) for menu-controlled settings; map Neil `video.*` / `machine.speed` on import.
 

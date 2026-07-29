@@ -2,16 +2,10 @@
 #include "computer.hpp"
 #include "Z85C30.hpp"
 
+#include "util/Connections.hpp"
 #include "util/DebugHandlerIDs.hpp"
 #include "util/DebugFormatter.hpp"
 #include "serial_devices/SerialDevice.hpp"
-#include "serial_devices/echo/EchoDevice.hpp"
-#include "serial_devices/file/FileDevice.hpp"
-#if !defined(__EMSCRIPTEN__)
-// ModemDevice pulls in SDL_net, which has no Emscripten backend (and the browser
-// sandbox blocks raw TCP anyway). Exclude it from the web build.
-#include "serial_devices/modem/ModemDevice.hpp"
-#endif
 
 constexpr uint32_t SCCBREG = 0xC038;
 constexpr uint32_t SCCAREG = 0xC039;
@@ -57,6 +51,7 @@ void scc8530_write_C0xx(void *context, uint32_t address, uint8_t data) {
 }
 
 void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
+    (void)slot;
 
     scc8530_state_t *st = new scc8530_state_t();
     st->irq_control = computer->irq_control;
@@ -69,25 +64,9 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
         computer->mmu->set_C0XX_read_handler(i, { scc8530_read_C0xx, st });
     }
 
-/*     const char *data_filename = "scc8530-a.data";
-    st->data_file_a = fopen(data_filename, "wb");
-    if (st->data_file_a == NULL) {
-        fprintf(stderr, "Failed to open data file %s\n", data_filename);
-        return;
-    }
-    scc->set_data_file(SCC_CHANNEL_A, st->data_file_a);
-    
-    const char *data_filename_b = "scc8530-b.data";
-    st->data_file_b = fopen(data_filename_b, "wb");
-    if (st->data_file_b == NULL) {
-        fprintf(stderr, "Failed to open data file %s\n", data_filename);
-        return;
-    }
-    scc->set_data_file(SCC_CHANNEL_B, st->data_file_b); */
-    
     computer->register_debug_display_handler(
         "scc8530",
-        DH_SCC8530, // unique ID for this, need to have in a header.
+        DH_SCC8530,
         [st]() -> DebugFormatter * {
             DebugFormatter *df = new DebugFormatter();
             st->scc->debug_output(df);
@@ -95,31 +74,47 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
         }
     );
 
-    // let the devices name themselves mostly. But we can, too if we like..
-    st->channel_a_device = new FileDevice(computer->event_queue, computer->device_frame_dispatcher, "A");
-    st->scc->set_device_channel(SCC_CHANNEL_A, st->channel_a_device);
+    // IIgs firmware: Port A = slot 1, Port B = slot 2. Devices attach via Connections.
 #if defined(__EMSCRIPTEN__)
-    // No SDL_net/modem on the web; use a file device so channel B is still valid.
-    st->channel_b_device = new FileDevice(computer->event_queue, computer->device_frame_dispatcher, "B");
+    const connection_device_type_t default_b = connection_device_type_t::FILE;
 #else
-    st->channel_b_device = new ModemDevice(nullptr, "B");
+    const connection_device_type_t default_b = connection_device_type_t::MODEM;
 #endif
-    st->scc->set_device_channel(SCC_CHANNEL_B, st->channel_b_device);
+
+    computer->connections->register_port(
+        connection_key_t{1, "a"},
+        "Serial Slot 1",
+        connection_port_kind_t::SERIAL,
+        connection_device_type_t::FILE,
+        [st](SerialDevice *dev) {
+            st->channel_a_device = dev;
+            st->scc->set_device_channel(SCC_CHANNEL_A, dev);
+        },
+        "A");
+
+    computer->connections->register_port(
+        connection_key_t{2, "a"},
+        "Serial Slot 2",
+        connection_port_kind_t::SERIAL,
+        default_b,
+        [st](SerialDevice *dev) {
+            st->channel_b_device = dev;
+            st->scc->set_device_channel(SCC_CHANNEL_B, dev);
+        },
+        "B");
 
     computer->register_shutdown_handler([st]() {
-        delete st->channel_a_device;
-        delete st->channel_b_device;
+        // SerialDevices are owned by Connections; only clear chip pointers here.
+        st->channel_a_device = nullptr;
+        st->channel_b_device = nullptr;
         delete st->scc;
         delete st;
         return true;
     });
 
-    // chip reset by pulling r and w low at same time and holding a bit. there's logic on the mobo for this, mixing reset and the normal r/w signal.
     computer->register_reset_handler([st](bool cold_start) {
+        (void)cold_start;
         st->scc->reset();
         return true;
     });
-
-    // register reset handler ?
-
 }
