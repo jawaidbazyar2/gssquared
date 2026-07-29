@@ -194,7 +194,7 @@ From [Roadmap.md](Roadmap.md), [DebugProtocol.md](DebugProtocol.md), [DevelopLog
 From [UserInterface.md](UserInterface.md), [SystemConfigTOML.md](SystemConfigTOML.md), [DevelopLog.md](DevelopLog.md):
 
 - [X] Manage slots in Control Panel (only when system off)
-- [ ] Show / manage devices on serial ports
+- [X] Show / manage devices on serial ports
 - [X] Create / Save / Load system configs from UI (File menu + Select screen `+` / folder) — verify vs current Config Editor
 - [X] On first run, copy default extra configs into user systems folder
 - [ ] Cache Control Panel template texture (static chrome vs dynamic widgets)
@@ -220,7 +220,7 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 - [ ] Full printer→PDF pipeline (libHaru / preview window) beyond raw dump
 - [X] Serial-to-telnet / Hayes path hardening as needed
 - [x] Super Serial Card (`super_serial`) — 6551 + ROM + Modem/File attach; see [SSC.md](SSC.md)
-- [ ] Apply `[[connections]]` at runtime for SCC and SSC
+- [x] Apply `[[connections]]` at runtime for SCC and SSC
 - [ ] Optional FujiNet-PC / NetSIO bridge
 - [x] Uthernet II emulation
 - [ ] Optional pcap/bpf Uthernet backend
@@ -243,7 +243,7 @@ From [CPUs.md](CPUs.md), [DevelopLog.md](DevelopLog.md), [Documentation.md](Docu
 - [ ] Address mask + debug OOB warnings on MMU
 - [ ] Thunderclock: interrupts, writing clock, more testing
 - [ ] Fast accesses for IIgs memory softswitches ([AppleIIgs-Memory.md](AppleIIgs-Memory.md))
-- [ ] Only-one-instance flags where hardware uniqueness matters (e.g. some cards)
+- [X] Only-one-instance flags where hardware uniqueness matters (e.g. some cards)
 
 ---
 
@@ -254,7 +254,7 @@ From [Compatibility.md](Compatibility.md) and [CompatibilityGS.md](Compatibility
 ### Apple II
 - [X] Mad Effects #2 (Mockingboard / VBL timing)
 - [X] keywin.2mg (800K) does not boot
-- [ ] Locksmith nibble copying / quarter-track cases
+- [X] Locksmith nibble copying / quarter-track cases
 - [ ] ProTerm 2.2: loops asking for keyboard after "confirm hardware"
 - [ ] Wizardry + Videx: shows only Videx screen on II+ (fine on //e)
 
