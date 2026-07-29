@@ -320,3 +320,5 @@ with ensoniq interrupt fix, intro music and game sound effects play correctly no
 ### Zany Golf
 
 Works right up until you are actually playing a level, then the screen is black where level should be. Say wha.
+
+Retested after IIgs fast-RAM sizing matched KEGS (ROM01 8.125MB / ROM03 9MB): still black playfield with HUD + music. Blit LocInfo at DP `$0C28+` can hold long-pointer junk in the Y/rows fields, so the mask blit reads nonsense banks; not fixed by RAM size alone.

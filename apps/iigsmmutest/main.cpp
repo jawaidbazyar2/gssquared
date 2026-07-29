@@ -8,6 +8,7 @@
 
 #include "mmus/mmu_iigs.hpp"
 #include "mmus/mmu_iie.hpp"
+#include "mmus/iigs_memory.hpp"
 
 uint64_t debug_level = 0;
 
@@ -358,11 +359,13 @@ int main(int argc, char *argv[])
         fclose(rom_file);
 
         const size_t rom_bank_ff_offset = rom_size - 65536;
-        printf("Live MMU: %s (%zu bytes), is_rom03 expected=%d\n\n",
-               rom_path, rom_size, use_rom03 ? 1 : 0);
+        const size_t fast_ram = iigs_memory::fast_ram_bytes(rom_size);
+        printf("Live MMU: %s (%zu bytes), is_rom03 expected=%d, fast_ram=%zu (banks $00–$%02X)\n\n",
+               rom_path, rom_size, use_rom03 ? 1 : 0, fast_ram,
+               iigs_memory::last_ram_bank(fast_ram));
 
         MMU_IIe *mmu_iie = new MMU_IIe(256, 128*1024, rom.data() + rom_bank_ff_offset + 0xC000);
-        MMU_IIgs *mmu_iigs = new MMU_IIgs(256, 8*1024*1024, (uint32_t)rom_size, rom.data(), mmu_iie);
+        MMU_IIgs *mmu_iigs = new MMU_IIgs(256, (int)fast_ram, (uint32_t)rom_size, rom.data(), mmu_iie);
         mmu_iigs->init_map();
         for (const auto& test : MMUTest::ALL_TESTS) {
             if (testNumber != -1 && test.number != testNumber) continue;

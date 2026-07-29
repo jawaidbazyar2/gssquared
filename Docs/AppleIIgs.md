@@ -170,16 +170,25 @@ https://retrocomputing.stackexchange.com/questions/5555/apple-iigs-hardware-impl
 
 ok. There is Fast RAM and Slow RAM. Slow RAM has the I/O stuff.
 
-#### Fast RAM - banks $00 - $7F
+#### Fast RAM - contiguous from bank $00
 
-Banks $02 - $7F are pure RAM (well, you -can- shadow them but this is rarely used in practice).
-Banks $00 - $01 are half of legacy Apple II emulation. 
+Installed size is **motherboard base (ROM-dependent) + expansion card**, not a flat 8MB total
+(see `src/mmus/iigs_memory.hpp`, matching KEGS):
 
-Use a 64KByte page size. Banks $00 and $01 get special read/write handler controlled by iigsmemory, that 
-The other banks are basically always mapped directly to RAM and that's it. So the MMU function for these will
-be the fastest performance. These handlers must handle Apple II LC bank switching; but also be able to set
-these banks to pure-RAM operation just like $02 - $7F. iigsmemory will likely have the custom handlers for these
-banks: native (what we'll call the "it's just ram" handler); and emulation (what we'll call what handles all the IIe memory mangling)
+| ROM | Motherboard | + 8MB card (default) | Last RAM bank |
+|-----|-------------|----------------------|---------------|
+| ROM01 (128KB) | 128KB (`$00`–`$01`) | 8.125MB | `$81` |
+| ROM03 (256KB) | 1MB (`$00`–`$0F`) | 9MB | `$8F` |
+
+Capped at `$DF0000` so contiguous RAM does not collide with Mega II / ROM. Mega II `$E0`/`$E1`
+is separate slow RAM and is **not** part of this size.
+
+Banks above the last RAM bank float until ROM (`$FC`+ / `$FE`+). Banks `$00`–`$01` are the
+legacy Apple II emulation half; higher banks are pure RAM (optional all-bank shadowing is rare).
+
+Use a 64KByte page size. Banks `$00` and `$01` get special read/write handlers controlled by
+iigsmemory. Other mapped banks are direct RAM. Handlers must support Apple II LC bank switching
+and pure-RAM operation for higher banks.
 
 Runs at average of 2.5MHz speed and is affected by RAM refresh timing.
 

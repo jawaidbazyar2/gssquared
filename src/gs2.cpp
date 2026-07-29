@@ -52,6 +52,7 @@
 #include "mmus/mmu_ii.hpp"
 #include "mmus/mmu_iie.hpp"
 #include "mmus/mmu_iigs.hpp"
+#include "mmus/iigs_memory.hpp"
 #include "util/EventTimer.hpp"
 #include "ui/SelectSystem.hpp"
 #include "ui/EditSystem.hpp"
@@ -822,8 +823,20 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
             // layout (and the emulation-mode reset vector) for ROM03.
             const size_t main_rom_size = rd->main_rom_file->size();
             const size_t rom_bank_ff_offset = main_rom_size - 65536;
+            // Contiguous FPI RAM = motherboard base (ROM-dependent) + 8MB expansion
+            // card, matching KEGS. Not a flat 8MB total — that left banks $80+ floating.
+            const size_t mobo_ram = iigs_memory::mobo_ram_bytes(main_rom_size);
+            const size_t exp_ram = iigs_memory::kDefaultExpBytes;
+            const size_t fast_ram = iigs_memory::fast_ram_bytes(main_rom_size, exp_ram);
+            const uint32_t last_bank = iigs_memory::last_ram_bank(fast_ram);
+            printf("IIgs RAM: %s mobo %zuKB + exp %zuMB = %zu bytes (banks $00–$%02X)\n",
+                   iigs_memory::is_rom03(main_rom_size) ? "ROM03" : "ROM01",
+                   mobo_ram / 1024,
+                   exp_ram / (1024 * 1024),
+                   fast_ram,
+                   last_bank);
             state->mmu_iie = new MMU_IIe(256, 128*1024, /* (uint8_t *) */rd->main_rom_data + rom_bank_ff_offset + 0xC000);
-            state->mmu_iigs = new MMU_IIgs(256, 8*1024*1024, (uint32_t) main_rom_size, /* (uint8_t *) */rd->main_rom_data, state->mmu_iie);
+            state->mmu_iigs = new MMU_IIgs(256, (int)fast_ram, (uint32_t) main_rom_size, /* (uint8_t *) */rd->main_rom_data, state->mmu_iie);
         }
             state->mmu_iigs->init_map();
             computer->cpu->set_mmu(state->mmu_iigs); // cpu gets FPI
