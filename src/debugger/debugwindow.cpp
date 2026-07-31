@@ -481,7 +481,12 @@ void debug_window_t::render_pane_trace() {
                                 false);
     }
     if (disasm_displayed) {
-        step_disasm->setLinePrepend(trace_layout.pc);
+        step_disasm->set_format(trace_layout, show_opbytes);
+        if (cpu->cpu_type == PROCESSOR_65816) {
+            step_disasm->set_mx(cpu->_M != 0, cpu->_X != 0);
+        } else {
+            step_disasm->set_mx(true, true);
+        }
         step_disasm->setAddress(cpu->full_pc);
         std::vector<std::string> disasm_lines = step_disasm->disassemble(disasm_displayed);
         // first line of disassembly is current unexecuted instruction. highlight the background. in white.

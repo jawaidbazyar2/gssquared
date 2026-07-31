@@ -42,10 +42,17 @@ enum address_mode {
 #define MIN_65C02 (CPU_65C02 | CPU_65816)
 #define MIN_65816 (CPU_65816)
 
+/** Per-opcode disasm hints for 65816 M/X-sensitive immediates and SEP/REP. */
+#define DISASM_IMM_M 0x01  /* IMM operand width follows M (A/memory) */
+#define DISASM_IMM_X 0x02  /* IMM operand width follows X (index) */
+#define DISASM_SEP   0x04  /* SEP: fixed 8-bit IMM; sets M/X bits in assumed P */
+#define DISASM_REP   0x08  /* REP: fixed 8-bit IMM; clears M/X bits in assumed P */
+
 struct disasm_entry {
     const char *opcode;
     address_mode mode;
     uint16_t cpu_mask;
+    uint8_t flags; /* DISASM_* — omitted brace entries zero-init in C++17 */
 };
 
 struct address_mode_entry {

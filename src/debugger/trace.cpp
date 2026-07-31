@@ -5,6 +5,7 @@
 
 #include "util/HexDecode.hpp"
 #include "debugger/trace.hpp"
+#include "debugger/trace_format.hpp"
 #include "debugger/trace_opcodes.hpp"
 #include "opcodes.hpp"
 #include "debugger/line_buffer.hpp"
@@ -130,128 +131,6 @@ void emit_regs_65816(line_buffer &buffer, const system_trace_entry_t *entry,
     buffer.put(entry->sp);
     buffer.pos(layout.p);
     buffer.put((uint8_t)entry->p);
-}
-
-void emit_pc(line_buffer &buffer, const system_trace_entry_t *entry,
-             const trace_column_layout &layout, bool is_65816) {
-    buffer.pos(layout.pc);
-    if (is_65816) {
-        buffer.put(entry->pb);
-        buffer.put('/');
-        buffer.put(entry->pc);
-    } else {
-        buffer.put((uint16_t)entry->pc);
-    }
-    buffer.put(": ");
-}
-
-void emit_opbytes(line_buffer &buffer, const system_trace_entry_t *entry,
-                  const trace_column_layout &layout, const address_mode_entry *am,
-                  bool show_opbytes) {
-    if (!show_opbytes) {
-        return;
-    }
-    buffer.pos(layout.opbytes);
-    buffer.put((uint8_t)entry->opcode);
-    buffer.put(' ');
-
-    uint32_t x_op = entry->operand;
-    int sz = am->size;
-    if (entry->f_op_sz == 2) {
-        sz = 3; // opcode + 16-bit immediate
-    }
-    for (int i = 1; i < 4; i++) {
-        if (i < sz) {
-            buffer.put((uint8_t)(x_op & 0xFF));
-            buffer.put(' ');
-        } else {
-            buffer.put("   ");
-        }
-        x_op >>= 8;
-    }
-}
-
-void emit_mnemonic_operand(line_buffer &buffer, const system_trace_entry_t *entry,
-                           const trace_column_layout &layout, const disasm_entry *da,
-                           const address_mode_entry *am, int16_t cpu_mask,
-                           uint32_t *branch_target_out) {
-    char snpbuf[256];
-
-    buffer.pos(layout.opcode);
-    const char *opcode_name = da->opcode;
-    if (opcode_name && (da->cpu_mask & cpu_mask)) {
-        buffer.put((char *)opcode_name);
-    } else {
-        buffer.put("???");
-    }
-
-    buffer.pos(layout.operand);
-    switch (da->mode) {
-        case NONE:
-            buffer.put("???");
-            break;
-        case ACC:
-        case IMP:
-            buffer.put((char *)am->format);
-            break;
-
-        case IMM:
-            buffer.put("#$");
-            if (entry->f_op_sz == 2) {
-                buffer.put((uint16_t)entry->operand);
-            } else {
-                buffer.put((uint8_t)entry->operand);
-            }
-            break;
-
-        case ABS:
-        case ABS_X:
-        case ABS_Y:
-        case ABS_IND_X:
-        case INDIR:
-        case INDEX_INDIR:
-        case INDIR_INDEX:
-        case ZP:
-        case ZP_IND:
-        case ZP_X:
-        case ZP_Y:
-        case ABSL:
-        case ABSL_X:
-        case IND_LONG:
-        case IND_Y_LONG:
-        case REL_S:
-        case REL_S_Y:
-        case ABS_IND_LONG:
-        case IMM_S:
-            snprintf(snpbuf, sizeof(snpbuf), am->format, entry->operand);
-            buffer.put(snpbuf);
-            break;
-
-        case REL: {
-            uint16_t btarget = (uint16_t)((entry->pc + 2) + (int8_t)entry->operand);
-            buffer.put("$");
-            buffer.put(btarget);
-            if (branch_target_out) {
-                *branch_target_out = ((uint32_t)entry->pb << 16) | btarget;
-            }
-            break;
-        }
-        case REL_L: {
-            uint16_t btargetl = (uint16_t)((entry->pc + 3) + (int16_t)entry->operand);
-            buffer.put("$");
-            buffer.put(btargetl);
-            if (branch_target_out) {
-                *branch_target_out = ((uint32_t)entry->pb << 16) | btargetl;
-            }
-            break;
-        }
-        case MOVE:
-            buffer.put("$");
-            buffer.put((uint8_t)(entry->operand & 0x00FF));
-            buffer.put(",$");
-            buffer.put((uint8_t)(entry->operand >> 8));
-            break;
-    }
 }
 
 void emit_mem(line_buffer &buffer, system_trace_buffer *tb, const system_trace_entry_t *entry,
@@ -502,12 +381,136 @@ char *system_trace_buffer::decode_trace_entry(system_trace_entry_t *entry) {
         return buffer.get();
     }
 
-    emit_pc(buffer, entry, layout, is_65816);
-    emit_opbytes(buffer, entry, layout, am, decode_opts.show_opbytes);
+    emit_insn_pc(buffer, layout, is_65816, entry->pb, entry->pc);
+
+    int insn_size = am->size;
+    if (entry->f_op_sz == 2) {
+        insn_size = 3; // opcode + 16-bit immediate
+    }
+    emit_insn_opbytes(buffer, layout, decode_opts.show_opbytes, entry->opcode, entry->operand,
+                      insn_size);
 
     uint32_t branch_target = UINT32_MAX;
-    emit_mnemonic_operand(buffer, entry, layout, da, am, cpu_mask, &branch_target);
+    emit_insn_mnemonic_operand(buffer, layout, da, am, cpu_mask, entry->pb, entry->pc,
+                               entry->operand, entry->f_op_sz, &branch_target);
     emit_mem(buffer, this, entry, layout, da, is_65816, branch_target);
 
     return buffer.get();
+}
+
+void emit_insn_pc(line_buffer &buffer, const trace_column_layout &layout, bool is_65816,
+                  uint8_t pb, uint16_t pc) {
+    buffer.pos(layout.pc);
+    if (is_65816) {
+        buffer.put(pb);
+        buffer.put('/');
+        buffer.put(pc);
+    } else {
+        buffer.put(pc);
+    }
+    buffer.put(": ");
+}
+
+void emit_insn_opbytes(line_buffer &buffer, const trace_column_layout &layout, bool show_opbytes,
+                       uint8_t opcode, uint32_t operand, int insn_size) {
+    if (!show_opbytes) {
+        return;
+    }
+    buffer.pos(layout.opbytes);
+    buffer.put(opcode);
+    buffer.put(' ');
+
+    uint32_t x_op = operand;
+    for (int i = 1; i < 4; i++) {
+        if (i < insn_size) {
+            buffer.put((uint8_t)(x_op & 0xFF));
+            buffer.put(' ');
+        } else {
+            buffer.put("   ");
+        }
+        x_op >>= 8;
+    }
+}
+
+void emit_insn_mnemonic_operand(line_buffer &buffer, const trace_column_layout &layout,
+                                const disasm_entry *da, const address_mode_entry *am,
+                                int16_t cpu_mask, uint8_t pb, uint16_t pc, uint32_t operand,
+                                uint8_t op_sz, uint32_t *branch_target_out) {
+    char snpbuf[256];
+
+    buffer.pos(layout.opcode);
+    const char *opcode_name = da->opcode;
+    if (opcode_name && (da->cpu_mask & cpu_mask)) {
+        buffer.put((char *)opcode_name);
+    } else {
+        buffer.put("???");
+    }
+
+    buffer.pos(layout.operand);
+    switch (da->mode) {
+        case NONE:
+            buffer.put("???");
+            break;
+        case ACC:
+        case IMP:
+            buffer.put((char *)am->format);
+            break;
+
+        case IMM:
+            buffer.put("#$");
+            if (op_sz == 2) {
+                buffer.put((uint16_t)operand);
+            } else {
+                buffer.put((uint8_t)operand);
+            }
+            break;
+
+        case ABS:
+        case ABS_X:
+        case ABS_Y:
+        case ABS_IND_X:
+        case INDIR:
+        case INDEX_INDIR:
+        case INDIR_INDEX:
+        case ZP:
+        case ZP_IND:
+        case ZP_X:
+        case ZP_Y:
+        case ABSL:
+        case ABSL_X:
+        case IND_LONG:
+        case IND_Y_LONG:
+        case REL_S:
+        case REL_S_Y:
+        case ABS_IND_LONG:
+        case IMM_S:
+            snprintf(snpbuf, sizeof(snpbuf), am->format, operand);
+            buffer.put(snpbuf);
+            break;
+
+        case REL: {
+            uint16_t btarget = (uint16_t)((pc + 2) + (int8_t)operand);
+            buffer.put("$");
+            buffer.put(btarget);
+            if (branch_target_out) {
+                *branch_target_out = ((uint32_t)pb << 16) | btarget;
+            }
+            break;
+        }
+        case REL_L: {
+            uint16_t btargetl = (uint16_t)((pc + 3) + (int16_t)operand);
+            buffer.put("$");
+            buffer.put(btargetl);
+            if (branch_target_out) {
+                *branch_target_out = ((uint32_t)pb << 16) | btargetl;
+            }
+            break;
+        }
+        case MOVE:
+            buffer.put("$");
+            buffer.put((uint8_t)(operand & 0x00FF));
+            buffer.put(",$");
+            buffer.put((uint8_t)(operand >> 8));
+            break;
+    }
 }

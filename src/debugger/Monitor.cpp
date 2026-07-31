@@ -54,6 +54,8 @@ mon_cmd_type_t Monitor::lookup_cmd(const std::string &cmd) {
     if (cmd == "sload") return MON_CMD_SLOAD;
     if (cmd == "sclear") return MON_CMD_SCLEAR;
     if (cmd == "slookup") return MON_CMD_SLOOKUP;
+    if (cmd == "m") return MON_CMD_M;
+    if (cmd == "x") return MON_CMD_X;
     return MON_CMD_UNKNOWN;
 }
 
@@ -345,6 +347,12 @@ void Monitor::dispatch() {
         case MON_CMD_LIST:
             cmd_list();
             break;
+        case MON_CMD_M:
+            cmd_mx(true);
+            break;
+        case MON_CMD_X:
+            cmd_mx(false);
+            break;
         case MON_CMD_HELP:
             cmd_help();
             break;
@@ -613,6 +621,43 @@ void Monitor::cmd_nobp() {
     }
 }
 
+bool Monitor::parse_reg_width(uint32_t n, bool *is_8bit) {
+    if (!is_8bit) {
+        return false;
+    }
+    if (n == 8) {
+        *is_8bit = true;
+        return true;
+    }
+    // Monitor numbers are hex: "10" → 0x10, "16" → 0x16; both mean 16-bit width.
+    if (n == 0x10 || n == 0x16) {
+        *is_8bit = false;
+        return true;
+    }
+    return false;
+}
+
+void Monitor::cmd_mx(bool is_m) {
+    const char *name = is_m ? "M" : "X";
+    bool &flag = is_m ? m_8bit_ : x_8bit_;
+
+    if (nodes_.size() == 1) {
+        addFormattedOutput("%s = %d", name, flag ? 8 : 16);
+        return;
+    }
+    if (nodes_.size() != 2 || nodes_[1].type != MON_NODE_TYPE_NUMBER) {
+        addFormattedOutput("Error: usage: %s 8|16", is_m ? "m" : "x");
+        return;
+    }
+    bool is_8 = true;
+    if (!parse_reg_width(nodes_[1].val_number, &is_8)) {
+        addFormattedOutput("Error: width must be 8 or 16 (got %X)", nodes_[1].val_number);
+        return;
+    }
+    flag = is_8;
+    addFormattedOutput("%s = %d", name, flag ? 8 : 16);
+}
+
 void Monitor::cmd_list() {
     if (!disasm_) {
         return;
@@ -622,6 +667,23 @@ void Monitor::cmd_list() {
         if (node1.type == MON_NODE_TYPE_NUMBER) {
             disasm_->setAddress(as_address(node1.val_number));
         }
+    }
+    disasm_->set_mx(m_8bit_, x_8bit_);
+    addFormattedOutput("M=%d X=%d", m_8bit_ ? 8 : 16, x_8bit_ ? 8 : 16);
+    if (trace_) {
+        // Shift columns so PC starts at 0 (monitor has no register columns).
+        const trace_column_layout &src = trace_->get_layout();
+        trace_column_layout mon = src;
+        const int base = src.pc;
+        mon.pc = 0;
+        mon.opbytes = src.opbytes - base;
+        mon.opcode = src.opcode - base;
+        mon.operand = src.operand - base;
+        mon.eaddr = src.eaddr - base;
+        mon.dir = src.dir - base;
+        mon.data = src.data - base;
+        mon.label = src.label - base;
+        disasm_->set_format(mon, trace_->decode_opts.show_opbytes);
     }
     addOutput(disasm_->disassemble(30));
 }
@@ -641,6 +703,9 @@ void Monitor::cmd_help() {
     addOutput("address:value [value...]     - set memory values");
     addOutput("list (l) address             - disassemble instructions from address");
     addOutput("list (l)                     - continue disassembly");
+    addOutput("m 8|16                       - set assumed M width for list (default 8)");
+    addOutput("x 8|16                       - set assumed X width for list (default 8)");
+    addOutput("m / x                        - show assumed M / X width");
     addOutput("load \"filename\" address      - load memory from file");
     addOutput("save \"filename\" lo.hi        - save memory range to file");
     addOutput("move lo.hi address           - move memory from lo to hi to address");

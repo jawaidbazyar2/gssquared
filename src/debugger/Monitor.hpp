@@ -46,6 +46,8 @@ enum mon_cmd_type_t {
     MON_CMD_SLOAD,
     MON_CMD_SCLEAR,
     MON_CMD_SLOOKUP,
+    MON_CMD_M, // set/show assumed M width for list disasm (8 or 16)
+    MON_CMD_X, // set/show assumed X width for list disasm (8 or 16)
 };
 
 struct mon_node_entry_t {
@@ -74,6 +76,8 @@ private:
     Disassembler *disasm_ = nullptr;
     std::vector<std::string> *debug_displays_ = nullptr;
     system_trace_buffer *trace_ = nullptr;
+    bool m_8bit_ = true; // assumed M for list disasm (default 8-bit)
+    bool x_8bit_ = true; // assumed X for list disasm (default 8-bit)
 
     std::vector<mon_node_entry_t> nodes_;
     std::vector<std::string> output_;
@@ -121,8 +125,11 @@ private:
     void cmd_bpd_bpi(uint8_t kind);
     void cmd_nobp();
     void cmd_list();
+    void cmd_mx(bool is_m);
     void cmd_help();
     void cmd_set();
+    /** Parse width arg: 8 → 8-bit; "10"/"16" (hex 0x10/0x16) → 16-bit. */
+    static bool parse_reg_width(uint32_t n, bool *is_8bit);
     void cmd_save();
     void cmd_load();
     void cmd_sload();

@@ -3,27 +3,19 @@
 #include "mmus/mmu.hpp"
 #include "debugger/disasm.hpp"
 #include "debugger/trace_opcodes.hpp"
-#include "util/HexDecode.hpp"
+#include "debugger/trace_format.hpp"
 #include "debugger/line_buffer.hpp"
-
-//           11111111112222222222
-// 012345678901234567890123456789
-// xxxx: xx xx xx    LDA  $1234
-
-#define TB_ADDRESS 0
-#define TB_OP1 6
-#define TB_OP2 9
-#define TB_OP3 12
-#define TB_OP4 15
-
-#define TB_OPCODE 18
-#define TB_OPERAND 23
-#define TB_EOL 40
 
 Disassembler::Disassembler(MMU *mmu, processor_type cputype) : mmu(mmu), cpu_type(cputype) {
     address = 0;
-    length = 0;
-    line_prepend = 0;
+    cpu_mask = 0;
+    if (cputype == PROCESSOR_65816) {
+        cpu_mask = CPU_65816;
+    } else if (cputype == PROCESSOR_65C02) {
+        cpu_mask = CPU_65C02;
+    } else if (cputype == PROCESSOR_6502) {
+        cpu_mask = CPU_6502;
+    }
 }
 
 Disassembler::~Disassembler() {
@@ -31,6 +23,17 @@ Disassembler::~Disassembler() {
 
 void Disassembler::setAddress(uint32_t address) {
     this->address = address;
+}
+
+void Disassembler::set_mx(bool m_8bit, bool x_8bit) {
+    this->m_8bit = m_8bit;
+    this->x_8bit = x_8bit;
+}
+
+void Disassembler::set_format(const trace_column_layout &layout, bool show_opbytes) {
+    layout_ = layout;
+    show_opbytes_ = show_opbytes;
+    layout_set_ = true;
 }
 
 uint8_t Disassembler::read_mem(uint32_t address) {
@@ -43,144 +46,91 @@ uint8_t Disassembler::read_mem(uint32_t address) {
     return mmu->read(address);
 }
 
+int Disassembler::resolve_insn_size(const disasm_entry *da, const address_mode_entry *am) const {
+    if (cpu_type != PROCESSOR_65816) {
+        return am->size;
+    }
+    if (da->flags & (DISASM_SEP | DISASM_REP)) {
+        return 2; // always opcode + 8-bit mask
+    }
+    if (da->flags & DISASM_IMM_M) {
+        return m_8bit ? 2 : 3;
+    }
+    if (da->flags & DISASM_IMM_X) {
+        return x_8bit ? 2 : 3;
+    }
+    return am->size;
+}
+
+void Disassembler::apply_sep_rep(const disasm_entry *da, uint8_t mask) {
+    if (da->flags & DISASM_SEP) {
+        if (mask & 0x20) {
+            m_8bit = true;
+        }
+        if (mask & 0x10) {
+            x_8bit = true;
+        }
+    } else if (da->flags & DISASM_REP) {
+        if (mask & 0x20) {
+            m_8bit = false;
+        }
+        if (mask & 0x10) {
+            x_8bit = false;
+        }
+    }
+}
+
 void Disassembler::disassemble_one() {
     line_buffer buffer;
-    char snpbuf[100];
-    size_t buffer_size = sizeof(buffer);
-    size_t snpbuf_size = sizeof(snpbuf);
+    buffer.reset();
 
-    //memset(buffer, ' ', buffer_size);
+    // Fallback: PC at column 0 with Bytes/Op/Operand spacing (montest / no set_format).
+    trace_column_layout layout = layout_;
+    if (!layout_set_) {
+        const bool is_65816 = (cpu_type == PROCESSOR_65816);
+        // cycle_w,a,x,y,sp,p unused when PC starts at 0
+        if (is_65816) {
+            layout = {0, 0, 0, 0, 0, 0, /*pc*/ 0, /*opbytes*/ 9, /*opcode*/ 21, /*operand*/ 26,
+                      0, 0, 0, 0, 12};
+        } else {
+            layout = {0, 0, 0, 0, 0, 0, /*pc*/ 0, /*opbytes*/ 6, /*opcode*/ 18, /*operand*/ 23,
+                      0, 0, 0, 0, 12};
+        }
+    }
 
-    //char *bufptr = buffer + line_prepend;
-
+    const bool is_65816 = (cpu_type == PROCESSOR_65816);
     uint8_t opcode = read_mem(address);
-        
     const disasm_entry *da = &disasm_table[opcode];
-    const char *opcode_name = da->opcode;
     const address_mode_entry *am = &address_mode_formats[da->mode];
-    uint32_t operand;
 
-    buffer.pos(line_prepend);
-    if (cpu_type == PROCESSOR_65816) {        
-        buffer.put(address);
-/*         decode_hex_byte(bufptr + TB_ADDRESS, address >> 16);
-        bufptr[TB_ADDRESS + 2] = '/';
-        bufptr+=3; */
-    } else {
-        buffer.put((uint16_t)address );
-        //decode_hex_word(bufptr + TB_ADDRESS, address);
+    int insn_size = resolve_insn_size(da, am);
+    uint8_t op_sz = 1;
+    if (da->mode == IMM) {
+        op_sz = (insn_size == 3) ? 2 : 1;
     }
 
-    buffer.put(": ");
-
-    buffer.put((uint8_t)opcode);
-    buffer.put(' ');
-
-    operand = 0; uint8_t op2, op3, op4;
-    if (am->size == 2) {
-        op2 = read_mem(address + 1);
-        operand = op2;
-        buffer.put((uint8_t)op2);
-        buffer.put(' ');
-        buffer.pos(buffer.pos() + 6);
-    } else if (am->size == 3) {
-        op2 = read_mem(address + 1);
-        op3 = read_mem(address + 2);
-        operand = op2 | (op3 << 8);
-        buffer.put((uint8_t)op2);
-        buffer.put(' ');
-        buffer.put((uint8_t)op3);
-        buffer.put(' ');
-        buffer.pos(buffer.pos() + 3);
-    } else if (am->size == 4) {
-        op2 = read_mem(address + 1);
-        op3 = read_mem(address + 2);
-        op4 = read_mem(address + 3);
-        operand = op2 | (op3 << 8) | (op4 << 16);
-        buffer.put((uint8_t)op2);
-        buffer.put(' ');
-        buffer.put((uint8_t)op3);
-        buffer.put(' ');
-        buffer.put((uint8_t)op4);
-        buffer.put(' ');
-    } else {
-        buffer.pos(buffer.pos() + 9);
+    uint32_t operand = 0;
+    for (int i = 1; i < insn_size; i++) {
+        uint8_t b = read_mem(address + i);
+        operand |= ((uint32_t)b) << ((i - 1) * 8);
     }
 
-    if (opcode_name) buffer.put((char *)opcode_name);
-    //memcpy(bufptr + TB_OPCODE, opcode_name, strlen(opcode_name));
-    else buffer.put("???");
-    //memcpy(bufptr + TB_OPCODE, "???", 3);
-    buffer.put("  ");
+    uint8_t pb = (uint8_t)((address >> 16) & 0xFF);
+    uint16_t pc = (uint16_t)(address & 0xFFFF);
 
-    switch (da->mode) {
-        case NONE:
-            //memcpy(bufptr + TB_OPERAND, "???", 3);
-            buffer.put("???");
-            break;
-        case ACC:
-        case IMP:
-            //memcpy(bufptr + TB_OPERAND, am->format, strlen(am->format));
-            buffer.put((char *)am->format);
-            break;
+    emit_insn_pc(buffer, layout, is_65816, pb, pc);
+    emit_insn_opbytes(buffer, layout, show_opbytes_, opcode, operand, insn_size);
+    emit_insn_mnemonic_operand(buffer, layout, da, am, cpu_mask, pb, pc, operand, op_sz, nullptr);
 
-        case ABS:
-        case ABS_X:
-        case ABS_Y:
-        case IMM:
-        case INDIR:
-        case ABS_IND_X: // 65c02
-        case INDEX_INDIR:
-        case INDIR_INDEX:
-        case ZP:
-        case ZP_X:
-        case ZP_Y:
-        case ZP_IND: // 65c02
-        case IND_LONG:
-        case IND_Y_LONG:
-        case REL_S:
-        case REL_S_Y:
-        case ABSL:
-        case ABSL_X:
-        case ABS_IND_LONG:
-        case IMM_S:
-            snprintf(snpbuf, snpbuf_size, am->format, operand);
-            //memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
-            buffer.put(snpbuf);
-            break;
-        case REL: {
-                uint16_t btarget = (address+2) + (int8_t)operand;
-                snprintf(snpbuf, snpbuf_size, "$%04X", btarget);
-                //memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
-                buffer.put(snpbuf);
-            }
-            break;
-        case REL_L: {
-                uint16_t btargetl = (address+3) + (int16_t)operand;
-                snprintf(snpbuf, snpbuf_size, "$%04X", btargetl);
-                //memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
-                buffer.put(snpbuf);
-            }
-            break;
-        case MOVE:  
-            {
-                printf("move operand %04X\n", operand);
-                snprintf(snpbuf, snpbuf_size, am->format,
-                    operand & 0x00FF, operand >> 8);
-                //memcpy(bufptr + TB_OPERAND, snpbuf, strlen(snpbuf));
-                buffer.put(snpbuf);
-            }
-            break;
-
+    if (da->flags & (DISASM_SEP | DISASM_REP)) {
+        apply_sep_rep(da, (uint8_t)(operand & 0xFF));
     }
-    address += am->size; // get ready for next instruction
-    //bufptr[TB_EOL] = '\0';
+
+    address += insn_size;
     output_buffer.push_back(buffer.get());
 }
 
-// returns vector of disassembled instructions
 std::vector<std::string> Disassembler::disassemble(int count) {
-    //printf("disassembling %d instructions\n", count);
     for (int i = 0; i < count; i++) {
         disassemble_one();
     }
