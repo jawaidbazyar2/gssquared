@@ -321,3 +321,11 @@ TR seems to be seeing our device, assuming it's a SmartPort, and calling a nonex
 ## Arkanoid
 
 This has same problem as Airheart. (FIXED)
+
+## Wavy Navy (Joyport)
+
+Joyport works differently on II+ vs IIe when launched from Total Replay — not a recent GSSquared regression (same on 0.9.0).
+
+TR’s Wavy Navy prelaunch checks `$FBB3` (ROM machine ID). On IIe-class (`$06`) it patches the game to **disable AN1 access** (comment in 4cade: otherwise UltraWarp dies). AN1 then stays at the reset default (off = horizontal), so D-pad left/right steer the ship. On II+ that patch is skipped, so the game’s real AN1 multiplexing runs; with GSSquared Joyport mode, D-pad **up/down** steer left/right instead.
+
+Same Wavy Navy binary either way; TR patches at launch on IIe only. GSSquared F6 Joyport + in-game Joyport selected for both tests. Worth revisiting II+ AN1 mux when the unpatched path is active.

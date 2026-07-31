@@ -38,16 +38,6 @@
 
 #include <cstdint>
 
-namespace {
-
-bool paddles_report_disconnected(const gamec_state_t *ds) {
-    return ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD
-        && ds->gps[0].gamepad == nullptr
-        && SystemSettings::instance().disconnected_when_no_gamepad();
-}
-
-}  // namespace
-
 /**
  * this is a relatively naive implementation of game controller,
  * translating mouse position inside the emulator window, to the paddle/joystick
@@ -69,6 +59,58 @@ bool paddles_report_disconnected(const gamec_state_t *ds) {
 
 // and scaled for 14M cycles
 #define GAME_INPUT_DECAY_TIME (2805*14)
+
+namespace {
+
+// SW0 / SW2 (pad0 / pad1): EAST, NORTH, LEFT_SHOULDER
+constexpr SDL_GamepadButton kApplePadButtons0[] = {
+    SDL_GAMEPAD_BUTTON_EAST,
+    SDL_GAMEPAD_BUTTON_NORTH,
+    SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,
+};
+// SW1 (pad0): SOUTH, WEST, RIGHT_SHOULDER
+constexpr SDL_GamepadButton kApplePadButtons1[] = {
+    SDL_GAMEPAD_BUTTON_SOUTH,
+    SDL_GAMEPAD_BUTTON_WEST,
+    SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,
+};
+
+inline bool paddles_report_disconnected(const gamec_state_t *ds) {
+    return ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD
+        && ds->gps[0].gamepad == nullptr
+        && SystemSettings::instance().disconnected_when_no_gamepad();
+}
+
+inline uint64_t paddle_trigger_at(gamec_state_t *ds, int apple_0_255) {
+    return ds->clock->get_c14m()
+         + (GAME_INPUT_DECAY_TIME * apple_0_255) / 255;
+}
+
+inline uint8_t bit7_with_float(gamec_state_t *ds, bool pressed) {
+    return (pressed ? 0x80 : 0x00) | (ds->mmu->floating_bus_read() & 0x7F);
+}
+
+template <size_t N>
+bool gamepad_any_button(SDL_Gamepad *pad, const SDL_GamepadButton (&buttons)[N]) {
+    for (size_t i = 0; i < N; i++) {
+        if (SDL_GetGamepadButton(pad, buttons[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+template <size_t N>
+int sample_apple_gamepad_switch(gamec_state_t *ds, int pad_index,
+                                const SDL_GamepadButton (&buttons)[N],
+                                int absent_value) {
+    if (ds->gps[pad_index].gamepad == nullptr) {
+        return absent_value;
+    }
+    return gamepad_any_button(ds->gps[pad_index].gamepad, buttons) ? 1 : 0;
+}
+
+}  // namespace
 
 /**
  * @brief Converts modern circular joystick values to Apple II square joystick range
@@ -128,29 +170,24 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
     if (ds->joystick_mode == JOYSTICK_APPLE_MOUSE) {
         float mouse_x, mouse_y;
         SDL_GetMouseState(&mouse_x, &mouse_y);
+        int x = std::clamp(static_cast<int>(std::round(float(mouse_x) / WINDOW_WIDTH * 255)), 0, 255);
+        int y = std::clamp(static_cast<int>(std::round(float(mouse_y) / WINDOW_HEIGHT * 255)), 0, 255);
         if (ds->paddle_flip_01) {
-            uint64_t x_trigger =  ds->clock->get_c14m() + (GAME_INPUT_DECAY_TIME * (1.0f - (float(mouse_x) / WINDOW_WIDTH)));
-            uint64_t y_trigger = ds->clock->get_c14m() + (GAME_INPUT_DECAY_TIME * (1.0f - (float(mouse_y) / WINDOW_HEIGHT)));
-
-            ds->game_input_trigger_0 = y_trigger;
-            ds->game_input_trigger_1 =x_trigger;   
+            ds->game_input_trigger[0] = paddle_trigger_at(ds, 255 - y);
+            ds->game_input_trigger[1] = paddle_trigger_at(ds, 255 - x);
         } else {
-            uint64_t x_trigger =  ds->clock->get_c14m() + (GAME_INPUT_DECAY_TIME * (float(mouse_x) / WINDOW_WIDTH));
-            uint64_t y_trigger = ds->clock->get_c14m() + (GAME_INPUT_DECAY_TIME * (float(mouse_y) / WINDOW_HEIGHT));
-
-            ds->game_input_trigger_0 = x_trigger;
-            ds->game_input_trigger_1 = y_trigger;
+            ds->game_input_trigger[0] = paddle_trigger_at(ds, x);
+            ds->game_input_trigger[1] = paddle_trigger_at(ds, y);
         }
-        if (DEBUG(DEBUG_GAME)) fprintf(stdout, "Strobe game inputs: %f, %f: %llu, %llu\n", mouse_x, mouse_y, u64_t(ds->game_input_trigger_0), u64_t(ds->game_input_trigger_1));
+        if (DEBUG(DEBUG_GAME)) fprintf(stdout, "Strobe game inputs: %f, %f: %llu, %llu\n", mouse_x, mouse_y, u64_t(ds->game_input_trigger[0]), u64_t(ds->game_input_trigger[1]));
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD /* ds->gps[0].game_type == GAME_INPUT_TYPE_GAMEPAD */) {
         JoystickValues jv;
         if (ds->gps[0].gamepad == nullptr) {
             if (SystemSettings::instance().disconnected_when_no_gamepad()) {
                 // Never expire: classic "no paddle connected" (bit 7 stays set).
-                ds->game_input_trigger_0 = UINT64_MAX;
-                ds->game_input_trigger_1 = UINT64_MAX;
-                ds->game_input_trigger_2 = UINT64_MAX;
-                ds->game_input_trigger_3 = UINT64_MAX;
+                for (int i = 0; i < 4; i++) {
+                    ds->game_input_trigger[i] = UINT64_MAX;
+                }
                 ds->last_jv = {0, 0};
                 return ds->mmu->floating_bus_read();
             }
@@ -165,11 +202,8 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
         }
 
         ds->last_jv = jv;
-        uint64_t x_trigger = ds->clock->get_c14m() + ((GAME_INPUT_DECAY_TIME * jv.x) / 255);
-        uint64_t y_trigger = ds->clock->get_c14m() + ((GAME_INPUT_DECAY_TIME * jv.y) / 255);
-
-        ds->game_input_trigger_0 = x_trigger;
-        ds->game_input_trigger_1 = y_trigger;
+        ds->game_input_trigger[0] = paddle_trigger_at(ds, jv.x);
+        ds->game_input_trigger[1] = paddle_trigger_at(ds, jv.y);
     }
     return ds->mmu->floating_bus_read();
 }
@@ -178,51 +212,12 @@ void strobe_game_inputs_w(void *context, uint32_t address, uint8_t value) {
     strobe_game_inputs(context, address);
 }
 
-uint8_t read_game_input_0(void *context, uint32_t address) {
+uint8_t read_game_input(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
-    uint8_t val;
-    if (paddles_report_disconnected(ds) || ds->game_input_trigger_0 > ds->clock->get_c14m()) {
-        val = 0x80;
-    } else {
-        val = 0x00;
-    }
-    return val | (ds->mmu->floating_bus_read() & 0x7F);
-}
-
-uint8_t read_game_input_1(void *context, uint32_t address) {
-    gamec_state_t *ds = (gamec_state_t *)context;
-    
-    uint8_t val;
-    if (paddles_report_disconnected(ds) || ds->game_input_trigger_1 > ds->clock->get_c14m()) {   
-        val = 0x80;
-    } else {
-        val = 0x00;
-    }
-    return val | (ds->mmu->floating_bus_read() & 0x7F);
-}
-
-uint8_t read_game_input_2(void *context, uint32_t address) {
-    gamec_state_t *ds = (gamec_state_t *)context;
-
-    uint8_t val;
-    if (paddles_report_disconnected(ds) || ds->game_input_trigger_2 > ds->clock->get_c14m()) {
-        val = 0x80;
-    } else {
-        val = 0x00;
-    }
-    return val | (ds->mmu->floating_bus_read() & 0x7F);
-}
-
-uint8_t read_game_input_3(void *context, uint32_t address) {
-    gamec_state_t *ds = (gamec_state_t *)context;
-    
-    uint8_t val;
-    if (paddles_report_disconnected(ds) || ds->game_input_trigger_3 > ds->clock->get_c14m()) {
-        val = 0x80;
-    } else {
-        val = 0x00;
-    }
-    return val | (ds->mmu->floating_bus_read() & 0x7F);
+    int n = address & 3;  // C064..C067 (and C06C..C06F mirrors)
+    return bit7_with_float(ds,
+        paddles_report_disconnected(ds)
+        || ds->game_input_trigger[n] > ds->clock->get_c14m());
 }
 
 uint8_t read_game_switch_0(void *context, uint32_t address) {
@@ -231,31 +226,20 @@ uint8_t read_game_switch_0(void *context, uint32_t address) {
     if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->computer->last_reset + 100000)) { // reverse polarity for atari
         bool val = ds->gps[0].gamepad
             && SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
-        return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);    
+        return bit7_with_float(ds, !val);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
-        if (ds->gps[0].gamepad == nullptr) {
-            ds->game_switch_0 = ds->is_ii_or_iiplus;
-        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
-            ds->game_switch_0 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
-            ds->game_switch_0 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER)) {
-            ds->game_switch_0 = 1;
-        } else {
-            ds->game_switch_0 = 0;
-        }
+        ds->game_switch[0] = sample_apple_gamepad_switch(
+            ds, 0, kApplePadButtons0, ds->is_ii_or_iiplus);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_MOUSE) {
-        ds->game_switch_0 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_LEFT)) != 0;
+        ds->game_switch[0] = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_LEFT)) != 0;
     } else {
-        ds->game_switch_0 = 0;
+        ds->game_switch[0] = 0;
     }
 
-    SDL_Keymod mod = SDL_GetModState();
     if (SDL_GetModState() & KEYMOD_OPENAPPLE) { // TODO: restrict to Apple IIe and up
-        ds->game_switch_0 = 1;
+        ds->game_switch[0] = 1;
     }
-    return (ds->game_switch_0 ? 0x80 : 0x00) | (ds->mmu->floating_bus_read() & 0x7F);
-
+    return bit7_with_float(ds, ds->game_switch[0]);
 }
 
 uint8_t read_game_switch_1(void *context, uint32_t address) {
@@ -275,29 +259,20 @@ uint8_t read_game_switch_1(void *context, uint32_t address) {
         if (SDL_GetModState() & KEYMOD_CLOSEDAPPLE) { // TODO: restrict to Apple IIe
             val = true;
         }
-        return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);
+        return bit7_with_float(ds, !val);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
-        if (ds->gps[0].gamepad == nullptr) {
-            ds->game_switch_1 = ds->is_ii_or_iiplus;
-        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_SOUTH)) {
-            ds->game_switch_1 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_WEST)) {
-            ds->game_switch_1 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER)) {
-            ds->game_switch_1 = 1;
-        } else {
-            ds->game_switch_1 = 0;
-        }
+        ds->game_switch[1] = sample_apple_gamepad_switch(
+            ds, 0, kApplePadButtons1, ds->is_ii_or_iiplus);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_MOUSE) {
-        ds->game_switch_1 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
+        ds->game_switch[1] = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
     } else {
-        ds->game_switch_1 = 0;
+        ds->game_switch[1] = 0;
     }
     
     if (SDL_GetModState() & KEYMOD_CLOSEDAPPLE) { // TODO: restrict to Apple IIe
-        ds->game_switch_1 = 1;
+        ds->game_switch[1] = 1;
     }
-    return (ds->game_switch_1 ? 0x80 : 0x00) | (ds->mmu->floating_bus_read() & 0x7F);
+    return bit7_with_float(ds, ds->game_switch[1]);
 }
 
 uint8_t read_game_switch_2(void *context, uint32_t address) {
@@ -314,25 +289,17 @@ uint8_t read_game_switch_2(void *context, uint32_t address) {
                 val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
             }
         }
-        return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);
+        return bit7_with_float(ds, !val);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
-        if (ds->gps[1].gamepad == nullptr) {
-            ds->game_switch_2 = 1; // on all platforms, SW2 will float.
-        } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
-            ds->game_switch_2 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
-            ds->game_switch_2 = 1;
-        } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER)) {
-            ds->game_switch_2 = 1;
-        } else {
-            ds->game_switch_2 = 0;
-        }
+        // on all platforms, SW2 will float when pad1 is absent.
+        ds->game_switch[2] = sample_apple_gamepad_switch(
+            ds, 1, kApplePadButtons0, 1);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_MOUSE) {
-        ds->game_switch_2 = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
+        ds->game_switch[2] = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_RIGHT)) != 0;
     } else {
-        ds->game_switch_2 = 0;
+        ds->game_switch[2] = 0;
     }
-    return (ds->game_switch_2 ? 0x80 : 0x00) | (ds->mmu->floating_bus_read() & 0x7F);
+    return bit7_with_float(ds, ds->game_switch[2]);
 }
 
 /**
@@ -440,7 +407,7 @@ DebugFormatter *debug_gamecontroller(gamec_state_t *ds) {
     DebugFormatter *df = new DebugFormatter();
     df->addLine("Joystick mode: %s", get_mode_name(ds->joystick_mode));
     df->addLine("Last Read");
-    df->addLine("  Button 0: %d  Button 1: %d  Button 2: %d", ds->game_switch_0, ds->game_switch_1, ds->game_switch_2);
+    df->addLine("  Button 0: %d  Button 1: %d  Button 2: %d", ds->game_switch[0], ds->game_switch[1], ds->game_switch[2]);
     df->addLine("  Values  : %d, %d", ds->last_jv.x, ds->last_jv.y);
     df->addLine("OpenApple: %d  ClosedApple: %d", (SDL_GetModState() & KEYMOD_OPENAPPLE) != 0, (SDL_GetModState() & KEYMOD_CLOSEDAPPLE) != 0);
      
@@ -494,13 +461,12 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     ds->computer = computer;
 
     ds->joystick_mode = JOYSTICK_APPLE_GAMEPAD;
-    ds->game_switch_0 = 0;
-    ds->game_switch_1 = 0;
-    ds->game_switch_2 = 0;
-    ds->game_input_trigger_0 = 0;
-    ds->game_input_trigger_1 = 0;
-    ds->game_input_trigger_2 = 0;
-    ds->game_input_trigger_3 = 0;
+    for (int i = 0; i < 3; i++) {
+        ds->game_switch[i] = 0;
+    }
+    for (int i = 0; i < 4; i++) {
+        ds->game_input_trigger[i] = 0;
+    }
     ds->mouse_wheel_pos_0 = 0;
     ds->paddle_flip_01 = 0; // to swap the mouse axes so Y is paddle 0
     ds->gps[0].gamepad = nullptr;
@@ -517,10 +483,9 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
 
     // register the I/O ports
     for (int i = 0; i <= 8; i+=8) { // in II+ and //e appears at C061 etc AND C069 etc.
-        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_0 + i, { read_game_input_0, ds });
-        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_1 + i, { read_game_input_1, ds });
-        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_2 + i, { read_game_input_2, ds });
-        computer->mmu->set_C0XX_read_handler(GAME_ANALOG_3 + i, { read_game_input_3, ds });
+        for (int n = 0; n < 4; n++) {
+            computer->mmu->set_C0XX_read_handler(GAME_ANALOG_0 + n + i, { read_game_input, ds });
+        }
         computer->mmu->set_C0XX_read_handler(GAME_SWITCH_0 + i, { read_game_switch_0, ds });
         computer->mmu->set_C0XX_read_handler(GAME_SWITCH_1 + i, { read_game_switch_1, ds });
         computer->mmu->set_C0XX_read_handler(GAME_SWITCH_2 + i, { read_game_switch_2, ds }); 
@@ -586,10 +551,9 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
             //ds->joyport_activate = ds->clock->get_cycles() + 100000; // 100ms
 
             // reset annunciators
-            ds->annunciators[3] = 0;
-            ds->annunciators[2] = 0;
-            ds->annunciators[1] = 0;
-            ds->annunciators[0] = 0;
+            for (int i = 0; i < 4; i++) {
+                ds->annunciators[i] = 0;
+            }
 
             return true;
         });

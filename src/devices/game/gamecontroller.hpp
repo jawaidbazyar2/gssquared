@@ -76,14 +76,9 @@ typedef struct gamec_state_t {
     joystick_mode_t joystick_mode = JOYSTICK_APPLE_GAMEPAD;
     //uint64_t joyport_activate = 0;
 
-    int game_switch_0;
-    int game_switch_1;
-    int game_switch_2;
+    int game_switch[3];
 
-    uint64_t game_input_trigger_0;
-    uint64_t game_input_trigger_1;
-    uint64_t game_input_trigger_2;
-    uint64_t game_input_trigger_3;
+    uint64_t game_input_trigger[4];
 
     int mouse_wheel_pos_0; // only one wheel per mouse.
     int paddle_flip_01;
