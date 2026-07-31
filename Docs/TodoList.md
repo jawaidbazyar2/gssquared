@@ -259,14 +259,14 @@ From [Compatibility.md](Compatibility.md) and [CompatibilityGS.md](Compatibility
 - [ ] Wizardry + Videx: shows only Videx screen on II+ (fine on //e)
 
 ### Apple IIgs
-- [ ] Zany Golf: black playfield once in a level
+- [ ] Zany Golf: black playfield once in a level (still after KEGS-matching RAM size; LocInfo/blit)
 - [X] Bard's Tale I/II: re-verify current status (had Ensoniq / SmartPort issues)
 - [X] A2Desktop text editor/viewer crash (AUX/MAIN?)
 - [X] A2Desktop with floppies enabled: hang reading floppies
 - [X] SenseiPlay: songs still incorrect after Ensoniq IRQ fix
-- [ ] Megademo: non-responsive after menu; fillmode defects on first screen
+- [X] Megademo: non-responsive after menu; fillmode defects on first screen
 - [X] Nucleus / Sales Demo-class instrument artifacts (if still present)
-- [ ] Photonix: direct 3.5 access / "Non bootable disk" loop
+- [X] Photonix: direct 3.5 access / "Non bootable disk" loop
 - [X] Airheart standalone on GS vs //e (5.25 bootloader / `C0EC` loop)
 - [ ] DreamVoir (Golden Orchard variant) BRK after splash
 
