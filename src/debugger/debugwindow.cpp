@@ -1,6 +1,8 @@
 #include <SDL3/SDL.h>
 #include <algorithm>
+#include <cstring>
 #include <iostream>
+#include <string>
 
 #include "debugwindow.hpp"
 #include "SDL3/SDL_keycode.h"
@@ -291,6 +293,112 @@ void debug_window_t::draw_text(debug_panel_t pane, int x,int y, const char *text
     text_renderer->render(textToShow, window_margin + pane_area[pane].x, y*font_line_height);
 }
 
+namespace {
+
+struct trace_rgba {
+    uint8_t r, g, b, a;
+};
+
+// Max-bright palette for black background (alpha always opaque).
+constexpr trace_rgba kTraceBase   = {230, 230, 230, 255}; // cycle, regs, bytes
+constexpr trace_rgba kTracePc     = {0,   255, 255, 255}; // PB/PC
+constexpr trace_rgba kTraceOp     = {255, 255, 0,   255}; // mnemonic
+constexpr trace_rgba kTraceOper   = {255, 180, 80,  255}; // operand
+constexpr trace_rgba kTraceMem    = {100, 255, 100, 255}; // Eff / > / M
+constexpr trace_rgba kTraceWrite  = {255, 80,  60,  255}; // < write
+constexpr trace_rgba kTraceLabel  = {80,  255, 80,  255}; // symbol
+constexpr trace_rgba kTraceIrq    = {255, 40,  40,  255}; // IRQ
+
+void draw_trace_segment(TextRenderer *tr, int base_x, int pixel_y, int mono_w,
+                        const char *line, int start, int end, trace_rgba color) {
+    if (!line || start < 0 || end <= start) {
+        return;
+    }
+    const int len = static_cast<int>(strlen(line));
+    if (start >= len) {
+        return;
+    }
+    if (end > len) {
+        end = len;
+    }
+    // Skip pure-whitespace segments (common for unused mem/label columns).
+    bool any = false;
+    for (int i = start; i < end; i++) {
+        if (line[i] != ' ') {
+            any = true;
+            break;
+        }
+    }
+    if (!any) {
+        return;
+    }
+    tr->set_color(color.r, color.g, color.b, color.a);
+    tr->render(std::string(line + start, line + end), base_x + start * mono_w, pixel_y);
+}
+
+} // namespace
+
+void debug_window_t::draw_trace_line_colored(debug_panel_t pane, int x, int y, const char *line,
+                                             const trace_column_layout &layout, bool show_opbytes,
+                                             bool header) {
+    if (!line) {
+        return;
+    }
+    (void)header;
+    const int base_x = window_margin + pane_area[pane].x + x;
+    const int pixel_y = y * font_line_height;
+    const int mono_w = text_renderer->char_width('0');
+
+    const trace_rgba base  = kTraceBase;
+    const trace_rgba pc    = kTracePc;
+    const trace_rgba op    = kTraceOp;
+    const trace_rgba oper  = kTraceOper;
+    const trace_rgba mem   = kTraceMem;
+    const trace_rgba write = kTraceWrite;
+    const trace_rgba label = kTraceLabel;
+    const trace_rgba irq   = kTraceIrq;
+
+    const int pc_end = show_opbytes ? layout.opbytes : layout.opcode;
+
+    draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line, 0, layout.pc, base);
+    draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line, layout.pc, pc_end, pc);
+
+    if (show_opbytes && layout.opbytes < layout.opcode) {
+        draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line,
+                           layout.opbytes, layout.opcode, base);
+    }
+
+    // IRQ rows: mnemonic column is "IRQ" with nothing after PC/bytes.
+    const int len = static_cast<int>(strlen(line));
+    if (!header && layout.opcode + 3 <= len
+        && line[layout.opcode] == 'I' && line[layout.opcode + 1] == 'R'
+        && line[layout.opcode + 2] == 'Q') {
+        draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line,
+                           layout.opcode, layout.opcode + 3, irq);
+        return;
+    }
+
+    draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line,
+                       layout.opcode, layout.operand, op);
+    draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line,
+                       layout.operand, layout.eaddr, oper);
+    draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line,
+                       layout.eaddr, layout.dir, mem);
+
+    if (layout.dir < len && line[layout.dir] == '<') {
+        draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line,
+                           layout.dir, layout.dir + 1, write);
+    } else {
+        draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line,
+                           layout.dir, layout.dir + 1, mem);
+    }
+
+    draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line,
+                       layout.data, layout.label, mem);
+    draw_trace_segment(text_renderer, base_x, pixel_y, mono_w, line,
+                       layout.label, layout.label + layout.label_w, label);
+}
+
 bool debug_window_t::is_pane_first(debug_panel_t pane) const {
     for (int i = 0; i < pane; i++) {
         if (panel_visible[i]) {
@@ -364,13 +472,16 @@ void debug_window_t::render_pane_trace() {
     // when the idx gets to trace_head, then we need to switch to show forward disassembly.
     // do numlines minus 10, to leave room for 10 lines of prospective disassembly
 
+    const trace_column_layout &trace_layout = cpu->trace_buffer->get_layout();
+    const bool show_opbytes = cpu->trace_buffer->decode_opts.show_opbytes;
     for (int i = 0; i < trace_displayed; i++) {
         size_t idx = (start_idx + i) % trace_size;
         char *line = cpu->trace_buffer->decode_trace_entry(&cpu->trace_buffer->entries[idx]);
-        draw_text(DEBUG_PANEL_TRACE, x, 8 + i, line);
+        draw_trace_line_colored(DEBUG_PANEL_TRACE, x, 8 + i, line, trace_layout, show_opbytes,
+                                false);
     }
     if (disasm_displayed) {
-        step_disasm->setLinePrepend(cpu->trace_buffer->get_layout().pc);
+        step_disasm->setLinePrepend(trace_layout.pc);
         step_disasm->setAddress(cpu->full_pc);
         std::vector<std::string> disasm_lines = step_disasm->disassemble(disasm_displayed);
         // first line of disassembly is current unexecuted instruction. highlight the background. in white.
@@ -428,7 +539,8 @@ void debug_window_t::render_pane_trace() {
 
     separator_line(DEBUG_PANEL_TRACE, 7);
     cpu->trace_buffer->format_column_header(buffer, sizeof(buffer));
-    draw_text(DEBUG_PANEL_TRACE, x, 7, buffer);
+    draw_trace_line_colored(DEBUG_PANEL_TRACE, x, 7, buffer, trace_layout, show_opbytes, true);
+    text_renderer->set_color(255, 255, 255, 255);
     
     separator_line(DEBUG_PANEL_TRACE, 8);
     ui_ctx.line(w + x -1.0f, 0, w + x -1.0f, window_height, 0xFFFFFFFF);

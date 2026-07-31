@@ -90,6 +90,9 @@ struct debug_window_t {
     void resize(int width, int height);
     void separator_line(debug_panel_t pane, int y);
     void draw_text(debug_panel_t pane, int x, int y, const char *text);
+    void draw_trace_line_colored(debug_panel_t pane, int x, int y, const char *line,
+                                 const trace_column_layout &layout, bool show_opbytes,
+                                 bool header);
     void resize_window();
     void toggle_panel(debug_panel_t panel);
     void render_pane_trace();
