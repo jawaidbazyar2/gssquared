@@ -298,7 +298,6 @@ uint8_t read_game_switch_1(void *context, uint32_t address) {
         ds->game_switch_1 = 1;
     }
     return (ds->game_switch_1 ? 0x80 : 0x00) | (ds->mmu->floating_bus_read() & 0x7F);
-   /*  } */
 }
 
 uint8_t read_game_switch_2(void *context, uint32_t address) {
@@ -318,7 +317,7 @@ uint8_t read_game_switch_2(void *context, uint32_t address) {
         return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
         if (ds->gps[1].gamepad == nullptr) {
-            ds->game_switch_2 = ds->is_ii_or_iiplus_or_iie;
+            ds->game_switch_2 = 1; // on all platforms, SW2 will float.
         } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
             ds->game_switch_2 = 1;
         } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
