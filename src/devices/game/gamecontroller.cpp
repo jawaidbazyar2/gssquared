@@ -419,11 +419,11 @@ DebugFormatter *debug_gamecontroller(gamec_state_t *ds) {
         const char *name = SDL_GetGamepadNameForID(ds->gps[i].id);
         df->addLine("GamePad %d (%s)", i, name);
 
-        int32_t axis0 = SDL_GetGamepadAxis(ds->gps[0].gamepad, SDL_GAMEPAD_AXIS_LEFTX);
-        int32_t axis1 = SDL_GetGamepadAxis(ds->gps[0].gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+        int32_t axis0 = SDL_GetGamepadAxis(ds->gps[i].gamepad, SDL_GAMEPAD_AXIS_LEFTX);
+        int32_t axis1 = SDL_GetGamepadAxis(ds->gps[i].gamepad, SDL_GAMEPAD_AXIS_LEFTY);
         df->addLine("  Axis LX: %d  Axis LY: %d", axis0, axis1);
-        int b0 = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
-        int b1 = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_SOUTH);
+        int b0 = SDL_GetGamepadButton(ds->gps[i].gamepad, SDL_GAMEPAD_BUTTON_EAST);
+        int b1 = SDL_GetGamepadButton(ds->gps[i].gamepad, SDL_GAMEPAD_BUTTON_SOUTH);
         df->addLine("  Button N: %d  Button W: %d", b0, b1);
     }
     return df;
