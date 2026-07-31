@@ -338,14 +338,14 @@ bool recompute_gamepads(gamec_state_t *gp_d) {
         gp_d->gps[0].id = -1;
         gp_d->gps[1].id = -1;
     }
-    if (gpcount == 1) {
+    if (gpcount >= 1) {
         gp_d->gps[0].gamepad = SDL_OpenGamepad(gpid[0]);
         if (gp_d->gps[0].gamepad== NULL) {
             printf("Error opening gamepad: %s\n", SDL_GetError());
             return false;
         }
         gp_d->gps[0].id = gpid[0];
-        // zero out second gamepad info, because there is only one.
+        // zero out second gamepad info
         gp_d->gps[1].gamepad = nullptr;
         gp_d->gps[1].id = -1;
     }
@@ -353,7 +353,6 @@ bool recompute_gamepads(gamec_state_t *gp_d) {
         gp_d->gps[1].gamepad = SDL_OpenGamepad(gpid[1]);
         if (gp_d->gps[1].gamepad== NULL) {
             printf("Error opening gamepad: %s\n", SDL_GetError());
-            SDL_Quit();
             return false;
         }
         gp_d->gps[1].id = gpid[1];
