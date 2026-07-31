@@ -74,11 +74,14 @@ typedef enum joystick_mode {
 
 typedef struct gamec_state_t {
     joystick_mode_t joystick_mode = JOYSTICK_APPLE_GAMEPAD;
-    //uint64_t joyport_activate = 0;
 
     int game_switch[3];
 
     uint64_t game_input_trigger[4];
+
+    // CPU cycles after last_reset before Joyport polarity/mux is enabled.
+    // ~100ms @ 1MHz on II/IIe; ~200ms @ 2.8MHz on IIgs (ROM self-test is slower).
+    uint64_t joyport_suspend_cycles = 100000;
 
     int mouse_wheel_pos_0; // only one wheel per mouse.
     int paddle_flip_01;

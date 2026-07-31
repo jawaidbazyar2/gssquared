@@ -49,7 +49,7 @@ In Joyport mode, GS2 emulates a Sirius Joyport. A variety of early to mid 80s ga
 
 The real Joyport had a compatibility problem which would cause control-reset to always throw the machine into self-test mode, on IIes and IIgs.
 
-Unlike the real Joyport, GS2's Joyport is compatible with II+, IIe, AND IIgs by disabling Joyport functions for 100 milliseconds after a reset.
+Unlike the real Joyport, GS2's Joyport is compatible with II+, IIe, AND IIgs by disabling Joyport functions after a reset (~100ms on II/IIe, ~200ms on IIgs).
 
 Enable Atari Joyport mode by using the menu, the OSD Buttons, or by pressing F6 on your keyboard until the message says Joyport mode is activated. (Switch back to regular Apple Joystick mode by pressing F6 again).
 

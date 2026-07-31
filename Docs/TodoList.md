@@ -154,8 +154,8 @@ From [ADB.md](ADB.md), [UserInterface.md](UserInterface.md), [Networking.md](Net
 - [X] Button 1 support / correct XY+button read order
 - [ ] At RESET, disable mouse interrupts
 - [ ] GS AKD bug: hold G then H, release H → AKD still set (real GS clears)
-- [ ] ADB vs gamecontroller modifier keymap conflict (Alt/Win)
-- [ ] Joyport workaround timing for GS reset if still flaky
+- [X] ADB vs gamecontroller modifier keymap conflict (Alt/Win)
+- [X] Joyport workaround timing for GS reset (200ms @ 2.8MHz)
 - [ ] Control-Shift-2 / Control-Shift-6 → correct ASCII (Lode Runner cheat)
 - [ ] Test mouse-wheel → arrow-key insertion; remove "wheel as paddle"
 - [ ] Extra `0x7F` on ctrl-reset (suspect should be `0xFF` clear)

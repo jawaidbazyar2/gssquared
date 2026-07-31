@@ -90,6 +90,12 @@ inline uint8_t bit7_with_float(gamec_state_t *ds, bool pressed) {
     return (pressed ? 0x80 : 0x00) | (ds->mmu->floating_bus_read() & 0x7F);
 }
 
+// Real Joyport holds PB0/PB1 active after reset and trips self-test; suspend mux until past that window.
+inline bool joyport_active(const gamec_state_t *ds) {
+    return ds->joystick_mode == JOYSTICK_ATARI_DPAD
+        && ds->clock->get_cycles() > ds->computer->last_reset + ds->joyport_suspend_cycles;
+}
+
 template <size_t N>
 bool gamepad_any_button(SDL_Gamepad *pad, const SDL_GamepadButton (&buttons)[N]) {
     for (size_t i = 0; i < N; i++) {
@@ -223,7 +229,7 @@ uint8_t read_game_input(void *context, uint32_t address) {
 uint8_t read_game_switch_0(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
     
-    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->computer->last_reset + 100000)) { // reverse polarity for atari
+    if (joyport_active(ds)) { // reverse polarity for atari
         bool val = ds->gps[0].gamepad
             && SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
         return bit7_with_float(ds, !val);
@@ -245,7 +251,7 @@ uint8_t read_game_switch_0(void *context, uint32_t address) {
 uint8_t read_game_switch_1(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
 
-    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->computer->last_reset + 100000)) {
+    if (joyport_active(ds)) {
         bool val = false;
 
         bool anc_1 = ds->annunciators[1];
@@ -278,7 +284,7 @@ uint8_t read_game_switch_1(void *context, uint32_t address) {
 uint8_t read_game_switch_2(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
 
-    if ((ds->joystick_mode == JOYSTICK_ATARI_DPAD) && (ds->clock->get_cycles() > ds->computer->last_reset + 100000)) {
+    if (joyport_active(ds)) {
         bool val = false;
 
         bool anc_1 = ds->annunciators[1];
@@ -543,13 +549,8 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
     );
 
     computer->register_reset_handler(
-        // might need to be longer for GS, since GS may take longer to get around to check buttons on reset.
         [ds](bool cold_start) {
-            // TODO: erp. reset used to be instant. now if we hold reset, the cpu clock keeps ticking and
-            // we exceed our 100,000 cycle delay here rapidly. 
-            //ds->joyport_activate = ds->clock->get_cycles() + 100000; // 100ms
-
-            // reset annunciators
+            // Joyport suspend window is timed from computer->last_reset (assert/deassert).
             for (int i = 0; i < 4; i++) {
                 ds->annunciators[i] = 0;
             }
@@ -561,5 +562,7 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
 
     ds->is_ii_or_iiplus = (computer->platform->id == PLATFORM_APPLE_II || computer->platform->id == PLATFORM_APPLE_II_PLUS) ? 1 : 0;
     ds->is_ii_or_iiplus_or_iie = (computer->platform->id == PLATFORM_APPLE_II || computer->platform->id == PLATFORM_APPLE_II_PLUS || computer->platform->id == PLATFORM_APPLE_IIE) ? 1 : 0;
+    // GS ROM checks buttons later; 200ms @ 2.8MHz. II/IIe keep ~100ms @ 1MHz.
+    ds->joyport_suspend_cycles = platform_is_iigs(computer->platform->id) ? 560000 : 100000;
 
 }
