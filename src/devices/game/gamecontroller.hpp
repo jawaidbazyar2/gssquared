@@ -92,6 +92,9 @@ typedef struct gamec_state_t {
 
     uint8_t annunciators[4] = {0, 0, 0, 0};
 
+    int is_ii_or_iiplus = 0;
+    int is_ii_or_iiplus_or_iie = 0;
+
     EventQueue *event_queue;
     MMU_II *mmu;
     NClock *clock;

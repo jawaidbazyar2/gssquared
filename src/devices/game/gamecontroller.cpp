@@ -234,7 +234,7 @@ uint8_t read_game_switch_0(void *context, uint32_t address) {
         return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);    
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
         if (ds->gps[0].gamepad == nullptr) {
-            ds->game_switch_0 = 0;
+            ds->game_switch_0 = ds->is_ii_or_iiplus;
         } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
             ds->game_switch_0 = 1;
         } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
@@ -278,7 +278,7 @@ uint8_t read_game_switch_1(void *context, uint32_t address) {
         return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
         if (ds->gps[0].gamepad == nullptr) {
-            ds->game_switch_1 = 0;
+            ds->game_switch_1 = ds->is_ii_or_iiplus;
         } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_SOUTH)) {
             ds->game_switch_1 = 1;
         } else if (SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_WEST)) {
@@ -318,7 +318,7 @@ uint8_t read_game_switch_2(void *context, uint32_t address) {
         return (val ? 0x00 : 0x80) | (ds->mmu->floating_bus_read() & 0x7F);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
         if (ds->gps[1].gamepad == nullptr) {
-            ds->game_switch_2 = 0;
+            ds->game_switch_2 = ds->is_ii_or_iiplus_or_iie;
         } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_EAST)) {
             ds->game_switch_2 = 1;
         } else if (SDL_GetGamepadButton(ds->gps[1].gamepad, SDL_GAMEPAD_BUTTON_NORTH)) {
@@ -596,4 +596,8 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot) {
         });
 
     computer->set_module_state(MODULE_GAMECONTROLLER, ds);
+
+    ds->is_ii_or_iiplus = (computer->platform->id == PLATFORM_APPLE_II || computer->platform->id == PLATFORM_APPLE_II_PLUS) ? 1 : 0;
+    ds->is_ii_or_iiplus_or_iie = (computer->platform->id == PLATFORM_APPLE_II || computer->platform->id == PLATFORM_APPLE_II_PLUS || computer->platform->id == PLATFORM_APPLE_IIE) ? 1 : 0;
+
 }
