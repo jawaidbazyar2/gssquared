@@ -46,6 +46,25 @@ struct system_trace_entry_t {
     uint16_t unused;
 };
 
+struct trace_decode_options {
+    bool show_opbytes = false;
+};
+
+/** Fixed column origins for a decoded trace line (absolute positions in line_buffer). */
+struct trace_column_layout {
+    int cycle_w;
+    int a, x, y, sp, p;
+    int pc;        // PB/PC or PC
+    int opbytes;   // ignored when !show_opbytes
+    int opcode;
+    int operand;
+    int eaddr;
+    int dir;       // '>' read (Eff→M), '<' write (M→Eff)
+    int data;
+    int label;     // trailing truncated label zone
+    int label_w;
+};
+
 struct system_trace_buffer {
     system_trace_entry_t *entries;
     size_t size;
@@ -55,6 +74,7 @@ struct system_trace_buffer {
     processor_type cpu_type;
     int16_t cpu_mask;
     std::unordered_map<uint32_t, std::string> labels;
+    trace_decode_options decode_opts;
 
     system_trace_buffer(size_t capacity, processor_type cpu_type);
     ~system_trace_buffer();
@@ -69,6 +89,12 @@ struct system_trace_buffer {
 
     char *decode_trace_entry(system_trace_entry_t *entry);
 
+    /** Column layout for the current cpu_type and decode_opts. */
+    const trace_column_layout &get_layout() const;
+
+    /** Header matching get_layout() columns (e.g. for the debug window). */
+    void format_column_header(char *buf, size_t buflen) const;
+
     bool load_labels_from_file(const std::string &filename);
 
     void clear_labels();
@@ -80,10 +106,4 @@ struct system_trace_buffer {
         if (cpu_type == PROCESSOR_6502) cpu_mask = CPU_6502;
     }
     const char *get_label(uint32_t address);
-
-private:
-    char *decode_trace_entry_6502(system_trace_entry_t *entry);
-    char *decode_trace_entry_65816(system_trace_entry_t *entry);
 };
-
-

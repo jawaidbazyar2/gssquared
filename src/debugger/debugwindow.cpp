@@ -370,7 +370,7 @@ void debug_window_t::render_pane_trace() {
         draw_text(DEBUG_PANEL_TRACE, x, 8 + i, line);
     }
     if (disasm_displayed) {
-        step_disasm->setLinePrepend(cpu->cpu_type == PROCESSOR_65816 ? 35 : 34);
+        step_disasm->setLinePrepend(cpu->trace_buffer->get_layout().pc);
         step_disasm->setAddress(cpu->full_pc);
         std::vector<std::string> disasm_lines = step_disasm->disassemble(disasm_displayed);
         // first line of disassembly is current unexecuted instruction. highlight the background. in white.
@@ -386,8 +386,9 @@ void debug_window_t::render_pane_trace() {
     text_renderer->set_color(255, 255, 255, 255);
     separator_line(DEBUG_PANEL_TRACE, 3);
     snprintf(buffer, sizeof(buffer),
-             "T)race: %s  SPACE: Step  RETURN: Run  Up/Dn/PgUp/PgDn/Home/End",
-             cpu->trace ? "ON " : "OFF");
+             "T)race: %s  B)ytes: %s  SPACE: Step  RETURN: Run  Up/Dn/PgUp/PgDn/Home/End",
+             cpu->trace ? "ON " : "OFF",
+             cpu->trace_buffer->decode_opts.show_opbytes ? "ON " : "OFF");
     draw_text(DEBUG_PANEL_TRACE, x, 3, buffer);
   
     separator_line(DEBUG_PANEL_TRACE, 4);
@@ -426,11 +427,8 @@ void debug_window_t::render_pane_trace() {
     //draw_text(DEBUG_PANEL_TRACE, x, 6, buffer);
 
     separator_line(DEBUG_PANEL_TRACE, 7);
-    if (cpu->cpu_type == PROCESSOR_65816) {
-        draw_text(DEBUG_PANEL_TRACE, x, 7, "   Cycle      A    X    Y  SP   P     PC                                Eff  M");
-    } else {
-        draw_text(DEBUG_PANEL_TRACE, x, 7, "   Cycle      A  X  Y  SP   P      PC                                Eff  M");
-    }
+    cpu->trace_buffer->format_column_header(buffer, sizeof(buffer));
+    draw_text(DEBUG_PANEL_TRACE, x, 7, buffer);
     
     separator_line(DEBUG_PANEL_TRACE, 8);
     ui_ctx.line(w + x -1.0f, 0, w + x -1.0f, window_height, 0xFFFFFFFF);
@@ -1056,6 +1054,10 @@ bool debug_window_t::handle_event(SDL_Event &event) {
                         }
                         break;
                     case SDLK_T: cpu->trace = !cpu->trace; break;
+                    case SDLK_B:
+                        cpu->trace_buffer->decode_opts.show_opbytes =
+                            !cpu->trace_buffer->decode_opts.show_opbytes;
+                        break;
                 }
                 return true; // consume the key down.
             }
