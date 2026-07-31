@@ -173,17 +173,17 @@ From [ADB.md](ADB.md), [UserInterface.md](UserInterface.md), [Networking.md](Net
 From [Roadmap.md](Roadmap.md), [DebugProtocol.md](DebugProtocol.md), [DevelopLog.md](DevelopLog.md), [65816.md](65816.md):
 
 - [ ] Ship flexible AI-drivable binary debug protocol (roadmap 0.10)
-- [ ] Trace option: hide raw bytes (`PCPC: LDA $xxxx` only)
+- [X] Trace option: hide raw bytes (`PCPC: LDA $xxxx` only) — debug window `B)ytes`
 - [X] Scrollable text widget + clickable scrollbar (click-to-jump position)
 - [ ] Trace cursor → show regs / P decode for that record
-- [ ] Monitor remembers bank like IIgs monitor
+- [X] Monitor remembers bank like IIgs monitor
 - [ ] Monitor command to display stack
 - [X] Address parser support for `/`
-- [ ] Disassembler: set/track M/X widths (REP/SEP)
+- [X] Disassembler: set/track M/X widths (REP/SEP)
 - [X] Breakpoints: PC-only / MEM-only / BOTH; value match; “write value to address”
 - [X] BP on 0 must not fire on immediates like `LDA #1`
 - [X] Debug frame-step: don't consume/modify normal frame-end path; interrupts shouldn't fire while CPU frozen
-- [ ] Debug window near screen edge + flash → runaway flash / slow debug updates
+- [-] Debug window near screen edge + flash → runaway flash / slow debug updates (pretty sure this is a MacOS problem)
 - [ ] Store `e` bit in trace flags; polish immediate-operand display
 - [ ] STP / WAI; abort/IRQ/NMI/RES stack paths if still incomplete ([65816.md](65816.md))
 
