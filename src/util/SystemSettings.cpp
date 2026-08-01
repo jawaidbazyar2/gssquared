@@ -357,6 +357,32 @@ void SystemSettings::record_use(const std::string& path) {
     save();
 }
 
+void SystemSettings::seed_recent_if_empty(const std::vector<std::string>& paths) {
+    if (!recent_.empty() || paths.empty()) {
+        return;
+    }
+
+    const int64_t now = now_unix_seconds();
+    for (size_t i = 0; i < paths.size(); ++i) {
+        const std::string normalized = normalize_path(paths[i]);
+        if (normalized.empty() || !file_exists(normalized)) {
+            continue;
+        }
+        RecentConfigEntry e;
+        e.path = normalized;
+        e.score = 1.0;
+        // Descending last_used preserves input order in display_entries().
+        e.last_used = now - static_cast<int64_t>(i);
+        recent_.push_back(std::move(e));
+    }
+
+    if (recent_.empty()) {
+        return;
+    }
+    trim_to_max();
+    save();
+}
+
 std::vector<RecentConfigEntry> SystemSettings::display_entries() const {
     std::vector<RecentConfigEntry> candidates;
     candidates.reserve(recent_.size());

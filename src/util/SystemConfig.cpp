@@ -17,6 +17,7 @@
 
 #include "util/SystemConfig.hpp"
 
+#include <algorithm>
 #include <cctype>
 #include <filesystem>
 #include <fstream>
@@ -24,6 +25,7 @@
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "device_info.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
@@ -1022,6 +1024,8 @@ void SystemConfig::ensure_default_system_configs() {
         return;
     }
 
+    std::vector<std::string> bundled_dest_paths;
+
     for (const auto& entry : fs::directory_iterator(src_dir, ec)) {
         if (ec) {
             std::cerr << "Failed to read shipped configs in '" << src_dir.string()
@@ -1036,17 +1040,23 @@ void SystemConfig::ensure_default_system_configs() {
         }
 
         const fs::path dest = dest_dir / entry.path().filename();
-        if (fs::exists(dest)) {
-            continue;
-        }
-
-        ec.clear();
-        fs::copy_file(entry.path(), dest, ec);
-        if (ec) {
-            std::cerr << "Failed to copy default system config '" << entry.path().filename().string()
-                      << "' to '" << dest.string() << "': " << ec.message() << std::endl;
-        } else {
+        if (!fs::exists(dest)) {
+            ec.clear();
+            fs::copy_file(entry.path(), dest, ec);
+            if (ec) {
+                std::cerr << "Failed to copy default system config '"
+                          << entry.path().filename().string() << "' to '" << dest.string()
+                          << "': " << ec.message() << std::endl;
+                continue;
+            }
             std::cout << "Installed default system config: " << dest.string() << std::endl;
         }
+
+        if (fs::exists(dest)) {
+            bundled_dest_paths.push_back(dest.string());
+        }
     }
+
+    std::sort(bundled_dest_paths.begin(), bundled_dest_paths.end());
+    SystemSettings::instance().seed_recent_if_empty(bundled_dest_paths);
 }

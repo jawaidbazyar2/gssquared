@@ -76,6 +76,14 @@ public:
     void record_use(const std::string& path);
 
     /**
+     * On a fresh install (empty recent history), seed recent_configs from the given
+     * paths (typically bundled .gs2 files under PrefPath/SystemConfigs) and save.
+     * No-op if recent_ is already non-empty. Paths that are missing are skipped.
+     * First path becomes MRU; remaining keep input order via last_used.
+     */
+    void seed_recent_if_empty(const std::vector<std::string>& paths);
+
+    /**
      * Up to kMaxDisplay entries: [0] = MRU by last_used; [1..] = highest score
      * excluding the MRU. Skips missing files.
      */
