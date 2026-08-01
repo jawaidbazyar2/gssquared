@@ -29,7 +29,7 @@ project(gssquared)
 
 # Define base version (major.minor)
 set(VERSION_MAJOR "0")
-set(VERSION_MINOR "9")
+set(VERSION_MINOR "10")
 
 # Get git commit count for patch version (auto-incrementing)
 find_package(Git QUIET)
