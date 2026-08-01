@@ -76,6 +76,7 @@ These go at the start of the file (before any `[[cards]]` blocks).
 | Key | Required? | What it does |
 |-----|-----------|--------------|
 | `gs2_version` | **Yes** | Must be `1`. Future GS2 versions may accept newer numbers. |
+| `id` | No | Stable UUID for this machine. Minted automatically if missing. See [Machine identity](#machine-identity-id). |
 | `name` | **Yes** | Short title shown on the System Select tile. |
 | `platform` | **Yes** | Which Apple II model. See [Platforms](#platforms). |
 | `description` | No | Subtitle or tooltip text. |
@@ -91,7 +92,24 @@ These go at the start of the file (before any `[[cards]]` blocks).
 | `"apple2e"` | Apple IIe |
 | `"apple2e_enhanced"` | Enhanced //e |
 | `"apple2e_65816"` | //e with 65816 accelerator |
-| `"apple2gs"` | Apple IIgs |
+| `"apple2gs"` | Apple IIgs ROM 01 |
+| `"apple2gs_rom3"` | Apple IIgs ROM 03 |
+
+### Machine identity (`id`)
+
+`id` is a UUID that identifies the *machine*, not the filename. On IIgs platforms, battery RAM (Control Panel / NVRAM) is stored as:
+
+`PrefPath/bram/<id>.bin`
+
+(for example under `~/Library/Application Support/jawaidbazyar2/GSSquared/bram/` on macOS).
+
+| Action | BRAM result |
+|--------|-------------|
+| Rename / move the `.gs2` (same `id`) | Same BRAM |
+| Save As to a new file | New `id` → separate BRAM |
+| Copy `id` into another `.gs2` | Shared BRAM (same machine) |
+
+If `id` is missing when you load a writable `.gs2`, GSSquared assigns one and may rewrite the file. You rarely need to set it yourself.
 
 ### Clock and video
 
@@ -131,9 +149,9 @@ Rules that bite people:
 | `"disk_ii"` | Disk II controller (two 5.25" drives) |
 | `"prodos_clock"` | ProDOS real-time clock |
 | `"thunder_clock"` | Thunder Clock Plus |
-| `"parallel"` | Parallel printer interface |
+| `"parallel"` | [Parallel Interface](Cards_Parallel.md) |
 | `"mockingboard"` | Mockingboard sound |
-| `"mouse"` | Apple Mouse III (PIA+6805 / Apple ROM); `"applemouseiii"` is an alias | |
+| `"mouse"` | [Apple Mouse III](Cards_AppleMouse.md); `"applemouseiii"` is an alias |
 | `"videx"` | Videx 80-column (II / II+ only, slot 3) |
 | `"mem_expansion"` | RAM expansion (Slinky-style) |
 | `"prodos_block"` | Deprecated - do not use |
@@ -141,21 +159,14 @@ Rules that bite people:
 | `"bazfast3"` | SmartPort / hard-disk controller (also accepts `"smartport"` or `"pdblock3"`) |
 | `"vidhd"` | VIDHD (65816 //e only) |
 | `"second_sight"` | Second Sight (IIgs only) |
+| `"super_serial"` | [Super Serial Card](Cards_SuperSerial.md) |
+| `"uthernet2"` | [Uthernet II](Cards_UthernetII.md) (IIe + IIgs; slots 1–7) |
 
 Empty slots are simply omitted — you do not need to say “empty.”
 
-### Parallel printer output
+### Parallel and serial attachments
 
-If you install a parallel card, you can send printer output to a file on your Mac:
-
-```toml
-[[cards]]
-slot = 1
-card = "parallel"
-output = "printouts/session.txt"
-```
-
-If `output` is omitted, GS2 uses a default file name.
+Do **not** put paths on the card entry. Use `[[connections]]` (below) for parallel file capture and serial modem/file attachments. See also [Parallel Interface](Cards_Parallel.md) and [Serial & Parallel Connections](SerialConnections.md).
 
 ---
 
@@ -215,9 +226,9 @@ image = "volumes/Games.po"
 
 ---
 
-## Serial ports — `[[connections]]`
+## Serial / parallel ports — `[[connections]]`
 
-Optional. Describes what is “plugged into” serial ports — file capture, loopback test, or a virtual modem.
+Optional. Describes what is “plugged into” each serial or parallel port — file capture or a virtual modem. Full UI walkthrough: [Serial & Parallel Connections](SerialConnections.md).
 
 **IIgs built-in ports** (no `slot` — these are on the motherboard):
 
@@ -232,16 +243,27 @@ port = "b"
 device = "modem"
 ```
 
+**Slot cards** (Super Serial, Parallel, etc.):
+
+```toml
+[[connections]]
+slot = 2
+device = "modem"
+
+[[connections]]
+slot = 1
+device = "file"
+path = "printouts/session.bin"
+```
+
 | Property | Meaning |
 |----------|---------|
-| `port` | `"a"` or `"b"`. Defaults to `"a"` if omitted. |
-| `device` | `"none"`, `"file"`, `"echo"`, or `"modem"`. |
+| `port` | IIgs SCC only: `"a"` or `"b"`. Defaults to `"a"` if omitted. |
+| `slot` | Expansion-slot card (SSC, parallel, …). Use instead of `port`. |
+| `device` | `"none"`, `"file"`, `"echo"`, or `"modem"`. Parallel allows `"none"` / `"file"` only. |
 | `path` | Host file when `device = "file"`. Relative paths work like disk images. |
-| `slot` | Only for a serial card in an expansion slot (future). Omit for IIgs built-in SCC. |
 
-If you omit `[[connections]]` entirely, GS2 uses platform defaults (on IIgs, port A is typically a file device and port B a modem on native builds).
-
-Omit this section unless you care about serial setup — most configs do not need it.
+If you omit `[[connections]]` entirely, GS2 uses platform defaults (IIgs: file + modem on native builds; SSC → modem; parallel → file).
 
 ---
 

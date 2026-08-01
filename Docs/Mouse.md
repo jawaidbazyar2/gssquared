@@ -4,8 +4,8 @@ As the Apple II series progressed in time, mouse support became more and more in
 
 GS2 supports a Mouse in two ways:
 
-* Via Mouse Card on Apple //e
-* Via ADB (Apple Desktop Bus) mouse on Apple IIgs
+* Via **[Apple Mouse III](Cards_AppleMouse.md)** card on Apple //e (and similar)
+* Via **ADB** (Apple Desktop Bus) mouse on Apple IIgs
 
 ## Mouse Capture
 
@@ -29,3 +29,5 @@ When you boot a GS/OS image, or other application that starts the IIgs Event Man
 This provides seamless movement of the mouse cursor in and out of the IIgs desktop, making the mouse work much more naturally, and avoiding the need for Mouse Capture mode with IIgs desktop apps.
 
 You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.
+
+ROM 01 and ROM 03 IIgs platforms both use this tracking path.

@@ -39,3 +39,15 @@ MacOS
 | Option | Closed Apple | Option |
 | Shift | Shift | Shift |
 | Caps Lock | Caps Lock | Caps Lock |
+
+# IIgs keyboard layouts (including French)
+
+On the Apple IIgs, the **keyboard layout** is selected inside the emulated machine (IIgs Control Panel / keyboard language), not from a GSSquared host menu.
+
+GSSquared maps your host keys through the layout the guest has selected. **French (AZERTY)** is supported: when the IIgs is set to French, typing follows the French layout and character set expected by French GS/OS and apps.
+
+To use French:
+
+1. Boot an Apple IIgs (ROM 01 or ROM 03).
+2. In the guest IIgs Control Panel (or equivalent), set the keyboard / layout language to **French**.
+3. Type normally on your host keyboard; GSSquared applies the French ADB mapping.

@@ -14,10 +14,26 @@
 
 * [Storage & Disks](Storage.md)
 
+* [Host FST](HostFST.md) — share a host folder with GS/OS
+
 * [Joysticks](Joysticks.md)
 
-* [Serial/Modem](Serial_Modem.md)
+* [Serial & Parallel Connections](SerialConnections.md)
+
+* [Serial / Modem](Serial_Modem.md)
 
 * [Creating Custom System Configs](ConfigEditor.md)
 
 * [Writing Config Files Manually](ConfigFiles.md)
+
+## Cards
+
+Slot cards and how to use them:
+
+* [Uthernet II](Cards_UthernetII.md) — Ethernet / TCP/IP
+
+* [Super Serial Card](Cards_SuperSerial.md) — serial port + modem or file
+
+* [Apple Mouse III](Cards_AppleMouse.md) — mouse card for //e
+
+* [Parallel Interface](Cards_Parallel.md) — printer / parallel capture to file

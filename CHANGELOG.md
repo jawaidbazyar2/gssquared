@@ -1,5 +1,52 @@
 # Changelog
 
+## 2026-08-01
+
+Covers commits from 2026-07-10 through 2026-08-01.
+
+### Features
+
+- **Apple IIgs ROM 03.** New ROM 03 platform with 256K ROM bank `$FF` offset derived from ROM size, text page 2 shadowing, ROM 03 identity flags, and boot-hang workarounds. (`4fdb2ea`, `f6a9a5c`, `ad5f436`, `6fc73cd`, `605a2c3`)
+- **Debug Protocol / external debugger.** New `DebugProtocolServer` with a Python client library and examples: RESET, memory domains (`MEGAII`, `MAIN_RAW`, `MEGAII_RAW`), `bpd`/`bpi` breakpoints, `step_info` with count, trace-buffer access, Ensoniq introspection, and DiskII hooks (`.po` uses `vol=>0` for a2osx). (`948ff76`, `7fd2a99`, `e951d15`, `904ddd4`, `5b0d837`, `b92dccd`, `74b2ac2`, `65ea90d`, `709653d`)
+- **Uthernet II.** Slirp-based Ethernet card that works out of the box on macOS, Windows, and Linux; libslirp version pinned. (`a1b2a00`, `8498cc0`)
+- **Super Serial Card.** New SSC device with MOS6551 emulation. (`5e35081`)
+- **IIgs Host FST and drivers volume.** Initial Host FST port plus a built-in drivers volume (à la VMware) that toggles mount/unmount of the Host FST and host driver. (`51a34a3`, `99fbb44`, `e1f62d6`, `0556e3c`)
+- **Apple Mouse III.** New Mouse III card with PIA6520; Mouse II paths redirect to the III implementation. (`10ad57a`)
+- **Screenshot to disk.** Save Screen writes timestamped screenshot files (#134). (`1e53380`)
+- **Serial / parallel connection UI.** In-app UI for managing serial and parallel connections; `FileDevice` shows a toast with the filename on close; parallel card refactored onto `FileDevice` and a child thread. (`29b57cb`, `93d3d71`)
+- **DOC stereo and drive stereo.** Ensoniq DOC stereo output (mono copied to both channels when needed); drive sound effects stereo-ified. (`160721c`, `d2a0e05`)
+- **IIgs French keyboard.** French ADB keyboard layout. (`cacab7d`, `8d45c69`)
+- **`.gs2` UUID / per-config BRAM.** Auto-generate and persist a UUID on `.gs2` files; BRAM files are named by that UUID so configs keep distinct battery RAM. (`a8ad06b`)
+- **Custom configs in Prefs.** Custom configs live as `.gs2` files copied into Prefs on startup; Launch defaults there; empty recent-config list is seeded from distributed configs. (`bd3a75b`, `6f33a97`, `7315428`)
+
+### User Interface
+
+- **HUD and gamepad preferences (#139).** Menu toggles to hide HUD stats and drive icons, plus “disconnected when no gamepad.” (`78e309f`)
+- **System Select / config editor polish.** Launch button; hover hints for +/Edit; restyled new/edit controls; version display; website and donate menu links. (`6d52665`, `2c19e82`, `a734321`, `e1443a0`, `235b966`, `c057046`)
+- **Debugger UX.** Monitor command rewrite; scrollable debug window; buttons to toggle debug-module panes; colored shared 6502/65816 trace; GS-style `/` bank separator and 24-bit addresses; M/X width in disassembly. (`7f1e34d`, `ab94831`, `855c93b`, `b5528bb`, `1f67146`, `695f440`, `423811d`)
+- **File dialog paths.** Last open/save locations tracked in `SystemSettings` instead of `Paths`. (`17175bf`)
+
+### Bug Fixes
+
+- **CPU / IRQ.** IRQ takes 7 cycles (was 6) with the missing phantom read on all CPU types — fixes Mad Effects 2; IRQ-pending reevaluated on reset. (`6b91d9c`, `be5c869`)
+- **IIgs RAM sizing.** Correct sizing with 8MB memory expansion plus motherboard RAM (ROM 01 128K / ROM 03 1M). (`e0729c9`)
+- **IWM / floppy.** Correct drive-enable model, empty-drive sense, and LSS clocking (#137). (`3d4efff`)
+- **ADB / mouse.** ADB mouse cursor read from Event Manager bank globals (#135); ROM 03 mouse tracking fixed. (`d36c06c`, `90afdeb`)
+- **Game controller / Joyport.** Floating GC switch behavior when no pad is connected (#143); Joyport suspend timing after reset; multi-gamepad startup fix. (`d79be3c`, `0e60636`, `5bd804a`, `cf94661`)
+- **Ensoniq.** Round of DOC / SoundGlu fixes for misbehaving titles. (`6eefad5`)
+- **Video soft switches.** Fixes to pass vsync and vidmodes tests (II+ / IIe solid; some GS switches still tentative). (`829bd5e`, `0d95d93`)
+- **`.2mg` images.** Fixed offset error. (`ba91cf6`)
+- **Host FST.** Fixed use-after-free in upstream `host_fst.c`. (`5bd8570`)
+- **Trace / debugger.** Wrong effective address on `LDA [d,X]` fixed with an explicit R/W flag in the trace record; gamepad debug output no longer hardcodes `gps[0]`. (`9420cac`, `a359889`)
+
+### Internals
+
+- **BreakpointTable.** Dedicated class for breakpoint management in the debugger. (`16066ec`)
+- **Default slotting.** Clock included by default on Enhanced IIe for A2Desktop; unenhanced IIe description corrected (no clock). (`b693acb`, `c95348f`)
+- **Code cleanup / reuse.** Game-controller readability refactor; 6502/65816 trace sharing; misc dead-API and cleanup passes. (`cba9c84`, `1f67146`, `a73d3e3`, `80e02e1`)
+- **Test tooling.** Python scripts for Ensoniq regression titles; arrow scancodes for input coverage. (`5283908`, `82ddc93`)
+- **Docs / agent notes.** Host FST and driver docs, networking/SSC notes, expanded agent instructions. (`e1f62d6`, `d948aad`)
+
 ## 2026-05-19
 
 Covers commits from 2026-05-01 through 2026-05-19.

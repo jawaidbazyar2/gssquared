@@ -1,8 +1,9 @@
 # Menus
 
-GSSquared provides a top menu bar appropriate to your platform. A top menu bar for MacOS, an in-window menu bar for Windows and Linux.
+GSSquared provides a top menu bar appropriate to your platform: a top menu bar on macOS, an in-window menu bar on Windows and Linux.
 
 ### File
+  * Launch Config… (only when the machine is off)
   * New Disk Image...
     * 5.25 DOS 3.3
     * 5.25 ProDOS
@@ -17,6 +18,9 @@ GSSquared provides a top menu bar appropriate to your platform. A top menu bar f
   * Save As System
   * Mount Drivers
   * Save Screenshot
+  * Close Emulation (when a machine is running)
+
+**Launch Config…** picks a `.gs2` or `… Settings.txt` and boots it immediately (System Select only).
 
 New Disk Image creates a new disk image of the specified size and type. You will be prompted for a folder and filename to save the new image to.
 
@@ -26,9 +30,9 @@ Open System can be exercised when you're at the System Select screen ("Choose yo
 
 Save System / Save As System let you save the current system configuration. This does not include any machine state except what disk images are mounted.
 
-Mount Drivers is a checkable item that mounts or unmounts the built-in `/GS2.DRIVERS` volume on BazFast (write-protected). Grayed out when BazFast is not in the current machine. See [Storage & Disks](Storage.md#mount-drivers).
+**Mount Drivers** is a checkable item that mounts or unmounts the built-in `/GS2.DRIVERS` volume on BazFast (write-protected). Grayed out when BazFast is not in the current machine. Used to install Host FST into GS/OS — see [Host FST](HostFST.md).
 
-Save Screenshot writes the current display (with borders) to a PNG on your Desktop, named like `GS2 Screenshot YYYY-MM-DD HH.MM.SS.png`. Shortcut: Shift+PrintScreen. Only one screenshot write can be in progress at a time.
+**Save Screenshot** writes the current display (with borders) to a PNG on your Desktop, named like `GS2 Screenshot YYYY-MM-DD HH.MM.SS.png`. Shortcut: Shift+PrintScreen. Only one screenshot write can be in progress at a time.
 
 ### Edit
   * Copy Screen
@@ -62,9 +66,12 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
     * Gamepad (Normal Joystick)
     * Mouse (Normal Joystick)
     * Sirius / Atari Joyport
+    * Disconnected When No Gamepad
   * Modifier Keys
     * OA/Cmd = ALT; CA/Opt = Win
     * OA/Cmd = WIN; CA/Opt = ALT
+
+**Disconnected When No Gamepad** — when checked, paddle/button lines float as if no joystick were plugged in. When unchecked (default), an absent gamepad still reports a centered stick so software like Total Replay keeps joystick titles visible. See [Joysticks](Joysticks.md).
 
 ### Display
   * Monitor
@@ -73,16 +80,32 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
     * Monochrome - Green
     * Monochrome - Amber
     * Monochrome - White
-  * CRT Effects
-    * Scanlines
-    * etc
+  * HUD
+    * Stats
+    * Drives
+  * CRT Shader
   * Full Screen
   * Hover Enable / Disable
-* Sound
+
+**HUD → Stats** toggles the small performance/stats overlay (off by default).  
+**HUD → Drives** toggles the drive-activity strip at the bottom of the screen (on by default).  
+Both are useful when recording video and you want a clean picture. Preferences are remembered in app settings.
+
+### Sound
   * Sound Effects On/Off
   * Volume
-* Debug
+  * Audio Decorrelation (Mockingboard)
+
+Drive seek/activity sounds are stereo (drive 1 toward the left, drive 2 toward the right) when sound effects are on. On the IIgs, Ensoniq DOC output is stereo when the guest software uses stereo; mono titles are played on both speakers.
+
+### Debug
   * Show/Hide Debugger
   * Save Trace
   * Load Symbols
   * Save Symbols
+
+### Docs
+  * Online Documentation
+  * Donate
+
+**Online Documentation** opens the GSSquared user docs in your browser. **Donate** opens the project donation page.
