@@ -19,7 +19,7 @@
     
     
       
-        <title>ExternalDebugInterface - GSSquared Documentation</title>
+        <title>Ensoniq chip management issues - GSSquared Documentation</title>
       
     
     
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dsl-vs-api-clarifying-the-earlier-proposal" class="md-skip">
+        <a href="#ensoniq-chip-management-issues" class="md-skip">
           Skip to content
         </a>
       
@@ -104,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ExternalDebugInterface
+              Ensoniq chip management issues
             
           </span>
         </div>
@@ -2542,12 +2542,390 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interrupt-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interrupt Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Interrupt Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vector-hookup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vector hookup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dangerous-busy-waits-inside-the-irq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dangerous busy-waits inside the IRQ
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-streamed-instruments-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Streamed instruments (runtime)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#apple-iigs-memory-unusual-choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple IIgs Memory — Unusual Choices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Apple IIgs Memory — Unusual Choices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-pre-locking-banks-0-and-1-fallback-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Pre-locking banks 0 and 1 (fallback path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-song-data-in-a-separate-contiguous-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Song data in a separate contiguous block
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-full-zero-page-saverestore-around-ntp-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Full zero-page save/restore around NTP calls
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gssquared-bug-hypotheses-ranked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gssquared Bug Hypotheses (Ranked)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="gssquared Bug Hypotheses (Ranked)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-oscillator-31-timer-irq-stops-most-likely-for-repeating-then-freeze" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Oscillator 31 timer IRQ stops (most likely for “repeating then freeze”)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-irq-handler-stuck-in-doc-busy-wait-full-system-freeze" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. IRQ handler stuck in DOC busy-wait (full system freeze)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-stream-completion-irq-never-fires-for-streamed-songs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Stream completion IRQ never fires (for streamed songs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-e100cc-osc-identification-wrong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. $E100CC / osc identification wrong
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-bank-switching-during-stream_copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Bank switching during stream_copy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-1-execution-control-minimum-viable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 1: Execution control (minimum viable)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-2-breakpoints-and-watchpoints-for-the-hang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 2: Breakpoints and watchpoints (for the hang)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-3-input-automation-boot-navigate-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 3: Input automation (boot + navigate UI)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-4-condition-expression-engine-critical-for-hang-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 4: Condition / expression engine (critical for “hang” detection)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-5-ensoniq-sound-introspection-the-differentiator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 5: Ensoniq / sound introspection (the differentiator)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Layer 5: Ensoniq / sound introspection (the differentiator)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#5a-sound-system-state-snapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5a. Sound system state snapshot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5b-irq-trace-ring-buffer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5b. IRQ trace ring buffer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5c-doc-access-trace-optional-high-volume" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5c. DOC access trace (optional, high volume)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5d-break-on-sound-specific-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5d. Break on sound-specific events
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-6-symbols-and-program-awareness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 6: Symbols and program awareness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-7-events-push-not-poll" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 7: Events (push, not poll)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-8-recording-and-replay-optional-but-powerful" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 8: Recording and replay (optional but powerful)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#minimal-cli-surface-for-shell-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Minimal CLI surface (for shell agents)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#end-to-end-agent-workflow-senseiplay-hang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        End-to-end agent workflow (SenseiPlay hang)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-priority-if-building-incrementally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation priority (if building incrementally)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-i-explicitly-do-not-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What I explicitly do not need
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#dsl-vs-api-clarifying-the-earlier-proposal" class="md-nav__link">
@@ -2718,11 +3096,766 @@
   
 
 
-  <h1>ExternalDebugInterface</h1>
+<h1 id="ensoniq-chip-management-issues">Ensoniq chip management issues<a class="headerlink" href="#ensoniq-chip-management-issues" title="Permanent link">&para;</a></h1>
+<p><em>Exported on 7/1/2026 at 13:49:59 EDT from Cursor (3.9.16)</em></p>
+<hr />
+<p><strong>User</strong></p>
+<p>read code (*.s files) and identify how it manages the ensoniq chip in the apple iigs.</p>
+<p>How does it utilize interrupts?
+How does it time loading new data into the chip and its DOC RAM?
+how does it set up and manage Apple IIgs memory - is it doing anything unusual?</p>
+<p>I am trying to identify a potential bug in gssquared - this program works up to the point where you select a song; it loads the data file; it plays perhaps a quarter second or half second of audio, sometimes repeating a couple times, then hangs in a loop, perhaps waiting for an event to come that never comes.</p>
+<hr />
+<p><strong>Cursor</strong></p>
+<p>I'll search the assembly sources for Ensoniq, interrupt, and DOC RAM handling to map how audio is driven on the IIgs.</p>
+<p>Here is how SenseiPlay / NinjaTrackerPlus drives the IIgs Ensoniq DOC, and where a gssquared hang is most likely coming from.</p>
+<h2 id="architecture-overview">Architecture Overview<a class="headerlink" href="#architecture-overview" title="Permanent link">&para;</a></h2>
+<p>Audio is handled entirely by <strong>NinjaTrackerPlus</strong> (<code>ninjatrackerplus/ninjatrackerplus.s</code>), loaded into its own 64K bank at runtime. SenseiPlay (<code>src/sp.s</code>) only loads songs, calls <code>NTPprepare</code> / <code>NTPplay</code>, and polls the player from <code>PlayerLoop</code>. It does <strong>not</strong> touch the sound chip directly during playback.</p>
+<p>```947:962:src/sp.s
+StartMusic      mx    %00
+                ldx   BnkMODPtr
+                ldy   BnkMODPtr+2
+                lda   SPOPT_DOUBLE_CHANS    ; configurable (0=off/1=on)
+                jsr   _NTPprepare
+                bcc   :ok
+                ...
+:ok             lda   SPOPT_LOOP_SONG
+                eor   #%1                   ; it's reversed to NTPplay
+                jsr   _NTPplay</p>
+<pre><code>
+---
 
-<blockquote>
-<p><strong>Not normative.</strong> Implemented docs: <a href="../DebugProtocol/">DebugProtocol.md</a> (wire), <a href="../gs2debug/">gs2debug.md</a> (Python/agent API), <a href="../DebugClient/">DebugClient.md</a>. This file is historical brainstorming.</p>
-</blockquote>
+## Ensoniq / DOC Management
+
+NTP talks to the chip through **direct-page I/O**, not through GS/OS Sound Tools:
+
+| DP offset | Real address | Purpose |
+|-----------|--------------|---------|
+| `$3C` | `$C03C` / `$E1C03C` | Sound control |
+| `$3D` | `$C03D` | Sound data |
+| `$3E` | `$C03E` | Sound address |
+
+During prepare, stop, and every IRQ, NTP sets **DP = `$C000`** so `$003C–$003E` hit the classic Ensoniq ports.
+
+Three access modes:
+
+```179:194:ninjatrackerplus/ninjatrackerplus.s
+access_doc_registers    = *
+                        ldal irq_volume          ; system volume from $E100CA
+                        sta sound_control
+                        rts
+
+access_doc_ram          = *
+                        ldal irq_volume
+                        ora #%0110_0000          ; DOC RAM, auto-increment
+                        sta sound_control
+                        rts
+</code></pre>
+<p><strong>Prepare phase</strong> (<code>NTPprepare</code>):
+1. Copies non-streamed instrument samples into DOC RAM (<code>copy_instruments_to_doc</code>)
+2. Ensures DOC page 0 has non-zero data (needed by the timer oscillator)
+3. Builds per-track oscillator register tables
+4. Installs the sound interrupt handler
+5. Starts <strong>oscillator 31</strong> as a silent free-running timer</p>
+<p><strong>Play phase</strong>: the interrupt handler updates oscillators each tracker tick via <code>talk_to_doc</code>.</p>
+<p><strong>Stop phase</strong> (<code>NTPstop</code>): silences all used oscillators, stops osc 31, restores the original vector at <code>$E1002C</code>.</p>
+<hr />
+<h2 id="interrupt-usage">Interrupt Usage<a class="headerlink" href="#interrupt-usage" title="Permanent link">&para;</a></h2>
+<p>This is the core of playback timing.</p>
+<h3 id="vector-hookup">Vector hookup<a class="headerlink" href="#vector-hookup" title="Permanent link">&para;</a></h3>
+<p>NTP <strong>replaces the system sound interrupt pointer</strong> at <code>$E1002C</code>:</p>
+<p>```929:967:ninjatrackerplus/ninjatrackerplus.s
+setup_interrupt         = *
+                        ldal  sound_interrupt_ptr
+                        sta   backup_interrupt_ptr
+                        ...
+                        lda   #$5c
+                        stal  sound_interrupt_ptr      ; JMP long
+                        ...
+                        lda   #interrupt_handler
+                        stal  sound_interrupt_ptr+1
+                        ...
+                        lda   #2
+                        sta   oscillator_job_tbl+interrupt_oscillator
+                        ...
+interrupt_oscillator    =     31
+reference_freq          =     249                   ; ~50 Hz</p>
+<pre><code>
+Oscillator **31** fires periodic interrupts. Its job code is **2** → `tracker_interrupt` (the mod player tick).
+
+### IRQ dispatch
+
+On entry, the handler reads **`$E100CC`** (`osc_interrupt`) to see which oscillator(s) fired, then dispatches via `oscillator_job_tbl`:
+
+| Job | Handler | Role |
+|-----|---------|------|
+| 0 | noop | One-shot instruments |
+| 2 | `tracker_interrupt` | ~50 Hz tracker tick (rows, effects, register updates) |
+| 6 | `interrupt_stream` | Refill streamed sample half-buffer |
+| 8 | `interrupt_handler_instr` | Twin-osc swap (looped DOC-RAM samples) |
+| 10 | `interrupt_streamsound` | SFX streaming API |
+
+### Tracker tick timing
+
+```1542:1564:ninjatrackerplus/ninjatrackerplus.s
+tracker_interrupt       = *
+                        lda   playing
+                        beq   interrupt_handler_rts
+
+                        lda   timer
+                        beq   parse_tracks              ; new row when timer=0
+
+                        inc
+                        cmp   tempo
+                        blt   tracker_interrupt_1
+                        lda   #0
+tracker_interrupt_1     sta   timer
+                        ...
+                        jsr   handle_effects
+                        jmp   talk_to_doc
+</code></pre>
+<ul>
+<li>Default <strong>tempo = 6</strong> → one pattern row every 6 timer IRQs (~120 ms at 50 Hz)</li>
+<li>Speed effect <code>$20+</code> retunes osc 31 via <code>bpm_to_freq</code></li>
+<li>Speed effect <strong>0</strong> sets <code>pattern_jump = 6</code> → <code>stop_playing</code></li>
+</ul>
+<h3 id="dangerous-busy-waits-inside-the-irq">Dangerous busy-waits inside the IRQ<a class="headerlink" href="#dangerous-busy-waits-inside-the-irq" title="Permanent link">&para;</a></h3>
+<p>The handler spins on DOC hardware status:</p>
+<p>```1457:1466:ninjatrackerplus/ninjatrackerplus.s
+]loop                   lda   sound_control
+                        bmi   ]loop                     ; wait until DOC not busy</p>
+<pre><code>                    lda   #$e0
+                    sta   sound_address
+                    lda   sound_data                ; read pending IRQ flags
+                    ...
+                    bpl   interrupt_handler_loop    ; process more osc IRQs
+</code></pre>
+<pre><code>
+If gssquared never clears bit 7 on the control register, or never sets bit 7 on the `$E0` status read, the **CPU hangs inside the interrupt handler**. That matches “plays briefly, repeats, then freezes.”
+
+---
+
+## Loading Data Into DOC RAM
+
+Two paths:
+
+### 1. Static instruments (prepare time)
+
+Copied wholesale into DOC RAM during `NTPprepare`:
+
+```773:827:ninjatrackerplus/ninjatrackerplus.s
+copy_instruments_to_doc = *
+                        jsr setup_docram
+                        ...
+                        lda instrument_types,y
+                        and #%1000
+                        bne copy_instruments_1          ; streamed → skip copy
+                        ...
+copy_instrument         = *
+                        jsr access_doc_ram
+                        stz sound_address
+                        lda instrument_osc_a_ptr,y
+                        sta sound_address+1
+                        ; byte loop: read_instrument → sound_data
+</code></pre>
+<h3 id="2-streamed-instruments-runtime">2. Streamed instruments (runtime)<a class="headerlink" href="#2-streamed-instruments-runtime" title="Permanent link">&para;</a></h3>
+<p>Marked with type bit <code>$800</code>. Sample stays in <strong>main RAM</strong>; only 512-byte ping-pong buffers in DOC RAM are filled at play time:</p>
+<p>```2262:2278:ninjatrackerplus/ninjatrackerplus.s
+talk_to_doc_prepstream  = *
+                        ; set stream_instr_ptr from instrument in RAM
+                        jsr stream_copy                 ; first 512 bytes
+                        jmp stream_copy_no_init</p>
+<pre><code>
+On each stream oscillator interrupt, `stream_copy` writes **256 bytes** into the next half-buffer and toggles `stream_doc_page_offset`. Osc A runs in **free-run-with-interrupt** mode; osc B plays audibly:
+
+```1947:1957:ninjatrackerplus/ninjatrackerplus.s
+                        lda #%0000_1000                 ; free run + interrupt on osc A
+                        sta sound_data
+                        ...
+                        lda #6
+                        sta oscillator_job_tbl,x        ; stream refill job
+</code></pre>
+<p><code>stream_copy</code> also does <strong><code>PHB</code> / <code>PLB</code></strong> to switch to the sample’s bank before reading — bank switching must be correct in the emulator.</p>
+<hr />
+<h2 id="apple-iigs-memory-unusual-choices">Apple IIgs Memory — Unusual Choices<a class="headerlink" href="#apple-iigs-memory-unusual-choices" title="Permanent link">&para;</a></h2>
+<p>SenseiPlay does several things a typical GS/OS app would not:</p>
+<h3 id="1-pre-locking-banks-0-and-1-fallback-path">1. Pre-locking banks 0 and 1 (fallback path)<a class="headerlink" href="#1-pre-locking-banks-0-and-1-fallback-path" title="Permanent link">&para;</a></h3>
+<p>If <code>MMStartUp</code> fails, it grabs <strong>all of bank 0 and bank 1 from <code>$0800–$BFFF</code></strong> as locked, fixed, absolute handles before restarting the Memory Manager:</p>
+<p>```1129:1168:src/sp.s
+                _MTStartUp
+                ...
+                pea   $0800                 ; bank 0, $0800-$BFFF
+                _NewHandle
+                ...
+                pea   $0800                 ; bank 1, $0800-$BFFF
+                _NewHandle
+                ...
+                _MMStartUp                  ; retry MM</p>
+<pre><code>
+That reserves ~46 KB per bank for the app on tight 256K machines.
+
+### 2. NTP engine in a full bank
+
+`AllocOneBank` allocates an entire 64K block; the JSL stubs patch the bank byte:
+
+```1094:1108:src/sp.s
+PrepareNTP      jsr   AllocOneBank
+                sta   BnkNTP
+                sta   _NTPprepare+2         ; patch JSL bank byte
+                ...
+                PT_LoadFilenameToPtr 'ntpplayer';0
+</code></pre>
+<p>NTP is assembled at <code>$0F0000</code> but runs from whatever bank the allocator returns.</p>
+<h3 id="3-song-data-in-a-separate-contiguous-block">3. Song data in a separate contiguous block<a class="headerlink" href="#3-song-data-in-a-separate-contiguous-block" title="Permanent link">&para;</a></h3>
+<p>Songs are loaded via <code>AllocContiguousPageAlign</code> into their own handle (<code>BnkMODHnd</code>), then the pointer is passed to <code>NTPprepare</code>. NTP returns a pointer past the instrument headers so that RAM can be reused.</p>
+<h3 id="4-full-zero-page-saverestore-around-ntp-calls">4. Full zero-page save/restore around NTP calls<a class="headerlink" href="#4-full-zero-page-saverestore-around-ntp-calls" title="Permanent link">&para;</a></h3>
+<p>```876:893:src/sp.s
+SaveDP          ; backs up $00–$FE to _DPBAK
+RestoreDP       ; restores before returning to main loop</p>
+<pre><code>
+NTP sets **DP = `$C000`** internally; SenseiPlay protects its ZP-based ProDOS helpers.
+
+### 5. Bypasses the OS sound driver entirely
+
+No Sound Tool calls for playback. It overwrites `$E1002C` directly. On real hardware that works if nothing else owns sound; in an emulator, this must be wired to the same path real IRQs use.
+
+---
+
+## What SenseiPlay’s Main Loop Is “Waiting” For
+
+During playback, `PlayerLoop` is a **tight poll loop**, not an event-driven wait:
+
+```307:327:src/sp.s
+PlayerLoop      inc   SP_ISPLAYING
+:key_loop       lda   SP_ISPLAYING
+                bne   :cont
+                ...                             ; exit when playing=0
+:cont           jsr   ShowTrackPos              ; reads NTPgetsongpos → playing flag
+                jsr   ShowVUs / ShowGRVUs
+                jsr   CheckKeyPlayerActions
+                beq   :key_loop                 ; spin until key or song ends
+</code></pre>
+<p><code>SP_ISPLAYING</code> comes from NTP’s <code>playing</code> word (byte 0 of <code>songinfo</code>). If the <strong>tracker IRQ stops</strong> but <code>playing</code> stays 1, the UI keeps spinning forever with frozen pattern/position — that can look like “waiting for an event.”</p>
+<p>If <strong><code>playing</code> goes to 0</strong>, the loop exits cleanly via <code>__cleanup</code> → <code>_NTPstop</code>.</p>
+<hr />
+<h2 id="gssquared-bug-hypotheses-ranked">gssquared Bug Hypotheses (Ranked)<a class="headerlink" href="#gssquared-bug-hypotheses-ranked" title="Permanent link">&para;</a></h2>
+<p>Your symptom — <strong>~0.25–0.5 s of audio, sometimes repeating, then hang</strong> — fits these patterns well:</p>
+<h3 id="1-oscillator-31-timer-irq-stops-most-likely-for-repeating-then-freeze">1. Oscillator 31 timer IRQ stops (most likely for “repeating then freeze”)<a class="headerlink" href="#1-oscillator-31-timer-irq-stops-most-likely-for-repeating-then-freeze" title="Permanent link">&para;</a></h3>
+<ul>
+<li>First row plays (initial <code>timer=0</code> → <code>parse_tracks</code> → <code>talk_to_doc</code>)</li>
+<li>Timer IRQs stop arriving</li>
+<li>Sample oscillators keep looping their DOC buffers → <strong>short repeating snippet</strong></li>
+<li><code>playing</code> stays 1 → <strong><code>PlayerLoop</code> spins forever</strong></li>
+</ul>
+<p><strong>Check in gssquared:</strong> delivery of sound IRQs via <code>$E1002C</code>, osc 31 enable (<code>$E1</code> global enable write in <code>timer_sound_settings</code>), and free-run mode on osc 31.</p>
+<h3 id="2-irq-handler-stuck-in-doc-busy-wait-full-system-freeze">2. IRQ handler stuck in DOC busy-wait (full system freeze)<a class="headerlink" href="#2-irq-handler-stuck-in-doc-busy-wait-full-system-freeze" title="Permanent link">&para;</a></h3>
+<p>The <code>]loop / bmi ]loop</code> on <code>sound_control</code> bit 7, or the <code>$E0</code> status poll, never completes.</p>
+<p><strong>Check:</strong> DOC “busy” bit timing after register/RAM accesses; behavior of reads at address <code>$E0</code>.</p>
+<h3 id="3-stream-completion-irq-never-fires-for-streamed-songs">3. Stream completion IRQ never fires (for streamed songs)<a class="headerlink" href="#3-stream-completion-irq-never-fires-for-streamed-songs" title="Permanent link">&para;</a></h3>
+<p>If the song uses streamed samples (<code>instrument_types &amp; $800</code>), osc A should interrupt every 256 bytes to call <code>interrupt_stream</code>. If that IRQ never comes, you get one buffer worth of audio then silence/repeat while the main loop still spins.</p>
+<p><strong>Check:</strong> swap/free-run-with-interrupt modes, <code>$E100CC</code> osc identification, and whether stream osc interrupts are generated separately from osc 31.</p>
+<h3 id="4-e100cc-osc-identification-wrong">4. <code>$E100CC</code> / osc identification wrong<a class="headerlink" href="#4-e100cc-osc-identification-wrong" title="Permanent link">&para;</a></h3>
+<p>The handler masks <code>osc_interrupt</code> with <code>%00111110</code> and shifts to get the osc number. Wrong emulation → dispatch to wrong job → unpredictable stalls.</p>
+<h3 id="5-bank-switching-during-stream_copy">5. Bank switching during <code>stream_copy</code><a class="headerlink" href="#5-bank-switching-during-stream_copy" title="Permanent link">&para;</a></h3>
+<p>```3717:3719:ninjatrackerplus/ninjatrackerplus.s
+                        lda   stream_instr_ptr_hi,y
+                        pha
+                        plb                         ; switch to sample bank</p>
+<pre><code>
+Wrong `PHB`/`PLB` behavior could corrupt streaming after the first chunk.
+
+---
+
+## Suggested gssquared Debug Steps
+
+1. **Breakpoint on `interrupt_handler`** (`NTP bank + offset of `interrupt_handler`) — does it keep firing after ~0.5 s?
+2. **Log which osc triggered** each IRQ — expect regular osc **31** ticks plus occasional stream osc hits.
+3. **Watch `$E1002C`** — confirm the JMP long to NTP’s handler is installed and not overwritten.
+4. **Inspect `playing` at `$C000+` offset in the NTP bank** (or via `NTPgetsongpos`) when hung — if still 1, tracker tick stopped; if 0, SenseiPlay should exit (different bug).
+5. **Try a song with only small DOC-RAM instruments** vs one with large streamed samples — narrows issue #1 vs #3.
+6. **Compare with KEGS/ActiveGS** on the same `.2mg` — if those work, diff Ensoniq IRQ and DOC status behavior.
+
+The highest-value fix area in gssquared is almost certainly **Ensoniq interrupt delivery and DOC status register semantics**, not SenseiPlay’s ProDOS memory management. The brief-audio-then-repeat pattern is classic “music voices still looping, but the 50 Hz tracker IRQ died.”
+
+If you want, I can help trace a specific hung state (register dump / which song file) or map exact runtime addresses once you know which bank `BnkNTP` landed in under gssquared.
+
+---
+
+**User**
+
+I want you to be able to boot, execute senseiplay, and interrogate gssquared automatically.
+
+You can already specify an image to load and boot to on the gssquared CLI.
+what interface would you need to be able to directly, interactively debug this application in GS2. be specific
+
+---
+
+**Cursor**
+
+I'll look for any existing gssquared integration in the repo and what CLI/debug hooks it exposes today.
+
+
+---
+
+**User**
+
+there is no external debug interface currently. I am asking you to devise one
+
+---
+
+**Cursor**
+
+Here is a concrete debug interface design for GS2, aimed at letting an agent (or script) boot SenseiPlay, drive the UI, and diagnose the Ensoniq/IRQ hang without a human at the keyboard.
+
+---
+
+## Design goal
+
+**Machine-first, human-second.** Every operation must be callable from CLI or a socket, return structured JSON, and support scripted “boot → play song → watch these addresses → break on hang.”
+
+Recommended transport: **line-delimited JSON-RPC 2.0** on a Unix domain socket (or TCP port), started with:
+
+```bash
+gssquared --image senseiplay.2mg --debug-server /tmp/gs2.sock
+# or
+gssquared --image senseiplay.2mg --debug-server 127.0.0.1:8765
+</code></pre>
+<p>The emulator runs the main loop; a lightweight debug thread accepts requests and pauses the CPU only when needed (or uses lock-free reads for safe “peek” operations).</p>
+<hr />
+<h2 id="layer-1-execution-control-minimum-viable">Layer 1: Execution control (minimum viable)<a class="headerlink" href="#layer-1-execution-control-minimum-viable" title="Permanent link">&para;</a></h2>
+<p>These are required before anything else works.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run</code></td>
+<td>Continue after pause</td>
+</tr>
+<tr>
+<td><code>pause</code></td>
+<td>Stop at next instruction boundary</td>
+</tr>
+<tr>
+<td><code>step</code> <code>{ "count": 1 }</code></td>
+<td>Single-step 65816</td>
+</tr>
+<tr>
+<td><code>step_over</code></td>
+<td>Step, skip one <code>JSL</code>/<code>JSR</code></td>
+</tr>
+<tr>
+<td><code>reset</code> <code>{ "hard": true }</code></td>
+<td>Power-on reset</td>
+</tr>
+<tr>
+<td><code>get_state</code></td>
+<td>Full machine snapshot</td>
+</tr>
+<tr>
+<td><code>set_registers</code> / <code>get_registers</code></td>
+<td>A,X,Y,S,DP,P,DBR,PBK,PC (24-bit)</td>
+</tr>
+<tr>
+<td><code>read_memory</code> <code>{ "addr": "00/2000", "len": 256 }</code></td>
+<td>Bank/offset hex</td>
+</tr>
+<tr>
+<td><code>write_memory</code></td>
+<td>Patch RAM</td>
+</tr>
+<tr>
+<td><code>disassemble</code> <code>{ "addr": "00/2000", "count": 20 }</code></td>
+<td>Merlin-ish syntax preferred</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Address format:</strong> <code>"bb/oooo"</code> (bank byte + 16-bit offset), e.g. <code>"0F/0000"</code> for NTP bank base. Also accept <code>"E1002C"</code> for direct 24-bit tool/global addresses.</p>
+<p><strong><code>get_state</code> response must include:</strong></p>
+<pre><code class="language-json">{
+  &quot;running&quot;: false,
+  &quot;paused_reason&quot;: &quot;breakpoint&quot;,
+  &quot;registers&quot;: { &quot;pc&quot;: &quot;00/2000&quot;, &quot;a&quot;: 0, &quot;x&quot;: 0, &quot;y&quot;: 0, &quot;dp&quot;: 0, &quot;p&quot;: 0x28, &quot;b&quot;: 0, &quot;k&quot;: 0 },
+  &quot;cycles&quot;: 12345678,
+  &quot;irq_pending&quot;: false,
+  &quot;in_irq&quot;: false,
+  &quot;irq_vector&quot;: &quot;E1002C&quot;
+}
+</code></pre>
+<p>Without this, nothing else is usable.</p>
+<hr />
+<h2 id="layer-2-breakpoints-and-watchpoints-for-the-hang">Layer 2: Breakpoints and watchpoints (for the hang)<a class="headerlink" href="#layer-2-breakpoints-and-watchpoints-for-the-hang" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>break_set</code> <code>{ "addr": "bb/oooo", "id": "ntp_irq" }</code></td>
+<td>PC breakpoint</td>
+</tr>
+<tr>
+<td><code>break_clear</code></td>
+<td>Remove</td>
+</tr>
+<tr>
+<td><code>watch_set</code> <code>{ "addr": "E1002C", "len": 4, "on": "write" }</code></td>
+<td>Catch vector overwrite</td>
+</tr>
+<tr>
+<td><code>watch_set</code> <code>{ "addr": "C03C", "len": 3, "on": "read_write" }</code></td>
+<td>DOC access trace</td>
+</tr>
+<tr>
+<td><code>break_on_irq</code> <code>{ "vector": "sound", "enabled": true }</code></td>
+<td>Break when sound IRQ taken</td>
+</tr>
+<tr>
+<td><code>break_on_condition</code></td>
+<td>Expression-based (see Layer 4)</td>
+</tr>
+</tbody>
+</table>
+<p>For SenseiPlay specifically, you want to break on:</p>
+<ol>
+<li><strong>Sound IRQ entry</strong> (after vector dispatch to NTP’s <code>interrupt_handler</code>)</li>
+<li><strong>Infinite loop sites</strong> — e.g. PC stuck in NTP’s <code>]loop</code> busy-wait on <code>sound_control</code></li>
+<li><strong>Write to <code>$E1002C</code></strong> — something restoring the OS vector mid-play</li>
+</ol>
+<hr />
+<h2 id="layer-3-input-automation-boot-navigate-ui">Layer 3: Input automation (boot + navigate UI)<a class="headerlink" href="#layer-3-input-automation-boot-navigate-ui" title="Permanent link">&para;</a></h2>
+<p>SenseiPlay is ProDOS 8, text UI, keyboard-driven. The agent must not rely on GUI clicks.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>key_inject</code> <code>{ "key": "RETURN", "modifiers": [] }</code></td>
+<td>One-shot key</td>
+</tr>
+<tr>
+<td><code>key_sequence</code> <code>{ "keys": ["DOWN","DOWN","RETURN"], "delay_ms": 100 }</code></td>
+<td>Menu navigation</td>
+</tr>
+<tr>
+<td><code>type_string</code> <code>{ "text": "/senseiplay/songs\\n" }</code></td>
+<td>If BASIC/shell ever needed</td>
+</tr>
+<tr>
+<td><code>wait_for_text</code> <code>{ "addr": "00/0400", "len": 1024, "contains": "Loading" }</code></td>
+<td>Screen scrape main/aux text</td>
+</tr>
+<tr>
+<td><code>wait_idle</code> <code>{ "cycles": 1000000 }</code></td>
+<td>Deterministic delay</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Screen read:</strong></p>
+<pre><code class="language-json">&quot;read_text_screen&quot;: {
+  &quot;page&quot;: 0,
+  &quot;row&quot;: 0, &quot;col&quot;: 0,
+  &quot;width&quot;: 80, &quot;height&quot;: 24
+}
+</code></pre>
+<p>Returns raw Apple text (high bit set) or ASCII-normalized.</p>
+<p><strong>Boot script target for SenseiPlay:</strong></p>
+<pre><code class="language-json">{ &quot;method&quot;: &quot;script_run&quot;, &quot;params&quot;: {
+  &quot;steps&quot;: [
+    { &quot;wait_cycles&quot;: 500000000 },
+    { &quot;wait_text&quot;: { &quot;contains&quot;: &quot;Sensei&quot; } },
+    { &quot;key&quot;: &quot;DOWN&quot; },
+    { &quot;key&quot;: &quot;RETURN&quot; },
+    { &quot;wait_text&quot;: { &quot;contains&quot;: &quot;Loading&quot; } },
+    { &quot;wait_ms&quot;: 2000 },
+    { &quot;pause&quot;: true }
+  ]
+}}
+</code></pre>
+<hr />
+<h2 id="layer-4-condition-expression-engine-critical-for-hang-detection">Layer 4: Condition / expression engine (critical for “hang” detection)<a class="headerlink" href="#layer-4-condition-expression-engine-critical-for-hang-detection" title="Permanent link">&para;</a></h2>
+<p>Hang detection cannot rely on the user noticing silence. The interface needs <strong>predicates over machine state</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>eval</code> <code>{ "expr": "read8('C03C') &amp; 0x80" }</code></td>
+<td>DOC busy bit</td>
+</tr>
+<tr>
+<td><code>wait_until</code> <code>{ "expr": "read8('E1002C') == 0x5C", "timeout_ms": 5000 }</code></td>
+<td>Vector installed</td>
+</tr>
+<tr>
+<td><code>wait_stuck</code> <code>{ "pc_range": ["bb/1457","bb/1466"], "cycles": 100000 }</code></td>
+<td>Spin in IRQ busy-wait</td>
+</tr>
+<tr>
+<td><code>wait_no_progress</code> <code>{ "watch": "bb/songinfo+0", "timeout_ms": 500 }</code></td>
+<td><code>playing</code> unchanged, PC in PlayerLoop</td>
+</tr>
+</tbody>
+</table>
+<p>Expression language (minimal):
+- <code>read8(addr)</code>, <code>read16(addr)</code>, <code>read24(addr)</code>
+- <code>pc()</code>, <code>cycles()</code>, <code>in_irq()</code>
+- <code>reg('a')</code>, <code>reg('dp')</code>
+- Comparisons, <code>&amp;&amp;</code>, <code>||</code></p>
+<p>For SenseiPlay hang:</p>
+<pre><code class="language-json">&quot;wait_stuck&quot;: {
+  &quot;expr&quot;: &quot;pc() &gt;= 'NN/1457' &amp;&amp; pc() &lt;= 'NN/1466' &amp;&amp; (read8('C03C') &amp; 0x80)&quot;,
+  &quot;min_consecutive_cycles&quot;: 50000
+}
+</code></pre>
+<p>(where <code>NN</code> is the runtime NTP bank from <code>BnkNTP</code>)</p>
+<hr />
+<h2 id="layer-5-ensoniq-sound-introspection-the-differentiator">Layer 5: Ensoniq / sound introspection (the differentiator)<a class="headerlink" href="#layer-5-ensoniq-sound-introspection-the-differentiator" title="Permanent link">&para;</a></h2>
+<p>Generic CPU debug is not enough. The bug is almost certainly <strong>IRQ + DOC</strong>. GS2 needs first-class sound debug hooks:</p>
+<h3 id="5a-sound-system-state-snapshot">5a. Sound system state snapshot<a class="headerlink" href="#5a-sound-system-state-snapshot" title="Permanent link">&para;</a></h3>
+<pre><code class="language-json">&quot;sound_get_state&quot;: {}
+</code></pre>
+<p>Response:</p>
+<pre><code class="language-json">{
+  &quot;irq_vector&quot;: { &quot;addr&quot;: &quot;E1002C&quot;, &quot;bytes&quot;: [&quot;5C&quot;, &quot;xx&quot;, &quot;xx&quot;, &quot;xx&quot;] },
+  &quot;irq_vector_target&quot;: &quot;0F/1420&quot;,
+  &quot;osc_interrupt_reg&quot;: &quot;E100CC&quot;,
+  &quot;last_irq_osc&quot;: 31,
+  &quot;last_irq_pc&quot;: &quot;0F/1420&quot;,
+  &quot;irq_count&quot;: { &quot;total&quot;: 412, &quot;osc31&quot;: 380, &quot;osc_stream&quot;: 32 },
+  &quot;oscillators&quot;: [
+    {
+      &quot;num&quot;: 31,
+      &quot;enabled&quot;: true,
+      &quot;mode&quot;: &quot;free_run&quot;,
+      &quot;freq&quot;: 249,
+      &quot;volume&quot;: 0,
+      &quot;job&quot;: 2,
+      &quot;wavetable_ptr&quot;: 0,
+      &quot;wavetable_size&quot;: 256
+    }
+  ],
+  &quot;doc_busy&quot;: true,
+  &quot;doc_control&quot;: &quot;0xCA&quot;,
+  &quot;doc_last_access&quot;: { &quot;type&quot;: &quot;register&quot;, &quot;addr&quot;: &quot;C03E&quot;, &quot;cycle&quot;: 12345670 }
+}
+</code></pre>
+<h3 id="5b-irq-trace-ring-buffer">5b. IRQ trace ring buffer<a class="headerlink" href="#5b-irq-trace-ring-buffer" title="Permanent link">&para;</a></h3>
+<pre><code class="language-json">&quot;trace_irq&quot;: { &quot;enable&quot;: true, &quot;max_entries&quot;: 1000 }
+&quot;trace_irq_get&quot;: {}
+</code></pre>
+<p>Each entry:</p>
+<pre><code class="language-json">{
+  &quot;cycle&quot;: 12345600,
+  &quot;osc&quot;: 31,
+  &quot;vector&quot;: &quot;sound&quot;,
+  &quot;handler_entry&quot;: &quot;0F/1420&quot;,
+  &quot;handler_exit_cycle&quot;: 12345680,
+  &quot;doc_busy_waits&quot;: 3
+}
+</code></pre>
+<p><strong>Agent use:</strong> after playing a song 2 seconds, if <code>osc31</code> count stops increasing but <code>osc_stream</code> or sample osc keeps firing → timer IRQ died.</p>
+<h3 id="5c-doc-access-trace-optional-high-volume">5c. DOC access trace (optional, high volume)<a class="headerlink" href="#5c-doc-access-trace-optional-high-volume" title="Permanent link">&para;</a></h3>
+<pre><code class="language-json">&quot;trace_doc&quot;: { &quot;enable&quot;: true, &quot;filter&quot;: &quot;register_only&quot; }
+</code></pre>
+<p>Log reads/writes to <code>$C03C–$C03E</code> (and <code>$E1C03x</code> if mapped separately), with cycle timestamp and PC.</p>
+<h3 id="5d-break-on-sound-specific-events">5d. Break on sound-specific events<a class="headerlink" href="#5d-break-on-sound-specific-events" title="Permanent link">&para;</a></h3>
+<pre><code class="language-json">&quot;break_on_sound&quot;: {
+  &quot;event&quot;: &quot;osc_interrupt&quot;,
+  &quot;osc&quot;: 31
+}
+</code></pre>
+<p>Events enum:
+- <code>sound_irq_taken</code>
+- <code>sound_irq_vector_called</code>
+- <code>doc_busy_timeout</code> — <strong>DOC busy bit set &gt; N cycles at same PC</strong> (automatic hang detector)
+- <code>osc_buffer_complete</code> — stream half-buffer interrupt
+- <code>osc31_tick</code> — tracker clock</p>
+<p>The <strong><code>doc_busy_timeout</code></strong> event is the single most valuable automation hook for this bug.</p>
+<hr />
+<h2 id="layer-6-symbols-and-program-awareness">Layer 6: Symbols and program awareness<a class="headerlink" href="#layer-6-symbols-and-program-awareness" title="Permanent link">&para;</a></h2>
+<p>SenseiPlay is Merlin-assembled. GS2 should load debug info without manual address math.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>symbols_load</code> <code>{ "path": "sensei.system.sym", "base": "00/2000" }</code></td>
+<td>Merlin/OBJ symbols</td>
+</tr>
+<tr>
+<td><code>symbols_load</code> <code>{ "path": "ntpplayer.sym", "base": "auto:bank_handle" }</code></td>
+<td>Bank-relative NTP</td>
+</tr>
+<tr>
+<td><code>resolve</code> <code>{ "name": "PlayerLoop" }</code> → <code>"00/0133"</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>break_set</code> <code>{ "symbol": "interrupt_handler" }</code></td>
+<td>Symbolic breakpoints</td>
+</tr>
+</tbody>
+</table>
+<p>Minimum symbol sources:
+- Merlin <code>.sym</code> / listing exports
+- Optional: JSON map checked into repo:</p>
+<pre><code class="language-json">{
+  &quot;sensei.system&quot;: { &quot;base&quot;: &quot;00/2000&quot;, &quot;symbols&quot;: { &quot;PlayerLoop&quot;: &quot;0x0307&quot;, &quot;StartMusic&quot;: &quot;0x03B4&quot; }},
+  &quot;ntpplayer&quot;:     { &quot;base&quot;: &quot;bank:BnkNTP&quot;, &quot;symbols&quot;: { &quot;interrupt_handler&quot;: &quot;0x1420&quot;, &quot;playing&quot;: &quot;0x4195&quot; }}
+}
+</code></pre>
+<p>Runtime <strong><code>BnkNTP</code></strong> is only known after <code>PrepareNTP</code>; the agent resolves it via:</p>
+<pre><code class="language-json">&quot;read_memory&quot;: { &quot;addr&quot;: &quot;00/xxxx&quot;, &quot;len&quot;: 2 }  // BnkNTP variable in sp.s
+</code></pre>
+<p>or <code>symbols_load</code> with <code>"base": "read16('00/BnkNTP')&lt;&lt;8"</code>.</p>
+<hr />
+<h2 id="layer-7-events-push-not-poll">Layer 7: Events (push, not poll)<a class="headerlink" href="#layer-7-events-push-not-poll" title="Permanent link">&para;</a></h2>
+<p>Long waits should be event-driven. Client subscribes once:</p>
+<pre><code class="language-json">{ &quot;method&quot;: &quot;subscribe&quot;, &quot;params&quot;: { &quot;events&quot;: [&quot;pause&quot;, &quot;break&quot;, &quot;irq&quot;, &quot;doc_busy_timeout&quot;, &quot;text_match&quot;] }}
+</code></pre>
+<p>Server pushes:</p>
+<pre><code class="language-json">{ &quot;event&quot;: &quot;doc_busy_timeout&quot;, &quot;data&quot;: { &quot;pc&quot;: &quot;0F/1457&quot;, &quot;cycles_stuck&quot;: 65536, &quot;doc_control&quot;: &quot;0xCA&quot; }}
+{ &quot;event&quot;: &quot;irq&quot;, &quot;data&quot;: { &quot;osc&quot;: 31, &quot;count_since_boot&quot;: 401 }}
+{ &quot;event&quot;: &quot;pause&quot;, &quot;data&quot;: { &quot;reason&quot;: &quot;breakpoint&quot;, &quot;id&quot;: &quot;ntp_irq&quot; }}
+</code></pre>
+<p>This lets an agent run <code>run</code>, subscribe, inject RETURN to pick a song, and react when <code>doc_busy_timeout</code> or <code>osc31</code> stall fires — no polling loop in the client.</p>
+<hr />
+<h2 id="layer-8-recording-and-replay-optional-but-powerful">Layer 8: Recording and replay (optional but powerful)<a class="headerlink" href="#layer-8-recording-and-replay-optional-but-powerful" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>record_start</code> <code>{ "include": ["irq", "doc", "keys"] }</code></td>
+<td>Capture session</td>
+</tr>
+<tr>
+<td><code>record_stop</code> → file</td>
+<td>Share reproducer</td>
+</tr>
+<tr>
+<td><code>replay</code> <code>{ "file": "senseiplay_hang.gs2trace" }</code></td>
+<td>Deterministic repro</td>
+</tr>
+</tbody>
+</table>
+<p>Useful for filing GS2 bugs with a 50 KB trace instead of “sometimes hangs.”</p>
+<hr />
+<h2 id="minimal-cli-surface-for-shell-agents">Minimal CLI surface (for shell agents)<a class="headerlink" href="#minimal-cli-surface-for-shell-agents" title="Permanent link">&para;</a></h2>
+<p>Even with JSON-RPC, expose thin CLI wrappers:</p>
+<pre><code class="language-bash">gs2ctl --socket /tmp/gs2.sock pause
+gs2ctl --socket /tmp/gs2.sock read E1002C 4
+gs2ctl --socket /tmp/gs2.sock break 0F/1420
+gs2ctl --socket /tmp/gs2.sock key RETURN
+gs2ctl --socket /tmp/gs2.sock sound-state
+gs2ctl --socket /tmp/gs2.sock wait-until 'irq_count.osc31 &gt; 100' --timeout 5
+gs2ctl --socket /tmp/gs2.sock run-script boot_senseiplay_play_first.json
+</code></pre>
+<hr />
+<h2 id="end-to-end-agent-workflow-senseiplay-hang">End-to-end agent workflow (SenseiPlay hang)<a class="headerlink" href="#end-to-end-agent-workflow-senseiplay-hang" title="Permanent link">&para;</a></h2>
+<p>A complete automated interrogation script would look like:</p>
+<pre><code class="language-json">[
+  { &quot;reset&quot;: {} },
+  { &quot;run&quot;: {} },
+  { &quot;wait_text&quot;: { &quot;contains&quot;: &quot;Sensei&quot; } },
+  { &quot;symbols_load&quot;: { &quot;file&quot;: &quot;debug/senseiplay.json&quot; } },
+  { &quot;trace_irq&quot;: { &quot;enable&quot;: true } },
+  { &quot;break_on_sound&quot;: { &quot;event&quot;: &quot;doc_busy_timeout&quot;, &quot;threshold_cycles&quot;: 10000 } },
+  { &quot;key_sequence&quot;: { &quot;keys&quot;: [&quot;RETURN&quot;], &quot;delay_ms&quot;: 200 } },
+  { &quot;wait_text&quot;: { &quot;contains&quot;: &quot;Loading&quot; } },
+  { &quot;wait_until&quot;: { &quot;expr&quot;: &quot;irq_count('osc31') &gt; 10&quot;, &quot;timeout_ms&quot;: 3000 } },
+  { &quot;wait_ms&quot;: 2000 },
+  { &quot;sound_get_state&quot;: {} },
+  { &quot;get_registers&quot;: {} },
+  { &quot;trace_irq_get&quot;: {} },
+  { &quot;read_memory&quot;: { &quot;addr&quot;: &quot;sym:playing&quot;, &quot;len&quot;: 2 } },
+  { &quot;read_memory&quot;: { &quot;addr&quot;: &quot;E1002C&quot;, &quot;len&quot;: 4 } }
+]
+</code></pre>
+<p><strong>Interpret results:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Observation</th>
+<th>Likely cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>osc31</code> count frozen, sample osc still looping</td>
+<td>Timer IRQ / vector dispatch broken</td>
+</tr>
+<tr>
+<td>PC stuck at NTP <code>interrupt_handler</code> busy-wait, <code>doc_busy</code> always true</td>
+<td>DOC status bit 7 never clears</td>
+</tr>
+<tr>
+<td><code>$E1002C</code> no longer JMP to NTP bank</td>
+<td>Vector restored or never installed</td>
+</tr>
+<tr>
+<td><code>playing==1</code>, PC in <code>PlayerLoop</code> <code>:key_loop</code></td>
+<td>Tracker stopped, UI spin (matches user report)</td>
+</tr>
+<tr>
+<td><code>playing==0</code></td>
+<td>Song ended or speed-0 effect; different path</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="implementation-priority-if-building-incrementally">Implementation priority (if building incrementally)<a class="headerlink" href="#implementation-priority-if-building-incrementally" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>JSON-RPC + pause/run/step + memory/registers</strong> — 1–2 days, unlocks everything else  </li>
+<li><strong>Key inject + text screen read</strong> — boot SenseiPlay unattended  </li>
+<li><strong><code>sound_get_state</code> + IRQ trace + <code>break_on_sound: doc_busy_timeout</code></strong> — targets this bug directly  </li>
+<li><strong>Expressions + <code>wait_until</code> / <code>wait_stuck</code></strong> — automated hang detection  </li>
+<li><strong>Symbols + scripts</strong> — ergonomics  </li>
+<li><strong>DOC trace + record/replay</strong> — deep dives and bug reports  </li>
+</ol>
+<hr />
+<h2 id="what-i-explicitly-do-not-need">What I explicitly do <em>not</em> need<a class="headerlink" href="#what-i-explicitly-do-not-need" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Full GUI debugger parity on day one  </li>
+<li>Source-level 65816 debugging (nice later)  </li>
+<li>GS/OS toolbox call tracing (SenseiPlay is ProDOS 8 + direct DOC access)  </li>
+<li>Network remote desktop — socket RPC is enough  </li>
+</ul>
+<hr />
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>The interface GS2 needs is a <strong>scriptable debug server</strong> with three properties ordinary emulators lack:</p>
+<ol>
+<li><strong>Deterministic automation</strong> — boot, keys, text wait, no human.  </li>
+<li><strong>Sound-native introspection</strong> — osc IRQ counts, <code>$E1002C</code>, DOC busy, stream buffer events.  </li>
+<li><strong>Hang as a first-class event</strong> — <code>doc_busy_timeout</code>, <code>wait_stuck</code>, <code>osc31_stall</code> rather than “CPU still running.”</li>
+</ol>
+<p>With Layers 1–3 + 5a/5b/5d, I could boot SenseiPlay on every CI run, play the first song, and produce a structured report pointing at vector dispatch, DOC busy-wait, or stream IRQ failure within seconds of the hang.</p>
+<p>If you want a next step in-repo, I can draft a <code>debug/senseiplay.gs2script</code> plus a <code>debug/symbols.json</code> keyed to the Merlin labels from <code>sp.s</code> and <code>ninjatrackerplus.s</code> so the protocol has concrete addresses to target on day one.</p>
+<hr />
 <p><strong>User</strong></p>
 <p>I'm wondering, MAME offers Lua for external scriptable debug access. what you're proposing above looks like a DSL (domain specific language), which I think I'd like to avoid. I am not necessarily a big fan of LUA though, so I'm wondering if there are some other options that would work well. </p>
 <p>I envision the architecture being something like this:

@@ -1395,6 +1395,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Uthernet II">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#contiki-enhanced-iie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contiki (Enhanced IIe)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2673,6 +2690,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Uthernet II">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#contiki-enhanced-iie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contiki (Enhanced IIe)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2747,13 +2781,35 @@
 <li>FujiNet</li>
 </ul>
 <h2 id="uthernet-ii">Uthernet II<a class="headerlink" href="#uthernet-ii" title="Permanent link">&para;</a></h2>
-<p>There is a reference that this card has a chip with a built-in TCP stack, and the Uthernet manual discusses programming Socket Registers etc. However you can also do "mac raw sockets" so it's unclear if application software uses the hw TCP or its own.</p>
-<p>Assuming applications use BOTH, then we have to emulate both a raw packet interface as well as TCP and UDP sockets. While there are a fair number of moving parts, the chip's interface seems rational and clean and it shouldn't be hard to deliver a correct solution.</p>
+<p>Selectable slot card (<code>card = "uthernet2"</code>) on Apple IIe and Apple IIgs platforms (slots 1–7).</p>
+<p>Emulates the W5100-based Uthernet II (register model aligned with AppleWin):</p>
+<ul>
+<li><strong>MACRAW / IPRAW:</strong> guest ethernet frames go through <a href="https://gitlab.com/qemu-project/libslirp/">libslirp</a> (user-space NAT). No pcap/npcap, no root, works on macOS / Linux / Windows.</li>
+<li><strong>TCP / UDP offload:</strong> host BSD sockets (non-blocking), on a dedicated worker thread so the emulator never blocks on network I/O.</li>
+<li>Slirp virtual <code>/24</code> is chosen at init so it does <strong>not</strong> overlap any host IPv4 interface (prefers <code>10.0.2.0/24</code> when free). Guest DHCP (MACRAW stacks such as Marinetti / IP65) sees that subnet; DNS is slirp’s <code>vnameserver</code> (typically <code>.3</code>).</li>
+</ul>
+<p><strong>Limits (slirp NAT):</strong> no LAN broadcast / SMB discovery on the real network; guest is double-NAT’d relative to the host’s LAN. HTTP browsing works. FTP is mixed: <strong>SAFE2</strong> (latest) works in <strong>PASV</strong> mode; active FTP and some older clients still fail under double NAT. A future pcap backend could be added if needed.</p>
+<p>libslirp is vendored under <code>vendored/libslirp</code> and built with CMake plus a small in-tree <code>glib_compat</code> shim (no system GLib dependency).</p>
+<h3 id="contiki-enhanced-iie">Contiki (Enhanced IIe)<a class="headerlink" href="#contiki-enhanced-iie" title="Permanent link">&para;</a></h3>
+<p>Contiki does <strong>not</strong> auto-detect the card. Stock <code>contiki.cfg</code> ships pointed at the old Uthernet (<code>cs8900a.eth</code> at a bogus <code>$0003</code>). On each Contiki disk, run <strong><code>ETHCONFI.SYSTEM</code></strong> once:</p>
+<ol>
+<li>Choose <strong>Uthernet II</strong> (driver <code>w5100.eth</code>, I/O base <code>$C0x4</code> where <code>x = 8 + slot</code>).</li>
+<li>Choose the <strong>same slot</strong> as in your <code>.gs2</code> config (e.g. slot 3 → <code>$C0B4</code>).</li>
+</ol>
+<p>Then run <strong><code>IPCONFIG.SYSTEM</code></strong> (manual IPs or DHCP). Contiki probes the W5100 Retry Time Register (<code>$0017</code> = <code>$07D0</code>); a slot mismatch shows as <code>w5100.eth: No hardware</code>.</p>
+<p>With DHCP, Contiki should receive an address from slirp’s pool (typically starting at <code>.15</code> on the auto-picked <code>/24</code>, gateway <code>.2</code>, DNS <code>.3</code>).</p>
 <h2 id="serial-to-telnet">Serial-to-telnet<a class="headerlink" href="#serial-to-telnet" title="Permanent link">&para;</a></h2>
-<p>In some ways this is quite a lot simpler. What needs to be emulated here is two things:</p>
-<p>1) a super serial card
-2) a hayes-compatible modem that is a telnet client (&amp;/or server)</p>
-<p>This is a pretty simple one.</p>
+<p>Emulates two pieces:</p>
+<ol>
+<li><strong>Super Serial Card</strong> — selectable slot card (<code>card = "super_serial"</code>). See <a href="../SSC/">SSC.md</a>.</li>
+<li><strong>Hayes-compatible modem</strong> as a telnet client — the same <code>ModemDevice</code> used by IIgs SCC port B. See <a href="../Serial_Modem/">Serial_Modem.md</a>.</li>
+</ol>
+<p>Example:</p>
+<pre><code class="language-toml">[[cards]]
+slot = 2
+card = &quot;super_serial&quot;
+</code></pre>
+<p>v1 attaches a ModemDevice by default on native builds. <code>[[connections]]</code> with <code>slot</code> is reserved for choosing file/modem/echo later (not applied at runtime yet).</p>
 <h2 id="fujinet">FujiNet<a class="headerlink" href="#fujinet" title="Permanent link">&para;</a></h2>
 <p>ok there's a third one. FujiNet seems to be mostly organized around providing access to TNFS (trivial network file system) stores for disk images; 
 There seems to be little need to do this, since the emulator is running on a machine that can access any network file system transparently.</p>

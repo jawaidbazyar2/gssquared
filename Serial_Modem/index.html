@@ -19,7 +19,7 @@
     
     
       
-        <title>Serial Port / Modem - GSSquared Documentation</title>
+        <title>Serial / Modem - GSSquared Documentation</title>
       
     
     
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#serial-port-modem" class="md-skip">
+        <a href="#serial-modem" class="md-skip">
           Skip to content
         </a>
       
@@ -104,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Serial Port / Modem
+              Serial / Modem
             
           </span>
         </div>
@@ -2545,6 +2545,69 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What you need
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-dial" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to dial
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-hang-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to hang up
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-capture-instead-of-a-modem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File capture instead of a modem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -2563,18 +2626,32 @@
   
 
 
-<h1 id="serial-port-modem">Serial Port / Modem<a class="headerlink" href="#serial-port-modem" title="Permanent link">&para;</a></h1>
-<p>On the IIgs, GSSquared emulates the serial port as well as a simple Hayes-compatible modem.</p>
-<p>Use any normal serial communications program like ProTERM, Spectrum, or TelCom. The virtual modem will automatically.</p>
-<p>The virtual modem allows you to "dial" an internet TCP/IP address.</p>
-<p>Example:</p>
+<h1 id="serial-modem">Serial / Modem<a class="headerlink" href="#serial-modem" title="Permanent link">&para;</a></h1>
+<p>GSSquared includes a virtual Hayes-compatible modem you can attach to a serial port. From Apple II terminal software it behaves like dialing out over a phone line — except the “number” is a TCP host and port on the internet.</p>
+<h2 id="what-you-need">What you need<a class="headerlink" href="#what-you-need" title="Permanent link">&para;</a></h2>
+<ol>
+<li>A serial port: IIgs built-in SCC, or a <a href="../Cards_SuperSerial/">Super Serial Card</a> in a slot.</li>
+<li>That port’s attachment set to <strong>Modem</strong> — see <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</li>
+</ol>
+<h2 id="how-to-dial">How to dial<a class="headerlink" href="#how-to-dial" title="Permanent link">&para;</a></h2>
+<p>Use any normal serial program (ProTERM, Spectrum, TelCom, etc.). Example:</p>
 <pre><code>ATDTcqbbs.ddns.net:6800
 </code></pre>
-<p>will connect to the Captain's Quarters BBS, at the DNS name qbbs.ddns.net, port 6800.</p>
-<p>You can hang up by sending the Hayes "attention" sequence and the hangup command:</p>
+<p>That connects to host <code>cqbbs.ddns.net</code>, TCP port <code>6800</code>.</p>
+<h2 id="how-to-hang-up">How to hang up<a class="headerlink" href="#how-to-hang-up" title="Permanent link">&para;</a></h2>
+<p>Send the Hayes escape sequence, then hang up:</p>
 <pre><code>+++
 ATH
 </code></pre>
+<p>(Wait about a second of silence before and after <code>+++</code>.)</p>
+<h2 id="file-capture-instead-of-a-modem">File capture instead of a modem<a class="headerlink" href="#file-capture-instead-of-a-modem" title="Permanent link">&para;</a></h2>
+<p>Set the port attachment to <strong>File</strong> to save serial output to a host file. When the file closes, GSSquared shows a short toast with the filename. Details: <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
+<h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../Cards_SuperSerial/">Super Serial Card</a></li>
+<li><a href="../SerialConnections/">Serial &amp; Parallel Connections</a></li>
+<li><a href="../Cards_UthernetII/">Uthernet II</a> — full TCP/IP without a serial modem</li>
+</ul>
 
 
 

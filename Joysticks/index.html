@@ -773,6 +773,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Joystick &amp; Paddles (Gamepad)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-gamepad-attached" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No gamepad attached
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2651,6 +2668,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Joystick &amp; Paddles (Gamepad)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#no-gamepad-attached" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No gamepad attached
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2705,6 +2739,9 @@
 <h2 id="joystick-paddles-gamepad">Joystick &amp; Paddles (Gamepad)<a class="headerlink" href="#joystick-paddles-gamepad" title="Permanent link">&para;</a></h2>
 <p>GS2 supports up to two (2) Gamepad or joystick devices. These can be USB, Bluetooth, whatever your system supports.</p>
 <p>GS2 will detect and activate multiple Gamepads if present.</p>
+<h3 id="no-gamepad-attached">No gamepad attached<a class="headerlink" href="#no-gamepad-attached" title="Permanent link">&para;</a></h3>
+<p>When <strong>Joystick - Gamepad</strong> mode is selected but no gamepad is connected, GSSquared by default still reports a <strong>centered</strong> stick (paddles at mid-range). That keeps software such as Total Replay from hiding joystick-only titles just because a controller was not plugged in at that moment.</p>
+<p>If you prefer hardware-accurate behavior — paddle timers that never expire, so the machine looks like no joystick is connected — enable <strong>Settings → Game Controller → Disconnected When No Gamepad</strong>. The preference is stored in the app-level <code>system_settings.toml</code> file and persists across sessions.</p>
 <p>Gamepad support: I have and have tested a 8BitDo Pro2 Gamepad. However, the underlying SDL library is known to work with hundreds of Gamepad models.</p>
 <p>Joystick axes and buttons are mapped like so:</p>
 <table>
@@ -2758,7 +2795,7 @@
 <h2 id="sirius-atari-joyport-atari-joystick-games">Sirius / Atari "Joyport" - Atari Joystick games<a class="headerlink" href="#sirius-atari-joyport-atari-joystick-games" title="Permanent link">&para;</a></h2>
 <p>In Joyport mode, GS2 emulates a Sirius Joyport. A variety of early to mid 80s games supported the Joyport, which allowed connecting Atari 2600 joysticks to the Apple II through a converter box. Reading the controls on the 2600 joysticks was done by multiplexing into the Apple II buttons and annunciators.</p>
 <p>The real Joyport had a compatibility problem which would cause control-reset to always throw the machine into self-test mode, on IIes and IIgs.</p>
-<p>Unlike the real Joyport, GS2's Joyport is compatible with II+, IIe, AND IIgs by disabling Joyport functions for 100 milliseconds after a reset.</p>
+<p>Unlike the real Joyport, GS2's Joyport is compatible with II+, IIe, AND IIgs by disabling Joyport functions after a reset (~100ms on II/IIe, ~200ms on IIgs).</p>
 <p>Enable Atari Joyport mode by using the menu, the OSD Buttons, or by pressing F6 on your keyboard until the message says Joyport mode is activated. (Switch back to regular Apple Joystick mode by pressing F6 again).</p>
 <p>Joyport emulation only works with Gamepads, not the Mouse.</p>
 <p>The Gamepad D-PAD (+ shaped control) is what is used for the Atari Joystick - NOT the regular joystick. </p>

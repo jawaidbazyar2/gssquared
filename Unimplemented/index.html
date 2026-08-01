@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../KeyboardShortcuts/">
-      
-      
-        <link rel="next" href="../Joysticks/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Using a Mouse - GSSquared Documentation</title>
+        <title>Intentionally Unimplemented - GSSquared Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mouse" class="md-skip">
+        <a href="#intentionally-unimplemented" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Using a Mouse
+              Intentionally Unimplemented
             
           </span>
         </div>
@@ -257,12 +253,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href=".." class="md-tabs__link">
           
   
@@ -477,31 +471,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -519,7 +508,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -674,37 +663,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Using a Mouse
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
         
   
   
@@ -720,48 +682,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mouse Capture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        IIgs - GS/OS Mouse Tracking
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2632,10 +2552,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
+  <a href="#apple-iigs-rombank-c028-statereg-bit-1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mouse Capture
+        Apple IIgs — ROMBANK ($C028 / STATEREG bit 1)
       
     </span>
   </a>
@@ -2643,10 +2563,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
+  <a href="#cassette-interface-c020-c060" class="md-nav__link">
     <span class="md-ellipsis">
       
-        IIgs - GS/OS Mouse Tracking
+        Cassette interface ($C020 / $C060)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ii-ii-rept-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        II / II+ REPT key
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-to-put-something-here-vs-a-todo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to put something here vs. a todo
       
     </span>
   </a>
@@ -2673,25 +2615,74 @@
   
 
 
-<h1 id="mouse">Mouse<a class="headerlink" href="#mouse" title="Permanent link">&para;</a></h1>
-<p>As the Apple II series progressed in time, mouse support became more and more integrated into the platform until in the //gs it became an indispensible base part of the system.</p>
-<p>GS2 supports a Mouse in two ways:</p>
-<ul>
-<li>Via <strong><a href="../Cards_AppleMouse/">Apple Mouse III</a></strong> card on Apple //e (and similar)</li>
-<li>Via <strong>ADB</strong> (Apple Desktop Bus) mouse on Apple IIgs</li>
-</ul>
-<h2 id="mouse-capture">Mouse Capture<a class="headerlink" href="#mouse-capture" title="Permanent link">&para;</a></h2>
-<p>When you're using emulated Mouse software, you will probably want to turn on Mouse Capture.</p>
-<p>Do this by using the Mouse Capture menu, Mouse Capture button, or by pressing F1.</p>
-<p>When you enter Mouse Capture, a helpful message will appear at the top of the screen for a few seconds reminding you how to exit Mouse Capture.</p>
-<p>To release Mouse Capture, you must press <strong>F1</strong>, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)</p>
-<p>Opening the Control Panel via <strong>F4</strong> or the Control Panel button will also temporarily release Mouse Capture. When you close the Control Panel, the original Mouse Capture state will be restored.</p>
-<p>Mouse capture also turns off the "mouse movement shows on-screen controls" feature. It locks you into that keyboard-oriented Apple II experience.</p>
-<h2 id="iigs-gsos-mouse-tracking">IIgs - GS/OS Mouse Tracking<a class="headerlink" href="#iigs-gsos-mouse-tracking" title="Permanent link">&para;</a></h2>
-<p>When you boot a GS/OS image, or other application that starts the IIgs Event Manager, GSSquared detects this and changes how it processes mouse movement events. It will calculate the mouse movement that the IIgs needs to see, in order to match where the Host (your computer) mouse . Then it synthesizes the appropriate events to get the cursor there.</p>
-<p>This provides seamless movement of the mouse cursor in and out of the IIgs desktop, making the mouse work much more naturally, and avoiding the need for Mouse Capture mode with IIgs desktop apps.</p>
-<p>You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.</p>
-<p>ROM 01 and ROM 03 IIgs platforms both use this tracking path.</p>
+<h1 id="intentionally-unimplemented">Intentionally Unimplemented<a class="headerlink" href="#intentionally-unimplemented" title="Permanent link">&para;</a></h1>
+<p>Features and hardware behaviors we have <strong>chosen not to emulate</strong> (or to leave as permanent no-ops), as distinct from open work in <a href="../Roadmap/">Roadmap.md</a> / the todo list.</p>
+<p>Add new entries here when we decide something is out of scope, obsolete, or unused enough that a stub would only add complexity.</p>
+<hr />
+<h2 id="apple-iigs-rombank-c028-statereg-bit-1">Apple IIgs — ROMBANK (<code>$C028</code> / STATEREG bit 1)<a class="headerlink" href="#apple-iigs-rombank-c028-statereg-bit-1" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hardware</strong></td>
+<td>On ROM 00/01 boards, access to <code>$C028</code> toggles <strong>ROMBANK</strong>. The same bit appears as bit 1 of <code>$C068</code> (STATEREG).</td>
+</tr>
+<tr>
+<td><strong>Effect</strong></td>
+<td>When language-card ROM is mapped at <code>$D000–$FFFF</code>, the toggle flips <strong>A14</strong> into the system ROM for that window: normal <code>$FF/D000–$FFFF</code> vs alternate <code>$FF/9000–$BFFF</code> (shown in the <code>$D000</code> window). It does <strong>not</strong> swap banks <code>$FE</code>/<code>$FF</code>.</td>
+</tr>
+<tr>
+<td><strong>ROM 01 firmware</strong></td>
+<td>Unused. Apple docs say STATEREG ROMBANK “must always be 0.” IIgs firmware and GS/OS never touch it.</td>
+</tr>
+<tr>
+<td><strong>ROM 03</strong></td>
+<td>Removed from the hardware (CYA era). <code>$C028</code> / the STATEREG bit are inert.</td>
+</tr>
+<tr>
+<td><strong>GSSquared</strong></td>
+<td><code>g_rombank</code> exists in the STATEREG bitfield for completeness / debugger display, but <code>$C028</code> is not handled and nothing remaps LC ROM from the bit. Behavior is “always 0,” which matches real software.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Related (ROM image layout, not ROMBANK):</strong> Physical ROM01 dumps sometimes present banks <code>$FE</code>/<code>$FF</code> swapped relative to linear address space. Our ROM01 image is stored with <code>$FE</code> then <code>$FF</code> (bank <code>$FF</code> last) so the MMU can map the top <code>N</code> banks of the file linearly. ROM03’s four banks are already linear <code>FC–FF</code> that way. That normalization is independent of the ROMBANK softswitch.</p>
+<hr />
+<h2 id="cassette-interface-c020-c060">Cassette interface (<code>$C020</code> / <code>$C060</code>)<a class="headerlink" href="#cassette-interface-c020-c060" title="Permanent link">&para;</a></h2>
+<p>Listed in <a href="../Documentation/">Documentation.md</a> as <strong>no support planned</strong>.</p>
+<p>The cassette port existed on II / II+ / IIe only (not IIc / IIgs). Almost no modern use case; disk images cover the same software. Softswitches may exist as stubs or float depending on platform wiring — we are not building encode/decode or host WAV I/O for tape.</p>
+<hr />
+<h2 id="ii-ii-rept-key">II / II+ <code>REPT</code> key<a class="headerlink" href="#ii-ii-rept-key" title="Permanent link">&para;</a></h2>
+<p>The physical REPT key is not modeled. Host keyboards already supply autorepeat; mapping a separate REPT key would not improve compatibility for any known software we care about.</p>
+<hr />
+<h2 id="when-to-put-something-here-vs-a-todo">When to put something here vs. a todo<a class="headerlink" href="#when-to-put-something-here-vs-a-todo" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Put it here</th>
+<th>Put it on the todo / roadmap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Firmware never uses it, or later hardware removed it</td>
+<td>Needed for compatibility or a planned machine</td>
+</tr>
+<tr>
+<td>Obsolete host/peripheral with no demand</td>
+<td>Incomplete but wanted (e.g. printer, MIDI)</td>
+</tr>
+<tr>
+<td>Emulation choice that permanently simplifies the model</td>
+<td>Temporary stub until the real behavior lands</td>
+</tr>
+</tbody>
+</table>
+<p>If a “by choice” item later turns out to matter for a real title or diagnostic, promote it to a tracked issue and remove or revise the entry here.</p>
 
 
 

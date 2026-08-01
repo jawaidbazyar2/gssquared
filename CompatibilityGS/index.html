@@ -3343,6 +3343,7 @@ THIS HAS BEEN FIXED. ProDOS 1.1.1 User's disk now booting on both 5.25 and 3.5.<
 <p>Apple Panic is not clearing c010?? that is some wacky stuff. Issue here is that the keyboard buffer is always "enabled". </p>
 <p>On a real GS, if we read C000 w/o clearing strobe, it does change as we type characters. in GS2, it does not, because I didn't write it that way.</p>
 <p>So what the hell does the GS do? ah ha!!! By default, GS has keyboard buffering DISABLED. When I ENABLE it, it behaves the same as GS2. So I need to respect the "buffer yes/no" bit and do the right thing.</p>
+<p>GS now respects "buffer disable/enable" modes_byte flags and this now works correctly.</p>
 <h2 id="taxman">Taxman<a class="headerlink" href="#taxman" title="Permanent link">&para;</a></h2>
 <p>TAXMAN loads switches to text page 2 and I got no other display..  hit reset, and then it starts working.. ?  ctrl-c switches back to text page 2. huh..  WE'RE NOT SHADOWING PAGE 2, HA HA  </p>
 <p>So this works, according to ROM01 where text page 2 doesn't work.</p>
@@ -3403,6 +3404,7 @@ After fixing State/C068/LCBNK2 was incorrect, we now boot to finder!</p>
 asks for volume; 
 tries to load stuff off slot 6 for a while then crashes. is likely expecting IWM in slot 5.</p>
 <p>Even with WOZ 3.5 it's dying looking for a disk over and over. Weird.</p>
+<p>ah, you have to load both disks in the set when you boot it up. With the latest DOC fixes (7-16-26) is now good to go.</p>
 <h2 id="qix">Qix<a class="headerlink" href="#qix" title="Permanent link">&para;</a></h2>
 <p>sometimes we have a crash booting GS/OS, and then a reboot, and it works.
 This feels like there is a s/s not being set correctly on powerup or reset.
@@ -3429,7 +3431,8 @@ Interestingly, same media boots and plays fine on //e.</p>
 <h2 id="noisetracker">NoiseTracker<a class="headerlink" href="#noisetracker" title="Permanent link">&para;</a></h2>
 <p>there was a MMU bug involving RAMRD/RAMWRT and direct access to bank 1. (we were adding an extra 0x1'0000 erroneously).
 It now starts but then hits a BRK; it plays music for a while; then dies with a "RESTART SYSTEM". Could be Ensoniq IRQ or another memory issue.
-2/18/26: gets a little further now before crashing, it displays a 3d Ball pyramid.</p>
+2/18/26: gets a little further now before crashing, it displays a 3d Ball pyramid.
+7/16/26: working well with latest round of Ensoniq fixes.</p>
 <h2 id="senseiplay">Senseiplay<a class="headerlink" href="#senseiplay" title="Permanent link">&para;</a></h2>
 <p>similar to noisetracker, now starts and plays a song for a couple seconds, then fails with a "RESTART SYSTEM-$01".</p>
 <p>with ensoniq interrupt fix, Does not trigger RESTART SYSTEM 01 but does not play songs correctly.</p>
@@ -3478,6 +3481,7 @@ all the controls work, the mouse is just a little sluggish sometimes. </p>
 <p>with ensoniq interrupt fix, it's not crashing out any more. however, there are artifacts on the main instruments (instr other than the bass). Probably similar to what's happening in Sales Demo. </p>
 <h3 id="apple-iigs-sales-demo">Apple IIgs Sales Demo<a class="headerlink" href="#apple-iigs-sales-demo" title="Permanent link">&para;</a></h3>
 <p>with ensoniq interrupt fix, now is running correctly mostly. the intro jazz music is good. </p>
+<p>After 7/16/26, the digitized speech playback "Introducing the Apple IIgs" is now working.</p>
 <h3 id="revenge-of-the-bobs">Revenge of the Bobs<a class="headerlink" href="#revenge-of-the-bobs" title="Permanent link">&para;</a></h3>
 <p>Coredump! I didn't have the 2nd disk mounted, sadly did not replicate.
 Boots, starts to run, wants accelerated mode, but then dies with SYSTEM ERROR 01</p>
@@ -3499,6 +3503,7 @@ WORKING!!! Implemented improvements to ADB emulation to support what w3d wanted.
 <p><strong>PLAYS LIKE A CHAMP</strong></p>
 <h3 id="zany-golf">Zany Golf<a class="headerlink" href="#zany-golf" title="Permanent link">&para;</a></h3>
 <p>Works right up until you are actually playing a level, then the screen is black where level should be. Say wha.</p>
+<p>Retested after IIgs fast-RAM sizing matched KEGS (ROM01 8.125MB / ROM03 9MB): still black playfield with HUD + music. Blit LocInfo at DP <code>$0C28+</code> can hold long-pointer junk in the Y/rows fields, so the mask blit reads nonsense banks; not fixed by RAM size alone.</p>
 
 
 

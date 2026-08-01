@@ -2571,6 +2571,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Top-level schema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#machine-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine identity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2758,10 +2775,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#what-stays-on-cards" class="md-nav__link">
+  <a href="#legacy-card-output" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What stays on cards
+        Legacy card output
       
     </span>
   </a>
@@ -2770,6 +2787,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parallel-card-output-on-cards-is-still-parsed-for-backward-compatibility-but-is-not-applied-use-connections-with-device-file-instead" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parallel card output = "..." on [[cards]] is still parsed for backward compatibility but is not applied; use [[connections]] with device = "file" instead.
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3043,6 +3071,7 @@
     clock_set_t clock_set;
     video_scanner_t scanner_type;
     const char *description;
+    const char *id;                 // machine identity (UUID)
     device_id slot_devices[NUM_SLOTS];  // slots 0–7, derived from [[cards]]
 };
 
@@ -3069,6 +3098,13 @@ typedef struct {
 <td>yes</td>
 <td>—</td>
 <td>Format version (currently <code>1</code>)</td>
+</tr>
+<tr>
+<td><code>id</code></td>
+<td>string</td>
+<td>no*</td>
+<td><code>id</code></td>
+<td>Machine identity (UUID). See <a href="#machine-identity">Machine identity</a></td>
 </tr>
 <tr>
 <td><code>name</code></td>
@@ -3135,6 +3171,38 @@ typedef struct {
 </tr>
 </tbody>
 </table>
+<p>*If <code>id</code> is missing on load, GSSquared mints a UUID and rewrites the file when writable. After load, every config has an <code>id</code>.</p>
+<h3 id="machine-identity">Machine identity<a class="headerlink" href="#machine-identity" title="Permanent link">&para;</a></h3>
+<p><code>id</code> is a stable UUID that identifies the <em>machine</em>, not the filename. Apple IIgs battery RAM (Control Panel / NVRAM) is stored at:</p>
+<p><code>PrefPath/bram/&lt;id&gt;.bin</code></p>
+<p>(e.g. <code>~/Library/Application Support/jawaidbazyar2/GSSquared/bram/&lt;id&gt;.bin</code> on macOS).</p>
+<table>
+<thead>
+<tr>
+<th>Behavior</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rename / move <code>.gs2</code></td>
+<td>Same <code>id</code> → same BRAM</td>
+</tr>
+<tr>
+<td>Save As (different path in editor)</td>
+<td>New <code>id</code> → separate BRAM</td>
+</tr>
+<tr>
+<td>Copy <code>id</code> into another <code>.gs2</code></td>
+<td>Shared BRAM (same machine)</td>
+</tr>
+<tr>
+<td>Reseed shipped default from assets</td>
+<td>Same preassigned <code>id</code> → BRAM survives</td>
+</tr>
+</tbody>
+</table>
+<p>Shipped configs under <code>assets/gs2/</code> and builtin selector tiles have fixed UUIDs.</p>
 <p>Motherboard-resident devices (keyboard, display, speaker, IIe memory, IIgs ADB/RTC/Ensoniq/SCC/IWM, etc.) are composed automatically from <code>platform</code> during <code>transition_to_emulation()</code>, matching current built-in behavior. Only slot cards appear in <code>[[cards]]</code>.</p>
 <p><strong>Separation of concerns:</strong></p>
 <ul>
@@ -3142,7 +3210,7 @@ typedef struct {
 <li><code>[[storage]]</code> — what disk images are mounted (<code>slot</code> + <code>drive</code>), matching <code>Mounts</code>.</li>
 <li><code>[[connections]]</code> — what virtual device is attached to each serial port (<code>port</code> or <code>slot</code> + <code>port</code>), matching however serial ports register at runtime (same pattern as <code>Mounts</code> for disks).</li>
 </ul>
-<p>There is no storage- or serial-attachment data on card entries (except <code>parallel</code> <code>output</code>, which is a printer sink rather than a serial connection).</p>
+<p>There is no storage- or serial-attachment data on card entries (except legacy parallel <code>output</code>, which is parsed but unused; prefer <code>[[connections]]</code>).</p>
 <hr />
 <h2 id="platform">Platform<a class="headerlink" href="#platform" title="Permanent link">&para;</a></h2>
 <p>String enum → <code>PlatformId_t</code> (<code>src/PlatformIDs.hpp</code>):</p>
@@ -3247,7 +3315,7 @@ typedef struct {
 <p>If omitted, derive from <code>platform</code> and <code>clock</code> (e.g. PAL //e → <code>"apple2e_pal"</code>).</p>
 <hr />
 <h2 id="card-types">Card types<a class="headerlink" href="#card-types" title="Permanent link">&para;</a></h2>
-<p>String enum → <code>device_id</code> (<code>src/Device_ID.hpp</code>). These are the values allowed in <code>[[cards]].card</code> and validated against <code>Devices[]</code> in <code>src/devices.cpp</code> (<code>slots_allowed</code>, <code>platform_flags</code>, <code>multipleInstances</code>).</p>
+<p>String enum → <code>device_id</code> (<code>src/Device_ID.hpp</code>). Slot/platform/multiplicity rules live only in <code>DeviceInfos[]</code> (<code>src/device_info.cpp</code>: <code>slots_allowed</code>, <code>platform_flags</code>, <code>multipleInstances</code>); <code>Devices[]</code> derives from that table. Load, editor save, and computer composition all validate against it. <code>slots_allowed == 0</code> means motherboard/non-slot (not assignable via <code>[[cards]]</code>).</p>
 <p>The TOML key <strong><code>device</code></strong> is reserved for <code>[[connections]]</code> — the virtual peripheral attached to a serial port (<code>file</code>, <code>modem</code>, <code>echo</code>, <code>none</code>). It MUST NOT be used as the card-type field.</p>
 <h3 id="slot-assignable-card-types">Slot-assignable card types<a class="headerlink" href="#slot-assignable-card-types" title="Permanent link">&para;</a></h3>
 <table>
@@ -3323,7 +3391,7 @@ typedef struct {
 <tr>
 <td><code>"mouse"</code></td>
 <td><code>DEVICE_ID_MOUSE</code></td>
-<td>Apple Mouse II</td>
+<td>Apple Mouse III (PIA+6805 / Apple ROM). Alias: <code>"applemouseiii"</code>.</td>
 <td></td>
 </tr>
 <tr>
@@ -3342,7 +3410,13 @@ typedef struct {
 <td><code>"second_sight"</code></td>
 <td><code>DEVICE_ID_SECOND_SIGHT</code></td>
 <td>Second Sight</td>
-<td>IIgs only</td>
+<td>IIgs only, slot 3 only</td>
+</tr>
+<tr>
+<td><code>"uthernet2"</code></td>
+<td><code>DEVICE_ID_UTHERNET2</code></td>
+<td>Uthernet II</td>
+<td>IIe + IIgs; slots 1–7; multiple instances allowed; see <code>Docs/Networking.md</code></td>
 </tr>
 </tbody>
 </table>
@@ -3475,9 +3549,10 @@ card = &quot;bazfast3&quot;
 </tr>
 </tbody>
 </table>
-<p>Validation (loader responsibility, mirroring <code>Devices[]</code>):</p>
+<p>Validation (against <code>DeviceInfos[]</code> in <code>src/device_info.cpp</code>):</p>
 <ul>
 <li>Each <code>slot</code> appears at most once.</li>
+<li>Card type must be a slot card (<code>slots_allowed != 0</code>).</li>
 <li>Card type must be allowed on the chosen <code>platform</code> (<code>platform_flags</code>).</li>
 <li>Card type must be legal in that slot number (<code>slots_allowed</code> bitmask).</li>
 <li>At most one instance unless <code>multipleInstances</code> is true (e.g. two <code>"mockingboard"</code> cards in slots 4 and 7).</li>
@@ -3487,9 +3562,9 @@ card = &quot;bazfast3&quot;
 <h2 id="per-card-type-properties">Per-card-type properties<a class="headerlink" href="#per-card-type-properties" title="Permanent link">&para;</a></h2>
 <p>Each card type defines which additional keys are valid on its <code>[[cards]]</code> entry. Unknown keys for a card type SHOULD produce a warning; loaders MAY reject them.</p>
 <p>Storage card types (<code>disk_ii</code>, <code>prodos_block</code>, <code>prodos_block2</code>, <code>bazfast3</code>) have <strong>no</strong> card-level storage properties. Mount disks via <code>[[storage]]</code> after the card is installed.</p>
-<p>Serial-capable slot cards (e.g. future Super Serial Card) have <strong>no</strong> connection properties on the card entry. Attach virtual devices via <code>[[connections]]</code>.</p>
+<p>Serial-capable slot cards (e.g. Super Serial Card) have <strong>no</strong> connection properties on the card entry. Attach virtual devices via <code>[[connections]]</code>.</p>
 <h3 id="parallel"><code>parallel</code><a class="headerlink" href="#parallel" title="Permanent link">&para;</a></h3>
-<p>Parallel printer interface. Optional output destination:</p>
+<p>Parallel printer interface. Attach a file sink via <code>[[connections]]</code> (slot + <code>device = "file"</code>). Legacy:</p>
 <table>
 <thead>
 <tr>
@@ -3503,21 +3578,24 @@ card = &quot;bazfast3&quot;
 <tr>
 <td><code>output</code></td>
 <td>string</td>
-<td><code>"parallel.out"</code></td>
-<td>File that receives printed bytes</td>
+<td>—</td>
+<td>Legacy; parsed but not applied</td>
 </tr>
 </tbody>
 </table>
 <pre><code class="language-toml">[[cards]]
 slot = 1
 card = &quot;parallel&quot;
-output = &quot;printouts/session.txt&quot;
+
+[[connections]]
+slot = 1
+device = &quot;file&quot;
 </code></pre>
 <h3 id="mockingboard-mouse-videx-language_card-clocks-storage-cards-serial-cards-etc"><code>mockingboard</code>, <code>mouse</code>, <code>videx</code>, <code>language_card</code>, clocks, storage cards, serial cards, etc.<a class="headerlink" href="#mockingboard-mouse-videx-language_card-clocks-storage-cards-serial-cards-etc" title="Permanent link">&para;</a></h3>
 <p>No additional v1 properties beyond <code>slot</code> and <code>card</code>. Card presence and slot are sufficient.</p>
 <hr />
 <h2 id="connections">Connections<a class="headerlink" href="#connections" title="Permanent link">&para;</a></h2>
-<p>All serial port attachments use <code>[[connections]]</code>, whether the port is on a slot card or built into the IIgs motherboard (SCC8530). Each serial port registers with the runtime the same way storage devices register with <code>Mounts</code>; the config file only names the port and what is plugged into it.</p>
+<p>All serial and parallel port attachments use <code>[[connections]]</code>, whether the port is on a slot card, a parallel card, or the IIgs built-in SCC8530. Each port registers with a runtime <code>Connections</code> registry the same way storage devices register with <code>Mounts</code>; the config file only names the port and what is plugged into it.</p>
 <table>
 <thead>
 <tr>
@@ -3535,22 +3613,22 @@ output = &quot;printouts/session.txt&quot;
 <td>Virtual peripheral: <code>file</code>, <code>modem</code>, <code>echo</code>, <code>none</code></td>
 </tr>
 <tr>
-<td><code>port</code></td>
-<td>string</td>
-<td>yes*</td>
-<td>Port channel: <code>"a"</code> or <code>"b"</code></td>
-</tr>
-<tr>
 <td><code>slot</code></td>
 <td>integer</td>
+<td>yes*</td>
+<td>Firmware/expansion slot: IIgs SCC A=<code>1</code>, B=<code>2</code>; cards use their slot</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td>string</td>
 <td>no</td>
-<td>Slot number when the port is on a slot card; omit for IIgs built-in SCC</td>
+<td>Channel <code>"a"</code> or <code>"b"</code> (defaults to <code>"a"</code>; legacy bare <code>port</code> without <code>slot</code> still loads)</td>
 </tr>
 <tr>
 <td><code>path</code></td>
 <td>string</td>
 <td>no</td>
-<td>Host file when <code>device = "file"</code></td>
+<td>Optional host file when <code>device = "file"</code> (runtime may auto-generate capture names)</td>
 </tr>
 <tr>
 <td><code>remote_url</code></td>
@@ -3560,7 +3638,7 @@ output = &quot;printouts/session.txt&quot;
 </tr>
 </tbody>
 </table>
-<p>* For a single-port slot card, <code>port</code> MAY be omitted and defaults to <code>"a"</code>.</p>
+<p>* Preferred form always includes <code>slot</code>. Legacy IIgs entries may omit <code>slot</code> and use <code>port = "a"|"b"</code>; the loader normalizes those to slots 1 and 2.</p>
 <h3 id="device-values"><code>device</code> values<a class="headerlink" href="#device-values" title="Permanent link">&para;</a></h3>
 <p>Aligned with <code>src/serial_devices/</code>:</p>
 <table>
@@ -3577,31 +3655,39 @@ output = &quot;printouts/session.txt&quot;
 </tr>
 <tr>
 <td><code>"file"</code></td>
-<td>Read/write through a host file (<code>path</code> required)</td>
+<td>Capture / file sink (<code>path</code> optional)</td>
 </tr>
 <tr>
 <td><code>"echo"</code></td>
-<td>Loopback for testing</td>
+<td>Loopback for testing (schema only; not offered in UI)</td>
 </tr>
 <tr>
 <td><code>"modem"</code></td>
-<td>Hayes-compatible virtual modem (native builds only)</td>
+<td>Hayes-compatible virtual modem (native builds; serial ports only)</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Allowed devices by port kind:</strong> serial (SCC, SSC) → none / file / modem; parallel → none / file only.</p>
 <h3 id="port-addressing">Port addressing<a class="headerlink" href="#port-addressing" title="Permanent link">&para;</a></h3>
-<p><strong>IIgs built-in SCC</strong> — omit <code>slot</code>, set <code>port</code> to <code>"a"</code> (modem/printer) or <code>"b"</code>:</p>
+<p><strong>IIgs built-in SCC</strong> — firmware maps Port A to slot 1 and Port B to slot 2. Preferred TOML:</p>
+<pre><code class="language-toml">[[connections]]
+slot = 1
+device = &quot;file&quot;
+
+[[connections]]
+slot = 2
+device = &quot;modem&quot;
+</code></pre>
+<p>Legacy form (still accepted; normalized on load):</p>
 <pre><code class="language-toml">[[connections]]
 port = &quot;a&quot;
 device = &quot;file&quot;
-path = &quot;captures/port_a.bin&quot;
 
 [[connections]]
 port = &quot;b&quot;
 device = &quot;modem&quot;
 </code></pre>
-<p>These map to <code>SCC_CHANNEL_A</code> / <code>SCC_CHANNEL_B</code> after <code>init_scc8530_slot()</code> composes the motherboard. Same attachment model as today’s hard-coded <code>FileDevice</code> / <code>ModemDevice</code> setup in <code>scc8530.cpp</code>, but driven from config.</p>
-<p><strong>Slot serial card</strong> (future Super Serial Card, etc.) — set <code>slot</code> to the card’s slot; <code>port</code> defaults to <code>"a"</code> for single-port cards:</p>
+<p><strong>Slot serial card</strong> (Super Serial Card) or <strong>parallel card</strong> — set <code>slot</code> to the card’s slot:</p>
 <pre><code class="language-toml">[[cards]]
 slot = 2
 card = &quot;super_serial&quot;
@@ -3609,17 +3695,24 @@ card = &quot;super_serial&quot;
 [[connections]]
 slot = 2
 device = &quot;modem&quot;
+
+[[cards]]
+slot = 1
+card = &quot;parallel&quot;
+
+[[connections]]
+slot = 1
+device = &quot;file&quot;
 </code></pre>
 <h3 id="rules">Rules<a class="headerlink" href="#rules" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Each <code>(slot, port)</code> pair appears at most once. Built-in SCC ports use <code>(no slot, "a"|"b")</code>.</li>
-<li>Omit <code>[[connections]]</code> entirely to use platform defaults (IIgs: port A → file, port B → modem on native builds).</li>
-<li>After hardware is composed, the loader SHOULD warn on or reject entries whose port is not registered.</li>
-<li>Built-in <code>port = "a"|"b"</code> entries are valid only when <code>platform = "apple2gs"</code>.</li>
+<li>Each canonical <code>(slot, "a")</code> pair appears at most once.</li>
+<li>Omit <code>[[connections]]</code> entirely to use platform defaults (IIgs: slot 1 → file, slot 2 → modem on native builds; SSC → modem; parallel → file).</li>
+<li>After hardware is composed, unregistered connection rows are warned and skipped; remaining ports get defaults.</li>
+<li>Built-in slot 1/2 SCC entries are valid only when <code>platform</code> is Apple IIgs.</li>
 </ul>
-<h3 id="what-stays-on-cards">What stays on cards<a class="headerlink" href="#what-stays-on-cards" title="Permanent link">&para;</a></h3>
-<p><strong>Parallel</strong> printer output is not a serial connection — it remains a card property (<code>output</code> on the <code>parallel</code> card entry). If other non-serial sinks appear later, they can stay on the card or gain their own top-level section; serial and serial-like comm ports use <code>[[connections]]</code>.</p>
-<hr />
+<h3 id="legacy-card-output">Legacy card <code>output</code><a class="headerlink" href="#legacy-card-output" title="Permanent link">&para;</a></h3>
+<h2 id="parallel-card-output-on-cards-is-still-parsed-for-backward-compatibility-but-is-not-applied-use-connections-with-device-file-instead">Parallel card <code>output = "..."</code> on <code>[[cards]]</code> is still parsed for backward compatibility but is <strong>not applied</strong>; use <code>[[connections]]</code> with <code>device = "file"</code> instead.<a class="headerlink" href="#parallel-card-output-on-cards-is-still-parsed-for-backward-compatibility-but-is-not-applied-use-connections-with-device-file-instead" title="Permanent link">&para;</a></h2>
 <h2 id="storage">Storage<a class="headerlink" href="#storage" title="Permanent link">&para;</a></h2>
 <p>All pre-mounted disk images use <code>[[storage]]</code>, regardless of whether the drive belongs to a slot card or to built-in IIgs IWM hardware. Every storage controller — Disk II, block devices, and IIgs IWM — registers drives with <code>Mounts</code> using the same <code>slot</code>/<code>drive</code> keys, so one format covers all of them.</p>
 <table>
@@ -3914,8 +4007,8 @@ card = &quot;disk_ii&quot;
 <hr />
 <h2 id="open-questions">Open questions<a class="headerlink" href="#open-questions" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Serial port registry:</strong> Implement a <code>Connections</code> (or extend device init) so SCC and slot serial cards register addressable ports the same way <code>Mounts</code> registers drives — then loader, OSD, and save/load all share one model.</li>
-<li><strong>Super Serial Card:</strong> Not yet in <code>devices.cpp</code>; <code>[[connections]]</code> with <code>slot</code> is specified for when it is added.</li>
+<li><strong>Serial port registry:</strong> Implemented as <code>Connections</code> (<code>src/util/Connections.hpp</code>); SCC, SSC, and parallel register ports; loader/OSD/EditSystem share the model.</li>
+<li><strong>Super Serial Card:</strong> <code>card = "super_serial"</code>; <code>[[connections]]</code> with <code>slot</code> is applied at runtime (same as IIgs SCC).</li>
 <li><strong>Built-in migration:</strong> Ship current <code>BuiltinSystemConfigs[]</code> as <code>.gs2</code> files and load all configs through one code path?</li>
 <li><strong>Profile preferences:</strong> Add <code>[display]</code>, <code>[speed]</code>, <code>[input]</code>, <code>[audio]</code> (or equivalent) for menu-controlled settings; map Neil <code>video.*</code> / <code>machine.speed</code> on import.</li>
 </ul>

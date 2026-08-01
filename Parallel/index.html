@@ -1415,6 +1415,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#capture-architecture-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capture architecture (v1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dot-matrix-printers" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2632,6 +2643,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#capture-architecture-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capture architecture (v1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#dot-matrix-printers" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2674,7 +2696,21 @@
 
 
 <h1 id="parallel-interface-for-printers">Parallel Interface (for Printers)<a class="headerlink" href="#parallel-interface-for-printers" title="Permanent link">&para;</a></h1>
-<p>The Apple Parallel Interface card had a ridiculously simple register interface, and, firmware is available.</p>
+<p>The Apple Parallel Interface card had a ridiculously simple register interface, and firmware is available.</p>
+<p>Selectable slot card (<code>card = "parallel"</code>) for Apple II / IIe / IIgs platforms (slots 1–7).</p>
+<h2 id="capture-architecture-v1">Capture architecture (v1)<a class="headerlink" href="#capture-architecture-v1" title="Permanent link">&para;</a></h2>
+<p>Parallel is output-only. Guest writes to <code>$C0n0</code> (<code>n = 8 + slot</code>) enqueue <code>MESSAGE_DATA</code> on the same SPSC <code>SerialQueue</code> path used by SSC and the IIgs SCC ports. A child-thread <code>FileDevice</code> drains the queue and writes capture files.</p>
+<p>Default attachment: <strong>FileDevice</strong> always (native and Emscripten). No ModemDevice. A future ImageWriter backend can swap in via the same <code>SerialDevice</code> interface.</p>
+<p>Capture filenames: <code>GS2.PARLn.YYYYMMDDHHMMSS</code> (same naming scheme as serial FileDevice).</p>
+<p>Lifecycle:</p>
+<ul>
+<li>Open on first byte after close</li>
+<li>Idle-close after ~10s of no writes (FileDevice poll loop)</li>
+<li>Close on ctrl-reset (<code>MESSAGE_CLOSE</code>)</li>
+<li>Reopen on the next write</li>
+<li>On close: console log <code>file %filename closed</code>, and an OSD fade toast <code>File closed %filename</code></li>
+</ul>
+<p>Main emu thread never blocks on file I/O.</p>
 <h2 id="dot-matrix-printers">Dot-Matrix Printers<a class="headerlink" href="#dot-matrix-printers" title="Permanent link">&para;</a></h2>
 <p>libHaru is a C library (that interfaces well with C++) that can create PDF files.</p>
 <p>So, explore the approach of implementing printer emulation threads, using libHaru to create PDF files.</p>
@@ -2684,12 +2720,9 @@
 <p>No need to have cancel or anything like that since it's not real paper.</p>
 <p>The Printer emulator should run as a separate thread, so it doesn't take up any time in the main loop. So the emu will chuck data to the printer thread.</p>
 <p>This will also simplify the state machine management of the printer.</p>
-<p>For testing, and initial deployment, we will want to have a printer capture mode that captures the raw data stream to the printer port and saves it to a file. Then have an initial standalone utility to convert those to PDF. That's the best way to get started.</p>
+<p>For testing, and initial deployment, we will want to have a printer capture mode that captures the raw data stream to the printer port and saves it to a file. Then have an initial standalone utility to convert those to PDF. That's the best way to get started. (v1 uses FileDevice capture as above.)</p>
 <h2 id="laser-printers">Laser Printers<a class="headerlink" href="#laser-printers" title="Permanent link">&para;</a></h2>
 <p>There was no software that handled PostScript on the IIe/IIc. People did use LaserWriters but those could apparently emulate an ImageWriter.</p>
-<h1 id="initial-test-implementation">Initial Test Implementation<a class="headerlink" href="#initial-test-implementation" title="Permanent link">&para;</a></h1>
-<p>The implementation is very simple. I have created assemblable source from the Apple II Parallel Card manual, circa 1978 version. For the initial implementation, </p>
-<p>I need to implement something that will flush and close the file after some period of inactivity. Let's say after 5 seconds, it will close the file. Whenever file is not open and a new write comes in, reopen the file in append mode. Also, close the file on a ctrl-reset.</p>
 
 
 

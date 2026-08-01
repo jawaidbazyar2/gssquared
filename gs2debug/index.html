@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../KeyboardShortcuts/">
-      
-      
-        <link rel="next" href="../Joysticks/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Using a Mouse - GSSquared Documentation</title>
+        <title>gs2debug — Python API for agents - GSSquared Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mouse" class="md-skip">
+        <a href="#gs2debug-python-api-for-agents" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Using a Mouse
+              gs2debug — Python API for agents
             
           </span>
         </div>
@@ -257,12 +253,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href=".." class="md-tabs__link">
           
   
@@ -477,31 +471,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -519,7 +508,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -674,37 +663,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Using a Mouse
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
         
   
   
@@ -720,48 +682,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mouse Capture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        IIgs - GS/OS Mouse Tracking
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2632,10 +2552,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
+  <a href="#setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mouse Capture
+        Setup
       
     </span>
   </a>
@@ -2643,13 +2563,135 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
+  <a href="#api-what-to-call" class="md-nav__link">
     <span class="md-ellipsis">
       
-        IIgs - GS/OS Mouse Tracking
+        API (what to call)
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constants
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recipes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recipes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recipes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#check-platform" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check platform
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#peek-poke-text-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Peek / poke text row
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#machine-reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine reset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-basic-arbitrary-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type BASIC / arbitrary text
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#applesoft-graphics-dont-confuse-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Applesoft graphics (don’t confuse modes)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gotchas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gotchas
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example scripts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Example scripts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breakpoints-iie-enhanced-and-iigs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breakpoints (IIe Enhanced and IIgs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2673,25 +2715,372 @@
   
 
 
-<h1 id="mouse">Mouse<a class="headerlink" href="#mouse" title="Permanent link">&para;</a></h1>
-<p>As the Apple II series progressed in time, mouse support became more and more integrated into the platform until in the //gs it became an indispensible base part of the system.</p>
-<p>GS2 supports a Mouse in two ways:</p>
-<ul>
-<li>Via <strong><a href="../Cards_AppleMouse/">Apple Mouse III</a></strong> card on Apple //e (and similar)</li>
-<li>Via <strong>ADB</strong> (Apple Desktop Bus) mouse on Apple IIgs</li>
-</ul>
-<h2 id="mouse-capture">Mouse Capture<a class="headerlink" href="#mouse-capture" title="Permanent link">&para;</a></h2>
-<p>When you're using emulated Mouse software, you will probably want to turn on Mouse Capture.</p>
-<p>Do this by using the Mouse Capture menu, Mouse Capture button, or by pressing F1.</p>
-<p>When you enter Mouse Capture, a helpful message will appear at the top of the screen for a few seconds reminding you how to exit Mouse Capture.</p>
-<p>To release Mouse Capture, you must press <strong>F1</strong>, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)</p>
-<p>Opening the Control Panel via <strong>F4</strong> or the Control Panel button will also temporarily release Mouse Capture. When you close the Control Panel, the original Mouse Capture state will be restored.</p>
-<p>Mouse capture also turns off the "mouse movement shows on-screen controls" feature. It locks you into that keyboard-oriented Apple II experience.</p>
-<h2 id="iigs-gsos-mouse-tracking">IIgs - GS/OS Mouse Tracking<a class="headerlink" href="#iigs-gsos-mouse-tracking" title="Permanent link">&para;</a></h2>
-<p>When you boot a GS/OS image, or other application that starts the IIgs Event Manager, GSSquared detects this and changes how it processes mouse movement events. It will calculate the mouse movement that the IIgs needs to see, in order to match where the Host (your computer) mouse . Then it synthesizes the appropriate events to get the cursor there.</p>
-<p>This provides seamless movement of the mouse cursor in and out of the IIgs desktop, making the mouse work much more naturally, and avoiding the need for Mouse Capture mode with IIgs desktop apps.</p>
-<p>You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.</p>
-<p>ROM 01 and ROM 03 IIgs platforms both use this tracking path.</p>
+<h1 id="gs2debug-python-api-for-agents">gs2debug — Python API for agents<a class="headerlink" href="#gs2debug-python-api-for-agents" title="Permanent link">&para;</a></h1>
+<p>How to drive a running GSSquared from Python. Prefer this package over hand-rolled sockets.</p>
+<p>Wire format (if needed): <a href="../DebugProtocol/">DebugProtocol.md</a>. Design notes: <a href="../DebugClient/">DebugClient.md</a>.</p>
+<h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># Terminal A — emulator (IIe example: -p 2)
+./build/GSSquared --debug /tmp/gs2.sock -p 2
+
+# Terminal B — always a separate terminal (Ctrl-C on the script must not SIGINT the emu)
+PYTHONPATH=clients/python/src python3 your_script.py /tmp/gs2.sock
+</code></pre>
+<table>
+<thead>
+<tr>
+<th><code>-p N</code></th>
+<th>Platform</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Apple II</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Apple II Plus</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Apple IIe</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Apple IIe Enhanced</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Apple IIe 65816</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Apple IIgs</td>
+</tr>
+</tbody>
+</table>
+<p>Same integers as <code>get_status().platform_id</code> / <code>PLATFORM_*</code> constants. Use a distinct socket path per instance if several are running.</p>
+<pre><code class="language-python">from gs2debug import Client, MEM_MAIN, PLATFORM_APPLE_IIE, ProtocolError
+
+with Client() as c:
+    c.connect(&quot;/tmp/gs2.sock&quot;)
+    c.hello()          # required before anything else
+    status = c.get_status()
+    assert status.platform_id == PLATFORM_APPLE_IIE
+    # ... use API ...
+</code></pre>
+<p>Import path: <code>clients/python/src</code> on <code>PYTHONPATH</code>, or <code>pip install -e clients/python</code>.</p>
+<h2 id="api-what-to-call">API (what to call)<a class="headerlink" href="#api-what-to-call" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>connect(path)</code> / <code>close()</code></td>
+<td>AF_UNIX connect; also context-manager</td>
+</tr>
+<tr>
+<td><code>hello()</code> → <code>HelloInfo</code></td>
+<td>Handshake; sets <code>version</code>, <code>flags</code>, <code>max_payload</code></td>
+</tr>
+<tr>
+<td><code>ping()</code></td>
+<td>Liveness; empty reply</td>
+</tr>
+<tr>
+<td><code>quit()</code></td>
+<td>Force-quit emu (skips QuitModal); prefer over kill/SIGTERM</td>
+</tr>
+<tr>
+<td><code>get_status()</code> → <code>StatusInfo</code></td>
+<td><code>.execution_mode</code> (<code>0=NORMAL</code>, <code>1=STEP_INTO</code>, <code>2=PAUSED</code>), <code>.platform_id</code> (<code>PlatformId_t</code> / <code>-p N</code>)</td>
+</tr>
+<tr>
+<td><code>reset(cold_start=False)</code></td>
+<td><code>computer_t::reset(cold_start)</code> on main thread</td>
+</tr>
+<tr>
+<td><code>pause()</code> / <code>continue_()</code></td>
+<td>Run-control; emits <code>EVT_STOPPED</code> / <code>EVT_RUN_STATE</code></td>
+</tr>
+<tr>
+<td><code>step_into(count=1)</code></td>
+<td>Arm N-instruction step; empty reply; <code>EVT_STOPPED</code> (<code>STOP_STEP</code>) + trace when done</td>
+</tr>
+<tr>
+<td><code>get_trace(ago=0, count=100)</code> → <code>TraceWindow</code></td>
+<td>Instruction ring window; <code>.available</code>, <code>.entries</code> (40-byte blobs, oldest→newest)</td>
+</tr>
+<tr>
+<td><code>state_get(device_id)</code> → <code>bytes</code></td>
+<td>Device snapshot blob (<code>DEVICE_ID_ENSONIQ</code>, …)</td>
+</tr>
+<tr>
+<td><code>bp_set(...)</code> → <code>id</code></td>
+<td>Create EXEC/DATA/IO breakpoint (see DebugProtocol.md)</td>
+</tr>
+<tr>
+<td><code>bp_clear(id)</code> / <code>bp_clear_all()</code> / <code>bp_enable(id, enabled)</code> / <code>bp_list()</code></td>
+<td>Breakpoint table</td>
+</tr>
+<tr>
+<td><code>wait_event()</code> / <code>wait_stopped()</code></td>
+<td>Block for unsolicited EVENT / parse <code>EVT_STOPPED</code></td>
+</tr>
+<tr>
+<td><code>read_mem(domain, address, length)</code> → <code>bytes</code></td>
+<td>Peek (<code>MEM_MAIN</code> / <code>MEM_MAIN_RAW</code>; <code>MEM_MEGAII</code> / <code>MEM_MEGAII_RAW</code> on IIgs)</td>
+</tr>
+<tr>
+<td><code>write_mem(domain, address, data)</code></td>
+<td>Poke (same domains); <code>data</code> non-empty</td>
+</tr>
+<tr>
+<td><code>key_event(down, scancode, mod=0)</code></td>
+<td>One SDL key down/up</td>
+</tr>
+<tr>
+<td><code>key_down</code> / <code>key_up</code></td>
+<td>Same, for modifiers</td>
+</tr>
+<tr>
+<td><code>tap_key(scancode, mod=0, hold_s=0.02)</code></td>
+<td>Down, optional hold, then up</td>
+</tr>
+<tr>
+<td><code>type_text(text, delay_s=0.05, hold_s=0.02)</code></td>
+<td>ASCII US layout; <code>\n</code> → Return; <code>hold_s</code> between down/up; <code>delay_s</code> after each char (<strong>3×</strong> after Return)</td>
+</tr>
+<tr>
+<td><code>request(type, payload)</code></td>
+<td>Raw framed call; raises <code>ProtocolError</code> on ERROR</td>
+</tr>
+<tr>
+<td><code>on_event(handler)</code></td>
+<td>Optional <code>handler(event_id, seq, data)</code> for EVENT frames</td>
+</tr>
+</tbody>
+</table>
+<p>Rules: call <code>hello()</code> first; one outstanding request at a time; never reimplement framing in agent scripts.</p>
+<h2 id="constants">Constants<a class="headerlink" href="#constants" title="Permanent link">&para;</a></h2>
+<p>From <code>gs2debug</code> / <code>gs2debug.keys</code> / <code>gs2debug.types</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Value / meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MEM_MAIN</code></td>
+<td><code>0</code> — CPU MMU view (<code>cpu-&gt;mmu-&gt;read</code> / <code>write</code>)</td>
+</tr>
+<tr>
+<td><code>MEM_MEGAII</code></td>
+<td><code>1</code> — Mega II / IIe-view MMU (<code>computer-&gt;mmu</code>); <strong>IIgs only</strong></td>
+</tr>
+<tr>
+<td><code>MEM_ENSONIQ</code></td>
+<td><code>2</code> — DOC RAM (IIgs only); address = DOC offset</td>
+</tr>
+<tr>
+<td><code>MEM_ADBMICRO</code></td>
+<td>Reserved (ERROR <code>unsupported domain</code>)</td>
+</tr>
+<tr>
+<td><code>DEVICE_ID_DISK_II</code></td>
+<td><code>9</code> — for <code>state_get</code> (60-byte v1 blob; see DebugProtocol.md)</td>
+</tr>
+<tr>
+<td><code>DEVICE_ID_ENSONIQ</code></td>
+<td><code>22</code> — for <code>state_get</code> (784-byte v1 blob; see DebugProtocol.md)</td>
+</tr>
+<tr>
+<td><code>STATE_GET</code></td>
+<td><code>0x00000601</code></td>
+</tr>
+<tr>
+<td><code>MEM_MAIN_RAW</code></td>
+<td><code>4</code> — physical <code>cpu-&gt;mmu-&gt;get_memory_base()[addr]</code> (no MMU/bus)</td>
+</tr>
+<tr>
+<td><code>MEM_MEGAII_RAW</code></td>
+<td><code>5</code> — physical Mega II buffer; <strong>IIgs only</strong></td>
+</tr>
+<tr>
+<td><code>PLATFORM_APPLE_II</code> … <code>PLATFORM_APPLE_IIGS</code></td>
+<td><code>0</code>…<code>5</code> — same as <code>-p</code> / <code>StatusInfo.platform_id</code></td>
+</tr>
+<tr>
+<td><code>SCANCODE_LCTRL</code>, <code>SCANCODE_F12</code>, <code>SCANCODE_RETURN</code>, …</td>
+<td>SDL3 scancodes (see <code>keys.py</code>)</td>
+</tr>
+<tr>
+<td><code>KMOD_LCTRL</code>, <code>KMOD_CTRL</code>, <code>KMOD_LSHIFT</code>, …</td>
+<td>SDL keymod bits for the <strong>event’s</strong> <code>mod</code> field</td>
+</tr>
+<tr>
+<td><code>ProtocolError.code</code> / <code>.message</code></td>
+<td><code>E_*</code> from protocol (<code>E_BAD_LENGTH=2</code>, <code>E_INTERNAL=6</code>, …)</td>
+</tr>
+</tbody>
+</table>
+<p>Addresses are linear <code>uint32</code>. IIe / Mega II text page 1 row 0: <code>0x0400</code> (<code>MEM_MAIN</code> on II/IIe, or <code>MEM_MEGAII</code> on IIgs). IIgs bank <code>$E0</code> text via FPI: <code>MEM_MAIN</code> at <code>0xE00400</code>. <code>MEM_*_RAW</code> uses buffer offsets (IIgs FPI: banks 0–127 in 8 MB; Mega II: 128 KB including aux at <code>+0x10000</code>) — not CPU <code>$E0xxxx</code> addresses.</p>
+<h2 id="recipes">Recipes<a class="headerlink" href="#recipes" title="Permanent link">&para;</a></h2>
+<h3 id="check-platform">Check platform<a class="headerlink" href="#check-platform" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">status = c.get_status()
+print(status.execution_mode, status.platform_id)
+</code></pre>
+<h3 id="peek-poke-text-row">Peek / poke text row<a class="headerlink" href="#peek-poke-text-row" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">row = c.read_mem(MEM_MAIN, 0x0400, 0x28)          # II / IIe
+c.write_mem(MEM_MAIN, 0x0400, os.urandom(0x28))
+assert c.read_mem(MEM_MAIN, 0x0400, 0x28) == data  # verify
+# IIgs FPI (MAIN): use 0xE00400
+# IIgs Mega II:     c.read_mem(MEM_MEGAII, 0x0400, 0x28)
+# Physical buffers: c.read_mem(MEM_MAIN_RAW, 0x0400, 0x28)
+#                   c.read_mem(MEM_MEGAII_RAW, 0x0400, 0x28)  # IIgs
+</code></pre>
+<h3 id="machine-reset">Machine reset<a class="headerlink" href="#machine-reset" title="Permanent link">&para;</a></h3>
+<p>Prefer the protocol command (not keyboard):</p>
+<pre><code class="language-python">c.reset(cold_start=False)   # warm
+c.reset(cold_start=True)    # cold (clears $3F2–$3F4)
+</code></pre>
+<p>Keyboard Control+Reset is still useful for testing KEYEVENT. Handlers check <strong>Ctrl on the F12 event</strong> (macOS/Windows Reset key), not only a prior Ctrl-down:</p>
+<pre><code class="language-python">from gs2debug import SCANCODE_LCTRL, SCANCODE_F12, KMOD_LCTRL, KMOD_CTRL
+import time
+
+c.key_down(SCANCODE_LCTRL, KMOD_LCTRL)
+c.key_down(SCANCODE_F12, KMOD_CTRL)   # mod must include CTRL
+time.sleep(1)
+c.key_up(SCANCODE_F12, KMOD_CTRL)
+c.key_up(SCANCODE_LCTRL, 0)
+</code></pre>
+<h3 id="type-basic-arbitrary-text">Type BASIC / arbitrary text<a class="headerlink" href="#type-basic-arbitrary-text" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">c.type_text('10 PRINT &quot;HI&quot;\nRUN\n', delay_s=0.1)  # prefer ≥0.1 so line numbers are not dropped
+</code></pre>
+<p>Or shell helper (stdin / <code>--text</code> / <code>--file</code>; does <strong>not</strong> embed a program):</p>
+<pre><code class="language-bash">PYTHONPATH=clients/python/src python3 clients/python/examples/type_to_emu.py /tmp/gs2.sock \
+  --reset --wait 2 --delay 0.1 &lt;&lt;'EOF'
+NEW
+10 GR
+20 END
+RUN
+EOF
+</code></pre>
+<p><code>--reset</code> calls protocol <code>reset(cold_start=False)</code>.</p>
+<h3 id="applesoft-graphics-dont-confuse-modes">Applesoft graphics (don’t confuse modes)<a class="headerlink" href="#applesoft-graphics-dont-confuse-modes" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Command</th>
+<th>Lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lo-res <code>GR</code></td>
+<td><code>COLOR=</code> 0–15</td>
+<td><code>HLIN</code> / <code>VLIN</code> (coords ~40×48)</td>
+</tr>
+<tr>
+<td>Hi-res <code>HGR</code></td>
+<td><code>HCOLOR=</code> 0–7</td>
+<td><code>HPLOT x1,y TO x2,y</code> (280×192) — <strong>not</strong> <code>HLIN</code></td>
+</tr>
+</tbody>
+</table>
+<p>IIe-only soft-switch <strong>status</strong> reads (<code>$C01A</code> TEXT, <code>$C01D</code> HIRES, …) are invalid on II / II Plus — use <code>-p 2</code> (or Enhanced) if you need those.</p>
+<h2 id="gotchas">Gotchas<a class="headerlink" href="#gotchas" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Separate terminal</strong> for the emulator — Ctrl-C in the same shell/process group can kill GSSquared. Prefer <code>c.quit()</code> (or start with <code>--no-quit-confirm</code> if the harness must SIGTERM).</li>
+<li><strong>Typing too fast drops keys</strong> (e.g. line <code>60</code> becomes line <code>0</code>). Use <code>delay_s≥0.1</code> and rely on <code>hold_s</code>; Return already gets a longer pause.</li>
+<li><strong>Shifted glyphs</strong> (<code>"</code>, uppercase, …): library holds Shift for that tap; do not put Control/Alt in <code>type_text</code> — use <code>key_down</code> / <code>key_up</code>.</li>
+<li><strong>MAIN / MAIN_RAW / MEGAII / MEGAII_RAW</strong> are implemented; ENSONIQ / ADBMICRO are not.</li>
+<li><strong>IIgs MAIN</strong> is the FPI/banked CPU MMU; <strong>MEGAII</strong> is <code>computer-&gt;mmu</code>. <code>*_RAW</code> indexes <code>get_memory_base()</code> (buffer offsets, not <code>$E0xxxx</code>). Non-GS + MEGAII/_RAW → ERROR <code>MEGAII only on Apple IIgs</code>.</li>
+<li>Disconnecting the client does <strong>not</strong> quit the emulator; it accepts a new client.</li>
+</ol>
+<h2 id="example-scripts">Example scripts<a class="headerlink" href="#example-scripts" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>examples/hello_ping.py</code></td>
+<td>HELLO / GET_STATUS (mode + platform) / PING</td>
+</tr>
+<tr>
+<td><code>examples/read_text40.py</code></td>
+<td>Loop-read II/IIe <code>$0400</code></td>
+</tr>
+<tr>
+<td><code>examples/read_text40_iigs.py</code></td>
+<td>Loop-read IIgs <code>$E0/0400</code> via MAIN</td>
+</tr>
+<tr>
+<td><code>examples/read_text40_megaii.py</code></td>
+<td>Loop-read IIgs <code>$0400</code> via MEGAII</td>
+</tr>
+<tr>
+<td><code>examples/write_text40.py</code></td>
+<td>Random write + readback <code>+/-</code> (II/IIe)</td>
+</tr>
+<tr>
+<td><code>examples/write_text40_iigs.py</code></td>
+<td>Same for <code>$E0/0400</code></td>
+</tr>
+<tr>
+<td><code>examples/type_basic_iie.py</code></td>
+<td>Boot wait, protocol RESET, demo Applesoft</td>
+</tr>
+<tr>
+<td><code>examples/type_to_emu.py</code></td>
+<td>Generic typer tool for agents</td>
+</tr>
+<tr>
+<td><code>examples/test_breakpoints.py</code></td>
+<td>PAUSE/CONTINUE + EXEC/IO breakpoints (IIe Enhanced <code>-p 3</code> and IIgs <code>-p 5</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>All under <code>clients/python/</code>. Each file’s header has concrete Usage lines.</p>
+<h3 id="breakpoints-iie-enhanced-and-iigs">Breakpoints (IIe Enhanced and IIgs)<a class="headerlink" href="#breakpoints-iie-enhanced-and-iigs" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash"># Terminal A — IIe Enhanced
+./build/GSSquared --debug /tmp/gs2-iie.sock -p 3
+
+# Terminal B
+PYTHONPATH=clients/python/src python3 clients/python/examples/test_breakpoints.py /tmp/gs2-iie.sock 3
+</code></pre>
+<pre><code class="language-bash"># Terminal A — IIgs
+./build/GSSquared --debug /tmp/gs2-gs.sock -p 5
+
+# Terminal B
+PYTHONPATH=clients/python/src python3 clients/python/examples/test_breakpoints.py /tmp/gs2-gs.sock 5
+</code></pre>
+<pre><code class="language-python">from gs2debug import Client, BP_KIND_EXEC, BP_FLAG_ENABLED
+
+with Client() as c:
+    c.connect(&quot;/tmp/gs2.sock&quot;)
+    c.hello()
+    bp = c.bp_set(kind=BP_KIND_EXEC, address=0xFA62, flags=BP_FLAG_ENABLED)
+    c.continue_()
+    hit = c.wait_stopped()
+    assert hit.bp_id == bp
+    c.step_into(1)
+    stepped = c.wait_stopped()
+    assert stepped.reason == 4  # STOP_STEP
+    assert len(stepped.trace) == 40
+    c.continue_()  # Policy A steps off if still on EXEC bp
+</code></pre>
 
 
 

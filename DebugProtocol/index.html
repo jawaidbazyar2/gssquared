@@ -1,0 +1,5563 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>External Debug Protocol (Framing v1) - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#external-debug-protocol-framing-v1" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              External Debug Protocol (Framing v1)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../DiskII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../UserInterface/" class="md-tabs__link">
+          
+  
+  
+  Misc
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Misc
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Misc
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals (v1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#frame-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Frame layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-word" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type word
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Type word">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#main-command-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main command numbers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flag-bits-high-byte" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flag bits (high byte)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sequence-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sequence ID
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#payload-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Payload rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transport-and-session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transport and session
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threading-model-hard-requirement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading model (hard requirement)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#initial-command-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initial command set
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Initial command set">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type-ids-meta-main-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type IDs (meta, main == 0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-ids-implemented-non-meta" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type IDs (implemented non-meta)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#protocol-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Protocol version
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hello-main-0-sub-1-0x00000001" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HELLO — main 0, sub 1 (0x00000001)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ping-main-0-sub-2-0x00000002" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PING — main 0, sub 2 (0x00000002)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quit-main-0-sub-5-0x00000005" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QUIT — main 0, sub 5 (0x00000005)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-main-0-sub-3-server-client-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ERROR — main 0, sub 3 (server → client only)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#event-main-0-sub-4-server-client-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EVENT — main 0, sub 4 (server → client only)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-control-main-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution control (main == 1)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Execution control (main == 1)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get_status-main-1-sub-1-0x00000101" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET_STATUS — main 1, sub 1 (0x00000101)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reset-main-1-sub-2-0x00000102" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RESET — main 1, sub 2 (0x00000102)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pause-main-1-sub-3-0x00000103" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PAUSE — main 1, sub 3 (0x00000103)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#continue-main-1-sub-4-0x00000104" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CONTINUE — main 1, sub 4 (0x00000104)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step_into-main-1-sub-5-0x00000105" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STEP_INTO — main 1, sub 5 (0x00000105)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cpu-trace-main-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CPU / trace (main == 2)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CPU / trace (main == 2)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get_trace-main-2-sub-1-0x00000201" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET_TRACE — main 2, sub 1 (0x00000201)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-main-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory (main == 3)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Memory (main == 3)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#readmem-main-3-sub-1-0x00000301" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        READMEM — main 3, sub 1 (0x00000301)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writemem-main-3-sub-2-0x00000302" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WRITEMEM — main 3, sub 2 (0x00000302)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#input-main-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input (main == 5)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Input (main == 5)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keyevent-main-5-sub-1-0x00000501" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        KEYEVENT — main 5, sub 1 (0x00000501)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#devices-main-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Devices (main == 6)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Devices (main == 6)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#state_get-main-6-sub-1-0x00000601" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STATE_GET — main 6, sub 1 (0x00000601)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="STATE_GET — main 6, sub 1 (0x00000601)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ensoniq-state_get-blob-v1-784-bytes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ensoniq STATE_GET blob (v1) — 784 bytes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disk-ii-state_get-blob-v1-60-bytes-device_id_disk_ii-9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disk II STATE_GET blob (v1) — 60 bytes (DEVICE_ID_DISK_II = 9)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apple-mouse-iii-state_get-blob-v1-32-bytes-device_id_mouse-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple Mouse III STATE_GET blob (v1) — 32 bytes (DEVICE_ID_MOUSE = 17)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state_set-main-6-sub-2-0x00000602" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        STATE_SET — main 6, sub 2 (0x00000602)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="STATE_SET — main 6, sub 2 (0x00000602)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#applemouse-iii-state_set-blob-v1-8-bytes-after-device_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AppleMouse III STATE_SET blob (v1) — 8 bytes (after device_id)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-exchange" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example exchange
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="external-debug-protocol-framing-v1">External Debug Protocol (Framing v1)<a class="headerlink" href="#external-debug-protocol-framing-v1" title="Permanent link">&para;</a></h1>
+<p>Wire protocol for host-driven debugging of GSSquared. External tools (CLI, Python, LLM agents) speak this framing over a local byte stream; the emulator does not embed a scripting language or parse JSON.</p>
+<p>This document is the source of truth for the wire format. Exploratory notes in <code>ExternalDebugInterface.md</code> are historical and not normative. Host-side library: <a href="../DebugClient/">DebugClient.md</a>. <strong>Agent cookbook:</strong> <a href="../gs2debug/">gs2debug.md</a>.</p>
+<h2 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Host-driven, imperative commands only — no DSL, Lua, or expression language inside GS2.</li>
+<li>Opaque binary payloads — no JSON encode/decode in the emulator.</li>
+<li>Transport-agnostic framing that works on Unix domain sockets first, TCP later.</li>
+<li>Dedicated protocol-driver thread so the main emulation loop never blocks on socket I/O.</li>
+<li>Extensible type namespace and sequence IDs for later pipelining, streaming, and client-side routing.</li>
+</ul>
+<h2 id="non-goals-v1">Non-goals (v1)<a class="headerlink" href="#non-goals-v1" title="Permanent link">&para;</a></h2>
+<ul>
+<li>TCP listen/connect (frame is ready; transport comes later).</li>
+<li>Required request pipelining (header supports it; implementation may allow only one outstanding request).</li>
+<li>MCP, GDB RSP, or an embedded script runtime.</li>
+<li>Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / READMEM / WRITEMEM / BP_* / KEYEVENT / STATE_GET / STATE_SET / QUIT below.</li>
+</ul>
+<hr />
+<h2 id="frame-layout">Frame layout<a class="headerlink" href="#frame-layout" title="Permanent link">&para;</a></h2>
+<p>All multi-byte integers are <strong>little-endian</strong>.</p>
+<pre><code>Offset  Size  Field
+0       4     type     — command / response / event kind
+4       4     seq      — correlation / routing id
+8       4     length   — N, payload byte count
+12      N     data     — opaque; meaning defined by type
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Header size</td>
+<td>12 bytes</td>
+</tr>
+<tr>
+<td>Max <code>length</code> (v1)</td>
+<td>1 MiB (<code>0x00100000</code>). Larger frames are rejected.</td>
+</tr>
+<tr>
+<td>Empty payload</td>
+<td><code>length == 0</code> is valid; no data bytes follow.</td>
+</tr>
+</tbody>
+</table>
+<p>Receivers must read the 12-byte header, validate <code>length</code>, then read exactly <code>N</code> payload bytes before parsing the next frame.</p>
+<hr />
+<h2 id="type-word">Type word<a class="headerlink" href="#type-word" title="Permanent link">&para;</a></h2>
+<p>The <code>type</code> field packs flags, a main command, and a subcommand:</p>
+<pre><code>Bits 31–24  flags      (8 bits)
+Bits 23–8   main       (16 bits) — command family
+Bits 7–0    sub        (8 bits)  — operation within family (0–255)
+</code></pre>
+<pre><code>type = (flags &lt;&lt; 24) | (main &lt;&lt; 8) | sub
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Extract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>flags</td>
+<td><code>(type &gt;&gt; 24) &amp; 0xFF</code></td>
+</tr>
+<tr>
+<td>main</td>
+<td><code>(type &gt;&gt; 8) &amp; 0xFFFF</code></td>
+</tr>
+<tr>
+<td>sub</td>
+<td><code>type &amp; 0xFF</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="main-command-numbers">Main command numbers<a class="headerlink" href="#main-command-numbers" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th><code>main</code></th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Meta / session (<code>HELLO</code>, <code>PING</code>, <code>ERROR</code>, <code>EVENT</code>)</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>Execution control</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>CPU / regs / disasm</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td>Memory</td>
+</tr>
+<tr>
+<td><code>4</code></td>
+<td>Breakpoints</td>
+</tr>
+<tr>
+<td><code>5</code></td>
+<td>Input / UI</td>
+</tr>
+<tr>
+<td><code>6</code></td>
+<td>Sound / Ensoniq</td>
+</tr>
+</tbody>
+</table>
+<h3 id="flag-bits-high-byte">Flag bits (high byte)<a class="headerlink" href="#flag-bits-high-byte" title="Permanent link">&para;</a></h3>
+<p>Direction is implicit on the wire: client→server is a request; server→client is either a <strong>reply</strong> or an <strong>event</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Bit in flags</th>
+<th>Mask on <code>type</code></th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7–0</td>
+<td><code>0xFF000000</code></td>
+<td>Reserved; must be zero in v1.</td>
+</tr>
+</tbody>
+</table>
+<p>Rules:</p>
+<ol>
+<li><strong>Client → server:</strong> requests with <code>flags == 0</code>.</li>
+<li><strong>Server → client (reply):</strong> same <code>type</code> as the request (<code>flags == 0</code>, same <code>main</code>/<code>sub</code>); <strong><code>seq</code> echoed</strong>. Matched by the client against outstanding requests. Replies never use <code>type=EVENT</code>.</li>
+<li><strong>Server → client (event):</strong> <code>type=EVENT</code> (<code>main=0</code>, <code>sub=4</code>); server allocates <code>seq</code> (monotone per connection is fine). Not correlated to a pending request. Client routes by <code>seq</code> and/or the <code>event_id</code> in the payload.</li>
+<li><strong>Unknown or failed request:</strong> server replies with <code>ERROR</code> (<code>main=0</code>, <code>sub=3</code>), echoing the request <code>seq</code>.</li>
+<li>Client must not send <code>EVENT</code> or <code>ERROR</code>.</li>
+</ol>
+<p>Convenience:</p>
+<pre><code>FLAGS_MASK = 0xFF000000
+MAIN_MASK  = 0x00FFFF00
+SUB_MASK   = 0x000000FF
+TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
+</code></pre>
+<hr />
+<h2 id="sequence-id">Sequence ID<a class="headerlink" href="#sequence-id" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Client chooses <code>seq</code> for each request. Non-zero is recommended; <code>0</code> is reserved for “no correlation.”</li>
+<li>Server <strong>must</strong> echo <code>seq</code> on the matching response.</li>
+<li>Enables later: pipelined requests, fan-out to different client modules, and multi-frame streams that share one <code>seq</code> without changing the header.</li>
+<li><strong>v1 behavior:</strong> at most one outstanding request per connection is acceptable. The header still carries <code>seq</code> so relaxing that later is not a framing break.</li>
+</ul>
+<hr />
+<h2 id="payload-rules">Payload rules<a class="headerlink" href="#payload-rules" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Opaque binary; layout is <strong>per <code>type</code></strong>, documented with each command.</li>
+<li>No JSON in GS2.</li>
+<li>Fields use explicit widths (<code>uint8</code> / <code>uint16</code> / <code>uint32</code> / <code>uint64</code>), little-endian, packed sequentially. Do not rely on compiler struct padding across the wire — document field order and sizes.</li>
+<li>Strings (rare): either length-prefixed inside the payload, or “remainder of payload is UTF-8” when there is a single trailing string (no NUL required).</li>
+</ul>
+<hr />
+<h2 id="transport-and-session">Transport and session<a class="headerlink" href="#transport-and-session" title="Permanent link">&para;</a></h2>
+<p>The protocol is a <strong>byte stream</strong>. Intended transports:</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Transport</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>First</td>
+<td>Local socket (AF_UNIX on macOS / Linux; AF_UNIX on Windows 10+, named pipe as a later fallback if needed)</td>
+</tr>
+<tr>
+<td>Later</td>
+<td>TCP</td>
+</tr>
+</tbody>
+</table>
+<p>Session rules (v1):</p>
+<ul>
+<li>One client connection at a time; additional connects are <strong>rejected</strong>.</li>
+<li>After connect, client sends <code>HELLO</code>; server replies with the same <code>type</code> (<code>HELLO</code>) plus version/caps in the payload. Further commands are undefined until handshake succeeds.</li>
+<li>Socket path / bind address is a CLI concern (e.g. <code>-debug /path</code>); not part of the frame.</li>
+</ul>
+<hr />
+<h2 id="threading-model-hard-requirement">Threading model (hard requirement)<a class="headerlink" href="#threading-model-hard-requirement" title="Permanent link">&para;</a></h2>
+<pre><code>Client  --byte stream--&gt;  protocol driver thread  --ring--&gt;  main emu thread
+        framed messages   accept / read / write /     drain cmds at a safe
+                          frame only; never touch     point; never block on
+                          emulated machine state      socket I/O
+</code></pre>
+<p>Rules:</p>
+<ol>
+<li><strong>Protocol driver is its own thread</strong>, started when the debug socket is enabled. It owns the listen socket, accept, framed read/write, and wire-level seq correlation.</li>
+<li><strong>Main emulation loop stays non-blocking</strong> w.r.t. this interface: no <code>recv</code> / <code>send</code> / <code>accept</code> on the main thread. Only a cheap non-blocking drain of a thread-safe command ring (and enqueue of replies) at a safe point.</li>
+<li>Protocol thread <strong>must not</strong> read or write emulated machine state. Peeks, pokes, and run-control go through the ring to the main thread.</li>
+<li>Main thread posts results to a response ring (or equivalent). Protocol thread frames them and writes to the socket. Socket backpressure is absorbed on the protocol thread, not the emu loop.</li>
+<li>Meta commands that need no machine state (<code>HELLO</code>, <code>PING</code>) <strong>may</strong> be answered entirely on the protocol thread so handshake does not depend on the emu loop ticking. <code>QUIT</code> runs on the main thread (force-halt).</li>
+</ol>
+<hr />
+<h2 id="initial-command-set">Initial command set<a class="headerlink" href="#initial-command-set" title="Permanent link">&para;</a></h2>
+<h3 id="type-ids-meta-main-0">Type IDs (meta, <code>main == 0</code>)<a class="headerlink" href="#type-ids-meta-main-0" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th><code>main</code></th>
+<th><code>sub</code></th>
+<th><code>type</code></th>
+<th>Direction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HELLO</code></td>
+<td>0</td>
+<td>1</td>
+<td><code>0x00000001</code></td>
+<td>client request; server reply uses same <code>type</code></td>
+</tr>
+<tr>
+<td><code>PING</code></td>
+<td>0</td>
+<td>2</td>
+<td><code>0x00000002</code></td>
+<td>client request; server reply uses same <code>type</code></td>
+</tr>
+<tr>
+<td><code>ERROR</code></td>
+<td>0</td>
+<td>3</td>
+<td><code>0x00000003</code></td>
+<td>server reply only — when a request fails or is unknown</td>
+</tr>
+<tr>
+<td><code>EVENT</code></td>
+<td>0</td>
+<td>4</td>
+<td><code>0x00000004</code></td>
+<td>server → client only — unsolicited notification</td>
+</tr>
+<tr>
+<td><code>QUIT</code></td>
+<td>0</td>
+<td>5</td>
+<td><code>0x00000005</code></td>
+<td>client request; force-quit (skips QuitModal)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="type-ids-implemented-non-meta">Type IDs (implemented non-meta)<a class="headerlink" href="#type-ids-implemented-non-meta" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th><code>main</code></th>
+<th><code>sub</code></th>
+<th><code>type</code></th>
+<th>Thread</th>
+<th>Reply payload</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET_STATUS</code></td>
+<td>1</td>
+<td>1</td>
+<td><code>0x00000101</code></td>
+<td>main</td>
+<td>8 bytes: <code>execution_mode</code>, <code>platform_id</code></td>
+</tr>
+<tr>
+<td><code>RESET</code></td>
+<td>1</td>
+<td>2</td>
+<td><code>0x00000102</code></td>
+<td>main</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>PAUSE</code></td>
+<td>1</td>
+<td>3</td>
+<td><code>0x00000103</code></td>
+<td>main</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>CONTINUE</code></td>
+<td>1</td>
+<td>4</td>
+<td><code>0x00000104</code></td>
+<td>main</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>STEP_INTO</code></td>
+<td>1</td>
+<td>5</td>
+<td><code>0x00000105</code></td>
+<td>main</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>GET_TRACE</code></td>
+<td>2</td>
+<td>1</td>
+<td><code>0x00000201</code></td>
+<td>main</td>
+<td>8-byte header + <code>N×40</code> entries</td>
+</tr>
+<tr>
+<td><code>READMEM</code></td>
+<td>3</td>
+<td>1</td>
+<td><code>0x00000301</code></td>
+<td>main</td>
+<td><code>length</code> data bytes</td>
+</tr>
+<tr>
+<td><code>WRITEMEM</code></td>
+<td>3</td>
+<td>2</td>
+<td><code>0x00000302</code></td>
+<td>main</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>BP_SET</code></td>
+<td>4</td>
+<td>1</td>
+<td><code>0x00000401</code></td>
+<td>main</td>
+<td>4 bytes: <code>id</code></td>
+</tr>
+<tr>
+<td><code>BP_CLEAR</code></td>
+<td>4</td>
+<td>2</td>
+<td><code>0x00000402</code></td>
+<td>main</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>BP_CLEAR_ALL</code></td>
+<td>4</td>
+<td>3</td>
+<td><code>0x00000403</code></td>
+<td>main</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>BP_ENABLE</code></td>
+<td>4</td>
+<td>4</td>
+<td><code>0x00000404</code></td>
+<td>main</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>BP_LIST</code></td>
+<td>4</td>
+<td>5</td>
+<td><code>0x00000405</code></td>
+<td>main</td>
+<td><code>count</code> + records</td>
+</tr>
+<tr>
+<td><code>KEYEVENT</code></td>
+<td>5</td>
+<td>1</td>
+<td><code>0x00000501</code></td>
+<td>protocol (<code>SDL_PushEvent</code>)</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>STATE_GET</code></td>
+<td>6</td>
+<td>1</td>
+<td><code>0x00000601</code></td>
+<td>main</td>
+<td>device-specific blob</td>
+</tr>
+<tr>
+<td><code>STATE_SET</code></td>
+<td>6</td>
+<td>2</td>
+<td><code>0x00000602</code></td>
+<td>main</td>
+<td>empty (or device ack)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="protocol-version">Protocol version<a class="headerlink" href="#protocol-version" title="Permanent link">&para;</a></h3>
+<p>Current protocol version: <strong>1</strong>.</p>
+<h3 id="hello-main-0-sub-1-0x00000001"><code>HELLO</code> — main 0, sub 1 (<code>0x00000001</code>)<a class="headerlink" href="#hello-main-0-sub-1-0x00000001" title="Permanent link">&para;</a></h3>
+<p>First message after connect. May be handled on the protocol thread.</p>
+<p><strong>Request payload</strong> (8 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>version</code></td>
+<td>Client protocol version (<code>uint32</code>). Send <code>1</code>.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>flags</code></td>
+<td>Client capability flags (<code>uint32</code>). v1: <code>0</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply</strong> (same <code>type=HELLO</code>, echoed <code>seq</code>), payload (12 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>version</code></td>
+<td>Server protocol version (<code>uint32</code>). <code>1</code>.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>flags</code></td>
+<td>Server capability flags (<code>uint32</code>). v1: <code>0</code>.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4</td>
+<td><code>max_payload</code></td>
+<td>Max accepted payload length (<code>uint32</code>). <code>0x00100000</code> (1 MiB).</td>
+</tr>
+</tbody>
+</table>
+<p>If the client version is unsupported, server replies with <code>ERROR</code> (same <code>seq</code>) instead of <code>HELLO</code>.</p>
+<h3 id="ping-main-0-sub-2-0x00000002"><code>PING</code> — main 0, sub 2 (<code>0x00000002</code>)<a class="headerlink" href="#ping-main-0-sub-2-0x00000002" title="Permanent link">&para;</a></h3>
+<p>Liveness check. May be handled on the protocol thread.</p>
+<p><strong>Request payload:</strong> empty (<code>length == 0</code>).</p>
+<p><strong>Success reply</strong> (same <code>type=PING</code>, echoed <code>seq</code>): empty payload.</p>
+<h3 id="quit-main-0-sub-5-0x00000005"><code>QUIT</code> — main 0, sub 5 (<code>0x00000005</code>)<a class="headerlink" href="#quit-main-0-sub-5-0x00000005" title="Permanent link">&para;</a></h3>
+<p>Force-quit the emulator process without the QuitModal confirmation or dirty-disk save prompts. Runs on the main thread (sets <code>no_quit_confirm</code>, posts <code>HLT_USER</code> / <code>SDL_EVENT_QUIT</code>). Prefer this over killing the process from test harnesses.</p>
+<p>Also available as CLI: <code>--no-quit-confirm</code> (same skip for any <code>SDL_EVENT_QUIT</code>, including SIGTERM mapped by SDL).</p>
+<p><strong>Request payload:</strong> empty (<code>length == 0</code>). Requires successful <code>HELLO</code>.</p>
+<p><strong>Success reply</strong> (same <code>type=QUIT</code>, echoed <code>seq</code>): empty payload. The socket may close shortly after.</p>
+<h3 id="error-main-0-sub-3-server-client-only"><code>ERROR</code> — main 0, sub 3 (server → client only)<a class="headerlink" href="#error-main-0-sub-3-server-client-only" title="Permanent link">&para;</a></h3>
+<p>Used for failures and unknown request types. Sent with the failing request’s <code>seq</code> and <code>type=ERROR</code> (<code>0x00000003</code>).</p>
+<p><strong>Payload</strong> (4 + M bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>code</code></td>
+<td>Error code (<code>uint32</code>), see below.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>M</td>
+<td><code>message</code></td>
+<td>Optional UTF-8 text; <code>M = length - 4</code>. Not NUL-terminated. <code>M</code> may be 0.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Error codes (v1):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>E_UNKNOWN_TYPE</code></td>
+<td>Request <code>type</code> not recognized.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>E_BAD_LENGTH</code></td>
+<td>Payload length invalid for this type, or exceeds <code>max_payload</code>.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>E_BAD_VERSION</code></td>
+<td><code>HELLO</code> version not supported.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>E_NOT_HANDSHAKED</code></td>
+<td>Command before successful <code>HELLO</code>.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>E_BUSY</code></td>
+<td>Previous request still outstanding (if single-flight).</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>E_INTERNAL</code></td>
+<td>Unspecified server failure.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="event-main-0-sub-4-server-client-only"><code>EVENT</code> — main 0, sub 4 (server → client only)<a class="headerlink" href="#event-main-0-sub-4-server-client-only" title="Permanent link">&para;</a></h3>
+<p>Unsolicited notification (breakpoint hit, run-state change, etc.). Not a reply to a request. Server chooses <code>seq</code> for client-side routing.</p>
+<p><strong>Payload</strong> (4 + M bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>event_id</code></td>
+<td>Event kind (<code>uint32</code>).</td>
+</tr>
+<tr>
+<td>4</td>
+<td>M</td>
+<td><code>data</code></td>
+<td>Event-specific bytes; <code>M = length - 4</code>. May be 0.</td>
+</tr>
+</tbody>
+</table>
+<p>No <code>event_id</code> values are defined in v1. Concrete ids and <code>data</code> layouts will be added when those notifications are implemented. Clients should ignore unknown <code>event_id</code>s.</p>
+<h3 id="execution-control-main-1">Execution control (<code>main == 1</code>)<a class="headerlink" href="#execution-control-main-1" title="Permanent link">&para;</a></h3>
+<p>Commands in this family are executed on the <strong>main emulation thread</strong> (via a request/reply bridge from the protocol driver). They must not be answered solely on the protocol thread.</p>
+<h4 id="get_status-main-1-sub-1-0x00000101"><code>GET_STATUS</code> — main 1, sub 1 (<code>0x00000101</code>)<a class="headerlink" href="#get_status-main-1-sub-1-0x00000101" title="Permanent link">&para;</a></h4>
+<p>Read-only snapshot of run-control and platform identity.</p>
+<p><strong>Request payload:</strong> empty (<code>length == 0</code>). Requires successful <code>HELLO</code>.</p>
+<p><strong>Success reply</strong> (same <code>type=GET_STATUS</code>, echoed <code>seq</code>), payload (8 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>execution_mode</code></td>
+<td><code>uint32</code> matching emulator <code>execution_modes_t</code>: <code>0=NORMAL</code>, <code>1=STEP_INTO</code>, <code>2=PAUSED</code>.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>platform_id</code></td>
+<td><code>uint32</code> matching <code>PlatformId_t</code> / CLI <code>-p N</code>: <code>0=II</code>, <code>1=II Plus</code>, <code>2=IIe</code>, <code>3=IIe Enhanced</code>, <code>4=IIe 65816</code>, <code>5=IIgs</code>. <code>0xFFFFFFFF</code> if unknown.</td>
+</tr>
+</tbody>
+</table>
+<p>If no machine (<code>computer_t</code>) is available yet, server replies <code>ERROR</code> with <code>E_INTERNAL</code> and message <code>no machine</code>.</p>
+<h4 id="reset-main-1-sub-2-0x00000102"><code>RESET</code> — main 1, sub 2 (<code>0x00000102</code>)<a class="headerlink" href="#reset-main-1-sub-2-0x00000102" title="Permanent link">&para;</a></h4>
+<p>Invoke <code>computer_t::reset(cold_start)</code> on the main thread.</p>
+<p><strong>Request payload</strong> (4 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>cold_start</code></td>
+<td><code>uint32</code>: <code>0</code> = warm reset, <code>1</code> = cold start (clears <code>$3F2</code>–<code>$3F4</code> before reset).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply</strong> (same <code>type=RESET</code>, echoed <code>seq</code>): empty payload.</p>
+<p><strong>Bounds:</strong> handshake required; payload exactly 4 bytes; <code>cold_start</code> must be <code>0</code> or <code>1</code>; no machine → <code>E_INTERNAL</code> / <code>no machine</code>.</p>
+<h4 id="pause-main-1-sub-3-0x00000103"><code>PAUSE</code> — main 1, sub 3 (<code>0x00000103</code>)<a class="headerlink" href="#pause-main-1-sub-3-0x00000103" title="Permanent link">&para;</a></h4>
+<p>Enter <code>EXEC_PAUSED</code>. Emits <code>EVT_STOPPED</code> (<code>STOP_PAUSE</code>) and <code>EVT_RUN_STATE</code>.</p>
+<p><strong>Request payload:</strong> empty. <strong>Success reply:</strong> empty.</p>
+<h4 id="continue-main-1-sub-4-0x00000104"><code>CONTINUE</code> — main 1, sub 4 (<code>0x00000104</code>)<a class="headerlink" href="#continue-main-1-sub-4-0x00000104" title="Permanent link">&para;</a></h4>
+<p>Resume <code>EXEC_NORMAL</code> from pause / step. Emits <code>EVT_RUN_STATE</code>. Applies Policy A when leaving an <code>EXEC</code> / step stop (see breakpoint semantics).</p>
+<p><strong>Request payload:</strong> empty. <strong>Success reply:</strong> empty.</p>
+<h4 id="step_into-main-1-sub-5-0x00000105"><code>STEP_INTO</code> — main 1, sub 5 (<code>0x00000105</code>)<a class="headerlink" href="#step_into-main-1-sub-5-0x00000105" title="Permanent link">&para;</a></h4>
+<p>Arm the existing emulator step path: set <code>execution_mode = EXEC_STEP_INTO</code> and <code>instructions_left = count</code>. The next emulation frame runs <code>count</code> instructions (same as the built-in debugger’s step-into), then idles in <code>EXEC_STEP_INTO</code> with <code>instructions_left == 0</code>.</p>
+<p><strong>Request payload</strong> (4 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>count</code></td>
+<td><code>uint32</code> instruction count (<code>instructions_left</code>). Must be <code>&gt;= 1</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply</strong> (same <code>type=STEP_INTO</code>, echoed <code>seq</code>): empty payload. The request only arms the step; it does <strong>not</strong> wait for completion.</p>
+<p><strong>On completion</strong> (after the instruction batch finishes on the main thread): unsolicited <code>EVENT</code> <code>EVT_STOPPED</code> with <code>reason = STOP_STEP</code> and the post-instruction <code>system_trace_entry_t</code> snapshot (same 72-byte layout as breakpoint stops). Also emits <code>EVT_RUN_STATE</code> when entering <code>EXEC_STEP_INTO</code> from another mode.</p>
+<p><strong>Bounds:</strong> handshake required; payload exactly 4 bytes; <code>count == 0</code> → <code>E_BAD_LENGTH</code> / <code>STEP_INTO count must be &gt;= 1</code>; no machine → <code>E_INTERNAL</code> / <code>no machine</code>.</p>
+<p>Breakpoint checks are <strong>not</strong> performed while executing the step batch (same as UI step-into).</p>
+<h3 id="cpu-trace-main-2">CPU / trace (<code>main == 2</code>)<a class="headerlink" href="#cpu-trace-main-2" title="Permanent link">&para;</a></h3>
+<p>Commands in this family run on the <strong>main emulation thread</strong>.</p>
+<h4 id="get_trace-main-2-sub-1-0x00000201"><code>GET_TRACE</code> — main 2, sub 1 (<code>0x00000201</code>)<a class="headerlink" href="#get_trace-main-2-sub-1-0x00000201" title="Permanent link">&para;</a></h4>
+<p>Read a window from the CPU instruction trace ring buffer (<code>cpu-&gt;trace_buffer</code>, capacity 100000, 40-byte <code>system_trace_entry_t</code> records — same layout as <code>EVT_STOPPED.trace</code>).</p>
+<p><strong>Request payload</strong> (8 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>ago</code></td>
+<td><code>uint32</code>: how many instructions <strong>before the newest</strong> completed entry to place the window’s newest end. <code>0</code> = most recent entry.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>count</code></td>
+<td><code>uint32</code>: number of records to return, extending <strong>into the past</strong> from that end. Must be <code>&gt;= 1</code> and <code>&lt;= 16384</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Window:</strong> logical indices <code>[newest − ago − count + 1, newest − ago]</code> (inclusive), clamped to what exists. If <code>ago &gt;= available</code>, <code>returned = 0</code>. Empty ring → <code>returned = 0</code>.</p>
+<p><strong>Success reply</strong> (same <code>type=GET_TRACE</code>, echoed <code>seq</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>available</code></td>
+<td>Total entries currently in the ring (<code>uint32</code>).</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>returned</code></td>
+<td><code>N</code> — may be less than requested <code>count</code> (<code>uint32</code>).</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>N × 40</code></td>
+<td>entries</td>
+<td>Packed <code>system_trace_entry_t</code> blobs, <strong>oldest → newest</strong>.</td>
+</tr>
+</tbody>
+</table>
+<p>Allowed anytime (like <code>READMEM</code>). Snapshot is consistent for that bridge call; while the guest is running, <code>head</code> may advance between calls. Host pages older history with a larger <code>ago</code>.</p>
+<p><strong>Bounds:</strong> handshake required; payload exactly 8 bytes; <code>count == 0</code> or <code>count &gt; 16384</code> → <code>E_BAD_LENGTH</code>; no CPU / trace buffer → <code>E_INTERNAL</code> / <code>no machine</code>.</p>
+<h3 id="memory-main-3">Memory (<code>main == 3</code>)<a class="headerlink" href="#memory-main-3" title="Permanent link">&para;</a></h3>
+<p>Commands in this family run on the <strong>main emulation thread</strong>.</p>
+<h4 id="readmem-main-3-sub-1-0x00000301"><code>READMEM</code> — main 3, sub 1 (<code>0x00000301</code>)<a class="headerlink" href="#readmem-main-3-sub-1-0x00000301" title="Permanent link">&para;</a></h4>
+<p>Peek bytes from a memory domain.</p>
+<p><strong>Request payload</strong> (12 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>domain</code></td>
+<td>Memory domain (<code>uint32</code>), see below.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>address</code></td>
+<td>Base address (<code>uint32</code>), little-endian.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4</td>
+<td><code>length</code></td>
+<td>Byte count (<code>uint32</code>). Must be &gt; 0.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply</strong> (same <code>type=READMEM</code>, echoed <code>seq</code>): exactly <code>length</code> raw data bytes.</p>
+<p><strong>Domains:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+<th>Source</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>MAIN</code></td>
+<td>CPU view: <code>computer-&gt;cpu-&gt;mmu-&gt;read(addr)</code> (II/IIe MMU, or IIgs FPI / banked MMU)</td>
+<td>Implemented</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>MEGAII</code></td>
+<td>Mega II / IIe-view MMU: <code>computer-&gt;mmu-&gt;read(addr)</code></td>
+<td>Implemented (Apple IIgs only)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>ENSONIQ</code></td>
+<td>DOC RAM (<code>ensoniq_state_t::doc_ram</code>), address = DOC offset <code>0</code>–<code>0xFFFF</code></td>
+<td>Implemented (Apple IIgs only)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>ADBMICRO</code></td>
+<td>ADB microcontroller memory</td>
+<td>Reserved</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>MAIN_RAW</code></td>
+<td>Physical RAM: <code>cpu-&gt;mmu-&gt;get_memory_base()[addr]</code></td>
+<td>Implemented</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>MEGAII_RAW</code></td>
+<td>Physical Mega II RAM: <code>computer-&gt;mmu-&gt;get_memory_base()[addr]</code></td>
+<td>Implemented (Apple IIgs only)</td>
+</tr>
+</tbody>
+</table>
+<p>On IIgs, <code>computer-&gt;mmu</code> is Mega II while <code>cpu-&gt;mmu</code> is the FPI; <code>MAIN</code> / <code>MAIN_RAW</code> use the CPU MMU. Addresses for <code>MEGAII</code> are passed through as-is (typically <code>0x0000</code>–<code>0xFFFF</code>, e.g. text <code>$0400</code>).</p>
+<p><code>MAIN_RAW</code> / <code>MEGAII_RAW</code> index the contiguous RAM allocation (not the page table, not bus <code>read</code>/<code>write</code>):</p>
+<ul>
+<li>II / II+: ~48 KB</li>
+<li>IIe / Mega II: 128 KB (main at <code>[0..]</code>, aux at <code>[0x10000..]</code>)</li>
+<li>IIgs FPI (<code>MAIN_RAW</code>): 8 MB (<code>bank * 0x10000 + offset</code> for banks 0–127)</li>
+</ul>
+<p><strong>Bounds:</strong></p>
+<ul>
+<li>Request payload must be exactly 12 bytes; otherwise <code>E_BAD_LENGTH</code>.</li>
+<li><code>length == 0</code> → <code>E_BAD_LENGTH</code>.</li>
+<li><code>length</code> capped at <strong>65536</strong> (and never above frame <code>max_payload</code>).</li>
+<li>Reject if <code>address + length</code> wraps <code>uint32</code>.</li>
+<li><code>MAIN_RAW</code> / <code>MEGAII_RAW</code>: reject if <code>address + length</code> exceeds <code>get_memory_size()</code> → <code>E_BAD_LENGTH</code> / <code>out of range</code>.</li>
+<li>Unimplemented domain → <code>E_INTERNAL</code> with message <code>unsupported domain</code>.</li>
+<li><code>MEGAII</code> / <code>MEGAII_RAW</code> on a non-IIgs platform → <code>E_INTERNAL</code> / <code>MEGAII only on Apple IIgs</code>.</li>
+<li>No machine / no MMU for the domain → <code>E_INTERNAL</code> / <code>no machine</code>.</li>
+</ul>
+<p>Unmapped addresses still succeed for <code>MAIN</code> / <code>MEGAII</code>: MMU <code>read()</code> returns floating-bus data as usual.</p>
+<h4 id="writemem-main-3-sub-2-0x00000302"><code>WRITEMEM</code> — main 3, sub 2 (<code>0x00000302</code>)<a class="headerlink" href="#writemem-main-3-sub-2-0x00000302" title="Permanent link">&para;</a></h4>
+<p>Poke bytes into a memory domain.</p>
+<p><strong>Request payload</strong> (<code>12 + length</code> bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>domain</code></td>
+<td>Memory domain (<code>uint32</code>), same table as READMEM.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>address</code></td>
+<td>Base address (<code>uint32</code>), little-endian.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4</td>
+<td><code>length</code></td>
+<td>Byte count (<code>uint32</code>). Must be &gt; 0.</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>length</code></td>
+<td><code>data</code></td>
+<td>Raw bytes to write.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply</strong> (same <code>type=WRITEMEM</code>, echoed <code>seq</code>): empty payload.</p>
+<p><strong>Domains:</strong> same as READMEM. <code>MAIN</code>, <code>MAIN_RAW</code>, and <code>MEGAII</code> / <code>MEGAII_RAW</code> (IIgs only) are implemented.</p>
+<p><strong>Bounds:</strong></p>
+<ul>
+<li>Frame payload length must be exactly <code>12 + length</code>; otherwise <code>E_BAD_LENGTH</code>.</li>
+<li><code>length == 0</code> → <code>E_BAD_LENGTH</code>.</li>
+<li><code>length</code> capped at <strong>65536</strong> (and never above frame <code>max_payload</code>).</li>
+<li>Reject if <code>address + length</code> wraps <code>uint32</code>.</li>
+<li><code>MAIN_RAW</code> / <code>MEGAII_RAW</code>: reject if <code>address + length</code> exceeds <code>get_memory_size()</code> → <code>E_BAD_LENGTH</code> / <code>out of range</code>.</li>
+<li>Unimplemented domain → <code>E_INTERNAL</code> with message <code>unsupported domain</code>.</li>
+<li><code>MEGAII</code> / <code>MEGAII_RAW</code> on a non-IIgs platform → <code>E_INTERNAL</code> / <code>MEGAII only on Apple IIgs</code>.</li>
+<li><code>ENSONIQ</code> on a non-IIgs platform or with no Ensoniq → <code>E_INTERNAL</code> (<code>unsupported domain</code> / <code>no ensoniq</code>).</li>
+<li><code>ENSONIQ</code>: reject if <code>address + length</code> exceeds <code>0x10000</code> → <code>E_BAD_LENGTH</code>.</li>
+<li>No machine / no MMU for the domain → <code>E_INTERNAL</code> / <code>no machine</code>.</li>
+</ul>
+<p><code>ENSONIQ</code> peeks/pokes DOC RAM with raw <code>memcpy</code> (no Sound GLU side effects).</p>
+<h3 id="input-main-5">Input (<code>main == 5</code>)<a class="headerlink" href="#input-main-5" title="Permanent link">&para;</a></h3>
+<h4 id="keyevent-main-5-sub-1-0x00000501"><code>KEYEVENT</code> — main 5, sub 1 (<code>0x00000501</code>)<a class="headerlink" href="#keyevent-main-5-sub-1-0x00000501" title="Permanent link">&para;</a></h4>
+<p>Inject one SDL keyboard event into the emulator event queue (<code>SDL_PushEvent</code>). Handled on the <strong>protocol thread</strong> (<code>SDL_PushEvent</code> is thread-safe). II/e keyboard and IIgs KeyGloo see the same events as a real keypress.</p>
+<p><strong>Request payload</strong> (12 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>down</code></td>
+<td><code>1</code> = key down, <code>0</code> = key up.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>scancode</code></td>
+<td><code>SDL_Scancode</code> (<code>uint32</code>).</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4</td>
+<td><code>mod</code></td>
+<td><code>SDL_Keymod</code> flags for this event (<code>uint32</code>).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply</strong> (same <code>type=KEYEVENT</code>, echoed <code>seq</code>): empty payload.</p>
+<p>Server fills <code>event.key.key</code> via <code>SDL_GetKeyFromScancode(scancode, mod, false)</code>, sets <code>repeat=false</code>, and pushes <code>SDL_EVENT_KEY_DOWN</code> or <code>SDL_EVENT_KEY_UP</code>.</p>
+<p><strong>Bounds:</strong></p>
+<ul>
+<li>Handshake required; payload exactly 12 bytes.</li>
+<li><code>down</code> must be <code>0</code> or <code>1</code>; otherwise <code>E_BAD_LENGTH</code>.</li>
+<li><code>SDL_PushEvent</code> failure → <code>E_INTERNAL</code>.</li>
+</ul>
+<p>Clients must set <code>mod</code> to the desired modifier mask <strong>on that event</strong>. Control-Reset on macOS/Windows: Control key-down, then F12 key-down with <code>mod</code> including <code>SDL_KMOD_CTRL</code> (handlers check <code>event.key.mod</code> on the Reset key itself).</p>
+<h3 id="devices-main-6">Devices (<code>main == 6</code>)<a class="headerlink" href="#devices-main-6" title="Permanent link">&para;</a></h3>
+<p>Generic device ops. Devices register in-process handlers via <code>computer_t::register_device_debug(device_id, …)</code>; the protocol server routes by <code>device_id</code> and does not interpret device blobs.</p>
+<h4 id="state_get-main-6-sub-1-0x00000601"><code>STATE_GET</code> — main 6, sub 1 (<code>0x00000601</code>)<a class="headerlink" href="#state_get-main-6-sub-1-0x00000601" title="Permanent link">&para;</a></h4>
+<p><strong>Request payload</strong> (4 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>device_id</code></td>
+<td><code>uint32</code> matching <code>device_id</code> / <code>DEVICE_ID_*</code> (e.g. <code>DEVICE_ID_ENSONIQ</code> = 22).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply:</strong> opaque device blob (layout owned by the device; versioned).</p>
+<p><strong>Bounds:</strong> handshake required; payload exactly 4 bytes; unknown / unregistered device → <code>E_INTERNAL</code> / <code>unknown device</code> (or handler message).</p>
+<h5 id="ensoniq-state_get-blob-v1-784-bytes">Ensoniq <code>STATE_GET</code> blob (v1) — 784 bytes<a class="headerlink" href="#ensoniq-state_get-blob-v1-784-bytes" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>version</code> = <code>1</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>1</td>
+<td><code>soundctl</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>1</td>
+<td><code>sounddata</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>1</td>
+<td><code>soundadrl</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>1</td>
+<td><code>soundadrh</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>1</td>
+<td><code>rege0</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>1</td>
+<td><code>rege1</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>1</td>
+<td><code>oscsenabled</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>1</td>
+<td>pad <code>0</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>4</td>
+<td><code>output_rate_hz</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>32 × 24</td>
+<td>oscillators</td>
+</tr>
+</tbody>
+</table>
+<p>Per-oscillator (24 bytes): <code>freq</code> u16, <code>wtsize</code> u16, <code>control</code> u8, <code>vol</code> u8, <code>data</code> u8, pad, <code>wavetblpointer</code> u32, <code>wavetblsize</code> u8, <code>resolution</code> u8, <code>irqpend</code> u8, pad, <code>accumulator</code> u32, pad u32.</p>
+<h5 id="disk-ii-state_get-blob-v1-60-bytes-device_id_disk_ii-9">Disk II <code>STATE_GET</code> blob (v1) — 60 bytes (<code>DEVICE_ID_DISK_II</code> = 9)<a class="headerlink" href="#disk-ii-state_get-blob-v1-60-bytes-device_id_disk_ii-9" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>version</code> = <code>1</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>1</td>
+<td><code>select</code> (drive 0/1)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>1</td>
+<td><code>motor_on</code> (physical / 555 grace)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>1</td>
+<td><code>motor_latch</code> (<code>diskii_enable</code>)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>1</td>
+<td><code>q6</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>1</td>
+<td><code>q7</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>1</td>
+<td><code>data_register</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>1</td>
+<td><code>sequencer_state</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>1</td>
+<td>pad <code>0</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>8</td>
+<td><code>mark_cycles_turnoff</code> (c14m deadline, or 0)</td>
+</tr>
+<tr>
+<td>20</td>
+<td>8</td>
+<td><code>cpu_cycles</code></td>
+</tr>
+<tr>
+<td>28</td>
+<td>16</td>
+<td>drive 0</td>
+</tr>
+<tr>
+<td>44</td>
+<td>16</td>
+<td>drive 1</td>
+</tr>
+</tbody>
+</table>
+<p>Per-drive (16 bytes): <code>track</code> i16 (quarter-tracks), <code>max_tracks</code> i16, <code>phase0</code>…<code>phase3</code> u8 each, <code>enable</code> u8, <code>write_protect</code> u8, <code>mounted</code> u8, pad×5.</p>
+<h5 id="apple-mouse-iii-state_get-blob-v1-32-bytes-device_id_mouse-17">Apple Mouse III <code>STATE_GET</code> blob (v1) — 32 bytes (<code>DEVICE_ID_MOUSE</code> = 17)<a class="headerlink" href="#apple-mouse-iii-state_get-blob-v1-32-bytes-device_id_mouse-17" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>version</code> = <code>1</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>1</td>
+<td><code>slot</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>1</td>
+<td><code>rom_bank</code> (0–7)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>1</td>
+<td><code>operating_mode</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>1</td>
+<td><code>int_state</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>1</td>
+<td><code>irq_asserted</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>1</td>
+<td><code>button0</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>1</td>
+<td><code>button1</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>1</td>
+<td>pad <code>0</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>2</td>
+<td><code>x</code> (i16)</td>
+</tr>
+<tr>
+<td>14</td>
+<td>2</td>
+<td><code>y</code> (i16)</td>
+</tr>
+<tr>
+<td>16</td>
+<td>2</td>
+<td><code>clamp_min_x</code> (i16)</td>
+</tr>
+<tr>
+<td>18</td>
+<td>2</td>
+<td><code>clamp_min_y</code> (i16)</td>
+</tr>
+<tr>
+<td>20</td>
+<td>2</td>
+<td><code>clamp_max_x</code> (i16)</td>
+</tr>
+<tr>
+<td>22</td>
+<td>2</td>
+<td><code>clamp_max_y</code> (i16)</td>
+</tr>
+<tr>
+<td>24</td>
+<td>1</td>
+<td>PIA <code>ORA</code></td>
+</tr>
+<tr>
+<td>25</td>
+<td>1</td>
+<td>PIA <code>ORB</code></td>
+</tr>
+<tr>
+<td>26</td>
+<td>1</td>
+<td>PIA <code>DDRA</code></td>
+</tr>
+<tr>
+<td>27</td>
+<td>1</td>
+<td>PIA <code>DDRB</code></td>
+</tr>
+<tr>
+<td>28</td>
+<td>1</td>
+<td>PIA <code>CRA</code></td>
+</tr>
+<tr>
+<td>29</td>
+<td>1</td>
+<td>PIA <code>CRB</code></td>
+</tr>
+<tr>
+<td>30</td>
+<td>1</td>
+<td>PIA <code>IA</code></td>
+</tr>
+<tr>
+<td>31</td>
+<td>1</td>
+<td>PIA <code>IB</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="state_set-main-6-sub-2-0x00000602"><code>STATE_SET</code> — main 6, sub 2 (<code>0x00000602</code>)<a class="headerlink" href="#state_set-main-6-sub-2-0x00000602" title="Permanent link">&para;</a></h4>
+<p><strong>Request payload:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>device_id</code></td>
+<td><code>uint32</code> matching <code>DEVICE_ID_*</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>N</td>
+<td>blob</td>
+<td>device-specific (versioned)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply:</strong> empty (or a small device ack blob).</p>
+<p><strong>Bounds:</strong> handshake required; payload at least 4 bytes; unknown / unregistered device → <code>E_INTERNAL</code>.</p>
+<h5 id="applemouse-iii-state_set-blob-v1-8-bytes-after-device_id">AppleMouse III <code>STATE_SET</code> blob (v1) — 8 bytes (after <code>device_id</code>)<a class="headerlink" href="#applemouse-iii-state_set-blob-v1-8-bytes-after-device_id" title="Permanent link">&para;</a></h5>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>version</code> = <code>1</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>1</td>
+<td><code>flags</code> — bit0 apply relative motion (<code>dx</code>/<code>dy</code>); bit1 set buttons</td>
+</tr>
+<tr>
+<td>5</td>
+<td>1</td>
+<td><code>dx</code> (i8)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>1</td>
+<td><code>dy</code> (i8)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>1</td>
+<td><code>buttons</code> — bit0 button0, bit1 button1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="example-exchange">Example exchange<a class="headerlink" href="#example-exchange" title="Permanent link">&para;</a></h2>
+<p>Client connects, then:</p>
+<ol>
+<li>Request: <code>type=HELLO</code>, <code>seq=1</code>, <code>length=8</code>, payload <code>version=1</code>, <code>flags=0</code>.</li>
+<li>Reply: <code>type=HELLO</code>, <code>seq=1</code>, <code>length=12</code>, payload <code>version=1</code>, <code>flags=0</code>, <code>max_payload=0x00100000</code>.</li>
+<li>Request: <code>type=GET_STATUS</code>, <code>seq=2</code>, <code>length=0</code>.</li>
+<li>Reply: <code>type=GET_STATUS</code>, <code>seq=2</code>, <code>length=8</code>, payload <code>execution_mode=0</code> (NORMAL), <code>platform_id=…</code>.</li>
+<li>Request: <code>type=READMEM</code>, <code>seq=3</code>, <code>length=12</code>, payload <code>domain=MAIN</code>, <code>address=0x0400</code>, <code>length=0x28</code>.</li>
+<li>Reply: <code>type=READMEM</code>, <code>seq=3</code>, <code>length=0x28</code>, payload = 40 memory bytes.</li>
+<li>Request: <code>type=WRITEMEM</code>, <code>seq=4</code>, <code>length=12+0x28</code>, payload <code>domain=MAIN</code>, <code>address=0x0400</code>, <code>length=0x28</code>, then 40 data bytes.</li>
+<li>Reply: <code>type=WRITEMEM</code>, <code>seq=4</code>, <code>length=0</code>.</li>
+<li>Request: <code>type=PING</code>, <code>seq=5</code>, <code>length=0</code>.</li>
+<li>Reply: <code>type=PING</code>, <code>seq=5</code>, <code>length=0</code>.</li>
+</ol>
+<hr />
+<h2 id="future-commands">Future commands<a class="headerlink" href="#future-commands" title="Permanent link">&para;</a></h2>
+<p>Main numbers 1–6 are reserved for execution, CPU, memory, breakpoints, input, and devices (up to 256 subs each). Beyond documented commands, any type outside the documented set yields <code>ERROR</code> with <code>E_UNKNOWN_TYPE</code>.</p>
+<hr />
+<h1 id="breakpoint-semantics-reference">Breakpoint semantics reference<a class="headerlink" href="#breakpoint-semantics-reference" title="Permanent link">&para;</a></h1>
+<p>The following section documents breakpoint / watchpoint behavior for the implemented <code>main == 4</code> commands and related events.</p>
+<hr />
+<h2 id="breakpoints-and-watchpoints-main-4">Breakpoints and watchpoints (<code>main == 4</code>)<a class="headerlink" href="#breakpoints-and-watchpoints-main-4" title="Permanent link">&para;</a></h2>
+<p>Status: <strong>implemented</strong> (commands listed under Initial command set). This section is the semantic reference.</p>
+<h3 id="design-principles">Design principles<a class="headerlink" href="#design-principles" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>GS2 is a typed stop engine.</strong> Match address / range / access class / optional fixed value / ignore-count / <strong>address mask</strong>. No expression language, symbols, or source lines inside the emulator.</li>
+<li><strong>Host evaluates fancy conditions.</strong> On <code>EVENT</code>, the client may <code>READMEM</code> / (future) read regs and <code>CONTINUE</code> if the stop is uninteresting. Thrashing is mitigated with ignore-count and temporary breakpoints, not with host round-trips on every instruction.</li>
+<li><strong>Stop reason is an unsolicited <code>EVENT</code>.</strong> Setting a breakpoint is a request/reply; hitting it is never a reply to <code>CONTINUE</code>.</li>
+<li><strong>Same memory domains as <code>READMEM</code> / <code>WRITEMEM</code>.</strong> Watchpoints name a domain explicitly (IIgs FPI vs Mega II vs raw buffers). Address validity and domain errors follow the same rules as memory ops (see Errors below).</li>
+<li><strong>Opaque breakpoint IDs.</strong> Clients address entries by <code>id</code> returned from <code>BP_SET</code>, not by “remove this address,” so overlapping ranges and temporary BPs do not collide.</li>
+<li><strong>Step helpers stay under <code>main == 1</code>.</strong> Step-into / over / out and “run to address” may install internal temporary stops, but they are execution-control ops; user breakpoints live under <code>main == 4</code>.</li>
+<li><strong><code>RESET</code> does not clear breakpoints.</strong> Warm/cold reset leaves the breakpoint table intact. Clients that want a clean slate call <code>BP_CLEAR_ALL</code> (or clear by <code>id</code>).</li>
+</ol>
+<h3 id="built-in-debugger-today-reference-not-wire">Built-in debugger today (reference, not wire)<a class="headerlink" href="#built-in-debugger-today-reference-not-wire" title="Permanent link">&para;</a></h3>
+<p>The in-window debugger is roughly:</p>
+<ul>
+<li><strong>Pre-instruction:</strong> if <code>(full_pc &amp; 0xFFFF)</code> is in a breakpoint range → pause.</li>
+<li><strong>Post-instruction:</strong> if <code>(eaddr &amp; 0xFFFF)</code> is in a breakpoint range → pause.</li>
+<li>Step-over via a one-shot PC; step-out via RTS/RTL opcode check.</li>
+<li>No R vs W distinction; no banked PC on the wire; no remote stop-reason payload.</li>
+</ul>
+<p>The draft below is the remote semantics we want, not a 1:1 export of that UI.</p>
+<h3 id="shared-stop-list-decided-shared">Shared stop list (<strong>decided: shared</strong>)<a class="headerlink" href="#shared-stop-list-decided-shared" title="Permanent link">&para;</a></h3>
+<p><strong>Decision:</strong> one process-wide breakpoint table. Monitor <code>bp</code> / the built-in UI and protocol <code>BP_*</code> read and write the same entries. Pre/post checks consult that one table whenever any breakpoint is armed.</p>
+<p>Tradeoff accepted: UI and remote client can interfere (<code>BP_CLEAR_ALL</code> wipes interactive breakpoints; either side can enable/disable/clear by <code>id</code> or address once the UI grows ids). That is preferable for now to maintaining two lists with divergent address/mask rules. Connection drop does <strong>not</strong> clear the table (same as <code>RESET</code>). If interference becomes painful in practice, split later without changing match semantics.</p>
+<p>Background (why not protocol-only): a separate socket list avoids clobbering the UI but duplicates the stop engine and invites the old “mask to 16 bits on one path only” class of bugs.</p>
+<h3 id="kinds">Kinds<a class="headerlink" href="#kinds" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Value</th>
+<th>When checked</th>
+<th>Trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EXEC</code></td>
+<td><code>1</code></td>
+<td>Before the instruction at PC runs (pre)</td>
+<td>Masked PC in range (see Address match)</td>
+</tr>
+<tr>
+<td><code>DATA</code></td>
+<td><code>2</code></td>
+<td>After the access (post), when effective address is known</td>
+<td>Masked access address in range, filtered by access flags</td>
+</tr>
+<tr>
+<td><code>IO</code></td>
+<td><code>3</code></td>
+<td>Same as <code>DATA</code> (post)</td>
+<td>Soft-switch / I/O space: offset in range <strong>and</strong> bank ∈ <code>{0x00, 0x01, 0xE0, 0xE1}</code> (see I/O kind). Not “every bank’s <code>$C0xx</code>.”</td>
+</tr>
+</tbody>
+</table>
+<p>Optional later kinds (out of scope until needed): IRQ/NMI entry, tracepoints that do not stop.</p>
+<p><strong>Why <code>IO</code> is not <code>DATA</code> + <code>addr_mask</code>:</strong> <code>addr_mask = 0x0000FFFF</code> would match <code>$C0xx</code> in <strong>every</strong> bank (<code>$02C030</code>, <code>$80C000</code>, …), which is far broader than real Apple II / IIgs I/O mirrors and fires on noise. Without a general expression language, the fixed bank set <code>{00,01,E0,E1}</code> belongs in a dedicated kind. Keep <code>addr_mask</code> on <code>EXEC</code> / <code>DATA</code> for other uses.</p>
+<h3 id="flags-and-fields-logical-model">Flags and fields (logical model)<a class="headerlink" href="#flags-and-fields-logical-model" title="Permanent link">&para;</a></h3>
+<p>Each breakpoint / watchpoint entry:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td><code>uint32</code></td>
+<td>Server-assigned; unique until cleared. <code>0</code> reserved / invalid.</td>
+</tr>
+<tr>
+<td><code>kind</code></td>
+<td><code>uint8</code></td>
+<td><code>1=EXEC</code>, <code>2=DATA</code>, <code>3=IO</code>.</td>
+</tr>
+<tr>
+<td><code>flags</code></td>
+<td><code>uint8</code></td>
+<td>Bitfield, see below.</td>
+</tr>
+<tr>
+<td><code>domain</code></td>
+<td><code>uint32</code></td>
+<td>Same domain table as <code>READMEM</code>. For <code>EXEC</code> / <code>DATA</code> / <code>IO</code>, typically <code>MAIN</code> (CPU view).</td>
+</tr>
+<tr>
+<td><code>address</code></td>
+<td><code>uint32</code></td>
+<td>Base address. <code>EXEC</code>: full PC. <code>DATA</code>: domain address. <code>IO</code>: offset base in <code>$C000</code>–<code>$C0FF</code> (e.g. <code>0xC000</code> or <code>0x00C000</code>; bank bits in <code>address</code> are ignored — bank filter is fixed).</td>
+</tr>
+<tr>
+<td><code>length</code></td>
+<td><code>uint32</code></td>
+<td>Byte span; <code>1</code> = single location. <code>length == 0</code> invalid. For <code>IO</code>, span is on the <strong>16-bit offset</strong>.</td>
+</tr>
+<tr>
+<td><code>addr_mask</code></td>
+<td><code>uint32</code></td>
+<td>Bits participating in the address compare for <code>EXEC</code> / <code>DATA</code>. <code>0xFFFFFFFF</code> = all bits (default). <strong>Ignored for <code>IO</code></strong> (bank whitelist + offset range replace mask).</td>
+</tr>
+<tr>
+<td><code>access</code></td>
+<td><code>uint8</code></td>
+<td><code>DATA</code> / <code>IO</code>: <code>1=R</code>, <code>2=W</code>, <code>3=RW</code>. Ignored for <code>EXEC</code>.</td>
+</tr>
+<tr>
+<td><code>data_value</code></td>
+<td><code>uint32</code></td>
+<td>Optional; meaningful when <code>FLAG_DATA_MATCH</code> set (<code>DATA</code> / <code>IO</code>).</td>
+</tr>
+<tr>
+<td><code>data_mask</code></td>
+<td><code>uint32</code></td>
+<td>With <code>FLAG_DATA_MATCH</code>: low-byte match (see Data-match rules).</td>
+</tr>
+<tr>
+<td><code>ignore_count</code></td>
+<td><code>uint32</code></td>
+<td>Skip this many hits before pausing; decremented on each match that would otherwise stop. <code>0</code> = stop on first hit.</td>
+</tr>
+<tr>
+<td><code>hit_count</code></td>
+<td><code>uint32</code></td>
+<td>(List / event only) times matched since set; informational.</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>flags</code> bits:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>FLAG_ENABLED</code></td>
+<td>Cleared = retained but inactive.</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>FLAG_TEMPORARY</code></td>
+<td>Auto-clear after the hit that causes a pause.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>FLAG_DATA_MATCH</code></td>
+<td><code>DATA</code> / <code>IO</code>: require value match (<code>data_value</code> / <code>data_mask</code>).</td>
+</tr>
+<tr>
+<td>3–7</td>
+<td>reserved</td>
+<td>Must be 0 until defined.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="address-match-range-mask-not-an-expression-language">Address match (range + mask — not an expression language)<a class="headerlink" href="#address-match-range-mask-not-an-expression-language" title="Permanent link">&para;</a></h3>
+<p>Applies to <strong><code>EXEC</code> and <code>DATA</code></strong>. (<code>IO</code> has its own rule below.)</p>
+<p>Still a fixed bitwise filter, in the same spirit as <code>data_mask</code>: no predicates, no OR of arbitrary addresses, no host-side callback per access.</p>
+<p>For an observed address <code>A</code> (full PC for <code>EXEC</code>, domain effective address for <code>DATA</code>):</p>
+<pre><code>masked_A    = A &amp; addr_mask
+masked_base = address &amp; addr_mask
+hit         = (masked_base &lt;= masked_A) &amp;&amp; (masked_A &lt; masked_base + length)
+</code></pre>
+<p>The range is a <strong>half-open</strong> interval on the masked address space: <code>[masked_base, masked_base + length)</code>. <code>length == 0</code> is empty and rejected at <code>BP_SET</code> (<code>E_BAD_LENGTH</code>). <code>length == 1</code> matches a single masked location; larger <code>length</code> spans consecutive masked addresses.</p>
+<p>Then apply <code>access</code> / <code>FLAG_DATA_MATCH</code> / <code>ignore_count</code> as usual.</p>
+<p><strong>Which bits participate is entirely <code>addr_mask</code>.</strong> Bits cleared in the mask are ignored in both <code>A</code> and <code>address</code>. Bits set in the mask must agree (within the length window).</p>
+<p>Concrete case — break only at bank 0 offset 0 (<code>$00/0000</code>), not at <code>$04/0000</code>:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>address</code></td>
+<td><code>0x00000000</code> (<code>$00/0000</code>)</td>
+</tr>
+<tr>
+<td><code>length</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>addr_mask</code></td>
+<td><code>0xFFFFFFFF</code> (full; bank bits <strong>included</strong>)</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Observed <code>A</code></th>
+<th><code>A &amp; mask</code></th>
+<th>Hit?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00/0000</code> (<code>0x00000000</code>)</td>
+<td><code>0</code></td>
+<td>yes — <code>masked_base == 0</code>, window <code>[0, 1)</code></td>
+</tr>
+<tr>
+<td><code>$04/0000</code> (<code>0x00040000</code>)</td>
+<td><code>0x00040000</code></td>
+<td><strong>no</strong> — not equal to <code>0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Same <code>address</code> / <code>length</code>, but mask <code>$00/FFFF</code> (<code>0x0000FFFF</code>, bank bits <strong>cleared</strong>):</p>
+<table>
+<thead>
+<tr>
+<th>Observed <code>A</code></th>
+<th><code>A &amp; mask</code></th>
+<th>Hit?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00/0000</code></td>
+<td><code>0</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>$04/0000</code></td>
+<td><code>0</code></td>
+<td><strong>yes</strong> — bank ignored; both collapse to offset <code>$0000</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>addr_mask = 0x0000FFFF</code> is useful when you <strong>intentionally</strong> want the same offset in every bank. It is the <strong>wrong</strong> tool for soft-switches (too broad — see <code>IO</code> kind).</p>
+<p><strong><code>masked_base == 0</code> is not “no breakpoint”.</strong> For <code>address = $00/0000</code>, <code>address &amp; addr_mask</code> is often <code>0</code>. That zero is the compare key for a real location. Implementations must not treat <code>(address &amp; addr_mask) == 0</code> or <code>(A &amp; addr_mask) == 0</code> as failure / unset. (Breakpoint <strong><code>id</code> <code>0</code></strong> is a different namespace — reserved/invalid. <strong><code>length == 0</code></strong> is the empty/invalid span.)</p>
+<p>Examples (<code>EXEC</code> / <code>DATA</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Want</th>
+<th><code>address</code></th>
+<th><code>length</code></th>
+<th><code>addr_mask</code></th>
+<th><code>$00/0000</code></th>
+<th><code>$04/0000</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Only <code>$00/0000</code></td>
+<td><code>0x00000000</code></td>
+<td><code>1</code></td>
+<td><code>0xFFFFFFFF</code></td>
+<td>hit</td>
+<td>miss</td>
+</tr>
+<tr>
+<td>Offset <code>$0000</code>, any bank</td>
+<td><code>0x00000000</code></td>
+<td><code>1</code></td>
+<td><code>0x0000FFFF</code></td>
+<td>hit</td>
+<td>hit</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th><code>addr_mask</code></th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0xFFFFFFFF</code></td>
+<td>Full compare; bank matters. Default.</td>
+</tr>
+<tr>
+<td><code>0x0000FFFF</code> (<code>$00/FFFF</code>)</td>
+<td>Ignore bank. Same offset in every bank matches.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why not “just truncate to 16 bits always”?</strong> That is what the built-in debugger does today, and it is wrong for <code>EXEC</code> on IIgs (bank matters for code). Mask defaults to full-width; clients opt into ignore-bank only when they mean it.</p>
+<h3 id="io-kind-bp_kind_io">I/O kind (<code>BP_KIND_IO</code>)<a class="headerlink" href="#io-kind-bp_kind_io" title="Permanent link">&para;</a></h3>
+<p>Apple II / IIgs soft-switches live at offsets <code>$C000</code>–<code>$C0FF</code> and are mirrored in a <strong>small</strong> set of banks, not in all 256 banks.</p>
+<p><strong>Bank whitelist (fixed in the protocol):</strong> <code>0x00</code>, <code>0x01</code>, <code>0xE0</code>, <code>0xE1</code>.</p>
+<p>For observed effective address <code>A</code>:</p>
+<pre><code>bank   = (A &gt;&gt; 16) &amp; 0xFF
+offset = A &amp; 0xFFFF
+base   = address &amp; 0xFFFF          // bank nibble in `address` ignored
+if bank not in {0x00, 0x01, 0xE0, 0xE1}:
+    miss
+else:
+    hit = (base &lt;= offset) &amp;&amp; (offset &lt; base + length)
+</code></pre>
+<p>Then apply <code>access</code> / <code>FLAG_DATA_MATCH</code> / <code>ignore_count</code> as usual. <code>addr_mask</code> is <strong>ignored</strong> (clients should send <code>0xFFFFFFFF</code>).</p>
+<p>On 8-bit machines (no bank byte), treat <code>bank</code> as <code>0x00</code> so <code>IO</code> still matches <code>$C0xx</code> accesses.</p>
+<p><strong>Bounds:</strong> <code>base + length</code> must not wrap the 16-bit offset space; prefer requiring the watch to lie within <code>$C000</code>–<code>$C0FF</code> (<code>base &gt;= 0xC000</code> and <code>base + length &lt;= 0xC100</code>) so “I/O” cannot be used as a sneaky any-bank RAM watch — reject otherwise with <code>E_BAD_LENGTH</code>.</p>
+<p>Example — whole soft-switch page in the real mirror banks only:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kind</code></td>
+<td><code>IO</code></td>
+</tr>
+<tr>
+<td><code>domain</code></td>
+<td><code>MAIN</code></td>
+</tr>
+<tr>
+<td><code>address</code></td>
+<td><code>0xC000</code></td>
+</tr>
+<tr>
+<td><code>length</code></td>
+<td><code>0x100</code></td>
+</tr>
+<tr>
+<td><code>addr_mask</code></td>
+<td><code>0xFFFFFFFF</code> (ignored)</td>
+</tr>
+<tr>
+<td><code>access</code></td>
+<td><code>RW</code> (or <code>R</code> / <code>W</code>)</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Observed <code>A</code></th>
+<th>Hit?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00/C030</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>$E0/C000</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>$02/C030</code></td>
+<td><strong>no</strong> (bank not in whitelist)</td>
+</tr>
+<tr>
+<td><code>$00/D000</code></td>
+<td><strong>no</strong> (offset outside range)</td>
+</tr>
+</tbody>
+</table>
+<p>Narrower watches (e.g. only <code>$C030</code>) use <code>address = 0xC030</code>, <code>length = 1</code>.</p>
+<p><strong>Data-match rules (</strong>decided: byte only<strong>):</strong></p>
+<ul>
+<li>Only for <code>DATA</code> / <code>IO</code> with <code>FLAG_DATA_MATCH</code>.</li>
+<li>The emulated data path is treated as <strong>8-bit</strong> for watchpoint purposes (6502 and 65816). Match one byte: <code>(observed_byte &amp; (data_mask &amp; 0xFF)) == ((data_value &amp; 0xFF) &amp; (data_mask &amp; 0xFF))</code>. High bytes of <code>data_value</code> / <code>data_mask</code> on the wire are ignored (send <code>0</code>).</li>
+<li>Multi-byte 65816 transfers are not a special case: if both bytes of a word access should be watched, use a <code>length</code> covering both addresses (or two watches). No page-wrap word semantics.</li>
+</ul>
+<p><strong>Address / domain rules (draft):</strong></p>
+<ul>
+<li>Prefer <strong>full PC</strong> for <code>EXEC</code> on 65816 / IIgs (<code>0xE10000</code> style), not truncated <code>$xxxx</code>.</li>
+<li><code>DATA</code> addresses follow the same domain conventions as <code>READMEM</code>.</li>
+<li><code>IO</code> compares 16-bit offset + bank whitelist as above.</li>
+<li>Cap <code>length</code> like memory ops (<strong>65536</strong>), except <code>IO</code> which is capped by the <code>$C000</code>–<code>$C0FF</code> window.</li>
+</ul>
+<h3 id="scale-and-performance-guidance">Scale and performance (guidance)<a class="headerlink" href="#scale-and-performance-guidance" title="Permanent link">&para;</a></h3>
+<p>Checks run on the <strong>hot path</strong> (pre-PC and post-<code>eaddr</code> once per instruction) whenever any breakpoint is armed — same cost class as today’s debug-window loop.</p>
+<p>Rough budget (order-of-magnitude, not a guarantee):</p>
+<table>
+<thead>
+<tr>
+<th>Active entries (linear scan)</th>
+<th>Expectation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Free: skip checks entirely (required fast path).</td>
+</tr>
+<tr>
+<td>tens (<code>≤ ~32–64</code>)</td>
+<td>Negligible vs <code>execute_next</code> on a modern host at 1 MHz–class emulation.</td>
+</tr>
+<tr>
+<td>low hundreds (<code>~128–256</code>)</td>
+<td>Usually fine; may show up if the debug path is already heavy (UI + ludicrous speed).</td>
+</tr>
+<tr>
+<td>thousands</td>
+<td>Noticeable: prefer a denser structure or raise the cost deliberately for “debug build” use.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Draft protocol cap:</strong> <strong>256</strong> armed entries (<code>BP_SET</code> → <code>E_BAD_LENGTH</code> / message <code>too many breakpoints</code> when exceeded). Enough for agents and UI; keeps worst-case linear scan bounded. Revisit if real workloads need more.</p>
+<p><strong>Alternate structures</strong> (implementation, not wire):</p>
+<table>
+<thead>
+<tr>
+<th>Structure</th>
+<th>Good for</th>
+<th>Weak for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vector</code> of ranges (start with this)</td>
+<td>Few BPs; arbitrary <code>length</code> + <code>addr_mask</code>; simple</td>
+<td>Large N</td>
+</tr>
+<tr>
+<td>Bitset / byte map (e.g. 64 KiB = 8 KiB RAM per bankless 16-bit space; or per-bank maps)</td>
+<td>Dense exact addresses, full <code>addr_mask</code></td>
+<td>Ranges; ignore-bank masks (unless OR’d carefully); 24-bit full maps are large (~2 MiB/bit-per-byte)</td>
+</tr>
+<tr>
+<td>Page map (e.g. bit per 256-byte page) + vector of BPs in hot pages</td>
+<td>Many scattered exact BPs</td>
+<td>Still need list walk inside a hot page</td>
+</tr>
+<tr>
+<td>Hash set of exact addresses</td>
+<td>Many single-byte full-mask BPs</td>
+<td>Ranges and masks</td>
+</tr>
+</tbody>
+</table>
+<p>Practical approach: <strong>vector + empty fast-out</strong> for v1; add a 16-bit or page bitmap later if profiling says N hurts. Masked / ranged / <code>IO</code> watches stay on the vector (or a short “slow list”) even if exact BPs move to a map.</p>
+<h3 id="errors">Errors<a class="headerlink" href="#errors" title="Permanent link">&para;</a></h3>
+<p>Do <strong>not</strong> invent breakpoint-specific <code>E_*</code> codes when an existing code already matches the failure class. Align with <code>READMEM</code> / <code>WRITEMEM</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wrong payload size; <code>length == 0</code>; <code>address + length</code> wraps; raw domain out of <code>get_memory_size()</code>; more than <strong>256</strong> breakpoints; <code>IO</code> range outside <code>$C000</code>–<code>$C0FF</code></td>
+<td><code>E_BAD_LENGTH</code> (same messages as memory ops where applicable, e.g. <code>out of range</code>; cap → <code>too many breakpoints</code>)</td>
+</tr>
+<tr>
+<td>Unknown / unimplemented <code>domain</code>; Mega II on non-IIgs; no machine</td>
+<td><code>E_INTERNAL</code> + same messages as memory ops (<code>unsupported domain</code>, <code>MEGAII only on Apple IIgs</code>, <code>no machine</code>, …)</td>
+</tr>
+<tr>
+<td>Bad <code>kind</code> / <code>access</code> / reserved flag bits</td>
+<td><code>E_BAD_LENGTH</code> if it is a payload-validity issue; else <code>E_INTERNAL</code> + short message</td>
+</tr>
+<tr>
+<td>Unknown <code>id</code> on clear/enable</td>
+<td><code>E_INTERNAL</code> + message such as <code>unknown id</code> (no new code)</td>
+</tr>
+<tr>
+<td>Handshake / busy / unknown type</td>
+<td>Existing <code>E_NOT_HANDSHAKED</code> / <code>E_BUSY</code> / <code>E_UNKNOWN_TYPE</code></td>
+</tr>
+</tbody>
+</table>
+<p>Setting a breakpoint on an address that would be rejected for a peek/poke in that domain must fail the same way as that peek/poke. Domains that accept floating-bus reads for unmapped addresses (e.g. <code>MAIN</code>) likewise accept breakpoints there.</p>
+<h3 id="proposed-commands-main-4">Proposed commands (<code>main == 4</code>)<a class="headerlink" href="#proposed-commands-main-4" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th><code>sub</code></th>
+<th><code>type</code></th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BP_SET</code></td>
+<td>1</td>
+<td><code>0x00000401</code></td>
+<td>Create; reply returns <code>id</code></td>
+</tr>
+<tr>
+<td><code>BP_CLEAR</code></td>
+<td>2</td>
+<td><code>0x00000402</code></td>
+<td>Delete by <code>id</code></td>
+</tr>
+<tr>
+<td><code>BP_CLEAR_ALL</code></td>
+<td>3</td>
+<td><code>0x00000403</code></td>
+<td>Delete all user breakpoints / watchpoints</td>
+</tr>
+<tr>
+<td><code>BP_ENABLE</code></td>
+<td>4</td>
+<td><code>0x00000404</code></td>
+<td>Set/clear <code>FLAG_ENABLED</code> by <code>id</code></td>
+</tr>
+<tr>
+<td><code>BP_LIST</code></td>
+<td>5</td>
+<td><code>0x00000405</code></td>
+<td>Snapshot of current entries</td>
+</tr>
+</tbody>
+</table>
+<p>All run on the <strong>main emulation thread</strong>. Handshake required.</p>
+<h4 id="constants">Constants<a class="headerlink" href="#constants" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BP_KIND_EXEC</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>BP_KIND_DATA</code></td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td><code>BP_KIND_IO</code></td>
+<td><code>3</code></td>
+</tr>
+<tr>
+<td><code>BP_ACCESS_NONE</code></td>
+<td><code>0</code> (EXEC)</td>
+</tr>
+<tr>
+<td><code>BP_ACCESS_R</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>BP_ACCESS_W</code></td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td><code>BP_ACCESS_RW</code></td>
+<td><code>3</code></td>
+</tr>
+<tr>
+<td><code>BP_FLAG_ENABLED</code></td>
+<td><code>1 &lt;&lt; 0</code></td>
+</tr>
+<tr>
+<td><code>BP_FLAG_TEMPORARY</code></td>
+<td><code>1 &lt;&lt; 1</code></td>
+</tr>
+<tr>
+<td><code>BP_FLAG_DATA_MATCH</code></td>
+<td><code>1 &lt;&lt; 2</code></td>
+</tr>
+<tr>
+<td><code>BP_MAX_ENTRIES</code></td>
+<td><code>256</code></td>
+</tr>
+<tr>
+<td><code>BP_IO_BANKS</code></td>
+<td><code>0x00</code>, <code>0x01</code>, <code>0xE0</code>, <code>0xE1</code> (fixed whitelist)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="bp_set-main-4-sub-1-0x00000401"><code>BP_SET</code> — main 4, sub 1 (<code>0x00000401</code>)<a class="headerlink" href="#bp_set-main-4-sub-1-0x00000401" title="Permanent link">&para;</a></h4>
+<p><strong>Request payload:</strong> exactly <strong>32</strong> bytes, little-endian, packed:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>1</td>
+<td><code>kind</code></td>
+<td><code>BP_KIND_EXEC</code>, <code>BP_KIND_DATA</code>, or <code>BP_KIND_IO</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td><code>flags</code></td>
+<td><code>BP_FLAG_*</code> (unknown bits → error)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1</td>
+<td><code>access</code></td>
+<td><code>DATA</code> / <code>IO</code>: <code>R</code>/<code>W</code>/<code>RW</code>; <code>EXEC</code>: <code>0</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>1</td>
+<td><code>pad</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>domain</code></td>
+<td>Same as <code>READMEM</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>4</td>
+<td><code>address</code></td>
+<td>Base (full PC, domain address, or I/O offset)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>4</td>
+<td><code>length</code></td>
+<td>Byte span; <code>≥ 1</code> (<code>IO</code>: within <code>$C000</code>–<code>$C0FF</code>)</td>
+</tr>
+<tr>
+<td>16</td>
+<td>4</td>
+<td><code>addr_mask</code></td>
+<td>Default <code>0xFFFFFFFF</code>; <strong>ignored for <code>IO</code></strong></td>
+</tr>
+<tr>
+<td>20</td>
+<td>4</td>
+<td><code>data_value</code></td>
+<td>Low 8 bits used if <code>FLAG_DATA_MATCH</code>; else ignored</td>
+</tr>
+<tr>
+<td>24</td>
+<td>4</td>
+<td><code>data_mask</code></td>
+<td>Low 8 bits used if <code>FLAG_DATA_MATCH</code>; else ignored (<code>0xFF</code> = compare all value bits)</td>
+</tr>
+<tr>
+<td>28</td>
+<td>4</td>
+<td><code>ignore_count</code></td>
+<td><code>0</code> = stop on first hit</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply:</strong> exactly <strong>4</strong> bytes: <code>id</code> (<code>uint32</code>, non-zero).</p>
+<h4 id="bp_clear-main-4-sub-2-0x00000402"><code>BP_CLEAR</code> — main 4, sub 2 (<code>0x00000402</code>)<a class="headerlink" href="#bp_clear-main-4-sub-2-0x00000402" title="Permanent link">&para;</a></h4>
+<p><strong>Request:</strong> exactly <strong>4</strong> bytes: <code>id</code>.</p>
+<p><strong>Success reply:</strong> empty.</p>
+<h4 id="bp_clear_all-main-4-sub-3-0x00000403"><code>BP_CLEAR_ALL</code> — main 4, sub 3 (<code>0x00000403</code>)<a class="headerlink" href="#bp_clear_all-main-4-sub-3-0x00000403" title="Permanent link">&para;</a></h4>
+<p><strong>Request / reply:</strong> empty. Does not run on <code>RESET</code>. Clears the shared table (UI and protocol).</p>
+<h4 id="bp_enable-main-4-sub-4-0x00000404"><code>BP_ENABLE</code> — main 4, sub 4 (<code>0x00000404</code>)<a class="headerlink" href="#bp_enable-main-4-sub-4-0x00000404" title="Permanent link">&para;</a></h4>
+<p><strong>Request:</strong> exactly <strong>8</strong> bytes:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>id</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>enabled</code> (<code>0</code> or <code>1</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply:</strong> empty. Sets/clears <code>BP_FLAG_ENABLED</code> only.</p>
+<h4 id="bp_list-main-4-sub-5-0x00000405"><code>BP_LIST</code> — main 4, sub 5 (<code>0x00000405</code>)<a class="headerlink" href="#bp_list-main-4-sub-5-0x00000405" title="Permanent link">&para;</a></h4>
+<p><strong>Request:</strong> empty.</p>
+<p><strong>Success reply:</strong> <code>4 + 40 * count</code> bytes:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>count</code> (<code>uint32</code>)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>40 * count</code></td>
+<td>records</td>
+</tr>
+</tbody>
+</table>
+<p>Each <strong>record</strong> is exactly <strong>40</strong> bytes:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>id</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>hit_count</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>32</td>
+<td>same layout as <code>BP_SET</code> request (<code>kind</code>…<code>ignore_count</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="events">Events<a class="headerlink" href="#events" title="Permanent link">&para;</a></h3>
+<p>Unsolicited <code>EVENT</code> frames. Clients ignore unknown <code>event_id</code>s.</p>
+<table>
+<thead>
+<tr>
+<th><code>event_id</code></th>
+<th>Name</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>1</code></td>
+<td><code>EVT_STOPPED</code></td>
+<td>Entered a stopped/paused state (breakpoint, step done, explicit <code>PAUSE</code>, …)</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td><code>EVT_RUN_STATE</code></td>
+<td><code>execution_mode</code> changed, including <strong>resume / started running</strong> after <code>CONTINUE</code> / run, and transitions into <code>STEP_*</code> if useful to the client</td>
+</tr>
+</tbody>
+</table>
+<h4 id="evt_stopped-event_id-1"><code>EVT_STOPPED</code> (<code>event_id = 1</code>)<a class="headerlink" href="#evt_stopped-event_id-1" title="Permanent link">&para;</a></h4>
+<p><strong><code>data</code> layout:</strong> <strong>32</strong>-byte header + <strong>40</strong>-byte CPU snapshot (<code>system_trace_entry_t</code> wire image) = <strong>72</strong> bytes total.</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>reason</code></td>
+<td>See table below</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>bp_id</code></td>
+<td>User bp <code>id</code>, or <code>0</code> if not a user bp</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4</td>
+<td><code>pc</code></td>
+<td>Full PC at stop (real address; may be <code>0</code>)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>4</td>
+<td><code>eaddr</code></td>
+<td>Unmasked effective address for <code>DATA</code>; unused for pure <code>EXEC</code> — do not use <code>0</code> as N/A sentinel; use <code>reason</code>/<code>kind</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>4</td>
+<td><code>value</code></td>
+<td>Observed <strong>byte</strong> for <code>DATA</code> when available (low 8 bits); else <code>0</code></td>
+</tr>
+<tr>
+<td>20</td>
+<td>1</td>
+<td><code>access</code></td>
+<td><code>R</code>/<code>W</code>/<code>0</code></td>
+</tr>
+<tr>
+<td>21</td>
+<td>1</td>
+<td><code>kind</code></td>
+<td><code>EXEC</code>/<code>DATA</code>/<code>IO</code>/<code>0</code></td>
+</tr>
+<tr>
+<td>22</td>
+<td>2</td>
+<td><code>pad</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>24</td>
+<td>4</td>
+<td><code>execution_mode</code></td>
+<td>Mode after stop (expect paused / step)</td>
+</tr>
+<tr>
+<td>28</td>
+<td>4</td>
+<td><code>trace_size</code></td>
+<td>Size of following snapshot in bytes; <strong><code>40</code></strong> in this draft. <code>0</code> = no snapshot appended (compat)</td>
+</tr>
+<tr>
+<td>32</td>
+<td>40</td>
+<td><code>trace</code></td>
+<td>CPU / instruction snapshot (see below)</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>reason</code> values:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>STOP_BP_EXEC</code></td>
+<td>User <code>EXEC</code> breakpoint</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>STOP_BP_DATA</code></td>
+<td>User <code>DATA</code> watchpoint</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>STOP_BP_IO</code></td>
+<td>User <code>IO</code> (soft-switch) watchpoint</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>STOP_STEP</code></td>
+<td>Step-into / over / out completed</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>STOP_PAUSE</code></td>
+<td>Explicit <code>PAUSE</code> from host</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Including a trace / CPU snapshot — yes, valuable.</strong> At a stop the host almost always wants registers, opcode, effective address, and data byte without a racey follow-up <code>READMEM</code> / future <code>GET_REGS</code>. GS2 already fills <code>cpu-&gt;trace_entry</code> on the instruction path; copying that blob into the event is cheap vs socket I/O.</p>
+<p>Wire image matches <code>system_trace_entry_t</code> (<strong>40</strong> bytes, little-endian, natural C layout / <code>sizeof == 40</code> today):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>8</td>
+<td><code>cycle</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>4</td>
+<td><code>operand</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>1</td>
+<td><code>opcode</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td>1</td>
+<td><code>p</code></td>
+</tr>
+<tr>
+<td>14</td>
+<td>1</td>
+<td><code>db</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td>1</td>
+<td><code>pb</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>2</td>
+<td><code>pc</code></td>
+</tr>
+<tr>
+<td>18</td>
+<td>2</td>
+<td><code>a</code></td>
+</tr>
+<tr>
+<td>20</td>
+<td>2</td>
+<td><code>x</code></td>
+</tr>
+<tr>
+<td>22</td>
+<td>2</td>
+<td><code>y</code></td>
+</tr>
+<tr>
+<td>24</td>
+<td>2</td>
+<td><code>sp</code></td>
+</tr>
+<tr>
+<td>26</td>
+<td>2</td>
+<td><code>d</code></td>
+</tr>
+<tr>
+<td>28</td>
+<td>2</td>
+<td><code>data</code></td>
+</tr>
+<tr>
+<td>30</td>
+<td>2</td>
+<td><code>(pad for align)</code> — must be <code>0</code> on the wire if the in-memory struct has padding here; prefer documenting the packed offsets clients use</td>
+</tr>
+<tr>
+<td>32</td>
+<td>4</td>
+<td><code>eaddr</code></td>
+</tr>
+<tr>
+<td>36</td>
+<td>2</td>
+<td><code>flags</code> (<code>f_irq</code>, <code>f_op_sz</code>, <code>f_data_sz</code> in low bits as today)</td>
+</tr>
+<tr>
+<td>38</td>
+<td>2</td>
+<td><code>unused</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>(If in-memory padding ever drifts, the protocol freeze is this 40-byte map, not a blind <code>memcpy</code> of a future struct — implementers should serialize field-by-field or <code>static_assert(sizeof == 40)</code> against this layout.)</em></p>
+<p><strong>Population rules:</strong></p>
+<table>
+<thead>
+<tr>
+<th><code>reason</code></th>
+<th>Snapshot content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>STOP_BP_DATA</code>, <code>STOP_BP_IO</code>, <code>STOP_STEP</code> (after insn)</td>
+<td>Copy the just-completed <code>trace_entry</code> (regs <strong>before</strong> that insn, <code>eaddr</code>/<code>data</code> for that access) — ideal fit.</td>
+</tr>
+<tr>
+<td><code>STOP_BP_EXEC</code></td>
+<td>Pre-instruction stop: fill from <strong>live</strong> CPU state at the about-to-execute PC (<code>pb</code>/<code>pc</code>/<code>a</code>/…); <code>opcode</code>/<code>operand</code> may be peeked from memory or left 0; <code>eaddr</code>/<code>data</code> typically unused. Do <strong>not</strong> pass off the <em>previous</em> instruction’s <code>trace_entry</code> as the current stop without labeling — prefer a live snapshot.</td>
+</tr>
+<tr>
+<td><code>STOP_PAUSE</code></td>
+<td>Live CPU snapshot at pause.</td>
+</tr>
+</tbody>
+</table>
+<p>Header <code>pc</code> / <code>eaddr</code> / <code>value</code> remain for quick filtering; <code>trace</code> is the authoritative register picture.</p>
+<h4 id="evt_run_state-event_id-2"><code>EVT_RUN_STATE</code> (<code>event_id = 2</code>)<a class="headerlink" href="#evt_run_state-event_id-2" title="Permanent link">&para;</a></h4>
+<p>Emitted when execution leaves or enters run-like states so clients can sync UI / agents without polling <code>GET_STATUS</code>. Includes <strong>started running</strong> after <code>CONTINUE</code> / run.</p>
+<p><strong><code>data</code> layout:</strong> <strong>8</strong> bytes:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>execution_mode</code></td>
+<td>New mode (<code>NORMAL</code>, <code>STEP_INTO</code>, <code>PAUSED</code>, …)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>prev_execution_mode</code></td>
+<td>Previous mode</td>
+</tr>
+</tbody>
+</table>
+<p>Emit at least on: pause→run (<code>NORMAL</code>), run→pause, and step-mode transitions. Exact set can be tightened when <code>CONTINUE</code> is specified.</p>
+<h3 id="execution-control-dependency-main-1">Execution control dependency (<code>main == 1</code>)<a class="headerlink" href="#execution-control-dependency-main-1" title="Permanent link">&para;</a></h3>
+<p>Breakpoints assume these exist (names provisional; not specified in full here):</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PAUSE</code></td>
+<td>Enter paused; <code>EVT_STOPPED</code> / <code>EVT_RUN_STATE</code></td>
+</tr>
+<tr>
+<td><code>CONTINUE</code> / <code>RUN</code></td>
+<td>Leave pause; <code>EVT_RUN_STATE</code> (started); arm checks again</td>
+</tr>
+<tr>
+<td><code>STEP_INTO</code></td>
+<td>Run <code>count</code> instructions via <code>instructions_left</code>; <code>EVT_STOPPED</code> with <code>STOP_STEP</code> + trace when the batch finishes</td>
+</tr>
+</tbody>
+</table>
+<p>While paused, breakpoint checks do not run.</p>
+<h3 id="re-hit-step-off-policy-decided-policy-a">Re-hit / “step off” policy (<strong>decided: Policy A</strong>)<a class="headerlink" href="#re-hit-step-off-policy-decided-policy-a" title="Permanent link">&para;</a></h3>
+<p><strong>Problem.</strong> Suppose an <code>EXEC</code> breakpoint is armed at PC=<code>P</code>, execution stops there (<code>EVT_STOPPED</code>, still sitting at <code>P</code>), and the host sends <code>CONTINUE</code> without clearing the bp. The next pre-check sees PC=<code>P</code> again and pauses immediately. No instruction retires; the machine makes no progress.</p>
+<p><strong>Policy A (required).</strong> When leaving pause after an <code>EXEC</code> stop at <code>P</code>, the stop engine ignores <code>EXEC</code> matches for address <code>P</code> until either:</p>
+<ol>
+<li>PC becomes something other than <code>P</code> (normal case after the instruction at <code>P</code> runs), or</li>
+<li>One instruction at <code>P</code> has retired (equivalent for straight-line code),</li>
+</ol>
+<p>whichever the implementation can do cheaply. Then the breakpoint is armed again, so a loop that returns to <code>P</code> still stops on the next visit. (<code>P</code> may be <code>0</code> — same rules; zero is a normal PC.)</p>
+<p>This is “step off the breakpoint” / continue-from-breakpoint. It applies to <code>EXEC</code> (and to step helpers that land on a user <code>EXEC</code> bp). It does <strong>not</strong> suppress <code>DATA</code> / <code>IO</code> watches. Spell the same text under the resume command when that command is specified. Temporary (<code>FLAG_TEMPORARY</code>) breakpoints avoid the issue by deleting themselves on the hit that paused.</p>
+<h3 id="host-vs-emulator-split">Host vs emulator split<a class="headerlink" href="#host-vs-emulator-split" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>In GS2</th>
+<th>On the host</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EXEC</code> / <code>DATA</code> / <strong><code>IO</code></strong>, R/W, range, domain, <strong><code>addr_mask</code></strong> (non-<code>IO</code>)</td>
+<td>Symbol → address</td>
+</tr>
+<tr>
+<td>Fixed I/O bank whitelist <code>{00,01,E0,E1}</code></td>
+<td>Choosing which soft-switch offsets to watch</td>
+</tr>
+<tr>
+<td>Temporary, enable/disable, ignore-count</td>
+<td>Source line breakpoints</td>
+</tr>
+<tr>
+<td>Optional fixed <strong>byte</strong> value/mask</td>
+<td>Arbitrary predicates (regs, “after boot”, OR of unrelated sites)</td>
+</tr>
+<tr>
+<td><code>EVT_STOPPED</code> (+ trace snapshot) / <code>EVT_RUN_STATE</code></td>
+<td>Re-arm, conditional continue, logging UX</td>
+</tr>
+</tbody>
+</table>
+<p><code>IO</code> is in GS2 because the soft-switch bank set is platform structure, not a general expression. <code>addr_mask</code> remains for other aliasing needs; it is not the soft-switch mechanism.</p>
+<h3 id="implementation-notes-non-normative">Implementation notes (non-normative)<a class="headerlink" href="#implementation-notes-non-normative" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Start with a vector + “count == 0 → skip checks.”</li>
+<li>Soft-switches: <code>BP_KIND_IO</code> + offset range in <code>$C000</code>–<code>$C0FF</code>.</li>
+<li>Serialize <code>EVT_STOPPED.trace</code> to the frozen 40-byte map (or <code>static_assert</code> on <code>system_trace_entry_t</code>).</li>
+</ul>
+<h3 id="open-questions">Open questions<a class="headerlink" href="#open-questions" title="Permanent link">&para;</a></h3>
+<ol>
+<li>~~Cap~~ → <strong>decided:</strong> soft expectation tens–low hundreds; <strong>hard cap 256</strong>; vector first, denser structures if needed.</li>
+<li>~~Shared vs protocol-only list~~ → <strong>decided: shared.</strong></li>
+<li>~~Wire layouts~~ → <strong>decided:</strong> <code>BP_SET</code> 32-byte request; list records 40 bytes; see above.</li>
+<li>~~Error codes~~ → <strong>decided:</strong> reuse existing <code>E_*</code>.</li>
+<li>~~<code>RESET</code> clears breakpoints?~~ → <strong>decided: no.</strong></li>
+<li>~~Word / 65816 bus width~~ → <strong>decided:</strong> byte (or byte range) only; data bus treated as 8-bit for watches.</li>
+<li>~~Events beyond stop~~ → <strong>decided:</strong> <code>EVT_RUN_STATE</code> including started/running after continue.</li>
+<li>~~Re-hit policy~~ → <strong>decided: Policy A.</strong></li>
+<li>~~Trace blob on stop?~~ → <strong>decided: yes</strong> — append 40-byte <code>system_trace_entry_t</code> image on <code>EVT_STOPPED</code>.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../KeyboardShortcuts/">
-      
-      
-        <link rel="next" href="../Joysticks/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Using a Mouse - GSSquared Documentation</title>
+        <title>Super Serial Card - GSSquared Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mouse" class="md-skip">
+        <a href="#super-serial-card" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Using a Mouse
+              Super Serial Card
             
           </span>
         </div>
@@ -257,12 +253,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href=".." class="md-tabs__link">
           
   
@@ -477,31 +471,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -519,7 +508,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -674,37 +663,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Using a Mouse
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
         
   
   
@@ -720,48 +682,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mouse Capture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        IIgs - GS/OS Mouse Tracking
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2632,10 +2552,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
+  <a href="#config" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mouse Capture
+        Config
       
     </span>
   </a>
@@ -2643,10 +2563,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
+  <a href="#io-map" class="md-nav__link">
     <span class="md-ellipsis">
       
-        IIgs - GS/OS Mouse Tracking
+        I/O map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rom-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ROM layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dip-defaults-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DIP defaults (v1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
       
     </span>
   </a>
@@ -2673,25 +2626,92 @@
   
 
 
-<h1 id="mouse">Mouse<a class="headerlink" href="#mouse" title="Permanent link">&para;</a></h1>
-<p>As the Apple II series progressed in time, mouse support became more and more integrated into the platform until in the //gs it became an indispensible base part of the system.</p>
-<p>GS2 supports a Mouse in two ways:</p>
+<h1 id="super-serial-card">Super Serial Card<a class="headerlink" href="#super-serial-card" title="Permanent link">&para;</a></h1>
+<p>Selectable slot card (<code>card = "super_serial"</code>) for Apple II / IIe / IIgs platforms (slots 1–7).</p>
+<p>Emulates the Apple Super Serial Card: a MOS 6551 ACIA, two readable DIP switch blocks, the stock 2 KB firmware ROM, and slot IRQs. Virtual serial backends reuse the same <code>SerialDevice</code> / File / Modem modules as the IIgs SCC8530.</p>
+<h2 id="config">Config<a class="headerlink" href="#config" title="Permanent link">&para;</a></h2>
+<pre><code class="language-toml">[[cards]]
+slot = 2
+card = &quot;super_serial&quot;
+</code></pre>
+<p>Default attachment (v1, same style as SCC hard-coding): <strong>ModemDevice</strong> on native builds, <strong>FileDevice</strong> under Emscripten. <code>[[connections]]</code> with <code>slot</code> is specified in <a href="../SystemConfigTOML/">SystemConfigTOML.md</a> but is not yet applied at runtime.</p>
+<p>Modem usage (Hayes AT commands over the attached device) is described in <a href="../Serial_Modem/">Serial_Modem.md</a>.</p>
+<h2 id="io-map">I/O map<a class="headerlink" href="#io-map" title="Permanent link">&para;</a></h2>
+<p>Addresses are <code>$C0nX</code> where <code>n = 8 + slot</code> (slot 2 → <code>$C0A0–$C0AF</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$C0n1</code></td>
+<td>DIPSW1 (read)</td>
+</tr>
+<tr>
+<td><code>$C0n2</code></td>
+<td>DIPSW2 (read; bit 0 = live CTS)</td>
+</tr>
+<tr>
+<td><code>$C0n8</code></td>
+<td>6551 Data (TX write / RX read)</td>
+</tr>
+<tr>
+<td><code>$C0n9</code></td>
+<td>6551 Status (read) / programmed Reset (write)</td>
+</tr>
+<tr>
+<td><code>$C0nA</code></td>
+<td>6551 Command</td>
+</tr>
+<tr>
+<td><code>$C0nB</code></td>
+<td>6551 Control</td>
+</tr>
+</tbody>
+</table>
+<h2 id="rom-layout">ROM layout<a class="headerlink" href="#rom-layout" title="Permanent link">&para;</a></h2>
+<p>Firmware image: <code>roms/cards/ssc/341-0065-A.bin</code> (2048 bytes).</p>
+<p>This image stores expansion ROM body at file offset <code>$000</code>, and the <code>$Cn00</code> page at offset <code>$700</code> (Apple listing / AppleWin-style packing):</p>
 <ul>
-<li>Via <strong><a href="../Cards_AppleMouse/">Apple Mouse III</a></strong> card on Apple //e (and similar)</li>
-<li>Via <strong>ADB</strong> (Apple Desktop Bus) mouse on Apple IIgs</li>
+<li><code>$Cn00–$CnFF</code> ← file <code>$700–$7FF</code></li>
+<li><code>$C800–$CFFF</code> ← full file <code>$000–$7FF</code> (mapped when the slot’s <code>$Cnxx</code> space selects expansion ROM; <code>$CFFF</code> resets the map)</li>
 </ul>
-<h2 id="mouse-capture">Mouse Capture<a class="headerlink" href="#mouse-capture" title="Permanent link">&para;</a></h2>
-<p>When you're using emulated Mouse software, you will probably want to turn on Mouse Capture.</p>
-<p>Do this by using the Mouse Capture menu, Mouse Capture button, or by pressing F1.</p>
-<p>When you enter Mouse Capture, a helpful message will appear at the top of the screen for a few seconds reminding you how to exit Mouse Capture.</p>
-<p>To release Mouse Capture, you must press <strong>F1</strong>, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)</p>
-<p>Opening the Control Panel via <strong>F4</strong> or the Control Panel button will also temporarily release Mouse Capture. When you close the Control Panel, the original Mouse Capture state will be restored.</p>
-<p>Mouse capture also turns off the "mouse movement shows on-screen controls" feature. It locks you into that keyboard-oriented Apple II experience.</p>
-<h2 id="iigs-gsos-mouse-tracking">IIgs - GS/OS Mouse Tracking<a class="headerlink" href="#iigs-gsos-mouse-tracking" title="Permanent link">&para;</a></h2>
-<p>When you boot a GS/OS image, or other application that starts the IIgs Event Manager, GSSquared detects this and changes how it processes mouse movement events. It will calculate the mouse movement that the IIgs needs to see, in order to match where the Host (your computer) mouse . Then it synthesizes the appropriate events to get the cursor there.</p>
-<p>This provides seamless movement of the mouse cursor in and out of the IIgs desktop, making the mouse work much more naturally, and avoiding the need for Mouse Capture mode with IIgs desktop apps.</p>
-<p>You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.</p>
-<p>ROM 01 and ROM 03 IIgs platforms both use this tracking path.</p>
+<h2 id="dip-defaults-v1">DIP defaults (v1)<a class="headerlink" href="#dip-defaults-v1" title="Permanent link">&para;</a></h2>
+<p>Hard-coded modem-friendly factory defaults (values <strong>as read</strong> by firmware; ON = 0, OFF = 1):</p>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DIPSW1</td>
+<td><code>$EF</code></td>
+<td>9600 baud, Communications mode</td>
+</tr>
+<tr>
+<td>DIPSW2</td>
+<td><code>$5A</code></td>
+<td>8N1 modem format, auto-LF off; CTS asserted (bit0 = 0)</td>
+</tr>
+</tbody>
+</table>
+<p>DIP packing (from SSC firmware notes):</p>
+<ul>
+<li>DIPSW1: <code>S1 S2 S3 S4 Z Z S5 S6</code></li>
+<li>DIPSW2: <code>S1 Z S2 Z S3 S4 S5 CTS</code></li>
+</ul>
+<p>SW2-6 (IRQ enable to the slot) is a hardware gate not present in the DIPSW2 read byte; v1 leaves it enabled.</p>
+<h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
+<p>Main emu thread: MMU handlers, 6551 registers, baud-timed TX/RX via <code>EventTimer</code>, slot IRQ via <code>InterruptController</code>.</p>
+<p>Child thread: <code>FileDevice</code> / <code>ModemDevice</code> — chip ↔ device only through SPSC <code>SerialQueue</code> (<code>q_host</code> / <code>q_dev</code>).</p>
+<p>DCD and DSR are held asserted so guest software does not stall waiting for carrier. Full RS-232 control messaging and config-driven <code>[[connections]]</code> are follow-ups shared with SCC work.</p>
 
 
 

@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../KeyboardShortcuts/">
-      
-      
-        <link rel="next" href="../Joysticks/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Using a Mouse - GSSquared Documentation</title>
+        <title>GS2 Debug Protocol vs DAP - GSSquared Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#mouse" class="md-skip">
+        <a href="#gs2-debug-protocol-vs-dap" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Using a Mouse
+              GS2 Debug Protocol vs DAP
             
           </span>
         </div>
@@ -257,12 +253,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href=".." class="md-tabs__link">
           
   
@@ -477,31 +471,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -519,7 +508,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -674,37 +663,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Using a Mouse
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
         
   
   
@@ -720,48 +682,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Mouse Capture
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        IIgs - GS/OS Mouse Tracking
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2632,10 +2552,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mouse-capture" class="md-nav__link">
+  <a href="#bottom-line" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Mouse Capture
+        Bottom line
       
     </span>
   </a>
@@ -2643,10 +2563,160 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#iigs-gsos-mouse-tracking" class="md-nav__link">
+  <a href="#design-posture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        IIgs - GS/OS Mouse Tracking
+        Design posture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design posture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gs2-external-debug-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GS2 External Debug Protocol
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debug-adapter-protocol-dap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug Adapter Protocol (DAP)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#capability-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capability matrix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assembly-debugging-depth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assembly debugging depth
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Assembly debugging depth">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-gs2-matches-or-exceeds-dap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where GS2 matches or exceeds DAP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-dap-is-richer-for-assembly-uis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where DAP is richer for assembly UIs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-debugging-depth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source debugging depth
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mapping-cheat-sheet-if-you-wrapped-gs2-in-dap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapping cheat sheet (if you wrapped GS2 in DAP)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gaps-worth-caring-about" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gaps worth caring about
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Gaps worth caring about">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#goal-agent-scripted-asm-debug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal: agent / scripted asm debug
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#goal-vs-code-source-debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal: VS Code source debugging
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sources
       
     </span>
   </a>
@@ -2673,25 +2743,321 @@
   
 
 
-<h1 id="mouse">Mouse<a class="headerlink" href="#mouse" title="Permanent link">&para;</a></h1>
-<p>As the Apple II series progressed in time, mouse support became more and more integrated into the platform until in the //gs it became an indispensible base part of the system.</p>
-<p>GS2 supports a Mouse in two ways:</p>
+<h1 id="gs2-debug-protocol-vs-dap">GS2 Debug Protocol vs DAP<a class="headerlink" href="#gs2-debug-protocol-vs-dap" title="Permanent link">&para;</a></h1>
+<p>Coverage comparison for source- and assembly-level debugging: GSSquared’s binary host protocol (<a href="../DebugProtocol/">DebugProtocol.md</a>, v1) against Microsoft’s <a href="https://microsoft.github.io/debug-adapter-protocol/specification.html">Debug Adapter Protocol</a> used by VS Code and similar IDEs.</p>
+<h2 id="bottom-line">Bottom line<a class="headerlink" href="#bottom-line" title="Permanent link">&para;</a></h2>
+<p>GS2 already covers the <strong>assembly-debugging core</strong> that DAP exposes optionally (run control, instruction/data breakpoints, memory R/W, stop reasons, CPU snapshot). It is intentionally weaker on <strong>source</strong> debugging, call stacks, variables, and expressions — those stay on the host. It is <strong>stronger</strong> on Apple II / IIgs machine specifics (memory domains, I/O watches, instruction trace, peripherals, key injection).</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>GS2</th>
+<th>DAP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Design center</td>
+<td>Assembly-first</td>
+<td>Source-first</td>
+</tr>
+<tr>
+<td>Surface size</td>
+<td>~20 implemented commands</td>
+<td>50+ requests (capability-gated)</td>
+</tr>
+<tr>
+<td>Audience</td>
+<td>Hosts, agents, scripts</td>
+<td>IDE UI</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="design-posture">Design posture<a class="headerlink" href="#design-posture" title="Permanent link">&para;</a></h2>
+<h3 id="gs2-external-debug-protocol">GS2 External Debug Protocol<a class="headerlink" href="#gs2-external-debug-protocol" title="Permanent link">&para;</a></h3>
+<p>Host-driven imperative commands over a 12-byte binary frame. Opaque payloads; no JSON, no expression language, no symbols inside the emulator.</p>
 <ul>
-<li>Via <strong><a href="../Cards_AppleMouse/">Apple Mouse III</a></strong> card on Apple //e (and similar)</li>
-<li>Via <strong>ADB</strong> (Apple Desktop Bus) mouse on Apple IIgs</li>
+<li>Binary framing</li>
+<li>Typed stop engine (address / access / mask / ignore-count)</li>
+<li>Host owns symbols and fancy predicates</li>
+<li>Agent / CLI first</li>
 </ul>
-<h2 id="mouse-capture">Mouse Capture<a class="headerlink" href="#mouse-capture" title="Permanent link">&para;</a></h2>
-<p>When you're using emulated Mouse software, you will probably want to turn on Mouse Capture.</p>
-<p>Do this by using the Mouse Capture menu, Mouse Capture button, or by pressing F1.</p>
-<p>When you enter Mouse Capture, a helpful message will appear at the top of the screen for a few seconds reminding you how to exit Mouse Capture.</p>
-<p>To release Mouse Capture, you must press <strong>F1</strong>, or Alt-Tab to switch windows. (Alt-Tab may be a bit different depending on your host operating system.)</p>
-<p>Opening the Control Panel via <strong>F4</strong> or the Control Panel button will also temporarily release Mouse Capture. When you close the Control Panel, the original Mouse Capture state will be restored.</p>
-<p>Mouse capture also turns off the "mouse movement shows on-screen controls" feature. It locks you into that keyboard-oriented Apple II experience.</p>
-<h2 id="iigs-gsos-mouse-tracking">IIgs - GS/OS Mouse Tracking<a class="headerlink" href="#iigs-gsos-mouse-tracking" title="Permanent link">&para;</a></h2>
-<p>When you boot a GS/OS image, or other application that starts the IIgs Event Manager, GSSquared detects this and changes how it processes mouse movement events. It will calculate the mouse movement that the IIgs needs to see, in order to match where the Host (your computer) mouse . Then it synthesizes the appropriate events to get the cursor there.</p>
-<p>This provides seamless movement of the mouse cursor in and out of the IIgs desktop, making the mouse work much more naturally, and avoiding the need for Mouse Capture mode with IIgs desktop apps.</p>
-<p>You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.</p>
-<p>ROM 01 and ROM 03 IIgs platforms both use this tracking path.</p>
+<p><strong>Split:</strong> GS2 matches addresses / access / masks; the host maps source lines, symbols, and complex conditions via stop → inspect → <code>CONTINUE</code>.</p>
+<h3 id="debug-adapter-protocol-dap">Debug Adapter Protocol (DAP)<a class="headerlink" href="#debug-adapter-protocol-dap" title="Permanent link">&para;</a></h3>
+<p>JSON request/response/event protocol between IDE and a debug adapter. Source lines are the primary breakpoint model; assembly is an optional capability layer.</p>
+<ul>
+<li>JSON + <code>Content-Length</code> framing</li>
+<li>IDE UI contract (Variables, Call Stack, Breakpoints, Debug Console)</li>
+<li>Expression evaluation in the adapter</li>
+<li>Capabilities negotiated at <code>initialize</code></li>
+</ul>
+<p>The adapter typically wraps GDB/LLDB/a runtime and presents threads, frames, variables, and source mapping to the editor.</p>
+<hr />
+<h2 id="capability-matrix">Capability matrix<a class="headerlink" href="#capability-matrix" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>GS2 protocol</th>
+<th>DAP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Session handshake / caps</td>
+<td><code>HELLO</code> (version + flags)</td>
+<td><code>initialize</code> + <code>Capabilities</code></td>
+</tr>
+<tr>
+<td>Pause / continue</td>
+<td><code>PAUSE</code>, <code>CONTINUE</code> + <code>EVT_RUN_STATE</code></td>
+<td><code>pause</code>, <code>continue</code> (+ <code>continued</code>)</td>
+</tr>
+<tr>
+<td>Step into (instruction)</td>
+<td><code>STEP_INTO(count)</code> + <code>STOP_STEP</code></td>
+<td><code>stepIn</code> (+ <code>granularity=instruction</code>)</td>
+</tr>
+<tr>
+<td>Step over / step out</td>
+<td>Not on wire (UI has helpers)</td>
+<td><code>next</code>, <code>stepOut</code></td>
+</tr>
+<tr>
+<td>Instruction breakpoints</td>
+<td><code>BP_SET</code> EXEC + <code>addr_mask</code> + range</td>
+<td><code>setInstructionBreakpoints</code></td>
+</tr>
+<tr>
+<td>Data breakpoints</td>
+<td><code>BP_SET</code> DATA (R/W, value, ignore)</td>
+<td><code>setDataBreakpoints</code> (+ bytes)</td>
+</tr>
+<tr>
+<td>I/O / soft-switch watches</td>
+<td><code>BP_KIND_IO</code> bank whitelist</td>
+<td>No first-class equivalent</td>
+</tr>
+<tr>
+<td>Source-line breakpoints</td>
+<td>Host maps line→addr (by design)</td>
+<td><code>setBreakpoints</code> (primary model)</td>
+</tr>
+<tr>
+<td>Function / exception BPs</td>
+<td>None</td>
+<td><code>setFunctionBreakpoints</code>, <code>setExceptionBreakpoints</code></td>
+</tr>
+<tr>
+<td>Memory read/write</td>
+<td><code>READMEM</code> / <code>WRITEMEM</code> + domains</td>
+<td><code>readMemory</code> / <code>writeMemory</code></td>
+</tr>
+<tr>
+<td>Disassembly service</td>
+<td>None (host can disasm bytes)</td>
+<td><code>disassemble</code></td>
+</tr>
+<tr>
+<td>CPU regs at stop</td>
+<td><code>EVT_STOPPED</code> 40-byte trace blob</td>
+<td><code>scopes</code> → <code>variables</code> (Registers)</td>
+</tr>
+<tr>
+<td>Live register query</td>
+<td>Via stop snapshot / <code>GET_TRACE</code></td>
+<td><code>scopes</code> / <code>variables</code> while stopped</td>
+</tr>
+<tr>
+<td>Instruction history</td>
+<td><code>GET_TRACE</code> ring (100k × 40B)</td>
+<td>No standard request</td>
+</tr>
+<tr>
+<td>Call stack / frames</td>
+<td>None</td>
+<td><code>stackTrace</code> (+ <code>instructionPointerReference</code>)</td>
+</tr>
+<tr>
+<td>Variables / evaluate</td>
+<td>None (no expr language in GS2)</td>
+<td><code>scopes</code>, <code>variables</code>, <code>evaluate</code>, <code>setVariable</code></td>
+</tr>
+<tr>
+<td>Symbols / modules / sources</td>
+<td>Host-side only</td>
+<td><code>modules</code>, <code>loadedSources</code>, <code>source</code></td>
+</tr>
+<tr>
+<td>Device / peripheral state</td>
+<td><code>STATE_GET</code> / <code>STATE_SET</code> (Ensoniq, Disk II, Mouse)</td>
+<td>Not in DAP core</td>
+</tr>
+<tr>
+<td>Input injection</td>
+<td><code>KEYEVENT</code> (SDL)</td>
+<td>Not in DAP core</td>
+</tr>
+<tr>
+<td>Machine reset</td>
+<td><code>RESET</code> warm/cold</td>
+<td><code>restart</code> (session-level, optional)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="assembly-debugging-depth">Assembly debugging depth<a class="headerlink" href="#assembly-debugging-depth" title="Permanent link">&para;</a></h2>
+<h3 id="where-gs2-matches-or-exceeds-dap">Where GS2 matches or exceeds DAP<a class="headerlink" href="#where-gs2-matches-or-exceeds-dap" title="Permanent link">&para;</a></h3>
+<p><strong>Stronger — memory domains.</strong> <code>MAIN</code> / <code>MEGAII</code> / <code>RAW</code> / <code>ENSONIQ</code> are first-class. DAP has opaque <code>memoryReference</code> strings with no standard multi-space model.</p>
+<p><strong>Stronger — I/O watches.</strong> Soft-switch kind with fixed banks <code>{00,01,E0,E1}</code>. DAP data breakpoints cannot express this without adapter-specific logic.</p>
+<p><strong>Stronger — address mask + range.</strong> Bank-aware or bank-agnostic EXEC/DATA matches without an expression language. DAP instruction breakpoints are point addresses.</p>
+<p><strong>Stronger — instruction trace.</strong> <code>GET_TRACE</code> exposes a large ring of completed instructions with full CPU snapshots. No DAP equivalent.</p>
+<p><strong>Parity — stop + CPU state.</strong> <code>EVT_STOPPED</code> ships reason, bp id, PC/eaddr, and a 40-byte register/opcode snapshot — same role as DAP <code>stopped</code> → <code>stackTrace</code> → <code>scopes</code>.</p>
+<p><strong>Parity — data BP features.</strong> R/W access, byte value/mask, ignore-count, temporary, enable. Maps to DAP data breakpoints + hit conditions (expression form differs; GS2 uses fixed fields).</p>
+<h3 id="where-dap-is-richer-for-assembly-uis">Where DAP is richer for assembly UIs<a class="headerlink" href="#where-dap-is-richer-for-assembly-uis" title="Permanent link">&para;</a></h3>
+<p><strong><code>disassemble</code>.</strong> Server returns formatted instructions with optional symbol resolution. GS2 expects the host to <code>READMEM</code> and disassemble locally.</p>
+<p><strong><code>instructionPointerReference</code>.</strong> Stack frames can anchor the disassembly view at the current PC. GS2 has PC in the stop blob but no frame model.</p>
+<p><strong>Step over / out / granularity.</strong> <code>next</code>, <code>stepOut</code>, and statement-vs-instruction stepping are standard. GS2 only exposes <code>STEP_INTO(count)</code> on the wire.</p>
+<p><strong>Register editing UX.</strong> <code>setVariable</code> / <code>setExpression</code> on register scopes. GS2 has no dedicated register-write command.</p>
+<p><strong>Advanced navigation.</strong> <code>goto</code>, <code>restartFrame</code>, <code>stepBack</code> — out of scope for GS2 v1.</p>
+<hr />
+<h2 id="source-debugging-depth">Source debugging depth<a class="headerlink" href="#source-debugging-depth" title="Permanent link">&para;</a></h2>
+<p><strong>Intentional asymmetry.</strong> GS2 explicitly pushes symbols and source lines to the host (“Symbol → address” / “Source line breakpoints” in the host column of DebugProtocol.md). DAP makes those first-class wire concepts.</p>
+<p>Bridging to VS Code means a thin DAP adapter that maps <code>setBreakpoints</code> → <code>BP_SET</code> EXEC after symbol lookup — <strong>not</strong> growing an expression language inside GS2.</p>
+<table>
+<thead>
+<tr>
+<th>DAP area</th>
+<th>What it provides</th>
+<th>GS2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source BPs</td>
+<td><code>setBreakpoints</code> by file/line/column; conditions, hit conditions, logpoints; <code>breakpointLocations</code></td>
+<td>Host maps line → address</td>
+</tr>
+<tr>
+<td>Stack + locals</td>
+<td><code>stackTrace</code>, <code>scopes</code>, <code>variables</code>, <code>evaluate</code></td>
+<td>None on wire; needs DWARF/PDB (or similar) in an adapter</td>
+</tr>
+<tr>
+<td>Modules / sources</td>
+<td><code>modules</code>, <code>loadedSources</code>, <code>source</code></td>
+<td>No program/module concept on the wire</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="mapping-cheat-sheet-if-you-wrapped-gs2-in-dap">Mapping cheat sheet (if you wrapped GS2 in DAP)<a class="headerlink" href="#mapping-cheat-sheet-if-you-wrapped-gs2-in-dap" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>DAP request / event</th>
+<th>GS2 backing</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>initialize</code></td>
+<td><code>HELLO</code></td>
+<td>Caps hardcoded in adapter</td>
+</tr>
+<tr>
+<td><code>attach</code> / <code>launch</code></td>
+<td>CLI + socket connect</td>
+<td>Emulator already running</td>
+</tr>
+<tr>
+<td><code>pause</code> / <code>continue</code></td>
+<td><code>PAUSE</code> / <code>CONTINUE</code></td>
+<td>Policy A = step-off EXEC bp</td>
+</tr>
+<tr>
+<td><code>stepIn</code></td>
+<td><code>STEP_INTO(1)</code></td>
+<td>Batch count is a GS2 extra</td>
+</tr>
+<tr>
+<td><code>next</code> / <code>stepOut</code></td>
+<td>Temp EXEC bp / host logic</td>
+<td>Not native yet</td>
+</tr>
+<tr>
+<td><code>setInstructionBreakpoints</code></td>
+<td><code>BP_SET</code> EXEC</td>
+<td>Replace-all semantics in adapter</td>
+</tr>
+<tr>
+<td><code>setDataBreakpoints</code></td>
+<td><code>BP_SET</code> DATA</td>
+<td>Map access + bytes</td>
+</tr>
+<tr>
+<td><code>setBreakpoints</code></td>
+<td>Host symbols → <code>BP_SET</code> EXEC</td>
+<td>Adapter owns line→addr</td>
+</tr>
+<tr>
+<td><code>readMemory</code> / <code>writeMemory</code></td>
+<td><code>READMEM</code> / <code>WRITEMEM</code></td>
+<td>Encode domain in <code>memoryReference</code></td>
+</tr>
+<tr>
+<td><code>disassemble</code></td>
+<td><code>READMEM</code> + host disasm</td>
+<td>Or add future <code>DISASM</code> cmd</td>
+</tr>
+<tr>
+<td><code>stopped</code></td>
+<td><code>EVT_STOPPED</code></td>
+<td>Map reason codes</td>
+</tr>
+<tr>
+<td><code>continued</code></td>
+<td><code>EVT_RUN_STATE</code></td>
+<td>When mode → <code>NORMAL</code></td>
+</tr>
+<tr>
+<td><code>stackTrace</code> / <code>scopes</code></td>
+<td>Trace blob → fake 1 frame</td>
+<td>Enough for asm UI</td>
+</tr>
+<tr>
+<td><code>threads</code></td>
+<td>Single dummy thread</td>
+<td>Required by DAP even for 1 CPU</td>
+</tr>
+<tr>
+<td><code>evaluate</code></td>
+<td>Host-only</td>
+<td>Do not put expr eval in GS2</td>
+</tr>
+<tr>
+<td><code>modules</code> / <code>source</code></td>
+<td>—</td>
+<td>Leave unsupported</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="gaps-worth-caring-about">Gaps worth caring about<a class="headerlink" href="#gaps-worth-caring-about" title="Permanent link">&para;</a></h2>
+<h3 id="goal-agent-scripted-asm-debug">Goal: agent / scripted asm debug<a class="headerlink" href="#goal-agent-scripted-asm-debug" title="Permanent link">&para;</a></h3>
+<p>GS2 v1 is already well-aimed: run control, rich stops, multi-domain memory, EXEC/DATA/IO breakpoints, trace history, peripherals.</p>
+<p><strong>Nice-to-haves on the wire:</strong> <code>STEP_OVER</code> / <code>STEP_OUT</code>, dedicated <code>GET_REGS</code> / <code>SET_REGS</code>, optional <code>DISASM</code> for convenience (not required if the host disassembles).</p>
+<h3 id="goal-vs-code-source-debugging">Goal: VS Code source debugging<a class="headerlink" href="#goal-vs-code-source-debugging" title="Permanent link">&para;</a></h3>
+<p>Build a DAP adapter process — do not implement DAP inside GS2. The hard missing pieces are host-side: symbols, stack unwinding for high-level languages, and variable evaluation.</p>
+<p>For Merlin/ca65/ORCA asm in the editor, instruction BPs + disassemble + memory + one register frame may be enough without full DWARF.</p>
+<hr />
+<h2 id="sources">Sources<a class="headerlink" href="#sources" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../DebugProtocol/">DebugProtocol.md</a> — GS2 framing v1</li>
+<li><a href="https://microsoft.github.io/debug-adapter-protocol/specification.html">DAP specification</a> — requests, <code>Capabilities</code>, assembly-related <code>supportsInstructionBreakpoints</code> / <code>supportsDisassembleRequest</code> / <code>supportsReadMemoryRequest</code></li>
+</ul>
 
 
 

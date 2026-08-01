@@ -2608,6 +2608,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#machine-identity-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine identity (id)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#clock-and-video" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2647,10 +2658,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#parallel-printer-output" class="md-nav__link">
+  <a href="#parallel-and-serial-attachments" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Parallel printer output
+        Parallel and serial attachments
       
     </span>
   </a>
@@ -2702,10 +2713,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#serial-ports-connections" class="md-nav__link">
+  <a href="#serial-parallel-ports-connections" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Serial ports — [[connections]]
+        Serial / parallel ports — [[connections]]
       
     </span>
   </a>
@@ -2965,6 +2976,11 @@ image = &quot;disks/BASIC SYSTEM.woz&quot;
 <td>Must be <code>1</code>. Future GS2 versions may accept newer numbers.</td>
 </tr>
 <tr>
+<td><code>id</code></td>
+<td>No</td>
+<td>Stable UUID for this machine. Minted automatically if missing. See <a href="#machine-identity-id">Machine identity</a>.</td>
+</tr>
+<tr>
 <td><code>name</code></td>
 <td><strong>Yes</strong></td>
 <td>Short title shown on the System Select tile.</td>
@@ -3022,10 +3038,41 @@ image = &quot;disks/BASIC SYSTEM.woz&quot;
 </tr>
 <tr>
 <td><code>"apple2gs"</code></td>
-<td>Apple IIgs</td>
+<td>Apple IIgs ROM 01</td>
+</tr>
+<tr>
+<td><code>"apple2gs_rom3"</code></td>
+<td>Apple IIgs ROM 03</td>
 </tr>
 </tbody>
 </table>
+<h3 id="machine-identity-id">Machine identity (<code>id</code>)<a class="headerlink" href="#machine-identity-id" title="Permanent link">&para;</a></h3>
+<p><code>id</code> is a UUID that identifies the <em>machine</em>, not the filename. On IIgs platforms, battery RAM (Control Panel / NVRAM) is stored as:</p>
+<p><code>PrefPath/bram/&lt;id&gt;.bin</code></p>
+<p>(for example under <code>~/Library/Application Support/jawaidbazyar2/GSSquared/bram/</code> on macOS).</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>BRAM result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rename / move the <code>.gs2</code> (same <code>id</code>)</td>
+<td>Same BRAM</td>
+</tr>
+<tr>
+<td>Save As to a new file</td>
+<td>New <code>id</code> → separate BRAM</td>
+</tr>
+<tr>
+<td>Copy <code>id</code> into another <code>.gs2</code></td>
+<td>Shared BRAM (same machine)</td>
+</tr>
+</tbody>
+</table>
+<p>If <code>id</code> is missing when you load a writable <code>.gs2</code>, GSSquared assigns one and may rewrite the file. You rarely need to set it yourself.</p>
 <h3 id="clock-and-video">Clock and video<a class="headerlink" href="#clock-and-video" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong><code>clock = "ntsc"</code></strong> — North American timing (default).</li>
@@ -3047,7 +3094,7 @@ card = &quot;bazfast3&quot;
 <p>Rules that bite people:</p>
 <ul>
 <li><strong>One card per slot.</strong> Do not list the same slot twice.</li>
-<li><strong>Some cards only fit certain slots or machines.</strong> Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight is IIgs-only.</li>
+<li><strong>Some cards only fit certain slots or machines.</strong> Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight is IIgs-only and slot 3 only.</li>
 <li><strong>Most cards allow only one instance.</strong> Mockingboard and Disk II are exceptions — you can have two Mockingboards in different slots.</li>
 </ul>
 <h3 id="card-types">Card types<a class="headerlink" href="#card-types" title="Permanent link">&para;</a></h3>
@@ -3077,7 +3124,7 @@ card = &quot;bazfast3&quot;
 </tr>
 <tr>
 <td><code>"parallel"</code></td>
-<td>Parallel printer interface</td>
+<td><a href="../Cards_Parallel/">Parallel Interface</a></td>
 </tr>
 <tr>
 <td><code>"mockingboard"</code></td>
@@ -3085,7 +3132,7 @@ card = &quot;bazfast3&quot;
 </tr>
 <tr>
 <td><code>"mouse"</code></td>
-<td>Apple Mouse II</td>
+<td><a href="../Cards_AppleMouse/">Apple Mouse III</a>; <code>"applemouseiii"</code> is an alias</td>
 </tr>
 <tr>
 <td><code>"videx"</code></td>
@@ -3097,11 +3144,11 @@ card = &quot;bazfast3&quot;
 </tr>
 <tr>
 <td><code>"prodos_block"</code></td>
-<td>Generic ProDOS block device</td>
+<td>Deprecated - do not use</td>
 </tr>
 <tr>
 <td><code>"prodos_block2"</code></td>
-<td>ProDOS block device (variant 2)</td>
+<td>Deprecated - do not use</td>
 </tr>
 <tr>
 <td><code>"bazfast3"</code></td>
@@ -3115,17 +3162,19 @@ card = &quot;bazfast3&quot;
 <td><code>"second_sight"</code></td>
 <td>Second Sight (IIgs only)</td>
 </tr>
+<tr>
+<td><code>"super_serial"</code></td>
+<td><a href="../Cards_SuperSerial/">Super Serial Card</a></td>
+</tr>
+<tr>
+<td><code>"uthernet2"</code></td>
+<td><a href="../Cards_UthernetII/">Uthernet II</a> (IIe + IIgs; slots 1–7)</td>
+</tr>
 </tbody>
 </table>
 <p>Empty slots are simply omitted — you do not need to say “empty.”</p>
-<h3 id="parallel-printer-output">Parallel printer output<a class="headerlink" href="#parallel-printer-output" title="Permanent link">&para;</a></h3>
-<p>If you install a parallel card, you can send printer output to a file on your Mac:</p>
-<pre><code class="language-toml">[[cards]]
-slot = 1
-card = &quot;parallel&quot;
-output = &quot;printouts/session.txt&quot;
-</code></pre>
-<p>If <code>output</code> is omitted, GS2 uses a default file name.</p>
+<h3 id="parallel-and-serial-attachments">Parallel and serial attachments<a class="headerlink" href="#parallel-and-serial-attachments" title="Permanent link">&para;</a></h3>
+<p>Do <strong>not</strong> put paths on the card entry. Use <code>[[connections]]</code> (below) for parallel file capture and serial modem/file attachments. See also <a href="../Cards_Parallel/">Parallel Interface</a> and <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
 <hr />
 <h2 id="disk-images-storage">Disk images — <code>[[storage]]</code><a class="headerlink" href="#disk-images-storage" title="Permanent link">&para;</a></h2>
 <p>Pre-mount disks so they are ready when the machine boots. Each row is one drive:</p>
@@ -3212,8 +3261,8 @@ drive = 2
 image = &quot;volumes/Games.po&quot;
 </code></pre>
 <hr />
-<h2 id="serial-ports-connections">Serial ports — <code>[[connections]]</code><a class="headerlink" href="#serial-ports-connections" title="Permanent link">&para;</a></h2>
-<p>Optional. Describes what is “plugged into” serial ports — file capture, loopback test, or a virtual modem.</p>
+<h2 id="serial-parallel-ports-connections">Serial / parallel ports — <code>[[connections]]</code><a class="headerlink" href="#serial-parallel-ports-connections" title="Permanent link">&para;</a></h2>
+<p>Optional. Describes what is “plugged into” each serial or parallel port — file capture or a virtual modem. Full UI walkthrough: <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
 <p><strong>IIgs built-in ports</strong> (no <code>slot</code> — these are on the motherboard):</p>
 <pre><code class="language-toml">[[connections]]
 port = &quot;a&quot;
@@ -3223,6 +3272,16 @@ path = &quot;captures/printer.bin&quot;
 [[connections]]
 port = &quot;b&quot;
 device = &quot;modem&quot;
+</code></pre>
+<p><strong>Slot cards</strong> (Super Serial, Parallel, etc.):</p>
+<pre><code class="language-toml">[[connections]]
+slot = 2
+device = &quot;modem&quot;
+
+[[connections]]
+slot = 1
+device = &quot;file&quot;
+path = &quot;printouts/session.bin&quot;
 </code></pre>
 <table>
 <thead>
@@ -3234,24 +3293,23 @@ device = &quot;modem&quot;
 <tbody>
 <tr>
 <td><code>port</code></td>
-<td><code>"a"</code> or <code>"b"</code>. Defaults to <code>"a"</code> if omitted.</td>
+<td>IIgs SCC only: <code>"a"</code> or <code>"b"</code>. Defaults to <code>"a"</code> if omitted.</td>
+</tr>
+<tr>
+<td><code>slot</code></td>
+<td>Expansion-slot card (SSC, parallel, …). Use instead of <code>port</code>.</td>
 </tr>
 <tr>
 <td><code>device</code></td>
-<td><code>"none"</code>, <code>"file"</code>, <code>"echo"</code>, or <code>"modem"</code>.</td>
+<td><code>"none"</code>, <code>"file"</code>, <code>"echo"</code>, or <code>"modem"</code>. Parallel allows <code>"none"</code> / <code>"file"</code> only.</td>
 </tr>
 <tr>
 <td><code>path</code></td>
 <td>Host file when <code>device = "file"</code>. Relative paths work like disk images.</td>
 </tr>
-<tr>
-<td><code>slot</code></td>
-<td>Only for a serial card in an expansion slot (future). Omit for IIgs built-in SCC.</td>
-</tr>
 </tbody>
 </table>
-<p>If you omit <code>[[connections]]</code> entirely, GS2 uses platform defaults (on IIgs, port A is typically a file device and port B a modem on native builds).</p>
-<p>Omit this section unless you care about serial setup — most configs do not need it.</p>
+<p>If you omit <code>[[connections]]</code> entirely, GS2 uses platform defaults (IIgs: file + modem on native builds; SSC → modem; parallel → file).</p>
 <hr />
 <h2 id="complete-examples">Complete examples<a class="headerlink" href="#complete-examples" title="Permanent link">&para;</a></h2>
 <h3 id="minimal-enhanced-e-with-one-boot-disk">Minimal Enhanced //e with one boot disk<a class="headerlink" href="#minimal-enhanced-e-with-one-boot-disk" title="Permanent link">&para;</a></h3>

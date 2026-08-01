@@ -1866,6 +1866,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#installed-fast-ram-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installed fast RAM size
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#shadow-register-c035" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2959,6 +2970,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#installed-fast-ram-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installed fast RAM size
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#shadow-register-c035" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3333,6 +3355,16 @@
 https://comp.sys.apple2.narkive.com/o1R6slX2/apple-iigs-bank-latching</p>
 <p>Also this:
 http://umich.edu/~archive/apple2/technotes/tn/iigs/TN.IIGS.032</p>
+<h2 id="installed-fast-ram-size">Installed fast RAM size<a class="headerlink" href="#installed-fast-ram-size" title="Permanent link">&para;</a></h2>
+<p>GSSquared sizes contiguous FPI RAM as <strong>motherboard + expansion card</strong> (KEGS-compatible),
+implemented in <code>src/mmus/iigs_memory.hpp</code>:</p>
+<ul>
+<li><strong>ROM01</strong> (128KB ROM file): 128KB motherboard + default 8MB card → <strong>8.125MB</strong> (banks <code>$00</code>–<code>$81</code>)</li>
+<li><strong>ROM03</strong> (256KB ROM file): 1MB motherboard + default 8MB card → <strong>9MB</strong> (banks <code>$00</code>–<code>$8F</code>)</li>
+</ul>
+<p>The expansion argument is card size, not total system RAM. Total is clamped to <code>$DF0000</code>.
+Mega II banks <code>$E0</code>/<code>$E1</code> are separate and not included. A flat 8MB map (banks <code>$00</code>–<code>$7F</code> only)
+is wrong for real ROM01+8MB / ROM03+8MB machines and leaves <code>$80+</code> floating.</p>
 <h2 id="shadow-register-c035">Shadow Register - $C035<a class="headerlink" href="#shadow-register-c035" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Default on Power-up:</li>
@@ -3550,7 +3582,7 @@ how to use this bit to select a memory bank.
 <tr>
 <td>1</td>
 <td>ROMBANK</td>
-<td>Must always be 0</td>
+<td>Must always be 0 (unused on ROM01; removed on ROM03 — see <a href="../Unimplemented/">Unimplemented.md</a>)</td>
 </tr>
 <tr>
 <td>0</td>

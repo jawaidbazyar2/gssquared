@@ -3900,8 +3900,9 @@ The mockingboard output is just a little bit clicky in parts. I wonder if I shou
 <p>It asks if I have a mb; then displays hires garbage, but playing music; hit a key, and it loads the game.</p>
 <h2 id="mousepaint">MousePaint<a class="headerlink" href="#mousepaint" title="Permanent link">&para;</a></h2>
 <p>trying to read from mouse using I/O hooks which I don't support yet.</p>
+<p>Works now with new Mouse card brought in from A2Pico project.</p>
 <h2 id="xtra8bit">Xtra8bit<a class="headerlink" href="#xtra8bit" title="Permanent link">&para;</a></h2>
-<p>looks like it's trying to in#4 to read mouse.</p>
+<p>looks like it's trying to in#4 to read mouse. Works now with new Mouse card.</p>
 <h1 id="total-replay_1">Total Replay<a class="headerlink" href="#total-replay_1" title="Permanent link">&para;</a></h1>
 <h2 id="airheart">AirHeart<a class="headerlink" href="#airheart" title="Permanent link">&para;</a></h2>
 <p>crashes after doing some STA C081,X; STA C082,X; STA C083,X. that is lang card stuff and maybe phantom-read stuff. 
@@ -3910,6 +3911,10 @@ This is due to something confusing our drive for a smartport, and jmp'ing to $Cx
 <p>TR seems to be seeing our device, assuming it's a SmartPort, and calling a nonexistent routine. (FIXED)</p>
 <h2 id="arkanoid">Arkanoid<a class="headerlink" href="#arkanoid" title="Permanent link">&para;</a></h2>
 <p>This has same problem as Airheart. (FIXED)</p>
+<h2 id="wavy-navy-joyport">Wavy Navy (Joyport)<a class="headerlink" href="#wavy-navy-joyport" title="Permanent link">&para;</a></h2>
+<p>Joyport works differently on II+ vs IIe when launched from Total Replay — not a recent GSSquared regression (same on 0.9.0).</p>
+<p>TR’s Wavy Navy prelaunch checks <code>$FBB3</code> (ROM machine ID). On IIe-class (<code>$06</code>) it patches the game to <strong>disable AN1 access</strong> (comment in 4cade: otherwise UltraWarp dies). AN1 then stays at the reset default (off = horizontal), so D-pad left/right steer the ship. On II+ that patch is skipped, so the game’s real AN1 multiplexing runs; with GSSquared Joyport mode, D-pad <strong>up/down</strong> steer left/right instead.</p>
+<p>Same Wavy Navy binary either way; TR patches at launch on IIe only. GSSquared F6 Joyport + in-game Joyport selected for both tests. Worth revisiting II+ AN1 mux when the unpatched path is active.</p>
 
 
 

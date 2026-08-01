@@ -726,6 +726,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#serial-parallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial / Parallel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#disk-drives-storage" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2738,6 +2749,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#serial-parallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serial / Parallel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#disk-drives-storage" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2799,7 +2821,7 @@
 <p>Aside from Menus, you can interact with the emulated system through use of a couple different OSD (On-Screen Display) elements:</p>
 <ul>
 <li><a href="#control-panel">Control Panel</a></li>
-<li><a href="#">OSD Buttons</a></li>
+<li><a href="#osd-buttons">OSD Buttons</a></li>
 <li><a href="#disk-drive-status">Disk Drive Status</a></li>
 </ul>
 <h2 id="control-panel">Control Panel<a class="headerlink" href="#control-panel" title="Permanent link">&para;</a></h2>
@@ -2813,14 +2835,18 @@
 <h3 id="slots">Slots<a class="headerlink" href="#slots" title="Permanent link">&para;</a></h3>
 <p>Displays what virtual cards are present in slots.</p>
 <p>If you are seeing the Control Panel from the System Select screen, it's because you asked to create or edit a System Config, and you will be able to change what is in the slots. Otherwise, it is display-only.</p>
+<h3 id="serial-parallel">Serial / Parallel<a class="headerlink" href="#serial-parallel" title="Permanent link">&para;</a></h3>
+<p>Buttons for each serial or parallel port on the machine (IIgs built-in SCC, Super Serial, Parallel, etc.). Click a button to attach <strong>None</strong>, <strong>File</strong>, or <strong>Modem</strong>. See <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
 <h3 id="disk-drives-storage">Disk Drives / Storage<a class="headerlink" href="#disk-drives-storage" title="Permanent link">&para;</a></h3>
 <p>You can see Disk drive status here (also see <a href="#disk-drive-status">Disk Drive Status</a> below)</p>
 <p>See <a href="../Storage/">Storage</a> for more details on managing mounted disk images.</p>
+<p>On Apple IIgs systems, <strong>Host Folder…</strong> chooses which real-computer directory is shared through Host FST (volume <code>:Host</code>). See <a href="../HostFST/">Host FST</a>.</p>
 <h2 id="osd-buttons">OSD Buttons<a class="headerlink" href="#osd-buttons" title="Permanent link">&para;</a></h2>
 <p>These buttons allow you to control various aspects of the system: speed, display type, full screen, etc.</p>
 <p>OSD Buttons are hidden when Mouse Capture is enabled. This is to prevent accidentally triggering buttons when using Mouse software.</p>
 <h2 id="disk-drive-status">Disk Drive Status<a class="headerlink" href="#disk-drive-status" title="Permanent link">&para;</a></h2>
 <p>When the Control Panel is not open, if disk drives are active, they will be displayed at the bottom of the screen, indicating slot, drive, track number, and disk image filename if an image is present.</p>
+<p>You can hide this strip with <strong>Display → HUD → Drives</strong>. The stats overlay (if enabled) is toggled with <strong>Display → HUD → Stats</strong>. See <a href="../Menus/">Menus</a>.</p>
 
 
 

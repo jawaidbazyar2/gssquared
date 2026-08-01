@@ -2575,6 +2575,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#config-editor-and-custom-system-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config editor and custom system profiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#gsos-mouse-tracking-keygloo" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2749,8 +2760,8 @@
 
 
 <h1 id="gs2-change-log-release-09">GS2 Change Log — Release 0.9<a class="headerlink" href="#gs2-change-log-release-09" title="Permanent link">&para;</a></h1>
-<p>Covers development from <strong>2026-05-19</strong> through <strong>2026-07-07</strong> (67 commits).</p>
-<p>Release 0.9 focuses on configurable hardware profiles, GS/OS mouse tracking, CRT post-processing effects, SecondSight card emulation, and groundwork for a web build.</p>
+<p>Covers development from <strong>2026-05-19</strong> through <strong>2026-07-09</strong> (85 commits).</p>
+<p>Release 0.9 focuses on configurable hardware profiles (including an in-app editor), GS/OS mouse tracking, CRT post-processing effects, SecondSight card emulation, and groundwork for a web build. The 0.9 roadmap items are complete.</p>
 <hr />
 <h2 id="major-changes">Major Changes<a class="headerlink" href="#major-changes" title="Permanent link">&para;</a></h2>
 <h3 id="toml-and-settingstxt-configuration">TOML and Settings.txt configuration<a class="headerlink" href="#toml-and-settingstxt-configuration" title="Permanent link">&para;</a></h3>
@@ -2759,6 +2770,16 @@
 <li><strong>TOML config files (<code>.gs2</code>).</strong> Full parsing, loading, and execution of machine profiles: platform, slots, storage, video, and aliases. Integrated into the main app and platform menus. Documented in <code>SystemConfigTOML.md</code> and <code>ConfigFiles.md</code>.</li>
 <li><strong>Settings.txt loader.</strong> Reader/loader for Mike's legacy <code>Settings.txt</code> format, with conversion into the new system config layer.</li>
 <li><strong>Test harness.</strong> <code>apps/systemconfigtest</code> with fixture files for both TOML and Settings.txt validation.</li>
+</ul>
+<h3 id="config-editor-and-custom-system-profiles">Config editor and custom system profiles<a class="headerlink" href="#config-editor-and-custom-system-profiles" title="Permanent link">&para;</a></h3>
+<p>In-app create / edit / save / launch of custom hardware configs — the remaining 0.9 roadmap item.</p>
+<ul>
+<li><strong>Edit System Configuration.</strong> New editor UI (<code>EditSystem</code>, <code>ConfigDraft</code>) for name, description, platform, slot cards, and pre-mounted storage. Opened from System Select via <strong>+</strong> (new) or <strong>Edit...</strong> (existing <code>.gs2</code> / Settings.txt).</li>
+<li><strong>Dynamic slots and drives UI.</strong> <code>SlotsPanel</code> and <code>StorageButtonFactory</code> build slot/drive buttons from the live config; OSD button constructors cleaned up around asset IDs.</li>
+<li><strong>Launch Config…</strong> Menu item (macOS / Windows / Linux) loads a config and boots immediately from System Select (renamed from "Open Config…"). Also supports drag/drop and Open With for profile packs.</li>
+<li><strong>macOS <code>.gs2</code> document type.</strong> Info.plist UTI + UTI-aware save dialog so <code>.gs2</code> files are recognized in Finder and save/open panels (not grayed out).</li>
+<li><strong>Device metadata.</strong> Card placement rules centralized in <code>device_info</code> (<code>slots_allowed</code>, <code>multipleInstances</code>, platform flags); editor and config load reject duplicate cards when not allowed.</li>
+<li>Documented in <code>ConfigEditor.md</code>.</li>
 </ul>
 <h3 id="gsos-mouse-tracking-keygloo">GS/OS mouse tracking (KeyGloo)<a class="headerlink" href="#gsos-mouse-tracking-keygloo" title="Permanent link">&para;</a></h3>
 <p>Mouse synchronization for GS/OS via the KeyGloo ADB path.</p>
@@ -2825,6 +2846,10 @@
 <td>Ensoniq <code>soundctl</code> register: low 4 bits are write-only and now return <code>0xF</code> on read.</td>
 </tr>
 <tr>
+<td><strong>#129</strong></td>
+<td>KeyGloo mouse sync detects 320-mode more accurately.</td>
+</tr>
+<tr>
 <td><strong>#102, #107</strong></td>
 <td>Ensoniq interrupt handling and change-during-frame behavior corrected.</td>
 </tr>
@@ -2844,6 +2869,10 @@
 <td>—</td>
 <td>Fixed double-lo-res switch display label.</td>
 </tr>
+<tr>
+<td>—</td>
+<td><code>Floppy525_woz</code> phase-settle events use a unique <code>instanceID</code> so concurrent Disk II and IWM drives do not collide on a shared timer.</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -2860,16 +2889,18 @@
 <h3 id="ui-ux">UI / UX<a class="headerlink" href="#ui-ux" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Drive icons repositioned slightly in the HUD.</li>
+<li>System badge and related Select System polish for custom configs.</li>
 </ul>
 <h3 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h3>
 <ul>
-<li>New or expanded docs: <code>ConfigFiles.md</code>, <code>SystemConfigTOML.md</code>, <code>SecondSight.md</code>, <code>Emscripten.md</code>, <code>PPU.md</code>, <code>ExternalDebugInterface.md</code>, <code>MemoryProtection.md</code>, <code>Mouse.md</code>, <code>CompatibilityGS.md</code>.</li>
-<li>Ongoing developer notes in <code>DevelopLog.md</code> and roadmap updates for 0.9 milestones.</li>
+<li>New or expanded docs: <code>ConfigFiles.md</code>, <code>SystemConfigTOML.md</code>, <code>ConfigEditor.md</code>, <code>SecondSight.md</code>, <code>Emscripten.md</code>, <code>PPU.md</code>, <code>ExternalDebugInterface.md</code>, <code>MemoryProtection.md</code>, <code>Mouse.md</code>, <code>CompatibilityGS.md</code>.</li>
+<li>Ongoing developer notes in <code>DevelopLog.md</code> and roadmap updates; <strong>0.9 roadmap marked complete</strong>.</li>
 </ul>
 <h3 id="internals-tooling">Internals / tooling<a class="headerlink" href="#internals-tooling" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>apps/vgatext</code> shader and VGA text rendering test harnesses with ARM NEON optimizations.</li>
 <li>Deprecated KeyGloo mouse-sync routines removed after the closed-loop rewrite.</li>
+<li>macOS agent build notes: prefer <code>cmake --build … --parallel</code>.</li>
 <li>Version bumped to <strong>0.8</strong> on 2026-05-19 (<code>CMakeLists.txt</code>); 0.9 features landed on top of that baseline.</li>
 </ul>
 <hr />
@@ -2900,7 +2931,11 @@
 </tr>
 <tr>
 <td><strong>Jul 6–7</strong></td>
-<td>TOML config system; Settings.txt loader; config documentation</td>
+<td>TOML config system; Settings.txt loader; config documentation; #129</td>
+</tr>
+<tr>
+<td><strong>Jul 9</strong></td>
+<td>Config editor UI; <code>.gs2</code> UTI / Launch Config; device_info; multi-drive floppy events; 0.9 roadmap complete</td>
 </tr>
 </tbody>
 </table>

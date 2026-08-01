@@ -2778,14 +2778,40 @@ https://retrocomputing.stackexchange.com/questions/5555/apple-iigs-hardware-impl
 7 - Speed indicator
 </code></pre>
 <p>ok. There is Fast RAM and Slow RAM. Slow RAM has the I/O stuff.</p>
-<h4 id="fast-ram-banks-00-7f">Fast RAM - banks $00 - $7F<a class="headerlink" href="#fast-ram-banks-00-7f" title="Permanent link">&para;</a></h4>
-<p>Banks $02 - $7F are pure RAM (well, you -can- shadow them but this is rarely used in practice).
-Banks $00 - $01 are half of legacy Apple II emulation. </p>
-<p>Use a 64KByte page size. Banks $00 and $01 get special read/write handler controlled by iigsmemory, that 
-The other banks are basically always mapped directly to RAM and that's it. So the MMU function for these will
-be the fastest performance. These handlers must handle Apple II LC bank switching; but also be able to set
-these banks to pure-RAM operation just like $02 - $7F. iigsmemory will likely have the custom handlers for these
-banks: native (what we'll call the "it's just ram" handler); and emulation (what we'll call what handles all the IIe memory mangling)</p>
+<h4 id="fast-ram-contiguous-from-bank-00">Fast RAM - contiguous from bank $00<a class="headerlink" href="#fast-ram-contiguous-from-bank-00" title="Permanent link">&para;</a></h4>
+<p>Installed size is <strong>motherboard base (ROM-dependent) + expansion card</strong>, not a flat 8MB total
+(see <code>src/mmus/iigs_memory.hpp</code>, matching KEGS):</p>
+<table>
+<thead>
+<tr>
+<th>ROM</th>
+<th>Motherboard</th>
+<th>+ 8MB card (default)</th>
+<th>Last RAM bank</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ROM01 (128KB)</td>
+<td>128KB (<code>$00</code>–<code>$01</code>)</td>
+<td>8.125MB</td>
+<td><code>$81</code></td>
+</tr>
+<tr>
+<td>ROM03 (256KB)</td>
+<td>1MB (<code>$00</code>–<code>$0F</code>)</td>
+<td>9MB</td>
+<td><code>$8F</code></td>
+</tr>
+</tbody>
+</table>
+<p>Capped at <code>$DF0000</code> so contiguous RAM does not collide with Mega II / ROM. Mega II <code>$E0</code>/<code>$E1</code>
+is separate slow RAM and is <strong>not</strong> part of this size.</p>
+<p>Banks above the last RAM bank float until ROM (<code>$FC</code>+ / <code>$FE</code>+). Banks <code>$00</code>–<code>$01</code> are the
+legacy Apple II emulation half; higher banks are pure RAM (optional all-bank shadowing is rare).</p>
+<p>Use a 64KByte page size. Banks <code>$00</code> and <code>$01</code> get special read/write handlers controlled by
+iigsmemory. Other mapped banks are direct RAM. Handlers must support Apple II LC bank switching
+and pure-RAM operation for higher banks.</p>
 <p>Runs at average of 2.5MHz speed and is affected by RAM refresh timing.</p>
 <h4 id="fast-rom-banks-f0-ff">Fast ROM - banks $F0 - $FF<a class="headerlink" href="#fast-rom-banks-f0-ff" title="Permanent link">&para;</a></h4>
 <p>Runs at full 2.8MHz and is unaffected by RAM refresh timing.</p>
