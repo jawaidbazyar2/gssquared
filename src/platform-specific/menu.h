@@ -53,8 +53,11 @@ void setMenuTrackingCallback(MenuIterateCallback callback, void *appstate);
 bool handleMenuEvent(const SDL_Event *event);
 void renderMenuOverlay(SDL_Renderer *renderer, int win_w, int win_h);
 void pumpMenuEvents();
+/** True when ImGui is capturing input (menu bar hover / open menu) and needs another frame. */
+bool menuNeedsFrame();
 #else
 inline bool handleMenuEvent(const SDL_Event * /*event*/) { return false; }
 inline void renderMenuOverlay(SDL_Renderer * /*renderer*/, int /*win_w*/, int /*win_h*/) {}
 inline void pumpMenuEvents() {}
+inline bool menuNeedsFrame() { return false; }
 #endif

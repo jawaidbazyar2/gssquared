@@ -1320,6 +1320,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         /* Render the selection UI (one frame). Events already dispatched by SDL_AppEvent. */
         video_system_t *vs = state->computer->video_system;
 
+        // ImGui menu events are consumed by handleMenuEvent (WantCaptureMouse) and
+        // never dirty SelectSystem. Keep ticking the overlay while ImGui has capture,
+        // or the menu and the tile UI both freeze.
+        if (menuNeedsFrame()) {
+            state->select_system->mark_dirty();
+        }
         if (state->select_system->update()) {
             SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
             vs->clear();
@@ -1376,6 +1382,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     if (state->phase == PHASE_EDIT_SYSTEM) {
         video_system_t *vs = state->computer->video_system;
+        // Same ImGui capture / dirty-flag coupling as PHASE_SYSTEM_SELECT.
+        if (menuNeedsFrame()) {
+            state->edit_system->mark_dirty();
+        }
         if (state->edit_system->update()) {
             SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
             vs->clear();

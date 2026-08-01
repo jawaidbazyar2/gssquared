@@ -374,6 +374,17 @@ void pumpMenuEvents()
     // No-op: ImGui is fully driven by renderMenuOverlay each frame.
 }
 
+bool menuNeedsFrame()
+{
+    if (!g_imgui_inited) return false;
+    ImGuiIO &io = ImGui::GetIO();
+    // WantCapture* is set at end of the previous NewFrame. While either is set,
+    // handleMenuEvent swallows input that would otherwise dirty SelectSystem /
+    // EditSystem — so those phases must keep calling renderMenuOverlay or ImGui
+    // (and the rest of the UI) freezes.
+    return io.WantCaptureMouse || io.WantCaptureKeyboard;
+}
+
 void renderMenuOverlay(SDL_Renderer *renderer, int /*win_w*/, int /*win_h*/)
 {
     if (!g_imgui_inited) return;

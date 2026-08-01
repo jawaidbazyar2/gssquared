@@ -63,6 +63,9 @@ public:
      */
     bool update();
 
+    /** Force a full redraw on the next render() (e.g. ImGui menu needs a frame). */
+    void mark_dirty() { updated = true; }
+
     /**
      * @brief Renders the OSD and all its components.
      */
