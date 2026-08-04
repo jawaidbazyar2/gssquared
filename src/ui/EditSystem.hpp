@@ -96,6 +96,8 @@ public:
     void start_from_config(const SystemConfig& config);
 
     bool update();
+    /** Force a full redraw on the next render() (e.g. ImGui menu needs a frame). */
+    void mark_dirty() { updated = true; }
     void render();
     bool event(const SDL_Event &event);
 

@@ -60,10 +60,15 @@ target_include_directories(gs2_libslirp
         ${CMAKE_CURRENT_BINARY_DIR}/libslirp-generated
 )
 
-target_compile_definitions(gs2_libslirp PRIVATE
-    BUILDING_LIBSLIRP
-    G_LOG_DOMAIN="Slirp"
-    LIBSLIRP_STATIC
+# BUILDING_LIBSLIRP is only for compiling libslirp itself.
+# LIBSLIRP_STATIC must be PUBLIC so consumers (e.g. slirp_backend.cpp) do not
+# treat API symbols as __declspec(dllimport) on Windows.
+target_compile_definitions(gs2_libslirp
+    PRIVATE
+        BUILDING_LIBSLIRP
+        G_LOG_DOMAIN="Slirp"
+    PUBLIC
+        LIBSLIRP_STATIC
 )
 
 # Silence noisy upstream warnings; we do not edit vendored sources.
