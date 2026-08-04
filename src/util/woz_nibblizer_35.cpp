@@ -449,7 +449,9 @@ int Woz_Nibblizer_35::decode_track(const woz_track_t *trk, int track_num, int si
  */
 
 int Woz_Nibblizer_35::write_disk_image_po_do(const media_descriptor *media, const disk_image_t *disk_image) {
-    FILE *out_fp = fopen(media->filename.c_str(), "w+b");
+    // "r+b", not "w+b": truncating the file would discard a container header
+    // (e.g. the 64-byte 2IMG header) that lives in front of data_offset.
+    FILE *out_fp = fopen(media->filename.c_str(), "r+b");
     if (!out_fp) {
         std::cerr << "Could not open " << media->filename << " for writing" << std::endl;
         return false;

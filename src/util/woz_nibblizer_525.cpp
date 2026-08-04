@@ -135,13 +135,17 @@ woz_track_t Woz_Nibblizer_525::build_track_from_nib(const uint8_t* nib_data, uin
 // ─── Import from media ────────────────────────────────────────────────────────
 
 
-int Woz_Nibblizer_525::load_nib_image(nibblized_disk_t& disk, const std::string& filename) {
+int Woz_Nibblizer_525::load_nib_image(nibblized_disk_t& disk, const media_descriptor *media) {
+    const std::string& filename = media->filename;
     FILE *fp = fopen(filename.c_str(), "rb");
     if (!fp) {
         std::cerr << "Could not open " << filename << std::endl;
         return -1;
     }
 
+    // A .nib is bare nibbles at offset 0, but a nibblized .2mg (image_format 2)
+    // carries the same data behind a 2IMG header.
+    fseek(fp, media->data_offset, SEEK_SET);
     for (int t = 0; t < TRACKS_PER_DISK; t++) {
         if (fread(disk.tracks[t].data, 1, TRACK_SIZE, fp) < TRACK_SIZE) {
             std::cerr << "Could not read " << TRACK_SIZE << " bytes from " << filename << std::endl;
@@ -158,7 +162,7 @@ int Woz_Nibblizer_525::load_nib_image(nibblized_disk_t& disk, const std::string&
 
 int Woz_Nibblizer_525::import_from_nib(Woz& woz, const media_descriptor* media) {
     nibblized_disk_t nib;
-    if (load_nib_image(nib, media->filename) != 0) {
+    if (load_nib_image(nib, media) != 0) {
         std::cerr << "WOZ: failed to load .nib image from '" << media->filename << "'\n";
         return -1;
     }

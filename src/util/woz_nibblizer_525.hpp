@@ -136,7 +136,7 @@ protected:
     int decode_track(const woz_track_t *trk, int track_num,
                       const interleave_t& phys_to_logical,
                       disk_image_t *out);
-    int load_nib_image(nibblized_disk_t& disk, const std::string& filename);
+    int load_nib_image(nibblized_disk_t& disk, const media_descriptor *media);
     int import_from_nib(Woz& woz, const media_descriptor* media);
 
     int load_disk_image(const media_descriptor *media, disk_image_t& disk_image);
