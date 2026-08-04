@@ -306,32 +306,68 @@ int identify_media(media_descriptor& md) {
         }
         display_2mg_header(hdr);
 
+        md.file_size = get_file_size(md.filename);
+
+        // Prefer the explicit data_offset field. Some creators (e.g. "pdos")
+        // set header_size to 52 while still placing disk data at offset 64.
+        md.data_offset = hdr.data_offset ? hdr.data_offset : hdr.header_size;
+        if (md.data_offset >= (uint64_t)md.file_size) {
+            std::cerr << "2MG data offset past end of file: " << md.filename << std::endl;
+            return -1;
+        }
+        uint64_t avail = (uint64_t)md.file_size - md.data_offset;
+
+        // Neither length field can be trusted. Sweet 16 ("WOOF") writes
+        // data_length 0, and the spec only defines block_count for ProDOS-order
+        // images, so DOS-order and nibblized images legitimately carry 0 there.
+        // Fall back through block_count to what the file actually holds; a
+        // zero here used to divide by zero and produce block_size 0.
+        uint64_t data_size = hdr.bytes_count;
+        if (data_size == 0) data_size = (uint64_t)hdr.block_count * 512;
+        if (data_size == 0 || data_size > avail) data_size = avail;
+
         if (hdr.image_format == 0x00000000) { // DOS 3.3 Sector Order. Only ever 143k disks.
+            if (avail < 560 * 256) {
+                std::cerr << "2MG DOS 3.3 image is short: " << md.filename << std::endl;
+                return -1;
+            }
             md.interleave = INTERLEAVE_DO;
             md.media_type = MEDIA_NYBBLE;
+            md.block_size = 256;
+            md.data_size = 560 * 256;
         } else if (hdr.image_format == 0x00000001) { // ProDOS Sector Order.
             // if disk size is 143k, treat as a nybble disk.
-            if (hdr.bytes_count == 560 * 256) { // floppy
+            if (data_size == 560 * 256) { // floppy
                 md.interleave = INTERLEAVE_PO;
                 md.media_type = MEDIA_NYBBLE;
+                md.block_size = 256;
             } else {                            // any other media size, just a bunch of blocks.
                 md.interleave = INTERLEAVE_NONE;
                 md.media_type = MEDIA_BLK;
+                md.block_size = 512;
             }
+            md.data_size = data_size - (data_size % md.block_size);
         } else if (hdr.image_format == 0x00000002) { // NIB data
+            if (avail < 35 * 6656) { // 35 tracks of raw nibbles
+                std::cerr << "2MG nibblized image is short: " << md.filename << std::endl;
+                return -1;
+            }
             md.interleave = INTERLEAVE_NONE;
             md.media_type = MEDIA_PRENYBBLE;
+            md.block_size = 256;
+            md.data_size = 140 * 1024;
         } else {
             std::cerr << "Unknown image format: " << hdr.image_format << std::endl;
             return -1;
         }
-        md.file_size = get_file_size(md.filename);
-        md.block_count = hdr.block_count;
-        md.block_size = hdr.bytes_count / hdr.block_count;
-        md.data_size = hdr.bytes_count;
-        // Prefer the explicit data_offset field. Some creators (e.g. "pdos")
-        // set header_size to 52 while still placing disk data at offset 64.
-        md.data_offset = hdr.data_offset ? hdr.data_offset : hdr.header_size;
+        // Derive the count from the data we actually have rather than the
+        // header, so a block_count that overruns EOF can't let the guest
+        // read or write past the end of the image data.
+        md.block_count = md.data_size / md.block_size;
+        if (md.block_count == 0) {
+            std::cerr << "2MG image has no data: " << md.filename << std::endl;
+            return -1;
+        }
         md.write_protected = md.write_protected || (hdr.flag & FLAG_LOCKED) != 0;
         md.dos33_volume = (hdr.flag & FLAG_DOS33) != 0 ? (hdr.flag & FLAG_DOS33_VOL_MASK) : 254; // if not set, then 254
 
