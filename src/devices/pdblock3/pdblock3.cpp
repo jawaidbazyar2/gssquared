@@ -417,9 +417,32 @@ public:
         return true;
     }
 
+    /* BazFast is a SmartPort block device, so it only speaks 512-byte blocks.
+       140K is additionally rejected even when it is block-structured (a 140K
+       .hdv is 280 blocks of 512): ProDOS assumes anything that size is a Disk II
+       on a 5.25 controller, and misdrives it. Those belong in a 5.25 drive. */
+    static const char *media_reject_reason(const media_descriptor *media) {
+        if (media->media_type != MEDIA_BLK || media->block_size != 512) {
+            return "not a 512-byte block image";
+        }
+        if (media->data_size == 140 * 1024) {
+            return "140K images must be mounted on a 5.25\" drive";
+        }
+        return nullptr;
+    }
+
     bool mount(storage_key_t key, std::vector<media_descriptor *> media_list) {
         if (media_list.empty()) return false;
         if (key.drive >= PDB3_MAX_DEVICES) return false;
+
+        // Vet every volume before opening any of them, so a bad entry in a
+        // .pmap can't leave us with a half-populated set of units.
+        for (const media_descriptor *media : media_list) {
+            if (const char *why = media_reject_reason(media)) {
+                std::cerr << "BazFast: refusing '" << media->filename << "': " << why << std::endl;
+                return false;
+            }
+        }
 
         int unused_unit = 0;
         int first_mounted_unit = -1;
