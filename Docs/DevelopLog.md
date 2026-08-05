@@ -12379,3 +12379,15 @@ Upgraded to latest SAFE2 FTP client, and PASV is working correctly now!
 ## July 27, 2026 (evening)
 
 Super Serial Card v1: `card = "super_serial"`, MOS 6551 from datasheet, stock `341-0065-A.bin` (Cn page at file `$700`), DIP defaults for modem 9600/8N1 Communications, ModemDevice attach (FileDevice on Emscripten). Docs: SSC.md. `[[connections]]` still not applied (shared with SCC).
+
+## August 4, 2026
+
+nearing the goal on 1.0!!!
+
+Focus: bug fixes. Right now most bugs are about rom03. There is one report about a program that uses undocumented (i.e. fake broken) nmos 6502 instructions.
+
+Should avoid features for the most part, however, it makes sense to clean stuff up.
+
+[X] installer setup on the virtual disk that includes the host FST, but also the Marinetti stuff. 
+[ ] IIe multi-language support. 
+

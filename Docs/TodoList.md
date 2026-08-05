@@ -53,7 +53,7 @@ From [Documentation.md](Documentation.md), [AppleIIgs.md](AppleIIgs.md), [AppleI
 
 - [ ] Apple IIc / IIc+ platform support
 - [ ] Apple II Rev 0 / j-plus (not planned as high priority; still listed as unsupported)
-- [ ] IIgs ROM03
+- [ ] IIgs ROM03 (started)
 - [X] Finish Ensoniq DOC (marked in-progress / ~half done)
 - [ ] Finish / harden Zilog SCC 8530 (modem exists; control signals, reset cleanup, file device, etc. still open in [SCC8530_Serial.md](SCC8530_Serial.md))
 - [-] RAMfast SCSI Interface (not started)
@@ -91,11 +91,11 @@ From [Documentation.md](Documentation.md), [Woz.md](Woz.md), [IWM.md](IWM.md), [
 - [ ] DiskII volume byte from DOS 3.3 VTOC when formatting image
 - [ ] pdblock3: boot from lowest numbered unit, not always unit 1
 - [ ] pdblock3: ignore mount if that file is already mounted elsewhere
-- [ ] Rename Generic ProDOS Block 3 to "BazFast"
+- [X] Rename Generic ProDOS Block 3 to "BazFast"
 - [ ] Mount error status codes for distinct user messages
 - [ ] Drag/drop: save/discard prompt before remounting over modified media
 - [ ] Drag/drop: smart target anywhere in window; drop onto a specific drive icon
-- [ ] Stereo drive sound effects (drive 1 left / drive 2 right)
+- [X] Stereo drive sound effects (drive 1 left / drive 2 right)
 - [ ] 3.5 sound effects: low-volume spin; auto eject / insert spring-snap
 - [ ] AppleDisk 5.25 effects: spin; eject/close (distinct recordings)
 - [ ] Upscale disk UI assets
@@ -113,7 +113,7 @@ From [DevelopLog.md](DevelopLog.md), [AppleIIgs.md](AppleIIgs.md), [Compatibilit
 - [ ] First pixel of HGR row disappears in Ludicrous Speed
 - [ ] Mid-line text→hires transitions (Crazy Cycles-style) need correct monochrome bit emission
 - [ ] Make SHR work again in composite
-- [ ] Mono DHGR / graphics when `$C05E` active (incl. HIRES_NODELAY)
+- [X] Mono DHGR / graphics when `$C05E` active (incl. HIRES_NODELAY)
 - [ ] IIe/65816: missing composite SHR; ctrl-reset should reset video registers based on scanner, not platform
 - [ ] PAL //e broken (needs more scanlines; garbage/overrun)
 - [ ] Implement PAL timing on GS; re-run irqtest
@@ -135,8 +135,8 @@ From [Documentation.md](Documentation.md), [MockingboardBugAnalysis.md](Mockingb
 - [ ] Verify other MockingboardBugAnalysis findings are fixed in tree (bipolar mix, silent when both disabled, tone period/duty)
 - [ ] Noise vs tone amplitude balance on Mockingboard
 - [X] Mad Effects #2 still wrong (MB interrupt / VBL timing specifics)
-- [ ] Speaker output delay
-- [ ] Configurable speaker output rate
+- [X] Speaker output delay
+- [-] Configurable speaker output rate
 - [ ] Mute / drain disk sound-effect queues in Ludicrous Speed (or on ctrl-reset)
 - [ ] Pause / mute audio when emulator window minimized
 - [ ] Chiptunes (Skull Island, Crazy Cycles 2): stop unending warning/spam streams
@@ -150,16 +150,16 @@ From [Documentation.md](Documentation.md), [MockingboardBugAnalysis.md](Mockingb
 From [ADB.md](ADB.md), [UserInterface.md](UserInterface.md), [Networking.md](Networking.md), [DevelopLog.md](DevelopLog.md):
 
 - [ ] Mouse interrupts only during VBL, max ~60 Hz
-- [ ] Cap mouse delta (±63 counts / ~0.8")
+- [-] Cap mouse delta (±63 counts / ~0.8")
 - [X] Button 1 support / correct XY+button read order
-- [ ] At RESET, disable mouse interrupts
+- [-] At RESET, disable mouse interrupts
 - [ ] GS AKD bug: hold G then H, release H → AKD still set (real GS clears)
 - [X] ADB vs gamecontroller modifier keymap conflict (Alt/Win)
 - [X] Joyport workaround timing for GS reset (200ms @ 2.8MHz)
-- [ ] Control-Shift-2 / Control-Shift-6 → correct ASCII (Lode Runner cheat)
+- [-] Control-Shift-2 / Control-Shift-6 → correct ASCII (Lode Runner cheat)
 - [ ] Test mouse-wheel → arrow-key insertion; remove "wheel as paddle"
 - [ ] Extra `0x7F` on ctrl-reset (suspect should be `0xFF` clear)
-- [ ] Alien Typhoon / similar: paddle jitter when stick centered
+- [-] Alien Typhoon / similar: paddle jitter when stick centered
 - [ ] Gauntlet (GS): joystick won't go right/down (timing?)
 - [ ] SNESMAX gamepad support (Donkey Kong mentions it)
 - [ ] Write ADB test cases for recent learnings
@@ -224,7 +224,7 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 - [ ] Optional FujiNet-PC / NetSIO bridge
 - [x] Uthernet II emulation
 - [ ] Optional pcap/bpf Uthernet backend
-- [ ] SMB FST via Uthernet (noted as preferred home-network path)
+- [X] SMB FST via Uthernet (noted as preferred home-network path)
 
 ---
 
