@@ -51,12 +51,17 @@ Import path: `clients/python/src` on `PYTHONPATH`, or `pip install -e clients/py
 | `pause()` / `continue_()` | Run-control; emits `EVT_STOPPED` / `EVT_RUN_STATE` |
 | `step_into(count=1)` | Arm N-instruction step; empty reply; `EVT_STOPPED` (`STOP_STEP`) + trace when done |
 | `get_trace(ago=0, count=100)` → `TraceWindow` | Instruction ring window; `.available`, `.entries` (40-byte blobs, oldest→newest) |
+| `get_regs()` → `bytes` | Live 40-byte CPU snapshot (same layout as stop/trace) |
+| `set_regs(mask, *, pc=…, a=…, …)` | Masked register write (`REG_PC`, `REG_A`, …) |
+| `find_mem(domain, address, length, pattern, *, mask=None, max_hits=16)` → `list[int]` | Pattern search; optional wildcard mask |
+| `video_text(page=CURRENT, mode=CURRENT)` → `VideoText` | Linearized text page; `.page`/`.mode` resolved; `.as_lines()` |
 | `state_get(device_id)` → `bytes` | Device snapshot blob (`DEVICE_ID_ENSONIQ`, …) |
 | `bp_set(...)` → `id` | Create EXEC/DATA/IO breakpoint (see DebugProtocol.md) |
 | `bp_clear(id)` / `bp_clear_all()` / `bp_enable(id, enabled)` / `bp_list()` | Breakpoint table |
 | `wait_event()` / `wait_stopped()` | Block for unsolicited EVENT / parse `EVT_STOPPED` |
 | `read_mem(domain, address, length)` → `bytes` | Peek (`MEM_MAIN` / `MEM_MAIN_RAW`; `MEM_MEGAII` / `MEM_MEGAII_RAW` on IIgs) |
 | `write_mem(domain, address, data)` | Poke (same domains); `data` non-empty |
+| `find_mem(...)` | See above; same domains as `read_mem` |
 | `key_event(down, scancode, mod=0)` | One SDL key down/up |
 | `key_down` / `key_up` | Same, for modifiers |
 | `tap_key(scancode, mod=0, hold_s=0.02)` | Down, optional hold, then up |
@@ -107,6 +112,39 @@ assert c.read_mem(MEM_MAIN, 0x0400, 0x28) == data  # verify
 # IIgs Mega II:     c.read_mem(MEM_MEGAII, 0x0400, 0x28)
 # Physical buffers: c.read_mem(MEM_MAIN_RAW, 0x0400, 0x28)
 #                   c.read_mem(MEM_MEGAII_RAW, 0x0400, 0x28)  # IIgs
+```
+
+### Live registers / pattern search
+
+```python
+from gs2debug import REG_A
+import struct
+
+c.pause()
+regs = c.get_regs()                         # 40-byte system_trace_entry_t
+a = struct.unpack_from("<H", regs, 18)[0]
+c.set_regs(REG_A, a=0x1234)
+assert struct.unpack_from("<H", c.get_regs(), 18)[0] == 0x1234
+
+sig = b"GS2FIND"
+c.write_mem(MEM_MAIN, 0x300, sig)
+hits = c.find_mem(MEM_MAIN, 0x0000, 0x1000, sig)
+assert 0x300 in hits
+# Wildcard: match GS2???? with mask clearing last 4 bytes
+hits = c.find_mem(MEM_MAIN, 0x0000, 0x1000, b"GS2XXXX", mask=b"\xff\xff\xff\x00\x00\x00\x00")
+```
+
+### Text screen snapshot
+
+```python
+from gs2debug import VIDEO_MODE_TEXT40, VIDEO_MODE_TEXT80
+
+vt = c.video_text()                 # CURRENT page + mode
+print(vt.mode, vt.page, vt.flags)   # resolved TEXT40/TEXT80, never CURRENT
+print("\n".join(vt.as_lines()))     # ASCII-ish rows (bit7 cleared)
+
+vt40 = c.video_text(1, VIDEO_MODE_TEXT40)   # force page 1 / 40-col
+assert vt40.cols == 40 and len(vt40.chars) == 960
 ```
 
 ### Machine reset
@@ -182,6 +220,8 @@ IIe-only soft-switch **status** reads (`$C01A` TEXT, `$C01D` HIRES, …) are inv
 | `examples/type_basic_iie.py` | Boot wait, protocol RESET, demo Applesoft |
 | `examples/type_to_emu.py` | Generic typer tool for agents |
 | `examples/test_breakpoints.py` | PAUSE/CONTINUE + EXEC/IO breakpoints (IIe Enhanced `-p 3` and IIgs `-p 5`) |
+| `examples/test_regs_findmem.py` | `GET_REGS` / `SET_REGS` / `FINDMEM` smoke (IIe Enhanced `-p 3`) |
+| `examples/test_video_text.py` | `VIDEO_TEXT` CURRENT + TEXT40/TEXT80 (IIe Enhanced `-p 3`) |
 
 All under `clients/python/`. Each file’s header has concrete Usage lines.
 

@@ -33,6 +33,9 @@ from .types import (
     EXEC_NORMAL,
     EXEC_PAUSED,
     EXEC_STEP_INTO,
+    FINDMEM,
+    FINDMEM_HAS_MASK,
+    GET_REGS,
     GET_STATUS,
     GET_TRACE,
     HELLO,
@@ -43,6 +46,7 @@ from .types import (
     QUIT,
     READMEM,
     RESET,
+    SET_REGS,
     STATE_GET,
     STATE_SET,
     STEP_INTO,
@@ -51,6 +55,9 @@ from .types import (
     STOP_BP_IO,
     STOP_PAUSE,
     STOP_STEP,
+    VIDEO_MODE_CURRENT,
+    VIDEO_PAGE_CURRENT,
+    VIDEO_TEXT,
     WRITEMEM,
 )
 
@@ -103,6 +110,30 @@ class TraceWindow:
 
     available: int
     entries: list[bytes]  # oldest → newest; each len == 40
+
+
+@dataclass(frozen=True)
+class VideoText:
+    """VIDEO_TEXT reply: linearized text page (resolved page/mode, never CURRENT)."""
+
+    cols: int
+    rows: int
+    page: int
+    mode: int
+    flags: int
+    chars: bytes
+
+    def as_lines(self, *, mask7: bool = True) -> list[str]:
+        """Decode row-major screen bytes to ASCII-ish lines for agents."""
+        lines: list[str] = []
+        for r in range(self.rows):
+            row = self.chars[r * self.cols : (r + 1) * self.cols]
+            out = []
+            for b in row:
+                c = b & 0x7F if mask7 else b
+                out.append(chr(c) if 0x20 <= c <= 0x7E else " ")
+            lines.append("".join(out))
+        return lines
 
 
 EventHandler = Callable[[int, int, bytes], None]
@@ -237,6 +268,54 @@ class Client:
             )
         entries = [reply[8 + i * 40 : 8 + (i + 1) * 40] for i in range(returned)]
         return TraceWindow(available=available, entries=entries)
+
+    def get_regs(self) -> bytes:
+        """Live CPU snapshot (40-byte system_trace_entry_t, same as EVT_STOPPED.trace)."""
+        if not self._handshaked:
+            raise RuntimeError("hello() required before get_regs()")
+        reply = self.request(GET_REGS, b"")
+        if len(reply) != 40:
+            raise ProtocolError(0, f"GET_REGS reply length {len(reply)}, expected 40")
+        return reply
+
+    def set_regs(
+        self,
+        mask: int,
+        *,
+        pc: int = 0,
+        pb: int = 0,
+        db: int = 0,
+        a: int = 0,
+        x: int = 0,
+        y: int = 0,
+        sp: int = 0,
+        d: int = 0,
+        p: int = 0,
+        e: int = 0,
+    ) -> None:
+        """Apply selected CPU registers. ``mask`` is a bitwise OR of ``REG_*`` flags."""
+        if not self._handshaked:
+            raise RuntimeError("hello() required before set_regs()")
+        if e not in (0, 1):
+            raise ValueError("set_regs e must be 0 or 1")
+        payload = struct.pack(
+            "<IHBBHHHHHBBI",
+            mask,
+            pc & 0xFFFF,
+            pb & 0xFF,
+            db & 0xFF,
+            a & 0xFFFF,
+            x & 0xFFFF,
+            y & 0xFFFF,
+            sp & 0xFFFF,
+            d & 0xFFFF,
+            p & 0xFF,
+            e & 0xFF,
+            0,
+        )
+        reply = self.request(SET_REGS, payload)
+        if reply:
+            raise ProtocolError(0, f"SET_REGS reply not empty ({len(reply)} bytes)")
 
     def state_get(self, device_id: int) -> bytes:
         """STATE_GET: device snapshot blob for ``device_id`` (DEVICE_ID_*)."""
@@ -414,6 +493,77 @@ class Client:
         reply = self.request(WRITEMEM, payload)
         if reply:
             raise ProtocolError(0, f"WRITEMEM reply not empty ({len(reply)} bytes)")
+
+    def video_text(
+        self,
+        page: int = VIDEO_PAGE_CURRENT,
+        mode: int = VIDEO_MODE_CURRENT,
+    ) -> VideoText:
+        """Capture a linearized text page (VIDEO_TEXT). Defaults to current page/mode."""
+        if not self._handshaked:
+            raise RuntimeError("hello() required before video_text()")
+        reply = self.request(VIDEO_TEXT, struct.pack("<II", page, mode))
+        if len(reply) < 20:
+            raise ProtocolError(0, f"VIDEO_TEXT reply too short ({len(reply)})")
+        cols, rows, rpage, rmode, flags = struct.unpack_from("<IIIII", reply, 0)
+        expect = 20 + cols * rows
+        if len(reply) != expect:
+            raise ProtocolError(0, f"VIDEO_TEXT reply length {len(reply)}, expected {expect}")
+        return VideoText(
+            cols=cols,
+            rows=rows,
+            page=rpage,
+            mode=rmode,
+            flags=flags,
+            chars=reply[20:],
+        )
+
+    def find_mem(
+        self,
+        domain: int,
+        address: int,
+        length: int,
+        pattern: bytes,
+        *,
+        mask: bytes | None = None,
+        max_hits: int = 16,
+    ) -> list[int]:
+        """Search ``length`` bytes at domain/address for ``pattern``; return hit addresses."""
+        if not self._handshaked:
+            raise RuntimeError("hello() required before find_mem()")
+        if not pattern:
+            raise ValueError("pattern must be non-empty")
+        if length < 1:
+            raise ValueError("length must be >= 1")
+        if max_hits < 1:
+            raise ValueError("max_hits must be >= 1")
+        flags = 0
+        body = pattern
+        if mask is not None:
+            if len(mask) != len(pattern):
+                raise ValueError("mask length must match pattern")
+            flags = FINDMEM_HAS_MASK
+            body = pattern + mask
+        payload = (
+            struct.pack(
+                "<IIIIII",
+                domain,
+                address,
+                length,
+                max_hits,
+                len(pattern),
+                flags,
+            )
+            + body
+        )
+        reply = self.request(FINDMEM, payload)
+        if len(reply) < 4:
+            raise ProtocolError(0, f"FINDMEM reply too short ({len(reply)})")
+        (hit_count,) = struct.unpack_from("<I", reply, 0)
+        expect = 4 + hit_count * 4
+        if len(reply) != expect:
+            raise ProtocolError(0, f"FINDMEM reply length {len(reply)}, expected {expect}")
+        return list(struct.unpack_from(f"<{hit_count}I", reply, 4)) if hit_count else []
 
     def key_event(self, down: bool, scancode: int, mod: int = 0) -> None:
         """Send KEYEVENT (one SDL key down or up)."""

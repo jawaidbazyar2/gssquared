@@ -14,6 +14,8 @@
 #include "cpu.hpp"
 #include "Device_ID.hpp"
 #include "devices/es5503/soundglu.hpp"
+#include "display/display.hpp"
+#include "display/text_page_layout.hpp"
 #include "gs2.hpp"
 #include "mmus/mmu.hpp"
 #include "Module_ID.hpp"
@@ -48,8 +50,11 @@ constexpr uint32_t kTypePause     = 0x00000103;
 constexpr uint32_t kTypeContinue  = 0x00000104;
 constexpr uint32_t kTypeStepInto  = 0x00000105;
 constexpr uint32_t kTypeGetTrace  = 0x00000201;
+constexpr uint32_t kTypeGetRegs   = 0x00000202;
+constexpr uint32_t kTypeSetRegs   = 0x00000203;
 constexpr uint32_t kTypeReadMem   = 0x00000301;
 constexpr uint32_t kTypeWriteMem  = 0x00000302;
+constexpr uint32_t kTypeFindMem   = 0x00000303;
 constexpr uint32_t kTypeStateGet  = 0x00000601;
 constexpr uint32_t kTypeStateSet  = 0x00000602;
 constexpr uint32_t kTypeBpSet     = 0x00000401;
@@ -58,6 +63,7 @@ constexpr uint32_t kTypeBpClearAll = 0x00000403;
 constexpr uint32_t kTypeBpEnable  = 0x00000404;
 constexpr uint32_t kTypeBpList    = 0x00000405;
 constexpr uint32_t kTypeKeyEvent  = 0x00000501;
+constexpr uint32_t kTypeVideoText = 0x00000701;
 
 constexpr uint32_t kEvtStopped   = 1;
 constexpr uint32_t kEvtRunState  = 2;
@@ -67,6 +73,39 @@ constexpr uint32_t kBpListRecordSize = 40;
 constexpr uint32_t kTraceEntrySize = 40;
 constexpr uint32_t kMaxTraceRecords = 16384;
 constexpr uint32_t kDocRamSize = 0x10000;
+constexpr uint32_t kSetRegsPayloadSize = 24;
+constexpr uint32_t kFindMemHeaderSize = 24;
+constexpr uint32_t kMaxFindPattern = 256;
+constexpr uint32_t kMaxFindHits = 256;
+
+constexpr uint32_t kRegPc = 1u << 0;
+constexpr uint32_t kRegPb = 1u << 1;
+constexpr uint32_t kRegDb = 1u << 2;
+constexpr uint32_t kRegA  = 1u << 3;
+constexpr uint32_t kRegX  = 1u << 4;
+constexpr uint32_t kRegY  = 1u << 5;
+constexpr uint32_t kRegSp = 1u << 6;
+constexpr uint32_t kRegD  = 1u << 7;
+constexpr uint32_t kRegP  = 1u << 8;
+constexpr uint32_t kRegE  = 1u << 9;
+constexpr uint32_t kRegMaskAll =
+    kRegPc | kRegPb | kRegDb | kRegA | kRegX | kRegY | kRegSp | kRegD | kRegP | kRegE;
+
+constexpr uint32_t kFindMemHasMask = 1u << 0;
+
+constexpr uint32_t kVideoPageCurrent = 0;
+constexpr uint32_t kVideoModeCurrent = 0;
+constexpr uint32_t kVideoModeText40 = 1;
+constexpr uint32_t kVideoModeText80 = 2;
+constexpr uint32_t kVideoTextHeaderSize = 20;
+constexpr uint32_t kVideoTextReqSize = 8;
+
+constexpr uint32_t kVfText    = 1u << 0;
+constexpr uint32_t kVfMix     = 1u << 1;
+constexpr uint32_t kVfPage2   = 1u << 2;
+constexpr uint32_t kVfHires   = 1u << 3;
+constexpr uint32_t kVf80Col   = 1u << 4;
+constexpr uint32_t kVfAltChar = 1u << 5;
 
 constexpr uint32_t kMemMain    = 0;
 constexpr uint32_t kMemMegaII  = 1;
@@ -147,6 +186,109 @@ uint32_t map_bp_add_error(const char *msg) {
         return kEBadLength;
     }
     return kEInternal;
+}
+
+/** Peek `length` bytes from a READMEM domain into `out`. On failure sets error fields. */
+bool read_domain_bytes(computer_t *computer, uint32_t domain, uint32_t address, uint32_t length,
+                       std::vector<uint8_t> &out, uint32_t &error, bool &megaii_reject,
+                       std::string &error_text) {
+    out.clear();
+    error = 0;
+    megaii_reject = false;
+    error_text.clear();
+
+    if (domain == kMemMain) {
+        if (!computer || !computer->cpu || !computer->cpu->mmu) {
+            error = kEInternal;
+            return false;
+        }
+        MMU *mmu = computer->cpu->mmu;
+        out.resize(length);
+        for (uint32_t i = 0; i < length; ++i) {
+            out[i] = mmu->read(address + i);
+        }
+        return true;
+    }
+    if (domain == kMemMegaII) {
+        if (!computer || !computer->platform || !platform_is_iigs(computer->platform->id)) {
+            error = kEInternal;
+            megaii_reject = true;
+            return false;
+        }
+        if (!computer->mmu) {
+            error = kEInternal;
+            return false;
+        }
+        MMU *mmu = computer->mmu;
+        out.resize(length);
+        for (uint32_t i = 0; i < length; ++i) {
+            out[i] = mmu->read(address + i);
+        }
+        return true;
+    }
+    if (domain == kMemMainRaw) {
+        if (!computer || !computer->cpu || !computer->cpu->mmu) {
+            error = kEInternal;
+            return false;
+        }
+        MMU *mmu = computer->cpu->mmu;
+        uint8_t *base = mmu->get_memory_base();
+        uint32_t size = mmu->get_memory_size();
+        if (!base || size == 0) {
+            error = kEInternal;
+            return false;
+        }
+        if (address > size || length > size - address) {
+            error = kEBadLength;
+            return false;
+        }
+        out.assign(base + address, base + address + length);
+        return true;
+    }
+    if (domain == kMemMegaIIRaw) {
+        if (!computer || !computer->platform || !platform_is_iigs(computer->platform->id)) {
+            error = kEInternal;
+            megaii_reject = true;
+            return false;
+        }
+        if (!computer->mmu) {
+            error = kEInternal;
+            return false;
+        }
+        MMU *mmu = computer->mmu;
+        uint8_t *base = mmu->get_memory_base();
+        uint32_t size = mmu->get_memory_size();
+        if (!base || size == 0) {
+            error = kEInternal;
+            return false;
+        }
+        if (address > size || length > size - address) {
+            error = kEBadLength;
+            return false;
+        }
+        out.assign(base + address, base + address + length);
+        return true;
+    }
+    if (domain == kMemEnsoniq) {
+        if (!computer || !computer->platform || computer->platform->id != PLATFORM_APPLE_IIGS) {
+            error = kEInternal;
+            return false;
+        }
+        auto *st = static_cast<ensoniq_state_t *>(computer->module_store[MODULE_ENSONIQ]);
+        if (!st || !st->doc_ram) {
+            error = kEInternal;
+            error_text = "no ensoniq";
+            return false;
+        }
+        if (address > kDocRamSize || length > kDocRamSize - address) {
+            error = kEBadLength;
+            return false;
+        }
+        out.assign(st->doc_ram + address, st->doc_ram + address + length);
+        return true;
+    }
+    error = kEInternal;
+    return false;
 }
 
 } // namespace
@@ -300,82 +442,9 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
         const uint32_t domain = bridge_arg0_;
         const uint32_t address = bridge_arg1_;
         const uint32_t length = bridge_arg2_;
-
-        if (domain == kMemMain) {
-            if (!computer || !computer->cpu || !computer->cpu->mmu) {
-                bridge_error_ = kEInternal;
-            } else {
-                MMU *mmu = computer->cpu->mmu;
-                bridge_reply_.resize(length);
-                for (uint32_t i = 0; i < length; ++i) {
-                    bridge_reply_[i] = mmu->read(address + i);
-                }
-            }
-        } else if (domain == kMemMegaII) {
-            if (!computer || !computer->platform
-                || !platform_is_iigs(computer->platform->id)) {
-                bridge_error_ = kEInternal;
-                bridge_megaii_platform_reject_ = true;
-            } else if (!computer->mmu) {
-                bridge_error_ = kEInternal;
-            } else {
-                MMU *mmu = computer->mmu;
-                bridge_reply_.resize(length);
-                for (uint32_t i = 0; i < length; ++i) {
-                    bridge_reply_[i] = mmu->read(address + i);
-                }
-            }
-        } else if (domain == kMemMainRaw) {
-            if (!computer || !computer->cpu || !computer->cpu->mmu) {
-                bridge_error_ = kEInternal;
-            } else {
-                MMU *mmu = computer->cpu->mmu;
-                uint8_t *base = mmu->get_memory_base();
-                uint32_t size = mmu->get_memory_size();
-                if (!base || size == 0) {
-                    bridge_error_ = kEInternal;
-                } else if (address > size || length > size - address) {
-                    bridge_error_ = kEBadLength;
-                } else {
-                    bridge_reply_.assign(base + address, base + address + length);
-                }
-            }
-        } else if (domain == kMemMegaIIRaw) {
-            if (!computer || !computer->platform
-                || !platform_is_iigs(computer->platform->id)) {
-                bridge_error_ = kEInternal;
-                bridge_megaii_platform_reject_ = true;
-            } else if (!computer->mmu) {
-                bridge_error_ = kEInternal;
-            } else {
-                MMU *mmu = computer->mmu;
-                uint8_t *base = mmu->get_memory_base();
-                uint32_t size = mmu->get_memory_size();
-                if (!base || size == 0) {
-                    bridge_error_ = kEInternal;
-                } else if (address > size || length > size - address) {
-                    bridge_error_ = kEBadLength;
-                } else {
-                    bridge_reply_.assign(base + address, base + address + length);
-                }
-            }
-        } else if (domain == kMemEnsoniq) {
-            if (!computer || !computer->platform
-                || computer->platform->id != PLATFORM_APPLE_IIGS) {
-                bridge_error_ = kEInternal;
-            } else {
-                auto *st = static_cast<ensoniq_state_t *>(computer->module_store[MODULE_ENSONIQ]);
-                if (!st || !st->doc_ram) {
-                    bridge_error_ = kEInternal;
-                    bridge_error_text_ = "no ensoniq";
-                } else if (address > kDocRamSize || length > kDocRamSize - address) {
-                    bridge_error_ = kEBadLength;
-                } else {
-                    bridge_reply_.assign(st->doc_ram + address, st->doc_ram + address + length);
-                }
-            }
-        } else {
-            bridge_error_ = kEInternal;
+        if (!read_domain_bytes(computer, domain, address, length, bridge_reply_, bridge_error_,
+                               bridge_megaii_platform_reject_, bridge_error_text_)) {
+            // bridge_error_ / flags already set
         }
     } else if (bridge_type_ == kTypeWriteMem) {
         const uint32_t domain = bridge_arg0_;
@@ -533,6 +602,125 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
                 }
             }
         }
+    } else if (bridge_type_ == kTypeGetRegs) {
+        if (!computer || !computer->cpu) {
+            bridge_error_ = kEInternal;
+        } else {
+            system_trace_entry_t live{};
+            fill_live_trace(computer, &live);
+            bridge_reply_.resize(kTraceEntrySize);
+            std::memcpy(bridge_reply_.data(), &live, kTraceEntrySize);
+        }
+    } else if (bridge_type_ == kTypeSetRegs) {
+        if (!computer || !computer->cpu) {
+            bridge_error_ = kEInternal;
+        } else if (bridge_request_.size() != kSetRegsPayloadSize) {
+            bridge_error_ = kEBadLength;
+        } else {
+            uint32_t mask = 0;
+            uint16_t pc = 0, a = 0, x = 0, y = 0, sp = 0, d = 0;
+            uint8_t pb = 0, db = 0, p = 0, e = 0;
+            std::memcpy(&mask, bridge_request_.data() + 0, 4);
+            std::memcpy(&pc, bridge_request_.data() + 4, 2);
+            pb = bridge_request_[6];
+            db = bridge_request_[7];
+            std::memcpy(&a, bridge_request_.data() + 8, 2);
+            std::memcpy(&x, bridge_request_.data() + 10, 2);
+            std::memcpy(&y, bridge_request_.data() + 12, 2);
+            std::memcpy(&sp, bridge_request_.data() + 14, 2);
+            std::memcpy(&d, bridge_request_.data() + 16, 2);
+            p = bridge_request_[18];
+            e = bridge_request_[19];
+            if ((mask & ~kRegMaskAll) != 0) {
+                bridge_error_ = kEBadLength;
+                bridge_error_text_ = "SET_REGS unknown mask bits";
+            } else if ((mask & kRegE) && e > 1) {
+                bridge_error_ = kEBadLength;
+                bridge_error_text_ = "SET_REGS e must be 0 or 1";
+            } else {
+                cpu_state *cpu = computer->cpu;
+                if (mask & kRegPc) {
+                    cpu->pc = pc;
+                }
+                if (mask & kRegPb) {
+                    cpu->pb = pb;
+                }
+                if (mask & kRegDb) {
+                    cpu->db = db;
+                }
+                if (mask & kRegA) {
+                    cpu->a = a;
+                }
+                if (mask & kRegX) {
+                    cpu->x = x;
+                }
+                if (mask & kRegY) {
+                    cpu->y = y;
+                }
+                if (mask & kRegSp) {
+                    cpu->sp = sp;
+                }
+                if (mask & kRegD) {
+                    cpu->d = d;
+                }
+                if (mask & kRegP) {
+                    cpu->p = p;
+                }
+                if (mask & kRegE) {
+                    cpu->E = e;
+                }
+            }
+        }
+    } else if (bridge_type_ == kTypeFindMem) {
+        if (bridge_request_.size() < kFindMemHeaderSize) {
+            bridge_error_ = kEBadLength;
+        } else {
+            uint32_t domain = 0, address = 0, length = 0, max_hits = 0, pattern_len = 0, flags = 0;
+            std::memcpy(&domain, bridge_request_.data() + 0, 4);
+            std::memcpy(&address, bridge_request_.data() + 4, 4);
+            std::memcpy(&length, bridge_request_.data() + 8, 4);
+            std::memcpy(&max_hits, bridge_request_.data() + 12, 4);
+            std::memcpy(&pattern_len, bridge_request_.data() + 16, 4);
+            std::memcpy(&flags, bridge_request_.data() + 20, 4);
+            const bool has_mask = (flags & kFindMemHasMask) != 0;
+            const size_t expect = kFindMemHeaderSize + pattern_len + (has_mask ? pattern_len : 0);
+            if ((flags & ~kFindMemHasMask) != 0 || pattern_len == 0 || pattern_len > kMaxFindPattern
+                || max_hits == 0 || max_hits > kMaxFindHits || pattern_len > length
+                || bridge_request_.size() != expect) {
+                bridge_error_ = kEBadLength;
+            } else {
+                std::vector<uint8_t> window;
+                if (!read_domain_bytes(computer, domain, address, length, window, bridge_error_,
+                                       bridge_megaii_platform_reject_, bridge_error_text_)) {
+                    // error already set
+                } else {
+                    const uint8_t *pattern = bridge_request_.data() + kFindMemHeaderSize;
+                    const uint8_t *mask = has_mask ? pattern + pattern_len : nullptr;
+                    std::vector<uint32_t> hits;
+                    hits.reserve(max_hits);
+                    const uint32_t last = length - pattern_len;
+                    for (uint32_t off = 0; off <= last && hits.size() < max_hits; ++off) {
+                        bool match = true;
+                        for (uint32_t j = 0; j < pattern_len; ++j) {
+                            const uint8_t m = mask ? mask[j] : 0xFFu;
+                            if ((window[off + j] & m) != (pattern[j] & m)) {
+                                match = false;
+                                break;
+                            }
+                        }
+                        if (match) {
+                            hits.push_back(address + off);
+                        }
+                    }
+                    const uint32_t hit_count = static_cast<uint32_t>(hits.size());
+                    bridge_reply_.resize(4 + hit_count * 4);
+                    std::memcpy(bridge_reply_.data(), &hit_count, 4);
+                    for (uint32_t i = 0; i < hit_count; ++i) {
+                        std::memcpy(bridge_reply_.data() + 4 + i * 4, &hits[i], 4);
+                    }
+                }
+            }
+        }
     } else if (bridge_type_ == kTypeStateGet) {
         if (!computer) {
             bridge_error_ = kEInternal;
@@ -614,6 +802,97 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
                 std::memcpy(rec + 0, &e.id, 4);
                 std::memcpy(rec + 4, &e.hit_count, 4);
                 pack_bp_fields(rec + 8, e);
+            }
+        }
+    } else if (bridge_type_ == kTypeVideoText) {
+        const uint32_t req_page = bridge_arg0_;
+        const uint32_t req_mode = bridge_arg1_;
+        auto *ds = static_cast<display_state_t *>(computer ? computer->cached_display_state : nullptr);
+        if (!computer || !ds) {
+            bridge_error_ = kEInternal;
+        } else {
+            uint32_t flags = 0;
+            if (ds->display_mode == TEXT_MODE) {
+                flags |= kVfText;
+            }
+            if (ds->display_split_mode == SPLIT_SCREEN) {
+                flags |= kVfMix;
+            }
+            if (ds->display_page_num == DISPLAY_PAGE_2) {
+                flags |= kVfPage2;
+            }
+            if (ds->display_graphics_mode == HIRES_MODE) {
+                flags |= kVfHires;
+            }
+            if (ds->f_80col) {
+                flags |= kVf80Col;
+            }
+            if (ds->f_altcharset) {
+                flags |= kVfAltChar;
+            }
+
+            uint32_t page = req_page;
+            if (page == kVideoPageCurrent) {
+                page = (ds->display_page_num == DISPLAY_PAGE_2) ? 2u : 1u;
+            } else if (page != 1 && page != 2) {
+                bridge_error_ = kEBadLength;
+                bridge_error_text_ = "VIDEO_TEXT invalid page";
+            }
+
+            uint32_t mode = req_mode;
+            if (bridge_error_ == 0) {
+                if (mode == kVideoModeCurrent) {
+                    if (ds->display_mode != TEXT_MODE) {
+                        bridge_error_ = kEInternal;
+                        bridge_error_text_ = "current mode is not text";
+                    } else {
+                        mode = ds->f_80col ? kVideoModeText80 : kVideoModeText40;
+                    }
+                } else if (mode != kVideoModeText40 && mode != kVideoModeText80) {
+                    bridge_error_ = kEBadLength;
+                    bridge_error_text_ = "unsupported video mode";
+                }
+            }
+
+            if (bridge_error_ == 0) {
+                MMU *mmu = nullptr;
+                if (computer->platform && platform_is_iigs(computer->platform->id)) {
+                    mmu = computer->mmu;
+                } else if (computer->cpu) {
+                    mmu = computer->cpu->mmu;
+                }
+                if (!mmu) {
+                    bridge_error_ = kEInternal;
+                } else {
+                    uint8_t *base = mmu->get_memory_base();
+                    const uint32_t mem_size = mmu->get_memory_size();
+                    const uint16_t page_off = text_page::page_base(page);
+                    const uint32_t need_main = static_cast<uint32_t>(page_off) + 0x400;
+                    if (!base || mem_size < need_main) {
+                        bridge_error_ = kEInternal;
+                    } else if (mode == kVideoModeText80
+                               && mem_size < text_page::kAuxBankOffset + need_main) {
+                        bridge_error_ = kEInternal;
+                        bridge_error_text_ = "TEXT80 not available";
+                    } else {
+                        const uint32_t cols =
+                            (mode == kVideoModeText80) ? text_page::kCols80 : text_page::kCols40;
+                        const uint32_t rows = text_page::kRows;
+                        const size_t chars_len = static_cast<size_t>(cols) * rows;
+                        bridge_reply_.resize(kVideoTextHeaderSize + chars_len);
+                        std::memcpy(bridge_reply_.data() + 0, &cols, 4);
+                        std::memcpy(bridge_reply_.data() + 4, &rows, 4);
+                        std::memcpy(bridge_reply_.data() + 8, &page, 4);
+                        std::memcpy(bridge_reply_.data() + 12, &mode, 4);
+                        std::memcpy(bridge_reply_.data() + 16, &flags, 4);
+                        uint8_t *chars = bridge_reply_.data() + kVideoTextHeaderSize;
+                        if (mode == kVideoModeText80) {
+                            text_page::linearize_text80(base, page, chars);
+                        } else {
+                            text_page::linearize_text40(base, page, chars);
+                        }
+                    }
+                }
             }
         }
     } else {
@@ -1267,6 +1546,108 @@ next_request:
             REPLY_OK(kTypeGetTrace, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
             break;
         }
+        case kTypeGetRegs: {
+            if (hdr.length != 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "GET_REGS requires empty payload");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeGetRegs, hdr.seq, 0, 0, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (reply.size() != kTraceEntrySize) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad get_regs reply");
+            }
+            REPLY_OK(kTypeGetRegs, hdr.seq, reply.data(), kTraceEntrySize);
+            break;
+        }
+        case kTypeSetRegs: {
+            if (hdr.length != kSetRegsPayloadSize) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "SET_REGS requires 24-byte payload");
+            }
+            uint32_t mask = 0;
+            std::memcpy(&mask, payload.data() + 0, 4);
+            if ((mask & ~kRegMaskAll) != 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "SET_REGS unknown mask bits");
+            }
+            if ((mask & kRegE) && payload[19] > 1) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "SET_REGS e must be 0 or 1");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            if (!submit_and_wait(kTypeSetRegs, hdr.seq, 0, 0, 0, payload, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (!reply.empty()) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad set_regs reply");
+            }
+            REPLY_OK(kTypeSetRegs, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypeFindMem: {
+            if (hdr.length < kFindMemHeaderSize) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "FINDMEM payload too short");
+            }
+            uint32_t domain = 0, address = 0, length = 0, max_hits = 0, pattern_len = 0, flags = 0;
+            std::memcpy(&domain, payload.data() + 0, 4);
+            std::memcpy(&address, payload.data() + 4, 4);
+            std::memcpy(&length, payload.data() + 8, 4);
+            std::memcpy(&max_hits, payload.data() + 12, 4);
+            std::memcpy(&pattern_len, payload.data() + 16, 4);
+            std::memcpy(&flags, payload.data() + 20, 4);
+            if ((flags & ~kFindMemHasMask) != 0) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "FINDMEM unknown flags");
+            }
+            if (length == 0 || length > kMaxReadMem) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "FINDMEM length out of range");
+            }
+            if (address > std::numeric_limits<uint32_t>::max() - length) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "FINDMEM address wrap");
+            }
+            if (pattern_len == 0 || pattern_len > kMaxFindPattern || pattern_len > length) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "FINDMEM pattern_len out of range");
+            }
+            if (max_hits == 0 || max_hits > kMaxFindHits) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "FINDMEM max_hits out of range");
+            }
+            if (domain != kMemMain && domain != kMemMegaII && domain != kMemEnsoniq
+                && domain != kMemAdbMicro && domain != kMemMainRaw && domain != kMemMegaIIRaw) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "FINDMEM invalid domain");
+            }
+            const bool has_mask = (flags & kFindMemHasMask) != 0;
+            const uint32_t expect = kFindMemHeaderSize + pattern_len + (has_mask ? pattern_len : 0);
+            if (hdr.length != expect) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "FINDMEM payload length mismatch");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            if (!submit_and_wait(kTypeFindMem, hdr.seq, 0, 0, 0, payload, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err, domain));
+            }
+            if (reply.size() < 4) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad findmem reply");
+            }
+            uint32_t hit_count = 0;
+            std::memcpy(&hit_count, reply.data(), 4);
+            if (hit_count > max_hits || reply.size() != 4 + static_cast<size_t>(hit_count) * 4) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad findmem reply");
+            }
+            REPLY_OK(kTypeFindMem, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
+            break;
+        }
         case kTypeStateGet: {
             if (hdr.length != 4) {
                 REJECT(client_fd, hdr.seq, kEBadLength, "STATE_GET requires 4-byte payload");
@@ -1491,6 +1872,46 @@ next_request:
                 REJECT(client_fd, hdr.seq, kEInternal, "bad bp_list reply");
             }
             REPLY_OK(kTypeBpList, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
+            break;
+        }
+        case kTypeVideoText: {
+            if (hdr.length != kVideoTextReqSize) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "VIDEO_TEXT requires 8-byte payload");
+            }
+            uint32_t page = 0, mode = 0;
+            std::memcpy(&page, payload.data() + 0, 4);
+            std::memcpy(&mode, payload.data() + 4, 4);
+            if (page > 2) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "VIDEO_TEXT invalid page");
+            }
+            if (mode > 7) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "VIDEO_TEXT invalid mode");
+            }
+            if (mode >= 3) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "unsupported video mode");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeVideoText, hdr.seq, page, mode, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (reply.size() < kVideoTextHeaderSize) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad video_text reply");
+            }
+            uint32_t cols = 0, rows = 0;
+            std::memcpy(&cols, reply.data() + 0, 4);
+            std::memcpy(&rows, reply.data() + 4, 4);
+            if (rows != text_page::kRows
+                || (cols != text_page::kCols40 && cols != text_page::kCols80)
+                || reply.size() != kVideoTextHeaderSize + static_cast<size_t>(cols) * rows) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad video_text reply");
+            }
+            REPLY_OK(kTypeVideoText, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
             break;
         }
         case kTypeKeyEvent: {

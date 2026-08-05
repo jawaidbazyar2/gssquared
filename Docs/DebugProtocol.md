@@ -17,7 +17,7 @@ This document is the source of truth for the wire format. Exploratory notes in `
 - TCP listen/connect (frame is ready; transport comes later).
 - Required request pipelining (header supports it; implementation may allow only one outstanding request).
 - MCP, GDB RSP, or an embedded script runtime.
-- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / READMEM / WRITEMEM / BP_* / KEYEVENT / STATE_GET / STATE_SET / QUIT below.
+- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / BP_* / KEYEVENT / STATE_GET / STATE_SET / VIDEO_TEXT / QUIT below.
 
 ---
 
@@ -74,6 +74,7 @@ type = (flags << 24) | (main << 8) | sub
 | `4` | Breakpoints |
 | `5` | Input / UI |
 | `6` | Sound / Ensoniq |
+| `7` | Video / display |
 
 ### Flag bits (high byte)
 
@@ -178,8 +179,11 @@ Rules:
 | `CONTINUE` | 1 | 4 | `0x00000104` | main | empty |
 | `STEP_INTO` | 1 | 5 | `0x00000105` | main | empty |
 | `GET_TRACE` | 2 | 1 | `0x00000201` | main | 8-byte header + `N×40` entries |
+| `GET_REGS` | 2 | 2 | `0x00000202` | main | 40-byte `system_trace_entry_t` |
+| `SET_REGS` | 2 | 3 | `0x00000203` | main | empty |
 | `READMEM` | 3 | 1 | `0x00000301` | main | `length` data bytes |
 | `WRITEMEM` | 3 | 2 | `0x00000302` | main | empty |
+| `FINDMEM` | 3 | 3 | `0x00000303` | main | `hit_count` + addresses |
 | `BP_SET` | 4 | 1 | `0x00000401` | main | 4 bytes: `id` |
 | `BP_CLEAR` | 4 | 2 | `0x00000402` | main | empty |
 | `BP_CLEAR_ALL` | 4 | 3 | `0x00000403` | main | empty |
@@ -188,6 +192,7 @@ Rules:
 | `KEYEVENT` | 5 | 1 | `0x00000501` | protocol (`SDL_PushEvent`) | empty |
 | `STATE_GET` | 6 | 1 | `0x00000601` | main | device-specific blob |
 | `STATE_SET` | 6 | 2 | `0x00000602` | main | empty (or device ack) |
+| `VIDEO_TEXT` | 7 | 1 | `0x00000701` | main | 20-byte header + linearized chars |
 
 ### Protocol version
 
@@ -359,6 +364,59 @@ Allowed anytime (like `READMEM`). Snapshot is consistent for that bridge call; w
 
 **Bounds:** handshake required; payload exactly 8 bytes; `count == 0` or `count > 16384` → `E_BAD_LENGTH`; no CPU / trace buffer → `E_INTERNAL` / `no machine`.
 
+#### `GET_REGS` — main 2, sub 2 (`0x00000202`)
+
+Live CPU register snapshot (same 40-byte `system_trace_entry_t` wire image as `EVT_STOPPED.trace` / `GET_TRACE` entries). Filled from current CPU state via the same path as EXEC/PAUSE stops (opcode peeked at `full_pc`; instruction-only fields zero).
+
+**Request payload:** empty (`length == 0`). Requires successful `HELLO`. Allowed while running or paused.
+
+**Success reply:** exactly **40** bytes.
+
+Does **not** include the 65816 emulation flag `E` (not part of the frozen 40-byte layout). Use `SET_REGS` with `REG_E` to write it.
+
+**Bounds:** handshake required; non-empty payload → `E_BAD_LENGTH`; no CPU → `E_INTERNAL` / `no machine`.
+
+#### `SET_REGS` — main 2, sub 3 (`0x00000203`)
+
+Masked write of CPU registers. Does not require pause; does not affect breakpoints or Policy A.
+
+**Request payload:** exactly **24** bytes, little-endian:
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `mask` | Which fields to apply (`REG_*` bits below) |
+| 4 | 2 | `pc` | Program counter (16-bit) |
+| 6 | 1 | `pb` | Program bank |
+| 7 | 1 | `db` | Data bank |
+| 8 | 2 | `a` | Accumulator |
+| 10 | 2 | `x` | X |
+| 12 | 2 | `y` | Y |
+| 14 | 2 | `sp` | Stack pointer |
+| 16 | 2 | `d` | Direct page |
+| 18 | 1 | `p` | Status register |
+| 19 | 1 | `e` | Emulation flag (`0` or `1`) when `REG_E` set |
+| 20 | 4 | `pad` | `0` |
+
+**`mask` bits:**
+
+| Bit | Name | Applies |
+|-----|------|---------|
+| 0 | `REG_PC` | `pc` |
+| 1 | `REG_PB` | `pb` |
+| 2 | `REG_DB` | `db` |
+| 3 | `REG_A` | `a` |
+| 4 | `REG_X` | `x` |
+| 5 | `REG_Y` | `y` |
+| 6 | `REG_SP` | `sp` |
+| 7 | `REG_D` | `d` |
+| 8 | `REG_P` | `p` |
+| 9 | `REG_E` | `e` |
+| 10–31 | reserved | Must be 0 |
+
+**Success reply:** empty.
+
+**Bounds:** handshake required; payload not 24 bytes / unknown mask bits / `e` not in `{0,1}` when `REG_E` set → `E_BAD_LENGTH`; no CPU → `E_INTERNAL` / `no machine`.
+
 ### Memory (`main == 3`)
 
 Commands in this family run on the **main emulation thread**.
@@ -440,6 +498,35 @@ Poke bytes into a memory domain.
 - No machine / no MMU for the domain → `E_INTERNAL` / `no machine`.
 
 `ENSONIQ` peeks/pokes DOC RAM with raw `memcpy` (no Sound GLU side effects).
+
+#### `FINDMEM` — main 3, sub 3 (`0x00000303`)
+
+Search a memory window for a byte pattern (optional per-byte mask for wildcards). Same domains and address rules as `READMEM`.
+
+**Request payload:** `24 + pattern_len` bytes, or `24 + 2×pattern_len` when `FINDMEM_HAS_MASK` is set:
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `domain` | Same domain table as READMEM |
+| 4 | 4 | `address` | Window base |
+| 8 | 4 | `length` | Window size (`1`…`65536`) |
+| 12 | 4 | `max_hits` | Cap on returned addresses (`1`…`256`) |
+| 16 | 4 | `pattern_len` | Pattern byte count (`1`…`256`, and `≤ length`) |
+| 20 | 4 | `flags` | Bit0 = `FINDMEM_HAS_MASK`; other bits must be 0 |
+| 24 | `pattern_len` | `pattern` | Bytes to match |
+| 24+`pattern_len` | `pattern_len` | `mask` | Present only if `HAS_MASK` |
+
+**Match:** for each start offset `i` where the pattern fits,
+`(byte[i+j] & m[j]) == (pattern[j] & m[j])` for all `j`. Without a mask, `m[j] = 0xFF` (exact). Cleared mask bits are wildcards. Hits are absolute addresses (`address + offset`), ascending. Scan stops after `max_hits`.
+
+**Success reply:**
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `hit_count` (`≤ max_hits`) |
+| 4 | `4 × hit_count` | addresses (`uint32` each) |
+
+**Bounds:** handshake required; payload size mismatch; zero/`>65536` window; wrap; bad `pattern_len` / `max_hits` / flags → `E_BAD_LENGTH`. Domain / platform errors match `READMEM` (`unsupported domain`, `MEGAII only on Apple IIgs`, `out of range`, …). Allowed while running or paused.
 
 ### Input (`main == 5`)
 
@@ -572,6 +659,63 @@ Per-drive (16 bytes): `track` i16 (quarter-tracks), `max_tracks` i16, `phase0`�
 | 6 | 1 | `dy` (i8) |
 | 7 | 1 | `buttons` — bit0 button0, bit1 button1 |
 
+### Video (`main == 7`)
+
+Commands in this family run on the **main emulation thread**.
+
+#### `VIDEO_TEXT` — main 7, sub 1 (`0x00000701`)
+
+Linearized text-page snapshot (de-skewed Apple II `$0400`/`$0800` layout). Returns raw screen bytes (high bit preserved), row-major. Not a graphics framebuffer.
+
+**Request payload** (8 bytes):
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | `page` | `0` = current (`display_page_num`), `1` = page 1 (`$0400`), `2` = page 2 (`$0800`) |
+| 4 | 4 | `mode` | See mode table |
+
+**Mode values:**
+
+| Value | Name | v1 |
+|-------|------|----|
+| `0` | `VIDEO_MODE_CURRENT` | Resolve from soft switches |
+| `1` | `VIDEO_MODE_TEXT40` | 40×24 |
+| `2` | `VIDEO_MODE_TEXT80` | 80×24 (aux then main per column pair) |
+| `3`–`7` | LORES / DLORES / HIRES / DHIRES / SHR | Reserved → `E_BAD_LENGTH` / `unsupported video mode` |
+
+**Resolving `CURRENT`:**
+
+- `page == 0` → `1` or `2` from `display_page_num`.
+- `mode == 0` → if `display_mode == TEXT` and `!f_80col` → `TEXT40`; if TEXT and `f_80col` → `TEXT80`; otherwise `E_INTERNAL` / `current mode is not text`.
+- Explicit page/mode dump that buffer even if soft switches disagree.
+
+**Success reply:** 20-byte header + `cols×rows` bytes:
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `cols` — `40` or `80` |
+| 4 | 4 | `rows` — always `24` |
+| 8 | 4 | `page` — **resolved** `1` or `2` (never `0`) |
+| 12 | 4 | `mode` — **resolved** `TEXT40` or `TEXT80` (never `CURRENT`) |
+| 16 | 4 | `flags` — soft-switch snapshot at capture |
+| 20 | `cols×rows` | `chars` — linearized screen bytes, row-major |
+
+**`flags` bits:**
+
+| Bit | Name | Source |
+|-----|------|--------|
+| 0 | `VF_TEXT` | text mode |
+| 1 | `VF_MIX` | mixed / split |
+| 2 | `VF_PAGE2` | display page 2 selected |
+| 3 | `VF_HIRES` | hires graphics mode |
+| 4 | `VF_80COL` | 80-column |
+| 5 | `VF_ALTCHAR` | alt charset |
+| 6–31 | reserved | 0 |
+
+**Physical RAM:** II/IIe family uses CPU MMU physical buffer (`MAIN_RAW`); IIgs uses Mega II (`MEGAII_RAW`). TEXT80 requires aux at `+0x10000`. Does not use bus `MAIN` reads (avoids `80STORE` remapping).
+
+**Bounds:** handshake required; payload exactly 8 bytes; bad page → `E_BAD_LENGTH`; reserved mode → `E_BAD_LENGTH` / `unsupported video mode`; TEXT80 without aux → `E_INTERNAL` / `TEXT80 not available`; no display → `E_INTERNAL` / `no machine`.
+
 ---
 
 ## Example exchange
@@ -593,7 +737,7 @@ Client connects, then:
 
 ## Future commands
 
-Main numbers 1–6 are reserved for execution, CPU, memory, breakpoints, input, and devices (up to 256 subs each). Beyond documented commands, any type outside the documented set yields `ERROR` with `E_UNKNOWN_TYPE`.
+Main numbers 1–7 are reserved for execution, CPU, memory, breakpoints, input, devices, and video (up to 256 subs each). Beyond documented commands, any type outside the documented set yields `ERROR` with `E_UNKNOWN_TYPE`.
 
 ---
 
@@ -610,7 +754,7 @@ Status: **implemented** (commands listed under Initial command set). This sectio
 ### Design principles
 
 1. **GS2 is a typed stop engine.** Match address / range / access class / optional fixed value / ignore-count / **address mask**. No expression language, symbols, or source lines inside the emulator.
-2. **Host evaluates fancy conditions.** On `EVENT`, the client may `READMEM` / (future) read regs and `CONTINUE` if the stop is uninteresting. Thrashing is mitigated with ignore-count and temporary breakpoints, not with host round-trips on every instruction.
+2. **Host evaluates fancy conditions.** On `EVENT`, the client may `READMEM` / `GET_REGS` and `CONTINUE` if the stop is uninteresting. Thrashing is mitigated with ignore-count and temporary breakpoints, not with host round-trips on every instruction.
 3. **Stop reason is an unsolicited `EVENT`.** Setting a breakpoint is a request/reply; hitting it is never a reply to `CONTINUE`.
 4. **Same memory domains as `READMEM` / `WRITEMEM`.** Watchpoints name a domain explicitly (IIgs FPI vs Mega II vs raw buffers). Address validity and domain errors follow the same rules as memory ops (see Errors below).
 5. **Opaque breakpoint IDs.** Clients address entries by `id` returned from `BP_SET`, not by “remove this address,” so overlapping ranges and temporary BPs do not collide.
@@ -957,7 +1101,7 @@ Unsolicited `EVENT` frames. Clients ignore unknown `event_id`s.
 | 4 | `STOP_STEP` | Step-into / over / out completed |
 | 5 | `STOP_PAUSE` | Explicit `PAUSE` from host |
 
-**Including a trace / CPU snapshot — yes, valuable.** At a stop the host almost always wants registers, opcode, effective address, and data byte without a racey follow-up `READMEM` / future `GET_REGS`. GS2 already fills `cpu->trace_entry` on the instruction path; copying that blob into the event is cheap vs socket I/O.
+**Including a trace / CPU snapshot — yes, valuable.** At a stop the host almost always wants registers, opcode, effective address, and data byte without a racey follow-up `READMEM` / `GET_REGS`. GS2 already fills `cpu->trace_entry` on the instruction path; copying that blob into the event is cheap vs socket I/O. Live queries while paused (or after reconnect) use `GET_REGS` (same 40-byte layout).
 
 Wire image matches `system_trace_entry_t` (**40** bytes, little-endian, natural C layout / `sizeof == 40` today):
 

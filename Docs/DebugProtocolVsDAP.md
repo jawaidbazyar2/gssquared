@@ -56,7 +56,8 @@ The adapter typically wraps GDB/LLDB/a runtime and presents threads, frames, var
 | Memory read/write | `READMEM` / `WRITEMEM` + domains | `readMemory` / `writeMemory` |
 | Disassembly service | None (host can disasm bytes) | `disassemble` |
 | CPU regs at stop | `EVT_STOPPED` 40-byte trace blob | `scopes` → `variables` (Registers) |
-| Live register query | Via stop snapshot / `GET_TRACE` | `scopes` / `variables` while stopped |
+| Live register query | `GET_REGS` / `SET_REGS` (masked); also stop snapshot / `GET_TRACE` | `scopes` / `variables` while stopped |
+| Memory pattern search | `FINDMEM` (optional byte mask) | No standard request |
 | Instruction history | `GET_TRACE` ring (100k × 40B) | No standard request |
 | Call stack / frames | None | `stackTrace` (+ `instructionPointerReference`) |
 | Variables / evaluate | None (no expr language in GS2) | `scopes`, `variables`, `evaluate`, `setVariable` |
@@ -140,7 +141,7 @@ Bridging to VS Code means a thin DAP adapter that maps `setBreakpoints` → `BP_
 
 GS2 v1 is already well-aimed: run control, rich stops, multi-domain memory, EXEC/DATA/IO breakpoints, trace history, peripherals.
 
-**Nice-to-haves on the wire:** `STEP_OVER` / `STEP_OUT`, dedicated `GET_REGS` / `SET_REGS`, optional `DISASM` for convenience (not required if the host disassembles).
+**Nice-to-haves on the wire:** `STEP_OVER` / `STEP_OUT`, optional `DISASM` for convenience (not required if the host disassembles). `GET_REGS` / `SET_REGS` / `FINDMEM` are implemented.
 
 ### Goal: VS Code source debugging
 
