@@ -20,6 +20,8 @@
 #include "mmus/mmu.hpp"
 #include "Module_ID.hpp"
 #include "PlatformIDs.hpp"
+#include "util/mount.hpp"
+#include "util/StorageDevice.hpp"
 
 #if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
 #include <fcntl.h>
@@ -64,6 +66,8 @@ constexpr uint32_t kTypeBpEnable  = 0x00000404;
 constexpr uint32_t kTypeBpList    = 0x00000405;
 constexpr uint32_t kTypeKeyEvent  = 0x00000501;
 constexpr uint32_t kTypeVideoText = 0x00000701;
+constexpr uint32_t kTypeMount     = 0x00000801;
+constexpr uint32_t kTypeUnmount   = 0x00000802;
 
 constexpr uint32_t kEvtStopped   = 1;
 constexpr uint32_t kEvtRunState  = 2;
@@ -106,6 +110,14 @@ constexpr uint32_t kVfPage2   = 1u << 2;
 constexpr uint32_t kVfHires   = 1u << 3;
 constexpr uint32_t kVf80Col   = 1u << 4;
 constexpr uint32_t kVfAltChar = 1u << 5;
+
+constexpr uint32_t kMediaOk            = 0;
+constexpr uint32_t kMediaNoDrive       = 1;
+constexpr uint32_t kMediaMountFailed   = 2;
+constexpr uint32_t kMediaUnmountFailed = 3;
+constexpr uint32_t kMediaBadPath       = 4;
+constexpr uint32_t kMaxMediaPathLen    = 4096;
+constexpr uint32_t kMaxMediaUnit       = 5;
 
 constexpr uint32_t kMemMain    = 0;
 constexpr uint32_t kMemMegaII  = 1;
@@ -894,6 +906,59 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
                     }
                 }
             }
+        }
+    } else if (bridge_type_ == kTypeMount) {
+        const uint32_t slot = bridge_arg0_;
+        const uint32_t unit = bridge_arg1_;
+        uint32_t status = kMediaOk;
+        if (!computer || !computer->mounts) {
+            bridge_error_ = kEInternal;
+        } else if (bridge_request_.empty()) {
+            status = kMediaBadPath;
+        } else {
+            storage_key_t key;
+            key.slot = static_cast<uint16_t>(slot);
+            key.drive = static_cast<uint16_t>(unit);
+            key.partition = 0;
+            key.subunit = 0;
+            if (!computer->mounts->has_drive(key)) {
+                status = kMediaNoDrive;
+            } else {
+                disk_mount_t dm{};
+                dm.slot = static_cast<uint16_t>(slot);
+                dm.drive = static_cast<uint16_t>(unit);
+                dm.filename.assign(reinterpret_cast<const char *>(bridge_request_.data()),
+                                   bridge_request_.size());
+                if (!computer->mounts->mount_media(dm)) {
+                    status = kMediaMountFailed;
+                }
+            }
+        }
+        if (bridge_error_ == 0) {
+            bridge_reply_.resize(4);
+            std::memcpy(bridge_reply_.data(), &status, 4);
+        }
+    } else if (bridge_type_ == kTypeUnmount) {
+        const uint32_t slot = bridge_arg0_;
+        const uint32_t unit = bridge_arg1_;
+        uint32_t status = kMediaOk;
+        if (!computer || !computer->mounts) {
+            bridge_error_ = kEInternal;
+        } else {
+            storage_key_t key;
+            key.slot = static_cast<uint16_t>(slot);
+            key.drive = static_cast<uint16_t>(unit);
+            key.partition = 0;
+            key.subunit = 0;
+            if (!computer->mounts->has_drive(key)) {
+                status = kMediaNoDrive;
+            } else if (!computer->mounts->unmount_media(key, DISCARD)) {
+                status = kMediaUnmountFailed;
+            }
+        }
+        if (bridge_error_ == 0) {
+            bridge_reply_.resize(4);
+            std::memcpy(bridge_reply_.data(), &status, 4);
         }
     } else {
         bridge_error_ = kEInternal;
@@ -1912,6 +1977,64 @@ next_request:
                 REJECT(client_fd, hdr.seq, kEInternal, "bad video_text reply");
             }
             REPLY_OK(kTypeVideoText, hdr.seq, reply.data(), static_cast<uint32_t>(reply.size()));
+            break;
+        }
+        case kTypeMount: {
+            if (hdr.length < 8) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "MOUNT payload too short");
+            }
+            uint32_t slot = 0, unit = 0;
+            std::memcpy(&slot, payload.data() + 0, 4);
+            std::memcpy(&unit, payload.data() + 4, 4);
+            if (unit > kMaxMediaUnit) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "MOUNT unit out of range");
+            }
+            const size_t path_len = payload.size() - 8;
+            if (path_len == 0) {
+                // Still bridge so reply is MEDIA_BAD_PATH status (not ERROR).
+            } else if (path_len > kMaxMediaPathLen) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "MOUNT path too long");
+            }
+            std::vector<uint8_t> path_bytes(payload.begin() + 8, payload.end());
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            if (!submit_and_wait(kTypeMount, hdr.seq, slot, unit, 0, path_bytes, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (reply.size() != 4) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad mount reply");
+            }
+            REPLY_OK(kTypeMount, hdr.seq, reply.data(), 4);
+            break;
+        }
+        case kTypeUnmount: {
+            if (hdr.length != 8) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "UNMOUNT requires 8-byte payload");
+            }
+            uint32_t slot = 0, unit = 0;
+            std::memcpy(&slot, payload.data() + 0, 4);
+            std::memcpy(&unit, payload.data() + 4, 4);
+            if (unit > kMaxMediaUnit) {
+                REJECT(client_fd, hdr.seq, kEBadLength, "UNMOUNT unit out of range");
+            }
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            static const std::vector<uint8_t> kEmptyRequest;
+            if (!submit_and_wait(kTypeUnmount, hdr.seq, slot, unit, 0, kEmptyRequest, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (reply.size() != 4) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad unmount reply");
+            }
+            REPLY_OK(kTypeUnmount, hdr.seq, reply.data(), 4);
             break;
         }
         case kTypeKeyEvent: {

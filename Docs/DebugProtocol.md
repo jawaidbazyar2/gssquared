@@ -17,7 +17,7 @@ This document is the source of truth for the wire format. Exploratory notes in `
 - TCP listen/connect (frame is ready; transport comes later).
 - Required request pipelining (header supports it; implementation may allow only one outstanding request).
 - MCP, GDB RSP, or an embedded script runtime.
-- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / BP_* / KEYEVENT / STATE_GET / STATE_SET / VIDEO_TEXT / QUIT below.
+- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / BP_* / KEYEVENT / STATE_GET / STATE_SET / VIDEO_TEXT / MOUNT / UNMOUNT / QUIT below.
 
 ---
 
@@ -75,6 +75,7 @@ type = (flags << 24) | (main << 8) | sub
 | `5` | Input / UI |
 | `6` | Sound / Ensoniq |
 | `7` | Video / display |
+| `8` | Storage / media |
 
 ### Flag bits (high byte)
 
@@ -193,6 +194,8 @@ Rules:
 | `STATE_GET` | 6 | 1 | `0x00000601` | main | device-specific blob |
 | `STATE_SET` | 6 | 2 | `0x00000602` | main | empty (or device ack) |
 | `VIDEO_TEXT` | 7 | 1 | `0x00000701` | main | 20-byte header + linearized chars |
+| `MOUNT` | 8 | 1 | `0x00000801` | main | 4 bytes: `status` |
+| `UNMOUNT` | 8 | 2 | `0x00000802` | main | 4 bytes: `status` |
 
 ### Protocol version
 
@@ -716,6 +719,50 @@ Linearized text-page snapshot (de-skewed Apple II `$0400`/`$0800` layout). Retur
 
 **Bounds:** handshake required; payload exactly 8 bytes; bad page → `E_BAD_LENGTH`; reserved mode → `E_BAD_LENGTH` / `unsupported video mode`; TEXT80 without aux → `E_INTERNAL` / `TEXT80 not available`; no display → `E_INTERNAL` / `no machine`.
 
+### Storage (`main == 8`)
+
+Commands call the unified `Mounts` layer (same as CLI `-dsXdY=` and the OSD). They run on the **main emulation thread**.
+
+**Unit numbering:** protocol `unit` is **0-based** (`storage_key_t.drive`). Disk II / IWM 5.25 / 3.5: `0`–`1`. BazFast: `0`–`5`. CLI/TOML use **1-based** drives (`-ds6d1=` → protocol slot `6`, unit `0`).
+
+#### Media status codes (MOUNT / UNMOUNT reply)
+
+Logical results are returned as a 4-byte `status` on the MOUNT/UNMOUNT reply (not as `ERROR`). Framing/payload problems still use `ERROR`.
+
+| Code | Name | Meaning |
+|------|------|---------|
+| `0` | `MEDIA_OK` | Success |
+| `1` | `MEDIA_NO_DRIVE` | No storage device registered at slot/unit |
+| `2` | `MEDIA_MOUNT_FAILED` | Identify/open/format/`fopen` failed |
+| `3` | `MEDIA_UNMOUNT_FAILED` | Unmount returned false |
+| `4` | `MEDIA_BAD_PATH` | Empty path on MOUNT |
+
+#### `MOUNT` — main 8, sub 1 (`0x00000801`)
+
+**Request:** `8 + N` bytes
+
+| Offset | Size | Field |
+|--------|------|-------|
+| 0 | 4 | `slot` |
+| 4 | 4 | `unit` — 0-based |
+| 8 | N | `path` — UTF-8 filesystem path (remainder; not NUL-terminated) |
+
+Clients should pass an **absolute path** so success does not depend on the emulator process cwd.
+
+**Success reply:** 4 bytes `status`.
+
+Already-mounted behavior matches CLI/UI (floppy replaces without writeback; BazFast may attach under the key).
+
+**Bounds:** handshake; payload `< 8` → `E_BAD_LENGTH`; `unit > 5` → `E_BAD_LENGTH`; `N > 4096` → `E_BAD_LENGTH`; no `mounts` → `E_INTERNAL`.
+
+#### `UNMOUNT` — main 8, sub 2 (`0x00000802`)
+
+**Request:** exactly 8 bytes — `slot`, `unit` (0-based). Always **discard** dirty (no save prompt).
+
+**Success reply:** 4 bytes `status`.
+
+**Bounds:** handshake; payload not 8 bytes / `unit > 5` → `E_BAD_LENGTH`; no `mounts` → `E_INTERNAL`.
+
 ---
 
 ## Example exchange
@@ -737,7 +784,7 @@ Client connects, then:
 
 ## Future commands
 
-Main numbers 1–7 are reserved for execution, CPU, memory, breakpoints, input, devices, and video (up to 256 subs each). Beyond documented commands, any type outside the documented set yields `ERROR` with `E_UNKNOWN_TYPE`.
+Main numbers 1–8 are reserved for execution, CPU, memory, breakpoints, input, devices, video, and storage (up to 256 subs each). Beyond documented commands, any type outside the documented set yields `ERROR` with `E_UNKNOWN_TYPE`.
 
 ---
 

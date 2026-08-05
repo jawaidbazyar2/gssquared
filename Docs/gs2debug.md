@@ -55,6 +55,8 @@ Import path: `clients/python/src` on `PYTHONPATH`, or `pip install -e clients/py
 | `set_regs(mask, *, pc=…, a=…, …)` | Masked register write (`REG_PC`, `REG_A`, …) |
 | `find_mem(domain, address, length, pattern, *, mask=None, max_hits=16)` → `list[int]` | Pattern search; optional wildcard mask |
 | `video_text(page=CURRENT, mode=CURRENT)` → `VideoText` | Linearized text page; `.page`/`.mode` resolved; `.as_lines()` |
+| `mount(slot, unit, path)` → `int` | Mount media (0-based `unit`); prefer absolute `path`; returns `MEDIA_*` |
+| `unmount(slot, unit)` → `int` | Unmount discard; returns `MEDIA_*` |
 | `state_get(device_id)` → `bytes` | Device snapshot blob (`DEVICE_ID_ENSONIQ`, …) |
 | `bp_set(...)` → `id` | Create EXEC/DATA/IO breakpoint (see DebugProtocol.md) |
 | `bp_clear(id)` / `bp_clear_all()` / `bp_enable(id, enabled)` / `bp_list()` | Breakpoint table |
@@ -147,6 +149,19 @@ vt40 = c.video_text(1, VIDEO_MODE_TEXT40)   # force page 1 / 40-col
 assert vt40.cols == 40 and len(vt40.chars) == 960
 ```
 
+### Mount / unmount media
+
+Protocol `unit` is **0-based** (CLI `-ds6d1=` → `mount(6, 0, path)`).
+
+```python
+from pathlib import Path
+from gs2debug import MEDIA_OK
+
+path = str(Path("disk_images/SPFBase.dsk").resolve())  # absolute
+assert c.mount(6, 0, path) == MEDIA_OK
+assert c.unmount(6, 0) == MEDIA_OK
+```
+
 ### Machine reset
 
 Prefer the protocol command (not keyboard):
@@ -222,6 +237,7 @@ IIe-only soft-switch **status** reads (`$C01A` TEXT, `$C01D` HIRES, …) are inv
 | `examples/test_breakpoints.py` | PAUSE/CONTINUE + EXEC/IO breakpoints (IIe Enhanced `-p 3` and IIgs `-p 5`) |
 | `examples/test_regs_findmem.py` | `GET_REGS` / `SET_REGS` / `FINDMEM` smoke (IIe Enhanced `-p 3`) |
 | `examples/test_video_text.py` | `VIDEO_TEXT` CURRENT + TEXT40/TEXT80 (IIe Enhanced `-p 3`) |
+| `examples/test_media_mount.py` | `MOUNT` / `UNMOUNT` Disk II slot 6 unit 0 (IIe Enhanced `-p 3`) |
 
 All under `clients/python/`. Each file’s header has concrete Usage lines.
 

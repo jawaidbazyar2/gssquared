@@ -127,6 +127,10 @@ drive_status_t Mounts::media_status(storage_key_t key) {
     return it->second.device->status(key);
 }
 
+bool Mounts::has_drive(storage_key_t key) const {
+    return storage_devices.find(key) != storage_devices.end();
+}
+
 
 void Mounts::dump() {
     for (auto it = mounted_media.begin(); it != mounted_media.end(); it++) {

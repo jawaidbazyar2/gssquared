@@ -81,6 +81,8 @@ public:
     bool mount_media(disk_mount_t disk_mount, bool force_write_protected = false);
     bool unmount_media(storage_key_t key, unmount_action_t action);
     drive_status_t media_status(storage_key_t key);
+    /** True if a storage device is registered at this slot/drive key. */
+    bool has_drive(storage_key_t key) const;
     const std::vector<drive_info_t>& get_all_drives();
     int register_storage_device(storage_key_t key, StorageDevice *storage_device, drive_type_t drive_type);
     void dump();

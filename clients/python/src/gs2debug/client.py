@@ -55,6 +55,8 @@ from .types import (
     STOP_BP_IO,
     STOP_PAUSE,
     STOP_STEP,
+    MOUNT,
+    UNMOUNT,
     VIDEO_MODE_CURRENT,
     VIDEO_PAGE_CURRENT,
     VIDEO_TEXT,
@@ -493,6 +495,31 @@ class Client:
         reply = self.request(WRITEMEM, payload)
         if reply:
             raise ProtocolError(0, f"WRITEMEM reply not empty ({len(reply)} bytes)")
+
+    def mount(self, slot: int, unit: int, path: str | bytes) -> int:
+        """MOUNT media at slot/unit (0-based). Prefer an absolute ``path``. Returns MEDIA_* status."""
+        if not self._handshaked:
+            raise RuntimeError("hello() required before mount()")
+        if unit < 0 or unit > 5:
+            raise ValueError("unit must be 0..5")
+        path_b = path.encode("utf-8") if isinstance(path, str) else path
+        reply = self.request(MOUNT, struct.pack("<II", slot, unit) + path_b)
+        if len(reply) != 4:
+            raise ProtocolError(0, f"MOUNT reply length {len(reply)}, expected 4")
+        (status,) = struct.unpack("<I", reply)
+        return status
+
+    def unmount(self, slot: int, unit: int) -> int:
+        """UNMOUNT media at slot/unit (0-based), discard dirty. Returns MEDIA_* status."""
+        if not self._handshaked:
+            raise RuntimeError("hello() required before unmount()")
+        if unit < 0 or unit > 5:
+            raise ValueError("unit must be 0..5")
+        reply = self.request(UNMOUNT, struct.pack("<II", slot, unit))
+        if len(reply) != 4:
+            raise ProtocolError(0, f"UNMOUNT reply length {len(reply)}, expected 4")
+        (status,) = struct.unpack("<I", reply)
+        return status
 
     def video_text(
         self,
