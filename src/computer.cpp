@@ -329,7 +329,11 @@ bool computer_t::call_device_debug(device_id id, uint32_t op,
 void computer_t::reset(bool cold_start) {
     last_reset = clock->get_cycles(); // catch this here (assert or instantaneous)
     if (cold_start) {
-        // force a cold start reset
+        // Invalidate Apple II soft-entry / power-up bytes ($3F2–$3F4).
+        // On II/IIe, computer->mmu is the only map. On IIgs, computer->mmu is
+        // the Mega II (bank $E0) while the CPU's MMU is the FPI — ROM 03 (and
+        // the Check Startup Device path) consults bank $00, so clear both.
+        // on a ROM03 the ROM uses CYAREG bit 6 which is not quite the same concept here.
         mmu->write(0x3f2, 0x00);
         mmu->write(0x3f3, 0x00);
         mmu->write(0x3f4, 0x00);
