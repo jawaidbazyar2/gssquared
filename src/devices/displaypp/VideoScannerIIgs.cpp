@@ -3,6 +3,7 @@
 #include "VideoScannerII.hpp"
 #include "ScanBuffer.hpp"
 #include "mmus/mmu_ii.hpp"
+#include "mmus/iigs_aux_linear.hpp"
 #include "device_irq_id.hpp"
 
 void VideoScannerIIgs::init_video_addresses()
@@ -90,16 +91,27 @@ void VideoScannerIIgs::init_video_addresses()
             (((hc <= 6) || (hc>= 19)))
         ) fl |= SA_FLAG_BORDER;
 
-        // SHR Mode
-        // shr buffer is linear. But there are also some cycles where we need to read the palette data from RAM.
-        // each cycle in SHR mode grabs 4 bytes from RAM.
+        // SHR Mode: CPU sees $2000–$9FFF as linear (C029 bit 6); physical Mega II
+        // aux is interleaved ($2000/$6000). Store physical $2000-half bases here so
+        // video_cycle can fetch with addr, addr+0x4000, addr+1, addr+0x4001.
+        // Covers pixels, SCBs ($9Dxx), and palettes ($9Exx).
         uint16_t shr_addr = 0x2000; // dummy default
         uint16_t shr_fl = fl;
         if (vc < 200) { // shr is 200 scanlines..
             // if in shr, unset border flag.
-            if (hc>=25) { shr_addr = 0x2000 + ((hc-25)*4) + (vc * 160); shr_fl |= SA_FLAG_SHR; shr_fl &= ~SA_FLAG_BORDER; } // shr data
-            else if (hc == 6) { shr_addr = 0x9D00 + vc; shr_fl |= SA_FLAG_SCB; } // SCB
-            else if (hc >= 7 && hc <= 14) { shr_addr = 0x9E00 + ((hc - 7) * 4); shr_fl |= SA_FLAG_PALETTE; } // Palette
+            if (hc>=25) {
+                uint16_t linear = 0x2000 + ((hc-25)*4) + (vc * 160);
+                shr_addr = iigs_aux_linear_to_phys(linear);
+                shr_fl |= SA_FLAG_SHR;
+                shr_fl &= ~SA_FLAG_BORDER;
+            } else if (hc == 6) {
+                shr_addr = iigs_aux_linear_to_phys(0x9D00 + vc);
+                shr_fl |= SA_FLAG_SCB;
+            } else if (hc >= 7 && hc <= 14) {
+                uint16_t linear = 0x9E00 + ((hc - 7) * 4);
+                shr_addr = iigs_aux_linear_to_phys(linear);
+                shr_fl |= SA_FLAG_PALETTE;
+            }
         }
         shr_p1[idx].addr = shr_addr;
         shr_p1[idx].flags = shr_fl;
@@ -165,6 +177,7 @@ void VideoScannerIIgs::video_cycle()
         frame_scan->push(scan);
     }  else */ if (sa.flags & SA_FLAG_SCB) {
         scan.mode = (uint8_t)VM_SHR_MODE;
+        // LUT addr is already physical (interleaved); single byte.
         scan.mainbyte = ram[address + 0x10000];
         scan.flags = mode_flags;
         frame_scan->push(scan);
@@ -172,8 +185,14 @@ void VideoScannerIIgs::video_cycle()
         current_scb = scan.mainbyte;
     } else if (sa.flags & SA_FLAG_PALETTE) {
         scan.mode = (uint8_t)VM_SHR_PALETTE;
-        uint32_t eaddr = address + (palette_index * 32) + 0x1'0000;
-        scan.shr_bytes = *((uint32_t *)(ram + eaddr));
+        // LUT addr = phys of linear $9E00+(hc-7)*4; +32 linear bytes ⇒ +16 phys in $2000 half.
+        uint16_t phys = address + (palette_index * 16);
+        uint8_t *aux = ram + 0x10000;
+        scan.shr_bytes =
+            aux[phys] |
+            (uint32_t(aux[phys + 0x4000]) << 8) |
+            (uint32_t(aux[phys + 1]) << 16) |
+            (uint32_t(aux[phys + 0x4001]) << 24);
         scan.flags = mode_flags;
         frame_scan->push(scan);
     } /* else */ 
@@ -189,7 +208,13 @@ void VideoScannerIIgs::video_cycle()
         frame_scan->push(scan);
     } else if (sa.flags & SA_FLAG_SHR) {
         scan.mode = static_cast<uint8_t>(video_mode); // SHR_PIXEL, SHR_PALETTE, SHR_MODE
-        scan.shr_bytes = *((uint32_t *)(ram + 0x1'0000 + address));
+        // LUT addr = physical of linear[0]; fetch interleaved linear L0..L3.
+        uint8_t *aux = ram + 0x10000;
+        scan.shr_bytes =
+            aux[address] |
+            (uint32_t(aux[address + 0x4000]) << 8) |
+            (uint32_t(aux[address + 1]) << 16) |
+            (uint32_t(aux[address + 0x4001]) << 24);
         frame_scan->push(scan);
     }  else {
         scan.mode = static_cast<uint8_t>(video_mode); 

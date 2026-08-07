@@ -10,7 +10,7 @@
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
-
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -22,7 +22,7 @@
 #include <cstdint>
 
 /**
- * IIgs contiguous fast RAM sizing (banks $00+), matching KEGS / real hardware.
+ * IIgs contiguous fast RAM sizing (banks $00+).
  *
  * Motherboard (ROM-dependent) + expansion card size. Mega II ($E0/$E1) is
  * separate and not included here.
@@ -30,9 +30,9 @@
  *   ROM01 (128KB ROM): 128KB mobo ($00–$01) + card
  *   ROM03 (256KB ROM): 1MB mobo ($00–$0F) + card
  *
- * Default card size is 8MB. Totals:
- *   ROM01 + 8MB card → 8.125MB (banks $00–$81)
- *   ROM03 + 8MB card → 9MB (banks $00–$8F)
+ * The FPI only decodes 23 address bits for RAM, so contiguous FPI RAM is
+ * hard-capped at 8MB (banks $00–$7F) on both ROM01 and ROM03. With an 8MB
+ * card, excess card banks above that window are inaccessible.
  *
  * `exp_bytes` is expansion-card size, not total system RAM.
  */
@@ -40,8 +40,8 @@ namespace iigs_memory {
 
 constexpr size_t kBankBytes = 65536;
 constexpr size_t kDefaultExpBytes = 8u * 1024u * 1024u;
-/** KEGS clamp: contiguous RAM must not extend into the $E0+ Mega II / ROM region. */
-constexpr size_t kMaxFastRamBytes = 0xDF0000;
+/** FPI RAM decode is 23 bits → 128 banks ($00–$7F). */
+constexpr size_t kMaxFastRamBytes = 0x80 * kBankBytes;
 
 inline bool is_rom03(size_t rom_size_bytes) {
     return rom_size_bytes >= 4 * kBankBytes;
@@ -54,7 +54,7 @@ inline size_t mobo_ram_bytes(size_t rom_size_bytes) {
 
 /**
  * Contiguous FPI RAM size from bank $00: motherboard + expansion card,
- * capped at kMaxFastRamBytes.
+ * capped at kMaxFastRamBytes (23-bit FPI decode).
  */
 inline size_t fast_ram_bytes(size_t rom_size_bytes, size_t exp_bytes = kDefaultExpBytes) {
     const size_t total = mobo_ram_bytes(rom_size_bytes) + exp_bytes;

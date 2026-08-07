@@ -172,16 +172,16 @@ ok. There is Fast RAM and Slow RAM. Slow RAM has the I/O stuff.
 
 #### Fast RAM - contiguous from bank $00
 
-Installed size is **motherboard base (ROM-dependent) + expansion card**, not a flat 8MB total
-(see `src/mmus/iigs_memory.hpp`, matching KEGS):
+Installed size is **motherboard base (ROM-dependent) + expansion card**
+(see `src/mmus/iigs_memory.hpp`):
 
 | ROM | Motherboard | + 8MB card (default) | Last RAM bank |
 |-----|-------------|----------------------|---------------|
-| ROM01 (128KB) | 128KB (`$00`–`$01`) | 8.125MB | `$81` |
-| ROM03 (256KB) | 1MB (`$00`–`$0F`) | 9MB | `$8F` |
+| ROM01 (128KB) | 128KB (`$00`–`$01`) | 8MB (128KB card clipped) | `$7F` |
+| ROM03 (256KB) | 1MB (`$00`–`$0F`) | 8MB (1MB card clipped) | `$7F` |
 
-Capped at `$DF0000` so contiguous RAM does not collide with Mega II / ROM. Mega II `$E0`/`$E1`
-is separate slow RAM and is **not** part of this size.
+FPI RAM decode is 23 bits → hard cap of 128 banks (`$00`–`$7F`) on both ROMs.
+Mega II `$E0`/`$E1` is separate slow RAM and is **not** part of this size.
 
 Banks above the last RAM bank float until ROM (`$FC`+ / `$FE`+). Banks `$00`–`$01` are the
 legacy Apple II emulation half; higher banks are pure RAM (optional all-bank shadowing is rare).

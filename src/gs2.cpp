@@ -824,7 +824,7 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
             const size_t main_rom_size = rd->main_rom_file->size();
             const size_t rom_bank_ff_offset = main_rom_size - 65536;
             // Contiguous FPI RAM = motherboard base (ROM-dependent) + 8MB expansion
-            // card, matching KEGS. Not a flat 8MB total — that left banks $80+ floating.
+            // card, hard-capped at bank $7F (FPI decodes 23 RAM address bits).
             const size_t mobo_ram = iigs_memory::mobo_ram_bytes(main_rom_size);
             const size_t exp_ram = iigs_memory::kDefaultExpBytes;
             const size_t fast_ram = iigs_memory::fast_ram_bytes(main_rom_size, exp_ram);

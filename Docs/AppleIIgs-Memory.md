@@ -10,15 +10,18 @@ http://umich.edu/~archive/apple2/technotes/tn/iigs/TN.IIGS.032
 
 ## Installed fast RAM size
 
-GSSquared sizes contiguous FPI RAM as **motherboard + expansion card** (KEGS-compatible),
+GSSquared sizes contiguous FPI RAM as **motherboard + expansion card**,
 implemented in `src/mmus/iigs_memory.hpp`:
 
-- **ROM01** (128KB ROM file): 128KB motherboard + default 8MB card → **8.125MB** (banks `$00`–`$81`)
-- **ROM03** (256KB ROM file): 1MB motherboard + default 8MB card → **9MB** (banks `$00`–`$8F`)
+- **ROM01** (128KB ROM file): 128KB motherboard + default 8MB card
+- **ROM03** (256KB ROM file): 1MB motherboard + default 8MB card
 
-The expansion argument is card size, not total system RAM. Total is clamped to `$DF0000`.
-Mega II banks `$E0`/`$E1` are separate and not included. A flat 8MB map (banks `$00`–`$7F` only)
-is wrong for real ROM01+8MB / ROM03+8MB machines and leaves `$80+` floating.
+The FPI only decodes **23 address bits** for RAM, so both are hard-capped at **8MB**
+(banks `$00`–`$7F`). Excess card banks above that window are inaccessible
+(ROM01: 128KB; ROM03: 1MB with an 8MB card).
+
+The expansion argument is card size, not total system RAM.
+Mega II banks `$E0`/`$E1` are separate and not included.
 
 ## Shadow Register - $C035
 
@@ -86,6 +89,8 @@ Text Page 1 is $0400 - $07FF.
 
 ### 6: Power-on status
 
+On a ROM03, 
+
 ### 5: reserved - do not modify
 
 ### 4: Shadowing enable for ALL FAST RAM banks
@@ -121,6 +126,15 @@ When 1, memory address bus is tri-stated during PHI1 except for refresh. Also ch
 
 When 0, memory map is same as normal Apple II.
 When 1, memory map is linear and starts at $2000 and ends at $9FFF in Aux memory.
+
+Bit 7 (SHR enabled) also forces the linear map, independent of bit 6 — the
+effective condition is `(C029 & $C0) != 0` (and the bank latch, bit 0, must be
+on). GS/OS relies on this: it prepares its boot screen with C029=$41 (linear
+map, SHR display off), then switches to C029=$81 to turn the display on, and
+keeps drawing — with bit 6 now clear. Gating linearization on bit 6 alone makes
+everything drawn after that point (the INIT/driver icon row along the bottom)
+land unlinearized, which the VGC then de-interleaves into scattered garbage.
+Bit 6 exists so you can get the linear map *without* enabling the SHR display.
 
 When linearization is enabled, e1/2000..9fff is remapped per below, to allow the SHR stuff to read two bytes of SHR data per cycle.
 

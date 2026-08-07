@@ -3,6 +3,7 @@
 #include "mmu.hpp"
 #include "mmu_iie.hpp"
 #include "iigs_shadow_flags.hpp"
+#include "iigs_aux_linear.hpp"
 #include "debug.hpp"
 #include "NClock.hpp"
 #include "devices/languagecard/LanguageCardLogic.hpp"
@@ -96,6 +97,7 @@ class MMU_IIgs : public MMU {
         inline bool shadow_is_enabled(uint32_t address) {
             uint32_t address_16 = address & 0xFFFF;
             uint32_t address_17 = address & 0x1FFFF;
+            const bool odd_bank = (address & 0x10000) != 0;
             
             if ((address_16 >= 0x0400 && address_16 <= 0x07FF) && !(reg_shadow & SHADOW_INH_TEXT1)) {
                 return true;
@@ -103,11 +105,15 @@ class MMU_IIgs : public MMU {
             if (is_rom03 && ((address_16 >= 0x0800 && address_16 <= 0x0BFF) && !(reg_shadow & SHADOW_INH_TEXT2))) {
                 return true;
             }
-            if ((address_16 >= 0x2000 && address_16 <= 0x3FFF) && !(reg_shadow & SHADOW_INH_HGR1)) {
-                return true;
-            }
-            if ((address_16 >= 0x4000 && address_16 <= 0x5FFF) && !(reg_shadow & SHADOW_INH_HGR2)) {
-                return true;
+            // HGR1/HGR2: even banks only. Odd-bank $2000-$5FFF is gated by AUXHGR|SHR
+            // (inhibit only when both are set; see SHADOW.s inhbt1).
+            if (!odd_bank) {
+                if ((address_16 >= 0x2000 && address_16 <= 0x3FFF) && !(reg_shadow & SHADOW_INH_HGR1)) {
+                    return true;
+                }
+                if ((address_16 >= 0x4000 && address_16 <= 0x5FFF) && !(reg_shadow & SHADOW_INH_HGR2)) {
+                    return true;
+                }
             }
             if ((address_17 >= 0x12000 && address_17 <= 0x19FFF) && !(reg_shadow & SHADOW_INH_SHR)) {
                 return true;
@@ -129,9 +135,13 @@ class MMU_IIgs : public MMU {
         } */
 
         inline void megaiiWrite(uint32_t address, uint8_t value) { 
-            if ((address & 0x1'0000) && g_bank_latch)
-                megaii->get_memory_base()[address & 0x1'FFFF] = value; 
-            else {
+            if ((address & 0x1'0000) && g_bank_latch) {
+                uint32_t idx = address & 0x1'FFFF;
+                if (is_aux_linear()) {
+                    idx = 0x1'0000 | iigs_aux_linear_to_phys((uint16_t)idx);
+                }
+                megaii->get_memory_base()[idx] = value;
+            } else {
                 megaii->write(address & 0xFFFF, value);
             }
             set_next_cycle_type(CYCLE_TYPE_SYNC);
@@ -141,6 +151,10 @@ class MMU_IIgs : public MMU {
 
         inline bool is_iolc_shadowed() { return !(reg_shadow & SHADOW_INH_IOLC); }
         inline bool is_bank_latch() { return g_bank_latch; }
+        /* Enabling SHR ($C029 bit 7) linearizes aux $2000-$9FFF too, not just the
+           explicit linearize bit 6. GS/OS draws its boot screen with $41 (linear,
+           display off) then switches to $81, and expects the mapping to persist. */
+        inline bool is_aux_linear() { return g_aux_linear || g_shr_enabled; }
 
         inline void set_shadow_register(uint8_t value) { if (DEBUG(DEBUG_MMUGS)) printf("setting shadow register: %02X\n", value); reg_shadow = value; }
         inline void set_speed_register(uint8_t value) { 

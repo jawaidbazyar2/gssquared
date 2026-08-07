@@ -37,8 +37,12 @@ inline uint8_t bank_e1_read(void *context, uint32_t address) {
         return mmu_iigs->megaii->read(address & 0xFFFF);
     } else 
     {
+        uint32_t idx = address & 0x1FFFF;
+        if (mmu_iigs->is_aux_linear()) {
+            idx = 0x10000 | iigs_aux_linear_to_phys((uint16_t)idx);
+        }
         uint8_t *ram = mmu_iigs->megaii->get_memory_base();
-        return ram[address & 0x1FFFF];   
+        return ram[idx];
     }
 }
 
@@ -52,8 +56,12 @@ inline void bank_e1_write(void *context, uint32_t address, uint8_t value) {
         mmu_iigs->megaii->write(address & 0xFFFF, value);
     } else 
     {
+        uint32_t idx = address & 0x1FFFF;
+        if (mmu_iigs->is_aux_linear()) {
+            idx = 0x10000 | iigs_aux_linear_to_phys((uint16_t)idx);
+        }
         uint8_t *ram = mmu_iigs->megaii->get_memory_base();
-        ram[address & 0x1FFFF] = value;   
+        ram[idx] = value;
     }
 }
 
@@ -558,6 +566,10 @@ uint8_t bank_shadow_read(void *context, uint32_t address) {
 
     address += mmu_iigs->calc_aux_read(address);    // handle RAMRD, 80STORE, ALTZP, PAGE2, HIRES (cuz we can have this AND LC at same time)
     if (DEBUG(DEBUG_MMUGS)) printf("Read: Effective address: %06X\n", address);
+    // Unpopulated banks (SPEED_SHADOW_ALL past ram_banks): float = bank number.
+    if (address >= mmu_iigs->get_memory_size()) {
+        return (uint8_t)(address >> 16);
+    }
     return mmu_iigs->get_memory_base()[address];
 }
 
@@ -595,7 +607,10 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
         mmu_iigs->megaiiWrite(address & 0x1'FFFF, value); // this will cover case of writing to bank 01 -> shadow to E1
     }
     if (DEBUG(DEBUG_MMUGS)) printf("Write: Effective address: %06X\n", address);
-    // goes to RAM
+    // Unpopulated banks: Mega II shadow already applied; discard RAM store.
+    if (address >= mmu_iigs->get_memory_size()) {
+        return;
+    }
     mmu_iigs->get_memory_base()[address] = value;
 }
 
@@ -650,19 +665,50 @@ void MMU_IIgs::init_c0xx_handlers() {
 }
 
 void MMU_IIgs::set_ram_shadow_banks() {
-    uint32_t max_shadow_bank = (reg_speed & SPEED_SHADOW_ALL) ? ram_banks : 0x02;
-    if (DEBUG(DEBUG_MMUGS)) printf("setting ram shadow banks: 0x00 - 0x%02X\n", max_shadow_bank - 1);
+    const bool all_banks = (reg_speed & SPEED_SHADOW_ALL) != 0;
+    uint32_t max_shadow_bank = all_banks ? ram_banks : 0x02;
+    if (DEBUG(DEBUG_MMUGS)) printf("setting ram shadow banks: 0x00 - 0x%02X (all=%d)\n", max_shadow_bank - 1, all_banks);
 
-    for (int i = 0x00; i < max_shadow_bank; i++) {
+    for (int i = 0x00; i < (int)max_shadow_bank; i++) {
         map_page_both(i, nullptr, "MAIN_RAM");
         set_page_read_h(i, {bank_shadow_read, this}, "SHADRD");
         set_page_write_h(i, {bank_shadow_write, this}, "SHADWR");       
     }
-    for (int i = max_shadow_bank; i < ram_banks; i++) {
+    for (int i = max_shadow_bank; i < (int)ram_banks; i++) {
         map_page_both(i, main_ram + i * BANK_SIZE, "MAIN_RAM");
         set_page_read_h(i, {nullptr, nullptr}, "MAIN_RAM");
         set_page_write_h(i, {nullptr, nullptr}, "MAIN_RAM");
     }
+
+    // SPEED_SHADOW_ALL shadows through $EF (not only installed RAM). Skip $E0/$E1 (Mega II).
+    auto map_float_shadow = [this](int bank) {
+        map_page_both(bank, nullptr, "Float");
+        set_page_read_h(bank, {bank_shadow_read, this}, "SHADRD");
+        set_page_write_h(bank, {bank_shadow_write, this}, "SHADWR");
+    };
+    auto map_float_plain = [this](int bank) {
+        map_page_both(bank, nullptr, "Float");
+        set_page_read_h(bank, float_read_handler, "Float");
+        set_page_write_h(bank, {nullptr, nullptr}, "Float");
+    };
+
+    if (all_banks) {
+        for (int i = (int)ram_banks; i <= 0xDF; i++) {
+            map_float_shadow(i);
+        }
+        for (int i = 0xE2; i <= 0xEF; i++) {
+            map_float_shadow(i);
+        }
+    } else {
+        // Restore unpopulated banks to float (same as init_map for $80-$DF / $E2+).
+        for (int i = (int)ram_banks; i <= 0xDF; i++) {
+            map_float_plain(i);
+        }
+        for (int i = 0xE2; i <= 0xEF; i++) {
+            map_float_plain(i);
+        }
+    }
+
     if (DEBUG(DEBUG_MMUGS)) {
         dump_page_table(0x00, 0x03);
         dump_page_table(0xE0, 0xE1);

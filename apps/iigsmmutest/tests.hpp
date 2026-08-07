@@ -489,6 +489,197 @@ inline const std::vector<Test> ALL_TESTS = {
             AssertOp{0xE1'C200, {0xE2, 0x40}},
         }
     },
+
+    // AUXHGR|SHR: odd-bank HGR shadows unless BOTH inhibits are set (SHADOW.s inhbt1=$18).
+    Test{
+        28,
+        "odd HGR1 shadows with SHR inhibit only (AUXHGR still enables)",
+        {
+            WriteOp{0xE1'2000, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+            WriteOp{0x01'2000, {0x56, 0x78}},
+            AssertOp{0xE1'2000, {0x56, 0x78}},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+        }
+    },
+    Test{
+        29,
+        "odd HGR1 shadows with AUXHGR inhibit only (SHR still enables)",
+        {
+            WriteOp{0xE1'2000, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, SHADOW_INH_AUXHGR},
+            WriteOp{0x01'2000, {0x56, 0x78}},
+            AssertOp{0xE1'2000, {0x56, 0x78}},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+        }
+    },
+    Test{
+        30,
+        "odd HGR1 inhibited when AUXHGR+SHR both set",
+        {
+            WriteOp{0xE1'2000, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR | SHADOW_INH_AUXHGR},
+            WriteOp{0x01'2000, {0x56, 0x78}},
+            AssertOp{0xE1'2000, {0x00, 0x00}},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+        }
+    },
+    Test{
+        31,
+        "even HGR1 still shadows when AUXHGR+SHR both set",
+        {
+            WriteOp{0xE0'2000, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR | SHADOW_INH_AUXHGR},
+            WriteOp{0x00'2000, {0x56, 0x78}},
+            AssertOp{0xE0'2000, {0x56, 0x78}},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+        }
+    },
+    Test{
+        32,
+        "odd HGR2 inhibited when AUXHGR+SHR both set",
+        {
+            WriteOp{0xE1'4000, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR | SHADOW_INH_AUXHGR},
+            WriteOp{0x01'4000, {0x56, 0x78}},
+            AssertOp{0xE1'4000, {0x00, 0x00}},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+        }
+    },
+
+    // SPEED_SHADOW_ALL shadows through $EF, including unpopulated banks past RAM.
+    Test{
+        33,
+        "all-banks shadow from unpopulated bank $82 text page to E0",
+        {
+            WriteOp{0xE0'0400, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+            WriteOp{0xE0'C036, 0x94},
+            WriteOp{0x82'0400, {0x12, 0x34}},
+            WriteOp{0xE0'C036, 0x84},
+            AssertOp{0xE0'0400, {0x12, 0x34}},
+            AssertOp{0x82'0000, 0x82},
+        }
+    },
+    Test{
+        34,
+        "all-banks shadow from unpopulated bank $EE text page to E0",
+        {
+            WriteOp{0xE0'0400, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+            WriteOp{0xE0'C036, 0x94},
+            WriteOp{0xEE'0400, {0x56, 0x78}},
+            AssertOp{0xE0'0400, {0x56, 0x78}},
+            AssertOp{0xEE'0000, 0xEE},
+            WriteOp{0xE0'C036, 0x84},
+            WriteOp{0xEE'0400, {0x9A, 0xBC}},
+            AssertOp{0xE0'0400, {0x56, 0x78}},
+        }
+    },
+
+    // C029 aux linearization (bit 6): E1 $2000-$9FFF interleaved when latch on.
+    // Matches SHADOW.s linexp for C029=$41 / $00 / $40.
+    Test{
+        35,
+        "C029=$41 linear: read E1/2001 sees physical E1/6000",
+        {
+            WriteOp{0xE0'C029, 0x01}, // latch on, linear off — plant physical markers
+            WriteOp{0xE1'2000, 0x20},
+            WriteOp{0xE1'2001, 0x21},
+            WriteOp{0xE1'6000, 0x60},
+            WriteOp{0xE0'C029, 0x41}, // latch on, linear on
+            AssertOp{0xE1'2000, 0x20}, // still physical 2000
+            AssertOp{0xE1'2001, 0x60}, // remapped to physical 6000
+            WriteOp{0xE0'C029, 0x01},
+        }
+    },
+    Test{
+        36,
+        "C029=$41 linear: write 01/2001 shadows to physical E1/6000",
+        {
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, 0x00}, // allow all video shadow
+            WriteOp{0xE1'2001, 0x21},
+            WriteOp{0xE1'6000, 0x60},
+            WriteOp{0xE0'C029, 0x41},
+            WriteOp{0x01'2001, 0x41}, // linear 2001 → phys 6000 via shadow
+            WriteOp{0xE0'C029, 0x01}, // linear off to inspect physical
+            AssertOp{0xE1'6000, 0x41},
+            AssertOp{0xE1'2001, 0x21}, // untouched
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+        }
+    },
+    Test{
+        37,
+        "C029=$40 linear+latch-off: no remap (same as latch-off)",
+        {
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'2000, 0x10},
+            WriteOp{0xE0'2001, 0x11},
+            WriteOp{0xE1'2000, 0x20},
+            WriteOp{0xE1'2001, 0x21},
+            WriteOp{0xE0'C029, 0x40}, // linear on but latch off → E1 reads as E0
+            AssertOp{0xE1'2000, 0x10},
+            AssertOp{0xE1'2001, 0x11},
+            WriteOp{0xE0'C029, 0x01},
+        }
+    },
+
+    // Enabling SHR (bit 7) linearizes as well, even with bit 6 clear. GS/OS runs
+    // its desktop at $81 and expects aux $2000-$9FFF to stay linearized.
+    Test{
+        38,
+        "C029=$81 (SHR on, bit 6 clear): read E1/2001 sees physical E1/6000",
+        {
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE1'2000, 0x20},
+            WriteOp{0xE1'2001, 0x21},
+            WriteOp{0xE1'6000, 0x60},
+            WriteOp{0xE0'C029, 0x81},
+            AssertOp{0xE1'2000, 0x20},
+            AssertOp{0xE1'2001, 0x60},
+            WriteOp{0xE0'C029, 0x01},
+        }
+    },
+    Test{
+        39,
+        "C029=$81: write 01/2001 shadows to physical E1/6000",
+        {
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, 0x00}, // allow all video shadow
+            WriteOp{0xE1'2001, 0x21},
+            WriteOp{0xE1'6000, 0x60},
+            WriteOp{0xE0'C029, 0x81},
+            WriteOp{0x01'2001, 0x41},
+            WriteOp{0xE0'C029, 0x01}, // linear off to inspect physical
+            AssertOp{0xE1'6000, 0x41},
+            AssertOp{0xE1'2001, 0x21}, // untouched
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+        }
+    },
+    Test{
+        40,
+        "C029=$80 (SHR on, latch off): no remap, E1 reads as E0",
+        {
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'2000, 0x10},
+            WriteOp{0xE0'2001, 0x11},
+            WriteOp{0xE1'2000, 0x20},
+            WriteOp{0xE1'2001, 0x21},
+            WriteOp{0xE0'C029, 0x80},
+            AssertOp{0xE1'2000, 0x10},
+            AssertOp{0xE1'2001, 0x11},
+            WriteOp{0xE0'C029, 0x01},
+        }
+    },
+
     // Test: when IOLC not inhibited, interrupt vector pull reads from ROM.
     // Test: when IOLC inhibited, interrupt vector pull reads from RAM.
     // Test: when LC RAM READ enabled, bit 3 in State tracks.
@@ -502,8 +693,9 @@ inline const std::vector<Test> ALL_TESTS = {
         0x99,
         "floating bus behavior: ram bank higher than real RAM data reads as the bank number",
         {
-            AssertOp{0x81'0000, 0x81},
-            AssertOp{0x82'0000, 0x82},
+            // FPI 23-bit RAM decode: last bank is $7F; first unpopulated is $80.
+            AssertOp{0x80'0000, 0x80},
+            AssertOp{0xEE'0000, 0xEE},
         }
     },
 
