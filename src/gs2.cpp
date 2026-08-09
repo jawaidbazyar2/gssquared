@@ -948,7 +948,7 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
         computer->video_system->set_display_engine(DM_ENGINE_RGB);
 
         computer->register_reset_handler([state](bool cold_start) {
-            state->mmu_iigs->reset();
+            state->mmu_iigs->reset(cold_start);
             return true;
         });
     }

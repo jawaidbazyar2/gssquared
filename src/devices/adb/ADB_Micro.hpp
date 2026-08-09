@@ -98,7 +98,32 @@ class KeyGloo
         bool step_outstanding = false;
         int stale_frames = 0;
 
-        uint8_t rom[3072];
+        uint8_t rom[4096];
+        uint32_t uc_rom_bytes = 3072;
+        bool uc_rom03 = false;
+
+        uint16_t uc_rom_base() const { return uc_rom03 ? 0x1000u : 0x1400u; }
+
+        uint8_t read_uc_memory(uint16_t addr) const {
+            if (addr < 96) {
+                return ram[addr];
+            }
+            const uint16_t rom_base = uc_rom_base();
+            if (addr >= rom_base && addr <= 0x1FFF) {
+                const uint32_t idx = addr - rom_base;
+                if (idx < uc_rom_bytes) {
+                    return rom[idx];
+                }
+            }
+            // $0060-$00DF (4-bit ports), $00E0-$00FF (P0-P3, timers, IRQ), etc.
+            return 0;
+        }
+
+        void write_uc_memory(uint16_t addr, uint8_t value) {
+            if (addr < 96) {
+                ram[addr] = value;
+            }
+        }
 
         union {
             uint8_t ram[96];
@@ -181,8 +206,10 @@ class KeyGloo
         int keysdown = 0;
 
     public:
-        KeyGloo(ResetController *reset_control) : reset_control(reset_control) {
-            const char *rom_filename = (true /* is rom 01 */) ? "roms/cards/keyglu/rom01-adb-341s0345.bin" : "roms/cards/keyglu/rom03-adb-341s0632-2.bin";
+        KeyGloo(ResetController *reset_control, bool is_rom03 = false) : reset_control(reset_control), uc_rom03(is_rom03) {
+            const char *rom_filename = is_rom03
+                ? "roms/cards/keyglu/rom03-adb-341s0632-2.bin"
+                : "roms/cards/keyglu/rom01-adb-341s0345.bin";
 
             ResourceFile *rom = new ResourceFile(rom_filename, READ_ONLY);
             if (rom == nullptr) {
@@ -191,7 +218,13 @@ class KeyGloo
             }
             rom->load();
             uint8_t *rom_data = (uint8_t *)(rom->get_data());
-            memcpy(this->rom, rom_data, 3072);
+            uc_rom_bytes = (uint32_t)rom->size();
+            if (uc_rom_bytes > sizeof(this->rom)) {
+                fprintf(stderr, "KeyGloo ROM too large (%u bytes, max %zu)\n",
+                    uc_rom_bytes, sizeof(this->rom));
+                uc_rom_bytes = (uint32_t)sizeof(this->rom);
+            }
+            memcpy(this->rom, rom_data, uc_rom_bytes);
             delete rom;
 
             // "power on" the RAM here should be all 0's.
@@ -487,16 +520,12 @@ class KeyGloo
                         configuration_bytes[2] = cmd[4];
                         set_vals_from_configuration();
                     } else if (value == 0x08) { // WRITE uC MEMORY
-                        // write 1 byte to uC memory
-                        ram[cmd[1]] = cmd[2];
+                        // write 1 byte to uC RAM (address is one byte)
+                        write_uc_memory(cmd[1], cmd[2]);
                     } else if (value == 0x09) { // READ uC MEMORY
                         // read 1 byte from uC memory
                         uint16_t addr = cmd[1] | (cmd[2] << 8);
-                        if (addr < 96) {
-                            response[0] = ram[addr];
-                        } else {
-                            response[0] = rom[addr - 0x1400];
-                        }
+                        response[0] = read_uc_memory(addr);
                         response_bytes = 1;
                     } else if (value == 0x0A) { // READ MODES BYTE
                         response[0] = modes_byte;

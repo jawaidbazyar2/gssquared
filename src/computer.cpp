@@ -339,7 +339,7 @@ void computer_t::reset(bool cold_start) {
         mmu->write(0x3f4, 0x00);
     }
 
-    mmu->reset(); // this first, so when CPU fetches PC from RESET it will be based on main memory/rom.
+    mmu->reset(cold_start); // this first, so when CPU fetches PC from RESET it will be based on main memory/rom.
     cpu->reset();
     
     for (auto& handler : reset_handlers) {

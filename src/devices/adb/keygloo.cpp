@@ -6,7 +6,6 @@
 #include "devices/adb/ADB_Micro.hpp"
 #include "util/DebugHandlerIDs.hpp"
 
-
 void keygloo_update_interrupt_status(keygloo_state_t *kb_state, KeyGloo *kg ) {
     // TODO: check if mouse interrupt is enabled, and if so, assert it.
     if (kg->interrupt_status()) {
@@ -106,7 +105,9 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
     kb_state->mmu = computer->mmu;
     kb_state->reset_control = computer->reset_control;
 
-    KeyGloo *kg = new KeyGloo(kb_state->reset_control);
+    bool rom03 = computer->platform->id == PLATFORM_APPLE_IIGS_ROM3;
+
+    KeyGloo *kg = new KeyGloo(kb_state->reset_control, rom03);
     kb_state->kg = kg;
     kg->set_host_context(kb_state);
 
