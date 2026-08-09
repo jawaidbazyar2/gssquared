@@ -288,7 +288,7 @@ class MMU {
             printf("\n");
         }
 
-        virtual void reset() {
+        virtual void reset(bool cold_start = false) {
             // do nothing.
         }
 

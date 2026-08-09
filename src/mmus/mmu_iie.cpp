@@ -70,8 +70,8 @@ void MMU_IIe::compose_c1cf() {
  * main board RAM and ROM are enabled; if there is an 80 column card in the aux slot, expansion slot 3 is allocated 
  * to the built-in 80 column firmware. auxiliary ram is disabled and the BSR is set up to read ROM and write RAM, bank 2. (hardware)
 */
-void MMU_IIe::reset() {
-    MMU_II::reset();
+void MMU_IIe::reset(bool cold_start) {
+    MMU_II::reset(cold_start);
     f_intcxrom = false;
     f_slotc3rom = false;
     compose_c1cf();
@@ -231,7 +231,8 @@ void MMU_IIe::set_slot_rom(SlotType_t slot, uint8_t *rom, const char *name) {
     map_page_read_only(0xC0 + slot, rom, name);
 }
 
-void MMU_IIe::reset() {
+void MMU_IIe::reset(bool cold_start) {
+    (void)cold_start;
     set_default_C8xx_map();
 }
 

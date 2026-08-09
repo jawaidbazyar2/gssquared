@@ -78,7 +78,8 @@ class MMU_IIgs : public MMU {
             is_rom03 = rom_banks >= 4;
             main_rom = rom;
             map_initialized = false;
-            reset();
+            reset(true); // power-on: ROM03 CYAREG bit 6 set when cold_start
+
         };
         virtual ~MMU_IIgs() { delete[] main_ram; /* main_rom is owned by caller */ }
 
@@ -222,8 +223,10 @@ class MMU_IIgs : public MMU {
         inline uint32_t rom_bank_ff_offset() const { return (rom_banks - 1) * BANK_SIZE; }
         uint8_t *get_memory_base() override { return main_ram; }
         uint32_t get_memory_size() override { return ram_banks * BANK_SIZE; }
+        inline bool is_rom03_machine() const { return is_rom03; }
+
         virtual void init_map();
-        virtual void reset() override;
+        virtual void reset(bool cold_start = false) override;
         void debug_dump(DebugFormatter *df);
 
         inline void set_clock(NClockII *clock) { this->clock = clock; }

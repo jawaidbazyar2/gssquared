@@ -753,7 +753,7 @@ void MMU_IIgs::init_map() {
     map_initialized = true;
 }
 
-void MMU_IIgs::reset() {
+void MMU_IIgs::reset(bool cold_start) {
     //reg_new_video = 0x01; reg_shadow = 0x08; reg_state = 0; g_80store = false; g_hires = false; g_rdrom = true; 
 
     reg_new_video = 0x01;
@@ -764,7 +764,7 @@ void MMU_IIgs::reset() {
 
     // on RESET, set:
     set_slot_register(0x00);
-    set_speed_register(0x80); // so this can set nclock correctly.
+    set_speed_register(cold_start && is_rom03 ? 0xC0u : 0x80u); // bit 7 slow; ROM03 bit 6 = power-on on cold start
     reg_shadow = 0x08;
     set_state_register(0x0C); // KEGS does 0x0D - enable ROM RD, 
     set_intcxrom(g_intcxrom); // this is needed to set the C1-CF map correctly.

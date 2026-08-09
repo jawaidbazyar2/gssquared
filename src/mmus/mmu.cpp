@@ -241,7 +241,8 @@ void MMU::dump_page(page_t page) {
     printf("\n");
 }
 
-void MMU::reset() {
+void MMU::reset(bool cold_start) {
+    (void)cold_start;
     // do nothing.
 }
 

@@ -305,7 +305,8 @@ uint8_t *MMU_II::get_rom_base() {
     return main_rom_D0;
 }
 
-void MMU_II::reset() {
+void MMU_II::reset(bool cold_start) {
+    (void)cold_start;
     set_default_C8xx_map(); // TODO: verify if RESET resets the C8xx map.
     init_map();
 }
