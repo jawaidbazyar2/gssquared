@@ -254,11 +254,19 @@ for the lookup table approach to the new DisplayNG code.
 
 ## William Simms
 
-for cycle-accurate video!
+for cycle-accurate video framework.
 
 ## Kelvin Sherlock
 
 Kelvin wrote the Host FST and associated support code for the GSPlus emulator. GPL 2.0.
+
+https://github.com/digarok/gsplus
+
+## Oliver Schmidt
+
+The Apple Mouse II support is derived from work by Oliver Schmidt
+
+https://github.com/oliverschmidt/a2pico
 
 ## Wyatt Wong
 
