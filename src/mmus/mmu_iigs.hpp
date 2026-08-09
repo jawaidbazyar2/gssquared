@@ -15,6 +15,11 @@ class MMU_IIgs : public MMU {
         uint32_t rom_banks;
         uint8_t *main_rom = nullptr;
         constexpr static uint32_t BANK_SIZE = 65536;
+        /* The FPI decodes banks $F0-$FF as ROM space and runs those cycles at full
+           speed with no RAM-refresh stretch, whether or not a ROM answers. Motherboard
+           ROM sits at the top of the window (ROM01: $FE-$FF, ROM03: $FC-$FF); the rest
+           is where expansion-card ROM lands. */
+        constexpr static uint32_t ROM_SPACE_BASE = 0xF00000;
 
         uint8_t reg_slot = 0;
         uint8_t reg_shadow = 0;
@@ -84,13 +89,13 @@ class MMU_IIgs : public MMU {
         virtual ~MMU_IIgs() { delete[] main_ram; /* main_rom is owned by caller */ }
 
         virtual uint8_t read(uint32_t address) override {
-            if (address >= 0xFC0000) set_next_cycle_type(CYCLE_TYPE_FAST_ROM); // rom access is fast.
+            if (address >= ROM_SPACE_BASE) set_next_cycle_type(CYCLE_TYPE_FAST_ROM); // rom access is fast.
 
             return MMU::read(address);
         }
 
         virtual void write(uint32_t address, uint8_t value) override {
-            if (address >= 0xFC0000) set_next_cycle_type(CYCLE_TYPE_FAST_ROM); // rom access is fast.
+            if (address >= ROM_SPACE_BASE) set_next_cycle_type(CYCLE_TYPE_FAST_ROM); // rom access is fast.
 
             MMU::write(address, value);
         }
