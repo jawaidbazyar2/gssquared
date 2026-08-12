@@ -82,6 +82,10 @@ void MenuInterface::toggleDisconnectedWhenNoGamepad() {
 	SystemSettings::instance().toggle_disconnected_when_no_gamepad();
 }
 
+void MenuInterface::toggleSsTextMode() {
+	SystemSettings::instance().toggle_ss_text_mode();
+}
+
 int MenuInterface::getCurrentSpeed() {
 	if (!computer_ || !computer_->clock) return -1;
 	return (int)computer_->clock->get_clock_mode();
@@ -134,12 +138,20 @@ bool MenuInterface::getDisconnectedWhenNoGamepad() {
 	return SystemSettings::instance().disconnected_when_no_gamepad();
 }
 
+bool MenuInterface::getSsTextMode() {
+	return SystemSettings::instance().ss_text_mode();
+}
+
 bool MenuInterface::isEmulationRunning() {
 	return computer_ != nullptr;
 }
 
 bool MenuInterface::hasBazFast() {
 	return computer_ && computer_->has_bazfast();
+}
+
+bool MenuInterface::hasSecondSight() {
+	return computer_ && computer_->has_second_sight();
 }
 
 bool MenuInterface::getMountDrivers() {

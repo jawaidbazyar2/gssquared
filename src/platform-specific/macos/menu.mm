@@ -126,6 +126,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)toggleCrtShader:(id)sender;
 - (void)toggleHudStats:(id)sender;
 - (void)toggleHudDrives:(id)sender;
+- (void)toggleSsTextMode:(id)sender;
 - (void)editCopyScreen:(id)sender;
 - (void)editPasteText:(id)sender;
 - (void)diskToggleDrive:(id)sender;
@@ -183,6 +184,10 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	if (menuItem.action == @selector(toggleHudDrives:)) {
 		[menuItem setState:getMenuInterface()->getHudDrives() ? NSControlStateValueOn : NSControlStateValueOff];
 	}
+	if (menuItem.action == @selector(toggleSsTextMode:)) {
+		[menuItem setState:getMenuInterface()->getSsTextMode() ? NSControlStateValueOn : NSControlStateValueOff];
+		return getMenuInterface()->isEmulationRunning() && getMenuInterface()->hasSecondSight();
+	}
 	if (menuItem.action == @selector(toggleCrtShader:)) {
 		[menuItem setState:getMenuInterface()->getCrtShader() ? NSControlStateValueOn : NSControlStateValueOff];
 		return getMenuInterface()->isEmulationRunning() && getMenuInterface()->getCrtShaderAvailable();
@@ -236,6 +241,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)toggleCrtShader:(id)sender   { getMenuInterface()->toggleCrtShader(); (void)sender; }
 - (void)toggleHudStats:(id)sender    { getMenuInterface()->toggleHudStats(); (void)sender; }
 - (void)toggleHudDrives:(id)sender   { getMenuInterface()->toggleHudDrives(); (void)sender; }
+- (void)toggleSsTextMode:(id)sender  { getMenuInterface()->toggleSsTextMode(); (void)sender; }
 - (void)editCopyScreen:(id)sender    { getMenuInterface()->editCopyScreen(); (void)sender; }
 - (void)editPasteText:(id)sender     { getMenuInterface()->editPasteText(); (void)sender; }
 
@@ -707,6 +713,13 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[fullScreenItem setTarget:sMenuHandler];
 	[displayMenu addItem:fullScreenItem];
+
+	NSMenuItem *ssTextItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Second Sight Text", nil)
+		       action:@selector(toggleSsTextMode:)
+		keyEquivalent:@""] autorelease];
+	[ssTextItem setTarget:sMenuHandler];
+	[displayMenu addItem:ssTextItem];
 
 	NSMenuItem *crtShaderItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"CRT Shader", nil)

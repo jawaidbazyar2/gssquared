@@ -91,6 +91,7 @@ bool SystemSettings::load() {
     hud_stats_ = false;
     hud_drives_ = true;
     disconnected_when_no_gamepad_ = false;
+    ss_text_mode_ = false;
     last_config_path_.clear();
     last_disk_path_.clear();
     host_fst_dir_.clear();
@@ -134,6 +135,9 @@ bool SystemSettings::load() {
         if (const auto* gc = table["game_controller"].as_table()) {
             disconnected_when_no_gamepad_ =
                 (*gc)["disconnected_when_no_gamepad"].value_or(false);
+        }
+        if (const auto* display = table["display"].as_table()) {
+            ss_text_mode_ = (*display)["ss_text_mode"].value_or(false);
         }
         if (const auto* fd = table["file_dialogs"].as_table()) {
             if (const auto p = (*fd)["last_config_path"].value<std::string>()) {
@@ -180,6 +184,10 @@ bool SystemSettings::save() const {
     toml::table game_controller;
     game_controller.insert("disconnected_when_no_gamepad", disconnected_when_no_gamepad_);
     table.insert("game_controller", std::move(game_controller));
+
+    toml::table display;
+    display.insert("ss_text_mode", ss_text_mode_);
+    table.insert("display", std::move(display));
 
     toml::table file_dialogs;
     file_dialogs.insert("last_config_path", last_config_path_);
@@ -241,6 +249,19 @@ void SystemSettings::toggle_hud_drives() {
 
 void SystemSettings::toggle_disconnected_when_no_gamepad() {
     disconnected_when_no_gamepad_ = !disconnected_when_no_gamepad_;
+    save();
+}
+
+void SystemSettings::set_ss_text_mode(bool enabled) {
+    if (ss_text_mode_ == enabled) {
+        return;
+    }
+    ss_text_mode_ = enabled;
+    save();
+}
+
+void SystemSettings::toggle_ss_text_mode() {
+    ss_text_mode_ = !ss_text_mode_;
     save();
 }
 

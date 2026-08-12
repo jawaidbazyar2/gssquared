@@ -430,6 +430,17 @@ bool computer_t::has_bazfast() {
     return false;
 }
 
+bool computer_t::has_second_sight() {
+    SystemConfig_t *config = get_system();
+    if (!config) return false;
+    for (int slot = 0; slot < NUM_SLOTS; ++slot) {
+        if (config->slot_devices[slot] == DEVICE_ID_SECOND_SIGHT) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool computer_t::is_drivers_mounted() {
     if (!drivers_mount_key.has_value() || !mounts) {
         return false;

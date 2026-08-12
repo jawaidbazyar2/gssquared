@@ -48,6 +48,7 @@ public:
 	void toggleHudStats();
 	void toggleHudDrives();
 	void toggleDisconnectedWhenNoGamepad();
+	void toggleSsTextMode();
 	void displayFullScreen();
 	void editCopyScreen();
 	void editPasteText();
@@ -69,10 +70,12 @@ public:
 	bool getHudStats();
 	bool getHudDrives();
 	bool getDisconnectedWhenNoGamepad();
+	bool getSsTextMode();
 	bool isEmulationRunning();
 	bool isPaused();
 	bool isMouseCaptured();
 	bool hasBazFast();
+	bool hasSecondSight();
 	bool getMountDrivers();
 	int  getCurrentControllerMode();
 	std::vector<MenuDriveInfo> getDriveList();

@@ -12,8 +12,11 @@
 #include "vga_render_text_9x16_present.hpp"
 #include "vga_mode_tables.hpp"
 #include "ppu_render.hpp"
-#include "paths.hpp"
 #include "mmus/mmu_ii.hpp"
+#include "ss_a2_text_sync.hpp"
+#include "util/SystemSettings.hpp"
+#include "display/display.hpp"
+#include "Module_ID.hpp"
 
 struct computer_t;
 
@@ -105,6 +108,7 @@ class SecondSight {
 
     video_system_t *vs;
     MMU_II *megaii;
+    computer_t *computer = nullptr;
     uint8_t *a2_ram = nullptr;
     NClock *clock;
     PPURender ppu;
@@ -177,6 +181,7 @@ class SecondSight {
             case 1:
             case 2:
             default:
+                vga_text_9x16_load_ss_rom_font();
                 break;
         }
     }
@@ -200,6 +205,45 @@ class SecondSight {
 
     inline bool is_text_mode() const {
         return current_vga_mode.graphics == TG_TEXT;
+    }
+
+    display_state_t *get_display_state() const {
+        return computer ? static_cast<display_state_t *>(computer->get_module_state(MODULE_DISPLAY))
+                        : nullptr;
+    }
+
+    /** Lazy VGA text setup for Apple II text overlay (mode 01h/03h; does not set vga_active). */
+    void ensure_a2_text_vga_setup(bool col80) {
+        const uint8_t want_mode = col80 ? 0x03 : 0x01;
+        const uint16_t want_cols = col80 ? 80 : 40;
+        if (is_text_mode() && vga_mode_num == want_mode && current_vga_mode.width == want_cols
+            && current_vga_mode.height == 25 && screen_base_addr == 0x010000) {
+            return;
+        }
+        if (col80) {
+            apply_rom_vga_mode(&SS_ROM_VGA_TEXT_80X25, 0x03);
+        } else {
+            apply_rom_vga_mode(&SS_ROM_VGA_TEXT_40X25, 0x01);
+        }
+        // Overlay path: do not claim host-driven VGA mode.
+        // apply_rom_vga_mode does not set vga_active; leave it unchanged.
+    }
+
+    void render_vga_text_frame(bool a2_overlay = false) {
+        const uint8_t *display_base = frame_buffer + screen_base_addr;
+        const int cols = (current_vga_mode.width > 0) ? (int)current_vga_mode.width : VGA_TEXT_COLS;
+        const int default_pitch = (cols <= 40) ? VGA_TEXT_FB_PITCH_40 : VGA_TEXT_FB_PITCH;
+        const int text_pitch = fb_pitch > 0 ? fb_pitch : default_pitch;
+        if (text_font_index != 3) {
+            vga_text_9x16_load_ss_rom_font();
+        }
+        if (!a2_overlay) {
+            vga_text_9x16_restore_ibm_palette();
+        }
+        if (tex_text) {
+            vga_render_text_9x16(vs, tex_text, display_base, text_pitch,
+                vga_text_vram_layout_t::Interleaved, cols);
+        }
     }
 
     // SetUserMode DMA payload (misc through ext_regs); excludes trailing padding.
@@ -226,10 +270,10 @@ class SecondSight {
         }
         vga_mode_num = mode_num;
 
-        if (mode_num == 0x03) {
+        if (mode_num == 0x03 || mode_num == 0x01) {
             crt_char_width = 9;
             fb_pitch = (uint16_t)vga_text_pitch_from_crtc_offset(crt_offset);
-            res_x = VGA_TEXT_SCREEN_W;
+            res_x = (mode_num == 0x01) ? VGA_TEXT_SCREEN_W_40 : VGA_TEXT_SCREEN_W;
             res_y = VGA_TEXT_SCREEN_H;
         } else {
             mode_info info;
@@ -238,9 +282,9 @@ class SecondSight {
             vga_mode_num = mode_num;
         }
         update_screen_base_addr();
-        // OTI extended regs not yet tracked; for mode 03h the text buffer
-        // always lives at VRAM offset 0x01'0000 (OTI reg 0x22 / ext_regs[12] = 0x08).
-        if (mode_num == 0x03) {
+        // OTI extended regs not yet tracked; text buffer lives at VRAM 0x01'0000
+        // (OTI reg 0x22 / ext_regs[12] = 0x08) for ROM text modes.
+        if (mode_num == 0x03 || mode_num == 0x01) {
             screen_base_addr = 0x010000;
         }
     }
@@ -430,7 +474,9 @@ class SecondSight {
     }
 
     public:
-        SecondSight(video_system_t *video_system, MMU_II *megaii, NClock *clock) : vs(video_system), megaii(megaii), clock(clock) {
+        SecondSight(video_system_t *video_system, MMU_II *megaii, NClock *clock,
+                    computer_t *computer = nullptr)
+            : vs(video_system), megaii(megaii), computer(computer), clock(clock) {
             a2_ram = megaii ? megaii->get_memory_base() : nullptr;
             frame_buffer = new uint8_t[SECOND_SIGHT_FB_SIZE];
             memset(frame_buffer, 0, SECOND_SIGHT_FB_SIZE);
@@ -799,6 +845,8 @@ class SecondSight {
                 } else {
                     if (cmd_buffer[1] == 0x03) {
                         apply_rom_vga_mode(&SS_ROM_VGA_TEXT_80X25, 0x03);
+                    } else if (cmd_buffer[1] == 0x01) {
+                        apply_rom_vga_mode(&SS_ROM_VGA_TEXT_40X25, 0x01);
                     } else {
                         for (int i = 0; i < sizeof(vga_modes) / sizeof(vga_mode_t); i++) {
                             if (vga_modes[i].mode == cmd_buffer[1]) {
@@ -1297,6 +1345,22 @@ class SecondSight {
 
 
         bool frame() {
+            const bool ss_text_enabled = SystemSettings::instance().ss_text_mode();
+            display_state_t *ds = get_display_state();
+            const bool a2_text = ss_text_enabled && ss_apple2_fullscreen_text(ds);
+
+            if (a2_text) {
+                if (!display_enabled) {
+                    return true;
+                }
+                ensure_a2_text_vga_setup(ds->f_80col);
+                const int text_pitch = fb_pitch > 0 ? fb_pitch
+                    : (ds->f_80col ? VGA_TEXT_FB_PITCH : VGA_TEXT_FB_PITCH_40);
+                ss_sync_a2_text_to_vga(a2_ram, frame_buffer + screen_base_addr, text_pitch, ds);
+                render_vga_text_frame(true);
+                return true;
+            }
+
             if (!vga_active) {
                 return false;
             }
@@ -1308,15 +1372,7 @@ class SecondSight {
             }
             const uint8_t *display_base = frame_buffer + screen_base_addr;
             if (is_text_mode()) {
-                const int text_pitch = fb_pitch > 0 ? fb_pitch : VGA_TEXT_FB_PITCH;
-                if (text_font_index != 3) {
-                    std::string font_path;
-                    Paths::calc_base(font_path, "img/IBM_VGA_8x16.png");
-                    vga_text_9x16_init(font_path.c_str());
-                }
-                if (tex_text) {
-                    vga_render_text_9x16(vs, tex_text, display_base, text_pitch);
-                }
+                render_vga_text_frame();
             } else if (current_vga_mode.color_depth == 8) {
                 vga_render_8bpp(vs, tex_24bpp, rgb24_buffer, palette_rgb, display_base, fb_pitch,
                     current_vga_mode.width, current_vga_mode.height);
@@ -1437,6 +1493,22 @@ class SecondSight {
             df->addLine("VGA Active: %d", vga_active);
             df->addLine("Display Mode: %s (%d)", ss_mode_label(ss_mode), (int)ss_mode);
             df->addLine("VGA Mode Num: %02X", vga_mode_num);
+            {
+                const bool setting = SystemSettings::instance().ss_text_mode();
+                display_state_t *ds = get_display_state();
+                const bool a2_text = setting && ss_apple2_fullscreen_text(ds);
+                df->addLine("SS Text setting: %d  A2 TEXT gate: %d", setting ? 1 : 0, a2_text ? 1 : 0);
+                if (ds) {
+                    const bool store80 = ds->video_scanner && ds->video_scanner->is_80store();
+                    const int page =
+                        (!store80 && ds->display_page_num == DISPLAY_PAGE_2) ? 2 : 1;
+                    df->addLine("A2 80col: %d  80store: %d  page: %d  flash: %d",
+                        ds->f_80col ? 1 : 0,
+                        store80 ? 1 : 0,
+                        page,
+                        ds->flash_state ? 1 : 0);
+                }
+            }
             if (text_font_index == 0xFF) {
                 df->addLine("TextFont: (not set)");
             } else {

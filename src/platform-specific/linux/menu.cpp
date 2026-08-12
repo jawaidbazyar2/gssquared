@@ -267,6 +267,15 @@ static void build_menu_bar()
         if (ImGui::MenuItem("Full Screen"))
             mi->displayFullScreen();
 
+        {
+            bool ss_on = mi->getSsTextMode();
+            bool has_ss = mi->hasSecondSight();
+            if (!has_ss) ImGui::BeginDisabled();
+            if (ImGui::MenuItem("Second Sight Text", nullptr, ss_on))
+                mi->toggleSsTextMode();
+            if (!has_ss) ImGui::EndDisabled();
+        }
+
         if (!running) ImGui::EndDisabled();
         ImGui::EndMenu();
     }

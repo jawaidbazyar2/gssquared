@@ -41,6 +41,8 @@ class SystemSettings {
     bool hud_stats_ = false;
     bool hud_drives_ = true;
     bool disconnected_when_no_gamepad_ = false;
+    /** When true and Apple II is in full-screen TEXT, Second Sight renders A2 text via VGA text. */
+    bool ss_text_mode_ = false;
 
     /** Last .gs2 open/save selection (full file path when known). */
     std::string last_config_path_;
@@ -94,14 +96,17 @@ public:
     bool hud_stats() const { return hud_stats_; }
     bool hud_drives() const { return hud_drives_; }
     bool disconnected_when_no_gamepad() const { return disconnected_when_no_gamepad_; }
+    bool ss_text_mode() const { return ss_text_mode_; }
 
     void set_hud_stats(bool enabled);
     void set_hud_drives(bool enabled);
     void set_disconnected_when_no_gamepad(bool enabled);
+    void set_ss_text_mode(bool enabled);
 
     void toggle_hud_stats();
     void toggle_hud_drives();
     void toggle_disconnected_when_no_gamepad();
+    void toggle_ss_text_mode();
 
     const std::string& last_config_path() const { return last_config_path_; }
     const std::string& last_disk_path() const { return last_disk_path_; }

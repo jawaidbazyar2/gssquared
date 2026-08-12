@@ -14,14 +14,21 @@
 #include <SDL3/SDL.h>
 
 void vga_render_text_9x16(video_system_t *vs, SDL_Texture *tex_text, const uint8_t *vram, int vram_pitch,
-    vga_text_vram_layout_t layout)
+    vga_text_vram_layout_t layout, int cols)
 {
+    if (cols <= 0) {
+        cols = VGA_TEXT_COLS;
+    }
+    if (cols > VGA_TEXT_COLS) {
+        cols = VGA_TEXT_COLS;
+    }
     void *pixels = nullptr;
     int pitch = 0;
     if (SDL_LockTexture(tex_text, nullptr, &pixels, &pitch)) {
-        vga_raster_text_9x16(vram, vram_pitch, (uint32_t *)pixels, pitch, layout);
+        vga_raster_text_9x16(vram, vram_pitch, (uint32_t *)pixels, pitch, layout, cols);
         SDL_UnlockTexture(tex_text);
     }
-    SDL_FRect src = { 0.0f, 0.0f, (float)VGA_TEXT_SCREEN_W, (float)VGA_TEXT_SCREEN_H };
+    const float src_w = (float)(cols * VGA_TEXT_CELL_W);
+    SDL_FRect src = { 0.0f, 0.0f, src_w, (float)VGA_TEXT_SCREEN_H };
     vs->render_frame(tex_text, &src, nullptr);
 }

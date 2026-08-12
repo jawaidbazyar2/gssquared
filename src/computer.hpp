@@ -197,6 +197,7 @@ struct computer_t {
     void send_full_screen_message();
 
     bool has_bazfast();
+    bool has_second_sight();
     bool is_drivers_mounted();
     void toggle_mount_drivers();
 };

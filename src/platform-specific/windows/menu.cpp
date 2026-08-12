@@ -247,6 +247,26 @@ static void updatePopupState(HMENU popup)
         return;
     }
 
+    // ── Display (top-level popup) ────────────────────────────────────────────
+    if (popup == g_displayPopup) {
+        bool has_ss = mi->hasSecondSight();
+        bool ss_text_on = mi->getSsTextMode();
+        int n = GetMenuItemCount(g_displayPopup);
+        for (int i = 0; i < n; ++i) {
+            UINT id = getItemId(g_displayPopup, i);
+            if (id == static_cast<UINT>(MENU_DISPLAY_SS_TEXT)) {
+                setItemCheck(g_displayPopup, i, ss_text_on);
+                setItemEnable(g_displayPopup, i, running && has_ss);
+            } else if (id == static_cast<UINT>(MENU_DISPLAY_FULLSCREEN)) {
+                setItemEnable(g_displayPopup, i, running);
+            } else {
+                // Monitor / HUD submenu parents
+                setItemEnable(g_displayPopup, i, running);
+            }
+        }
+        return;
+    }
+
     // ── Help (always enabled regardless of emulation state) ──────────────────
     if (popup == g_helpPopup) {
         int n = GetMenuItemCount(g_helpPopup);
@@ -255,7 +275,7 @@ static void updatePopupState(HMENU popup)
         return;
     }
 
-    // ── Generic fallback (Edit, Machine, Display popups) ─────────────────────
+    // ── Generic fallback (Edit, Machine popups) ──────────────────────────────
     // Enable/disable every non-separator item based on running state.
     int n = GetMenuItemCount(popup);
     for (int i = 0; i < n; ++i) {
@@ -313,6 +333,7 @@ static void dispatchCommand(UINT id)
     case MENU_DISPLAY_FULLSCREEN: mi->displayFullScreen(); return;
     case MENU_HUD_STATS:          mi->toggleHudStats();    return;
     case MENU_HUD_DRIVES:         mi->toggleHudDrives();   return;
+    case MENU_DISPLAY_SS_TEXT:    mi->toggleSsTextMode();  return;
 
     // Edit / File
     case MENU_EDIT_COPY_SCREEN:      mi->editCopyScreen();      return;
@@ -495,6 +516,7 @@ static void setupMenus()
                 reinterpret_cast<UINT_PTR>(g_hudMenu), L"HUD");
 
     AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_FULLSCREEN, L"Full Screen");
+    AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_SS_TEXT, L"Second Sight Text");
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_displayPopup), L"Display");
 

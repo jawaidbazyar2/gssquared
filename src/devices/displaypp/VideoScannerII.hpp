@@ -280,6 +280,7 @@ public:
     inline bool is_80col()        { return sw80col;   }
     inline bool is_altchrset()    { return altchrset; }
     inline bool is_dblres()       { return dblres; }
+    inline bool is_80store()      { return f_80store; }
 
     inline void set_80col()       { queue_mode_change(vs_mode_switch_t::COL80, 1); }
     inline void set_altchrset()   { queue_mode_change(vs_mode_switch_t::ALTCHAR, 1); }
