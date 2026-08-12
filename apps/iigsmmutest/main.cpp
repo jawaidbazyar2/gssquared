@@ -183,12 +183,13 @@ void EmitAssemblyPostamble(AsmFile *a) {
     }
 }
 
-void liveTest(const MMUTest::Test& test, MMU_IIgs *mmu_iigs) {
+int liveTest(const MMUTest::Test& test, MMU_IIgs *mmu_iigs) {
     int testnum = test.number;
+    int failures = 0;
     printf("Running: %d - %s\n", testnum, test.description.c_str());
     
     for (const auto& op : test.operations) {
-        std::visit([mmu_iigs](auto&& operation) {
+        std::visit([mmu_iigs, &failures](auto&& operation) {
             using T = std::decay_t<decltype(operation)>;
             if constexpr (std::is_same_v<T, MMUTest::WriteOp>) {
                 // Handle write
@@ -237,6 +238,7 @@ void liveTest(const MMUTest::Test& test, MMU_IIgs *mmu_iigs) {
                     //printf("%02X ", byte);
                     uint8_t val = mmu_iigs->read(address);
                     if (val != byte) {
+                        failures++;
                         printf("    failed: (expected %06X = %02X, got %02X)\n", 
                             address,
                             byte,
@@ -249,6 +251,8 @@ void liveTest(const MMUTest::Test& test, MMU_IIgs *mmu_iigs) {
             }
         }, op);
     }
+    printf("  %s: %d - %s\n", failures ? "FAIL" : "PASS", testnum, test.description.c_str());
+    return failures;
 }
 
 static FILE *open_rom_file(const char *path) {
@@ -277,6 +281,10 @@ int main(int argc, char *argv[])
     bool use_rom03 = false;
     bool any_flag_set = false;
     int testNumber = -1;
+    int tests_run = 0;
+    int tests_failed = 0;
+    int assertion_failures = 0;
+    std::vector<int> failed_tests;
 
     int opt;
     while ((opt = getopt(argc, argv, "al3ph")) != -1) {
@@ -377,11 +385,26 @@ int main(int argc, char *argv[])
                 printf("Skipping: %d - %s (ROM01-only negative case)\n\n", test.number, test.description.c_str());
                 continue;
             }
-            liveTest(test, mmu_iigs);
+            int failures = liveTest(test, mmu_iigs);
+            tests_run++;
+            if (failures) {
+                tests_failed++;
+                assertion_failures += failures;
+                failed_tests.push_back(test.number);
+            }
         }
         delete mmu_iigs;
         delete mmu_iie;
+
+        printf("\n===== %s: %d tests run, %d failed, %d assertion failures =====\n",
+               tests_failed ? "FAILURES" : "ALL PASS",
+               tests_run, tests_failed, assertion_failures);
+        if (tests_failed) {
+            printf("Failed tests:");
+            for (int n : failed_tests) printf(" %d", n);
+            printf("\n");
+        }
     }
 
-    return 0;
+    return tests_failed ? 1 : 0;
 }

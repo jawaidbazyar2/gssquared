@@ -37,12 +37,15 @@ inline uint8_t bank_e1_read(void *context, uint32_t address) {
         return mmu_iigs->megaii->read(address & 0xFFFF);
     } else 
     {
-        uint32_t idx = address & 0x1FFFF;
-        if (mmu_iigs->is_aux_linear()) {
-            idx = 0x10000 | iigs_aux_linear_to_phys((uint16_t)idx);
+        uint16_t a16 = (uint16_t)address;
+        /* $FF ROM overlays the LC window here just as it does in bank $E0; verified
+           against a real ROM 01. Cycle type stays SYNC - whether the FPI serves this
+           as a fast ROM cycle instead is unverified. */
+        if (a16 >= 0xD000 && !mmu_iigs->is_lc_read_enable()) {
+            return mmu_iigs->get_rom_base()[mmu_iigs->rom_bank_ff_offset() + a16];
         }
         uint8_t *ram = mmu_iigs->megaii->get_memory_base();
-        return ram[idx];
+        return ram[mmu_iigs->e1_aux_index(a16)];
     }
 }
 
@@ -50,18 +53,19 @@ inline void bank_e1_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_SYNC);
 
-    if ((address & 0xF000) == 0xC000) mmu_iigs->megaii->write(address & 0xFFFF, value); // mmu_iigs->write_c0xx(address, value);
+    if ((address & 0xF000) == 0xC000) { 
+        mmu_iigs->megaii->write(address & 0xFFFF, value); 
+        return;
+    }
 
     if (!mmu_iigs->is_bank_latch()) {
         mmu_iigs->megaii->write(address & 0xFFFF, value);
     } else 
     {
-        uint32_t idx = address & 0x1FFFF;
-        if (mmu_iigs->is_aux_linear()) {
-            idx = 0x10000 | iigs_aux_linear_to_phys((uint16_t)idx);
-        }
+        uint16_t a16 = (uint16_t)address;
+        if (a16 >= 0xD000 && !mmu_iigs->is_lc_write_enable()) return; // LC write protected
         uint8_t *ram = mmu_iigs->megaii->get_memory_base();
-        ram[idx] = value;
+        ram[mmu_iigs->e1_aux_index(a16)] = value;
     }
 }
 
@@ -256,9 +260,11 @@ void MMU_IIgs::megaii_compose_map() {
         megaii->map_page_write(0x00, memory_base + altoffset + 0x0000, n_zp ? TAG_ALT : TAG_MAIN);
         megaii->map_page_read(0x01, memory_base + altoffset + 0x0100, n_zp ? TAG_ALT : TAG_MAIN);
         megaii->map_page_write(0x01, memory_base + altoffset + 0x0100, n_zp ? TAG_ALT : TAG_MAIN);
-        
-        // handle mapping the "language card" portion.
-        //bsr_map_memory(iiememory_d); // handle the 'language card' portion.
+
+        /* ALTZP moves the LC window too, so $D0-$FF has to be recomposed. Without
+           this, $C008/$C009 left those pages on whichever bank the last $C08x or
+           $C068 access selected, and a stale aux mapping made $E0's LC alias $E1's. */
+        bsr_map_memory();
     }
     if (n_text1_r != m_text1_r) {
         // change $04 - $07

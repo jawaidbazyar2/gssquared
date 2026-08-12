@@ -204,6 +204,54 @@ So, "data bit" is just "we're going to hack another address bit by using the dat
 
 ugh this is still not clear which banks this works against.
 
+#### Measured: the LC arrangement in bank $E1 (real ROM 01)
+
+A read-only probe run on a real ROM 01 machine, with the bank latch on, sampling the
+LC window in `$E1` against the same bytes read straight out of bank `$FF`:
+
+| Sampled | Value |
+|-|-|
+| `$E1/D000`, LC bank 2, RDROM | `6F` |
+| `$E1/E000`, RDROM | `4C` |
+| `$E0/D000`, RDROM | `6F` |
+| `$FF/D000` (reference) | `6F` |
+| `$FF/E000` (reference) | `4C` |
+| `$E1/D000`, LC bank 1, RDROM | `6F` |
+
+So bank `$FF` ROM overlays `$E1/D000-$FFFF` when reads are switched to ROM, under
+either LC bank, exactly as it does in `$E0`. Together with the LC bank 1 `$D000`
+image and write protection, that is the full "LC arrangement must still be
+respected" requirement noted above. GSSquared returned `CC CC 6F 6F 4C CC` before
+this was implemented in `bank_e1_read` / `bank_e1_write`; see tests 41-46 in
+`apps/iigsmmutest/tests.hpp`.
+
+Still unmeasured: whether the FPI serves that ROM read as a fast cycle. Our `$E1`
+handlers keep `CYCLE_TYPE_SYNC` for it, unlike banks `$00`/`$01` where
+`bank_shadow_read` switches to `CYCLE_TYPE_FAST_ROM`.
+
+#### ALTZP moves the bank $E0 LC window, and $C008/$C009 must recompose it
+
+Bank `$E0`'s LC window follows ALTZP into aux - which is to say, into the same RAM
+that a direct bank `$E1` access reaches with the bank latch on. `$E0/D000` with
+ALTZP set really is `$E1/D000`. Only the `$E0` side moves; `$E1` is always aux.
+
+`MMU_IIgs::megaii_compose_map()` used to remap only pages `$00`/`$01` on an ALTZP
+change, leaving `$D0-$FF` wherever the last `$C08x` or `$C068` access had put them.
+Software that sets ALTZP, touches the LC, then clears ALTZP through `$C008` was left
+with the LC window stuck on aux, so writes through `$E0` landed on top of `$E1`.
+
+The ROM 03 built-in diagnostic catches this. Test 04 (`RAM_ADDR`, in
+`Bank FF/diag.tests.asm`) fills banks `$E1`, `$E0`, `$01`, `$00` with an
+address+bank pattern and compares them back in the same order, so bank `$E1` is
+written first and `$E0`'s stale-aux writes clobbered it before the compare:
+`04E1E000` before the `$E1` LC decode above was implemented, `04E1D000` after, since
+that moved which address collides first. Regression test 47 in
+`apps/iigsmmutest/tests.hpp`.
+
+Note the diagnostic inhibits all shadowing (`$C035 = $7F`) while it runs, so its own
+`LDA $C08B` with DB=0 reads bank `$00` RAM rather than the softswitch - the LC
+arrangement it tests with is whichever one test 03 left behind.
+
 ## $C068 - State Register
 
 The State Register duplicates in the FPI certain memory management bits that can be read all in one byte, instead of across many bytes as in the Apple IIe.

@@ -680,6 +680,140 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
 
+    /* Bank $E1 language card decode. With the bank latch on, aux is forced, but the
+       LC arrangement still applies in bank $E1 exactly as it does in $E0 - see the
+       bank latch section of Docs/AppleIIgs-Memory.md. Test 41 is a transcription of a
+       read-only program run on a real ROM 01 machine, which returned ROM in both LC
+       banks:
+           $E1/D000 bank2 = 6F   $E1/E000 = 4C   $E0/D000 = 6F
+           $FF/D000 = 6F         $FF/E000 = 4C   $E1/D000 bank1 = 6F           */
+    Test{
+        41,
+        "$FF ROM appears in the E1 LC window when RDROM set",
+        {
+            ReadOp{0xE0'C082, 0x00},        // LC bank 2, read ROM, no write
+            AssertOp{0xE1'D000, 0x6F},
+            AssertOp{0xE1'E000, 0x4C},
+            AssertOp{0xE0'D000, 0x6F},      // control: E0 goes through the Mega II page table
+            AssertOp{0xFF'D000, 0x6F},      // reference: the ROM bytes themselves
+            AssertOp{0xFF'E000, 0x4C},
+            ReadOp{0xE0'C08A, 0x00},        // LC bank 1, read ROM, no write
+            AssertOp{0xE1'D000, 0x6F},      // ROM regardless of which LC bank is selected
+            ReadOp{0xE0'C082, 0x00},
+        }
+    },
+    Test{
+        42,
+        "E1 LC bank 1 $D000 is a different 4K page than LC bank 2 $D000",
+        {
+            ReadOp{0xE0'C08B, 0x00},        // LC bank 1, read RAM, write RAM
+            ReadOp{0xE0'C08B, 0x00},
+            WriteOp{0xE1'D000, 0xB1},
+            ReadOp{0xE0'C083, 0x00},        // LC bank 2, read RAM, write RAM
+            ReadOp{0xE0'C083, 0x00},
+            WriteOp{0xE1'D000, 0xB2},
+            ReadOp{0xE0'C088, 0x00},        // LC bank 1, read RAM
+            AssertOp{0xE1'D000, 0xB1},
+            ReadOp{0xE0'C080, 0x00},        // LC bank 2, read RAM
+            AssertOp{0xE1'D000, 0xB2},
+            ReadOp{0xE0'C082, 0x00},
+        }
+    },
+    Test{
+        43,
+        "E1 $E000 is the same RAM under both LC banks",
+        {
+            ReadOp{0xE0'C08B, 0x00},        // LC bank 1, read RAM, write RAM
+            ReadOp{0xE0'C08B, 0x00},
+            WriteOp{0xE1'E000, 0xE1},
+            ReadOp{0xE0'C083, 0x00},        // LC bank 2, read RAM, write RAM
+            ReadOp{0xE0'C083, 0x00},
+            AssertOp{0xE1'E000, 0xE1},      // only $D000-$DFFF is banked
+            ReadOp{0xE0'C082, 0x00},
+        }
+    },
+    Test{
+        44,
+        "E1 LC RAM is write protected when LC writes are disabled",
+        {
+            ReadOp{0xE0'C083, 0x00},        // LC bank 2, read RAM, write RAM
+            ReadOp{0xE0'C083, 0x00},
+            WriteOp{0xE1'D000, 0x55},
+            ReadOp{0xE0'C080, 0x00},        // LC bank 2, read RAM, writes disabled
+            WriteOp{0xE1'D000, 0xAA},
+            AssertOp{0xE1'D000, 0x55},      // write discarded
+            ReadOp{0xE0'C082, 0x00},
+        }
+    },
+    /* ALTZP is driven through the state register here; test 47 covers the
+       $C008/$C009 route to the same mapping. */
+    Test{
+        45,
+        "bank latch forces E1 LC to aux; E0 LC follows ALTZP",
+        {
+            ReadOp{0xE0'C083, 0x00},        // LC bank 2, read RAM, write RAM
+            ReadOp{0xE0'C083, 0x00},
+            WriteOp{0xE0'C068, 0x04},       // ALTZP off, LC bank 2, read RAM
+            WriteOp{0xE0'E001, 0x22},       // main LC
+            WriteOp{0xE1'E001, 0x11},       // aux LC, forced by the bank latch
+            AssertOp{0xE0'E001, 0x22},
+            WriteOp{0xE0'C068, 0x84},       // ALTZP on: E0 LC moves to aux
+            AssertOp{0xE0'E001, 0x11},
+            AssertOp{0xE1'E001, 0x11},      // E1 unaffected either way
+            WriteOp{0xE0'C068, 0x04},       // ALTZP off again
+            AssertOp{0xE0'E001, 0x22},
+            AssertOp{0xE1'E001, 0x11},
+            WriteOp{0xE0'C068, 0x0C},       // restore the reset state
+        }
+    },
+    /* Derived from the hardware reference (the shadow register governs the shadowed
+       banks $00/$01, not the Mega II's own banks), not yet measured on a real GS. */
+    Test{
+        46,
+        "IOLC inhibit does not remove I/O or the LC decode from banks E0/E1",
+        {
+            ReadOp{0xE0'C082, 0x00},                // LC bank 2, read ROM
+            WriteOp{0xE0'C035, SHADOW_INH_IOLC | SHADOW_INH_SHR},
+            AssertOp{0xE0'C200, {0xE2, 0x40}},      // slot ROM still present
+            AssertOp{0xE1'C200, {0xE2, 0x40}},
+            AssertOp{0xE0'D000, 0x6F},              // LC decode still active
+            AssertOp{0xE1'D000, 0x6F},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},     // restore
+        }
+    },
+    /* Regression for the ROM 03 built-in diagnostic, test 04 (RAM_ADDR in
+       Bank FF/diag.tests.asm). It fills banks $E1 then $E0 with an address pattern
+       and compares them back in the same order, and read bank $E0's pattern out of
+       bank $E1: $C008/$C009 remapped pages $00/$01 but left the LC pages $D0-$FF on
+       whichever bank the last $C08x / $C068 access had selected, so a stale aux
+       mapping put $E0's LC on top of $E1's. */
+    Test{
+        47,
+        "toggling ALTZP through $C008/$C009 remaps the E0 LC window",
+        {
+            WriteOp{0xE0'C029, 0x01},       // bank latch on
+            WriteOp{0xE0'C009, 0x00},       // ALTZP on
+            ReadOp{0xE0'C08B, 0x00},        // LC bank 1, read RAM, write RAM - composes on aux
+            ReadOp{0xE0'C08B, 0x00},
+            WriteOp{0xE1'D000, 0x11},
+            WriteOp{0xE1'E000, 0x22},
+            AssertOp{0xE0'D000, 0x11},      // ALTZP on: the E0 LC window is E1's RAM
+            AssertOp{0xE0'E000, 0x22},
+            WriteOp{0xE0'C008, 0x00},       // ALTZP off: the window must move back to main
+            WriteOp{0xE0'D000, 0xE0},       // ... so these land in main, not on top of E1
+            WriteOp{0xE0'E000, 0xE0},
+            AssertOp{0xE1'D000, 0x11},
+            AssertOp{0xE1'E000, 0x22},
+            AssertOp{0xE0'D000, 0xE0},
+            AssertOp{0xE0'E000, 0xE0},
+            WriteOp{0xE0'C009, 0x00},       // ALTZP on again: back to E1's RAM
+            AssertOp{0xE0'D000, 0x11},
+            AssertOp{0xE0'E000, 0x22},
+            WriteOp{0xE0'C008, 0x00},       // restore
+            ReadOp{0xE0'C082, 0x00},        // restore: LC bank 2, read ROM
+        }
+    },
+
     // Test: when IOLC not inhibited, interrupt vector pull reads from ROM.
     // Test: when IOLC inhibited, interrupt vector pull reads from RAM.
     // Test: when LC RAM READ enabled, bit 3 in State tracks.
