@@ -140,8 +140,11 @@ class KeyGloo
                     3-0: set keyboard layout language
             byte 3: 7-4: repeat delay
                         0: 1/4 sec; 1: 1/2 sec; 2: 3/4 sec; 3: 1 sec; 4: no repeat.
-                    3-0: repeat rate
+                    3-0: repeat rate (uC-facing nibble; host ROM already mapped)
+                        ROM01 (nibble 0 = fastest, 0-7):
                         0: 40/sec; 1: 30/sec; 2: 24/sec; 3: 20/sec; 4: 15/sec; 5: 11/sec; 6: 8/sec; 7: 4/sec
+                        ROM03 (nibble 0 = slowest, 0-9; SETUPCNFG sends USERRSPD as-is):
+                        0-1 extra-slow, 2-9 reverse of ROM01 7-0. CP rightmost bars are 8-9 (fastest).
         */
         uint8_t configuration_bytes[3] = {0};
 
@@ -173,9 +176,33 @@ class KeyGloo
 
         ResetController *reset_control = nullptr;
 
+        // 60 Hz frame divisors. ROM01: nibble 0 = fastest. ROM03: nibble 0 = slowest, 9 = fastest.
         const uint8_t repeat_rate[8] = { 1, 2, 2, 3, 4, 5, 8, 15 };
+        const uint8_t repeat_rate_rom03[10] = { 30, 20, 15, 8, 5, 4, 3, 2, 2, 1 };
 
         const uint8_t delay_to_repeat[5] = { 15, 30, 45, 60, 0 };
+
+        uint8_t delay_frames() const {
+            uint8_t dlyval = (vars.dlyrpt & 0xF0) >> 4;
+            if (dlyval > 4) {
+                dlyval = 4;
+            }
+            return delay_to_repeat[dlyval];
+        }
+
+        uint8_t repeat_frames() const {
+            uint8_t idx = vars.dlyrpt & 0x0F;
+            if (uc_rom03) {
+                if (idx >= 10) {
+                    idx = 9;
+                }
+                return repeat_rate_rom03[idx];
+            }
+            if (idx >= 8) {
+                idx = 7;
+            }
+            return repeat_rate[idx];
+        }
         
         union {
             struct {
@@ -904,9 +931,7 @@ class KeyGloo
         uint8_t read_mouse_data();
 
         void start_repeat() {
-            uint8_t dlyval = (vars.dlyrpt & 0xF0) >> 4;
-            printf("start_repeat: %02X %d\n", vars.dlyrpt, delay_to_repeat[dlyval]);
-            vars.dncntr = delay_to_repeat[dlyval]; 
+            vars.dncntr = delay_frames();
         }
         void stop_repeat() {
             vars.dncntr = 0;
@@ -1023,7 +1048,7 @@ class KeyGloo
                 vars.dncntr--;
                 if (vars.dncntr == 0) {
                     store_key_to_buffer(last_key_down, vars.currmod.value);
-                    vars.dncntr = repeat_rate[vars.dlyrpt & 0x0F]; // repeat rate
+                    vars.dncntr = repeat_frames();
                 }
             }
             if (reset_counter) {
