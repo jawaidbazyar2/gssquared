@@ -1604,8 +1604,10 @@ inline void branch_if(cpu_state *cpu, uint8_t N, bool condition) {
         // branch taken uses another clock to update the PC
         incr_cycles(cpu); 
         /* If a branch is taken and the target is on a different page, this adds another CPU cycle (4 in total). */
-        if ((oaddr & 0xFF00) != (taddr & 0xFF00)) {
-            incr_cycles(cpu);
+        if constexpr (!CPUTraits::has_65816_ops || CPUTraits::e_mode) {
+            if ((oaddr & 0xFF00) != (taddr & 0xFF00)) {
+                incr_cycles(cpu);
+            }
         }
     }
 }
