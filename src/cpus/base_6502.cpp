@@ -4630,11 +4630,11 @@ int execute_next(cpu_state *cpu) override {
                     cpu->_M = 1;
                     cpu->_X = 1;
                 }
+                phantom_read_ign(cpu, make_pc_long(cpu, _PC(cpu)));
             } else if constexpr (CPUTraits::has_65c02_ops) { // invalid opcode
                 invalid_nop(cpu, 1, 1);
             } else invalid_opcode(cpu, opcode); // invalid opcode
             break;
-
 
             
         /* End of Opcodes -------------------------- */

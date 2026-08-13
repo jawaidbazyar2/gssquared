@@ -1492,6 +1492,13 @@ test_record test_records[] = {
         {0xEB},
         3,
         0, 0, 0, m8x8  // X=0x42 to test transfer to A
+    },
+
+    {
+        "XCE",
+        {0xFB},
+        2,
+        0, 0, 0, m8x8  // native (E=0), C=0: stay native; phantom read is cycle 2
     }
 };
 
