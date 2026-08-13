@@ -40,19 +40,28 @@ enum class vga_text_vram_layout_t {
     PlanarSplit,   // plane0[row*cols+col], plane1 at base + 0x2000
 };
 
-/** 8x16 font in Second Sight VRAM: 256 glyphs, 16 bytes/scanline per glyph. */
+/** 8x16 font: 256 glyphs, 16 bytes/scanline per glyph (4096 bytes on disk). */
 static constexpr int SS_VRAM_FONT_GLYPH_BYTES = 16;
 static constexpr int SS_VRAM_FONT_SIZE = 256 * SS_VRAM_FONT_GLYPH_BYTES;   // 4096
 static constexpr uint32_t SS_VRAM_FONT_DEFAULT_BASE = 0x20;
 
-/** Load font atlas from PNG (legacy / SetTextFont PC ANSI fallback). */
-bool vga_text_9x16_init(const char *font_path);
+/** SetTextFont bank: $00/$01 apple, $02 ANSI (IBM). */
+enum class vga_text_font_bank_t : uint8_t {
+    Apple = 0,
+    Ansi = 2,
+};
 
-/** Bake glyph masks from 8x16 font bytes already in card VRAM (upload/DMA). */
+/**
+ * Load both ROM font bins from disk and bake mask banks.
+ * Paths are relative to the resources base (e.g. roms/cards/secondsight/…).
+ */
+bool vga_text_9x16_load_rom_fonts(const char *apple_path, const char *ansi_path);
+
+/** Select active ROM bank (Apple or Ansi). No-op if banks not loaded. */
+void vga_text_9x16_select_rom_font(vga_text_font_bank_t bank);
+
+/** Bake glyph masks from 8x16 font bytes (SetTextFont $03 user font). */
 bool vga_text_9x16_load_font_from_vram(const uint8_t *font_base, int glyph_stride = SS_VRAM_FONT_GLYPH_BYTES);
-
-/** Load Second Sight ROM `copy_font` charset (MouseText + ASCII). Idempotent. */
-bool vga_text_9x16_load_ss_rom_font();
 
 /**
  * A2 text overlay DAC (ROM `set_textmode_palette` / `setup_textmode_palette`):

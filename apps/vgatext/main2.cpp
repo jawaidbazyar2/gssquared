@@ -63,18 +63,20 @@ int main(int argc, char *argv[]) {
     SDL_SetTextureScaleMode(screen_tex, SDL_SCALEMODE_NEAREST);
 
     const char *font_paths[] = {
-        "apps/vgatext/IBM_VGA_8x16.png",
-        "resources/img/IBM_VGA_8x16.png",
+        "resources/roms/cards/secondsight/font_ansi_8x16.bin",
+        "assets/roms/cards/secondsight/font_ansi_8x16.bin",
     };
     bool font_ok = false;
     for (const char *path : font_paths) {
-        if (vga_text_9x16_init(path)) {
+        // Load ANSI bank into both slots so select defaults to a valid set.
+        if (vga_text_9x16_load_rom_fonts(path, path)) {
+            vga_text_9x16_select_rom_font(vga_text_font_bank_t::Ansi);
             font_ok = true;
             break;
         }
     }
     if (!font_ok) {
-        printf("Font bitmap could not be loaded from any path\n");
+        printf("Font bin could not be loaded from any path\n");
         return 1;
     }
 

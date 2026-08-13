@@ -9,24 +9,24 @@
 
 #include "vga_render_text_9x16.hpp"
 
-#include "ss_rom_font_8x16.hpp"
-
-#include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
 #include <cstdio>
+#include <cstring>
 
 #if defined(__ARM_NEON)
 #include <arm_neon.h>
 #endif
 
-static constexpr int ATLAS_COL_STRIDE = 9;
-static constexpr int ATLAS_ROW_STRIDE = 17;
-
 static constexpr uint32_t argb(uint8_t r, uint8_t g, uint8_t b) {
     return (0xFFu << 24) | (uint32_t(r) << 16) | (uint32_t(g) << 8) | uint32_t(b);
 }
 
-alignas(64) static uint16_t glyph_masks[256][VGA_TEXT_CELL_H];
+using GlyphBank = uint16_t[256][VGA_TEXT_CELL_H];
+
+alignas(64) static GlyphBank glyph_masks_apple;
+alignas(64) static GlyphBank glyph_masks_ansi;
+alignas(64) static GlyphBank glyph_masks_user;
+/** Active bank for rasterization (points into apple/ansi/user). */
+static GlyphBank *glyph_masks_active = &glyph_masks_apple;
 
 static constexpr uint32_t kIbmTextPalette[16] = {
     argb(0x00,0x00,0x00), argb(0x00,0x00,0xAA), argb(0x00,0xAA,0x00), argb(0x00,0xAA,0xAA),
@@ -42,11 +42,9 @@ alignas(64) static uint32_t text_palette[16] = {
     argb(0xFF,0x55,0x55), argb(0xFF,0x55,0xFF), argb(0xFF,0xFF,0x55), argb(0xFF,0xFF,0xFF),
 };
 
-static bool font_ready = false;
-/** 0 = none/PNG/other, 1 = SS ROM font, 2 = user VRAM font (opaque). */
-static uint8_t font_source = 0;
+static bool rom_fonts_loaded = false;
 
-static void bake_glyph_masks_from_vram_8x16(const uint8_t *font_base, int glyph_stride) {
+static void bake_glyph_masks_into(GlyphBank *dst, const uint8_t *font_base, int glyph_stride) {
     for (int g = 0; g < 256; g++) {
         const uint8_t *glyph = font_base + g * glyph_stride;
         for (int gy = 0; gy < VGA_TEXT_CELL_H; gy++) {
@@ -61,28 +59,56 @@ static void bake_glyph_masks_from_vram_8x16(const uint8_t *font_base, int glyph_
             if (g >= 0xC0 && g <= 0xDF) {
                 bits = (bits & ~1u) | ((bits >> 1) & 1u);
             }
-            glyph_masks[g][gy] = bits;
+            (*dst)[g][gy] = bits;
         }
     }
+}
+
+static bool load_bin_font(const char *path, GlyphBank *dst) {
+    FILE *fp = fopen(path, "rb");
+    if (!fp) {
+        printf("SecondSight: could not open font %s\n", path);
+        return false;
+    }
+    uint8_t buf[SS_VRAM_FONT_SIZE];
+    const size_t n = fread(buf, 1, SS_VRAM_FONT_SIZE, fp);
+    fclose(fp);
+    if (n != SS_VRAM_FONT_SIZE) {
+        printf("SecondSight: font %s size %zu (expected %d)\n", path, n, SS_VRAM_FONT_SIZE);
+        return false;
+    }
+    bake_glyph_masks_into(dst, buf, SS_VRAM_FONT_GLYPH_BYTES);
+    return true;
+}
+
+bool vga_text_9x16_load_rom_fonts(const char *apple_path, const char *ansi_path) {
+    if (!apple_path || !ansi_path) {
+        return false;
+    }
+    if (!load_bin_font(apple_path, &glyph_masks_apple)) {
+        return false;
+    }
+    if (!load_bin_font(ansi_path, &glyph_masks_ansi)) {
+        return false;
+    }
+    rom_fonts_loaded = true;
+    glyph_masks_active = &glyph_masks_apple;
+    return true;
+}
+
+void vga_text_9x16_select_rom_font(vga_text_font_bank_t bank) {
+    if (!rom_fonts_loaded) {
+        return;
+    }
+    glyph_masks_active = (bank == vga_text_font_bank_t::Ansi) ? &glyph_masks_ansi : &glyph_masks_apple;
 }
 
 bool vga_text_9x16_load_font_from_vram(const uint8_t *font_base, int glyph_stride) {
     if (font_base == nullptr || glyph_stride < 8) {
         return false;
     }
-    bake_glyph_masks_from_vram_8x16(font_base, glyph_stride);
-    font_ready = true;
-    font_source = 2;
-    return true;
-}
-
-bool vga_text_9x16_load_ss_rom_font() {
-    if (font_ready && font_source == 1) {
-        return true;
-    }
-    bake_glyph_masks_from_vram_8x16(SS_ROM_FONT_8X16, SS_VRAM_FONT_GLYPH_BYTES);
-    font_ready = true;
-    font_source = 1;
+    bake_glyph_masks_into(&glyph_masks_user, font_base, glyph_stride);
+    glyph_masks_active = &glyph_masks_user;
     return true;
 }
 
@@ -106,56 +132,6 @@ void vga_text_9x16_restore_ibm_palette() {
     }
 }
 
-static bool bake_glyph_masks(SDL_Surface *fs) {
-    const uint8_t *base = (const uint8_t *)fs->pixels;
-    const int spitch = fs->pitch;
-    for (int g = 0; g < 256; g++) {
-        const int sx = (g & 0x0F) * ATLAS_COL_STRIDE;
-        const int sy = (g >> 4)   * ATLAS_ROW_STRIDE;
-        for (int gy = 0; gy < VGA_TEXT_CELL_H; gy++) {
-            uint16_t bits = 0;
-            const uint8_t *p = base + (sy + gy) * spitch + sx * 4;
-            const int src_cols = (g >= 0xC0 && g <= 0xDF) ? (VGA_TEXT_CELL_W - 1) : VGA_TEXT_CELL_W;
-            for (int gx = 0; gx < src_cols; gx++) {
-                uint8_t r = p[0], gc = p[1], b = p[2], a = p[3];
-                bool on = (a > 127) && ((r > 127) || (gc > 127) || (b > 127));
-                if (on) bits |= uint16_t(1u << (VGA_TEXT_CELL_W - 1 - gx));
-                p += 4;
-            }
-            if (g >= 0xC0 && g <= 0xDF) {
-                bits = (bits & ~1u) | ((bits >> 1) & 1u);
-            }
-            glyph_masks[g][gy] = bits;
-        }
-    }
-    return true;
-}
-
-bool vga_text_9x16_init(const char *font_path) {
-    if (font_ready) {
-        return true;
-    }
-    SDL_Surface *font_surface = IMG_Load(font_path);
-    if (font_surface == NULL) {
-        printf("SecondSight: font bitmap could not be loaded (%s): %s\n", font_path, SDL_GetError());
-        return false;
-    }
-    SDL_Surface *fs = SDL_ConvertSurface(font_surface, SDL_PIXELFORMAT_RGBA32);
-    SDL_DestroySurface(font_surface);
-    if (fs == NULL) {
-        printf("SecondSight: font surface conversion failed: %s\n", SDL_GetError());
-        return false;
-    }
-    if (!bake_glyph_masks(fs)) {
-        SDL_DestroySurface(fs);
-        return false;
-    }
-    SDL_DestroySurface(fs);
-    font_ready = true;
-    font_source = 0;
-    return true;
-}
-
 void vga_raster_text_9x16(const uint8_t *vram, int vram_pitch, uint32_t *pixels, int pitch,
     vga_text_vram_layout_t layout, int cols)
 {
@@ -165,6 +141,7 @@ void vga_raster_text_9x16(const uint8_t *vram, int vram_pitch, uint32_t *pixels,
     if (cols > VGA_TEXT_COLS) {
         cols = VGA_TEXT_COLS;
     }
+    const GlyphBank &masks = *glyph_masks_active;
 #if defined(__ARM_NEON)
     const uint32x4_t sel0 = {0x100u, 0x80u, 0x40u, 0x20u};
     const uint32x4_t sel1 = {0x10u, 0x8u, 0x4u, 0x2u};
@@ -191,7 +168,7 @@ void vga_raster_text_9x16(const uint8_t *vram, int vram_pitch, uint32_t *pixels,
             }
             const uint32_t fg = text_palette[attr & 0x0F];
             const uint32_t bg = text_palette[(attr >> 4) & 0x0F];
-            uint16_t bits = glyph_masks[ch][gy];
+            uint16_t bits = masks[ch][gy];
 
 #if defined(__ARM_NEON)
             const uint32x4_t vbits = vdupq_n_u32(bits);

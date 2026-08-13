@@ -12,6 +12,7 @@
 #include "vga_render_text_9x16_present.hpp"
 #include "vga_mode_tables.hpp"
 #include "ppu_render.hpp"
+#include "paths.hpp"
 #include "mmus/mmu_ii.hpp"
 #include "ss_a2_text_sync.hpp"
 #include "util/SystemSettings.hpp"
@@ -127,8 +128,8 @@ class SecondSight {
     uint8_t crt_char_width = 8;    // pixels per CRTC character clock
     uint32_t screen_base_addr = 0;
     uint16_t fb_pitch = 0;
-    /** SetTextFont index ($00–$03); $FF = never set. */
-    uint8_t text_font_index = 0xFF;
+    /** SetTextFont index ($00–$03); default Apple II ROM font. */
+    uint8_t text_font_index = 0;
 
     struct upload_log_entry_t {
         uint8_t code_data_flag = 0;
@@ -147,8 +148,8 @@ class SecondSight {
 
     static const char *text_font_label(uint8_t index) {
         switch (index) {
-            case 0: return "ROM standard ($00)";
-            case 1: return "ROM alternate ($01)";
+            case 0: return "Apple II ROM ($00)";
+            case 1: return "Apple II ROM alt ($01)";
             case 2: return "PC ANSI ($02)";
             case 3: return "User @ Z180 $F000 ($03)";
             default: return "unknown";
@@ -177,13 +178,27 @@ class SecondSight {
                         SS_VRAM_FONT_GLYPH_BYTES);
                 }
                 break;
+            case 2:
+                vga_text_9x16_select_rom_font(vga_text_font_bank_t::Ansi);
+                break;
             case 0:
             case 1:
-            case 2:
             default:
-                vga_text_9x16_load_ss_rom_font();
+                vga_text_9x16_select_rom_font(vga_text_font_bank_t::Apple);
                 break;
         }
+    }
+
+    void load_rom_text_fonts() {
+        std::string apple_path;
+        std::string ansi_path;
+        Paths::calc_base(apple_path, "roms/cards/secondsight/font_apple_8x16.bin");
+        Paths::calc_base(ansi_path, "roms/cards/secondsight/font_ansi_8x16.bin");
+        if (!vga_text_9x16_load_rom_fonts(apple_path.c_str(), ansi_path.c_str())) {
+            printf("SecondSight: failed to load text fonts\n");
+            return;
+        }
+        apply_text_font(text_font_index);
     }
 
     // Various apple II code is:
@@ -234,9 +249,6 @@ class SecondSight {
         const int cols = (current_vga_mode.width > 0) ? (int)current_vga_mode.width : VGA_TEXT_COLS;
         const int default_pitch = (cols <= 40) ? VGA_TEXT_FB_PITCH_40 : VGA_TEXT_FB_PITCH;
         const int text_pitch = fb_pitch > 0 ? fb_pitch : default_pitch;
-        if (text_font_index != 3) {
-            vga_text_9x16_load_ss_rom_font();
-        }
         if (!a2_overlay) {
             vga_text_9x16_restore_ibm_palette();
         }
@@ -501,6 +513,7 @@ class SecondSight {
             } else {
                 SDL_SetTextureScaleMode(tex_text, SDL_SCALEMODE_NEAREST);
             }
+            load_rom_text_fonts();
             display_enabled = true;
         }
         ~SecondSight() {
@@ -537,7 +550,8 @@ class SecondSight {
             crt_offset = 0;
             crt_char_width = 8;
             screen_base_addr = 0;
-            text_font_index = 0xFF;
+            text_font_index = 0;
+            apply_text_font(0);
             upload_log_total = 0;
             upload_log_next = 0;
             upload_small_total = 0;
@@ -1509,11 +1523,7 @@ class SecondSight {
                         ds->flash_state ? 1 : 0);
                 }
             }
-            if (text_font_index == 0xFF) {
-                df->addLine("TextFont: (not set)");
-            } else {
-                df->addLine("TextFont: %02X %s", text_font_index, text_font_label(text_font_index));
-            }
+            df->addLine("TextFont: %02X %s", text_font_index, text_font_label(text_font_index));
             df->addLine("Screen Base Addr: %X", screen_base_addr);
             df->addLine("CRT Start Addr: %02X%02X", crt_start_addr_high, crt_start_addr_low);
             df->addLine("CRT HDisplay End: %02X (+%d clocks)", crt_hdisplay_end, crtc_char_clocks_per_line());
