@@ -535,7 +535,8 @@ void display_write_c041(void *context, uint32_t address, uint8_t value) {
     value &= 0x1F; // bits 7-5 "must be 0"
     ds->f_INTEN = value;
 
-    update_megaii_interrupt(ds, false);
+    ds->f_vbl_enable = (value & 0x08) != 0;
+    update_megaii_interrupt(ds, true);
 }
 
 uint8_t display_read_C041(void *context, uint32_t address) {
