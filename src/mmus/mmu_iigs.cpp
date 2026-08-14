@@ -833,7 +833,11 @@ void MMU_IIgs::debug_dump(DebugFormatter *df) {
 
 uint8_t MMU_IIgs::vp_read(uint32_t address) {
     if (is_iolc_shadowed()) { // if IOLC is shadowed, read from ROM.
-        return get_rom_base()[rom_bank_ff_offset() + (address & 0xFFFF)];
+        uint16_t a16 = address & 0xFFFF;
+        if (a16 >= 0xD000 && is_lc_read_enable()) {
+            return read(address);
+        }
+        return get_rom_base()[rom_bank_ff_offset() + a16];
     } else {
         return read(address);
     }
