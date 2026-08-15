@@ -11,6 +11,7 @@
 #include "SelectButton.hpp"
 #include "Style.hpp"
 #include "TextInput.hpp"
+#include "paths.hpp"
 #include "platforms.hpp"
 #include "util/SystemConfig.hpp"
 #include "util/SystemSettings.hpp"
@@ -567,6 +568,7 @@ bool EditSystem::write_draft_to_path(const std::string& path) {
         return false;
     }
     draft.set_path(path);
+    SystemSettings::instance().record_use(path);
     status_text = "Saved " + path;
     updated = true;
     return true;
@@ -598,7 +600,7 @@ void EditSystem::begin_save() {
         }
 
         std::string path = filelist[0];
-        if (path.size() < 4 || path.substr(path.size() - 4) != ".gs2") {
+        if (!Paths::ends_with_icase(path, ".gs2")) {
             path += ".gs2";
         }
         if (editor->write_draft_to_path(path)) {
