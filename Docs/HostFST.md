@@ -39,6 +39,7 @@ After the FST is installed and loaded, the shared folder appears in the GS/OS Fi
 ## Notes
 
 - Requires an **Apple IIgs** platform and **GS/OS** (not plain ProDOS 8 on a //e).
+- On **Windows**, Host FST stores ProDOS type/auxtype, Finder info, and resource forks in NTFS Alternate Data Streams (`:AFP_AfpInfo` and `:AFP_Resource`, the same convention as CiderPress and Services for Macintosh). Use an **NTFS** folder; FAT/exFAT and some network shares will not keep that metadata.
 - The **Host Folder…** picker is not available in the web (Emscripten) build.
 - Mount Drivers only supplies the installer disk; the Host FST itself stays built into the emulator once the two System files are installed.
 

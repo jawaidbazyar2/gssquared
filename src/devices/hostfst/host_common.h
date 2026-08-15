@@ -1,9 +1,30 @@
 #pragma once
 
+/* Set to 1 for per-call traces, Win32 error detail, and FAIL banners. */
+#ifndef HOST_FST_DEBUG
+#define HOST_FST_DEBUG 0
+#endif
+
 #include "defc_shim.h"
+
+#if HOST_FST_DEBUG
+#define HOST_FST_LOG(...) do { fprintf(stderr, __VA_ARGS__); fflush(stderr); } while (0)
+#else
+#define HOST_FST_LOG(...) ((void)0)
+#endif
 
 #ifdef _WIN32
 
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
 #include <stdint.h>
 
 #pragma pack(push, 2)
@@ -134,6 +155,8 @@ word32 host_map_errno_path(int xerrno, const char *path);
 const char *host_error_name(word16 error);
 
 #ifdef _WIN32
+void host_win32_log(const char *op, const char *path, DWORD e);
+word32 host_win32_fail(const char *op, const char *path, DWORD e);
 word32 host_map_win32_error(DWORD);
 word32 host_map_win32_error_path(DWORD, const char *path);
 #endif

@@ -19,7 +19,7 @@
 #include <cstdio>
 #include <string>
 
-#if defined(_WIN32) || defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__)
 
 std::string hostfst_resolved_dir() {
     const std::string &configured = SystemSettings::instance().host_fst_dir();
