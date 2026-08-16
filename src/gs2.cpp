@@ -188,6 +188,19 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
  */
 void frame_video_update(computer_t *computer, bool force_full_frame = false) {
     video_system_t *vs = computer->video_system;
+    display_state_t *ds = (display_state_t *)computer->cached_display_state;
+
+    // LS / step do not tick the scanner during CPU execution. Advance one
+    // video frame here so VBL / QTR / scanline IRQs still fire even if a
+    // higher-weight processor (Second Sight, Videx) skips Apple II rendering.
+    // Ultimately LS should be refactored to run in multiples of 14MHz so we can run the normal video
+    // scanner.
+    if (force_full_frame && ds && ds->video_scanner) {
+        const int n = (int)computer->clock->get_vid_cycles_per_frame();
+        for (int i = 0; i < n; i++) {
+            ds->video_scanner->video_cycle();
+        }
+    }
 
     vs->update_display(force_full_frame);
 

@@ -125,13 +125,11 @@ bool update_display_apple2_cycle(display_state_t *ds) {
 }
 
 /**
- * This is effectively a "redraw the entire screen each frame" method now.
+ * Frame-based Apple II blit. Scanner advance for LS / step lives in
+ * frame_video_update() so VBL still runs when another processor owns the frame.
  */
 
 bool update_display_apple2(display_state_t *ds) {
-    for (int i = 0; i < 17030; i++) {
-        ds->video_scanner->video_cycle();
-    }
     update_display_apple2_cycle(ds);
     return true;
 }
