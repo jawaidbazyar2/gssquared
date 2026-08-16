@@ -385,28 +385,46 @@ add_library(gs2_devices_vidhd     src/devices/vidhd/vidhd.cpp )
 
 add_library(gs2_devices_adb     src/devices/adb/keygloo.cpp )
 
-# Host FST (GSPlus / Kelvin Sherlock) — full Unix/macOS; stub elsewhere
+# Host FST (GSPlus / Kelvin Sherlock) — Unix/macOS/Windows; stub on Emscripten
 set(GS2_HOSTFST_SOURCES
     src/devices/hostfst/hostfst.cpp
     src/devices/hostfst/hostfst_engine.cpp
 )
-if(NOT WIN32 AND NOT EMSCRIPTEN)
+if(NOT EMSCRIPTEN)
     list(APPEND GS2_HOSTFST_SOURCES
-        src/devices/hostfst/host_fst.c
         src/devices/hostfst/host_common.c
-        src/devices/hostfst/unix_host_common.c
     )
+    if(WIN32)
+        list(APPEND GS2_HOSTFST_SOURCES
+            src/devices/hostfst/win32_host_fst.c
+            src/devices/hostfst/win32_host_common.c
+        )
+    else()
+        list(APPEND GS2_HOSTFST_SOURCES
+            src/devices/hostfst/host_fst.c
+            src/devices/hostfst/unix_host_common.c
+        )
+    endif()
 endif()
 add_library(gs2_devices_hostfst ${GS2_HOSTFST_SOURCES})
 target_include_directories(gs2_devices_hostfst PRIVATE ${CMAKE_SOURCE_DIR}/src/devices/hostfst)
 target_link_libraries(gs2_devices_hostfst PUBLIC gs2_systemconfig gs2_paths gs2_cpu gs2_mmu)
-if(NOT WIN32 AND NOT EMSCRIPTEN)
-    set_source_files_properties(
-        src/devices/hostfst/host_fst.c
-        src/devices/hostfst/host_common.c
-        src/devices/hostfst/unix_host_common.c
-        PROPERTIES LANGUAGE C
-    )
+if(NOT EMSCRIPTEN)
+    if(WIN32)
+        set_source_files_properties(
+            src/devices/hostfst/host_common.c
+            src/devices/hostfst/win32_host_fst.c
+            src/devices/hostfst/win32_host_common.c
+            PROPERTIES LANGUAGE C
+        )
+    else()
+        set_source_files_properties(
+            src/devices/hostfst/host_fst.c
+            src/devices/hostfst/host_common.c
+            src/devices/hostfst/unix_host_common.c
+            PROPERTIES LANGUAGE C
+        )
+    endif()
 endif()
 
 # Uthernet II + libslirp (stubbed on Emscripten)

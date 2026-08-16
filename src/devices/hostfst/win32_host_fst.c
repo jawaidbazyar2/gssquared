@@ -5,33 +5,14 @@
    See LICENSE.txt for license (GPL v2)
  */
 
-#define _BSD_SOURCE
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
+#define _WIN32_WINNT 0x0600 // vista+
+#include <Windows.h>
+
 #include <errno.h>
-#include <unistd.h>
 #include <ctype.h>
 #include <string.h>
-#include <time.h>
-#include <libgen.h>
-
-
-#if defined(__APPLE__)
-#include <sys/xattr.h>
-#include <sys/attr.h>
-#include <sys/paths.h>
-#endif
-
-#ifndef XATTR_FINDERINFO_NAME
-#define XATTR_FINDERINFO_NAME "com.apple.FinderInfo"
-#endif
-
-#ifndef XATTR_RESOURCEFORK_NAME
-#define XATTR_RESOURCEFORK_NAME "com.apple.ResourceFork"
-#endif
-
+#include <stdint.h>
 
 #include "defc_shim.h"
 #include "gsos.h"
@@ -39,12 +20,22 @@
 
 #include "host_common.h"
 
+#ifdef _MSC_VER
+#define strcasecmp stricmp
+#define strncasecmp strnicmp
+#define strdup _strdup
+#endif
+
+/* Allow SetFileInfo / extra opens while a fork is already open. */
+#define HOST_SHARE_ALL (FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
+
 /*
  * MFS/HFS classic limit. Volume/dir entries report mfsFSID; Finder assumes
  * <=31 character names. Returning longer host names (JudgeName used to
  * advertise 255) can overflow Finder and BRK when opening :Host.
  */
 #define HOST_FST_MAX_NAME_LEN 31
+
 
 extern Engine_reg engine;
 
@@ -62,7 +53,6 @@ extern Engine_reg engine;
 #define global_buffer 0x009a00
 
 
-
 struct directory {
   int displacement;
   int num_entries;
@@ -75,17 +65,21 @@ struct fd_entry {
   int cookie;
   int type;
   int access;
-  int fd;
+  HANDLE handle;
   int translate;
   struct directory *dir;
 };
 
+
+
+
 static void free_directory(struct directory *dd);
 static struct directory *read_directory(const char *path, word16 *error);
 
+
 #define COOKIE_BASE 0x8000
 
-static word32 cookies[32] = {};
+static word32 cookies[32] = { 0 };
 
 static int alloc_cookie() {
   for (int i = 0; i < 32; ++i) {
@@ -104,7 +98,7 @@ static int alloc_cookie() {
 static int free_cookie(int cookie) {
   if (cookie < COOKIE_BASE) return -1;
   cookie -= COOKIE_BASE;
-  if (cookie >= 32 *32) return -1;
+  if (cookie >= 32 * 32) return -1;
 
   int chunk = cookie / 32;
   int offset = 1 << (cookie % 32);
@@ -121,11 +115,10 @@ static struct fd_entry *fd_head = NULL;
 
 
 
-
 static struct fd_entry *find_fd(int cookie) {
   struct fd_entry *head = fd_head;
 
-  while(head) {
+  while (head) {
     if (head->cookie == cookie) return head;
     head = head->next;
   }
@@ -133,10 +126,10 @@ static struct fd_entry *find_fd(int cookie) {
 }
 
 
-static void free_fd(struct fd_entry *e) {
+static void free_fd(struct fd_entry     *e) {
   if (!e) return;
   if (e->cookie) free_cookie(e->cookie);
-  if (e->fd >= 0) close(e->fd);
+  if (e->handle != INVALID_HANDLE_VALUE) CloseHandle(e->handle);
   if (e->dir) free_directory(e->dir);
   free(e->path);
   free(e);
@@ -144,10 +137,9 @@ static void free_fd(struct fd_entry *e) {
 
 static struct fd_entry *alloc_fd() {
   struct fd_entry *e = calloc(sizeof(struct fd_entry), 1);
-  e->fd = -1;
+  e->handle = INVALID_HANDLE_VALUE;
   return e;
 }
-
 
 static word32 remove_fd(int cookie) {
   word32 rv = invalidRefNum;
@@ -169,64 +161,6 @@ static word32 remove_fd(int cookie) {
   return rv;
 }
 
-
-static ssize_t safe_read(struct fd_entry *e, byte *buffer, size_t count) {
-  int fd = e->fd;
-  int tr = e->translate;
-
-  for (;;) {
-    ssize_t ok = read(fd, buffer, count);
-    if (ok >= 0) {
-      size_t i;
-      if (tr == translate_crlf) {
-        for (i = 0; i < ok; ++i) {
-          if (buffer[i] == '\n') buffer[i] = '\r';
-        }
-      }
-      if (tr == translate_merlin) {
-        for (i = 0; i < ok; ++i) {
-          unsigned char c = buffer[i];
-          if (c == '\t') c = 0xa0;
-          if (c == '\n') c = '\r';
-          if (c != ' ') c |= 0x80;
-          buffer[i] = c;
-        }
-      }
-      return ok;
-    }
-    if (ok < 0 && errno == EINTR) continue;
-    return ok;
-  }
-}
-
-static ssize_t safe_write(struct fd_entry *e, byte *buffer, size_t count) {
-  int fd = e->fd;
-  int tr = e->translate;
-
-  if (tr == translate_crlf) {
-    size_t i;
-    for (i = 0; i < count; ++i) {
-      if (buffer[i] == '\r') buffer[i] = '\n';
-    }
-  }
-  if (tr == translate_merlin) {
-    size_t i;
-    for (i = 0; i < count; ++i) {
-      unsigned char c = buffer[i];
-      if (c == 0xa0) c = '\t';
-      c &= 0x7f;
-      if (c == '\r') c = '\n';
-      buffer[i] = c;
-    }
-  }
-
-  for (;;) {
-    ssize_t ok = write(fd, buffer, count);
-    if (ok >= 0) return ok;
-    if (ok < 0 && errno == EINTR) continue;
-    return ok;
-  }
-}
 
 
 /*
@@ -412,10 +346,6 @@ static char *get_path2(void) {
 }
 
 
-/*
- * shutdown is called when switching to p8.
- * startup is ONLY called during initial boot.
- */
 
 static word32 fst_shutdown(void) {
 
@@ -443,7 +373,6 @@ static word32 fst_startup(void) {
   memset(&cookies, 0, sizeof(cookies));
 
   return host_startup();
-
 }
 
 void host_fst_remount(void) {
@@ -488,10 +417,9 @@ static word32 fst_create(int class, const char *path) {
 
 
     if (pcount >= 4) {
-      host_file_type_to_finder_info(fi.finder_info, fi.file_type, fi.aux_type);
+      afp_init(&fi.afp, fi.file_type, fi.aux_type);
       fi.has_fi = 1;
     }
-
 
   } else {
 
@@ -501,7 +429,7 @@ static word32 fst_create(int class, const char *path) {
     fi.storage_type = get_memory16_c(pb + CreateRec_storageType, 0);
     fi.create_date = host_get_date_time(pb + CreateRec_createDate);
 
-    host_file_type_to_finder_info(fi.finder_info, fi.file_type, fi.aux_type);
+    afp_init(&fi.afp, fi.file_type, fi.aux_type);
     fi.has_fi = 1;
   }
   int ok;
@@ -510,10 +438,8 @@ static word32 fst_create(int class, const char *path) {
     fi.storage_type = 0x0d;
 
   if (fi.storage_type == 0x0d) {
-    ok = mkdir(path, 0777);
-    if (ok < 0) {
-      return host_map_errno_path(errno, path);
-    }
+    ok = CreateDirectory(path, NULL);
+    if (!ok) return host_win32_fail("CreateDirectory", path, GetLastError());
 
     if (class) {
       if (pcount >= 5) set_memory16_c(pb + CreateRecGS_storageType, fi.storage_type, 0);
@@ -526,11 +452,23 @@ static word32 fst_create(int class, const char *path) {
   if (fi.storage_type <= 3 || fi.storage_type == 0x05) {
     // normal file.
     // 0x05 is an extended/resource file but we don't do anything special.
-    ok = open(path, O_WRONLY | O_CREAT | O_EXCL, 0666);
-    if (ok < 0) return host_map_errno_path(errno, path);
+    HANDLE h = CreateFile(path,
+                          GENERIC_WRITE,
+                          HOST_SHARE_ALL,
+                          NULL,
+                          CREATE_NEW,
+                          FILE_ATTRIBUTE_NORMAL,
+                          NULL);
+    if (h == INVALID_HANDLE_VALUE) return host_win32_fail("CreateFile:CREATE_NEW", path, GetLastError());
     // set ftype, auxtype...
-    host_set_file_info(path, &fi);
-    close(ok);
+    {
+      word32 xinfo = host_set_file_info(path, &fi);
+      if (xinfo) {
+        HOST_FST_LOG("Host FST: CreateFile ok but set_file_info failed $%02x %s path=%s\n",
+                     (unsigned)xinfo, host_error_name((word16)xinfo), path);
+      }
+    }
+    CloseHandle(h);
 
     fi.storage_type = 1;
 
@@ -555,32 +493,47 @@ static word32 fst_create(int class, const char *path) {
   }
 
   // other storage types?
+  HOST_FST_LOG("Host FST: fst_create unsupported storage_type=$%04x path=%s\n",
+               fi.storage_type, path);
   return badStoreType;
 }
 
 
+
 static word32 fst_destroy(int class, const char *path) {
 
-  struct stat st;
+  word16 rv = 0;
+  BOOL ok = 0;
+  word16 type = host_storage_type(path, &rv);
+  if (rv) return rv;
+  if (g_cfg_host_read_only) return drvrWrtProt;
 
-  if (!path) return badStoreType;
+  switch(type) {
+    case 0: return fileNotFound;
+    case 0x0f: return badStoreType;
+    default: return badStoreType;
 
-  if (stat(path, &st) < 0) {
-    return host_map_errno_path(errno, path);
+    case directoryFile:
+      ok = RemoveDirectory(path);
+      break;
+    case sapling:
+    case seedling:
+    case tree:
+    case extendedFile:
+      ok = DeleteFile(path);
+      break;
   }
 
-  // can't delete volume root.
-  if (host_is_root(&st))
-    return badStoreType;
-
-  int ok = S_ISDIR(st.st_mode) ? rmdir(path) : unlink(path);
-
-
-  if (ok < 0) return host_map_errno_path(errno, path);
+  if (!ok) return host_win32_fail(type == directoryFile ? "RemoveDirectory" : "DeleteFile", path, GetLastError());
   return 0;
 }
 
 static word32 fst_set_file_info(int class, const char *path) {
+
+  word16 rv = 0;
+  word16 type = host_storage_type(path, &rv);
+  if (rv) return rv;
+  if (g_cfg_host_read_only) return drvrWrtProt;
 
 
   word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
@@ -591,6 +544,7 @@ static word32 fst_set_file_info(int class, const char *path) {
 
   // load up existing file types / finder info.
   host_get_file_xinfo(path, &fi);
+  fi.storage_type = type;
 
   word32 option_list = 0;
   if (class) {
@@ -606,9 +560,9 @@ static word32 fst_set_file_info(int class, const char *path) {
     if (pcount >= 8) option_list = get_memory24_c(pb + FileInfoRecGS_optionList, 0);
     // remainder reserved
 
-    if (pcount >= 4) {
-      host_file_type_to_finder_info(fi.finder_info, fi.file_type, fi.aux_type);
-      fi.has_fi = 1;
+    if (fi.has_fi) {
+      if (pcount < 4) fi.aux_type = fi.afp.prodos_aux_type;
+      if (pcount < 3) fi.file_type = fi.afp.prodos_file_type;
     }
 
   } else {
@@ -619,8 +573,15 @@ static word32 fst_set_file_info(int class, const char *path) {
     //fi.storage_type = get_memory32_c(pb + FileRec_storageType, 0);
     fi.create_date = host_get_date_time(pb + FileRec_createDate);
     fi.modified_date = host_get_date_time(pb + FileRec_modDate);
+  }
 
-    host_file_type_to_finder_info(fi.finder_info, fi.file_type, fi.aux_type);
+
+  if (fi.has_fi) {
+    fi.afp.prodos_file_type = fi.file_type;
+    fi.afp.prodos_aux_type = fi.aux_type;
+  }
+  else {
+    afp_init(&fi.afp, fi.file_type, fi.aux_type);
     fi.has_fi = 1;
   }
 
@@ -632,12 +593,19 @@ static word32 fst_set_file_info(int class, const char *path) {
 
     int size = req_size - 6;
     if ((fst_id == proDOSFSID || fst_id == hfsFSID || fst_id == appleShareFSID) && size >= 32) {
+
+      // this should never happen...
+      if (!fi.has_fi) afp_init(&fi.afp, fi.file_type, fi.aux_type);
       fi.has_fi = 1;
+
       for (int i = 0; i <32; ++i)
-        fi.finder_info[i] = get_memory_c(option_list + 6 + i, 0);
+        fi.afp.finder_info[i] = get_memory_c(option_list + 6 + i, 0);
     }
   }
 
+  // one more check... if ftype/auxtype doesn't match the ftype/auxtype in finder info
+  // update finder info
+  if (fi.has_fi) afp_synchronize(&fi.afp, prefer_prodos);
 
   return host_set_file_info(path, &fi);
 }
@@ -668,7 +636,7 @@ static word32 fst_get_file_info(int class, const char *path) {
       word16 fst_id = hfsFSID;
       //if (fi.storage_type == 0x0f) fst_id = mfsFSID;
       word32 option_list = get_memory24_c(pb + FileInfoRecGS_optionList, 0);
-      rv = set_option_list(option_list,  fst_id, fi.finder_info, fi.has_fi ? 32 : 0);
+      rv = set_option_list(option_list,  fst_id, fi.afp.finder_info, fi.has_fi ? 32 : 0);
     }
     if (pcount >= 9) set_memory32_c(pb + FileInfoRecGS_eof, fi.eof, 0);
     if (pcount >= 10) set_memory32_c(pb + FileInfoRecGS_blocksUsed, fi.blocks, 0);
@@ -761,596 +729,13 @@ static word32 fst_volume(int class) {
 }
 
 static word32 fst_clear_backup(int class, const char *path) {
-  return invalidFSTop;
-}
 
-
-static int open_data_fork(const char *path, word16 *access, word16 *error) {
-
-  int fd = -1;
-  for (;;) {
-
-    switch(*access) {
-      case readEnableAllowWrite:
-      case readWriteEnable:
-        fd = open(path, O_RDWR);
-        break;
-      case readEnable:
-        fd = open(path, O_RDONLY);
-        break;
-      case writeEnable:
-        fd = open(path, O_WRONLY);
-        break;
-    }
-
-    if (*access == readEnableAllowWrite) {
-      if (fd < 0) {
-        *access = readEnable;
-        continue;
-      }
-      *access = readWriteEnable;
-    }
-    break;
-  }
-  if (fd < 0) {
-    *error = host_map_errno_path(errno, path);
-  }
-
-  return fd;
-}
-#if defined(__APPLE__)
-static int open_resource_fork(const char *path, word16 *access, word16 *error) {
-  // os x / hfs/apfs don't need to specifically create a resource fork.
-  // or do they?
-
-  char *rpath = host_gc_append_path(path, _PATH_RSRCFORKSPEC);
-
-  int fd = -1;
-  for (;;) {
-
-    switch(*access) {
-      case readEnableAllowWrite:
-      case readWriteEnable:
-        fd = open(rpath, O_RDWR | O_CREAT, 0666);
-        break;
-      case readEnable:
-        fd = open(rpath, O_RDONLY);
-        break;
-      case writeEnable:
-        fd = open(rpath, O_WRONLY | O_CREAT, 0666);
-        break;
-    }
-
-    if (*access == readEnableAllowWrite) {
-      if (fd < 0) {
-        *access = readEnable;
-        continue;
-      }
-      *access = readWriteEnable;
-    }
-    break;
-  }
-  if (fd < 0) {
-    *error = host_map_errno_path(errno, path);
-  }
-
-  return fd;
-
-
-
-}
-#elif defined __sun
-static int open_resource_fork(const char *path, word16 *access, word16 *error) {
-  int tmp = open(path, O_RDONLY);
-  if (tmp < 0) {
-    *error = host_map_errno_path(errno, path);
-    return -1;
-  }
-
-  int fd = -1;
-  for(;;) {
-
-    switch(*access) {
-      case readEnableAllowWrite:
-      case readWriteEnable:
-        fd = openat(tmp, XATTR_RESOURCEFORK_NAME, O_RDWR | O_CREAT | O_XATTR, 0666);
-        break;
-      case readEnable:
-        fd = openat(tmp, XATTR_RESOURCEFORK_NAME, O_RDONLY | O_XATTR);
-        break;
-      case writeEnable:
-        fd = openat(tmp, XATTR_RESOURCEFORK_NAME, O_WRONLY | O_CREAT | O_XATTR, 0666);
-        break;
-    }
-
-    if (*access == readEnableAllowWrite) {
-      if (fd < 0) {
-        *access = readEnable;
-        continue;
-      }
-      *access = readWriteEnable;
-    }
-    break;
-  }
-
-  if (fd < 0) {
-    *error = host_map_errno_path(errno, path);
-    close(tmp);
-    return -1;
-  }
-  close(tmp);
-
-  return fd;
-}
-#elif defined __linux__
-static int open_resource_fork(const char *path, word16 *access, word16 *error) {
-  *error = resForkNotFound;
-  return -1;
-}
-#else
-static int open_resource_fork(const char *path, word16 *access, word16 *error) {
-  *error = resForkNotFound;
-  return -1;
-}
-#endif
-
-
-static word32 fst_open(int class, const char *path) {
-
-
-  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
-
-  struct file_info fi;
   word16 rv = 0;
-
-  rv = host_get_file_info(path, &fi);
+  word16 type = host_storage_type(path, &rv);
   if (rv) return rv;
+  if (g_cfg_host_read_only) return drvrWrtProt;
 
-
-  int fd = -1;
-  int type = file_regular;
-  struct directory *dd = NULL;
-
-  word16 pcount = 0;
-  word16 request_access = readEnableAllowWrite;
-  word16 access = 0;
-  word16 resource_number = 0;
-  if (class) {
-    pcount = get_memory16_c(pb, 0);
-    if (pcount >= 3) request_access = get_memory16_c(pb + OpenRecGS_requestAccess, 0);
-    if (pcount >= 4) resource_number = get_memory16_c(pb + OpenRecGS_resourceNumber, 0);
-  }
-
-  if (resource_number) {
-    if (resource_number > 1) return paramRangeErr;
-    type = file_resource;
-  }
-
-  if (access > 3) return paramRangeErr;
-
-  // special access checks for directories.
-  if (fi.storage_type == 0x0d || fi.storage_type == 0x0f) {
-    if (resource_number) return resForkNotFound;
-    switch (request_access) {
-      case readEnableAllowWrite:
-        request_access = readEnable;
-        break;
-      case writeEnable:
-      case readWriteEnable:
-        return invalidAccess;
-    }
-    type = file_directory;
-  }
-
-
-  if (g_cfg_host_read_only) {
-    switch (request_access) {
-      case readEnableAllowWrite:
-        request_access = readEnable;
-        break;
-      case readWriteEnable:
-      case writeEnable:
-        return invalidAccess;
-        break;
-    }
-  }
-
-  access = request_access;
-  switch(type) {
-    case file_regular:
-      fd = open_data_fork(path, &access, &rv);
-      break;
-    case file_resource:
-      fd = open_resource_fork(path, &access, &rv);
-      break;
-    case file_directory:
-      dd = read_directory(path, &rv);
-      break;
-  }
-
-  if (rv) return rv;
-
-
-  if (class) {
-    if (pcount >= 5) set_memory16_c(pb + OpenRecGS_access, access, 0);
-    if (pcount >= 6) set_memory16_c(pb + OpenRecGS_fileType, fi.file_type, 0);
-    if (pcount >= 7) set_memory32_c(pb + OpenRecGS_auxType, fi.aux_type, 0);
-    if (pcount >= 8) set_memory16_c(pb + OpenRecGS_storageType, fi.storage_type, 0);
-
-    if (pcount >= 9) host_set_date_time_rec(pb + OpenRecGS_createDateTime, fi.create_date);
-    if (pcount >= 10) host_set_date_time_rec(pb + OpenRecGS_modDateTime, fi.modified_date);
-
-    if (pcount >= 11) {
-      word16 fst_id = hfsFSID;
-      //if (fi.storage_type == 0x0f) fst_id = mfsFSID;
-
-      word32 option_list = get_memory24_c(pb + OpenRecGS_optionList, 0);
-      word32 tmp = set_option_list(option_list, fst_id, fi.finder_info, fi.has_fi ? 32 : 0);
-      if (!rv) rv = tmp;
-    }
-
-    if (pcount >= 12) set_memory32_c(pb + OpenRecGS_eof, fi.eof, 0);
-    if (pcount >= 13) set_memory32_c(pb + OpenRecGS_blocksUsed, fi.blocks, 0);
-    if (pcount >= 14) set_memory32_c(pb + OpenRecGS_resourceEOF, fi.resource_eof, 0);
-    if (pcount >= 15) set_memory32_c(pb + OpenRecGS_resourceBlocks, fi.resource_blocks, 0);
-
-
-  }
-  // prodos 16 doesn't return anything in the parameter block.
-
-  struct fd_entry *e = alloc_fd();
-  if (!e) {
-    if (fd >=0) close(fd);
-    if (dd) free_directory(dd);
-    return outOfMem;
-  }
-  e->fd = fd;
-  e->dir = dd;
-
-  e->cookie = alloc_cookie();
-  if (!e->cookie) {
-    free_fd(e);
-    return tooManyFilesOpen;
-  }
-
-  if (type == file_regular) {
-
-    if (g_cfg_host_crlf) {
-      if (fi.file_type == 0x04 || fi.file_type == 0xb0)
-        e->translate = translate_crlf;
-    }
-
-    if (g_cfg_host_merlin && fi.file_type == 0x04) {
-      int n = strlen(path);
-      if (n >= 3 && path[n-1] == 'S' && path[n-2] == '.')
-        e->translate = translate_merlin;
-    }
-  }
-
-  e->access = access;
-  e->path = strdup(path);
-  e->type = type;
-
-
-  // insert it in the linked list.
-  e->next = fd_head;
-  fd_head = e;
-
-  engine.xreg = e->cookie;
-  engine.yreg = access; // actual access, needed in fcr.
-
-  return rv;
-}
-
-static word32 fst_read(int class) {
-
-  int cookie = engine.yreg;
-  struct fd_entry *e = find_fd(cookie);
-
-  if (!e) return invalidRefNum;
-
-  switch (e->type) {
-    case file_directory:
-      return badStoreType;
-  }
-
-  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
-
-  word32 data_buffer = 0;
-  word32 request_count = 0;
-  word32 transfer_count = 0;
-
-  if (class) {
-    data_buffer = get_memory24_c(pb + IORecGS_dataBuffer, 0);
-    request_count = get_memory24_c(pb + IORecGS_requestCount, 0);
-    // pre-zero transfer count
-    set_memory32_c(pb + IORecGS_transferCount, 0, 0);
-  } else {
-    data_buffer = get_memory24_c(pb + FileIORec_dataBuffer, 0);
-    request_count = get_memory24_c(pb + FileIORec_requestCount, 0);
-    set_memory32_c(pb + FileIORec_transferCount, 0, 0);
-  }
-
-  if (request_count == 0) return 0;
-
-
-  word16 newline_mask;
-  word32 rv = 0;
-  ssize_t ok;
-
-  newline_mask = get_memory16_c(global_buffer, 0);
-  if (newline_mask) {
-    byte newline_table[256];
-    for (int i = 0; i < 256; ++i)
-      newline_table[i] = get_memory_c(global_buffer + 2 + i, 0);
-
-    for (word32 i = 0; i < request_count; ++i) {
-      byte b;
-      ok = safe_read(e, &b, 1);
-      if (ok < 0) return host_map_errno(errno);
-      if (ok == 0) break;
-      transfer_count++;
-      set_memory_c(data_buffer++, b, 0);
-      if (newline_table[b & newline_mask]) break;
-    }
-    if (transfer_count == 0) rv = eofEncountered;
-  }
-  else {
-    byte *data = host_gc_malloc(request_count);
-    if (!data) return outOfMem;
-
-
-    ok = safe_read(e, data, request_count);
-    if (ok < 0) rv = host_map_errno(errno);
-    if (ok == 0) rv = eofEncountered;
-    if (ok > 0) {
-      transfer_count = ok;
-      for (size_t i = 0; i < ok; ++i) {
-        set_memory_c(data_buffer + i, data[i], 0);
-      }
-    }
-  }
-
-  if (transfer_count) {
-    if (class)
-      set_memory32_c(pb + IORecGS_transferCount, transfer_count, 0);
-    else
-      set_memory32_c(pb + FileIORec_transferCount, transfer_count, 0);
-  }
-
-  return rv;
-}
-
-static word32 fst_write(int class) {
-
-  int cookie = engine.yreg;
-  struct fd_entry *e = find_fd(cookie);
-
-  if (!e) return invalidRefNum;
-
-  if (!(e->access & writeEnable))
-    return invalidAccess;
-
-  switch (e->type) {
-    case file_directory:
-      return badStoreType;
-  }
-
-
-  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
-
-  word32 data_buffer = 0;
-  word32 request_count = 0;
-
-  if (class) {
-    data_buffer = get_memory24_c(pb + IORecGS_dataBuffer, 0);
-    request_count = get_memory24_c(pb + IORecGS_requestCount, 0);
-    // pre-zero transfer count
-    set_memory32_c(pb + IORecGS_transferCount, 0, 0);
-  } else {
-    data_buffer = get_memory24_c(pb + FileIORec_dataBuffer, 0);
-    request_count = get_memory24_c(pb + FileIORec_requestCount, 0);
-    set_memory32_c(pb + FileIORec_transferCount, 0, 0);
-  }
-
-  if (request_count == 0) return 0;
-  byte *data = host_gc_malloc(request_count);
-  if (!data) return outOfMem;
-
-  for (word32 i = 0; i < request_count; ++i) {
-    data[i] = get_memory_c(data_buffer + i,0);
-  }
-
-  word32 rv = 0;
-  ssize_t ok = safe_write(e, data, request_count);
-  if (ok < 0) rv = host_map_errno(errno);
-  if (ok > 0) {
-    if (class)
-      set_memory32_c(pb + IORecGS_transferCount, ok, 0);
-    else
-      set_memory32_c(pb + FileIORec_transferCount, ok, 0);
-  }
-  return rv;
-}
-
-static word32 fst_close(int class) {
-
-  int cookie = engine.yreg;
-
-  return remove_fd(cookie);
-
-}
-
-static word32 fst_flush(int class) {
-
-  int cookie = engine.yreg;
-  struct fd_entry *e = find_fd(cookie);
-
-  if (!e) return invalidRefNum;
-
-  switch (e->type) {
-    case file_directory:
-      return badStoreType;
-  }
-
-  int ok = fsync(e->fd);
-  if (ok < 0) return host_map_errno(errno);
-  return 0;
-}
-
-static off_t get_offset(int fd, word16 base, word32 displacement) {
-
-  off_t pos = lseek(fd, 0, SEEK_CUR);
-  off_t eof = lseek(fd, 0, SEEK_END);
-  lseek(fd, pos, SEEK_SET);
-
-  switch (base) {
-    case startPlus:
-      return displacement;
-      break;
-    case eofMinus:
-      return eof - displacement;
-      break;
-    case markPlus:
-      return pos + displacement;
-      break;
-    case markMinus:
-      return pos - displacement;
-      break;
-    default:
-      return -1;
-  }
-
-
-}
-
-static word32 fst_set_mark(int class) {
-
-  int cookie = engine.yreg;
-
-  struct fd_entry *e = find_fd(cookie);
-  if (!e) return invalidRefNum;
-
-  switch (e->type) {
-    case file_directory:
-      return badStoreType;
-  }
-
-  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
-
-  word16 base = 0;
-  word32 displacement = 0;
-  if (class) {
-    base = get_memory16_c(pb + SetPositionRecGS_base, 0);
-    displacement = get_memory32_c(pb + SetPositionRecGS_displacement, 0);
-  } else {
-    displacement = get_memory32_c(pb + MarkRec_position, 0);
-  }
-  if (base > markMinus) return paramRangeErr;
-
-  off_t offset = get_offset(e->fd, base, displacement);
-  if (offset < 0) return outOfRange;
-
-  off_t ok = lseek(e->fd, offset, SEEK_SET);
-  if (ok < 0) return host_map_errno(errno);
-  return 0;
-}
-
-static word32 fst_set_eof(int class) {
-
-  int cookie = engine.yreg;
-
-  struct fd_entry *e = find_fd(cookie);
-  if (!e) return invalidRefNum;
-
-  switch (e->type) {
-    case file_directory:
-      return badStoreType;
-  }
-
-
-  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
-
-  word16 base = 0;
-  word32 displacement = 0;
-  if (class) {
-    base = get_memory16_c(pb + SetPositionRecGS_base, 0);
-    displacement = get_memory32_c(pb + SetPositionRecGS_displacement, 0);
-  } else {
-    displacement = get_memory32_c(pb + EOFRec_eofPosition, 0);
-  }
-
-  if (base > markMinus) return paramRangeErr;
-
-  off_t offset = get_offset(e->fd, base, displacement);
-  if (offset < 0) return outOfRange;
-
-  int ok = ftruncate(e->fd, offset);
-  if (ok < 0) return host_map_errno(errno);
-  return 0;
-
-}
-
-static word32 fst_get_mark(int class) {
-
-  int cookie = engine.yreg;
-
-  struct fd_entry *e = find_fd(cookie);
-  if (!e) return invalidRefNum;
-
-  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
-
-  off_t pos = 0;
-
-  switch (e->type) {
-    case file_directory:
-      return badStoreType;
-  }
-
-  pos = lseek(e->fd, 0, SEEK_CUR);
-  if (pos < 0) return host_map_errno(errno);
-
-  if (class) {
-    set_memory32_c(pb + PositionRecGS_position, pos, 0);
-  } else {
-    set_memory32_c(pb + MarkRec_position, pos, 0);
-  }
-
-  return 0;
-}
-
-static word32 fst_get_eof(int class) {
-
-  int cookie = engine.yreg;
-
-  struct fd_entry *e = find_fd(cookie);
-  if (!e) return invalidRefNum;
-
-  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
-
-
-  switch (e->type) {
-    case file_directory:
-      return badStoreType;
-  }
-
-
-  off_t eof = 0;
-  off_t pos = 0;
-
-  pos = lseek(e->fd, 0, SEEK_CUR);
-  eof = lseek(e->fd, 0, SEEK_END);
-  if (eof < 0) return host_map_errno(errno);
-  lseek(e->fd, pos, SEEK_SET);
-
-
-  if (class) {
-    set_memory32_c(pb + PositionRecGS_position, eof, 0);
-  } else {
-    set_memory32_c(pb + MarkRec_position, eof, 0);
-  }
-
-  return 0;
+  return invalidFSTop;
 }
 
 static void free_directory(struct directory *dd) {
@@ -1394,48 +779,51 @@ static int filter_directory_entry(const char *name) {
   return 0;
 }
 
-
 static struct directory *read_directory(const char *path, word16 *error) {
-  DIR *dirp;
+  HANDLE h;
+  WIN32_FIND_DATA data;
   struct directory *dd;
   int capacity = 100;
   int size = sizeof(struct directory) + capacity * sizeof(char *);
 
-  dirp = opendir(path);
-  if (!dirp) {
-    *error = host_map_errno_path(errno, path);
+  memset(&data, 0, sizeof(data));
+
+  char *p = host_gc_append_path(path, "*");
+  h = FindFirstFile(p, &data);
+  if (h == INVALID_HANDLE_VALUE) {
+    *error = host_win32_fail("FindFirstFile:read_directory", p, GetLastError());
     return NULL;
   }
 
   dd = (struct directory *)malloc(size);
   if (!dd) {
+    FindClose(h);
     *error = outOfMem;
-    closedir(dirp);
     return NULL;
   }
   memset(dd, 0, size);
-
-  for(;;) {
-    struct dirent *d = readdir(dirp);
-    if (!d) break;
-    if (filter_directory_entry(d->d_name)) continue;
-
+  do {
+    if (filter_directory_entry(data.cFileName)) continue;
     if (dd->num_entries >= capacity) {
       capacity += capacity;
       size = sizeof(struct directory) + capacity * sizeof(char *);
       struct directory * tmp = realloc(dd, size);
       if (!tmp) {
-        *error = host_map_errno(errno);
+		  *error = outOfMem;
         free_directory(dd);
-        closedir(dirp);
+        FindClose(h);
         return NULL;
       }
       dd = tmp;
     }
-    dd->entries[dd->num_entries++] = strdup(d->d_name);
-  };
+    dd->entries[dd->num_entries++] = strdup(data.cFileName);
+  } while (FindNextFile(h, &data) != 0);
 
-  closedir(dirp);
+  //?
+  DWORD e = GetLastError();
+  if (e != ERROR_NO_MORE_FILES) *error = host_win32_fail("FindNextFile:read_directory", p, e);
+
+  FindClose(h);
 
   // sort them....
   qsort(dd->entries, dd->num_entries, sizeof(char *), qsort_callback);
@@ -1444,8 +832,594 @@ static struct directory *read_directory(const char *path, word16 *error) {
 }
 
 
-static word32 fst_get_dir_entry(int class) {
 
+static HANDLE open_data_fork(const char *path, word16 *access, word16 *error) {
+
+  HANDLE h = INVALID_HANDLE_VALUE;
+  for (;;) {
+
+    DWORD wAccess = 0;
+    DWORD wShare = HOST_SHARE_ALL;
+    DWORD wCreate = OPEN_EXISTING;
+
+    switch(*access) {
+      case readEnableAllowWrite:
+      case readWriteEnable:
+        wAccess = GENERIC_READ | GENERIC_WRITE;
+        break;
+      case readEnable:
+        wAccess = GENERIC_READ;
+        break;
+      case writeEnable:
+        wAccess = GENERIC_WRITE;
+        break;
+    }
+
+    h = CreateFile(path, wAccess, wShare, NULL, wCreate, FILE_ATTRIBUTE_NORMAL, NULL);
+
+
+    if (*access == readEnableAllowWrite) {
+      if (h == INVALID_HANDLE_VALUE) {
+        *access = readEnable;
+        continue;
+      }
+      *access = readWriteEnable;
+    }
+    break;
+  }
+  if (h == INVALID_HANDLE_VALUE) {
+    *error = host_win32_fail("CreateFile:data_fork", path, GetLastError());
+  }
+  return h;
+}
+
+static HANDLE open_resource_fork(const char *path, word16 *access, word16 *error) {
+
+  char *rpath = host_gc_append_string(path, ":AFP_Resource");
+
+  HANDLE h = INVALID_HANDLE_VALUE;
+  for (;;) {
+
+    DWORD wAccess = 0;
+    DWORD wShare = HOST_SHARE_ALL;
+    DWORD wCreate = 0;
+
+    switch(*access) {
+      case readEnableAllowWrite:
+      case readWriteEnable:
+        wAccess = GENERIC_READ | GENERIC_WRITE;
+        wCreate = OPEN_ALWAYS;
+        break;
+      case readEnable:
+        wAccess = GENERIC_READ;
+        wCreate = OPEN_EXISTING;
+        break;
+      case writeEnable:
+        wAccess = GENERIC_WRITE;
+        wCreate = OPEN_ALWAYS;
+        break;
+    }
+
+    h = CreateFile(rpath, wAccess, wShare, NULL, wCreate, FILE_ATTRIBUTE_NORMAL, NULL);
+
+
+    if (*access == readEnableAllowWrite) {
+      if (h == INVALID_HANDLE_VALUE) {
+        *access = readEnable;
+        continue;
+      }
+      *access = readWriteEnable;
+    }
+    break;
+  }
+  if (h == INVALID_HANDLE_VALUE) {
+    *error = host_win32_fail("CreateFile:AFP_Resource", rpath, GetLastError());
+  }
+  return h;
+}
+
+
+
+static word32 fst_open(int class, const char *path) {
+
+
+  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
+
+  struct file_info fi;
+  word16 rv = 0;
+
+  rv = host_get_file_info(path, &fi);
+  if (rv) return rv;
+
+
+  HANDLE h = INVALID_HANDLE_VALUE;
+  int type = file_regular;
+  struct directory *dd = NULL;
+
+  word16 pcount = 0;
+  word16 request_access = readEnableAllowWrite;
+  word16 access = 0;
+  word16 resource_number = 0;
+  if (class) {
+    pcount = get_memory16_c(pb, 0);
+    if (pcount >= 3) request_access = get_memory16_c(pb + OpenRecGS_requestAccess, 0);
+    if (pcount >= 4) resource_number = get_memory16_c(pb + OpenRecGS_resourceNumber, 0);
+  }
+
+  if (resource_number) {
+    if (resource_number > 1) return paramRangeErr;
+    type = file_resource;
+  }
+
+  if (access > 3) return paramRangeErr;
+
+  // special access checks for directories.
+  if (fi.storage_type == 0x0f || fi.storage_type == 0x0d) {
+    if (resource_number) return resForkNotFound;
+    switch (request_access) {
+      case readEnableAllowWrite:
+        request_access = readEnable;
+        break;
+      case writeEnable:
+      case readWriteEnable:
+        return invalidAccess;
+    }
+    type = file_directory;
+  }
+
+
+  if (g_cfg_host_read_only) {
+    switch (request_access) {
+      case readEnableAllowWrite:
+        request_access = readEnable;
+        break;
+      case readWriteEnable:
+      case writeEnable:
+        return invalidAccess;
+        break;
+    }
+  }
+
+  access = request_access;
+  switch(type) {
+    case file_regular:
+      h = open_data_fork(path, &access, &rv);
+      break;
+    case file_resource:
+      h = open_resource_fork(path, &access, &rv);
+      break;
+    case file_directory:
+      dd = read_directory(path, &rv);
+      break;
+  }
+
+  if (rv) return rv;
+
+
+  if (class) {
+    if (pcount >= 5) set_memory16_c(pb + OpenRecGS_access, access, 0);
+    if (pcount >= 6) set_memory16_c(pb + OpenRecGS_fileType, fi.file_type, 0);
+    if (pcount >= 7) set_memory32_c(pb + OpenRecGS_auxType, fi.aux_type, 0);
+    if (pcount >= 8) set_memory16_c(pb + OpenRecGS_storageType, fi.storage_type, 0);
+
+    if (pcount >= 9) host_set_date_time_rec(pb + OpenRecGS_createDateTime, fi.create_date);
+    if (pcount >= 10) host_set_date_time_rec(pb + OpenRecGS_modDateTime, fi.modified_date);
+
+    if (pcount >= 11) {
+      word16 fst_id = hfsFSID;
+      //if (fi.storage_type == 0x0f) fst_id = mfsFSID;
+
+      word32 option_list = get_memory24_c(pb + OpenRecGS_optionList, 0);
+      word32 tmp = set_option_list(option_list, fst_id, fi.afp.finder_info, fi.has_fi ? 32 : 0);
+      if (!rv) rv = tmp;
+    }
+
+    if (pcount >= 12) set_memory32_c(pb + OpenRecGS_eof, fi.eof, 0);
+    if (pcount >= 13) set_memory32_c(pb + OpenRecGS_blocksUsed, fi.blocks, 0);
+    if (pcount >= 14) set_memory32_c(pb + OpenRecGS_resourceEOF, fi.resource_eof, 0);
+    if (pcount >= 15) set_memory32_c(pb + OpenRecGS_resourceBlocks, fi.resource_blocks, 0);
+
+
+  }
+  // prodos 16 doesn't return anything in the parameter block.
+
+  struct fd_entry *e = alloc_fd();
+  if (!e) {
+    if (h != INVALID_HANDLE_VALUE) CloseHandle(h);
+    if (dd) free_directory(dd);
+    return outOfMem;
+  }
+  e->handle = h;
+  e->dir = dd;
+
+  e->cookie = alloc_cookie();
+  if (!e->cookie) {
+    free_fd(e);
+    return tooManyFilesOpen;
+  }
+
+  if (type == file_regular) {
+
+    if (g_cfg_host_crlf) {
+      if (fi.file_type == 0x04 || fi.file_type == 0xb0)
+        e->translate = translate_crlf;
+    }
+
+    if (g_cfg_host_merlin && fi.file_type == 0x04) {
+      int n = strlen(path);
+      if (n >= 3 && path[n-1] == 'S' && path[n-2] == '.')
+        e->translate = translate_merlin;
+    }
+  }
+
+
+
+  e->access = access;
+  e->path = strdup(path);
+  e->type = type;
+
+
+  // insert it in the linked list.
+  e->next = fd_head;
+  fd_head = e;
+
+  engine.xreg = e->cookie;
+  engine.yreg = access;       // actual access, needed in fcr.
+
+  return rv;
+}
+
+static word32 fst_read(int class) {
+
+  int cookie = engine.yreg;
+  struct fd_entry *e = find_fd(cookie);
+
+  if (!e) return invalidRefNum;
+
+  switch (e->type) {
+    case file_directory:
+      return badStoreType;
+  }
+
+  if (!(e->access & readEnable))
+    return invalidAccess;
+
+  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
+
+  word32 data_buffer = 0;
+  word32 request_count = 0;
+  word32 transfer_count = 0;
+
+  if (class) {
+    data_buffer = get_memory24_c(pb + IORecGS_dataBuffer, 0);
+    request_count = get_memory24_c(pb + IORecGS_requestCount, 0);
+    // pre-zero transfer count
+    set_memory32_c(pb + IORecGS_transferCount, 0, 0);
+  } else {
+    data_buffer = get_memory24_c(pb + FileIORec_dataBuffer, 0);
+    request_count = get_memory24_c(pb + FileIORec_requestCount, 0);
+    set_memory32_c(pb + FileIORec_transferCount, 0, 0);
+  }
+
+  if (request_count == 0) return 0;
+
+
+  word16 newline_mask;
+  word32 rv = 0;
+  int ok;
+
+  newline_mask = get_memory16_c(global_buffer, 0);
+  if (newline_mask) {
+    byte newline_table[256];
+    for (int i = 0; i < 256; ++i)
+      newline_table[i] = get_memory_c(global_buffer + 2 + i, 0);
+
+    for (word32 i = 0; i < request_count; ++i) {
+      byte b;
+      DWORD read_count;
+      ok = ReadFile(e->handle, &b, 1, &read_count, NULL);
+      if (!ok) return host_win32_fail("ReadFile:newline", e->path, GetLastError());
+      if (read_count == 0) break;
+      transfer_count++;
+
+      switch(e->translate) {
+        case translate_crlf:
+          host_lf_to_cr(&b, 1);
+          break;
+        case translate_merlin:
+          host_text_to_merlin(&b, 1);
+          break;
+      }
+
+      set_memory_c(data_buffer++, b, 0);
+      if (newline_table[b & newline_mask]) break;
+    }
+    if (transfer_count == 0) rv = eofEncountered;
+  }
+  else {
+    DWORD read_count;
+    byte *data = host_gc_malloc(request_count);
+    if (!data) return outOfMem;
+
+    ok = ReadFile(e->handle, data, request_count, &read_count, NULL);
+    if (!ok) rv = host_win32_fail("ReadFile", e->path, GetLastError());
+    else if (read_count == 0) rv = eofEncountered;
+    if (read_count > 0) {
+      transfer_count = read_count;
+      switch(e->translate) {
+        case translate_crlf:
+          host_lf_to_cr(data, transfer_count);
+          break;
+        case translate_merlin:
+          host_text_to_merlin(data, transfer_count);
+          break;
+      }
+      for (size_t i = 0; i < transfer_count; ++i) {
+        set_memory_c(data_buffer + i, data[i], 0);
+      }
+    }
+  }
+
+  if (transfer_count) {
+    if (class)
+      set_memory32_c(pb + IORecGS_transferCount, transfer_count, 0);
+    else
+      set_memory32_c(pb + FileIORec_transferCount, transfer_count, 0);
+  }
+
+  return rv;
+}
+
+static word32 fst_write(int class) {
+
+  int cookie = engine.yreg;
+  struct fd_entry *e = find_fd(cookie);
+
+  if (!e) return invalidRefNum;
+
+  switch (e->type) {
+    case file_directory:
+      return badStoreType;
+  }
+  if (g_cfg_host_read_only) return drvrWrtProt;
+
+  if (!(e->access & writeEnable))
+    return invalidAccess;
+
+  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
+
+  word32 data_buffer = 0;
+  word32 request_count = 0;
+
+  if (class) {
+    data_buffer = get_memory24_c(pb + IORecGS_dataBuffer, 0);
+    request_count = get_memory24_c(pb + IORecGS_requestCount, 0);
+    // pre-zero transfer count
+    set_memory32_c(pb + IORecGS_transferCount, 0, 0);
+  } else {
+    data_buffer = get_memory24_c(pb + FileIORec_dataBuffer, 0);
+    request_count = get_memory24_c(pb + FileIORec_requestCount, 0);
+    set_memory32_c(pb + FileIORec_transferCount, 0, 0);
+  }
+
+  if (request_count == 0) return 0;
+  byte *data = host_gc_malloc(request_count);
+  if (!data) return outOfMem;
+
+  for (word32 i = 0; i < request_count; ++i) {
+    data[i] = get_memory_c(data_buffer + i,0);
+  }
+
+  switch (e->translate) {
+    case translate_crlf:
+      host_cr_to_lf(data, request_count);
+      break;
+    case translate_merlin:
+      host_merlin_to_text(data, request_count);
+      break;
+  }
+  word32 rv = 0;
+  DWORD write_count = 0;
+  int ok = WriteFile(e->handle, data, request_count, &write_count, NULL);
+  if (!ok) rv = host_win32_fail("WriteFile", e->path, GetLastError());
+  if (write_count > 0) {
+    if (class)
+      set_memory32_c(pb + IORecGS_transferCount, write_count, 0);
+    else
+      set_memory32_c(pb + FileIORec_transferCount, write_count, 0);
+  }
+  return rv;
+}
+
+static word32 fst_close(int class) {
+
+  int cookie = engine.yreg;
+
+  return remove_fd(cookie);
+
+}
+
+static word32 fst_flush(int class) {
+
+  int cookie = engine.yreg;
+  struct fd_entry *e = find_fd(cookie);
+
+  if (!e) return invalidRefNum;
+
+  switch (e->type) {
+    case file_directory:
+      return badStoreType;
+  }
+
+  if (!FlushFileBuffers(e->handle)) return host_win32_fail("FlushFileBuffers", e->path, GetLastError());
+  return 0;
+}
+
+
+static word16 win_seek(HANDLE h, word16 base, word32 displacement, LARGE_INTEGER *position) {
+  LARGE_INTEGER d;
+  int m = 0;
+  switch (base) {
+    case startPlus:
+      m = FILE_BEGIN;
+      d.QuadPart = displacement;
+      break;
+    case markPlus:
+      m = FILE_CURRENT;
+      d.QuadPart = displacement;
+      break;
+    case markMinus:
+      m = FILE_CURRENT;
+      d.QuadPart = -(LONGLONG)displacement;
+      break;
+    case eofMinus:
+      m = FILE_END;
+      d.QuadPart = -(LONGLONG)displacement;
+      break;
+
+    default:
+      return paramRangeErr;
+
+  }
+  if (!SetFilePointerEx(h, d, position, m)) return host_win32_fail("SetFilePointerEx", NULL, GetLastError());
+  return 0;
+}
+
+static word32 fst_set_mark(int class) {
+
+  int cookie = engine.yreg;
+
+  struct fd_entry *e = find_fd(cookie);
+  if (!e) return invalidRefNum;
+
+  switch (e->type) {
+    case file_directory:
+      return badStoreType;
+  }
+
+  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
+
+  word16 base = 0;
+  word32 displacement = 0;
+  if (class) {
+    base = get_memory16_c(pb + SetPositionRecGS_base, 0);
+    displacement = get_memory32_c(pb + SetPositionRecGS_displacement, 0);
+  } else {
+    displacement = get_memory32_c(pb + MarkRec_position, 0);
+  }
+  if (base > markMinus) return paramRangeErr;
+
+  return win_seek(e->handle, base, displacement, NULL);
+}
+
+static word32 fst_set_eof(int class) {
+
+  int cookie = engine.yreg;
+
+  struct fd_entry *e = find_fd(cookie);
+  if (!e) return invalidRefNum;
+
+  switch (e->type) {
+    case file_directory:
+      return badStoreType;
+  }
+  if (g_cfg_host_read_only) return drvrWrtProt;
+
+  if (!(e->access & writeEnable))
+    return invalidAccess;
+
+  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
+
+  word16 base = 0;
+  word32 displacement = 0;
+  if (class) {
+    base = get_memory16_c(pb + SetPositionRecGS_base, 0);
+    displacement = get_memory32_c(pb + SetPositionRecGS_displacement, 0);
+  } else {
+    displacement = get_memory32_c(pb + EOFRec_eofPosition, 0);
+  }
+
+  if (base > markMinus) return paramRangeErr;
+
+  // get the current mark
+  LARGE_INTEGER mark;
+  LARGE_INTEGER zero; zero.QuadPart = 0;
+  SetFilePointerEx(e->handle, zero, &mark, FILE_CURRENT);
+
+  word16 rv = win_seek(e->handle, base, displacement, NULL);
+  if (rv) return rv;
+
+  // SetEndOfFile sets the current positions as eof.
+  if (!SetEndOfFile(e->handle)) return host_win32_fail("SetEndOfFile", e->path, GetLastError());
+
+  // restore old mark. ???
+  SetFilePointerEx(e->handle, mark, NULL, FILE_BEGIN);
+  return 0;
+
+}
+
+static word32 fst_get_mark(int class) {
+
+  int cookie = engine.yreg;
+
+  struct fd_entry *e = find_fd(cookie);
+  if (!e) return invalidRefNum;
+
+  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
+
+  switch (e->type) {
+    case file_directory:
+      return badStoreType;
+  }
+
+  // get the current mark
+  LARGE_INTEGER pos;
+  LARGE_INTEGER zero; zero.QuadPart = 0;
+  if (!SetFilePointerEx(e->handle, zero, &pos, FILE_CURRENT)) return host_win32_fail("SetFilePointerEx:get_mark", e->path, GetLastError());
+
+  if (class) {
+    set_memory32_c(pb + PositionRecGS_position, pos.LowPart, 0);
+  } else {
+    set_memory32_c(pb + MarkRec_position, pos.LowPart, 0);
+  }
+
+  return 0;
+}
+
+static word32 fst_get_eof(int class) {
+
+  int cookie = engine.yreg;
+
+  struct fd_entry *e = find_fd(cookie);
+  if (!e) return invalidRefNum;
+
+  word32 pb = get_memory24_c(engine.direct + dp_param_blk_ptr, 0);
+
+
+  switch (e->type) {
+    case file_directory:
+      return badStoreType;
+  }
+
+  LARGE_INTEGER eof;
+
+  if (!GetFileSizeEx(e->handle, &eof)) return host_win32_fail("GetFileSizeEx", e->path, GetLastError());
+
+  // what if > 32 bits?
+
+  if (class) {
+    set_memory32_c(pb + PositionRecGS_position, eof.LowPart, 0);
+  } else {
+    set_memory32_c(pb + MarkRec_position, eof.LowPart, 0);
+  }
+
+  return 0;
+}
+
+
+
+
+static word32 fst_get_dir_entry(int class) {
 
   int cookie = engine.yreg;
 
@@ -1539,7 +1513,7 @@ static word32 fst_get_dir_entry(int class) {
       word16 fst_id = hfsFSID;
       //if (fi.storage_type == 0x0f) fst_id = mfsFSID;
       word32 option_list = get_memory24_c(pb + DirEntryRecGS_optionList, 0);
-      word32 tmp = set_option_list(option_list, fst_id, fi.finder_info, fi.has_fi ? 32 : 0);
+      word32 tmp = set_option_list(option_list, fst_id, fi.afp.finder_info, fi.has_fi ? 32 : 0);
       if (!rv) rv = tmp;
     }
 
@@ -1569,15 +1543,18 @@ static word32 fst_get_dir_entry(int class) {
 static word32 fst_change_path(int class, const char *path1, const char *path2) {
 
   /* make sure they're not trying to rename the volume... */
-  struct stat st;
-  if (stat(path1, &st) < 0) return host_map_errno_path(errno, path1);
-  if (host_is_root(&st))
-    return invalidAccess;
+  BOOL ok = 0;
 
-  // rename will delete any previous file. ChangePath should return an error.
-  if (stat(path2, &st) == 0) return dupPathname;
+  word16 rv = 0;
+  word16 type = host_storage_type(path1, &rv);
+  if (rv) return rv;
+  if (type == 0x0f) return badStoreType;
+  if (g_cfg_host_read_only) return drvrWrtProt;
 
-  if (rename(path1, path2) < 0) return host_map_errno_path(errno, path2);
+  if (!MoveFile(path1, path2)) {
+    HOST_FST_LOG("Host FST WIN32: MoveFile dest=%s\n", path2 ? path2 : "(null)");
+    return host_win32_fail("MoveFile", path1, GetLastError());
+  }
   return 0;
 }
 
@@ -1588,6 +1565,8 @@ static word32 fst_format(int class) {
 static word32 fst_erase(int class) {
   return notBlockDev;
 }
+
+#define expand_path(x, y) (x)
 
 static const char *call_name(word16 call) {
   static char* class1[] = {
@@ -1717,7 +1696,6 @@ static const char *call_name(word16 call) {
   return "";
 }
 
-
 void host_fst(void) {
 
   /*
@@ -1737,9 +1715,12 @@ void host_fst(void) {
 
   word32 acc = 0;
   word16 call = engine.xreg;
+  char *path1 = NULL;
+  char *path2 = NULL;
+  char *path3 = NULL;
+  char *path4 = NULL;
 
   HOST_FST_LOG("Host FST: %04x %s", call, call_name(call));
-
 
   if (call & 0x8000) {
     HOST_FST_LOG("\n");
@@ -1766,6 +1747,7 @@ void host_fst(void) {
       return;
     }
 
+
     int class = call >> 13;
     call &= 0x1fff;
 
@@ -1778,10 +1760,6 @@ void host_fst(void) {
       return;
     }
 
-    char *path1 = NULL;
-    char *path2 = NULL;
-    char *path3 = NULL;
-    char *path4 = NULL;
     const char *cp;
 
     switch(call & 0xff) {
@@ -1802,11 +1780,14 @@ void host_fst(void) {
     if (path1) HOST_FST_LOG(" - %s", path1);
     if (path2) HOST_FST_LOG(" - %s", path2);
 
+
     switch(call & 0xff) {
       case 0x01:
         cp = check_path(path1, &acc);
         if (acc) break;
         path3 = host_gc_append_path(host_root, cp);
+        path3 = expand_path(path3, &acc);
+        if (acc) break;
 
         acc = fst_create(class, path3);
         break;
@@ -1814,6 +1795,8 @@ void host_fst(void) {
         cp = check_path(path1, &acc);
         if (acc) break;
         path3 = host_gc_append_path(host_root, cp);
+        path3 = expand_path(path3, &acc);
+        if (acc) break;
 
         acc = fst_destroy(class, path3);
         break;
@@ -1822,10 +1805,14 @@ void host_fst(void) {
         cp = check_path(path1, &acc);
         if (acc) break;
         path3 = host_gc_append_path(host_root, cp);
+        path3 = expand_path(path3, &acc);
+        if (acc) break;
 
         cp = check_path(path2, &acc);
         if (acc) break;
         path4 = host_gc_append_path(host_root, cp);
+        path4 = expand_path(path4, &acc);
+        if (acc) break;
 
         acc = fst_change_path(class, path3, path4);
         break;
@@ -1833,6 +1820,8 @@ void host_fst(void) {
         cp = check_path(path1, &acc);
         if (acc) break;
         path3 = host_gc_append_path(host_root, cp);
+        path3 = expand_path(path3, &acc);
+        if (acc) break;
 
         acc = fst_set_file_info(class, path3);
         break;
@@ -1840,6 +1829,9 @@ void host_fst(void) {
         cp = check_path(path1, &acc);
         if (acc) break;
         path3 = host_gc_append_path(host_root, cp);
+        path3 = expand_path(path3, &acc);
+        if (acc) break;
+
         acc = fst_get_file_info(class, path3);
         break;
       case 0x07:
@@ -1852,12 +1844,18 @@ void host_fst(void) {
         cp = check_path(path1, &acc);
         if (acc) break;
         path3 = host_gc_append_path(host_root, cp);
+        path3 = expand_path(path3, &acc);
+        if (acc) break;
+
         acc = fst_clear_backup(class, path3);
         break;
       case 0x10:
         cp = check_path(path1, &acc);
         if (acc) break;
         path3 = host_gc_append_path(host_root, cp);
+        path3 = expand_path(path3, &acc);
+        if (acc) break;
+
         acc = fst_open(class, path3);
         break;
       case 0x012:
@@ -1901,7 +1899,26 @@ void host_fst(void) {
     HOST_FST_LOG("\n");
   }
 
-  if (acc) HOST_FST_LOG("          %02x   %s\n", acc, host_error_name(acc));
+  if (acc) {
+    const char *open_path = NULL;
+    if (!path3) {
+      struct fd_entry *fe = find_fd((int)engine.yreg);
+      if (fe) open_path = fe->path;
+    }
+    HOST_FST_LOG("************************************************************************\n"
+                 "Host FST FAIL: %04x %s gsos=$%02x %s\n"
+                 "  gs path:   %s\n"
+                 "  gs path2:  %s\n"
+                 "  host path: %s\n"
+                 "************************************************************************\n",
+                 (unsigned)engine.xreg,
+                 call_name(engine.xreg),
+                 (unsigned)acc,
+                 host_error_name((word16)acc),
+                 path1 ? path1 : "(none)",
+                 path2 ? path2 : "(none)",
+                 path3 ? path3 : (open_path ? open_path : "(none)"));
+  }
 
   host_gc_free();
 
@@ -1909,3 +1926,4 @@ void host_fst(void) {
   if (acc) SEC();
   else CLC();
 }
+

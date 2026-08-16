@@ -34,6 +34,26 @@ cmake --build build --parallel
 cmake --install build
 ```
 
+### Windows (MSYS2 / MinGW64)
+
+Windows development uses **MSYS2** with the MinGW64 toolchain (not a native PowerShell/`cmd` environment).
+
+- Open an MSYS2 bash shell (or invoke `C:\msys64\usr\bin\bash.exe`). Home is `/home/<user>` (`C:\msys64\home\<user>`), not `%USERPROFILE%`.
+- **Always `source ~/.profile` first** so compiler, cmake, and other MinGW tools are on `PATH` (`/c/msys64/mingw64/bin`). Without that, `g++`/`clang++`/`cmake` may be missing or the wrong binaries.
+- From a non-login shell (including many agent terminals), use:
+
+```
+source ~/.profile
+```
+
+or start bash as a login shell (`bash -lc '…'`), which reads `~/.profile` automatically.
+
+```
+source ~/.profile
+cmake -G "MinGW Makefiles" -DGS2_PROGRAM_FILES=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B build -S .
+cmake --build build --parallel
+```
+
 ## Debug-protocol smoke tests
 
 When launching GSSquared for scripted tests over `--debug SOCKET`:

@@ -475,7 +475,7 @@ void host_synthesize_file_xinfo(const char *path, struct file_info *fi) {
   for(n = 0;; ++n) {
     char c = path[n];
     if (c == 0) break;
-    else if (c == '/') { slash = path + n + 1; dot = NULL; }
+    else if (c == '/' || c == '\\') { slash = path + n + 1; dot = NULL; }
     else if (c == '.') dot = path + n + 1;
   }
 

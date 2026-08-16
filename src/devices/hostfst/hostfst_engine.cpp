@@ -9,7 +9,7 @@
 
 #include "devices/hostfst/hostfst_engine.hpp"
 
-#if defined(_WIN32) || defined(__EMSCRIPTEN__)
+#if defined(__EMSCRIPTEN__)
 
 void hostfst_bind_cpu(cpu_state *) {}
 void hostfst_sync_engine_from_cpu(cpu_state *) {}
@@ -26,6 +26,10 @@ void hostfst_set_host_path(const char *) {}
 
 #include <cstdlib>
 #include <cstring>
+
+#ifdef _WIN32
+#define strdup _strdup
+#endif
 
 Engine_reg engine = {};
 

@@ -18,6 +18,7 @@
 #include "util/SystemSettings.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -36,6 +37,36 @@ int64_t now_unix_seconds() {
 bool file_exists(const std::string& path) {
     std::error_code ec;
     return std::filesystem::is_regular_file(std::filesystem::path(path), ec);
+}
+
+/** Slash- and (on Windows) case-insensitive path identity. */
+std::string path_compare_key(const std::string& path) {
+    std::string key = std::filesystem::path(path).lexically_normal().generic_string();
+#if defined(_WIN32)
+    for (char& c : key) {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+#endif
+    return key;
+}
+
+bool paths_are_same(const std::string& a, const std::string& b) {
+    if (a == b) {
+        return true;
+    }
+    if (a.empty() || b.empty()) {
+        return false;
+    }
+    if (path_compare_key(a) == path_compare_key(b)) {
+        return true;
+    }
+    std::error_code ec;
+    const std::filesystem::path pa(a);
+    const std::filesystem::path pb(b);
+    if (!std::filesystem::exists(pa, ec) || !std::filesystem::exists(pb, ec)) {
+        return false;
+    }
+    return std::filesystem::equivalent(pa, pb, ec);
 }
 
 }  // namespace
@@ -123,6 +154,7 @@ bool SystemSettings::load() {
                 e.score = (*entry)["score"].value_or(0.0);
                 e.last_used = (*entry)["last_used"].value_or(static_cast<int64_t>(0));
                 if (!e.path.empty()) {
+                    e.path = normalize_path(e.path);
                     recent_.push_back(std::move(e));
                 }
             }
@@ -200,12 +232,14 @@ bool SystemSettings::save() const {
 
     const std::string path = settings_path();
     try {
-        std::ofstream out(path);
+        const std::filesystem::path out_path(path);
+        std::ofstream out(out_path);
         if (!out) {
             std::cerr << "Failed to open system_settings.toml for writing: " << path << std::endl;
             return false;
         }
         out << table;
+        out.flush();
         return static_cast<bool>(out);
     } catch (const std::exception& ex) {
         std::cerr << "Failed to write system_settings.toml: " << ex.what() << std::endl;
@@ -362,10 +396,13 @@ void SystemSettings::record_use(const std::string& path) {
 
     const int64_t now = now_unix_seconds();
     auto it = std::find_if(recent_.begin(), recent_.end(),
-                           [&](const RecentConfigEntry& e) { return e.path == normalized; });
+                           [&](const RecentConfigEntry& e) {
+                               return paths_are_same(e.path, normalized);
+                           });
     if (it != recent_.end()) {
         it->score += 1.0;
         it->last_used = now;
+        it->path = normalized;
     } else {
         RecentConfigEntry e;
         e.path = normalized;
@@ -429,7 +466,7 @@ std::vector<RecentConfigEntry> SystemSettings::display_entries() const {
     std::vector<RecentConfigEntry> others;
     others.reserve(candidates.size());
     for (const auto& e : candidates) {
-        if (e.path != mru_it->path) {
+        if (!paths_are_same(e.path, mru_it->path)) {
             others.push_back(e);
         }
     }

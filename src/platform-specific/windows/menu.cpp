@@ -288,6 +288,17 @@ static void updatePopupState(HMENU popup)
     }
 }
 
+// SDL3's callback loop does not treat WM_QUIT as SDL_EVENT_QUIT, so File>Quit
+// must request exit the same way Close Emulation / WM_CLOSE already do.
+static void requestAppQuit()
+{
+    if (SDL_EventEnabled(SDL_EVENT_QUIT)) {
+        SDL_Event ev = {};
+        ev.type = SDL_EVENT_QUIT;
+        SDL_PushEvent(&ev);
+    }
+}
+
 // ── WM_COMMAND dispatcher ─────────────────────────────────────────────────────
 
 static void dispatchCommand(UINT id)
@@ -300,14 +311,8 @@ static void dispatchCommand(UINT id)
         mi->openSystemConfig();
         return;
     case IDM_FILE_CLOSE:
-        if (SDL_EventEnabled(SDL_EVENT_QUIT)) {
-            SDL_Event ev = {};
-            ev.type = SDL_EVENT_QUIT;
-            SDL_PushEvent(&ev);
-        }
-        return;
     case IDM_APP_QUIT:
-        PostQuitMessage(0);
+        requestAppQuit();
         return;
 
     // Machine
