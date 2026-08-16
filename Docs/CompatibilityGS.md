@@ -196,6 +196,8 @@ similar to noisetracker, now starts and plays a song for a couple seconds, then 
 
 with ensoniq interrupt fix, Does not trigger RESTART SYSTEM 01 but does not play songs correctly.
 
+Now working correctly with latest ensoniq fixes.
+
 ## Telcom 0.28 (1991)
 
 my baby!

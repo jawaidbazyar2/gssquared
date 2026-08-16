@@ -12391,3 +12391,24 @@ Should avoid features for the most part, however, it makes sense to clean stuff 
 [X] installer setup on the virtual disk that includes the host FST, but also the Marinetti stuff. 
 [ ] IIe multi-language support. 
 
+## August 12, 2026
+
+I know what I said about new features, but, new features are sexy!
+
+There is some low hanging fruit that shouldn't be too hard to do.
+
+But there are significant bugs. The weirdest one is the ROM03 speaker beep frequency error. 
+
+## August 16, 2026
+
+digging into AppleTalk support again. Why? Don't know!
+
+First: this uses Marinetti to directly do IPTalk encap from a GS. 
+
+https://sheumann.github.io/AFPBridge/
+
+Then of course you need NetAtalk to act as a AFP server/router. (or, a real -old- Mac with Ethernet/EtherTalk.)
+
+So, AFPBridge would likely work as-is from GS2 with Marinetti set up.
+
+However, we could also have GS2 internally convert IPTalk to-from LocalTalk via the SCC emulation. We'd have a serial port module for this. Then that would send/recv the IPTalk UDP packets. We'd need to handle various SCC register settings for appletalk (synchronous mode etc.) but I bet clanker could help with that.
