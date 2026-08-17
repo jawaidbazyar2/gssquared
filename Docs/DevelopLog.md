@@ -12412,3 +12412,34 @@ Then of course you need NetAtalk to act as a AFP server/router. (or, a real -old
 So, AFPBridge would likely work as-is from GS2 with Marinetti set up.
 
 However, we could also have GS2 internally convert IPTalk to-from LocalTalk via the SCC emulation. We'd have a serial port module for this. Then that would send/recv the IPTalk UDP packets. We'd need to handle various SCC register settings for appletalk (synchronous mode etc.) but I bet clanker could help with that.
+
+Also thinking about something to start to tie a lot of this together. For instance, a Second Sight text console for GNO. That is something people always wanted!!
+
+We would default to using the ANSI termcap. That might need to be improved/updated somewhat, I don't think anyone ever did one!
+
+Options:
+1) implement using existing interface. Not the fastest thing. This would be the same as 
+2) could we implement with shadowing (e.g. hgr area) and then have the card do a copy of the shadowed area using its Move cmd, every vblank? 
+
+There is an existing ANSI emulation for secondsight inside Spectrum. Maybe we can pull that out rather than implement from scratch.
+
+Some anciliary things: would want to define some cool colored prompts etc (if gsh/termcap support that).
+
+And we would want the driver to be able to support both 80x25 and 80x43. I suppose that would be switched by an IOCTL, and, somehow the system would need to report console dimensions.
+
+1. Black box state machine.
+
+I envision a few steps to develop and test. First would be a black box state-machine module that would do the ANSI character processing. Of course we might get fed partial character streams so we have to track that. (I did a lot of that in telcom for vt100). 
+
+2. tie that in to a gno driver container.
+
+3. auto detection
+
+On gno boot, detect second sight and auto-select this console driver. 
+
+4. other work
+
+CLI tool to switch between x25 and x43 modes.
+
+The GNO drivers folder is flat and this driver should be built in the src tree as a subfolder.
+

@@ -93,7 +93,7 @@ From [Documentation.md](Documentation.md), [Woz.md](Woz.md), [IWM.md](IWM.md), [
 - [ ] pdblock3: ignore mount if that file is already mounted elsewhere
 - [X] Rename Generic ProDOS Block 3 to "BazFast"
 - [ ] Mount error status codes for distinct user messages
-- [ ] Drag/drop: save/discard prompt before remounting over modified media
+- [X] Drag/drop: save/discard prompt before remounting over modified media
 - [ ] Drag/drop: smart target anywhere in window; drop onto a specific drive icon
 - [X] Stereo drive sound effects (drive 1 left / drive 2 right)
 - [ ] 3.5 sound effects: low-volume spin; auto eject / insert spring-snap
@@ -111,7 +111,7 @@ From [DevelopLog.md](DevelopLog.md), [AppleIIgs.md](AppleIIgs.md), [Compatibilit
 - [ ] Disable invalid mixed modes (e.g. no 40-col text in double graphics)
 - [X] Split GR/text in Ludicrous Speed should be color/NTSC, not mono
 - [X] First pixel of HGR row disappears in Ludicrous Speed
-- [ ] Mid-line text→hires transitions (Crazy Cycles-style) need correct monochrome bit emission
+- [-] Mid-line text→hires transitions (Crazy Cycles-style) need correct monochrome bit emission
 - [ ] Make SHR work again in composite
 - [X] Mono DHGR / graphics when `$C05E` active (incl. HIRES_NODELAY)
 - [ ] IIe/65816: missing composite SHR; ctrl-reset should reset video registers based on scanner, not platform
@@ -199,7 +199,7 @@ From [UserInterface.md](UserInterface.md), [SystemConfigTOML.md](SystemConfigTOM
 - [X] On first run, copy default extra configs into user systems folder
 - [ ] Cache Control Panel template texture (static chrome vs dynamic widgets)
 - [ ] Platform specifies allowed CPU speed settings in OSD
-- [ ] Remove "IIgs with 5.25 only" test config tile
+- [-] Remove "IIgs with 5.25 only" test config tile
 - [ ] Professional cleanup of artwork / higher-res assets scaled down
 - [ ] UI texture redraw only when dirty
 - [ ] "Lots of buttons" polish pass
