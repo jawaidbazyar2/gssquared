@@ -8,6 +8,8 @@
 #include "SpeedSelect.hpp"
 #include "DisplaySelect.hpp"
 
+struct computer_t;
+
 class HoverControls_t : public FadeContainer_t {
 protected:
     LabeledButton *hov_speed = nullptr;    
@@ -33,7 +35,7 @@ protected:
     MenuInterface *mi = nullptr;
 
 public:
-    HoverControls_t(UIContext *ctx, const Style_t& initial_style = Style_t(), NClock *clock = nullptr);
+    HoverControls_t(UIContext *ctx, const Style_t& initial_style = Style_t(), computer_t *computer = nullptr);
     ~HoverControls_t();
     virtual void update() override;
 };

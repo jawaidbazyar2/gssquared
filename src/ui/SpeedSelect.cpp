@@ -2,8 +2,11 @@
 #include "SelectButton.hpp"
 #include "MainAtlas.hpp"
 #include "NClock.hpp"
+#include "computer.hpp"
+#include "display/display.hpp"
 
-SpeedSelect_t::SpeedSelect_t(UIContext *ctx, const Style_t& initial_style, NClock *clock) : Container_t(ctx, initial_style), clock(clock) {
+SpeedSelect_t::SpeedSelect_t(UIContext *ctx, const Style_t& initial_style, computer_t *computer)
+    : Container_t(ctx, initial_style), computer(computer), clock(computer ? computer->clock : nullptr) {
     Style_t CB = {
         .background_color = 0x00000000,
         .border_color = 0x000000FF,
@@ -26,7 +29,15 @@ SpeedSelect_t::SpeedSelect_t(UIContext *ctx, const Style_t& initial_style, NCloc
         Tile_t *tile = tiles[i];
         tile->on_click([this,tile](const SDL_Event& event) -> bool {
             this->selected_value(tile->value());
-            this->clock->set_clock_mode((clock_mode_t)tile->value());
+            clock_mode_t mode = (clock_mode_t)tile->value();
+            this->clock->set_clock_mode(mode);
+            if (mode == CLOCK_FREE_RUN && this->computer) {
+                this->computer->begin_ludicrous_calibration();
+            }
+            if (this->computer) {
+                display_state_t *ds = (display_state_t *)this->computer->get_module_state(MODULE_DISPLAY);
+                if (ds) display_update_video_scanner(ds);
+            }
             this->set_visible(false);
             return true;
         });
@@ -38,10 +49,6 @@ SpeedSelect_t::SpeedSelect_t(UIContext *ctx, const Style_t& initial_style, NCloc
 // whenever we go from invisible to visible, set the selected value to the current clock mode
 void SpeedSelect_t::set_visible(bool visible) {
     Container_t::set_visible(visible);
-    //printf("SpeedSelect_t::set_visible: %d\n", visible);
-    /* if (!visible) {
-        assert(true);
-    } */
     if (visible) {
         this->selected_value(this->clock->get_clock_mode());
     }
@@ -55,7 +62,6 @@ void SpeedSelect_t::render() {
 bool SpeedSelect_t::handle_mouse_event(const SDL_Event& event) {
     if (!visible) return false;
     bool consumed = Container_t::handle_mouse_event(event);
-    //printf("SpeedSelect_t::handle_mouse_event: %d\n", consumed);
     if (consumed && event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
         return true;
     }

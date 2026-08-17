@@ -673,13 +673,10 @@ uint8_t display_read_C02EF(void *context, uint32_t address) {
 }
 
 void display_update_video_scanner(display_state_t *ds) {
-    if (ds->clock->get_clock_mode() == CLOCK_FREE_RUN) {
-        ds->framebased = true;
-        ds->clock->set_video_scanner(nullptr);
-    } else {
-        ds->framebased = false;
-        ds->clock->set_video_scanner(ds->video_scanner);
-    }
+    // All clock modes (including ludicrous N×14M) keep the scanner hooked so
+    // VBL / scanline / QTR IRQs fire during CPU execution.
+    ds->framebased = false;
+    ds->clock->set_video_scanner(ds->video_scanner);
 }
 
 /* accepts a VideoScannerEvent and updates the display interrupts accordingly */

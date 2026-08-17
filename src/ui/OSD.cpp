@@ -401,22 +401,33 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     speed_btn_8 = speed_btns[4];
     speed_btn_10->on_click([this](const SDL_Event&) -> bool {
         this->clock->set_clock_mode(CLOCK_1_024MHZ);
+        display_state_t *ds = (display_state_t *)this->computer->get_module_state(MODULE_DISPLAY);
+        if (ds) display_update_video_scanner(ds);
         return true;
     });
     speed_btn_28->on_click([this](const SDL_Event&) -> bool {
         this->clock->set_clock_mode(CLOCK_2_8MHZ);
+        display_state_t *ds = (display_state_t *)this->computer->get_module_state(MODULE_DISPLAY);
+        if (ds) display_update_video_scanner(ds);
         return true;
     });
     speed_btn_71->on_click([this](const SDL_Event&) -> bool {
         this->clock->set_clock_mode(CLOCK_7_159MHZ);
+        display_state_t *ds = (display_state_t *)this->computer->get_module_state(MODULE_DISPLAY);
+        if (ds) display_update_video_scanner(ds);
         return true;
     });
     speed_btn_14->on_click([this](const SDL_Event&) -> bool {
         this->clock->set_clock_mode(CLOCK_14_3MHZ);
+        display_state_t *ds = (display_state_t *)this->computer->get_module_state(MODULE_DISPLAY);
+        if (ds) display_update_video_scanner(ds);
         return true;
     });
     speed_btn_8->on_click([this](const SDL_Event&) -> bool {
         this->clock->set_clock_mode(CLOCK_FREE_RUN);
+        this->computer->begin_ludicrous_calibration();
+        display_state_t *ds = (display_state_t *)this->computer->get_module_state(MODULE_DISPLAY);
+        if (ds) display_update_video_scanner(ds);
         return true;
     });
 
@@ -474,7 +485,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     SB.border_color = 0x000000FF;
     SB.padding = 0;
 
-    hover_controls_con = new HoverControls_t(&ui_ctx, SB, clock);
+    hover_controls_con = new HoverControls_t(&ui_ctx, SB, computer);
     ncontainers.push_back(hover_controls_con);
 
     system_config = computer->get_system();
@@ -848,7 +859,17 @@ void OSD::render() {
         // display the MHz at the bottom of the screen.
         if (getMenuInterface()->getHudStats()) {
             char hud_str[150];
-            snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f / Idle: %5.1f%%", computer->e_mhz, computer->fps, computer->get_idle_percent());
+            if (clock->get_clock_mode() == CLOCK_FREE_RUN) {
+                uint32_t n = clock->get_cpu_per_14m();
+                const char *tag = computer->is_ludicrous_calibrating() ? " (cal)" :
+                    (computer->is_ludicrous_locked() ? "" : " (cal)");
+                snprintf(hud_str, sizeof(hud_str),
+                    "MHz: %8.4f (%ux14.3%s) / FPS %8.4f / Idle: %5.1f%%",
+                    computer->e_mhz, n, tag, computer->fps, computer->get_idle_percent());
+            } else {
+                snprintf(hud_str, sizeof(hud_str), "MHz: %8.4f / FPS %8.4f / Idle: %5.1f%%",
+                    computer->e_mhz, computer->fps, computer->get_idle_percent());
+            }
             SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderDebugText(renderer, 20, window_height - 30, hud_str);
 

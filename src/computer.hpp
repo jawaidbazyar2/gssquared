@@ -38,11 +38,22 @@ class ResetController;
 class BreakpointTable;
 class DebugProtocolServer;
 
+// Comment this out to restore the original one-frame guess probe in gs2.cpp.
+#define LUDICROUS_BINARY_SEARCH_PROBE
+
 enum execution_modes_t {
     EXEC_NORMAL = 0,
     EXEC_STEP_INTO,
     EXEC_PAUSED,
     //EXEC_STEP_OVER // no longer used?
+};
+
+/** Ludicrous-speed (CLOCK_FREE_RUN) auto-calibration of cpu_per_14m. */
+enum ludicrous_cal_state_t {
+    LS_CAL_IDLE = 0,
+    LS_CAL_PROBE,
+    LS_CAL_DROPPING,
+    LS_CAL_LOCKED
 };
 
 /** Ops for register_device_debug / call_device_debug (protocol STATE_GET / STATE_SET, …). */
@@ -141,6 +152,24 @@ struct computer_t {
     double fps = 0;
     double e_mhz = 0;
     uint64_t clock_slip = 0;
+    bool frame_slipped = false;  // set by frame_sleep for this frame only
+
+    // Ludicrous (N×14M) auto-calibration — session-sticky once locked.
+    ludicrous_cal_state_t ludicrous_cal_state = LS_CAL_IDLE;
+    uint32_t ludicrous_slip_streak = 0;
+    uint32_t ludicrous_stable_frames = 0;
+    uint32_t ludicrous_saved_n = 1; // preserved across temporary 14.3 boost (INSERT / RMB)
+#ifdef LUDICROUS_BINARY_SEARCH_PROBE
+    uint32_t ludicrous_search_low = LUDICROUS_CPU_PER_14M_MIN;
+    uint32_t ludicrous_search_high = LUDICROUS_CPU_PER_14M_MAX;
+    uint32_t ludicrous_search_best = LUDICROUS_CPU_PER_14M_MIN;
+    uint32_t ludicrous_search_samples = 0;
+    float ludicrous_search_idle_sum = 0.0f;
+    bool ludicrous_search_slipped = false;
+    uint64_t ludicrous_search_cycle_sum = 0;
+    uint64_t ludicrous_plateau_target_cycles = 0;
+    bool ludicrous_searching_plateau = false;
+#endif
 
     // Frame-timing state used by the emulation loop (run_cpus / SDL_AppIterate).
     // Moved here from run_cpus() locals so iterations can be driven externally.
@@ -157,6 +186,16 @@ struct computer_t {
     void set_clock(NClockII *clock); 
     inline void set_idle_percent(float idle_percent) { this->idle_percent = idle_percent; }
     inline float get_idle_percent() { return this->idle_percent; }
+
+    /** Start probe/drop/lock for ∞. Call only on explicit user select of FREE_RUN. */
+    void begin_ludicrous_calibration();
+    /** Per-frame update after frame_sleep; ignores slips while modal_tracking. */
+    void update_ludicrous_calibration(bool modal_tracking,
+                                      uint64_t cpu_cycles_this_frame);
+    inline bool is_ludicrous_calibrating() const {
+        return ludicrous_cal_state == LS_CAL_PROBE || ludicrous_cal_state == LS_CAL_DROPPING;
+    }
+    inline bool is_ludicrous_locked() const { return ludicrous_cal_state == LS_CAL_LOCKED; }
 
     void set_mmu(MMU_II *mmu) { this->mmu = mmu; }
     void set_cpu(cpu_state *cpu) { this->cpu = cpu; }
