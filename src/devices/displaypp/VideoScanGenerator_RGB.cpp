@@ -195,7 +195,7 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
     }
     
     if (dump_next_frame) {
-        frame_scan->saveToFile("scan_buffer.txt");
+        //frame_scan->saveToFile("scan_buffer.txt");
         dump_next_frame = false;
     }
 

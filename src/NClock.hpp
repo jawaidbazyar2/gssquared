@@ -22,7 +22,12 @@
 #include "devices/displaypp/VideoScannerII.hpp"
 #include "PlatformIDs.hpp"
 #include "util/EventTimer.hpp"
+#include "util/DebugFormatter.hpp"
 #include <functional>
+
+// Max CPU cycles per 14M tick in ludicrous (auto) mode (~229 MHz).
+static constexpr uint32_t LUDICROUS_CPU_PER_14M_MAX = 20;
+static constexpr uint32_t LUDICROUS_CPU_PER_14M_MIN = 2;
 
 typedef enum {
     CLOCK_FREE_RUN = 0,
@@ -116,6 +121,11 @@ protected:
     uint64_t frame_end_c14M = 0;
     uint64_t frame_count = 0;
 
+    // Ludicrous (CLOCK_FREE_RUN): N CPU fast-cycles per one 14M tick.
+    // Other modes keep this at 1. Calibrator on computer_t sets N.
+    uint32_t cpu_per_14m = 1;
+    uint32_t cpu_div = 0;
+
     VideoScannerII *video_scanner = nullptr;
     //EventTimer event_vid;
     // have a predefined vector of max 8 cycle handlers.
@@ -152,7 +162,20 @@ public:
     inline uint64_t get_cycles() { return cycles; } // this should make accessing cycles fast still.
     inline uint64_t get_c14m() { return c_14M; }
     inline uint64_t get_vid_cycles() { return video_cycles; }
-    inline uint64_t get_hz_rate() { return current.hz_rate; }
+    inline uint64_t get_hz_rate() {
+        if (clock_mode == CLOCK_FREE_RUN) {
+            return current.c14M_per_second * (uint64_t)cpu_per_14m;
+        }
+        return current.hz_rate;
+    }
+    inline uint32_t get_cpu_per_14m() const { return cpu_per_14m; }
+    inline uint32_t get_cpu_div() const { return cpu_div; }
+    inline void set_cpu_per_14m(uint32_t n) {
+        if (n < 1) n = 1;
+        if (n > LUDICROUS_CPU_PER_14M_MAX) n = LUDICROUS_CPU_PER_14M_MAX;
+        cpu_per_14m = n;
+        cpu_div = 0;
+    }
     inline uint64_t get_c14m_per_cpu_cycle() { return current.c_14M_per_cpu_cycle; }
     inline uint64_t get_c14m_per_second() { return current.c14M_per_second; }
     inline uint64_t get_c14m_per_frame() { return current.c14M_per_frame; }
@@ -195,7 +218,14 @@ public:
 
     void set_clock_mode(clock_mode_t mode) {
         clock_mode = mode;
-        current = system_clock_mode_info[mode]; // copy the whole struct, avoids another pointer dereference.
+        if (mode == CLOCK_FREE_RUN) {
+            // Same 14.3 physics; cpu_per_14m is owned by the calibrator.
+            current = system_clock_mode_info[CLOCK_14_3MHZ];
+        } else {
+            current = system_clock_mode_info[mode];
+            cpu_per_14m = 1;
+            cpu_div = 0;
+        }
     }
 
     // I forget who uses this.
@@ -220,15 +250,16 @@ public:
     }
     
     inline void incr_cycles() {
-        if (clock_mode == CLOCK_FREE_RUN) cycles++;
-        else slow_incr_cycles();
+        slow_incr_cycles();
     }
 
     virtual DebugFormatter *debug() {
         DebugFormatter *f = new DebugFormatter();
         f->addLine("Clock Mode: %s", get_clock_mode_name());
-        //f->addLine("CPU Slow Mode: %d", get_slow_mode());
-        f->addLine("CPU Expected Rate: %d", get_hz_rate());
+        f->addLine("CPU Expected Rate: %llu", (unsigned long long)get_hz_rate());
+        if (clock_mode == CLOCK_FREE_RUN) {
+            f->addLine("CPU per 14M: %u (div %u)", cpu_per_14m, cpu_div);
+        }
         f->addLine("CPU Cycle: %12llu", get_cycles());
         f->addLine("Vid Cycle: %12llu", get_vid_cycles());
         f->addLine("14M Cycle: %12llu", get_c14m());
@@ -246,8 +277,16 @@ public:
     }
 
     // II, II+, IIe
+    // When cpu_per_14m > 1 (ludicrous): N CPU cycles share one 14M tick / scanner step.
     inline virtual void slow_incr_cycles() override {
-        cycles++; 
+        cycles++;
+        if (cpu_per_14m > 1) {
+            if (++cpu_div < cpu_per_14m) {
+                return;
+            }
+            cpu_div = 0;
+        }
+
         c_14M += current.c_14M_per_cpu_cycle;
         
         if (video_scanner) {
@@ -300,13 +339,26 @@ protected:
     inline void set_next_cycle_type(cycle_type_t type) { cycle_type = type; }
 
     // IIgs
+    // Fast path: N CPU cycles per 14M when ludicrous. SYNC / slow / 1 MHz ignore N.
     inline void slow_incr_cycles() override {
-        cycles++; 
+        cycles++;
         if (slow_mode) cycle_type = CYCLE_TYPE_SYNC;
         if (current.hz_rate == 1020484) cycle_type = CYCLE_TYPE_SYNC; // also get refresh for "free" here.
+
+        const bool sync_cycle = (cycle_type == CYCLE_TYPE_SYNC);
+        if (sync_cycle) {
+            // Slow accesses stay 1 MHz; do not apply ludicrous multiplier.
+            cpu_div = 0;
+        } else if (cpu_per_14m > 1) {
+            if (++cpu_div < cpu_per_14m) {
+                cycle_type = CYCLE_TYPE_FAST;
+                return;
+            }
+            cpu_div = 0;
+        }
         
         uint64_t c14m_this_cycle;
-        if (cycle_type == CYCLE_TYPE_SYNC) {
+        if (sync_cycle) {
     
             c14m_this_cycle = 14;                                   // if PH2 start lines up with PH0 start.. 
             if (video_cycle_14M_count) c14m_this_cycle += (14 - video_cycle_14M_count); // otherwise wait until end of next PH0, then 14 more C14s.

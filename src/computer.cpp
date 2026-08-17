@@ -96,6 +96,9 @@ computer_t::computer_t(NClockII *clock) {
     sys_event->registerHandler(SDL_EVENT_MOUSE_BUTTON_DOWN,[this](const SDL_Event &event ) {
         if (event.button.button == SDL_BUTTON_RIGHT && gs2_app_values.right_mouse_accelerate) {
             old_speed = this->clock->get_clock_mode();
+            if (old_speed == CLOCK_FREE_RUN) {
+                ludicrous_saved_n = this->clock->get_cpu_per_14m();
+            }
             this->clock->set_clock_mode(CLOCK_14_3MHZ);
             return true;
         }
@@ -104,6 +107,9 @@ computer_t::computer_t(NClockII *clock) {
     sys_event->registerHandler(SDL_EVENT_MOUSE_BUTTON_UP,[this](const SDL_Event &event ) {
         if (event.button.button == SDL_BUTTON_RIGHT && gs2_app_values.right_mouse_accelerate) {
             this->clock->set_clock_mode(old_speed);
+            if (old_speed == CLOCK_FREE_RUN) {
+                this->clock->set_cpu_per_14m(ludicrous_saved_n);
+            }
             return true;
         }
         return false;
@@ -118,6 +124,9 @@ computer_t::computer_t(NClockII *clock) {
         } else if (key == SDLK_INSERT) {
             if (event.key.repeat == 1) return false; // ignore repeats otherwise it will forget the original speed
             old_speed = this->clock->get_clock_mode();
+            if (old_speed == CLOCK_FREE_RUN) {
+                ludicrous_saved_n = this->clock->get_cpu_per_14m();
+            }
             this->clock->set_clock_mode(CLOCK_14_3MHZ);
             return true;
         }
@@ -137,6 +146,9 @@ computer_t::computer_t(NClockII *clock) {
             return true; 
         } else if (key == SDLK_INSERT) {
             this->clock->set_clock_mode(old_speed);
+            if (old_speed == CLOCK_FREE_RUN) {
+                this->clock->set_cpu_per_14m(ludicrous_saved_n);
+            }
             return true;
         }
         return false;
@@ -371,6 +383,211 @@ void computer_t::send_clock_mode_message(clock_mode_t clock_mode) {
 
     snprintf(buffer, sizeof(buffer), "Clock Mode Set to %s", clock->get_clock_mode_name(clock_mode)); // 
     event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, buffer));
+}
+
+void computer_t::begin_ludicrous_calibration() {
+    ludicrous_cal_state = LS_CAL_PROBE;
+    ludicrous_slip_streak = 0;
+    ludicrous_stable_frames = 0;
+#ifdef LUDICROUS_BINARY_SEARCH_PROBE
+    ludicrous_search_low = LUDICROUS_CPU_PER_14M_MIN;
+    ludicrous_search_high = LUDICROUS_CPU_PER_14M_MAX;
+    ludicrous_search_best = LUDICROUS_CPU_PER_14M_MIN;
+    ludicrous_search_samples = 0;
+    ludicrous_search_idle_sum = 0.0f;
+    ludicrous_search_slipped = false;
+    ludicrous_search_cycle_sum = 0;
+    ludicrous_plateau_target_cycles = 0;
+    ludicrous_searching_plateau = false;
+    clock->set_cpu_per_14m(
+        (ludicrous_search_low + ludicrous_search_high) / 2);
+#else
+    // Probe measures at 1 CPU per 14M; N is chosen after one wall-timed frame.
+    clock->set_cpu_per_14m(1);
+#endif
+}
+
+void computer_t::update_ludicrous_calibration(
+    bool modal_tracking, uint64_t cpu_cycles_this_frame) {
+    if (clock->get_clock_mode() != CLOCK_FREE_RUN) {
+        if (ludicrous_cal_state != LS_CAL_IDLE) {
+            ludicrous_cal_state = LS_CAL_IDLE;
+            ludicrous_slip_streak = 0;
+            ludicrous_stable_frames = 0;
+        }
+        return;
+    }
+    if (ludicrous_cal_state == LS_CAL_IDLE) {
+        return;
+    }
+    if (ludicrous_cal_state == LS_CAL_LOCKED) {
+        return; // session-sticky; dialogs must not change N
+    }
+
+#ifdef LUDICROUS_BINARY_SEARCH_PROBE
+    if (ludicrous_cal_state == LS_CAL_PROBE) {
+        if (modal_tracking) {
+            return;
+        }
+
+        ludicrous_search_samples++;
+        ludicrous_search_idle_sum += idle_percent;
+        ludicrous_search_slipped |= frame_slipped;
+        ludicrous_search_cycle_sum += cpu_cycles_this_frame;
+
+        // Average several complete frames so a single noisy frame does not
+        // decide which half of the search space to discard.
+        if (ludicrous_search_samples < 3) {
+            return;
+        }
+
+        uint32_t candidate = clock->get_cpu_per_14m();
+        float average_idle =
+            ludicrous_search_idle_sum / (float)ludicrous_search_samples;
+        uint64_t average_cycles =
+            ludicrous_search_cycle_sum / ludicrous_search_samples;
+
+        if (ludicrous_searching_plateau) {
+            if (ludicrous_plateau_target_cycles == 0) {
+                // The fastest sustainable N defines the plateau. Find the
+                // smallest N that still delivers at least 95% of its CPU work.
+                ludicrous_plateau_target_cycles =
+                    (average_cycles * 95) / 100;
+                ludicrous_search_low = LUDICROUS_CPU_PER_14M_MIN;
+                ludicrous_search_high =
+                    (ludicrous_search_best > LUDICROUS_CPU_PER_14M_MIN)
+                        ? ludicrous_search_best - 1
+                        : 0;
+
+                fprintf(stdout,
+                    "Ludicrous plateau: N=%u delivers %llu cycles/frame; "
+                    "target=%llu (95%%)\n",
+                    candidate,
+                    (unsigned long long)average_cycles,
+                    (unsigned long long)ludicrous_plateau_target_cycles);
+
+                ludicrous_search_samples = 0;
+                ludicrous_search_idle_sum = 0.0f;
+                ludicrous_search_slipped = false;
+                ludicrous_search_cycle_sum = 0;
+
+                if (ludicrous_search_low <= ludicrous_search_high) {
+                    uint32_t next =
+                        (ludicrous_search_low + ludicrous_search_high) / 2;
+                    clock->set_cpu_per_14m(next);
+                } else {
+                    clock->set_cpu_per_14m(ludicrous_search_best);
+                    ludicrous_cal_state = LS_CAL_DROPPING;
+                }
+                return;
+            }
+
+            bool reaches_plateau =
+                !ludicrous_search_slipped &&
+                average_cycles >= ludicrous_plateau_target_cycles;
+
+            fprintf(stdout,
+                "Ludicrous plateau search: N=%u cycles/frame=%llu "
+                "target=%llu -> %s\n",
+                candidate,
+                (unsigned long long)average_cycles,
+                (unsigned long long)ludicrous_plateau_target_cycles,
+                reaches_plateau ? "plateau" : "below");
+
+            if (reaches_plateau) {
+                ludicrous_search_best = candidate;
+                ludicrous_search_high =
+                    (candidate > LUDICROUS_CPU_PER_14M_MIN)
+                        ? candidate - 1
+                        : 0;
+            } else {
+                ludicrous_search_low = candidate + 1;
+            }
+        } else {
+            bool fits =
+                !ludicrous_search_slipped && average_idle >= 15.0f;
+
+            fprintf(stdout,
+                "Ludicrous capacity search: N=%u idle=%5.1f%% "
+                "slips=%s -> %s\n",
+                candidate, average_idle,
+                ludicrous_search_slipped ? "yes" : "no",
+                fits ? "fits" : "too fast");
+
+            if (fits) {
+                ludicrous_search_best = candidate;
+                ludicrous_search_low = candidate + 1;
+            } else {
+                ludicrous_search_high =
+                    (candidate > LUDICROUS_CPU_PER_14M_MIN)
+                        ? candidate - 1
+                        : 0;
+            }
+        }
+
+        ludicrous_search_samples = 0;
+        ludicrous_search_idle_sum = 0.0f;
+        ludicrous_search_slipped = false;
+        ludicrous_search_cycle_sum = 0;
+
+        if (ludicrous_search_low <= ludicrous_search_high) {
+            uint32_t next =
+                (ludicrous_search_low + ludicrous_search_high) / 2;
+            clock->set_cpu_per_14m(next);
+        } else if (!ludicrous_searching_plateau) {
+            // Benchmark delivered CPU cycles at the fastest sustainable N,
+            // then search downward for the true throughput plateau.
+            ludicrous_searching_plateau = true;
+            ludicrous_plateau_target_cycles = 0;
+            clock->set_cpu_per_14m(ludicrous_search_best);
+        } else {
+            clock->set_cpu_per_14m(ludicrous_search_best);
+            ludicrous_cal_state = LS_CAL_DROPPING;
+            ludicrous_slip_streak = 0;
+            ludicrous_stable_frames = 0;
+            fprintf(stdout,
+                "Ludicrous plateau selected N=%u (nominal %.1f MHz)\n",
+                ludicrous_search_best,
+                ludicrous_search_best * 14.31818);
+        }
+        return;
+    }
+#else
+    if (ludicrous_cal_state == LS_CAL_PROBE) {
+        // Original one-frame guess probe is handled in run_one_frame.
+        return;
+    }
+#endif
+
+    // LS_CAL_DROPPING
+    if (modal_tracking) {
+        return;
+    }
+
+    if (frame_slipped) {
+        ludicrous_slip_streak++;
+        ludicrous_stable_frames = 0;
+        if (ludicrous_slip_streak >= 3) {
+            uint32_t n = clock->get_cpu_per_14m();
+            if (n > LUDICROUS_CPU_PER_14M_MIN) {
+                clock->set_cpu_per_14m(n - 1);
+                ludicrous_slip_streak = 0;
+            } else {
+                // Floor: lock even with tiny idle — host cannot do more.
+                ludicrous_cal_state = LS_CAL_LOCKED;
+                ludicrous_slip_streak = 0;
+            }
+        }
+        return;
+    }
+
+    ludicrous_slip_streak = 0;
+    ludicrous_stable_frames++;
+    if (ludicrous_stable_frames >= 30 && idle_percent >= 15.0f) {
+        ludicrous_cal_state = LS_CAL_LOCKED;
+    } else if (ludicrous_stable_frames >= 30 && clock->get_cpu_per_14m() <= LUDICROUS_CPU_PER_14M_MIN) {
+        ludicrous_cal_state = LS_CAL_LOCKED;
+    }
 }
 
 void computer_t::send_full_screen_message() {

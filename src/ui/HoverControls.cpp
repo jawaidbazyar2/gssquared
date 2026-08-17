@@ -6,8 +6,9 @@
 #include "SpeedSelect.hpp"
 #include "DisplaySelect.hpp"
 #include "util/MenuInterface.h"
+#include "computer.hpp"
 
-HoverControls_t::HoverControls_t(UIContext *ctx, const Style_t& initial_style, NClock *clock) : 
+HoverControls_t::HoverControls_t(UIContext *ctx, const Style_t& initial_style, computer_t *computer) : 
     FadeContainer_t(ctx, initial_style) {
     mi = getMenuInterface();
 
@@ -46,7 +47,7 @@ HoverControls_t::HoverControls_t(UIContext *ctx, const Style_t& initial_style, N
         });
         add(b2);
 
-        hov_speed_con = new SpeedSelect_t(ctx, SB, clock);
+        hov_speed_con = new SpeedSelect_t(ctx, SB, computer);
         hov_speed_con->set_visible(false);
 
         hov_display_con = new DisplaySelect(ctx, SB);

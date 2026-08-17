@@ -96,7 +96,7 @@ void VideoScanGenerator::generate_frame(ScanBuffer *frame_scan, Frame560 *frame_
     }
     
     if (dump_next_frame) {
-        saveScanBufferToFile(frame_scan, "scan_buffer.txt");
+        //saveScanBufferToFile(frame_scan, "scan_buffer.txt");
         dump_next_frame = false;
     }
 

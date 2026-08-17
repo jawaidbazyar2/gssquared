@@ -142,9 +142,9 @@ static void ensoniq_catch_up(ensoniq_state_t *st, uint64_t now_c14m) {
         return;
     }
 
-    // Only generate during normal execution. While paused / single-stepping (or in
-    // CLOCK_FREE_RUN, where c_14M is frozen) we just keep the time base pinned to "now"
-    // so that resuming does not try to render a huge backlog of samples.
+    // Only generate during normal execution. While paused / single-stepping we
+    // just keep the time base pinned to "now" so that resuming does not try to
+    // render a huge backlog of samples. (Ludicrous N×14M keeps c_14M advancing.)
     if (st->computer->execution_mode != EXEC_NORMAL) {
         st->last_catchup_c14m = now_c14m;
         st->c14m_accum = 0;
