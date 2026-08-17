@@ -57,10 +57,11 @@ video_system_t::video_system_t(computer_t *computer) {
     } */
 
     // Prefer the SDL GPU-backed renderer so we can attach custom fragment
-    // shaders (CRT post-processing). On macOS this maps to Metal/MSL. If it
-    // is unavailable, fall back to the classic renderer; gpu_device stays null
-    // and CRT shader effects are disabled.
-    renderer = SDL_CreateGPURenderer(window, SDL_GPU_SHADERFORMAT_MSL, &gpu_device);
+    // shaders (CRT post-processing). macOS uses Metal/MSL; Windows uses
+    // D3D12/DXIL. If neither backend is available, fall back to the classic
+    // renderer; gpu_device stays null and CRT shader effects are disabled.
+    renderer = SDL_CreateGPURenderer(window,
+        SDL_GPU_SHADERFORMAT_MSL | SDL_GPU_SHADERFORMAT_DXIL, &gpu_device);
     if (!renderer) {
         printf("GPU renderer unavailable (%s); falling back to classic renderer\n", SDL_GetError());
         gpu_device = nullptr;
@@ -191,10 +192,12 @@ video_system_t::~video_system_t() {
 }
 
 // Fragment-shader uniform block for the CRT effect (matches the shader's
-// cbuffer: float2 resolution).
+// cbuffer: float2 resolution). Padded to 16 bytes for D3D12 cbuffer alignment.
 struct crt_uniforms_t {
     float texture_width;
     float texture_height;
+    float pad0;
+    float pad1;
 };
 
 bool video_system_t::init_crt_shader() {
@@ -203,18 +206,26 @@ bool video_system_t::init_crt_shader() {
     }
 
     SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(gpu_device);
-    if (!(formats & SDL_GPU_SHADERFORMAT_MSL)) {
-        printf("CRT shader: MSL format not supported by GPU device; shader disabled\n");
+    const char *shader_path = nullptr;
+    const char *entrypoint = nullptr;
+    if (formats & SDL_GPU_SHADERFORMAT_MSL) {
+        shader_path = "shaders/crt.frag.metal";
+        entrypoint = nullptr; // Metal default: main0
+    } else if (formats & SDL_GPU_SHADERFORMAT_DXIL) {
+        shader_path = "shaders/crt.frag.dxil";
+        entrypoint = "main";
+    } else {
+        printf("CRT shader: no supported shader format (need MSL or DXIL); shader disabled\n");
         return false;
     }
 
     crt_shader = create_gpu_shader_from_resource(
         gpu_device,
-        "shaders/crt.frag.metal",
+        shader_path,
         SDL_GPU_SHADERSTAGE_FRAGMENT,
         1,
         1,
-        nullptr);
+        entrypoint);
     if (!crt_shader) {
         return false;
     }
@@ -596,7 +607,7 @@ void video_system_t::present_scene() {
     const float content_h = target.h > 0.0f ? target.h : (float)scene_target_h;
     const float src_w = last_srcrect.w > 0.0f ? last_srcrect.w : content_w;
     const float src_h = last_srcrect.h > 0.0f ? last_srcrect.h : content_h;
-    crt_uniforms_t uniforms;
+    crt_uniforms_t uniforms = {};
     uniforms.texture_width = (float)scene_target_w * src_w / content_w;
     uniforms.texture_height = 2.0f * (float)scene_target_h * src_h / content_h;
     SDL_SetGPURenderStateFragmentUniforms(crt_state, 0, &uniforms, sizeof(uniforms));

@@ -13,7 +13,7 @@
 #include "util/MenuInterface.h"
 
 // ── Local command IDs (items not in MenuEventCode) ────────────────────────────
-// Ranges already occupied: 1-4, 100-103, 200-204, 300-302, 400-401, 501, 600-6xx, 700-703
+// Ranges already occupied: 1-4, 100-103, 200-204, 300-304, 400-401, 501, 600-6xx, 700-703
 #define IDM_FILE_CLOSE       800
 #define IDM_APP_QUIT         801
 #define IDM_SETTINGS_SLEEP        802
@@ -257,6 +257,9 @@ static void updatePopupState(HMENU popup)
             if (id == static_cast<UINT>(MENU_DISPLAY_SS_TEXT)) {
                 setItemCheck(g_displayPopup, i, ss_text_on);
                 setItemEnable(g_displayPopup, i, running && has_ss);
+            } else if (id == static_cast<UINT>(MENU_DISPLAY_CRT_SHADER)) {
+                setItemCheck(g_displayPopup, i, mi->getCrtShader());
+                setItemEnable(g_displayPopup, i, running && mi->getCrtShaderAvailable());
             } else if (id == static_cast<UINT>(MENU_DISPLAY_FULLSCREEN)) {
                 setItemEnable(g_displayPopup, i, running);
             } else {
@@ -339,6 +342,7 @@ static void dispatchCommand(UINT id)
     case MENU_HUD_STATS:          mi->toggleHudStats();    return;
     case MENU_HUD_DRIVES:         mi->toggleHudDrives();   return;
     case MENU_DISPLAY_SS_TEXT:    mi->toggleSsTextMode();  return;
+    case MENU_DISPLAY_CRT_SHADER: mi->toggleCrtShader();   return;
 
     // Edit / File
     case MENU_EDIT_COPY_SCREEN:      mi->editCopyScreen();      return;
@@ -522,6 +526,7 @@ static void setupMenus()
 
     AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_FULLSCREEN, L"Full Screen");
     AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_SS_TEXT, L"Second Sight Text");
+    AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_CRT_SHADER, L"CRT Shader");
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_displayPopup), L"Display");
 
