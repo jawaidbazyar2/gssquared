@@ -87,13 +87,13 @@ From [Documentation.md](Documentation.md), [Woz.md](Woz.md), [IWM.md](IWM.md), [
 - [ ] Gate `fast_forward` on `motor_on` (current `lss_disk_spinning`/enable check wrong for 3.5)
 - [ ] Implement Disk Speed register
 - [ ] Multi-volume hard drive support
-- [ ] Quarter / half track support (Locksmith nibble copy / some utils)
+- [X] Quarter / half track support (Locksmith nibble copy / some utils)
 - [ ] DiskII volume byte from DOS 3.3 VTOC when formatting image
 - [ ] pdblock3: boot from lowest numbered unit, not always unit 1
 - [ ] pdblock3: ignore mount if that file is already mounted elsewhere
 - [X] Rename Generic ProDOS Block 3 to "BazFast"
 - [ ] Mount error status codes for distinct user messages
-- [ ] Drag/drop: save/discard prompt before remounting over modified media
+- [X] Drag/drop: save/discard prompt before remounting over modified media
 - [ ] Drag/drop: smart target anywhere in window; drop onto a specific drive icon
 - [X] Stereo drive sound effects (drive 1 left / drive 2 right)
 - [ ] 3.5 sound effects: low-volume spin; auto eject / insert spring-snap
@@ -109,9 +109,9 @@ From [DevelopLog.md](DevelopLog.md), [AppleIIgs.md](AppleIIgs.md), [Compatibilit
 - [ ] Aspect ratio correction in VPP; correct defaults / window sizes
 - [ ] Hot key for II-friendly vs GS-friendly window size toggles
 - [ ] Disable invalid mixed modes (e.g. no 40-col text in double graphics)
-- [ ] Split GR/text in Ludicrous Speed should be color/NTSC, not mono
-- [ ] First pixel of HGR row disappears in Ludicrous Speed
-- [ ] Mid-line text→hires transitions (Crazy Cycles-style) need correct monochrome bit emission
+- [X] Split GR/text in Ludicrous Speed should be color/NTSC, not mono
+- [X] First pixel of HGR row disappears in Ludicrous Speed
+- [-] Mid-line text→hires transitions (Crazy Cycles-style) need correct monochrome bit emission
 - [ ] Make SHR work again in composite
 - [X] Mono DHGR / graphics when `$C05E` active (incl. HIRES_NODELAY)
 - [ ] IIe/65816: missing composite SHR; ctrl-reset should reset video registers based on scanner, not platform
@@ -199,7 +199,7 @@ From [UserInterface.md](UserInterface.md), [SystemConfigTOML.md](SystemConfigTOM
 - [X] On first run, copy default extra configs into user systems folder
 - [ ] Cache Control Panel template texture (static chrome vs dynamic widgets)
 - [ ] Platform specifies allowed CPU speed settings in OSD
-- [ ] Remove "IIgs with 5.25 only" test config tile
+- [-] Remove "IIgs with 5.25 only" test config tile
 - [ ] Professional cleanup of artwork / higher-res assets scaled down
 - [ ] UI texture redraw only when dirty
 - [ ] "Lots of buttons" polish pass
