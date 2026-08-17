@@ -225,7 +225,6 @@ bool TextInput_t::handle_mouse_event(const SDL_Event& event) {
             if (event.key.key == SDLK_RETURN) {
                 if (enter_handler) {
                     enter_handler(event);
-                    clear_edit();
                 }
                 return true;
             }
