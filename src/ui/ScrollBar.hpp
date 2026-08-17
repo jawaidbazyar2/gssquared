@@ -22,9 +22,16 @@
 #include "Tile.hpp"
 
 /**
- * Vertical scrollbar. Position 0 = live/newest end (thumb near bottom);
- * larger position = scrolled toward older content (thumb toward top).
+ * Vertical scrollbar.
+ *
+ * OriginBottom (default, logs): position 0 = live/newest (thumb near bottom);
+ * larger position = older content (thumb toward top).
+ *
+ * OriginTop (documents): position 0 = start of content (thumb at top);
+ * larger position = scrolled down (thumb toward bottom).
  */
+enum class ScrollBarOrigin { Bottom, Top };
+
 class ScrollBar_t : public Tile_t {
 public:
     using ChangeHandler = std::function<void(int pos)>;
@@ -37,6 +44,8 @@ public:
     int position() const { return position_; }
     int content_size() const { return content_size_; }
     int page_size() const { return page_size_; }
+    void set_origin(ScrollBarOrigin origin) { origin_ = origin; }
+    ScrollBarOrigin origin() const { return origin_; }
 
     void scroll_by(int delta);
     void scroll_to_home();
@@ -53,13 +62,14 @@ private:
     int max_position() const;
     int clamp_position(int pos) const;
     SDL_FRect thumb_rect() const;
-    /** Map a Y on the track to scroll position (top=max/oldest, bottom=0/newest). */
+    /** Map a Y on the track to scroll position according to origin_. */
     int position_from_track_y(float y) const;
     void apply_position(int pos, bool notify);
 
     int content_size_ = 0;
     int page_size_ = 1;
     int position_ = 0;
+    ScrollBarOrigin origin_ = ScrollBarOrigin::Bottom;
 
     bool dragging_ = false;
 
