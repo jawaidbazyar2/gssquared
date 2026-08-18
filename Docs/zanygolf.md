@@ -125,7 +125,7 @@ Captured on the bad hole while looping at `$01/0D1B`:
 
 | Pointer | Address | Mapped? | Sample |
 |---------|---------|---------|--------|
-| Source (`DB` + `$0C`) | `$83/8319` | **FLOAT** (ROM01 last RAM bank is `$81`) | solid `$83` (`float_area_read` = bank#) |
+| Source (`DB` + `$0C`) | `$83/8319` | **FLOAT** (ROM01 last RAM bank is `$7F`) | solid `$83` (`float_area_read` = bank#) |
 | Dest `[08]` | `$38/C6ED` | RAM | filled with `$83` (copied from float src) |
 | SHR | `$E1/2000` | Mega II | HUD only |
 
@@ -209,7 +209,7 @@ Toggled rapidly by **ROM** routines:
 | `$E1/2000` | SHR pixel buffer (scanner); HUD present, playfield empty when bug active |
 | `$E1/9D00` | SCBs (often zero in captures) |
 | `$E1/9E00` | Palette (nonzero when SHR active) |
-| Bank `$83` | Unmapped on ROM01 (RAM through `$81`); float reads return `$83` |
+| Bank `$83` | Unmapped on ROM01 (RAM through `$7F`); float reads return `$83` |
 | Ensoniq `$C03D`/`$C03E` | Music IRQ path — works independently |
 
 ---
@@ -218,16 +218,16 @@ Toggled rapidly by **ROM** routines:
 
 ### IIgs fast RAM size (partial red herring)
 
-GSSquared originally mapped a flat **8MB** (`$00`–`$7F`). KEGS uses **mobo + 8MB card**:
+Installed size is **mobo + 8MB card**, hard-capped by the FPI’s 23-bit RAM decode at bank `$7F`:
 
 | ROM | Total with 8MB card | Last RAM bank |
 |-----|---------------------|---------------|
-| ROM01 | 8.125MB | `$81` |
-| ROM03 | 9MB | `$8F` |
+| ROM01 | 8MB (128KB card inaccessible) | `$7F` |
+| ROM03 | 8MB (1MB card inaccessible) | `$7F` |
 
-Implemented in `src/mmus/iigs_memory.hpp`. Bank probes match KEGS. **Zany playfield still black** on ROM01 and ROM03 after the fix.
+Implemented in `src/mmus/iigs_memory.hpp`. **Zany playfield still black** on ROM01 and ROM03 after the fix.
 
-Bank `$83` remains float on ROM01 even with correct sizing. On ROM03, `$83` is RAM — but LocInfo was still corrupted and `$E1` playfield still empty. So the bug is **not** “need bank `$83` to exist”; it is **bad Y/rows → computed bank `$83`**.
+Bank `$83` remains float on both ROMs. LocInfo was still corrupted and `$E1` playfield still empty. So the bug is **not** “need bank `$83` to exist”; it is **bad Y/rows → computed bank `$83`**.
 
 ### Float-bus “fool the Memory Manager”
 
