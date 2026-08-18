@@ -34,7 +34,7 @@ private:
     uint32_t vcount_real = 0;
     
     uint8_t lastByte = 0x00; // for hires
-    color_mode_t color_mode;
+    color_mode_t color_mode = {};
     
     uint8_t color_delay_mask = 0xFF;
 

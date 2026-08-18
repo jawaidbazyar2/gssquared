@@ -8,9 +8,12 @@ cbuffer Context : register(b0, space3) {
 Texture2D u_texture : register(t0, space2);
 SamplerState u_sampler : register(s0, space2);
 
+// SDL_GPU's vertex shaders are compiled via shadercross, which remaps COLOR0
+// to TEXCOORD0 and TEXCOORD0 to TEXCOORD1. Raw DXC must use the same
+// semantics or D3D12 pipeline creation fails and the CRT blit draws nothing.
 struct PSInput {
-    float4 v_color : COLOR0;
-    float2 v_uv : TEXCOORD0;
+    float4 v_color : TEXCOORD0;
+    float2 v_uv : TEXCOORD1;
 };
 
 struct PSOutput {

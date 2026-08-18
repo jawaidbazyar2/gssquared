@@ -452,7 +452,8 @@ add_library(gs2_trace src/debugger/trace.cpp src/debugger/trace_opcodes.cpp)
 
 add_library(gs2_debugger  src/debugger/debugwindow.cpp src/debugger/Monitor.cpp
     src/debugger/MemoryWatch.cpp src/debugger/disasm.cpp
-    src/debugger/DebugProtocolServer.cpp src/debugger/BreakpointTable.cpp)
+    src/debugger/DebugProtocolServer.cpp src/debugger/BreakpointTable.cpp
+    src/debugger/DebugVideoView.cpp)
 
 add_library(gs2_mmu src/mmus/mmu.cpp src/mmus/mmu_ii.cpp src/mmus/mmu_iie.cpp src/mmus/mmu_iigs.cpp)
 
@@ -487,7 +488,9 @@ add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Butt
     src/ui/SerialPortButton.cpp src/ui/SerialPortsOSD.cpp
 )
 
-add_library(gs2_displaypp src/devices/displaypp/frame/frame_bit.cpp src/devices/displaypp/frame/frame_byte.cpp src/devices/displaypp/CharRom.cpp src/devices/displaypp/AppleIIgsColors.cpp)
+add_library(gs2_displaypp src/devices/displaypp/frame/frame_bit.cpp src/devices/displaypp/frame/frame_byte.cpp
+    src/devices/displaypp/CharRom.cpp src/devices/displaypp/AppleIIgsColors.cpp
+    src/devices/displaypp/generate/AppleII.cpp)
 
 add_library(gs2_ntsc
     src/display/ntsc.cpp
@@ -496,6 +499,8 @@ add_library(gs2_ntsc
     src/display/filters.cpp
     src/display/shaders/GpuShaderLoader.cpp
 )
+
+target_link_libraries(gs2_displaypp PUBLIC gs2_ntsc)
 
 #add_library(gs2_diskii src/devices/diskii/ndiskii.cpp)
 
@@ -591,7 +596,7 @@ add_library(gs2_devices_rtc_pram src/devices/rtc/rtc_pram.cpp)
 target_link_libraries(gs2_devices_rtc_pram PUBLIC gs2_paths)
 
 target_link_libraries(gs2_ui ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF} gs2_systemconfig gs2_devices_hostfst)
-target_link_libraries(gs2_debugger gs2_trace gs2_util ${GS2_SDL3} ${GS2_SDL3_TTF})
+target_link_libraries(gs2_debugger gs2_trace gs2_util gs2_displaypp ${GS2_SDL3} ${GS2_SDL3_TTF})
 # Connections.cpp constructs SerialDevice subclasses; link after gs2_util for GNU ld.
 target_link_libraries(gs2_util PUBLIC gs2_serial_devices ${GS2_SDL3_TTF})
 target_link_libraries(gs2_computer ${GS2_SDL3_TTF})

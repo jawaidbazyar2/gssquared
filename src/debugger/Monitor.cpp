@@ -1,4 +1,5 @@
 #include "debugger/Monitor.hpp"
+#include "debugger/DebugVideoView.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -7,13 +8,15 @@
 #include <sstream>
 
 void Monitor::bind(MMU *mmu, MemoryWatch *watches, BreakpointTable *breakpoints, Disassembler *disasm,
-                   std::vector<std::string> *debug_displays, system_trace_buffer *trace_buffer) {
+                   std::vector<std::string> *debug_displays, system_trace_buffer *trace_buffer,
+                   DebugVideoViews *video_views) {
     mmu_ = mmu;
     watches_ = watches;
     breakpoints_ = breakpoints;
     disasm_ = disasm;
     debug_displays_ = debug_displays;
     trace_ = trace_buffer;
+    video_views_ = video_views;
 }
 
 const std::vector<std::string> &Monitor::execute(const std::string &line) {
@@ -56,6 +59,8 @@ mon_cmd_type_t Monitor::lookup_cmd(const std::string &cmd) {
     if (cmd == "slookup") return MON_CMD_SLOOKUP;
     if (cmd == "m") return MON_CMD_M;
     if (cmd == "x") return MON_CMD_X;
+    if (cmd == "video") return MON_CMD_VIDEO;
+    if (cmd == "novideo") return MON_CMD_NOVIDEO;
     return MON_CMD_UNKNOWN;
 }
 
@@ -386,6 +391,12 @@ void Monitor::dispatch() {
         case MON_CMD_NODEBUG:
             cmd_nodebug();
             break;
+        case MON_CMD_VIDEO:
+            cmd_video();
+            break;
+        case MON_CMD_NOVIDEO:
+            cmd_novideo();
+            break;
         case MON_CMD_VERIFY:
             break;
         case MON_CMD_UNKNOWN:
@@ -711,6 +722,12 @@ void Monitor::cmd_help() {
     addOutput("move lo.hi address           - move memory from lo to hi to address");
     addOutput("debug \"displayname\"        - add debug display");
     addOutput("nodebug \"displayname\"      - remove debug display");
+    addOutput("video preset|mode [addr] [render] - add Video pane thumbnail");
+    addOutput("  presets: text1 text2 80text1 80text2 gr1 gr2 hgr1 hgr2 dhgr1 dhgr2 shr");
+    addOutput("  modes: text40 text80 lores40 lores80 hires hires_ns dhgr shr");
+    addOutput("  render: mono ntsc rgb");
+    addOutput("video                        - list video views");
+    addOutput("novideo id                   - remove video view");
     addOutput("help                         - this help");
 }
 
@@ -902,4 +919,117 @@ void Monitor::cmd_nodebug() {
     }
     debug_displays_->erase(std::remove(debug_displays_->begin(), debug_displays_->end(), node1.val_string),
                            debug_displays_->end());
+}
+
+static video_decode_mode_t parse_decode_mode(const std::string &s) {
+    std::string n = s;
+    std::transform(n.begin(), n.end(), n.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    if (n == "text40") return video_decode_mode_t::TEXT40;
+    if (n == "text80") return video_decode_mode_t::TEXT80;
+    if (n == "lores40") return video_decode_mode_t::LORES40;
+    if (n == "lores80") return video_decode_mode_t::LORES80;
+    if (n == "hires") return video_decode_mode_t::HIRES;
+    if (n == "hires_ns" || n == "hires_noshift") return video_decode_mode_t::HIRES_NOSHIFT;
+    if (n == "dhgr") return video_decode_mode_t::DHGR;
+    if (n == "shr") return video_decode_mode_t::SHR;
+    return video_decode_mode_t::HIRES;
+}
+
+static bool is_decode_mode_token(const std::string &s) {
+    std::string n = s;
+    std::transform(n.begin(), n.end(), n.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return n == "text40" || n == "text80" || n == "lores40" || n == "lores80" || n == "hires" ||
+           n == "hires_ns" || n == "hires_noshift" || n == "dhgr" || n == "shr";
+}
+
+static video_render_mode_t parse_render_mode(const std::string &s) {
+    std::string n = s;
+    std::transform(n.begin(), n.end(), n.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    if (n == "mono") return video_render_mode_t::MONO;
+    if (n == "ntsc") return video_render_mode_t::NTSC;
+    return video_render_mode_t::RGB;
+}
+
+void Monitor::cmd_video() {
+    if (!video_views_) {
+        addOutput("Error: video views unavailable");
+        return;
+    }
+    if (nodes_.size() == 1) {
+        addOutput("Current video views:");
+        for (const auto &v : *video_views_) {
+            addFormattedOutput("[%u] %s %s %s", v.id, DebugVideoView::decode_name(v.decode),
+                               format_addr(v.address).c_str(), DebugVideoView::render_name(v.render));
+        }
+        return;
+    }
+
+    // video <preset>
+    // video <mode> [addr] [render]
+    std::string token;
+    if (nodes_[1].type == MON_NODE_TYPE_STRING) {
+        token = nodes_[1].val_string;
+    } else if (nodes_[1].type == MON_NODE_TYPE_COMMAND) {
+        token = nodes_[1].val_string;
+    } else {
+        addOutput("Usage: video preset | video mode [addr] [mono|ntsc|rgb]");
+        return;
+    }
+
+    DebugVideoView scratch;
+    if (scratch.apply_preset(token)) {
+        uint32_t id = video_views_->add_preset(token);
+        if (id) {
+            addFormattedOutput("Added video view [%u] preset %s", id, token.c_str());
+        } else {
+            addOutput("Error: unknown preset");
+        }
+        return;
+    }
+
+    if (!is_decode_mode_token(token)) {
+        addOutput("Error: unknown preset or mode");
+        return;
+    }
+
+    video_decode_mode_t dec = parse_decode_mode(token);
+    uint32_t addr = 0x2000;
+    video_render_mode_t ren = video_render_mode_t::RGB;
+
+    size_t i = 2;
+    if (i < nodes_.size() && nodes_[i].type == MON_NODE_TYPE_NUMBER) {
+        addr = as_address(nodes_[i].val_number);
+        i++;
+    }
+    if (i < nodes_.size()) {
+        std::string rtok;
+        if (nodes_[i].type == MON_NODE_TYPE_STRING || nodes_[i].type == MON_NODE_TYPE_COMMAND) {
+            rtok = nodes_[i].val_string;
+            ren = parse_render_mode(rtok);
+        }
+    }
+
+    uint32_t id = video_views_->add(dec, addr, ren);
+    addFormattedOutput("Added video view [%u] %s %s %s", id, DebugVideoView::decode_name(dec),
+                       format_addr(addr).c_str(), DebugVideoView::render_name(ren));
+}
+
+void Monitor::cmd_novideo() {
+    if (!video_views_) {
+        addOutput("Error: video views unavailable");
+        return;
+    }
+    if (nodes_.size() < 2 || nodes_[1].type != MON_NODE_TYPE_NUMBER) {
+        addOutput("Error: expected video view id");
+        return;
+    }
+    uint32_t id = nodes_[1].val_number;
+    if (!video_views_->remove(id)) {
+        addOutput("Error: unknown video view id");
+        return;
+    }
+    addFormattedOutput("Removed video view [%u]", id);
 }

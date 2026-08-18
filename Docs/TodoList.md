@@ -29,7 +29,7 @@ From [Roadmap.md](Roadmap.md):
 From [jawaidbazyar2/gssquared](https://github.com/jawaidbazyar2/gssquared/issues) (`gh issue list --state open`):
 
 ### Bugs
-- [ ] [#133](https://github.com/jawaidbazyar2/gssquared/issues/133) Unclaimed Sound Interrupt — QFTO (standard Sound Tools) dies to blue-screen after intro sound starts
+- [X] [#133](https://github.com/jawaidbazyar2/gssquared/issues/133) Unclaimed Sound Interrupt — QFTO (standard Sound Tools) dies to blue-screen after intro sound starts
 - [ ] [#125](https://github.com/jawaidbazyar2/gssquared/issues/125) 5.25" drive missing when returning to Finder from GS/OS app; returning via P8 can leave continuous polling
 - [X] [#124](https://github.com/jawaidbazyar2/gssquared/issues/124) Floating bus / edge artifacts on Sather Little Text Window demo
 - [ ] [#117](https://github.com/jawaidbazyar2/gssquared/issues/117) Locksmith 6.0 fails to copy Bilestoad (half/quarter-track read)
@@ -39,7 +39,7 @@ From [jawaidbazyar2/gssquared](https://github.com/jawaidbazyar2/gssquared/issues
 ### Enhancements / features
 - [ ] [#140](https://github.com/jawaidbazyar2/gssquared/issues/140) International keyboards on GS (e.g. AZERTY)
 - [ ] [#81](https://github.com/jawaidbazyar2/gssquared/issues/81) Make OA / CA key assignments configurable
-- [ ] [#77](https://github.com/jawaidbazyar2/gssquared/issues/77) Debugger: render specified display page (`hgr1`, `80text1`, …) into watch pane
+- [X] [#77](https://github.com/jawaidbazyar2/gssquared/issues/77) Debugger: render specified display page (`hgr1`, `80text1`, …) into Video pane
 - [ ] [#73](https://github.com/jawaidbazyar2/gssquared/issues/73) Disasm: share trace disassembly; M/X width commands; track REP/SEP
 - [X] [#69](https://github.com/jawaidbazyar2/gssquared/issues/69) Debugger UI: play/pause/step/step-over buttons; scrollbar click; section panes; monitor scrollback
 - [ ] [#51](https://github.com/jawaidbazyar2/gssquared/issues/51) Printer emulation (ImageWriter II → PostScript/PDF / host print)
@@ -86,7 +86,7 @@ From [Documentation.md](Documentation.md), [Woz.md](Woz.md), [IWM.md](IWM.md), [
 - [ ] IWM 5.25: make `motor_on` follow enable explicitly
 - [ ] Gate `fast_forward` on `motor_on` (current `lss_disk_spinning`/enable check wrong for 3.5)
 - [ ] Implement Disk Speed register
-- [ ] Multi-volume hard drive support
+- [X] Multi-volume hard drive support
 - [X] Quarter / half track support (Locksmith nibble copy / some utils)
 - [ ] DiskII volume byte from DOS 3.3 VTOC when formatting image
 - [ ] pdblock3: boot from lowest numbered unit, not always unit 1
@@ -122,7 +122,7 @@ From [DevelopLog.md](DevelopLog.md), [AppleIIgs.md](AppleIIgs.md), [Compatibilit
 - [ ] FTA XMAS: slight cycle timing defect on lower-right border
 - [ ] Phosphor persistence effect (multi-texture fade)
 - [ ] VideoScanner asserts so bad state can't crash
-- [ ] Clean up leftover `set_full_frame_redraw()` once LS full-frame path is settled
+- [X] Clean up leftover `set_full_frame_redraw()` once LS full-frame path is settled
 
 ---
 
@@ -185,7 +185,7 @@ From [Roadmap.md](Roadmap.md), [DebugProtocol.md](DebugProtocol.md), [DevelopLog
 - [X] Debug frame-step: don't consume/modify normal frame-end path; interrupts shouldn't fire while CPU frozen
 - [-] Debug window near screen edge + flash → runaway flash / slow debug updates (pretty sure this is a MacOS problem)
 - [ ] Store `e` bit in trace flags; polish immediate-operand display
-- [ ] STP / WAI; abort/IRQ/NMI/RES stack paths if still incomplete ([65816.md](65816.md))
+- [X] STP / WAI; abort/IRQ/NMI/RES stack paths if still incomplete ([65816.md](65816.md))
 
 ---
 
@@ -214,15 +214,15 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 - [ ] Clear SCC queues on reset
 - [X] Implement "file" serial device (complete path)
 - [ ] ImageWriter II emulation
-- [x] OSD gizmo when a capture file finishes writing (path toast)
-- [x] Refactor parallel card onto threads; connect to file (ImageWriter later)
-- [x] Parallel: flush/close after inactivity; reopen on write; close on ctrl-reset (via FileDevice)
+- [X] OSD gizmo when a capture file finishes writing (path toast)
+- [X] Refactor parallel card onto threads; connect to file (ImageWriter later)
+- [X] Parallel: flush/close after inactivity; reopen on write; close on ctrl-reset (via FileDevice)
 - [ ] Full printer→PDF pipeline (libHaru / preview window) beyond raw dump
 - [X] Serial-to-telnet / Hayes path hardening as needed
-- [x] Super Serial Card (`super_serial`) — 6551 + ROM + Modem/File attach; see [SSC.md](SSC.md)
-- [x] Apply `[[connections]]` at runtime for SCC and SSC
+- [X] Super Serial Card (`super_serial`) — 6551 + ROM + Modem/File attach; see [SSC.md](SSC.md)
+- [X] Apply `[[connections]]` at runtime for SCC and SSC
 - [ ] Optional FujiNet-PC / NetSIO bridge
-- [x] Uthernet II emulation
+- [X] Uthernet II emulation
 - [ ] Optional pcap/bpf Uthernet backend
 - [X] SMB FST via Uthernet (noted as preferred home-network path)
 

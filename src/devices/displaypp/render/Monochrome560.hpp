@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Render.hpp"
 
 class Monochrome560 : public Render {

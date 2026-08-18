@@ -15,6 +15,10 @@
 #include "debugger/BreakpointTable.hpp"
 #include "debugger/Monitor.hpp"
 #include "debugger/disasm.hpp"
+#include "debugger/DebugVideoView.hpp"
+
+#include <cstddef>
+#include <cstdint>
 
 struct computer_t;
 struct video_system_t;
@@ -23,6 +27,7 @@ enum debug_panel_t {
     DEBUG_PANEL_TRACE = 0,
     DEBUG_PANEL_MONITOR,
     DEBUG_PANEL_MEMORY,
+    DEBUG_PANEL_VIDEO,
     DEBUG_PANEL_DEVICES,
     DEBUG_PANEL_COUNT
 };
@@ -48,7 +53,10 @@ struct debug_window_t {
     std::vector<Container_t *> containers;
     Container_t *tab_container, *step_container;
     WrapContainer_t *debug_display_container = nullptr;
+    WrapContainer_t *video_preset_container_ = nullptr;
+    Container_t *video_controls_container_ = nullptr;
     MemoryWatch memory_watches;
+    DebugVideoViews video_views_;
     Monitor monitor_;
     uint32_t stepover_bp = 0;
     bool step_out_active = false;
@@ -63,10 +71,14 @@ struct debug_window_t {
     TextInput_t* mon_textinput;
     ScrollBar_t *trace_scroll_ = nullptr;
     ScrollBar_t *mon_scroll_ = nullptr;
+    ScrollBar_t *video_scroll_ = nullptr;
     std::vector<std::string> mon_display_buffer;
     std::vector<std::string> mon_history;
     int mon_history_position = 0;
     int mon_view_position = 0;
+    int video_scroll_pos_ = 0;
+    int video_content_height_ = 0;
+    size_t video_controls_synced_count_ = SIZE_MAX;
 
     MMU *mmu = nullptr;
 
@@ -98,6 +110,7 @@ struct debug_window_t {
     void render_pane_trace();
     void render_pane_monitor();
     void render_pane_memory();
+    void render_pane_video();
     void render_pane_devices();
     void set_panel_visible(debug_panel_t panel, bool visible);
     bool is_pane_first(debug_panel_t pane) const;
@@ -106,6 +119,14 @@ struct debug_window_t {
     void layout_debug_display_container();
     void toggle_debug_display(const std::string &name);
     int memory_pane_base_line() const;
+    void sync_video_preset_buttons();
+    void sync_video_view_controls();
+    void layout_video_pane_controls();
+    void sync_video_scrollbar();
+    /** First pixel row available for thumbnails, below the wrapped preset strip. */
+    int video_pane_content_top() const;
+    uint32_t add_video_preset(const std::string &name);
+    bool remove_video_view(uint32_t id);
     void event_pane_monitor(SDL_Event &event);
     bool handle_pane_event_monitor(SDL_Event &event);
     bool check_pre_breakpoint(cpu_state *cpu, StopHit *hit_out = nullptr);

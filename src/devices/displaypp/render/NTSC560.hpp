@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Render.hpp"
 #include "display/ntsc.hpp"
 #include "display/filters.hpp"

@@ -64,11 +64,11 @@ void ScrollBar_t::scroll_by(int delta) {
 }
 
 void ScrollBar_t::scroll_to_home() {
-    apply_position(max_position(), true);
+    apply_position(origin_ == ScrollBarOrigin::Top ? 0 : max_position(), true);
 }
 
 void ScrollBar_t::scroll_to_end() {
-    apply_position(0, true);
+    apply_position(origin_ == ScrollBarOrigin::Top ? max_position() : 0, true);
 }
 
 SDL_FRect ScrollBar_t::thumb_rect() const {
@@ -94,10 +94,16 @@ SDL_FRect ScrollBar_t::thumb_rect() const {
     float travel = track_h - thumb_h;
     float thumb_y = tp.y;
     if (max_pos > 0 && travel > 0.0f) {
-        // position 0 -> bottom; position max -> top
-        float t = (float)(max_pos - position_) / (float)max_pos;
+        float t;
+        if (origin_ == ScrollBarOrigin::Top) {
+            // position 0 -> top; position max -> bottom
+            t = (float)position_ / (float)max_pos;
+        } else {
+            // position 0 -> bottom; position max -> top
+            t = (float)(max_pos - position_) / (float)max_pos;
+        }
         thumb_y = tp.y + travel * t;
-    } else if (max_pos == 0) {
+    } else if (max_pos == 0 && origin_ != ScrollBarOrigin::Top) {
         thumb_y = tp.y + travel; // at bottom / end
     }
 
@@ -116,8 +122,14 @@ int ScrollBar_t::position_from_track_y(float y) const {
     if (t > 1.0f) {
         t = 1.0f;
     }
-    // top -> max (oldest), bottom -> 0 (newest)
-    int pos = (int)((1.0f - t) * (float)max_pos + 0.5f);
+    int pos;
+    if (origin_ == ScrollBarOrigin::Top) {
+        // top -> 0, bottom -> max
+        pos = (int)(t * (float)max_pos + 0.5f);
+    } else {
+        // top -> max (oldest), bottom -> 0 (newest)
+        pos = (int)((1.0f - t) * (float)max_pos + 0.5f);
+    }
     return clamp_position(pos);
 }
 

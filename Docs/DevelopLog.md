@@ -6059,7 +6059,7 @@ this means, display and iiememory BOTH need to track these. More specifically, i
    keyboard kept reading joystick button 0 down and rebooting.
    turn joystick on, then the reading clears to 0 and ctrl-reset works as exepcted.
 
-[ ] ds->video_system->set_full_frame_redraw(); <-- we can get rid of all these once we're confident we're sticking with the "redraw full frames in LS mode.
+[X] ds->video_system->set_full_frame_redraw(); <-- we can get rid of all these once we're confident we're sticking with the "redraw full frames in LS mode.
 
 [ ] check condition after reset on table 5.4 of understanding iie - make sure we are implementing those reset conditions.  
 [ ] per table 5.4 also, C018 is MMU, C01C/C01D are IOU (display).

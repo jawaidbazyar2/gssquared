@@ -1,3 +1,5 @@
+#pragma once
+
 #include "GSRGB_LUT.hpp"
 #include "Render.hpp"
 #include "../AppleIIgsColors.hpp"
@@ -368,7 +370,8 @@ text looks like a** in it. */
         } 
     }
 
-    virtual void render(Frame560 *frame_byte, FrameVSG *frame_rgba) override {
+    template<typename FrameOut>
+    void render_gsrgb_content(Frame560 *frame_byte, FrameOut *frame_rgba) {
         uint16_t framewidth = frame_byte->width();
         uint16_t *lut;
 
@@ -376,7 +379,7 @@ text looks like a** in it. */
             frame_byte->set_line(y);
             frame_rgba->set_line(y);
 
-            color_mode_t color_mode = frame_byte->get_color_mode(y); // TODO: also need to know if we're in split mode so we can do lines > 160 correctly.
+            color_mode_t color_mode = frame_byte->get_color_mode(y);
 
             uint8_t phase_offset = color_mode.phase_offset;
 
@@ -389,23 +392,15 @@ text looks like a** in it. */
             RGBColor *ctable = (RGBColor *)GSHGRColors;
 
             if (color_mode.colorburst == 1 && color_mode.mixed_mode == 0) {
-                // do color burst
-
-                /* int bitindex = 0;
-                int ph = 0;
-                uint8_t latch = 0, pixel = 0;
-                bool diff = false; */
                 uint32_t shiftreg = 0;
                 bool bit;
 
-                // Preload 3 bits
                 for (int i = 0; i < 3-phase_offset; i++) {
                     bit = frame_byte->pull() & 1;
                     shiftreg = ((shiftreg << 1) | bit);
                 }
 
                 for (int i = 0; i < framewidth/4-1; i++) {
-                    // fetch 4 bits at a time
                     bit = frame_byte->pull() & 1;
                     shiftreg = ((shiftreg << 1) | bit);
                     bit = frame_byte->pull() & 1;
@@ -414,11 +409,10 @@ text looks like a** in it. */
                     shiftreg = ((shiftreg << 1) | bit);
                     bit = frame_byte->pull() & 1;
                     shiftreg = ((shiftreg << 1) | bit);
-                    shiftreg = shiftreg & 0x7FF; // 11 bits
+                    shiftreg = shiftreg & 0x7FF;
 
                     uint16_t pixels = lut[shiftreg];
 
-                    //RGBColor color = GSHGRColors[(pixels >> 12) & 0xF];
                     RGBColor c = ctable[(pixels >> 12) & 0xF];
                     frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
                     c = ctable[(pixels >> 8) & 0xF];
@@ -429,16 +423,15 @@ text looks like a** in it. */
                     frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
                 }
 
-                // trail out last 4 visible bits (pulls these into next, not current..)
                 shiftreg = ((shiftreg << 1) | (frame_byte->pull() & 1));
                 if (phase_offset == 1) {
-                    shiftreg = ((shiftreg << 1) | (frame_byte->pull() & 1)); // grab extra
+                    shiftreg = ((shiftreg << 1) | (frame_byte->pull() & 1));
                 } else {
                     shiftreg = ((shiftreg << 1) | 0);
                 }
                 shiftreg = ((shiftreg << 1) | 0);
                 shiftreg = ((shiftreg << 1) | 0);
-                shiftreg = shiftreg & 0x7FF; // 11 bits
+                shiftreg = shiftreg & 0x7FF;
 
                 uint16_t pixels = lut[shiftreg];
 
@@ -450,10 +443,8 @@ text looks like a** in it. */
                 frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
                 c = ctable[pixels & 0xF];
                 frame_rgba->push(RGBA_t::make(c.r>>8, c.g>>8, c.b>>8, 0xFF));
-            
+
             } else {
-                // do mono (white) rendering (or colored with GS colors)
-                // TODO: only works with text. We're not even looking at bit here.
                 for (uint16_t x = 0; x < framewidth; x++) {
                     uint8_t bit = frame_byte->pull();
                     RGBA_t pixel = gs_txt_colors[bit >> 4];
@@ -466,5 +457,9 @@ text looks like a** in it. */
                 }
             }
         }
+    }
+
+    virtual void render(Frame560 *frame_byte, FrameVSG *frame_rgba) override {
+        render_gsrgb_content(frame_byte, frame_rgba);
     }
 };
