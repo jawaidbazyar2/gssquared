@@ -9,10 +9,6 @@
 #include "generate/AppleIIgs.hpp"
 #include "util/printf_helper.hpp"
 #include "render/GSRGB_LUT.hpp"
-#include "render/GSRGB560.hpp"
-
-// Alias to the shared Apple IIgs color table for text rendering
-//static const RGBA_t (&gs_text_palette)[16] = AppleIIgs::TEXT_COLORS;
 
 VideoScanGenerator_RGB::VideoScanGenerator_RGB(CharRom *charrom, bool border_enabled, FrameVSG *frame_vsg)
 {
@@ -45,7 +41,7 @@ VideoScanGenerator_RGB::VideoScanGenerator_RGB(CharRom *charrom, bool border_ena
     for (int i = 0; i < 16; i++) {
         hgr_color_lut[i] = RGBA_t::make(GSHGRColors[i].r>>8, GSHGRColors[i].g>>8, GSHGRColors[i].b>>8, 0xFF);
         //hgr_color_lut[i] = AppleIIgs::RGB_COLORS[i];
-        txt_color_lut[i] = gs_txt_colors[i];
+        txt_color_lut[i] = AppleIIgs::TEXT_COLORS[i];
     }
     build_mono_lut(txt_color_lut, txt_mono_lut);
     build_mono_lut(hgr_color_lut, hgr_mono_lut);

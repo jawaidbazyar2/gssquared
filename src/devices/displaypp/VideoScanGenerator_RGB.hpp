@@ -47,7 +47,7 @@ private:
     uint16_t scanner_freq = 14;
 
     uint8_t lastByte = 0x00; // for hires
-    color_mode_t color_mode;
+    color_mode_t color_mode = {};
     bool dump_next_frame = false;
     
     uint8_t color_delay_mask = 0xFF;
@@ -58,8 +58,6 @@ private:
     //ScanBuffer *frame_scan = nullptr;
     FrameVSG *frame_vsg = nullptr;
     Render *render = nullptr;
-
-    const RGBA_t (&gs_txt_colors)[16] = AppleIIgs::TEXT_COLORS;
     
     // hires mapping (process data in from GuS)
     // the hgr table ("16 colors") are not the same layout/assignment as the text/lores table. So maintain it separately.
