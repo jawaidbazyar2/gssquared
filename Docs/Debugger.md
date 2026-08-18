@@ -148,6 +148,27 @@ this pane contains a number of selectable diagnostic displays, that automaticall
 | display | various display information | ✅ | ✅ | ✅ |
 | scc8530 | IIgs Zilog Serial Chip | ❌ | ❌ | ✅ |
 
+# Video Pane
+
+Static thumbnails of Apple II / IIgs video pages (not cycle-accurate), drawn 1× horizontal and 2× vertical to approximate Apple II pixel aspect. Open with the **Video** tab.
+
+Per view controls:
+* **Decode** — TEXT40 / TEXT80 / LORES40 / LORES80 / HIRES / HIRES_NS / DHGR / SHR
+* **Render** — MONO / NTSC / RGB (ignored for SHR)
+* **Address** — 24-bit base `BB/AAAA` (Enter to apply); aux for 80-col/DHGR defaults to bank XOR 1
+
+Preset buttons: `text1`, `text2`, `80text1`, `80text2`, `gr1`, `gr2`, `hgr1`, `hgr2`, `dhgr1`, `dhgr2`, `shr` (`$E1/2000`).
+
+Monitor commands:
+```
+video hgr1
+video hires 00/8000 ntsc
+video
+novideo id
+```
+
+Thumbnails use `AppleII_View` (standalone Composite / GSRGB generators, not cycle-accurate). They read guest RAM in place (IIgs E1 SHR applies the C029 aux interleave). The live guest display remains the VideoScanGenerator path.
+
 Maybe the thing to do here is, when we are mapping memory, we pass along a string to set the memory map description. Then we can just read the whole thing straight out of the MMU page table. That seems good.
 Alternatively, can we just construct this from the softswitches? That requires info about system type. I kind of like just having 
 

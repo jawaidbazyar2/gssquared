@@ -12,6 +12,8 @@
 #include "debugger/trace.hpp"
 #include "mmus/mmu.hpp"
 
+class DebugVideoViews;
+
 struct mon_range_t {
     uint32_t lo;
     uint32_t hi;
@@ -48,6 +50,8 @@ enum mon_cmd_type_t {
     MON_CMD_SLOOKUP,
     MON_CMD_M, // set/show assumed M width for list disasm (8 or 16)
     MON_CMD_X, // set/show assumed X width for list disasm (8 or 16)
+    MON_CMD_VIDEO,
+    MON_CMD_NOVIDEO,
 };
 
 struct mon_node_entry_t {
@@ -64,7 +68,8 @@ public:
     Monitor() = default;
 
     void bind(MMU *mmu, MemoryWatch *watches, BreakpointTable *breakpoints, Disassembler *disasm,
-              std::vector<std::string> *debug_displays, system_trace_buffer *trace_buffer);
+              std::vector<std::string> *debug_displays, system_trace_buffer *trace_buffer,
+              DebugVideoViews *video_views = nullptr);
 
     /** Parse + run one line; returns output valid until the next execute(). */
     const std::vector<std::string> &execute(const std::string &line);
@@ -76,6 +81,7 @@ private:
     Disassembler *disasm_ = nullptr;
     std::vector<std::string> *debug_displays_ = nullptr;
     system_trace_buffer *trace_ = nullptr;
+    DebugVideoViews *video_views_ = nullptr;
     bool m_8bit_ = true; // assumed M for list disasm (default 8-bit)
     bool x_8bit_ = true; // assumed X for list disasm (default 8-bit)
 
@@ -139,4 +145,6 @@ private:
     void cmd_move();
     void cmd_debug();
     void cmd_nodebug();
+    void cmd_video();
+    void cmd_novideo();
 };

@@ -8,10 +8,7 @@
 //#include "devices/displaypp/frame/frame_bit.hpp"
 #include "SDL3/SDL_surface.h"
 #include "devices/displaypp/frame/Frames.hpp"
-#include "devices/displaypp/generate/AppleII.cpp"
-#include "devices/displaypp/render/Monochrome560.hpp"
-#include "devices/displaypp/render/NTSC560.hpp"
-#include "devices/displaypp/render/GSRGB560.hpp"
+#include "devices/displaypp/generate/AppleII.hpp"
 #include "devices/displaypp/CharRom.hpp"
 #include "util/printf_helper.hpp"
 
@@ -328,22 +325,18 @@ int main(int argc, char **argv) {
     SDL_SetTextureScaleMode(shrtexture,  scales[0] /* SDL_SCALEMODE_LINEAR */);
     SDL_SetTextureBlendMode(shrtexture, SDL_BLENDMODE_NONE); 
 
-    Monochrome560 monochrome;
-    NTSC560 ntsc_render;
-    GSRGB560 rgb_render;
-
-    AppleII_Display display_iie(&iie_rom);
+    AppleII_View display_iie(&iie_rom);
     iie_rom.print_matrix(0x40);
-    AppleII_Display display_iiplus(&iiplus_rom);
+    AppleII_View display_iiplus(&iiplus_rom);
     iiplus_rom.print_matrix(0x40);
 
 #if 0
     start = SDL_GetTicksNS();
     for (int numframes = 0; numframes < testiterations; numframes++) {
-        for (int l = 0; l < 24; l++) {
-            display_iiplus.generate_text40(text_page, frame_byte, l);
-        }
-        monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
+        frame_rgba->open();
+        display_iiplus.generate(video_decode_mode_t::TEXT40, video_render_mode_t::MONO,
+                                text_page, nullptr, frame_rgba, nullptr);
+        frame_rgba->close();
     }
 
     end = SDL_GetTicksNS();
@@ -456,7 +449,6 @@ int main(int argc, char **argv) {
         }
 
         start = SDL_GetTicksNS();
-        int phaseoffset = 1; // now that I start normal (40) display at pixel 7, its phase is 1 also. So, both 40 and 80 display start at phase 1 now.
 
         if (flash_count++ > 14) {
             flash_state = !flash_state;
@@ -465,66 +457,69 @@ int main(int argc, char **argv) {
             display_iie.set_flash_state(flash_state);
         }
 
+        video_render_mode_t rmode = video_render_mode_t::MONO;
+        if (render_mode == 2) {
+            rmode = video_render_mode_t::NTSC;
+        } else if (render_mode == 3) {
+            rmode = video_render_mode_t::RGB;
+        }
+
         /* Generate */
         if (generate_mode >= 7) {
             frame_shr->open();
-            display_iie.generate_shr((SHR *)(generate_mode == 7 ? testshrpic : testshrpic2), frame_shr);
+            display_iie.generate(video_decode_mode_t::SHR, rmode,
+                                 generate_mode == 7 ? testshrpic : testshrpic2, nullptr,
+                                 nullptr, frame_shr);
             frame_shr->close();
-
-            /* SDL_LockTexture(shrtexture, NULL, &pixels, &pitch);
-            std::memcpy(pixels, frame_shr->data(), 640 * 200 * sizeof(RGBA_t));
-            SDL_UnlockTexture(shrtexture); */
 
             SDL_RenderClear(renderer);
 
             SDL_FRect source_rect = { 0.0, 0.0, sources[generate_mode].w, sources[generate_mode].h };
             SDL_RenderTexture(renderer, shrtexture, &source_rect, &source_rect);       
         } else {
+            video_decode_mode_t dmode = video_decode_mode_t::TEXT40;
+            const uint8_t *main = text_page;
+            const uint8_t *aux = nullptr;
+            AppleII_View *gen = &display_iiplus;
             switch (generate_mode) {
                 case 1:
-                    for (int l = 0; l < 24; l++) 
-                        display_iiplus.generate_text40(text_page, frame_byte, l);
+                    dmode = video_decode_mode_t::TEXT40;
+                    main = text_page;
+                    gen = &display_iiplus;
                     break;
                 case 2:
-                    for (int l = 0; l < 24; l++) 
-                        display_iie.generate_text80(text_page, alt_text_page, frame_byte, l);
-                    phaseoffset = 1;
+                    dmode = video_decode_mode_t::TEXT80;
+                    main = text_page;
+                    aux = alt_text_page;
+                    gen = &display_iie;
                     break;
                 case 3:
-                    for (int l = 0; l < 24; l++) 
-                        display_iie.generate_lores40(text_page, frame_byte, l);
+                    dmode = video_decode_mode_t::LORES40;
+                    main = text_page;
+                    gen = &display_iie;
                     break;
                 case 4:
-                    for (int l = 0; l < 24; l++) 
-                        display_iie.generate_lores80(lores_page, alt_lores_page, frame_byte, l);
-                    phaseoffset = 1;
-                    break;        
+                    dmode = video_decode_mode_t::LORES80;
+                    main = lores_page;
+                    aux = alt_lores_page;
+                    gen = &display_iie;
+                    break;
                 case 5:
-                    for (int l = 0; l < 24; l++) 
-                        display_iiplus.generate_hires40(testhgrpic, frame_byte, l);
+                    dmode = video_decode_mode_t::HIRES;
+                    main = testhgrpic;
+                    gen = &display_iiplus;
                     break;
                 case 6:
                     // saved dhgr files are aux memory first, then main memory.
-                    for (int l = 0; l < 24; l++) 
-                        display_iiplus.generate_hires80(testdhgrpic+0x2000, testdhgrpic, frame_byte, l);
-                    phaseoffset = 1;
+                    dmode = video_decode_mode_t::DHGR;
+                    main = testdhgrpic + 0x2000;
+                    aux = testdhgrpic;
+                    gen = &display_iiplus;
                     break;
             }
-            
-            /* Render */
+
             frame_rgba->open();
-            switch (render_mode) {
-                case 1:
-                    monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
-                    break;
-                case 2:
-                    ntsc_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF)/* , phaseoffset */);
-                    break;
-                case 3:
-                    /* if (generate_mode == 1 || generate_mode == 2) monochrome.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF));
-                    else  */rgb_render.render(frame_byte, frame_rgba, RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) /* , phaseoffset */);
-                    break;
-            }
+            gen->generate(dmode, rmode, main, aux, frame_rgba, nullptr);
             frame_rgba->close();
 
             // update the texture 

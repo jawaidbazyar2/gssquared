@@ -62,6 +62,18 @@ debug_window_t::debug_window_t(computer_t *computer) {
     debug_display_container->set_visible(false);
     containers.push_back(debug_display_container);
 
+    video_preset_container_ = new WrapContainer_t(&ui_ctx, CS);
+    video_preset_container_->set_position(25, 15);
+    video_preset_container_->size(620, 70);
+    video_preset_container_->set_visible(false);
+    containers.push_back(video_preset_container_);
+
+    video_controls_container_ = new Container_t(&ui_ctx, CS);
+    video_controls_container_->set_position(25, 90);
+    video_controls_container_->size(620, 700);
+    video_controls_container_->set_visible(false);
+    containers.push_back(video_controls_container_);
+
     Style_t SS;
     //SS.background_color = 0x00A1F0FF; // active (20% brighter)
     SS.background_color = 0x00426340; // 50% darker than 0x0084C6FF
@@ -97,6 +109,14 @@ debug_window_t::debug_window_t(computer_t *computer) {
         return true;
     });
     tab_container->add(s3);
+
+    Button_t* s4 = new Button_t(&ui_ctx, "Video", SS);
+    s4->size(70, 22);
+    s4->on_click([this](const SDL_Event& event) -> bool {
+        toggle_panel(DEBUG_PANEL_VIDEO);
+        return true;
+    });
+    tab_container->add(s4);
     tab_container->layout();
 
     /* Button_t *b4 = new Button_t(&ui_ctx, "||", SS);
@@ -157,7 +177,11 @@ debug_window_t::debug_window_t(computer_t *computer) {
     trace_scroll_->on_change([this](int pos) { view_position = pos; });
     mon_scroll_ = new ScrollBar_t(&ui_ctx, scroll_style);
     mon_scroll_->on_change([this](int pos) { mon_view_position = pos; });
+    video_scroll_ = new ScrollBar_t(&ui_ctx, scroll_style);
+    video_scroll_->set_origin(ScrollBarOrigin::Top);
+    video_scroll_->on_change([this](int pos) { video_scroll_pos_ = pos; });
 
+    sync_video_preset_buttons();
     resize_window(); // first time we need to calculate the pane locations and window size.
 }
 
@@ -168,15 +192,21 @@ debug_window_t::~debug_window_t() {
     delete tab_container;
     delete step_container;
     delete debug_display_container;
+    delete video_preset_container_;
+    delete video_controls_container_;
     delete mon_textinput;
     delete trace_scroll_;
     delete mon_scroll_;
+    delete video_scroll_;
     if (disasm) delete disasm;
     if (step_disasm) delete step_disasm;
 }
 
+#include "debugger/disasm.hpp"
 #include "debugger/BreakpointTable.hpp"
 #include "debugger/DebugProtocolServer.hpp"
+#include "Module_ID.hpp"
+#include "display/display.hpp"
 
 bool debug_window_t::check_pre_breakpoint(cpu_state *cpu, StopHit *hit_out) {
     uint32_t fullpc = cpu->full_pc;
@@ -241,14 +271,16 @@ bool debug_window_t::needs_breakpoint_checks() const {
 void debug_window_t::set_mmu(MMU *mmu) {
     this->mmu = mmu;
     monitor_.bind(mmu, &memory_watches, computer->breakpoints, disasm, &debug_displays,
-                  cpu ? cpu->trace_buffer : nullptr);
+                  cpu ? cpu->trace_buffer : nullptr, &video_views_);
 }
 
 void debug_window_t::execute_command(const std::string& command) {
     int num_mem_watches = memory_watches.size();
     int num_debug_displays = debug_displays.size();
+    int num_video_views = video_views_.size();
 
-    monitor_.bind(mmu, &memory_watches, computer->breakpoints, disasm, &debug_displays, cpu->trace_buffer);
+    monitor_.bind(mmu, &memory_watches, computer->breakpoints, disasm, &debug_displays,
+                  cpu->trace_buffer, &video_views_);
     const auto &output = monitor_.execute(command);
 
     mon_history.push_back(command); // put into the scrollback
@@ -279,6 +311,12 @@ void debug_window_t::execute_command(const std::string& command) {
         // debug display list changed, so we need to re-render the debug pane
         if (debug_displays.size() > 0) {
             set_panel_visible(DEBUG_PANEL_MEMORY, true);
+        }
+    }
+    if (num_video_views != video_views_.size()) {
+        video_controls_synced_count_ = SIZE_MAX;
+        if (video_views_.size() > 0) {
+            set_panel_visible(DEBUG_PANEL_VIDEO, true);
         }
     }
 }
@@ -702,9 +740,334 @@ void debug_window_t::render_pane_devices() {
     int x = pane_area[DEBUG_PANEL_DEVICES].x;
     int y = pane_area[DEBUG_PANEL_DEVICES].y;
     int base_line = 0;
-    
+    (void)x;
+    (void)y;
+    (void)base_line;
 }
 
+uint32_t debug_window_t::add_video_preset(const std::string &name) {
+    uint32_t id = video_views_.add_preset(name);
+    if (id) {
+        set_panel_visible(DEBUG_PANEL_VIDEO, true);
+        video_controls_synced_count_ = SIZE_MAX;
+    }
+    return id;
+}
+
+bool debug_window_t::remove_video_view(uint32_t id) {
+    bool ok = video_views_.remove(id);
+    if (ok) {
+        video_controls_synced_count_ = SIZE_MAX;
+    }
+    return ok;
+}
+
+void debug_window_t::sync_video_preset_buttons() {
+    if (!video_preset_container_) {
+        return;
+    }
+    if (video_preset_container_->count() > 0) {
+        return;
+    }
+
+    Style_t SS;
+    SS.background_color = 0x00426340;
+    SS.border_color = 0xFFFFFFFF;
+    SS.hover_color = 0x606060FF;
+    SS.text_color = 0xFFFFFFFF;
+    SS.padding = 4;
+    SS.border_width = 1;
+
+    static const char *kPresets[] = {
+        "text1", "text2", "80text1", "80text2", "gr1", "gr2",
+        "hgr1", "hgr2", "dhgr1", "dhgr2", "shr",
+    };
+    for (const char *name : kPresets) {
+        std::string n(name);
+        Button_t *btn = new Button_t(&ui_ctx, n, SS);
+        const int text_w = text_renderer->string_width(n);
+        btn->size(static_cast<float>(std::max(text_w + 16, 50)), 22.0f);
+        btn->on_click([this, n](const SDL_Event &event) -> bool {
+            (void)event;
+            add_video_preset(n);
+            return true;
+        });
+        video_preset_container_->add(btn);
+    }
+    video_preset_container_->layout();
+}
+
+void debug_window_t::sync_video_view_controls() {
+    if (!video_controls_container_) {
+        return;
+    }
+    const size_t n = static_cast<size_t>(video_views_.size());
+    if (video_controls_synced_count_ != n) {
+        std::vector<Tile_t *> old = video_controls_container_->get_tiles();
+        for (Tile_t *t : old) {
+            delete t;
+        }
+        video_controls_container_->remove_all_tiles();
+
+        Style_t SS;
+        SS.background_color = 0x00426340;
+        SS.border_color = 0xFFFFFFFF;
+        SS.hover_color = 0x606060FF;
+        SS.text_color = 0xFFFFFFFF;
+        SS.padding = 2;
+        SS.border_width = 1;
+
+        for (auto &view : video_views_) {
+            const uint32_t id = view.id;
+
+            Button_t *dec = new Button_t(&ui_ctx, DebugVideoView::decode_name(view.decode), SS);
+            dec->size(90, 22);
+            dec->on_click([this, id](const SDL_Event &) -> bool {
+                if (DebugVideoView *v = video_views_.find(id)) {
+                    v->decode = DebugVideoView::next_decode(v->decode);
+                    video_controls_synced_count_ = SIZE_MAX;
+                }
+                return true;
+            });
+            video_controls_container_->add(dec);
+
+            Button_t *ren = new Button_t(&ui_ctx, DebugVideoView::render_name(view.render), SS);
+            ren->size(60, 22);
+            ren->on_click([this, id](const SDL_Event &) -> bool {
+                if (DebugVideoView *v = video_views_.find(id)) {
+                    v->render = DebugVideoView::next_render(v->render);
+                    video_controls_synced_count_ = SIZE_MAX;
+                }
+                return true;
+            });
+            video_controls_container_->add(ren);
+
+            char addrbuf[16];
+            snprintf(addrbuf, sizeof(addrbuf), "%02X/%04X", (view.address >> 16) & 0xFF, view.address & 0xFFFF);
+            TextInput_t *addr = new TextInput_t(&ui_ctx, addrbuf, SS);
+            addr->set_text_renderer(text_renderer);
+            addr->set_max_length(12);
+            addr->size(100, 22);
+            addr->set_padding(2);
+            addr->set_enter_handler([this, id, addr](const SDL_Event &) -> bool {
+                if (DebugVideoView *v = video_views_.find(id)) {
+                    std::string t = addr->get_text();
+                    bool ok = false;
+                    // BB/AAAA or AAAA
+                    auto slash = t.find('/');
+                    if (slash != std::string::npos) {
+                        unsigned bank = 0, off = 0;
+                        if (sscanf(t.c_str(), "%x/%x", &bank, &off) == 2) {
+                            v->address = ((bank & 0xFF) << 16) | (off & 0xFFFF);
+                            ok = true;
+                        }
+                    } else {
+                        unsigned off = 0;
+                        if (sscanf(t.c_str(), "%x", &off) == 1) {
+                            v->address = off & 0xFFFFFF;
+                            ok = true;
+                        }
+                    }
+                    if (ok) {
+                        char addrbuf[16];
+                        snprintf(addrbuf, sizeof(addrbuf), "%02X/%04X",
+                                 (v->address >> 16) & 0xFF, v->address & 0xFFFF);
+                        addr->set_text(addrbuf);
+                        addr->set_edit_active(false);
+                    }
+                }
+                return true;
+            });
+            video_controls_container_->add(addr);
+
+            Button_t *close = new Button_t(&ui_ctx, "x", SS);
+            close->size(28, 22);
+            close->on_click([this, id](const SDL_Event &) -> bool {
+                remove_video_view(id);
+                return true;
+            });
+            video_controls_container_->add(close);
+        }
+        video_controls_synced_count_ = n;
+    }
+
+    // Update labels / address text (when not editing) and positions.
+    size_t ti = 0;
+    int content_y = 0;
+    const int pane_x = pane_area[DEBUG_PANEL_VIDEO].x;
+    const int top = video_pane_content_top();
+    for (auto &view : video_views_) {
+        Button_t *dec = static_cast<Button_t *>(video_controls_container_->get_tile(ti++));
+        Button_t *ren = static_cast<Button_t *>(video_controls_container_->get_tile(ti++));
+        TextInput_t *addr = static_cast<TextInput_t *>(video_controls_container_->get_tile(ti++));
+        Button_t *close = static_cast<Button_t *>(video_controls_container_->get_tile(ti++));
+        if (!dec || !ren || !addr || !close) {
+            break;
+        }
+        if (!addr->is_edit_active()) {
+            char addrbuf[16];
+            snprintf(addrbuf, sizeof(addrbuf), "%02X/%04X", (view.address >> 16) & 0xFF, view.address & 0xFFFF);
+            addr->set_text(addrbuf);
+        }
+
+        const float row_y = static_cast<float>(top + content_y - video_scroll_pos_);
+        dec->set_position(static_cast<float>(pane_x + 8), row_y);
+        ren->set_position(static_cast<float>(pane_x + 102), row_y);
+        addr->set_position(static_cast<float>(pane_x + 168), row_y);
+        close->set_position(static_cast<float>(pane_x + 274), row_y);
+
+        // Rows scrolled out of the thumbnail band must not draw over the preset strip.
+        const bool row_visible = row_y >= static_cast<float>(top) &&
+                                 row_y + 22.0f <= static_cast<float>(window_height);
+        dec->set_visible(row_visible);
+        ren->set_visible(row_visible);
+        addr->set_visible(row_visible);
+        close->set_visible(row_visible);
+
+        content_y += 28 + view.display_height() + 12;
+    }
+    video_content_height_ = content_y;
+}
+
+void debug_window_t::layout_video_pane_controls() {
+    if (!video_preset_container_ || !video_controls_container_) {
+        return;
+    }
+    const bool vis = panel_visible[DEBUG_PANEL_VIDEO] != 0;
+    video_preset_container_->set_visible(vis);
+    video_controls_container_->set_visible(vis);
+    if (video_scroll_) {
+        video_scroll_->set_visible(vis);
+    }
+    if (!vis) {
+        return;
+    }
+    const int pane_x = pane_area[DEBUG_PANEL_VIDEO].x;
+    // Sit below the pane-toggle tabs when Video is the leftmost pane.
+    const int top = is_pane_first(DEBUG_PANEL_VIDEO) ? 50 : 15;
+    // Leave room for the scrollbar on the right; WrapContainer_t::layout sets height to fit.
+    const float strip_w = static_cast<float>(pane_area[DEBUG_PANEL_VIDEO].w - 8 - 24);
+    video_preset_container_->set_position(static_cast<float>(pane_x + 8), static_cast<float>(top));
+    video_preset_container_->size(strip_w, 1.0f);
+    video_preset_container_->layout();
+}
+
+int debug_window_t::video_pane_content_top() const {
+    const int strip_top = is_pane_first(DEBUG_PANEL_VIDEO) ? 50 : 15;
+    if (!video_preset_container_ || !video_preset_container_->is_visible()) {
+        return strip_top;
+    }
+    // The preset strip wraps to as many lines as it needs, so its laid-out height
+    // is the only reliable offset for the first thumbnail.
+    float x = 0, y = 0, w = 0, h = 0;
+    video_preset_container_->get_tile_position(x, y);
+    video_preset_container_->get_tile_size(&w, &h);
+    (void)x;
+    (void)w;
+    return static_cast<int>(y + h) + 6;
+}
+
+void debug_window_t::sync_video_scrollbar() {
+    if (!video_scroll_ || !panel_visible[DEBUG_PANEL_VIDEO]) {
+        return;
+    }
+    const int top = video_pane_content_top();
+    const int page = std::max(window_height - top - 10, 100);
+    video_scroll_->set_range(std::max(video_content_height_, page), page);
+    video_scroll_->set_position(video_scroll_pos_);
+    const int x = pane_area[DEBUG_PANEL_VIDEO].x + pane_area[DEBUG_PANEL_VIDEO].w - 18;
+    video_scroll_->set_position(static_cast<float>(x), static_cast<float>(top));
+    video_scroll_->size(14, static_cast<float>(page));
+}
+
+void debug_window_t::render_pane_video() {
+    if (!panel_visible[DEBUG_PANEL_VIDEO]) {
+        return;
+    }
+
+    const int pane_x = pane_area[DEBUG_PANEL_VIDEO].x;
+    const int top = video_pane_content_top();
+    int content_y = 0;
+
+    DebugVideoDecodeOpts opts;
+    if (computer) {
+        auto *ds = static_cast<display_state_t *>(computer->get_module_state(MODULE_DISPLAY));
+        if (ds) {
+            opts.char_rom = ds->char_rom;
+            opts.flash_state = ds->flash_state;
+            opts.altcharset = ds->f_altcharset;
+            opts.char_set = (ds->f_langsel & 0xE0) >> 5;
+            opts.text_fg = ds->text_color >> 4;
+            opts.text_bg = ds->text_color & 0x0F;
+        }
+    }
+
+    // Thumbnails are clipped to the band between the preset strip and the window bottom.
+    const float band_top = static_cast<float>(top);
+    const float band_bottom = static_cast<float>(window_height);
+
+    for (auto &view : video_views_) {
+        view.rebuild(mmu, renderer, opts);
+        SDL_Texture *tex = view.texture();
+        const int tw = view.width();
+        const int th = view.height();
+        const int dw = view.display_width();
+        const int dh = view.display_height();
+        const float row_y = static_cast<float>(top + content_y - video_scroll_pos_);
+        const float dest_y = row_y + 28.0f;
+        const float y_scale = (th > 0) ? (static_cast<float>(dh) / static_cast<float>(th)) : 1.0f;
+        const float img_x = static_cast<float>(pane_x + 8);
+        const float img_y = dest_y;
+        const float img_w = static_cast<float>(dw);
+        const float img_h = static_cast<float>(dh);
+
+        if (tex) {
+            float dy = img_y;
+            float dest_h = img_h;
+            float src_y = 0.0f;
+            if (dy < band_top) {
+                const float cut = band_top - dy;
+                src_y += cut / y_scale;
+                dest_h -= cut;
+                dy = band_top;
+            }
+            if (dy + dest_h > band_bottom) {
+                dest_h = band_bottom - dy;
+            }
+            if (dest_h > 0.0f) {
+                const float src_h = dest_h / y_scale;
+                SDL_FRect src = {0.f, src_y, static_cast<float>(tw), src_h};
+                SDL_FRect dst = {img_x, dy, img_w, dest_h};
+                SDL_RenderTexture(renderer, tex, &src, &dst);
+            }
+        }
+
+        SDL_FRect border = {img_x - 1.0f, img_y - 1.0f, img_w + 2.0f, img_h + 2.0f};
+        if (border.y + border.h > band_top && border.y < band_bottom) {
+            const SDL_Rect clip = {
+                pane_area[DEBUG_PANEL_VIDEO].x,
+                static_cast<int>(band_top),
+                pane_area[DEBUG_PANEL_VIDEO].w,
+                static_cast<int>(band_bottom - band_top)
+            };
+            SDL_SetRenderClipRect(renderer, &clip);
+            ui_ctx.draw_rect(border, 0xFFFFFFFF);
+            SDL_SetRenderClipRect(renderer, nullptr);
+        }
+        if (row_y >= band_top && row_y + 22.0f <= band_bottom) {
+            char hdr[64];
+            snprintf(hdr, sizeof(hdr), "[%u]", view.id);
+            text_renderer->set_color(200, 200, 200, 255);
+            text_renderer->render(hdr, pane_x + 310, static_cast<int>(row_y));
+        }
+        content_y += 28 + dh + 12;
+    }
+    video_content_height_ = content_y;
+
+    if (video_scroll_) {
+        video_scroll_->render();
+    }
+}
 
 int debug_window_t::memory_pane_base_line() const {
     // Reserve space for the debug-display toggle strip at the top of Watch.
@@ -903,10 +1266,19 @@ void debug_window_t::render() {
     if (mon_scroll_) {
         mon_scroll_->set_visible(panel_visible[DEBUG_PANEL_MONITOR] != 0);
     }
+    if (video_scroll_) {
+        video_scroll_->set_visible(panel_visible[DEBUG_PANEL_VIDEO] != 0);
+    }
 
     // Watch-pane debug-display toggles (handlers register after debugger construction).
     sync_debug_display_buttons();
     layout_debug_display_container();
+    if (panel_visible[DEBUG_PANEL_VIDEO]) {
+        sync_video_preset_buttons();
+        layout_video_pane_controls();
+        sync_video_view_controls();
+        sync_video_scrollbar();
+    }
 
     ui_ctx.color(0x000000FF);
     SDL_RenderClear(renderer);
@@ -926,6 +1298,9 @@ void debug_window_t::render() {
     }
     if (panel_visible[DEBUG_PANEL_MEMORY]) {
         render_pane_memory();
+    }
+    if (panel_visible[DEBUG_PANEL_VIDEO]) {
+        render_pane_video();
     }
 
     SDL_RenderPresent(renderer);
@@ -1102,12 +1477,29 @@ bool debug_window_t::handle_event(SDL_Event &event) {
                 if (wy > 0 && wy < 1) wy = 1;
                 if (point_in_panel(DEBUG_PANEL_MONITOR, mx, my)) {
                     mon_scroll_by(static_cast<int>(wy));
+                } else if (point_in_panel(DEBUG_PANEL_VIDEO, mx, my) && video_scroll_) {
+                    video_scroll_->scroll_by(static_cast<int>(-wy) * 40);
+                    video_scroll_pos_ = video_scroll_->position();
                 } else if (panel_visible[DEBUG_PANEL_TRACE]) {
                     trace_scroll(event.wheel.y);
                 }
                 break;
             }
             case SDL_EVENT_KEY_DOWN: {
+                // Let Video pane address fields consume keys while editing.
+                if (panel_visible[DEBUG_PANEL_VIDEO] && video_controls_container_) {
+                    bool editing = false;
+                    for (Tile_t *tile : video_controls_container_->get_tiles()) {
+                        auto *ti = dynamic_cast<TextInput_t *>(tile);
+                        if (ti && ti->is_edit_active()) {
+                            editing = true;
+                            ti->handle_mouse_event(event);
+                        }
+                    }
+                    if (editing) {
+                        return true;
+                    }
+                }
                 const bool mod_nav = (event.key.mod & (SDL_KMOD_ALT | SDL_KMOD_GUI)) != 0;
                 switch (event.key.key) {
                     case SDLK_SPACE: step_one(); break;
@@ -1187,6 +1579,11 @@ bool debug_window_t::handle_event(SDL_Event &event) {
                     && trace_scroll_->handle_mouse_event(event)) {
                     break;
                 }
+                if (video_scroll_ && panel_visible[DEBUG_PANEL_VIDEO]
+                    && video_scroll_->handle_mouse_event(event)) {
+                    video_scroll_pos_ = video_scroll_->position();
+                    break;
+                }
                 for (Container_t *container : containers) {
                     container->handle_mouse_event(event);
                 }
@@ -1214,7 +1611,8 @@ bool debug_window_t::is_open() {
 void debug_window_t::set_open() {
     disasm = new Disassembler(mmu, cpu->cpu_type); // used in monitor pane
     step_disasm = new Disassembler(mmu, cpu->cpu_type); // used in trace pane
-    monitor_.bind(mmu, &memory_watches, computer->breakpoints, disasm, &debug_displays, cpu->trace_buffer);
+    monitor_.bind(mmu, &memory_watches, computer->breakpoints, disasm, &debug_displays, cpu->trace_buffer,
+                  &video_views_);
     window_open = true;
     computer->video_system->show(window);
     computer->video_system->raise(window);
@@ -1230,7 +1628,8 @@ void debug_window_t::set_closed() {
     disasm = nullptr;
     delete step_disasm;
     step_disasm = nullptr;
-    monitor_.bind(mmu, &memory_watches, computer->breakpoints, nullptr, &debug_displays, cpu->trace_buffer);
+    monitor_.bind(mmu, &memory_watches, computer->breakpoints, nullptr, &debug_displays, cpu->trace_buffer,
+                  &video_views_);
 }
 
 void debug_window_t::resize_window() {
@@ -1252,11 +1651,17 @@ void debug_window_t::resize_window() {
         pane_area[DEBUG_PANEL_MEMORY].w = 640;
         window_width += 640;
     }
+    if (panel_visible[DEBUG_PANEL_VIDEO]) {
+        pane_area[DEBUG_PANEL_VIDEO].x = window_width;
+        pane_area[DEBUG_PANEL_VIDEO].w = 650;
+        window_width += 650;
+    }
     if (window_width < TRACE_WIDTH) {
         window_width = TRACE_WIDTH;
     }
     SDL_SetWindowSize(window, window_width, window_height);
     layout_debug_display_container();
+    layout_video_pane_controls();
 }
 
 void debug_window_t::toggle_panel(debug_panel_t panel) {

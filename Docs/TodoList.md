@@ -29,7 +29,7 @@ From [Roadmap.md](Roadmap.md):
 From [jawaidbazyar2/gssquared](https://github.com/jawaidbazyar2/gssquared/issues) (`gh issue list --state open`):
 
 ### Bugs
-- [ ] [#133](https://github.com/jawaidbazyar2/gssquared/issues/133) Unclaimed Sound Interrupt — QFTO (standard Sound Tools) dies to blue-screen after intro sound starts
+- [X] [#133](https://github.com/jawaidbazyar2/gssquared/issues/133) Unclaimed Sound Interrupt — QFTO (standard Sound Tools) dies to blue-screen after intro sound starts
 - [ ] [#125](https://github.com/jawaidbazyar2/gssquared/issues/125) 5.25" drive missing when returning to Finder from GS/OS app; returning via P8 can leave continuous polling
 - [X] [#124](https://github.com/jawaidbazyar2/gssquared/issues/124) Floating bus / edge artifacts on Sather Little Text Window demo
 - [ ] [#117](https://github.com/jawaidbazyar2/gssquared/issues/117) Locksmith 6.0 fails to copy Bilestoad (half/quarter-track read)
@@ -39,7 +39,7 @@ From [jawaidbazyar2/gssquared](https://github.com/jawaidbazyar2/gssquared/issues
 ### Enhancements / features
 - [ ] [#140](https://github.com/jawaidbazyar2/gssquared/issues/140) International keyboards on GS (e.g. AZERTY)
 - [ ] [#81](https://github.com/jawaidbazyar2/gssquared/issues/81) Make OA / CA key assignments configurable
-- [ ] [#77](https://github.com/jawaidbazyar2/gssquared/issues/77) Debugger: render specified display page (`hgr1`, `80text1`, …) into watch pane
+- [X] [#77](https://github.com/jawaidbazyar2/gssquared/issues/77) Debugger: render specified display page (`hgr1`, `80text1`, …) into Video pane
 - [ ] [#73](https://github.com/jawaidbazyar2/gssquared/issues/73) Disasm: share trace disassembly; M/X width commands; track REP/SEP
 - [X] [#69](https://github.com/jawaidbazyar2/gssquared/issues/69) Debugger UI: play/pause/step/step-over buttons; scrollbar click; section panes; monitor scrollback
 - [ ] [#51](https://github.com/jawaidbazyar2/gssquared/issues/51) Printer emulation (ImageWriter II → PostScript/PDF / host print)
