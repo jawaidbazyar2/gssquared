@@ -2210,8 +2210,12 @@ int execute_next(cpu_state *cpu) override {
     }
 
     if (cpu->rdy) { // RDY test occurs after IRQ.
-        incr_cycles(cpu);
-        return 0;
+        if (cpu->irq_asserted) {
+            cpu->rdy = false;
+        } else {
+            incr_cycles(cpu);
+            return 0;
+        }
     }
 
     // we're into the next instruction, so catch this up now.
@@ -4568,6 +4572,9 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_INOP_AB: /* INOP AB */ /* OP_PLB_S */
             if constexpr (CPUTraits::has_65816_ops) {
+                // Two phantom cycles go here..
+                phantom_read_ign(cpu, make_pc_long(cpu, _PC(cpu)));
+                phantom_read_ign(cpu, make_pc_long(cpu, _PC(cpu)));
                 cpu->db = pop_byte_new(cpu); // "unsafe" pop.
                 stack_fix_new(cpu);
                 set_n_z_flags(cpu, cpu->db);
@@ -4586,7 +4593,10 @@ int execute_next(cpu_state *cpu) override {
 
         case OP_INOP_CB: /* INOP CB */ /* OP_WAI_IMP */
             if constexpr (CPUTraits::has_65816_ops) {
-                cpu->rdy = true;
+                // If IRQ is already asserted, do not pull RDY low — continue to next insn.
+                if (!cpu->irq_asserted) {
+                    cpu->rdy = true;
+                }
                 incr_cycles(cpu); // ticks 2 cycles past the opcode.
                 incr_cycles(cpu);
             } else if constexpr (CPUTraits::has_65c02_ops) {
