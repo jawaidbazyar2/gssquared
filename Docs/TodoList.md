@@ -34,7 +34,7 @@ From [jawaidbazyar2/gssquared](https://github.com/jawaidbazyar2/gssquared/issues
 - [X] [#124](https://github.com/jawaidbazyar2/gssquared/issues/124) Floating bus / edge artifacts on Sather Little Text Window demo
 - [ ] [#117](https://github.com/jawaidbazyar2/gssquared/issues/117) Locksmith 6.0 fails to copy Bilestoad (half/quarter-track read)
 - [ ] [#112](https://github.com/jawaidbazyar2/gssquared/issues/112) `$C021` (IIgs): determine correct RESET state (mono bit not cleared by RESET)
-- [ ] [#101](https://github.com/jawaidbazyar2/gssquared/issues/101) textfunk timing incorrect — white border starts too early (memory access slowdown missing?)
+- [X] [#101](https://github.com/jawaidbazyar2/gssquared/issues/101) textfunk timing incorrect — white border starts too early (memory access slowdown missing?)
 
 ### Enhancements / features
 - [ ] [#140](https://github.com/jawaidbazyar2/gssquared/issues/140) International keyboards on GS (e.g. AZERTY)
@@ -77,7 +77,6 @@ From [Documentation.md](Documentation.md), [Woz.md](Woz.md), [IWM.md](IWM.md), [
 - [ ] WOZ 2.1 support
 - [X] Respect WOZ bit-timing field (Border Zone disk 2 is very slow)
 - [ ] .nib 13-sector disks (size collision with DOS 3.3 .nib; need better detection)
-- [ ] Successful writeback for non-WOZ formats (e.g. `.po`) where still failing
 - [ ] DOS 3.2 Disk II ROM variant + import conversion for 116K images
 - [X] Disk II: return floating bus on reads instead of `0xEE`
 - [X] Disk II: schedule true motor-off with a timer (sometimes stays on)
@@ -90,11 +89,11 @@ From [Documentation.md](Documentation.md), [Woz.md](Woz.md), [IWM.md](IWM.md), [
 - [X] Quarter / half track support (Locksmith nibble copy / some utils)
 - [ ] DiskII volume byte from DOS 3.3 VTOC when formatting image
 - [ ] pdblock3: boot from lowest numbered unit, not always unit 1
-- [ ] pdblock3: ignore mount if that file is already mounted elsewhere
+- [X] pdblock3: ignore mount if that file is already mounted elsewhere
 - [X] Rename Generic ProDOS Block 3 to "BazFast"
 - [ ] Mount error status codes for distinct user messages
 - [X] Drag/drop: save/discard prompt before remounting over modified media
-- [ ] Drag/drop: smart target anywhere in window; drop onto a specific drive icon
+- [X] Drag/drop: smart target anywhere in window; drop onto a specific drive icon
 - [X] Stereo drive sound effects (drive 1 left / drive 2 right)
 - [ ] 3.5 sound effects: low-volume spin; auto eject / insert spring-snap
 - [ ] AppleDisk 5.25 effects: spin; eject/close (distinct recordings)
@@ -118,10 +117,10 @@ From [DevelopLog.md](DevelopLog.md), [AppleIIgs.md](AppleIIgs.md), [Compatibilit
 - [ ] PAL //e broken (needs more scanlines; garbage/overrun)
 - [ ] Implement PAL timing on GS; re-run irqtest
 - [ ] Test RGB monitor colors
-- [ ] Lower Planes: right border offset by 1–2 scanlines ([CompatibilityGS.md](CompatibilityGS.md))
+- [X] Lower Planes: right border offset by 1–2 scanlines ([CompatibilityGS.md](CompatibilityGS.md))
 - [ ] FTA XMAS: slight cycle timing defect on lower-right border
 - [ ] Phosphor persistence effect (multi-texture fade)
-- [ ] VideoScanner asserts so bad state can't crash
+- [-] VideoScanner asserts so bad state can't crash
 - [X] Clean up leftover `set_full_frame_redraw()` once LS full-frame path is settled
 
 ---
