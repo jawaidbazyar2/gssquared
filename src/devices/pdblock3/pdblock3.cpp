@@ -16,6 +16,7 @@
  */
 
 //#include <stdio.h>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -467,16 +468,54 @@ public:
         return nullptr;
     }
 
+    /* Same host path, or two paths that resolve to the same inode. */
+    static bool same_host_file(const std::string& a, const std::string& b) {
+        if (a.empty() || b.empty()) return false;
+        if (a == b) return true;
+        std::error_code ec;
+        const std::filesystem::path pa(a);
+        const std::filesystem::path pb(b);
+        if (!std::filesystem::exists(pa, ec) || !std::filesystem::exists(pb, ec)) {
+            return false;
+        }
+        return std::filesystem::equivalent(pa, pb, ec);
+    }
+
+    bool host_file_already_mounted(const std::string& filename) const {
+        for (int j = 0; j < PDB3_MAX_UNITS; j++) {
+            if (drives[j].media && same_host_file(drives[j].media->filename, filename)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool mount(storage_key_t key, std::vector<media_descriptor *> media_list) {
         if (media_list.empty()) return false;
         if (key.drive >= PDB3_MAX_DEVICES) return false;
 
         // Vet every volume before opening any of them, so a bad entry in a
         // .pmap can't leave us with a half-populated set of units.
-        for (const media_descriptor *media : media_list) {
+        // Sharing one host file across units is allowed only for APM partitions
+        // in this same mount (same file, different data_offset). Remounting that
+        // file onto another drive, or listing it twice at the same offset,
+        // would give two writers the same bytes.
+        for (size_t i = 0; i < media_list.size(); i++) {
+            const media_descriptor *media = media_list[i];
             if (const char *why = media_reject_reason(media)) {
                 std::cerr << "BazFast: refusing '" << media->filename << "': " << why << std::endl;
                 return false;
+            }
+            if (host_file_already_mounted(media->filename)) {
+                std::cerr << "BazFast: refusing '" << media->filename << "': already mounted" << std::endl;
+                return false;
+            }
+            for (size_t k = 0; k < i; k++) {
+                if (same_host_file(media_list[k]->filename, media->filename) &&
+                    media_list[k]->data_offset == media->data_offset) {
+                    std::cerr << "BazFast: refusing '" << media->filename << "': already mounted" << std::endl;
+                    return false;
+                }
             }
         }
 
