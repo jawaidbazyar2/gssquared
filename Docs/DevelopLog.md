@@ -12447,6 +12447,12 @@ The GNO drivers folder is flat and this driver should be built in the src tree a
 
 ran the new Arekkusu CPU test and only had 3 issues - XCE (which I fixed a few days ago); WAI (there was an odd edge condition where we weren't releasing if an IRQ was already set); and PLB was 2 cycles instead of 4. Those are all fixed!
 
-Had zero impact on TextFunk. Augh! ha ha. Comparing TF in GS2 and CR. One notable thing that stands out is in GS2, border changes are locked to cycle boundaries. This is because we model on 1MHz boundaries for everything. CR shows border changes at any number of 14M modulos. I think this implies two things: 1) the border color is NOT a slow cycle register; 2) we need to model border rendering on something else, OR, .
+Had zero impact on TextFunk. Augh! ha ha. Comparing TF in GS2 and CR. One notable thing that stands out is in GS2, border changes are locked to cycle boundaries. This is because we model on 1MHz boundaries for everything. CR shows border changes at any number of 14M modulos. I think this implies two things: 1) the border color is NOT a slow cycle register; 2) we need to model border rendering on something else.
 
 For TextFunk, JUST border writes being locked to slow cycles could maybe account for differences in the border color? Worth checking out.
+
+References I find are that C034 clock/border are slow cycles. But that definitely doesn't match border changing on various 14Ms.
+
+Real GS testing indicates the border color changes happen on slow cycles and are perfectly aligned with text character cells
+
+Implemented fast cycles for FPI registers - AND TEXTFUNK HAS BEEN CONQUERED!!!

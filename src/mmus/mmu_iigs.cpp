@@ -152,6 +152,7 @@ inline uint8_t MMU_IIgs::read_c0xx(uint16_t address) {
 
 uint8_t read_c068(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
     return mmu_iigs->state_register();
 }
 
@@ -199,6 +200,7 @@ void write_c02d(void *context, uint32_t address, uint8_t value) {
 
 uint8_t read_c02d(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
     return mmu_iigs->get_slot_register();
 }
 
@@ -451,24 +453,40 @@ TODO: need to add: c015, c016, c017, c018, c01a, c01b, c01c, c01d
 // set shadow register
 void c035_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
     mmu_iigs->set_shadow_register(value);
 }
 
 uint8_t c035_read(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
     return mmu_iigs->shadow_register();
 }
 
 uint8_t c036_read(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
     return mmu_iigs->speed_register();
 }
 
 // set speed register
 void c036_write(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
     mmu_iigs->set_speed_register(value);
     mmu_iigs->set_ram_shadow_banks();
+}
+
+uint8_t c037_read(void *context, uint32_t address) {
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
+    return mmu_iigs->get_dma_bank_register();
+}
+
+void c037_write(void *context, uint32_t address, uint8_t value) {
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
+    mmu_iigs->set_dma_bank_register(value);
 }
 
 /*
@@ -622,6 +640,7 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
 
 uint8_t iolc_rom_read(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
     return mmu_iigs->get_rom_base()[mmu_iigs->rom_bank_ff_offset() + (address & 0xFFFF)];
 }
 

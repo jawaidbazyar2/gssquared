@@ -69,6 +69,8 @@ class MMU_IIgs : public MMU {
 
         bool is_rom03 = false;
 
+        uint8_t dma_bank_register = 0;
+
         //cpu_state *cpu = nullptr;
         NClock *clock = nullptr;
 
@@ -83,9 +85,10 @@ class MMU_IIgs : public MMU {
             is_rom03 = rom_banks >= 4;
             main_rom = rom;
             map_initialized = false;
+            dma_bank_register = 0;
             reset(true); // power-on: ROM03 CYAREG bit 6 set when cold_start
-
         };
+
         virtual ~MMU_IIgs() { delete[] main_ram; /* main_rom is owned by caller */ }
 
         virtual uint8_t read(uint32_t address) override {
@@ -215,8 +218,10 @@ class MMU_IIgs : public MMU {
         inline void set_intcxrom(bool value);
         
         inline void set_slot_register(uint8_t value);
-        
         inline uint8_t get_slot_register() { return reg_slot; }
+
+        inline void set_dma_bank_register(uint8_t value) { dma_bank_register = value; }
+        inline uint8_t get_dma_bank_register() { return dma_bank_register; }
 
         void bsr_map_memory();
         virtual uint8_t vp_read(uint32_t address) override;
