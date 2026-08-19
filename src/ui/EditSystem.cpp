@@ -502,7 +502,7 @@ void EditSystem::show_card_picker(int slot) {
 void EditSystem::open_premount_dialog(storage_key_t key) {
     pending_mount_key = key;
     static const SDL_DialogFileFilter filters[] = {
-        {"Disk Images", "do;po;woz;dsk;hdv;2mg;img"},
+        {"Disk Images", "do;po;woz;dsk;hdv;2mg;img;iso"},
         {"All files", "*"},
     };
 
@@ -525,7 +525,7 @@ void EditSystem::open_premount_dialog(storage_key_t key) {
     };
 
 #if defined(__EMSCRIPTEN__)
-    web_open_file_dialog(callback, data, ".do,.po,.woz,.dsk,.hdv,.2mg,.img");
+    web_open_file_dialog(callback, data, ".do,.po,.woz,.dsk,.hdv,.2mg,.img,.iso");
 #else
     const std::string last_path =
         SystemSettings::instance().get_file_dialog_default_location(FileDialogKind::Disk);

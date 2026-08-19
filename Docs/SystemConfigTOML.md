@@ -366,7 +366,7 @@ Rules:
 - **Absolute paths** are used as-is.
 - **Relative paths** are resolved relative to the directory containing the `.gs2` file (recommended for portable configs).
 
-Supported image types are whatever `identify_media()` accepts (`.po`, `.dsk`, `.woz`, `.2mg`, `.hdv`, `.pmap` etc.).
+Supported image types are whatever `identify_media()` accepts (`.po`, `.dsk`, `.woz`, `.2mg`, `.hdv`, `.iso`, `.pmap` etc.). APM `.iso` / block images expand to multiple BazFast units the same way a `.pmap` does.
 
 ### Drive map (reference)
 

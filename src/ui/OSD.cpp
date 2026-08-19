@@ -221,14 +221,14 @@ void bazfast_button_click(void *userdata) {
     }
     
     static const SDL_DialogFileFilter filters[] = {
-        { "Disk Images",  "po;dsk;hdv;2mg;img;pmap" },
+        { "Disk Images",  "po;dsk;hdv;2mg;img;pmap;iso" },
         { "All files",   "*" }
     };
 
     printf("unidisk button clicked\n");
 #if defined(__EMSCRIPTEN__)
     web_open_file_dialog(file_dialog_callback, userdata,
-        ".po,.dsk,.hdv,.2mg,.img,.pmap");
+        ".po,.dsk,.hdv,.2mg,.img,.pmap,.iso");
 #else
     const std::string last_path =
         SystemSettings::instance().get_file_dialog_default_location(FileDialogKind::Disk);

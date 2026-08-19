@@ -25,6 +25,7 @@
 #include "mount.hpp"
 #include "paths.hpp"
 #include "util/PMap.hpp"
+#include "util/apm.hpp"
 #include "util/printf_helper.hpp"
 
 // this and umount should work on the basis of a disk device registering callbacks for mount, unmount, status, whatever else.
@@ -64,6 +65,18 @@ bool Mounts::mount_media(disk_mount_t disk_mount, bool force_write_protected) {
                 //return false;
             }
             if (force_write_protected) media->write_protected = true;
+            if (media->media_type == MEDIA_BLK && media->block_size == 512) {
+                std::vector<media_descriptor> parts;
+                if (probe_apm(*media, parts)) {
+                    delete media;
+                    for (const media_descriptor &part : parts) {
+                        printf("mounting APM partition %s (%u blocks)\n",
+                               part.filestub.c_str(), part.block_count);
+                        media_list.push_back(new media_descriptor(part));
+                    }
+                    continue;
+                }
+            }
             media_list.push_back(media);
         }
         if (media_list.empty()) {
@@ -85,6 +98,32 @@ bool Mounts::mount_media(disk_mount_t disk_mount, bool force_write_protected) {
             return false;
         }
         if (force_write_protected) media->write_protected = true;
+
+        if (media->media_type == MEDIA_BLK && media->block_size == 512) {
+            std::vector<media_descriptor> parts;
+            if (probe_apm(*media, parts)) {
+                if (parts.empty()) {
+                    std::cerr << "APM image has no mountable ProDOS/HFS partitions: "
+                              << media->filename << std::endl;
+                    delete media;
+                    return false;
+                }
+                for (const media_descriptor &part : parts) {
+                    printf("mounting APM partition %s (%u blocks)\n",
+                           part.filestub.c_str(), part.block_count);
+                    media_list.push_back(new media_descriptor(part));
+                }
+                delete media;
+                if (!it->second.device->mount(key, media_list)) {
+                    for (media_descriptor *m : media_list) {
+                        delete m;
+                    }
+                    return false;
+                }
+                return true;
+            }
+        }
+
         if (!it->second.device->mount(key, {media})) {
             delete media;
             return false;

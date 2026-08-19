@@ -193,6 +193,9 @@ int display_media_descriptor(media_descriptor& md) {
     std::cout << "  Data Size: " << md.data_size << std::endl;
     std::cout << "  Data Offset: " << md.data_offset << std::endl;
     std::cout << "  Write Protected: " << (md.write_protected ? "Yes" : "No") << std::endl;
+    std::cout << "  SmartPort Type: 0x" << std::hex << (int)md.smartport_device_type << std::dec
+              << (md.smartport_device_type == SP_DEVICE_CDROM ? " (CD-ROM)" : " (hard disk)")
+              << std::endl;
     std::cout << "  DOS 3.3 Volume: " << md.dos33_volume << std::endl;
     return 0;
 }
@@ -371,7 +374,8 @@ int identify_media(media_descriptor& md) {
         md.write_protected = md.write_protected || (hdr.flag & FLAG_LOCKED) != 0;
         md.dos33_volume = (hdr.flag & FLAG_DOS33) != 0 ? (hdr.flag & FLAG_DOS33_VOL_MASK) : 254; // if not set, then 254
 
-    } else if ((compare_suffix(md.filename, ".hdv")) || (compare_suffix(md.filename, ".img"))) {
+    } else if ((compare_suffix(md.filename, ".hdv")) || (compare_suffix(md.filename, ".img"))
+               || (compare_suffix(md.filename, ".iso"))) {
         md.media_type = MEDIA_BLK;
         // get size of file on disk
         md.file_size = get_file_size(md.filename);
@@ -380,6 +384,11 @@ int identify_media(media_descriptor& md) {
         md.data_size = md.file_size;
         md.interleave = INTERLEAVE_NONE;
         md.data_offset = 0;
+        /* CD dumps are treated as read-only even if the host file is writable. */
+        if (compare_suffix(md.filename, ".iso")) {
+            md.write_protected = true;
+            md.smartport_device_type = SP_DEVICE_CDROM;
+        }
     } else if (compare_suffix(md.filename, ".do") || compare_suffix(md.filename, ".dsk")) {
         md.media_type = MEDIA_NYBBLE;
         // if file size is not 140K, then error.

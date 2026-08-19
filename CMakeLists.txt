@@ -469,7 +469,7 @@ add_library(gs2_event_dispatcher src/util/EventDispatcher.cpp )
 
 add_library(gs2_serial_devices src/serial_devices/SerialDevice.cpp
 )
-add_library(gs2_util src/util/media.cpp src/util/ResourceFile.cpp src/util/dialog.cpp src/util/mount.cpp
+add_library(gs2_util src/util/media.cpp src/util/apm.cpp src/util/ResourceFile.cpp src/util/dialog.cpp src/util/mount.cpp
     src/util/Connections.cpp
     #src/util/soundeffects.cpp 
     src/util/SoundEffect.cpp

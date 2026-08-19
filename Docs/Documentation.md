@@ -100,6 +100,7 @@ Additional notes: 5.25 Floppy does not support quarter or half tracks.
 | .do, .dsk | ✅ Read/write | 1430 | |
 | .po | ✅ Read/write | 140K | |
 | .hdv, .img | ✅ Read/write | Any size | Block device, complete |
+| .iso | ✅ Read only | Any size | CD dump; APM ProDOS/HFS partitions expand on BazFast |
 | .2mg | ✅ Read/Write | Various | For block devices, complete |
 | .nib | ✅ Read Only | 140K | |
 | .woz 1.0 | ✅ Read/Write | 140K 800K | |

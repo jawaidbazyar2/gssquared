@@ -104,6 +104,10 @@ typedef enum media_interleave_t {
     INTERLEAVE_CPM
 } media_interleave_t;
 
+/* SmartPort DIB device types (ProDOS TN SmartPort #4). */
+static constexpr uint8_t SP_DEVICE_HARDDISK = 0x02; /* ProFile-type hard disk */
+static constexpr uint8_t SP_DEVICE_CDROM    = 0x05; /* SCSI CD-ROM */
+
 //typedef uint8_t nibblized_image_t[0x1A00 * 35];
 
 typedef struct media_descriptor {
@@ -122,6 +126,7 @@ typedef struct media_descriptor {
     uint64_t data_size = 0;
     bool write_protected = false;
     uint16_t dos33_volume = 254;
+    uint8_t smartport_device_type = SP_DEVICE_HARDDISK;
 } media_descriptor;
 
 int identify_media(media_descriptor& md);
