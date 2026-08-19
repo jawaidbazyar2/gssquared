@@ -2619,6 +2619,39 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#live-registers-pattern-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Live registers / pattern search
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#text-screen-snapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Text screen snapshot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mount-unmount-media" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mount / unmount media
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#machine-reset" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2816,6 +2849,30 @@ with Client() as c:
 <td>Instruction ring window; <code>.available</code>, <code>.entries</code> (40-byte blobs, oldest→newest)</td>
 </tr>
 <tr>
+<td><code>get_regs()</code> → <code>bytes</code></td>
+<td>Live 40-byte CPU snapshot (same layout as stop/trace)</td>
+</tr>
+<tr>
+<td><code>set_regs(mask, *, pc=…, a=…, …)</code></td>
+<td>Masked register write (<code>REG_PC</code>, <code>REG_A</code>, …)</td>
+</tr>
+<tr>
+<td><code>find_mem(domain, address, length, pattern, *, mask=None, max_hits=16)</code> → <code>list[int]</code></td>
+<td>Pattern search; optional wildcard mask</td>
+</tr>
+<tr>
+<td><code>video_text(page=CURRENT, mode=CURRENT)</code> → <code>VideoText</code></td>
+<td>Linearized text page; <code>.page</code>/<code>.mode</code> resolved; <code>.as_lines()</code></td>
+</tr>
+<tr>
+<td><code>mount(slot, unit, path)</code> → <code>int</code></td>
+<td>Mount media (0-based <code>unit</code>); prefer absolute <code>path</code>; returns <code>MEDIA_*</code></td>
+</tr>
+<tr>
+<td><code>unmount(slot, unit)</code> → <code>int</code></td>
+<td>Unmount discard; returns <code>MEDIA_*</code></td>
+</tr>
+<tr>
 <td><code>state_get(device_id)</code> → <code>bytes</code></td>
 <td>Device snapshot blob (<code>DEVICE_ID_ENSONIQ</code>, …)</td>
 </tr>
@@ -2838,6 +2895,10 @@ with Client() as c:
 <tr>
 <td><code>write_mem(domain, address, data)</code></td>
 <td>Poke (same domains); <code>data</code> non-empty</td>
+</tr>
+<tr>
+<td><code>find_mem(...)</code></td>
+<td>See above; same domains as <code>read_mem</code></td>
 </tr>
 <tr>
 <td><code>key_event(down, scancode, mod=0)</code></td>
@@ -2945,6 +3006,42 @@ assert c.read_mem(MEM_MAIN, 0x0400, 0x28) == data  # verify
 # Physical buffers: c.read_mem(MEM_MAIN_RAW, 0x0400, 0x28)
 #                   c.read_mem(MEM_MEGAII_RAW, 0x0400, 0x28)  # IIgs
 </code></pre>
+<h3 id="live-registers-pattern-search">Live registers / pattern search<a class="headerlink" href="#live-registers-pattern-search" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">from gs2debug import REG_A
+import struct
+
+c.pause()
+regs = c.get_regs()                         # 40-byte system_trace_entry_t
+a = struct.unpack_from(&quot;&lt;H&quot;, regs, 18)[0]
+c.set_regs(REG_A, a=0x1234)
+assert struct.unpack_from(&quot;&lt;H&quot;, c.get_regs(), 18)[0] == 0x1234
+
+sig = b&quot;GS2FIND&quot;
+c.write_mem(MEM_MAIN, 0x300, sig)
+hits = c.find_mem(MEM_MAIN, 0x0000, 0x1000, sig)
+assert 0x300 in hits
+# Wildcard: match GS2???? with mask clearing last 4 bytes
+hits = c.find_mem(MEM_MAIN, 0x0000, 0x1000, b&quot;GS2XXXX&quot;, mask=b&quot;\xff\xff\xff\x00\x00\x00\x00&quot;)
+</code></pre>
+<h3 id="text-screen-snapshot">Text screen snapshot<a class="headerlink" href="#text-screen-snapshot" title="Permanent link">&para;</a></h3>
+<pre><code class="language-python">from gs2debug import VIDEO_MODE_TEXT40, VIDEO_MODE_TEXT80
+
+vt = c.video_text()                 # CURRENT page + mode
+print(vt.mode, vt.page, vt.flags)   # resolved TEXT40/TEXT80, never CURRENT
+print(&quot;\n&quot;.join(vt.as_lines()))     # ASCII-ish rows (bit7 cleared)
+
+vt40 = c.video_text(1, VIDEO_MODE_TEXT40)   # force page 1 / 40-col
+assert vt40.cols == 40 and len(vt40.chars) == 960
+</code></pre>
+<h3 id="mount-unmount-media">Mount / unmount media<a class="headerlink" href="#mount-unmount-media" title="Permanent link">&para;</a></h3>
+<p>Protocol <code>unit</code> is <strong>0-based</strong> (CLI <code>-ds6d1=</code> → <code>mount(6, 0, path)</code>).</p>
+<pre><code class="language-python">from pathlib import Path
+from gs2debug import MEDIA_OK
+
+path = str(Path(&quot;disk_images/SPFBase.dsk&quot;).resolve())  # absolute
+assert c.mount(6, 0, path) == MEDIA_OK
+assert c.unmount(6, 0) == MEDIA_OK
+</code></pre>
 <h3 id="machine-reset">Machine reset<a class="headerlink" href="#machine-reset" title="Permanent link">&para;</a></h3>
 <p>Prefer the protocol command (not keyboard):</p>
 <pre><code class="language-python">c.reset(cold_start=False)   # warm
@@ -3049,6 +3146,18 @@ EOF
 <tr>
 <td><code>examples/test_breakpoints.py</code></td>
 <td>PAUSE/CONTINUE + EXEC/IO breakpoints (IIe Enhanced <code>-p 3</code> and IIgs <code>-p 5</code>)</td>
+</tr>
+<tr>
+<td><code>examples/test_regs_findmem.py</code></td>
+<td><code>GET_REGS</code> / <code>SET_REGS</code> / <code>FINDMEM</code> smoke (IIe Enhanced <code>-p 3</code>)</td>
+</tr>
+<tr>
+<td><code>examples/test_video_text.py</code></td>
+<td><code>VIDEO_TEXT</code> CURRENT + TEXT40/TEXT80 (IIe Enhanced <code>-p 3</code>)</td>
+</tr>
+<tr>
+<td><code>examples/test_media_mount.py</code></td>
+<td><code>MOUNT</code> / <code>UNMOUNT</code> Disk II slot 6 unit 0 (IIe Enhanced <code>-p 3</code>)</td>
 </tr>
 </tbody>
 </table>

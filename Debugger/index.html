@@ -2797,6 +2797,20 @@ Put control buttons at the top. These can be Button_t in a container!</p>
 </tr>
 </tbody>
 </table>
+<h1 id="video-pane">Video Pane<a class="headerlink" href="#video-pane" title="Permanent link">&para;</a></h1>
+<p>Static thumbnails of Apple II / IIgs video pages (not cycle-accurate), drawn 1× horizontal and 2× vertical to approximate Apple II pixel aspect. Open with the <strong>Video</strong> tab.</p>
+<p>Per view controls:
+* <strong>Decode</strong> — TEXT40 / TEXT80 / LORES40 / LORES80 / HIRES / HIRES_NS / DHGR / SHR
+* <strong>Render</strong> — MONO / NTSC / RGB (ignored for SHR)
+* <strong>Address</strong> — 24-bit base <code>BB/AAAA</code> (Enter to apply); aux for 80-col/DHGR defaults to bank XOR 1</p>
+<p>Preset buttons: <code>text1</code>, <code>text2</code>, <code>80text1</code>, <code>80text2</code>, <code>gr1</code>, <code>gr2</code>, <code>hgr1</code>, <code>hgr2</code>, <code>dhgr1</code>, <code>dhgr2</code>, <code>shr</code> (<code>$E1/2000</code>).</p>
+<p>Monitor commands:</p>
+<pre><code>video hgr1
+video hires 00/8000 ntsc
+video
+novideo id
+</code></pre>
+<p>Thumbnails use <code>AppleII_View</code> (standalone Composite / GSRGB generators, not cycle-accurate). They read guest RAM in place (IIgs E1 SHR applies the C029 aux interleave). The live guest display remains the VideoScanGenerator path.</p>
 <p>Maybe the thing to do here is, when we are mapping memory, we pass along a string to set the memory map description. Then we can just read the whole thing straight out of the MMU page table. That seems good.
 Alternatively, can we just construct this from the softswitches? That requires info about system type. I kind of like just having </p>
 <h1 id="debugger-feature-roadmap">Debugger Feature Roadmap<a class="headerlink" href="#debugger-feature-roadmap" title="Permanent link">&para;</a></h1>

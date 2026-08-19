@@ -4755,6 +4755,39 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#august-4-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        August 4, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#august-12-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        August 12, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#august-16-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        August 16, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -6977,6 +7010,39 @@
     <span class="md-ellipsis">
       
         July 27, 2026 (evening)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#august-4-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        August 4, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#august-12-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        August 12, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#august-16-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        August 16, 2026
       
     </span>
   </a>
@@ -12581,7 +12647,7 @@ this means, display and iiememory BOTH need to track these. More specifically, i
    keyboard kept reading joystick button 0 down and rebooting.
    turn joystick on, then the reading clears to 0 and ctrl-reset works as exepcted.
 
-[ ] ds-&gt;video_system-&gt;set_full_frame_redraw(); &lt;-- we can get rid of all these once we're confident we're sticking with the &quot;redraw full frames in LS mode.
+[X] ds-&gt;video_system-&gt;set_full_frame_redraw(); &lt;-- we can get rid of all these once we're confident we're sticking with the &quot;redraw full frames in LS mode.
 
 [ ] check condition after reset on table 5.4 of understanding iie - make sure we are implementing those reset conditions.  
 [ ] per table 5.4 also, C018 is MMU, C01C/C01D are IOU (display).
@@ -17290,6 +17356,49 @@ libslirp works on mac/linux/windows.</p>
 <p>Upgraded to latest SAFE2 FTP client, and PASV is working correctly now!</p>
 <h2 id="july-27-2026-evening">July 27, 2026 (evening)<a class="headerlink" href="#july-27-2026-evening" title="Permanent link">&para;</a></h2>
 <p>Super Serial Card v1: <code>card = "super_serial"</code>, MOS 6551 from datasheet, stock <code>341-0065-A.bin</code> (Cn page at file <code>$700</code>), DIP defaults for modem 9600/8N1 Communications, ModemDevice attach (FileDevice on Emscripten). Docs: SSC.md. <code>[[connections]]</code> still not applied (shared with SCC).</p>
+<h2 id="august-4-2026">August 4, 2026<a class="headerlink" href="#august-4-2026" title="Permanent link">&para;</a></h2>
+<p>nearing the goal on 1.0!!!</p>
+<p>Focus: bug fixes. Right now most bugs are about rom03. There is one report about a program that uses undocumented (i.e. fake broken) nmos 6502 instructions.</p>
+<p>Should avoid features for the most part, however, it makes sense to clean stuff up.</p>
+<p>[X] installer setup on the virtual disk that includes the host FST, but also the Marinetti stuff. 
+[ ] IIe multi-language support. </p>
+<h2 id="august-12-2026">August 12, 2026<a class="headerlink" href="#august-12-2026" title="Permanent link">&para;</a></h2>
+<p>I know what I said about new features, but, new features are sexy!</p>
+<p>There is some low hanging fruit that shouldn't be too hard to do.</p>
+<p>But there are significant bugs. The weirdest one is the ROM03 speaker beep frequency error. </p>
+<h2 id="august-16-2026">August 16, 2026<a class="headerlink" href="#august-16-2026" title="Permanent link">&para;</a></h2>
+<p>digging into AppleTalk support again. Why? Don't know!</p>
+<p>First: this uses Marinetti to directly do IPTalk encap from a GS. </p>
+<p>https://sheumann.github.io/AFPBridge/</p>
+<p>Then of course you need NetAtalk to act as a AFP server/router. (or, a real -old- Mac with Ethernet/EtherTalk.)</p>
+<p>So, AFPBridge would likely work as-is from GS2 with Marinetti set up.</p>
+<p>However, we could also have GS2 internally convert IPTalk to-from LocalTalk via the SCC emulation. We'd have a serial port module for this. Then that would send/recv the IPTalk UDP packets. We'd need to handle various SCC register settings for appletalk (synchronous mode etc.) but I bet clanker could help with that.</p>
+<p>Also thinking about something to start to tie a lot of this together. For instance, a Second Sight text console for GNO. That is something people always wanted!!</p>
+<p>We would default to using the ANSI termcap. That might need to be improved/updated somewhat, I don't think anyone ever did one!</p>
+<p>Options:
+1) implement using existing interface. Not the fastest thing. This would be the same as 
+2) could we implement with shadowing (e.g. hgr area) and then have the card do a copy of the shadowed area using its Move cmd, every vblank? </p>
+<p>There is an existing ANSI emulation for secondsight inside Spectrum. Maybe we can pull that out rather than implement from scratch.</p>
+<p>Some anciliary things: would want to define some cool colored prompts etc (if gsh/termcap support that).</p>
+<p>And we would want the driver to be able to support both 80x25 and 80x43. I suppose that would be switched by an IOCTL, and, somehow the system would need to report console dimensions.</p>
+<ol>
+<li>Black box state machine.</li>
+</ol>
+<p>I envision a few steps to develop and test. First would be a black box state-machine module that would do the ANSI character processing. Of course we might get fed partial character streams so we have to track that. (I did a lot of that in telcom for vt100). </p>
+<ol>
+<li>
+<p>tie that in to a gno driver container.</p>
+</li>
+<li>
+<p>auto detection</p>
+</li>
+</ol>
+<p>On gno boot, detect second sight and auto-select this console driver. </p>
+<ol>
+<li>other work</li>
+</ol>
+<p>CLI tool to switch between x25 and x43 modes.</p>
+<p>The GNO drivers folder is flat and this driver should be built in the src tree as a subfolder.</p>
 
 
 

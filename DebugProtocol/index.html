@@ -2862,6 +2862,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#get_regs-main-2-sub-2-0x00000202" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GET_REGS — main 2, sub 2 (0x00000202)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set_regs-main-2-sub-3-0x00000203" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SET_REGS — main 2, sub 3 (0x00000203)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2895,6 +2917,17 @@
     <span class="md-ellipsis">
       
         WRITEMEM — main 3, sub 2 (0x00000302)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#findmem-main-3-sub-3-0x00000303" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FINDMEM — main 3, sub 3 (0x00000303)
       
     </span>
   </a>
@@ -3029,6 +3062,84 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#video-main-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Video (main == 7)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Video (main == 7)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#video_text-main-7-sub-1-0x00000701" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VIDEO_TEXT — main 7, sub 1 (0x00000701)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#storage-main-8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage (main == 8)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Storage (main == 8)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#media-status-codes-mount-unmount-reply" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Media status codes (MOUNT / UNMOUNT reply)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mount-main-8-sub-1-0x00000801" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MOUNT — main 8, sub 1 (0x00000801)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unmount-main-8-sub-2-0x00000802" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UNMOUNT — main 8, sub 2 (0x00000802)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3092,7 +3203,7 @@
 <li>TCP listen/connect (frame is ready; transport comes later).</li>
 <li>Required request pipelining (header supports it; implementation may allow only one outstanding request).</li>
 <li>MCP, GDB RSP, or an embedded script runtime.</li>
-<li>Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / READMEM / WRITEMEM / BP_* / KEYEVENT / STATE_GET / STATE_SET / QUIT below.</li>
+<li>Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / BP_* / KEYEVENT / STATE_GET / STATE_SET / VIDEO_TEXT / MOUNT / UNMOUNT / QUIT below.</li>
 </ul>
 <hr />
 <h2 id="frame-layout">Frame layout<a class="headerlink" href="#frame-layout" title="Permanent link">&para;</a></h2>
@@ -3193,6 +3304,14 @@ Bits 7–0    sub        (8 bits)  — operation within family (0–255)
 <tr>
 <td><code>6</code></td>
 <td>Sound / Ensoniq</td>
+</tr>
+<tr>
+<td><code>7</code></td>
+<td>Video / display</td>
+</tr>
+<tr>
+<td><code>8</code></td>
+<td>Storage / media</td>
 </tr>
 </tbody>
 </table>
@@ -3399,6 +3518,22 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 <td>8-byte header + <code>N×40</code> entries</td>
 </tr>
 <tr>
+<td><code>GET_REGS</code></td>
+<td>2</td>
+<td>2</td>
+<td><code>0x00000202</code></td>
+<td>main</td>
+<td>40-byte <code>system_trace_entry_t</code></td>
+</tr>
+<tr>
+<td><code>SET_REGS</code></td>
+<td>2</td>
+<td>3</td>
+<td><code>0x00000203</code></td>
+<td>main</td>
+<td>empty</td>
+</tr>
+<tr>
 <td><code>READMEM</code></td>
 <td>3</td>
 <td>1</td>
@@ -3413,6 +3548,14 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 <td><code>0x00000302</code></td>
 <td>main</td>
 <td>empty</td>
+</tr>
+<tr>
+<td><code>FINDMEM</code></td>
+<td>3</td>
+<td>3</td>
+<td><code>0x00000303</code></td>
+<td>main</td>
+<td><code>hit_count</code> + addresses</td>
 </tr>
 <tr>
 <td><code>BP_SET</code></td>
@@ -3477,6 +3620,30 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 <td><code>0x00000602</code></td>
 <td>main</td>
 <td>empty (or device ack)</td>
+</tr>
+<tr>
+<td><code>VIDEO_TEXT</code></td>
+<td>7</td>
+<td>1</td>
+<td><code>0x00000701</code></td>
+<td>main</td>
+<td>20-byte header + linearized chars</td>
+</tr>
+<tr>
+<td><code>MOUNT</code></td>
+<td>8</td>
+<td>1</td>
+<td><code>0x00000801</code></td>
+<td>main</td>
+<td>4 bytes: <code>status</code></td>
+</tr>
+<tr>
+<td><code>UNMOUNT</code></td>
+<td>8</td>
+<td>2</td>
+<td><code>0x00000802</code></td>
+<td>main</td>
+<td>4 bytes: <code>status</code></td>
 </tr>
 </tbody>
 </table>
@@ -3795,6 +3962,168 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 </table>
 <p>Allowed anytime (like <code>READMEM</code>). Snapshot is consistent for that bridge call; while the guest is running, <code>head</code> may advance between calls. Host pages older history with a larger <code>ago</code>.</p>
 <p><strong>Bounds:</strong> handshake required; payload exactly 8 bytes; <code>count == 0</code> or <code>count &gt; 16384</code> → <code>E_BAD_LENGTH</code>; no CPU / trace buffer → <code>E_INTERNAL</code> / <code>no machine</code>.</p>
+<h4 id="get_regs-main-2-sub-2-0x00000202"><code>GET_REGS</code> — main 2, sub 2 (<code>0x00000202</code>)<a class="headerlink" href="#get_regs-main-2-sub-2-0x00000202" title="Permanent link">&para;</a></h4>
+<p>Live CPU register snapshot (same 40-byte <code>system_trace_entry_t</code> wire image as <code>EVT_STOPPED.trace</code> / <code>GET_TRACE</code> entries). Filled from current CPU state via the same path as EXEC/PAUSE stops (opcode peeked at <code>full_pc</code>; instruction-only fields zero).</p>
+<p><strong>Request payload:</strong> empty (<code>length == 0</code>). Requires successful <code>HELLO</code>. Allowed while running or paused.</p>
+<p><strong>Success reply:</strong> exactly <strong>40</strong> bytes.</p>
+<p>Does <strong>not</strong> include the 65816 emulation flag <code>E</code> (not part of the frozen 40-byte layout). Use <code>SET_REGS</code> with <code>REG_E</code> to write it.</p>
+<p><strong>Bounds:</strong> handshake required; non-empty payload → <code>E_BAD_LENGTH</code>; no CPU → <code>E_INTERNAL</code> / <code>no machine</code>.</p>
+<h4 id="set_regs-main-2-sub-3-0x00000203"><code>SET_REGS</code> — main 2, sub 3 (<code>0x00000203</code>)<a class="headerlink" href="#set_regs-main-2-sub-3-0x00000203" title="Permanent link">&para;</a></h4>
+<p>Masked write of CPU registers. Does not require pause; does not affect breakpoints or Policy A.</p>
+<p><strong>Request payload:</strong> exactly <strong>24</strong> bytes, little-endian:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>mask</code></td>
+<td>Which fields to apply (<code>REG_*</code> bits below)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>2</td>
+<td><code>pc</code></td>
+<td>Program counter (16-bit)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>1</td>
+<td><code>pb</code></td>
+<td>Program bank</td>
+</tr>
+<tr>
+<td>7</td>
+<td>1</td>
+<td><code>db</code></td>
+<td>Data bank</td>
+</tr>
+<tr>
+<td>8</td>
+<td>2</td>
+<td><code>a</code></td>
+<td>Accumulator</td>
+</tr>
+<tr>
+<td>10</td>
+<td>2</td>
+<td><code>x</code></td>
+<td>X</td>
+</tr>
+<tr>
+<td>12</td>
+<td>2</td>
+<td><code>y</code></td>
+<td>Y</td>
+</tr>
+<tr>
+<td>14</td>
+<td>2</td>
+<td><code>sp</code></td>
+<td>Stack pointer</td>
+</tr>
+<tr>
+<td>16</td>
+<td>2</td>
+<td><code>d</code></td>
+<td>Direct page</td>
+</tr>
+<tr>
+<td>18</td>
+<td>1</td>
+<td><code>p</code></td>
+<td>Status register</td>
+</tr>
+<tr>
+<td>19</td>
+<td>1</td>
+<td><code>e</code></td>
+<td>Emulation flag (<code>0</code> or <code>1</code>) when <code>REG_E</code> set</td>
+</tr>
+<tr>
+<td>20</td>
+<td>4</td>
+<td><code>pad</code></td>
+<td><code>0</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>mask</code> bits:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Applies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>REG_PC</code></td>
+<td><code>pc</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>REG_PB</code></td>
+<td><code>pb</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>REG_DB</code></td>
+<td><code>db</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>REG_A</code></td>
+<td><code>a</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>REG_X</code></td>
+<td><code>x</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>REG_Y</code></td>
+<td><code>y</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>REG_SP</code></td>
+<td><code>sp</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>REG_D</code></td>
+<td><code>d</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>REG_P</code></td>
+<td><code>p</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>REG_E</code></td>
+<td><code>e</code></td>
+</tr>
+<tr>
+<td>10–31</td>
+<td>reserved</td>
+<td>Must be 0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Success reply:</strong> empty.</p>
+<p><strong>Bounds:</strong> handshake required; payload not 24 bytes / unknown mask bits / <code>e</code> not in <code>{0,1}</code> when <code>REG_E</code> set → <code>E_BAD_LENGTH</code>; no CPU → <code>E_INTERNAL</code> / <code>no machine</code>.</p>
 <h3 id="memory-main-3">Memory (<code>main == 3</code>)<a class="headerlink" href="#memory-main-3" title="Permanent link">&para;</a></h3>
 <p>Commands in this family run on the <strong>main emulation thread</strong>.</p>
 <h4 id="readmem-main-3-sub-1-0x00000301"><code>READMEM</code> — main 3, sub 1 (<code>0x00000301</code>)<a class="headerlink" href="#readmem-main-3-sub-1-0x00000301" title="Permanent link">&para;</a></h4>
@@ -3954,6 +4283,94 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 <li>No machine / no MMU for the domain → <code>E_INTERNAL</code> / <code>no machine</code>.</li>
 </ul>
 <p><code>ENSONIQ</code> peeks/pokes DOC RAM with raw <code>memcpy</code> (no Sound GLU side effects).</p>
+<h4 id="findmem-main-3-sub-3-0x00000303"><code>FINDMEM</code> — main 3, sub 3 (<code>0x00000303</code>)<a class="headerlink" href="#findmem-main-3-sub-3-0x00000303" title="Permanent link">&para;</a></h4>
+<p>Search a memory window for a byte pattern (optional per-byte mask for wildcards). Same domains and address rules as <code>READMEM</code>.</p>
+<p><strong>Request payload:</strong> <code>24 + pattern_len</code> bytes, or <code>24 + 2×pattern_len</code> when <code>FINDMEM_HAS_MASK</code> is set:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>domain</code></td>
+<td>Same domain table as READMEM</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>address</code></td>
+<td>Window base</td>
+</tr>
+<tr>
+<td>8</td>
+<td>4</td>
+<td><code>length</code></td>
+<td>Window size (<code>1</code>…<code>65536</code>)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>4</td>
+<td><code>max_hits</code></td>
+<td>Cap on returned addresses (<code>1</code>…<code>256</code>)</td>
+</tr>
+<tr>
+<td>16</td>
+<td>4</td>
+<td><code>pattern_len</code></td>
+<td>Pattern byte count (<code>1</code>…<code>256</code>, and <code>≤ length</code>)</td>
+</tr>
+<tr>
+<td>20</td>
+<td>4</td>
+<td><code>flags</code></td>
+<td>Bit0 = <code>FINDMEM_HAS_MASK</code>; other bits must be 0</td>
+</tr>
+<tr>
+<td>24</td>
+<td><code>pattern_len</code></td>
+<td><code>pattern</code></td>
+<td>Bytes to match</td>
+</tr>
+<tr>
+<td>24+<code>pattern_len</code></td>
+<td><code>pattern_len</code></td>
+<td><code>mask</code></td>
+<td>Present only if <code>HAS_MASK</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Match:</strong> for each start offset <code>i</code> where the pattern fits,
+<code>(byte[i+j] &amp; m[j]) == (pattern[j] &amp; m[j])</code> for all <code>j</code>. Without a mask, <code>m[j] = 0xFF</code> (exact). Cleared mask bits are wildcards. Hits are absolute addresses (<code>address + offset</code>), ascending. Scan stops after <code>max_hits</code>.</p>
+<p><strong>Success reply:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>hit_count</code> (<code>≤ max_hits</code>)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>4 × hit_count</code></td>
+<td>addresses (<code>uint32</code> each)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Bounds:</strong> handshake required; payload size mismatch; zero/<code>&gt;65536</code> window; wrap; bad <code>pattern_len</code> / <code>max_hits</code> / flags → <code>E_BAD_LENGTH</code>. Domain / platform errors match <code>READMEM</code> (<code>unsupported domain</code>, <code>MEGAII only on Apple IIgs</code>, <code>out of range</code>, …). Allowed while running or paused.</p>
 <h3 id="input-main-5">Input (<code>main == 5</code>)<a class="headerlink" href="#input-main-5" title="Permanent link">&para;</a></h3>
 <h4 id="keyevent-main-5-sub-1-0x00000501"><code>KEYEVENT</code> — main 5, sub 1 (<code>0x00000501</code>)<a class="headerlink" href="#keyevent-main-5-sub-1-0x00000501" title="Permanent link">&para;</a></h4>
 <p>Inject one SDL keyboard event into the emulator event queue (<code>SDL_PushEvent</code>). Handled on the <strong>protocol thread</strong> (<code>SDL_PushEvent</code> is thread-safe). II/e keyboard and IIgs KeyGloo see the same events as a real keypress.</p>
@@ -4359,6 +4776,241 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 </tr>
 </tbody>
 </table>
+<h3 id="video-main-7">Video (<code>main == 7</code>)<a class="headerlink" href="#video-main-7" title="Permanent link">&para;</a></h3>
+<p>Commands in this family run on the <strong>main emulation thread</strong>.</p>
+<h4 id="video_text-main-7-sub-1-0x00000701"><code>VIDEO_TEXT</code> — main 7, sub 1 (<code>0x00000701</code>)<a class="headerlink" href="#video_text-main-7-sub-1-0x00000701" title="Permanent link">&para;</a></h4>
+<p>Linearized text-page snapshot (de-skewed Apple II <code>$0400</code>/<code>$0800</code> layout). Returns raw screen bytes (high bit preserved), row-major. Not a graphics framebuffer.</p>
+<p><strong>Request payload</strong> (8 bytes):</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>page</code></td>
+<td><code>0</code> = current (<code>display_page_num</code>), <code>1</code> = page 1 (<code>$0400</code>), <code>2</code> = page 2 (<code>$0800</code>)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>mode</code></td>
+<td>See mode table</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Mode values:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+<th>v1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td><code>VIDEO_MODE_CURRENT</code></td>
+<td>Resolve from soft switches</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>VIDEO_MODE_TEXT40</code></td>
+<td>40×24</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td><code>VIDEO_MODE_TEXT80</code></td>
+<td>80×24 (aux then main per column pair)</td>
+</tr>
+<tr>
+<td><code>3</code>–<code>7</code></td>
+<td>LORES / DLORES / HIRES / DHIRES / SHR</td>
+<td>Reserved → <code>E_BAD_LENGTH</code> / <code>unsupported video mode</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Resolving <code>CURRENT</code>:</strong></p>
+<ul>
+<li><code>page == 0</code> → <code>1</code> or <code>2</code> from <code>display_page_num</code>.</li>
+<li><code>mode == 0</code> → if <code>display_mode == TEXT</code> and <code>!f_80col</code> → <code>TEXT40</code>; if TEXT and <code>f_80col</code> → <code>TEXT80</code>; otherwise <code>E_INTERNAL</code> / <code>current mode is not text</code>.</li>
+<li>Explicit page/mode dump that buffer even if soft switches disagree.</li>
+</ul>
+<p><strong>Success reply:</strong> 20-byte header + <code>cols×rows</code> bytes:</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>cols</code> — <code>40</code> or <code>80</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>rows</code> — always <code>24</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>4</td>
+<td><code>page</code> — <strong>resolved</strong> <code>1</code> or <code>2</code> (never <code>0</code>)</td>
+</tr>
+<tr>
+<td>12</td>
+<td>4</td>
+<td><code>mode</code> — <strong>resolved</strong> <code>TEXT40</code> or <code>TEXT80</code> (never <code>CURRENT</code>)</td>
+</tr>
+<tr>
+<td>16</td>
+<td>4</td>
+<td><code>flags</code> — soft-switch snapshot at capture</td>
+</tr>
+<tr>
+<td>20</td>
+<td><code>cols×rows</code></td>
+<td><code>chars</code> — linearized screen bytes, row-major</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>flags</code> bits:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>VF_TEXT</code></td>
+<td>text mode</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>VF_MIX</code></td>
+<td>mixed / split</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>VF_PAGE2</code></td>
+<td>display page 2 selected</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>VF_HIRES</code></td>
+<td>hires graphics mode</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>VF_80COL</code></td>
+<td>80-column</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>VF_ALTCHAR</code></td>
+<td>alt charset</td>
+</tr>
+<tr>
+<td>6–31</td>
+<td>reserved</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Physical RAM:</strong> II/IIe family uses CPU MMU physical buffer (<code>MAIN_RAW</code>); IIgs uses Mega II (<code>MEGAII_RAW</code>). TEXT80 requires aux at <code>+0x10000</code>. Does not use bus <code>MAIN</code> reads (avoids <code>80STORE</code> remapping).</p>
+<p><strong>Bounds:</strong> handshake required; payload exactly 8 bytes; bad page → <code>E_BAD_LENGTH</code>; reserved mode → <code>E_BAD_LENGTH</code> / <code>unsupported video mode</code>; TEXT80 without aux → <code>E_INTERNAL</code> / <code>TEXT80 not available</code>; no display → <code>E_INTERNAL</code> / <code>no machine</code>.</p>
+<h3 id="storage-main-8">Storage (<code>main == 8</code>)<a class="headerlink" href="#storage-main-8" title="Permanent link">&para;</a></h3>
+<p>Commands call the unified <code>Mounts</code> layer (same as CLI <code>-dsXdY=</code> and the OSD). They run on the <strong>main emulation thread</strong>.</p>
+<p><strong>Unit numbering:</strong> protocol <code>unit</code> is <strong>0-based</strong> (<code>storage_key_t.drive</code>). Disk II / IWM 5.25 / 3.5: <code>0</code>–<code>1</code>. BazFast: <code>0</code>–<code>5</code>. CLI/TOML use <strong>1-based</strong> drives (<code>-ds6d1=</code> → protocol slot <code>6</code>, unit <code>0</code>).</p>
+<h4 id="media-status-codes-mount-unmount-reply">Media status codes (MOUNT / UNMOUNT reply)<a class="headerlink" href="#media-status-codes-mount-unmount-reply" title="Permanent link">&para;</a></h4>
+<p>Logical results are returned as a 4-byte <code>status</code> on the MOUNT/UNMOUNT reply (not as <code>ERROR</code>). Framing/payload problems still use <code>ERROR</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td><code>MEDIA_OK</code></td>
+<td>Success</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>MEDIA_NO_DRIVE</code></td>
+<td>No storage device registered at slot/unit</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td><code>MEDIA_MOUNT_FAILED</code></td>
+<td>Identify/open/format/<code>fopen</code> failed</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td><code>MEDIA_UNMOUNT_FAILED</code></td>
+<td>Unmount returned false</td>
+</tr>
+<tr>
+<td><code>4</code></td>
+<td><code>MEDIA_BAD_PATH</code></td>
+<td>Empty path on MOUNT</td>
+</tr>
+</tbody>
+</table>
+<h4 id="mount-main-8-sub-1-0x00000801"><code>MOUNT</code> — main 8, sub 1 (<code>0x00000801</code>)<a class="headerlink" href="#mount-main-8-sub-1-0x00000801" title="Permanent link">&para;</a></h4>
+<p><strong>Request:</strong> <code>8 + N</code> bytes</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>4</td>
+<td><code>slot</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td><code>unit</code> — 0-based</td>
+</tr>
+<tr>
+<td>8</td>
+<td>N</td>
+<td><code>path</code> — UTF-8 filesystem path (remainder; not NUL-terminated)</td>
+</tr>
+</tbody>
+</table>
+<p>Clients should pass an <strong>absolute path</strong> so success does not depend on the emulator process cwd.</p>
+<p><strong>Success reply:</strong> 4 bytes <code>status</code>.</p>
+<p>Already-mounted behavior matches CLI/UI (floppy replaces without writeback; BazFast may attach under the key).</p>
+<p><strong>Bounds:</strong> handshake; payload <code>&lt; 8</code> → <code>E_BAD_LENGTH</code>; <code>unit &gt; 5</code> → <code>E_BAD_LENGTH</code>; <code>N &gt; 4096</code> → <code>E_BAD_LENGTH</code>; no <code>mounts</code> → <code>E_INTERNAL</code>.</p>
+<h4 id="unmount-main-8-sub-2-0x00000802"><code>UNMOUNT</code> — main 8, sub 2 (<code>0x00000802</code>)<a class="headerlink" href="#unmount-main-8-sub-2-0x00000802" title="Permanent link">&para;</a></h4>
+<p><strong>Request:</strong> exactly 8 bytes — <code>slot</code>, <code>unit</code> (0-based). Always <strong>discard</strong> dirty (no save prompt).</p>
+<p><strong>Success reply:</strong> 4 bytes <code>status</code>.</p>
+<p><strong>Bounds:</strong> handshake; payload not 8 bytes / <code>unit &gt; 5</code> → <code>E_BAD_LENGTH</code>; no <code>mounts</code> → <code>E_INTERNAL</code>.</p>
 <hr />
 <h2 id="example-exchange">Example exchange<a class="headerlink" href="#example-exchange" title="Permanent link">&para;</a></h2>
 <p>Client connects, then:</p>
@@ -4376,7 +5028,7 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 </ol>
 <hr />
 <h2 id="future-commands">Future commands<a class="headerlink" href="#future-commands" title="Permanent link">&para;</a></h2>
-<p>Main numbers 1–6 are reserved for execution, CPU, memory, breakpoints, input, and devices (up to 256 subs each). Beyond documented commands, any type outside the documented set yields <code>ERROR</code> with <code>E_UNKNOWN_TYPE</code>.</p>
+<p>Main numbers 1–8 are reserved for execution, CPU, memory, breakpoints, input, devices, video, and storage (up to 256 subs each). Beyond documented commands, any type outside the documented set yields <code>ERROR</code> with <code>E_UNKNOWN_TYPE</code>.</p>
 <hr />
 <h1 id="breakpoint-semantics-reference">Breakpoint semantics reference<a class="headerlink" href="#breakpoint-semantics-reference" title="Permanent link">&para;</a></h1>
 <p>The following section documents breakpoint / watchpoint behavior for the implemented <code>main == 4</code> commands and related events.</p>
@@ -4386,7 +5038,7 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 <h3 id="design-principles">Design principles<a class="headerlink" href="#design-principles" title="Permanent link">&para;</a></h3>
 <ol>
 <li><strong>GS2 is a typed stop engine.</strong> Match address / range / access class / optional fixed value / ignore-count / <strong>address mask</strong>. No expression language, symbols, or source lines inside the emulator.</li>
-<li><strong>Host evaluates fancy conditions.</strong> On <code>EVENT</code>, the client may <code>READMEM</code> / (future) read regs and <code>CONTINUE</code> if the stop is uninteresting. Thrashing is mitigated with ignore-count and temporary breakpoints, not with host round-trips on every instruction.</li>
+<li><strong>Host evaluates fancy conditions.</strong> On <code>EVENT</code>, the client may <code>READMEM</code> / <code>GET_REGS</code> and <code>CONTINUE</code> if the stop is uninteresting. Thrashing is mitigated with ignore-count and temporary breakpoints, not with host round-trips on every instruction.</li>
 <li><strong>Stop reason is an unsolicited <code>EVENT</code>.</strong> Setting a breakpoint is a request/reply; hitting it is never a reply to <code>CONTINUE</code>.</li>
 <li><strong>Same memory domains as <code>READMEM</code> / <code>WRITEMEM</code>.</strong> Watchpoints name a domain explicitly (IIgs FPI vs Mega II vs raw buffers). Address validity and domain errors follow the same rules as memory ops (see Errors below).</li>
 <li><strong>Opaque breakpoint IDs.</strong> Clients address entries by <code>id</code> returned from <code>BP_SET</code>, not by “remove this address,” so overlapping ranges and temporary BPs do not collide.</li>
@@ -5263,7 +5915,7 @@ else:
 </tr>
 </tbody>
 </table>
-<p><strong>Including a trace / CPU snapshot — yes, valuable.</strong> At a stop the host almost always wants registers, opcode, effective address, and data byte without a racey follow-up <code>READMEM</code> / future <code>GET_REGS</code>. GS2 already fills <code>cpu-&gt;trace_entry</code> on the instruction path; copying that blob into the event is cheap vs socket I/O.</p>
+<p><strong>Including a trace / CPU snapshot — yes, valuable.</strong> At a stop the host almost always wants registers, opcode, effective address, and data byte without a racey follow-up <code>READMEM</code> / <code>GET_REGS</code>. GS2 already fills <code>cpu-&gt;trace_entry</code> on the instruction path; copying that blob into the event is cheap vs socket I/O. Live queries while paused (or after reconnect) use <code>GET_REGS</code> (same 40-byte layout).</p>
 <p>Wire image matches <code>system_trace_entry_t</code> (<strong>40</strong> bytes, little-endian, natural C layout / <code>sizeof == 40</code> today):</p>
 <table>
 <thead>

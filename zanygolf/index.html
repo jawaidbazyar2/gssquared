@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../AppleIIc/">
-      
-      
-        <link rel="next" href="../AppleIII/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Apple IIgs - GSSquared Documentation</title>
+        <title>Zany Golf (IIgs) — reverse-engineering / bug notes - GSSquared Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#apple-iigs" class="md-skip">
+        <a href="#zany-golf-iigs-reverse-engineering-bug-notes" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Apple IIgs
+              Zany Golf (IIgs) — reverse-engineering / bug notes
             
           </span>
         </div>
@@ -277,12 +273,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../AppleIIe/" class="md-tabs__link">
           
   
@@ -788,31 +782,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
@@ -830,7 +819,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -901,37 +890,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Apple IIgs
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
         
   
   
@@ -947,48 +909,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#key-differences" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Differences
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#new-hardware" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        New Hardware
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2632,10 +2552,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#key-differences" class="md-nav__link">
+  <a href="#how-to-reproduce" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Key Differences
+        How to reproduce
       
     </span>
   </a>
@@ -2643,10 +2563,282 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#new-hardware" class="md-nav__link">
+  <a href="#symptom-summary" class="md-nav__link">
     <span class="md-ellipsis">
       
-        New Hardware
+        Symptom summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-direct-page-contexts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two direct-page contexts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Two direct-page contexts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-locinfo-setup-d-0c00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. LocInfo / setup — D = $0C00
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-blit-working-dp-d-0e00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. Blit working DP — D = $0E00
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#locinfo-at-0c28-d0c00-dp-28" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LocInfo at $0C28 (D=$0C00 → DP $28+)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LocInfo at $0C28 (D=$0C00 → DP $28+)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#corrupted-values-on-black-windmill-hole-captured-repeatedly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Corrupted values on black Windmill hole (captured repeatedly)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#address-math-why-source-becomes-83xxxx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Address math (why source becomes $83/xxxx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sane-values-after-manually-clearing-0c2e0c39" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sane values (after manually clearing $0C2E–$0C39)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#blit-dp-at-0e00-d0e00" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blit DP at $0E00 (D=$0E00)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Blit DP at $0E00 (D=$0E00)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#live-bad-hole-snapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Live bad-hole snapshot
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-map-bank-01" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code map (bank $01)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Code map (bank $01)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mask-blit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mask blit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multiply-width-y" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiply (width × Y)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#writers-that-put-long-pointers-into-30-32-same-abs-as-locinfo-y" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Writers that put long pointers into $30 / $32 (same abs as LocInfo Y)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup-that-writes-sane-yrows-after-clear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup that writes sane Y/rows (after clear)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shadow-register-during-gameplay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shadow register during gameplay
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related memory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-was-ruled-out-tried" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What was ruled out / tried
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What was ruled out / tried">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iigs-fast-ram-size-partial-red-herring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IIgs fast RAM size (partial red herring)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#float-bus-fool-the-memory-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Float-bus “fool the Memory Manager”
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debug-recipe-gssquared" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debug recipe (GSSquared)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-reference-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick reference card
       
     </span>
   </a>
@@ -2673,520 +2865,511 @@
   
 
 
-<h1 id="apple-iigs">Apple IIgs<a class="headerlink" href="#apple-iigs" title="Permanent link">&para;</a></h1>
-<h2 id="key-differences">Key Differences<a class="headerlink" href="#key-differences" title="Permanent link">&para;</a></h2>
-<p>New Hardware</p>
-<h2 id="new-hardware">New Hardware<a class="headerlink" href="#new-hardware" title="Permanent link">&para;</a></h2>
-<p>The GS features a variety of new hardware.</p>
-<p>Test Suite for Emulators generally:</p>
-<p>http://krue.net/truegs/</p>
-<h1 id="development-roadmap">Development Roadmap<a class="headerlink" href="#development-roadmap" title="Permanent link">&para;</a></h1>
-<p>We can implement in this order.</p>
-<p>[X] 65816 [initial version done]<br />
-[X] Accurate Cycle Timing (FPI / Mega II / Fast-Slow)<br />
-[X] mmu (done-ish but might still be bugs)<br />
-[X] RTC / BRAM<br />
-[X] ADB<br />
-  [X] Keyboard<br />
-  [X] Mouse<br />
-[X] New Display Modes
-  [X] SHR<br />
-  [X] text mode enhancements (colored text / border)<br />
-[X] Game controller <br />
-[X] Interrupts<br />
-[X] IWM<br />
-[1/2] Ensoniq<br />
-[ ] Zilog SCC 8530<br />
-[ ] ROM03  <br />
-[ ] Host FST  </p>
-<p>65816 emulation mode - the key element here is going to be to switch all the functions to use auto to allow us to switch from 8-bit to 16-bit more easily. By using auto, the compiler will .. uh, automatically.. pick the right data types based on calling parameters, stuff like that. CPU done.</p>
-<p>So I jumped ahead and did SHR stuff. Got it in the dpp framework, now need to implement it in vpp (VideoScanner). Then go back to text/borders.</p>
-<h2 id="65816-processor">65816 Processor<a class="headerlink" href="#65816-processor" title="Permanent link">&para;</a></h2>
-<p>This looks like an excellent resource:</p>
-<p>http://www.6502.org/tutorials/65c816opcodes.html</p>
-<p>Test suite for the 65816.</p>
-<p>https://forums.nesdev.org/viewtopic.php?t=24940</p>
-<p>First one to start using:
-https://github.com/gilyon/snes-tests</p>
-<h2 id="accurate-cycle-timing">Accurate Cycle Timing<a class="headerlink" href="#accurate-cycle-timing" title="Permanent link">&para;</a></h2>
-<p>The CPU code will need to distinguish, for incr_cycles() purposes, between:
-* internal cycles
-* bus cycles, with a speed returned by the mmu</p>
-<p>Hm, ARE there any purely "internal" cycles? Every CPU cycle hits the memory bus. </p>
-<h2 id="ensoniq-5503-doc">Ensoniq 5503 DOC<a class="headerlink" href="#ensoniq-5503-doc" title="Permanent link">&para;</a></h2>
-<p>See Ensoniq.md. Accessed via new $C0xx registers.</p>
-<h2 id="new-display-modes">New Display Modes<a class="headerlink" href="#new-display-modes" title="Permanent link">&para;</a></h2>
-<h3 id="shr-super-hi-res-video-modes">SHR - Super Hi-Res Video Modes<a class="headerlink" href="#shr-super-hi-res-video-modes" title="Permanent link">&para;</a></h3>
-<p>Pretty straightforward. Linear video buffer, pixel values look up 4096 colors (12-bit color value) in a palette table.</p>
-<p>[X] Implement Fill Mode  </p>
-<h3 id="standard-apple-ii-text-with-color">Standard Apple II text with Color<a class="headerlink" href="#standard-apple-ii-text-with-color" title="Permanent link">&para;</a></h3>
-<p>Text modes have a foreground and background color applied from a choice of 16 colors. Configured with new $C0xx registers.</p>
-<h3 id="rgb-output-even-for-8-bit-ii-modes">RGB output even for 8-bit II modes<a class="headerlink" href="#rgb-output-even-for-8-bit-ii-modes" title="Permanent link">&para;</a></h3>
-<p>Exact Apple IIgs style RGB display for the Apple II video modes is done for hires, double hires.</p>
-<p>[ ] Implement special case for crisp Lo-Res and Double Lo-Res in RGB mode  </p>
-<h2 id="adb-apple-desktop-bus">ADB (Apple Desktop Bus)<a class="headerlink" href="#adb-apple-desktop-bus" title="Permanent link">&para;</a></h2>
-<p>A shared serial bus (precursor of the USB concept) for keyboard, mouse, potentially other devices.</p>
-<p>The ADB Protocol is fairly straightforward. The 65816-side registers are documented in Apple IIGS Hardware Reference Chapter 6.  The microcontroller side is discussed here:
-https://llx.com/Neil/a2/adb.html</p>
-<p>however, I don't think there is any reason to emulate anything other than the keyboard and mouse. We do need to handle generic / general-purpose ADB commands/responses, but again the protocol is very simple. There are several types of interrupts the ADB can generate.</p>
-<p>The C000/C010 keyboard logic should be fed from the ADB module.</p>
-<p>Have an ADBGLU class, that acts as a middleman between the devices and the "motherboard". Need to be able to queue stuff. I am guessing the GLU handles the 16-character typeahead buffer? Or is it in the keyboard. this is unclear, but unlikely to be relevant for our purposes.</p>
-<p>The Keyboard is ADB but there is a simulation of the $C000/$C010 scheme. The ADB GLU is where those switches live in a GS.</p>
-<h2 id="memory-map">Memory Map<a class="headerlink" href="#memory-map" title="Permanent link">&para;</a></h2>
-<p>The IIgs has a 16MB (24-bit) address space. All I/O is done in the legacy $C000 space.</p>
-<p>Shadowing: normally, only banks 00/01 shadow - and that's writes, and that's to banks E0/E1, and then, only portions of those banks, controlled by shadowing register.</p>
-<p>00/01 runs at full speed, except shadowed writes, which slow down and sync to 1MHz. In native mode programs might only have I/O shadowing enabled.
-E0/E1 runs at 1MHz, period. This is "slow ram", always runs @ 1MHz.</p>
-<p>Apple IIe emulation is run in banks $00 and $01, but with shadowing to E0/E1 for I/O and video.<br />
-This allows reads by 8-bit software to occur at full speed, but shadowed writes are synced to 1MHz.
-There is various stuff in banks E0/E1 used by GS/OS, interrupt handlers, etc.</p>
-<p>I'll need something to return the speed and sync of a r/w. Maybe just a simple flag "1mhz read/write", which is:
-* any shadowed write in 00/01
-* any read or write in E0/E1</p>
-<p>So computer has a MegaII MMU, but also MMU_IIGS - the FPI. MMU_IIGS allocates its own Mega II MMU internally.</p>
-<p>The CPU calls MMU_IIGS. Everything else is injected with RegMMU.
-Unlike the IIe implementation, MMU_IIGS is a class that manages all its own softswitches etc., which exposes registers including:</p>
-<ul>
-<li>Shadow register</li>
-<li>New-Video register</li>
-<li>State register</li>
-</ul>
-<p>MMU_IIgs also replicates the language card functionality, and have those registers, because that bank switching exists in banks 00/01.</p>
-<p>New-Video, controls linearity or interleave of some memory in bank 1. Also, controls whether ALL even/odd banks are shadowed?</p>
-<p>So have page maps that map these banks to the Apple II MMU.
-Banks $00 - $01 are 128K built-in in ROM01 (plus E0/E1 = 256K). Banks $00 - $0F for ROM03 (1.125M total)
-Banks $00 and $01 are "shadowed" to banks $E0 and $E1 if shadowing is enabled - this is exact use of shadow handler for those pages.</p>
-<p>Fast ROM is banks $F0 to $FF. (1MB total).</p>
-<p>The $C000 - $FFFF space in E0/E1 is controlled by the LC. The Shadow register bit 6 just controls whether a WINDOW in those locations in banks0/1 is present or not.
-LC memory writes are NOT shadowed to E0/E1.</p>
-<p>The ROM01 file is 128KB exactly, and maps to banks $FE $FF. ROM03 is 256KB and maps to banks FC-FF. It looks like $FF/C000 is various slot card firmware, including at $C800-$CFFF (I forget, did the IIe have stuff here too?)
-$FF/D000 is AppleSoft etc. $F800 should be monitor ROM.. yep. All largely unmodified. So mapping this should be straightforward. Of course the reset/etc vectors are different.</p>
-<p>Weirdly, there is ROM data at $C071-$C07F. The IRQ/BRK vector is 74 C0 ($C074). At that location in the ROM is this:</p>
-<p>B8 5C 10 00 E1</p>
-<p>which is CLV then JML $E1/0010. What? E1/0010 etc are interrupt vectors. What about apple II software that uses page 0? Ah, that is not shadowed.</p>
-<p>JBrooks: "$C07x ROM is active in bank 0 &amp; 1 when I/O shadowing is enabled, or after the CPU does a vector pull (interrupt) via $FFEx/FFFx"
-We determined that we think C07x ROM is controlled purely by the I/O shadowing flag. </p>
-<p>Shadowing: not all the regions in $00/$01 are shadowed:
-https://retrocomputing.stackexchange.com/questions/5555/apple-iigs-hardware-implementation-of-ram-shadowing</p>
-<pre><code>0 - 0400...07FF - Text1
-1 - 2000...3FFF - HGR1
-2 - 4000...5FFF - HGR2
-3 - 2000...9FFF - Super High-res
-4 - 2000...3FFF - Double High-res ($01/2000...)
-5 - Unused
-6 - C000...DFFF - Switches/Slot Memory
-7 - Speed indicator
+<h1 id="zany-golf-iigs-reverse-engineering-bug-notes">Zany Golf (IIgs) — reverse-engineering / bug notes<a class="headerlink" href="#zany-golf-iigs-reverse-engineering-bug-notes" title="Permanent link">&para;</a></h1>
+<p>Working notes from debugging the <strong>black playfield</strong> bug in GSSquared (Windmill hole and other levels). Music and HUD (Par / Strokes Left) work; the SHR playfield stays black.</p>
+<p>Last updated: 2026-07-29.</p>
+<h2 id="how-to-reproduce">How to reproduce<a class="headerlink" href="#how-to-reproduce" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash">./build/GSSquared -p 5 \
+  -ds7d1=/Users/bazyar/src/IIgsDisks/wita2gs_0_81/wita2gs.pmap \
+  --debug /tmp/gs2-zany.sock --no-quit-confirm
 </code></pre>
-<p>ok. There is Fast RAM and Slow RAM. Slow RAM has the I/O stuff.</p>
-<h4 id="fast-ram-contiguous-from-bank-00">Fast RAM - contiguous from bank $00<a class="headerlink" href="#fast-ram-contiguous-from-bank-00" title="Permanent link">&para;</a></h4>
-<p>Installed size is <strong>motherboard base (ROM-dependent) + expansion card</strong>
-(see <code>src/mmus/iigs_memory.hpp</code>):</p>
+<ol>
+<li>Wait ~5 seconds for the disk menu.</li>
+<li>Type <code>zany</code> + Return (e.g. <code>clients/python/examples/type_to_emu.py</code>).</li>
+<li>Enter a hole (Windmill). Playfield should be black; HUD + music OK.</li>
+</ol>
+<p>Platform <code>-p 5</code> = ROM01. Same playfield failure also seen on ROM03 (<code>-p 6</code>).</p>
+<h2 id="symptom-summary">Symptom summary<a class="headerlink" href="#symptom-summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Observed value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NEWVIDEO</code> <code>$C029</code></td>
+<td><code>$C1</code> — SHR on</td>
+</tr>
+<tr>
+<td><code>SHADOW</code> <code>$C035</code></td>
+<td><code>$1E</code> / <code>$1F</code> — <strong>SHR shadow inhibited</strong> (bit 3 set)</td>
+</tr>
+<tr>
+<td><code>$E1/2000–$9FFF</code></td>
+<td>~860 nonzero bytes (HUD only); mid-playfield empty</td>
+</tr>
+<tr>
+<td><code>$01/2000–$9FFF</code></td>
+<td>Often ~85% nonzero — <strong>not</strong> the displayed SHR buffer when shadow is off; mostly other RAM/code</td>
+</tr>
+<tr>
+<td>Hot CPU loop</td>
+<td><code>$01/0D1B</code>–<code>$0DBF</code> mask blit</td>
+</tr>
+<tr>
+<td>Music</td>
+<td>Ensoniq <code>$C03D</code>/<code>$C03E</code> on IRQ — unrelated to the blit bug</td>
+</tr>
+</tbody>
+</table>
+<p>Display path: SHR pixels are scanned from Mega II <strong><code>$E1</code></strong>. With SHR shadow off, writes to bank <code>$01</code> do not update the screen. The game draws into an offscreen buffer and (presumably) copies to <code>$E1</code>; that pipeline is fed garbage because the <strong>source</strong> address is wrong.</p>
+<hr />
+<h2 id="two-direct-page-contexts">Two direct-page contexts<a class="headerlink" href="#two-direct-page-contexts" title="Permanent link">&para;</a></h2>
+<p>Zany reuses DP offsets for different meanings depending on <code>D</code>.</p>
+<h3 id="a-locinfo-setup-d-0c00">A. LocInfo / setup — <code>D = $0C00</code><a class="headerlink" href="#a-locinfo-setup-d-0c00" title="Permanent link">&para;</a></h3>
+<p>Absolute addresses = <code>$0C00 + offset</code>. The QuickDraw-ish <strong>LocInfo</strong> block the blit reads lives at <strong><code>$0C28</code></strong>.</p>
+<h3 id="b-blit-working-dp-d-0e00">B. Blit working DP — <code>D = $0E00</code><a class="headerlink" href="#b-blit-working-dp-d-0e00" title="Permanent link">&para;</a></h3>
+<p>Absolute addresses = <code>$0E00 + offset</code>. The mask-blit hot loop uses long pointers here (<code>[08]</code>, <code>($0C)</code> / <code>PLB</code> from <code>$0E</code>).</p>
+<p>These can be live at the same time: LocInfo stays at <code>$0C28</code> while the blit runs with <code>D=$0E00</code>.</p>
+<hr />
+<h2 id="locinfo-at-0c28-d0c00-dp-28">LocInfo at <code>$0C28</code> (<code>D=$0C00</code> → DP <code>$28+</code>)<a class="headerlink" href="#locinfo-at-0c28-d0c00-dp-28" title="Permanent link">&para;</a></h2>
+<p>Layout as used by blit entry <code>$01/0C64</code> (16-bit words, little-endian):</p>
+<table>
+<thead>
+<tr>
+<th>Abs</th>
+<th>DP (D=<code>$0C00</code>)</th>
+<th>Field</th>
+<th>Role in blit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$0C28</code></td>
+<td><code>$28</code></td>
+<td>base low</td>
+<td>Source base address low word</td>
+</tr>
+<tr>
+<td><code>$0C2A</code></td>
+<td><code>$2A</code></td>
+<td>base high</td>
+<td>Source base bank / high word (seen as <code>$0002</code> → bank <code>$02</code>)</td>
+</tr>
+<tr>
+<td><code>$0C2C</code></td>
+<td><code>$2C</code></td>
+<td>width</td>
+<td>Bytes per row (e.g. <code>$00F8</code>)</td>
+</tr>
+<tr>
+<td><code>$0C2E</code></td>
+<td><code>$2E</code></td>
+<td>X / xoff</td>
+<td>Horizontal offset (corrupted in bug: <code>$BD2F</code>)</td>
+</tr>
+<tr>
+<td><code>$0C30</code></td>
+<td><code>$30</code></td>
+<td><strong>Y</strong></td>
+<td>Treated as <strong>16-bit Y</strong> by blit; also abused as ptr low elsewhere</td>
+</tr>
+<tr>
+<td><code>$0C32</code></td>
+<td><code>$32</code></td>
+<td>(Y high / pad)</td>
+<td>Blit treats nearby words as scalars; other code stores <strong>bank</strong> here for long ptrs</td>
+</tr>
+<tr>
+<td><code>$0C34</code></td>
+<td><code>$34</code></td>
+<td><strong>rows</strong></td>
+<td>Row count for blit (corrupted: <code>$E938</code>)</td>
+</tr>
+<tr>
+<td><code>$0C36</code></td>
+<td><code>$36</code></td>
+<td></td>
+<td>Related size / second dimension</td>
+</tr>
+<tr>
+<td><code>$0C38</code></td>
+<td><code>$38</code></td>
+<td>destY / related</td>
+<td>Further blit geometry (corrupted: <code>$3837</code>)</td>
+</tr>
+<tr>
+<td><code>$0C3A+</code></td>
+<td><code>$3A+</code></td>
+<td></td>
+<td>Additional LocInfo / clip fields</td>
+</tr>
+</tbody>
+</table>
+<h3 id="corrupted-values-on-black-windmill-hole-captured-repeatedly">Corrupted values on black Windmill hole (captured repeatedly)<a class="headerlink" href="#corrupted-values-on-black-windmill-hole-captured-repeatedly" title="Permanent link">&para;</a></h3>
+<pre><code>base   = $02/1D0A
+width  = $00F8
+X      = $BD2F
+Y      = $8531          ← should be a small scanline-ish value
+rows   = $E938          ← should be a small row count
+destY  = $3837
+</code></pre>
+<h3 id="address-math-why-source-becomes-83xxxx">Address math (why source becomes <code>$83/xxxx</code>)<a class="headerlink" href="#address-math-why-source-becomes-83xxxx" title="Permanent link">&para;</a></h3>
+<p>Blit entry roughly does:</p>
+<pre><code class="language-text">product = width * Y          ; via $01/1360
+src     = base + product + x_offsets
+</code></pre>
+<p>With the bad values:</p>
+<pre><code class="language-text">$00F8 * $8531 = $0081_0778
+high word $81 + base bank $02 → bank $83
+low + offsets → ~$8319
+</code></pre>
+<p>So <strong>DB / source bank <code>$83</code></strong> is not a Memory Manager allocation in high RAM — it is <strong>arithmetic overflow</strong> from treating pointer-sized junk as Y.</p>
+<h3 id="sane-values-after-manually-clearing-0c2e0c39">Sane values (after manually clearing <code>$0C2E</code>–<code>$0C39</code>)<a class="headerlink" href="#sane-values-after-manually-clearing-0c2e0c39" title="Permanent link">&para;</a></h3>
+<p>When those bytes were zeroed, setup code rewrote:</p>
+<table>
+<thead>
+<tr>
+<th>Site</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$01/6312</code></td>
+<td><code>$30 = $003C</code> (Y ≈ 60)</td>
+</tr>
+<tr>
+<td><code>$01/6941</code></td>
+<td><code>$34 = $0013</code> (rows ≈ 19)</td>
+</tr>
+</tbody>
+</table>
+<p>Course graphics then appeared. So the blit engine itself is fine; <strong>inputs</strong> are wrong.</p>
+<hr />
+<h2 id="blit-dp-at-0e00-d0e00">Blit DP at <code>$0E00</code> (<code>D=$0E00</code>)<a class="headerlink" href="#blit-dp-at-0e00-d0e00" title="Permanent link">&para;</a></h2>
+<p>Captured on the bad hole while looping at <code>$01/0D1B</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Abs</th>
+<th>DP</th>
+<th>Bytes (LE)</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$0E00</code></td>
+<td><code>$00</code></td>
+<td></td>
+<td>Scratch / counters</td>
+</tr>
+<tr>
+<td><code>$0E02</code></td>
+<td><code>$02</code></td>
+<td></td>
+<td><strong>Row / loop counter</strong> — <code>DEC $02</code> near <code>$01/0DAF</code>; <code>BEQ</code> exit ~<code>$01/0DB1</code></td>
+</tr>
+<tr>
+<td><code>$0E08</code>–<code>$0E0A</code></td>
+<td><code>$08</code></td>
+<td><code>ED C6 38</code></td>
+<td><strong>Dest long</strong> <code>[08]</code> → <strong><code>$38/C6ED</code></strong> (offscreen buffer, valid RAM)</td>
+</tr>
+<tr>
+<td><code>$0E0C</code>–<code>$0E0E</code></td>
+<td><code>$0C</code>/<code>$0E</code></td>
+<td><code>19 83 83</code></td>
+<td><strong>Source</strong>: addr <code>$8319</code>, bank byte <code>$83</code> → after <code>PLB</code>, <strong>DB=<code>$83</code></strong></td>
+</tr>
+<tr>
+<td><code>$0E1E</code>–<code>$0E20</code></td>
+<td><code>$1E</code></td>
+<td><code>00 20 E1</code></td>
+<td><strong>SHR screen pointer</strong> <code>$E1/2000</code> (display base; not the blit dest)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="live-bad-hole-snapshot">Live bad-hole snapshot<a class="headerlink" href="#live-bad-hole-snapshot" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Pointer</th>
+<th>Address</th>
+<th>Mapped?</th>
+<th>Sample</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source (<code>DB</code> + <code>$0C</code>)</td>
+<td><code>$83/8319</code></td>
+<td><strong>FLOAT</strong> (ROM01 last RAM bank is <code>$81</code>)</td>
+<td>solid <code>$83</code> (<code>float_area_read</code> = bank#)</td>
+</tr>
+<tr>
+<td>Dest <code>[08]</code></td>
+<td><code>$38/C6ED</code></td>
+<td>RAM</td>
+<td>filled with <code>$83</code> (copied from float src)</td>
+</tr>
+<tr>
+<td>SHR</td>
+<td><code>$E1/2000</code></td>
+<td>Mega II</td>
+<td>HUD only</td>
+</tr>
+</tbody>
+</table>
+<p>So: <strong>source is float, dest is real, dest contents are float-colored garbage.</strong> Screen stays black because nothing useful reaches <code>$E1</code> playfield.</p>
+<hr />
+<h2 id="code-map-bank-01">Code map (bank <code>$01</code>)<a class="headerlink" href="#code-map-bank-01" title="Permanent link">&para;</a></h2>
+<p>Addresses are <code>bank/offset</code> in program bank <code>$01</code> unless noted.</p>
+<h3 id="mask-blit">Mask blit<a class="headerlink" href="#mask-blit" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Address</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$01/0C64</code></td>
+<td><strong>Blit entry</strong> — <code>PHP</code>/<code>PHB</code>/<code>REP #$30</code>, <code>TDC</code>, save D to <code>$0DCA</code>, copy LocInfo words from DP <code>$28+</code> into a working save area (<code>$0DCC+</code> style), set up multiply / source bank</td>
+</tr>
+<tr>
+<td><code>$01/0C80</code></td>
+<td>Alternate / related entry (callers searched; less hot than <code>$0C64</code> path)</td>
+</tr>
+<tr>
+<td><code>$01/0CFD</code></td>
+<td><strong><code>STA $0E</code></strong> — store computed <strong>source bank</strong> into blit DP (after <code>ADC</code> of multiply high word onto base bank)</td>
+</tr>
+<tr>
+<td><code>$01/0D1B</code>–<code>$0DBF</code></td>
+<td><strong>Hot mask-blit loop</strong> — <code>LDA ($0C),Y</code> / mask via <code>$22,X</code> / <code>STA [08],Y</code>; uses <code>DB</code> as source bank</td>
+</tr>
+<tr>
+<td><code>$01/0DAF</code></td>
+<td><code>DEC $02</code> (row counter on blit DP)</td>
+</tr>
+<tr>
+<td><code>$01/0DB1</code></td>
+<td><code>BEQ</code> → exit</td>
+</tr>
+<tr>
+<td><code>$01/0DB3</code></td>
+<td><code>JMP</code> back into loop (<code>$0D1F</code> region)</td>
+</tr>
+</tbody>
+</table>
+<p>Loop shape (from live bytes at <code>$0D1B</code>): read source under current <code>DB</code>, combine with mask table via <code>$22,X</code>, write to long dest <code>[08]</code>, advance Y, <code>DEC $02</code>, loop.</p>
+<h3 id="multiply-width-y">Multiply (width × Y)<a class="headerlink" href="#multiply-width-y" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Address</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$01/1360</code></td>
+<td><strong>16×16→32 multiply</strong>; high word returned in <strong>X</strong> (also poked into self-mod immediate)</td>
+</tr>
+<tr>
+<td><code>$01/1388</code></td>
+<td>Self-mod <strong>immediate</strong> holding multiply high word (seen as <code>$81</code> with bad Y)</td>
+</tr>
+</tbody>
+</table>
+<p>Caller path from blit entry: load width / Y from saved LocInfo, <code>JSR $1360</code>, then add high word to base bank and <code>STA $0E</code>.</p>
+<h3 id="writers-that-put-long-pointers-into-30-32-same-abs-as-locinfo-y">Writers that put <strong>long pointers</strong> into <code>$30</code> / <code>$32</code> (same abs as LocInfo Y)<a class="headerlink" href="#writers-that-put-long-pointers-into-30-32-same-abs-as-locinfo-y" title="Permanent link">&para;</a></h3>
+<p>These are <strong>not</strong> blit scalars; they stash 24-bit pointers at <code>$0C30</code>/<code>$0C32</code> when <code>D=$0C00</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Address</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$01/187D</code></td>
+<td><code>LDA #$17A4</code> / <code>STA $30</code>; <code>LDA #$0001</code> / <code>STA $32</code> → ptr <strong><code>$01/17A4</code></strong></td>
+</tr>
+<tr>
+<td><code>$01/18A3</code></td>
+<td>Same pattern with <strong><code>$01/17B0</code></strong></td>
+</tr>
+<tr>
+<td><code>$01/1C00</code></td>
+<td>ASCII tag <strong><code>MUSSHDRTRAK</code></strong> — music header path; uses <code>$30</code>/<code>$32</code> as <strong>source long pointer</strong>; copies <code>$2C</code>/<code>$2E</code> into <code>$34</code>/<code>$36</code></td>
+</tr>
+<tr>
+<td><code>$01/15D8</code>, <code>$01/161E</code>, <code>$01/169F</code>, <code>$01/16D8</code>, <code>$01/1E2A</code>, …</td>
+<td>Other <code>$30</code> updates (add/sub width, loads from tables)</td>
+</tr>
+<tr>
+<td><code>$01/3F04</code>, <code>$01/552F</code>, <code>$01/5DD0</code>, <code>$01/5EB5</code>, <code>$01/35FE</code>, …</td>
+<td>Further <code>STA $30</code> sites seen on watchpoints</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Structural bug hypothesis:</strong> LocInfo Y/rows fields share DP slots with pointer-shaped data. If blit runs without those fields being rewritten as small integers, <code>width×Y</code> explodes into bank <code>$83</code>.</p>
+<h3 id="setup-that-writes-sane-yrows-after-clear">Setup that writes <strong>sane</strong> Y/rows (after clear)<a class="headerlink" href="#setup-that-writes-sane-yrows-after-clear" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Address</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$01/6312</code></td>
+<td>Writes Y <code>$003C</code> into LocInfo <code>$30</code></td>
+</tr>
+<tr>
+<td><code>$01/6941</code></td>
+<td>Writes rows <code>$0013</code> into <code>$34</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="shadow-register-during-gameplay">Shadow register during gameplay<a class="headerlink" href="#shadow-register-during-gameplay" title="Permanent link">&para;</a></h2>
+<p><code>$C035</code> watched with <code>BP_KIND_IO</code> write breakpoints during the hole main loop:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>SHR shadow (bit 3)</th>
+<th>Text1 inhibit (bit 0)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$1E</code></td>
+<td><strong>OFF</strong></td>
+<td>clear</td>
+</tr>
+<tr>
+<td><code>$1F</code></td>
+<td><strong>OFF</strong></td>
+<td>set</td>
+</tr>
+</tbody>
+</table>
+<p>Toggled rapidly by <strong>ROM</strong> routines:</p>
+<ul>
+<li><code>$FF/BA93</code> — writes <code>$1F</code> (pattern <code>STA $C035</code>)</li>
+<li><code>$FF/B7E5</code> — writes <code>$1E</code></li>
+</ul>
+<p><strong>SHR shadow never turns on</strong> during the observed main loop. Only bit 0 chatters. Playfield is not expected to appear via <code>$01</code>→<code>$E1</code> shadowing; the game must blit/copy into <code>$E1</code> itself (HUD already does). Failure is upstream (bad source → useless offscreen buffer).</p>
+<hr />
+<h2 id="related-memory">Related memory<a class="headerlink" href="#related-memory" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$38/C6ED</code> (grows in bank <code>$38</code>/<code>$39</code>)</td>
+<td>Offscreen playfield buffer (dest <code>[08]</code>)</td>
+</tr>
+<tr>
+<td><code>$E1/2000</code></td>
+<td>SHR pixel buffer (scanner); HUD present, playfield empty when bug active</td>
+</tr>
+<tr>
+<td><code>$E1/9D00</code></td>
+<td>SCBs (often zero in captures)</td>
+</tr>
+<tr>
+<td><code>$E1/9E00</code></td>
+<td>Palette (nonzero when SHR active)</td>
+</tr>
+<tr>
+<td>Bank <code>$83</code></td>
+<td>Unmapped on ROM01 (RAM through <code>$81</code>); float reads return <code>$83</code></td>
+</tr>
+<tr>
+<td>Ensoniq <code>$C03D</code>/<code>$C03E</code></td>
+<td>Music IRQ path — works independently</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="what-was-ruled-out-tried">What was ruled out / tried<a class="headerlink" href="#what-was-ruled-out-tried" title="Permanent link">&para;</a></h2>
+<h3 id="iigs-fast-ram-size-partial-red-herring">IIgs fast RAM size (partial red herring)<a class="headerlink" href="#iigs-fast-ram-size-partial-red-herring" title="Permanent link">&para;</a></h3>
+<p>GSSquared originally mapped a flat <strong>8MB</strong> (<code>$00</code>–<code>$7F</code>). KEGS uses <strong>mobo + 8MB card</strong>:</p>
 <table>
 <thead>
 <tr>
 <th>ROM</th>
-<th>Motherboard</th>
-<th>+ 8MB card (default)</th>
+<th>Total with 8MB card</th>
 <th>Last RAM bank</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>ROM01 (128KB)</td>
-<td>128KB (<code>$00</code>–<code>$01</code>)</td>
-<td>8MB (128KB card clipped)</td>
-<td><code>$7F</code></td>
+<td>ROM01</td>
+<td>8.125MB</td>
+<td><code>$81</code></td>
 </tr>
 <tr>
-<td>ROM03 (256KB)</td>
-<td>1MB (<code>$00</code>–<code>$0F</code>)</td>
-<td>8MB (1MB card clipped)</td>
-<td><code>$7F</code></td>
+<td>ROM03</td>
+<td>9MB</td>
+<td><code>$8F</code></td>
 </tr>
 </tbody>
 </table>
-<p>FPI RAM decode is 23 bits → hard cap of 128 banks (<code>$00</code>–<code>$7F</code>) on both ROMs.
-Mega II <code>$E0</code>/<code>$E1</code> is separate slow RAM and is <strong>not</strong> part of this size.</p>
-<p>Banks above the last RAM bank float until ROM (<code>$FC</code>+ / <code>$FE</code>+). Banks <code>$00</code>–<code>$01</code> are the
-legacy Apple II emulation half; higher banks are pure RAM (optional all-bank shadowing is rare).</p>
-<p>Use a 64KByte page size. Banks <code>$00</code> and <code>$01</code> get special read/write handlers controlled by
-iigsmemory. Other mapped banks are direct RAM. Handlers must support Apple II LC bank switching
-and pure-RAM operation for higher banks.</p>
-<p>Runs at average of 2.5MHz speed and is affected by RAM refresh timing.</p>
-<h4 id="fast-rom-banks-f0-ff">Fast ROM - banks $F0 - $FF<a class="headerlink" href="#fast-rom-banks-f0-ff" title="Permanent link">&para;</a></h4>
-<p>Runs at full 2.8MHz and is unaffected by RAM refresh timing.</p>
-<h4 id="slow-ram-banks-e0-e1">Slow RAM - banks $E0 - $E1<a class="headerlink" href="#slow-ram-banks-e0-e1" title="Permanent link">&para;</a></h4>
-<p>These two banks are comprised of: display pages; I/O space. The I/O space mapping and ROM mapping for it are here and
-handled the same way they are in a IIe.
-All accesses in this space are clocked at 1MHz to share access with video scanner.</p>
-<h4 id="state-register-c068">State Register - C068<a class="headerlink" href="#state-register-c068" title="Permanent link">&para;</a></h4>
-<p>this is a condensed version of all the bank0/1 memory map features, in one place. And these likely coincide with the ones iigsmemory will deal with.</p>
-<h3 id="bus-timing">Bus Timing<a class="headerlink" href="#bus-timing" title="Permanent link">&para;</a></h3>
-<p>CPU normally runs at 1MHz (speed set to 1MHz hard), 2.8MHz, (or 7MHz / 14MHz in our accelerated modes). When an access is done to slow memory, we need to wait an appropriate amount of time to synchronize with the 1MHz clock, then execute the 1MHz cycle access at 1MHz speed.</p>
-<p>So we'll need to know in incr_cycles if it's a 1MHz access or 2.8MHz access. (Also, the GS can control its own cpu speed.) We will want to generalize that mechanism to work at 2.8 but also 7.1MHz.</p>
-<p>This will be done by tracking a 1MHz reference clock all the time.  </p>
-<p>"remember to allow an additional 10% in total cycle time to account for RAM refresh delays". More about this on Page 24 hardware reference. "FPI can execute ROM cycles while RAM refresh cycles are occurring". Occur approximately every 3.5 microseconds and reduce the 2.8MHz processing speed by about 8% for programs that run in RAM. What is 3.5 microseconds.. about 50 14Ms we need to delay cpu access to RAM by 4 14M's. This applies only to the Fast Ram. The slow ram is refreshed by the video circuitry during phase low just like an Apple II.</p>
-<p>There are certain registers inside the fPI (fast processor interface) that can be read at high speed: dma register; speed register; shadow register; interrupt ROM ($C071-$C07F) does not slow the system.
-State Register and Slot ROM select register are written at 1MHz and read at 2.8MHz.</p>
-<p>Great Discussion on the Apple2Inifinitum slack #kegs-emulator channel:
-Personally, I don't think there's much point in implementing the refresh timing without implementing the other stuff (i.e. stretch cycles and sync between fast and slow). You'll end up something theoretically closer, but it will still look off. (edited) 
-I can paste code here, but it'll probably add to the confusion.
-Fundamentally, you need to implement 3 clocks - a fast clock, a slow clock with stretched cycles and a refresh clock. The refresh clock is every 10 fast clocks. The refresh clock gets delayed if it overlaps between a slow and a fast. Refresh clock is "free" if it happens on a slow cycle or a FPI register cycle.</p>
-<p>There's even some code of clocking implementation from CrossRunner.</p>
-<p>Some I/O locations are FAST even though they're in the I/O space, because they're in the FPI and MegaII and reads are from FPI:
-Ok, I can confirm that for reads $35,$36,$37,$2D,$68,$71-$7F are all fast. $69-$70 are all slow.
-For writes only $35,$36,$37 are fast. Everything else is slow. (edited)
-that's: SHADOW, CYRREG, DMA, SLTROMSEL, STATE, rom interrupt code jump table (these are rom addresses after all).</p>
-<h2 id="game-io">Game I/O<a class="headerlink" href="#game-io" title="Permanent link">&para;</a></h2>
-<p>The same as the Apple II. Can use the gamecontroller module as-is.</p>
-<h2 id="realtime-clock">Realtime Clock<a class="headerlink" href="#realtime-clock" title="Permanent link">&para;</a></h2>
-<p>$C033 and $C034 work together to provide access to the IIgs Realtime clock.</p>
-<p>Bits 7-4 of $C034 manage a protocol to communicate with the clock; bits 3-0 control the Border Color on the IIgs display.
-Page 169 of the hardware reference.</p>
-<p>The RTC also holds the more general purpose "battery ram". There are a total of 256 bytes of information present in this. These values will need to be stored to a data file on host disk whenever they're modified. This is a detailed description of the battery ram and its contents:</p>
-<p>https://groups.google.com/g/comp.sys.apple2/c/FmncxrjEVlw</p>
-<h2 id="2-built-in-serial-ports-via-zilog-scc-chip">2 built-in serial ports via Zilog SCC chip<a class="headerlink" href="#2-built-in-serial-ports-via-zilog-scc-chip" title="Permanent link">&para;</a></h2>
-<p>Zilog SCC chip supports 2 built-in serial ports. The registers for this chip are: $C038 -9 (scc command channel B and A), and $C03A-B (scc data channel b and a).</p>
-<h3 id="appletalk-localtalk-networking-via-zilog-chip">AppleTalk / LocalTalk networking (via Zilog chip)<a class="headerlink" href="#appletalk-localtalk-networking-via-zilog-chip" title="Permanent link">&para;</a></h3>
-<p>This is likely just driven by firmware. If we wanted to support AppleTalk, we'd need to decode packets and convert to ethernet or something like that.</p>
-<h2 id="iwm-smartport-built-in-52535-controller">IWM (SmartPort) - Built-in 5.25/3.5 Controller<a class="headerlink" href="#iwm-smartport-built-in-52535-controller" title="Permanent link">&para;</a></h2>
-<p>IWM/SmartPort can control both 5.25" disk II drives as well as 3.5" drives. </p>
-<p>The UniDisk is a "smart" drive that has built in cpu and is accessed via a block interface protocol.
-The Apple Disk 3.5 is a dumb drive that looks a lot like the Disk II and is managed low-level like the Disk II.</p>
-<p>We will implement the 5.25" and the Apple 3.5" drive - i.e. the dumb drives. (That's what I've got for real hardware).
-Then don't have to bother trying to support downloadable code into UniDisk.</p>
-<p>This means we will have to implement something like the current Disk II code, but to work with the 3.5" drive low level format.</p>
-<p>Sectors are 512 bytes. And of course the disks are double-sided. </p>
-<pre><code>The standard layout for a single side is as follows: 
-Zone    Tracks  Sectors/Track   Bytes/Track
-1   0–15    12  6,144
-2   16–31   11  5,632
-3   32–47   10  5,120
-4   48–63   9   4,608
-5   64–79   8   4,096
+<p>Implemented in <code>src/mmus/iigs_memory.hpp</code>. Bank probes match KEGS. <strong>Zany playfield still black</strong> on ROM01 and ROM03 after the fix.</p>
+<p>Bank <code>$83</code> remains float on ROM01 even with correct sizing. On ROM03, <code>$83</code> is RAM — but LocInfo was still corrupted and <code>$E1</code> playfield still empty. So the bug is <strong>not</strong> “need bank <code>$83</code> to exist”; it is <strong>bad Y/rows → computed bank <code>$83</code></strong>.</p>
+<h3 id="float-bus-fool-the-memory-manager">Float-bus “fool the Memory Manager”<a class="headerlink" href="#float-bus-fool-the-memory-manager" title="Permanent link">&para;</a></h3>
+<p>Early idea that float <code>$83</code> confused RAM probes was dropped: floating <code>$80+</code> is normal past installed RAM; KEGS does the same for unmapped banks.</p>
+<hr />
+<h2 id="debug-recipe-gssquared">Debug recipe (GSSquared)<a class="headerlink" href="#debug-recipe-gssquared" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># Launch (see reproduce above), type zany, enter hole, then:
+
+PYTHONPATH=clients/python/src python3 - &lt;&lt;'PY'
+from gs2debug import Client, MEM_MAIN, BP_KIND_EXEC, BP_KIND_IO, BP_ACCESS_W, BP_FLAG_ENABLED
+# Useful breakpoints:
+#   EXEC $010C64  — blit entry (dump $0C28 LocInfo + D)
+#   EXEC $010D1B  — hot loop (dump D=$0E00 longs, DB)
+#   EXEC $011360  — multiply (A/X = factors / high word)
+#   EXEC $010CFD  — STA $0E source bank
+#   IO   $C035 W  — shadow (noisy; ROM toggles $1E/$1F)
+PY
 </code></pre>
-<p>Now, we -could- cheat and act like we have slot 5 mapped to our own card which is our dummy pdblock drive. That would be the fastest way to get an 800k drive working here. But we'd need the above to eventually deal with copy-protected .WOZ images of 3.5's. (Turns out there are a fair number of titles that see GS floppy and just assume slot 6 and crash booting)</p>
-<p>The IWM registers look just like Disk II registers and sit in $C0E0-C0EF; plus a couple other control registers elsewhere.</p>
-<p>Start with pdblock2 + disk ii, and then implement the iwm fully as a Phase 2. This might be where we implement .WOZ support fully also.</p>
-<p>Has the IWM chip - Integrated Woz Machine. Looks like a Disk II in Slot 6, but how is the 3.5 drive handled? What is that protocol?</p>
-<p>Depends on the drive. UniDisk has a built-in CPU controller operating at 2mhz. AppleDisk 3.5 has no built-in controller.</p>
-<p>You can 'download' custom code to run on the UniDisk. With an AppleDisk this "runs in host memory" according to UniDisk 3.5 TechPub #5. UniDisk details are discussed in Apple IIgs Firmware Reference. (I'm not going to support this).</p>
-<p>This discusses the registers in detail:</p>
-<p>https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/storage/disks/IWM-Controlling%20the%203.5%20Drive%20Hardware%20on%20the%20Apple%20IIGS.pdf</p>
-<ul>
-<li>Excellent deep dive into IWM
-https://llx.com/Neil/a2/disk</li>
-</ul>
-<h3 id="debugger">Debugger<a class="headerlink" href="#debugger" title="Permanent link">&para;</a></h3>
-<p>Technically not hardware - but, the various debugger modules must be updated to support 24-bit address and 16-bit data values.
-This should involve cleanup/refactor of the trace, disasm, and monitor module more specifically. </p>
+<p>Trace capture: <code>GET_TRACE</code> → <code>/tmp/zany-golf-trace.bin</code>, decode with <code>./build/gstrace 65816 …</code>.</p>
+<p><strong>Experiment that drew the course:</strong> clear <code>$0C2E</code>–<code>$0C39</code>, let <code>$01/6312</code> / <code>$01/6941</code> refill Y/rows, continue.</p>
+<hr />
+<h2 id="open-questions">Open questions<a class="headerlink" href="#open-questions" title="Permanent link">&para;</a></h2>
 <ol>
-<li>"Address" should be able to handle any size value up to 32 bits.</li>
-<li>allow "bp" and "watch" on single address</li>
-<li>monitor commands must be enhanced to support 32-bit addresses.</li>
-<li>convert iiememory info section to be a callback like the others.</li>
+<li><strong>Who leaves pointer junk in <code>$0C30</code>/<code>$0C34</code> immediately before the playfield blit?</strong> Music (<code>MUSSHDRTRAK</code>) and ptr writers at <code>$187D</code>/<code>$18A3</code> are suspects; need call-order / “last writer wins” relative to <code>$0C64</code>.</li>
+<li><strong>Is LocInfo supposed to be copied from a level object each frame</strong>, and that copy skipped/wrong under GSSquared timing?</li>
+<li><strong>Buffer → <code>$E1</code> copy path</strong> — not fully mapped; once source is sane, confirm how <code>$38/xxxx</code> reaches <code>$E1/2000</code>.</li>
+<li><strong>Why KEGS works</strong> — same binary presumably; difference may be timing, Memory Manager layout changing whether stale DP is overwritten, or an earlier init path we do not hit.</li>
 </ol>
-<h3 id="trace">Trace<a class="headerlink" href="#trace" title="Permanent link">&para;</a></h3>
-<ol>
-<li>[X] all this to make room for decoding addresses -&gt; symbols, as well as 16-bit widths for: A, X, Y, SP, PC.  That's two more characters for each of those.</li>
-<li>have debugger BP -before- instruction execute. i.e. if the PC is going to be XXXX, then BP before it executes. And highlight that instruction in the display.</li>
-<li>[X] instead of showing whole cycle, what if we just display last say 6 digits of cycle. That would be enough to show differences while not taking up too much screen.</li>
-<li>[X] make generation of the lines much easier by having a line class that tracks a horizontal 'cursor' inside the line.</li>
-<li>pack opcode and operand into a single 32-bit value, instead of 32-bit plus 8-bit.</li>
-<li>the other fields in the trace record are otherwise the right size.</li>
-<li>have a trace decoder base class plus two (maybe 3?) derived classes: 6502, 65c02, 65816. </li>
-<li>Same for disassembler.</li>
-<li>in 6502/65c02 mode, show SP as just a byte, to free up room.</li>
-<li>[X] use p flags e/m/x to determine trace formatting in 65816 class.</li>
-</ol>
-<h2 id="display-parameters">Display Parameters<a class="headerlink" href="#display-parameters" title="Permanent link">&para;</a></h2>
-<p>on my GS RGB SHR is 7.75 inches across and regular hires is 7.75 inches across. So they are the same horizontal beam scan path, but the SHR just clocks the pixels out a bit faster. We'll have to hope the scaling doesn't look too bad. I think the Videx is ok (640 pixels). But, this may be where the aspect ratio stuff comes in. This is an interesting question actually.. </p>
-<h2 id="interrupts">Interrupts<a class="headerlink" href="#interrupts" title="Permanent link">&para;</a></h2>
-<h3 id="vgc">VGC<a class="headerlink" href="#vgc" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Register</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>C023[7]</td>
-<td>VGC Interrupt Status</td>
-</tr>
-<tr>
-<td>C023[6]</td>
-<td>One-second interrupt status</td>
-</tr>
-<tr>
-<td>C023[5]</td>
-<td>scanline interrupt status</td>
-</tr>
-<tr>
-<td>C023[4]</td>
-<td>external interrupt status</td>
-</tr>
-<tr>
-<td>C023[3]</td>
-<td>unused set to 0</td>
-</tr>
-<tr>
-<td>C023[2]</td>
-<td>one-second interrupt enable</td>
-</tr>
-<tr>
-<td>C023[1]</td>
-<td>scanline interrupt enable</td>
-</tr>
-<tr>
-<td>C023[0]</td>
-<td>external interrupt enable</td>
-</tr>
-</tbody>
-</table>
-<p>7 is the OR of 4-6.</p>
-<p>This is one of the clearer interrupt setups. </p>
-<table>
-<thead>
-<tr>
-<th>Register</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>C032[7]</td>
-<td>not used, set to 0</td>
-</tr>
-<tr>
-<td>C032[6]</td>
-<td>Clear bit for one-second interrupt</td>
-</tr>
-<tr>
-<td>C032[5]</td>
-<td>clear bit for scanline interrupt</td>
-</tr>
-<tr>
-<td>C032[4-0]</td>
-<td>unused set to 0</td>
-</tr>
-</tbody>
-</table>
-<p>Write a 0 into bit 6 or bit 5 to clear that interrupt. Writing a 1 has no effect.
-Reading the video counters will also clear the ScanLine interrupt status bit!</p>
-<p>To implement the one-second interrupt, we need a timer that works sort of like the Scheduler except is based on the 14M clock. (or is this based on 60 frames? i.e. is it ACTUALLY 1 second?).</p>
-<p>To implement the scanline interrupt, VideoScannerIIgs will have to set the interrupt when it reads the scanline control byte. If the bit in SCB is 1, throw an interrupt. That seems easy enough.</p>
-<ul>
-<li>Other ADB</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>Register</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>C027[5]</td>
-<td>data interrupt full</td>
-</tr>
-<tr>
-<td>C027[4]</td>
-<td>data interrupt enable</td>
-</tr>
-</tbody>
-</table>
-<p>This was unusually difficult because it's hard to find test examples that don't immediately crash and/or require tons of code tracing. but, it might be working?</p>
-<h3 id="megaii-mouse">MegaII Mouse<a class="headerlink" href="#megaii-mouse" title="Permanent link">&para;</a></h3>
-<ul>
-<li>C041 - Int Enable - INTEN</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>Register</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>C041[7]</td>
-<td>0</td>
-</tr>
-<tr>
-<td>C041[6]</td>
-<td>0</td>
-</tr>
-<tr>
-<td>C041[5]</td>
-<td>0</td>
-</tr>
-<tr>
-<td>C041[4]</td>
-<td>Enable 1/4 sec ints</td>
-</tr>
-<tr>
-<td>C041[3]</td>
-<td>Enable VBL ints</td>
-</tr>
-<tr>
-<td>C041[2]</td>
-<td>Enable Mega II mouse switch ints</td>
-</tr>
-<tr>
-<td>C041[1]</td>
-<td>enable Mega II mouse move ints</td>
-</tr>
-<tr>
-<td>C041[0]</td>
-<td>enable Mega II mouse operation</td>
-</tr>
-</tbody>
-</table>
-<p>So I don't think the GS uses anything here except bits 3-4: vbl and quarter-second.</p>
-<p>Again, the ideal place to insert the VBL interrupt is in VideoScannerIIgs. (done)</p>
-<h2 id="cyareg-c036">CYAREG - $C036<a class="headerlink" href="#cyareg-c036" title="Permanent link">&para;</a></h2>
-<p>This is the speed control register. see AppleIIgs-Memory.md.</p>
-<h2 id="rom03">ROM03<a class="headerlink" href="#rom03" title="Permanent link">&para;</a></h2>
-<p>There are a few relatively minor differences between ROM01 and ROM03.</p>
-<ol>
-<li>ROM03 supports shadowing Text Page 2.</li>
-</ol>
-<p>This is easily supported by checking the ROM type in shadow_bank_read/write.</p>
-<ol>
-<li>It has more memory by default. This won't really matter for us.</li>
-</ol>
-<p>This is irrelevant given our design (all fast RAM is one contiguous stretch)</p>
-<ol>
-<li>It has an updated ADB Micro, that supports stickey keys</li>
-</ol>
-<p>It's possible the Micro works differently in some cases and may require some tweaks to work with updated ROM.</p>
-<h2 id="unique-peripheral-cards-to-consider-implementing">Unique Peripheral Cards to Consider Implementing<a class="headerlink" href="#unique-peripheral-cards-to-consider-implementing" title="Permanent link">&para;</a></h2>
-<p>There were a variety of unique/useful cards that really took advantage of the Apple IIgs capabilities. With any of these give consideration to utility - truly want to enable a broader software ecosystem that would really use this stuff.</p>
-<h3 id="voc-video-overlay-card">VoC - Video Overlay Card<a class="headerlink" href="#voc-video-overlay-card" title="Permanent link">&para;</a></h3>
-<p>Offered video overlay of IIgs graphics on an external video source, but also allowed a 320x400 and 640x400 mode using interlacing on the IIgs monitor. </p>
-<p>There is some interesting work occurring related to this, and use of two shr buffers to allow easier sprites.</p>
-<h3 id="secondsight">SecondSight<a class="headerlink" href="#secondsight" title="Permanent link">&para;</a></h3>
-<p>Well, we know all about this. It added VGA graphics to the Apple IIgs, and had some cool JPEG, TIF etc picture viewer written by a guy named Jawaid. </p>
-<h3 id="vidhd-andor-other-upcoming-cards">VidHD and/or other upcoming cards<a class="headerlink" href="#vidhd-andor-other-upcoming-cards" title="Permanent link">&para;</a></h3>
-<p>VidHD had some interesting and useful features. and the long-awaited AppleTini card promises a variety of very interesting video modes.</p>
-<p>What if I implemented my thoughts for a video system, with a frame buffer living in fast ram and having video acceleration features like a "gpu" that implements quickdraw calls in paravirtualization.</p>
-<h3 id="virtual-memory-memory-protection">Virtual Memory - Memory Protection<a class="headerlink" href="#virtual-memory-memory-protection" title="Permanent link">&para;</a></h3>
-<p>Ahhh the holy grail. This deserves its own long writeup. But short version: memory protection integrated with GS/OS and GNO, and perhaps memory virtualization to allow combinations of apps &gt; 16MB address space. (Could have much more physical ram behind the virtual window). But memory protection would be a huge win. </p>
-<h3 id="ramfast-scsi">RAMfast SCSI<a class="headerlink" href="#ramfast-scsi" title="Permanent link">&para;</a></h3>
-<p>this was the fastest disk interface then (or now for that matter) since it supported DMA to any IIgs memory bank. Since we don't have a real bus, trying to implement this would be really for nostalgia sake. However, having a Smartport-compliant "Hard Disk" card option that makes it very easy to manage lots of large disk partitions is something I need. The current pdblock2 has been fine but the 2-drive limit and no removability support makes it awkward to use on a GS.</p>
-<p>This would need a nice clean UI. Drag and drop for sure. More generally, the ability to save disk mounts in config so they persist across sessions. </p>
-<h2 id="source-code-that-reads-the-character-rom-out-of-a-iigs">Source code that reads the character rom out of a IIgs<a class="headerlink" href="#source-code-that-reads-the-character-rom-out-of-a-iigs" title="Permanent link">&para;</a></h2>
-<p>from Ian Brumby:</p>
-<p>For those following the thread on comp.sys.apple2, we now have some documentation on four previously unknown softswitches: $C02C, $C06D, $C06E, $C06F. And it turns out it was on my hard drive the whole time. Doh!</p>
-<pre><code>  lda #0
-buildloop   anop
-    sta thechar
-    tax
-    lda packbuffer,x
-    and #$00FF
-    bne isachar
-    brl nextchar
+<hr />
+<h2 id="quick-reference-card">Quick reference card<a class="headerlink" href="#quick-reference-card" title="Permanent link">&para;</a></h2>
+<pre><code>LocInfo @ $0C28 (D=$0C00):
+  $28/$2A  base       $2C width    $2E X
+  $30/$32  Y (blit) / long ptr (other)
+  $34      rows       $38 destY…
 
-isachar anop
-    lda thechar
-    xba
-    ora thechar
-    ldx #$76
-fillscreen anop
-    sta $E00400,x
-    sta $E00480,x
-    sta $E00500,x
-    sta $E00580,x
-    sta $E00600,x
-    sta $E00680,x
-    sta $E00700,x
-    sta $E00780,x
-    dex
-    dex
-    bpl fillscreen
+Blit DP @ $0E00:
+  $02      row counter
+  $08      dest long  → $38/C6ED (offscreen)
+  $0C/$0E  src addr/bank → bad: $83/8319
+  $1E      SHR ptr    → $E1/2000
 
-    lda thechar
-    asl a
-    asl a
-    asl a
-    ora #$8000
-    tay     ;offset into buffptr+$8000
+Code:
+  $01/0C64 entry → $01/1360 mul → $01/0CFD STA bank
+  $01/0D1B–0DBF  mask loop
+  $01/1C00       MUSSHDRTRAK (ptr in $30)
+  $01/187D/18A3  ptr stores to $30/$32
 
-    shortm
-    sta $E0C00C ;40COL
-    sta $E0C00F ;ALTCHARSET
-
-offset  equ $A1D5
-    ldx #offset
-    lda #0
-    sta thevline
-    phb
-    lda #$E0
-    pha
-    plb
-    bra readROM
-
-tryagain    anop    ;missed our data: wait and retry
-    lda #0  ;turn off test mode while waiting to...
-    sta $C06D-offset,x  ;...minimize chance of a reset...
-    sta $C06E-offset,x  ;...happening while it's enabled.
-    plp     ;give interrupts a chance
-    phx     ;waste time
-    plx
-    phx
-    plx
-    phx
-    plx
-    phx
-    plx
-readROM anop
-    php     ;disable interrupts while in test mode
-    sei
-    lda #$DA    ;password byte 1
-    sta $C06F-offset,x
-    lda #$61    ;password byte 2
-    sta $C06F-offset,x
-    lda #$40    ;enable test mode $40
-    sta $C06D-offset,x
-tryonce anop
-    lda $C02F   ;horizontal count
-    asl a   ;low bit of vcount now in carry
-    and #%11100000
-    eor #%10100000  ;want hcounts +/-8usec from left edge
-    bne tryonce
-    lda $C02E   ;vcount
-    rol a   ;roll in low bit from hcount
-    bcc tryagain    ;want top 192 visible lines only
-    bmi tryagain
-    eor &gt;thevline   ;compare to desired v position
-    and #$07    ;...only care about low 3 bits
-    bne tryagain
-    lda $C02C-offset,x          ;read CHARROM finally
-    sta [&lt;buffptr],y
-    lda #0  ;turn off test mode
-    sta $C06D-offset,x
-    sta $C06E-offset,x
-    plp     ;reenable interrupts
-    iny
-
-    lda &gt;thevline
-    inc a
-    sta &gt;thevline
-    cmp #8
-    blt readROM
-    plb
-    longm
-nextchar    anop
-    lda thechar
-    inc a
-    cmp #$100
-    bge lastchar
-    brl buildloop
-
-lastchar    anop
+Video:
+  NEWVIDEO=$C1  SHADOW=$1E/$1F (SHR shadow OFF)
 </code></pre>
 
 

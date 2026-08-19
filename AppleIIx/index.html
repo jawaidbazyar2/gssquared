@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../AppleIIc/">
-      
-      
-        <link rel="next" href="../AppleIII/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Apple IIgs - GSSquared Documentation</title>
+        <title>Apple IIx - GSSquared Documentation</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#apple-iigs" class="md-skip">
+        <a href="#apple-iix" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Apple IIgs
+              Apple IIx
             
           </span>
         </div>
@@ -277,12 +273,10 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
+      <li class="md-tabs__item">
         <a href="../AppleIIe/" class="md-tabs__link">
           
   
@@ -788,31 +782,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
@@ -830,7 +819,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -901,37 +890,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Apple IIgs
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
         
   
   
@@ -947,48 +909,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#key-differences" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Differences
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#new-hardware" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        New Hardware
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2632,10 +2552,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#key-differences" class="md-nav__link">
+  <a href="#mmu" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Key Differences
+        MMU
       
     </span>
   </a>
@@ -2643,10 +2563,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#new-hardware" class="md-nav__link">
+  <a href="#gpu" class="md-nav__link">
     <span class="md-ellipsis">
       
-        New Hardware
+        GPU
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gsos-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GS/OS Compatibility
       
     </span>
   </a>
@@ -2673,521 +2604,92 @@
   
 
 
-<h1 id="apple-iigs">Apple IIgs<a class="headerlink" href="#apple-iigs" title="Permanent link">&para;</a></h1>
-<h2 id="key-differences">Key Differences<a class="headerlink" href="#key-differences" title="Permanent link">&para;</a></h2>
-<p>New Hardware</p>
-<h2 id="new-hardware">New Hardware<a class="headerlink" href="#new-hardware" title="Permanent link">&para;</a></h2>
-<p>The GS features a variety of new hardware.</p>
-<p>Test Suite for Emulators generally:</p>
-<p>http://krue.net/truegs/</p>
-<h1 id="development-roadmap">Development Roadmap<a class="headerlink" href="#development-roadmap" title="Permanent link">&para;</a></h1>
-<p>We can implement in this order.</p>
-<p>[X] 65816 [initial version done]<br />
-[X] Accurate Cycle Timing (FPI / Mega II / Fast-Slow)<br />
-[X] mmu (done-ish but might still be bugs)<br />
-[X] RTC / BRAM<br />
-[X] ADB<br />
-  [X] Keyboard<br />
-  [X] Mouse<br />
-[X] New Display Modes
-  [X] SHR<br />
-  [X] text mode enhancements (colored text / border)<br />
-[X] Game controller <br />
-[X] Interrupts<br />
-[X] IWM<br />
-[1/2] Ensoniq<br />
-[ ] Zilog SCC 8530<br />
-[ ] ROM03  <br />
-[ ] Host FST  </p>
-<p>65816 emulation mode - the key element here is going to be to switch all the functions to use auto to allow us to switch from 8-bit to 16-bit more easily. By using auto, the compiler will .. uh, automatically.. pick the right data types based on calling parameters, stuff like that. CPU done.</p>
-<p>So I jumped ahead and did SHR stuff. Got it in the dpp framework, now need to implement it in vpp (VideoScanner). Then go back to text/borders.</p>
-<h2 id="65816-processor">65816 Processor<a class="headerlink" href="#65816-processor" title="Permanent link">&para;</a></h2>
-<p>This looks like an excellent resource:</p>
-<p>http://www.6502.org/tutorials/65c816opcodes.html</p>
-<p>Test suite for the 65816.</p>
-<p>https://forums.nesdev.org/viewtopic.php?t=24940</p>
-<p>First one to start using:
-https://github.com/gilyon/snes-tests</p>
-<h2 id="accurate-cycle-timing">Accurate Cycle Timing<a class="headerlink" href="#accurate-cycle-timing" title="Permanent link">&para;</a></h2>
-<p>The CPU code will need to distinguish, for incr_cycles() purposes, between:
-* internal cycles
-* bus cycles, with a speed returned by the mmu</p>
-<p>Hm, ARE there any purely "internal" cycles? Every CPU cycle hits the memory bus. </p>
-<h2 id="ensoniq-5503-doc">Ensoniq 5503 DOC<a class="headerlink" href="#ensoniq-5503-doc" title="Permanent link">&para;</a></h2>
-<p>See Ensoniq.md. Accessed via new $C0xx registers.</p>
-<h2 id="new-display-modes">New Display Modes<a class="headerlink" href="#new-display-modes" title="Permanent link">&para;</a></h2>
-<h3 id="shr-super-hi-res-video-modes">SHR - Super Hi-Res Video Modes<a class="headerlink" href="#shr-super-hi-res-video-modes" title="Permanent link">&para;</a></h3>
-<p>Pretty straightforward. Linear video buffer, pixel values look up 4096 colors (12-bit color value) in a palette table.</p>
-<p>[X] Implement Fill Mode  </p>
-<h3 id="standard-apple-ii-text-with-color">Standard Apple II text with Color<a class="headerlink" href="#standard-apple-ii-text-with-color" title="Permanent link">&para;</a></h3>
-<p>Text modes have a foreground and background color applied from a choice of 16 colors. Configured with new $C0xx registers.</p>
-<h3 id="rgb-output-even-for-8-bit-ii-modes">RGB output even for 8-bit II modes<a class="headerlink" href="#rgb-output-even-for-8-bit-ii-modes" title="Permanent link">&para;</a></h3>
-<p>Exact Apple IIgs style RGB display for the Apple II video modes is done for hires, double hires.</p>
-<p>[ ] Implement special case for crisp Lo-Res and Double Lo-Res in RGB mode  </p>
-<h2 id="adb-apple-desktop-bus">ADB (Apple Desktop Bus)<a class="headerlink" href="#adb-apple-desktop-bus" title="Permanent link">&para;</a></h2>
-<p>A shared serial bus (precursor of the USB concept) for keyboard, mouse, potentially other devices.</p>
-<p>The ADB Protocol is fairly straightforward. The 65816-side registers are documented in Apple IIGS Hardware Reference Chapter 6.  The microcontroller side is discussed here:
-https://llx.com/Neil/a2/adb.html</p>
-<p>however, I don't think there is any reason to emulate anything other than the keyboard and mouse. We do need to handle generic / general-purpose ADB commands/responses, but again the protocol is very simple. There are several types of interrupts the ADB can generate.</p>
-<p>The C000/C010 keyboard logic should be fed from the ADB module.</p>
-<p>Have an ADBGLU class, that acts as a middleman between the devices and the "motherboard". Need to be able to queue stuff. I am guessing the GLU handles the 16-character typeahead buffer? Or is it in the keyboard. this is unclear, but unlikely to be relevant for our purposes.</p>
-<p>The Keyboard is ADB but there is a simulation of the $C000/$C010 scheme. The ADB GLU is where those switches live in a GS.</p>
-<h2 id="memory-map">Memory Map<a class="headerlink" href="#memory-map" title="Permanent link">&para;</a></h2>
-<p>The IIgs has a 16MB (24-bit) address space. All I/O is done in the legacy $C000 space.</p>
-<p>Shadowing: normally, only banks 00/01 shadow - and that's writes, and that's to banks E0/E1, and then, only portions of those banks, controlled by shadowing register.</p>
-<p>00/01 runs at full speed, except shadowed writes, which slow down and sync to 1MHz. In native mode programs might only have I/O shadowing enabled.
-E0/E1 runs at 1MHz, period. This is "slow ram", always runs @ 1MHz.</p>
-<p>Apple IIe emulation is run in banks $00 and $01, but with shadowing to E0/E1 for I/O and video.<br />
-This allows reads by 8-bit software to occur at full speed, but shadowed writes are synced to 1MHz.
-There is various stuff in banks E0/E1 used by GS/OS, interrupt handlers, etc.</p>
-<p>I'll need something to return the speed and sync of a r/w. Maybe just a simple flag "1mhz read/write", which is:
-* any shadowed write in 00/01
-* any read or write in E0/E1</p>
-<p>So computer has a MegaII MMU, but also MMU_IIGS - the FPI. MMU_IIGS allocates its own Mega II MMU internally.</p>
-<p>The CPU calls MMU_IIGS. Everything else is injected with RegMMU.
-Unlike the IIe implementation, MMU_IIGS is a class that manages all its own softswitches etc., which exposes registers including:</p>
+<h1 id="apple-iix">Apple IIx<a class="headerlink" href="#apple-iix" title="Permanent link">&para;</a></h1>
+<p>What the IIgs "could have been"</p>
+<p>Goals:
+* virtual memory / especially memory protection
+* Microkernel OS, with preemptive multitasking, that supports Unix-like (GNO 3) as well as IIgs Desktop Apps
+* higher resolution video display</p>
+<p>I think a gradual approach, where we start with the virtual memory add-on; then implement the microkernel; then start bringing in the ability to run existing GS/OS applications.</p>
+<p>GS/OS will, in true microkernel fashion, be a personality layer on top of that.</p>
+<p>And Unixy can be an personality layer also - i.e., GNO 3 is at a similar layer as "GS/OS" but doesn't rely on it. There has been plenty of work showing that GS/OS is simple enough to model via paravirtualization (GoldenGate, Host FST, etc.)</p>
+<p>Start from fundamentals- establish the base, get the MM, GPU, and multitasking OS layer up, then add bits at a time until we can run a GS/OS app.</p>
+<p>We'll develop inside GSSquared as a framework, to ensure we don't stray too far from something that might work on a real GS.</p>
+<h2 id="mmu">MMU<a class="headerlink" href="#mmu" title="Permanent link">&para;</a></h2>
+<p>To support everything a modern OS needs, requires an MMU. For real hardware, this will require an accelerator that plugs in to the IIgs CPU socket.</p>
+<p>We'll also want some framebuffer access for text, and perhaps up to 1024x768 resolution (1MB memory space).</p>
+<p>Build as a new MMU construct. Like current GS MMU, allocates an internal Mega II for some level of compatibility. But handles mapping differently.</p>
+<h2 id="gpu">GPU<a class="headerlink" href="#gpu" title="Permanent link">&para;</a></h2>
+<p>For the display, the 1MHz Apple II bus is too slow for video. If we have any hope of running this in existing IIgs hardware (with accelerator+mmu addons) then a "send a GPU a sequence of commands to do the heavy lifting" approach is required. And that's fine.</p>
+<p>That implies modifications to QuickDraw to work with that type of backend.</p>
+<p>This will be secondsight with the GPU extension.</p>
+<h2 id="gsos-compatibility">GS/OS Compatibility<a class="headerlink" href="#gsos-compatibility" title="Permanent link">&para;</a></h2>
+<p>Our design goal is GS/OS compatibility - at the application level - not necessarily Apple II hardware compatibility.</p>
+<p>Legacy Apple II compatibility maybe could be handled with a mode switcher of some sort. Those apps really take over the hardware. So set up a virtualization environment helped along by the MMU. So a virtual Apple II thinks it has access to bare h/w but doesn't.</p>
+<h1 id="os-architecture">OS Architecture<a class="headerlink" href="#os-architecture" title="Permanent link">&para;</a></h1>
+<h1 id="modern-desktop-os-architecture-beyond-the-global-unix-model">Modern Desktop OS Architecture: Beyond the Global Unix Model<a class="headerlink" href="#modern-desktop-os-architecture-beyond-the-global-unix-model" title="Permanent link">&para;</a></h1>
+<h2 id="1-core-architectural-shift">1. Core Architectural Shift<a class="headerlink" href="#1-core-architectural-shift" title="Permanent link">&para;</a></h2>
+<p>Traditional Unix-style operating systems were built for multi-user, time-sharing mainframes. On a modern single-user desktop, the primary security threat is no longer <strong>User A vs. User B</strong>, but <strong>User A vs. Untrusted Application X</strong>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Dimension</th>
+<th style="text-align: left;">Legacy Unix Paradigm</th>
+<th style="text-align: left;">Modern Desktop Reality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Primary Boundary</strong></td>
+<td style="text-align: left;">User identity (<code>UID</code> / <code>GID</code>)</td>
+<td style="text-align: left;">Application domain &amp; sandbox</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Authority</strong></td>
+<td style="text-align: left;">Ambient (Process inherits full user rights)</td>
+<td style="text-align: left;">Capability-based (Explicit, ephemeral handles)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Storage Model</strong></td>
+<td style="text-align: left;">Global hierarchical root (<code>/</code>)</td>
+<td style="text-align: left;">Isolated per-app storage spaces</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Inter-Process Model</strong></td>
+<td style="text-align: left;">File-path reads &amp; global IPC</td>
+<td style="text-align: left;">Event bus, Pub/Sub, and RPC services</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-structural-principles">2. Structural Principles<a class="headerlink" href="#2-structural-principles" title="Permanent link">&para;</a></h2>
+<h3 id="a-banishment-of-the-global-root">A. Banishment of the Global Root (<code>/</code>)<a class="headerlink" href="#a-banishment-of-the-global-root" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Shadow register</li>
-<li>New-Video register</li>
-<li>State register</li>
+<li><strong>No Shared Tree:</strong> The concept of a single global filesystem root (<code>/</code>) accessible to all processes is eliminated.</li>
+<li><strong>Hermetic App Domains:</strong> Applications exist in encapsulated, isolated storage spaces containing only their binaries, assets, configuration, and scratch space.</li>
+<li><strong>Complete Uninstalls:</strong> Removing an application simply deletes its isolated domain—leaving zero orphan files in shared system folders.</li>
 </ul>
-<p>MMU_IIgs also replicates the language card functionality, and have those registers, because that bank switching exists in banks 00/01.</p>
-<p>New-Video, controls linearity or interleave of some memory in bank 1. Also, controls whether ALL even/odd banks are shadowed?</p>
-<p>So have page maps that map these banks to the Apple II MMU.
-Banks $00 - $01 are 128K built-in in ROM01 (plus E0/E1 = 256K). Banks $00 - $0F for ROM03 (1.125M total)
-Banks $00 and $01 are "shadowed" to banks $E0 and $E1 if shadowing is enabled - this is exact use of shadow handler for those pages.</p>
-<p>Fast ROM is banks $F0 to $FF. (1MB total).</p>
-<p>The $C000 - $FFFF space in E0/E1 is controlled by the LC. The Shadow register bit 6 just controls whether a WINDOW in those locations in banks0/1 is present or not.
-LC memory writes are NOT shadowed to E0/E1.</p>
-<p>The ROM01 file is 128KB exactly, and maps to banks $FE $FF. ROM03 is 256KB and maps to banks FC-FF. It looks like $FF/C000 is various slot card firmware, including at $C800-$CFFF (I forget, did the IIe have stuff here too?)
-$FF/D000 is AppleSoft etc. $F800 should be monitor ROM.. yep. All largely unmodified. So mapping this should be straightforward. Of course the reset/etc vectors are different.</p>
-<p>Weirdly, there is ROM data at $C071-$C07F. The IRQ/BRK vector is 74 C0 ($C074). At that location in the ROM is this:</p>
-<p>B8 5C 10 00 E1</p>
-<p>which is CLV then JML $E1/0010. What? E1/0010 etc are interrupt vectors. What about apple II software that uses page 0? Ah, that is not shadowed.</p>
-<p>JBrooks: "$C07x ROM is active in bank 0 &amp; 1 when I/O shadowing is enabled, or after the CPU does a vector pull (interrupt) via $FFEx/FFFx"
-We determined that we think C07x ROM is controlled purely by the I/O shadowing flag. </p>
-<p>Shadowing: not all the regions in $00/$01 are shadowed:
-https://retrocomputing.stackexchange.com/questions/5555/apple-iigs-hardware-implementation-of-ram-shadowing</p>
-<pre><code>0 - 0400...07FF - Text1
-1 - 2000...3FFF - HGR1
-2 - 4000...5FFF - HGR2
-3 - 2000...9FFF - Super High-res
-4 - 2000...3FFF - Double High-res ($01/2000...)
-5 - Unused
-6 - C000...DFFF - Switches/Slot Memory
-7 - Speed indicator
-</code></pre>
-<p>ok. There is Fast RAM and Slow RAM. Slow RAM has the I/O stuff.</p>
-<h4 id="fast-ram-contiguous-from-bank-00">Fast RAM - contiguous from bank $00<a class="headerlink" href="#fast-ram-contiguous-from-bank-00" title="Permanent link">&para;</a></h4>
-<p>Installed size is <strong>motherboard base (ROM-dependent) + expansion card</strong>
-(see <code>src/mmus/iigs_memory.hpp</code>):</p>
-<table>
-<thead>
-<tr>
-<th>ROM</th>
-<th>Motherboard</th>
-<th>+ 8MB card (default)</th>
-<th>Last RAM bank</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ROM01 (128KB)</td>
-<td>128KB (<code>$00</code>–<code>$01</code>)</td>
-<td>8MB (128KB card clipped)</td>
-<td><code>$7F</code></td>
-</tr>
-<tr>
-<td>ROM03 (256KB)</td>
-<td>1MB (<code>$00</code>–<code>$0F</code>)</td>
-<td>8MB (1MB card clipped)</td>
-<td><code>$7F</code></td>
-</tr>
-</tbody>
-</table>
-<p>FPI RAM decode is 23 bits → hard cap of 128 banks (<code>$00</code>–<code>$7F</code>) on both ROMs.
-Mega II <code>$E0</code>/<code>$E1</code> is separate slow RAM and is <strong>not</strong> part of this size.</p>
-<p>Banks above the last RAM bank float until ROM (<code>$FC</code>+ / <code>$FE</code>+). Banks <code>$00</code>–<code>$01</code> are the
-legacy Apple II emulation half; higher banks are pure RAM (optional all-bank shadowing is rare).</p>
-<p>Use a 64KByte page size. Banks <code>$00</code> and <code>$01</code> get special read/write handlers controlled by
-iigsmemory. Other mapped banks are direct RAM. Handlers must support Apple II LC bank switching
-and pure-RAM operation for higher banks.</p>
-<p>Runs at average of 2.5MHz speed and is affected by RAM refresh timing.</p>
-<h4 id="fast-rom-banks-f0-ff">Fast ROM - banks $F0 - $FF<a class="headerlink" href="#fast-rom-banks-f0-ff" title="Permanent link">&para;</a></h4>
-<p>Runs at full 2.8MHz and is unaffected by RAM refresh timing.</p>
-<h4 id="slow-ram-banks-e0-e1">Slow RAM - banks $E0 - $E1<a class="headerlink" href="#slow-ram-banks-e0-e1" title="Permanent link">&para;</a></h4>
-<p>These two banks are comprised of: display pages; I/O space. The I/O space mapping and ROM mapping for it are here and
-handled the same way they are in a IIe.
-All accesses in this space are clocked at 1MHz to share access with video scanner.</p>
-<h4 id="state-register-c068">State Register - C068<a class="headerlink" href="#state-register-c068" title="Permanent link">&para;</a></h4>
-<p>this is a condensed version of all the bank0/1 memory map features, in one place. And these likely coincide with the ones iigsmemory will deal with.</p>
-<h3 id="bus-timing">Bus Timing<a class="headerlink" href="#bus-timing" title="Permanent link">&para;</a></h3>
-<p>CPU normally runs at 1MHz (speed set to 1MHz hard), 2.8MHz, (or 7MHz / 14MHz in our accelerated modes). When an access is done to slow memory, we need to wait an appropriate amount of time to synchronize with the 1MHz clock, then execute the 1MHz cycle access at 1MHz speed.</p>
-<p>So we'll need to know in incr_cycles if it's a 1MHz access or 2.8MHz access. (Also, the GS can control its own cpu speed.) We will want to generalize that mechanism to work at 2.8 but also 7.1MHz.</p>
-<p>This will be done by tracking a 1MHz reference clock all the time.  </p>
-<p>"remember to allow an additional 10% in total cycle time to account for RAM refresh delays". More about this on Page 24 hardware reference. "FPI can execute ROM cycles while RAM refresh cycles are occurring". Occur approximately every 3.5 microseconds and reduce the 2.8MHz processing speed by about 8% for programs that run in RAM. What is 3.5 microseconds.. about 50 14Ms we need to delay cpu access to RAM by 4 14M's. This applies only to the Fast Ram. The slow ram is refreshed by the video circuitry during phase low just like an Apple II.</p>
-<p>There are certain registers inside the fPI (fast processor interface) that can be read at high speed: dma register; speed register; shadow register; interrupt ROM ($C071-$C07F) does not slow the system.
-State Register and Slot ROM select register are written at 1MHz and read at 2.8MHz.</p>
-<p>Great Discussion on the Apple2Inifinitum slack #kegs-emulator channel:
-Personally, I don't think there's much point in implementing the refresh timing without implementing the other stuff (i.e. stretch cycles and sync between fast and slow). You'll end up something theoretically closer, but it will still look off. (edited) 
-I can paste code here, but it'll probably add to the confusion.
-Fundamentally, you need to implement 3 clocks - a fast clock, a slow clock with stretched cycles and a refresh clock. The refresh clock is every 10 fast clocks. The refresh clock gets delayed if it overlaps between a slow and a fast. Refresh clock is "free" if it happens on a slow cycle or a FPI register cycle.</p>
-<p>There's even some code of clocking implementation from CrossRunner.</p>
-<p>Some I/O locations are FAST even though they're in the I/O space, because they're in the FPI and MegaII and reads are from FPI:
-Ok, I can confirm that for reads $35,$36,$37,$2D,$68,$71-$7F are all fast. $69-$70 are all slow.
-For writes only $35,$36,$37 are fast. Everything else is slow. (edited)
-that's: SHADOW, CYRREG, DMA, SLTROMSEL, STATE, rom interrupt code jump table (these are rom addresses after all).</p>
-<h2 id="game-io">Game I/O<a class="headerlink" href="#game-io" title="Permanent link">&para;</a></h2>
-<p>The same as the Apple II. Can use the gamecontroller module as-is.</p>
-<h2 id="realtime-clock">Realtime Clock<a class="headerlink" href="#realtime-clock" title="Permanent link">&para;</a></h2>
-<p>$C033 and $C034 work together to provide access to the IIgs Realtime clock.</p>
-<p>Bits 7-4 of $C034 manage a protocol to communicate with the clock; bits 3-0 control the Border Color on the IIgs display.
-Page 169 of the hardware reference.</p>
-<p>The RTC also holds the more general purpose "battery ram". There are a total of 256 bytes of information present in this. These values will need to be stored to a data file on host disk whenever they're modified. This is a detailed description of the battery ram and its contents:</p>
-<p>https://groups.google.com/g/comp.sys.apple2/c/FmncxrjEVlw</p>
-<h2 id="2-built-in-serial-ports-via-zilog-scc-chip">2 built-in serial ports via Zilog SCC chip<a class="headerlink" href="#2-built-in-serial-ports-via-zilog-scc-chip" title="Permanent link">&para;</a></h2>
-<p>Zilog SCC chip supports 2 built-in serial ports. The registers for this chip are: $C038 -9 (scc command channel B and A), and $C03A-B (scc data channel b and a).</p>
-<h3 id="appletalk-localtalk-networking-via-zilog-chip">AppleTalk / LocalTalk networking (via Zilog chip)<a class="headerlink" href="#appletalk-localtalk-networking-via-zilog-chip" title="Permanent link">&para;</a></h3>
-<p>This is likely just driven by firmware. If we wanted to support AppleTalk, we'd need to decode packets and convert to ethernet or something like that.</p>
-<h2 id="iwm-smartport-built-in-52535-controller">IWM (SmartPort) - Built-in 5.25/3.5 Controller<a class="headerlink" href="#iwm-smartport-built-in-52535-controller" title="Permanent link">&para;</a></h2>
-<p>IWM/SmartPort can control both 5.25" disk II drives as well as 3.5" drives. </p>
-<p>The UniDisk is a "smart" drive that has built in cpu and is accessed via a block interface protocol.
-The Apple Disk 3.5 is a dumb drive that looks a lot like the Disk II and is managed low-level like the Disk II.</p>
-<p>We will implement the 5.25" and the Apple 3.5" drive - i.e. the dumb drives. (That's what I've got for real hardware).
-Then don't have to bother trying to support downloadable code into UniDisk.</p>
-<p>This means we will have to implement something like the current Disk II code, but to work with the 3.5" drive low level format.</p>
-<p>Sectors are 512 bytes. And of course the disks are double-sided. </p>
-<pre><code>The standard layout for a single side is as follows: 
-Zone    Tracks  Sectors/Track   Bytes/Track
-1   0–15    12  6,144
-2   16–31   11  5,632
-3   32–47   10  5,120
-4   48–63   9   4,608
-5   64–79   8   4,096
-</code></pre>
-<p>Now, we -could- cheat and act like we have slot 5 mapped to our own card which is our dummy pdblock drive. That would be the fastest way to get an 800k drive working here. But we'd need the above to eventually deal with copy-protected .WOZ images of 3.5's. (Turns out there are a fair number of titles that see GS floppy and just assume slot 6 and crash booting)</p>
-<p>The IWM registers look just like Disk II registers and sit in $C0E0-C0EF; plus a couple other control registers elsewhere.</p>
-<p>Start with pdblock2 + disk ii, and then implement the iwm fully as a Phase 2. This might be where we implement .WOZ support fully also.</p>
-<p>Has the IWM chip - Integrated Woz Machine. Looks like a Disk II in Slot 6, but how is the 3.5 drive handled? What is that protocol?</p>
-<p>Depends on the drive. UniDisk has a built-in CPU controller operating at 2mhz. AppleDisk 3.5 has no built-in controller.</p>
-<p>You can 'download' custom code to run on the UniDisk. With an AppleDisk this "runs in host memory" according to UniDisk 3.5 TechPub #5. UniDisk details are discussed in Apple IIgs Firmware Reference. (I'm not going to support this).</p>
-<p>This discusses the registers in detail:</p>
-<p>https://mirrors.apple2.org.za/ftp.apple.asimov.net/documentation/hardware/storage/disks/IWM-Controlling%20the%203.5%20Drive%20Hardware%20on%20the%20Apple%20IIGS.pdf</p>
+<h3 id="b-intent-driven-data-access">B. Intent-Driven Data Access<a class="headerlink" href="#b-intent-driven-data-access" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Excellent deep dive into IWM
-https://llx.com/Neil/a2/disk</li>
+<li>Applications hold zero ambient access to user documents.</li>
+<li>Access to external data is granted exclusively through <strong>User Intent Actions</strong> (e.g., File Pickers, Drag &amp; Drop, Copy/Paste).</li>
+<li>The OS acts as a broker, handing the application an ephemeral, byte-range-limited capability token rather than exposing file system paths.</li>
 </ul>
-<h3 id="debugger">Debugger<a class="headerlink" href="#debugger" title="Permanent link">&para;</a></h3>
-<p>Technically not hardware - but, the various debugger modules must be updated to support 24-bit address and 16-bit data values.
-This should involve cleanup/refactor of the trace, disasm, and monitor module more specifically. </p>
-<ol>
-<li>"Address" should be able to handle any size value up to 32 bits.</li>
-<li>allow "bp" and "watch" on single address</li>
-<li>monitor commands must be enhanced to support 32-bit addresses.</li>
-<li>convert iiememory info section to be a callback like the others.</li>
-</ol>
-<h3 id="trace">Trace<a class="headerlink" href="#trace" title="Permanent link">&para;</a></h3>
-<ol>
-<li>[X] all this to make room for decoding addresses -&gt; symbols, as well as 16-bit widths for: A, X, Y, SP, PC.  That's two more characters for each of those.</li>
-<li>have debugger BP -before- instruction execute. i.e. if the PC is going to be XXXX, then BP before it executes. And highlight that instruction in the display.</li>
-<li>[X] instead of showing whole cycle, what if we just display last say 6 digits of cycle. That would be enough to show differences while not taking up too much screen.</li>
-<li>[X] make generation of the lines much easier by having a line class that tracks a horizontal 'cursor' inside the line.</li>
-<li>pack opcode and operand into a single 32-bit value, instead of 32-bit plus 8-bit.</li>
-<li>the other fields in the trace record are otherwise the right size.</li>
-<li>have a trace decoder base class plus two (maybe 3?) derived classes: 6502, 65c02, 65816. </li>
-<li>Same for disassembler.</li>
-<li>in 6502/65c02 mode, show SP as just a byte, to free up room.</li>
-<li>[X] use p flags e/m/x to determine trace formatting in 65816 class.</li>
-</ol>
-<h2 id="display-parameters">Display Parameters<a class="headerlink" href="#display-parameters" title="Permanent link">&para;</a></h2>
-<p>on my GS RGB SHR is 7.75 inches across and regular hires is 7.75 inches across. So they are the same horizontal beam scan path, but the SHR just clocks the pixels out a bit faster. We'll have to hope the scaling doesn't look too bad. I think the Videx is ok (640 pixels). But, this may be where the aspect ratio stuff comes in. This is an interesting question actually.. </p>
-<h2 id="interrupts">Interrupts<a class="headerlink" href="#interrupts" title="Permanent link">&para;</a></h2>
-<h3 id="vgc">VGC<a class="headerlink" href="#vgc" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Register</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>C023[7]</td>
-<td>VGC Interrupt Status</td>
-</tr>
-<tr>
-<td>C023[6]</td>
-<td>One-second interrupt status</td>
-</tr>
-<tr>
-<td>C023[5]</td>
-<td>scanline interrupt status</td>
-</tr>
-<tr>
-<td>C023[4]</td>
-<td>external interrupt status</td>
-</tr>
-<tr>
-<td>C023[3]</td>
-<td>unused set to 0</td>
-</tr>
-<tr>
-<td>C023[2]</td>
-<td>one-second interrupt enable</td>
-</tr>
-<tr>
-<td>C023[1]</td>
-<td>scanline interrupt enable</td>
-</tr>
-<tr>
-<td>C023[0]</td>
-<td>external interrupt enable</td>
-</tr>
-</tbody>
-</table>
-<p>7 is the OR of 4-6.</p>
-<p>This is one of the clearer interrupt setups. </p>
-<table>
-<thead>
-<tr>
-<th>Register</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>C032[7]</td>
-<td>not used, set to 0</td>
-</tr>
-<tr>
-<td>C032[6]</td>
-<td>Clear bit for one-second interrupt</td>
-</tr>
-<tr>
-<td>C032[5]</td>
-<td>clear bit for scanline interrupt</td>
-</tr>
-<tr>
-<td>C032[4-0]</td>
-<td>unused set to 0</td>
-</tr>
-</tbody>
-</table>
-<p>Write a 0 into bit 6 or bit 5 to clear that interrupt. Writing a 1 has no effect.
-Reading the video counters will also clear the ScanLine interrupt status bit!</p>
-<p>To implement the one-second interrupt, we need a timer that works sort of like the Scheduler except is based on the 14M clock. (or is this based on 60 frames? i.e. is it ACTUALLY 1 second?).</p>
-<p>To implement the scanline interrupt, VideoScannerIIgs will have to set the interrupt when it reads the scanline control byte. If the bit in SCB is 1, throw an interrupt. That seems easy enough.</p>
+<h3 id="c-system-level-event-bus-pubsub-rpc">C. System-Level Event Bus (Pub/Sub &amp; RPC)<a class="headerlink" href="#c-system-level-event-bus-pubsub-rpc" title="Permanent link">&para;</a></h3>
+<p>Rather than inspecting a shared disk or navigating local file paths, applications interact with the system and each other through an explicit event-driven communication fabric:</p>
 <ul>
-<li>Other ADB</li>
+<li><strong>Ephemeral Pub/Sub:</strong> Handles user-driven events (Clipboard transfers, Drag &amp; Drop payloads).</li>
+<li><strong>RPC Services:</strong> Applications expose specific capabilities (e.g., <code>image.transform.v1</code>) to the OS broker.</li>
+<li><strong>Event Channels:</strong> Hardware changes, system status updates, and notifications are broadcast across restricted, capability-gated topics.</li>
 </ul>
-<table>
-<thead>
-<tr>
-<th>Register</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>C027[5]</td>
-<td>data interrupt full</td>
-</tr>
-<tr>
-<td>C027[4]</td>
-<td>data interrupt enable</td>
-</tr>
-</tbody>
-</table>
-<p>This was unusually difficult because it's hard to find test examples that don't immediately crash and/or require tons of code tracing. but, it might be working?</p>
-<h3 id="megaii-mouse">MegaII Mouse<a class="headerlink" href="#megaii-mouse" title="Permanent link">&para;</a></h3>
+<hr />
+<h2 id="3-the-unix-sub-universe-as-a-personality">3. The Unix Sub-Universe as a Personality<a class="headerlink" href="#3-the-unix-sub-universe-as-a-personality" title="Permanent link">&para;</a></h2>
+<p>The power of Unix—text streams, <code>stdin</code>/<code>stdout</code>, and pipeline composition (<code>|</code>)—remains an invaluable paradigm for software development, but it no longer serves as the host-level operating system architecture.</p>
 <ul>
-<li>C041 - Int Enable - INTEN</li>
+<li><strong>Bounded Environments:</strong> Unix exists as a self-contained "personality" or workspace container (a developer environment).</li>
+<li><strong>Controlled Access:</strong> Inside its boundary, POSIX tools, pipes, and standard permissions function freely.</li>
+<li><strong>Isolation from Host:</strong> The Unix container cannot reach out to inspect isolated desktop application spaces or host configuration.</li>
 </ul>
-<table>
-<thead>
-<tr>
-<th>Register</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>C041[7]</td>
-<td>0</td>
-</tr>
-<tr>
-<td>C041[6]</td>
-<td>0</td>
-</tr>
-<tr>
-<td>C041[5]</td>
-<td>0</td>
-</tr>
-<tr>
-<td>C041[4]</td>
-<td>Enable 1/4 sec ints</td>
-</tr>
-<tr>
-<td>C041[3]</td>
-<td>Enable VBL ints</td>
-</tr>
-<tr>
-<td>C041[2]</td>
-<td>Enable Mega II mouse switch ints</td>
-</tr>
-<tr>
-<td>C041[1]</td>
-<td>enable Mega II mouse move ints</td>
-</tr>
-<tr>
-<td>C041[0]</td>
-<td>enable Mega II mouse operation</td>
-</tr>
-</tbody>
-</table>
-<p>So I don't think the GS uses anything here except bits 3-4: vbl and quarter-second.</p>
-<p>Again, the ideal place to insert the VBL interrupt is in VideoScannerIIgs. (done)</p>
-<h2 id="cyareg-c036">CYAREG - $C036<a class="headerlink" href="#cyareg-c036" title="Permanent link">&para;</a></h2>
-<p>This is the speed control register. see AppleIIgs-Memory.md.</p>
-<h2 id="rom03">ROM03<a class="headerlink" href="#rom03" title="Permanent link">&para;</a></h2>
-<p>There are a few relatively minor differences between ROM01 and ROM03.</p>
-<ol>
-<li>ROM03 supports shadowing Text Page 2.</li>
-</ol>
-<p>This is easily supported by checking the ROM type in shadow_bank_read/write.</p>
-<ol>
-<li>It has more memory by default. This won't really matter for us.</li>
-</ol>
-<p>This is irrelevant given our design (all fast RAM is one contiguous stretch)</p>
-<ol>
-<li>It has an updated ADB Micro, that supports stickey keys</li>
-</ol>
-<p>It's possible the Micro works differently in some cases and may require some tweaks to work with updated ROM.</p>
-<h2 id="unique-peripheral-cards-to-consider-implementing">Unique Peripheral Cards to Consider Implementing<a class="headerlink" href="#unique-peripheral-cards-to-consider-implementing" title="Permanent link">&para;</a></h2>
-<p>There were a variety of unique/useful cards that really took advantage of the Apple IIgs capabilities. With any of these give consideration to utility - truly want to enable a broader software ecosystem that would really use this stuff.</p>
-<h3 id="voc-video-overlay-card">VoC - Video Overlay Card<a class="headerlink" href="#voc-video-overlay-card" title="Permanent link">&para;</a></h3>
-<p>Offered video overlay of IIgs graphics on an external video source, but also allowed a 320x400 and 640x400 mode using interlacing on the IIgs monitor. </p>
-<p>There is some interesting work occurring related to this, and use of two shr buffers to allow easier sprites.</p>
-<h3 id="secondsight">SecondSight<a class="headerlink" href="#secondsight" title="Permanent link">&para;</a></h3>
-<p>Well, we know all about this. It added VGA graphics to the Apple IIgs, and had some cool JPEG, TIF etc picture viewer written by a guy named Jawaid. </p>
-<h3 id="vidhd-andor-other-upcoming-cards">VidHD and/or other upcoming cards<a class="headerlink" href="#vidhd-andor-other-upcoming-cards" title="Permanent link">&para;</a></h3>
-<p>VidHD had some interesting and useful features. and the long-awaited AppleTini card promises a variety of very interesting video modes.</p>
-<p>What if I implemented my thoughts for a video system, with a frame buffer living in fast ram and having video acceleration features like a "gpu" that implements quickdraw calls in paravirtualization.</p>
-<h3 id="virtual-memory-memory-protection">Virtual Memory - Memory Protection<a class="headerlink" href="#virtual-memory-memory-protection" title="Permanent link">&para;</a></h3>
-<p>Ahhh the holy grail. This deserves its own long writeup. But short version: memory protection integrated with GS/OS and GNO, and perhaps memory virtualization to allow combinations of apps &gt; 16MB address space. (Could have much more physical ram behind the virtual window). But memory protection would be a huge win. </p>
-<h3 id="ramfast-scsi">RAMfast SCSI<a class="headerlink" href="#ramfast-scsi" title="Permanent link">&para;</a></h3>
-<p>this was the fastest disk interface then (or now for that matter) since it supported DMA to any IIgs memory bank. Since we don't have a real bus, trying to implement this would be really for nostalgia sake. However, having a Smartport-compliant "Hard Disk" card option that makes it very easy to manage lots of large disk partitions is something I need. The current pdblock2 has been fine but the 2-drive limit and no removability support makes it awkward to use on a GS.</p>
-<p>This would need a nice clean UI. Drag and drop for sure. More generally, the ability to save disk mounts in config so they persist across sessions. </p>
-<h2 id="source-code-that-reads-the-character-rom-out-of-a-iigs">Source code that reads the character rom out of a IIgs<a class="headerlink" href="#source-code-that-reads-the-character-rom-out-of-a-iigs" title="Permanent link">&para;</a></h2>
-<p>from Ian Brumby:</p>
-<p>For those following the thread on comp.sys.apple2, we now have some documentation on four previously unknown softswitches: $C02C, $C06D, $C06E, $C06F. And it turns out it was on my hard drive the whole time. Doh!</p>
-<pre><code>  lda #0
-buildloop   anop
-    sta thechar
-    tax
-    lda packbuffer,x
-    and #$00FF
-    bne isachar
-    brl nextchar
-
-isachar anop
-    lda thechar
-    xba
-    ora thechar
-    ldx #$76
-fillscreen anop
-    sta $E00400,x
-    sta $E00480,x
-    sta $E00500,x
-    sta $E00580,x
-    sta $E00600,x
-    sta $E00680,x
-    sta $E00700,x
-    sta $E00780,x
-    dex
-    dex
-    bpl fillscreen
-
-    lda thechar
-    asl a
-    asl a
-    asl a
-    ora #$8000
-    tay     ;offset into buffptr+$8000
-
-    shortm
-    sta $E0C00C ;40COL
-    sta $E0C00F ;ALTCHARSET
-
-offset  equ $A1D5
-    ldx #offset
-    lda #0
-    sta thevline
-    phb
-    lda #$E0
-    pha
-    plb
-    bra readROM
-
-tryagain    anop    ;missed our data: wait and retry
-    lda #0  ;turn off test mode while waiting to...
-    sta $C06D-offset,x  ;...minimize chance of a reset...
-    sta $C06E-offset,x  ;...happening while it's enabled.
-    plp     ;give interrupts a chance
-    phx     ;waste time
-    plx
-    phx
-    plx
-    phx
-    plx
-    phx
-    plx
-readROM anop
-    php     ;disable interrupts while in test mode
-    sei
-    lda #$DA    ;password byte 1
-    sta $C06F-offset,x
-    lda #$61    ;password byte 2
-    sta $C06F-offset,x
-    lda #$40    ;enable test mode $40
-    sta $C06D-offset,x
-tryonce anop
-    lda $C02F   ;horizontal count
-    asl a   ;low bit of vcount now in carry
-    and #%11100000
-    eor #%10100000  ;want hcounts +/-8usec from left edge
-    bne tryonce
-    lda $C02E   ;vcount
-    rol a   ;roll in low bit from hcount
-    bcc tryagain    ;want top 192 visible lines only
-    bmi tryagain
-    eor &gt;thevline   ;compare to desired v position
-    and #$07    ;...only care about low 3 bits
-    bne tryagain
-    lda $C02C-offset,x          ;read CHARROM finally
-    sta [&lt;buffptr],y
-    lda #0  ;turn off test mode
-    sta $C06D-offset,x
-    sta $C06E-offset,x
-    plp     ;reenable interrupts
-    iny
-
-    lda &gt;thevline
-    inc a
-    sta &gt;thevline
-    cmp #8
-    blt readROM
-    plb
-    longm
-nextchar    anop
-    lda thechar
-    inc a
-    cmp #$100
-    bge lastchar
-    brl buildloop
-
-lastchar    anop
-</code></pre>
 
 
 

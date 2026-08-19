@@ -2866,8 +2866,13 @@
 </tr>
 <tr>
 <td>Live register query</td>
-<td>Via stop snapshot / <code>GET_TRACE</code></td>
+<td><code>GET_REGS</code> / <code>SET_REGS</code> (masked); also stop snapshot / <code>GET_TRACE</code></td>
 <td><code>scopes</code> / <code>variables</code> while stopped</td>
+</tr>
+<tr>
+<td>Memory pattern search</td>
+<td><code>FINDMEM</code> (optional byte mask)</td>
+<td>No standard request</td>
 </tr>
 <tr>
 <td>Instruction history</td>
@@ -3048,7 +3053,7 @@
 <h2 id="gaps-worth-caring-about">Gaps worth caring about<a class="headerlink" href="#gaps-worth-caring-about" title="Permanent link">&para;</a></h2>
 <h3 id="goal-agent-scripted-asm-debug">Goal: agent / scripted asm debug<a class="headerlink" href="#goal-agent-scripted-asm-debug" title="Permanent link">&para;</a></h3>
 <p>GS2 v1 is already well-aimed: run control, rich stops, multi-domain memory, EXEC/DATA/IO breakpoints, trace history, peripherals.</p>
-<p><strong>Nice-to-haves on the wire:</strong> <code>STEP_OVER</code> / <code>STEP_OUT</code>, dedicated <code>GET_REGS</code> / <code>SET_REGS</code>, optional <code>DISASM</code> for convenience (not required if the host disassembles).</p>
+<p><strong>Nice-to-haves on the wire:</strong> <code>STEP_OVER</code> / <code>STEP_OUT</code>, optional <code>DISASM</code> for convenience (not required if the host disassembles). <code>GET_REGS</code> / <code>SET_REGS</code> / <code>FINDMEM</code> are implemented.</p>
 <h3 id="goal-vs-code-source-debugging">Goal: VS Code source debugging<a class="headerlink" href="#goal-vs-code-source-debugging" title="Permanent link">&para;</a></h3>
 <p>Build a DAP adapter process — do not implement DAP inside GS2. The hard missing pieces are host-side: symbols, stack unwinding for high-level languages, and variable evaluation.</p>
 <p>For Merlin/ca65/ORCA asm in the editor, instruction BPs + disassemble + memory + one register frame may be enough without full DWARF.</p>

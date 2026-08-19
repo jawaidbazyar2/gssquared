@@ -2107,6 +2107,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="0: Enable Bank Latch">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#measured-the-lc-arrangement-in-bank-e1-real-rom-01" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measured: the LC arrangement in bank $E1 (real ROM 01)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#altzp-moves-the-bank-e0-lc-window-and-c008c009-must-recompose-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ALTZP moves the bank $E0 LC window, and $C008/$C009 must recompose it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3211,6 +3239,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="0: Enable Bank Latch">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#measured-the-lc-arrangement-in-bank-e1-real-rom-01" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measured: the LC arrangement in bank $E1 (real ROM 01)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#altzp-moves-the-bank-e0-lc-window-and-c008c009-must-recompose-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ALTZP moves the bank $E0 LC window, and $C008/$C009 must recompose it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3356,15 +3412,17 @@ https://comp.sys.apple2.narkive.com/o1R6slX2/apple-iigs-bank-latching</p>
 <p>Also this:
 http://umich.edu/~archive/apple2/technotes/tn/iigs/TN.IIGS.032</p>
 <h2 id="installed-fast-ram-size">Installed fast RAM size<a class="headerlink" href="#installed-fast-ram-size" title="Permanent link">&para;</a></h2>
-<p>GSSquared sizes contiguous FPI RAM as <strong>motherboard + expansion card</strong> (KEGS-compatible),
+<p>GSSquared sizes contiguous FPI RAM as <strong>motherboard + expansion card</strong>,
 implemented in <code>src/mmus/iigs_memory.hpp</code>:</p>
 <ul>
-<li><strong>ROM01</strong> (128KB ROM file): 128KB motherboard + default 8MB card → <strong>8.125MB</strong> (banks <code>$00</code>–<code>$81</code>)</li>
-<li><strong>ROM03</strong> (256KB ROM file): 1MB motherboard + default 8MB card → <strong>9MB</strong> (banks <code>$00</code>–<code>$8F</code>)</li>
+<li><strong>ROM01</strong> (128KB ROM file): 128KB motherboard + default 8MB card</li>
+<li><strong>ROM03</strong> (256KB ROM file): 1MB motherboard + default 8MB card</li>
 </ul>
-<p>The expansion argument is card size, not total system RAM. Total is clamped to <code>$DF0000</code>.
-Mega II banks <code>$E0</code>/<code>$E1</code> are separate and not included. A flat 8MB map (banks <code>$00</code>–<code>$7F</code> only)
-is wrong for real ROM01+8MB / ROM03+8MB machines and leaves <code>$80+</code> floating.</p>
+<p>The FPI only decodes <strong>23 address bits</strong> for RAM, so both are hard-capped at <strong>8MB</strong>
+(banks <code>$00</code>–<code>$7F</code>). Excess card banks above that window are inaccessible
+(ROM01: 128KB; ROM03: 1MB with an 8MB card).</p>
+<p>The expansion argument is card size, not total system RAM.
+Mega II banks <code>$E0</code>/<code>$E1</code> are separate and not included.</p>
 <h2 id="shadow-register-c035">Shadow Register - $C035<a class="headerlink" href="#shadow-register-c035" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Default on Power-up:</li>
@@ -3467,6 +3525,7 @@ is wrong for real ROM01+8MB / ROM03+8MB machines and leaves <code>$80+</code> fl
 <h2 id="c036-speed-register">$C036 - Speed Register<a class="headerlink" href="#c036-speed-register" title="Permanent link">&para;</a></h2>
 <h3 id="7-cpu-speed">7: CPU Speed<a class="headerlink" href="#7-cpu-speed" title="Permanent link">&para;</a></h3>
 <h3 id="6-power-on-status">6: Power-on status<a class="headerlink" href="#6-power-on-status" title="Permanent link">&para;</a></h3>
+<p>On a ROM03, </p>
 <h3 id="5-reserved-do-not-modify">5: reserved - do not modify<a class="headerlink" href="#5-reserved-do-not-modify" title="Permanent link">&para;</a></h3>
 <h3 id="4-shadowing-enable-for-all-fast-ram-banks">4: Shadowing enable for ALL FAST RAM banks<a class="headerlink" href="#4-shadowing-enable-for-all-fast-ram-banks" title="Permanent link">&para;</a></h3>
 <p>GuS only changes pagetable entries for the SHR page; banks $02 - $MAXFASTBANK.
@@ -3487,6 +3546,14 @@ When 1, memory address bus is tri-stated during PHI1 except for refresh. Also ch
 <h3 id="6-change-memory-map">6: Change Memory Map<a class="headerlink" href="#6-change-memory-map" title="Permanent link">&para;</a></h3>
 <p>When 0, memory map is same as normal Apple II.
 When 1, memory map is linear and starts at $2000 and ends at $9FFF in Aux memory.</p>
+<p>Bit 7 (SHR enabled) also forces the linear map, independent of bit 6 — the
+effective condition is <code>(C029 &amp; $C0) != 0</code> (and the bank latch, bit 0, must be
+on). GS/OS relies on this: it prepares its boot screen with C029=$41 (linear
+map, SHR display off), then switches to C029=$81 to turn the display on, and
+keeps drawing — with bit 6 now clear. Gating linearization on bit 6 alone makes
+everything drawn after that point (the INIT/driver icon row along the bottom)
+land unlinearized, which the VGC then de-interleaves into scattered garbage.
+Bit 6 exists so you can get the linear map <em>without</em> enabling the SHR display.</p>
 <p>When linearization is enabled, e1/2000..9fff is remapped per below, to allow the SHR stuff to read two bytes of SHR data per cycle.</p>
 <pre><code>x = linear_address - $2000
 y = x[15]:x[0]:x[14..1]
@@ -3538,6 +3605,70 @@ how to use this bit to select a memory bank.
 1 The 17th address bit is ignored.</p>
 <p>So, "data bit" is just "we're going to hack another address bit by using the data bus" because the MegaII has only a 16-bit input. So that really can be treated as address bit 17.</p>
 <p>ugh this is still not clear which banks this works against.</p>
+<h4 id="measured-the-lc-arrangement-in-bank-e1-real-rom-01">Measured: the LC arrangement in bank $E1 (real ROM 01)<a class="headerlink" href="#measured-the-lc-arrangement-in-bank-e1-real-rom-01" title="Permanent link">&para;</a></h4>
+<p>A read-only probe run on a real ROM 01 machine, with the bank latch on, sampling the
+LC window in <code>$E1</code> against the same bytes read straight out of bank <code>$FF</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Sampled</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$E1/D000</code>, LC bank 2, RDROM</td>
+<td><code>6F</code></td>
+</tr>
+<tr>
+<td><code>$E1/E000</code>, RDROM</td>
+<td><code>4C</code></td>
+</tr>
+<tr>
+<td><code>$E0/D000</code>, RDROM</td>
+<td><code>6F</code></td>
+</tr>
+<tr>
+<td><code>$FF/D000</code> (reference)</td>
+<td><code>6F</code></td>
+</tr>
+<tr>
+<td><code>$FF/E000</code> (reference)</td>
+<td><code>4C</code></td>
+</tr>
+<tr>
+<td><code>$E1/D000</code>, LC bank 1, RDROM</td>
+<td><code>6F</code></td>
+</tr>
+</tbody>
+</table>
+<p>So bank <code>$FF</code> ROM overlays <code>$E1/D000-$FFFF</code> when reads are switched to ROM, under
+either LC bank, exactly as it does in <code>$E0</code>. Together with the LC bank 1 <code>$D000</code>
+image and write protection, that is the full "LC arrangement must still be
+respected" requirement noted above. GSSquared returned <code>CC CC 6F 6F 4C CC</code> before
+this was implemented in <code>bank_e1_read</code> / <code>bank_e1_write</code>; see tests 41-46 in
+<code>apps/iigsmmutest/tests.hpp</code>.</p>
+<p>Still unmeasured: whether the FPI serves that ROM read as a fast cycle. Our <code>$E1</code>
+handlers keep <code>CYCLE_TYPE_SYNC</code> for it, unlike banks <code>$00</code>/<code>$01</code> where
+<code>bank_shadow_read</code> switches to <code>CYCLE_TYPE_FAST_ROM</code>.</p>
+<h4 id="altzp-moves-the-bank-e0-lc-window-and-c008c009-must-recompose-it">ALTZP moves the bank $E0 LC window, and $C008/$C009 must recompose it<a class="headerlink" href="#altzp-moves-the-bank-e0-lc-window-and-c008c009-must-recompose-it" title="Permanent link">&para;</a></h4>
+<p>Bank <code>$E0</code>'s LC window follows ALTZP into aux - which is to say, into the same RAM
+that a direct bank <code>$E1</code> access reaches with the bank latch on. <code>$E0/D000</code> with
+ALTZP set really is <code>$E1/D000</code>. Only the <code>$E0</code> side moves; <code>$E1</code> is always aux.</p>
+<p><code>MMU_IIgs::megaii_compose_map()</code> used to remap only pages <code>$00</code>/<code>$01</code> on an ALTZP
+change, leaving <code>$D0-$FF</code> wherever the last <code>$C08x</code> or <code>$C068</code> access had put them.
+Software that sets ALTZP, touches the LC, then clears ALTZP through <code>$C008</code> was left
+with the LC window stuck on aux, so writes through <code>$E0</code> landed on top of <code>$E1</code>.</p>
+<p>The ROM 03 built-in diagnostic catches this. Test 04 (<code>RAM_ADDR</code>, in
+<code>Bank FF/diag.tests.asm</code>) fills banks <code>$E1</code>, <code>$E0</code>, <code>$01</code>, <code>$00</code> with an
+address+bank pattern and compares them back in the same order, so bank <code>$E1</code> is
+written first and <code>$E0</code>'s stale-aux writes clobbered it before the compare:
+<code>04E1E000</code> before the <code>$E1</code> LC decode above was implemented, <code>04E1D000</code> after, since
+that moved which address collides first. Regression test 47 in
+<code>apps/iigsmmutest/tests.hpp</code>.</p>
+<p>Note the diagnostic inhibits all shadowing (<code>$C035 = $7F</code>) while it runs, so its own
+<code>LDA $C08B</code> with DB=0 reads bank <code>$00</code> RAM rather than the softswitch - the LC
+arrangement it tests with is whichever one test 03 left behind.</p>
 <h2 id="c068-state-register">$C068 - State Register<a class="headerlink" href="#c068-state-register" title="Permanent link">&para;</a></h2>
 <p>The State Register duplicates in the FPI certain memory management bits that can be read all in one byte, instead of across many bytes as in the Apple IIe.</p>
 <table>

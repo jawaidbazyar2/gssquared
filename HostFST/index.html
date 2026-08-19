@@ -2673,6 +2673,7 @@
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Requires an <strong>Apple IIgs</strong> platform and <strong>GS/OS</strong> (not plain ProDOS 8 on a //e).</li>
+<li>On <strong>Windows</strong>, Host FST stores ProDOS type/auxtype, Finder info, and resource forks in NTFS Alternate Data Streams (<code>:AFP_AfpInfo</code> and <code>:AFP_Resource</code>, the same convention as CiderPress and Services for Macintosh). Use an <strong>NTFS</strong> folder; FAT/exFAT and some network shares will not keep that metadata.</li>
 <li>The <strong>Host Folder…</strong> picker is not available in the web (Emscripten) build.</li>
 <li>Mount Drivers only supplies the installer disk; the Host FST itself stays built into the emulator once the two System files are installed.</li>
 </ul>

@@ -3436,6 +3436,7 @@ It now starts but then hits a BRK; it plays music for a while; then dies with a 
 <h2 id="senseiplay">Senseiplay<a class="headerlink" href="#senseiplay" title="Permanent link">&para;</a></h2>
 <p>similar to noisetracker, now starts and plays a song for a couple seconds, then fails with a "RESTART SYSTEM-$01".</p>
 <p>with ensoniq interrupt fix, Does not trigger RESTART SYSTEM 01 but does not play songs correctly.</p>
+<p>Now working correctly with latest ensoniq fixes.</p>
 <h2 id="telcom-028-1991">Telcom 0.28 (1991)<a class="headerlink" href="#telcom-028-1991" title="Permanent link">&para;</a></h2>
 <p>my baby!</p>
 <p>this crashes to a BRK on GS2. It does NOT crash on Kegs. Something is doing a tool call 2403 to call 00/C2CC in emulation mode. (Why?) This routine exits with a JMP $4xxx, meaning, it's expecting the program bank to be FF, not 00. So something in that stretch between 14/6360 (can't guarantee it's always here, but, it's the JSL $E10000 before the BRK).</p>
@@ -3503,7 +3504,7 @@ WORKING!!! Implemented improvements to ADB emulation to support what w3d wanted.
 <p><strong>PLAYS LIKE A CHAMP</strong></p>
 <h3 id="zany-golf">Zany Golf<a class="headerlink" href="#zany-golf" title="Permanent link">&para;</a></h3>
 <p>Works right up until you are actually playing a level, then the screen is black where level should be. Say wha.</p>
-<p>Retested after IIgs fast-RAM sizing matched KEGS (ROM01 8.125MB / ROM03 9MB): still black playfield with HUD + music. Blit LocInfo at DP <code>$0C28+</code> can hold long-pointer junk in the Y/rows fields, so the mask blit reads nonsense banks; not fixed by RAM size alone.</p>
+<p>Retested after IIgs fast-RAM sizing (FPI 23-bit cap, banks <code>$00</code>–<code>$7F</code> on ROM01/ROM03): still black playfield with HUD + music. Blit LocInfo at DP <code>$0C28+</code> can hold long-pointer junk in the Y/rows fields, so the mask blit reads nonsense banks; not fixed by RAM size alone.</p>
 
 
 
