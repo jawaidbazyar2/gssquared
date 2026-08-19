@@ -26,6 +26,8 @@
 
 * [Writing Config Files Manually](ConfigFiles.md)
 
+* [Using the Debugger](UsingTheDebugger.md)
+
 ## Cards
 
 Slot cards and how to use them:

@@ -99,10 +99,13 @@ Both are useful when recording video and you want a clean picture. Preferences a
 Drive seek/activity sounds are stereo (drive 1 toward the left, drive 2 toward the right) when sound effects are on. On the IIgs, Ensoniq DOC output is stereo when the guest software uses stereo; mono titles are played on both speakers.
 
 ### Debug
-  * Show/Hide Debugger
-  * Save Trace
-  * Load Symbols
-  * Save Symbols
+
+See [Using the Debugger](UsingTheDebugger.md) for the full guide (panes, monitor commands, breakpoints, video views, and workflows).
+
+  * **F10** or the OSD **Debug** button — show/hide the debugger window
+  * On exit, the instruction trace is saved automatically as `gssquared-trace.bin` in your documents folder
+
+Menu items for Save Trace / Load Symbols / Save Symbols are planned; use monitor commands (`sload`, `sclear`, `slookup`) and the automatic trace save on quit for now.
 
 ### Docs
   * Online Documentation
