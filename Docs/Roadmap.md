@@ -82,12 +82,16 @@
 [X] Host FST
 [X] Built-in RO Disk with drivers (e.g. Host FST driver) mount/unmount with menu item; PPU mode demo; various other things.
 [X] Uthernet II support (via SLIRP)
-[ ] Optional pcap Uthernet path (slirp double-NAT; FTP fails, HTTP works)  
-[ ] Provide flexible AI-drivable binary protocol debugger interface  
+
+## Release 0.11
+
+[X] CRT Shader on Windows
+[X] Provide flexible AI-drivable binary protocol debugger interface  
+[X] Host FST on Windows
 
 ## Release 1.0
 
-[ ] implement shaders on windows/linux
+[ ] implement shaders on Linux
 [ ] Fix all known / pending bugs  
 
 

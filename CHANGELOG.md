@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-08-19
+
+Covers commits since the v0.10.0 release (2026-08-01) through 2026-08-19.
+
+### Features
+
+- **Second Sight text mode (#156).** Apple II text can be rendered through Second Sight VGA (Apple-ified font from the Second Sight ROM); fonts load from compact 4K `.bin` files, with a menu toggle to enable. (`7de4caf`, `bbbe1fa`)
+- **Debugger display pages (#77).** The debugger can render a specified display page (`hgr1`, `80text1`, …) into a Video pane. Apple II rendering was refactored for fast static snapshots. (`c914232`)
+- **APM / CD-ROM on BazFast.** Apple Partition Map support on BazFast volumes, primarily for mounting and booting CD-ROMs. (`5963009`)
+- **Windows Host FST.** Host FST now works on 64-bit Windows. (`d8c5b69`)
+- **CRT shader on Windows.** The CRT GPU shader is available on Windows (HLSL/DXIL). (`fffa140`)
+- **Debug Protocol.** Mount/unmount storage images; linearized text-page capture; get/set CPU registers. (`29dadbb`, `84b83b3`)
+- **Drivers volume.** Built-in drivers disk now includes the installer plus Marinetti/Uthernet drivers. (`8920254`)
+
+### User Interface
+
+- **Windows File → Quit.** The Quit menu item now works on Windows. (`0892702`)
+- **Scrollbar origin.** Scrollbars can reverse the “0” point. (`7738b64`)
+- **Windows paths.** Tweaks to path handling in `SystemSettings`. (`25ee968`)
+
+### Bug Fixes
+
+- **IIgs FPI / cycle timing (#150, #101).** FPI registers (`$C035`–`$C037`, `$C02D`, `$C068`, `$C071`–`$C07F`) are billed as fast cycles instead of 1 MHz Mega II accesses — fixes textfunk border timing. (`7333660`)
+- **Ludicrous speed.** Reworked as fixed multiples of the 14 MHz clock so the video scanner still runs; speaker, Ensoniq, and related devices no longer break under LS. (`e169b2b`)
+- **Second Sight VBL (#159).** Temporary fix so VBL is generated in Second Sight text mode under ludicrous speed (GNO/ME no longer freezes). (`03c52c8`)
+- **65816 / 6502.** WAI implementation; `PLB` is 4 cycles (was 2); `XCE` is 2 cycles (was 1); native-mode relative branches no longer take a page-cross penalty (#157, ROM 03 beep pitch). (`8fbca78`, `d981a26`, `34022cf`)
+- **ROM 03 keyboard repeat (#145).** Repeat rates above default are no longer extremely slow. (`887d943`)
+- **IIgs MMU.** Bank `$E1` language-card decode (#154); linearization and shadow bugs from Arekkusu tests; ROM 03 cold-start reset; banks `$F0`–`$FF` treated as fast ROM. (`42fd845`, `18f5d04`, `35505bd`, `992a523`, `52dcd30`)
+- **`.2mg` images.** Truncation/misread when header parameters are missing or zero; stronger header sanity checks. (`e2f6ab5`, `f169170`)
+- **BazFast mounts.** Reject 140K floppy images on the hard drive; refuse mounting the same image more than once. (`343082c`, `b066409`)
+
+### Internals
+
+- **MMU reset.** `reset()` now takes a cold-start flag. (`35505bd`)
+- **Display.** Shared GS color tables and a missing initializer. (`b87142f`)
+- **Docs.** Debugger user guide (`UsingTheDebugger.md`); PR template and contributing notes. (`881ccb3`, `1713b7e`)
+
 ## 2026-08-01
 
 Covers commits from 2026-07-10 through 2026-08-01.

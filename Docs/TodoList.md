@@ -13,7 +13,7 @@ GitHub issue list last synced: 2026-07-19. Re-check with `gh issue list --state 
 From [Roadmap.md](Roadmap.md):
 
 ### Release 0.10
-- [ ] Provide flexible AI-drivable binary protocol debugger interface
+- [X] Provide flexible AI-drivable binary protocol debugger interface
 
 ### Release 1.0
 - [ ] Fix all known / pending bugs
