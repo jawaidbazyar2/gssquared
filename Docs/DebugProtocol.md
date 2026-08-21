@@ -17,7 +17,7 @@ This document is the source of truth for the wire format. Exploratory notes in `
 - TCP listen/connect (frame is ready; transport comes later).
 - Required request pipelining (header supports it; implementation may allow only one outstanding request).
 - MCP, GDB RSP, or an embedded script runtime.
-- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / BP_* / KEYEVENT / STATE_GET / STATE_SET / VIDEO_TEXT / MOUNT / UNMOUNT / QUIT below.
+- Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / BP_* / KEYEVENT / PASTE_TEXT / STATE_GET / STATE_SET / VIDEO_TEXT / MOUNT / UNMOUNT / QUIT below.
 
 ---
 
@@ -191,6 +191,7 @@ Rules:
 | `BP_ENABLE` | 4 | 4 | `0x00000404` | main | empty |
 | `BP_LIST` | 4 | 5 | `0x00000405` | main | `count` + records |
 | `KEYEVENT` | 5 | 1 | `0x00000501` | protocol (`SDL_PushEvent`) | empty |
+| `PASTE_TEXT` | 5 | 2 | `0x00000502` | main | empty |
 | `STATE_GET` | 6 | 1 | `0x00000601` | main | device-specific blob |
 | `STATE_SET` | 6 | 2 | `0x00000602` | main | empty (or device ack) |
 | `VIDEO_TEXT` | 7 | 1 | `0x00000701` | main | 20-byte header + linearized chars |
@@ -556,6 +557,24 @@ Server fills `event.key.key` via `SDL_GetKeyFromScancode(scancode, mod, false)`,
 - `SDL_PushEvent` failure → `E_INTERNAL`.
 
 Clients must set `mod` to the desired modifier mask **on that event**. Control-Reset on macOS/Windows: Control key-down, then F12 key-down with `mod` including `SDL_KMOD_CTRL` (handlers check `event.key.mod` on the Reset key itself).
+
+#### `PASTE_TEXT` — main 5, sub 2 (`0x00000502`)
+
+Fill the II/IIe keyboard or IIgs KeyGloo paste buffer. Handled on the **main thread**. Same injection path as Edit → Paste Text / Shift+Insert: IIe meters on `$C000` read when the strobe is clear; IIgs injects one ASCII byte per frame. Keyboard modules convert `'\n'` to `'\r'`. Reply is immediate after the buffer is replaced; drain continues asynchronously while the machine runs.
+
+Does **not** synthesize SDL key events (use `KEYEVENT` for Control-Reset, Open-Apple, and other non-pasteable keys).
+
+**Request payload:** raw 8-bit key bytes. Frame `length` is the text length (no extra length prefix). Empty payload clears/cancels an in-progress paste. Replaces, does not append.
+
+**Success reply** (same `type=PASTE_TEXT`, echoed `seq`): empty payload.
+
+**Bounds:**
+
+- Handshake required; length 0..`max_payload` (1 MiB; already enforced at frame parse).
+- No keyboard or KeyGloo module → `E_INTERNAL` (`no keyboard`).
+- Allowed while running or paused (paused: buffer fills; drain waits until the guest polls / frames resume).
+
+UTF-8 multibyte is out of scope (same as UI paste). Typically ASCII.
 
 ### Devices (`main == 6`)
 

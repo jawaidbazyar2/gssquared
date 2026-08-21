@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Type text / BASIC into a running GSSquared via the debug KEYEVENT API.
+"""Type or paste text / BASIC into a running GSSquared via the debug protocol.
 
 Meant to be called as a tool from scripts or agents.
 
@@ -10,8 +10,9 @@ Usage:
   PYTHONPATH=clients/python/src python3 clients/python/examples/type_to_emu.py /tmp/gs2.sock \\
     --text 'PRINT "HI"'
 
-  # Type a multi-line program from stdin
-  PYTHONPATH=clients/python/src python3 clients/python/examples/type_to_emu.py /tmp/gs2.sock <<'EOF'
+  # Paste a multi-line program (guest paces the buffer; no per-key delay)
+  PYTHONPATH=clients/python/src python3 clients/python/examples/type_to_emu.py /tmp/gs2.sock \\
+    --paste <<'EOF'
 10 GR
 20 END
 RUN
@@ -48,6 +49,11 @@ def main() -> int:
     p.add_argument("--wait", type=float, default=0.0, help="Seconds to sleep after connect/reset")
     p.add_argument("--delay", type=float, default=0.1, help="Delay between keystrokes (seconds)")
     p.add_argument(
+        "--paste",
+        action="store_true",
+        help="Send via PASTE_TEXT (guest-paced buffer) instead of KEYEVENT type_text",
+    )
+    p.add_argument(
         "--no-return",
         action="store_true",
         help="Do not append Return after each --text argument",
@@ -78,8 +84,12 @@ def main() -> int:
             print(f"waiting {args.wait}s...", flush=True)
             time.sleep(args.wait)
         if body:
-            print(f"typing {len(body)} chars...", flush=True)
-            client.type_text(body, delay_s=args.delay)
+            if args.paste:
+                print(f"pasting {len(body)} chars...", flush=True)
+                client.paste_text(body)
+            else:
+                print(f"typing {len(body)} chars...", flush=True)
+                client.type_text(body, delay_s=args.delay)
         print("done", flush=True)
     return 0
 

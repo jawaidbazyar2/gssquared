@@ -18,7 +18,7 @@ struct cpu_state;
 
 /**
  * External debug protocol driver (AF_UNIX).
- * HELLO / PING / KEYEVENT on the protocol thread; main-thread cmds via bridge.
+ * HELLO / PING / KEYEVENT on the protocol thread; PASTE_TEXT and other cmds via main-thread bridge.
  * Unsolicited EVENT frames are enqueued from the main thread and flushed on the protocol thread.
  * See Docs/DebugProtocol.md.
  */

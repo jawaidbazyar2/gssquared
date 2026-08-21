@@ -40,6 +40,7 @@ from .types import (
     GET_TRACE,
     HELLO,
     KEYEVENT,
+    PASTE_TEXT,
     PAUSE,
     PING,
     PROTOCOL_VERSION,
@@ -635,6 +636,24 @@ class Client:
                 pause = delay_s * 3
             if pause > 0:
                 time.sleep(pause)
+
+    def paste_text(self, text: str) -> None:
+        """Fill the emulator paste buffer (IIe $C000 / IIgs KeyGloo). One round-trip.
+
+        Replaces any in-progress paste. Empty string cancels. Injection is paced by
+        the guest; this call does not wait for drain. Prefer over type_text for long
+        strings. Use type_text / key_event for Control-Reset and other non-pasteable keys.
+        """
+        if not self._handshaked:
+            raise RuntimeError("hello() required before paste_text()")
+        normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+        try:
+            payload = normalized.encode("latin-1")
+        except UnicodeEncodeError as exc:
+            raise ValueError("paste_text only supports latin-1 / 8-bit characters") from exc
+        reply = self.request(PASTE_TEXT, payload)
+        if reply:
+            raise ProtocolError(0, f"PASTE_TEXT reply not empty ({len(reply)} bytes)")
 
     def request(
         self,

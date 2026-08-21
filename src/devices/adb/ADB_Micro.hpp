@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 #include <cstdio>
+#include <string>
 #include <vector>
 
 #include "device_reset_id.hpp"
@@ -161,6 +162,7 @@ class KeyGloo
         uint8_t error_byte = 0;
 
         key_code_t key_latch;
+        std::string paste_buffer;
 
         uint8_t last_key_down = 0;
 
@@ -285,6 +287,10 @@ class KeyGloo
             ram[0x51] = 0;
         }
 
+        void start_paste(std::string text) {
+            paste_buffer = std::move(text);
+        }
+
         void reset() {
             vars.inpt = 0;
             vars.outpt = 0;
@@ -306,6 +312,7 @@ class KeyGloo
             data_register_full = false;
             kb_register_full = false;
             mouse_data_full = false;
+            paste_buffer.clear();
             update_interrupt_status();
         }
 
@@ -329,6 +336,7 @@ class KeyGloo
 
             keysdown = 0;
             data_register_full = false;
+            paste_buffer.clear();
 
         }
 
@@ -337,6 +345,7 @@ class KeyGloo
             vars.outpt = 0;
             key_latch = {0,0};
             keysdown = 0;
+            paste_buffer.clear();
         }
 
         void flush_key_queue() {
@@ -1056,6 +1065,14 @@ class KeyGloo
                 if (reset_counter == 0) {
                     reset_control->assert_reset(RST_ID_KEYMICRO, false);
                 }
+            }
+            if (!paste_buffer.empty() && !(key_latch.keycode & 0x80)) {
+                uint8_t key = static_cast<uint8_t>(paste_buffer[0]);
+                if (key == '\n') {
+                    key = '\r';
+                }
+                store_key_to_buffer(key, vars.currmod.value);
+                paste_buffer.erase(0, 1);
             }
         }
 

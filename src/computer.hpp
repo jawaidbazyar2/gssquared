@@ -230,6 +230,9 @@ struct computer_t {
     void *get_module_state( module_id_t module_id);
     void set_module_state( module_id_t module_id, void *state);
 
+    /** Fill II/IIe or IIgs paste buffer. Returns false if neither keyboard module is present. */
+    bool start_keyboard_paste(std::string text);
+
     void send_clock_mode_message(clock_mode_t clock_mode);
     void frame_status_update();
 

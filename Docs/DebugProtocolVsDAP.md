@@ -63,7 +63,7 @@ The adapter typically wraps GDB/LLDB/a runtime and presents threads, frames, var
 | Variables / evaluate | None (no expr language in GS2) | `scopes`, `variables`, `evaluate`, `setVariable` |
 | Symbols / modules / sources | Host-side only | `modules`, `loadedSources`, `source` |
 | Device / peripheral state | `STATE_GET` / `STATE_SET` (Ensoniq, Disk II, Mouse) | Not in DAP core |
-| Input injection | `KEYEVENT` (SDL) | Not in DAP core |
+| Input injection | `KEYEVENT` (SDL); `PASTE_TEXT` (keyboard paste buffer) | Not in DAP core |
 | Machine reset | `RESET` warm/cold | `restart` (session-level, optional) |
 
 ---

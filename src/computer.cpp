@@ -19,6 +19,7 @@
 #include "gs2.hpp"
 #include "platform-specific/menu.h"
 #include "devices/keyboard/keyboard.hpp"
+#include "devices/adb/keygloo.hpp"
 #include "devices/game/gamecontroller.hpp"
 #include "util/InterruptController.hpp"
 #include "util/ResetController.hpp"
@@ -122,6 +123,7 @@ computer_t::computer_t(NClockII *clock) {
         if (key == SDLK_F9) { 
             return true; // eat the keydown
         } else if (key == SDLK_INSERT) {
+            if (event.key.mod & SDL_KMOD_SHIFT) return false; // Shift+Insert is paste (keyboard / KeyGloo)
             if (event.key.repeat == 1) return false; // ignore repeats otherwise it will forget the original speed
             old_speed = this->clock->get_clock_mode();
             if (old_speed == CLOCK_FREE_RUN) {
@@ -145,6 +147,7 @@ computer_t::computer_t(NClockII *clock) {
             send_clock_mode_message(speed_new);
             return true; 
         } else if (key == SDLK_INSERT) {
+            if (event.key.mod & SDL_KMOD_SHIFT) return false; // Shift+Insert is paste (keyboard / KeyGloo)
             this->clock->set_clock_mode(old_speed);
             if (old_speed == CLOCK_FREE_RUN) {
                 this->clock->set_cpu_per_14m(ludicrous_saved_n);
@@ -220,13 +223,10 @@ computer_t::computer_t(NClockII *clock) {
                 toggle_mount_drivers();
                 return true;
             case MENU_EDIT_PASTE_TEXT: {
-                keyboard_state_t *kb = (keyboard_state_t *)get_module_state(MODULE_KEYBOARD);
-                if (kb) {
-                    char *text = SDL_GetClipboardText();
-                    if (text) {
-                        kb->paste_buffer = std::string(text);
-                        SDL_free(text);
-                    }
+                char *text = SDL_GetClipboardText();
+                if (text) {
+                    start_keyboard_paste(std::string(text));
+                    SDL_free(text);
                 }
                 return true;
             }
@@ -375,6 +375,20 @@ void *computer_t::get_module_state(module_id_t module_id) {
 
 void computer_t::set_module_state(module_id_t module_id, void *state) {
     module_store[module_id] = state;
+}
+
+bool computer_t::start_keyboard_paste(std::string text) {
+    auto *kb = static_cast<keyboard_state_t *>(module_store[MODULE_KEYBOARD]);
+    if (kb) {
+        kb->paste_buffer = std::move(text);
+        return true;
+    }
+    auto *kg_state = static_cast<keygloo_state_t *>(module_store[MODULE_KEYGLOO]);
+    if (kg_state) {
+        keygloo_start_paste(kg_state, text);
+        return true;
+    }
+    return false;
 }
 
 // TODO: should live inside a reconstituted clock class.

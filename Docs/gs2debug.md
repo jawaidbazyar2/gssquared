@@ -67,7 +67,8 @@ Import path: `clients/python/src` on `PYTHONPATH`, or `pip install -e clients/py
 | `key_event(down, scancode, mod=0)` | One SDL key down/up |
 | `key_down` / `key_up` | Same, for modifiers |
 | `tap_key(scancode, mod=0, hold_s=0.02)` | Down, optional hold, then up |
-| `type_text(text, delay_s=0.05, hold_s=0.02)` | ASCII US layout; `\n` → Return; `hold_s` between down/up; `delay_s` after each char (**3×** after Return) |
+| `type_text(text, delay_s=0.05, hold_s=0.02)` | ASCII US layout KEYEVENT taps; `\n` → Return; `hold_s` between down/up; `delay_s` after each char (**3×** after Return) |
+| `paste_text(text)` | Fill IIe/IIgs paste buffer (`PASTE_TEXT`); one round-trip; guest paces drain. Prefer for long strings |
 | `request(type, payload)` | Raw framed call; raises `ProtocolError` on ERROR |
 | `on_event(handler)` | Optional `handler(event_id, seq, data)` for EVENT frames |
 
@@ -186,15 +187,18 @@ c.key_up(SCANCODE_LCTRL, 0)
 
 ### Type BASIC / arbitrary text
 
+Prefer `paste_text` for programs and long strings (one round-trip; the guest meters the buffer). Use `type_text` for Control-Reset, Open-Apple, and other keys that are not pasteable ASCII.
+
 ```python
-c.type_text('10 PRINT "HI"\nRUN\n', delay_s=0.1)  # prefer ≥0.1 so line numbers are not dropped
+c.paste_text('10 PRINT "HI"\nRUN\n')
+# c.type_text('10 PRINT "HI"\nRUN\n', delay_s=0.1)  # KEYEVENT taps; prefer ≥0.1 so line numbers are not dropped
 ```
 
-Or shell helper (stdin / `--text` / `--file`; does **not** embed a program):
+Or shell helper (stdin / `--text` / `--file`; does **not** embed a program). `--paste` uses `PASTE_TEXT`; default is KEYEVENT:
 
 ```bash
 PYTHONPATH=clients/python/src python3 clients/python/examples/type_to_emu.py /tmp/gs2.sock \
-  --reset --wait 2 --delay 0.1 <<'EOF'
+  --paste --reset --wait 2 <<'EOF'
 NEW
 10 GR
 20 END
@@ -216,7 +220,7 @@ IIe-only soft-switch **status** reads (`$C01A` TEXT, `$C01D` HIRES, …) are inv
 ## Gotchas
 
 1. **Separate terminal** for the emulator — Ctrl-C in the same shell/process group can kill GSSquared. Prefer `c.quit()` (or start with `--no-quit-confirm` if the harness must SIGTERM).
-2. **Typing too fast drops keys** (e.g. line `60` becomes line `0`). Use `delay_s≥0.1` and rely on `hold_s`; Return already gets a longer pause.
+2. **Typing too fast drops keys** (e.g. line `60` becomes line `0`). Prefer `paste_text` for long strings. If you must use `type_text`, use `delay_s≥0.1` and rely on `hold_s`; Return already gets a longer pause.
 3. **Shifted glyphs** (`"`, uppercase, …): library holds Shift for that tap; do not put Control/Alt in `type_text` — use `key_down` / `key_up`.
 4. **MAIN / MAIN_RAW / MEGAII / MEGAII_RAW** are implemented; ENSONIQ / ADBMICRO are not.
 5. **IIgs MAIN** is the FPI/banked CPU MMU; **MEGAII** is `computer->mmu`. `*_RAW` indexes `get_memory_base()` (buffer offsets, not `$E0xxxx`). Non-GS + MEGAII/_RAW → ERROR `MEGAII only on Apple IIgs`.
@@ -233,7 +237,7 @@ IIe-only soft-switch **status** reads (`$C01A` TEXT, `$C01D` HIRES, …) are inv
 | `examples/write_text40.py` | Random write + readback `+/-` (II/IIe) |
 | `examples/write_text40_iigs.py` | Same for `$E0/0400` |
 | `examples/type_basic_iie.py` | Boot wait, protocol RESET, demo Applesoft |
-| `examples/type_to_emu.py` | Generic typer tool for agents |
+| `examples/type_to_emu.py` | Generic typer tool for agents (`--paste` for PASTE_TEXT) |
 | `examples/test_breakpoints.py` | PAUSE/CONTINUE + EXEC/IO breakpoints (IIe Enhanced `-p 3` and IIgs `-p 5`) |
 | `examples/test_regs_findmem.py` | `GET_REGS` / `SET_REGS` / `FINDMEM` smoke (IIe Enhanced `-p 3`) |
 | `examples/test_video_text.py` | `VIDEO_TEXT` CURRENT + TEXT40/TEXT80 (IIe Enhanced `-p 3`) |

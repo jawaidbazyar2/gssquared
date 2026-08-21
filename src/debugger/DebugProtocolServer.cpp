@@ -65,6 +65,7 @@ constexpr uint32_t kTypeBpClearAll = 0x00000403;
 constexpr uint32_t kTypeBpEnable  = 0x00000404;
 constexpr uint32_t kTypeBpList    = 0x00000405;
 constexpr uint32_t kTypeKeyEvent  = 0x00000501;
+constexpr uint32_t kTypePasteText = 0x00000502;
 constexpr uint32_t kTypeVideoText = 0x00000701;
 constexpr uint32_t kTypeMount     = 0x00000801;
 constexpr uint32_t kTypeUnmount   = 0x00000802;
@@ -959,6 +960,14 @@ void DebugProtocolServer::process_main_thread(computer_t *computer) {
         if (bridge_error_ == 0) {
             bridge_reply_.resize(4);
             std::memcpy(bridge_reply_.data(), &status, 4);
+        }
+    } else if (bridge_type_ == kTypePasteText) {
+        if (!computer) {
+            bridge_error_ = kEInternal;
+        } else if (!computer->start_keyboard_paste(
+                       std::string(bridge_request_.begin(), bridge_request_.end()))) {
+            bridge_error_ = kEInternal;
+            bridge_error_text_ = "no keyboard";
         }
     } else {
         bridge_error_ = kEInternal;
@@ -2062,6 +2071,22 @@ next_request:
                 REJECT(client_fd, hdr.seq, kEInternal, "SDL_PushEvent failed");
             }
             REPLY_OK(kTypeKeyEvent, hdr.seq, nullptr, 0);
+            break;
+        }
+        case kTypePasteText: {
+            std::vector<uint8_t> reply;
+            uint32_t err = 0;
+            if (!submit_and_wait(kTypePasteText, hdr.seq, 0, 0, 0, payload, reply, err,
+                                 kMainThreadTimeoutMs)) {
+                return;
+            }
+            if (err != 0) {
+                REJECT(client_fd, hdr.seq, err, bridge_error_message(err));
+            }
+            if (!reply.empty()) {
+                REJECT(client_fd, hdr.seq, kEInternal, "bad paste_text reply");
+            }
+            REPLY_OK(kTypePasteText, hdr.seq, nullptr, 0);
             break;
         }
         default: {

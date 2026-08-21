@@ -26,10 +26,10 @@ You do not need deep Python experience to use the library; agents and the packag
 | Layer | Owns |
 |-------|------|
 | [DebugProtocol.md](DebugProtocol.md) | Frame bytes, type IDs, payload layouts |
-| Client library (`gs2debug`) | Connect, framing read/write, seq allocation, HELLO, request/reply matching, ERROR → exception, EVENT demux, thin helpers (`read_mem`, `reset`, `bp_set`, `wait_stopped`, `type_text`, `quit`, …) |
+| Client library (`gs2debug`) | Connect, framing read/write, seq allocation, HELLO, request/reply matching, ERROR → exception, EVENT demux, thin helpers (`read_mem`, `reset`, `bp_set`, `wait_stopped`, `type_text`, `paste_text`, `quit`, …) |
 | Agent / script | Workflows (reset → type → peek → …), timeouts, retries, policy |
 
-The emulator owns machine state. The client peeks/pokes memory via READMEM / WRITEMEM, resets via RESET, run-controls via PAUSE / CONTINUE, sets breakpoints via BP_*, injects keys via KEYEVENT, and force-exits via QUIT.
+The emulator owns machine state. The client peeks/pokes memory via READMEM / WRITEMEM, resets via RESET, run-controls via PAUSE / CONTINUE, sets breakpoints via BP_*, injects keys via KEYEVENT, fills the paste buffer via PASTE_TEXT, and force-exits via QUIT.
 
 ## Package layout
 
@@ -40,7 +40,7 @@ clients/python/
   src/gs2debug/
     __init__.py
     types.py              # HELLO / PING / QUIT / GET_STATUS / RESET / PAUSE / CONTINUE /
-                          # READMEM / WRITEMEM / BP_* / KEYEVENT / EVT_* / STOP_* / MEM_* constants
+                          # READMEM / WRITEMEM / BP_* / KEYEVENT / PASTE_TEXT / EVT_* / STOP_* / MEM_* constants
     keys.py               # SDL scancodes / keymods + ASCII→key map for type_text
     frame.py              # pack / unpack 12-byte header + payload
     client.py             # Client, HelloInfo, StatusInfo, BpInfo, StoppedEvent, TraceWindow
@@ -208,6 +208,10 @@ class Client:
         """Type printable ASCII (US layout); newline → Return.
         hold_s between down/up; delay_s after each char (3× after Return)."""
 
+    def paste_text(self, text: str) -> None:
+        """Fill the emulator paste buffer (PASTE_TEXT). One round-trip; guest paces drain.
+        Replaces any in-progress paste. Empty string cancels. Prefer over type_text for long strings."""
+
     def request(
         self,
         type: int,
@@ -274,7 +278,7 @@ Implementers and agents must handle these; do not reinvent per script:
 **Once the debug socket exists:**
 
 1. Start GSSquared with `--debug PATH` (or `-D PATH`), e.g. `-p 3` for IIe Enhanced / `-p 5` for IIgs.
-2. `Client().connect(path)` → `hello()` → `get_status()` (check `platform_id`) → `reset()` / `read_mem` / `type_text` / `bp_*` / `wait_stopped` → `quit()`.
+2. `Client().connect(path)` → `hello()` → `get_status()` (check `platform_id`) → `reset()` / `read_mem` / `paste_text` / `type_text` / `bp_*` / `wait_stopped` → `quit()`.
 3. Assert caps and that `platform_id` matches the launched `-p N`.
 4. Prefer `c.quit()` over `kill` (see [AGENTS.md](../AGENTS.md) debug-protocol smoke notes).
 

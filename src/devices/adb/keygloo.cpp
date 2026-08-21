@@ -89,6 +89,12 @@ bool keygloo_process_event(keygloo_state_t *kb_state, const SDL_Event &event) {
     return true;
 }
 
+void keygloo_start_paste(keygloo_state_t *kb_state, const std::string &text) {
+    if (kb_state && kb_state->kg) {
+        kb_state->kg->start_paste(text);
+    }
+}
+
 DebugFormatter *debug_keygloo(keygloo_state_t *kb_state) {
     DebugFormatter *df = new DebugFormatter();
     kb_state->kg->debug_display(df);
@@ -112,6 +118,14 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
     kg->set_host_context(kb_state);
 
     computer->dispatch->registerHandler(SDL_EVENT_KEY_DOWN, [kb_state](const SDL_Event &event) {
+        if (event.key.key == SDLK_INSERT && event.key.mod & SDL_KMOD_SHIFT) {
+            char *text = SDL_GetClipboardText();
+            if (text) {
+                keygloo_start_paste(kb_state, std::string(text));
+                SDL_free(text);
+            }
+            return true;
+        }
         return keygloo_process_event(kb_state, event);
     });
     computer->dispatch->registerHandler(SDL_EVENT_KEY_UP, [kb_state](const SDL_Event &event) {
@@ -141,6 +155,7 @@ void init_slot_keygloo(computer_t *computer, SlotType_t slot) {
 
     computer->device_frame_dispatcher->registerHandler([kb_state]() {
         kb_state->kg->frame_handler();
+        keygloo_update_interrupt_status(kb_state, kb_state->kg);
         return true;
     });
     computer->register_debug_display_handler(
