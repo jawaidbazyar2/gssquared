@@ -597,6 +597,9 @@ target_link_libraries(gs2_devices_rtc_pram PUBLIC gs2_paths)
 
 target_link_libraries(gs2_ui ${GS2_SDL3_IMAGE} ${GS2_SDL3_TTF} gs2_systemconfig gs2_devices_hostfst)
 target_link_libraries(gs2_debugger gs2_trace gs2_util gs2_displaypp ${GS2_SDL3} ${GS2_SDL3_TTF})
+if(WIN32)
+    target_link_libraries(gs2_debugger ws2_32)
+endif()
 # Connections.cpp constructs SerialDevice subclasses; link after gs2_util for GNU ld.
 target_link_libraries(gs2_util PUBLIC gs2_serial_devices ${GS2_SDL3_TTF})
 target_link_libraries(gs2_computer ${GS2_SDL3_TTF})
