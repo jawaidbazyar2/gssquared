@@ -16,6 +16,8 @@
 struct computer_t;
 struct cpu_state;
 
+using DebugSocketHandle = std::intptr_t;
+
 /**
  * External debug protocol driver (AF_UNIX).
  * HELLO / PING / KEYEVENT on the protocol thread; PASTE_TEXT and other cmds via main-thread bridge.
@@ -50,15 +52,16 @@ public:
 private:
     static int SDLCALL thread_entry(void *userdata);
     void thread_main();
-    void serve_client(int client_fd);
-    bool flush_events(int fd);
-    bool read_full(int fd, void *buf, size_t n);
-    bool write_full(int fd, const void *buf, size_t n);
-    bool send_frame(int fd, uint32_t type, uint32_t seq, const void *payload, uint32_t length);
-    bool send_error(int fd, uint32_t seq, uint32_t code, const char *message);
+    void serve_client(DebugSocketHandle client_fd);
+    bool flush_events(DebugSocketHandle fd);
+    bool read_full(DebugSocketHandle fd, void *buf, size_t n);
+    bool write_full(DebugSocketHandle fd, const void *buf, size_t n);
+    bool send_frame(DebugSocketHandle fd, uint32_t type, uint32_t seq,
+                    const void *payload, uint32_t length);
+    bool send_error(DebugSocketHandle fd, uint32_t seq, uint32_t code, const char *message);
 
     /** Send a protocol error. Returns true if the connection is dead (caller should return). */
-    bool reject(int fd, uint32_t seq, uint32_t code, const char *message);
+    bool reject(DebugSocketHandle fd, uint32_t seq, uint32_t code, const char *message);
 
     /** Map a bridge error code to a client-facing message. domain is for READMEM/WRITEMEM. */
     const char *bridge_error_message(uint32_t err, uint32_t domain = 0);
@@ -83,9 +86,10 @@ private:
 
     std::string socket_path_;
     std::atomic<bool> stop_{false};
-    std::atomic<int> listen_fd_{-1};
-    std::atomic<int> client_fd_{-1};
+    std::atomic<DebugSocketHandle> listen_fd_{-1};
+    std::atomic<DebugSocketHandle> client_fd_{-1};
     SDL_Thread *thread_{nullptr};
+    bool winsock_started_{false};
 
     // Single-flight main-thread bridge
     std::mutex bridge_mu_;
