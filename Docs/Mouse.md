@@ -31,3 +31,5 @@ This provides seamless movement of the mouse cursor in and out of the IIgs deskt
 You will still want to use Mouse Capture mode when using many games, or 8-bit programs, that don't use the Event Manager to read the mouse.
 
 ROM 01 and ROM 03 IIgs platforms both use this tracking path.
+
+Host X is mapped onto the guest’s 320- or 640-pixel SHR coordinate space using line 0’s Scan Control Byte (bit 7). That byte lives at CPU `$E1/9D00`; when `$C029` SHR/linearize is on it is stored at the interleaved Mega II physical address, not at raw Mega II `$E1/9D00`. Reading the untranslated location samples a pixel and can make a 640 desktop track as 320 (host cursor escapes at the right edge while the IIgs pointer is only halfway across).

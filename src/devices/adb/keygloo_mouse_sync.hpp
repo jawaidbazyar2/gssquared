@@ -11,6 +11,9 @@
 #include "mmus/mmu_ii.hpp"
 #include "debug.hpp"
 
+#include "mmus/iigs_aux_linear.hpp"
+#include "mmus/mmu_iigs.hpp"
+
 #include "devices/adb/keygloo_state.hpp"
 #include "devices/adb/ADB_Micro.hpp"
 
@@ -55,7 +58,7 @@ static constexpr uint32_t EM_MOUSE_X_LO_BANK = 0x10190;
 static constexpr uint32_t EM_MOUSE_X_HI_BANK = 0x10192;
 static constexpr uint32_t EM_MOUSE_Y_LO_BANK = 0x10191;
 static constexpr uint32_t EM_MOUSE_Y_HI_BANK = 0x10193;
-static constexpr uint32_t SHR_SCB_LINE0 = 0x19D00;
+static constexpr uint16_t SHR_SCB_LINE0_CPU = 0x9D00;
 static constexpr int MOTION_CHUNK_MAX = 63;
 
 inline int clamp_int(int value, int lo, int hi) {
@@ -66,12 +69,27 @@ inline uint8_t read_megaii_linear(MMU_II *megaii, uint32_t addr) {
     return megaii->get_memory_base()[addr & 0x1FFFF];
 }
 
-inline bool shr_320_mode(MMU_II *megaii) {
-    if (!megaii) {
-        return false;
+inline uint8_t read_shr_scb_line0(computer_t *computer) {
+    if (!computer || !computer->mmu) {
+        return 0x80; // treat as 640 so we do not half-scale
     }
-    // KEGS adb_update_mouse(): line 0 SCB bit 7 clear => 320-column SHR desktop.
-    return (read_megaii_linear(megaii, SHR_SCB_LINE0) & 0x80) == 0;
+    // CPU $E1/9D00. With C029 SHR/linearize the Mega II aux window is
+    // interleaved ($2000/$6000); raw 0x19D00 is a pixel byte, not the SCB
+    // (#170). Same mapping as VideoScannerIIgs / generate_shr.
+    uint16_t phys = SHR_SCB_LINE0_CPU;
+    if (computer->cpu && computer->cpu->mmu) {
+        if (auto *gs = dynamic_cast<MMU_IIgs *>(computer->cpu->mmu)) {
+            if (gs->is_aux_linear()) {
+                phys = iigs_aux_linear_to_phys(SHR_SCB_LINE0_CPU);
+            }
+        }
+    }
+    return read_megaii_linear(computer->mmu, 0x10000u | phys);
+}
+
+inline bool shr_320_mode(computer_t *computer) {
+    // Line 0 SCB bit 7 clear => 320-column SHR (KEGS adb_update_mouse).
+    return (read_shr_scb_line0(computer) & 0x80) == 0;
 }
 
 inline void read_em_mouse_pos(MMU_II *mmu, int &x, int &y, bool rom03) {
@@ -155,7 +173,7 @@ inline void host_to_a2(computer_t *computer, float render_x, float render_y, int
     py = clamp_int(py, 0, 399);
     ay = py >> 1;
     ax = px;
-    if (computer && computer->mmu && shr_320_mode(computer->mmu)) {
+    if (shr_320_mode(computer)) {
         ax = ax >> 1;
     }
 }
@@ -442,8 +460,10 @@ inline void KeyGloo::handle_em_mouse_motion(float wx, float wy) {
         // (step_em_closed_loop) reads the guest's live EM position and injects.
         pending_target = true;
         if (keygloo_mouse_sync::sync_trace_enabled()) {
-            printf("KeyGloo sync: closed-loop target (%d,%d) from SDL (%.0f,%.0f)\n",
-                target_x, target_y, wx, wy);
+            printf("KeyGloo sync: closed-loop target (%d,%d) from SDL (%.0f,%.0f) scb=%02X %s\n",
+                target_x, target_y, wx, wy,
+                keygloo_mouse_sync::read_shr_scb_line0(host_ctx->computer),
+                keygloo_mouse_sync::shr_320_mode(host_ctx->computer) ? "320" : "640");
         }
         return;
     }
