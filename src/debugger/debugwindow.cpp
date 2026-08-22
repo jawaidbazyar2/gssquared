@@ -295,8 +295,9 @@ void debug_window_t::execute_command(const std::string& command) {
         std::cout << line << std::endl;
         mon_display_buffer.push_back(line);
     }
-    // Stick to live end when already there; otherwise keep scroll offset (clamped on sync).
-    if (mon_view_position == 0 && mon_scroll_) {
+    // Always jump to newest output so a command typed while scrolled back is visible.
+    mon_view_position = 0;
+    if (mon_scroll_) {
         mon_scroll_->set_position(0);
     }
     mon_textinput->clear_edit();
