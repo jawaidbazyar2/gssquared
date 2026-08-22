@@ -1,5 +1,6 @@
 #include "debugger/DebugProtocolServer.hpp"
 
+#include <algorithm>
 #include <cerrno>
 #include <chrono>
 #include <cstdio>
@@ -7,6 +8,24 @@
 #include <deque>
 #include <limits>
 #include <vector>
+
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#include <afunix.h>
+#define GS2_DEBUG_PROTO_UNIX 1
+#elif !defined(__EMSCRIPTEN__)
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#define GS2_DEBUG_PROTO_UNIX 1
+#else
+#define GS2_DEBUG_PROTO_UNIX 0
+#endif
 
 #include <SDL3/SDL.h>
 
@@ -22,17 +41,6 @@
 #include "PlatformIDs.hpp"
 #include "util/mount.hpp"
 #include "util/StorageDevice.hpp"
-
-#if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
-#include <fcntl.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-#define GS2_DEBUG_PROTO_UNIX 1
-#else
-#define GS2_DEBUG_PROTO_UNIX 0
-#endif
 
 namespace {
 
@@ -135,6 +143,47 @@ constexpr uint32_t kEBusy          = 5;
 constexpr uint32_t kEInternal      = 6;
 
 constexpr int kMainThreadTimeoutMs = 5000;
+constexpr DebugSocketHandle kInvalidSocket = -1;
+
+#if defined(_WIN32)
+SOCKET native_socket(DebugSocketHandle fd) {
+    return static_cast<SOCKET>(fd);
+}
+
+DebugSocketHandle debug_socket(SOCKET fd) {
+    return fd == INVALID_SOCKET ? kInvalidSocket : static_cast<DebugSocketHandle>(fd);
+}
+
+void close_socket(DebugSocketHandle fd) {
+    if (fd != kInvalidSocket) {
+        ::closesocket(native_socket(fd));
+    }
+}
+
+void shutdown_socket(DebugSocketHandle fd) {
+    if (fd != kInvalidSocket) {
+        ::shutdown(native_socket(fd), SD_BOTH);
+    }
+}
+#else
+void close_socket(DebugSocketHandle fd) {
+    if (fd != kInvalidSocket) {
+        ::close(static_cast<int>(fd));
+    }
+}
+
+void shutdown_socket(DebugSocketHandle fd) {
+    if (fd != kInvalidSocket) {
+        ::shutdown(static_cast<int>(fd), SHUT_RDWR);
+    }
+}
+#endif
+
+void remove_socket_path(const std::string &path) {
+    if (!path.empty()) {
+        std::remove(path.c_str());
+    }
+}
 
 #pragma pack(push, 1)
 struct FrameHeader {
@@ -328,34 +377,78 @@ bool DebugProtocolServer::start() {
     }
 
     stop_ = false;
-    int lfd = ::socket(AF_UNIX, SOCK_STREAM, 0);
-    if (lfd < 0) {
+#if defined(_WIN32)
+    WSADATA wsa_data{};
+    const int startup_error = ::WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    if (startup_error != 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                     "DebugProtocolServer: WSAStartup(): %d", startup_error);
+        return false;
+    }
+    winsock_started_ = true;
+    const DebugSocketHandle lfd = debug_socket(::socket(AF_UNIX, SOCK_STREAM, 0));
+#else
+    const DebugSocketHandle lfd = ::socket(AF_UNIX, SOCK_STREAM, 0);
+#endif
+    if (lfd == kInvalidSocket) {
+#if defined(_WIN32)
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                     "DebugProtocolServer: socket(): %d", ::WSAGetLastError());
+        ::WSACleanup();
+        winsock_started_ = false;
+#else
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DebugProtocolServer: socket(): %s", strerror(errno));
+#endif
         return false;
     }
 
-    ::unlink(socket_path_.c_str());
+    remove_socket_path(socket_path_);
 
     sockaddr_un addr{};
     addr.sun_family = AF_UNIX;
     if (socket_path_.size() >= sizeof(addr.sun_path)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DebugProtocolServer: path too long: %s", socket_path_.c_str());
-        ::close(lfd);
+        close_socket(lfd);
+#if defined(_WIN32)
+        ::WSACleanup();
+        winsock_started_ = false;
+#endif
         return false;
     }
     std::snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", socket_path_.c_str());
 
-    if (::bind(lfd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
+#if defined(_WIN32)
+    if (::bind(native_socket(lfd), reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) == SOCKET_ERROR) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DebugProtocolServer: bind(%s): %d",
+                     socket_path_.c_str(), ::WSAGetLastError());
+#else
+    if (::bind(static_cast<int>(lfd), reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DebugProtocolServer: bind(%s): %s",
                      socket_path_.c_str(), strerror(errno));
-        ::close(lfd);
+#endif
+        close_socket(lfd);
+        remove_socket_path(socket_path_);
+#if defined(_WIN32)
+        ::WSACleanup();
+        winsock_started_ = false;
+#endif
         return false;
     }
 
-    if (::listen(lfd, 1) < 0) {
+#if defined(_WIN32)
+    if (::listen(native_socket(lfd), 1) == SOCKET_ERROR) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                     "DebugProtocolServer: listen(): %d", ::WSAGetLastError());
+#else
+    if (::listen(static_cast<int>(lfd), 1) < 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DebugProtocolServer: listen(): %s", strerror(errno));
-        ::close(lfd);
-        ::unlink(socket_path_.c_str());
+#endif
+        close_socket(lfd);
+        remove_socket_path(socket_path_);
+#if defined(_WIN32)
+        ::WSACleanup();
+        winsock_started_ = false;
+#endif
         return false;
     }
 
@@ -364,9 +457,13 @@ bool DebugProtocolServer::start() {
     if (!thread_) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "DebugProtocolServer: SDL_CreateThread failed: %s",
                      SDL_GetError());
-        listen_fd_ = -1;
-        ::close(lfd);
-        ::unlink(socket_path_.c_str());
+        listen_fd_ = kInvalidSocket;
+        close_socket(lfd);
+        remove_socket_path(socket_path_);
+#if defined(_WIN32)
+        ::WSACleanup();
+        winsock_started_ = false;
+#endif
         return false;
     }
 
@@ -382,23 +479,23 @@ void DebugProtocolServer::stop() {
         wake_bridge_locked();
     }
 #if GS2_DEBUG_PROTO_UNIX
-    int cfd = client_fd_.exchange(-1);
-    if (cfd >= 0) {
-        ::shutdown(cfd, SHUT_RDWR);
-    }
-    int lfd = listen_fd_.exchange(-1);
-    if (lfd >= 0) {
-        ::shutdown(lfd, SHUT_RDWR);
-        ::close(lfd);
-    }
+    const DebugSocketHandle cfd = client_fd_.exchange(kInvalidSocket);
+    shutdown_socket(cfd);
+    const DebugSocketHandle lfd = listen_fd_.exchange(kInvalidSocket);
+    shutdown_socket(lfd);
+    close_socket(lfd);
 #endif
     if (thread_) {
         SDL_WaitThread(thread_, nullptr);
         thread_ = nullptr;
     }
 #if GS2_DEBUG_PROTO_UNIX
-    if (!socket_path_.empty()) {
-        ::unlink(socket_path_.c_str());
+    remove_socket_path(socket_path_);
+#endif
+#if defined(_WIN32)
+    if (winsock_started_) {
+        ::WSACleanup();
+        winsock_started_ = false;
     }
 #endif
 }
@@ -1146,7 +1243,7 @@ void DebugProtocolServer::emit_run_state(uint32_t new_mode, uint32_t prev_mode) 
     enqueue_event(kEvtRunState, data);
 }
 
-bool DebugProtocolServer::flush_events(int fd) {
+bool DebugProtocolServer::flush_events(DebugSocketHandle fd) {
 #if GS2_DEBUG_PROTO_UNIX
     std::deque<std::vector<uint8_t>> pending;
     {
@@ -1172,32 +1269,41 @@ int SDLCALL DebugProtocolServer::thread_entry(void *userdata) {
 
 void DebugProtocolServer::thread_main() {
 #if GS2_DEBUG_PROTO_UNIX
-    const int lfd = listen_fd_.load();
-    while (!stop_ && lfd >= 0) {
-        int client_fd = ::accept(lfd, nullptr, nullptr);
-        if (client_fd < 0) {
+    const DebugSocketHandle lfd = listen_fd_.load();
+    while (!stop_ && lfd != kInvalidSocket) {
+#if defined(_WIN32)
+        const DebugSocketHandle client_fd = debug_socket(::accept(native_socket(lfd), nullptr, nullptr));
+        if (client_fd == kInvalidSocket) {
+            const int socket_error = ::WSAGetLastError();
+            if (stop_ || socket_error != WSAEINTR) {
+                break;
+            }
+#else
+        const DebugSocketHandle client_fd = ::accept(static_cast<int>(lfd), nullptr, nullptr);
+        if (client_fd == kInvalidSocket) {
             if (stop_ || errno != EINTR) {
                 break;
             }
+#endif
             continue;
         }
 
         if (stop_) {
-            ::close(client_fd);
+            close_socket(client_fd);
             break;
         }
 
         client_fd_ = client_fd;
         SDL_Log("DebugProtocolServer: client connected");
         serve_client(client_fd);
-        client_fd_ = -1;
-        ::close(client_fd);
+        client_fd_ = kInvalidSocket;
+        close_socket(client_fd);
         SDL_Log("DebugProtocolServer: client disconnected");
     }
 #endif
 }
 
-bool DebugProtocolServer::read_full(int fd, void *buf, size_t n) {
+bool DebugProtocolServer::read_full(DebugSocketHandle fd, void *buf, size_t n) {
 #if GS2_DEBUG_PROTO_UNIX
     auto *p = static_cast<uint8_t *>(buf);
     size_t got = 0;
@@ -1205,6 +1311,41 @@ bool DebugProtocolServer::read_full(int fd, void *buf, size_t n) {
         if (stop_) {
             return false;
         }
+#if defined(_WIN32)
+        const size_t remaining = n - got;
+        const int chunk = static_cast<int>(std::min(
+            remaining, static_cast<size_t>(std::numeric_limits<int>::max())));
+        const int r = ::recv(native_socket(fd), reinterpret_cast<char *>(p + got), chunk, 0);
+        if (r == 0) {
+            return false;
+        }
+        if (r == SOCKET_ERROR) {
+            const int socket_error = ::WSAGetLastError();
+            if (socket_error == WSAEINTR) {
+                continue;
+            }
+            if (socket_error == WSAEWOULDBLOCK) {
+                WSAPOLLFD pfd{};
+                pfd.fd = native_socket(fd);
+                pfd.events = POLLRDNORM;
+                const int pr = ::WSAPoll(&pfd, 1, 50);
+                if (pr == SOCKET_ERROR) {
+                    if (::WSAGetLastError() == WSAEINTR) {
+                        continue;
+                    }
+                    return false;
+                }
+                if (pr == 0) {
+                    continue;
+                }
+                if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                    return false;
+                }
+                continue;
+            }
+            return false;
+        }
+#else
         ssize_t r = ::recv(fd, p + got, n - got, 0);
         if (r == 0) {
             return false;
@@ -1237,6 +1378,7 @@ bool DebugProtocolServer::read_full(int fd, void *buf, size_t n) {
             }
             return false;
         }
+#endif
         got += static_cast<size_t>(r);
     }
     return true;
@@ -1248,7 +1390,7 @@ bool DebugProtocolServer::read_full(int fd, void *buf, size_t n) {
 #endif
 }
 
-bool DebugProtocolServer::write_full(int fd, const void *buf, size_t n) {
+bool DebugProtocolServer::write_full(DebugSocketHandle fd, const void *buf, size_t n) {
 #if GS2_DEBUG_PROTO_UNIX
     auto *p = static_cast<const uint8_t *>(buf);
     size_t sent = 0;
@@ -1256,6 +1398,38 @@ bool DebugProtocolServer::write_full(int fd, const void *buf, size_t n) {
         if (stop_) {
             return false;
         }
+#if defined(_WIN32)
+        const size_t remaining = n - sent;
+        const int chunk = static_cast<int>(std::min(
+            remaining, static_cast<size_t>(std::numeric_limits<int>::max())));
+        const int w = ::send(native_socket(fd), reinterpret_cast<const char *>(p + sent), chunk, 0);
+        if (w == SOCKET_ERROR) {
+            const int socket_error = ::WSAGetLastError();
+            if (socket_error == WSAEINTR) {
+                continue;
+            }
+            if (socket_error == WSAEWOULDBLOCK) {
+                WSAPOLLFD pfd{};
+                pfd.fd = native_socket(fd);
+                pfd.events = POLLWRNORM;
+                const int pr = ::WSAPoll(&pfd, 1, 50);
+                if (pr == SOCKET_ERROR) {
+                    if (::WSAGetLastError() == WSAEINTR) {
+                        continue;
+                    }
+                    return false;
+                }
+                if (pr == 0) {
+                    continue;
+                }
+                if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                    return false;
+                }
+                continue;
+            }
+            return false;
+        }
+#else
         ssize_t w = ::send(fd, p + sent, n - sent, 0);
         if (w < 0) {
             if (errno == EINTR) {
@@ -1285,6 +1459,7 @@ bool DebugProtocolServer::write_full(int fd, const void *buf, size_t n) {
             }
             return false;
         }
+#endif
         if (w == 0) {
             return false;
         }
@@ -1299,7 +1474,8 @@ bool DebugProtocolServer::write_full(int fd, const void *buf, size_t n) {
 #endif
 }
 
-bool DebugProtocolServer::send_frame(int fd, uint32_t type, uint32_t seq, const void *payload, uint32_t length) {
+bool DebugProtocolServer::send_frame(DebugSocketHandle fd, uint32_t type, uint32_t seq,
+                                     const void *payload, uint32_t length) {
     FrameHeader hdr{type, seq, length};
     if (!write_full(fd, &hdr, sizeof(hdr))) {
         return false;
@@ -1310,7 +1486,8 @@ bool DebugProtocolServer::send_frame(int fd, uint32_t type, uint32_t seq, const 
     return write_full(fd, payload, length);
 }
 
-bool DebugProtocolServer::send_error(int fd, uint32_t seq, uint32_t code, const char *message) {
+bool DebugProtocolServer::send_error(DebugSocketHandle fd, uint32_t seq, uint32_t code,
+                                     const char *message) {
     const size_t msg_len = message ? std::strlen(message) : 0;
     std::vector<uint8_t> payload(4 + msg_len);
     std::memcpy(payload.data(), &code, 4);
@@ -1320,7 +1497,8 @@ bool DebugProtocolServer::send_error(int fd, uint32_t seq, uint32_t code, const 
     return send_frame(fd, kTypeError, seq, payload.data(), static_cast<uint32_t>(payload.size()));
 }
 
-bool DebugProtocolServer::reject(int fd, uint32_t seq, uint32_t code, const char *message) {
+bool DebugProtocolServer::reject(DebugSocketHandle fd, uint32_t seq, uint32_t code,
+                                 const char *message) {
     return !send_error(fd, seq, code, message);
 }
 
@@ -1354,8 +1532,11 @@ const char *DebugProtocolServer::bridge_error_message(uint32_t err, uint32_t dom
     return "internal error";
 }
 
-void DebugProtocolServer::serve_client(int client_fd) {
-#if GS2_DEBUG_PROTO_UNIX
+void DebugProtocolServer::serve_client(DebugSocketHandle client_fd) {
+#if defined(_WIN32)
+    u_long nonblocking = 1;
+    ::ioctlsocket(native_socket(client_fd), FIONBIO, &nonblocking);
+#elif GS2_DEBUG_PROTO_UNIX
     const int flags = fcntl(client_fd, F_GETFL, 0);
     if (flags >= 0) {
         fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);
@@ -1382,7 +1563,27 @@ next_request:
             return;
         }
 
-#if GS2_DEBUG_PROTO_UNIX
+#if defined(_WIN32)
+        WSAPOLLFD pfd{};
+        pfd.fd = native_socket(client_fd);
+        pfd.events = POLLRDNORM;
+        const int pr = ::WSAPoll(&pfd, 1, 50);
+        if (pr == SOCKET_ERROR) {
+            if (::WSAGetLastError() == WSAEINTR) {
+                continue;
+            }
+            return;
+        }
+        if (pr == 0) {
+            continue;
+        }
+        if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            return;
+        }
+        if (!(pfd.revents & POLLRDNORM)) {
+            continue;
+        }
+#elif GS2_DEBUG_PROTO_UNIX
         struct pollfd pfd{};
         pfd.fd = client_fd;
         pfd.events = POLLIN;
