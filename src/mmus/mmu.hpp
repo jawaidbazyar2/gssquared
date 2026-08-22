@@ -292,6 +292,10 @@ class MMU {
             // do nothing.
         }
 
+        // IIgs C029: aux $2000–$9FFF is linearized (bit 6) or SHR is on (bit 7).
+        // Default false so IIe/II+ and test apps need no MMU_IIgs RTTI.
+        virtual bool is_aux_linear() { return false; }
+
         const char *get_read_d(page_t page) {
             return page_table[page].read_d;
         }

@@ -12,7 +12,6 @@
 #include "debug.hpp"
 
 #include "mmus/iigs_aux_linear.hpp"
-#include "mmus/mmu_iigs.hpp"
 
 #include "devices/adb/keygloo_state.hpp"
 #include "devices/adb/ADB_Micro.hpp"
@@ -77,12 +76,8 @@ inline uint8_t read_shr_scb_line0(computer_t *computer) {
     // interleaved ($2000/$6000); raw 0x19D00 is a pixel byte, not the SCB
     // (#170). Same mapping as VideoScannerIIgs / generate_shr.
     uint16_t phys = SHR_SCB_LINE0_CPU;
-    if (computer->cpu && computer->cpu->mmu) {
-        if (auto *gs = dynamic_cast<MMU_IIgs *>(computer->cpu->mmu)) {
-            if (gs->is_aux_linear()) {
-                phys = iigs_aux_linear_to_phys(SHR_SCB_LINE0_CPU);
-            }
-        }
+    if (computer->cpu && computer->cpu->mmu && computer->cpu->mmu->is_aux_linear()) {
+        phys = iigs_aux_linear_to_phys(SHR_SCB_LINE0_CPU);
     }
     return read_megaii_linear(computer->mmu, 0x10000u | phys);
 }
