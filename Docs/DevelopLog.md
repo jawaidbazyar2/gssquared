@@ -12397,7 +12397,7 @@ I know what I said about new features, but, new features are sexy!
 
 There is some low hanging fruit that shouldn't be too hard to do.
 
-But there are significant bugs. The weirdest one is the ROM03 speaker beep frequency error. 
+But there are significant bugs. The weirdest one is the ROM03 speaker beep frequency error. (FIXED). This was a CPU instruction bug where cross and not cross a page boundary are same on 65816. Whupped its ass real good.
 
 ## August 16, 2026
 
@@ -12456,3 +12456,105 @@ References I find are that C034 clock/border are slow cycles. But that definitel
 Real GS testing indicates the border color changes happen on slow cycles and are perfectly aligned with text character cells
 
 Implemented fast cycles for FPI registers - AND TEXTFUNK HAS BEEN CONQUERED!!!
+
+## Aug 20, 2026
+
+dealing with the N multiplier on GS. on IIe it's great. On GS, what happens is:
+let's say we're at N=8.
+If we hit a SYNC cycle, then we could blow potentially:
+N * 28
+
+cycles, or 224 ultrafast CPU cycles waiting to sync with the MegaII.
+Get enough of these in a frame, and suddenly instead of an 8X speedup you're stuck with a many times slowdown.
+
+I tested: 
+```
+honor C036 system speed setting
+ok I think I get it. the SYNC cycles are not something present in the IIe NClock and that only affect the GS, and ONE sync cycle at ludicrous speed can wipe out hundreds of cycles of potential cpu processing.
+
+When I had the original "run flat out by time" ludicrous speed, it would run many more cpu cycles because it just kept going until wall clock got close to end of a 16ms frame.
+
+SO. Given the key constraints (we MUST clock based on 14M multiples so we can maintain synchronization with the video scanner) where would it make the most sense to modify NClockIIgs to speed up the ludicrous speed emulation?
+
+What if in Ludicrous speed we clocked more like the IIe, treating sync cycles like fast ram 
+instead of dropping 2N on a slip, just drop 1.
+I feel like even in ludicrous speed, if the system requests 1MHz mode (slow_mode) we should respect that. 
+```
+
+however, this breaks seeks in the IWM/floppy525 code. Here is the analysis:
+```
+Seek delay
+Floppy525_woz::set_phase does not step the head immediately. It queues a ~0.5 ms settle:
+
+
+Floppy525_woz.cpp
+Ln 86–87
+event_timer->scheduleEvent(clock->get_cycles() + 520, phase_change_callback,
+                           instanceID, this);
+520 is 520 CPU cycles (about 0.5 ms at 1 MHz). The callback is what actually runs update_track().
+
+Rotation is also CPU-cycle based: get_current_time() is clock->get_cycles(), and head_advance_per_cycle() converts elapsed CPU cycles into bit cells. That affects spin, not the stepper.
+
+Two different timers
+Same Floppy525 class, two wirings:
+
+Path	Timer injected	processEvents uses
+Disk II (ndiskii_woz.cpp)
+cpu_event_timer
+get_cycles()
+IWM (iwm_device.cpp)
+event_timer
+get_c14m()
+Disk II: stamp and compare are both CPU cycles. After LS, a new phase change still fires 520 CPU cycles later. Seeks should still happen (just too soon while N is large).
+
+IWM: stamp is CPU cycles, compare is 14M. Floppy35 already documents that mix as wrong:
+
+
+Floppy35_woz.cpp
+Ln 128–133
+// The shared `event_timer` is processed against clock->get_c14m()
+// Scheduling in CPU-cycle units against a 14M-driven event timer
+// would fire ~immediately because c_14M outpaces (cycles + hz_rate)
+During LS, get_cycles() runs about N× ahead of c_14M. A settle event is queued at cycles+520 ≈ N × c_14M. The 14M timer will not reach that value while you stay in LS, and after you leave LS the two counters do not re-sync — they keep their absolute values. New seeks keep scheduling at “current cycles + 520”, still far above c_14M. update_track() never runs, so the head never moves, including after you drop back to 2.8/1 MHz. Catch-up at 2.8 MHz would take on the order of tens of seconds to minutes per second spent in LS.
+
+That matches “broken after any LS, still broken after switching back.”
+
+Extra landmine (other 14M events)
+EventTimer::scheduleEvent rejects anything with triggerCycles < clock->get_cycles(), always vs CPU cycles, even on the 14M timer. After LS, cycles can be ahead of c_14M, so a correctly 14M-stamped event (get_c14m() + delay) can be dropped as “in the past.” That is the 3.5 motor-off / IWM 1 s enable-off class of bug, not the 5.25 stepper stamp itself.
+
+Bottom line: 5.25 seek is timed in CPU cycles. On IWM that is the wrong domain for the timer it uses, and LS makes the mismatch permanent. Disk II’s CPU timer is consistent; IWM 5.25 is not.
+```
+
+So. The thing was definitely much much faster, however, floppies not working is bad. (esp when floppy works fine on IIe at LS).
+
+So, something I've been avoiding for a while is having a wall-clock queue, I guess. The wallclock is not reliable because of OS interruption. So I've always used various proxies.
+
+Hm, is this a bug? "IWM stamp is CPU compare is 14M". 
+
+## Aug 21, 2026
+
+Thinking about things to do to wrap this up:
+
+Create a bunch of Profiles for testing with Mike. I do have AppleII image generation now so we're basically good to go to do profiles there.
+
+investigate DynaPro support in KEGS. This seems potentially fragile. And complex. ProDOS supports AppleTalk by wrapping the ProDOS MLI and detecting when it's an appletalk-related call. So, we could just do a PV there. Intercept the MLI vector and do the same thing ATINIT does. More general appletalk info at:
+
+http://apple2.guidero.us/doku.php
+
+AppleTalk-type injection to ProDOS 8 but for: host folders, and maybe smb or FujiNet file system or something like that. Fuji might be more appropriate for IIe's. OTOH SMB is universal.
+
+I still have the super-annoying Zany Golf problem. What would be ideal, would be to run it in GS2 and BP at a certain point, and then do the same in another emulator, and then compare RAM dumps.
+
+Agh, the draw of new features! Henri forked and ported AppleTini functionality. That is pretty cool. Needs some rework to get its tendrils out of display and pdblock3. But certainly doable.
+
+And we got the GSOS source, so we could go ahead and do the QuickDraw GPU stuff!  <- v1.0 roadmap
+
+How about allow sprites to be arbitrary NxM where N and M are multiples of 8. Also allow the tile map to be varying dimensions. For Ms PacMan. 
+
+## Aug 22, 2026
+
+See Arqyv docs..
+
+Print to clipboard (#165). New `ClipboardDevice` — same idle-close / MESSAGE_CLOSE / reopen-on-write path as FileDevice, but a 128KB RAM buffer instead of a capture file. Worker strips bit 7, maps CR to LF, skips NULs; on close it snapshots to the main thread, which calls `SDL_SetClipboardText` and toasts the byte count. `device = "clipboard"` on serial and parallel (OSD, config editor, TOML). Does not steal the clipboard on emulator quit.
+
+IIgs Slot 1 printer defaults to “Add LF after CR: YES”, so a listing is CRLF. Clipboard must collapse CR+LF (and LF+CR) to a single LF; otherwise paste is double-spaced. Bare CR-only (typical II/IIe printer) still becomes one LF.

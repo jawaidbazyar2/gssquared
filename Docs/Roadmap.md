@@ -88,14 +88,15 @@
 [X] CRT Shader on Windows
 [X] Provide flexible AI-drivable binary protocol debugger interface  
 [X] Host FST on Windows
+[ ] Full international keyboard support for GS
 
 ## Release 1.0
 
 [ ] implement shaders on Linux
 [ ] Fix all known / pending bugs  
 
-
 ## Post-1.0
 
 [ ] Refactor MB to use new fixed-point synth  
 [ ] Optimize / cache UI elements  
+[ ] AppleTalk-shaped Host folder / network file server support for ProDOS

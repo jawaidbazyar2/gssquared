@@ -142,7 +142,7 @@ If omitted, derive from `platform` and `clock` (e.g. PAL //e → `"apple2e_pal"`
 
 String enum → `device_id` (`src/Device_ID.hpp`). Slot/platform/multiplicity rules live only in `DeviceInfos[]` (`src/device_info.cpp`: `slots_allowed`, `platform_flags`, `multipleInstances`); `Devices[]` derives from that table. Load, editor save, and computer composition all validate against it. `slots_allowed == 0` means motherboard/non-slot (not assignable via `[[cards]]`).
 
-The TOML key **`device`** is reserved for `[[connections]]` — the virtual peripheral attached to a serial port (`file`, `modem`, `echo`, `none`). It MUST NOT be used as the card-type field.
+The TOML key **`device`** is reserved for `[[connections]]` — the virtual peripheral attached to a serial port (`file`, `clipboard`, `modem`, `echo`, `none`). It MUST NOT be used as the card-type field.
 
 ### Slot-assignable card types
 
@@ -280,10 +280,11 @@ Aligned with `src/serial_devices/`:
 |-------|-------------|
 | `"none"` | No attachment |
 | `"file"` | Capture / file sink (`path` optional) |
+| `"clipboard"` | Capture to host clipboard (high-bit stripped; CR/LF/CRLF → one LF; idle-close like file) |
 | `"echo"` | Loopback for testing (schema only; not offered in UI) |
 | `"modem"` | Hayes-compatible virtual modem (native builds; serial ports only) |
 
-**Allowed devices by port kind:** serial (SCC, SSC) → none / file / modem; parallel → none / file only.
+**Allowed devices by port kind:** serial (SCC, SSC) → none / file / clipboard / modem; parallel → none / file / clipboard.
 
 ### Port addressing
 

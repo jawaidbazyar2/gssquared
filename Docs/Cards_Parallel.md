@@ -16,7 +16,7 @@ ImageWriter / PDF printer emulation is not required for basic capture — any so
 
 1. Open **+** or **Edit…** from System Select.
 2. Click a slot and choose **Parallel**.
-3. Under **Serial / Parallel**, click that port and choose **File** (parallel ports only allow **None** or **File**).
+3. Under **Serial / Parallel**, click that port and choose **File** or **Clipboard** (parallel ports allow **None**, **File**, or **Clipboard**).
 4. Save and launch.
 
 ### In a `.gs2` file
@@ -48,7 +48,7 @@ If you omit `[[connections]]`, parallel defaults to **File**.
 
 1. Press **F4** for the Control Panel.
 2. Click the parallel-port button.
-3. Choose **File** to capture, or **None** to disconnect.
+3. Choose **File** to capture to a host file, **Clipboard** to copy printout to the host clipboard, or **None** to disconnect.
 
 Capture files use names like `GS2.PARLn.YYYYMMDDHHMMSS`. A file opens on the first byte written, closes after ~10 seconds of idle output or on Ctrl-Reset, and reopens on the next write. Closing shows a toast with the filename.
 

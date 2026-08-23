@@ -172,6 +172,18 @@ static bool test_parallel_output() {
     return true;
 }
 
+static bool test_clipboard_connection() {
+    const auto path = fixture_dir() / "ClipboardConn.gs2";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "ClipboardConn load: " << error);
+    CHECK(config.connections().size() == 1, "one connection");
+    CHECK(config.connections()[0].slot.has_value(), "has slot");
+    CHECK(*config.connections()[0].slot == 1, "slot 1");
+    CHECK(config.connections()[0].device == "clipboard", "device clipboard");
+    return true;
+}
+
 static bool test_connections() {
     const auto path = fixture_dir() / "MyGS.gs2";
     SystemConfig config;
@@ -383,6 +395,7 @@ static bool run_self_tests() {
         {"dual_mockingboard", test_dual_mockingboard},
         {"storage_multivolume", test_storage_multivolume},
         {"parallel_output", test_parallel_output},
+        {"clipboard_connection", test_clipboard_connection},
         {"connections", test_connections},
         {"connections_save_roundtrip", test_connections_save_roundtrip},
         {"errors", test_errors},

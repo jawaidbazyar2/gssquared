@@ -8,8 +8,9 @@ namespace {
 
 const char *device_short_label(connection_device_type_t d) {
     switch (d) {
-        case connection_device_type_t::FILE:  return "File";
-        case connection_device_type_t::MODEM: return "Modem";
+        case connection_device_type_t::FILE:      return "File";
+        case connection_device_type_t::CLIPBOARD: return "Clip";
+        case connection_device_type_t::MODEM:     return "Modem";
         case connection_device_type_t::NONE:
         default:                             return "—";
     }

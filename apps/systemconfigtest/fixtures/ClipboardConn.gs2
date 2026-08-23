@@ -1,0 +1,15 @@
+gs2_version = 1
+id = "c1a5b0a7-4d2e-4f8a-9c31-7e6d2f1a0b44"
+name = "Clipboard Parallel"
+platform = "apple2e_enhanced"
+clock = "ntsc"
+scanner = "apple2e"
+builtin = false
+
+[[cards]]
+slot = 1
+card = "parallel"
+
+[[connections]]
+slot = 1
+device = "clipboard"

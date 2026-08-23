@@ -55,6 +55,7 @@ enum class connection_port_kind_t {
 enum class connection_device_type_t {
     NONE,
     FILE,
+    CLIPBOARD,
     MODEM,
 };
 
@@ -109,21 +110,25 @@ inline connection_key_t normalize_connection_key(int slot, const std::string &po
 
 inline const char *connection_device_type_name(connection_device_type_t type) {
     switch (type) {
-        case connection_device_type_t::NONE:  return "none";
-        case connection_device_type_t::FILE:  return "file";
-        case connection_device_type_t::MODEM: return "modem";
+        case connection_device_type_t::NONE:      return "none";
+        case connection_device_type_t::FILE:      return "file";
+        case connection_device_type_t::CLIPBOARD: return "clipboard";
+        case connection_device_type_t::MODEM:     return "modem";
     }
     return "none";
 }
 
 inline connection_device_type_t connection_device_type_from_string(const std::string &s) {
     if (s == "file") return connection_device_type_t::FILE;
+    if (s == "clipboard") return connection_device_type_t::CLIPBOARD;
     if (s == "modem") return connection_device_type_t::MODEM;
     return connection_device_type_t::NONE;
 }
 
 inline bool connection_device_allowed(connection_port_kind_t kind, connection_device_type_t type) {
-    if (type == connection_device_type_t::NONE || type == connection_device_type_t::FILE) {
+    if (type == connection_device_type_t::NONE ||
+        type == connection_device_type_t::FILE ||
+        type == connection_device_type_t::CLIPBOARD) {
         return true;
     }
     if (type == connection_device_type_t::MODEM) {
@@ -134,11 +139,16 @@ inline bool connection_device_allowed(connection_port_kind_t kind, connection_de
 
 inline std::vector<connection_device_type_t> connection_allowed_devices(connection_port_kind_t kind) {
     if (kind == connection_port_kind_t::PARALLEL) {
-        return {connection_device_type_t::NONE, connection_device_type_t::FILE};
+        return {
+            connection_device_type_t::NONE,
+            connection_device_type_t::FILE,
+            connection_device_type_t::CLIPBOARD,
+        };
     }
     return {
         connection_device_type_t::NONE,
         connection_device_type_t::FILE,
+        connection_device_type_t::CLIPBOARD,
         connection_device_type_t::MODEM,
     };
 }

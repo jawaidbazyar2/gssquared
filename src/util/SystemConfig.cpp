@@ -315,7 +315,8 @@ bool validate_connections(PlatformId_t platform,
         seen.insert(key);
 
         const std::string device = to_lower(conn.device);
-        if (device != "none" && device != "file" && device != "echo" && device != "modem") {
+        if (device != "none" && device != "file" && device != "echo" &&
+            device != "modem" && device != "clipboard") {
             error_out = "Unknown connection device: " + conn.device;
             return false;
         }

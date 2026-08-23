@@ -260,7 +260,7 @@ path = "printouts/session.bin"
 |----------|---------|
 | `port` | IIgs SCC only: `"a"` or `"b"`. Defaults to `"a"` if omitted. |
 | `slot` | Expansion-slot card (SSC, parallel, …). Use instead of `port`. |
-| `device` | `"none"`, `"file"`, `"echo"`, or `"modem"`. Parallel allows `"none"` / `"file"` only. |
+| `device` | `"none"`, `"file"`, `"clipboard"`, `"echo"`, or `"modem"`. Parallel allows `"none"` / `"file"` / `"clipboard"` only. |
 | `path` | Host file when `device = "file"`. Relative paths work like disk images. |
 
 If you omit `[[connections]]` entirely, GS2 uses platform defaults (IIgs: file + modem on native builds; SSC → modem; parallel → file).

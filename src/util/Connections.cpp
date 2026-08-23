@@ -22,6 +22,7 @@
 #include <iostream>
 
 #include "serial_devices/SerialDevice.hpp"
+#include "serial_devices/clipboard/ClipboardDevice.hpp"
 #include "serial_devices/file/FileDevice.hpp"
 #include "util/DeviceFrameDispatcher.hpp"
 #include "util/EventQueue.hpp"
@@ -42,6 +43,8 @@ SerialDevice *Connections::create_device(connection_device_type_t type, const st
             return nullptr;
         case connection_device_type_t::FILE:
             return new FileDevice(event_queue_, device_frame_dispatcher_, port_id.c_str());
+        case connection_device_type_t::CLIPBOARD:
+            return new ClipboardDevice(event_queue_, device_frame_dispatcher_, port_id.c_str());
         case connection_device_type_t::MODEM:
 #if defined(__EMSCRIPTEN__)
             // No SDL_net/modem on the web; fall back to file capture.

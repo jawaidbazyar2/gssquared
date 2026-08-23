@@ -439,6 +439,7 @@ void EditSystem::show_connection_picker(connection_key_t key, connection_port_ki
     for (connection_device_type_t type : connection_allowed_devices(kind)) {
         const char *label = "Nothing";
         if (type == connection_device_type_t::FILE) label = "File";
+        else if (type == connection_device_type_t::CLIPBOARD) label = "Clipboard";
         else if (type == connection_device_type_t::MODEM) label = "Modem";
         add_choice(type, label);
     }
