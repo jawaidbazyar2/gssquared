@@ -171,7 +171,7 @@ From [ADB.md](ADB.md), [UserInterface.md](UserInterface.md), [Networking.md](Net
 
 From [Roadmap.md](Roadmap.md), [DebugProtocol.md](DebugProtocol.md), [DevelopLog.md](DevelopLog.md), [65816.md](65816.md):
 
-- [ ] Ship flexible AI-drivable binary debug protocol (roadmap 0.10)
+- [X] Ship flexible AI-drivable binary debug protocol (roadmap 0.10)
 - [X] Trace option: hide raw bytes (`PCPC: LDA $xxxx` only) — debug window `B)ytes`
 - [X] Scrollable text widget + clickable scrollbar (click-to-jump position)
 - [ ] Trace cursor → show regs / P decode for that record
@@ -212,6 +212,7 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 - [ ] Simulate SCC modem control signals (CTS/RTS/DSR/DTR, etc.)
 - [ ] Clear SCC queues on reset
 - [X] Implement "file" serial device (complete path)
+- [X] Print to clipboard serial/parallel device (#165)
 - [ ] ImageWriter II emulation
 - [X] OSD gizmo when a capture file finishes writing (path toast)
 - [X] Refactor parallel card onto threads; connect to file (ImageWriter later)

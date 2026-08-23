@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-22
+
+Covers commits since the 2026-08-19 changelog entry through 2026-08-22.
+
+### Features
+
+- **Print to clipboard (#165).** Serial and parallel ports can attach a Clipboard device (OSD and config editor). Guest output is buffered (128KB), high-bit stripped, CR converted to LF, and copied to the host clipboard on idle-close (~10s) or Ctrl-Reset, with a toast for the byte count.
+- **IIgs paste / debug-protocol PASTE_TEXT (#167).** Paste now works on IIgs ADB (KeyGloo), matching the existing II/IIe path: Shift+Insert and Edit → Paste Text fill a buffer that is metered one character per frame. The debug protocol gained `PASTE_TEXT` (and Python `paste_text`) so agents can replace that buffer in one round-trip; the guest paces drain. (`bf8471d`)
+- **Debug Protocol on Windows (#168).** The debug protocol server now listens on Windows AF_UNIX sockets, so `--debug` works on Win10+. (`0df4821`)
+
 ## 2026-08-19
 
 Covers commits since the v0.10.0 release (2026-08-01) through 2026-08-19.
@@ -22,7 +32,7 @@ Covers commits since the v0.10.0 release (2026-08-01) through 2026-08-19.
 
 ### Bug Fixes
 
-- **IIgs FPI / cycle timing (#150, #101).** FPI registers (`$C035`–`$C037`, `$C02D`, `$C068`, `$C071`–`$C07F`) are billed as fast cycles instead of 1 MHz Mega II accesses — fixes textfunk border timing. (`7333660`)
+- **IIgs FPI / cycle timing (#150, #101).** FPI registers (`$C035`–`$C037`, `$C02D`, `$C068`, `$C071`–`$C07F`) are billed as fast cycles instead of 1 MHz Mega II accesses — fixes textfunk display timing. (`7333660`)
 - **Ludicrous speed.** Reworked as fixed multiples of the 14 MHz clock so the video scanner still runs; speaker, Ensoniq, and related devices no longer break under LS. (`e169b2b`)
 - **Second Sight VBL (#159).** Temporary fix so VBL is generated in Second Sight text mode under ludicrous speed (GNO/ME no longer freezes). (`03c52c8`)
 - **65816 / 6502.** WAI implementation; `PLB` is 4 cycles (was 2); `XCE` is 2 cycles (was 1); native-mode relative branches no longer take a page-cross penalty (#157, ROM 03 beep pitch). (`8fbca78`, `d981a26`, `34022cf`)
