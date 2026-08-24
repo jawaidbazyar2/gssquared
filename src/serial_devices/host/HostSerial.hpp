@@ -66,7 +66,11 @@ inline std::string host_serial_basename(const std::string &path) {
  * Platform .cpp supplies the methods and host_serial_enumerate().
  */
 class HostSerial {
+#ifdef _WIN32
+    void *handle_ = nullptr; // HANDLE; closed is nullptr, never INVALID_HANDLE_VALUE
+#else
     int fd_ = -1;
+#endif
 
 public:
     HostSerial() = default;
@@ -79,7 +83,13 @@ public:
     bool configure(const host_serial_line_t &line);
     int send(const uint8_t *data, int n);
     int receive(uint8_t *data, int n);
-    bool is_attached() const { return fd_ >= 0; }
+    bool is_attached() const {
+#ifdef _WIN32
+        return handle_ != nullptr;
+#else
+        return fd_ >= 0;
+#endif
+    }
 };
 
 std::vector<host_serial_info_t> host_serial_enumerate();

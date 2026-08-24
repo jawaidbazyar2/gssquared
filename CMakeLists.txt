@@ -469,6 +469,8 @@ add_library(gs2_event_dispatcher src/util/EventDispatcher.cpp )
 
 if(APPLE)
     set(GS2_HOST_SERIAL_SRC src/serial_devices/host/HostSerial_macos.cpp)
+elseif(WIN32)
+    set(GS2_HOST_SERIAL_SRC src/serial_devices/host/HostSerial_win32.cpp)
 else()
     set(GS2_HOST_SERIAL_SRC src/serial_devices/host/HostSerial_stub.cpp)
 endif()

@@ -108,6 +108,32 @@ class SerialPortDevice : public SerialDevice {
         last_try_ms_ = SDL_GetTicks();
     }
 
+    /** Pull host RX into q_dev without overflowing; leftover stays in the OS driver. */
+    void drain_host_rx() {
+        if (!port_.is_attached()) {
+            return;
+        }
+        uint8_t buf[64];
+        while (true) {
+            const int room = static_cast<int>(q_dev.space());
+            if (room <= 0) {
+                return;
+            }
+            const int want = room < static_cast<int>(sizeof(buf)) ? room : static_cast<int>(sizeof(buf));
+            const int n = port_.receive(buf, want);
+            if (n < 0) {
+                handle_io_error();
+                return;
+            }
+            if (n == 0) {
+                return;
+            }
+            for (int i = 0; i < n; i++) {
+                q_dev.send(SerialMessage{MESSAGE_DATA, buf[i]});
+            }
+        }
+    }
+
     void poll() {
         if (!event_queue_) {
             return;
@@ -150,6 +176,7 @@ public:
         while (true) {
             SDL_Delay(5);
             try_attach();
+            drain_host_rx();
 
             while (!q_host.is_empty()) {
                 SerialMessage msg = q_host.get();
@@ -180,18 +207,7 @@ public:
                 }
             }
 
-            if (!port_.is_attached()) {
-                continue;
-            }
-            uint8_t buf[32];
-            const int n = port_.receive(buf, static_cast<int>(sizeof(buf)));
-            if (n < 0) {
-                handle_io_error();
-                continue;
-            }
-            for (int i = 0; i < n; i++) {
-                q_dev.send(SerialMessage{MESSAGE_DATA, buf[i]});
-            }
+            drain_host_rx();
         }
     }
 };

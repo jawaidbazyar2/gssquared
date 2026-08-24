@@ -51,6 +51,9 @@ class SerialQueue {
         }
 
         inline uint64_t get_count() { return (head - tail) & queue_mask; }
+        inline uint32_t space() {
+            return (queue_depth - 1) - static_cast<uint32_t>(get_count());
+        }
 };
 
 class SerialDevice {
