@@ -286,9 +286,13 @@ void ConfigDraft::prune_orphan_connections() {
         for (const auto& p : ports) {
             if (p.key != nk) continue;
             matched = true;
-            if (p.kind == connection_port_kind_t::PARALLEL &&
-                connection_device_type_from_string(c.device) == connection_device_type_t::MODEM) {
-                c.device = "file";
+            if (p.kind == connection_port_kind_t::PARALLEL) {
+                const connection_device_type_t dt = connection_device_type_from_string(c.device);
+                if (dt == connection_device_type_t::MODEM ||
+                    dt == connection_device_type_t::SERIAL) {
+                    c.device = "file";
+                    c.path.clear();
+                }
             }
             break;
         }
@@ -299,7 +303,8 @@ void ConfigDraft::prune_orphan_connections() {
     connections_ = std::move(kept);
 }
 
-void ConfigDraft::set_connection(connection_key_t key, connection_device_type_t device) {
+void ConfigDraft::set_connection(connection_key_t key, connection_device_type_t device,
+                                const std::string &path) {
     key = normalize_connection_key(key.slot, key.port);
     // Find port kind for validation.
     const auto ports = derive_ports_from_config(config_.platform_id, config_.slot_devices);
@@ -315,19 +320,26 @@ void ConfigDraft::set_connection(connection_key_t key, connection_device_type_t 
     if (!found) return;
     if (!connection_device_allowed(kind, device)) return;
 
+    auto apply_fields = [&](connection_config_t &c) {
+        c.slot = key.slot;
+        c.port = key.port;
+        c.device = connection_device_type_name(device);
+        if (device == connection_device_type_t::SERIAL) {
+            c.path = path;
+        } else {
+            c.path.clear();
+        }
+    };
+
     for (auto& c : connections_) {
         const connection_key_t nk = normalize_connection_key(c.slot, c.port);
         if (nk == key) {
-            c.slot = key.slot;
-            c.port = key.port;
-            c.device = connection_device_type_name(device);
+            apply_fields(c);
             return;
         }
     }
     connection_config_t c;
-    c.slot = key.slot;
-    c.port = key.port;
-    c.device = connection_device_type_name(device);
+    apply_fields(c);
     connections_.push_back(std::move(c));
 }
 
@@ -362,6 +374,7 @@ std::vector<connection_port_spec_t> ConfigDraft::port_specs() const {
         for (const auto& c : connections_) {
             if (normalize_connection_key(c.slot, c.port) == spec.key) {
                 spec.device = connection_device_type_from_string(c.device);
+                spec.path = c.path;
                 break;
             }
         }

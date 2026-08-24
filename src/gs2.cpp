@@ -940,7 +940,7 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
         for (const auto& conn : state->loaded_config->connections()) {
             const connection_key_t key = normalize_connection_key(conn.slot, conn.port);
             const connection_device_type_t dtype = connection_device_type_from_string(conn.device);
-            if (!computer->connections->attach(key, dtype)) {
+            if (!computer->connections->attach(key, dtype, conn.path)) {
                 printf("Warning: connection slot %d device=%s not applied (port not registered?)\n",
                        key.slot, conn.device.c_str());
             }

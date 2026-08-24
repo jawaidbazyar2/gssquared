@@ -32,6 +32,7 @@ struct debug_window_t; // don't bring in debugwindow.hpp, it would create a depe
 struct video_system_t; // same.
 class Mounts;
 class Connections;
+class SerialPortManager;
 class EventTimer;
 class VideoScannerII;
 class ResetController;
@@ -117,6 +118,7 @@ struct computer_t {
 
     Mounts *mounts = nullptr;
     Connections *connections = nullptr;
+    SerialPortManager *serial_ports = nullptr;
 
     /** UI drive key used by File > Mount Drivers (BazFast 3 + drivers.hdv). */
     std::optional<storage_key_t> drivers_mount_key;

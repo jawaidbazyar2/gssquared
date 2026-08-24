@@ -19,6 +19,7 @@
 #include "SystemBadge.hpp"
 #include "TextInput.hpp"
 #include "UIContext.hpp"
+#include "serial_devices/host/SerialPortManager.hpp"
 #include "util/ConfigDraft.hpp"
 #include "util/Connections.hpp"
 #include "util/TextRenderer.hpp"
@@ -67,6 +68,8 @@ protected:
     connection_key_t picking_connection_key_{};
     connection_port_kind_t picking_connection_kind_ = connection_port_kind_t::SERIAL;
     Container_t *connection_picker = nullptr;
+    SerialPortManager serial_ports_;
+    uint64_t picker_generation_ = 0;
 
     std::string status_text;
     storage_key_t pending_mount_key{};

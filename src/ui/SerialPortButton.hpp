@@ -15,6 +15,7 @@ class SerialPortButton : public Button_t {
     connection_port_kind_t kind_ = connection_port_kind_t::SERIAL;
     connection_device_type_t device_ = connection_device_type_t::NONE;
     std::string port_name_;
+    std::string path_;
 
     void refresh_label();
 

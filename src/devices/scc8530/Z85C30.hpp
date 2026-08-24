@@ -7,6 +7,7 @@
 #include "util/EventTimer.hpp"
 #include "NClock.hpp"
 #include "serial_devices/SerialDevice.hpp"
+#include "serial_devices/host/HostSerial.hpp"
 
 constexpr bool SCDEBUG = 0;
  
@@ -308,6 +309,40 @@ class Z85C30 {
             float baud_rate = (float)SCC_RX_CLOCK / (2.0f * (float)new_mode * ((float)time_constant + 2.0f));
             this->baud_rate[channel] = baud_rate;
             if (SCDEBUG) printf("SCC: Ch %d: Clock Mode: %d, Time Constant: %d, Baud Rate: %08.2f\n", channel, new_mode, time_constant, baud_rate);
+            push_line_params(channel);
+        }
+
+        inline void push_line_params(scc_channel_t channel) {
+            if (serial_devices[channel] == nullptr) {
+                return;
+            }
+            host_serial_line_t line;
+            float br = baud_rate[channel];
+            line.baud = (br <= 0.0f) ? 9600 : static_cast<uint32_t>(br + 0.5f);
+
+            switch (registers[channel].r5_tx_bits_per_char) {
+                case 0b00: line.data_bits = 5; break;
+                case 0b01: line.data_bits = 7; break;
+                case 0b10: line.data_bits = 6; break;
+                default:   line.data_bits = 8; break;
+            }
+
+            if (!registers[channel].r4_parity_enable) {
+                line.parity = HOST_SERIAL_PARITY_NONE;
+            } else if (registers[channel].r4_parity_even_odd) {
+                line.parity = HOST_SERIAL_PARITY_EVEN;
+            } else {
+                line.parity = HOST_SERIAL_PARITY_ODD;
+            }
+
+            switch (registers[channel].r4_stop_bits) {
+                case 0b10: line.stop_bits = 15; break;
+                case 0b11: line.stop_bits = 2; break;
+                default:   line.stop_bits = 1; break;
+            }
+
+            serial_devices[channel]->q_host.send(
+                SerialMessage{MESSAGE_LINE, host_serial_pack_line(line)});
         }
 
         inline bool update_tx_ip(scc_channel_t channel) {
@@ -440,6 +475,7 @@ class Z85C30 {
         inline void write_register_3(scc_channel_t channel, uint8_t data) {
             print_write_register(channel, WR3, data);
             registers[channel].w_regs[WR3] = data;
+            push_line_params(channel);
         }
 
         inline void write_register_4(scc_channel_t channel, uint8_t data) {
@@ -451,6 +487,7 @@ class Z85C30 {
         inline void write_register_5(scc_channel_t channel, uint8_t data) {
             print_write_register(channel, WR5, data);
             registers[channel].w_regs[WR5] = data;
+            push_line_params(channel);
         }
 
         inline void write_register_6(scc_channel_t channel, uint8_t data) {
@@ -821,6 +858,7 @@ class Z85C30 {
 
         void set_device_channel(scc_channel_t channel, SerialDevice *device) {
             serial_devices[channel] = device;
+            push_line_params(channel);
         }
         
         void debug_output(DebugFormatter *df) {

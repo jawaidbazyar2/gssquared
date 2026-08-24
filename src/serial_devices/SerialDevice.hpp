@@ -10,6 +10,7 @@ enum serial_message_type_t {
     MESSAGE_BREAK_OFF,
     MESSAGE_CLOSE,
     MESSAGE_SHUTDOWN,
+    MESSAGE_LINE,
 };
 
 struct SerialMessage {

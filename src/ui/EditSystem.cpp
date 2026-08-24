@@ -13,6 +13,7 @@
 #include "TextInput.hpp"
 #include "paths.hpp"
 #include "platforms.hpp"
+#include "serial_devices/host/HostSerial.hpp"
 #include "util/SystemConfig.hpp"
 #include "util/SystemSettings.hpp"
 #include "util/uuid.hpp"
@@ -200,7 +201,7 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
     };
     serial_ports_panel = new SerialPortsOSD_t(&ui_ctx, DC);
     serial_ports_panel->set_position(360 + layout_dx, 140 + body_dy);
-    serial_ports_panel->size(220, 450);
+    serial_ports_panel->size(230, 450);
     serial_ports_panel->set_button_style(SPB);
     serial_ports_panel->set_click_handler([this](SerialPortButton *button, const SDL_Event&) {
         show_connection_picker(button->get_key(), button->get_kind());
@@ -420,9 +421,9 @@ void EditSystem::show_connection_picker(connection_key_t key, connection_port_ki
     connection_picker = new Container_t(&ui_ctx, MS);
     connection_picker->set_position(380 + layout_dx, 160 + body_dy);
 
-    constexpr float kBtnW = 180.0f;
+    constexpr float kBtnW = 280.0f;
     constexpr float kBtnH = 28.0f;
-    constexpr float kPanelW = 220.0f;
+    constexpr float kPanelW = 320.0f;
 
     auto add_choice = [this](connection_device_type_t type, const char *label) {
         Button_t *b = new Button_t(&ui_ctx, label, card_picker_btn_style());
@@ -443,6 +444,25 @@ void EditSystem::show_connection_picker(connection_key_t key, connection_port_ki
         else if (type == connection_device_type_t::MODEM) label = "Modem";
         add_choice(type, label);
     }
+
+#if !defined(__EMSCRIPTEN__)
+    if (kind == connection_port_kind_t::SERIAL) {
+        serial_ports_.poll(SDL_GetTicks());
+        picker_generation_ = serial_ports_.generation();
+        for (const host_serial_info_t &info : serial_ports_.ports()) {
+            Button_t *b = new Button_t(&ui_ctx, host_serial_basename(info.display).c_str(),
+                                       card_picker_btn_style());
+            b->size(kBtnW, kBtnH);
+            b->on_click([this, path = info.path](const SDL_Event&) -> bool {
+                draft.set_connection(picking_connection_key_, connection_device_type_t::SERIAL, path);
+                dismiss_connection_picker();
+                rebuild_ui_from_draft();
+                return true;
+            });
+            connection_picker->add(b);
+        }
+    }
+#endif
 
     const size_t n = connection_picker->count();
     const float pad = static_cast<float>(MS.padding);
@@ -632,6 +652,12 @@ void EditSystem::begin_save() {
 }
 
 bool EditSystem::update() {
+    if (serial_ports_.poll(SDL_GetTicks())) {
+        if (connection_picker) {
+            show_connection_picker(picking_connection_key_, picking_connection_kind_);
+        }
+        updated = true;
+    }
     if (name_input) name_input->update();
     if (desc_input) desc_input->update();
     if ((name_input && name_input->needs_redraw()) ||

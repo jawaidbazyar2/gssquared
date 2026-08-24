@@ -78,6 +78,8 @@ protected:
     SerialPortsOSD_t *serial_ports_container = nullptr;
     Container_t *connection_picker = nullptr;
     connection_key_t picking_connection_key_{};
+    connection_port_kind_t picking_connection_kind_ = connection_port_kind_t::SERIAL;
+    uint64_t picker_generation_ = 0;
 
     Container_t *speed_con = nullptr;
     SelectButton_t *speed_btn_10 = nullptr;

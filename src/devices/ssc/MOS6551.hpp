@@ -5,6 +5,7 @@
 
 #include "NClock.hpp"
 #include "serial_devices/SerialDevice.hpp"
+#include "serial_devices/host/HostSerial.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/EventTimer.hpp"
 #include "util/InterruptController.hpp"
@@ -83,7 +84,10 @@ public:
         reset();
     }
 
-    void set_device(SerialDevice *dev) { device = dev; }
+    void set_device(SerialDevice *dev) {
+        device = dev;
+        push_line_params();
+    }
 
     void set_dip_irq_enabled(bool enabled) {
         dip_irq_enabled = enabled;
@@ -189,6 +193,7 @@ public:
         if (tx_ctrl() == 0b11) {
             /* Break — not messaged to backends in v1 */
         }
+        push_line_params();
         update_interrupts();
     }
 
@@ -203,6 +208,7 @@ public:
         }
         control = data;
         update_baud();
+        push_line_params();
     }
 
     void debug_output(DebugFormatter *df) {
@@ -240,6 +246,36 @@ private:
         } else {
             baud_rate = baud_table[sel];
         }
+    }
+
+    void push_line_params() {
+        if (device == nullptr) {
+            return;
+        }
+        host_serial_line_t line;
+        line.baud = (baud_rate <= 0.0f) ? 9600 : static_cast<uint32_t>(baud_rate + 0.5f);
+        switch ((control >> 5) & 0x03) {
+            case 0: line.data_bits = 8; break;
+            case 1: line.data_bits = 7; break;
+            case 2: line.data_bits = 6; break;
+            default: line.data_bits = 5; break;
+        }
+        if ((command & 0x20) == 0) {
+            line.parity = HOST_SERIAL_PARITY_NONE;
+        } else {
+            switch ((command >> 6) & 0x03) {
+                case 0: line.parity = HOST_SERIAL_PARITY_ODD; break;
+                case 1: line.parity = HOST_SERIAL_PARITY_EVEN; break;
+                case 2: line.parity = HOST_SERIAL_PARITY_MARK; break;
+                default: line.parity = HOST_SERIAL_PARITY_SPACE; break;
+            }
+        }
+        if (control & 0x80) {
+            line.stop_bits = (line.data_bits == 5) ? 15 : 2;
+        } else {
+            line.stop_bits = 1;
+        }
+        device->q_host.send(SerialMessage{MESSAGE_LINE, host_serial_pack_line(line)});
     }
 
     uint8_t bits_per_char() const {

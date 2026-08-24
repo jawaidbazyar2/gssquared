@@ -4,13 +4,16 @@
 
 #include "SerialPortButton.hpp"
 
+#include "serial_devices/host/HostSerial.hpp"
+
 namespace {
 
-const char *device_short_label(connection_device_type_t d) {
+std::string device_short_label(connection_device_type_t d, const std::string &path) {
     switch (d) {
         case connection_device_type_t::FILE:      return "File";
         case connection_device_type_t::CLIPBOARD: return "Clip";
         case connection_device_type_t::MODEM:     return "Modem";
+        case connection_device_type_t::SERIAL:    return host_serial_basename(path);
         case connection_device_type_t::NONE:
         default:                             return "—";
     }
@@ -20,16 +23,16 @@ const char *device_short_label(connection_device_type_t d) {
 
 SerialPortButton::SerialPortButton(UIContext *ctx, const Style_t &style)
     : Button_t(ctx, "Port", style) {
-    size(200, 36);
+    size(215, 36);
 }
 
 void SerialPortButton::refresh_label() {
-    text = port_name_ + "  [" + device_short_label(device_) + "]";
+    text = port_name_ + "  [" + device_short_label(device_, path_) + "]";
     set_content_size_from_text();
-    // Keep a stable button width for the panel column.
-    if (cp.w < 180) {
-        size(200, cp.h > 0 ? cp.h : 36);
-    }
+    // Fixed tile size so a long host-port name does not grow the button or
+    // skip recentering (content origin is LEFT-aligned in Button_t::render).
+    size(215, 36);
+    position_content(CP_CENTER, CP_CENTER);
 }
 
 void SerialPortButton::set_port(const connection_port_spec_t &spec) {
@@ -37,6 +40,7 @@ void SerialPortButton::set_port(const connection_port_spec_t &spec) {
     kind_ = spec.kind;
     device_ = spec.device;
     port_name_ = spec.display_name;
+    path_ = spec.path;
     refresh_label();
 }
 

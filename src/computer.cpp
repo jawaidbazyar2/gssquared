@@ -2,6 +2,7 @@
 #include <cstdint>
 
 #include "PlatformIDs.hpp"
+#include "SDL3/SDL.h"
 #include "SDL3/SDL_keycode.h"
 #include "cpu.hpp"
 #include "NClock.hpp"
@@ -30,6 +31,7 @@
 #include "paths.hpp"
 #include "slots.hpp"
 #include "util/Connections.hpp"
+#include "serial_devices/host/SerialPortManager.hpp"
 #include "util/mount.hpp"
 
 computer_t::computer_t(NClockII *clock) {
@@ -90,6 +92,7 @@ computer_t::computer_t(NClockII *clock) {
     slot_manager = new SlotManager_t();
     mounts = new Mounts();
     connections = new Connections(event_queue, device_frame_dispatcher);
+    serial_ports = new SerialPortManager();
 
     video_system = new video_system_t(this);
     debug_window = new debug_window_t(this);
@@ -274,6 +277,8 @@ computer_t::~computer_t() {
     }
     delete connections;
     connections = nullptr;
+    delete serial_ports;
+    serial_ports = nullptr;
     delete mounts;
     mounts = nullptr;
     delete cpu;
