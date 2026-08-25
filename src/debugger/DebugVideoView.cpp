@@ -6,7 +6,6 @@
 
 #include "devices/displaypp/CharRom.hpp"
 #include "mmus/mmu.hpp"
-#include "mmus/mmu_iigs.hpp"
 
 const char *DebugVideoView::decode_name(video_decode_mode_t m) {
     switch (m) {
@@ -153,21 +152,21 @@ const uint8_t *DebugVideoView::guest_ptr(MMU *mmu, uint32_t start, size_t len, b
         return nullptr;
     }
 
-    auto *gs = dynamic_cast<MMU_IIgs *>(mmu);
     uint8_t bank = (start >> 16) & 0xFF;
     uint16_t off = start & 0xFFFF;
 
     // IIgs Mega II: E0 is linear main, E1 is aux. With C029 linear/SHR the
     // $2000–$9FFF aux window is physically interleaved; the renderer maps
     // CPU-linear offsets onto that layout (see iigs_aux_linear_to_phys).
-    if (gs && gs->megaii) {
-        uint8_t *ram = gs->megaii->get_memory_base();
-        uint32_t msz = gs->megaii->get_memory_size();
+    MMU *megaii = mmu->get_megaii_mmu();
+    if (megaii) {
+        uint8_t *ram = megaii->get_memory_base();
+        uint32_t msz = megaii->get_memory_size();
         if (ram && bank == 0xE1) {
             uint32_t phys = 0x10000u + off;
             if (phys <= msz && len <= msz - phys) {
                 if (shr_interleave) {
-                    *shr_interleave = gs->is_aux_linear();
+                    *shr_interleave = mmu->is_aux_linear();
                 }
                 return ram + phys;
             }

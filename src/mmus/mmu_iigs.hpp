@@ -164,6 +164,7 @@ class MMU_IIgs : public MMU {
            explicit linearize bit 6. GS/OS draws its boot screen with $41 (linear,
            display off) then switches to $81, and expects the mapping to persist. */
         inline bool is_aux_linear() override { return g_aux_linear || g_shr_enabled; }
+        MMU *get_megaii_mmu() override { return megaii; }
 
         /* Physical aux index for a direct bank $E1 access (bank latch on). Aux is
            forced, so ALTZP / RAMRD / RAMWRT / 80STORE / PAGE2 do not apply here -

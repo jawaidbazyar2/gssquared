@@ -296,6 +296,10 @@ class MMU {
         // Default false so IIe/II+ and test apps need no MMU_IIgs RTTI.
         virtual bool is_aux_linear() { return false; }
 
+        // IIgs Mega II (display RAM for banks $E0/$E1). Null on II/IIe so
+        // debugger/tests need no dynamic_cast / MMU_IIgs typeinfo.
+        virtual MMU *get_megaii_mmu() { return nullptr; }
+
         const char *get_read_d(page_t page) {
             return page_table[page].read_d;
         }
