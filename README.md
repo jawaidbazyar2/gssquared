@@ -262,12 +262,6 @@ Kelvin wrote the Host FST and associated support code for the GSPlus emulator. G
 
 https://github.com/digarok/gsplus
 
-## Oliver Schmidt
-
-The Apple Mouse II support is derived from work by Oliver Schmidt
-
-https://github.com/oliverschmidt/a2pico
-
 ## Wyatt Wong
 
 for helping test in different build environments, and providing MacOS-Intel builds.
