@@ -471,6 +471,8 @@ if(APPLE)
     set(GS2_HOST_SERIAL_SRC src/serial_devices/host/HostSerial_macos.cpp)
 elseif(WIN32)
     set(GS2_HOST_SERIAL_SRC src/serial_devices/host/HostSerial_win32.cpp)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(GS2_HOST_SERIAL_SRC src/serial_devices/host/HostSerial_linux.cpp)
 else()
     set(GS2_HOST_SERIAL_SRC src/serial_devices/host/HostSerial_stub.cpp)
 endif()
@@ -1137,6 +1139,10 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
             COMPONENT Runtime
         )
         install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/vdisk"
+            DESTINATION "${GS2_INSTALL_DATADIR}"
+            COMPONENT Runtime
+        )
+        install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/shaders"
             DESTINATION "${GS2_INSTALL_DATADIR}"
             COMPONENT Runtime
         )

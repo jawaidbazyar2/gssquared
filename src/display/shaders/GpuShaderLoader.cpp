@@ -122,15 +122,27 @@ SDL_GPUShader *create_gpu_shader_from_resource(
         return nullptr;
     }
 
-    const bool is_dxil = path_ends_with(resource_path, ".dxil");
-    const SDL_GPUShaderFormat format = is_dxil
-        ? SDL_GPU_SHADERFORMAT_DXIL
-        : SDL_GPU_SHADERFORMAT_MSL;
+    SDL_GPUShaderFormat format;
+    const char *format_name;
+    bool is_binary;
+    if (path_ends_with(resource_path, ".dxil")) {
+        format = SDL_GPU_SHADERFORMAT_DXIL;
+        format_name = "DXIL";
+        is_binary = true;
+    } else if (path_ends_with(resource_path, ".spv")) {
+        format = SDL_GPU_SHADERFORMAT_SPIRV;
+        format_name = "SPIR-V";
+        is_binary = true;
+    } else {
+        format = SDL_GPU_SHADERFORMAT_MSL;
+        format_name = "MSL";
+        is_binary = false;
+    }
 
     SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(device);
     if (!(formats & format)) {
         fprintf(stderr, "create_gpu_shader_from_resource: %s not supported by GPU device\n",
-            is_dxil ? "DXIL" : "MSL");
+            format_name);
         return nullptr;
     }
 
@@ -139,7 +151,7 @@ SDL_GPUShader *create_gpu_shader_from_resource(
     const Uint8 *code = nullptr;
     size_t code_size = 0;
 
-    if (is_dxil) {
+    if (is_binary) {
         if (!load_resource_bytes(resource_path, binary_source)) {
             return nullptr;
         }

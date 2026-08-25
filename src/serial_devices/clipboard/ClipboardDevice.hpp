@@ -74,6 +74,8 @@ class ClipboardDevice : public SerialDevice {
         char display_msg_[256]{}; // main-thread only; pointed at by EventQueue OSD events
         ClipboardCloseStatusQueue status_q_;
         EventQueue *event_queue_ = nullptr;
+        DeviceFrameDispatcher *frames_ = nullptr;
+        size_t frame_handler_id_ = static_cast<size_t>(-1);
 
         void mark_write() {
             last_write_ticks = SDL_GetTicks();
@@ -169,9 +171,9 @@ class ClipboardDevice : public SerialDevice {
 
     public:
         ClipboardDevice(EventQueue *event_queue, DeviceFrameDispatcher *frames, const char *port_id)
-            : SerialDevice("ClipboardDevice", port_id), event_queue_(event_queue) {
-            if (frames) {
-                frames->registerHandler([this]() {
+            : SerialDevice("ClipboardDevice", port_id), event_queue_(event_queue), frames_(frames) {
+            if (frames_) {
+                frame_handler_id_ = frames_->registerHandler([this]() {
                     poll();
                     return true;
                 });
@@ -179,6 +181,11 @@ class ClipboardDevice : public SerialDevice {
         }
 
         ~ClipboardDevice() {
+            if (frames_ && frame_handler_id_ != static_cast<size_t>(-1)) {
+                frames_->unregisterHandler(frame_handler_id_);
+                frames_ = nullptr;
+                frame_handler_id_ = static_cast<size_t>(-1);
+            }
             if (thread) {
                 SDL_Log("SerialDevice: %s shutting down", this->name);
                 SerialMessage msg = {MESSAGE_SHUTDOWN, 0};

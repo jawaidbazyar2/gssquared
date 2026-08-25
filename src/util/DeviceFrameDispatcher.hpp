@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <functional>
 #include <vector>
 
@@ -11,7 +12,8 @@ public:
     DeviceFrameDispatcher();
     ~DeviceFrameDispatcher();
 
-    void registerHandler(EventHandler handler);
+    size_t registerHandler(EventHandler handler);
+    void unregisterHandler(size_t id);
     void dispatch();
 
 protected:

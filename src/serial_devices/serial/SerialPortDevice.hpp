@@ -68,6 +68,8 @@ class SerialPortDevice : public SerialDevice {
     char display_msg_[256]{};
     SerialPortStatusQueue status_q_;
     EventQueue *event_queue_ = nullptr;
+    DeviceFrameDispatcher *frames_ = nullptr;
+    size_t frame_handler_id_ = static_cast<size_t>(-1);
 
     void notify(const char *fmt, const char *arg) {
         SerialPortStatusMsg msg;
@@ -151,9 +153,10 @@ public:
                      const char *port_id, const std::string &path)
         : SerialDevice("SerialPortDevice", port_id),
           path_(path),
-          event_queue_(event_queue) {
-        if (frames) {
-            frames->registerHandler([this]() {
+          event_queue_(event_queue),
+          frames_(frames) {
+        if (frames_) {
+            frame_handler_id_ = frames_->registerHandler([this]() {
                 poll();
                 return true;
             });
@@ -161,6 +164,11 @@ public:
     }
 
     ~SerialPortDevice() {
+        if (frames_ && frame_handler_id_ != static_cast<size_t>(-1)) {
+            frames_->unregisterHandler(frame_handler_id_);
+            frames_ = nullptr;
+            frame_handler_id_ = static_cast<size_t>(-1);
+        }
         if (thread) {
             SDL_Log("SerialDevice: %s shutting down", this->name);
             SerialMessage msg = {MESSAGE_SHUTDOWN, 0};

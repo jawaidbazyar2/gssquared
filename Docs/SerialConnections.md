@@ -10,7 +10,7 @@ GSSquared treats each serial or parallel port as a jack you can plug a virtual d
 | **File** | Capture TX data to a host file | Capture printer bytes to a host file |
 | **Clipboard** | Capture TX to the host clipboard | Capture printer bytes to the host clipboard |
 | **Modem** | Virtual Hayes modem (TCP dial-out) | — |
-| **Serial** | Real host UART (macOS `/dev/cu.*`, skipping Bluetooth/debug/wlan system callouts; Windows `COMn`, skipping Bluetooth modem mappings; Linux later) | — |
+| **Serial** | Real host UART (macOS `/dev/cu.*`, skipping Bluetooth/debug/wlan system callouts; Windows `COMn`, skipping Bluetooth modem mappings; Linux `/dev/ttyUSB*` `/dev/ttyACM*` `/dev/ttyAMA*`, skipping Bluetooth/debug) | — |
 
 When a **File** attachment closes, a short on-screen message shows the filename. When a **Clipboard** attachment closes (idle ~10s, or Ctrl-Reset on parallel), high-bit-stripped text is copied to the host clipboard and a toast reports the byte count. Newlines are normalized to LF; IIgs “Add LF after CR” CRLF pairs become a single line break.
 
@@ -53,16 +53,16 @@ slot = 2
 device = "modem"
 ```
 
-Optional `path` sets the capture filename for `device = "file"`. For `device = "serial"`, `path` is the host port name stored as written (`/dev/cu.usbserial-…`, `cu.usbserial-…`, `COM3`, …) — it is not resolved relative to the config file.
+Optional `path` sets the capture filename for `device = "file"`. For `device = "serial"`, `path` is the host port name stored as written (`/dev/cu.usbserial-…`, `cu.usbserial-…`, `COM3`, `/dev/ttyUSB0`, …) — it is not resolved relative to the config file.
 
 ```toml
 [[connections]]
 slot = 2
 device = "serial"
-path = "cu.usbserial-A50285BI"   # macOS; on Windows use path = "COM3"
+path = "cu.usbserial-A50285BI"   # macOS; on Windows use path = "COM3"; on Linux, /dev/ttyUSB0
 ```
 
-Guest software programs baud / data / parity / stop bits on the SCC or 6551; those settings are passed through to the host port. If the dongle is unplugged, the emulator keeps the attachment and retries.
+Guest software programs baud / data / parity / stop bits on the SCC or 6551; those settings are passed through to the host port. If the dongle is unplugged, the emulator keeps the attachment and retries. On Linux, `/dev/ttyUSB*` is owned by group `dialout` (some distros use `uucp`); the local user must be in that group and re-login before GSSquared can open the port.
 
 If you omit `[[connections]]`, GSSquared applies sensible defaults (IIgs: file on one port and modem on the other on native builds; SSC → modem; parallel → file).
 

@@ -45,7 +45,7 @@ GS2 has a "CRT Shader" option under the Display menu, that turns on a "CRT Emula
 
 The effect modifies the normal display output, applying a "shadow mask" and some other enhancements to attempt to emulate the way pixels appear on an 80s-era CRT display.
 
-Available on macOS (Metal) and Windows (D3D12). Works best on Retina / high-DPI displays but works pretty well on other monitors such as 27" e.g. 1440p (2560 x 1440). Linux is not supported yet (needs a SPIR-V shader).
+Available on macOS (Metal), Windows (D3D12), and Linux (Vulkan / SPIR-V). Works best on Retina / high-DPI displays but works pretty well on other monitors such as 27" e.g. 1440p (2560 x 1440).
 
 The shader mode can be activated with Display > CRT Shader, or by pressing F7. The `-g` command-line flag enables it at boot.
 

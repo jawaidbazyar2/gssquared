@@ -92,7 +92,7 @@
 
 ## Release 1.0
 
-[ ] implement shaders on Linux
+[X] implement shaders on Linux
 [ ] Fix all known / pending bugs  
 
 ## Post-1.0

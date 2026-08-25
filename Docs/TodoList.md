@@ -220,7 +220,7 @@ From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagew
 - [ ] Full printer→PDF pipeline (libHaru / preview window) beyond raw dump
 - [X] Serial-to-telnet / Hayes path hardening as needed
 - [X] Super Serial Card (`super_serial`) — 6551 + ROM + Modem/File attach; see [SSC.md](SSC.md)
-- [X] Host serial port attachment (#155) — macOS `/dev/cu.*`; Windows `COMn`; Linux stub
+- [X] Host serial port attachment (#155) — macOS `/dev/cu.*`; Windows `COMn`; Linux `/dev/ttyUSB*`
 - [X] Apply `[[connections]]` at runtime for SCC and SSC
 - [ ] Optional FujiNet-PC / NetSIO bridge
 - [X] Uthernet II emulation
