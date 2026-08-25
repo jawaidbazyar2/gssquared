@@ -58,10 +58,11 @@ video_system_t::video_system_t(computer_t *computer) {
 
     // Prefer the SDL GPU-backed renderer so we can attach custom fragment
     // shaders (CRT post-processing). macOS uses Metal/MSL; Windows uses
-    // D3D12/DXIL. If neither backend is available, fall back to the classic
-    // renderer; gpu_device stays null and CRT shader effects are disabled.
+    // D3D12/DXIL; Linux uses Vulkan/SPIR-V. If none of those backends is
+    // available, fall back to the classic renderer; gpu_device stays null
+    // and CRT shader effects are disabled.
     renderer = SDL_CreateGPURenderer(window,
-        SDL_GPU_SHADERFORMAT_MSL | SDL_GPU_SHADERFORMAT_DXIL, &gpu_device);
+        SDL_GPU_SHADERFORMAT_MSL | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_SPIRV, &gpu_device);
     if (!renderer) {
         printf("GPU renderer unavailable (%s); falling back to classic renderer\n", SDL_GetError());
         gpu_device = nullptr;
@@ -214,8 +215,11 @@ bool video_system_t::init_crt_shader() {
     } else if (formats & SDL_GPU_SHADERFORMAT_DXIL) {
         shader_path = "shaders/crt.frag.dxil";
         entrypoint = "main";
+    } else if (formats & SDL_GPU_SHADERFORMAT_SPIRV) {
+        shader_path = "shaders/crt.frag.spv";
+        entrypoint = "main";
     } else {
-        printf("CRT shader: no supported shader format (need MSL or DXIL); shader disabled\n");
+        printf("CRT shader: no supported shader format (need MSL, DXIL, or SPIR-V); shader disabled\n");
         return false;
     }
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-24
+
+### Features
+
+- **CRT shader on Linux.** The CRT GPU shader is available on Linux (Vulkan / SPIR-V). The prebuilt `crt.frag.spv` is committed like the Windows DXIL blob; DXC is not required to build.
+
 ## 2026-08-22
 
 Covers commits since the 2026-08-19 changelog entry through 2026-08-22.

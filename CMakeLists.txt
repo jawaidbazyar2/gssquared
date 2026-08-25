@@ -1142,6 +1142,10 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
             DESTINATION "${GS2_INSTALL_DATADIR}"
             COMPONENT Runtime
         )
+        install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/shaders"
+            DESTINATION "${GS2_INSTALL_DATADIR}"
+            COMPONENT Runtime
+        )
         install(FILES "${CMAKE_BINARY_DIR}/resources/img/atlas.png"
             DESTINATION "${GS2_INSTALL_DATADIR}/img"
             COMPONENT Runtime

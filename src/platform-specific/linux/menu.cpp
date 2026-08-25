@@ -276,6 +276,15 @@ static void build_menu_bar()
             if (!has_ss) ImGui::EndDisabled();
         }
 
+        {
+            bool crt_on = mi->getCrtShader();
+            bool crt_avail = mi->getCrtShaderAvailable();
+            if (!crt_avail) ImGui::BeginDisabled();
+            if (ImGui::MenuItem("CRT Shader", "F7", crt_on))
+                mi->toggleCrtShader();
+            if (!crt_avail) ImGui::EndDisabled();
+        }
+
         if (!running) ImGui::EndDisabled();
         ImGui::EndMenu();
     }
