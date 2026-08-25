@@ -77,7 +77,7 @@ static bool test_apm_512() {
     const auto path = std::filesystem::temp_directory_path() / "gssquared_apm_512.iso";
     const uint16_t blk = 512;
     const uint32_t total = 40;
-    FILE *fp = fopen(path.c_str(), "wb");
+    FILE *fp = fopen(path.string().c_str(), "wb");
     CHECK(fp, "create 512-byte APM fixture");
     std::vector<uint8_t> zeros((size_t)total * blk, 0);
     fwrite(zeros.data(), 1, zeros.size(), fp);
@@ -136,7 +136,7 @@ static bool test_apm_2048() {
     const auto path = std::filesystem::temp_directory_path() / "gssquared_apm_2048.hdv";
     const uint16_t blk = 2048;
     const uint32_t total = 7;
-    FILE *fp = fopen(path.c_str(), "wb");
+    FILE *fp = fopen(path.string().c_str(), "wb");
     CHECK(fp, "create 2048-byte APM fixture");
     std::vector<uint8_t> zeros((size_t)total * blk, 0);
     fwrite(zeros.data(), 1, zeros.size(), fp);
@@ -183,7 +183,7 @@ static bool test_apm_cooked_cd() {
     /* DDM says 512, first PM is at offset 2048 (padded CD sector 0). */
     const auto path = std::filesystem::temp_directory_path() / "gssquared_apm_cooked.iso";
     const uint64_t file_size = 16ull * 2048;
-    FILE *fp = fopen(path.c_str(), "wb");
+    FILE *fp = fopen(path.string().c_str(), "wb");
     CHECK(fp, "create cooked APM fixture");
     std::vector<uint8_t> zeros((size_t)file_size, 0);
     fwrite(zeros.data(), 1, zeros.size(), fp);
@@ -221,7 +221,7 @@ static bool test_apm_cooked_cd() {
 
 static bool test_not_apm() {
     const auto path = std::filesystem::temp_directory_path() / "gssquared_plain.hdv";
-    FILE *fp = fopen(path.c_str(), "wb");
+    FILE *fp = fopen(path.string().c_str(), "wb");
     CHECK(fp, "create plain hdv");
     std::vector<uint8_t> zeros(64 * 512, 0);
     fwrite(zeros.data(), 1, zeros.size(), fp);
