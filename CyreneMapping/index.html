@@ -19,7 +19,7 @@
     
     
       
-        <title>Saved Config Files - GSSquared Documentation</title>
+        <title>Cyrene ↔ GSSquared DebugProtocol Mapping - GSSquared Documentation</title>
       
     
     
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#saved-config-files" class="md-skip">
+        <a href="#cyrene-gssquared-debugprotocol-mapping" class="md-skip">
           Skip to content
         </a>
       
@@ -104,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Saved Config Files
+              Cyrene ↔ GSSquared DebugProtocol Mapping
             
           </span>
         </div>
@@ -2552,10 +2552,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#two-file-formats-pick-one" class="md-nav__link">
+  <a href="#verdict" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two file formats (pick one)
+        Verdict
       
     </span>
   </a>
@@ -2563,10 +2563,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#opening-a-config" class="md-nav__link">
+  <a href="#architecture-comparison" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Opening a config
+        Architecture comparison
       
     </span>
   </a>
@@ -2574,55 +2574,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#your-first-gs2-file" class="md-nav__link">
+  <a href="#command-mapping-c2k-debugprotocol" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Your first .gs2 file
+        Command mapping (C2K → DebugProtocol)
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#top-level-settings" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Top-level settings
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Top-level settings">
+    <nav class="md-nav" aria-label="Command mapping (C2K → DebugProtocol)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#platforms" class="md-nav__link">
+  <a href="#k2c-responses-intermediary-cyrene" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Platforms
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#machine-identity-id" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Machine identity (id)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#clock-and-video" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Clock and video
+        K2C responses (intermediary → Cyrene)
       
     </span>
   </a>
@@ -2635,22 +2602,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#expansion-cards-cards" class="md-nav__link">
+  <a href="#snapshot-synthesis-k2c_send_snapshot" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Expansion cards — [[cards]]
+        Snapshot synthesis (K2C_SEND_SNAPSHOT)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Expansion cards — [[cards]]">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#breakpoint-mapping-shared-memory-text-bp_set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breakpoint mapping (shared memory text → BP_SET)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Breakpoint mapping (shared memory text → BP_SET)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#card-types" class="md-nav__link">
+  <a href="#supported-direct-or-approximate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Card types
+        Supported (direct or approximate)
       
     </span>
   </a>
@@ -2658,10 +2636,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#parallel-and-serial-attachments" class="md-nav__link">
+  <a href="#unsupported-report-parse-error-or-ignore-line" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Parallel and serial attachments
+        Unsupported (report parse error or ignore line)
       
     </span>
   </a>
@@ -2674,22 +2652,55 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#disk-images-storage" class="md-nav__link">
+  <a href="#operation-record-59-bytes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Disk images — [[storage]]
+        Operation record (59 bytes)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Disk images — [[storage]]">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-execution-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event / execution mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trace-log-output-shared-memory-ring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trace / log output (shared memory ring)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gap-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gap summary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Gap summary">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#where-to-put-image-files" class="md-nav__link">
+  <a href="#intermediary-only-no-gs2-change-required" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Where to put image files
+        Intermediary-only (no GS2 change required)
       
     </span>
   </a>
@@ -2697,10 +2708,88 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#which-slot-and-drive" class="md-nav__link">
+  <a href="#degraded-works-with-limitations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Which slot and drive?
+        Degraded (works with limitations)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hard-gaps-need-gs2-extensions-or-accept-missing-cyrene-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hard gaps (need GS2 extensions or accept missing Cyrene features)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hard gaps (need GS2 extensions or accept missing Cyrene features)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#semantic-stop-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic stop conditions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#system-call-breakpoints-and-trace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System-call breakpoints and trace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#battery-ram-in-snapshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Battery RAM in snapshot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logpoints-and-file-actions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logpoints and file actions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-breakpoint-comparators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data breakpoint comparators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register-hold-breakpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register hold breakpoints
       
     </span>
   </a>
@@ -2711,62 +2800,6 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#serial-parallel-ports-connections" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Serial / parallel ports — [[connections]]
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#complete-examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Complete examples
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Complete examples">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#minimal-enhanced-e-with-one-boot-disk" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Minimal Enhanced //e with one boot disk
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#apple-daily-driver-style" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Apple ][+ “daily driver” style
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#apple-iigs-with-smartport-volumes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Apple IIgs with SmartPort volumes
-      
-    </span>
-  </a>
-  
-</li>
         
       </ul>
     </nav>
@@ -2774,82 +2807,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#a2fusion-profiles-and-settingstxt" class="md-nav__link">
+  <a href="#recommended-intermediary-shape" class="md-nav__link">
     <span class="md-ellipsis">
       
-        A2Fusion Profiles and Settings.txt
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="A2Fusion Profiles and Settings.txt">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#example-profile-file" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Example profile file
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-settings-keys-map-to-gs2-concepts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How Settings keys map to .gs2 concepts
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#preference-keys-display-speed-audio" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Preference keys (display, speed, audio)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#profilestxt-and-global-settingstxt" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Profiles.txt and Global Settings.txt
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#when-to-use-which-format" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        When to use which format
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#common-mistakes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Common mistakes
+        Recommended intermediary shape
       
     </span>
   </a>
@@ -2857,10 +2818,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#organizing-your-configs" class="md-nav__link">
+  <a href="#suggested-gs2-protocol-additions-priority-order" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Organizing your configs
+        Suggested GS2 protocol additions (priority order)
       
     </span>
   </a>
@@ -2868,10 +2829,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#further-reading" class="md-nav__link">
+  <a href="#implementation-readiness-checklist" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Further reading
+        Implementation readiness checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
       
     </span>
   </a>
@@ -2898,707 +2870,606 @@
   
 
 
-<h1 id="saved-config-files">Saved Config Files<a class="headerlink" href="#saved-config-files" title="Permanent link">&para;</a></h1>
-<p>GSSquared lets you save and reload a complete virtual Apple II setup: which model you are emulating, what cards are in the slots, which disk images are mounted, and (optionally) serial-port attachments. That setup lives in a <strong>saved config file</strong>.</p>
-<p>This guide is written for people who want to <strong>create or edit their own configs</strong>. If you need every field, validation rule, and enum value, see <a href="../SystemConfigTOML/">SystemConfigTOML.md</a>.</p>
+<h1 id="cyrene-gssquared-debugprotocol-mapping">Cyrene ↔ GSSquared DebugProtocol Mapping<a class="headerlink" href="#cyrene-gssquared-debugprotocol-mapping" title="Permanent link">&para;</a></h1>
+<p>Assessment of whether <a href="../DebugProtocol/">DebugProtocol.md</a> (v1) is sufficient to build an <strong>intermediary server</strong> that speaks the Cyrene/KEGS IPC contract on one side and GSSquared’s debug socket on the other.</p>
+<p><strong>Cyrene reference:</strong> <code>/Users/bazyar/src/CyreneSourceCode/CyrenePlugInForKEGS</code> — see <code>CYRENE_KEGS_PROTOCOL.md</code>, <code>Cyrene_WindowIPC.h</code>, <code>Cyrene_Breakpoint.c</code>.</p>
+<p><strong>Scope:</strong> Apple IIgs only (<code>-p 5</code>). Cyrene is a 65816 / GS/OS–oriented debugger; GS2’s multi-platform commands are irrelevant to this bridge.</p>
 <hr />
-<h2 id="two-file-formats-pick-one">Two file formats (pick one)<a class="headerlink" href="#two-file-formats-pick-one" title="Permanent link">&para;</a></h2>
+<h2 id="verdict">Verdict<a class="headerlink" href="#verdict" title="Permanent link">&para;</a></h2>
+<p><strong>Yes — for a first useful bridge.</strong> DebugProtocol now covers the core loop Cyrene needs: session handshake, pause/continue, instruction stepping, register snapshots at stop, multi-domain memory peek/poke, typed breakpoints with stop events, and Ensoniq peripheral state.</p>
+<p><strong>No — for full Cyrene parity without extra work.</strong> Several Cyrene features have no GS2 wire equivalent (semantic stop conditions, system-call breakpoints, logpoints, system-call trace ring, battery RAM in snapshots, streaming 59-byte operation batches with Toolbox call numbers). An intermediary can <strong>emulate some</strong> of these (blocking acks, snapshot assembly, GOID counters, trace→operation translation) but others need <strong>GS2 extensions</strong> or <strong>accept degraded behavior</strong>.</p>
+<p>Recommended posture: ship an intermediary that implements Cyrene IPC + shared memory on Windows (or a Cyrene-facing TCP shim), maps the <strong>supported subset</strong> below, and documents unsupported Cyrene breakpoint/stop forms with clear errors in the shared breakpoint region.</p>
+<hr />
+<h2 id="architecture-comparison">Architecture comparison<a class="headerlink" href="#architecture-comparison" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Format</th>
-<th>Filename</th>
-<th>Best for</th>
+<th>Aspect</th>
+<th>Cyrene ↔ KEGS</th>
+<th>Cyrene ↔ intermediary ↔ GS2</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>GS2 native</strong></td>
-<td><code>Something.gs2</code></td>
-<td>Configs you write yourself. Clear structure, easy to read.</td>
+<td>Transport</td>
+<td><code>WM_COPYDATA</code> between hidden HWNDs</td>
+<td>Intermediary presents Cyrene IPC; connects to GS2 <code>AF_UNIX</code> debug socket</td>
 </tr>
 <tr>
-<td><strong>A2Fusion Profiles</strong></td>
-<td><code>Something Settings.txt</code></td>
-<td>Profile packs from the community (arqyv / A2Fusion). GS2 can load these, but you usually do not hand-edit them.</td>
+<td>Bulk data</td>
+<td>~1 MB named shared memory (<code>Local\Cyrene_&lt;pid&gt;</code>)</td>
+<td>Intermediary owns shared memory; fills from GS2 commands</td>
+</tr>
+<tr>
+<td>Sync model</td>
+<td>KEGS <strong>blocks emulation</strong> until next C2K command after K2C data</td>
+<td>GS2 is <strong>async</strong> (requests + unsolicited <code>EVENT</code>s); intermediary must block Cyrene side and sequence GS2 I/O</td>
+</tr>
+<tr>
+<td>Memory read</td>
+<td>Full snapshot (~MB) per stop</td>
+<td>Synthesize from many <code>READMEM</code> / <code>GET_REGS</code> / <code>STATE_GET</code> calls</td>
+</tr>
+<tr>
+<td>Breakpoints</td>
+<td>Text lines in shared memory</td>
+<td>Parse lines → <code>BP_SET</code>; map hits → Cyrene stop reason <code>10</code></td>
+</tr>
+<tr>
+<td>Live progress</td>
+<td>GOID QWORD at shared offset 0</td>
+<td>Intermediary maintains GOID/GCC counters (not tied to GS2 internals)</td>
 </tr>
 </tbody>
 </table>
-<p>Both formats describe the same thing internally. GS2 converts either one into the same machine setup at boot time.</p>
-<p>There is also <strong><code>Profiles.txt</code></strong>, which is a <strong>catalog</strong> listing available profiles in a pack. You cannot boot from <code>Profiles.txt</code> directly — open a specific <code>… Settings.txt</code> file (or let the Profiles browser pick one for you).</p>
+<p>The intermediary is therefore a <strong>stateful adapter</strong>, not a thin opcode translator.</p>
 <hr />
-<h2 id="opening-a-config">Opening a config<a class="headerlink" href="#opening-a-config" title="Permanent link">&para;</a></h2>
+<h2 id="command-mapping-c2k-debugprotocol">Command mapping (C2K → DebugProtocol)<a class="headerlink" href="#command-mapping-c2k-debugprotocol" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Cyrene (C2K)</th>
+<th>GS2</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OPEN_CONNECTION</code></td>
+<td><code>HELLO</code></td>
+<td>Intermediary accepts Cyrene window name; opens GS2 socket separately</td>
+</tr>
+<tr>
+<td><code>CLOSE_CONNECTION</code></td>
+<td>close socket</td>
+<td>Optional <code>QUIT</code> only if shutting down emulator</td>
+</tr>
+<tr>
+<td><code>GET_SNAPSHOT</code></td>
+<td>composite</td>
+<td>See <a href="#snapshot-synthesis-k2c_send_snapshot">Snapshot synthesis</a></td>
+</tr>
+<tr>
+<td><code>GET_OPERATION</code> + <code>Stop=xN</code></td>
+<td><code>STEP_INTO(N)</code> then wait <code>EVT_STOPPED</code></td>
+<td>Cyrene uses GOID-relative stop; GS2 uses instruction count — equivalent for fixed N</td>
+</tr>
+<tr>
+<td><code>GET_OPERATION</code> + <code>Stop=@addr</code></td>
+<td>temp <code>BP_SET</code> EXEC + <code>CONTINUE</code></td>
+<td>Remove temp BP after stop</td>
+</tr>
+<tr>
+<td><code>GET_OPERATION</code> + <code>Stop=JMP/JSR/RTS/VBL/INTERRUPT/TOOLBOX/OS</code></td>
+<td><strong>no direct map</strong></td>
+<td>See <a href="#gap-semantic-stop-conditions">Semantic stop conditions</a></td>
+</tr>
+<tr>
+<td><code>PAUSE</code></td>
+<td><code>PAUSE</code></td>
+<td>Cyrene stop reason maps to explicit pause, not Cyrene code <code>5</code></td>
+</tr>
+<tr>
+<td><code>WRITE_DATA</code></td>
+<td><code>WRITEMEM</code></td>
+<td>Cyrene: <code>(addr &amp; 0xFF000000)==0</code> → RAM at <code>addr &amp; 0xFFFFFF</code>; else DOC → GS2 <code>MEM_MAIN</code> / <code>MEM_ENSONIQ</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="k2c-responses-intermediary-cyrene">K2C responses (intermediary → Cyrene)<a class="headerlink" href="#k2c-responses-intermediary-cyrene" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Cyrene (K2C)</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SEND_SNAPSHOT</code></td>
+<td>Synthesized buffer (59-byte op + stop byte + RAM + DOC + BRAM + DOC regs)</td>
+</tr>
+<tr>
+<td><code>SEND_OPERATION</code></td>
+<td>Translated from <code>GET_TRACE</code> windows and/or stepped instructions</td>
+</tr>
+<tr>
+<td><code>CLOSE_CONNECTION</code></td>
+<td>GS2 process exit or debug socket close</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="snapshot-synthesis-k2c_send_snapshot">Snapshot synthesis (<code>K2C_SEND_SNAPSHOT</code>)<a class="headerlink" href="#snapshot-synthesis-k2c_send_snapshot" title="Permanent link">&para;</a></h2>
+<p>Cyrene expects a single variable-length blob (see Cyrene spec offsets 0, 100, 101, 512, 768, 1024+).</p>
+<table>
+<thead>
+<tr>
+<th>Snapshot region</th>
+<th>Cyrene offset</th>
+<th>GS2 source</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Current operation</td>
+<td>0, 59 bytes</td>
+<td><code>GET_REGS</code> + last completed trace / live peek</td>
+<td><strong>Partial</strong> — see <a href="#gap-operation-record-59-bytes">Operation record</a></td>
+</tr>
+<tr>
+<td>Stop reason</td>
+<td>100</td>
+<td><code>EVT_STOPPED.reason</code></td>
+<td><strong>Partial</strong> — map GS2 reasons to Cyrene 1–10</td>
+</tr>
+<tr>
+<td>Breakpoint ID</td>
+<td>101</td>
+<td><code>EVT_STOPPED.bp_id</code></td>
+<td>OK when <code>reason=10</code></td>
+</tr>
+<tr>
+<td>DOC registers</td>
+<td>512, 227 bytes</td>
+<td><code>STATE_GET</code> (<code>DEVICE_ID_ENSONIQ</code>)</td>
+<td><strong>Partial</strong> — layout differs; intermediary must pack Cyrene’s 227-byte DOC block from GS2’s 784-byte blob</td>
+</tr>
+<tr>
+<td>Battery RAM</td>
+<td>768, 256 bytes</td>
+<td>—</td>
+<td><strong>Gap</strong> — no <code>READMEM</code> domain or <code>STATE_GET</code> for <code>DEVICE_ID_RTC_PRAM</code></td>
+</tr>
+<tr>
+<td>Fast/slow RAM</td>
+<td>1024+</td>
+<td><code>READMEM</code> <code>MEM_MAIN_RAW</code> / banked reads</td>
+<td>OK (multiple round-trips; mind 64 KiB/frame cap)</td>
+</tr>
+<tr>
+<td>ROM</td>
+<td>after RAM</td>
+<td><code>READMEM</code> <code>MEM_MAIN</code> at <code>$FC0000</code>–<code>$FFFFFF</code></td>
+<td>OK via CPU view</td>
+</tr>
+<tr>
+<td>DOC RAM</td>
+<td>after ROM</td>
+<td><code>READMEM</code> <code>MEM_ENSONIQ</code></td>
+<td>OK</td>
+</tr>
+</tbody>
+</table>
+<p>Stop-reason mapping (GS2 → Cyrene byte at offset 100):</p>
+<table>
+<thead>
+<tr>
+<th>GS2 <code>EVT_STOPPED.reason</code></th>
+<th>Cyrene code</th>
+<th>Cyrene meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>STOP_STEP</code> (4)</td>
+<td>1</td>
+<td>GOID count (if stop was <code>Stop=xN</code>)</td>
+</tr>
+<tr>
+<td><code>STOP_BP_EXEC</code> (1)</td>
+<td>5 or 10</td>
+<td>Address / breakpoint — use 10 if <code>bp_id != 0</code></td>
+</tr>
+<tr>
+<td><code>STOP_BP_DATA</code> (2)</td>
+<td>10</td>
+<td>Breakpoint</td>
+</tr>
+<tr>
+<td><code>STOP_BP_IO</code> (3)</td>
+<td>10</td>
+<td>Breakpoint</td>
+</tr>
+<tr>
+<td><code>STOP_PAUSE</code> (5)</td>
+<td>—</td>
+<td>Cyrene has no direct “host paused” code; use <code>10</code> with id 0 or extend adapter convention</td>
+</tr>
+</tbody>
+</table>
+<p>Semantic stops (JMP, VBL, Toolbox, …) have <strong>no GS2 event</strong> today.</p>
+<hr />
+<h2 id="breakpoint-mapping-shared-memory-text-bp_set">Breakpoint mapping (shared memory text → <code>BP_SET</code>)<a class="headerlink" href="#breakpoint-mapping-shared-memory-text-bp_set" title="Permanent link">&para;</a></h2>
+<p>Cyrene writes semicolon-separated lines to shared memory; KEGS parses in <code>Cyrene_Breakpoint.c</code>. The intermediary parses the same text and issues <code>BP_SET</code> / <code>BP_CLEAR</code> / <code>BP_ENABLE</code>.</p>
+<h3 id="supported-direct-or-approximate">Supported (direct or approximate)<a class="headerlink" href="#supported-direct-or-approximate" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Cyrene source + trigger</th>
+<th>GS2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Address=BB/HHLL</code> + <code>Execute</code></td>
+<td><code>BP_KIND_EXEC</code>, <code>address = (BB&lt;&lt;16)\|HHLL</code>, <code>addr_mask</code> from <code>*</code> wildcards</td>
+</tr>
+<tr>
+<td><code>Address=…</code> + <code>Read</code> / <code>Write</code> / <code>ReadWrite</code></td>
+<td><code>BP_KIND_DATA</code> + <code>BP_ACCESS_*</code></td>
+</tr>
+<tr>
+<td><code>Address=BB/HHLL</code> in <code>$C000</code>–<code>$C0FF</code> + R/W</td>
+<td><code>BP_KIND_IO</code> (bank whitelist matches Cyrene soft-switch banks)</td>
+</tr>
+<tr>
+<td><code>Read: = XX</code> / <code>Write: = XX</code> (byte, equality)</td>
+<td><code>FLAG_DATA_MATCH</code> + <code>data_value</code> / <code>data_mask</code></td>
+</tr>
+<tr>
+<td><code>Repeat:Only&lt;N&gt;</code> / <code>Repeat:After&lt;N&gt;</code></td>
+<td><code>ignore_count</code> / hit-count logic in intermediary (GS2 <code>ignore_count</code> = skip N hits before stop — map <code>After&lt;N&gt;</code>; <code>Only&lt;N&gt;</code> needs intermediary-side disable after N hits)</td>
+</tr>
+<tr>
+<td><code>Action:Stop</code></td>
+<td>normal BP stop → Cyrene reason 10</td>
+</tr>
+</tbody>
+</table>
+<p>Wildcard addresses (<code>*</code> in hex digits): map to GS2 <code>addr_mask</code> nibble masks (same idea as Cyrene’s <code>source_address_mask</code>).</p>
+<h3 id="unsupported-report-parse-error-or-ignore-line">Unsupported (report parse error or ignore line)<a class="headerlink" href="#unsupported-report-parse-error-or-ignore-line" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Cyrene feature</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SystemCall=P8/P16/GSOS/TOOL-…</code></td>
+<td>GS2 does not instrument Toolbox / ProDOS / GS/OS calls</td>
+</tr>
+<tr>
+<td><code>Register=…</code> + <code>Hold:</code></td>
+<td>No register watch / compare breakpoint kind</td>
+</tr>
+<tr>
+<td><code>Operation=NNOOOOPPQQ</code></td>
+<td>No opcode/operand pattern breakpoint</td>
+</tr>
+<tr>
+<td><code>Address=src-dst</code> range (MVN/MVP)</td>
+<td>GS2 range BPs are single contiguous span, not dual-address block moves</td>
+</tr>
+<tr>
+<td><code>Read/Write: !=, &gt;, &gt;=, &lt;, &lt;=</code></td>
+<td>GS2 data match is <strong>byte equality with mask</strong> only</td>
+</tr>
+<tr>
+<td>16-bit compare values in triggers</td>
+<td>GS2 watches treat bus as <strong>8-bit</strong> for value match</td>
+</tr>
+<tr>
+<td><code>Action:Print'…'</code> / <code>Action:File'…'</code></td>
+<td>No logpoint / trace-to-ring-buffer in GS2</td>
+</tr>
+<tr>
+<td><code>Symbol=…</code></td>
+<td>Cyrene resolves before send; still OK if resolved to <code>Address=</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="operation-record-59-bytes">Operation record (59 bytes)<a class="headerlink" href="#operation-record-59-bytes" title="Permanent link">&para;</a></h2>
+<p>Cyrene’s per-instruction record (<code>OPERATION_DATA_SIZE = 59</code>) is <strong>not</strong> the same as GS2’s <code>system_trace_entry_t</code> (40 bytes, documented in DebugProtocol).</p>
+<table>
+<thead>
+<tr>
+<th>Cyrene field</th>
+<th>GS2 trace / stop blob</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A, X, Y, PC, PB, DB, SP, D, P</td>
+<td>Present (layout differs)</td>
+</tr>
+<tr>
+<td>Opcode + 3 operand bytes</td>
+<td><code>opcode</code>, <code>operand</code> (32-bit) — pack into Cyrene bytes</td>
+</tr>
+<tr>
+<td>Separate read / write / jump addresses</td>
+<td><strong>Gap</strong> — GS2 has one <code>eaddr</code>, <code>data</code>, <code>f_write</code></td>
+</tr>
+<tr>
+<td>Read/write value sizes, page-wrap flags</td>
+<td><strong>Partial</strong> — <code>f_data_sz</code>, no separate wrap bits</td>
+</tr>
+<tr>
+<td><code>call_number</code> (Toolbox/OS)</td>
+<td><strong>Gap</strong> — not in GS2 trace</td>
+</tr>
+<tr>
+<td>Soft switches C02E/C02F/C035/C068</td>
+<td><strong>Gap</strong> — not in trace; could <code>READMEM</code> <code>MEM_MAIN</code> at <code>$C0xx</code> when building record</td>
+</tr>
+<tr>
+<td>GOID / GCC</td>
+<td>Intermediary counters</td>
+</tr>
+<tr>
+<td>ROM version / RAM bank count</td>
+<td>From <code>GET_STATUS</code> / config, not trace</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Streaming:</strong> Cyrene receives up to 20,000 × 59-byte records mid-run (<code>K2C_SEND_OPERATION</code>) before the final snapshot. GS2 exposes history via <code>GET_TRACE</code> (ring buffer, 40-byte entries) and stop via <code>EVT_STOPPED</code>. An intermediary can poll <code>GET_TRACE</code> during long <code>STEP_INTO</code> runs but:</p>
 <ul>
-<li><strong>System Select screen</strong> — use <strong>Launch Config…</strong> (or the folder icon) and choose a <code>.gs2</code> or <code>… Settings.txt</code> file.</li>
-<li><strong>macOS Finder</strong> — double-click a <code>.gs2</code> file (or Open With GSSquared). If the System Select screen is showing, GSSquared loads and launches that config. If emulation is already running, it shows a short message asking you to quit emulation first.</li>
-<li><strong>Command line</strong> — pass the file path as a positional argument:</li>
+<li>Entries are <strong>post-instruction</strong> and may race if the guest is not paused.</li>
+<li>Ring semantics differ from Cyrene’s forward cache flush.</li>
 </ul>
-<p><code>bash
-  gssquared ~/Documents/MyIIe.gs2
-  gssquared "Choplifter Settings.txt"</code></p>
-<p>When you launch with a config file path, GSSquared skips the System Select screen and boots straight into that configuration.</p>
-<p><strong>Save System</strong> (writing your current session back to disk) is planned but not fully wired up yet. For now, create configs by editing a <code>.gs2</code> file in a text editor.</p>
+<p>Practical approach: for <code>Stop=xN</code> with N ≤ a few thousand, step in chunks (<code>STEP_INTO</code> + wait event), pull <code>GET_TRACE</code> after each chunk, translate to 59-byte records.</p>
 <hr />
-<h2 id="your-first-gs2-file">Your first <code>.gs2</code> file<a class="headerlink" href="#your-first-gs2-file" title="Permanent link">&para;</a></h2>
-<p>A <code>.gs2</code> file is plain text in <strong>TOML</strong> format. TOML uses <code>key = value</code> lines and <code>[[sections]]</code> for repeating blocks. Comments start with <code>#</code>.</p>
-<p>Every file must start with a version line and a name:</p>
-<pre><code class="language-toml">gs2_version = 1
-name = &quot;My Enhanced IIe&quot;
-platform = &quot;apple2e_enhanced&quot;
-</code></pre>
-<p>Add a Disk II in slot 6 (the usual boot-floppy location on most setups):</p>
-<pre><code class="language-toml">[[cards]]
-slot = 6
-card = &quot;disk_ii&quot;
-</code></pre>
-<p>Save as <code>MyIIe.gs2</code>, put a disk image next to it, and mount it:</p>
-<pre><code class="language-toml">[[storage]]
-slot = 6
-drive = 1
-image = &quot;disks/BASIC SYSTEM.woz&quot;
-</code></pre>
-<p>That is a valid, bootable config. Everything else is optional.</p>
+<h2 id="event-execution-mapping">Event / execution mapping<a class="headerlink" href="#event-execution-mapping" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Cyrene behavior</th>
+<th>GS2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Block until Cyrene ack</td>
+<td>Intermediary waits on Cyrene C2K after sending K2C; drives GS2 asynchronously in background</td>
+</tr>
+<tr>
+<td>Break at BP</td>
+<td><code>EVT_STOPPED</code> + <code>PAUSE</code> semantics (<code>execution_mode=PAUSED</code>)</td>
+</tr>
+<tr>
+<td>Continue after stop</td>
+<td><code>CONTINUE</code> (Policy A for EXEC re-hit — compatible with Cyrene “step off” if Cyrene sends another <code>GET_OPERATION</code>)</td>
+</tr>
+<tr>
+<td>Step 1/10/100/…</td>
+<td><code>STEP_INTO(count)</code></td>
+</tr>
+<tr>
+<td>Live GOID at shm[0]</td>
+<td>Intermediary increments on each translated operation</td>
+</tr>
+</tbody>
+</table>
+<p>GS2 <strong><code>SET_REGS</code></strong> exists but Cyrene/KEGS never had register write — not required for Cyrene compatibility.</p>
 <hr />
-<h2 id="top-level-settings">Top-level settings<a class="headerlink" href="#top-level-settings" title="Permanent link">&para;</a></h2>
-<p>These go at the start of the file (before any <code>[[cards]]</code> blocks).</p>
+<h2 id="trace-log-output-shared-memory-ring">Trace / log output (shared memory ring)<a class="headerlink" href="#trace-log-output-shared-memory-ring" title="Permanent link">&para;</a></h2>
+<p>Cyrene shared memory offset 5120+: 1 MB ring of <code>P</code>/<code>F</code>/<code>T</code> lines from breakpoint print actions and system-call tracing (mask at offset 28).</p>
 <table>
 <thead>
 <tr>
-<th>Key</th>
-<th>Required?</th>
-<th>What it does</th>
+<th>Feature</th>
+<th>GS2</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>gs2_version</code></td>
-<td><strong>Yes</strong></td>
-<td>Must be <code>1</code>. Future GS2 versions may accept newer numbers.</td>
+<td>Breakpoint <code>Action:Print</code> / <code>Action:File</code></td>
+<td><strong>Gap</strong> — no formatted trace output channel</td>
 </tr>
 <tr>
-<td><code>id</code></td>
-<td>No</td>
-<td>Stable UUID for this machine. Minted automatically if missing. See <a href="#machine-identity-id">Machine identity</a>.</td>
+<td>System-call trace (<code>T</code> lines, mask bits P8/P16/GSOS/Toolbox)</td>
+<td><strong>Gap</strong> — no OS/Toolbox hook in debug protocol</td>
 </tr>
 <tr>
-<td><code>name</code></td>
-<td><strong>Yes</strong></td>
-<td>Short title shown on the System Select tile.</td>
-</tr>
-<tr>
-<td><code>platform</code></td>
-<td><strong>Yes</strong></td>
-<td>Which Apple II model. See <a href="#platforms">Platforms</a>.</td>
-</tr>
-<tr>
-<td><code>description</code></td>
-<td>No</td>
-<td>Subtitle or tooltip text.</td>
-</tr>
-<tr>
-<td><code>clock</code></td>
-<td>No</td>
-<td><code>"ntsc"</code> (default) or <code>"pal"</code>. Not valid on IIgs.</td>
-</tr>
-<tr>
-<td><code>scanner</code></td>
-<td>No</td>
-<td>Video timing. Usually omitted — GS2 picks a sensible default from <code>platform</code> and <code>clock</code>.</td>
+<td>Overflow counter at offset 24</td>
+<td>Intermediary can implement locally if emulating print actions</td>
 </tr>
 </tbody>
 </table>
-<h3 id="platforms">Platforms<a class="headerlink" href="#platforms" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Value</th>
-<th>Machine</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"apple2"</code></td>
-<td>Original Apple ][</td>
-</tr>
-<tr>
-<td><code>"apple2plus"</code></td>
-<td>Apple ][+</td>
-</tr>
-<tr>
-<td><code>"apple2e"</code></td>
-<td>Apple IIe</td>
-</tr>
-<tr>
-<td><code>"apple2e_enhanced"</code></td>
-<td>Enhanced //e</td>
-</tr>
-<tr>
-<td><code>"apple2e_65816"</code></td>
-<td>//e with 65816 accelerator</td>
-</tr>
-<tr>
-<td><code>"apple2gs"</code></td>
-<td>Apple IIgs ROM 01</td>
-</tr>
-<tr>
-<td><code>"apple2gs_rom3"</code></td>
-<td>Apple IIgs ROM 03</td>
-</tr>
-</tbody>
-</table>
-<h3 id="machine-identity-id">Machine identity (<code>id</code>)<a class="headerlink" href="#machine-identity-id" title="Permanent link">&para;</a></h3>
-<p><code>id</code> is a UUID that identifies the <em>machine</em>, not the filename. On IIgs platforms, battery RAM (Control Panel / NVRAM) is stored as:</p>
-<p><code>PrefPath/bram/&lt;id&gt;.bin</code></p>
-<p>(for example under <code>~/Library/Application Support/jawaidbazyar2/GSSquared/bram/</code> on macOS).</p>
-<table>
-<thead>
-<tr>
-<th>Action</th>
-<th>BRAM result</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Rename / move the <code>.gs2</code> (same <code>id</code>)</td>
-<td>Same BRAM</td>
-</tr>
-<tr>
-<td>Save As to a new file</td>
-<td>New <code>id</code> → separate BRAM</td>
-</tr>
-<tr>
-<td>Copy <code>id</code> into another <code>.gs2</code></td>
-<td>Shared BRAM (same machine)</td>
-</tr>
-</tbody>
-</table>
-<p>If <code>id</code> is missing when you load a writable <code>.gs2</code>, GSSquared assigns one and may rewrite the file. You rarely need to set it yourself.</p>
-<h3 id="clock-and-video">Clock and video<a class="headerlink" href="#clock-and-video" title="Permanent link">&para;</a></h3>
+<hr />
+<h2 id="gap-summary">Gap summary<a class="headerlink" href="#gap-summary" title="Permanent link">&para;</a></h2>
+<h3 id="intermediary-only-no-gs2-change-required">Intermediary-only (no GS2 change required)<a class="headerlink" href="#intermediary-only-no-gs2-change-required" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong><code>clock = "ntsc"</code></strong> — North American timing (default).</li>
-<li><strong><code>clock = "pal"</code></strong> — European timing. Use with II, II+, and IIe family only.</li>
-<li><strong><code>scanner</code></strong> — Advanced. Values: <code>"apple2"</code>, <code>"apple2e"</code>, <code>"apple2e_pal"</code>, <code>"apple2gs"</code>. If you are building a PAL //e, set <code>clock = "pal"</code> and you can skip <code>scanner</code>; GS2 will use <code>"apple2e_pal"</code>.</li>
+<li>Windows <code>WM_COPYDATA</code> + shared memory façade</li>
+<li>Synchronous blocking ack semantics on Cyrene side</li>
+<li>GOID / GCC generation</li>
+<li>Full snapshot assembly from many protocol round-trips (slow but correct except BRAM)</li>
+<li>40 → 59 byte operation translation (with documented missing fields zeroed)</li>
+<li>Cyrene breakpoint text parser → <code>BP_SET</code></li>
+<li><code>Repeat:Only</code> / complex repeat modes via intermediary state</li>
+<li>Stop reason byte mapping for supported stop types</li>
 </ul>
-<p>Motherboard devices (keyboard, built-in IIgs sound, built-in floppy controller on the GS, and so on) are added automatically from <code>platform</code>. You only list <strong>expansion cards</strong> in <code>[[cards]]</code>.</p>
-<hr />
-<h2 id="expansion-cards-cards">Expansion cards — <code>[[cards]]</code><a class="headerlink" href="#expansion-cards-cards" title="Permanent link">&para;</a></h2>
-<p>Each card occupies one slot. Slots are numbered <strong>0 through 7</strong>.</p>
-<pre><code class="language-toml">[[cards]]
-slot = 6
-card = &quot;disk_ii&quot;
-
-[[cards]]
-slot = 7
-card = &quot;bazfast3&quot;
-</code></pre>
-<p>Rules that bite people:</p>
+<h3 id="degraded-works-with-limitations">Degraded (works with limitations)<a class="headerlink" href="#degraded-works-with-limitations" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>One card per slot.</strong> Do not list the same slot twice.</li>
-<li><strong>Some cards only fit certain slots or machines.</strong> Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight is IIgs-only and slot 3 only.</li>
-<li><strong>Most cards allow only one instance.</strong> Mockingboard and Disk II are exceptions — you can have two Mockingboards in different slots.</li>
+<li><strong><code>GET_SNAPSHOT</code> latency</strong> — many <code>READMEM</code> calls vs one KEGS memcpy; cache snapshots in intermediary if Cyrene tolerates staleness on optional refresh</li>
+<li><strong>Operation streaming</strong> — chunk stepping + <code>GET_TRACE</code> instead of true per-op flush; large <code>Stop=x10000</code> may be slow</li>
+<li><strong>Wildcard / masked address BPs</strong> — map to <code>addr_mask</code>; verify edge cases against Cyrene’s nibble <code>*</code> rules</li>
+<li><strong>DOC register block in snapshot</strong> — translate from Ensoniq <code>STATE_GET</code> v1 layout</li>
+<li><strong>Soft-switch bytes in operation record</strong> — extra <code>READMEM</code> at <code>$C02E</code> etc. when synthesizing 59-byte records</li>
 </ul>
-<h3 id="card-types">Card types<a class="headerlink" href="#card-types" title="Permanent link">&para;</a></h3>
+<h3 id="hard-gaps-need-gs2-extensions-or-accept-missing-cyrene-features">Hard gaps (need GS2 extensions or accept missing Cyrene features)<a class="headerlink" href="#hard-gaps-need-gs2-extensions-or-accept-missing-cyrene-features" title="Permanent link">&para;</a></h3>
+<h4 id="semantic-stop-conditions">Semantic stop conditions<a class="headerlink" href="#semantic-stop-conditions" title="Permanent link">&para;</a></h4>
+<p><code>C2K_GET_OPERATION</code> strings with no GS2 command:</p>
 <table>
 <thead>
 <tr>
-<th><code>card</code> value</th>
-<th>What it is</th>
+<th>Payload</th>
+<th>Needed capability</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>"language_card"</code></td>
-<td>Language card (slot 0, II / II+ only)</td>
+<td><code>Stop=JMP</code></td>
+<td>Stop on branch/jump opcode</td>
 </tr>
 <tr>
-<td><code>"disk_ii"</code></td>
-<td>Disk II controller (two 5.25" drives)</td>
+<td><code>Stop=JSR</code></td>
+<td>Stop on JSR/JSL/JML</td>
 </tr>
 <tr>
-<td><code>"prodos_clock"</code></td>
-<td>ProDOS real-time clock</td>
+<td><code>Stop=RTS</code></td>
+<td>Stop on RTS/RTL/RTI</td>
 </tr>
 <tr>
-<td><code>"thunder_clock"</code></td>
-<td>Thunder Clock Plus</td>
+<td><code>Stop=VBL</code></td>
+<td>Vertical-blank stop</td>
 </tr>
 <tr>
-<td><code>"parallel"</code></td>
-<td><a href="../Cards_Parallel/">Parallel Interface</a></td>
+<td><code>Stop=INTERRUPT</code></td>
+<td>IRQ/NMI entry stop</td>
 </tr>
 <tr>
-<td><code>"mockingboard"</code></td>
-<td>Mockingboard sound</td>
+<td><code>Stop=TOOLBOX</code></td>
+<td>Toolbox call stop</td>
 </tr>
 <tr>
-<td><code>"mouse"</code></td>
-<td><a href="../Cards_AppleMouse/">Apple Mouse III</a>; <code>"applemouseiii"</code> is an alias</td>
-</tr>
-<tr>
-<td><code>"videx"</code></td>
-<td>Videx 80-column (II / II+ only, slot 3)</td>
-</tr>
-<tr>
-<td><code>"mem_expansion"</code></td>
-<td>RAM expansion (Slinky-style)</td>
-</tr>
-<tr>
-<td><code>"prodos_block"</code></td>
-<td>Deprecated - do not use</td>
-</tr>
-<tr>
-<td><code>"prodos_block2"</code></td>
-<td>Deprecated - do not use</td>
-</tr>
-<tr>
-<td><code>"bazfast3"</code></td>
-<td>SmartPort / hard-disk controller (also accepts <code>"smartport"</code> or <code>"pdblock3"</code>)</td>
-</tr>
-<tr>
-<td><code>"vidhd"</code></td>
-<td>VIDHD (65816 //e only)</td>
-</tr>
-<tr>
-<td><code>"second_sight"</code></td>
-<td>Second Sight (IIgs only)</td>
-</tr>
-<tr>
-<td><code>"super_serial"</code></td>
-<td><a href="../Cards_SuperSerial/">Super Serial Card</a></td>
-</tr>
-<tr>
-<td><code>"uthernet2"</code></td>
-<td><a href="../Cards_UthernetII/">Uthernet II</a> (IIe + IIgs; slots 1–7)</td>
+<td><code>Stop=OS</code></td>
+<td>ProDOS / GS/OS call stop</td>
 </tr>
 </tbody>
 </table>
-<p>Empty slots are simply omitted — you do not need to say “empty.”</p>
-<h3 id="parallel-and-serial-attachments">Parallel and serial attachments<a class="headerlink" href="#parallel-and-serial-attachments" title="Permanent link">&para;</a></h3>
-<p>Do <strong>not</strong> put paths on the card entry. Use <code>[[connections]]</code> (below) for parallel file/clipboard capture and serial modem/file/clipboard/host-UART attachments. See also <a href="../Cards_Parallel/">Parallel Interface</a> and <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
+<p><strong>Possible GS2 additions:</strong> <code>STEP_UNTIL</code> with a <code>stop_kind</code> enum, or temporary internal stops wired to existing CPU trace hooks. Until then, intermediary can only approximate with repeated small steps and host-side opcode inspection (too slow for interactive use).</p>
+<h4 id="system-call-breakpoints-and-trace">System-call breakpoints and trace<a class="headerlink" href="#system-call-breakpoints-and-trace" title="Permanent link">&para;</a></h4>
+<p>Cyrene <code>SystemCall=P8-XX</code>, <code>P16-XXXX</code>, <code>GSOS-XXXX</code>, <code>TOOL-XXXX</code> and the system-call trace ring require <strong>GS/OS &amp; Toolbox call detection</strong> in the emulator debug path (KEGS fills <code>call_number</code> in <code>Cyrene_Operation.c</code> / engine hook). GS2 trace records do not include call numbers; no <code>BP_KIND_SYSCALL</code> exists.</p>
+<h4 id="battery-ram-in-snapshot">Battery RAM in snapshot<a class="headerlink" href="#battery-ram-in-snapshot" title="Permanent link">&para;</a></h4>
+<p>Cyrene dumps 256 bytes at snapshot offset 768. GS2 stores BRAM in the RTC device (<code>bram[256]</code>, persisted under <code>PrefPath/bram/&lt;uuid&gt;.bin</code>) with <strong>no</strong> <code>STATE_GET</code>/<code>READMEM</code> exposure. Intermediary cannot faithfully reproduce this region without a new <strong><code>STATE_GET</code> for <code>DEVICE_ID_RTC_PRAM</code></strong> (256-byte blob) or a dedicated memory domain.</p>
+<h4 id="logpoints-and-file-actions">Logpoints and file actions<a class="headerlink" href="#logpoints-and-file-actions" title="Permanent link">&para;</a></h4>
+<p><code>Action:Print</code> / <code>Action:File</code> with template expansion (<code>[A]</code>, <code>[GOID]</code>, <code>[@addr]</code>, …) — no GS2 equivalent. Would need either logpoint support in the stop engine or intermediary-side emulation by evaluating templates on each <code>EVT_STOPPED</code> (only for stops, not for non-stop prints).</p>
+<h4 id="data-breakpoint-comparators">Data breakpoint comparators<a class="headerlink" href="#data-breakpoint-comparators" title="Permanent link">&para;</a></h4>
+<p>Cyrene supports <code>!=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code> on read/write/hold triggers (8- and 16-bit). GS2 <code>BP_SET</code> data match is <strong>fixed byte equality with mask</strong>. Relational watches require host-side continue filtering or a protocol extension.</p>
+<h4 id="register-hold-breakpoints">Register hold breakpoints<a class="headerlink" href="#register-hold-breakpoints" title="Permanent link">&para;</a></h4>
+<p>Cyrene <code>Register=PC</code> + <code>Hold: &gt;= XXXX</code> — no GS2 register watch kind. Could fake with <code>GET_REGS</code> after every stop only if combined with full instruction tracing ( impractical ).</p>
 <hr />
-<h2 id="disk-images-storage">Disk images — <code>[[storage]]</code><a class="headerlink" href="#disk-images-storage" title="Permanent link">&para;</a></h2>
-<p>Pre-mount disks so they are ready when the machine boots. Each row is one drive:</p>
-<pre><code class="language-toml">[[storage]]
-slot = 6
-drive = 1
-image = &quot;disks/BASIC SYSTEM.woz&quot;
-
-[[storage]]
-slot = 6
-drive = 2
-image = &quot;disks/empty.woz&quot;
+<h2 id="recommended-intermediary-shape">Recommended intermediary shape<a class="headerlink" href="#recommended-intermediary-shape" title="Permanent link">&para;</a></h2>
+<pre><code>┌─────────────┐   WM_COPYDATA +    ┌──────────────────┐   AF_UNIX    ┌───────────┐
+│ Cyrene.exe  │◄──shared memory───►│ cyrene-gs2-bridge │◄────────────►│ GSSquared │
+│ (Windows)   │                    │ (Windows service) │  DebugProto  │  -p 5     │
+└─────────────┘                    └──────────────────┘              └───────────┘
 </code></pre>
+<p>Core loop on <code>C2K_GET_OPERATION</code>:</p>
+<ol>
+<li>Parse stop string; if unsupported, set Cyrene-visible error (e.g. reject in breakpoint status or no-op with message in output ring).</li>
+<li>Install/update BPs from shared memory (<code>UpdateBreakpointList</code> equivalent).</li>
+<li>Issue GS2 <code>CONTINUE</code> or <code>STEP_INTO(N)</code>.</li>
+<li>Wait for <code>EVT_STOPPED</code> / <code>EVT_RUN_STATE</code> (and optionally poll <code>GET_TRACE</code> mid-run).</li>
+<li>Build <code>K2C_SEND_OPERATION</code> batches and final <code>K2C_SEND_SNAPSHOT</code>.</li>
+<li>Block until next C2K (Cyrene ack model).</li>
+</ol>
+<p>Run GS2 as: <code>./GSSquared --debug /tmp/cyrene-gs2.sock -p 5 --no-quit-confirm</code> for harness-style shutdown.</p>
+<hr />
+<h2 id="suggested-gs2-protocol-additions-priority-order">Suggested GS2 protocol additions (priority order)<a class="headerlink" href="#suggested-gs2-protocol-additions-priority-order" title="Permanent link">&para;</a></h2>
+<p>If the goal is <strong>full Cyrene parity</strong> rather than a minimal bridge, extend DebugProtocol in this order:</p>
+<ol>
+<li><strong><code>STATE_GET</code> for <code>DEVICE_ID_RTC_PRAM</code></strong> — 256-byte BRAM blob (+ version header). Unblocks snapshot offset 768.</li>
+<li><strong><code>STEP_UNTIL</code> or extended <code>STEP_INTO</code> flags</strong> — JMP / JSR / RTS / VBL / interrupt semantic stops (matches Cyrene <code>Stop=</code> strings).</li>
+<li><strong>System-call stop + trace event</strong> — Toolbox / P8 / P16 / GS/OS call number in trace or dedicated <code>EVENT</code>; enables Cyrene <code>SystemCall=</code> BPs and <code>T</code> ring lines.</li>
+<li><strong>Logpoint channel</strong> — optional text lines on BP match without stopping (<code>Action:Print</code>), or document that intermediary fakes these locally.</li>
+<li><strong>Richer data-watch compare ops</strong> — optional <code>BP_FLAG_CMP_GT</code> etc., or keep relational filters host-side only.</li>
+</ol>
+<p>Items 1–3 unblock the largest Cyrene/KEGS feature gaps; 4–5 are polish for power users.</p>
+<hr />
+<h2 id="implementation-readiness-checklist">Implementation readiness checklist<a class="headerlink" href="#implementation-readiness-checklist" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Property</th>
-<th>Meaning</th>
+<th>Cyrene workflow</th>
+<th>Ready?</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>slot</code></td>
-<td>Slot number of the <strong>controller</strong> (Disk II card, SmartPort card, or built-in IIgs drive).</td>
+<td>Connect / disconnect</td>
+<td>Yes (adapter)</td>
 </tr>
 <tr>
-<td><code>drive</code></td>
-<td>Drive number <strong>1–6</strong>, matching what you see in the Control Panel (1 = first drive).</td>
+<td>Pause</td>
+<td>Yes (<code>PAUSE</code>)</td>
 </tr>
 <tr>
-<td><code>image</code></td>
-<td>Path to the disk image file.</td>
+<td>Step 1 / 10 / … / 10000</td>
+<td>Yes (<code>STEP_INTO</code>)</td>
+</tr>
+<tr>
+<td>Run to address</td>
+<td>Yes (temp EXEC BP)</td>
+</tr>
+<tr>
+<td>Exec / read / write / I/O address breakpoints</td>
+<td>Yes (<code>BP_SET</code>, with comparator limits)</td>
+</tr>
+<tr>
+<td>Memory patch</td>
+<td>Yes (<code>WRITEMEM</code>)</td>
+</tr>
+<tr>
+<td>Register view at stop</td>
+<td>Yes (<code>EVT_STOPPED</code> / <code>GET_REGS</code>)</td>
+</tr>
+<tr>
+<td>Full memory snapshot</td>
+<td>Yes, slow (many <code>READMEM</code>; BRAM missing)</td>
+</tr>
+<tr>
+<td>Per-instruction history at stop</td>
+<td>Partial (<code>GET_TRACE</code> + translate)</td>
+</tr>
+<tr>
+<td>Step JMP/JSR/RTS/VBL/INT/Toolbox/OS</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td>System-call breakpoints</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td>Register / opcode pattern breakpoints</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td>Print / file breakpoint actions</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td>System-call trace ring</td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td>Relational data watch values</td>
+<td><strong>No</strong></td>
 </tr>
 </tbody>
 </table>
-<h3 id="where-to-put-image-files">Where to put image files<a class="headerlink" href="#where-to-put-image-files" title="Permanent link">&para;</a></h3>
+<hr />
+<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Relative paths</strong> (recommended) — resolved from the folder containing your <code>.gs2</code> file. Keep images in a subfolder next to the config so you can zip the whole bundle and share it.</li>
-<li><strong>Absolute paths</strong> — used as-is (<code>/Users/you/disks/game.po</code>).</li>
-</ul>
-<p>Supported image types include <code>.po</code>, <code>.dsk</code>, <code>.woz</code>, <code>.2mg</code>, <code>.hdv</code>, and others GS2 recognizes.</p>
-<h3 id="which-slot-and-drive">Which slot and drive?<a class="headerlink" href="#which-slot-and-drive" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Hardware</th>
-<th>Typical <code>slot</code></th>
-<th><code>drive</code> values</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Disk II card</td>
-<td><code>6</code> (often)</td>
-<td><code>1</code>, <code>2</code></td>
-</tr>
-<tr>
-<td>SmartPort / BazFast (<code>bazfast3</code>)</td>
-<td>card slot (often <code>7</code>)</td>
-<td><code>1</code>–<code>6</code></td>
-</tr>
-<tr>
-<td>IIgs built-in 3.5" (IWM)</td>
-<td><code>5</code></td>
-<td><code>1</code>, <code>2</code></td>
-</tr>
-<tr>
-<td>IIgs built-in 5.25" (IWM)</td>
-<td><code>6</code></td>
-<td><code>1</code>, <code>2</code></td>
-</tr>
-</tbody>
-</table>
-<p>On a <strong>IIgs</strong>, slot <code>6</code> is the <strong>built-in</strong> 5.25" drive — not a Disk II card. On II / II+ / IIe, slot <code>6</code> is usually a Disk II card you listed in <code>[[cards]]</code>. The <code>[[storage]]</code> syntax is the same either way; only the hardware behind that slot differs.</p>
-<p>Multiple SmartPort volumes are multiple <code>[[storage]]</code> rows on the same slot:</p>
-<pre><code class="language-toml">[[storage]]
-slot = 7
-drive = 1
-image = &quot;volumes/GSOS.po&quot;
-
-[[storage]]
-slot = 7
-drive = 2
-image = &quot;volumes/Games.po&quot;
-</code></pre>
-<hr />
-<h2 id="serial-parallel-ports-connections">Serial / parallel ports — <code>[[connections]]</code><a class="headerlink" href="#serial-parallel-ports-connections" title="Permanent link">&para;</a></h2>
-<p>Optional. Describes what is “plugged into” each serial or parallel port — file capture, clipboard, a virtual modem, or a real host UART. Full UI walkthrough: <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
-<p><strong>IIgs built-in ports</strong> (no <code>slot</code> — these are on the motherboard):</p>
-<pre><code class="language-toml">[[connections]]
-port = &quot;a&quot;
-device = &quot;file&quot;
-path = &quot;captures/printer.bin&quot;
-
-[[connections]]
-port = &quot;b&quot;
-device = &quot;modem&quot;
-</code></pre>
-<p><strong>Slot cards</strong> (Super Serial, Parallel, etc.):</p>
-<pre><code class="language-toml">[[connections]]
-slot = 2
-device = &quot;modem&quot;
-
-[[connections]]
-slot = 1
-device = &quot;file&quot;
-path = &quot;printouts/session.bin&quot;
-</code></pre>
-<table>
-<thead>
-<tr>
-<th>Property</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>port</code></td>
-<td>IIgs SCC only: <code>"a"</code> or <code>"b"</code>. Defaults to <code>"a"</code> if omitted.</td>
-</tr>
-<tr>
-<td><code>slot</code></td>
-<td>Expansion-slot card (SSC, parallel, …). Use instead of <code>port</code>.</td>
-</tr>
-<tr>
-<td><code>device</code></td>
-<td><code>"none"</code>, <code>"file"</code>, <code>"clipboard"</code>, <code>"echo"</code>, <code>"modem"</code>, or <code>"serial"</code>. Parallel allows <code>"none"</code> / <code>"file"</code> / <code>"clipboard"</code> only.</td>
-</tr>
-<tr>
-<td><code>path</code></td>
-<td>Host file when <code>device = "file"</code> (relative paths work like disk images). Host port name when <code>device = "serial"</code> (stored as-is, e.g. <code>cu.usbserial-…</code>, <code>/dev/cu.usbserial-…</code>, <code>COM3</code>, or <code>/dev/ttyUSB0</code>).</td>
-</tr>
-</tbody>
-</table>
-<p>If you omit <code>[[connections]]</code> entirely, GS2 uses platform defaults (IIgs: file + modem on native builds; SSC → modem; parallel → file).</p>
-<hr />
-<h2 id="complete-examples">Complete examples<a class="headerlink" href="#complete-examples" title="Permanent link">&para;</a></h2>
-<h3 id="minimal-enhanced-e-with-one-boot-disk">Minimal Enhanced //e with one boot disk<a class="headerlink" href="#minimal-enhanced-e-with-one-boot-disk" title="Permanent link">&para;</a></h3>
-<pre><code class="language-toml">gs2_version = 1
-name = &quot;Blank IIe&quot;
-platform = &quot;apple2e_enhanced&quot;
-
-[[cards]]
-slot = 6
-card = &quot;disk_ii&quot;
-
-[[storage]]
-slot = 6
-drive = 1
-image = &quot;disks/BASIC SYSTEM.woz&quot;
-</code></pre>
-<h3 id="apple-daily-driver-style">Apple ][+ “daily driver” style<a class="headerlink" href="#apple-daily-driver-style" title="Permanent link">&para;</a></h3>
-<pre><code class="language-toml">gs2_version = 1
-name = &quot;Apple ][+&quot;
-description = &quot;Disk II, clock, parallel, VIDEX, Mockingboard, SmartPort&quot;
-platform = &quot;apple2plus&quot;
-clock = &quot;ntsc&quot;
-
-[[cards]]
-slot = 0
-card = &quot;language_card&quot;
-
-[[cards]]
-slot = 1
-card = &quot;parallel&quot;
-
-[[cards]]
-slot = 2
-card = &quot;prodos_clock&quot;
-
-[[cards]]
-slot = 3
-card = &quot;videx&quot;
-
-[[cards]]
-slot = 4
-card = &quot;mockingboard&quot;
-
-[[cards]]
-slot = 5
-card = &quot;bazfast3&quot;
-
-[[cards]]
-slot = 6
-card = &quot;disk_ii&quot;
-
-[[cards]]
-slot = 7
-card = &quot;mem_expansion&quot;
-
-[[storage]]
-slot = 5
-drive = 1
-image = &quot;volumes/ProDOS_32MB.po&quot;
-
-[[storage]]
-slot = 6
-drive = 1
-image = &quot;disks/BASIC SYSTEM.woz&quot;
-</code></pre>
-<h3 id="apple-iigs-with-smartport-volumes">Apple IIgs with SmartPort volumes<a class="headerlink" href="#apple-iigs-with-smartport-volumes" title="Permanent link">&para;</a></h3>
-<pre><code class="language-toml">gs2_version = 1
-name = &quot;My GS Workstation&quot;
-platform = &quot;apple2gs&quot;
-
-[[cards]]
-slot = 3
-card = &quot;second_sight&quot;
-
-[[cards]]
-slot = 7
-card = &quot;bazfast3&quot;
-
-[[storage]]
-slot = 5
-drive = 1
-image = &quot;images/SystemTools_800k.2mg&quot;
-
-[[storage]]
-slot = 6
-drive = 1
-image = &quot;disks/BASIC SYSTEM.woz&quot;
-
-[[storage]]
-slot = 7
-drive = 1
-image = &quot;volumes/GSOS.po&quot;
-
-[[storage]]
-slot = 7
-drive = 2
-image = &quot;volumes/Games.po&quot;
-</code></pre>
-<hr />
-<h2 id="a2fusion-profiles-and-settingstxt">A2Fusion Profiles and <code>Settings.txt</code><a class="headerlink" href="#a2fusion-profiles-and-settingstxt" title="Permanent link">&para;</a></h2>
-<p>Community <strong>profile packs</strong> (published through arqyv / A2Fusion) ship as folders containing disk images and one or more <strong><code>… Settings.txt</code></strong> files. These follow Michael Neil’s <strong>Profiles Specification</strong> — a simple <code>key value</code> format (space-separated, <code>#</code> comments).</p>
-<p>GS2 can load any file whose name ends with <strong><code>Settings.txt</code></strong> (case-insensitive). You do not need to convert them to <code>.gs2</code> unless you want to edit by hand in TOML.</p>
-<h3 id="example-profile-file">Example profile file<a class="headerlink" href="#example-profile-file" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Choplifter on Apple IIgs
-profile.name Choplifter
-machine A2GS
-
-smartport.disk1 disks/zaxxon.dsk
-floppy.disk1 disks/zork.woz
-floppy.disk2 disks/zork2.woz
-
-machine.speed 2800000
-video.mode MONO
-</code></pre>
-<h3 id="how-settings-keys-map-to-gs2-concepts">How Settings keys map to <code>.gs2</code> concepts<a class="headerlink" href="#how-settings-keys-map-to-gs2-concepts" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Settings.txt</th>
-<th>Same idea in <code>.gs2</code></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>profile.name</code></td>
-<td><code>name</code></td>
-</tr>
-<tr>
-<td><code>machine</code></td>
-<td><code>platform</code> (see tokens below)</td>
-</tr>
-<tr>
-<td><code>gssquared.description</code></td>
-<td><code>description</code></td>
-</tr>
-<tr>
-<td><code>gssquared.clock</code></td>
-<td><code>clock</code></td>
-</tr>
-<tr>
-<td><code>gssquared.scanner</code></td>
-<td><code>scanner</code></td>
-</tr>
-<tr>
-<td><code>slot6 disk_ii</code></td>
-<td><code>[[cards]]</code> with <code>slot = 6</code>, <code>card = "disk_ii"</code></td>
-</tr>
-<tr>
-<td><code>smartport.disk1 path</code></td>
-<td><code>[[storage]]</code> on the SmartPort slot, <code>drive = 1</code></td>
-</tr>
-<tr>
-<td><code>floppy.disk1 path</code></td>
-<td><code>[[storage]]</code> on the floppy controller, <code>drive = 1</code></td>
-</tr>
-</tbody>
-</table>
-<p><strong>Machine tokens</strong> in <code>machine</code> (comma-separated; first supported one wins):</p>
-<table>
-<thead>
-<tr>
-<th>Token</th>
-<th>GS2 platform</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>APPLE2</code></td>
-<td><code>apple2</code></td>
-</tr>
-<tr>
-<td><code>APPLE2PLUS</code></td>
-<td><code>apple2plus</code></td>
-</tr>
-<tr>
-<td><code>APPLE2E</code></td>
-<td><code>apple2e</code></td>
-</tr>
-<tr>
-<td><code>APPLE2E_ENHANCED</code></td>
-<td><code>apple2e_enhanced</code></td>
-</tr>
-<tr>
-<td><code>APPLE2E_65816</code></td>
-<td><code>apple2e_65816</code></td>
-</tr>
-<tr>
-<td><code>A2GS</code></td>
-<td><code>apple2gs</code></td>
-</tr>
-</tbody>
-</table>
-<p>Card names in <code>slotN</code> lines use the same names as the <code>card</code> column in the table above (<code>disk_ii</code>, <code>mockingboard</code>, <code>smartport</code>, etc.).</p>
-<p><strong>SmartPort behavior:</strong> If a Settings file mentions <code>smartport.diskN</code> but does not define slot 7, GS2 automatically installs a SmartPort card (<code>bazfast3</code>) in slot 7 — matching how many published profiles expect things to work.</p>
-<p><strong>Paths in Settings files:</strong> Relative paths are resolved from the Settings file’s folder. Some packs use an <code>sd:</code> prefix on paths; GS2 strips that and treats the remainder as a relative path.</p>
-<h3 id="preference-keys-display-speed-audio">Preference keys (display, speed, audio)<a class="headerlink" href="#preference-keys-display-speed-audio" title="Permanent link">&para;</a></h3>
-<p>Lines like <code>machine.speed</code>, <code>video.mode</code>, and <code>video.scanlines</code> are <strong>preferences</strong> — how you want to run the machine, not which hardware is installed. GS2 reads and stores these for compatibility with profile packs, but <strong>does not apply all of them at boot yet</strong>. Hardware and disk mounts from the same file still load normally.</p>
-<h3 id="profilestxt-and-global-settingstxt"><code>Profiles.txt</code> and <code>Global Settings.txt</code><a class="headerlink" href="#profilestxt-and-global-settingstxt" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong><code>Profiles.txt</code></strong> — index inside a profile pack (“Choplifter → Choplifter Settings.txt”, and so on). Open an individual Settings file, or use the Profiles browser when it is available — not the catalog itself.</li>
-<li><strong><code>Global Settings.txt</code></strong> — app-wide defaults in the Profiles spec (networking, UI, paths). These belong to the <strong>application</strong>, not to one virtual machine. Per-machine hardware still comes from each profile’s Settings file or your <code>.gs2</code> file.</li>
-</ul>
-<h3 id="when-to-use-which-format">When to use which format<a class="headerlink" href="#when-to-use-which-format" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>You want to…</th>
-<th>Use</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Write your own config from scratch</td>
-<td><code>.gs2</code></td>
-</tr>
-<tr>
-<td>Share a config with another GS2 user</td>
-<td><code>.gs2</code> + relative disk paths</td>
-</tr>
-<tr>
-<td>Run a curated arqyv / A2Fusion pack</td>
-<td>The pack’s <code>… Settings.txt</code> as-is</td>
-</tr>
-<tr>
-<td>Match every validation rule and enum</td>
-<td><a href="../SystemConfigTOML/">SystemConfigTOML.md</a></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="common-mistakes">Common mistakes<a class="headerlink" href="#common-mistakes" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Problem</th>
-<th>Fix</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>Unsupported gs2_version</code></td>
-<td>Set <code>gs2_version = 1</code>.</td>
-</tr>
-<tr>
-<td><code>Duplicate [[cards]] slot</code></td>
-<td>Each slot number may appear only once in <code>[[cards]]</code>.</td>
-</tr>
-<tr>
-<td><code>Card videx is not allowed on platform apple2gs</code></td>
-<td>Videx is II / II+ only. Check platform vs. cards.</td>
-</tr>
-<tr>
-<td><code>clock=pal is not valid for platform apple2gs</code></td>
-<td>Remove <code>clock = "pal"</code> on IIgs configs.</td>
-</tr>
-<tr>
-<td><code>Duplicate storage entry</code></td>
-<td>Only one <code>image</code> per <code>slot</code> + <code>drive</code> pair.</td>
-</tr>
-<tr>
-<td>Disk not found at boot</td>
-<td>Check relative paths — they are relative to the <strong>config file’s directory</strong>, not the app.</td>
-</tr>
-<tr>
-<td><code>Not a .gs2 or Settings.txt file</code></td>
-<td>Rename to end in <code>.gs2</code> or <code>Settings.txt</code>.</td>
-</tr>
-<tr>
-<td>TOML syntax error</td>
-<td>Strings need quotes; table headers are exactly <code>[[cards]]</code>, <code>[[storage]]</code>, <code>[[connections]]</code>.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="organizing-your-configs">Organizing your configs<a class="headerlink" href="#organizing-your-configs" title="Permanent link">&para;</a></h2>
-<p>A portable layout that works well:</p>
-<pre><code class="language-text">MyConfigs/
-  MyIIe.gs2
-  disks/
-    BASIC SYSTEM.woz
-  volumes/
-    ProDOS_32MB.po
-</code></pre>
-<p>On macOS, user configs will eventually live under Application Support (for example <code>~/Library/Application Support/GSSquared/systems/</code>). Until Save System is implemented, you can keep files anywhere and open them with the folder icon or <code>-c</code>.</p>
-<hr />
-<h2 id="further-reading">Further reading<a class="headerlink" href="#further-reading" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong><a href="../SystemConfigTOML/">SystemConfigTOML.md</a></strong> — full schema, validation rules, connection port registry, load/save behavior, and design notes.</li>
-<li><strong>Fixture examples in the repo</strong> — <code>apps/systemconfigtest/fixtures/*.gs2</code> and <code>* Settings.txt</code> are real files GS2’s tests load successfully; useful as copy-paste starting points.</li>
+<li>GS2: <a href="../DebugProtocol/">DebugProtocol.md</a>, <a href="../DebugClient/">DebugClient.md</a>, <a href="../gs2debug/">gs2debug.md</a></li>
+<li>GS2 vs IDE protocols: <a href="../DebugProtocolVsDAP/">DebugProtocolVsDAP.md</a> (similar “adapter owns gaps” pattern)</li>
+<li>Cyrene/KEGS: <code>CYRENE_KEGS_PROTOCOL.md</code>, <code>Cyrene_WindowIPC.h</code>, <code>Cyrene_Breakpoint.h</code>, <code>Cyrene_Operation.h</code></li>
 </ul>
 
 

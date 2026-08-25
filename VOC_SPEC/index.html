@@ -19,7 +19,7 @@
     
     
       
-        <title>Saved Config Files - GSSquared Documentation</title>
+        <title>Apple II Video Overlay Card (VOC) — Cleanroom Specification - GSSquared Documentation</title>
       
     
     
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#saved-config-files" class="md-skip">
+        <a href="#apple-ii-video-overlay-card-voc-cleanroom-specification" class="md-skip">
           Skip to content
         </a>
       
@@ -104,7 +104,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Saved Config Files
+              Apple II Video Overlay Card (VOC) — Cleanroom Specification
             
           </span>
         </div>
@@ -2552,55 +2552,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#two-file-formats-pick-one" class="md-nav__link">
+  <a href="#1-overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two file formats (pick one)
+        1. Overview
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#opening-a-config" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Opening a config
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#your-first-gs2-file" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Your first .gs2 file
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#top-level-settings" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Top-level settings
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Top-level settings">
+    <nav class="md-nav" aria-label="1. Overview">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#platforms" class="md-nav__link">
+  <a href="#11-real-hardware-vs-kegs-scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Platforms
+        1.1 Real Hardware vs KEGS Scope
       
     </span>
   </a>
@@ -2608,10 +2575,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#machine-identity-id" class="md-nav__link">
+  <a href="#12-mode-coupling-voc-vs-iigs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Machine identity (id)
+        1.2 Mode Coupling: VOC vs IIgs
       
     </span>
   </a>
@@ -2619,10 +2586,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#clock-and-video" class="md-nav__link">
+  <a href="#13-decoupled-mode-programming" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Clock and video
+        1.3 Decoupled Mode Programming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 Architecture
       
     </span>
   </a>
@@ -2635,22 +2613,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#expansion-cards-cards" class="md-nav__link">
+  <a href="#2-slot-and-io-map" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Expansion cards — [[cards]]
+        2. Slot and I/O Map
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Expansion cards — [[cards]]">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-device-select-registers-c0b0c0bf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Device-Select Registers ($C0B0–$C0BF)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Device-Select Registers ($C0B0–$C0BF)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#card-types" class="md-nav__link">
+  <a href="#c0b0-status-vbl-acknowledge" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Card types
+        $C0B0 — Status / VBL Acknowledge
       
     </span>
   </a>
@@ -2658,10 +2647,65 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#parallel-and-serial-attachments" class="md-nav__link">
+  <a href="#c0b1-mode-control" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Parallel and serial attachments
+        $C0B1 — Mode Control
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c0b3-dissolve-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $C0B3 — Dissolve Control
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c0b4-key-color-green-blue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $C0B4 — Key Color (Green / Blue)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c0b5-key-color-red-and-output-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $C0B5 — Key Color (Red) and Output Control
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c0b6-hue-saturation-adjust" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $C0B6 — Hue / Saturation Adjust
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#detection-reads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detection Reads
       
     </span>
   </a>
@@ -2674,22 +2718,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#disk-images-storage" class="md-nav__link">
+  <a href="#4-memory-architecture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Disk images — [[storage]]
+        4. Memory Architecture
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Disk images — [[storage]]">
+    <nav class="md-nav" aria-label="4. Memory Architecture">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#where-to-put-image-files" class="md-nav__link">
+  <a href="#41-shadow-banks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Where to put image files
+        4.1 Shadow Banks
       
     </span>
   </a>
@@ -2697,10 +2741,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#which-slot-and-drive" class="md-nav__link">
+  <a href="#42-shr-framebuffer-layout" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Which slot and drive?
+        4.2 SHR Framebuffer Layout
       
     </span>
   </a>
@@ -2713,33 +2757,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#serial-parallel-ports-connections" class="md-nav__link">
+  <a href="#5-functional-modes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Serial / parallel ports — [[connections]]
+        5. Functional Modes
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#complete-examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Complete examples
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Complete examples">
+    <nav class="md-nav" aria-label="5. Functional Modes">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#minimal-enhanced-e-with-one-boot-disk" class="md-nav__link">
+  <a href="#51-standard-graphics-modes-real-hardware" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Minimal Enhanced //e with one boot disk
+        5.1 Standard Graphics Modes (Real Hardware)
       
     </span>
   </a>
@@ -2747,10 +2780,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#apple-daily-driver-style" class="md-nav__link">
+  <a href="#52-standard-shr-aux-source" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Apple ][+ “daily driver” style
+        5.2 Standard SHR (Aux Source)
       
     </span>
   </a>
@@ -2758,10 +2791,43 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#apple-iigs-with-smartport-volumes" class="md-nav__link">
+  <a href="#53-page-switch-mode-shr-source-select" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Apple IIgs with SmartPort volumes
+        5.3 Page-Switch Mode (SHR Source Select)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-interlace-mode-640400-shr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 Interlace Mode (640×400 SHR)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55-video-input-mixing-stub-future-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 Video Input Mixing (Stub — Future Work)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#56-dual-monitor-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.6 Dual-Monitor Mode
       
     </span>
   </a>
@@ -2774,22 +2840,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#a2fusion-profiles-and-settingstxt" class="md-nav__link">
+  <a href="#6-initialization-and-detection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        A2Fusion Profiles and Settings.txt
+        6. Initialization and Detection
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="A2Fusion Profiles and Settings.txt">
+    <nav class="md-nav" aria-label="6. Initialization and Detection">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#example-profile-file" class="md-nav__link">
+  <a href="#61-interlace-mode-init" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Example profile file
+        6.1 Interlace Mode Init
       
     </span>
   </a>
@@ -2797,10 +2863,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#how-settings-keys-map-to-gs2-concepts" class="md-nav__link">
+  <a href="#62-register-reset-values" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How Settings keys map to .gs2 concepts
+        6.2 Register Reset Values
       
     </span>
   </a>
@@ -2808,32 +2874,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#preference-keys-display-speed-audio" class="md-nav__link">
+  <a href="#63-presence-detection" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Preference keys (display, speed, audio)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#profilestxt-and-global-settingstxt" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Profiles.txt and Global Settings.txt
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#when-to-use-which-format" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        When to use which format
+        6.3 Presence Detection
       
     </span>
   </a>
@@ -2846,10 +2890,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#common-mistakes" class="md-nav__link">
+  <a href="#7-mode-selection-truth-table" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Common mistakes
+        7. Mode Selection Truth Table
       
     </span>
   </a>
@@ -2857,10 +2901,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#organizing-your-configs" class="md-nav__link">
+  <a href="#8-kegs-implementation-matrix" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Organizing your configs
+        8. KEGS Implementation Matrix
       
     </span>
   </a>
@@ -2868,10 +2912,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#further-reading" class="md-nav__link">
+  <a href="#9-source-code-cross-references" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Further reading
+        9. Source Code Cross-References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. References
       
     </span>
   </a>
@@ -2898,707 +2953,915 @@
   
 
 
-<h1 id="saved-config-files">Saved Config Files<a class="headerlink" href="#saved-config-files" title="Permanent link">&para;</a></h1>
-<p>GSSquared lets you save and reload a complete virtual Apple II setup: which model you are emulating, what cards are in the slots, which disk images are mounted, and (optionally) serial-port attachments. That setup lives in a <strong>saved config file</strong>.</p>
-<p>This guide is written for people who want to <strong>create or edit their own configs</strong>. If you need every field, validation rule, and enum value, see <a href="../SystemConfigTOML/">SystemConfigTOML.md</a>.</p>
-<hr />
-<h2 id="two-file-formats-pick-one">Two file formats (pick one)<a class="headerlink" href="#two-file-formats-pick-one" title="Permanent link">&para;</a></h2>
+<h1 id="apple-ii-video-overlay-card-voc-cleanroom-specification">Apple II Video Overlay Card (VOC) — Cleanroom Specification<a class="headerlink" href="#apple-ii-video-overlay-card-voc-cleanroom-specification" title="Permanent link">&para;</a></h1>
+<p>This document describes the Apple IIgs Video Overlay Card (VOC) as inferred from
+the KEGS emulator implementation and related public material. It is intended as
+a cleanroom hardware specification for implementers.</p>
+<p><strong>Sources:</strong> <a href="../src/voc.c"><code>src/voc.c</code></a>, <a href="../src/moremem.c"><code>src/moremem.c</code></a>,
+<a href="../src/video.c"><code>src/video.c</code></a>, <a href="README.kegs.txt"><code>doc/README.kegs.txt</code></a>.
+Register bit names and overlay/genlock semantics come from inline comments in
+<code>voc.c</code> (attributed in KEGS to VOC development headers and public material).</p>
+<p><strong>Legend:</strong></p>
 <table>
 <thead>
 <tr>
-<th>Format</th>
-<th>Filename</th>
-<th>Best for</th>
+<th>Label</th>
+<th>Meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>GS2 native</strong></td>
-<td><code>Something.gs2</code></td>
-<td>Configs you write yourself. Clear structure, easy to read.</td>
+<td><strong>Implemented in KEGS</strong></td>
+<td>Behavior observable in KEGS source</td>
 </tr>
 <tr>
-<td><strong>A2Fusion Profiles</strong></td>
-<td><code>Something Settings.txt</code></td>
-<td>Profile packs from the community (arqyv / A2Fusion). GS2 can load these, but you usually do not hand-edit them.</td>
+<td><strong>Register-defined</strong></td>
+<td>Register exists and is stored; pixel/video effect not emulated</td>
+</tr>
+<tr>
+<td><strong>Inferred</strong></td>
+<td>Derived from architecture or comments; not verified in KEGS</td>
 </tr>
 </tbody>
 </table>
-<p>Both formats describe the same thing internally. GS2 converts either one into the same machine setup at boot time.</p>
-<p>There is also <strong><code>Profiles.txt</code></strong>, which is a <strong>catalog</strong> listing available profiles in a pack. You cannot boot from <code>Profiles.txt</code> directly — open a specific <code>… Settings.txt</code> file (or let the Profiles browser pick one for you).</p>
 <hr />
-<h2 id="opening-a-config">Opening a config<a class="headerlink" href="#opening-a-config" title="Permanent link">&para;</a></h2>
+<h2 id="1-overview">1. Overview<a class="headerlink" href="#1-overview" title="Permanent link">&para;</a></h2>
+<p>The VOC is a slot-3 expansion card with its own <strong>complete Mega II/VGC graphics
+subsystem</strong>. On real hardware it can render <strong>any Apple II/IIgs graphics mode</strong>
+(lores, hires, double-hires, text, SHR) to the VOC monitor output, with
+genlock/overlay compositing over external video.</p>
+<p><strong>Implemented in KEGS:</strong> VOC display changes apply to <strong>SHR only</strong> — 640×400
+interlace mode and main-memory SHR source. VOC registers are stored but do not
+affect lores/hires/text rendering paths.</p>
+<p>A VOC-specific extension exploited by software is <strong>640×400 SHR</strong> using dual
+shadow banks <code>$E0</code> and <code>$E1</code>. The hardware register name for this mode is
+<strong>interlace mode</strong>; the KEGS implementation target is <strong>progressive 60 Hz</strong>
+(see §5.4).</p>
+<p>KEGS enables the card via config flag <code>g_voc_enable</code> rather than hardware
+auto-detection (see §6).</p>
+<h3 id="11-real-hardware-vs-kegs-scope">1.1 Real Hardware vs KEGS Scope<a class="headerlink" href="#11-real-hardware-vs-kegs-scope" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Real VOC</th>
+<th>KEGS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lores, hires, DHR, text on VOC output</td>
+<td>Yes (independent Mega II/VGC)</td>
+<td>No VOC-specific path</td>
+</tr>
+<tr>
+<td>SHR on VOC output</td>
+<td>Yes</td>
+<td>Yes (standard aux source)</td>
+</tr>
+<tr>
+<td>SHR main-memory source (<code>$C0B1</code> 5:4=<code>01</code>)</td>
+<td>Yes</td>
+<td>Yes (<code>ALL_STAT_VOC_MAIN</code>)</td>
+</tr>
+<tr>
+<td>SHR 640×400 interlace mode</td>
+<td>Yes (30 Hz fields)</td>
+<td>Yes, progressive 60 Hz (<code>ALL_STAT_VOC_INTERLACE</code>)</td>
+</tr>
+<tr>
+<td>Video overlay / genlock compositing</td>
+<td>Yes</td>
+<td>Stub (registers only)</td>
+</tr>
+<tr>
+<td>Independent VOC vs GS video mode</td>
+<td>Partial (see §1.2)</td>
+<td>No — fully mirrored</td>
+</tr>
+</tbody>
+</table>
+<p>KEGS gates VOC display flags inside <code>video_all_stat_to_filt_stat</code> — they apply
+<strong>only when <code>ALL_STAT_SUPER_HIRES</code> is set</strong> (<code>video.c</code> lines 722–724). The
+<code>voc.c</code> header states: <em>"The only currently supported VOC feature is the SHR
+interlaced display."</em></p>
+<h3 id="12-mode-coupling-voc-vs-iigs">1.2 Mode Coupling: VOC vs IIgs<a class="headerlink" href="#12-mode-coupling-voc-vs-iigs" title="Permanent link">&para;</a></h3>
+<p><strong>Inferred:</strong> The VOC is <strong>not a simple mirror</strong> of GS video mode at all times.
+Mode coupling is <strong>partial</strong>, through the GG bus, with VOC-specific overrides.</p>
+<p><strong>Separate outputs:</strong> The IIgs host VGC drives the GS monitor; the VOC's own
+Mega II/VGC drives the VOC monitor. Apple IIgs Technical Note #70 states that
+host <code>$C02E</code>/<code>$C02F</code> counters are <strong>not synchronous</strong> with VOC video output —
+separate scan domains.</p>
+<p><strong>Shared base mode (GG Bus Enable = 1, <code>$C0B1</code> bit 0):</strong> <strong>Inferred:</strong> VOC
+observes host video soft-switch writes — at minimum <code>$C023</code> (KEGS comment:
+"ignores writes to <code>$C023</code>, etc." when bit 0 = 0). This implies the VOC VGC
+snoops host <code>$C029</code> / <code>$C050</code>–<code>$C057</code> class registers for base mode selection
+(text, lores, hires, SHR). Init sequences set <code>$C029</code> for SHR alongside VOC
+registers.</p>
+<p><strong>VOC-only overrides (independent of host display formatting):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Register</th>
+<th>Effect on VOC output only</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SHR memory source</td>
+<td><code>$C0B1</code> 5:4</td>
+<td>Aux vs main vs interlaced bank selection</td>
+</tr>
+<tr>
+<td>VOC linearization</td>
+<td><code>$C0B1</code> bit 3 (MainPageLin)</td>
+<td>Separate from host <code>$C029</code> bit 6</td>
+</tr>
+<tr>
+<td>Interlace 640×400</td>
+<td><code>$C0B1</code> 5:4=<code>11</code> + <code>$C0B5</code> bit 7</td>
+<td>VOC output path only</td>
+</tr>
+<tr>
+<td>Overlay/genlock</td>
+<td><code>$C0B3</code>–<code>$C0B5</code></td>
+<td>VOC compositor only</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Register-defined:</strong> Clearing <code>$C0B1</code> bit 3 (e.g. write <code>$30</code>) stops VOC-side
+memory linearization; the SHR buffer appears scrambled until re-enabled, even if
+host <code>$C029</code> bit 6 remains set.</p>
+<p><strong>GG Bus disabled (<code>$C0B1</code> bit 0 = 0):</strong> <strong>Inferred:</strong> VOC ignores host video
+I/O writes. Exact latched-mode behavior is not documented in KEGS.</p>
+<p><strong>Practical model:</strong></p>
 <ul>
-<li><strong>System Select screen</strong> — use <strong>Launch Config…</strong> (or the folder icon) and choose a <code>.gs2</code> or <code>… Settings.txt</code> file.</li>
-<li><strong>macOS Finder</strong> — double-click a <code>.gs2</code> file (or Open With GSSquared). If the System Select screen is showing, GSSquared loads and launches that config. If emulation is already running, it shows a short message asking you to quit emulation first.</li>
-<li><strong>Command line</strong> — pass the file path as a positional argument:</li>
+<li><strong>Memory:</strong> Always shared via <code>$E0</code>/<code>$E1</code> shadow — both subsystems read the
+  same framebuffer data.</li>
+<li><strong>Base mode:</strong> Coupled when GG bus enabled; typical software keeps host and
+  VOC in the same base mode.</li>
+<li><strong>Output format:</strong> VOC can extend SHR with interlace, alternate bank source,
+  and overlay. The GS monitor may show 320×200 SHR while the VOC monitor shows
+  640×400 interlaced SHR of the same shadow memory.</li>
+<li><strong>Full independence</strong> (GS text + VOC hires simultaneously): architecturally
+  plausible (separate VGC chips) but <strong>not confirmed</strong> in KEGS.</li>
 </ul>
-<p><code>bash
-  gssquared ~/Documents/MyIIe.gs2
-  gssquared "Choplifter Settings.txt"</code></p>
-<p>When you launch with a config file path, GSSquared skips the System Select screen and boots straight into that configuration.</p>
-<p><strong>Save System</strong> (writing your current session back to disk) is planned but not fully wired up yet. For now, create configs by editing a <code>.gs2</code> file in a text editor.</p>
-<hr />
-<h2 id="your-first-gs2-file">Your first <code>.gs2</code> file<a class="headerlink" href="#your-first-gs2-file" title="Permanent link">&para;</a></h2>
-<p>A <code>.gs2</code> file is plain text in <strong>TOML</strong> format. TOML uses <code>key = value</code> lines and <code>[[sections]]</code> for repeating blocks. Comments start with <code>#</code>.</p>
-<p>Every file must start with a version line and a name:</p>
-<pre><code class="language-toml">gs2_version = 1
-name = &quot;My Enhanced IIe&quot;
-platform = &quot;apple2e_enhanced&quot;
-</code></pre>
-<p>Add a Disk II in slot 6 (the usual boot-floppy location on most setups):</p>
-<pre><code class="language-toml">[[cards]]
-slot = 6
-card = &quot;disk_ii&quot;
-</code></pre>
-<p>Save as <code>MyIIe.gs2</code>, put a disk image next to it, and mount it:</p>
-<pre><code class="language-toml">[[storage]]
-slot = 6
-drive = 1
-image = &quot;disks/BASIC SYSTEM.woz&quot;
-</code></pre>
-<p>That is a valid, bootable config. Everything else is optional.</p>
-<hr />
-<h2 id="top-level-settings">Top-level settings<a class="headerlink" href="#top-level-settings" title="Permanent link">&para;</a></h2>
-<p>These go at the start of the file (before any <code>[[cards]]</code> blocks).</p>
+<p><strong>Implemented in KEGS:</strong> Single display, single <code>g_cur_a2_stat</code>. VOC register
+changes patch host display state directly (<code>voc_update_interlace</code> →
+<code>change_display_mode</code>). Fully mirrored — no independent VOC video mode.</p>
+<h3 id="13-decoupled-mode-programming">1.3 Decoupled Mode Programming<a class="headerlink" href="#13-decoupled-mode-programming" title="Permanent link">&para;</a></h3>
+<p><strong>Inferred technique</strong> — not implemented or tested in KEGS.</p>
+<p>Software <em>may</em> achieve <strong>VOC in SHR while the GS shows text</strong> by toggling
+<strong>GG Bus Enable</strong> (<code>$C0B1</code> bit 0).</p>
+<p><strong>Terminology:</strong></p>
 <table>
 <thead>
 <tr>
-<th>Key</th>
-<th>Required?</th>
-<th>What it does</th>
+<th>Term</th>
+<th>Register</th>
+<th>Purpose</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>gs2_version</code></td>
-<td><strong>Yes</strong></td>
-<td>Must be <code>1</code>. Future GS2 versions may accept newer numbers.</td>
+<td><strong>GG Bus Enable</strong></td>
+<td><code>$C0B1</code> bit 0</td>
+<td>VOC snoops (or ignores) host video soft-switch writes</td>
 </tr>
 <tr>
-<td><code>id</code></td>
-<td>No</td>
-<td>Stable UUID for this machine. Minted automatically if missing. See <a href="#machine-identity-id">Machine identity</a>.</td>
-</tr>
-<tr>
-<td><code>name</code></td>
-<td><strong>Yes</strong></td>
-<td>Short title shown on the System Select tile.</td>
-</tr>
-<tr>
-<td><code>platform</code></td>
-<td><strong>Yes</strong></td>
-<td>Which Apple II model. See <a href="#platforms">Platforms</a>.</td>
-</tr>
-<tr>
-<td><code>description</code></td>
-<td>No</td>
-<td>Subtitle or tooltip text.</td>
-</tr>
-<tr>
-<td><code>clock</code></td>
-<td>No</td>
-<td><code>"ntsc"</code> (default) or <code>"pal"</code>. Not valid on IIgs.</td>
-</tr>
-<tr>
-<td><code>scanner</code></td>
-<td>No</td>
-<td>Video timing. Usually omitted — GS2 picks a sensible default from <code>platform</code> and <code>clock</code>.</td>
+<td><strong>Memory shadow</strong></td>
+<td><code>$C035</code> + <code>$E0</code>/<code>$E1</code> banks</td>
+<td>CPU writes to shadowed pages land in VOC framebuffer RAM — <strong>independent of GG bus</strong></td>
 </tr>
 </tbody>
 </table>
-<h3 id="platforms">Platforms<a class="headerlink" href="#platforms" title="Permanent link">&para;</a></h3>
+<p>Do not conflate GG bus with <code>$C035</code> shadowing. SHR framebuffer updates via bank
+<code>$E0</code>/<code>$E1</code> (or aux/main shadow pages) work <strong>regardless of GG bus state</strong>.</p>
+<p><strong>Proposed decoupling sequence:</strong></p>
+<pre><code>1. $C0B1 bit 0 ← 1          ; GG bus ON — VOC follows host video I/O
+2. $C029 ← SHR              ; Both GS and VOC enter SHR
+3. $C0B1/$C0B5 ← VOC opts   ; Interlace, MainPageLin, etc.
+4. $C0B1 bit 0 ← 0          ; GG bus OFF — VOC freezes latched mode
+5. soft switches ← text     ; GS monitor → text; VOC stays SHR (inferred)
+6. Write SHR data to $E0/$E1 ; No GG bus needed for memory updates
+</code></pre>
+<p><strong>Important:</strong> Re-enabling GG bus while the host is in text mode may re-sync
+VOC to text, undoing decoupling. Keep GG bus <strong>disabled</strong> during normal
+operation when modes must differ.</p>
+<p><strong>Unverified caveats:</strong></p>
+<ul>
+<li>Whether VOC <strong>latches</strong> base mode on GG bus falling edge vs simply stops
+  receiving updates.</li>
+<li>Host <code>$C023</code> scan interrupts may not align with VOC beam when GG bus is off;
+  use <code>$C0B0</code> for VOC timing (per TN #70).</li>
+</ul>
+<pre><code class="language-mermaid">sequenceDiagram
+  participant SW as Software
+  participant GS as HostVGC
+  participant VOC as VOC_VGC
+  SW-&gt;&gt;VOC: C0B1 bit0=1 GG bus on
+  SW-&gt;&gt;GS: C029 SHR
+  SW-&gt;&gt;VOC: snooped SHR
+  SW-&gt;&gt;VOC: C0B1/C0B5 VOC format
+  SW-&gt;&gt;VOC: C0B1 bit0=0 GG bus off
+  SW-&gt;&gt;GS: soft switches text
+  Note over GS: GS monitor text
+  Note over VOC: VOC frozen SHR
+  SW-&gt;&gt;SW: write E0/E1 shadow RAM
+  Note over VOC: reads updated SHR data
+</code></pre>
+<h3 id="14-architecture">1.4 Architecture<a class="headerlink" href="#14-architecture" title="Permanent link">&para;</a></h3>
+<pre><code class="language-mermaid">flowchart LR
+  subgraph host [IIgs Host]
+    CPU[65816 CPU]
+    MainMem[Main/Aux RAM banks 0/1]
+    ShadowE0[Bank E0 shadow RAM]
+    ShadowE1[Bank E1 shadow RAM]
+  end
+  subgraph voc [VOC Slot 3]
+    DevSel[&quot;DevSel C0B0-C0BF&quot;]
+    VOCVGC[VOC VGC/MegaII]
+    GenLock[&quot;GenLock + Key/Dissolve stub&quot;]
+  end
+  Slot3ROM[&quot;Slot3 built-in ROM C300-C3FF&quot;]
+  CPU --&gt;|writes shadow pages| ShadowE0
+  CPU --&gt;|writes shadow pages| ShadowE1
+  CPU --&gt; DevSel
+  ShadowE0 --&gt; VOCVGC
+  ShadowE1 --&gt; VOCVGC
+  DevSel --&gt; VOCVGC
+  ExternalVideo[External NTSC/RGB] --&gt; GenLock
+  VOCVGC --&gt; GenLock
+  GenLock --&gt; VOCMonitor[VOC Monitor Output]
+  host --&gt; GSMonitor[IIgs Monitor Output]
+</code></pre>
+<hr />
+<h2 id="2-slot-and-io-map">2. Slot and I/O Map<a class="headerlink" href="#2-slot-and-io-map" title="Permanent link">&para;</a></h2>
+<p><strong>No VOC-specific <code>$CNxx</code> ROM.</strong> The VOC occupies slot 3 but does not provide
+card firmware in the <code>$C300</code>–<code>$C3FF</code> I/O-select range. That range remains the
+<strong>IIgs built-in slot 3 ROM</strong> (80-column firmware), served by <code>c3xx_read</code> in
+<code>moremem.c</code> from <code>g_rom_fc_ff_ptr[0x3c300+]</code>. VOC control is exclusively via
+<strong>device-select</strong> registers at <code>$C0B0</code>–<code>$C0BF</code>.</p>
 <table>
 <thead>
 <tr>
-<th>Value</th>
-<th>Machine</th>
+<th>Region</th>
+<th>Address Range</th>
+<th>Owner</th>
+<th>Function</th>
+<th>KEGS</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>"apple2"</code></td>
-<td>Original Apple ][</td>
+<td>Device Select (slot 3)</td>
+<td><code>$C0B0</code>–<code>$C0BF</code></td>
+<td>VOC</td>
+<td>Control/status registers</td>
+<td>Implemented</td>
 </tr>
 <tr>
-<td><code>"apple2plus"</code></td>
-<td>Apple ][+</td>
-</tr>
-<tr>
-<td><code>"apple2e"</code></td>
-<td>Apple IIe</td>
-</tr>
-<tr>
-<td><code>"apple2e_enhanced"</code></td>
-<td>Enhanced //e</td>
-</tr>
-<tr>
-<td><code>"apple2e_65816"</code></td>
-<td>//e with 65816 accelerator</td>
-</tr>
-<tr>
-<td><code>"apple2gs"</code></td>
-<td>Apple IIgs ROM 01</td>
-</tr>
-<tr>
-<td><code>"apple2gs_rom3"</code></td>
-<td>Apple IIgs ROM 03</td>
+<td>I/O Select (slot 3)</td>
+<td><code>$C300</code>–<code>$C3FF</code></td>
+<td>IIgs firmware</td>
+<td>Built-in slot 3 ROM (80-col)</td>
+<td>Standard ROM path</td>
 </tr>
 </tbody>
 </table>
-<h3 id="machine-identity-id">Machine identity (<code>id</code>)<a class="headerlink" href="#machine-identity-id" title="Permanent link">&para;</a></h3>
-<p><code>id</code> is a UUID that identifies the <em>machine</em>, not the filename. On IIgs platforms, battery RAM (Control Panel / NVRAM) is stored as:</p>
-<p><code>PrefPath/bram/&lt;id&gt;.bin</code></p>
-<p>(for example under <code>~/Library/Application Support/jawaidbazyar2/GSSquared/bram/</code> on macOS).</p>
+<p><strong>Related host registers (not VOC-owned, required for SHR):</strong></p>
 <table>
 <thead>
 <tr>
+<th>Register</th>
+<th>Address</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>New Video</td>
+<td><code>$C029</code></td>
+<td>Bit 7 = SHR enable; bit 6 = host-side memory linearization</td>
+</tr>
+<tr>
+<td>Shadow</td>
+<td><code>$C035</code></td>
+<td>Controls which host pages shadow into <code>$E0</code>/<code>$E1</code></td>
+</tr>
+<tr>
+<td>Scan/video IRQ</td>
+<td><code>$C023</code></td>
+<td>VGC scan-line and 1-second interrupts; gated by <code>$C0B1</code> bit 0</td>
+</tr>
+</tbody>
+</table>
+<p>Per Apple TN #70: host Mega II counters at <code>$C02E</code>/<code>$C02F</code> synchronize to
+IIgs video, <strong>not</strong> VOC video output. Use VOC status register <code>$C0B0</code> for
+VOC-output beam timing.</p>
+<hr />
+<h2 id="3-device-select-registers-c0b0c0bf">3. Device-Select Registers (<code>$C0B0</code>–<code>$C0BF</code>)<a class="headerlink" href="#3-device-select-registers-c0b0c0bf" title="Permanent link">&para;</a></h2>
+<p>All registers below are accessed via slot 3 device select. Unlisted offsets
+within <code>$C0B0</code>–<code>$C0BF</code> are undocumented in KEGS.</p>
+<h3 id="c0b0-status-vbl-acknowledge"><code>$C0B0</code> — Status / VBL Acknowledge<a class="headerlink" href="#c0b0-status-vbl-acknowledge" title="Permanent link">&para;</a></h3>
+<p><strong>Read (R/O when VOC enabled):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td>InVBL</td>
+<td>1 = in vertical blanking</td>
+</tr>
+<tr>
+<td>3</td>
+<td>VideoDetected</td>
+<td>1 = external video detected</td>
+</tr>
+<tr>
+<td>4</td>
+<td>GenLocked</td>
+<td>1 = video genlocked</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Field</td>
+<td>0 = field 0, 1 = field 1</td>
+</tr>
+<tr>
+<td>6</td>
+<td>VBLIntPending</td>
+<td>VBL interrupt request pending</td>
+</tr>
+<tr>
+<td>7</td>
+<td>LineIntPending</td>
+<td>Line interrupt request pending</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Implemented in KEGS:</strong> Bits 2 and 5 computed from host VBL state
+(<code>voc_read_reg0</code>). Bits 3–4, 6–7 not fully modeled.</p>
+<p><strong>Write:</strong> Write <code>$00</code> to clear VBL interrupt. Other write values are invalid.</p>
+<h3 id="c0b1-mode-control"><code>$C0B1</code> — Mode Control<a class="headerlink" href="#c0b1-mode-control" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>R/W</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>GGBusEnable</td>
+<td>R/W</td>
+<td>1 = VOC observes host <code>$C023</code> etc.; 0 = ignores</td>
+</tr>
+<tr>
+<td>2</td>
+<td>OutChromaFilter</td>
+<td>R/W</td>
+<td>0 = chroma filter enabled; 1 = disabled; also TextMonoOver when bit 5 set</td>
+</tr>
+<tr>
+<td>3</td>
+<td>MainPageLin</td>
+<td>R/W</td>
+<td>1 = VOC-side SHR memory linearization (like <code>$C029</code> bit 6)</td>
+</tr>
+<tr>
+<td>5:4</td>
+<td>SHRSource</td>
+<td>R/W</td>
+<td><code>00</code> = Aux (<code>$E1</code>); <code>01</code> = Main; <code>11</code> = Interlaced dual-bank</td>
+</tr>
+<tr>
+<td>6</td>
+<td>VBLIntEnable</td>
+<td>R/W</td>
+<td>Enable VBL interrupts</td>
+</tr>
+<tr>
+<td>7</td>
+<td>LineIntEnable</td>
+<td>R/W</td>
+<td>Enable line interrupts</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reset value:</strong> <code>$0D</code> (GG Bus + MainPageLin enabled).</p>
+<p><strong>Mode decode</strong> (<code>voc_update_interlace</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>(reg1 &amp; $30) == $30</code> AND <code>(reg5 &amp; $80)</code></td>
+<td>Interlace mode (640×400)</td>
+</tr>
+<tr>
+<td><code>(reg1 &amp; $30) == $10</code></td>
+<td>Main-memory SHR source</td>
+</tr>
+<tr>
+<td><code>(reg1 &amp; $30) == $00</code></td>
+<td>Standard aux SHR (<code>$E1</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c0b3-dissolve-control"><code>$C0B3</code> — Dissolve Control<a class="headerlink" href="#c0b3-dissolve-control" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Bits</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KeyDissolve</td>
+<td>2:0</td>
+<td>0 = 100% graphics, 7 = 100% video</td>
+</tr>
+<tr>
+<td>EnhancedDissolve</td>
+<td>3</td>
+<td>1 = enhanced dissolve enabled</td>
+</tr>
+<tr>
+<td>NonKeyDissolve</td>
+<td>6:4</td>
+<td>0 = 100% graphics, 7 = 100% video</td>
+</tr>
+<tr>
+<td>OutputSetupDisabled</td>
+<td>7</td>
+<td>0 = output setup enabled</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reset:</strong> <code>$07</code>. <strong>Register-defined</strong> — stored, not rendered.</p>
+<h3 id="c0b4-key-color-green-blue"><code>$C0B4</code> — Key Color (Green / Blue)<a class="headerlink" href="#c0b4-key-color-green-blue" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Bits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KeyColor Blue</td>
+<td>3:0</td>
+</tr>
+<tr>
+<td>KeyColor Green</td>
+<td>7:4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reset:</strong> <code>$00</code>.</p>
+<h3 id="c0b5-key-color-red-and-output-control"><code>$C0B5</code> — Key Color (Red) and Output Control<a class="headerlink" href="#c0b5-key-color-red-and-output-control" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Name</th>
+<th>Function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3:0</td>
+<td>KeyColorRed</td>
+<td>Key color red component</td>
+</tr>
+<tr>
+<td>4</td>
+<td>OutExtBlank</td>
+<td>0 = graphics blanking; 1 = external blanking</td>
+</tr>
+<tr>
+<td>5</td>
+<td>GenLockDisable</td>
+<td>0 = genlock enabled; 1 = disabled</td>
+</tr>
+<tr>
+<td>6</td>
+<td>KeyColorDisable</td>
+<td>0 = key color enabled</td>
+</tr>
+<tr>
+<td>7</td>
+<td>InterlaceEnable</td>
+<td>1 = interlace mode (requires <code>$C0B1</code> 5:4 = <code>11</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reset:</strong> <code>$40</code>.</p>
+<h3 id="c0b6-hue-saturation-adjust"><code>$C0B6</code> — Hue / Saturation Adjust<a class="headerlink" href="#c0b6-hue-saturation-adjust" title="Permanent link">&para;</a></h3>
+<p><strong>Register-defined</strong> — write sequences trigger adjustment:</p>
+<table>
+<thead>
+<tr>
+<th>Sequence</th>
 <th>Action</th>
-<th>BRAM result</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Rename / move the <code>.gs2</code> (same <code>id</code>)</td>
-<td>Same BRAM</td>
+<td><code>$08</code>, <code>$09</code>, <code>$08</code></td>
+<td>Hue increment</td>
 </tr>
 <tr>
-<td>Save As to a new file</td>
-<td>New <code>id</code> → separate BRAM</td>
+<td><code>$0A</code>, <code>$0B</code>, <code>$0A</code></td>
+<td>Hue decrement</td>
 </tr>
 <tr>
-<td>Copy <code>id</code> into another <code>.gs2</code></td>
-<td>Shared BRAM (same machine)</td>
+<td><code>$04</code>, <code>$05</code>, <code>$04</code></td>
+<td>Saturation increment</td>
+</tr>
+<tr>
+<td><code>$06</code>, <code>$07</code>, <code>$06</code></td>
+<td>Saturation decrement</td>
+</tr>
+<tr>
+<td><code>$00</code></td>
+<td>AdjSave</td>
 </tr>
 </tbody>
 </table>
-<p>If <code>id</code> is missing when you load a writable <code>.gs2</code>, GSSquared assigns one and may rewrite the file. You rarely need to set it yourself.</p>
-<h3 id="clock-and-video">Clock and video<a class="headerlink" href="#clock-and-video" title="Permanent link">&para;</a></h3>
+<p>Bit 3 = hue; bit 2 = saturation.</p>
+<h3 id="detection-reads">Detection Reads<a class="headerlink" href="#detection-reads" title="Permanent link">&para;</a></h3>
+<p>These offsets return <code>$00</code> on VOC (used by detection code for other cards):</p>
+<table>
+<thead>
+<tr>
+<th>Address</th>
+<th>Probed by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$C0B7</code></td>
+<td>Uthernet 2 detection</td>
+</tr>
+<tr>
+<td><code>$C0B8</code></td>
+<td>Second Sight detection (Second Sight returns <code>$01</code>)</td>
+</tr>
+<tr>
+<td><code>$C0BD</code></td>
+<td>A2OSX Uthernet 1 detection</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-memory-architecture">4. Memory Architecture<a class="headerlink" href="#4-memory-architecture" title="Permanent link">&para;</a></h2>
+<h3 id="41-shadow-banks">4.1 Shadow Banks<a class="headerlink" href="#41-shadow-banks" title="Permanent link">&para;</a></h3>
+<p><strong>Implemented in KEGS:</strong> VOC maintains <strong>128 KB</strong> of slow-side RAM as IIgs banks
+<strong><code>$E0</code></strong> (first 64 KB) and <strong><code>$E1</code></strong> (second 64 KB). Host CPU reads/writes to
+<code>$E0xxxx</code> / <code>$E1xxxx</code> are redirected through the IIgs shadow mechanism
+(<code>setup_pageinfo</code>, <code>fixup_ramwrt</code>, <code>fixup_shadow_shr</code> in <code>moremem.c</code>).</p>
 <ul>
-<li><strong><code>clock = "ntsc"</code></strong> — North American timing (default).</li>
-<li><strong><code>clock = "pal"</code></strong> — European timing. Use with II, II+, and IIe family only.</li>
-<li><strong><code>scanner</code></strong> — Advanced. Values: <code>"apple2"</code>, <code>"apple2e"</code>, <code>"apple2e_pal"</code>, <code>"apple2gs"</code>. If you are building a PAL //e, set <code>clock = "pal"</code> and you can skip <code>scanner</code>; GS2 will use <code>"apple2e_pal"</code>.</li>
+<li>Pages <code>$0400</code>–<code>$07FF</code> and <code>$2000</code>–<code>$9FFF</code> in banks <code>$E0</code>/<code>$E1</code> mirror host
+  aux/main depending on <code>$C035</code> shadow bits and RAMRD/RAMWRT.</li>
+<li>KEGS: <code>g_slow_memory_ptr[0..0x1FFFF]</code> — offset <code>0x00000</code> = bank <code>$E0</code>,
+  <code>0x10000</code> = bank <code>$E1</code>.</li>
 </ul>
-<p>Motherboard devices (keyboard, built-in IIgs sound, built-in floppy controller on the GS, and so on) are added automatically from <code>platform</code>. You only list <strong>expansion cards</strong> in <code>[[cards]]</code>.</p>
+<p>Memory shadowing via <code>$C035</code> is <strong>independent of GG Bus Enable</strong> (<code>$C0B1</code>
+bit 0).</p>
+<h3 id="42-shr-framebuffer-layout">4.2 SHR Framebuffer Layout<a class="headerlink" href="#42-shr-framebuffer-layout" title="Permanent link">&para;</a></h3>
+<p>Standard Apple IIgs SHR layout within <code>$2000</code>–<code>$9FFF</code> in each bank:</p>
+<table>
+<thead>
+<tr>
+<th>Range</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$2000</code>–<code>$9CFF</code></td>
+<td>Pixel data (160 bytes/line × 200 lines)</td>
+</tr>
+<tr>
+<td><code>$9D00</code>–<code>$9DFF</code></td>
+<td>Scan-line control bytes (one per line)</td>
+</tr>
+<tr>
+<td><code>$9E00</code>–<code>$9FFF</code></td>
+<td>Color palettes (16 palettes × 32 bytes)</td>
+</tr>
+</tbody>
+</table>
+<p>In interlace mode, each bank carries <strong>independent</strong> scan bytes and palettes.</p>
 <hr />
-<h2 id="expansion-cards-cards">Expansion cards — <code>[[cards]]</code><a class="headerlink" href="#expansion-cards-cards" title="Permanent link">&para;</a></h2>
-<p>Each card occupies one slot. Slots are numbered <strong>0 through 7</strong>.</p>
-<pre><code class="language-toml">[[cards]]
-slot = 6
-card = &quot;disk_ii&quot;
-
-[[cards]]
-slot = 7
-card = &quot;bazfast3&quot;
-</code></pre>
-<p>Rules that bite people:</p>
+<h2 id="5-functional-modes">5. Functional Modes<a class="headerlink" href="#5-functional-modes" title="Permanent link">&para;</a></h2>
+<h3 id="51-standard-graphics-modes-real-hardware">5.1 Standard Graphics Modes (Real Hardware)<a class="headerlink" href="#51-standard-graphics-modes-real-hardware" title="Permanent link">&para;</a></h3>
+<p><strong>Inferred:</strong> The VOC's independent Mega II/VGC renders all standard Apple
+II/IIgs modes to the VOC monitor, controlled by host soft switches (<code>$C029</code>,
+<code>$C050</code>–<code>$C057</code>, etc.) when GG bus is enabled. Genlock/overlay (<code>$C0B3</code>–
+<code>$C0B5</code>) composites whichever mode is active over external video.</p>
+<p><strong>Implemented in KEGS:</strong> No VOC-specific path for non-SHR modes. Host display
+handles lores/hires/text normally; VOC registers have no effect.</p>
+<h3 id="52-standard-shr-aux-source">5.2 Standard SHR (Aux Source)<a class="headerlink" href="#52-standard-shr-aux-source" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>One card per slot.</strong> Do not list the same slot twice.</li>
-<li><strong>Some cards only fit certain slots or machines.</strong> Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight is IIgs-only and slot 3 only.</li>
-<li><strong>Most cards allow only one instance.</strong> Mockingboard and Disk II are exceptions — you can have two Mockingboards in different slots.</li>
+<li><code>$C029</code> bit 7 = 1 (SHR enabled)</li>
+<li><code>$C0B1</code> bits 5:4 = <code>00</code></li>
+<li>Display source: bank <code>$E1</code> (<code>g_slow_memory_ptr + 0x10000</code>)</li>
+<li>Resolution: 320×200 or 640×200 per scan-byte bit 7</li>
 </ul>
-<h3 id="card-types">Card types<a class="headerlink" href="#card-types" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th><code>card</code> value</th>
-<th>What it is</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>"language_card"</code></td>
-<td>Language card (slot 0, II / II+ only)</td>
-</tr>
-<tr>
-<td><code>"disk_ii"</code></td>
-<td>Disk II controller (two 5.25" drives)</td>
-</tr>
-<tr>
-<td><code>"prodos_clock"</code></td>
-<td>ProDOS real-time clock</td>
-</tr>
-<tr>
-<td><code>"thunder_clock"</code></td>
-<td>Thunder Clock Plus</td>
-</tr>
-<tr>
-<td><code>"parallel"</code></td>
-<td><a href="../Cards_Parallel/">Parallel Interface</a></td>
-</tr>
-<tr>
-<td><code>"mockingboard"</code></td>
-<td>Mockingboard sound</td>
-</tr>
-<tr>
-<td><code>"mouse"</code></td>
-<td><a href="../Cards_AppleMouse/">Apple Mouse III</a>; <code>"applemouseiii"</code> is an alias</td>
-</tr>
-<tr>
-<td><code>"videx"</code></td>
-<td>Videx 80-column (II / II+ only, slot 3)</td>
-</tr>
-<tr>
-<td><code>"mem_expansion"</code></td>
-<td>RAM expansion (Slinky-style)</td>
-</tr>
-<tr>
-<td><code>"prodos_block"</code></td>
-<td>Deprecated - do not use</td>
-</tr>
-<tr>
-<td><code>"prodos_block2"</code></td>
-<td>Deprecated - do not use</td>
-</tr>
-<tr>
-<td><code>"bazfast3"</code></td>
-<td>SmartPort / hard-disk controller (also accepts <code>"smartport"</code> or <code>"pdblock3"</code>)</td>
-</tr>
-<tr>
-<td><code>"vidhd"</code></td>
-<td>VIDHD (65816 //e only)</td>
-</tr>
-<tr>
-<td><code>"second_sight"</code></td>
-<td>Second Sight (IIgs only)</td>
-</tr>
-<tr>
-<td><code>"super_serial"</code></td>
-<td><a href="../Cards_SuperSerial/">Super Serial Card</a></td>
-</tr>
-<tr>
-<td><code>"uthernet2"</code></td>
-<td><a href="../Cards_UthernetII/">Uthernet II</a> (IIe + IIgs; slots 1–7)</td>
-</tr>
-</tbody>
-</table>
-<p>Empty slots are simply omitted — you do not need to say “empty.”</p>
-<h3 id="parallel-and-serial-attachments">Parallel and serial attachments<a class="headerlink" href="#parallel-and-serial-attachments" title="Permanent link">&para;</a></h3>
-<p>Do <strong>not</strong> put paths on the card entry. Use <code>[[connections]]</code> (below) for parallel file/clipboard capture and serial modem/file/clipboard/host-UART attachments. See also <a href="../Cards_Parallel/">Parallel Interface</a> and <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
-<hr />
-<h2 id="disk-images-storage">Disk images — <code>[[storage]]</code><a class="headerlink" href="#disk-images-storage" title="Permanent link">&para;</a></h2>
-<p>Pre-mount disks so they are ready when the machine boots. Each row is one drive:</p>
-<pre><code class="language-toml">[[storage]]
-slot = 6
-drive = 1
-image = &quot;disks/BASIC SYSTEM.woz&quot;
-
-[[storage]]
-slot = 6
-drive = 2
-image = &quot;disks/empty.woz&quot;
-</code></pre>
-<table>
-<thead>
-<tr>
-<th>Property</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>slot</code></td>
-<td>Slot number of the <strong>controller</strong> (Disk II card, SmartPort card, or built-in IIgs drive).</td>
-</tr>
-<tr>
-<td><code>drive</code></td>
-<td>Drive number <strong>1–6</strong>, matching what you see in the Control Panel (1 = first drive).</td>
-</tr>
-<tr>
-<td><code>image</code></td>
-<td>Path to the disk image file.</td>
-</tr>
-</tbody>
-</table>
-<h3 id="where-to-put-image-files">Where to put image files<a class="headerlink" href="#where-to-put-image-files" title="Permanent link">&para;</a></h3>
+<h3 id="53-page-switch-mode-shr-source-select">5.3 Page-Switch Mode (SHR Source Select)<a class="headerlink" href="#53-page-switch-mode-shr-source-select" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Relative paths</strong> (recommended) — resolved from the folder containing your <code>.gs2</code> file. Keep images in a subfolder next to the config so you can zip the whole bundle and share it.</li>
-<li><strong>Absolute paths</strong> — used as-is (<code>/Users/you/disks/game.po</code>).</li>
+<li><code>$C0B1</code> bits 5:4 = <code>01</code> — main memory as SHR display source</li>
+<li><strong>Implemented in KEGS:</strong> SHR fetched from bank 0 (<code>$E0</code> shadow) via
+  <code>ALL_STAT_VOC_MAIN</code> (<code>video.c</code> line 1721)</li>
+<li><code>$C0B1</code> bit 3 (MainPageLin) must be 1 for linear <code>$2000</code>–<code>$9FFF</code> addressing</li>
+<li>Selects which shadow bank feeds VOC output (<code>$E1</code>/aux vs <code>$E0</code>/main); not a
+  runtime page flip</li>
 </ul>
-<p>Supported image types include <code>.po</code>, <code>.dsk</code>, <code>.woz</code>, <code>.2mg</code>, <code>.hdv</code>, and others GS2 recognizes.</p>
-<h3 id="which-slot-and-drive">Which slot and drive?<a class="headerlink" href="#which-slot-and-drive" title="Permanent link">&para;</a></h3>
+<p><strong>Naming:</strong> KEGS <code>CHANGES.txt</code> calls this unreleased mode <strong>"Fat Screen"</strong> —
+Kent Dickey's informal label, not register or Apple terminology. Prefer
+<strong>"main-memory SHR source"</strong> or <strong>"page-switch mode"</strong>.</p>
+<h3 id="54-interlace-mode-640400-shr">5.4 Interlace Mode (640×400 SHR)<a class="headerlink" href="#54-interlace-mode-640400-shr" title="Permanent link">&para;</a></h3>
+<p>Hardware register name: <strong>interlace mode</strong>. Implementation target: <strong>progressive
+60 Hz</strong> (both fields composited every frame).</p>
+<p><strong>Enable sequence</strong> (from <code>README.kegs.txt</code>):</p>
+<pre><code>$C029 ← $C1    ; SHR + host linearization
+$C0B1 ← $39    ; GG Bus, SHRSource=11 (bits 5:4)
+$C0B5 ← $80    ; InterlaceEnable (bit 7)
+</code></pre>
+<p><strong>Field mapping</strong> (<code>redraw_changed_super_hires</code> in <code>video.c</code>):</p>
 <table>
 <thead>
 <tr>
-<th>Hardware</th>
-<th>Typical <code>slot</code></th>
-<th><code>drive</code> values</th>
+<th>Line parity</th>
+<th>Source bank</th>
+<th>Base address</th>
+<th>Palette</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Disk II card</td>
-<td><code>6</code> (often)</td>
-<td><code>1</code>, <code>2</code></td>
+<td>Even (0, 2, …)</td>
+<td><code>$E1</code> (aux)</td>
+<td><code>$E12000</code></td>
+<td><code>$E19E00</code></td>
 </tr>
 <tr>
-<td>SmartPort / BazFast (<code>bazfast3</code>)</td>
-<td>card slot (often <code>7</code>)</td>
-<td><code>1</code>–<code>6</code></td>
-</tr>
-<tr>
-<td>IIgs built-in 3.5" (IWM)</td>
-<td><code>5</code></td>
-<td><code>1</code>, <code>2</code></td>
-</tr>
-<tr>
-<td>IIgs built-in 5.25" (IWM)</td>
-<td><code>6</code></td>
-<td><code>1</code>, <code>2</code></td>
+<td>Odd (1, 3, …)</td>
+<td><code>$E0</code> (main)</td>
+<td><code>$E02000</code></td>
+<td><code>$E09E00</code></td>
 </tr>
 </tbody>
 </table>
-<p>On a <strong>IIgs</strong>, slot <code>6</code> is the <strong>built-in</strong> 5.25" drive — not a Disk II card. On II / II+ / IIe, slot <code>6</code> is usually a Disk II card you listed in <code>[[cards]]</code>. The <code>[[storage]]</code> syntax is the same either way; only the hardware behind that slot differs.</p>
-<p>Multiple SmartPort volumes are multiple <code>[[storage]]</code> rows on the same slot:</p>
-<pre><code class="language-toml">[[storage]]
-slot = 7
-drive = 1
-image = &quot;volumes/GSOS.po&quot;
-
-[[storage]]
-slot = 7
-drive = 2
-image = &quot;volumes/Games.po&quot;
-</code></pre>
-<hr />
-<h2 id="serial-parallel-ports-connections">Serial / parallel ports — <code>[[connections]]</code><a class="headerlink" href="#serial-parallel-ports-connections" title="Permanent link">&para;</a></h2>
-<p>Optional. Describes what is “plugged into” each serial or parallel port — file capture, clipboard, a virtual modem, or a real host UART. Full UI walkthrough: <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>.</p>
-<p><strong>IIgs built-in ports</strong> (no <code>slot</code> — these are on the motherboard):</p>
-<pre><code class="language-toml">[[connections]]
-port = &quot;a&quot;
-device = &quot;file&quot;
-path = &quot;captures/printer.bin&quot;
-
-[[connections]]
-port = &quot;b&quot;
-device = &quot;modem&quot;
-</code></pre>
-<p><strong>Slot cards</strong> (Super Serial, Parallel, etc.):</p>
-<pre><code class="language-toml">[[connections]]
-slot = 2
-device = &quot;modem&quot;
-
-[[connections]]
-slot = 1
-device = &quot;file&quot;
-path = &quot;printouts/session.bin&quot;
-</code></pre>
+<p><strong>Timing:</strong></p>
 <table>
 <thead>
 <tr>
-<th>Property</th>
-<th>Meaning</th>
+<th>Aspect</th>
+<th>Real VOC hardware</th>
+<th>Implementation target</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>port</code></td>
-<td>IIgs SCC only: <code>"a"</code> or <code>"b"</code>. Defaults to <code>"a"</code> if omitted.</td>
+<td>Refresh</td>
+<td>True interlace: one field per ~16 ms, 30 Hz effective</td>
+<td>Progressive 60 Hz: both fields every frame</td>
 </tr>
 <tr>
-<td><code>slot</code></td>
-<td>Expansion-slot card (SSC, parallel, …). Use instead of <code>port</code>.</td>
+<td>Field offset</td>
+<td>Odd field shifted down one scan line</td>
+<td>Fixed line parity (even=<code>$E1</code>, odd=<code>$E0</code>)</td>
 </tr>
 <tr>
-<td><code>device</code></td>
-<td><code>"none"</code>, <code>"file"</code>, <code>"clipboard"</code>, <code>"echo"</code>, <code>"modem"</code>, or <code>"serial"</code>. Parallel allows <code>"none"</code> / <code>"file"</code> / <code>"clipboard"</code> only.</td>
-</tr>
-<tr>
-<td><code>path</code></td>
-<td>Host file when <code>device = "file"</code> (relative paths work like disk images). Host port name when <code>device = "serial"</code> (stored as-is, e.g. <code>cu.usbserial-…</code>, <code>/dev/cu.usbserial-…</code>, <code>COM3</code>, or <code>/dev/ttyUSB0</code>).</td>
+<td>Register name</td>
+<td><code>$C0B1</code> 5:4=<code>11</code> + <code>$C0B5</code> bit 7</td>
+<td>Same — retain "interlace mode" name</td>
 </tr>
 </tbody>
 </table>
-<p>If you omit <code>[[connections]]</code> entirely, GS2 uses platform defaults (IIgs: file + modem on native builds; SSC → modem; parallel → file).</p>
-<hr />
-<h2 id="complete-examples">Complete examples<a class="headerlink" href="#complete-examples" title="Permanent link">&para;</a></h2>
-<h3 id="minimal-enhanced-e-with-one-boot-disk">Minimal Enhanced //e with one boot disk<a class="headerlink" href="#minimal-enhanced-e-with-one-boot-disk" title="Permanent link">&para;</a></h3>
-<pre><code class="language-toml">gs2_version = 1
-name = &quot;Blank IIe&quot;
-platform = &quot;apple2e_enhanced&quot;
-
-[[cards]]
-slot = 6
-card = &quot;disk_ii&quot;
-
-[[storage]]
-slot = 6
-drive = 1
-image = &quot;disks/BASIC SYSTEM.woz&quot;
-</code></pre>
-<h3 id="apple-daily-driver-style">Apple ][+ “daily driver” style<a class="headerlink" href="#apple-daily-driver-style" title="Permanent link">&para;</a></h3>
-<pre><code class="language-toml">gs2_version = 1
-name = &quot;Apple ][+&quot;
-description = &quot;Disk II, clock, parallel, VIDEX, Mockingboard, SmartPort&quot;
-platform = &quot;apple2plus&quot;
-clock = &quot;ntsc&quot;
-
-[[cards]]
-slot = 0
-card = &quot;language_card&quot;
-
-[[cards]]
-slot = 1
-card = &quot;parallel&quot;
-
-[[cards]]
-slot = 2
-card = &quot;prodos_clock&quot;
-
-[[cards]]
-slot = 3
-card = &quot;videx&quot;
-
-[[cards]]
-slot = 4
-card = &quot;mockingboard&quot;
-
-[[cards]]
-slot = 5
-card = &quot;bazfast3&quot;
-
-[[cards]]
-slot = 6
-card = &quot;disk_ii&quot;
-
-[[cards]]
-slot = 7
-card = &quot;mem_expansion&quot;
-
-[[storage]]
-slot = 5
-drive = 1
-image = &quot;volumes/ProDOS_32MB.po&quot;
-
-[[storage]]
-slot = 6
-drive = 1
-image = &quot;disks/BASIC SYSTEM.woz&quot;
-</code></pre>
-<h3 id="apple-iigs-with-smartport-volumes">Apple IIgs with SmartPort volumes<a class="headerlink" href="#apple-iigs-with-smartport-volumes" title="Permanent link">&para;</a></h3>
-<pre><code class="language-toml">gs2_version = 1
-name = &quot;My GS Workstation&quot;
-platform = &quot;apple2gs&quot;
-
-[[cards]]
-slot = 3
-card = &quot;second_sight&quot;
-
-[[cards]]
-slot = 7
-card = &quot;bazfast3&quot;
-
-[[storage]]
-slot = 5
-drive = 1
-image = &quot;images/SystemTools_800k.2mg&quot;
-
-[[storage]]
-slot = 6
-drive = 1
-image = &quot;disks/BASIC SYSTEM.woz&quot;
-
-[[storage]]
-slot = 7
-drive = 1
-image = &quot;volumes/GSOS.po&quot;
-
-[[storage]]
-slot = 7
-drive = 2
-image = &quot;volumes/Games.po&quot;
-</code></pre>
-<hr />
-<h2 id="a2fusion-profiles-and-settingstxt">A2Fusion Profiles and <code>Settings.txt</code><a class="headerlink" href="#a2fusion-profiles-and-settingstxt" title="Permanent link">&para;</a></h2>
-<p>Community <strong>profile packs</strong> (published through arqyv / A2Fusion) ship as folders containing disk images and one or more <strong><code>… Settings.txt</code></strong> files. These follow Michael Neil’s <strong>Profiles Specification</strong> — a simple <code>key value</code> format (space-separated, <code>#</code> comments).</p>
-<p>GS2 can load any file whose name ends with <strong><code>Settings.txt</code></strong> (case-insensitive). You do not need to convert them to <code>.gs2</code> unless you want to edit by hand in TOML.</p>
-<h3 id="example-profile-file">Example profile file<a class="headerlink" href="#example-profile-file" title="Permanent link">&para;</a></h3>
-<pre><code class="language-text"># Choplifter on Apple IIgs
-profile.name Choplifter
-machine A2GS
-
-smartport.disk1 disks/zaxxon.dsk
-floppy.disk1 disks/zork.woz
-floppy.disk2 disks/zork2.woz
-
-machine.speed 2800000
-video.mode MONO
-</code></pre>
-<h3 id="how-settings-keys-map-to-gs2-concepts">How Settings keys map to <code>.gs2</code> concepts<a class="headerlink" href="#how-settings-keys-map-to-gs2-concepts" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>Settings.txt</th>
-<th>Same idea in <code>.gs2</code></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>profile.name</code></td>
-<td><code>name</code></td>
-</tr>
-<tr>
-<td><code>machine</code></td>
-<td><code>platform</code> (see tokens below)</td>
-</tr>
-<tr>
-<td><code>gssquared.description</code></td>
-<td><code>description</code></td>
-</tr>
-<tr>
-<td><code>gssquared.clock</code></td>
-<td><code>clock</code></td>
-</tr>
-<tr>
-<td><code>gssquared.scanner</code></td>
-<td><code>scanner</code></td>
-</tr>
-<tr>
-<td><code>slot6 disk_ii</code></td>
-<td><code>[[cards]]</code> with <code>slot = 6</code>, <code>card = "disk_ii"</code></td>
-</tr>
-<tr>
-<td><code>smartport.disk1 path</code></td>
-<td><code>[[storage]]</code> on the SmartPort slot, <code>drive = 1</code></td>
-</tr>
-<tr>
-<td><code>floppy.disk1 path</code></td>
-<td><code>[[storage]]</code> on the floppy controller, <code>drive = 1</code></td>
-</tr>
-</tbody>
-</table>
-<p><strong>Machine tokens</strong> in <code>machine</code> (comma-separated; first supported one wins):</p>
-<table>
-<thead>
-<tr>
-<th>Token</th>
-<th>GS2 platform</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>APPLE2</code></td>
-<td><code>apple2</code></td>
-</tr>
-<tr>
-<td><code>APPLE2PLUS</code></td>
-<td><code>apple2plus</code></td>
-</tr>
-<tr>
-<td><code>APPLE2E</code></td>
-<td><code>apple2e</code></td>
-</tr>
-<tr>
-<td><code>APPLE2E_ENHANCED</code></td>
-<td><code>apple2e_enhanced</code></td>
-</tr>
-<tr>
-<td><code>APPLE2E_65816</code></td>
-<td><code>apple2e_65816</code></td>
-</tr>
-<tr>
-<td><code>A2GS</code></td>
-<td><code>apple2gs</code></td>
-</tr>
-</tbody>
-</table>
-<p>Card names in <code>slotN</code> lines use the same names as the <code>card</code> column in the table above (<code>disk_ii</code>, <code>mockingboard</code>, <code>smartport</code>, etc.).</p>
-<p><strong>SmartPort behavior:</strong> If a Settings file mentions <code>smartport.diskN</code> but does not define slot 7, GS2 automatically installs a SmartPort card (<code>bazfast3</code>) in slot 7 — matching how many published profiles expect things to work.</p>
-<p><strong>Paths in Settings files:</strong> Relative paths are resolved from the Settings file’s folder. Some packs use an <code>sd:</code> prefix on paths; GS2 strips that and treats the remainder as a relative path.</p>
-<h3 id="preference-keys-display-speed-audio">Preference keys (display, speed, audio)<a class="headerlink" href="#preference-keys-display-speed-audio" title="Permanent link">&para;</a></h3>
-<p>Lines like <code>machine.speed</code>, <code>video.mode</code>, and <code>video.scanlines</code> are <strong>preferences</strong> — how you want to run the machine, not which hardware is installed. GS2 reads and stores these for compatibility with profile packs, but <strong>does not apply all of them at boot yet</strong>. Hardware and disk mounts from the same file still load normally.</p>
-<h3 id="profilestxt-and-global-settingstxt"><code>Profiles.txt</code> and <code>Global Settings.txt</code><a class="headerlink" href="#profilestxt-and-global-settingstxt" title="Permanent link">&para;</a></h3>
+<p>30 Hz field alternation is <strong>not implemented by design</strong>.</p>
+<p>Resolution: 640×400 (2 bits/pixel) or 320×400 (4 bits/pixel) per standard SHR
+scan-byte format.</p>
+<h3 id="55-video-input-mixing-stub-future-work">5.5 Video Input Mixing (Stub — Future Work)<a class="headerlink" href="#55-video-input-mixing-stub-future-work" title="Permanent link">&para;</a></h3>
+<p><strong>Register-defined</strong> — registers stored; compositing not rendered.</p>
+<p>Intended overlay pipeline for future implementation:</p>
+<ol>
+<li>External NTSC/RGB input digitized; <code>$C0B0</code> bits 3–4 report VideoDetected /
+   GenLocked.</li>
+<li>Genlock controlled by <code>$C0B5</code> bit 5 (<code>GenLockDisable</code>).</li>
+<li>Key color (<code>$C0B4</code>/<code>$C0B5</code>) marks transparent pixels.</li>
+<li>KeyDissolve / NonKeyDissolve (<code>$C0B3</code>) blend graphics and live video.</li>
+<li><code>$C0B5</code> bit 4 (OutExtBlank) selects graphics vs external blanking.</li>
+<li><strong>Optional loopback</strong> (<strong>Inferred</strong>): VOC output fed back as input to build
+   a sprite/overlay layer.</li>
+</ol>
+<h3 id="56-dual-monitor-mode">5.6 Dual-Monitor Mode<a class="headerlink" href="#56-dual-monitor-mode" title="Permanent link">&para;</a></h3>
+<p><strong>Inferred:</strong></p>
 <ul>
-<li><strong><code>Profiles.txt</code></strong> — index inside a profile pack (“Choplifter → Choplifter Settings.txt”, and so on). Open an individual Settings file, or use the Profiles browser when it is available — not the catalog itself.</li>
-<li><strong><code>Global Settings.txt</code></strong> — app-wide defaults in the Profiles spec (networking, UI, paths). These belong to the <strong>application</strong>, not to one virtual machine. Per-machine hardware still comes from each profile’s Settings file or your <code>.gs2</code> file.</li>
+<li><strong>IIgs monitor:</strong> normal host Mega II/VGC output.</li>
+<li><strong>VOC monitor:</strong> VOC composite/RGB output after genlock/overlay processing.</li>
+<li>Full VideoMix-style overlay operation requires two monitors.</li>
 </ul>
-<h3 id="when-to-use-which-format">When to use which format<a class="headerlink" href="#when-to-use-which-format" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>You want to…</th>
-<th>Use</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Write your own config from scratch</td>
-<td><code>.gs2</code></td>
-</tr>
-<tr>
-<td>Share a config with another GS2 user</td>
-<td><code>.gs2</code> + relative disk paths</td>
-</tr>
-<tr>
-<td>Run a curated arqyv / A2Fusion pack</td>
-<td>The pack’s <code>… Settings.txt</code> as-is</td>
-</tr>
-<tr>
-<td>Match every validation rule and enum</td>
-<td><a href="../SystemConfigTOML/">SystemConfigTOML.md</a></td>
-</tr>
-</tbody>
-</table>
+<p><strong>Implemented in KEGS:</strong> Single emulator window; no dual physical monitor
+support.</p>
 <hr />
-<h2 id="common-mistakes">Common mistakes<a class="headerlink" href="#common-mistakes" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Problem</th>
-<th>Fix</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>Unsupported gs2_version</code></td>
-<td>Set <code>gs2_version = 1</code>.</td>
-</tr>
-<tr>
-<td><code>Duplicate [[cards]] slot</code></td>
-<td>Each slot number may appear only once in <code>[[cards]]</code>.</td>
-</tr>
-<tr>
-<td><code>Card videx is not allowed on platform apple2gs</code></td>
-<td>Videx is II / II+ only. Check platform vs. cards.</td>
-</tr>
-<tr>
-<td><code>clock=pal is not valid for platform apple2gs</code></td>
-<td>Remove <code>clock = "pal"</code> on IIgs configs.</td>
-</tr>
-<tr>
-<td><code>Duplicate storage entry</code></td>
-<td>Only one <code>image</code> per <code>slot</code> + <code>drive</code> pair.</td>
-</tr>
-<tr>
-<td>Disk not found at boot</td>
-<td>Check relative paths — they are relative to the <strong>config file’s directory</strong>, not the app.</td>
-</tr>
-<tr>
-<td><code>Not a .gs2 or Settings.txt file</code></td>
-<td>Rename to end in <code>.gs2</code> or <code>Settings.txt</code>.</td>
-</tr>
-<tr>
-<td>TOML syntax error</td>
-<td>Strings need quotes; table headers are exactly <code>[[cards]]</code>, <code>[[storage]]</code>, <code>[[connections]]</code>.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="organizing-your-configs">Organizing your configs<a class="headerlink" href="#organizing-your-configs" title="Permanent link">&para;</a></h2>
-<p>A portable layout that works well:</p>
-<pre><code class="language-text">MyConfigs/
-  MyIIe.gs2
-  disks/
-    BASIC SYSTEM.woz
-  volumes/
-    ProDOS_32MB.po
+<h2 id="6-initialization-and-detection">6. Initialization and Detection<a class="headerlink" href="#6-initialization-and-detection" title="Permanent link">&para;</a></h2>
+<h3 id="61-interlace-mode-init">6.1 Interlace Mode Init<a class="headerlink" href="#61-interlace-mode-init" title="Permanent link">&para;</a></h3>
+<p>Minimal sequence (§5.4). In KEGS, also set <code>Enable VOC = Enabled</code> in the
+configuration panel (<code>g_voc_enable = 1</code>).</p>
+<p>Monitor debugger example (from <code>README.kegs.txt</code>):</p>
+<pre><code>CALL -151
+c029:c1       ; Turn on SHR
+c0b1:39       ; SHRSource=11, GG Bus enabled
+c0b5:80       ; InterlaceEnable
 </code></pre>
-<p>On macOS, user configs will eventually live under Application Support (for example <code>~/Library/Application Support/GSSquared/systems/</code>). Until Save System is implemented, you can keep files anywhere and open them with the folder icon or <code>-c</code>.</p>
+<h3 id="62-register-reset-values">6.2 Register Reset Values<a class="headerlink" href="#62-register-reset-values" title="Permanent link">&para;</a></h3>
+<p>From <code>voc_reset()</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Register</th>
+<th>Value</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$C0B1</code></td>
+<td><code>$0D</code></td>
+<td>GG Bus + MainPageLin</td>
+</tr>
+<tr>
+<td><code>$C0B3</code></td>
+<td><code>$07</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>$C0B4</code></td>
+<td><code>$00</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>$C0B5</code></td>
+<td><code>$40</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>$C0B6</code></td>
+<td><code>$00</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="63-presence-detection">6.3 Presence Detection<a class="headerlink" href="#63-presence-detection" title="Permanent link">&para;</a></h3>
+<p>Software probes <code>$C0B0</code>–<code>$C0BF</code> via slot 3 device-select addressing. Common
+detection code also tests <code>$C0B7</code>, <code>$C0B8</code>, <code>$C0BD</code> for absence of Uthernet
+or Second Sight signatures.</p>
+<p><strong>Implemented in KEGS:</strong> No auto-detection; explicit config enable required.</p>
 <hr />
-<h2 id="further-reading">Further reading<a class="headerlink" href="#further-reading" title="Permanent link">&para;</a></h2>
+<h2 id="7-mode-selection-truth-table">7. Mode Selection Truth Table<a class="headerlink" href="#7-mode-selection-truth-table" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th><code>$C0B1</code> 5:4</th>
+<th><code>$C0B5</code> 7</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>00</code></td>
+<td>x</td>
+<td>Aux SHR (<code>$E1</code>)</td>
+</tr>
+<tr>
+<td><code>01</code></td>
+<td>x</td>
+<td>Main-memory SHR source (<code>$E0</code>)</td>
+</tr>
+<tr>
+<td><code>11</code></td>
+<td>0</td>
+<td>Undefined; KEGS treats as aux</td>
+</tr>
+<tr>
+<td><code>11</code></td>
+<td>1</td>
+<td>640×400 interlace mode (progressive 60 Hz)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-kegs-implementation-matrix">8. KEGS Implementation Matrix<a class="headerlink" href="#8-kegs-implementation-matrix" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$C0B0</code>–<code>$C0B6</code> read/write storage</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Interlace mode 640×400 (progressive 60 Hz)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Main-memory SHR source (<code>SHRSource</code>=01)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Video input mixing / genlock / dissolve</td>
+<td>Stub (registers stored, no compositing)</td>
+</tr>
+<tr>
+<td>VOC firmware at <code>$C300</code>–<code>$C3FF</code></td>
+<td>No (built-in IIgs slot 3 ROM only)</td>
+</tr>
+<tr>
+<td>Non-SHR modes on VOC output path</td>
+<td>No</td>
+</tr>
+<tr>
+<td>True hardware 30 Hz field interlace</td>
+<td>No (by design)</td>
+</tr>
+<tr>
+<td>Independent VOC vs GS video mode</td>
+<td>No (fully mirrored)</td>
+</tr>
+<tr>
+<td>Dual physical monitors</td>
+<td>N/A (single window)</td>
+</tr>
+<tr>
+<td>VBL/line IRQ delivery</td>
+<td>Partial (status bits incomplete)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9-source-code-cross-references">9. Source Code Cross-References<a class="headerlink" href="#9-source-code-cross-references" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Relevant content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/voc.c</code></td>
+<td>Register I/O, mode decode, reset</td>
+</tr>
+<tr>
+<td><code>src/video.c</code></td>
+<td>SHR rendering, interlace field mapping (lines 1713–1726)</td>
+</tr>
+<tr>
+<td><code>src/moremem.c</code></td>
+<td>Shadow bank setup (lines 901–915), device-select routing (1395–1400)</td>
+</tr>
+<tr>
+<td><code>src/defcomm.h</code></td>
+<td><code>ALL_STAT_VOC_INTERLACE</code>, <code>ALL_STAT_VOC_MAIN</code> flags</td>
+</tr>
+<tr>
+<td><code>doc/README.kegs.txt</code></td>
+<td>User-facing VOC init instructions</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="10-references">10. References<a class="headerlink" href="#10-references" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong><a href="../SystemConfigTOML/">SystemConfigTOML.md</a></strong> — full schema, validation rules, connection port registry, load/save behavior, and design notes.</li>
-<li><strong>Fixture examples in the repo</strong> — <code>apps/systemconfigtest/fixtures/*.gs2</code> and <code>* Settings.txt</code> are real files GS2’s tests load successfully; useful as copy-paste starting points.</li>
+<li>KEGS source: <code>src/voc.c</code>, <code>src/video.c</code>, <code>src/moremem.c</code></li>
+<li>Apple IIgs Technical Note #70 (Fast Graphics Hints) — VOC video timing independence</li>
+<li>Apple II Video Overlay Card product description (discontinued Apple hardware)</li>
+<li>KEGS <code>doc/README.kegs.txt</code>, <code>doc/CHANGES.txt</code></li>
 </ul>
 
 

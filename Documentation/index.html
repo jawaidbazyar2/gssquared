@@ -2863,6 +2863,12 @@ RGB is an accurate (exact) Apple IIgs RGB presentation.</p>
 <td>Block device, complete</td>
 </tr>
 <tr>
+<td>.iso</td>
+<td>✅ Read only</td>
+<td>Any size</td>
+<td>CD dump; APM ProDOS/HFS partitions expand on BazFast</td>
+</tr>
+<tr>
 <td>.2mg</td>
 <td>✅ Read/Write</td>
 <td>Various</td>
@@ -2938,7 +2944,7 @@ RGB is an accurate (exact) Apple IIgs RGB presentation.</p>
 <tr>
 <td>Modem / serial port</td>
 <td>Partial</td>
-<td>IIgs SCC8530 + Hayes modem; IIe Super Serial Card (<code>super_serial</code>) + same ModemDevice — see <a href="../SSC/">SSC.md</a></td>
+<td>IIgs SCC8530 + Hayes modem; IIe Super Serial Card (<code>super_serial</code>) + same ModemDevice — see <a href="../SSC/">SSC.md</a>. Host UART attach (#155) on macOS, Windows, and Linux (<code>device = "serial"</code>).</td>
 </tr>
 <tr>
 <td>ImageWriter printer emulation</td>

@@ -2845,6 +2845,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#new-observations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Observations
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3097,7 +3108,7 @@ low + offsets → ~$8319
 <tr>
 <td>Source (<code>DB</code> + <code>$0C</code>)</td>
 <td><code>$83/8319</code></td>
-<td><strong>FLOAT</strong> (ROM01 last RAM bank is <code>$81</code>)</td>
+<td><strong>FLOAT</strong> (ROM01 last RAM bank is <code>$7F</code>)</td>
 <td>solid <code>$83</code> (<code>float_area_read</code> = bank#)</td>
 </tr>
 <tr>
@@ -3288,7 +3299,7 @@ low + offsets → ~$8319
 </tr>
 <tr>
 <td>Bank <code>$83</code></td>
-<td>Unmapped on ROM01 (RAM through <code>$81</code>); float reads return <code>$83</code></td>
+<td>Unmapped on ROM01 (RAM through <code>$7F</code>); float reads return <code>$83</code></td>
 </tr>
 <tr>
 <td>Ensoniq <code>$C03D</code>/<code>$C03E</code></td>
@@ -3299,7 +3310,7 @@ low + offsets → ~$8319
 <hr />
 <h2 id="what-was-ruled-out-tried">What was ruled out / tried<a class="headerlink" href="#what-was-ruled-out-tried" title="Permanent link">&para;</a></h2>
 <h3 id="iigs-fast-ram-size-partial-red-herring">IIgs fast RAM size (partial red herring)<a class="headerlink" href="#iigs-fast-ram-size-partial-red-herring" title="Permanent link">&para;</a></h3>
-<p>GSSquared originally mapped a flat <strong>8MB</strong> (<code>$00</code>–<code>$7F</code>). KEGS uses <strong>mobo + 8MB card</strong>:</p>
+<p>Installed size is <strong>mobo + 8MB card</strong>, hard-capped by the FPI’s 23-bit RAM decode at bank <code>$7F</code>:</p>
 <table>
 <thead>
 <tr>
@@ -3311,18 +3322,18 @@ low + offsets → ~$8319
 <tbody>
 <tr>
 <td>ROM01</td>
-<td>8.125MB</td>
-<td><code>$81</code></td>
+<td>8MB (128KB card inaccessible)</td>
+<td><code>$7F</code></td>
 </tr>
 <tr>
 <td>ROM03</td>
-<td>9MB</td>
-<td><code>$8F</code></td>
+<td>8MB (1MB card inaccessible)</td>
+<td><code>$7F</code></td>
 </tr>
 </tbody>
 </table>
-<p>Implemented in <code>src/mmus/iigs_memory.hpp</code>. Bank probes match KEGS. <strong>Zany playfield still black</strong> on ROM01 and ROM03 after the fix.</p>
-<p>Bank <code>$83</code> remains float on ROM01 even with correct sizing. On ROM03, <code>$83</code> is RAM — but LocInfo was still corrupted and <code>$E1</code> playfield still empty. So the bug is <strong>not</strong> “need bank <code>$83</code> to exist”; it is <strong>bad Y/rows → computed bank <code>$83</code></strong>.</p>
+<p>Implemented in <code>src/mmus/iigs_memory.hpp</code>. <strong>Zany playfield still black</strong> on ROM01 and ROM03 after the fix.</p>
+<p>Bank <code>$83</code> remains float on both ROMs. LocInfo was still corrupted and <code>$E1</code> playfield still empty. So the bug is <strong>not</strong> “need bank <code>$83</code> to exist”; it is <strong>bad Y/rows → computed bank <code>$83</code></strong>.</p>
 <h3 id="float-bus-fool-the-memory-manager">Float-bus “fool the Memory Manager”<a class="headerlink" href="#float-bus-fool-the-memory-manager" title="Permanent link">&para;</a></h3>
 <p>Early idea that float <code>$83</code> confused RAM probes was dropped: floating <code>$80+</code> is normal past installed RAM; KEGS does the same for unmapped banks.</p>
 <hr />
@@ -3371,6 +3382,11 @@ Code:
 Video:
   NEWVIDEO=$C1  SHADOW=$1E/$1F (SHR shadow OFF)
 </code></pre>
+<h2 id="new-observations">New Observations<a class="headerlink" href="#new-observations" title="Permanent link">&para;</a></h2>
+<p>The Blit Routine is never exiting. Its RTS is at 01/0DC9, but the branch at 1/0DBD is never taken, so it always jumps to the top of the blit loop at $0D1B, and the RTS is never executed.</p>
+<p>So, the game loop gets locked up in this routine, and does not respond to mouse or keyboard input.</p>
+<p>As we know, the parameters in the blit loop at E08 and E0C are borked. So likely other input params also borked. Anyway, this <em>erroneous</em> blit never ends. Sound continues because that is being driven by interrupts from the Ensoniq, and the sound player interrupt handler is the only thing that is executing outside the blit loop.</p>
+<p>In past attempts to have Cursor test this automatically, we have suffered issues related to losing context. Now that we have the MCP interface, the testing might go more smoothly?</p>
 
 
 

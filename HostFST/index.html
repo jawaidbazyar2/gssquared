@@ -2636,27 +2636,7 @@
 <li>Choose <strong>File → Mount Drivers</strong>.<br />
    That mounts the write-protected <code>/GS2.DRIVERS</code> volume on an empty BazFast drive.<br />
    (Grayed out if there is no BazFast, emulation is not running, or every BazFast icon already has media — free a drive and try again.)</li>
-<li>On <code>/GS2.DRIVERS</code>, open the <strong><code>HOST.FST</code></strong> folder. Copy these two files into your GS/OS System folder:</li>
-</ol>
-<table>
-<thead>
-<tr>
-<th>File on drivers volume</th>
-<th>Copy to</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Host.FST</strong></td>
-<td><code>System/FSTs</code></td>
-</tr>
-<tr>
-<td><strong>Host.Driver</strong></td>
-<td><code>System/Drivers</code></td>
-</tr>
-</tbody>
-</table>
-<ol>
+<li>Run the <strong>installer</strong> on <code>/GS2.DRIVERS</code>. It has options to install <strong>Host FST</strong>, <strong>Marinetti</strong>, and <strong>Uthernet II</strong>. Select <strong>Host FST</strong> (and the others if you want TCP/IP — see <a href="../Cards_UthernetII/">Uthernet II</a>).</li>
 <li>Restart GS/OS (or otherwise let it load the new FST/driver) so Host FST becomes active.</li>
 <li>You can uncheck <strong>File → Mount Drivers</strong> when you no longer need the drivers volume mounted.</li>
 </ol>
@@ -2675,7 +2655,7 @@
 <li>Requires an <strong>Apple IIgs</strong> platform and <strong>GS/OS</strong> (not plain ProDOS 8 on a //e).</li>
 <li>On <strong>Windows</strong>, Host FST stores ProDOS type/auxtype, Finder info, and resource forks in NTFS Alternate Data Streams (<code>:AFP_AfpInfo</code> and <code>:AFP_Resource</code>, the same convention as CiderPress and Services for Macintosh). Use an <strong>NTFS</strong> folder; FAT/exFAT and some network shares will not keep that metadata.</li>
 <li>The <strong>Host Folder…</strong> picker is not available in the web (Emscripten) build.</li>
-<li>Mount Drivers only supplies the installer disk; the Host FST itself stays built into the emulator once the two System files are installed.</li>
+<li>Mount Drivers only supplies the installer disk; you only need to install the drivers/FST on each bootable GS/OS volume you use.</li>
 </ul>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>

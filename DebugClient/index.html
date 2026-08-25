@@ -2717,7 +2717,7 @@
 </tr>
 <tr>
 <td>Client library (<code>gs2debug</code>)</td>
-<td>Connect, framing read/write, seq allocation, HELLO, request/reply matching, ERROR → exception, EVENT demux, thin helpers (<code>read_mem</code>, <code>reset</code>, <code>bp_set</code>, <code>wait_stopped</code>, <code>type_text</code>, <code>quit</code>, …)</td>
+<td>Connect, framing read/write, seq allocation, HELLO, request/reply matching, ERROR → exception, EVENT demux, thin helpers (<code>read_mem</code>, <code>reset</code>, <code>bp_set</code>, <code>wait_stopped</code>, <code>type_text</code>, <code>paste_text</code>, <code>quit</code>, …)</td>
 </tr>
 <tr>
 <td>Agent / script</td>
@@ -2725,7 +2725,7 @@
 </tr>
 </tbody>
 </table>
-<p>The emulator owns machine state. The client peeks/pokes memory via READMEM / WRITEMEM, resets via RESET, run-controls via PAUSE / CONTINUE, sets breakpoints via BP_*, injects keys via KEYEVENT, and force-exits via QUIT.</p>
+<p>The emulator owns machine state. The client peeks/pokes memory via READMEM / WRITEMEM, resets via RESET, run-controls via PAUSE / CONTINUE, sets breakpoints via BP_*, injects keys via KEYEVENT, fills the paste buffer via PASTE_TEXT, and force-exits via QUIT.</p>
 <h2 id="package-layout">Package layout<a class="headerlink" href="#package-layout" title="Permanent link">&para;</a></h2>
 <pre><code>clients/python/
   README.md
@@ -2733,7 +2733,7 @@
   src/gs2debug/
     __init__.py
     types.py              # HELLO / PING / QUIT / GET_STATUS / RESET / PAUSE / CONTINUE /
-                          # READMEM / WRITEMEM / BP_* / KEYEVENT / EVT_* / STOP_* / MEM_* constants
+                          # READMEM / WRITEMEM / BP_* / KEYEVENT / PASTE_TEXT / EVT_* / STOP_* / MEM_* constants
     keys.py               # SDL scancodes / keymods + ASCII→key map for type_text
     frame.py              # pack / unpack 12-byte header + payload
     client.py             # Client, HelloInfo, StatusInfo, BpInfo, StoppedEvent, TraceWindow
@@ -2897,6 +2897,10 @@ class Client:
         &quot;&quot;&quot;Type printable ASCII (US layout); newline → Return.
         hold_s between down/up; delay_s after each char (3× after Return).&quot;&quot;&quot;
 
+    def paste_text(self, text: str) -&gt; None:
+        &quot;&quot;&quot;Fill the emulator paste buffer (PASTE_TEXT). One round-trip; guest paces drain.
+        Replaces any in-progress paste. Empty string cancels. Prefer over type_text for long strings.&quot;&quot;&quot;
+
     def request(
         self,
         type: int,
@@ -2980,7 +2984,7 @@ class Client:
 <p><strong>Once the debug socket exists:</strong></p>
 <ol>
 <li>Start GSSquared with <code>--debug PATH</code> (or <code>-D PATH</code>), e.g. <code>-p 3</code> for IIe Enhanced / <code>-p 5</code> for IIgs.</li>
-<li><code>Client().connect(path)</code> → <code>hello()</code> → <code>get_status()</code> (check <code>platform_id</code>) → <code>reset()</code> / <code>read_mem</code> / <code>type_text</code> / <code>bp_*</code> / <code>wait_stopped</code> → <code>quit()</code>.</li>
+<li><code>Client().connect(path)</code> → <code>hello()</code> → <code>get_status()</code> (check <code>platform_id</code>) → <code>reset()</code> / <code>read_mem</code> / <code>paste_text</code> / <code>type_text</code> / <code>bp_*</code> / <code>wait_stopped</code> → <code>quit()</code>.</li>
 <li>Assert caps and that <code>platform_id</code> matches the launched <code>-p N</code>.</li>
 <li>Prefer <code>c.quit()</code> over <code>kill</code> (see <a href="../AGENTS.md">AGENTS.md</a> debug-protocol smoke notes).</li>
 </ol>

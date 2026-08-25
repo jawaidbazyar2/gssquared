@@ -2908,8 +2908,13 @@
 <td>Can be any size, raw block device</td>
 </tr>
 <tr>
+<td>.iso</td>
+<td>any</td>
+<td>CD-ROM dump: raw 512-byte blocks, always write-protected. If the image has an Apple Partition Map, BazFast mounts each ProDOS and HFS partition as its own SmartPort unit</td>
+</tr>
+<tr>
 <td>.pmap</td>
-<td>any .2mg, .hdv, .img, .po</td>
+<td>any .2mg, .hdv, .img, .po, .iso</td>
 <td>"Partition Map" to mount multiple hard drive images at once</td>
 </tr>
 </tbody>
@@ -2928,7 +2933,7 @@
 <p>You can choose a storage device from the menu (<strong>File → Drives</strong>), and mount/unmount images to the device the same as above.</p>
 <h3 id="mount-drivers">Mount Drivers<a class="headerlink" href="#mount-drivers" title="Permanent link">&para;</a></h3>
 <p><strong>File → Mount Drivers</strong> mounts GSSquared’s built-in drivers disk (<code>/GS2.DRIVERS</code>) onto an empty BazFast drive. Check the menu item to mount; uncheck it to unmount that same drive.</p>
-<p>The image is write-protected. It currently includes the Host FST driver files (see <a href="../HostFST/">Host FST</a>). The menu item is grayed out if the current machine has no BazFast card, or if emulation is not running. If all six BazFast icons already have media mounted, Mount Drivers does nothing until you free a drive.</p>
+<p>The image is write-protected. Run the installer on that volume; it has options to install <strong>Host FST</strong>, <strong>Marinetti</strong>, and <strong>Uthernet II</strong>. See <a href="../HostFST/">Host FST</a> and <a href="../Cards_UthernetII/">Uthernet II</a>. The menu item is grayed out if the current machine has no BazFast card, or if emulation is not running. If all six BazFast icons already have media mounted, Mount Drivers does nothing until you free a drive.</p>
 <h3 id="drag-and-drop">Drag and Drop<a class="headerlink" href="#drag-and-drop" title="Permanent link">&para;</a></h3>
 <p>If you drag a file from your operating system Finder / Explorer / Linuxything on top of GS2, the Control Panel will automatically open, and then you can drag the disk image on top of the drive you want to mount on.</p>
 <h2 id="drive-specific-details">Drive-specific details:<a class="headerlink" href="#drive-specific-details" title="Permanent link">&para;</a></h2>
@@ -2944,7 +2949,7 @@
 <ul>
 <li>BazFast</li>
 </ul>
-<p>BazFast is a SmartPort hard drive device - you can mount any kind of media 800K or larger to the BazFast device. You can mount a 140K media, however, ProDOS assumes a 140K media is a Disk II and will usually crash trying to use such a disk.</p>
+<p>BazFast is a SmartPort hard drive device — mount 512-byte block images <strong>800K or larger</strong>. 140K images are refused (ProDOS treats that size as a Disk II); put those on a 5.25" drive. The same host file cannot be mounted twice.</p>
 <p>BazFast transfers data into the emulated machine using a kind of "Super DMA" that takes no processor cycles. It's about as fast as it can get.</p>
 <p>You can have up to 32 media mounted on BazFast. The upper limit on volume size under ProDOS 8 is 32M. The limit on GS/OS is 2 GiB.</p>
 <p>BazFast presents as six hard disk icons in the Control Panel. Each one of these icons can mount any number of images, up to the limit of 32 total across all six icons. This lets each device operate similarly to a single hard disk with partitions. Each "partition" or image gets a unique SmartPort unit number.</p>
@@ -2961,8 +2966,9 @@ F_Demos.hdv
 G_Games with Path Mods.hdv
 </code></pre>
 <p>If you mount this pmap on a BazFast device, all 7 images will be mounted at once, a big time-saver for those with complex setups, multi-disk collections like What Is the AppleIIgs or Golden Orchard.</p>
+<p>BazFast also understands <strong>Apple Partition Map</strong> (APM) images — the on-disk partition scheme used on many 1990s Macintosh / Apple IIgs CD-ROMs and some hard disks. Mounting an APM <code>.iso</code> (or an APM <code>.hdv</code> / <code>.img</code>) on a BazFast icon expands each <code>Apple_PRODOS</code> and <code>Apple_HFS</code> partition into its own SmartPort unit, the same way a <code>.pmap</code> expands a list of files. Driver, free-space, and partition-map entries are skipped. <code>.iso</code> images are always mounted write-protected. They are identified as CD-ROM on the host, but BazFast still reports SmartPort device type <code>$02</code> (hard disk): GS/OS treats <code>$05</code> as SCSI and prompts for a SCSI driver. A plain ISO 9660 disc with no APM is mounted as a single block device (GS/OS already has an ISO 9660 FST). An APM image that contains no ProDOS or HFS partitions is refused.</p>
 <h2 id="host-fst">Host FST<a class="headerlink" href="#host-fst" title="Permanent link">&para;</a></h2>
-<p>Host FST shares a folder on your real computer with GS/OS as the <strong><code>:Host</code></strong> volume. Full setup (Mount Drivers, copy <strong>Host.FST</strong> / <strong>Host.Driver</strong> into <code>System/FSTs</code> and <code>System/Drivers</code>, and <strong>Host Folder…</strong>) is in <a href="../HostFST/">Host FST</a>.</p>
+<p>Host FST shares a folder on your real computer with GS/OS as the <strong><code>:Host</code></strong> volume. Full setup (Mount Drivers, run the installer and choose <strong>Host FST</strong>, and <strong>Host Folder…</strong>) is in <a href="../HostFST/">Host FST</a>.</p>
 <h2 id="write-protection">Write-protection<a class="headerlink" href="#write-protection" title="Permanent link">&para;</a></h2>
 <p>If the disk image permission in the host operating system is Read-Only (i.e., writes not allowed) then the image will be mounted into GS2 as Write Protected.</p>
 <h2 id="floppy-emulation-speeds">Floppy Emulation Speeds<a class="headerlink" href="#floppy-emulation-speeds" title="Permanent link">&para;</a></h2>

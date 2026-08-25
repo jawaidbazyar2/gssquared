@@ -2962,6 +2962,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#paste_text-main-5-sub-2-0x00000502" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PASTE_TEXT — main 5, sub 2 (0x00000502)
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3203,7 +3214,7 @@
 <li>TCP listen/connect (frame is ready; transport comes later).</li>
 <li>Required request pipelining (header supports it; implementation may allow only one outstanding request).</li>
 <li>MCP, GDB RSP, or an embedded script runtime.</li>
-<li>Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / BP_* / KEYEVENT / STATE_GET / STATE_SET / VIDEO_TEXT / MOUNT / UNMOUNT / QUIT below.</li>
+<li>Full debug command set — session meta plus GET_STATUS / RESET / PAUSE / CONTINUE / STEP_INTO / GET_TRACE / GET_REGS / SET_REGS / READMEM / WRITEMEM / FINDMEM / BP_* / KEYEVENT / PASTE_TEXT / STATE_GET / STATE_SET / VIDEO_TEXT / MOUNT / UNMOUNT / QUIT below.</li>
 </ul>
 <hr />
 <h2 id="frame-layout">Frame layout<a class="headerlink" href="#frame-layout" title="Permanent link">&para;</a></h2>
@@ -3603,6 +3614,14 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 <td>1</td>
 <td><code>0x00000501</code></td>
 <td>protocol (<code>SDL_PushEvent</code>)</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>PASTE_TEXT</code></td>
+<td>5</td>
+<td>2</td>
+<td><code>0x00000502</code></td>
+<td>main</td>
 <td>empty</td>
 </tr>
 <tr>
@@ -4414,6 +4433,18 @@ TYPE_MASK  = 0x00FFFFFF   /* main + sub; flags cleared */
 <li><code>SDL_PushEvent</code> failure → <code>E_INTERNAL</code>.</li>
 </ul>
 <p>Clients must set <code>mod</code> to the desired modifier mask <strong>on that event</strong>. Control-Reset on macOS/Windows: Control key-down, then F12 key-down with <code>mod</code> including <code>SDL_KMOD_CTRL</code> (handlers check <code>event.key.mod</code> on the Reset key itself).</p>
+<h4 id="paste_text-main-5-sub-2-0x00000502"><code>PASTE_TEXT</code> — main 5, sub 2 (<code>0x00000502</code>)<a class="headerlink" href="#paste_text-main-5-sub-2-0x00000502" title="Permanent link">&para;</a></h4>
+<p>Fill the II/IIe keyboard or IIgs KeyGloo paste buffer. Handled on the <strong>main thread</strong>. Same injection path as Edit → Paste Text / Shift+Insert: IIe meters on <code>$C000</code> read when the strobe is clear; IIgs injects one ASCII byte per frame. Keyboard modules convert <code>'\n'</code> to <code>'\r'</code>. Reply is immediate after the buffer is replaced; drain continues asynchronously while the machine runs.</p>
+<p>Does <strong>not</strong> synthesize SDL key events (use <code>KEYEVENT</code> for Control-Reset, Open-Apple, and other non-pasteable keys).</p>
+<p><strong>Request payload:</strong> raw 8-bit key bytes. Frame <code>length</code> is the text length (no extra length prefix). Empty payload clears/cancels an in-progress paste. Replaces, does not append.</p>
+<p><strong>Success reply</strong> (same <code>type=PASTE_TEXT</code>, echoed <code>seq</code>): empty payload.</p>
+<p><strong>Bounds:</strong></p>
+<ul>
+<li>Handshake required; length 0..<code>max_payload</code> (1 MiB; already enforced at frame parse).</li>
+<li>No keyboard or KeyGloo module → <code>E_INTERNAL</code> (<code>no keyboard</code>).</li>
+<li>Allowed while running or paused (paused: buffer fills; drain waits until the guest polls / frames resume).</li>
+</ul>
+<p>UTF-8 multibyte is out of scope (same as UI paste). Typically ASCII.</p>
 <h3 id="devices-main-6">Devices (<code>main == 6</code>)<a class="headerlink" href="#devices-main-6" title="Permanent link">&para;</a></h3>
 <p>Generic device ops. Devices register in-process handlers via <code>computer_t::register_device_debug(device_id, …)</code>; the protocol server routes by <code>device_id</code> and does not interpret device blobs.</p>
 <h4 id="state_get-main-6-sub-1-0x00000601"><code>STATE_GET</code> — main 6, sub 1 (<code>0x00000601</code>)<a class="headerlink" href="#state_get-main-6-sub-1-0x00000601" title="Permanent link">&para;</a></h4>

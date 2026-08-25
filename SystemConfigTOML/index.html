@@ -3316,7 +3316,7 @@ typedef struct {
 <hr />
 <h2 id="card-types">Card types<a class="headerlink" href="#card-types" title="Permanent link">&para;</a></h2>
 <p>String enum → <code>device_id</code> (<code>src/Device_ID.hpp</code>). Slot/platform/multiplicity rules live only in <code>DeviceInfos[]</code> (<code>src/device_info.cpp</code>: <code>slots_allowed</code>, <code>platform_flags</code>, <code>multipleInstances</code>); <code>Devices[]</code> derives from that table. Load, editor save, and computer composition all validate against it. <code>slots_allowed == 0</code> means motherboard/non-slot (not assignable via <code>[[cards]]</code>).</p>
-<p>The TOML key <strong><code>device</code></strong> is reserved for <code>[[connections]]</code> — the virtual peripheral attached to a serial port (<code>file</code>, <code>modem</code>, <code>echo</code>, <code>none</code>). It MUST NOT be used as the card-type field.</p>
+<p>The TOML key <strong><code>device</code></strong> is reserved for <code>[[connections]]</code> — the virtual peripheral attached to a serial port (<code>file</code>, <code>clipboard</code>, <code>modem</code>, <code>echo</code>, <code>serial</code>, <code>none</code>). It MUST NOT be used as the card-type field.</p>
 <h3 id="slot-assignable-card-types">Slot-assignable card types<a class="headerlink" href="#slot-assignable-card-types" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -3610,7 +3610,7 @@ device = &quot;file&quot;
 <td><code>device</code></td>
 <td>string</td>
 <td>yes</td>
-<td>Virtual peripheral: <code>file</code>, <code>modem</code>, <code>echo</code>, <code>none</code></td>
+<td>Virtual peripheral: <code>file</code>, <code>modem</code>, <code>echo</code>, <code>clipboard</code>, <code>serial</code>, <code>none</code></td>
 </tr>
 <tr>
 <td><code>slot</code></td>
@@ -3628,7 +3628,7 @@ device = &quot;file&quot;
 <td><code>path</code></td>
 <td>string</td>
 <td>no</td>
-<td>Optional host file when <code>device = "file"</code> (runtime may auto-generate capture names)</td>
+<td>Capture file when <code>device = "file"</code> (optional); host port name when <code>device = "serial"</code> (required; stored as-is, not relative to the config)</td>
 </tr>
 <tr>
 <td><code>remote_url</code></td>
@@ -3658,6 +3658,10 @@ device = &quot;file&quot;
 <td>Capture / file sink (<code>path</code> optional)</td>
 </tr>
 <tr>
+<td><code>"clipboard"</code></td>
+<td>Capture to host clipboard (high-bit stripped; CR/LF/CRLF → one LF; idle-close like file)</td>
+</tr>
+<tr>
 <td><code>"echo"</code></td>
 <td>Loopback for testing (schema only; not offered in UI)</td>
 </tr>
@@ -3665,9 +3669,13 @@ device = &quot;file&quot;
 <td><code>"modem"</code></td>
 <td>Hayes-compatible virtual modem (native builds; serial ports only)</td>
 </tr>
+<tr>
+<td><code>"serial"</code></td>
+<td>Real host UART; <code>path</code> is the OS port name (macOS <code>/dev/cu.*</code>, Windows <code>COMn</code>, Linux <code>/dev/ttyUSB*</code>)</td>
+</tr>
 </tbody>
 </table>
-<p><strong>Allowed devices by port kind:</strong> serial (SCC, SSC) → none / file / modem; parallel → none / file only.</p>
+<p><strong>Allowed devices by port kind:</strong> serial (SCC, SSC) → none / file / clipboard / modem / serial; parallel → none / file / clipboard.</p>
 <h3 id="port-addressing">Port addressing<a class="headerlink" href="#port-addressing" title="Permanent link">&para;</a></h3>
 <p><strong>IIgs built-in SCC</strong> — firmware maps Port A to slot 1 and Port B to slot 2. Preferred TOML:</p>
 <pre><code class="language-toml">[[connections]]
@@ -3757,7 +3765,7 @@ device = &quot;file&quot;
 <li><strong>Absolute paths</strong> are used as-is.</li>
 <li><strong>Relative paths</strong> are resolved relative to the directory containing the <code>.gs2</code> file (recommended for portable configs).</li>
 </ul>
-<p>Supported image types are whatever <code>identify_media()</code> accepts (<code>.po</code>, <code>.dsk</code>, <code>.woz</code>, <code>.2mg</code>, <code>.hdv</code>, <code>.pmap</code> etc.).</p>
+<p>Supported image types are whatever <code>identify_media()</code> accepts (<code>.po</code>, <code>.dsk</code>, <code>.woz</code>, <code>.2mg</code>, <code>.hdv</code>, <code>.iso</code>, <code>.pmap</code> etc.). APM <code>.iso</code> / block images expand to multiple BazFast units the same way a <code>.pmap</code> does.</p>
 <h3 id="drive-map-reference">Drive map (reference)<a class="headerlink" href="#drive-map-reference" title="Permanent link">&para;</a></h3>
 <table>
 <thead>

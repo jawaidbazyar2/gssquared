@@ -2687,10 +2687,9 @@
 </ul>
 <p>"Copy" will then populate the bmp header for use when / if the clipboard callback routine is called.</p>
 <h2 id="paste">Paste<a class="headerlink" href="#paste" title="Permanent link">&para;</a></h2>
-<p>Paste should be handled by the keyboard module. When a paste is done, copy the pasted string into a buffer.</p>
-<p>each time C000 is read, if:
-    C000 would return false, then read the next character from the buffer.
-    if it would return true, then they have not processed the keystroke.</p>
+<p>Paste is handled by the keyboard module. When a paste is done, copy the pasted string into a buffer.</p>
+<p><strong>II / IIe:</strong> each time <code>$C000</code> is read, if the strobe is clear (bit 7 = 0), inject the next character from the buffer. If the strobe is set, the guest has not processed the current keystroke. Shift+Insert, Edit → Paste Text, and debug-protocol <code>PASTE_TEXT</code> fill this buffer.</p>
+<p><strong>IIgs (KeyGloo / ADB):</strong> meter from the KeyGloo <code>frame_handler</code> (once per frame). If paste text remains and the <code>$C000</code> latch strobe is clear, inject one ASCII character via <code>store_key_to_buffer()</code> (<code>'\n'</code> becomes <code>'\r'</code>). Reset and keyboard flush abort the paste. Shift+Insert, Edit → Paste Text, and debug-protocol <code>PASTE_TEXT</code> all fill this buffer.</p>
 <p>Implemented!</p>
 
 

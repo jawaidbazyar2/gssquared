@@ -3097,7 +3097,7 @@
 <p>Breakpoints remain active even when the debugger window is closed, as long as they were set and not cleared.</p>
 <hr />
 <h2 id="monitor-pane">Monitor pane<a class="headerlink" href="#monitor-pane" title="Permanent link">&para;</a></h2>
-<p>The Monitor pane provides a command line at the bottom of the pane. Click the input area, type a command, and press <strong>Enter</strong>. Previous commands are recalled with <strong>Up</strong> and <strong>Down</strong> while the input field is focused.</p>
+<p>The Monitor pane provides a command line at the bottom of the pane. Click the input area, type a command, and press <strong>Enter</strong>. Previous commands are recalled with <strong>Up</strong> and <strong>Down</strong> while the input field is focused. After a command runs, the pane jumps to the newest output.</p>
 <p>Type <strong><code>help</code></strong> for a summary of commands. Addresses use <strong><code>BB/AAAA</code></strong> bank/offset form on the Apple IIgs (bank is sticky across commands). On 8-bit machines, or to continue working in the same bank, a bare hex address such as <code>0400</code> is enough.</p>
 <h3 id="inspecting-and-changing-memory">Inspecting and changing memory<a class="headerlink" href="#inspecting-and-changing-memory" title="Permanent link">&para;</a></h3>
 <table>
@@ -3486,6 +3486,7 @@ al C010 .Loop
 <p>Launch GSSquared with a Unix domain socket to allow external tools to pause, step, read memory, set breakpoints, inject keystrokes, and more — without using the debugger UI:</p>
 <pre><code class="language-bash">./build/GSSquared --debug /tmp/gs2.sock -p 3
 </code></pre>
+<p>On <strong>Windows 10+</strong>, <code>--debug</code> uses AF_UNIX sockets the same way (for example <code>GSSquared --debug C:\Temp\gs2.sock -p 3</code>).</p>
 <p>See <a href="../gs2debug/">gs2debug.md</a> for the Python client and examples. The UI debugger and the socket protocol can be used at the same time.</p>
 <hr />
 <h2 id="limitations-and-tips">Limitations and tips<a class="headerlink" href="#limitations-and-tips" title="Permanent link">&para;</a></h2>

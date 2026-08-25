@@ -2829,13 +2829,15 @@
 <li>Mount Drivers</li>
 <li>Save Screenshot</li>
 <li>Close Emulation (when a machine is running)</li>
+<li>Quit</li>
 </ul>
 <p><strong>Launch Config…</strong> picks a <code>.gs2</code> or <code>… Settings.txt</code> and boots it immediately (System Select only).</p>
 <p>New Disk Image creates a new disk image of the specified size and type. You will be prompted for a folder and filename to save the new image to.</p>
 <p>Open Disk Image lets you select the storage device, then you will select the disk image file to mount to that device.</p>
 <p>Open System can be exercised when you're at the System Select screen ("Choose your retro experience"). This lets you load a system configuration you have previously defined and saved.</p>
 <p>Save System / Save As System let you save the current system configuration. This does not include any machine state except what disk images are mounted.</p>
-<p><strong>Mount Drivers</strong> is a checkable item that mounts or unmounts the built-in <code>/GS2.DRIVERS</code> volume on BazFast (write-protected). Grayed out when BazFast is not in the current machine. Used to install Host FST into GS/OS — see <a href="../HostFST/">Host FST</a>.</p>
+<p><strong>Mount Drivers</strong> is a checkable item that mounts or unmounts the built-in <code>/GS2.DRIVERS</code> volume on BazFast (write-protected). Grayed out when BazFast is not in the current machine. The installer on that disk has options to install <strong>Host FST</strong>, <strong>Marinetti</strong>, and <strong>Uthernet II</strong>. See <a href="../HostFST/">Host FST</a> and <a href="../Cards_UthernetII/">Uthernet II</a>.</p>
+<p><strong>Quit</strong> exits the application. On Windows it is enabled at System Select; while a machine is running, use <strong>Close Emulation</strong> first (Quit is grayed out). On macOS and Linux, Quit is available in both states.</p>
 <p><strong>Save Screenshot</strong> writes the current display (with borders) to a PNG on your Desktop, named like <code>GS2 Screenshot YYYY-MM-DD HH.MM.SS.png</code>. Shortcut: Shift+PrintScreen. Only one screenshot write can be in progress at a time.</p>
 <h3 id="edit">Edit<a class="headerlink" href="#edit" title="Permanent link">&para;</a></h3>
 <ul>
@@ -2843,7 +2845,7 @@
 <li>Paste Text</li>
 </ul>
 <p>Copy Screen copies the current display - with borders - into your computer's copy/paste buffer, where you can easily paste it into documents, Slack, Facebook, Twitter, etc. Shortcut: PrintScreen.</p>
-<p>Paste Text pastes text in your computer's copy/paste buffer into the emulated Apple, as if you were typing it.</p>
+<p>Paste Text pastes text from your computer’s clipboard into the emulated Apple, as if you were typing it. Works on II / IIe and on IIgs ADB: characters are injected one per frame so the guest can keep up. Shortcut: Shift+Insert. Reset or a keyboard flush aborts an in-progress paste.</p>
 <h3 id="machine">Machine<a class="headerlink" href="#machine" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Reset</li>
@@ -2898,13 +2900,16 @@ Capture Mouse - see <a href="../Mouse/">Using a Mouse</a></p>
 <li>Drives</li>
 </ul>
 </li>
-<li>CRT Shader</li>
 <li>Full Screen</li>
+<li>Second Sight Text</li>
+<li>CRT Shader</li>
 <li>Hover Enable / Disable</li>
 </ul>
 <p><strong>HUD → Stats</strong> toggles the small performance/stats overlay (off by default).<br />
 <strong>HUD → Drives</strong> toggles the drive-activity strip at the bottom of the screen (on by default).<br />
 Both are useful when recording video and you want a clean picture. Preferences are remembered in app settings.</p>
+<p><strong>Second Sight Text</strong> (IIgs with a Second Sight card) renders Apple II 40/80-column text through the card’s VGA path. Grayed out if the current machine has no Second Sight. See <a href="../Displays/">Displays</a>.<br />
+<strong>CRT Shader</strong> applies a GPU CRT effect. Shortcut: <strong>F7</strong>. Available on macOS, Windows, and Linux. See <a href="../Displays/">Displays</a>.</p>
 <h3 id="sound">Sound<a class="headerlink" href="#sound" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Sound Effects On/Off</li>

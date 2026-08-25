@@ -2649,19 +2649,29 @@
 <td>Capture printer bytes to a host file</td>
 </tr>
 <tr>
+<td><strong>Clipboard</strong></td>
+<td>Capture TX to the host clipboard</td>
+<td>Capture printer bytes to the host clipboard</td>
+</tr>
+<tr>
 <td><strong>Modem</strong></td>
 <td>Virtual Hayes modem (TCP dial-out)</td>
 <td>—</td>
 </tr>
+<tr>
+<td><strong>Serial</strong></td>
+<td>Real host UART (macOS <code>/dev/cu.*</code>, skipping Bluetooth/debug/wlan system callouts; Windows <code>COMn</code>, skipping Bluetooth modem mappings; Linux <code>/dev/ttyUSB*</code> <code>/dev/ttyACM*</code> <code>/dev/ttyAMA*</code>, skipping Bluetooth/debug)</td>
+<td>—</td>
+</tr>
 </tbody>
 </table>
-<p>When a <strong>File</strong> attachment closes, a short on-screen message shows the filename.</p>
+<p>When a <strong>File</strong> attachment closes, a short on-screen message shows the filename. When a <strong>Clipboard</strong> attachment closes (idle ~10s, or Ctrl-Reset on parallel), high-bit-stripped text is copied to the host clipboard and a toast reports the byte count. Newlines are normalized to LF; IIgs “Add LF after CR” CRLF pairs become a single line break.</p>
 <h2 id="control-panel-while-the-machine-is-running">Control Panel (while the machine is running)<a class="headerlink" href="#control-panel-while-the-machine-is-running" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Press <strong>F4</strong> (or click the Control Panel tab).</li>
 <li>Find the <strong>Serial / Parallel</strong> buttons (between the slot list and the drive icons).</li>
 <li>Click a port button.</li>
-<li>Pick <strong>None</strong>, <strong>File</strong>, or <strong>Modem</strong> (Modem only where allowed).</li>
+<li>Pick <strong>None</strong>, <strong>File</strong>, <strong>Clipboard</strong>, <strong>Modem</strong>, or a host serial port listed by name (Modem and host ports only on serial jacks). The host-port list is rescanned every 2 seconds while the control panel or config editor is open, so plugging or unplugging a USB serial dongle updates the picker.</li>
 </ol>
 <p>On Apple IIgs machines you will see the built-in ports (often labeled like printer/modem). Slot cards such as Super Serial or Parallel appear as their own buttons.</p>
 <h2 id="config-editor-saved-with-the-machine">Config editor (saved with the machine)<a class="headerlink" href="#config-editor-saved-with-the-machine" title="Permanent link">&para;</a></h2>
@@ -2686,7 +2696,13 @@ device = &quot;modem&quot;
 slot = 2
 device = &quot;modem&quot;
 </code></pre>
-<p>Optional <code>path</code> sets the capture filename for <code>device = "file"</code>.</p>
+<p>Optional <code>path</code> sets the capture filename for <code>device = "file"</code>. For <code>device = "serial"</code>, <code>path</code> is the host port name stored as written (<code>/dev/cu.usbserial-…</code>, <code>cu.usbserial-…</code>, <code>COM3</code>, <code>/dev/ttyUSB0</code>, …) — it is not resolved relative to the config file.</p>
+<pre><code class="language-toml">[[connections]]
+slot = 2
+device = &quot;serial&quot;
+path = &quot;cu.usbserial-A50285BI&quot;   # macOS; on Windows use path = &quot;COM3&quot;; on Linux, /dev/ttyUSB0
+</code></pre>
+<p>Guest software programs baud / data / parity / stop bits on the SCC or 6551; those settings are passed through to the host port. If the dongle is unplugged, the emulator keeps the attachment and retries. On Linux, <code>/dev/ttyUSB*</code> is owned by group <code>dialout</code> (some distros use <code>uucp</code>); the local user must be in that group and re-login before GSSquared can open the port.</p>
 <p>If you omit <code>[[connections]]</code>, GSSquared applies sensible defaults (IIgs: file on one port and modem on the other on native builds; SSC → modem; parallel → file).</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>

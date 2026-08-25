@@ -2704,7 +2704,7 @@ card = &quot;uthernet2&quot;
 </ol>
 <p>A slot mismatch usually shows as <code>w5100.eth: No hardware</code>.</p>
 <h3 id="gsos-marinetti">GS/OS / Marinetti<a class="headerlink" href="#gsos-marinetti" title="Permanent link">&para;</a></h3>
-<p>Install and configure Marinetti (or another IIgs TCP stack) for Uthernet II in the slot you chose. With DHCP, the guest typically receives an address on slirp’s private <code>/24</code> (gateway often <code>.2</code>, DNS <code>.3</code>).</p>
+<p><strong>File → Mount Drivers</strong> mounts <code>/GS2.DRIVERS</code>. Run the installer on that volume and choose <strong>Marinetti</strong> and <strong>Uthernet II</strong> (and <strong>Host FST</strong> if you want <code>:Host</code> as well). Then configure Marinetti for Uthernet II in the slot you chose. With DHCP, the guest typically receives an address on slirp’s private <code>/24</code> (gateway often <code>.2</code>, DNS <code>.3</code>).</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Serial modem “dial-up” style access: <a href="../Serial_Modem/">Serial / Modem</a></li>

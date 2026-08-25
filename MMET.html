@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memory-Mapped Enhanced Text (MMET)</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4f;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-dim: #1f3a5f;
+      --green: #3fb950;
+      --orange: #d29922;
+      --mono: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 2rem 1.5rem 4rem;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      max-width: 52rem;
+      margin-inline: auto;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin: 0;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 2.5rem 0 1rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    h2:first-of-type { border-top: none; padding-top: 0; }
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+      color: var(--muted);
+    }
+
+    p { margin: 0.75rem 0; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    code, kbd {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1em 0.35em;
+    }
+
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin: 1rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin: 1rem 0;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--surface);
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .callout {
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .callout.warn { border-left-color: var(--orange); }
+    .callout.ok   { border-left-color: var(--green); }
+
+    .callout p:first-child { margin-top: 0; }
+    .callout p:last-child  { margin-bottom: 0; }
+
+    dl {
+      display: grid;
+      grid-template-columns: 8rem 1fr;
+      gap: 0.4rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+
+    dt {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    dd { margin: 0; color: var(--text); }
+
+    ul, ol { padding-left: 1.4rem; margin: 0.75rem 0; }
+    li { margin: 0.35rem 0; }
+
+    .diagram {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      white-space: pre;
+      color: var(--muted);
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Memory-Mapped Enhanced Text</h1>
+  <p class="subtitle">Video-card spec — shadow Apple&nbsp;II memory as VGA-style text</p>
+  <span class="status">Draft</span>
+</header>
+
+<section id="summary">
+  <h2>Summary</h2>
+  <p>
+    <strong>Memory-Mapped Enhanced Text (MMET)</strong> lets application code treat
+    ordinary Apple&nbsp;II RAM as a high-resolution text framebuffer. The host selects
+    a mode; the video card shadows configured memory regions and renders each cell as
+    a glyph with independent foreground and background colors.
+  </p>
+  <p>
+    From the programmer’s point of view the workflow is simple:
+  </p>
+  <ol>
+    <li><strong>Set mode</strong> — tell the card columns, rows, and (optionally) which Apple&nbsp;II addresses to watch.</li>
+    <li><strong>Write cells</strong> — store two-byte <code>(character, attribute)</code> pairs into shadowed RAM.</li>
+    <li><strong>Scroll</strong> — increment <code>first_line</code> by 1; rewrite only the newly exposed row.</li>
+    <li><strong>Display</strong> — the card rasterizes from its shadow copy every frame; the CPU never touches card VRAM directly.</li>
+  </ol>
+  <div class="callout ok">
+    <p>
+      MMET reuses the shadow-memory pattern already used by Second&nbsp;Sight, A2DVI,
+      and the PPU tilemap model: bulk screen data flows over the 1&nbsp;MHz bus into
+      host RAM; the card snoops writes and keeps its own copy for rendering.
+    </p>
+  </div>
+  <p>
+    Two host interfaces reach the same hardware modes — see
+    <a href="#api">Direct access</a> (memory map + card I/O) and
+    <a href="#cout-firmware">COUT firmware</a> (<code>PR#n</code> + control codes
+    for BASIC, Pascal, and other existing text software).
+  </p>
+</section>
+
+<section id="access-paths">
+  <h2>Two ways in</h2>
+  <table>
+    <thead>
+      <tr><th>Path</th><th>Who uses it</th><th>How the screen is driven</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="#api">Direct MMET</a></td>
+        <td>New apps, ports, shells</td>
+        <td>Host writes <code>(char, attr)</code> cells in shadow RAM; card API sets mode</td>
+      </tr>
+      <tr>
+        <td><a href="#cout-firmware">COUT firmware</a></td>
+        <td>BASIC, Pascal, legacy text tools</td>
+        <td><code>PR#n</code> then <code>PRINT</code> / <code>WRITELN</code>; firmware interprets bytes + control codes</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Both paths rasterize through the same MMET engine and support the same mode table.</p>
+</section>
+
+<section id="contrast">
+  <h2>Native text vs enhanced text</h2>
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Apple&nbsp;II native (40-col)</th>
+        <th>MMET enhanced</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Bytes per cell</td>
+        <td class="num">1</td>
+        <td class="num">2</td>
+      </tr>
+      <tr>
+        <td>Cell layout</td>
+        <td><code>character</code></td>
+        <td><code>character, attribute</code></td>
+      </tr>
+      <tr>
+        <td>Memory layout</td>
+        <td>Interleaved line map (<code>$0400</code> scheme)</td>
+        <td>Linear row-major, fixed pitch</td>
+      </tr>
+      <tr>
+        <td>Colors</td>
+        <td>Global fg/bg + reverse/video bits</td>
+        <td>Per-cell fg/bg (VGA attribute byte)</td>
+      </tr>
+      <tr>
+        <td>Typical width</td>
+        <td class="num">40</td>
+        <td class="num">80 – 132</td>
+      </tr>
+      <tr>
+        <td>Who renders</td>
+        <td>On-board video scanner</td>
+        <td>Add-on card (VGA / HDMI output)</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="cell-format">
+  <h2>Cell format</h2>
+  <p>Each screen cell occupies <strong>two consecutive bytes</strong> in host memory:</p>
+  <pre>offset +0   character code   (8-bit, PC/VGA code page 437 by default)
+offset +1   attribute byte   (VGA text attribute)</pre>
+
+  <h3>Attribute byte (IBM VGA / mode 03h compatible)</h3>
+  <table>
+    <thead>
+      <tr><th>Bits</th><th>Field</th><th>Values</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>3–0</td><td>Foreground color</td><td>16-color palette index</td></tr>
+      <tr><td>6–4</td><td>Background color</td><td>16-color palette index (bits 6–4; bit 7 shared)</td></tr>
+      <tr><td>7</td><td>Blink / bright</td><td>0 = bright fg; 1 = blink fg (or bg bit 3 on some hardware)</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Cards SHOULD implement the standard 16-color VGA text palette. Font glyphs
+    default to 9×16 pixels (mode&nbsp;03h) for 80-column modes and 8×16 for
+    132-column modes unless the mode table specifies otherwise.
+  </p>
+</section>
+
+<section id="memory-layout">
+  <h2>Memory layout</h2>
+  <p>
+    Enhanced text uses a <strong>linear framebuffer</strong>, not the Apple&nbsp;II
+    interleaved text-page address scheme. Row <var>r</var>, column <var>c</var>:
+  </p>
+  <pre>line   = (first_line + r) mod ring_lines
+offset = line × pitch + c × 2
+address = base + offset
+
+ring_lines = length ÷ pitch</pre>
+  <p>where:</p>
+  <dl>
+    <dt>base</dt>
+    <dd>24-bit host address of byte&nbsp;0 of the shadowed region (physical line&nbsp;0)</dd>
+    <dt>length</dt>
+    <dd>Size of the shadowed ring buffer in bytes (≥ <code>pitch × rows</code>)</dd>
+    <dt>ring_lines</dt>
+    <dd><code>length ÷ pitch</code> — number of physical lines in the ring</dd>
+    <dt>first_line</dt>
+    <dd>Line index (0 … <code>ring_lines − 1</code>) of the physical line displayed as row&nbsp;0</dd>
+    <dt>pitch</dt>
+    <dd>Bytes per scanline = <code>columns × 2</code></dd>
+    <dt>visible size</dt>
+    <dd><code>pitch × rows</code> bytes on screen; <code>rows ≤ ring_lines</code></dd>
+  </dl>
+
+  <div class="callout warn">
+    <p>
+      Do <em>not</em> use the native <code>$0400</code> line-address table for MMET.
+      Software that assumes interleaved 40-column layout must be rewritten or
+      use a translation layer. MMET is intended for new code and ports of PC/VGA
+      text applications.
+    </p>
+  </div>
+
+  <h3>Example: 80×25 at base <code>$2000</code>, first_line = 0</h3>
+  <pre class="diagram">pitch = 160 bytes   rows = 25   ring_lines = 25   length = 4000
+display row 0 → physical line 0 → $2000 .. $209F
+display row 1 → physical line 1 → $20A0 .. $213F
+...
+display row 24 → physical line 24 → $3E80 .. $3F1F</pre>
+</section>
+
+<section id="scrolling">
+  <h2>Scrolling and first line</h2>
+  <p>
+    Moving thousands of bytes over the 1&nbsp;MHz bus for every scroll is too
+    slow. MMET follows the <a href="VideoTerm.md">Videx Videoterm</a> model:
+    the card keeps a <strong>ring buffer</strong> in shadow memory and a
+    <strong>first line</strong> index that says which physical line is
+    displayed as row&nbsp;0. Scrolling is a register change plus a single-line
+    write — not a block copy.
+  </p>
+
+  <div class="callout ok">
+    <p>
+      <strong>Scroll up one line</strong> (standard terminal behavior):<br>
+      1. <code>first_line ← (first_line + 1) mod ring_lines</code> — increment only; no multiply<br>
+      2. Rewrite <em>one</em> line — display row <code>rows − 1</code> — at physical line
+      <code>(first_line + rows − 1) mod ring_lines</code>
+    </p>
+  </div>
+
+  <p>
+    Videx firmware uses a similar “first line on screen” pointer
+    (<code>$6F8+n</code>); its CRTC start address (R12/R13) is a byte offset
+    equivalent to <code>first_line × pitch</code>. MMET exposes a
+    <strong>line index</strong> on the host API so scroll is a single
+    increment (or one small immediate I/O write) — no multiply-by-pitch on the
+    Apple&nbsp;II. The card converts to a byte offset internally when driving
+    VGA/CRTC hardware.
+  </p>
+
+  <h3>Ring buffer sizing</h3>
+  <table>
+    <thead>
+      <tr><th>Strategy</th><th>ring_lines</th><th>length</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Minimum ring (recommended)</td>
+        <td class="num"><code>rows</code></td>
+        <td><code>pitch × rows</code></td>
+        <td>Each scroll reuses the top physical line as the new bottom; no extra RAM</td>
+      </tr>
+      <tr>
+        <td>Extra history</td>
+        <td class="num"><code>rows + k</code></td>
+        <td><code>pitch × (rows + k)</code></td>
+        <td><var>k</var> spare lines for scrollback capture or double-buffer tricks</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    <code>first_line</code> MUST satisfy <code>0 ≤ first_line &lt; ring_lines</code>
+    and <code>rows ≤ ring_lines</code>. When <code>ring_lines = rows</code>,
+    incrementing <code>first_line</code> wraps modulo <code>ring_lines</code>.
+  </p>
+
+  <h3>Scroll-up walkthrough (80×25)</h3>
+  <pre class="diagram">Before:  first_line = 0,   ring_lines = 25,  pitch = 160
+         display row 0 → line 0 @ $2000,  row 24 → line 24 @ $3E80
+
+Scroll:  first_line = 1     (INC + conditional wrap — one fast I/O write)
+         display row 0 → line 1 @ $20A0
+         display row 24 → line 0 @ $2000  (wrapped — stale; rewrite this)
+
+Rewrite: fill 160 bytes @ $2000  (one line of char+attr pairs)
+         ; host: line_addr = base + line × pitch  (one multiply for the write)</pre>
+
+  <h3>Scroll-down</h3>
+  <p>
+    Reverse scroll decrements the origin:
+    <code>first_line ← (first_line − 1) mod ring_lines</code>, then
+    rewrite display row&nbsp;0 (physical line <code>first_line</code>).
+    Same cost: one register update + one line write.
+  </p>
+
+  <h3>Horizontal scroll</h3>
+  <p>
+    <code>first_line</code> is vertical only. Character-column horizontal
+    origin is a separate future parameter (<code>first_column</code>); it is
+    not derived by adding small increments to a byte offset.
+  </p>
+</section>
+
+<section id="modes">
+  <h2>Supported modes</h2>
+
+  <h3>80-column family</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Mode</th>
+        <th>ID</th>
+        <th>Columns</th>
+        <th>Rows</th>
+        <th>Pitch</th>
+        <th>Buffer size</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>80×24</td>
+        <td><code>0x02</code> <sup>*</sup></td>
+        <td class="num">80</td>
+        <td class="num">24</td>
+        <td class="num">160</td>
+        <td class="num">3,840</td>
+      </tr>
+      <tr>
+        <td>80×25</td>
+        <td><code>0x03</code></td>
+        <td class="num">80</td>
+        <td class="num">25</td>
+        <td class="num">160</td>
+        <td class="num">4,000</td>
+      </tr>
+      <tr>
+        <td>80×43</td>
+        <td><code>0x04</code></td>
+        <td class="num">80</td>
+        <td class="num">43</td>
+        <td class="num">160</td>
+        <td class="num">6,880</td>
+      </tr>
+      <tr>
+        <td>80×50</td>
+        <td><code>0x05</code></td>
+        <td class="num">80</td>
+        <td class="num">50</td>
+        <td class="num">160</td>
+        <td class="num">8,000</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><sup>*</sup> <code>0x02</code> is the Second&nbsp;Sight “80×25” slot in existing
+  firmware; emulators MAY treat it as 80×24. New software should use explicit mode IDs.</p>
+
+  <h3>132-column family (VESA text extensions)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Mode</th>
+        <th>VESA ID</th>
+        <th>Columns</th>
+        <th>Rows</th>
+        <th>Pitch</th>
+        <th>Buffer size</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>132×25</td>
+        <td><code>0x109</code></td>
+        <td class="num">132</td>
+        <td class="num">25</td>
+        <td class="num">264</td>
+        <td class="num">6,600</td>
+      </tr>
+      <tr>
+        <td>132×43</td>
+        <td><code>0x10A</code></td>
+        <td class="num">132</td>
+        <td class="num">43</td>
+        <td class="num">264</td>
+        <td class="num">11,352</td>
+      </tr>
+      <tr>
+        <td>132×50</td>
+        <td><code>0x10B</code></td>
+        <td class="num">132</td>
+        <td class="num">50</td>
+        <td class="num">264</td>
+        <td class="num">13,200</td>
+      </tr>
+      <tr>
+        <td>132×60</td>
+        <td><code>0x10C</code></td>
+        <td class="num">132</td>
+        <td class="num">60</td>
+        <td class="num">264</td>
+        <td class="num">15,840</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="memory-map">
+  <h2>Apple&nbsp;II memory mapping</h2>
+  <p>
+    The card watches host writes (and optionally reads) to a configured address
+    range and mirrors them into an internal text buffer used for rasterization.
+    On the Apple&nbsp;IIgs, shadowing typically applies to banks <code>$E0</code>/<code>$E1</code>
+    when the corresponding video region is enabled in <code>$C035</code>.
+  </p>
+
+  <h3>Default mapping suggestions</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Buffer size</th>
+        <th>Suggested host region</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>≤ 4&nbsp;KB</td>
+        <td>HGR page&nbsp;1 <code>$2000–$2FFF</code></td>
+        <td>Fits 80×25; disable native HGR display</td>
+      </tr>
+      <tr>
+        <td>≤ 8&nbsp;KB</td>
+        <td>HGR pages&nbsp;1+2 <code>$2000–$5FFF</code></td>
+        <td>Fits 80×43 (6,880&nbsp;B) and 80×50 (8,000&nbsp;B)</td>
+      </tr>
+      <tr>
+        <td>≤ 16&nbsp;KB</td>
+        <td>SHR lower half <code>$2000–$5FFF</code> main+aux</td>
+        <td>Fits 132×25 with margin</td>
+      </tr>
+      <tr>
+        <td>≤ 32&nbsp;KB</td>
+        <td>Full SHR <code>$2000–$9FFF</code></td>
+        <td>Fits 132×60 (15,840&nbsp;B)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <p>
+      Mappings are <strong>user-defined</strong>. A program may place the buffer
+      anywhere in RAM that the card can shadow — the same flexibility described
+      for PPU tilemaps in the card API. Defaults exist so simple programs need
+      not configure addresses manually.
+    </p>
+  </div>
+
+  <h3>What the card must not map</h3>
+  <ul>
+    <li>Screen-hole regions used by firmware or peripherals (Videx-style control bytes at <code>$478+</code> etc.) unless explicitly requested</li>
+    <li>Language-card or I/O space when shadow inhibit is clear</li>
+    <li>Regions smaller than the mode buffer</li>
+  </ul>
+</section>
+
+<section id="api">
+  <h2>Direct access — card API</h2>
+  <p>
+    MMET extends the Second&nbsp;Sight-style command interface at
+    <code>$C0B0–$C0BF</code> (IIgs slot&nbsp;3 / card I/O window). Bulk
+    configuration uses the existing DMA handshake (<code>0x01 → 0x00</code>);
+    mode changes use the long-running pattern (<code>0xA5</code> success /
+    <code>0xA6</code> error).
+  </p>
+
+  <h3>SetMode — enter MMET</h3>
+  <p>
+    Extends the existing <code>SetMode</code> command. Emulation flag
+    <code>$04</code> = <strong>MMET mode</strong> (proposed; distinct from
+    Apple&nbsp;II emu <code>$00</code>, VGA <code>$01</code>, PPU <code>$02</code>,
+    GPU <code>$03</code>).
+  </p>
+  <pre>Byte 0  command = SetMode ($03)
+Byte 1  mode_id   (0x02–0x05, 0x109–0x10C, or 0xFF + user VGA table)
+Byte 2  emu_flag  $04 = MMET</pre>
+  <p>Effect:</p>
+  <ul>
+    <li>Card switches output to enhanced-text rasterization.</li>
+    <li>Native Apple&nbsp;II video scanner output is bypassed (same as VGA modes).</li>
+    <li>Default geometry and memory map for <code>mode_id</code> are applied.</li>
+  </ul>
+
+  <h3>SetTextGeometry</h3>
+  <p>Optional override of <code>columns</code> / <code>rows</code> when a fixed
+  mode ID is not used (<code>mode_id = 0xFF</code> custom VGA table). Normal
+  MMET software selects a mode ID from the tables above.</p>
+  <pre>columns   uint16   80 or 132 (must match active mode family)
+rows      uint16   1 .. rows_max
+reserved  uint16   0</pre>
+
+  <h3>SetTextMemoryMap</h3>
+  <p>Define the shadowed ring buffer. 24-bit address, IIgs bank included.</p>
+  <pre>base_addr      uint24   Host address of ring line 0
+pitch          uint16   Bytes per line (0 = columns × 2)
+length         uint16   Ring size in bytes (0 = pitch × rows)
+first_line     uint16   Physical line displayed as row 0 (0 .. ring_lines − 1)</pre>
+  <p>
+    <code>first_line</code> may be omitted on first setup (defaults to 0).
+    Changing only <code>first_line</code> is the intended fast path for
+    scroll; see <a href="#scrolling">Scrolling</a>.
+  </p>
+
+  <h3>SetTextFirstLine</h3>
+  <p>
+    <strong>Immediate command</strong> (no DMA handshake) — optimized for
+    scroll hot paths on a 1&nbsp;MHz host. Updates which physical line is
+    row&nbsp;0.
+  </p>
+  <pre>first_line   uint16   New line index (0 .. ring_lines − 1)
+                       Wrap: (first_line + 1) mod ring_lines for scroll-up</pre>
+  <p>
+    Cards SHOULD apply the new origin before the next frame rasterization.
+    Internally: <code>byte_offset = first_line × pitch</code> (card-side multiply
+    for CRTC/VGA). Host software SHOULD follow with a single-line write to the
+    newly exposed row rather than copying the whole screen.
+  </p>
+
+  <h3>GetTextFirstLine</h3>
+  <p>Immediate read (or via <code>GetMemoryMap</code>): returns current
+  <code>first_line</code>, <code>ring_lines</code>, <code>base_addr</code>,
+  <code>pitch</code>, and <code>length</code>.</p>
+
+  <h3>GetMemoryMap</h3>
+  <p>
+    Returns card capabilities and the active MMET mapping (same command family
+    as PPU <code>GetMemoryMap</code>). Minimum fields:
+  </p>
+  <ul>
+    <li>Supported mode IDs bitmask</li>
+    <li>Maximum rows for 80-col and 132-col</li>
+    <li>Current <code>base_addr</code>, <code>pitch</code>, <code>length</code>, <code>ring_lines</code>, <code>first_line</code>, <code>columns</code>, <code>rows</code></li>
+    <li>Shadow active (bool)</li>
+  </ul>
+
+  <h3>SetTextFont</h3>
+  <p>
+    Reuses existing <code>SetTextFont</code> (<code>$0F</code>): ROM font,
+    alternate ROM, PC ANSI 8×16, or user font uploaded to card SRAM.
+    Font glyphs are rasterized by the card; they do not live in the host
+    MMET buffer.
+  </p>
+</section>
+
+<section id="rendering">
+  <h2>Rendering model</h2>
+  <ol>
+    <li>Host writes update shadow RAM on the card (one-way snoop, same as A2DVI).</li>
+    <li>Each display refresh, the card walks <code>rows</code> lines beginning at
+        physical line <code>first_line</code>, wrapping at <code>ring_lines</code>.</li>
+    <li>For each cell, look up glyph bitmap + apply fg/bg from attribute byte.</li>
+    <li>Composite into the VGA/HDMI frame; present via existing <code>Present</code> path.</li>
+  </ol>
+  <p>
+    The card SHOULD read from its shadow copy, not directly from host RAM at
+    scan-out time, so the host can update the buffer during active display
+    without bus contention. Double-buffering the shadow (swap at VBL) is
+    optional but recommended for flicker-free updates.
+  </p>
+
+  <h3>Pixel dimensions (reference)</h3>
+  <table>
+    <thead>
+      <tr><th>Mode</th><th>Cell (W×H)</th><th>Screen (pixels)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>80×25</td><td>9×16</td><td>720×400</td></tr>
+      <tr><td>80×43</td><td>9×16</td><td>720×688</td></tr>
+      <tr><td>80×50</td><td>9×16</td><td>720×800</td></tr>
+      <tr><td>132×25</td><td>8×16</td><td>1056×400</td></tr>
+      <tr><td>132×60</td><td>8×16</td><td>1056×960</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="host-usage">
+  <h2>Host software usage</h2>
+
+  <h3>Minimal bring-up (80×25)</h3>
+  <pre>1. GetStatus / GetMemoryMap — verify MMET + mode 0x03
+2. SetMode(mode=0x03, flag=MMET)
+   ; default map: $2000, pitch 160, 4000 bytes
+3. ; optional: SetTextFont(PC ANSI)
+4. ; write cells — e.g. store $41,$07 at $2000 for 'A' white-on-black
+5. ; card displays immediately; no explicit Present required for text</pre>
+
+  <h3>132×43 VESA mode</h3>
+  <pre>1. SetMode(mode=0x10A, flag=MMET)
+2. SetTextMemoryMap(base=$2000, pitch=264, length=11352, first_line=0)
+3. Fill 132×43 × 2 bytes in the ring at $2000 ..</pre>
+
+  <h3>80×43 mode</h3>
+  <pre>1. SetMode(mode=0x04, flag=MMET)
+2. SetTextMemoryMap(base=$2000, pitch=160, length=6880, first_line=0)
+3. Fill 80×43 × 2 bytes in the ring at $2000 ..</pre>
+
+  <h3>80×50 mode</h3>
+  <pre>1. SetMode(mode=0x05, flag=MMET)
+2. SetTextMemoryMap(base=$2000, pitch=160, length=8000, first_line=0)
+3. Fill 80×50 × 2 bytes in the ring at $2000 ..</pre>
+
+  <h3>Scroll up (80×25 terminal)</h3>
+  <pre>; ring_lines = 25, pitch = 160, base = $2000
+1. SetTextFirstLine(first_line + 1)   ; wrap at 25 — INC, no multiply
+2. ; physical line to rewrite = (first_line + 24) mod 25
+   ; line_addr = base + line × pitch   (one multiply for the line write)
+   ; write 160 bytes at line_addr — blank or new prompt line
+; Scroll register update: O(1) add; total bus traffic ~162 bytes not ~4000</pre>
+</section>
+
+<section id="cout-firmware">
+  <h2>COUT firmware — <code>PR#n</code> interface</h2>
+  <p>
+    Many existing programs never touch video memory directly. They activate a slot
+    firmware with <code>PR#n</code> (or the equivalent DOS command) and emit
+    characters through the <strong>COUT</strong> vector (<code>$FDED</code> on
+    6502, GS/OS tool chain on the IIgs). This path lets BASIC, Apple Pascal,
+    and similar environments use MMET modes without knowing about shadow maps or
+    card I/O registers.
+  </p>
+  <p>
+    The model follows 80-column cards such as the
+    <a href="VideoTerm.md">Videx Videoterm</a> and enhanced-text firmware on
+    cards like VidHD: the host sets cursor coordinates in well-known
+    <strong>screen-hole</strong> locations, sends a byte stream to COUT, and
+    firmware interprets control sequences and writes the internal MMET buffer.
+  </p>
+
+  <div class="callout">
+    <p>
+      Firmware owns the MMET ring buffer, mode selection, and
+      <code>first_line</code> scroll logic. Application code sees only COUT,
+      screen holes, and escape sequences — the same contract as classic
+      80-column firmware, extended to 43/50-row and 132-column modes with color.
+    </p>
+  </div>
+
+  <h3>Activation</h3>
+  <ol>
+    <li>Card installed in slot <var>s</var> (typically slot&nbsp;3 on //e and IIgs).</li>
+    <li>256-byte firmware image mapped at <code>$Cs00</code> (and optionally
+        <code>$C800–$CFFF</code> for extended routines).</li>
+    <li><code>PR#s</code> — sets output vector to the card’s COUT entry.</li>
+    <li><code>IN#s</code> — optional; keyboard input (may pass through to standard
+        GETLN or a minimal line editor).</li>
+    <li>Firmware calls the card MMET API internally to enter default mode
+        (80×25, <code>0x03</code>) and map its private text buffer.</li>
+  </ol>
+  <p>
+    A soft-switch or annunciator (Videx-style <code>$C058</code>/<code>$C059</code>)
+    MAY gate whether the card or native Apple video is displayed; firmware sets
+    this when <code>PR#</code> is active.
+  </p>
+
+  <h3>Screen holes</h3>
+  <p>
+    Cursor and mode state live in the Apple&nbsp;II text-page screen holes,
+    offset by slot number <var>s</var> (same convention as Videx and Apple Mouse).
+    Pascal, BASIC extensions, and some word processors read these directly.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Register</th><th>Address</th><th>R/W</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>CH</td>
+        <td><code>$578 + s</code></td>
+        <td>R/W</td>
+        <td>Cursor column, 0 … <code>columns − 1</code></td>
+      </tr>
+      <tr>
+        <td>CV</td>
+        <td><code>$5F8 + s</code></td>
+        <td>R/W</td>
+        <td>Cursor row, 0 … <code>rows − 1</code></td>
+      </tr>
+      <tr>
+        <td>ATTR</td>
+        <td><code>$678 + s</code></td>
+        <td>R/W</td>
+        <td>Current VGA attribute byte for COUT (default <code>$07</code> light gray on black)</td>
+      </tr>
+      <tr>
+        <td>FIRSTLINE</td>
+        <td><code>$6F8 + s</code></td>
+        <td>R/W</td>
+        <td>Scroll origin (<code>first_line</code> line index); firmware updates on scroll</td>
+      </tr>
+      <tr>
+        <td>MODE</td>
+        <td><code>$7F8 + s</code></td>
+        <td>R/W</td>
+        <td>Active MMET mode ID (e.g. <code>$03</code>, <code>$04</code>, <code>$109</code>)</td>
+      </tr>
+      <tr>
+        <td>FLAGS</td>
+        <td><code>$778 + s</code></td>
+        <td>R/W</td>
+        <td>Bit&nbsp;0: alt charset; bit&nbsp;4: firmware busy; bit&nbsp;7: escape parser active</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Writing CH/CV moves the cursor; firmware does not require the host to compute
+    cell addresses. Reading CH/CV reflects the firmware cursor after the last COUT
+    operation.
+  </p>
+
+  <h3>COUT character handling</h3>
+  <p>When COUT receives a byte:</p>
+  <table>
+    <thead>
+      <tr><th>Byte</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>$20</code>–<code>$7E</code>, <code>$80</code>–<code>$FF</code></td>
+          <td>Printable: store <code>(char, ATTR)</code> at (CH,&nbsp;CV); advance CH; wrap or scroll at line end</td></tr>
+      <tr><td><code>$08</code></td><td>Backspace: <code>CH ← max(0, CH − 1)</code></td></tr>
+      <tr><td><code>$0D</code></td><td>Carriage return: <code>CH ← 0</code></td></tr>
+      <tr><td><code>$0A</code></td><td>Line feed: <code>CV ← CV + 1</code>; scroll if <code>CV ≥ rows</code></td></tr>
+      <tr><td><code>$07</code></td><td>Bell (host beep or card speaker click)</td></tr>
+      <tr><td><code>$09</code></td><td>Tab: advance CH to next multiple of 8 (or firmware tab stops)</td></tr>
+      <tr><td><code>$1B</code></td><td>Escape: enter control-sequence parser (see below)</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Scroll on line feed uses the same <code>first_line</code> ring algorithm as
+    direct MMET: firmware increments <code>FIRSTLINE</code>, clears or rewrites
+    the bottom row — no full-screen copy on the host.
+  </p>
+
+  <h3>Control sequences</h3>
+  <p>
+    Sequences begin with <code>ESC</code> (<code>$1B</code>). Firmware parses a
+    small subset sufficient for mode selection, cursor motion, color, and screen
+    clearing. Printable output from BASIC/Pascal often mixes plain text with these
+    codes via <code>CHR$()</code>.
+  </p>
+
+  <h4>Mode selection</h4>
+  <pre>ESC  M  mode_id
+
+Examples:
+  ESC M $03     → 80×25
+  ESC M $04     → 80×43
+  ESC M $05     → 80×50
+  ESC M $109    → 132×25   (two-byte mode: ESC M $01 $09)</pre>
+  <p>
+    After a mode change, firmware re-inits the MMET buffer, resets CH/CV to 0,
+    updates MODE screen hole, and clears the display (or preserves screen per
+    FLAGS — default clear).
+  </p>
+
+  <h4>Cursor position (CSI)</h4>
+  <pre>ESC  [  row ; col  H     →  CV ← row−1, CH ← col−1  (1-based, ANSI-style)
+ESC  [  H               →  home: CV ← 0, CH ← 0</pre>
+
+  <h4>Attributes and color</h4>
+  <pre>ESC  [  attr  m          →  ATTR ← attr (VGA attribute byte, 0–255)
+ESC  [  0  m               →  reset ATTR to $07</pre>
+  <p>
+    A minimal ANSI SGR mapping (30–37 foreground, 40–47 background) MAY translate
+    to VGA attribute bytes for software that already emits ANSI color codes.
+  </p>
+
+  <h4>Erase</h4>
+  <pre>ESC  [  2  J              →  clear entire screen, home cursor
+ESC  [  K                  →  clear from cursor to end of line</pre>
+
+  <h4>Scroll region (optional)</h4>
+  <pre>ESC  [  r1 ; r2  r         →  set scroll region rows (firmware-only; for advanced TUIs)</pre>
+
+  <h3>BASIC example</h3>
+  <pre>10 PRINT CHR$(4);"PR#3"          : REM activate slot 3 firmware
+20 PRINT CHR$(27);"M";CHR$(4);     : REM ESC M $04 → 80×43
+30 PRINT CHR$(27);"[2J";           : REM clear screen
+40 PRINT "Hello in 80 columns, 43 rows."
+50 FOR I = 1 TO 43: PRINT I: NEXT   : REM scroll via normal PRINT/LF</pre>
+
+  <h3>Pascal / assembly</h3>
+  <p>
+    Pascal runtimes often write through COUT but track cursor via CH/CV screen
+    holes. Assembly code may <code>JSR COUT</code> or call the slot firmware
+    directly at <code>$Cs00</code>. Either way, firmware maintains the MMET
+    buffer; the host never writes two-byte cells itself unless it opts into
+    direct MMET later.
+  </p>
+
+  <h3>Firmware ↔ card responsibilities</h3>
+  <table>
+    <thead>
+      <tr><th>Layer</th><th>Responsibility</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Host (BASIC, etc.)</td>
+        <td><code>PR#n</code>, COUT byte stream, optional CH/CV screen holes</td>
+      </tr>
+      <tr>
+        <td>Slot firmware</td>
+        <td>Parse control codes; cursor; scroll; call card API; update screen holes</td>
+      </tr>
+      <tr>
+        <td>Video card</td>
+        <td>MMET shadow buffer, rasterization, HDMI/VGA output</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Direct MMET vs COUT firmware</h3>
+  <table>
+    <thead>
+      <tr><th></th><th>Direct MMET</th><th>COUT firmware</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Mode set</td><td><code>SetMode</code> API</td><td><code>ESC M mode</code> or MODE screen hole</td></tr>
+      <tr><td>Put character</td><td>Write 2 bytes in shadow RAM</td><td>COUT / PRINT</td></tr>
+      <tr><td>Cursor</td><td>Host calculates address</td><td>CH/CV holes or <code>ESC [ r ; c H</code></td></tr>
+      <tr><td>Scroll</td><td><code>SetTextFirstLine</code></td><td>Automatic on LF; FIRSTLINE hole</td></tr>
+      <tr><td>Color</td><td>Attribute byte per cell</td><td>ATTR hole + <code>ESC [ n m</code></td></tr>
+      <tr><td>Best for</td><td>Games, TUIs, ports</td><td>BASIC, Pascal, unmodified text apps</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <p>
+      Firmware MUST NOT place its MMET ring buffer over screen-hole addresses
+      (<code>$478+</code> … <code>$7F8+</code> per slot). Use HGR/SHR regions
+      from the default mapping table, same as direct MMET.
+    </p>
+  </div>
+</section>
+
+<section id="compatibility">
+  <h2>Card requirements</h2>
+  <p>A card claiming MMET support MUST implement:</p>
+  <ul>
+    <li>Write snoop (shadow) on a configurable 24-bit address range</li>
+    <li><code>SetMode</code> with MMET emulation flag</li>
+    <li>At least one 80-column mode (80×25 minimum) and rasterization to VGA/HDMI output</li>
+    <li>Two-byte cell interpretation (char + attribute)</li>
+    <li>Linear pitch = <code>columns × 2</code></li>
+    <li><code>first_line</code> ring indexing with modulo wrap at <code>ring_lines</code></li>
+    <li><code>SetTextFirstLine</code> immediate command for scroll</li>
+    <li>COUT firmware at <code>$Cs00</code> with screen holes and escape parser (for <code>PR#n</code> access)</li>
+  </ul>
+  <p>SHOULD implement:</p>
+  <ul>
+    <li>80-column modes through 80×50 and 132-column modes through 132×60</li>
+    <li><code>SetTextGeometry</code> only for custom (<code>0xFF</code>) VGA tables</li>
+    <li><code>GetMemoryMap</code> / <code>GetTextFirstLine</code></li>
+    <li>VBL wait / double-buffered shadow swap</li>
+  </ul>
+  <p>Known compatible architectures (emulation targets):</p>
+  <ul>
+    <li>Second&nbsp;Sight (VGA text mode 03h baseline)</li>
+    <li>A2DVI v4+ (shadow engine; may need firmware update)</li>
+    <li>Emulators with E0/E1 shadow and slot-card VRAM</li>
+  </ul>
+</section>
+
+<section id="relations">
+  <h2>Relationship to other card modes</h2>
+  <table>
+    <thead>
+      <tr><th>Mode</th><th>Emu flag</th><th>Host writes pixels?</th><th>Typical use</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Apple&nbsp;II emu</td>
+        <td><code>$00</code></td>
+        <td>Native 1-byte text / hires</td>
+        <td>Legacy software</td>
+      </tr>
+      <tr>
+        <td>VGA framebuffer</td>
+        <td><code>$01</code></td>
+        <td>Via card VRAM / DMA upload</td>
+        <td>Graphical modes, Mode X</td>
+      </tr>
+      <tr>
+        <td><strong>MMET direct</strong></td>
+        <td><code>$04</code></td>
+        <td>2-byte cells in shadowed host RAM</td>
+        <td>Terminal emulators, shells, TUIs</td>
+      </tr>
+      <tr>
+        <td><strong>MMET COUT</strong></td>
+        <td><code>$04</code> + firmware</td>
+        <td>COUT / <code>PR#n</code>; firmware fills MMET buffer</td>
+        <td>BASIC, Pascal, legacy text apps</td>
+      </tr>
+      <tr>
+        <td>PPU</td>
+        <td><code>$02</code></td>
+        <td>Tilemaps / OAM in shadow RAM</td>
+        <td>Tile-based games</td>
+      </tr>
+      <tr>
+        <td>GPU</td>
+        <td><code>$03</code></td>
+        <td>Display lists, textures</td>
+        <td>Accelerated drawing</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="references">
+  <h2>References</h2>
+  <ul>
+    <li>Second&nbsp;Sight VGA text mode 03h — 80×25, 160-byte pitch, interleaved char/attr (<code>Docs/SecondSight.md</code>)</li>
+    <li>Videx Videoterm screen holes and COUT model (<code>Docs/VideoTerm.md</code>)</li>
+    <li>VidHD enhanced text via slot firmware (conceptual precedent)</li>
+    <li>PPU shadow-memory mapping model (<code>Docs/PPU.md</code>)</li>
+    <li>IIgs video shadow regions (<code>Docs/AppleIIgs-Memory.md</code>)</li>
+    <li>Implementation sketch: <code>src/devices/secondsight/vga_render_text_9x16.hpp</code></li>
+    <li>132-column text mode IDs <code>0x109–0x10C</code></li>
+  </ul>
+</section>
+
+<footer>
+  <p>GSSquared — Memory-Mapped Enhanced Text specification (draft).</p>
+  <p>Derived from Second&nbsp;Sight / PPU card API work. Subject to change.</p>
+</footer>
+
+</body>
+</html>

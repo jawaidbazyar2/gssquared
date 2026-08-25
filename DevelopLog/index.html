@@ -4788,6 +4788,61 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#aug-19-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aug 19, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aug-20-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aug 20, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aug-21-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aug 21, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aug-22-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aug 22, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aug-25-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aug 25, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -7043,6 +7098,61 @@
     <span class="md-ellipsis">
       
         August 16, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aug-19-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aug 19, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aug-20-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aug 20, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aug-21-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aug 21, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aug-22-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aug 22, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aug-25-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aug 25, 2026
       
     </span>
   </a>
@@ -17365,7 +17475,7 @@ libslirp works on mac/linux/windows.</p>
 <h2 id="august-12-2026">August 12, 2026<a class="headerlink" href="#august-12-2026" title="Permanent link">&para;</a></h2>
 <p>I know what I said about new features, but, new features are sexy!</p>
 <p>There is some low hanging fruit that shouldn't be too hard to do.</p>
-<p>But there are significant bugs. The weirdest one is the ROM03 speaker beep frequency error. </p>
+<p>But there are significant bugs. The weirdest one is the ROM03 speaker beep frequency error. (FIXED). This was a CPU instruction bug where cross and not cross a page boundary are same on 65816. Whupped its ass real good.</p>
 <h2 id="august-16-2026">August 16, 2026<a class="headerlink" href="#august-16-2026" title="Permanent link">&para;</a></h2>
 <p>digging into AppleTalk support again. Why? Don't know!</p>
 <p>First: this uses Marinetti to directly do IPTalk encap from a GS. </p>
@@ -17399,6 +17509,95 @@ libslirp works on mac/linux/windows.</p>
 </ol>
 <p>CLI tool to switch between x25 and x43 modes.</p>
 <p>The GNO drivers folder is flat and this driver should be built in the src tree as a subfolder.</p>
+<h2 id="aug-19-2026">Aug 19, 2026<a class="headerlink" href="#aug-19-2026" title="Permanent link">&para;</a></h2>
+<p>ran the new Arekkusu CPU test and only had 3 issues - XCE (which I fixed a few days ago); WAI (there was an odd edge condition where we weren't releasing if an IRQ was already set); and PLB was 2 cycles instead of 4. Those are all fixed!</p>
+<p>Had zero impact on TextFunk. Augh! ha ha. Comparing TF in GS2 and CR. One notable thing that stands out is in GS2, border changes are locked to cycle boundaries. This is because we model on 1MHz boundaries for everything. CR shows border changes at any number of 14M modulos. I think this implies two things: 1) the border color is NOT a slow cycle register; 2) we need to model border rendering on something else.</p>
+<p>For TextFunk, JUST border writes being locked to slow cycles could maybe account for differences in the border color? Worth checking out.</p>
+<p>References I find are that C034 clock/border are slow cycles. But that definitely doesn't match border changing on various 14Ms.</p>
+<p>Real GS testing indicates the border color changes happen on slow cycles and are perfectly aligned with text character cells</p>
+<p>Implemented fast cycles for FPI registers - AND TEXTFUNK HAS BEEN CONQUERED!!!</p>
+<h2 id="aug-20-2026">Aug 20, 2026<a class="headerlink" href="#aug-20-2026" title="Permanent link">&para;</a></h2>
+<p>dealing with the N multiplier on GS. on IIe it's great. On GS, what happens is:
+let's say we're at N=8.
+If we hit a SYNC cycle, then we could blow potentially:
+N * 28</p>
+<p>cycles, or 224 ultrafast CPU cycles waiting to sync with the MegaII.
+Get enough of these in a frame, and suddenly instead of an 8X speedup you're stuck with a many times slowdown.</p>
+<p>I tested: </p>
+<pre><code>honor C036 system speed setting
+ok I think I get it. the SYNC cycles are not something present in the IIe NClock and that only affect the GS, and ONE sync cycle at ludicrous speed can wipe out hundreds of cycles of potential cpu processing.
+
+When I had the original &quot;run flat out by time&quot; ludicrous speed, it would run many more cpu cycles because it just kept going until wall clock got close to end of a 16ms frame.
+
+SO. Given the key constraints (we MUST clock based on 14M multiples so we can maintain synchronization with the video scanner) where would it make the most sense to modify NClockIIgs to speed up the ludicrous speed emulation?
+
+What if in Ludicrous speed we clocked more like the IIe, treating sync cycles like fast ram 
+instead of dropping 2N on a slip, just drop 1.
+I feel like even in ludicrous speed, if the system requests 1MHz mode (slow_mode) we should respect that. 
+</code></pre>
+<p>however, this breaks seeks in the IWM/floppy525 code. Here is the analysis:</p>
+<pre><code>Seek delay
+Floppy525_woz::set_phase does not step the head immediately. It queues a ~0.5 ms settle:
+
+
+Floppy525_woz.cpp
+Ln 86–87
+event_timer-&gt;scheduleEvent(clock-&gt;get_cycles() + 520, phase_change_callback,
+                           instanceID, this);
+520 is 520 CPU cycles (about 0.5 ms at 1 MHz). The callback is what actually runs update_track().
+
+Rotation is also CPU-cycle based: get_current_time() is clock-&gt;get_cycles(), and head_advance_per_cycle() converts elapsed CPU cycles into bit cells. That affects spin, not the stepper.
+
+Two different timers
+Same Floppy525 class, two wirings:
+
+Path    Timer injected  processEvents uses
+Disk II (ndiskii_woz.cpp)
+cpu_event_timer
+get_cycles()
+IWM (iwm_device.cpp)
+event_timer
+get_c14m()
+Disk II: stamp and compare are both CPU cycles. After LS, a new phase change still fires 520 CPU cycles later. Seeks should still happen (just too soon while N is large).
+
+IWM: stamp is CPU cycles, compare is 14M. Floppy35 already documents that mix as wrong:
+
+
+Floppy35_woz.cpp
+Ln 128–133
+// The shared `event_timer` is processed against clock-&gt;get_c14m()
+// Scheduling in CPU-cycle units against a 14M-driven event timer
+// would fire ~immediately because c_14M outpaces (cycles + hz_rate)
+During LS, get_cycles() runs about N× ahead of c_14M. A settle event is queued at cycles+520 ≈ N × c_14M. The 14M timer will not reach that value while you stay in LS, and after you leave LS the two counters do not re-sync — they keep their absolute values. New seeks keep scheduling at “current cycles + 520”, still far above c_14M. update_track() never runs, so the head never moves, including after you drop back to 2.8/1 MHz. Catch-up at 2.8 MHz would take on the order of tens of seconds to minutes per second spent in LS.
+
+That matches “broken after any LS, still broken after switching back.”
+
+Extra landmine (other 14M events)
+EventTimer::scheduleEvent rejects anything with triggerCycles &lt; clock-&gt;get_cycles(), always vs CPU cycles, even on the 14M timer. After LS, cycles can be ahead of c_14M, so a correctly 14M-stamped event (get_c14m() + delay) can be dropped as “in the past.” That is the 3.5 motor-off / IWM 1 s enable-off class of bug, not the 5.25 stepper stamp itself.
+
+Bottom line: 5.25 seek is timed in CPU cycles. On IWM that is the wrong domain for the timer it uses, and LS makes the mismatch permanent. Disk II’s CPU timer is consistent; IWM 5.25 is not.
+</code></pre>
+<p>So. The thing was definitely much much faster, however, floppies not working is bad. (esp when floppy works fine on IIe at LS).</p>
+<p>So, something I've been avoiding for a while is having a wall-clock queue, I guess. The wallclock is not reliable because of OS interruption. So I've always used various proxies.</p>
+<p>Hm, is this a bug? "IWM stamp is CPU compare is 14M". </p>
+<h2 id="aug-21-2026">Aug 21, 2026<a class="headerlink" href="#aug-21-2026" title="Permanent link">&para;</a></h2>
+<p>Thinking about things to do to wrap this up:</p>
+<p>Create a bunch of Profiles for testing with Mike. I do have AppleII image generation now so we're basically good to go to do profiles there.</p>
+<p>investigate DynaPro support in KEGS. This seems potentially fragile. And complex. ProDOS supports AppleTalk by wrapping the ProDOS MLI and detecting when it's an appletalk-related call. So, we could just do a PV there. Intercept the MLI vector and do the same thing ATINIT does. More general appletalk info at:</p>
+<p>http://apple2.guidero.us/doku.php</p>
+<p>AppleTalk-type injection to ProDOS 8 but for: host folders, and maybe smb or FujiNet file system or something like that. Fuji might be more appropriate for IIe's. OTOH SMB is universal.</p>
+<p>I still have the super-annoying Zany Golf problem. What would be ideal, would be to run it in GS2 and BP at a certain point, and then do the same in another emulator, and then compare RAM dumps.</p>
+<p>Agh, the draw of new features! Henri forked and ported AppleTini functionality. That is pretty cool. Needs some rework to get its tendrils out of display and pdblock3. But certainly doable.</p>
+<p>And we got the GSOS source, so we could go ahead and do the QuickDraw GPU stuff!  &lt;- v1.0 roadmap</p>
+<p>How about allow sprites to be arbitrary NxM where N and M are multiples of 8. Also allow the tile map to be varying dimensions. For Ms PacMan. </p>
+<h2 id="aug-22-2026">Aug 22, 2026<a class="headerlink" href="#aug-22-2026" title="Permanent link">&para;</a></h2>
+<p>See Arqyv docs..</p>
+<p>Print to clipboard (#165). New <code>ClipboardDevice</code> — same idle-close / MESSAGE_CLOSE / reopen-on-write path as FileDevice, but a 128KB RAM buffer instead of a capture file. Worker strips bit 7, maps CR to LF, skips NULs; on close it snapshots to the main thread, which calls <code>SDL_SetClipboardText</code> and toasts the byte count. <code>device = "clipboard"</code> on serial and parallel (OSD, config editor, TOML). Does not steal the clipboard on emulator quit.</p>
+<p>IIgs Slot 1 printer defaults to “Add LF after CR: YES”, so a listing is CRLF. Clipboard must collapse CR+LF (and LF+CR) to a single LF; otherwise paste is double-spaced. Bare CR-only (typical II/IIe printer) still becomes one LF.</p>
+<h2 id="aug-25-2026">Aug 25, 2026<a class="headerlink" href="#aug-25-2026" title="Permanent link">&para;</a></h2>
+<p>Discussion on how to set up ssh server to give me an msys2 shell!</p>
+<p>https://claude.ai/share/a73e36fd-c180-40b5-b47f-8eeff31319d7</p>
+<p>Getting there.. why so hard, Windoze.</p>
 
 
 

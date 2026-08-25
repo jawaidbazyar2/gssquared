@@ -2655,12 +2655,12 @@
 
 
 <h1 id="super-serial-card">Super Serial Card<a class="headerlink" href="#super-serial-card" title="Permanent link">&para;</a></h1>
-<p>The Super Serial Card (SSC) is Apple’s classic slot serial card. In GSSquared it provides a virtual serial port you can attach to a <strong>file</strong> (capture) or a <strong>modem</strong> (TCP “dial-up”).</p>
+<p>The Super Serial Card (SSC) is Apple’s classic slot serial card. In GSSquared it provides a virtual serial port you can attach to a <strong>file</strong> (capture), the <strong>clipboard</strong>, a <strong>modem</strong> (TCP “dial-up”), or a <strong>host serial</strong> UART.</p>
 <h2 id="what-it-does">What it does<a class="headerlink" href="#what-it-does" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Emulates the Apple Super Serial Card (MOS 6551 ACIA + stock firmware ROM).</li>
 <li>Works in slots <strong>1–7</strong> on Apple II, II+, //e, and IIgs.</li>
-<li>Shares the same connection types as the IIgs built-in serial ports: <strong>None</strong>, <strong>File</strong>, or <strong>Modem</strong>.</li>
+<li>Shares the same connection types as the IIgs built-in serial ports: <strong>None</strong>, <strong>File</strong>, <strong>Clipboard</strong>, <strong>Modem</strong>, or a listed <strong>host serial port</strong>.</li>
 </ul>
 <p>Use it with ProTERM, Spectrum, ADTPro, printer-to-file capture, or any software that talks to an SSC.</p>
 <h2 id="how-to-enable-it">How to enable it<a class="headerlink" href="#how-to-enable-it" title="Permanent link">&para;</a></h2>
@@ -2668,7 +2668,7 @@
 <ol>
 <li>Open <strong>+</strong> or <strong>Edit…</strong> from System Select.</li>
 <li>Click a slot and choose <strong>Super Serial</strong>.</li>
-<li>Under <strong>Serial / Parallel</strong>, click the port button for that slot and pick <strong>Modem</strong> or <strong>File</strong> (see <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>).</li>
+<li>Under <strong>Serial / Parallel</strong>, click the port button for that slot and pick <strong>Modem</strong>, <strong>File</strong>, <strong>Clipboard</strong>, or a host serial port (see <a href="../SerialConnections/">Serial &amp; Parallel Connections</a>).</li>
 <li>Save and launch.</li>
 </ol>
 <h3 id="in-a-gs2-file">In a <code>.gs2</code> file<a class="headerlink" href="#in-a-gs2-file" title="Permanent link">&para;</a></h3>
@@ -2691,9 +2691,9 @@ path = &quot;captures/ssc-output.bin&quot;
 <ol>
 <li>Press <strong>F4</strong> to open the Control Panel.</li>
 <li>Click the serial-port button for the SSC slot.</li>
-<li>Choose <strong>None</strong>, <strong>File</strong>, or <strong>Modem</strong>.</li>
+<li>Choose <strong>None</strong>, <strong>File</strong>, <strong>Clipboard</strong>, <strong>Modem</strong>, or a listed host serial port.</li>
 </ol>
-<p>When a <strong>File</strong> attachment closes (idle timeout, reset, or you switch away from File), GSSquared shows a short on-screen toast with the capture filename.</p>
+<p>When a <strong>File</strong> attachment closes (idle timeout, reset, or you switch away from File), GSSquared shows a short on-screen toast with the capture filename. <strong>Clipboard</strong> copies the captured text to the host clipboard on close. Guest baud / line settings are passed through to a <strong>host serial</strong> port.</p>
 <h2 id="using-the-virtual-modem">Using the virtual modem<a class="headerlink" href="#using-the-virtual-modem" title="Permanent link">&para;</a></h2>
 <p>With <strong>Modem</strong> attached, use Hayes-style commands from your terminal program. See <a href="../Serial_Modem/">Serial / Modem</a> for <code>ATDT host:port</code> examples and hang-up.</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>

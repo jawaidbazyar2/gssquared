@@ -2758,6 +2758,7 @@
 # Terminal B — always a separate terminal (Ctrl-C on the script must not SIGINT the emu)
 PYTHONPATH=clients/python/src python3 your_script.py /tmp/gs2.sock
 </code></pre>
+<p>On <strong>Windows+</strong>, pass a filesystem socket path the same way (<code>--debug C:\Temp\gs2.sock</code>). AF_UNIX is supported; do not use a TCP port.</p>
 <table>
 <thead>
 <tr>
@@ -2914,7 +2915,11 @@ with Client() as c:
 </tr>
 <tr>
 <td><code>type_text(text, delay_s=0.05, hold_s=0.02)</code></td>
-<td>ASCII US layout; <code>\n</code> → Return; <code>hold_s</code> between down/up; <code>delay_s</code> after each char (<strong>3×</strong> after Return)</td>
+<td>ASCII US layout KEYEVENT taps; <code>\n</code> → Return; <code>hold_s</code> between down/up; <code>delay_s</code> after each char (<strong>3×</strong> after Return)</td>
+</tr>
+<tr>
+<td><code>paste_text(text)</code></td>
+<td>Fill IIe/IIgs paste buffer (<code>PASTE_TEXT</code>); one round-trip; guest paces drain. Prefer for long strings</td>
 </tr>
 <tr>
 <td><code>request(type, payload)</code></td>
@@ -3058,11 +3063,13 @@ c.key_up(SCANCODE_F12, KMOD_CTRL)
 c.key_up(SCANCODE_LCTRL, 0)
 </code></pre>
 <h3 id="type-basic-arbitrary-text">Type BASIC / arbitrary text<a class="headerlink" href="#type-basic-arbitrary-text" title="Permanent link">&para;</a></h3>
-<pre><code class="language-python">c.type_text('10 PRINT &quot;HI&quot;\nRUN\n', delay_s=0.1)  # prefer ≥0.1 so line numbers are not dropped
+<p>Prefer <code>paste_text</code> for programs and long strings (one round-trip; the guest meters the buffer). Use <code>type_text</code> for Control-Reset, Open-Apple, and other keys that are not pasteable ASCII.</p>
+<pre><code class="language-python">c.paste_text('10 PRINT &quot;HI&quot;\nRUN\n')
+# c.type_text('10 PRINT &quot;HI&quot;\nRUN\n', delay_s=0.1)  # KEYEVENT taps; prefer ≥0.1 so line numbers are not dropped
 </code></pre>
-<p>Or shell helper (stdin / <code>--text</code> / <code>--file</code>; does <strong>not</strong> embed a program):</p>
+<p>Or shell helper (stdin / <code>--text</code> / <code>--file</code>; does <strong>not</strong> embed a program). <code>--paste</code> uses <code>PASTE_TEXT</code>; default is KEYEVENT:</p>
 <pre><code class="language-bash">PYTHONPATH=clients/python/src python3 clients/python/examples/type_to_emu.py /tmp/gs2.sock \
-  --reset --wait 2 --delay 0.1 &lt;&lt;'EOF'
+  --paste --reset --wait 2 &lt;&lt;'EOF'
 NEW
 10 GR
 20 END
@@ -3096,7 +3103,7 @@ EOF
 <h2 id="gotchas">Gotchas<a class="headerlink" href="#gotchas" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Separate terminal</strong> for the emulator — Ctrl-C in the same shell/process group can kill GSSquared. Prefer <code>c.quit()</code> (or start with <code>--no-quit-confirm</code> if the harness must SIGTERM).</li>
-<li><strong>Typing too fast drops keys</strong> (e.g. line <code>60</code> becomes line <code>0</code>). Use <code>delay_s≥0.1</code> and rely on <code>hold_s</code>; Return already gets a longer pause.</li>
+<li><strong>Typing too fast drops keys</strong> (e.g. line <code>60</code> becomes line <code>0</code>). Prefer <code>paste_text</code> for long strings. If you must use <code>type_text</code>, use <code>delay_s≥0.1</code> and rely on <code>hold_s</code>; Return already gets a longer pause.</li>
 <li><strong>Shifted glyphs</strong> (<code>"</code>, uppercase, …): library holds Shift for that tap; do not put Control/Alt in <code>type_text</code> — use <code>key_down</code> / <code>key_up</code>.</li>
 <li><strong>MAIN / MAIN_RAW / MEGAII / MEGAII_RAW</strong> are implemented; ENSONIQ / ADBMICRO are not.</li>
 <li><strong>IIgs MAIN</strong> is the FPI/banked CPU MMU; <strong>MEGAII</strong> is <code>computer-&gt;mmu</code>. <code>*_RAW</code> indexes <code>get_memory_base()</code> (buffer offsets, not <code>$E0xxxx</code>). Non-GS + MEGAII/_RAW → ERROR <code>MEGAII only on Apple IIgs</code>.</li>
@@ -3141,7 +3148,7 @@ EOF
 </tr>
 <tr>
 <td><code>examples/type_to_emu.py</code></td>
-<td>Generic typer tool for agents</td>
+<td>Generic typer tool for agents (<code>--paste</code> for PASTE_TEXT)</td>
 </tr>
 <tr>
 <td><code>examples/test_breakpoints.py</code></td>
