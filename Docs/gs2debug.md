@@ -14,6 +14,8 @@ Wire format (if needed): [DebugProtocol.md](DebugProtocol.md). Design notes: [De
 PYTHONPATH=clients/python/src python3 your_script.py /tmp/gs2.sock
 ```
 
+On **Windows+**, pass a filesystem socket path the same way (`--debug C:\Temp\gs2.sock`). AF_UNIX is supported; do not use a TCP port.
+
 | `-p N` | Platform |
 |--------|----------|
 | 0 | Apple II |

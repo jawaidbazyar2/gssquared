@@ -49,6 +49,12 @@ Available on macOS (Metal), Windows (D3D12), and Linux (Vulkan / SPIR-V). Works 
 
 The shader mode can be activated with Display > CRT Shader, or by pressing F7. The `-g` command-line flag enables it at boot.
 
+## Second Sight Text
+
+If the current machine has a **Second Sight** card, **Display → Second Sight Text** renders Apple II fullscreen 40- or 80-column text through the card’s VGA path, using an Apple-ified font from the Second Sight ROM. Graphics modes and Second Sight’s own VGA modes are unchanged.
+
+The menu item is grayed out when no Second Sight card is present. The setting is remembered in app settings.
+
 ## Pixel Modes
 
 GS2 has two Pixel Modes:

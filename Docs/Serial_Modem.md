@@ -28,9 +28,9 @@ ATH
 
 (Wait about a second of silence before and after `+++`.)
 
-## File capture instead of a modem
+## File capture, clipboard, or a real serial port
 
-Set the port attachment to **File** to save serial output to a host file. When the file closes, GSSquared shows a short toast with the filename. Details: [Serial & Parallel Connections](SerialConnections.md).
+Set the port attachment to **File** to save serial output to a host file (a toast shows the filename when the file closes). **Clipboard** copies the captured/printed text to the host clipboard on close. **Serial** attaches a real host serial port. Details: [Serial & Parallel Connections](SerialConnections.md).
 
 ## Related
 

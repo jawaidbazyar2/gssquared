@@ -44,7 +44,7 @@ A slot mismatch usually shows as `w5100.eth: No hardware`.
 
 ### GS/OS / Marinetti
 
-Install and configure Marinetti (or another IIgs TCP stack) for Uthernet II in the slot you chose. With DHCP, the guest typically receives an address on slirp’s private `/24` (gateway often `.2`, DNS `.3`).
+**File → Mount Drivers** mounts `/GS2.DRIVERS`. Run the installer on that volume and choose **Marinetti** and **Uthernet II** (and **Host FST** if you want `:Host` as well). Then configure Marinetti for Uthernet II in the slot you chose. With DHCP, the guest typically receives an address on slirp’s private `/24` (gateway often `.2`, DNS `.3`).
 
 ## Related
 

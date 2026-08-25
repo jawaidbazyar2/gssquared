@@ -42,7 +42,7 @@ You can choose a storage device from the menu (**File → Drives**), and mount/u
 
 **File → Mount Drivers** mounts GSSquared’s built-in drivers disk (`/GS2.DRIVERS`) onto an empty BazFast drive. Check the menu item to mount; uncheck it to unmount that same drive.
 
-The image is write-protected. It currently includes the Host FST driver files (see [Host FST](HostFST.md)). The menu item is grayed out if the current machine has no BazFast card, or if emulation is not running. If all six BazFast icons already have media mounted, Mount Drivers does nothing until you free a drive.
+The image is write-protected. Run the installer on that volume; it has options to install **Host FST**, **Marinetti**, and **Uthernet II**. See [Host FST](HostFST.md) and [Uthernet II](Cards_UthernetII.md). The menu item is grayed out if the current machine has no BazFast card, or if emulation is not running. If all six BazFast icons already have media mounted, Mount Drivers does nothing until you free a drive.
 
 ### Drag and Drop
 
@@ -63,7 +63,7 @@ You can mount any 800K image onto a 3.5 drive. As with a 5.25 floppy, changes ar
 
 * BazFast
 
-BazFast is a SmartPort hard drive device - you can mount any kind of media 800K or larger to the BazFast device. You can mount a 140K media, however, ProDOS assumes a 140K media is a Disk II and will usually crash trying to use such a disk.
+BazFast is a SmartPort hard drive device — mount 512-byte block images **800K or larger**. 140K images are refused (ProDOS treats that size as a Disk II); put those on a 5.25" drive. The same host file cannot be mounted twice.
 
 BazFast transfers data into the emulated machine using a kind of "Super DMA" that takes no processor cycles. It's about as fast as it can get.
 
@@ -94,7 +94,7 @@ BazFast also understands **Apple Partition Map** (APM) images — the on-disk pa
 
 ## Host FST
 
-Host FST shares a folder on your real computer with GS/OS as the **`:Host`** volume. Full setup (Mount Drivers, copy **Host.FST** / **Host.Driver** into `System/FSTs` and `System/Drivers`, and **Host Folder…**) is in [Host FST](HostFST.md).
+Host FST shares a folder on your real computer with GS/OS as the **`:Host`** volume. Full setup (Mount Drivers, run the installer and choose **Host FST**, and **Host Folder…**) is in [Host FST](HostFST.md).
 
 ## Write-protection
 

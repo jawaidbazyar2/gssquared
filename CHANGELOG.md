@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-25
+
+Covers commits since the 2026-08-24 changelog entry through 2026-08-25, plus Host Serial (landed 08-24/08-25 but omitted from that entry) and two debugger/mouse fixes from 08-22 that were never listed.
+
+### Features
+
+- **Host Serial.** Serial ports (IIgs SCC, Super Serial) can attach a real host UART from the OSD or config editor: macOS `/dev/cu.*`, Windows `COMn`, Linux `/dev/ttyUSB*` / `ttyACM*` / `ttyAMA*` (Bluetooth/debug callouts skipped). The port list is rescanned while the picker is open. Guest baud/data/parity/stop settings pass through; unplugged dongles stay attached and retry. (`fb52cc7`, `e75e005`, `f6f9005`, `5b280b4`)
+
+### Bug Fixes
+
+- **IIgs mouse tracking (#170).** GS/OS tracking now reads the SHR Scan Control Byte through the linearized Mega II mapping, so a 640 desktop no longer tracks as 320. (`1f95ff7`, `bd182ac`)
+- **Debugger monitor pane (#169).** After a monitor command, the pane jumps to the newest output instead of staying scrolled to the top. (`d7173f7`)
+
 ## 2026-08-24
 
 ### Features

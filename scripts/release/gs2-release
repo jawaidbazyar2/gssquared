@@ -1,0 +1,1001 @@
+#!/usr/bin/env python3
+"""Orchestrate GSSquared native package builds on macOS, Windows, and Linux.
+
+Run from any cwd. Hosts live in scripts/release/hosts.toml (copy the .example).
+Logs and collected assets go to <repo>/.release/.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+try:
+    import tomllib
+except ImportError:  # Python < 3.11
+    tomllib = None  # type: ignore[assignment]
+
+PLATFORMS = ("macos", "windows", "linux")
+MIN_ARTIFACT_BYTES = 4_000_000
+DEFAULT_GH_REPO = "jawaidbazyar2/gssquared"
+PLACEHOLDER_RE = re.compile(r"YOUR[-_]")
+
+ARTIFACT_PATTERNS: dict[str, tuple[str, ...]] = {
+    "macos": (
+        "packages/gssquared-*-Darwin.dmg",
+        "build/gssquared-*-Darwin.dmg",
+        "packages/*.dmg",
+        "build/*.dmg",
+    ),
+    "windows": (
+        "packages/gssquared-*-win64.zip",
+        "build/gssquared-*-win64.zip",
+        "packages/gssquared-*.zip",
+        "build/gssquared-*.zip",
+    ),
+    "linux": (
+        "build/GSSquared-x86_64.AppImage",
+        "build/GSSquared-*.AppImage",
+        "GSSquared-x86_64.AppImage",
+        "GSSquared-*.AppImage",
+    ),
+}
+
+BUILD_SCRIPT: dict[str, str] = {
+    "macos": """
+set -euo pipefail
+cmake -DGS2_PROGRAM_FILES=OFF -DCMAKE_BUILD_TYPE=Release -S . -B build
+cmake --build build --parallel
+cmake --install build
+cmake --build build --target package
+""",
+    "windows": """
+set -euo pipefail
+cmake -G "MinGW Makefiles" -DGS2_PROGRAM_FILES=OFF -DCMAKE_BUILD_TYPE=Release \\
+    -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B build -S .
+cmake --build build --parallel --target package
+""",
+    "linux": """
+set -euo pipefail
+cmake -DCMAKE_BUILD_TYPE=Release -DGS2_PROGRAM_FILES=OFF -S . -B build
+cmake --build build --parallel
+cmake --build build --target appimage
+""",
+}
+
+PING_SCRIPT = r"""
+set -euo pipefail
+echo "pwd=$(pwd)"
+echo "host=$(uname -s 2>/dev/null || echo unknown)"
+command -v git
+command -v cmake
+git --version
+cmake --version | head -n 1
+if command -v clang >/dev/null 2>&1; then clang --version | head -n 1; fi
+test -d .git
+test -f CMakeLists.txt
+echo PING_OK
+"""
+
+UNPUSHED_SCRIPT = r"""
+set -euo pipefail
+echo "branch=$(git rev-parse --abbrev-ref HEAD)"
+echo "head=$(git rev-parse --short HEAD)"
+git rev-parse --verify origin/main >/dev/null
+ahead=$(git rev-list --count origin/main..HEAD)
+echo "ahead_of_origin_main=$ahead"
+if [ "$ahead" -gt 0 ]; then
+  echo "UNPUSHED_COMMITS:"
+  git log --oneline origin/main..HEAD
+  echo UNPUSHED_FAIL
+  exit 1
+fi
+echo UNPUSHED_OK
+"""
+
+_print_lock = threading.Lock()
+_status_lock = threading.Lock()
+
+
+@dataclass
+class Host:
+    name: str
+    kind: str
+    repo: str
+    release_repo: str
+    host: str | None = None
+    user: str | None = None
+    remote_shell: str = "unix"
+    msys_bash: str = "C:/msys64/usr/bin/bash.exe"
+
+    def is_placeholder(self) -> bool:
+        blob = f"{self.host or ''} {self.user or ''} {self.repo}"
+        return bool(PLACEHOLDER_RE.search(blob))
+
+    def ssh_dest(self) -> str:
+        if self.user:
+            return f"{self.user}@{self.host}"
+        return self.host or ""
+
+    def tree_path(self, tree: str) -> str:
+        if tree == "source":
+            return self.repo
+        if tree == "release":
+            return self.release_repo
+        raise ValueError(tree)
+
+
+def repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent.parent
+
+
+def release_dir() -> Path:
+    return repo_root() / ".release"
+
+
+def hosts_toml_path() -> Path:
+    return Path(__file__).resolve().parent / "hosts.toml"
+
+
+def sibling_release_repo(repo: str) -> str:
+    """ /path/gssquared -> /path/gssquared-release (POSIX / MSYS paths). """
+    repo = repo.rstrip("/")
+    parent, sep, name = repo.rpartition("/")
+    if not sep:
+        return f"{repo}-release"
+    return f"{parent}/{name}-release"
+
+
+def iso_now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _parse_simple_toml(text: str) -> dict[str, dict[str, str]]:
+    """Minimal TOML: [section], key = \"value\", # comments. Enough for hosts.toml."""
+    data: dict[str, dict[str, str]] = {}
+    section: str | None = None
+    for lineno, raw_line in enumerate(text.splitlines(), 1):
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = line[1:-1].strip()
+            data.setdefault(section, {})
+            continue
+        if "=" not in line or section is None:
+            raise ValueError(f"line {lineno}: expected key = \"value\" under a [section]")
+        key, _, rest = line.partition("=")
+        val = rest.strip()
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
+            val = val[1:-1]
+        data[section][key.strip()] = val
+    return data
+
+
+def load_toml(path: Path) -> dict[str, Any]:
+    if tomllib is not None:
+        with path.open("rb") as fh:
+            return tomllib.load(fh)
+    return _parse_simple_toml(path.read_text(encoding="utf-8"))
+
+
+def load_hosts() -> dict[str, Host]:
+    path = hosts_toml_path()
+    example = path.with_name("hosts.toml.example")
+    if not path.is_file():
+        sys.stderr.write(
+            f"missing {path}\n"
+            f"copy {example} to {path} and fill in SSH aliases / repo paths.\n"
+        )
+        sys.exit(2)
+    try:
+        raw = load_toml(path)
+    except Exception as exc:
+        sys.stderr.write(f"{path}: {exc}\n")
+        sys.exit(2)
+    hosts: dict[str, Host] = {}
+    for name in PLATFORMS:
+        if name not in raw:
+            sys.stderr.write(f"{path}: missing [{name}] section\n")
+            sys.exit(2)
+        sec = raw[name]
+        kind = str(sec.get("kind", "")).strip()
+        if kind not in ("local", "ssh"):
+            sys.stderr.write(f"{path}: [{name}].kind must be local or ssh\n")
+            sys.exit(2)
+        repo = str(sec.get("repo", "")).strip()
+        if not repo:
+            sys.stderr.write(f"{path}: [{name}].repo is required\n")
+            sys.exit(2)
+        host = sec.get("host")
+        host_s = str(host).strip() if host else None
+        if kind == "ssh" and not host_s:
+            sys.stderr.write(f"{path}: [{name}].host is required for ssh\n")
+            sys.exit(2)
+        user = sec.get("user")
+        user_s = str(user).strip() if user else None
+        rel = sec.get("release_repo")
+        rel_s = str(rel).strip() if rel else sibling_release_repo(repo)
+        hosts[name] = Host(
+            name=name,
+            kind=kind,
+            repo=repo,
+            release_repo=rel_s,
+            host=host_s,
+            user=user_s or None,
+            remote_shell=str(sec.get("remote_shell", "unix")).strip() or "unix",
+            msys_bash=str(sec.get("msys_bash", "C:/msys64/usr/bin/bash.exe")).strip(),
+        )
+    return hosts
+
+
+def parse_platforms(value: str) -> tuple[str, ...]:
+    if value == "all":
+        return PLATFORMS
+    if value not in PLATFORMS:
+        sys.stderr.write(f"unknown platform {value!r}; use macos|windows|linux|all\n")
+        sys.exit(2)
+    return (value,)
+
+
+def emit(prefix: str, line: str) -> None:
+    text = line if line.endswith("\n") else line + "\n"
+    with _print_lock:
+        sys.stdout.write(f"[{prefix}] {text}")
+        sys.stdout.flush()
+
+
+def status_path() -> Path:
+    return release_dir() / "status.json"
+
+
+def load_status() -> dict[str, Any]:
+    path = status_path()
+    if not path.is_file():
+        return {"platforms": {}}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {"platforms": {}}
+
+
+def save_status(data: dict[str, Any]) -> None:
+    d = release_dir()
+    d.mkdir(parents=True, exist_ok=True)
+    path = status_path()
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(path)
+
+
+def update_platform_status(platform: str, **fields: Any) -> None:
+    with _status_lock:
+        data = load_status()
+        data.setdefault("platforms", {})
+        cur = data["platforms"].setdefault(platform, {})
+        cur.update(fields)
+        data["updated_at"] = iso_now()
+        save_status(data)
+
+
+def log_path(platform: str) -> Path:
+    return release_dir() / "logs" / f"{platform}.log"
+
+
+def tail_lines(path: Path, n: int = 20) -> list[str]:
+    if not path.is_file():
+        return []
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    lines = text.splitlines()
+    return lines[-n:]
+
+
+def wrap_remote_script(host: Host, bash_command: str, tree: str = "source") -> str:
+    """Script fed to `bash -s` on the remote. MSYS2 SSH is already bash."""
+    lines: list[str] = ["set -e"]
+    if host.remote_shell == "msys2":
+        # Login `bash -l` already ran /etc/profile (MinGW PATH). ~/.profile is
+        # optional on these boxes; source it only when present (and before -u).
+        lines.append('if [ -f "$HOME/.profile" ]; then source "$HOME/.profile"; fi')
+        lines.append("set -uo pipefail")
+    else:
+        lines.append("set -uo pipefail")
+    lines.append(f"cd {shlex.quote(host.tree_path(tree))}")
+    lines.append(bash_command.rstrip() + "\n")
+    return "\n".join(lines)
+
+
+def ssh_argv(host: Host) -> list[str]:
+    """Remote argv: bash -s with the script on stdin.
+
+    Do not wrap MSYS2 in `bash.exe -c \"...\"`. Windows OpenSSH often hands that
+    string to cmd.exe, which replies 'The syntax of the command is incorrect.'
+    Interactive SSH to these boxes is already MSYS2 bash. Use bash -l so
+    /etc/profile puts clang/cmake on PATH (non-interactive bash -s would not).
+    """
+    bash_args = ["bash", "-l", "-s"] if host.remote_shell == "msys2" else ["bash", "-s"]
+    argv = [
+        "ssh",
+        "-T",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "ConnectTimeout=20",
+        "-o",
+        "StrictHostKeyChecking=accept-new",
+    ]
+    if host.user:
+        argv += ["-l", host.user]
+    argv += [host.host or "", *bash_args]
+    return argv
+
+
+def run_logged(
+    argv: list[str],
+    log: Path,
+    prefix: str,
+    cwd: Path | None = None,
+    stdin_text: str | None = None,
+) -> int:
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a", encoding="utf-8", errors="replace") as fh:
+        fh.write(f"\n# {iso_now()} $ {shlex.join(argv)}\n")
+        fh.flush()
+        proc = subprocess.Popen(
+            argv,
+            cwd=cwd,
+            stdin=subprocess.PIPE if stdin_text is not None else None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=0,
+        )
+        if stdin_text is not None:
+            assert proc.stdin is not None
+            proc.stdin.write(stdin_text.encode("utf-8"))
+            proc.stdin.close()
+        assert proc.stdout is not None
+        buf = b""
+        while True:
+            chunk = proc.stdout.read(4096)
+            if not chunk:
+                break
+            buf += chunk
+            while b"\n" in buf:
+                line, buf = buf.split(b"\n", 1)
+                text = line.decode("utf-8", errors="replace")
+                fh.write(text + "\n")
+                fh.flush()
+                emit(prefix, text)
+        if buf:
+            text = buf.decode("utf-8", errors="replace")
+            fh.write(text)
+            if not text.endswith("\n"):
+                fh.write("\n")
+            fh.flush()
+            emit(prefix, text)
+        return proc.wait()
+
+
+def run_on_host(
+    host: Host,
+    bash_command: str,
+    log: Path | None,
+    prefix: str | None = None,
+    tree: str = "source",
+) -> int:
+    prefix = prefix or host.name
+    if host.kind == "local":
+        argv = ["bash", "-c", bash_command]
+        cwd = Path(host.tree_path(tree))
+        if log is None:
+            return subprocess.run(argv, cwd=cwd).returncode
+        return run_logged(argv, log, prefix, cwd=cwd)
+    argv = ssh_argv(host)
+    script = wrap_remote_script(host, bash_command, tree=tree)
+    if log is None:
+        return subprocess.run(argv, input=script.encode("utf-8")).returncode
+    return run_logged(argv, log, prefix, stdin_text=script)
+
+
+def capture_on_host(
+    host: Host, bash_command: str, tree: str = "source"
+) -> subprocess.CompletedProcess[str]:
+    if host.kind == "local":
+        return subprocess.run(
+            ["bash", "-c", bash_command],
+            cwd=host.tree_path(tree),
+            text=True,
+            capture_output=True,
+        )
+    return subprocess.run(
+        ssh_argv(host),
+        text=True,
+        capture_output=True,
+        input=wrap_remote_script(host, bash_command, tree=tree),
+    )
+
+
+def git_sha(repo: Path, ref: str) -> str:
+    out = subprocess.check_output(
+        ["git", "rev-parse", "--verify", f"{ref}^{{commit}}"],
+        cwd=repo,
+        text=True,
+    )
+    return out.strip()
+
+
+def ensure_on_origin(repo: Path, sha: str) -> None:
+    """Fail unless origin can supply this commit (branch tip, ancestor, or tag)."""
+    subprocess.run(["git", "fetch", "origin", "--tags"], cwd=repo, check=True)
+    contains = subprocess.run(
+        ["git", "branch", "-r", "--contains", sha],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+    )
+    if contains.returncode == 0 and contains.stdout.strip():
+        return
+    rtags = subprocess.run(
+        ["git", "ls-remote", "--tags", "origin"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+    )
+    if rtags.returncode == 0 and sha in rtags.stdout:
+        return
+    by_sha = subprocess.run(
+        ["git", "fetch", "origin", sha],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+    )
+    if by_sha.returncode == 0:
+        return
+    sys.stderr.write(
+        f"{sha} is not on origin. Push the commit (and tags) before sync/build.\n"
+    )
+    sys.exit(1)
+
+
+def detect_gh_repo(local_repo: Path) -> str:
+    env = os.environ.get("GS2_GH_REPO")
+    if env:
+        return env
+    try:
+        url = subprocess.check_output(
+            ["git", "remote", "get-url", "origin"],
+            cwd=local_repo,
+            text=True,
+        ).strip()
+    except subprocess.CalledProcessError:
+        return DEFAULT_GH_REPO
+    m = re.search(r"github\.com[:/](.+?)(?:\.git)?$", url)
+    return m.group(1) if m else DEFAULT_GH_REPO
+
+
+def find_artifact_local(repo: Path, platform: str) -> Path | None:
+    for pat in ARTIFACT_PATTERNS[platform]:
+        matches = [p for p in repo.glob(pat) if p.is_file()]
+        if matches:
+            return max(matches, key=lambda p: p.stat().st_mtime)
+    return None
+
+
+def find_artifact_remote(host: Host) -> str | None:
+    quoted = " ".join(shlex.quote(p) for p in ARTIFACT_PATTERNS[host.name])
+    script = f"""
+set +e
+shopt -s nullglob
+for pat in {quoted}; do
+  for f in $pat; do
+    if [ -f "$f" ]; then
+      printf '%s\\n' "$f"
+    fi
+  done
+done
+"""
+    proc = capture_on_host(host, script, tree="release")
+    lines = [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+    return lines[-1] if lines else None
+
+
+def file_magic(path: Path) -> str | None:
+    try:
+        return subprocess.check_output(
+            ["file", "-b", str(path)], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return None
+
+
+def verify_artifact(platform: str, path: Path) -> tuple[bool, str]:
+    try:
+        size = path.stat().st_size
+    except OSError as exc:
+        return False, f"stat failed: {exc}"
+    if size < MIN_ARTIFACT_BYTES:
+        return False, f"too small ({size} bytes; need >= {MIN_ARTIFACT_BYTES})"
+    magic = file_magic(path)
+    if magic:
+        low = magic.lower()
+        if "ascii text" in low or low.startswith("utf-8 unicode text"):
+            return False, f"looks like text, not a package: {magic}"
+        if platform == "windows" and "zip" not in low:
+            return False, f"expected zip, file(1) said: {magic}"
+        if platform == "linux" and "elf" not in low:
+            return False, f"expected ELF AppImage, file(1) said: {magic}"
+    return True, magic or f"{size} bytes"
+
+
+def cmd_ping(hosts: dict[str, Host], platforms: tuple[str, ...]) -> int:
+    rc = 0
+    for name in platforms:
+        host = hosts[name]
+        if host.is_placeholder():
+            emit(name, "NOT CONFIGURED (placeholder in hosts.toml)")
+            rc = 1
+            continue
+        if host.kind == "local" and not Path(host.repo).is_dir():
+            emit(name, f"FAIL repo missing: {host.repo}")
+            rc = 1
+            continue
+        proc = capture_on_host(host, PING_SCRIPT)
+        out = (proc.stdout or "") + (proc.stderr or "")
+        for line in out.splitlines():
+            emit(name, line)
+        if proc.returncode != 0 or "PING_OK" not in out:
+            emit(name, f"FAIL (exit {proc.returncode})")
+            rc = 1
+        else:
+            dest = f"{host.ssh_dest()}:" if host.kind == "ssh" else ""
+            emit(name, f"ok  source {dest}{host.repo}")
+            emit(name, f"    release {dest}{host.release_repo}  (created by sync)")
+    return rc
+
+
+def cmd_unpushed(hosts: dict[str, Host], platforms: tuple[str, ...]) -> int:
+    """Fail if source clone HEAD is ahead of the existing origin/main ref (no fetch)."""
+    rc = 0
+    for name in platforms:
+        host = hosts[name]
+        if host.is_placeholder():
+            emit(name, "NOT CONFIGURED (placeholder in hosts.toml)")
+            rc = 1
+            continue
+        proc = capture_on_host(host, UNPUSHED_SCRIPT, tree="source")
+        out = (proc.stdout or "") + (proc.stderr or "")
+        for line in out.splitlines():
+            emit(name, line)
+        if proc.returncode != 0 or "UNPUSHED_OK" not in out:
+            emit(name, "FAIL  push or drop local-only commits before sync")
+            rc = 1
+        else:
+            emit(name, "ok  no unpushed commits")
+    return rc
+
+
+def sync_one(host: Host, sha: str, force_clean: bool) -> None:
+    """Create or update a detached worktree at release_repo. Leaves host.repo untouched."""
+    if host.is_placeholder():
+        raise RuntimeError("placeholder in hosts.toml")
+    src = shlex.quote(host.repo)
+    rel = shlex.quote(host.release_repo)
+    sha_q = shlex.quote(sha)
+    clean = "clean -fdx" if force_clean else "clean -fd"
+    script = f"""
+set -euo pipefail
+SRC={src}
+REL={rel}
+SHA={sha_q}
+git -C "$SRC" fetch origin --tags
+git -C "$SRC" worktree prune
+if git -C "$REL" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git -C "$REL" reset --hard "$SHA"
+  git -C "$REL" {clean}
+else
+  if [ -e "$REL" ]; then
+    echo "gs2-release: $REL exists but is not a git worktree" >&2
+    exit 1
+  fi
+  git -C "$SRC" worktree add --detach "$REL" "$SHA"
+fi
+git -C "$REL" submodule update --init --recursive
+echo "release_head=$(git -C "$REL" rev-parse HEAD)"
+"""
+    log = log_path(host.name)
+    rc = run_on_host(host, script, log, host.name, tree="source")
+    if rc != 0:
+        raise RuntimeError(f"sync failed (exit {rc}); see {log}")
+
+
+def cmd_sync(
+    hosts: dict[str, Host],
+    platforms: tuple[str, ...],
+    ref: str | None,
+    force_clean: bool,
+) -> int:
+    local_repo = Path(hosts["macos"].repo)
+    if not local_repo.is_dir():
+        local_repo = repo_root()
+    ref_arg = ref or "origin/main"
+    emit("sync", f"fetching origin in {local_repo}")
+    subprocess.run(["git", "fetch", "origin", "--tags"], cwd=local_repo, check=True)
+    sha = git_sha(local_repo, ref_arg)
+    emit("sync", f"target {sha} ({ref_arg})")
+    ensure_on_origin(local_repo, sha)
+    with _status_lock:
+        data = load_status()
+        data["ref"] = sha
+        data["ref_arg"] = ref_arg
+        data["updated_at"] = iso_now()
+        save_status(data)
+    rc = 0
+    for name in platforms:
+        host = hosts[name]
+        try:
+            emit(name, "syncing")
+            sync_one(host, sha, force_clean)
+            update_platform_status(name, synced_sha=sha, sync="ok")
+            emit(name, f"synced {sha[:12]}")
+        except Exception as exc:
+            update_platform_status(name, synced_sha=sha, sync="fail", error=str(exc))
+            emit(name, f"FAIL {exc}")
+            rc = 1
+    return rc
+
+
+def build_one(host: Host) -> dict[str, Any]:
+    if host.is_placeholder():
+        raise RuntimeError("placeholder in hosts.toml")
+    log = log_path(host.name)
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text("", encoding="utf-8")  # truncate per-build
+    update_platform_status(
+        host.name,
+        state="running",
+        error=None,
+        artifact=None,
+        size=None,
+        log=str(log.relative_to(repo_root())),
+        started_at=iso_now(),
+        pid=os.getpid(),
+    )
+    if host.kind == "local" and not Path(host.release_repo).is_dir():
+        raise RuntimeError(
+            f"release worktree missing ({host.release_repo}); run sync first"
+        )
+    script = BUILD_SCRIPT[host.name].strip() + "\n"
+    rc = run_on_host(host, script, log, host.name, tree="release")
+    if rc != 0:
+        raise RuntimeError(f"build failed (exit {rc})")
+
+    if host.kind == "local":
+        art = find_artifact_local(Path(host.release_repo), host.name)
+        art_s = str(art) if art else None
+        size = art.stat().st_size if art else None
+        ok, detail = (False, "artifact not found") if art is None else verify_artifact(host.name, art)
+        if not ok:
+            raise RuntimeError(f"verify failed: {detail}")
+        result = {
+            "state": "ok",
+            "artifact": art_s,
+            "artifact_remote": None,
+            "size": size,
+            "verify": detail,
+            "finished_at": iso_now(),
+            "error": None,
+        }
+    else:
+        remote = find_artifact_remote(host)
+        if not remote:
+            raise RuntimeError("artifact not found on remote")
+        size_proc = capture_on_host(
+            host, f"wc -c < {shlex.quote(remote)}", tree="release"
+        )
+        try:
+            size = int(size_proc.stdout.strip() or "0")
+        except ValueError:
+            size = 0
+        if size < MIN_ARTIFACT_BYTES:
+            raise RuntimeError(f"too small ({size} bytes; need >= {MIN_ARTIFACT_BYTES})")
+        result = {
+            "state": "ok",
+            "artifact": None,
+            "artifact_remote": remote,
+            "size": size,
+            "verify": f"{size} bytes",
+            "finished_at": iso_now(),
+            "error": None,
+        }
+    update_platform_status(host.name, **result)
+    return result
+
+
+def cmd_build(hosts: dict[str, Host], platforms: tuple[str, ...]) -> int:
+    release_dir().mkdir(parents=True, exist_ok=True)
+    (release_dir() / "logs").mkdir(parents=True, exist_ok=True)
+    pid_path = release_dir() / "build.pid"
+    pid_path.write_text(str(os.getpid()) + "\n", encoding="utf-8")
+    with _status_lock:
+        data = load_status()
+        data["build_started_at"] = iso_now()
+        save_status(data)
+    rc = 0
+    if len(platforms) == 1:
+        name = platforms[0]
+        try:
+            emit(name, "building")
+            result = build_one(hosts[name])
+            loc = result.get("artifact") or result.get("artifact_remote")
+            emit(name, f"ok  {loc}  ({result.get('size')} bytes)")
+        except Exception as exc:
+            update_platform_status(name, state="fail", error=str(exc), finished_at=iso_now())
+            emit(name, f"FAIL {exc}")
+            rc = 1
+        finally:
+            pid_path.unlink(missing_ok=True)
+        return rc
+
+    futures = {}
+    with ThreadPoolExecutor(max_workers=len(platforms)) as pool:
+        for name in platforms:
+            futures[pool.submit(build_one, hosts[name])] = name
+        for fut in as_completed(futures):
+            name = futures[fut]
+            try:
+                result = fut.result()
+                loc = result.get("artifact") or result.get("artifact_remote")
+                emit(name, f"ok  {loc}  ({result.get('size')} bytes)")
+            except Exception as exc:
+                update_platform_status(
+                    name, state="fail", error=str(exc), finished_at=iso_now()
+                )
+                emit(name, f"FAIL {exc}")
+                rc = 1
+    pid_path.unlink(missing_ok=True)
+    return rc
+
+
+def cmd_status() -> int:
+    data = load_status()
+    pid_path = release_dir() / "build.pid"
+    running_pid = None
+    if pid_path.is_file():
+        try:
+            running_pid = int(pid_path.read_text().strip())
+        except ValueError:
+            running_pid = None
+        if running_pid is not None:
+            try:
+                os.kill(running_pid, 0)
+            except OSError:
+                data["stale_pid"] = running_pid
+                running_pid = None
+    data["build_pid"] = running_pid
+    platforms = data.setdefault("platforms", {})
+    for name, info in platforms.items():
+        log = repo_root() / info.get("log", f".release/logs/{name}.log")
+        info["last_lines"] = tail_lines(log)
+        if info.get("state") == "running" and running_pid is None:
+            info["state"] = "fail"
+            info["error"] = info.get("error") or "build process is gone (stale status)"
+    json.dump(data, sys.stdout, indent=2)
+    sys.stdout.write("\n")
+    if running_pid is not None:
+        return 0
+    states = [p.get("state") for p in platforms.values()]
+    if states and all(s == "ok" for s in states):
+        return 0
+    if any(s == "fail" for s in states):
+        return 1
+    return 0
+
+
+def dist_dir() -> Path:
+    return release_dir() / "dist"
+
+
+def fetch_remote_file(host: Host, remote_path: str, dest: Path) -> None:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    argv = ssh_argv(host)
+    script = wrap_remote_script(
+        host, f"cat {shlex.quote(remote_path)}", tree="release"
+    )
+    emit(host.name, f"fetch {remote_path} -> {dest}")
+    with dest.open("wb") as out:
+        proc = subprocess.run(
+            argv, stdout=out, stderr=subprocess.PIPE, input=script.encode("utf-8")
+        )
+    if proc.returncode != 0:
+        err = proc.stderr.decode("utf-8", errors="replace")
+        dest.unlink(missing_ok=True)
+        raise RuntimeError(err.strip() or f"scp/cat failed (exit {proc.returncode})")
+    if dest.stat().st_size < MIN_ARTIFACT_BYTES:
+        raise RuntimeError(f"fetched file too small: {dest.stat().st_size} bytes")
+
+
+def cmd_collect(hosts: dict[str, Host], platforms: tuple[str, ...]) -> int:
+    dest_root = dist_dir()
+    dest_root.mkdir(parents=True, exist_ok=True)
+    status = load_status()
+    rc = 0
+    collected: list[str] = []
+    for name in platforms:
+        host = hosts[name]
+        if host.is_placeholder():
+            emit(name, "NOT CONFIGURED")
+            rc = 1
+            continue
+        plat = status.get("platforms", {}).get(name, {})
+        try:
+            if host.kind == "local":
+                src = plat.get("artifact")
+                path = Path(src) if src else find_artifact_local(Path(host.release_repo), name)
+                if path is None or not path.is_file():
+                    raise RuntimeError("no local artifact; build first")
+                dest = dest_root / path.name
+                shutil.copy2(path, dest)
+                ok, detail = verify_artifact(name, dest)
+                if not ok:
+                    raise RuntimeError(detail)
+                emit(name, f"copied {dest} ({dest.stat().st_size} bytes) {detail}")
+            else:
+                remote = plat.get("artifact_remote") or find_artifact_remote(host)
+                if not remote:
+                    raise RuntimeError("no remote artifact; build first")
+                dest = dest_root / Path(remote).name
+                fetch_remote_file(host, remote, dest)
+                ok, detail = verify_artifact(name, dest)
+                if not ok:
+                    raise RuntimeError(detail)
+                emit(name, f"fetched {dest} ({dest.stat().st_size} bytes) {detail}")
+            collected.append(str(dest))
+            update_platform_status(name, collected=str(dest))
+        except Exception as exc:
+            emit(name, f"FAIL {exc}")
+            rc = 1
+    if collected:
+        emit("collect", "files:\n  " + "\n  ".join(collected))
+    return rc
+
+
+def cmd_upload(tag: str, create: bool, gh_repo: str | None) -> int:
+    dest_root = dist_dir()
+    if not dest_root.is_dir():
+        sys.stderr.write("nothing in .release/dist/; run collect first\n")
+        return 1
+    files = sorted(p for p in dest_root.iterdir() if p.is_file())
+    if not files:
+        sys.stderr.write("nothing in .release/dist/; run collect first\n")
+        return 1
+    local_repo = repo_root()
+    repo = gh_repo or detect_gh_repo(local_repo)
+    for f in files:
+        ok, detail = True, ""
+        name = f.name.lower()
+        plat = (
+            "macos"
+            if name.endswith(".dmg")
+            else "windows"
+            if name.endswith(".zip")
+            else "linux"
+            if "appimage" in name
+            else None
+        )
+        if plat:
+            ok, detail = verify_artifact(plat, f)
+        emit("upload", f"{f.name}  {f.stat().st_size} bytes  {detail}")
+        if not ok:
+            sys.stderr.write(f"refusing to upload {f}: {detail}\n")
+            return 1
+
+    gh = shutil.which("gh")
+    if not gh:
+        sys.stderr.write("gh not found on PATH\n")
+        return 1
+
+    view = subprocess.run(
+        [gh, "release", "view", tag, "--repo", repo],
+        capture_output=True,
+        text=True,
+    )
+    paths = [str(p) for p in files]
+    if view.returncode != 0:
+        if not create:
+            sys.stderr.write(
+                f"release {tag} does not exist on {repo}; pass --create or create it first\n"
+            )
+            return 1
+        emit("upload", f"creating {tag} on {repo}")
+        cmd = [gh, "release", "create", tag, "--repo", repo, "--title", f"GSSquared {tag}"]
+        cmd += paths
+        proc = subprocess.run(cmd)
+        return proc.returncode
+    emit("upload", f"uploading to existing {tag} on {repo}")
+    proc = subprocess.run([gh, "release", "upload", tag, "--repo", repo, *paths])
+    return proc.returncode
+
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="gs2-release",
+        description="Native package builds on macOS (local) and Windows/Linux (SSH).",
+    )
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    ping = sub.add_parser("ping", help="SSH/toolchain smoke test")
+    ping.add_argument("--platform", default="all", help="macos|windows|linux|all")
+
+    unpushed = sub.add_parser(
+        "unpushed",
+        help="fail if HEAD is ahead of origin/main (no fetch; run before sync)",
+    )
+    unpushed.add_argument("--platform", default="all")
+
+    sync = sub.add_parser("sync", help="detached worktree at <repo>-release from origin/main")
+    sync.add_argument("--ref", default=None, help="SHA, tag, or branch (default: origin/main)")
+    sync.add_argument(
+        "--force-clean",
+        action="store_true",
+        help="in the release worktree only: git clean -fdx (also wipe ignored build/)",
+    )
+    sync.add_argument("--platform", default="all")
+
+    build = sub.add_parser("build", help="configure, package, verify artifacts")
+    build.add_argument("--platform", default="all")
+
+    sub.add_parser("status", help="print .release/status.json")
+
+    collect = sub.add_parser("collect", help="copy/scp artifacts into .release/dist/")
+    collect.add_argument("--platform", default="all")
+
+    upload = sub.add_parser("upload", help="gh release upload from .release/dist/")
+    upload.add_argument("--tag", required=True, help="existing or new GitHub release tag")
+    upload.add_argument(
+        "--create",
+        action="store_true",
+        help="create the GitHub release if it does not exist",
+    )
+    upload.add_argument("--repo", default=None, help="owner/name (default: origin)")
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    if args.cmd == "status":
+        return cmd_status()
+    if args.cmd == "upload":
+        return cmd_upload(args.tag, args.create, args.repo)
+
+    hosts = load_hosts()
+    platforms = parse_platforms(args.platform)
+    if args.cmd == "ping":
+        return cmd_ping(hosts, platforms)
+    if args.cmd == "unpushed":
+        return cmd_unpushed(hosts, platforms)
+    if args.cmd == "sync":
+        return cmd_sync(hosts, platforms, args.ref, args.force_clean)
+    if args.cmd == "build":
+        return cmd_build(hosts, platforms)
+    if args.cmd == "collect":
+        return cmd_collect(hosts, platforms)
+    raise AssertionError(args.cmd)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

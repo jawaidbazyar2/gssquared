@@ -116,7 +116,7 @@ Breakpoints remain active even when the debugger window is closed, as long as th
 
 ## Monitor pane
 
-The Monitor pane provides a command line at the bottom of the pane. Click the input area, type a command, and press **Enter**. Previous commands are recalled with **Up** and **Down** while the input field is focused.
+The Monitor pane provides a command line at the bottom of the pane. Click the input area, type a command, and press **Enter**. Previous commands are recalled with **Up** and **Down** while the input field is focused. After a command runs, the pane jumps to the newest output.
 
 Type **`help`** for a summary of commands. Addresses use **`BB/AAAA`** bank/offset form on the Apple IIgs (bank is sticky across commands). On 8-bit machines, or to continue working in the same bank, a bare hex address such as `0400` is enough.
 
@@ -289,6 +289,8 @@ Launch GSSquared with a Unix domain socket to allow external tools to pause, ste
 ```bash
 ./build/GSSquared --debug /tmp/gs2.sock -p 3
 ```
+
+On **Windows 10+**, `--debug` uses AF_UNIX sockets the same way (for example `GSSquared --debug C:\Temp\gs2.sock -p 3`).
 
 See [gs2debug.md](gs2debug.md) for the Python client and examples. The UI debugger and the socket protocol can be used at the same time.
 

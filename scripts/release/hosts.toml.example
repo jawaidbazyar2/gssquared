@@ -1,0 +1,25 @@
+# Copy to hosts.toml (gitignored) and fill in the SSH aliases + repo paths.
+# Used by scripts/release/gs2-release. First command after editing: gs2-release ping
+
+# repo = your everyday clone (may be dirty).
+# release_repo defaults to <parent>/<name>-release (e.g. ~/src/gssquared-release).
+# sync makes a detached git worktree there from origin/main; build runs only there.
+
+[macos]
+kind = "local"
+repo = "/Users/bazyar/src/gssquared"
+# release_repo = "/Users/bazyar/src/gssquared-release"
+
+[windows]
+kind = "ssh"
+host = "YOUR-WIN11-SSH-ALIAS"
+# MSYS2 path. SSH lands in MSYS2 bash; home is often /c/Users/<user> (not /home/<user>).
+repo = "/c/Users/YOU/src/gssquared"
+remote_shell = "msys2"
+
+[linux]
+kind = "ssh"
+host = "YOUR-UBUNTU22-SSH-ALIAS"
+user = "ubuntu"   # optional; omit to use your local ssh default / ~/.ssh/config
+repo = "/home/ubuntu/src/gssquared"
+remote_shell = "unix"

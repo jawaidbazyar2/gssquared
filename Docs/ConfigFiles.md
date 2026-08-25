@@ -166,7 +166,7 @@ Empty slots are simply omitted — you do not need to say “empty.”
 
 ### Parallel and serial attachments
 
-Do **not** put paths on the card entry. Use `[[connections]]` (below) for parallel file capture and serial modem/file attachments. See also [Parallel Interface](Cards_Parallel.md) and [Serial & Parallel Connections](SerialConnections.md).
+Do **not** put paths on the card entry. Use `[[connections]]` (below) for parallel file/clipboard capture and serial modem/file/clipboard/host-UART attachments. See also [Parallel Interface](Cards_Parallel.md) and [Serial & Parallel Connections](SerialConnections.md).
 
 ---
 
@@ -228,7 +228,7 @@ image = "volumes/Games.po"
 
 ## Serial / parallel ports — `[[connections]]`
 
-Optional. Describes what is “plugged into” each serial or parallel port — file capture or a virtual modem. Full UI walkthrough: [Serial & Parallel Connections](SerialConnections.md).
+Optional. Describes what is “plugged into” each serial or parallel port — file capture, clipboard, a virtual modem, or a real host UART. Full UI walkthrough: [Serial & Parallel Connections](SerialConnections.md).
 
 **IIgs built-in ports** (no `slot` — these are on the motherboard):
 

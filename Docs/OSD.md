@@ -21,7 +21,7 @@ NTSC, RGB, and three colors of monochrome
 
 ### Speed
 
-1MHz, 2.8MHz, 7.1MHz, 14.3MHz, and Ludicrous speed
+1MHz, 2.8MHz, 7.1MHz, 14.3MHz, and Ludicrous speed. Ludicrous speed still ties into the normal 1MHz video system so speaker, Ensoniq, and disk devices keep running (if ludicrously).
 
 ### Slots
 

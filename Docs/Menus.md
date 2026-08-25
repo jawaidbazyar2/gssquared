@@ -19,6 +19,7 @@ GSSquared provides a top menu bar appropriate to your platform: a top menu bar o
   * Mount Drivers
   * Save Screenshot
   * Close Emulation (when a machine is running)
+  * Quit
 
 **Launch Config…** picks a `.gs2` or `… Settings.txt` and boots it immediately (System Select only).
 
@@ -30,7 +31,9 @@ Open System can be exercised when you're at the System Select screen ("Choose yo
 
 Save System / Save As System let you save the current system configuration. This does not include any machine state except what disk images are mounted.
 
-**Mount Drivers** is a checkable item that mounts or unmounts the built-in `/GS2.DRIVERS` volume on BazFast (write-protected). Grayed out when BazFast is not in the current machine. Used to install Host FST into GS/OS — see [Host FST](HostFST.md).
+**Mount Drivers** is a checkable item that mounts or unmounts the built-in `/GS2.DRIVERS` volume on BazFast (write-protected). Grayed out when BazFast is not in the current machine. The installer on that disk has options to install **Host FST**, **Marinetti**, and **Uthernet II**. See [Host FST](HostFST.md) and [Uthernet II](Cards_UthernetII.md).
+
+**Quit** exits the application. On Windows it is enabled at System Select; while a machine is running, use **Close Emulation** first (Quit is grayed out). On macOS and Linux, Quit is available in both states.
 
 **Save Screenshot** writes the current display (with borders) to a PNG on your Desktop, named like `GS2 Screenshot YYYY-MM-DD HH.MM.SS.png`. Shortcut: Shift+PrintScreen. Only one screenshot write can be in progress at a time.
 
@@ -40,7 +43,7 @@ Save System / Save As System let you save the current system configuration. This
 
 Copy Screen copies the current display - with borders - into your computer's copy/paste buffer, where you can easily paste it into documents, Slack, Facebook, Twitter, etc. Shortcut: PrintScreen.
 
-Paste Text pastes text in your computer's copy/paste buffer into the emulated Apple, as if you were typing it.
+Paste Text pastes text from your computer’s clipboard into the emulated Apple, as if you were typing it. Works on II / IIe and on IIgs ADB: characters are injected one per frame so the guest can keep up. Shortcut: Shift+Insert. Reset or a keyboard flush aborts an in-progress paste.
 
 ### Machine
   * Reset
@@ -83,13 +86,17 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
   * HUD
     * Stats
     * Drives
-  * CRT Shader
   * Full Screen
+  * Second Sight Text
+  * CRT Shader
   * Hover Enable / Disable
 
 **HUD → Stats** toggles the small performance/stats overlay (off by default).  
 **HUD → Drives** toggles the drive-activity strip at the bottom of the screen (on by default).  
 Both are useful when recording video and you want a clean picture. Preferences are remembered in app settings.
+
+**Second Sight Text** (IIgs with a Second Sight card) renders Apple II 40/80-column text through the card’s VGA path. Grayed out if the current machine has no Second Sight. See [Displays](Displays.md).  
+**CRT Shader** applies a GPU CRT effect. Shortcut: **F7**. Available on macOS, Windows, and Linux. See [Displays](Displays.md).
 
 ### Sound
   * Sound Effects On/Off

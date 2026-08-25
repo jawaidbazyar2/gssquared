@@ -12,13 +12,7 @@ You only need to do this once per GS/OS boot volume (or after you rebuild that S
 2. Choose **File → Mount Drivers**.  
    That mounts the write-protected `/GS2.DRIVERS` volume on an empty BazFast drive.  
    (Grayed out if there is no BazFast, emulation is not running, or every BazFast icon already has media — free a drive and try again.)
-3. On `/GS2.DRIVERS`, open the **`HOST.FST`** folder. Copy these two files into your GS/OS System folder:
-
-   | File on drivers volume | Copy to |
-   |------------------------|---------|
-   | **Host.FST** | `System/FSTs` |
-   | **Host.Driver** | `System/Drivers` |
-
+3. Run the **installer** on `/GS2.DRIVERS`. It has options to install **Host FST**, **Marinetti**, and **Uthernet II**. Select **Host FST** (and the others if you want TCP/IP — see [Uthernet II](Cards_UthernetII.md)).
 4. Restart GS/OS (or otherwise let it load the new FST/driver) so Host FST becomes active.
 5. You can uncheck **File → Mount Drivers** when you no longer need the drivers volume mounted.
 
@@ -41,7 +35,7 @@ After the FST is installed and loaded, the shared folder appears in the GS/OS Fi
 - Requires an **Apple IIgs** platform and **GS/OS** (not plain ProDOS 8 on a //e).
 - On **Windows**, Host FST stores ProDOS type/auxtype, Finder info, and resource forks in NTFS Alternate Data Streams (`:AFP_AfpInfo` and `:AFP_Resource`, the same convention as CiderPress and Services for Macintosh). Use an **NTFS** folder; FAT/exFAT and some network shares will not keep that metadata.
 - The **Host Folder…** picker is not available in the web (Emscripten) build.
-- Mount Drivers only supplies the installer disk; the Host FST itself stays built into the emulator once the two System files are installed.
+- Mount Drivers only supplies the installer disk; you only need to install the drivers/FST on each bootable GS/OS volume you use.
 
 ## Related
 
