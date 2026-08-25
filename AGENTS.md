@@ -72,3 +72,7 @@ To inspect Apple II disk images and their contents, use CiderPress2:
 ```
 cp2='~/src/cp2_1.0.5_osx-x64_sc/cp2'
 ```
+
+## Release packages (macOS + Windows + Linux)
+
+Native package builds are orchestrated from this Mac by `scripts/release/gs2-release`. Copy `scripts/release/hosts.toml.example` to `scripts/release/hosts.toml` and fill in SSH hosts. Run `unpushed` before `sync` so no host is sitting on unpushed commits. `sync` creates a detached worktree at `<repo>-release` (e.g. `~/src/gssquared-release`) from `origin/main`; package builds run there, not in the everyday clone. Agent workflow: `.cursor/skills/gs2-release/SKILL.md`.

@@ -88,12 +88,13 @@
 [X] CRT Shader on Windows
 [X] Provide flexible AI-drivable binary protocol debugger interface  
 [X] Host FST on Windows
-[ ] Full international keyboard support for GS
 
 ## Release 1.0
 
 [X] implement shaders on Linux
+[ ] Full international keyboard support for GS
 [ ] Fix all known / pending bugs  
+
 
 ## Post-1.0
 

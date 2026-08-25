@@ -12558,3 +12558,11 @@ See Arqyv docs..
 Print to clipboard (#165). New `ClipboardDevice` — same idle-close / MESSAGE_CLOSE / reopen-on-write path as FileDevice, but a 128KB RAM buffer instead of a capture file. Worker strips bit 7, maps CR to LF, skips NULs; on close it snapshots to the main thread, which calls `SDL_SetClipboardText` and toasts the byte count. `device = "clipboard"` on serial and parallel (OSD, config editor, TOML). Does not steal the clipboard on emulator quit.
 
 IIgs Slot 1 printer defaults to “Add LF after CR: YES”, so a listing is CRLF. Clipboard must collapse CR+LF (and LF+CR) to a single LF; otherwise paste is double-spaced. Bare CR-only (typical II/IIe printer) still becomes one LF.
+
+## Aug 25, 2026
+
+Discussion on how to set up ssh server to give me an msys2 shell!
+
+https://claude.ai/share/a73e36fd-c180-40b5-b47f-8eeff31319d7
+
+Getting there.. why so hard, Windoze.
