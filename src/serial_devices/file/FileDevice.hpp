@@ -62,6 +62,8 @@ class FileDevice : public SerialDevice {
         char display_msg_[256]{}; // main-thread only; pointed at by EventQueue OSD events
         FileCloseStatusQueue status_q_;
         EventQueue *event_queue_ = nullptr;
+        DeviceFrameDispatcher *frames_ = nullptr;
+        size_t frame_handler_id_ = static_cast<size_t>(-1);
 
         void notify_closed() {
             printf("file %s closed\n", filename);
@@ -93,10 +95,10 @@ class FileDevice : public SerialDevice {
 
     public:
         FileDevice(EventQueue *event_queue, DeviceFrameDispatcher *frames, const char *port_id)
-            : SerialDevice("FileDevice", port_id), event_queue_(event_queue) {
+            : SerialDevice("FileDevice", port_id), event_queue_(event_queue), frames_(frames) {
             file = NULL;
-            if (frames) {
-                frames->registerHandler([this]() {
+            if (frames_) {
+                frame_handler_id_ = frames_->registerHandler([this]() {
                     poll();
                     return true;
                 });
@@ -104,6 +106,11 @@ class FileDevice : public SerialDevice {
         }
 
         ~FileDevice() {
+            if (frames_ && frame_handler_id_ != static_cast<size_t>(-1)) {
+                frames_->unregisterHandler(frame_handler_id_);
+                frames_ = nullptr;
+                frame_handler_id_ = static_cast<size_t>(-1);
+            }
             // Ensure thread stops before our members are destroyed
             if (thread) {
                 SDL_Log("SerialDevice: %s shutting down", this->name);
