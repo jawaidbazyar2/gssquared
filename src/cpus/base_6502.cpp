@@ -3304,12 +3304,17 @@ int execute_next(cpu_state *cpu) override {
                 //cpu->EFFI = cpu->I;
                 if constexpr (CPUTraits::has_65816_ops && !CPUTraits::e_mode) {
                     stack_pull(cpu, cpu->p);
-                    // TODO: perform x/m mode switch check here.
+                    // TODO: perform x mode switch check here.
+                    if (cpu->_X == 1) {
+                        cpu->x_hi = 0;
+                        cpu->y_hi = 0;
+                    }
                 } else if constexpr (CPUTraits::has_65816_ops && CPUTraits::e_mode) {
                     // when e flag=1, m/x are forced to 1, so after plp, both flags will still be 1 no matter what is pulled from stack.
                     stack_pull(cpu, cpu->p);
                     cpu->_M = 1;
                     cpu->_X = 1;
+                    // XY should be $00nn here already if E=1
                 } else {
                     stack_pull(cpu, cpu->p);
                     cpu->p &= ~FLAG_B; // break flag is cleared.
@@ -3783,7 +3788,6 @@ int execute_next(cpu_state *cpu) override {
         /* RTI --------------------------------- */
         case OP_RTI_IMP: /* RTI */
             {
-                // TODO: make sure you finish this.
                 if constexpr (CPUTraits::has_65816_ops) {
                     // "different order from N6502"
                     byte_t oldp = cpu->p & (FLAG_B | FLAG_UNUSED);
@@ -3796,6 +3800,10 @@ int execute_next(cpu_state *cpu) override {
                     } else {
                         p = p & ~(FLAG_B | FLAG_UNUSED);
                         cpu->p = p | oldp;
+                    }
+                    if (cpu->_X == 1) {
+                        cpu->x_hi = 0;
+                        cpu->y_hi = 0;
                     }
                     cpu->pc = pop_word(cpu);
                     if constexpr (!CPUTraits::e_mode) cpu->pb = pop_byte(cpu);
