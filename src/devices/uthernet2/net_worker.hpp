@@ -26,6 +26,10 @@ public:
     /** Non-blocking: drain one event if available. */
     bool poll_event(NetEvent *out);
 
+    /** TCP RX backpressure: only recv this many bytes from the host socket. */
+    void set_rx_credit(uint8_t sock, int credit);
+    void add_rx_credit(uint8_t sock, int n);
+
     void wake();
 
 private:
@@ -59,6 +63,7 @@ private:
     SpscRing<NetEvent, kEventRingDepth> events_;
 
     SockState socks_[U2_NUM_SOCKETS]{};
+    std::atomic<int> rx_credit_[U2_NUM_SOCKETS]{};
     SlirpBackend slirp_;
     bool slirp_ok_ = false;
 };

@@ -7,7 +7,8 @@
 
 #include "w5100_chip.hpp"
 
-#include <cstdio>
+#include <algorithm>
+#include <cstddef>
 #include <cstring>
 
 namespace u2 {
@@ -55,6 +56,7 @@ void W5100Chip::reset(bool power_cycle) {
         sockets_[i] = SocketState{};
         sockets_[i].registerAddress = static_cast<uint16_t>(W5100_S0_BASE + (i << 8));
         reset_rxtx(i);
+        worker_.set_rx_credit(static_cast<uint8_t>(i), 0);
         const uint16_t ra = sockets_[i].registerAddress;
         memory_[ra + W5100_SN_DHAR0] = 0xFF;
         memory_[ra + W5100_SN_DHAR1] = 0xFF;
@@ -180,6 +182,44 @@ bool W5100Chip::room_for(size_t i, size_t len) const {
     return s.sn_rx_rsr + len + s.headerSize < s.receiveSize;
 }
 
+size_t W5100Chip::rx_free(size_t i) const {
+    const auto &s = sockets_[i];
+    const unsigned used = static_cast<unsigned>(s.sn_rx_rsr) + s.headerSize;
+    if (used + 1 >= s.receiveSize) {
+        return 0;
+    }
+    return static_cast<size_t>(s.receiveSize - used - 1);
+}
+
+void W5100Chip::flush_tcp_pending(size_t i) {
+    auto &s = sockets_[i];
+    while (!s.rx_pending.empty()) {
+        const size_t room = rx_free(i);
+        if (room == 0) {
+            return;
+        }
+        const size_t n = std::min(room, s.rx_pending.size());
+        write_rx_data(i, s.rx_pending.data(), n);
+        s.rx_pending.erase(s.rx_pending.begin(), s.rx_pending.begin() + static_cast<std::ptrdiff_t>(n));
+    }
+}
+
+void W5100Chip::ingest_tcp(size_t i, const uint8_t *data, size_t len) {
+    flush_tcp_pending(i);
+    if (len == 0) {
+        return;
+    }
+    const size_t room = rx_free(i);
+    const size_t n = std::min(room, len);
+    if (n > 0) {
+        write_rx_data(i, data, n);
+    }
+    if (n < len) {
+        auto &s = sockets_[i];
+        s.rx_pending.insert(s.rx_pending.end(), data + n, data + len);
+    }
+}
+
 void W5100Chip::write_rx_byte(size_t i, uint8_t v) {
     auto &socket = sockets_[i];
     const uint16_t base = socket.receiveBase;
@@ -200,6 +240,11 @@ void W5100Chip::write_rx_data(size_t i, const uint8_t *data, size_t len) {
 }
 
 void W5100Chip::drain_events() {
+    for (size_t i = 0; i < sockets_.size(); ++i) {
+        if (!sockets_[i].rx_pending.empty()) {
+            flush_tcp_pending(i);
+        }
+    }
     NetEvent ev;
     while (worker_.poll_event(&ev)) {
         apply_event(ev);
@@ -214,11 +259,13 @@ void W5100Chip::apply_event(const NetEvent &ev) {
     case NetEvt::Status:
         sockets_[ev.sock].status = ev.status;
         set_header_size(ev.sock);
+        if (ev.status == W5100_SN_SR_CLOSED) {
+            worker_.set_rx_credit(ev.sock, 0);
+            sockets_[ev.sock].rx_pending.clear();
+        }
         break;
     case NetEvt::RxTcp:
-        if (room_for(ev.sock, ev.payload.size())) {
-            write_rx_data(ev.sock, ev.payload.data(), ev.payload.size());
-        }
+        ingest_tcp(ev.sock, ev.payload.data(), ev.payload.size());
         break;
     case NetEvt::RxUdp:
         if (room_for(ev.sock, ev.payload.size())) {
@@ -356,6 +403,13 @@ void W5100Chip::open_socket(size_t i) {
         break;
     }
     reset_rxtx(i);
+    sockets_[i].rx_pending.clear();
+    if (protocol == W5100_SN_MR_TCP) {
+        const uint16_t sz = sockets_[i].receiveSize;
+        worker_.set_rx_credit(static_cast<uint8_t>(i), sz > 0 ? static_cast<int>(sz - 1) : 0);
+    } else {
+        worker_.set_rx_credit(static_cast<uint8_t>(i), 0);
+    }
 }
 
 void W5100Chip::send_data(size_t i) {
@@ -476,6 +530,8 @@ void W5100Chip::handle_command(size_t i, uint8_t cmd) {
         req.msg = NetMsg::Close;
         req.sock = static_cast<uint8_t>(i);
         worker_.post(std::move(req));
+        worker_.set_rx_credit(static_cast<uint8_t>(i), 0);
+        sockets_[i].rx_pending.clear();
         socket.status = W5100_SN_SR_CLOSED;
         set_header_size(i);
         break;
@@ -483,9 +539,16 @@ void W5100Chip::handle_command(size_t i, uint8_t cmd) {
     case W5100_SN_CR_SEND:
         send_data(i);
         break;
-    case W5100_SN_CR_RECV:
+    case W5100_SN_CR_RECV: {
+        const uint16_t old_rsr = sockets_[i].sn_rx_rsr;
         update_rsr(i);
+        const uint16_t new_rsr = sockets_[i].sn_rx_rsr;
+        if (old_rsr > new_rsr) {
+            worker_.add_rx_credit(static_cast<uint8_t>(i), static_cast<int>(old_rsr - new_rsr));
+        }
+        flush_tcp_pending(i);
         break;
+    }
     default:
         break;
     }

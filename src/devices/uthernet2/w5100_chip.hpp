@@ -19,6 +19,7 @@ struct SocketState {
     uint16_t sn_rx_rsr = 0;
     uint8_t status = W5100_SN_SR_CLOSED;
     uint8_t headerSize = 0;
+    std::vector<uint8_t> rx_pending;
 };
 
 class W5100Chip {
@@ -63,6 +64,9 @@ private:
     void write_rx_be16(size_t i, uint16_t v);
     void write_rx_data(size_t i, const uint8_t *data, size_t len);
     bool room_for(size_t i, size_t len) const;
+    size_t rx_free(size_t i) const;
+    void flush_tcp_pending(size_t i);
+    void ingest_tcp(size_t i, const uint8_t *data, size_t len);
 
     void apply_event(const NetEvent &ev);
     void ingest_macraw(const NetEvent &ev);

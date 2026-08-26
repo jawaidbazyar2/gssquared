@@ -84,6 +84,12 @@ public:
         tail_.store((t + 1) & (Depth - 1), std::memory_order_release);
         return true;
     }
+
+    bool can_send() const {
+        const uint32_t h = head_.load(std::memory_order_relaxed);
+        const uint32_t next = (h + 1) & (Depth - 1);
+        return next != tail_.load(std::memory_order_acquire);
+    }
 };
 
 inline uint16_t read_be16(const uint8_t *p) {

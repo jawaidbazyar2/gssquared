@@ -124,6 +124,19 @@ void NetWorker::wake() {
     }
 }
 
+void NetWorker::set_rx_credit(uint8_t sock, int credit) {
+    if (sock < U2_NUM_SOCKETS) {
+        rx_credit_[sock].store(credit < 0 ? 0 : credit, std::memory_order_release);
+    }
+}
+
+void NetWorker::add_rx_credit(uint8_t sock, int n) {
+    if (sock < U2_NUM_SOCKETS && n > 0) {
+        rx_credit_[sock].fetch_add(n, std::memory_order_acq_rel);
+        wake();
+    }
+}
+
 int NetWorker::thread_main(void *userdata) {
     static_cast<NetWorker *>(userdata)->run();
     return 0;
@@ -374,9 +387,21 @@ void NetWorker::poll_sockets() {
         }
 
         if (st.status == W5100_SN_SR_ESTABLISHED && st.is_tcp) {
+            if (!events_.can_send()) {
+                continue;
+            }
+            const int cred = rx_credit_[i].load(std::memory_order_acquire);
+            if (cred <= 0) {
+                continue;
+            }
             uint8_t buf[2048];
-            const int n = ::recv(st.fd, reinterpret_cast<char *>(buf), sizeof(buf), 0);
+            const int want = cred < static_cast<int>(sizeof(buf)) ? cred : static_cast<int>(sizeof(buf));
+            const int n = ::recv(st.fd, reinterpret_cast<char *>(buf), want, 0);
             if (n > 0) {
+                const int prev = rx_credit_[i].fetch_sub(n, std::memory_order_acq_rel);
+                if (prev < n) {
+                    rx_credit_[i].store(0, std::memory_order_release);
+                }
                 NetEvent ev;
                 ev.evt = NetEvt::RxTcp;
                 ev.sock = i;
