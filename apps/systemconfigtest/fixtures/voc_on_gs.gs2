@@ -1,0 +1,11 @@
+gs2_version = 1
+id = "f1c68719-a647-4e29-a299-f1116a6a03aa"
+name = "VOC on GS"
+platform = "apple2gs"
+clock = "ntsc"
+scanner = "apple2gs"
+builtin = false
+
+[[cards]]
+slot = 3
+card = "voc"

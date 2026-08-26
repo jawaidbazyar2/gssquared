@@ -1,0 +1,7 @@
+gs2_version = 1
+name = "VOC wrong slot"
+platform = "apple2gs"
+
+[[cards]]
+slot = 6
+card = "voc"

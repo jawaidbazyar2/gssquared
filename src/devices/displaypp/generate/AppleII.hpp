@@ -56,6 +56,15 @@ public:
                   Frame560RGBA *out560, Frame640 *out640,
                   bool shr_phys_interleave = false);
 
+    /**
+     * VOC 640x400 interlace mode: progressive composite of two 32K SHR buffers.
+     * Even dest lines come from e1 ($E12000); odd dest lines from e0 ($E02000).
+     * Each pointer is the 32K window starting at CPU $xx/2000.
+     */
+    void generate_voc400(const uint8_t *e1_2000, const uint8_t *e0_2000,
+                         Frame640x400 *out,
+                         bool e1_phys_interleave, bool e0_phys_interleave = false);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

@@ -1,0 +1,7 @@
+gs2_version = 1
+name = "VOC on IIe"
+platform = "apple2e_enhanced"
+
+[[cards]]
+slot = 3
+card = "voc"

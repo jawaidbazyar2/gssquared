@@ -47,7 +47,7 @@ The editor title is **Edit System Configuration**. You can set:
 
 * **Name** and **description** — shown on the badge / for your own reference.
 * **Platform** — Apple II, II+, //e, Enhanced //e, IIgs ROM 01, IIgs ROM 03, etc.
-* **Slots** — click a slot to pick which card goes there (or None). Card choices include Disk II, BazFast, Mockingboard, [Uthernet II](Cards_UthernetII.md), [Super Serial](Cards_SuperSerial.md), [Apple Mouse](Cards_AppleMouse.md), [Parallel](Cards_Parallel.md), and others.
+* **Slots** — click a slot to pick which card goes there (or None). Card choices include Disk II, BazFast, Mockingboard, [Uthernet II](Cards_UthernetII.md), [Super Serial](Cards_SuperSerial.md), [Apple Mouse](Cards_AppleMouse.md), [Parallel](Cards_Parallel.md), [Video Overlay Card](Cards_VOC.md) (IIgs slot 3), and others.
 * **Storage (pre-mount)** — click a drive to choose a disk image that will be mounted when you later launch this config. Click again to clear it. Any valid disk image including .pmap (BazFast multi-image) can be "pre-mounted" this way.
 * **Serial / Parallel** — click a port button and choose **None**, **File**, **Clipboard**, or **Modem**. See [Serial & Parallel Connections](SerialConnections.md).
 
