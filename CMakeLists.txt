@@ -377,6 +377,9 @@ add_library(gs2_devices_secondsight
 )
 target_link_libraries(gs2_devices_secondsight PRIVATE ${GS2_SDL3_IMAGE} gs2_displaypp gs2_paths)
 
+add_library(gs2_devices_voc src/devices/voc/voc.cpp)
+target_link_libraries(gs2_devices_voc PRIVATE gs2_displaypp)
+
 add_library(gs2_devices_iwm src/devices/iwm/iwm_device.cpp)
 
 add_library(gs2_devices_cassette     src/devices/cassette/cassette.cpp )
@@ -557,6 +560,7 @@ set(GS2_DEVICE_REGISTRY_LIBS
     gs2_devices_scc8530
     gs2_devices_ssc
     gs2_devices_secondsight
+    gs2_devices_voc
     gs2_devices_iwm
     gs2_devices_mouse
     gs2_devices_rtc_pram
@@ -670,6 +674,7 @@ target_link_libraries(GSSquared
     gs2_devices_scc8530
     gs2_devices_ssc
     gs2_devices_secondsight
+    gs2_devices_voc
     gs2_devices_iwm
     gs2_serial_devices
     gs2_debugger

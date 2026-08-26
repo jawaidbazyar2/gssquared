@@ -241,9 +241,21 @@ static bool test_errors() {
     CHECK(test_load_fails("bad_version.gs2", "gs2_version"), "bad version");
     CHECK(test_load_fails("dup_slot.gs2", "Duplicate"), "duplicate slot");
     CHECK(test_load_fails("videx_on_gs.gs2", "not allowed"), "videx on gs");
+    CHECK(test_load_fails("voc_on_iie.gs2", "not allowed"), "voc on iie");
+    CHECK(test_load_fails("voc_wrong_slot.gs2", "not allowed"), "voc wrong slot");
     CHECK(test_load_fails("pal_on_gs.gs2", "pal"), "pal on gs");
     CHECK(test_load_fails("dup_storage.gs2", "Duplicate storage"), "dup storage");
     CHECK(test_load_fails("bad_settings_name.txt", "Not a .gs2 or Settings.txt"), "bad settings name");
+    return true;
+}
+
+static bool test_voc() {
+    const auto path = fixture_dir() / "voc_on_gs.gs2";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "voc_on_gs load: " << error);
+    CHECK(config.config().platform_id == PLATFORM_APPLE_IIGS, "voc platform");
+    CHECK(config.config().slot_devices[3] == DEVICE_ID_VOC, "voc slot 3");
     return true;
 }
 
@@ -399,6 +411,7 @@ static bool run_self_tests() {
         {"connections", test_connections},
         {"connections_save_roundtrip", test_connections_save_roundtrip},
         {"errors", test_errors},
+        {"voc", test_voc},
         {"settings_choplifter", test_settings_choplifter},
         {"settings_global", test_settings_global},
         {"settings_no_machine_default", test_settings_no_machine_default},

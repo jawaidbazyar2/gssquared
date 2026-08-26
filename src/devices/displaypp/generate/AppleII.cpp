@@ -457,46 +457,68 @@ static SHRColor shr_palette_color(const uint8_t *base2000, uint8_t pal, uint8_t 
     return c;
 }
 
+template<typename FrameT>
+static void generate_shr_line(const uint8_t *base2000, bool interleave, FrameT *f,
+                              uint16_t src_line, uint16_t dst_line) {
+    SHRMode mode;
+    mode.v = shr_at(base2000, static_cast<uint16_t>(0x7D00 + src_line), interleave);
+    uint8_t p_num = mode.p;
+    f->set_line(dst_line);
+    if (mode.mode640) {
+        for (int x = 0; x < 160; x++) {
+            uint8_t pval = shr_at(base2000, static_cast<uint16_t>(src_line * 160 + x), interleave);
+            f->push(convert12bitTo24bit(shr_palette_color(base2000, p_num, pixel640<3>(pval) + 0x8, interleave)));
+            f->push(convert12bitTo24bit(shr_palette_color(base2000, p_num, pixel640<2>(pval) + 0x0C, interleave)));
+            f->push(convert12bitTo24bit(shr_palette_color(base2000, p_num, pixel640<1>(pval) + 0x00, interleave)));
+            f->push(convert12bitTo24bit(shr_palette_color(base2000, p_num, pixel640<0>(pval) + 0x04, interleave)));
+        }
+    } else {
+        // Same scanline fill-seed as VideoScanGenerator_RGB (MAME / John Brooks).
+        static const uint32_t fillmode_init[32] = {
+            2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
+        };
+        RGBA_t lastpixel = convert12bitTo24bit(
+            shr_palette_color(base2000, p_num, static_cast<uint8_t>(fillmode_init[src_line & 0x1F]), interleave));
+        for (int x = 0; x < 160; x++) {
+            uint8_t pval = shr_at(base2000, static_cast<uint16_t>(src_line * 160 + x), interleave);
+            uint8_t pix = pixel320<1>(pval);
+            if (!mode.fill || pix != 0) {
+                lastpixel = convert12bitTo24bit(shr_palette_color(base2000, p_num, pix, interleave));
+            }
+            f->push(lastpixel);
+            f->push(lastpixel);
+            pix = pixel320<0>(pval);
+            if (!mode.fill || pix != 0) {
+                lastpixel = convert12bitTo24bit(shr_palette_color(base2000, p_num, pix, interleave));
+            }
+            f->push(lastpixel);
+            f->push(lastpixel);
+        }
+    }
+}
+
 static void generate_shr(const uint8_t *base2000, bool interleave, Frame640 *f) {
     if (!base2000 || !f) {
         return;
     }
     for (uint16_t line = 0; line < 200; line++) {
-        SHRMode mode;
-        mode.v = shr_at(base2000, static_cast<uint16_t>(0x7D00 + line), interleave);
-        uint8_t p_num = mode.p;
-        f->set_line(line);
-        if (mode.mode640) {
-            for (int x = 0; x < 160; x++) {
-                uint8_t pval = shr_at(base2000, static_cast<uint16_t>(line * 160 + x), interleave);
-                f->push(convert12bitTo24bit(shr_palette_color(base2000, p_num, pixel640<3>(pval) + 0x8, interleave)));
-                f->push(convert12bitTo24bit(shr_palette_color(base2000, p_num, pixel640<2>(pval) + 0x0C, interleave)));
-                f->push(convert12bitTo24bit(shr_palette_color(base2000, p_num, pixel640<1>(pval) + 0x00, interleave)));
-                f->push(convert12bitTo24bit(shr_palette_color(base2000, p_num, pixel640<0>(pval) + 0x04, interleave)));
-            }
+        generate_shr_line(base2000, interleave, f, line, line);
+    }
+}
+
+static void generate_shr_voc400(const uint8_t *e1, bool e1_interleave,
+                                const uint8_t *e0, bool e0_interleave,
+                                Frame640x400 *f) {
+    if (!e1 || !e0 || !f) {
+        return;
+    }
+    for (uint16_t dst = 0; dst < 400; dst++) {
+        uint16_t src = dst >> 1;
+        if (dst & 1) {
+            generate_shr_line(e0, e0_interleave, f, src, dst);
         } else {
-            // Same scanline fill-seed as VideoScanGenerator_RGB (MAME / John Brooks).
-            static const uint32_t fillmode_init[32] = {
-                2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
-                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf,
-            };
-            RGBA_t lastpixel = convert12bitTo24bit(
-                shr_palette_color(base2000, p_num, static_cast<uint8_t>(fillmode_init[line & 0x1F]), interleave));
-            for (int x = 0; x < 160; x++) {
-                uint8_t pval = shr_at(base2000, static_cast<uint16_t>(line * 160 + x), interleave);
-                uint8_t pix = pixel320<1>(pval);
-                if (!mode.fill || pix != 0) {
-                    lastpixel = convert12bitTo24bit(shr_palette_color(base2000, p_num, pix, interleave));
-                }
-                f->push(lastpixel);
-                f->push(lastpixel);
-                pix = pixel320<0>(pval);
-                if (!mode.fill || pix != 0) {
-                    lastpixel = convert12bitTo24bit(shr_palette_color(base2000, p_num, pix, interleave));
-                }
-                f->push(lastpixel);
-                f->push(lastpixel);
-            }
+            generate_shr_line(e1, e1_interleave, f, src, dst);
         }
     }
 }
@@ -541,4 +563,10 @@ void AppleII_View::generate(video_decode_mode_t decode, video_render_mode_t rend
     } else {
         impl_->composite.generate(decode, render == video_render_mode_t::NTSC, main, aux, out560);
     }
+}
+
+void AppleII_View::generate_voc400(const uint8_t *e1_2000, const uint8_t *e0_2000,
+                                   Frame640x400 *out,
+                                   bool e1_phys_interleave, bool e0_phys_interleave) {
+    generate_shr_voc400(e1_2000, e1_phys_interleave, e0_2000, e0_phys_interleave, out);
 }
