@@ -1,7 +1,7 @@
 gs2_version = 1
 id = "7c3a1d2b-9f5e-4b82-ad4c-2e8f3c5b6c03"
 name = "IIe Enh-PAL"
-description = "PAL Video; 128K RAM; Disk II; Clock; Parallel Port; Mockingboard"
+description = "PAL Video; 128K RAM; Disk II; Clock; Parallel Port; Phasor"
 platform = "apple2e_enhanced"
 clock = "pal"
 scanner = "apple2e_pal"
@@ -12,7 +12,7 @@ card = "mem_expansion"
 
 [[cards]]
 slot = 4
-card = "mockingboard"
+card = "phasor"
 
 [[cards]]
 slot = 5

@@ -345,7 +345,10 @@ target_link_libraries(gs2_devices_parallel PUBLIC gs2_serial_devices)
 
 add_library(gs2_devices_videx     src/devices/videx/videx.cpp src/devices/videx/videx_80x24.cpp )
 
-add_library(gs2_devices_mockingboard     src/devices/mockingboard/mb2.cpp )
+add_library(gs2_devices_mockingboard
+    src/devices/mockingboard/mb2.cpp
+    src/devices/mockingboard/SSI263.cpp
+)
 
 # Apple Mouse III (PIA+6805 / Apple ROM). Former BazMouse sources remain under
 # src/devices/applemouseii/ but are not built.

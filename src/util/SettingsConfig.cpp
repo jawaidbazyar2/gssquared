@@ -184,6 +184,7 @@ std::string canonical_card_name(const std::string& value) {
         {"floppy2", "disk_ii"},
         {"floppy3", "disk_ii"},
         {"floppy4", "disk_ii"},
+        {"mockingboard", "phasor"},
     };
     const auto it = aliases.find(to_lower(value));
     if (it != aliases.end()) {
@@ -203,7 +204,7 @@ std::optional<device_id> parse_card_type(const std::string& value, std::string& 
         {"prodos_block2", DEVICE_ID_PD_BLOCK2},
         {"parallel", DEVICE_ID_PARALLEL},
         {"videx", DEVICE_ID_VIDEX},
-        {"mockingboard", DEVICE_ID_MOCKINGBOARD},
+        {"phasor", DEVICE_ID_MOCKINGBOARD},
         {"mouse", DEVICE_ID_MOUSE},
         {"vidhd", DEVICE_ID_VIDHD},
         {"bazfast3", DEVICE_ID_PD_BLOCK3},

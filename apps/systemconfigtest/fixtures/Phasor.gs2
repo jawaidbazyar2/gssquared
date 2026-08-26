@@ -1,0 +1,9 @@
+gs2_version = 1
+id = "704a96a6-b9b7-4dbe-8d3c-4ec2a82ad0d4"
+name = "Enhanced IIe with Phasor"
+description = "128K RAM; Phasor"
+platform = "apple2e_enhanced"
+
+[[cards]]
+slot = 4
+card = "phasor"

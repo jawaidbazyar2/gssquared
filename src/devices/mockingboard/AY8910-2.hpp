@@ -5,6 +5,7 @@
 #include <deque>
 #include <vector>
 #include "debug.hpp"
+#include "PhasorAudio.hpp"
 #include "util/EventTimer.hpp"
 #include "util/InterruptController.hpp"
 #include "util/AudioSystem.hpp"
@@ -46,11 +47,9 @@ struct AyBusResult {
     uint8_t data;
 };
 
-// Global constants
-// must be based on 59.9227 fps rate just like Speaker code.
-//constexpr double OUTPUT_SAMPLE_RATE = 44100.0;
-constexpr uint32_t OUTPUT_SAMPLE_RATE_INT = 44100;
-constexpr uint32_t SAMPLES_PER_FRAME_INT = 740;
+// Phasor audio shares one stream. Use the 48 kHz timebase of the verified
+// Appletini SSI-263 backend; AY event timing is resampled onto this rate.
+constexpr uint32_t OUTPUT_SAMPLE_RATE_INT = PhasorAudio::kSampleRate;
 
 // Event to represent register changes with timestamps
 struct RegisterEvent {
@@ -173,6 +172,14 @@ static const float normalized_levels[16] = {
         // Set the audio buffer
         void setAudioBuffer(std::vector<float>* buffer) {
             audio_buffer = buffer;
+        }
+
+        // A Phasor clocks all four AYs at twice the Mockingboard rate while
+        // its native mode is selected. Keep the multiplier in the synth so
+        // queued register events and oscillator/envelope state remain
+        // continuous when software changes card modes.
+        void setClockMultiplier(uint8_t multiplier) {
+            clock_multiplier = multiplier == 2 ? 2 : 1;
         }
         
         void reset() {
@@ -522,8 +529,8 @@ static const float normalized_levels[16] = {
             }
         }
         
-        // Generate audio samples at 44.1kHz
-        void generateSamples(int num_samples) {
+        // Generate audio samples on the shared 48 kHz Phasor stream.
+        void generateSamples(int num_samples, uint8_t audible_chip_mask = 0x03) {
             if (!audio_buffer) {
                 return;  // No buffer to write to
             }
@@ -538,8 +545,9 @@ static const float normalized_levels[16] = {
                       << ")" << std::endl;
             
             const double output_time_step = 1.0f / OUTPUT_SAMPLE_RATE_INT;
-            const double chip_time_step = 1.0 / CHIP_FREQUENCY;
-            const double envelope_base_frequency = MASTER_CLOCK / ENVELOPE_CLOCK_DIVIDER;
+            const double chip_time_step = 1.0 / (CHIP_FREQUENCY * clock_multiplier);
+            const double envelope_base_frequency =
+                (MASTER_CLOCK * clock_multiplier) / ENVELOPE_CLOCK_DIVIDER;
             const double envelope_base_time_step = 1.0 / envelope_base_frequency;
             
             for (int i = 0; i < num_samples; i++) {
@@ -591,7 +599,10 @@ static const float normalized_levels[16] = {
                 float mixed_output[2] = {0.0f, 0.0f};
     
                 for (int c = 0; c < 2; c++) {
-    
+                    if ((audible_chip_mask & (1u << c)) == 0) {
+                        continue;
+                    }
+
                     const AY3_8910& chip = chips[c];
 #if 0
                     for (int channel = 0; channel < 3; channel++) {
@@ -809,6 +820,7 @@ static const float normalized_levels[16] = {
         double current_time;
         double time_accumulator;
         double envelope_time_accumulator;  // New accumulator for envelope timing
+        uint8_t clock_multiplier = 1;
         std::deque<RegisterEvent> pending_events;
         std::vector<float>* audio_buffer;  // Pointer to external audio buffer
         AudioSystem *audio_system = nullptr;  // Shared audio settings (decorrelation, etc.)
@@ -824,10 +836,10 @@ static const float normalized_levels[16] = {
         // two signals then cancel to silence, producing the "muted channel"
         // defect. True stereo speakers and mono-from-one-chip both avoid it.
         //
-        // A short delay on R (16 samples @ 44.1kHz = ~363us) is far below the
-        // Haas echo threshold (~30ms), so stereo listeners perceive no
-        // difference, but it guarantees mono_sum(f) = 2|sin(pi*f*d)| > 0 at
-        // every audio frequency -> no more structural cancellation.
+        // A 256-sample delay on R (about 5.33 ms at 48 kHz) is below the Haas
+        // echo threshold, so stereo listeners perceive no discrete echo, but
+        // it prevents persistent structural cancellation in an acoustic mono
+        // sum.
         static constexpr size_t MONO_DECORR_DELAY = 256;
         float    r_delay_buf[MONO_DECORR_DELAY] = {0.0f};
         uint32_t r_delay_idx                    = 0;

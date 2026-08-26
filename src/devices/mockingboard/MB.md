@@ -331,33 +331,193 @@ it should be vid_cycles. Why would it have changed this..
 
 # Phasor Card
 
-This has same components as the Mockingboard but a slightly different layout:
+The system configuration editor exposes this device as **Phasor**, and new
+`.gs2` files serialize it as `card = "phasor"`. Existing configurations that
+use `card = "mockingboard"` remain valid as a legacy alias.
 
-| Chip Number | Control Reg | Data Reg | Latch | Write |
-|-|-|-|-|-|
-| 1 | Cs10 | Cs11 | $0F, $0C | $0E, $0C |
-| 2 | Cs10 | Cs11 | $17, $14 | $16, $14 |
-| 3 | Cs80 | Cs81 | $0F, $0C | $0E, $0C |
-| 4 | Cs80 | Cs81 | $17, $14 | $16, $14 |
+The emulated Applied Engineering Phasor powers up in mode 0, so existing
+software sees an ordinary two-VIA, two-AY Mockingboard unless it deliberately
+selects an extended mode. The three defined modes are:
 
-Differences:
-* instead of being at Cs00, the 2nd 6522 is at Cs10. 
-* Each 6522 controls TWO AY chips; these have different control/data reg values.
+| Mode | Name | Visible hardware |
+|---:|---|---|
+| 0 | Mockingboard compatible | Two mirrored VIAs, one primary AY behind each VIA, and both SSI-263 write decodes |
+| 5 | Phasor native | Interleaved VIAs, all four AYs at twice the Mockingboard clock, both SSI-263 write decodes, native D7 reads, and direct speech IRQs |
+| 7 | Echo+ | One fully mirrored VIA and its primary/secondary AY pair at the normal Mockingboard clock; SSI bus decode is hidden |
 
-Chip 1 CE is set via bit [3]. Chip 2 CE is set via bit [4] in each value.
+## Mode softswitch
 
-That's pretty straightforward.
+The 16-byte slot softswitch is at `$C080 + slot * $10`. Thus slot 4 uses
+`$C0C0-$C0CF`. Both reads and writes change the mode. Each access first clears
+the accumulated mode to zero when offset bit 3 is set, then ORs offset bits
+2-0 into it:
 
-However, there are maybe also these "activate" or configuration locations.
-"These 3 lines enable communications with the Phasor Card and initialize the sound chips. The addresses
-change based on the slot where the Phasor is installed. "
 ```
-C0CD
-C493:FF
-C492:FF
+if X & $08: mode = 0
+mode = mode | (X & $07)
 ```
 
-Oh, it says C490-C493 are for talking to the speech chip. I never did figure out what memory locations are used on a regular mockingboard for that..
+This explains the formerly mysterious `$C0CD` access: in slot 4, offset `$D`
+resets the accumulator and selects mode 5 in one operation. `$C0CF` similarly
+selects Echo+ mode 7, and `$C0C8` returns the card to Mockingboard mode 0.
+Accesses without bit 3 set can accumulate the selection over several bus
+cycles. A card reset also restores mode 0.
 
-It seems like you can write to both AYs at the same time. So each 6522 controls a left/right pair? Interesting.
-Unclear what C0CD is. 
+## VIA and AY decode
+
+Mode 0 retains the classic mirrored layout: VIA-A responds throughout
+`$Cx00-$Cx7F`, and VIA-B throughout `$Cx80-$CxFF`. In native mode, address bit
+4 selects VIA-A and address bit 7 selects VIA-B. A native write for which both
+bits are set reaches both VIAs; a read ORs their results. Echo+ mode mirrors
+VIA-B throughout the complete `$Cx00-$CxFF` slot page.
+
+Native-mode reads of either VIA's T1C-L or T2C-L advance that selected timer by
+one additional 1 MHz tick before returning its value, matching the Phasor
+detection timing. This extra tick does not apply in mode 0 or Echo+ mode.
+
+Each VIA has a primary and a secondary AY-3-8913-compatible PSG. Port B bits 1
+and 0 remain BDIR and BC1, and bit 2 remains the active-low AY reset. In the
+extended modes, bit 4 is the active-low primary-AY select and bit 3 is the
+active-low secondary-AY select. Native Phasor latch behavior is deliberately
+asymmetric: selecting the secondary AY for a latch cycle latches both AYs,
+whereas selecting only the primary latches only it. The remembered selections
+then permit primary, secondary, or simultaneous reads and writes; data from
+two selected readers is ORed. The usual native Port-B sequences are:
+
+| AY select | Latch / idle | Write / idle |
+|---|---|---|
+| Primary | `$0F`, `$0C` | `$0E`, `$0C` |
+| Secondary | `$17`, `$14` | `$16`, `$14` |
+
+Mode 0 ignores the extra chip-select behavior and exposes only the two primary
+AYs. Mode 5 exposes all four and doubles their master clock, as a real Phasor
+does. Mode 7 exposes the two AYs behind VIA-B but leaves their clock at the
+normal Mockingboard rate. The two AYs behind a VIA share that VIA's existing
+stereo placement.
+
+## Dual SSI-263 sockets
+
+Both physical speech sockets contain SSI-263AP devices; there is no SC-01 or
+Votrax substitution. Speech writes are an additional decode beside the VIA
+write, rather than a replacement for it. In modes 0 and 5:
+
+| Address condition | SSI socket | Completion route in mode 0 |
+|---|---|---|
+| A6 = 1 | Primary | CA1 of VIA-B (`$Cx80` half) |
+| A5 = 1 | Secondary | CA1 of VIA-A (`$Cx00` half) |
+
+A2-A0 select registers 0-7, with 4-7 all aliasing FILFREQ. Because the selects
+are independent, a write with both A6 and A5 set reaches both speech chips.
+The coincident VIA decode still occurs according to the current card mode.
+
+Each SSI is a mono source. GSSquared centers both sockets into the left and
+right channels of the shared 48 kHz card stream with a constant-power
+`1/sqrt(2)` coefficient. Software using only the usual primary socket is thus
+audible in both speakers without doubling its total power. The AY banks retain
+their existing stereo placement. The card mixer sums the active AY and centered
+SSI sources in floating point and saturates once at the completed card output;
+this avoids source-order-dependent clipping. The saturated mix then passes
+through the same fixed +8 card-level warmth network used by Appletini: a
+warm-band boost, one-quarter treble subtraction, and a soft knee at 20480 PCM.
+The three FPGA-rate one-poles are collapsed to deterministic Q1.31 updates on
+the 48 kHz card timeline. Their state survives an Apple warm reset and is
+cleared by a cold/card reset.
+
+The exact 48 kHz synthesis stream is independent of the host audio device
+clock. The SDL output starts behind a 50 ms safety prefill, targets a 60 ms
+queue, and trims host consumption by at most +/-0.5 percent. This prevents a
+normal 1024-frame device callback or modest scheduling jitter from padding a
+one-video-frame queue with audible silence; it does not duplicate, drop, or
+retime SSI/AY synthesis samples.
+
+Mode 0 slot-page reads continue to return the VIA, so SSI D7 is not directly
+visible there. In mode 5 a native speech-status read requires A4 = 0, A7 = 0,
+and either A6 or A5. D7 returns the selected chip's pending A/!R status and the
+lower seven data bits are floating; when both speech selects are present, the
+secondary socket has priority.
+
+When enabled, a mode-0 completion drives the corresponding VIA CA1 input. The
+VIA's PCR edge selection, IFR.CA1 latch, IER gating, and normal Port-A/IFR
+acknowledgement rules then apply. In native mode the same completion asserts a
+direct card IRQ rather than passing through the VIA. A pending D7 request is
+level-routed when the mode changes: entering mode 0 presents it to CA1,
+entering mode 5 asserts the direct IRQ, and leaving native mode removes that
+direct assertion. Thus switching modes neither loses nor duplicates a pending
+speech response.
+
+## SSI-263 bus timing and reset behavior
+
+SSI response and duration timing runs from the effective approximately 1 MHz
+XCK clock, separately from the fixed 20 kHz formant-control and coefficient
+clock and the shared 48 kHz card audio stream. With duration field `D` and RATE
+high nibble `R`, one complete phone cycle is exactly:
+
+```
+(4 - D) * 4096 * (16 - R) effective XCK edges
+```
+
+The 48 kHz samples are rendered incrementally on that emulated XCK timeline,
+so a phone, closure, RATE, or reset transition inside a video frame affects
+only subsequent audio instead of being applied retroactively to the frame.
+
+In response mode 1, A/!R occurs once per `4096 * (16 - R)`-edge frame while
+the phone itself has three frames. Modes 2 and 3 respond at the complete phone
+boundary. A zero duration/mode field disables the external A/!R route but
+retains the previously selected response/inflection mode; D7 still records
+the response at that retained mode's boundary. A completed phone repeats from
+its first timing phase until software writes another phone or powers the chip
+down.
+
+Writes to DURPHON, INFLECT, or RATEINF acknowledge D7. DURPHON starts the newly
+latched phone, but INFLECT and RATEINF only clear the request; they do not
+restart the tract, audio, or duration phase. A RATE change takes effect on the
+next internal 1/16-frame slot, never retroactively on the slot already in
+progress. RATE controls public duration and response timing only; it does not
+speed up articulation.
+
+CTTRAMP bit 7 powers the output down, mutes it, clears the visible request, and
+suppresses new A/!R assertions. Lowering the bit starts the latched DURPHON
+again with a full response interval. The first transitioned-inflection phone
+seeds its pitch from the first live 12-bit target instead of sweeping up from
+an artificial zero; subsequent transitioned phones retain the running upper
+pitch target.
+
+A cold reset sets DURPHON=`$C0`, INFLECT=`$00`, RATEINF=`$00`,
+CTTRAMP=`$80`, and FILFREQ=`$00`, clears D7, and clears synthesis history. An
+Apple reset is a warm reset for the SSI-263AP: it powers speech down and
+releases D7/IRQ while preserving DURPHON, INFLECT, RATEINF, FILFREQ, and the
+transitioned-inflection seed/state.
+
+FILFREQ remains a readable/writable register latch, including the register 4-7
+aliases, and follows the reset-retention rules above. To match the Appletini
+backend, however, it is acoustically unused: it does not retune the fixed 20 kHz
+formant coefficient model, and no value (including `$FF`) is a mute command.
+IIR history is invalidated at a phone boundary, matching the Appletini
+validity-mask behavior and avoiding stale-coefficient crackle without resetting
+the oscillator or interpolation state.
+
+## Speech synthesis fidelity
+
+Speech is synthesized in real time from a glottal source and a 15-bit LFSR
+noise source. It never plays recorded phoneme samples. The exact active
+512-byte native SSI-263A/SC-02 ROM table covers all 64 SSI phoneme and
+allophone codes (SHA-256
+`101d129a5f104e6190f2eca518bbf9ef65bf4ff92684d29eba56d9641aa02b0a`).
+These bytes are control parameters, not audio. Ordinary phones use the native
+targets directly; the capture-proven HV/HVC/HFC/HN hold phones instead freeze
+the instantaneous interpolated tract state so an established articulation is
+not lost.
+
+The renderer is intentionally a hybrid model: native SSI parameters drive the
+retained SC-01A-compatible F1, F2 voice/noise, F3, F4, closure, and output
+topology derived from Olivier Galibert's `vsim`/MAME work. GSSquared implements
+the Appletini signal path at 48 kHz with Q15 filter coefficients, saturating
+24-bit intermediate stages, and signed 16-bit output. Its output stage mirrors
+Appletini's soft limiter (a knee at +/-8192 with 4:1 compression beyond it) and
+limits adjacent output changes to 3000 counts per sample. The result is then
+converted to the card mixer's floating-point domain for constant-power stereo
+placement and the single final card-output saturation described above.
+
+This remains neither a transistor-level SC-02 model nor a claim of equivalence
+to every analog SSI-263. Native selector-4/control routing that has no
+counterpart in the retained tract remains outside this hybrid model.

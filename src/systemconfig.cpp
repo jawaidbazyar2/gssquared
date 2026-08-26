@@ -160,7 +160,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleII,
-        "64K RAM (incl Lang Card); Disk II; Clock; Parallel Port; VIDEX 80-col; Mockingboard",
+        "64K RAM (incl Lang Card); Disk II; Clock; Parallel Port; VIDEX 80-col; Phasor",
         "6b2f0c1a-8e4d-4a91-9c3b-1f7e2d4a5b02",
         {
             DEVICE_ID_LANGUAGE_CARD,
@@ -180,7 +180,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
-        "128K RAM; Disk II; AppleMouse II; Mockingboard",
+        "128K RAM; Disk II; AppleMouse II; Phasor",
         "6b2f0c1a-8e4d-4a91-9c3b-1f7e2d4a5b03",
         {
             DEVICE_ID_NONE,
@@ -200,7 +200,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         true,
         CLOCK_SET_US,
         Scanner_AppleIIe,
-        "128K RAM; Disk II; Clock; AppleMouse II; Mockingboard",
+        "128K RAM; Disk II; Clock; AppleMouse II; Phasor",
         "6b2f0c1a-8e4d-4a91-9c3b-1f7e2d4a5b04",
         {
             DEVICE_ID_NONE,
@@ -213,7 +213,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
             DEVICE_ID_PD_BLOCK3
         },
     },
-    /* Extra configs (Dual Mockingboard, IIe 65816, IIe PAL, IIgs Disk II)
+    /* Extra configs (Dual Phasor, IIe 65816, IIe PAL, IIgs Disk II)
        ship as .gs2 under assets/gs2/ and are seeded into PrefPath/SystemConfigs. */
     {
         "Apple IIgs",

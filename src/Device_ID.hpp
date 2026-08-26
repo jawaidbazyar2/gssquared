@@ -17,6 +17,8 @@ typedef enum device_id {
     DEVICE_ID_PD_BLOCK2,
     DEVICE_ID_PARALLEL,
     DEVICE_ID_VIDEX,
+    // Legacy internal ID retained for ABI/config compatibility. The
+    // user-visible card is the Phasor, which powers up in Mockingboard mode.
     DEVICE_ID_MOCKINGBOARD,
     DEVICE_ID_IIE_MEMORY,
     DEVICE_ID_MOUSE,

@@ -139,6 +139,7 @@ std::string canonical_card_name(const std::string& value) {
         {"pdblock3", "bazfast3"},
         {"smartport", "bazfast3"},
         {"pdblock2", "prodos_block2"},
+        {"mockingboard", "phasor"},
     };
     const auto it = aliases.find(value);
     if (it != aliases.end()) {
@@ -158,7 +159,7 @@ std::optional<device_id> parse_card_type(const std::string& value, std::string& 
         {"prodos_block2", DEVICE_ID_PD_BLOCK2},
         {"parallel", DEVICE_ID_PARALLEL},
         {"videx", DEVICE_ID_VIDEX},
-        {"mockingboard", DEVICE_ID_MOCKINGBOARD},
+        {"phasor", DEVICE_ID_MOCKINGBOARD},
         {"mouse", DEVICE_ID_MOUSE},
         {"vidhd", DEVICE_ID_VIDHD},
         {"bazfast3", DEVICE_ID_PD_BLOCK3},
@@ -431,7 +432,7 @@ const char* card_type_name(device_id id) {
         case DEVICE_ID_PD_BLOCK2: return "prodos_block2";
         case DEVICE_ID_PARALLEL: return "parallel";
         case DEVICE_ID_VIDEX: return "videx";
-        case DEVICE_ID_MOCKINGBOARD: return "mockingboard";
+        case DEVICE_ID_MOCKINGBOARD: return "phasor";
         case DEVICE_ID_MOUSE: return "mouse";
         case DEVICE_ID_VIDHD: return "vidhd";
         case DEVICE_ID_PD_BLOCK3: return "bazfast3";
@@ -454,7 +455,7 @@ static const char* card_display_name(device_id id) {
         case DEVICE_ID_PD_BLOCK2: return "ProDOS Block 2";
         case DEVICE_ID_PARALLEL: return "Parallel Interface";
         case DEVICE_ID_VIDEX: return "Videx VideoTerm";
-        case DEVICE_ID_MOCKINGBOARD: return "Mockingboard";
+        case DEVICE_ID_MOCKINGBOARD: return "Phasor";
         case DEVICE_ID_MOUSE: return "Apple Mouse II";
         case DEVICE_ID_VIDHD: return "VIDHD";
         case DEVICE_ID_PD_BLOCK3: return "BazFast 3";

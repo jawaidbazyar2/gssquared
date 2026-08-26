@@ -157,7 +157,7 @@ The TOML key **`device`** is reserved for `[[connections]]` — the virtual peri
 | `"prodos_block2"` | `DEVICE_ID_PD_BLOCK2` | Generic ProDOS Block 2 | |
 | `"parallel"` | `DEVICE_ID_PARALLEL` | Apple II Parallel Interface | |
 | `"videx"` | `DEVICE_ID_VIDEX` | Videx VideoTerm | Slot 3 only; II / II+ only |
-| `"mockingboard"` | `DEVICE_ID_MOCKINGBOARD` | Mockingboard | Multiple instances allowed |
+| `"phasor"` | `DEVICE_ID_MOCKINGBOARD` | Phasor | Multiple instances allowed; `DEVICE_ID_MOCKINGBOARD` is retained internally for compatibility |
 | `"mouse"` | `DEVICE_ID_MOUSE` | Apple Mouse III (PIA+6805 / Apple ROM). Alias: `"applemouseiii"`. | |
 | `"vidhd"` | `DEVICE_ID_VIDHD` | VIDHD | 65816 //e only |
 | `"bazfast3"` | `DEVICE_ID_PD_BLOCK3` | BazFast 3 (DMA Storage) | Multiple instances allowed |
@@ -171,6 +171,7 @@ Aliases (optional, loader MAY accept):
 |-------|-----------|
 | `"pdblock3"`, `"smartport"` | `"bazfast3"` |
 | `"pdblock2"` | `"prodos_block2"` |
+| `"mockingboard"` | `"phasor"` |
 
 ### Motherboard devices (not in `[[cards]]`)
 
@@ -412,7 +413,7 @@ image = "volumes/Games2.po"
 ```toml
 gs2_version = 1
 name = "Apple ][+"
-description = "64K RAM (incl Lang Card); Disk II; Clock; Parallel Port; VIDEX 80-col; Mockingboard"
+description = "64K RAM (incl Lang Card); Disk II; Clock; Parallel Port; VIDEX 80-col; Phasor"
 platform = "apple2plus"
 clock = "ntsc"
 scanner = "apple2"
@@ -435,7 +436,7 @@ card = "videx"
 
 [[cards]]
 slot = 4
-card = "mockingboard"
+card = "phasor"
 
 [[cards]]
 slot = 5
@@ -465,21 +466,21 @@ drive = 2
 image = "disks/empty.woz"
 ```
 
-### Enhanced //e with dual Mockingboard
+### Enhanced //e with dual Phasor
 
 `DualMock.gs2`:
 
 ```toml
 gs2_version = 1
-name = "Apple IIe Enhanced Dual Mockingboard"
-description = "128K RAM; Disk II; Clock; DUAL Mockingboard"
+name = "Apple IIe Enhanced Dual Phasor"
+description = "128K RAM; Disk II; Clock; DUAL Phasor"
 platform = "apple2e_enhanced"
 clock = "ntsc"
 scanner = "apple2e"
 
 [[cards]]
 slot = 4
-card = "mockingboard"
+card = "phasor"
 
 [[cards]]
 slot = 5
@@ -491,7 +492,7 @@ card = "disk_ii"
 
 [[cards]]
 slot = 7
-card = "mockingboard"
+card = "phasor"
 
 [[storage]]
 slot = 6
@@ -561,7 +562,7 @@ device = "modem"
 ```toml
 gs2_version = 1
 name = "Apple IIe Enhanced / PAL"
-description = "PAL Video; 128K RAM; Disk II; Clock; Mockingboard"
+description = "PAL Video; 128K RAM; Disk II; Clock; Phasor"
 platform = "apple2e_enhanced"
 clock = "pal"
 scanner = "apple2e_pal"
@@ -572,7 +573,7 @@ card = "mem_expansion"
 
 [[cards]]
 slot = 4
-card = "mockingboard"
+card = "phasor"
 
 [[cards]]
 slot = 5
