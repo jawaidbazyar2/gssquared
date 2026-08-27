@@ -98,7 +98,9 @@ quit     lda   h1
          sta   ss_mode
          sta   ss_flag
          jsr   SetMode
-         rtl
+         jsl   $E100A8          ; GS/OS _Quit (does not return)
+         dw    $2029
+         adrl  quitpb
 
 PatchCSB anop
          lda   x0
@@ -297,6 +299,8 @@ fgx      lda   px
          rts
 
          put   ss.s
+
+quitpb   dw    0                 ; pCount = 0
 
 ss_mode  ds    2
 ss_flag  ds    2
