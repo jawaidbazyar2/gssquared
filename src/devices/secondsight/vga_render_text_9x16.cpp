@@ -132,6 +132,19 @@ void vga_text_9x16_restore_ibm_palette() {
     }
 }
 
+void vga_text_9x16_set_palette_rgb(const uint8_t *rgb48) {
+    if (rgb48 == nullptr) {
+        return;
+    }
+    for (int i = 0; i < 16; i++) {
+        text_palette[i] = argb(rgb48[i * 3], rgb48[i * 3 + 1], rgb48[i * 3 + 2]);
+    }
+}
+
+void vga_text_9x16_set_palette_entry(uint8_t index, uint8_t r, uint8_t g, uint8_t b) {
+    text_palette[index & 0x0F] = argb(r, g, b);
+}
+
 void vga_raster_text_9x16(const uint8_t *vram, int vram_pitch, uint32_t *pixels, int pitch,
     vga_text_vram_layout_t layout, int cols)
 {

@@ -15,6 +15,11 @@ testdev/gputest/*
 !testdev/gputest/*.s
 !testdev/gputest/Makefile
 !testdev/gputest/README.md
+!testdev/hosttext/
+testdev/hosttext/*
+!testdev/hosttext/*.s
+!testdev/hosttext/Makefile
+!testdev/hosttext/README.md
 CMakeCache.txt
 **/cmake_install.cmake
 cmake_install.cmake

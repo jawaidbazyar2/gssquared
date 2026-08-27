@@ -428,10 +428,14 @@ SetMode byte $02, is "emulation flag". Currently:
 I think we add:
 * $02: PPU mode
 * $03: GPU mode
+* $04: Host Text mode
 
 PPU mode is where we render PPU style like a NES.
 GPU mode is where we process a command language and render. Spec:
-[SecondSight_GPU.md](SecondSight_GPU.md). 
+[SecondSight_GPU.md](SecondSight_GPU.md).
+Host Text mode scans an 80-column VGA-style cell buffer out of shadowed Apple RAM
+(hardware row scroll, page-flip, planar or interleaved). Spec:
+[SecondSight_Text.md](SecondSight_Text.md). 
 
 Since all addon video cards (from SecondSight in 1995 to the present day) shadow Apple II video memory writes to the cards, and store in card memory, that is a fast and convenient way to put data into the cards. The PPU buffers just need to be mapped.
 

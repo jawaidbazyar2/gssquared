@@ -73,6 +73,11 @@ void vga_text_9x16_set_a2_text_dac(uint32_t bg_argb, uint32_t fg_argb, bool flas
 /** Restore IBM CGA/VGA 16-color text palette (host VGA text mode). */
 void vga_text_9x16_restore_ibm_palette();
 
+/** 16 RGB888 triplets (48 bytes, R,G,B per index). */
+void vga_text_9x16_set_palette_rgb(const uint8_t *rgb48);
+
+void vga_text_9x16_set_palette_entry(uint8_t index, uint8_t r, uint8_t g, uint8_t b);
+
 /** CRTC offset reg -> byte pitch for standard VGA text (offset * 4). */
 inline int vga_text_pitch_from_crtc_offset(uint8_t crtc_offset) {
     return crtc_offset > 0 ? (int)crtc_offset * 4 : VGA_TEXT_FB_PITCH;
