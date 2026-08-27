@@ -12,6 +12,7 @@
 #include "vga_render_text_9x16_present.hpp"
 #include "vga_mode_tables.hpp"
 #include "ppu_render.hpp"
+#include "ss_gpu.hpp"
 #include "paths.hpp"
 #include "mmus/mmu_ii.hpp"
 #include "ss_a2_text_sync.hpp"
@@ -20,7 +21,6 @@
 #include "Module_ID.hpp"
 
 struct computer_t;
-
 
 #define SECOND_SIGHT_FB_SIZE 1024 * 1024
 /** Z180 SRAM ($00/0000–$01/FFFF per Second Sight memory map). */
@@ -77,6 +77,14 @@ class SecondSight {
     uint16_t vga_active = 0; // 1 means VGA mode active ("do not emulate current Apple II mode")
     ss_display_mode_t ss_mode = SS_MODE_EMU;
     uint16_t display_enabled = 1; // 1 means display is enabled
+
+    using CmdHandler = void (SecondSight::*)();
+    CmdHandler cmd_table_emu[256] = {};
+    CmdHandler cmd_table_vga[256] = {};
+    CmdHandler cmd_table_ppu[256] = {};
+    CmdHandler cmd_table_gpu[256] = {};
+    CmdHandler *cmd_table = cmd_table_emu;
+    SsGpu gpu;
 
     union {
         uint8_t user_mode_data[84] = {0};
@@ -450,6 +458,7 @@ class SecondSight {
         current_vga_mode.bitspercolor = 8;
         display_enabled = 1;
         printf("SecondSight: PPU mode %dx%d\n", PPU_FB_W, PPU_FB_H);
+        cmd_table = cmd_table_ppu;
     }
 
     void sync_ppu_registers_from_a2(ppu_config_t &cfg) {
@@ -515,8 +524,11 @@ class SecondSight {
             }
             load_rom_text_fonts();
             display_enabled = true;
+            gpu.init(vs);
+            init_cmd_tables();
         }
         ~SecondSight() {
+            gpu.shutdown();
             delete[] frame_buffer;
             delete[] z180_sram;
             delete[] rgb24_buffer;
@@ -539,6 +551,8 @@ class SecondSight {
             reg_handshake = 0;
             vga_active = 0;
             ss_mode = SS_MODE_EMU;
+            cmd_table = cmd_table_emu;
+            gpu.leave_mode();
             vga_mode_num = 0;
             res_x = 640;
             res_y = 480;
@@ -595,6 +609,59 @@ class SecondSight {
         };
 
         vga_mode_t current_vga_mode = {0};
+
+        static uint8_t gpu_format_from_depth(uint8_t color_depth) {
+            if (color_depth <= 8) {
+                return SS_GPU_FMT_IDX8;
+            }
+            if (color_depth <= 16) {
+                return SS_GPU_FMT_RGB555;
+            }
+            return SS_GPU_FMT_RGB888;
+        }
+
+        bool lookup_gpu_graphics_mode(uint8_t mode_num, vga_mode_t *out) const {
+            for (int i = 0; i < (int)(sizeof(vga_modes) / sizeof(vga_mode_t)); i++) {
+                if (vga_modes[i].mode == mode_num && vga_modes[i].graphics == TG_GRAPHICS
+                    && vga_modes[i].vgamode) {
+                    *out = vga_modes[i];
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        bool apply_gpu_mode(const vga_mode_t &mode) {
+            const uint8_t fmt = gpu_format_from_depth(mode.color_depth);
+            if (!gpu.enter_mode(mode.width, mode.height, fmt)) {
+                return false;
+            }
+            ss_mode = SS_MODE_GPU;
+            vga_active = 1;
+            vga_mode_num = mode.mode;
+            res_x = mode.width;
+            res_y = mode.height;
+            current_vga_mode = mode;
+            display_enabled = 1;
+            cmd_table = cmd_table_gpu;
+            printf("SecondSight: GPU mode %dx%d fmt=%02X\n", mode.width, mode.height, fmt);
+            return true;
+        }
+
+        void leave_gpu_if_needed() {
+            if (ss_mode == SS_MODE_GPU) {
+                gpu.leave_mode();
+            }
+        }
+
+        void select_cmd_table() {
+            switch (ss_mode) {
+                case SS_MODE_GPU: cmd_table = cmd_table_gpu; break;
+                case SS_MODE_PPU: cmd_table = cmd_table_ppu; break;
+                case SS_MODE_VGA: cmd_table = cmd_table_vga; break;
+                default: cmd_table = cmd_table_emu; break;
+            }
+        }
 
         enum dma_direction_t {
             DMA_DIRECTION_IN = 0,
@@ -837,15 +904,36 @@ class SecondSight {
             //   $00: Apple II emulation mode
             //   $01: VGA mode
             //   $02: PPU mode
+            //   $03: GPU mode
             // look for mode, if we don't find it then error.
 
             if (command_step == 1) {
                 setup_dma(DMA_DIRECTION_IN, cmd_buffer+1, 0x02);
             } else if (command_step == 2) {
                 const uint8_t emu_flag = cmd_buffer[2];
-                if (emu_flag == 0x02) {
+                const uint8_t mode_num = cmd_buffer[1];
+                uint8_t result = 0xA5;
+
+                if (emu_flag == 0x03) {
+                    vga_mode_t gm{};
+                    if (!lookup_gpu_graphics_mode(mode_num, &gm)) {
+                        result = 0xA6;
+                    } else if (ss_mode == SS_MODE_GPU && vga_mode_num == mode_num) {
+                        /* same GPU mode: keep handles */
+                    } else {
+                        leave_gpu_if_needed();
+                        if (!apply_gpu_mode(gm)) {
+                            result = 0xA6;
+                            ss_mode = SS_MODE_EMU;
+                            vga_active = 0;
+                            cmd_table = cmd_table_emu;
+                        }
+                    }
+                } else if (emu_flag == 0x02) {
+                    leave_gpu_if_needed();
                     apply_ppu_mode();
-                } else if (cmd_buffer[1] == 0xFF) {
+                } else if (mode_num == 0xFF) {
+                    leave_gpu_if_needed();
                     mode_info info;
                     analyze_vga_mode(&user_mode_rec, &info);
                     apply_analyzed_mode(&user_mode_rec, &info);
@@ -856,16 +944,18 @@ class SecondSight {
                         vga_active = 1;
                         ss_mode = SS_MODE_VGA;
                     }
+                    select_cmd_table();
                 } else {
-                    if (cmd_buffer[1] == 0x03) {
+                    leave_gpu_if_needed();
+                    if (mode_num == 0x03) {
                         apply_rom_vga_mode(&SS_ROM_VGA_TEXT_80X25, 0x03);
-                    } else if (cmd_buffer[1] == 0x01) {
+                    } else if (mode_num == 0x01) {
                         apply_rom_vga_mode(&SS_ROM_VGA_TEXT_40X25, 0x01);
                     } else {
-                        for (int i = 0; i < sizeof(vga_modes) / sizeof(vga_mode_t); i++) {
-                            if (vga_modes[i].mode == cmd_buffer[1]) {
+                        for (int i = 0; i < (int)(sizeof(vga_modes) / sizeof(vga_mode_t)); i++) {
+                            if (vga_modes[i].mode == mode_num) {
                                 current_vga_mode = vga_modes[i];
-                                vga_mode_num = cmd_buffer[1];
+                                vga_mode_num = mode_num;
                                 res_x = current_vga_mode.width;
                                 res_y = current_vga_mode.height;
                                 fb_pitch = current_vga_mode.width
@@ -884,8 +974,9 @@ class SecondSight {
                         vga_active = 1;
                         ss_mode = SS_MODE_VGA;
                     }
+                    select_cmd_table();
                 }
-                trigger_longrun_wait(0xA5);
+                trigger_longrun_wait(result);
             }
             display_enabled = 1;
         }
@@ -904,8 +995,10 @@ class SecondSight {
                 mode_info info;
                 analyze_vga_mode(&user_mode_rec, &info);
                 apply_analyzed_mode(&user_mode_rec, &info);
+                leave_gpu_if_needed();
                 ss_mode = SS_MODE_VGA;
                 vga_active = 1;
+                select_cmd_table();
                 print_mode_info(&user_mode_rec);
                 printf("SecondSight: applied user mode, rendering %dx%d %dbpp pitch=%d base=%X\n",
                     current_vga_mode.width, current_vga_mode.height,
@@ -1173,66 +1266,191 @@ class SecondSight {
                 reg_handshake = 0x00;
             }
         }
+        void cmd_run_code() {
+            command_step = 0;
+            reg_handshake = 0x00;
+        }
+
+        void cmd_reject() {
+            command_step = 0;
+            dma_address = nullptr;
+            dma_length = 0;
+            trigger_longrun_wait(0xA6);
+        }
+
+        void cmd_get_gpu_info() {
+            if (command_step == 1) {
+                ss_gpu_info_t inf;
+                gpu.fill_info(&inf);
+                resp_buffer[0] = inf.isa_version;
+                resp_buffer[1] = (uint8_t)(inf.heap_size);
+                resp_buffer[2] = (uint8_t)(inf.heap_size >> 8);
+                resp_buffer[3] = (uint8_t)(inf.heap_size >> 16);
+                resp_buffer[4] = (uint8_t)(inf.heap_size >> 24);
+                resp_buffer[5] = (uint8_t)(inf.heap_free);
+                resp_buffer[6] = (uint8_t)(inf.heap_free >> 8);
+                resp_buffer[7] = (uint8_t)(inf.heap_free >> 16);
+                resp_buffer[8] = (uint8_t)(inf.heap_free >> 24);
+                resp_buffer[9] = (uint8_t)(inf.max_textures);
+                resp_buffer[10] = (uint8_t)(inf.max_textures >> 8);
+                resp_buffer[11] = (uint8_t)(inf.max_csb);
+                resp_buffer[12] = (uint8_t)(inf.max_csb >> 8);
+                resp_buffer[13] = (uint8_t)(inf.width);
+                resp_buffer[14] = (uint8_t)(inf.width >> 8);
+                resp_buffer[15] = (uint8_t)(inf.height);
+                resp_buffer[16] = (uint8_t)(inf.height >> 8);
+                resp_buffer[17] = inf.native_format;
+                resp_buffer[18] = inf.present_policy;
+                resp_buffer[19] = inf.active;
+                setup_dma(DMA_DIRECTION_OUT, resp_buffer, 0x14);
+            } else if (command_step == 2) {
+                command_step = 0;
+                reg_handshake = 0x00;
+            }
+        }
+
+        void cmd_upload_texture() {
+            if (command_step == 1) {
+                setup_dma(DMA_DIRECTION_IN, cmd_buffer + 1, 8);
+            } else if (command_step == 2) {
+                trigger_handshake_hold();
+            } else if (command_step == 3) {
+                const uint16_t w = (uint16_t)cmd_buffer[1] | ((uint16_t)cmd_buffer[2] << 8);
+                const uint16_t h = (uint16_t)cmd_buffer[3] | ((uint16_t)cmd_buffer[4] << 8);
+                const uint8_t format = cmd_buffer[5];
+                uint32_t bpp = 0;
+                switch (format) {
+                    case SS_GPU_FMT_IDX8: bpp = 1; break;
+                    case SS_GPU_FMT_RGB555: bpp = 2; break;
+                    case SS_GPU_FMT_RGB888: bpp = 3; break;
+                    case SS_GPU_FMT_ARGB8888: bpp = 4; break;
+                    default: break;
+                }
+                const uint32_t nbytes = (uint32_t)w * (uint32_t)h * bpp;
+                if (bpp == 0 || w == 0 || h == 0 || nbytes == 0 || nbytes > 4u * 1024u * 1024u) {
+                    command_step = 0;
+                    trigger_longrun_wait(0xA6);
+                    return;
+                }
+                upload_total_length = nbytes;
+                uint8_t *buf = gpu.ensure_upload_buf(nbytes);
+                setup_dma(DMA_DIRECTION_IN, buf, nbytes);
+            } else if (command_step == 4) {
+                /* Pixel DMA done: keep hs=0 so guest WaitHSOff can see it before handle out. */
+                trigger_handshake_hold();
+            } else if (command_step == 5) {
+                const uint16_t w = (uint16_t)cmd_buffer[1] | ((uint16_t)cmd_buffer[2] << 8);
+                const uint16_t h = (uint16_t)cmd_buffer[3] | ((uint16_t)cmd_buffer[4] << 8);
+                const uint8_t format = cmd_buffer[5];
+                const uint8_t flags = cmd_buffer[6];
+                const uint16_t handle = gpu.upload_texture(w, h, format, flags,
+                    gpu.ensure_upload_buf(upload_total_length), upload_total_length);
+                resp_buffer[0] = (uint8_t)handle;
+                resp_buffer[1] = (uint8_t)(handle >> 8);
+                setup_dma(DMA_DIRECTION_OUT, resp_buffer, 2);
+            } else if (command_step == 6) {
+                const uint16_t handle = (uint16_t)resp_buffer[0] | ((uint16_t)resp_buffer[1] << 8);
+                command_step = 0;
+                trigger_longrun_wait(handle == SsGpu::INVALID_HANDLE ? 0xA6 : 0xA5);
+            }
+        }
+
+        void cmd_free_texture() {
+            if (command_step == 1) {
+                setup_dma(DMA_DIRECTION_IN, cmd_buffer + 1, 2);
+            } else if (command_step == 2) {
+                const uint16_t handle = (uint16_t)cmd_buffer[1] | ((uint16_t)cmd_buffer[2] << 8);
+                command_step = 0;
+                trigger_longrun_wait(gpu.free_texture(handle) ? 0xA5 : 0xA6);
+            }
+        }
+
+        void cmd_exec_cmd_buf() {
+            if (command_step == 1) {
+                setup_dma(DMA_DIRECTION_IN, cmd_buffer + 1, 4);
+            } else if (command_step == 2) {
+                trigger_handshake_hold();
+            } else if (command_step == 3) {
+                const uint32_t length = (uint32_t)cmd_buffer[1] | ((uint32_t)cmd_buffer[2] << 8)
+                    | ((uint32_t)cmd_buffer[3] << 16);
+                upload_total_length = length;
+                if (length == 0 || length > SsGpu::MAX_CSB) {
+                    command_step = 0;
+                    trigger_longrun_wait(0xA6);
+                    return;
+                }
+                setup_dma(DMA_DIRECTION_IN, gpu.csb_buf(), length);
+            } else if (command_step == 4) {
+                bool wait_vbl = false;
+                const bool ok = gpu.exec_csb(gpu.csb_buf(), upload_total_length, &wait_vbl);
+                command_step = 0;
+                if (!ok) {
+                    trigger_longrun_wait(0xA6);
+                } else if (wait_vbl) {
+                    /* A5 published from frame() after VBL. */
+                    reg_handshake = 0x00;
+                } else {
+                    trigger_longrun_wait(0xA5);
+                }
+            }
+        }
+
+        void fill_classic_cmd_table(CmdHandler *t) {
+            t[0] = &SecondSight::cmd_get_status;
+            t[1] = &SecondSight::cmd_set_mode;
+            t[2] = &SecondSight::cmd_upload_code_data;
+            t[3] = &SecondSight::cmd_scroll_screen;
+            t[4] = &SecondSight::cmd_screen_off;
+            t[5] = &SecondSight::cmd_screen_on;
+            t[6] = &SecondSight::cmd_set_palette;
+            t[7] = &SecondSight::cmd_set_palette_entry;
+            t[8] = &SecondSight::cmd_set_border;
+            t[9] = &SecondSight::cmd_run_code;
+            t[10] = &SecondSight::cmd_clear_screen;
+            t[11] = &SecondSight::cmd_set_shadow;
+            t[12] = &SecondSight::cmd_set_vga_reg;
+            t[13] = &SecondSight::cmd_get_vga_reg;
+            t[14] = &SecondSight::cmd_set_user_mode;
+            t[15] = &SecondSight::cmd_set_text_font;
+            t[0x40] = &SecondSight::cmd_reject;
+            t[0x41] = &SecondSight::cmd_reject;
+            t[0x42] = &SecondSight::cmd_reject;
+            t[0x43] = &SecondSight::cmd_get_gpu_info;
+        }
+
+        void init_cmd_tables() {
+            fill_classic_cmd_table(cmd_table_emu);
+            fill_classic_cmd_table(cmd_table_vga);
+            fill_classic_cmd_table(cmd_table_ppu);
+
+            cmd_table_gpu[0] = &SecondSight::cmd_get_status;
+            cmd_table_gpu[1] = &SecondSight::cmd_set_mode;
+            cmd_table_gpu[4] = &SecondSight::cmd_screen_off;
+            cmd_table_gpu[5] = &SecondSight::cmd_screen_on;
+            for (int i = 2; i < 16; i++) {
+                if (i != 4 && i != 5) {
+                    cmd_table_gpu[i] = &SecondSight::cmd_reject;
+                }
+            }
+            cmd_table_gpu[0x40] = &SecondSight::cmd_upload_texture;
+            cmd_table_gpu[0x41] = &SecondSight::cmd_free_texture;
+            cmd_table_gpu[0x42] = &SecondSight::cmd_exec_cmd_buf;
+            cmd_table_gpu[0x43] = &SecondSight::cmd_get_gpu_info;
+            cmd_table = cmd_table_emu;
+        }
+
         /*
             track active command - we do
             track command step - 0 is none; others are command specific, but increment as each step completes.
         */
         
         void execute_command() {
-            switch (active_command) {
-                case 0:
-                    cmd_get_status();
-                    break;
-                case 1:
-                    cmd_set_mode();
-                    break;
-                case 2:
-                    cmd_upload_code_data();
-                    break;
-                case 3:
-                    cmd_scroll_screen();
-                    break;
-                case 4:
-                    cmd_screen_off();
-                    break;
-                case 5:
-                    cmd_screen_on();
-                    break;
-                case 6:
-                    cmd_set_palette();
-                    break;
-                case 7:
-                    cmd_set_palette_entry();
-                    break;
-                case 8:
-                    cmd_set_border();
-                    break;
-                case 9:
-                    // cmd_run_code
-                    // we have no code to run, so disregard.
-                    break;
-                case 10:
-                    cmd_clear_screen();
-                    break;
-                case 11:
-                    cmd_set_shadow();
-                    break;
-                case 12:
-                    cmd_set_vga_reg();
-                    break;
-                case 13:
-                    cmd_get_vga_reg();
-                    break;
-                case 14: 
-                    cmd_set_user_mode();
-                    break;
-                case 15:
-                    cmd_set_text_font();
-                    break;
-                default:
-                    printf("SecondSight: execute_command: unknown command %d\n", active_command);
-                    break;
+            if (active_command < 0 || active_command > 255 || cmd_table == nullptr
+                || cmd_table[active_command] == nullptr) {
+                cmd_reject();
+                return;
             }
+            (this->*cmd_table[active_command])();
         }
 
         uint32_t handshake_hold_reads = 0;
@@ -1297,7 +1515,7 @@ class SecondSight {
         void write_cmd(uint8_t value) {
             //reg_handshake = 0x01;
 
-            if (dma_address) { // catch buggy library calls writing data to the cmd port 
+            if (dma_address) { // catch buggy library calls writing data to the cmd port
                 write_data(0, value);
                 return;
             }
@@ -1380,6 +1598,13 @@ class SecondSight {
             }
             if (!display_enabled) {
                 return true; // we control frame, but have nothing to draw.
+            }
+            if (ss_mode == SS_MODE_GPU) {
+                if (gpu.take_vbl_complete()) {
+                    reg_handshake = 0xA5;
+                    command_step = 0;
+                }
+                return gpu.frame_to_window();
             }
             if (ss_mode == SS_MODE_PPU) {
                 return frame_ppu();
@@ -1549,6 +1774,16 @@ class SecondSight {
                     SS_PPU_REGS_ADDR);
             }
             df->addLine("Active command: %d", active_command);
+            if (ss_mode == SS_MODE_GPU) {
+                ss_gpu_info_t inf;
+                gpu.fill_info(&inf);
+                df->addLine("GPU heap: %u / %u  handles: %d  last CSB op: %02X",
+                    inf.heap_size - inf.heap_free, inf.heap_size, gpu.handle_count(),
+                    gpu.last_csb_op());
+                df->addLine("GPU surface: %ux%u fmt=%02X policy=%u  front/back: %d/%d",
+                    inf.width, inf.height, inf.native_format, inf.present_policy,
+                    gpu.front_index(), gpu.back_index());
+            }
             uint32_t dma_address_offset = dma_address ? dma_address - frame_buffer : 0;
             df->addLine("Current DMA address: %06X  length: %04X  remain: %06X", dma_address_offset, dma_length,
                 dma_length_remaining);

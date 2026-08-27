@@ -9,7 +9,12 @@ build/
 build/*
 gs2.dSYM/
 hw.dSYM/
-testdev/
+testdev/*
+!testdev/gputest/
+testdev/gputest/*
+!testdev/gputest/*.s
+!testdev/gputest/Makefile
+!testdev/gputest/README.md
 CMakeCache.txt
 **/cmake_install.cmake
 cmake_install.cmake

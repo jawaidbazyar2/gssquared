@@ -31,7 +31,7 @@ For the display, the 1MHz Apple II bus is too slow for video. If we have any hop
 
 That implies modifications to QuickDraw to work with that type of backend.
 
-This will be secondsight with the GPU extension.
+This will be Second Sight with the GPU extension. Spec: [SecondSight_GPU.md](SecondSight_GPU.md).
 
 ## GS/OS Compatibility
 

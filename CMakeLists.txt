@@ -368,6 +368,7 @@ target_link_libraries(gs2_devices_ssc PUBLIC gs2_serial_devices)
 add_library(gs2_devices_secondsight
     src/devices/secondsight/secondsight.cpp
     src/devices/secondsight/ss_a2_text_sync.cpp
+    src/devices/secondsight/ss_gpu.cpp
     src/devices/secondsight/ppu_render.cpp
     src/devices/secondsight/vga_render_8.cpp
     src/devices/secondsight/vga_render_16.cpp
