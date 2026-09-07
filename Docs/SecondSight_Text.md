@@ -1,6 +1,6 @@
 # Second Sight Host Text Mode
 
-**Status:** draft v0.1 (2026-08-27)
+**Status:** draft v0.3 (2026-08-28)
 **Card mode:** SetMode emulation flag `$04`
 **Depends on:** [SecondSight.md](SecondSight.md) (classic VGA API, handshake, slot I/O)
 
@@ -135,9 +135,9 @@ The mode **number** selects cell geometry and the pixel size of the scanout.
 
 | Mode  | Visible | Cell   | Pixels   | Notes                          |
 | ----- | ------- | ------ | -------- | ------------------------------ |
-| `$01` | 40×25   | 9×16   | 360×400  |                                |
-| `$03` | 80×25   | 9×16   | 720×400  | v0.1 required                  |
-| `$43` | 80×43   | 8×8    | 640×344  | planned; 8×8 font              |
+| `$01` | 40×25   | 9×16   | 360×400  | planned                        |
+| `$03` | 80×25   | 9×16   | 720×400  | required                       |
+| `$43` | 80×43   | 8×8    | 640×344  | `font_ansi_8x8.bin`            |
 | `$50` | 80×50   | 8×8    | 640×400  | planned                        |
 
 `$03` is the GNO default and matches classic SS / IBM mode 03h *geometry*, not
@@ -220,7 +220,8 @@ arming.
 | `$0A` | 2  | buffer_addr   | 16-bit — char plane, or interleaved buffer |
 | `$0C` | 2  | attr_addr     | 16-bit — attr plane if planar; ignored if interleaved |
 | `$0E` | 2  | pal_addr      | 16-bit — 16×RGB888 if `pal_from_block`; `$0000` = command palette |
-| `$10` | 16 | reserved      | 0 |
+| `$10` | 2  | cursor_style  | Hardware cursor: on/off, blink, shape, invert vs attr. Same word as GPU Text `CursorStyle`. §7.2. |
+| `$12` | 14 | reserved      | 0 |
 
 Pointers are 16-bit only. Main vs aux is **`flags` bits 5–7**, not a bank
 byte.
@@ -233,13 +234,45 @@ byte.
 | 1   | `wrap`         | 1 = circular `start_line` (required for console scroll). 0 = clamp. |
 | 2   | `pal_from_block` | 1 = load 16×RGB from `pal_addr` each VBL. 0 = last `$06`/`$07` (or IBM default). |
 | 3   | `blink`        | 1 = VGA blink (attr bit 7). 0 = **16 background colors** (bit 7 is bg intensity). Default 0. |
-| 4   | `cursor`       | 1 = draw a hardware cursor at (`cursor_x`,`cursor_y`). |
+| 4   | `cursor`       | Ignored. On/off is `cursor_style` bit 0 (§7.2). Write 0. |
 | 5   | `buffer_aux`   | 0 = `buffer_addr` in main, 1 = aux (IIgs `$E1`). |
 | 6   | `attr_aux`     | Same for `attr_addr`. |
 | 7   | `pal_aux`      | Same for `pal_addr`. |
 
 `cols` × `virt_rows` must fit the allocation behind `buffer_addr` (and
 `attr_addr` if planar). The card does not clip oversize; the driver owns that.
+
+### 7.2 `cursor_style`
+
+Hardware cursor at (`cursor_x`, `cursor_y`) in *visible* space (after freeze +
+scroll). It is not a glyph in the cell buffer; scanout overlays it. Position
+is still `$05`/`$06`; this word is enable, blink, shape, and how it is drawn.
+
+Same 16-bit layout as GPU Text `CursorStyle` ([SecondSight_GPUText.md](SecondSight_GPUText.md) §6.2):
+
+| Bits | Name | |
+| --- | --- | --- |
+| 0 | `enable` | 0 = hidden (`DECTCEM` off). 1 = draw. |
+| 1 | `blink` | 1 = hardware blink (~2 Hz, card-defined). 0 = steady. |
+| 2–3 | `shape` | `00` block (full cell), `01` underline, `10` bar (insert; left of cell), `11` reserved (= block). |
+| 4 | `replace` | 0 = **invert** the cell (IIe flash). 1 = draw the shape in the **cell's** attribute (fg on those scanlines). Host Text has no card-side SGR pen. |
+| 5–7 | reserved | 0 |
+| 8–11 | `start` | First scanline of the glyph cell (0 = top). `$F` = default for `shape`. |
+| 12–15 | `end` | Last scanline, inclusive. `$F` = default. If `start > end`, treat as default. |
+
+Defaults when `start`/`end` are `$F`: block = full cell height (8 or 16);
+underline = last two rows; bar = full height, 1–2 pixels wide (not a CRTC
+scanline pair).
+
+`$0003` = enable + blink, block, invert, default lines. `$0000` = hidden.
+IIe 80-col: show = `$0003`, hide = `$0000`. Linux `DECSCUSR` / `CSI ? 25 h/l`
+map to this word; the host does not set scanlines unless it wants a custom
+underline.
+
+v0.1–v0.2 used `flags.cursor` as a boolean (always blink block, invert). If
+`cursor_style` is `$0000` and that bit is still set, treat as `$0003` so old
+control blocks keep a visible cursor. New software writes `cursor_style` and
+leaves bit 4 clear.
 
 ---
 
@@ -384,6 +417,7 @@ cells at $2000                     ; 80*25*2 = 4000
 ctrl  at $2FE0                     ; SetTextCtrl($2FE0), aux=0
   flags = wrap                     ; or planar | wrap
   cols=80, vis=25, virt=25, start_line=0
+  cursor_style = $0003             ; blink block, invert (or $0000 hidden)
   buffer_addr = $2000
   attr_addr   = $0000              ; packed after chars if planar
   pal_addr    = $2FA0              ; or $0000 and use $06
@@ -419,13 +453,13 @@ the rest of HGR1 and moves the block to `$3FE0`.
 
 ## 13. Hardware cursor
 
-If `flags.cursor` is set, the card inverts or replaces the cell at
-(`cursor_x`, `cursor_y`) in *visible* space (after freeze + scroll). Blink
-rate is card-defined (~2 Hz). `cursor_x >= cols` or `cursor_y >= vis_rows`
-hides it.
+`cursor_style` (§7.2) at the card’s (`cursor_x`, `cursor_y`) — visible space,
+after freeze + scroll. It is not a glyph in the buffer; scanout overlays it.
 
-v0.1: block cursor, full cell. Shape / underline is a later flags nibble if
-anyone cares.
+`cursor_x >= cols` or `cursor_y >= vis_rows` hides it (same as `enable` = 0).
+
+Blink rate, when `blink` is set, is card-defined (~2 Hz). Steady when `blink`
+is clear. IIe 80-col: show = `$0003`, hide = `$0000`.
 
 ---
 
@@ -439,6 +473,11 @@ SetTextCtrl($2FE0)                  ; aux=0; next VBL is live
 SetTextFont($02)                    ; PC ANSI, optional
 ```
 
+80×43 8×8: `SetMode($43, HOSTTEXT)`, cells in HGR1 (`$2000`–`$3ADF` interleaved
+= 6880), control block at `$3FE0`. `SetTextFont` `$00`–`$02` all use the
+card's 8×8 ANSI ROM (`font_ansi_8x8.bin`); `$03` takes the first 8 rows of
+each user 8×16 glyph.
+
 Hot path: stores into planes, `INC start_line` on LF, `chgat` into attrs.
 No SS commands. Alternate screen: second buffer + store `buffer_addr`.
 25 ↔ 43: `SetMode` to a new raster, then rewrite `vis_rows` (keep armed).
@@ -451,18 +490,27 @@ IOCTL reports `cols` × `vis_rows`. Termcap: ANSI, 16-color SGR.
 
 **v0.1**
 
-- Raster `$03` (80×25 9×16) only.
+- Raster `$03` (80×25 9×16).
 - Control block, `SetTextCtrl`, blank-until-armed.
 - Interleaved and planar, wrap scroll, freeze rows, hardware cursor.
 - `$06` / `$07` / `$08` / `$0F`.
 - Conventional map in §11.
 
+**v0.2**
+
+- Raster `$43` (80×43 8×8), ANSI 8×8 ROM font.
+
+**v0.3**
+
+- `cursor_style` at `$10`: enable, blink, block/underline/bar, invert vs cell
+  attr, scanlines. Same word as GPU Text `CursorStyle`. `flags.cursor` is
+  legacy only (`$0000` + bit 4 → `$0003`).
+
 **Later**
 
-- Rasters `$43` / `$50` / `$01`.
+- Rasters `$50` / `$01`.
 - WaitVBL command if polling `start_line` vs beam ever matters (latch should
   make this unnecessary).
-- Cursor shape.
 
 ---
 

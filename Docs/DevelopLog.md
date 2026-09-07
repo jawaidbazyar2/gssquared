@@ -12566,3 +12566,102 @@ Discussion on how to set up ssh server to give me an msys2 shell!
 https://claude.ai/share/a73e36fd-c180-40b5-b47f-8eeff31319d7
 
 Getting there.. why so hard, Windoze.
+
+## Aug 27, 2026
+
+implemented a basic GPU - right now, it only does upload texture, free texture, render texture at x,y, clear and present. 
+
+Whipped out 80x25 and 80x43 text modes. That is some fun! 
+
+Thinking about how to dig in to testing video modes.
+
+https://man7.org/linux/man-pages/man4/console_codes.4.html
+https://en.wikipedia.org/wiki/ANSI_escape_code
+
+there are a couple approaches. First, implement a VT100/linux/ANSI console as a standalone GS/OS app - most broadly applicable.
+And/or build a GNO console the same way.
+
+The other main way, is to build the terminal type into the card, so that the card is doing -all- the processing. The Apple II simply chucks a byte-stream to the card, not doing much else but reading the keyboard. This has the following benefits: prototype rapidly in C++ emu-side; do it as a sub-thread that does all the code decoding, manipulating a frame buffer shared with the SS card code itself; 
+
+this would be yet another new SS mode. 
+
+This was a suggestion Rikkles put into AppleTini. I think he did VT100, but, we could do anything (I like ANSI for color support). 
+
+Once a solid C++ version was done, we could port that to 65816 assembly for the GNO console version. 
+
+Pro's/Con's: having it in 816 code is more flexible - you can implement any video regime you want. But it's slower for the 816 to move video memory around (even with hw scroll support).
+
+Reading the docs, GNO has like "delete line" and "insert line" commands, which can't be acclerated with hw scroll. 
+
+There's actually a THIRD approach we could take, which is to implement GPU commands for text mode. That would make quick work of scroll (vert and horz), even moving rectangles around. At the higher cost of sending chars to the card.
+
+How about a optimized interface - we activate a mode where we just accept an ongoing stream of bytes. Command "stream on"; then just bytes under command "stream off". So sending a byte to the card is just STA C0B1 instead of the whole command sequence and handshake thing... that could work well for the text mode generally.
+
+Scrolling a VGA buf in bank 0 RAM is very expensive - basically it costs us a whole frame (1/60th sec). No matter what we're eating a bunch of MegaII cycles.
+
+So maybe we can think about this as a mix of these two models: have a GPU-ish language, or another way to think of it, a terminal emulation language, but have some of it be handled host-side. So let's say we assume 16-bit writes to C0B1/C0B2. That lets us shove in a 16-bit attr+char at once.
+Primitives will be:
+char
+repeated char
+scroll up / scroll down
+insert line / delete line
+move cursor
+
+So "char" would be four bytes - 16-bit command and 16-bit char. 16 bits gives us lots of room for fancy encoded stuff like high byte is a code, low byte is a count.
+Four bytes for a char sounds crazy except it's literally just:
+```
+LDA #0100     ; char out + advance, 0 = 1 char
+STA C0B1
+LDA #0041     ; letter A, no attributes
+STA C0B2
+```
+In terms of cycles, this is 14 cycles per character.
+NOW. Don't get too fancy with the behavior here. If the card only does character advance under controlled circumstances, then we never have to read the cursor x/y back. Basically, the II would set the cursor - if we are end of line and send a char, it sticks at end of line - but the II has been keeping tracking of cursor. So in addition to the above, 
+```
+inc ch
+lda #40
+cmp ch
+branch if blah blah
+```
+the II is then responsible for translating its language to the card's language - but you see that it knows all its cursor info. One, to stay synced with Apple II land. Two, to prevent unintended behavior.
+
+```
+LDA #0101    ; three characters
+STA C0B1
+LDA #0041
+STA C0B1
+LDA #0042
+STA C0B1
+LDA #0043
+STA C0B1
+```
+
+Now what about cases where we need to readback data. OK, I guess we could just:
+
+```
+LDA #0200    ; readback chars from screen
+LDA C0B1     ; the next interaction is a read, not a write
+```
+
+I suppose there could be a operating mode where we use the split char/attributes.
+
+Now we're not going to SCROLL this way (you could, but it would be pretty slow). This is optimized for writing data to screen.
+
+OK, so we can optimize this somewhat: bit 15 (bit 7 of attribute portion) is a flag. If =0, means "this is a bare character". This gives up blink.
+If =1, means "this is a command code". Command codes are then $80 - $FF, and you can pass a full char (with blink) by using $80 - essentially like quoting it.
+
+Thus: a bunch of single character writes (non-blink) become just: a bunch of 16-bit stores, 2 bytes per character:
+```
+<-- enters with A=character in lo byte (no blink)
+ORA zp_attr   ; 3
+STA C0B1      ; 4
+```
+
+With replacement firmware say on a IIe, you just
+```
+STA C0B1
+LDA dp_saved_attribute
+STA C0B1
+```
+that's pretty crazy right there compared to everything the 80-col firmware has to do.
+

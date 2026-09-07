@@ -376,6 +376,8 @@ add_library(gs2_devices_secondsight
     src/devices/secondsight/vga_render_24.cpp
     src/devices/secondsight/vga_render_text_9x16.cpp
     src/devices/secondsight/vga_render_text_9x16_present.cpp
+    src/devices/secondsight/vga_render_text_8x8.cpp
+    src/devices/secondsight/vga_render_text_8x8_present.cpp
 )
 target_link_libraries(gs2_devices_secondsight PRIVATE ${GS2_SDL3_IMAGE} gs2_displaypp gs2_paths)
 

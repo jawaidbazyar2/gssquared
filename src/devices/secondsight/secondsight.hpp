@@ -10,6 +10,8 @@
 #include "vga_render.hpp"
 #include "vga_render_text_9x16.hpp"
 #include "vga_render_text_9x16_present.hpp"
+#include "vga_render_text_8x8.hpp"
+#include "vga_render_text_8x8_present.hpp"
 #include "vga_mode_tables.hpp"
 #include "ppu_render.hpp"
 #include "ss_gpu.hpp"
@@ -93,6 +95,7 @@ class SecondSight {
     uint16_t host_text_ctrl_addr = 0;
     bool host_text_ctrl_aux = false;
     ss_host_text_ctrl_t host_text_latch{};
+    ss_host_text_raster_t host_text_raster{};
     uint32_t host_text_frame = 0;
     uint8_t host_text_border = 0;
 
@@ -186,9 +189,23 @@ class SecondSight {
             dest, length, host_src, flag);
     }
 
+    bool host_text_is_8x8() const {
+        return ss_mode == SS_MODE_HOSTTEXT && host_text_raster.cell_h == 8;
+    }
+
     void apply_text_font(uint8_t font_index) {
         text_font_index = font_index;
         printf("SecondSight SetTextFont: %02X (%s)\n", font_index, text_font_label(font_index));
+        if (host_text_is_8x8()) {
+            /* 8x8 raster: ROM is ANSI CP437; $00/$01 have no separate Apple 8x8 bin. */
+            if (font_index == 3 && z180_sram != nullptr) {
+                vga_text_8x8_load_font_from_vram(z180_sram + SS_Z180_USER_FONT_ADDR,
+                    SS_VRAM_FONT_GLYPH_BYTES);
+            } else {
+                vga_text_8x8_select_rom_font();
+            }
+            return;
+        }
         switch (font_index) {
             case 3:
                 if (z180_sram != nullptr) {
@@ -210,11 +227,15 @@ class SecondSight {
     void load_rom_text_fonts() {
         std::string apple_path;
         std::string ansi_path;
+        std::string ansi8_path;
         Paths::calc_base(apple_path, "roms/cards/secondsight/font_apple_8x16.bin");
         Paths::calc_base(ansi_path, "roms/cards/secondsight/font_ansi_8x16.bin");
+        Paths::calc_base(ansi8_path, "roms/cards/secondsight/font_ansi_8x8.bin");
         if (!vga_text_9x16_load_rom_fonts(apple_path.c_str(), ansi_path.c_str())) {
             printf("SecondSight: failed to load text fonts\n");
-            return;
+        }
+        if (!vga_text_8x8_load_rom_font(ansi8_path.c_str())) {
+            printf("SecondSight: failed to load 8x8 text font\n");
         }
         apply_text_font(text_font_index);
     }
@@ -480,30 +501,81 @@ class SecondSight {
         host_text_frame = 0;
     }
 
-    void apply_host_text_mode() {
+    void present_host_text_cells(const uint8_t *dst, int pitch, bool overlay_cursor = false) {
+        if (!tex_text) {
+            return;
+        }
+        void *pixels = nullptr;
+        int tex_pitch = 0;
+        if (SDL_LockTexture(tex_text, nullptr, &pixels, &tex_pitch)) {
+            if (host_text_raster.cell_h == 8) {
+                vga_raster_text_8x8(dst, pitch, (uint32_t *)pixels, tex_pitch,
+                    vga_text_vram_layout_t::Interleaved,
+                    (int)host_text_raster.cols, (int)host_text_raster.vis_rows);
+            } else {
+                vga_raster_text_9x16(dst, pitch, (uint32_t *)pixels, tex_pitch,
+                    vga_text_vram_layout_t::Interleaved, (int)host_text_raster.cols);
+            }
+            if (overlay_cursor) {
+                const bool blink_on = ((host_text_frame / 15) & 1) != 0;
+                ss_host_text_overlay_cursor((uint32_t *)pixels, tex_pitch, dst, pitch,
+                    host_text_latch, blink_on,
+                    (int)host_text_raster.cell_w, (int)host_text_raster.cell_h,
+                    (int)host_text_raster.vis_rows);
+            }
+            SDL_UnlockTexture(tex_text);
+        }
+        const float src_w = (float)((int)host_text_raster.cols * (int)host_text_raster.cell_w);
+        const float src_h = (float)((int)host_text_raster.vis_rows * (int)host_text_raster.cell_h);
+        SDL_FRect src = { 0.0f, 0.0f, src_w, src_h };
+        vs->render_frame(tex_text, &src, nullptr);
+    }
+
+    void apply_host_text_mode(uint8_t mode_num) {
+        ss_host_text_raster_t raster{};
+        if (!ss_host_text_lookup_raster(mode_num, &raster)) {
+            return;
+        }
         leave_gpu_if_needed();
-        unarm_host_text();
-        apply_rom_vga_mode(&SS_ROM_VGA_TEXT_80X25, 0x03);
+        const bool already = (ss_mode == SS_MODE_HOSTTEXT);
+        if (!already) {
+            unarm_host_text();
+            vga_text_9x16_restore_ibm_palette();
+        }
+        host_text_raster = raster;
         ss_mode = SS_MODE_HOSTTEXT;
         vga_active = 1;
         display_enabled = 1;
-        vga_text_9x16_restore_ibm_palette();
+        vga_mode_num = mode_num;
+        res_x = raster.pix_w;
+        res_y = raster.pix_h;
+        fb_pitch = (uint16_t)(raster.cols * 2);
+        crt_char_width = raster.cell_w;
+        screen_base_addr = 0x010000;
+        current_vga_mode = {};
+        current_vga_mode.vgamode = true;
+        current_vga_mode.graphics = TG_TEXT;
+        current_vga_mode.width = raster.cols;
+        current_vga_mode.height = raster.vis_rows;
+        current_vga_mode.color_depth = 4;
+        apply_text_font(text_font_index);
         cmd_table = cmd_table_hosttext;
-        printf("SecondSight: Host Text mode 80x25 (unarmed)\n");
+        printf("SecondSight: Host Text mode %ux%u %ux%u cells (%s)\n",
+            raster.cols, raster.vis_rows, raster.cell_w, raster.cell_h,
+            host_text_armed ? "armed" : "unarmed");
     }
 
     void present_host_text_blank() {
         uint8_t *dst = frame_buffer + screen_base_addr;
-        const int pitch = VGA_TEXT_FB_PITCH;
+        const int cols = host_text_raster.cols ? (int)host_text_raster.cols : VGA_TEXT_COLS;
+        const int rows = host_text_raster.vis_rows ? (int)host_text_raster.vis_rows : VGA_TEXT_ROWS;
+        const int pitch = cols * 2;
         const uint8_t bg = (uint8_t)((host_text_border & 0x0F) << 4);
-        for (int i = 0; i < VGA_TEXT_ROWS * VGA_TEXT_COLS; i++) {
+        for (int i = 0; i < rows * cols; i++) {
             dst[i * 2] = 0x20;
             dst[i * 2 + 1] = bg;
         }
-        if (tex_text) {
-            vga_render_text_9x16(vs, tex_text, dst, pitch,
-                vga_text_vram_layout_t::Interleaved, VGA_TEXT_COLS);
-        }
+        present_host_text_cells(dst, pitch);
     }
 
     bool frame_host_text() {
@@ -525,7 +597,9 @@ class SecondSight {
         for (int i = 0; i < SS_HT_CTRL_BYTES; i++) {
             latch_bytes[i] = bank[(uint16_t)(host_text_ctrl_addr + (uint16_t)i)];
         }
-        if (!ss_host_text_ctrl_valid(host_text_latch) || host_text_latch.cols != 80) {
+        if (!ss_host_text_ctrl_valid(host_text_latch)
+            || host_text_latch.cols != host_text_raster.cols
+            || host_text_latch.vis_rows > host_text_raster.vis_rows) {
             present_host_text_blank();
             return true;
         }
@@ -540,18 +614,14 @@ class SecondSight {
         }
 
         uint8_t *dst = frame_buffer + screen_base_addr;
-        const int pitch = VGA_TEXT_FB_PITCH;
-        if (!ss_host_text_compose(dst, pitch, a2_ram, ram_size, host_text_latch)) {
+        const int pitch = (int)host_text_raster.cols * 2;
+        if (!ss_host_text_compose(dst, pitch, a2_ram, ram_size, host_text_latch,
+                (int)host_text_raster.vis_rows)) {
             present_host_text_blank();
             return true;
         }
         host_text_frame++;
-        const bool cursor_on = ((host_text_frame / 15) & 1) != 0;
-        ss_host_text_apply_cursor(dst, pitch, host_text_latch, cursor_on);
-        if (tex_text) {
-            vga_render_text_9x16(vs, tex_text, dst, pitch,
-                vga_text_vram_layout_t::Interleaved, VGA_TEXT_COLS);
-        }
+        present_host_text_cells(dst, pitch, true);
         return true;
     }
 
@@ -665,6 +735,7 @@ class SecondSight {
             upload_small_total = 0;
             fb_pitch = 0;
             unarm_host_text();
+            host_text_raster = {};
         }
 
         uint8_t *dma_address = nullptr;
@@ -752,6 +823,8 @@ class SecondSight {
         void leave_host_text_if_needed() {
             if (ss_mode == SS_MODE_HOSTTEXT) {
                 unarm_host_text();
+                host_text_raster = {};
+                apply_text_font(text_font_index);
             }
         }
 
@@ -1019,14 +1092,16 @@ class SecondSight {
 
                 if (emu_flag == 0x04) {
                     leave_gpu_if_needed();
-                    if (mode_num != 0x03) {
+                    ss_host_text_raster_t raster{};
+                    if (!ss_host_text_lookup_raster(mode_num, &raster)) {
                         result = 0xA6;
                         leave_host_text_if_needed();
                         ss_mode = SS_MODE_EMU;
                         vga_active = 0;
                         cmd_table = cmd_table_emu;
+                        printf("SecondSight: SetMode hosttext rejected mode=%02X\n", mode_num);
                     } else {
-                        apply_host_text_mode();
+                        apply_host_text_mode(mode_num);
                     }
                 } else if (emu_flag == 0x03) {
                     leave_host_text_if_needed();
@@ -1560,6 +1635,9 @@ class SecondSight {
             t[0x41] = &SecondSight::cmd_reject;
             t[0x42] = &SecondSight::cmd_reject;
             t[0x43] = &SecondSight::cmd_get_gpu_info;
+            /* SetTextCtrl is Host Text only; handler returns $A6 from any other ss_mode.
+             * Must still be present so WaitHSOn sees hs=1 (nullptr → cmd_reject leaves hs=0). */
+            t[0x50] = &SecondSight::cmd_set_text_ctrl;
         }
 
         void init_cmd_tables() {
@@ -1924,18 +2002,22 @@ class SecondSight {
             df->addLine("FB Pitch: %d", fb_pitch);
             df->addLine("Res X/Y @ Depth: %d/%d @ %d", res_x, res_y, current_vga_mode.color_depth);
             if (ss_mode == SS_MODE_HOSTTEXT) {
-                df->addLine("HostText: %s ctrl=%04X aux=%d",
+                df->addLine("HostText: %s ctrl=%04X aux=%d raster=%02X %ux%u %ux%u",
                     host_text_armed ? "armed" : "unarmed",
-                    host_text_ctrl_addr, host_text_ctrl_aux ? 1 : 0);
+                    host_text_ctrl_addr, host_text_ctrl_aux ? 1 : 0,
+                    host_text_raster.mode, host_text_raster.cols, host_text_raster.vis_rows,
+                    host_text_raster.cell_w, host_text_raster.cell_h);
                 if (host_text_armed) {
                     df->addLine("  flags=%02X cols=%u vis=%u virt=%u start=%u",
                         host_text_latch.flags, host_text_latch.cols,
                         host_text_latch.vis_rows, host_text_latch.virt_rows,
                         host_text_latch.start_line);
-                    df->addLine("  buf=%04X attr=%04X pal=%04X cursor=%u,%u freeze=%u/%u",
+                    df->addLine("  buf=%04X attr=%04X pal=%04X cursor=%u,%u style=%04X freeze=%u/%u",
                         host_text_latch.buffer_addr, host_text_latch.attr_addr,
                         host_text_latch.pal_addr, host_text_latch.cursor_x,
-                        host_text_latch.cursor_y, host_text_latch.frozen_top,
+                        host_text_latch.cursor_y,
+                        ss_host_text_effective_cursor_style(host_text_latch),
+                        host_text_latch.frozen_top,
                         host_text_latch.frozen_bottom);
                 }
             }

@@ -5,6 +5,10 @@ GS/OS S16 that talks to Second Sight in **slot 3**: `SetMode($03, $04)`
 hires page 1 (`$E0/2000` chars, `$E0/2FA0` attrs). Control block at
 `$E0/3FE0`, IBM palette at `$E0/3FA0`.
 
+**HOSTTEXT43** is the same bounce demo with `SetMode($43, $04)` (80×43,
+8×8 cells, ANSI 8×8 font). `vis_rows=43`; the planar 80×50 buffer, wrap
+scroll, freeze rows, palette rotate, and HGR1/HGR2 page-flip are unchanged.
+
 Each VBL:
 
 - increments `start_line` (hardware wrap scroll, frozen HUD rows)
@@ -29,16 +33,17 @@ Override paths if needed:
 make MERLIN32=/path/to/Merlin32 CP2=/path/to/cp2
 ```
 
-Produces `hosttext.po` (800K ProDOS) containing `HOSTTEXT` (type `$B3` S16).
+Produces `hosttext.po` (800K ProDOS) containing `HOSTTEXT` and `HOSTTEXT43`
+(type `$B3` S16).
 
 ## Run
 
 1. Apple IIgs, **Second Sight** in slot 3, GS/OS booted from BazFast (or similar) on slot 7.
 2. Mount `testdev/hosttext/hosttext.po` as another SmartPort volume beside GS/OS.
-3. From the Finder, open that volume and launch **HOSTTEXT**.
+3. From the Finder, open that volume and launch **HOSTTEXT** or **HOSTTEXT43**.
 
-Expect an 80×25 VGA-style screen: CP437 shade blocks, a scrolling message,
-rainbow per-cell attributes, a status line that does not scroll, and a
+Expect an 80×25 (or 80×43) VGA-style screen: CP437 shade blocks, a scrolling
+message, rainbow per-cell attributes, a status line that does not scroll, and a
 periodic flip to a starfield page. The emulator `ss` debug panel should show
 `hosttext` armed, `start=` climbing, and `buf=` toggling `$2000`/`$4000`.
 

@@ -78,6 +78,9 @@ void vga_text_9x16_set_palette_rgb(const uint8_t *rgb48);
 
 void vga_text_9x16_set_palette_entry(uint8_t index, uint8_t r, uint8_t g, uint8_t b);
 
+/** 16 ARGB8888 entries used by both 9x16 and 8x8 rasters. */
+const uint32_t *vga_text_palette();
+
 /** CRTC offset reg -> byte pitch for standard VGA text (offset * 4). */
 inline int vga_text_pitch_from_crtc_offset(uint8_t crtc_offset) {
     return crtc_offset > 0 ? (int)crtc_offset * 4 : VGA_TEXT_FB_PITCH;

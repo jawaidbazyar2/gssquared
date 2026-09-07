@@ -10,13 +10,20 @@ HOSTTEXT: hosttext.s ss.s
 	$(MERLIN32) $(MACROS) hosttext.s
 	test -f HOSTTEXT
 
-hosttext.po: HOSTTEXT
+HOSTTEXT43: hosttext43.s ss.s
+	$(MERLIN32) $(MACROS) hosttext43.s
+	test -f HOSTTEXT43
+
+hosttext.po: HOSTTEXT HOSTTEXT43
 	rm -f hosttext.po
 	$(CP2) create-disk-image hosttext.po 800k prodos
 	$(CP2) add --overwrite hosttext.po HOSTTEXT
 	$(CP2) set-attr hosttext.po type=S16,aux=0x0000 HOSTTEXT
+	$(CP2) add --overwrite hosttext.po HOSTTEXT43
+	$(CP2) set-attr hosttext.po type=S16,aux=0x0000 HOSTTEXT43
 	$(CP2) catalog hosttext.po
 
 clean:
-	rm -f HOSTTEXT hosttext.po error_output.txt _FileInformation.txt \
-		HOSTTEXT_S01_Segment1_Output.txt HOSTTEXT_S01_Segment1_Output_Error.txt
+	rm -f HOSTTEXT HOSTTEXT43 hosttext.po error_output.txt _FileInformation.txt \
+		HOSTTEXT_S01_Segment1_Output.txt HOSTTEXT_S01_Segment1_Output_Error.txt \
+		HOSTTEXT43_S01_Segment1_Output.txt HOSTTEXT43_S01_Segment1_Output_Error.txt

@@ -10,8 +10,6 @@
 #include "ss_host_text.hpp"
 #include "vga_render_text_9x16.hpp"
 
-#include <cstring>
-
 const uint8_t *ss_host_text_bank(const uint8_t *a2_ram, uint32_t ram_size, bool aux) {
     if (a2_ram == nullptr || ram_size == 0) {
         return nullptr;
@@ -84,9 +82,13 @@ static uint8_t host_at(const uint8_t *bank, uint16_t addr) {
 }
 
 bool ss_host_text_compose(uint8_t *dst, int dst_pitch,
-    const uint8_t *a2_ram, uint32_t ram_size, const ss_host_text_ctrl_t &c)
+    const uint8_t *a2_ram, uint32_t ram_size, const ss_host_text_ctrl_t &c,
+    int max_rows)
 {
-    if (!dst || !ss_host_text_ctrl_valid(c)) {
+    if (!dst || !ss_host_text_ctrl_valid(c) || max_rows <= 0) {
+        return false;
+    }
+    if ((int)c.vis_rows > max_rows) {
         return false;
     }
     const int cols = (int)c.cols;
@@ -114,10 +116,10 @@ bool ss_host_text_compose(uint8_t *dst, int dst_pitch,
         return false;
     }
 
-    const int vis = (int)c.vis_rows > VGA_TEXT_ROWS ? VGA_TEXT_ROWS : (int)c.vis_rows;
+    const int vis = (int)c.vis_rows;
     const uint16_t char_pitch = planar ? (uint16_t)cols : (uint16_t)(cols * 2);
 
-    for (int y = 0; y < VGA_TEXT_ROWS; y++) {
+    for (int y = 0; y < max_rows; y++) {
         uint8_t *row = dst + y * dst_pitch;
         if (y >= vis) {
             for (int x = 0; x < cols; x++) {
@@ -147,20 +149,83 @@ bool ss_host_text_compose(uint8_t *dst, int dst_pitch,
     return true;
 }
 
-void ss_host_text_apply_cursor(uint8_t *dst, int dst_pitch, const ss_host_text_ctrl_t &c,
-    bool blink_on)
+static void cursor_scanlines(uint16_t style, int cell_h, int *sl0, int *sl1) {
+    const int shape = (int)((style & SS_HT_CS_SHAPE_MASK) >> SS_HT_CS_SHAPE_SHIFT);
+    const int start = (int)((style >> SS_HT_CS_START_SHIFT) & SS_HT_CS_NIBBLE);
+    const int end = (int)((style >> SS_HT_CS_END_SHIFT) & SS_HT_CS_NIBBLE);
+    if (start == (int)SS_HT_CS_DEFAULT_LINES || end == (int)SS_HT_CS_DEFAULT_LINES
+        || start > end) {
+        if (shape == SS_HT_CS_SHAPE_UNDERLINE) {
+            *sl0 = (cell_h >= 2) ? cell_h - 2 : 0;
+            *sl1 = cell_h - 1;
+        } else {
+            *sl0 = 0;
+            *sl1 = cell_h - 1;
+        }
+        return;
+    }
+    *sl0 = (start >= cell_h) ? cell_h - 1 : start;
+    *sl1 = (end >= cell_h) ? cell_h - 1 : end;
+    if (*sl0 > *sl1) {
+        *sl0 = 0;
+        *sl1 = cell_h - 1;
+    }
+}
+
+void ss_host_text_overlay_cursor(uint32_t *pixels, int pixel_pitch,
+    const uint8_t *cells, int cell_pitch, const ss_host_text_ctrl_t &c,
+    bool blink_phase, int cell_w, int cell_h, int max_rows)
 {
-    if (!dst || (c.flags & SS_HT_CURSOR) == 0 || !blink_on) {
+    if (!pixels || !cells || cell_w <= 0 || cell_h <= 0 || pixel_pitch <= 0 || max_rows <= 0) {
+        return;
+    }
+    const uint16_t style = ss_host_text_effective_cursor_style(c);
+    if ((style & SS_HT_CS_ENABLE) == 0) {
+        return;
+    }
+    if ((style & SS_HT_CS_BLINK) && !blink_phase) {
         return;
     }
     const int cols = (int)c.cols;
     const int vis = (int)c.vis_rows;
-    if (c.cursor_x >= cols || c.cursor_y >= vis || c.cursor_y >= VGA_TEXT_ROWS) {
+    if (c.cursor_x >= cols || c.cursor_y >= vis || (int)c.cursor_y >= max_rows) {
         return;
     }
-    uint8_t *cell = dst + (int)c.cursor_y * dst_pitch + (int)c.cursor_x * 2;
-    const uint8_t attr = cell[1];
-    cell[1] = (uint8_t)(((attr & 0x0F) << 4) | ((attr >> 4) & 0x0F));
+    if (cell_pitch < cols * 2) {
+        return;
+    }
+
+    const int cx = (int)c.cursor_x;
+    const int cy = (int)c.cursor_y;
+    const uint8_t attr = cells[cy * cell_pitch + cx * 2 + 1];
+    const uint32_t *palette = vga_text_palette();
+    const uint32_t fg = palette[attr & 0x0F];
+    const uint32_t bg = palette[(attr >> 4) & 0x0F];
+    const bool replace = (style & SS_HT_CS_REPLACE) != 0;
+    int shape = (int)((style & SS_HT_CS_SHAPE_MASK) >> SS_HT_CS_SHAPE_SHIFT);
+    if (shape == 3) {
+        shape = SS_HT_CS_SHAPE_BLOCK;
+    }
+
+    int sl0 = 0;
+    int sl1 = cell_h - 1;
+    cursor_scanlines(style, cell_h, &sl0, &sl1);
+
+    const int x0 = cx * cell_w;
+    const int x1 = (shape == SS_HT_CS_SHAPE_BAR)
+        ? x0 + ((cell_w >= 9) ? 2 : 1)
+        : x0 + cell_w;
+
+    for (int gy = sl0; gy <= sl1; gy++) {
+        uint32_t *row = (uint32_t *)((uint8_t *)pixels + (cy * cell_h + gy) * pixel_pitch);
+        for (int px = x0; px < x1; px++) {
+            if (replace) {
+                row[px] = fg;
+            } else {
+                row[px] = (row[px] == fg) ? bg : fg;
+            }
+        }
+    }
 }
 
 bool ss_host_text_read_palette(uint8_t rgb48[48],

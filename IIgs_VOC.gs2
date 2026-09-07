@@ -1,0 +1,20 @@
+gs2_version = 1
+id = "436b08b4-a784-44f3-a93a-bbe9f7cef524"
+name = "IIgs VOC test"
+description = "Apple IIgs; Video Overlay Card in slot 3; odds-orig.po on BazFast"
+platform = "apple2gs"
+clock = "ntsc"
+scanner = "apple2gs"
+
+[[cards]]
+slot = 3
+card = "voc"
+
+[[cards]]
+slot = 7
+card = "bazfast3"
+
+[[storage]]
+slot = 7
+drive = 1
+image = "/Users/bazyar/src/IIgsDisks/odds-orig.po"

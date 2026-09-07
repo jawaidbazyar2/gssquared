@@ -1,14 +1,14 @@
-* HOSTTEXT — GS/OS S16 demo for Second Sight Host Text mode
-* SetMode($03,$04), ANSI font, planar 80x50 wrap scroll, HGR1/HGR2 page-flip.
+* HOSTTEXT43 — GS/OS S16 demo for Second Sight Host Text 80x43 (8x8)
+* SetMode($43,$04), ANSI 8x8 font, planar 80x50 wrap scroll, HGR1/HGR2 page-flip.
 
          rel
-         dsk   HOSTTEXT
+         dsk   HOSTTEXT43
          typ   S16
          mx    %00
          xc
          xc
 
-HOSTTEXT START
+HOSTTEXT43 START
          phk
          plb
          clc
@@ -19,7 +19,7 @@ HOSTTEXT START
 
          jsr   GetStatus
 
-         lda   #$0003
+         lda   #$0043
          sta   ss_mode
          lda   #$0004
          sta   ss_flag
@@ -331,7 +331,7 @@ InitCtrl anop
          sta   >$E03FE0
          lda   #80
          sta   >$E03FE1
-         lda   #25
+         lda   #43
          sta   >$E03FE2
          lda   #50
          sta   >$E03FE3
@@ -532,13 +532,13 @@ savg     ds    1
 savb     ds    1
 hudbuf   ds    80
 
-hudtmpl  asc   ' HOST TEXT   LINE=00  PAGE=A  HW-SCROLL + PAGE-FLIP + COLOR '
+hudtmpl  asc   ' HOST TEXT43 LINE=00  PAGE=A  HW-SCROLL + PAGE-FLIP + COLOR '
          ds    20
 
 shades   hex   B0B1B2DB
 
-msg      asc   'GSSQUARED HOST TEXT -- FAST SCROLL  PAGE-FLIP  16-COLOR ATTR'
-         asc   'ANSI PLASMA IN HGR -- PRESS ANY KEY TO EXIT               '
+msg      asc   'GSSQUARED HOST TEXT 80x43 -- FAST SCROLL  PAGE-FLIP 16-COLOR '
+         asc   'ANSI 8x8 IN HGR -- PRESS ANY KEY TO EXIT                   '
 
 ibmpal   hex   0000000000AA00AA0000AAAAAA0000AA00AAAA5500AAAAAA
          hex   5555555555FF55FF5555FFFFFF5555FF55FFFFFF55FFFFFF
