@@ -2,9 +2,25 @@
 
 Working notes from debugging the **black playfield** bug in GSSquared (Windmill hole and other levels). Music and HUD (Par / Strokes Left) work; the SHR playfield stays black.
 
-Last updated: 2026-07-29.
+Last updated: 2026-08-25.
+
+Drive this from Cursor with the **GS2 debug MCP** (`user-gs2-debug`). One emulator at a time. After `bp_set`, `step_into`, or `pause`, call `wait_stopped` for `EVT_STOPPED`. End the session with `quit` (protocol `QUIT`) — do not kill the process.
 
 ## How to reproduce
+
+MCP `launch` (ROM01). Disk image is an extra CLI flag; the sidecar owns the debug socket:
+
+```
+launch
+  platform: IIgs
+  extra_args: ["-ds7d1=/Users/bazyar/src/IIgsDisks/wita2gs_0_81/wita2gs.pmap", "--no-quit-confirm"]
+```
+
+1. Wait ~5 seconds for the disk menu.
+2. `type_text` with `text: "zany\n"` (newline is Return).
+3. Enter a hole (Windmill). Playfield should be black; HUD + music OK.
+
+To attach to an already-running emu instead of `launch`:
 
 ```bash
 ./build/GSSquared -p 5 \
@@ -12,11 +28,9 @@ Last updated: 2026-07-29.
   --debug /tmp/gs2-zany.sock --no-quit-confirm
 ```
 
-1. Wait ~5 seconds for the disk menu.
-2. Type `zany` + Return (e.g. `clients/python/examples/type_to_emu.py`).
-3. Enter a hole (Windmill). Playfield should be black; HUD + music OK.
+then MCP `connect` with `socket: /tmp/gs2-zany.sock`. Type `zany` + Return yourself, or use `type_text` as above.
 
-Platform `-p 5` = ROM01. Same playfield failure also seen on ROM03 (`-p 6`).
+Platform `-p 5` / MCP `platform: IIgs` = ROM01. Same playfield failure also seen on ROM03 (`-p 6`).
 
 ## Symptom summary
 
@@ -185,7 +199,7 @@ These are **not** blit scalars; they stash 24-bit pointers at `$0C30`/`$0C32` wh
 
 ## Shadow register during gameplay
 
-`$C035` watched with `BP_KIND_IO` write breakpoints during the hole main loop:
+`$C035` watched with MCP `bp_set` (`kind: IO`, `address: 0xC035`, `access: W`) during the hole main loop:
 
 | Value | SHR shadow (bit 3) | Text1 inhibit (bit 0) |
 |-------|--------------------|----------------------|
@@ -235,25 +249,34 @@ Early idea that float `$83` confused RAM probes was dropped: floating `$80+` is 
 
 ---
 
-## Debug recipe (GSSquared)
+## Debug recipe (GS2 debug MCP)
 
-```bash
-# Launch (see reproduce above), type zany, enter hole, then:
+Sidecar tools map 1:1 onto the debug protocol ([McpServer.md](McpServer.md), [DebugProtocol.md](DebugProtocol.md)). Do not wrap these in Python `gs2debug` scripts for this investigation — call the MCP tools directly.
 
-PYTHONPATH=clients/python/src python3 - <<'PY'
-from gs2debug import Client, MEM_MAIN, BP_KIND_EXEC, BP_KIND_IO, BP_ACCESS_W, BP_FLAG_ENABLED
-# Useful breakpoints:
-#   EXEC $010C64  — blit entry (dump $0C28 LocInfo + D)
-#   EXEC $010D1B  — hot loop (dump D=$0E00 longs, DB)
-#   EXEC $011360  — multiply (A/X = factors / high word)
-#   EXEC $010CFD  — STA $0E source bank
-#   IO   $C035 W  — shadow (noisy; ROM toggles $1E/$1F)
-PY
-```
+Useful breakpoints (`bp_set`, then `continue_exec` / `wait_stopped`; raise `timeout_s` if the hole takes a while to reach):
 
-Trace capture: `GET_TRACE` → `/tmp/zany-golf-trace.bin`, decode with `./build/gstrace 65816 …`.
+| `kind` | `address` | `access` | Why |
+|--------|-----------|----------|-----|
+| `EXEC` | `0x010C64` | | Blit entry — dump LocInfo at `$0C28` and `D` via `get_regs` |
+| `EXEC` | `0x010D1B` | | Hot loop — dump blit DP `$0E00` longs and `DB` |
+| `EXEC` | `0x011360` | | Multiply — `A`/`X` are factors / high word |
+| `EXEC` | `0x010CFD` | | `STA $0E` source bank |
+| `IO` | `0xC035` | `W` | Shadow (noisy; ROM toggles `$1E`/`$1F`) |
 
-**Experiment that drew the course:** clear `$0C2E`–`$0C39`, let `$01/6312` / `$01/6941` refill Y/rows, continue.
+Peeks after a stop (`domain` defaults to `MAIN`; IIgs CPU addresses are 24-bit):
+
+| Tool | Args | What |
+|------|------|------|
+| `get_regs` | | Live CPU snapshot (`D`, `DB`, `PC`, …) |
+| `read_mem` | `address: 0x000C28`, `length: 20` | LocInfo block |
+| `read_mem` | `address: 0x000E00`, `length: 0x22` | Blit DP (dest `[08]`, src `$0C`/`$0E`, SHR `$1E`) |
+| `read_mem` | `address: 0xE12000`, `length: 64` | SHR scanner (HUD vs empty playfield) |
+| `read_mem` | `address: 0x012000`, `length: 64` | Bank `$01` “SHR” (not displayed when shadow is off) |
+| `get_trace` | `ago: 0`, `count: 200` | Instruction ring (newest first; no `gstrace` file dump) |
+
+**Experiment that drew the course:** `pause` (then `wait_stopped`), `write_mem` zeros over `$0C2E`–`$0C39` (`address: 0x000C2E`, `data: "000000000000000000000000"`), `continue_exec`, let `$01/6312` / `$01/6941` refill Y/rows.
+
+When finished: `quit`.
 
 ---
 
@@ -289,3 +312,15 @@ Code:
 Video:
   NEWVIDEO=$C1  SHADOW=$1E/$1F (SHR shadow OFF)
 ```
+
+## New Observations
+
+The Blit Routine is never exiting. Its RTS is at 01/0DC9, but the branch at 1/0DBD is never taken, so it always jumps to the top of the blit loop at $0D1B, and the RTS is never executed.
+
+So, the game loop gets locked up in this routine, and does not respond to mouse or keyboard input.
+
+As we know, the parameters in the blit loop at E08 and E0C are borked. So likely other input params also borked. Anyway, this *erroneous* blit never ends. Sound continues because that is being driven by interrupts from the Ensoniq, and the sound player interrupt handler is the only thing that is executing outside the blit loop.
+
+I ran Zany Golf in the Crossrunner debugger and the pointers looked reasonable: not bank $38 etc. So something in the setup of the pointers is wrong.
+
+Automated re-checks should stay on the MCP sidecar (imperative `launch` → `type_text` → `bp_set` → `wait_stopped` → `read_mem` / `get_regs` / `get_trace` → `quit`), not the old Python `gs2debug` helpers. The server does not own workflows; the agent sequences the tools.
