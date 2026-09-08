@@ -69,10 +69,16 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
     * Gamepad (Normal Joystick)
     * Mouse (Normal Joystick)
     * Sirius / Atari Joyport
+    * Joyport Controller Select
+      * Left
+      * Center
+      * Right
     * Disconnected When No Gamepad
   * Modifier Keys
     * OA/Cmd = ALT; CA/Opt = Win
     * OA/Cmd = WIN; CA/Opt = ALT
+
+**Joyport Controller Select** emulates the physical Left / Center / Right switch on a Sirius Joyport. Center (default) lets software pick joystick 1 vs 2 with Annunciator 0. The submenu is available only in Joyport mode. See [Joysticks](Joysticks.md).
 
 **Disconnected When No Gamepad** — when checked, paddle/button lines float as if no joystick were plugged in. When unchecked (default), an absent gamepad still reports a centered stick so software like Total Replay keeps joystick titles visible. See [Joysticks](Joysticks.md).
 

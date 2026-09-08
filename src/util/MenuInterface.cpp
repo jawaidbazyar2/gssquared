@@ -181,6 +181,18 @@ int MenuInterface::getCurrentControllerMode() {
 	return (int)get_joystick_mode(gc);
 }
 
+void MenuInterface::setJoyportSelect(int select) {
+	switch (select) {
+		case JOYPORT_SELECT_LEFT:   pushMenuEvent(MENU_CONTROLLER_JOYPORT_LEFT);   break;
+		case JOYPORT_SELECT_CENTER: pushMenuEvent(MENU_CONTROLLER_JOYPORT_CENTER); break;
+		case JOYPORT_SELECT_RIGHT:  pushMenuEvent(MENU_CONTROLLER_JOYPORT_RIGHT);  break;
+	}
+}
+
+int MenuInterface::getJoyportSelect() {
+	return (int)get_joyport_select();
+}
+
 std::vector<MenuDriveInfo> MenuInterface::getDriveList() {
 	std::vector<MenuDriveInfo> result;
 	if (!computer_ || !computer_->mounts) return result;

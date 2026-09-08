@@ -122,6 +122,7 @@ bool SystemSettings::load() {
     hud_stats_ = false;
     hud_drives_ = true;
     disconnected_when_no_gamepad_ = false;
+    joyport_select_ = 1; // center
     ss_text_mode_ = false;
     last_config_path_.clear();
     last_disk_path_.clear();
@@ -167,6 +168,15 @@ bool SystemSettings::load() {
         if (const auto* gc = table["game_controller"].as_table()) {
             disconnected_when_no_gamepad_ =
                 (*gc)["disconnected_when_no_gamepad"].value_or(false);
+            if (const auto sel = (*gc)["joyport_select"].value<std::string>()) {
+                if (*sel == "left") {
+                    joyport_select_ = 0;
+                } else if (*sel == "right") {
+                    joyport_select_ = 2;
+                } else {
+                    joyport_select_ = 1;
+                }
+            }
         }
         if (const auto* display = table["display"].as_table()) {
             ss_text_mode_ = (*display)["ss_text_mode"].value_or(false);
@@ -215,6 +225,13 @@ bool SystemSettings::save() const {
 
     toml::table game_controller;
     game_controller.insert("disconnected_when_no_gamepad", disconnected_when_no_gamepad_);
+    const char *joyport_select_name = "center";
+    if (joyport_select_ == 0) {
+        joyport_select_name = "left";
+    } else if (joyport_select_ == 2) {
+        joyport_select_name = "right";
+    }
+    game_controller.insert("joyport_select", joyport_select_name);
     table.insert("game_controller", std::move(game_controller));
 
     toml::table display;
@@ -268,6 +285,17 @@ void SystemSettings::set_disconnected_when_no_gamepad(bool enabled) {
         return;
     }
     disconnected_when_no_gamepad_ = enabled;
+    save();
+}
+
+void SystemSettings::set_joyport_select(int select) {
+    if (select < 0 || select > 2) {
+        select = 1;
+    }
+    if (joyport_select_ == select) {
+        return;
+    }
+    joyport_select_ = select;
     save();
 }
 

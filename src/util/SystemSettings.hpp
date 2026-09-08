@@ -41,6 +41,8 @@ class SystemSettings {
     bool hud_stats_ = false;
     bool hud_drives_ = true;
     bool disconnected_when_no_gamepad_ = false;
+    /** Sirius Joyport Controller Select: 0=left, 1=center (default), 2=right. */
+    int joyport_select_ = 1;
     /** When true and Apple II is in full-screen TEXT, Second Sight renders A2 text via VGA text. */
     bool ss_text_mode_ = false;
 
@@ -96,11 +98,13 @@ public:
     bool hud_stats() const { return hud_stats_; }
     bool hud_drives() const { return hud_drives_; }
     bool disconnected_when_no_gamepad() const { return disconnected_when_no_gamepad_; }
+    int joyport_select() const { return joyport_select_; }
     bool ss_text_mode() const { return ss_text_mode_; }
 
     void set_hud_stats(bool enabled);
     void set_hud_drives(bool enabled);
     void set_disconnected_when_no_gamepad(bool enabled);
+    void set_joyport_select(int select);
     void set_ss_text_mode(bool enabled);
 
     void toggle_hud_stats();

@@ -96,6 +96,32 @@ inline bool joyport_active(const gamec_state_t *ds) {
         && ds->clock->get_cycles() > ds->computer->last_reset + ds->joyport_suspend_cycles;
 }
 
+// Controller Select: Left=JS1, Right=JS2, Center=AN0 (on=JS1, off=JS2).
+// Missing gps[1] falls back to gps[0] so one host pad mirrors onto both ports.
+inline int joyport_selected_index(const gamec_state_t *ds) {
+    int idx;
+    switch (get_joyport_select()) {
+        case JOYPORT_SELECT_LEFT:
+            idx = 0;
+            break;
+        case JOYPORT_SELECT_RIGHT:
+            idx = 1;
+            break;
+        case JOYPORT_SELECT_CENTER:
+        default:
+            idx = ds->annunciators[0] ? 0 : 1;
+            break;
+    }
+    if (ds->gps[idx].gamepad) {
+        return idx;
+    }
+    return 0;
+}
+
+inline SDL_Gamepad *joyport_selected_pad(const gamec_state_t *ds) {
+    return ds->gps[joyport_selected_index(ds)].gamepad;
+}
+
 template <size_t N>
 bool gamepad_any_button(SDL_Gamepad *pad, const SDL_GamepadButton (&buttons)[N]) {
     for (size_t i = 0; i < N; i++) {
@@ -230,8 +256,8 @@ uint8_t read_game_switch_0(void *context, uint32_t address) {
     gamec_state_t *ds = (gamec_state_t *)context;
     
     if (joyport_active(ds)) { // reverse polarity for atari
-        bool val = ds->gps[0].gamepad
-            && SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_EAST);
+        SDL_Gamepad *pad = joyport_selected_pad(ds);
+        bool val = pad && SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_EAST);
         return bit7_with_float(ds, !val);
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD) {
         ds->game_switch[0] = sample_apple_gamepad_switch(
@@ -255,11 +281,12 @@ uint8_t read_game_switch_1(void *context, uint32_t address) {
         bool val = false;
 
         bool anc_1 = ds->annunciators[1];
-        if (ds->gps[0].gamepad) {
-            if (anc_1) { // up-1
-                val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP);
-            } else { // left-1
-                val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+        SDL_Gamepad *pad = joyport_selected_pad(ds);
+        if (pad) {
+            if (anc_1) { // up
+                val = SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_UP);
+            } else { // left
+                val = SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
             }
         }
         if (SDL_GetModState() & KEYMOD_CLOSEDAPPLE) { // TODO: restrict to Apple IIe
@@ -288,11 +315,12 @@ uint8_t read_game_switch_2(void *context, uint32_t address) {
         bool val = false;
 
         bool anc_1 = ds->annunciators[1];
-        if (ds->gps[0].gamepad) {
-            if (anc_1) { // down-1
-                val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
-            } else { // right-1
-                val = SDL_GetGamepadButton(ds->gps[0].gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+        SDL_Gamepad *pad = joyport_selected_pad(ds);
+        if (pad) {
+            if (anc_1) { // down
+                val = SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+            } else { // right
+                val = SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
             }
         }
         return bit7_with_float(ds, !val);
@@ -386,6 +414,33 @@ joystick_mode_t get_joystick_mode(gamec_state_t *gp_d) {
     return gp_d->joystick_mode;
 }
 
+const char *get_joyport_select_name(joyport_select_t select) {
+    switch (select) {
+        case JOYPORT_SELECT_LEFT:   return "Left";
+        case JOYPORT_SELECT_RIGHT:  return "Right";
+        case JOYPORT_SELECT_CENTER:
+        default:                    return "Center";
+    }
+}
+
+joyport_select_t get_joyport_select() {
+    int v = SystemSettings::instance().joyport_select();
+    if (v == JOYPORT_SELECT_LEFT || v == JOYPORT_SELECT_RIGHT) {
+        return (joyport_select_t)v;
+    }
+    return JOYPORT_SELECT_CENTER;
+}
+
+void set_joyport_select(gamec_state_t *gp_d, joyport_select_t select) {
+    SystemSettings::instance().set_joyport_select((int)select);
+    if (gp_d && gp_d->event_queue) {
+        static char buffer[256];
+        snprintf(buffer, sizeof(buffer), "Joyport Controller Select: %s",
+                 get_joyport_select_name(select));
+        gp_d->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, buffer));
+    }
+}
+
 const char *get_mode_name(joystick_mode_t mode) {
     const char *mode_names[] = {
         "Apple Joystick (Gamepad)",
@@ -411,6 +466,10 @@ void toggle_joystick_mode(gamec_state_t *gp_d) {
 DebugFormatter *debug_gamecontroller(gamec_state_t *ds) {
     DebugFormatter *df = new DebugFormatter();
     df->addLine("Joystick mode: %s", get_mode_name(ds->joystick_mode));
+    df->addLine("Joyport Select: %s  AN0: %d  AN1: %d  Active pad: %d",
+                get_joyport_select_name(get_joyport_select()),
+                ds->annunciators[0], ds->annunciators[1],
+                joyport_selected_index(ds));
     df->addLine("Last Read");
     df->addLine("  Button 0: %d  Button 1: %d  Button 2: %d", ds->game_switch[0], ds->game_switch[1], ds->game_switch[2]);
     df->addLine("  Values  : %d, %d", ds->last_jv.x, ds->last_jv.y);

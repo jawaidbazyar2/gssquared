@@ -122,7 +122,7 @@ Additional notes: 5.25 Floppy does not support quarter or half tracks.
 | Modem / serial port | Partial | IIgs SCC8530 + Hayes modem; IIe Super Serial Card (`super_serial`) + same ModemDevice — see [SSC.md](SSC.md). Host UART attach (#155) on macOS, Windows, and Linux (`device = "serial"`). |
 | ImageWriter printer emulation | Not started | |
 | Joystick / paddles | ✅ Complete | Mouse emulation of Joystick; Gamepads;  |
-| Sirius JoyPort (Atari) | ✅ | Implemented Single Joystick - enable mode with F6 |
+| Sirius JoyPort (Atari) | ✅ | Two Atari sticks via AN0 / Controller Select; enable mode with F6 |
 | Shift-key mod and Lowercase Character Generator | Not started | |
 
 ## Clocks

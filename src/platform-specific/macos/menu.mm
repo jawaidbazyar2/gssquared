@@ -116,6 +116,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)toggleAudioDecorrelation:(id)sender;
 - (void)toggleRightMouseAccel:(id)sender;
 - (void)controllerMode:(id)sender;
+- (void)joyportSelect:(id)sender;
 - (void)toggleDisconnectedWhenNoGamepad:(id)sender;
 - (void)monitorComposite:(id)sender;
 - (void)monitorGSRGB:(id)sender;
@@ -175,6 +176,12 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 		int current = getMenuInterface()->getCurrentControllerMode();
 		[menuItem setState:([menuItem tag] == current) ? NSControlStateValueOn : NSControlStateValueOff];
 	}
+	if (menuItem.action == @selector(joyportSelect:)) {
+		int current = getMenuInterface()->getJoyportSelect();
+		[menuItem setState:([menuItem tag] == current) ? NSControlStateValueOn : NSControlStateValueOff];
+		return getMenuInterface()->isEmulationRunning()
+			&& getMenuInterface()->getCurrentControllerMode() == 2;
+	}
 	if (menuItem.action == @selector(toggleDisconnectedWhenNoGamepad:)) {
 		[menuItem setState:getMenuInterface()->getDisconnectedWhenNoGamepad() ? NSControlStateValueOn : NSControlStateValueOff];
 	}
@@ -225,6 +232,11 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)controllerMode:(id)sender {
 	NSMenuItem *item = (NSMenuItem *)sender;
 	getMenuInterface()->setControllerMode((int)[item tag]);
+}
+
+- (void)joyportSelect:(id)sender {
+	NSMenuItem *item = (NSMenuItem *)sender;
+	getMenuInterface()->setJoyportSelect((int)[item tag]);
 }
 
 - (void)toggleDisconnectedWhenNoGamepad:(id)sender {
@@ -318,8 +330,14 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)menuNeedsUpdate:(NSMenu *)menu {
 	int current = getMenuInterface()->getCurrentControllerMode();
 	bool absentDisconnected = getMenuInterface()->getDisconnectedWhenNoGamepad();
+	bool joyport_on = (current == 2);
+	bool running = getMenuInterface()->isEmulationRunning();
 	for (NSMenuItem *item in [menu itemArray]) {
 		if ([item isSeparatorItem]) {
+			continue;
+		}
+		if ([item hasSubmenu]) {
+			[item setEnabled:running && joyport_on];
 			continue;
 		}
 		if ([item tag] == CONTROLLER_TAG_ABSENT_DISCONNECTED) {
@@ -608,6 +626,31 @@ static void setupMenus(void) {
 		[item setTag:ci.tag];
 		[controllerMenu addItem:item];
 	}
+	[controllerMenu addItem:[NSMenuItem separatorItem]];
+
+	NSMenu *joyportSelectMenu = [[[NSMenu alloc]
+		initWithTitle:NSLocalizedString(@"Joyport Controller Select", nil)] autorelease];
+	struct { NSString *title; NSInteger tag; } selectItems[] = {
+		{ @"Left",   0 },
+		{ @"Center", 1 },
+		{ @"Right",  2 },
+	};
+	for (auto &si : selectItems) {
+		NSMenuItem *item = [[[NSMenuItem alloc]
+			initWithTitle:si.title
+			       action:@selector(joyportSelect:)
+			keyEquivalent:@""] autorelease];
+		[item setTarget:sMenuHandler];
+		[item setTag:si.tag];
+		[joyportSelectMenu addItem:item];
+	}
+	NSMenuItem *joyportSelectMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Joyport Controller Select", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[joyportSelectMenuItem setSubmenu:joyportSelectMenu];
+	[controllerMenu addItem:joyportSelectMenuItem];
+
 	[controllerMenu addItem:[NSMenuItem separatorItem]];
 	NSMenuItem *absentDisconnectedItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Disconnected When No Gamepad", nil)

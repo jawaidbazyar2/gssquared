@@ -61,4 +61,4 @@ I am thinking what we need to do on a control-reset, is suspend the joyport func
 
 ## Two Joysticks
 
-Now we need to support two gamepads/joysticks, through use of the annunciator #0 option.
+Two host gamepads map to Joyport joysticks 1 and 2. **Settings → Game Controller → Joyport Controller Select** is Left / Center / Right (default Center). In Center, Annunciator 0 selects the stick; a missing second pad falls back to the first so one controller appears as both ports.

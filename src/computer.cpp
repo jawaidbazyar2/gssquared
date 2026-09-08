@@ -248,6 +248,18 @@ computer_t::computer_t(NClockII *clock) {
                 }
                 return true;
             }
+            case MENU_CONTROLLER_JOYPORT_LEFT:
+            case MENU_CONTROLLER_JOYPORT_CENTER:
+            case MENU_CONTROLLER_JOYPORT_RIGHT: {
+                gamec_state_t *gc = (gamec_state_t *)get_module_state(MODULE_GAMECONTROLLER);
+                if (gc) {
+                    joyport_select_t select = (event.user.code == MENU_CONTROLLER_JOYPORT_LEFT)  ? JOYPORT_SELECT_LEFT
+                                           : (event.user.code == MENU_CONTROLLER_JOYPORT_RIGHT) ? JOYPORT_SELECT_RIGHT
+                                                                                                : JOYPORT_SELECT_CENTER;
+                    set_joyport_select(gc, select);
+                }
+                return true;
+            }
         }
         return false;
     });

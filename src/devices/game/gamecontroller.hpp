@@ -72,6 +72,13 @@ typedef enum joystick_mode {
     NUM_JOYSTICK_MODES
 } joystick_mode_t;
 
+// Sirius Joyport physical Controller Select switch.
+typedef enum joyport_select {
+    JOYPORT_SELECT_LEFT = 0,
+    JOYPORT_SELECT_CENTER,
+    JOYPORT_SELECT_RIGHT,
+} joyport_select_t;
+
 typedef struct gamec_state_t {
     joystick_mode_t joystick_mode = JOYSTICK_APPLE_GAMEPAD;
 
@@ -105,3 +112,7 @@ void init_mb_game_controller(computer_t *computer, SlotType_t slot);
 
 void set_joystick_mode(gamec_state_t *gp_d, joystick_mode_t mode);
 joystick_mode_t get_joystick_mode(gamec_state_t *gp_d);
+
+void set_joyport_select(gamec_state_t *gp_d, joyport_select_t select);
+joyport_select_t get_joyport_select();
+const char *get_joyport_select_name(joyport_select_t select);

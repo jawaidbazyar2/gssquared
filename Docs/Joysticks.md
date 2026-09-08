@@ -57,6 +57,12 @@ Joyport emulation only works with Gamepads, not the Mouse.
 
 The Gamepad D-PAD (+ shaped control) is what is used for the Atari Joystick - NOT the regular joystick. 
 
-Currently, only the first Gamepad is recognized by the system for Joyport mode, so no multi-player games.
+Joyport can use one or two host gamepads. **Settings → Game Controller → Joyport Controller Select** emulates the physical switch on the Sirius box (grayed out unless Joyport mode is active):
+
+* **Left** — always joystick 1 (first gamepad). Annunciator 0 is ignored.
+* **Right** — always joystick 2 (second gamepad, or the first if only one is attached).
+* **Center** (default) — Annunciator 0 selects the stick (on = joystick 1, off = joystick 2). Two-player games that poll both ports need this setting.
+
+If only one gamepad is connected, its D-pad and fire button are mirrored onto both Atari ports, so turn-based two-player games work by passing the pad. With two gamepads and Select set to Center, pad 0 is joystick 1 and pad 1 is joystick 2.
 
 Almost all Joyport games will require configuration in-game to enable Joyport support. Many Sirius Software games use Control-Shift-@ (Apple IIe Emulation) or Control-Shift-P (Apple II+ Emulation) to enable Joyport. Other games have setup menus. You will have to check the manual for the game.
