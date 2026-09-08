@@ -42,3 +42,4 @@ After the FST is installed and loaded, the shared folder appears in the GS/OS Fi
 - [Storage & Disks](Storage.md) — BazFast, Mount Drivers overview
 - [OSD / Control Panel](OSD.md)
 - [Menus](Menus.md)
+- [Host FST resource forks: Native vs AppleDouble](HostFST_AD.md) — Linux gaps, ADS vs xattr, proposed sidecar toggle
