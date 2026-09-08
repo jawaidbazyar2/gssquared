@@ -82,6 +82,10 @@ class KeyGloo
         ADB_Mouse * adb_mouse = nullptr;
         keygloo_state_t *host_ctx = nullptr;
         bool em_active = false;
+        // SDL button bits forwarded to the guest while EM tracking is on.
+        // Used so a press that started inside the content area can still
+        // release if the pointer leaves before button-up.
+        uint8_t em_forwarded_buttons = 0;
         bool reported_valid = false;
         int target_x = 0;
         int target_y = 0;
@@ -272,6 +276,7 @@ class KeyGloo
         void set_host_context(keygloo_state_t *ctx);
         void detect_and_update_em_active();
         void handle_em_mouse_motion(float wx, float wy);
+        bool em_mouse_button_should_deliver(const SDL_Event &event);
         void queue_motion_toward_target();
         void drain_motion_queue();
         void deliver_mouse_reg0();
@@ -955,6 +960,14 @@ class KeyGloo
                 detect_and_update_em_active();
                 if (em_active) {
                     handle_em_mouse_motion(event.motion.x, event.motion.y);
+                    return true;
+                }
+            }
+
+            if ((event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
+                 event.type == SDL_EVENT_MOUSE_BUTTON_UP) && host_ctx) {
+                detect_and_update_em_active();
+                if (em_active && !em_mouse_button_should_deliver(event)) {
                     return true;
                 }
             }

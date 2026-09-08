@@ -268,6 +268,7 @@ inline void KeyGloo::detect_and_update_em_active() {
             pending_target = false;
             step_outstanding = false;
             stale_frames = 0;
+            em_forwarded_buttons = 0;
             restore_em_host_cursor();
         }
     }
@@ -423,6 +424,35 @@ inline void KeyGloo::update_em_host_cursor(float wx, float wy) {
         SDL_ShowCursor();
         em_host_cursor_hidden = false;
     }
+}
+
+inline bool KeyGloo::em_mouse_button_should_deliver(const SDL_Event &event) {
+    if (!host_ctx || !host_ctx->computer || !host_ctx->computer->video_system) {
+        return true;
+    }
+
+    video_system_t *vs = host_ctx->computer->video_system;
+    float rx = event.button.x;
+    float ry = event.button.y;
+    keygloo_mouse_sync::window_to_render_coords(vs, event.button.x, event.button.y, rx, ry);
+    const bool inside = keygloo_mouse_sync::render_point_in_guest_content(vs, rx, ry);
+    const uint8_t bit = static_cast<uint8_t>(1u << event.button.button);
+
+    if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+        if (!inside) {
+            return false;
+        }
+        em_forwarded_buttons |= bit;
+        return true;
+    }
+
+    // Button-up: still deliver if the matching press was accepted inside the
+    // content area, so a drag that leaves the guest cannot stick the button.
+    if (!inside && (em_forwarded_buttons & bit) == 0) {
+        return false;
+    }
+    em_forwarded_buttons &= static_cast<uint8_t>(~bit);
+    return true;
 }
 
 inline void KeyGloo::handle_em_mouse_motion(float wx, float wy) {
