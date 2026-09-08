@@ -12665,3 +12665,14 @@ STA C0B1
 ```
 that's pretty crazy right there compared to everything the 80-col firmware has to do.
 
+## Sep 8, 2026
+
+tried having Grok iterate the IWMTEST. It DID clear the tests. However, it broke writing to 3.5's. So it's clearly important when taking this approach, to make sure you have ALL tests and ALL constraints put in.
+
+I think a good starting point is making sure the speed control when there's a disk motor-on is working correctly. That is likely to break some timers.
+
+Another thing: the AI itself waiting for input and switching disks is slow. This is a case where maybe the python tool would be better, as the AI can delegate wait, read screen, switch disks, etc. to it esp when you have to keep repeating testing. BUT perhaps it could by a python tool controlling the MCP interface. The Python is a higher level interface. Some commands can go straight through but others can be more sophisticated recipes, a specific test harness for a specific purpose.
+
+For example: re-testing is pretty slow when it's all manual. After each serious modification, we need to run a regression test. That should also be under control of a python. Some folks have done this with mame LUA scripting, but would python be more expressive and easier for an AI to write? The regression test can be simple like: boot, wait 20 seconds, snapshot screen. Or more complex, like exercising stuff.
+
+Anyway that work is on lappy branch iwmtest.
