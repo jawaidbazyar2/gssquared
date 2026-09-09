@@ -129,7 +129,7 @@ Additional notes: 5.25 Floppy does not support quarter or half tracks.
 
 | Type | Status | Notes |
 |------|--------|-------|
-| Thunderclock | Partial | Read of time implemented. Interrupts, writing clock - not implemented. Needs testing. |
+| Thunderclock | ✅ | uPD1990AC protocol, firmware ROM, ProDOS timestamps, TIME SET, IRQ / timer-pulse. |
 | Generic ProDOS-compatible Clock | Complete | Read-only. |
 | IIgs Realtime Clock | ✅ | syncs to host clock using local time zone |
 

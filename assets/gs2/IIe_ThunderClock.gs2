@@ -1,0 +1,13 @@
+gs2_version = 1
+id = "c8e2f1a0-7b3d-4e91-9c4a-1d5e6f708192"
+name = "IIe Enh ThunderClock"
+description = "IIe Enhanced; Disk II; ThunderClock Plus in slot 5"
+platform = "apple2e_enhanced"
+
+[[cards]]
+slot = 5
+card = "thunder_clock"
+
+[[cards]]
+slot = 6
+card = "disk_ii"

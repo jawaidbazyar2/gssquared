@@ -1,0 +1,13 @@
+gs2_version = 1
+id = "a1d4c8e2-5b70-4f13-9e6a-2c8d0b174305"
+name = "II+ ThunderClock"
+description = "Apple II+; Disk II; ThunderClock Plus in slot 5"
+platform = "apple2plus"
+
+[[cards]]
+slot = 5
+card = "thunder_clock"
+
+[[cards]]
+slot = 6
+card = "disk_ii"

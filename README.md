@@ -244,6 +244,16 @@ I also shamelessly copied the Disk II sound files from OpenEmulator.
 
 The mouse tracking code is based in part on the technique used in KEGS, written by Geoff Weiss, though I use a different approach for causing updates to the emulated mouse position. GPL 2.0.
 
+## ThunderClock Plus
+
+The ThunderClock Plus card is derived from the protocol and hardware work in:
+
+- [web-a2e](https://github.com/mikedaley/web-a2e) by Mike Daley — HLE serial shift, host-time snapshot, and the real 2 KB firmware layout.
+- [a2fpga_core](https://github.com/BrentRector/a2fpga_core) by Brent Rector — uPD1990AC command set, timer-pulse IRQ, and C8 ownership.
+- MAME `a2thunderclock` / `upd1990a` by R. Belmont — chip pinout and DATA OUT on bit 7.
+
+Firmware image is the Thunderware 2716 (MAME CRC `1b99c4e3`).
+
 ## Apple Mouse III card
 
 The Apple Mouse II Interface Card emulation (PIA + 6805 protocol) is adapted from the [A2Pico mouse-interface](https://github.com/oliverschmidt/mouse-interface) firmware by Thorsten Brehm and Oliver Schmidt (MIT License).
