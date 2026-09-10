@@ -41,7 +41,8 @@ VideoScanGenerator_Comp::VideoScanGenerator_Comp(CharRom *charrom, bool border_e
 
     mono_mode = false;
 
-    frame_byte = new Frame560(560, 263);
+    frame_byte = new Frame560(560, 192);
+    frame_byte->clear(0);
     frame_vsg->set_line(0);
     frame_byte->set_line(0);
 }
@@ -66,6 +67,10 @@ void VideoScanGenerator_Comp::build_hires40Font(bool delayEnabled)
 
 void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
 {
+    if (last_scan_buffer && (last_scan_buffer != frame_scan ||
+            expected_read_sequence != frame_scan->get_read_sequence()))
+        awaiting_sync = true;
+    last_scan_buffer = frame_scan;
     /* mode = { .p = 0 }; 
     palette = { .colors = {0} };
     lastpixel = {0};
@@ -100,6 +105,11 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
 
     while (fcnt--) {
         Scan_t scan = frame_scan->pull();
+        if (awaiting_sync && scan.mode != VM_VSYNC) continue;
+        // A partial or interrupted stream must never write beyond the legacy
+        // 40-column, 192-row bitstream while waiting for its next sync marker.
+        if (scan.mode <= VM_DHIRES &&
+                (vcount >= Frame560::max_height() || hcount >= 40)) continue;
         if (modeChecks && scan.mode <= VM_DHIRES) {
             color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
             color_mode.mixed_mode = scan.flags & VS_FL_MIXED ? 1 : 0;
@@ -117,10 +127,14 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                 break;
             case VM_VSYNC:  // end of frame
                     vcount = 0;
+                    hcount = 0;
                     beam_v = 0;
                     beam_h = 0;
-                    frame_byte->set_line_v(vcount);
+                    frame_byte->set_line(vcount);
                     sawdata = false;
+                    lastByte = 0;
+                    modeChecks = true;
+                    awaiting_sync = false;
                     fcnt=0;
                     break;
 
@@ -128,7 +142,7 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     lastByte = 0x00; // for hires
                     hcount = 0; if (sawdata) vcount++;
                     beam_h = 0; beam_v++;
-                    frame_byte->set_line(vcount);
+                    if (vcount < Frame560::max_height()) frame_byte->set_line(vcount);
                     modeChecks = true;
 
                     // from MAME
@@ -420,10 +434,12 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
         }
     }
 
-    // TODO: insert here call to the selected renderer.
-    // save our hloc/scanline.
-    // call renderer
+    expected_read_sequence = frame_scan->get_read_sequence();
+    // Conversion reads every input row using the same cursor as the decoder.
+    // Preserve the write position when a debugger pause or frame pacing splits
+    // a scanline between two calls; otherwise the next sample writes past the
+    // final row, where the monitor renderer finished reading.
+    const auto write_cursor = frame_byte->cursor();
     render->render(frame_byte, frame_vsg);
-    // restore hloc/scanline.
+    frame_byte->set_cursor(write_cursor);
 }
-

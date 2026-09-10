@@ -58,6 +58,9 @@ private:
     //ScanBuffer *frame_scan = nullptr;
     FrameVSG *frame_vsg = nullptr;
     Render *render = nullptr;
+    const ScanBuffer *last_scan_buffer = nullptr;
+    uint64_t expected_read_sequence = 0;
+    bool awaiting_sync = false;
     
     // hires mapping (process data in from GuS)
     // the hgr table ("16 colors") are not the same layout/assignment as the text/lores table. So maintain it separately.
