@@ -18,4 +18,4 @@ struct SDL_Texture;
 /** Lock tex, raster, unlock, and present (cols=40 → 360px src, cols=80 → 720px). */
 void vga_render_text_9x16(video_system_t *vs, SDL_Texture *tex_text, const uint8_t *vram, int vram_pitch,
     vga_text_vram_layout_t layout = vga_text_vram_layout_t::Interleaved,
-    int cols = VGA_TEXT_COLS);
+    int cols = VGA_TEXT_COLS, uint8_t border_r = 0, uint8_t border_g = 0, uint8_t border_b = 0);

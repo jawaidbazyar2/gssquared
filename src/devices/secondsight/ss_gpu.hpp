@@ -50,7 +50,7 @@ public:
 
     void on_frame();
     bool take_vbl_complete();
-    bool frame_to_window();
+    bool frame_to_window(uint8_t border_r = 0, uint8_t border_g = 0, uint8_t border_b = 0);
 
     void fill_info(ss_gpu_info_t *out) const;
 

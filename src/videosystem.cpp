@@ -303,6 +303,39 @@ void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_
     last_srcrect = *srcrect;
 }
 
+void video_system_t::render_frame_vga(SDL_Texture *texture, SDL_FRect *srcrect,
+        uint8_t border_r, uint8_t border_g, uint8_t border_b, bool respect_mode) {
+    const float canvas_w = (float)(BASE_WIDTH + border_width * 2);
+    const float canvas_h = (float)(BASE_HEIGHT + border_height * 2);
+    const float scale_x = (canvas_w > 0.0f) ? (target.w / canvas_w) : 1.0f;
+    const float scale_y = (canvas_h > 0.0f) ? (target.h / canvas_h) : 1.0f;
+    SDL_FRect dest = {
+        target.x + (float)border_width * scale_x,
+        target.y + (float)border_height * scale_y,
+        (float)BASE_WIDTH * scale_x,
+        (float)BASE_HEIGHT * scale_y
+    };
+
+    Uint8 orr = 0, og = 0, ob = 0, oa = 255;
+    SDL_GetRenderDrawColor(renderer, &orr, &og, &ob, &oa);
+    SDL_SetRenderDrawColor(renderer, border_r, border_g, border_b, 255);
+    SDL_RenderFillRect(renderer, &target);
+    SDL_SetRenderDrawColor(renderer, orr, og, ob, oa);
+
+    if (respect_mode) {
+        if (display_pixel_mode == DM_PIXEL_FUZZ) {
+            SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_LINEAR);
+        } else {
+            SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART);
+        }
+    }
+
+    SDL_RenderTexture(renderer, texture, srcrect, &dest);
+    content = dest;
+    last_texture = texture;
+    last_srcrect = *srcrect;
+}
+
 void video_system_t::clear() {
     SDL_RenderClear(renderer);
 }

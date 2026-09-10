@@ -13,9 +13,9 @@
 #include <SDL3/SDL.h>
 
 void vga_render_24bpp(video_system_t *vs, SDL_Texture *tex_24bpp, const uint8_t *display_base,
-    int fb_pitch, int width, int height)
+    int fb_pitch, int width, int height, uint8_t border_r, uint8_t border_g, uint8_t border_b)
 {
     SDL_UpdateTexture(tex_24bpp, nullptr, display_base, fb_pitch);
     SDL_FRect src = { 0.0f, 0.0f, (float)width, (float)height };
-    vs->render_frame(tex_24bpp, &src, nullptr);
+    vs->render_frame_vga(tex_24bpp, &src, border_r, border_g, border_b);
 }

@@ -14,7 +14,8 @@
 #include <SDL3/SDL.h>
 
 void vga_render_text_8x8(video_system_t *vs, SDL_Texture *tex_text, const uint8_t *vram, int vram_pitch,
-    vga_text_vram_layout_t layout, int cols, int rows)
+    vga_text_vram_layout_t layout, int cols, int rows,
+    uint8_t border_r, uint8_t border_g, uint8_t border_b)
 {
     if (cols <= 0) {
         cols = VGA_TEXT_8X8_COLS;
@@ -34,5 +35,5 @@ void vga_render_text_8x8(video_system_t *vs, SDL_Texture *tex_text, const uint8_
     const float src_w = (float)(cols * VGA_TEXT_8X8_CELL_W);
     const float src_h = (float)(rows * VGA_TEXT_8X8_CELL_H);
     SDL_FRect src = { 0.0f, 0.0f, src_w, src_h };
-    vs->render_frame(tex_text, &src, nullptr);
+    vs->render_frame_vga(tex_text, &src, border_r, border_g, border_b);
 }

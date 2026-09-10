@@ -25,10 +25,10 @@ void expand_8bpp_to_rgb24(uint8_t *rgb24_buffer, const uint8_t palette_rgb[256][
 
 void vga_render_8bpp(video_system_t *vs, SDL_Texture *tex_24bpp, uint8_t *rgb24_buffer,
     const uint8_t palette_rgb[256][3], const uint8_t *display_base, int fb_pitch,
-    int width, int height);
+    int width, int height, uint8_t border_r = 0, uint8_t border_g = 0, uint8_t border_b = 0);
 
 void vga_render_16bpp(video_system_t *vs, SDL_Texture *tex_16bpp, const uint8_t *display_base,
-    int fb_pitch, int width, int height);
+    int fb_pitch, int width, int height, uint8_t border_r = 0, uint8_t border_g = 0, uint8_t border_b = 0);
 
 void vga_render_24bpp(video_system_t *vs, SDL_Texture *tex_24bpp, const uint8_t *display_base,
-    int fb_pitch, int width, int height);
+    int fb_pitch, int width, int height, uint8_t border_r = 0, uint8_t border_g = 0, uint8_t border_b = 0);

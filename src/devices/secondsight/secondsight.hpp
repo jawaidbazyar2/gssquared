@@ -108,7 +108,7 @@ class SecondSight {
     ss_host_text_ctrl_t host_text_latch{};
     ss_host_text_raster_t host_text_raster{};
     uint32_t host_text_frame = 0;
-    uint8_t host_text_border = 0;
+    uint8_t host_text_border = 0; // SetBorder palette index (window bezel + Host Text blank)
 
     union {
         uint8_t user_mode_data[84] = {0};
@@ -309,8 +309,10 @@ class SecondSight {
             vga_text_9x16_restore_ibm_palette();
         }
         if (tex_text) {
+            uint8_t br = 0, bg = 0, bb = 0;
+            resolve_ss_bezel(&br, &bg, &bb);
             vga_render_text_9x16(vs, tex_text, display_base, text_pitch,
-                vga_text_vram_layout_t::Interleaved, cols);
+                vga_text_vram_layout_t::Interleaved, cols, br, bg, bb);
         }
     }
 
@@ -519,6 +521,27 @@ class SecondSight {
         host_text_frame = 0;
     }
 
+    void resolve_ss_bezel(uint8_t *r, uint8_t *g, uint8_t *b) const {
+        const bool text = is_text_mode() || ss_mode == SS_MODE_HOSTTEXT || ss_mode == SS_MODE_GPUTEXT;
+        if (text) {
+            const uint32_t *pal = vga_text_palette();
+            const uint32_t c = pal[host_text_border & 0x0F];
+            *r = (uint8_t)((c >> 16) & 0xFF);
+            *g = (uint8_t)((c >> 8) & 0xFF);
+            *b = (uint8_t)(c & 0xFF);
+            return;
+        }
+        *r = palette_rgb[host_text_border][0];
+        *g = palette_rgb[host_text_border][1];
+        *b = palette_rgb[host_text_border][2];
+    }
+
+    void present_ss_texture(SDL_Texture *tex, SDL_FRect *src, bool respect_mode = true) {
+        uint8_t r = 0, g = 0, b = 0;
+        resolve_ss_bezel(&r, &g, &b);
+        vs->render_frame_vga(tex, src, r, g, b, respect_mode);
+    }
+
     void present_host_text_cells(const uint8_t *dst, int pitch, bool overlay_cursor = false) {
         if (!tex_text) {
             return;
@@ -546,7 +569,7 @@ class SecondSight {
         const float src_w = (float)((int)host_text_raster.cols * (int)host_text_raster.cell_w);
         const float src_h = (float)((int)host_text_raster.vis_rows * (int)host_text_raster.cell_h);
         SDL_FRect src = { 0.0f, 0.0f, src_w, src_h };
-        vs->render_frame(tex_text, &src, nullptr);
+        present_ss_texture(tex_text, &src);
     }
 
     void apply_host_text_mode(uint8_t mode_num) {
@@ -741,7 +764,7 @@ class SecondSight {
         const float src_w = (float)((int)raster.cols * (int)raster.cell_w);
         const float src_h = (float)((int)raster.vis_rows * (int)raster.cell_h);
         SDL_FRect src = { 0.0f, 0.0f, src_w, src_h };
-        vs->render_frame(tex_text, &src, nullptr);
+        present_ss_texture(tex_text, &src);
     }
 
     bool frame_gpu_text() {
@@ -799,8 +822,10 @@ class SecondSight {
         memcpy(palette_rgb, a2_ram + SS_PPU_PALETTE_ADDR, SS_PPU_PALETTE_BYTES);
         sync_vga_palette_from_rgb();
 
+        uint8_t br = 0, bg = 0, bb = 0;
+        resolve_ss_bezel(&br, &bg, &bb);
         vga_render_8bpp(vs, tex_24bpp, rgb24_buffer, palette_rgb,
-            frame_buffer + SS_PPU_FB_PAGE1_ADDR, PPU_FB_W, PPU_FB_W, PPU_FB_H);
+            frame_buffer + SS_PPU_FB_PAGE1_ADDR, PPU_FB_W, PPU_FB_W, PPU_FB_H, br, bg, bb);
         return true;
     }
 
@@ -1629,7 +1654,7 @@ class SecondSight {
             } else if (command_step == 2) {
                 // DMA complete, we're done.
                 uint8_t color = cmd_buffer[1];
-                host_text_border = color;
+                host_text_border = color; // palette index: window bezel + Host Text blank
                 command_step = 0;
                 reg_handshake = 0x00;
             }
@@ -2077,12 +2102,14 @@ class SecondSight {
             if (!display_enabled) {
                 return true; // we control frame, but have nothing to draw.
             }
+            uint8_t br = 0, bg = 0, bb = 0;
+            resolve_ss_bezel(&br, &bg, &bb);
             if (ss_mode == SS_MODE_GPU) {
                 if (gpu.take_vbl_complete()) {
                     reg_handshake = 0xA5;
                     command_step = 0;
                 }
-                return gpu.frame_to_window();
+                return gpu.frame_to_window(br, bg, bb);
             }
             if (ss_mode == SS_MODE_PPU) {
                 return frame_ppu();
@@ -2092,13 +2119,13 @@ class SecondSight {
                 render_vga_text_frame();
             } else if (current_vga_mode.color_depth == 8) {
                 vga_render_8bpp(vs, tex_24bpp, rgb24_buffer, palette_rgb, display_base, fb_pitch,
-                    current_vga_mode.width, current_vga_mode.height);
+                    current_vga_mode.width, current_vga_mode.height, br, bg, bb);
             } else if (current_vga_mode.color_depth == 16) {
                 vga_render_16bpp(vs, tex_16bpp, display_base, fb_pitch,
-                    current_vga_mode.width, current_vga_mode.height);
+                    current_vga_mode.width, current_vga_mode.height, br, bg, bb);
             } else if (current_vga_mode.color_depth == 24) {
                 vga_render_24bpp(vs, tex_24bpp, display_base, fb_pitch,
-                    current_vga_mode.width, current_vga_mode.height);
+                    current_vga_mode.width, current_vga_mode.height, br, bg, bb);
             }
             return true;
         }
@@ -2208,6 +2235,11 @@ class SecondSight {
 
         void debug(DebugFormatter *df) {
             df->addLine("VGA Active: %d", vga_active);
+            {
+                uint8_t br = 0, bg = 0, bb = 0;
+                resolve_ss_bezel(&br, &bg, &bb);
+                df->addLine("SetBorder: %02X  bezel RGB %02X%02X%02X", host_text_border, br, bg, bb);
+            }
             df->addLine("Display Mode: %s (%d)", ss_mode_label(ss_mode), (int)ss_mode);
             df->addLine("VGA Mode Num: %02X", vga_mode_num);
             {

@@ -29,10 +29,10 @@ void expand_8bpp_to_rgb24(uint8_t *rgb24_buffer, const uint8_t palette_rgb[256][
 
 void vga_render_8bpp(video_system_t *vs, SDL_Texture *tex_24bpp, uint8_t *rgb24_buffer,
     const uint8_t palette_rgb[256][3], const uint8_t *display_base, int fb_pitch,
-    int width, int height)
+    int width, int height, uint8_t border_r, uint8_t border_g, uint8_t border_b)
 {
     expand_8bpp_to_rgb24(rgb24_buffer, palette_rgb, display_base, fb_pitch, width, height);
     SDL_UpdateTexture(tex_24bpp, nullptr, rgb24_buffer, SS_RGB24_PITCH);
     SDL_FRect src = { 0.0f, 0.0f, (float)width, (float)height };
-    vs->render_frame(tex_24bpp, &src, nullptr);
+    vs->render_frame_vga(tex_24bpp, &src, border_r, border_g, border_b);
 }

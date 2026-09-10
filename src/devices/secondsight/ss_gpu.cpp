@@ -345,11 +345,11 @@ bool SsGpu::take_vbl_complete() {
     return true;
 }
 
-bool SsGpu::frame_to_window() {
+bool SsGpu::frame_to_window(uint8_t border_r, uint8_t border_g, uint8_t border_b) {
     if (!active || !vs || !display[front]) {
         return true;
     }
     SDL_FRect src = {0.0f, 0.0f, (float)width, (float)height};
-    vs->render_frame(display[front], &src, nullptr, true, nullptr);
+    vs->render_frame_vga(display[front], &src, border_r, border_g, border_b);
     return true;
 }

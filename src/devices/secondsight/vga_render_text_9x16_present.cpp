@@ -14,7 +14,7 @@
 #include <SDL3/SDL.h>
 
 void vga_render_text_9x16(video_system_t *vs, SDL_Texture *tex_text, const uint8_t *vram, int vram_pitch,
-    vga_text_vram_layout_t layout, int cols)
+    vga_text_vram_layout_t layout, int cols, uint8_t border_r, uint8_t border_g, uint8_t border_b)
 {
     if (cols <= 0) {
         cols = VGA_TEXT_COLS;
@@ -30,5 +30,5 @@ void vga_render_text_9x16(video_system_t *vs, SDL_Texture *tex_text, const uint8
     }
     const float src_w = (float)(cols * VGA_TEXT_CELL_W);
     SDL_FRect src = { 0.0f, 0.0f, src_w, (float)VGA_TEXT_SCREEN_H };
-    vs->render_frame(tex_text, &src, nullptr);
+    vs->render_frame_vga(tex_text, &src, border_r, border_g, border_b);
 }
