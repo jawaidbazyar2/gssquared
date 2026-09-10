@@ -153,7 +153,10 @@ static void cursor_scanlines(uint16_t style, int cell_h, int *sl0, int *sl1) {
     const int shape = (int)((style & SS_HT_CS_SHAPE_MASK) >> SS_HT_CS_SHAPE_SHIFT);
     const int start = (int)((style >> SS_HT_CS_START_SHIFT) & SS_HT_CS_NIBBLE);
     const int end = (int)((style >> SS_HT_CS_END_SHIFT) & SS_HT_CS_NIBBLE);
-    if (start == (int)SS_HT_CS_DEFAULT_LINES || end == (int)SS_HT_CS_DEFAULT_LINES
+    /* $0003 is IIe “show cursor”: enable+blink+block. Start/end 0 would
+     * otherwise be a 1-pixel bar at the top of the cell. */
+    if (style == SS_HT_CS_LEGACY
+        || start == (int)SS_HT_CS_DEFAULT_LINES || end == (int)SS_HT_CS_DEFAULT_LINES
         || start > end) {
         if (shape == SS_HT_CS_SHAPE_UNDERLINE) {
             *sl0 = (cell_h >= 2) ? cell_h - 2 : 0;
@@ -172,35 +175,31 @@ static void cursor_scanlines(uint16_t style, int cell_h, int *sl0, int *sl1) {
     }
 }
 
-void ss_host_text_overlay_cursor(uint32_t *pixels, int pixel_pitch,
-    const uint8_t *cells, int cell_pitch, const ss_host_text_ctrl_t &c,
+void ss_text_overlay_cursor(uint32_t *pixels, int pixel_pitch,
+    const uint8_t *cells, int cell_pitch,
+    int cx, int cy, int cols, int vis_rows,
+    uint16_t style, uint8_t draw_attr,
     bool blink_phase, int cell_w, int cell_h, int max_rows)
 {
     if (!pixels || !cells || cell_w <= 0 || cell_h <= 0 || pixel_pitch <= 0 || max_rows <= 0) {
         return;
     }
-    const uint16_t style = ss_host_text_effective_cursor_style(c);
     if ((style & SS_HT_CS_ENABLE) == 0) {
         return;
     }
     if ((style & SS_HT_CS_BLINK) && !blink_phase) {
         return;
     }
-    const int cols = (int)c.cols;
-    const int vis = (int)c.vis_rows;
-    if (c.cursor_x >= cols || c.cursor_y >= vis || (int)c.cursor_y >= max_rows) {
+    if (cx < 0 || cy < 0 || cx >= cols || cy >= vis_rows || cy >= max_rows) {
         return;
     }
     if (cell_pitch < cols * 2) {
         return;
     }
 
-    const int cx = (int)c.cursor_x;
-    const int cy = (int)c.cursor_y;
-    const uint8_t attr = cells[cy * cell_pitch + cx * 2 + 1];
     const uint32_t *palette = vga_text_palette();
-    const uint32_t fg = palette[attr & 0x0F];
-    const uint32_t bg = palette[(attr >> 4) & 0x0F];
+    const uint32_t fg = palette[draw_attr & 0x0F];
+    const uint32_t bg = palette[(draw_attr >> 4) & 0x0F];
     const bool replace = (style & SS_HT_CS_REPLACE) != 0;
     int shape = (int)((style & SS_HT_CS_SHAPE_MASK) >> SS_HT_CS_SHAPE_SHIFT);
     if (shape == 3) {
@@ -226,6 +225,24 @@ void ss_host_text_overlay_cursor(uint32_t *pixels, int pixel_pitch,
             }
         }
     }
+}
+
+void ss_host_text_overlay_cursor(uint32_t *pixels, int pixel_pitch,
+    const uint8_t *cells, int cell_pitch, const ss_host_text_ctrl_t &c,
+    bool blink_phase, int cell_w, int cell_h, int max_rows)
+{
+    const uint16_t style = ss_host_text_effective_cursor_style(c);
+    const int cols = (int)c.cols;
+    const int vis = (int)c.vis_rows;
+    const int cx = (int)c.cursor_x;
+    const int cy = (int)c.cursor_y;
+    uint8_t draw_attr = 0x07;
+    if (cells && cy >= 0 && cx >= 0 && cy < vis && cx < cols && cell_pitch >= cols * 2) {
+        draw_attr = cells[cy * cell_pitch + cx * 2 + 1];
+    }
+    ss_text_overlay_cursor(pixels, pixel_pitch, cells, cell_pitch,
+        cx, cy, cols, vis, style, draw_attr,
+        blink_phase, cell_w, cell_h, max_rows);
 }
 
 bool ss_host_text_read_palette(uint8_t rgb48[48],

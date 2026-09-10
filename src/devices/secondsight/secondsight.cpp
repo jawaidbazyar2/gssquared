@@ -4,6 +4,17 @@
 #include "cpu.hpp"
 #include "util/DebugHandlerIDs.hpp"
 
+void secondsight_log_yield_mux(computer_t *computer, const char *why,
+    bool yielded, uint16_t old_vga, uint16_t new_vga) {
+    uint32_t pc = 0;
+    if (computer && computer->cpu) {
+        pc = computer->cpu->full_pc & 0x00FFFFFFu;
+    }
+    printf("SecondSight: GPUText yield mux %s yielded=%d vga_active %u->%u pc=%06X\n",
+        why, yielded ? 1 : 0, old_vga, new_vga, pc);
+    fflush(stdout);
+}
+
 /*
 ssCOMMAND =    $E0C0B0
 ssWRITEDATA =  $E0C0B1

@@ -1,8 +1,9 @@
 # Second Sight GPU Text Mode
 
-**Status:** draft v0.1 (2026-08-28)
+**Status:** implemented in emulator, v0.1 (no `$94` ReadCells) — 2026-09-09
 **Card mode:** SetMode emulation flag `$05`
 **Depends on:** [SecondSight.md](SecondSight.md) (classic VGA API, handshake, slot I/O)
+**Host yield:** [Specs/SSConsole.md](../Specs/SSConsole.md) §13 (`$95`)
 
 This is a *new* mode: the card owns a VGA-style text cell buffer in **card
 VRAM** and accepts a **16-bit word stream** on `C0B1`. The host is a terminal
@@ -66,24 +67,34 @@ The 1 MHz bus is a capacity of about two bytes per microsecond. Spend it on
 
 `SetMode` with flag `$05` and a text raster mode number (`$03` = 80×25 9×16,
 `$43` = 80×43 8×8; same numbers as Host Text) switches the command table,
-allocates a card-side cell buffer, and **turns `C0B1` into a free-running
-word FIFO**.
+allocates a card-side cell buffer if needed, and **turns `C0B1` into a
+free-running word FIFO**.
+
+`SetMode($05)` is **not** a clear. It does not `Reset` or `Erase`. Same
+raster again keeps VRAM, cursor, margins, and sync. A new raster (or first
+arm) allocates a buffer whose cells are unspecified until the host
+`Reset`s or `Erase`s. Apps that want a known page send `$92` / `Erase`
+after `SetMode`.
 
 Until `SetMode($05)` succeeds:
 
 - output is **blank** (same pixels as `ScreenOff`);
 - writes to `C0B1` are classic DMA data, not this ISA.
 
-No default cells. Driver should `Reset` (or `Erase` page) before `ScreenOn`.
-
 Leaving GPU Text (`SetMode` with flag `$00` / `$01` / `$02` / `$03` / `$04`)
-**ends the stream** and discards FIFO contents. Re-entry is blank until the
-host paints again.
+**ends the stream** and discards FIFO contents and VRAM. That is a leave,
+not an implicit clear of an armed page.
+
+To show Mega II **without** leaving the mode, use **`Yield` (`$95`)** (§6.7).
+VRAM, cursor, margins, and the armed stream stay. No SetMode, no replay.
 
 `ScreenOff` / `ScreenOn`, `SetPalette` / `SetPaletteEntry`, `SetBorder`,
 `SetTextFont` stay on **`C0B0` handshake** (same fence as Host Text). They are
 not 16-bit stream opcodes. `UploadData`, `ScrollScreen`, `ClearScreen`,
 `SetVGAReg`, GPU `$40`–`$43` are **fenced** (`$A6`).
+
+`ScreenOff` is **black while we still own VGA**. `Yield` is **Mega II scanout**
+(`vga_active` clear). They are not the same.
 
 There is no per-word `$A5`. Putc does not poll. While the GPU Text stream is
 armed, **`$C0B8` is the classic handshake** (§3): **`$00` = not ready** (ring
@@ -258,7 +269,7 @@ cell, then clamp-advance. Slightly more expensive; rare.
 
 ## 6. Command codes
 
-128 opcodes `$80`–`$FF`. v0.1 uses `$80`–`$93` (`$94` experimental).
+128 opcodes `$80`–`$FF`. v0.1 uses `$80`–`$93` and `$95` (`$94` experimental).
 Unused codes must `$NOP`-safe or `$A6` the FIFO until StreamEnd —
 **reserved = ignore one word**, so a future host can skip.
 
@@ -285,9 +296,10 @@ Necessary and sufficient for **IIe 80-col console firmware** and a
 | `$8F` | `SetTop` | row | — | Top of scroll region (`WNDTOP`, `DECSTBM`). |
 | `$90` | `SetBottom` | row | — | Inclusive bottom row. |
 | `$91` | `CursorStyle` | ignored | style word | Hardware cursor at card `(x,y)`. See §6.2. |
-| `$92` | `Reset` | ignored | — | Margins = full raster, `(x,y)=(0,0)`, attr `$07`, cursor on (blink block), erase full raster. Does **not** change `SetSync`. |
+| `$92` | `Reset` | ignored | — | Margins = full raster, `(x,y)=(0,0)`, attr `$07`, cursor on (blink block), erase full raster. Does **not** change `SetSync` or `Yield`. |
 | `$93` | `SetSync` | 0 / 1 | — | `$00` = process immediately; `$01` = batch until VBL. See §6.3. |
 | `$94` | `ReadCells` | count | *host reads* `count` words | **Experimental.** See §6.5. |
+| `$95` | `Yield` | 0 / 1 | — | `$00` = park (Mega II); `$01` = claim (same VRAM). See §6.7. |
 
 `SetX` + `SetY` replace a packed `MoveTo`. Two words, 8-bit args, IIe `CH`/`CV`
 sized. 80×43 / 80×50 fit.
@@ -422,6 +434,35 @@ Do not ship firmware that needs this.
 Insert/delete **character** *is* on the card so curses does not read the
 rest of the line across 1 MHz.
 
+### 6.7 `Yield` (`$95`)
+
+Temporarily give the display back to Mega II **without** leaving GPU Text.
+Host policy (when to park for a CDA, a GS/OS dialog, etc.) is
+[Specs/SSConsole.md](../Specs/SSConsole.md) §13.
+
+```
+        ; park: drain first so $9500 is last
+wait    LDA   $C0B8
+        CMP   #$01
+        BNE   wait
+        LDA   #$9500
+        STA   $C0B1
+        ; Mega II is on the glass. VRAM unchanged.
+        LDA   #$9501            ; claim
+        STA   $C0B1
+        ; same page — no SetMode, no replay
+```
+
+| Arg | Name | Effect |
+| --- | --- | --- |
+| `$00` | park / yield | `vga_active` ← 0. Frame path draws Mega II. Stream stays armed. |
+| `$01` | claim / unpark | `vga_active` ← 1. Next frame presents card VRAM. |
+| other | — | Ignore; keep previous yield state. |
+
+`Reset` (`$92`) does **not** change yield. `SetMode` away still ends the
+stream and discards VRAM. `SetMode($05)` again is not a clear. `ScreenOff`
+still means “black, we own VGA.”
+
 ---
 
 ## 7. Current attribute
@@ -540,11 +581,12 @@ per glyph. `LDA $C0B8` until `$01` if you must know the buffer is empty
 **v0.1**
 
 - Rasters `$03` / `$43`.
-- Bit 15 putc vs `$80`–`$93` (`$94` experimental).
+- Bit 15 putc vs `$80`–`$93` and `$95` (`$94` experimental).
 - Clamp-advance, margins, no auto wrap.
 - `CursorStyle` (`$91`): enable, blink, block/underline/bar, invert vs attr, scanlines.
 - Write-IRQ → ring → consumer; one-way stream.
 - `SetSync` (`$93`): `$00` immediate, `$01` VBL. Default immediate.
+- `Yield` (`$95`): `$00` park (Mega II), `$01` claim. No SetMode, no replay.
 - `$C0B8`: `$00` = not ready (work in ring), `$01` = ready (empty). No idle opcode.
 - IIe two-byte `C0B1` path and 816 16-bit / `D=$C000` path.
 
@@ -556,5 +598,3 @@ per glyph. `LDA $C0B8` until `$01` if you must know the buffer is empty
 - Packed `SetXY` extra word.
 - Horizontal pan (rarely needed for VT100).
 - Scrollback on the card (`ED 3`).
-- Flag `$05` listed in [SecondSight.md](SecondSight.md) “New Mode Definitions”
-  next to `$02` PPU / `$03` GPU / `$04` Host Text.

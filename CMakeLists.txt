@@ -369,6 +369,7 @@ add_library(gs2_devices_secondsight
     src/devices/secondsight/secondsight.cpp
     src/devices/secondsight/ss_a2_text_sync.cpp
     src/devices/secondsight/ss_host_text.cpp
+    src/devices/secondsight/ss_gpu_text.cpp
     src/devices/secondsight/ss_gpu.cpp
     src/devices/secondsight/ppu_render.cpp
     src/devices/secondsight/vga_render_8.cpp
@@ -754,6 +755,8 @@ if(NOT EMSCRIPTEN)
     add_subdirectory(apps/mousebugtest)
 
     add_subdirectory(apps/systemconfigtest)
+
+    add_subdirectory(apps/ssgputexttest)
 endif()
 
 ################################################################################

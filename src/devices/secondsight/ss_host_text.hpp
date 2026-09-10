@@ -115,6 +115,14 @@ bool ss_host_text_compose(uint8_t *dst, int dst_pitch,
     const uint8_t *a2_ram, uint32_t ram_size, const ss_host_text_ctrl_t &c,
     int max_rows);
 
+/** Overlay hardware cursor onto an ARGB8888 raster (after vga_raster_text_*).
+ *  draw_attr is the IBM attr used for invert/replace colors. */
+void ss_text_overlay_cursor(uint32_t *pixels, int pixel_pitch,
+    const uint8_t *cells, int cell_pitch,
+    int cx, int cy, int cols, int vis_rows,
+    uint16_t style, uint8_t draw_attr,
+    bool blink_phase, int cell_w, int cell_h, int max_rows);
+
 /** Overlay hardware cursor onto an ARGB8888 raster (after vga_raster_text_*). */
 void ss_host_text_overlay_cursor(uint32_t *pixels, int pixel_pitch,
     const uint8_t *cells, int cell_pitch, const ss_host_text_ctrl_t &c,

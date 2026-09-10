@@ -2,7 +2,7 @@
 
 GS/OS S16 that talks to Second Sight in **slot 3**: `SetMode($5C, $03)` (640×480 GPU), uploads three 128×128 RGB555 textures, then each frame sends a small CSB (`Clear` / three `DrawTexture` / `Present` VBL / `End`). The 65816 never blits 640×480.
 
-Press any key to free the textures, return to emulation mode, and `rtl` back to GS/OS.
+Press any key to free the textures, return to emulation mode, and exit via GS/OS `_Quit`.
 
 This stage assumes the emulator has GPU mode. Do not wait on `GetCapabilities`.
 
