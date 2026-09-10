@@ -84,6 +84,17 @@ private:
     color_mode_t line_mode[HEIGHT];
 
 public:
+    struct Cursor {
+        uint32_t line;
+        uint32_t column;
+    };
+
+    inline Cursor cursor() const noexcept { return {scanline, hloc}; }
+    inline void set_cursor(Cursor position) noexcept {
+        set_line(position.line);
+        hloc = position.column;
+    }
+
     //Frame(uint16_t width, uint16_t height);  // pixels
 
     Frame(uint32_t width, uint32_t height, SDL_Renderer* renderer = nullptr, SDL_PixelFormat format = SDL_PIXELFORMAT_UNKNOWN);   

@@ -184,6 +184,10 @@ inline void VideoScanGenerator_RGB::render_hires_mono() {
  */
 void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
 {
+    if (last_scan_buffer && (last_scan_buffer != frame_scan ||
+            expected_read_sequence != frame_scan->get_read_sequence()))
+        awaiting_sync = true;
+    last_scan_buffer = frame_scan;
     uint64_t fcnt = frame_scan->get_count();
     if (fcnt == 0) {
         //printf("Warning: no data in ScanBuffer\n");
@@ -203,6 +207,7 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
 
     while (fcnt--) {
         Scan_t scan = frame_scan->pull();
+        if (awaiting_sync && scan.mode != VM_VSYNC) continue;
         if (modeChecks && scan.mode <= VM_DHIRES) {
             color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
             color_mode.mixed_mode = scan.flags & VS_FL_MIXED ? 1 : 0;
@@ -214,6 +219,15 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
             eff_mode = (scan.flags & VS_FL_80COL) ? VM_TEXT80 : VM_TEXT40; // or TEXT80 depending on mode..
         }
 
+        // Legacy/SHR transitions can change sample widths within a line; clip
+        // data at the fixed output boundary while continuing to consume sync.
+        const uint32_t sample_width = eff_mode == VM_SHR ? 16 :
+            (eff_mode <= VM_DHIRES ? 14 :
+             (eff_mode == VM_BORDER_COLOR ? scanner_freq : 0));
+        if (sample_width && (beam_v >= FrameVSG::max_height() ||
+                frame_vsg->cursor().column + sample_width > FrameVSG::max_width()))
+            continue;
+
         switch (eff_mode) {
             case VM_BLANK:
                 frame_vsg->advance(scanner_freq); // advance by scanner_freq pixels
@@ -221,10 +235,16 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
                 break;
             case VM_VSYNC:
                 vcount = 0;
+                hcount = 0;
                 beam_v = 0;
                 beam_h = 0;
-                frame_vsg->set_line_v(beam_v); // move V but not H
+                frame_vsg->set_line(beam_v);
                 sawdata = false;
+                lastByte = 0;
+                modeChecks = true;
+                awaiting_sync = false;
+                bit_stream.clear();
+                expected_read_sequence = frame_scan->get_read_sequence();
                 return;
                 //break;
 
@@ -232,7 +252,7 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
                     lastByte = 0x00; // for hires
                     hcount = 0; if (sawdata) vcount++;
                     beam_h = 0; beam_v++;
-                    frame_vsg->set_line(beam_v); // and set H to 0
+                    if (beam_v < FrameVSG::max_height()) frame_vsg->set_line(beam_v);
                     
                     modeChecks = true;
 
@@ -494,5 +514,5 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
         }
         beam_h++;
     }
+    expected_read_sequence = frame_scan->get_read_sequence();
 }
-

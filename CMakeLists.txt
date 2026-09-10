@@ -754,6 +754,7 @@ if(NOT EMSCRIPTEN)
     add_subdirectory(apps/mousebugtest)
 
     add_subdirectory(apps/systemconfigtest)
+    add_subdirectory(apps/videoscanregressiontest)
 endif()
 
 ################################################################################

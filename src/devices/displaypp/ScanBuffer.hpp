@@ -8,16 +8,20 @@ class ScanBuffer {
     alignas(64) Scan_t buffer[BUFFER_SIZE];
     uint32_t write_pos;
     uint32_t read_pos;
+    uint64_t read_sequence = 0;
 
 public:
     ScanBuffer() { clear(); };
     ~ScanBuffer() {};
 
     inline void push(Scan_t scan) noexcept { buffer[write_pos] = scan; write_pos = (write_pos + 1) & BUFFER_MASK; };
-    inline Scan_t pull() noexcept { Scan_t scan = buffer[read_pos]; read_pos = (read_pos + 1) & BUFFER_MASK; return scan;};
+    inline Scan_t pull() noexcept { Scan_t scan = buffer[read_pos]; read_pos = (read_pos + 1) & BUFFER_MASK; ++read_sequence; return scan;};
     inline Scan_t peek() const noexcept { return buffer[read_pos];};
     inline uint32_t get_count() const noexcept { return (write_pos - read_pos) & BUFFER_MASK; };
-    inline void clear() noexcept { write_pos = 0; read_pos = 0; };
+    // Readers use this sequence to detect discarded samples or consumption by
+    // another decoder, including an omitted VSync marker in a partial frame.
+    inline uint64_t get_read_sequence() const noexcept { return read_sequence; }
+    inline void clear() noexcept { write_pos = 0; read_pos = 0; ++read_sequence; };
     inline Scan_t get(uint32_t index) const noexcept { return buffer[(read_pos + index) & BUFFER_MASK]; };
 
     // Delay-0 softswitches: revise flags on the most recently pushed sample.

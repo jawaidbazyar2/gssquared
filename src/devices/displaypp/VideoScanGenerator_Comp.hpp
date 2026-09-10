@@ -50,9 +50,13 @@ private:
     FrameVSG *frame_vsg = nullptr;
     Frame560 *frame_byte = nullptr;
     Render *render = nullptr;
+    const ScanBuffer *last_scan_buffer = nullptr;
+    uint64_t expected_read_sequence = 0;
+    bool awaiting_sync = false;
 
 public:
     VideoScanGenerator_Comp(CharRom *charrom, bool border_enabled = false, FrameVSG *frame_vsg = nullptr);
+    virtual ~VideoScanGenerator_Comp() { delete frame_byte; }
 
     virtual void generate_frame(ScanBuffer *frame_scan);
     virtual void set_display_shift(bool enable) { display_shift_enabled = enable; }

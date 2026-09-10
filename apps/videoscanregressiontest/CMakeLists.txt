@@ -1,0 +1,3 @@
+add_executable(videoscanregressiontest main.cpp)
+target_link_libraries(videoscanregressiontest PRIVATE gs2_video_scanner)
+add_test(NAME videoscanregressiontest COMMAND videoscanregressiontest)
