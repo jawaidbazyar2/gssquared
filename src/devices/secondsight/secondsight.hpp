@@ -1230,7 +1230,7 @@ class SecondSight {
                 resp_buffer[4] = 'G';
                 resp_buffer[5] = 'A';
                 resp_buffer[6] = 0x05; // size of following record data
-                resp_buffer[7] = 0x14; // version 1.4
+                resp_buffer[7] = 0x20; // version 2.0 (GetCapabilities exists)
                 resp_buffer[8] = vga_active; 
                 resp_buffer[9] = vga_mode_num;
                 resp_buffer[0x0A] = 1; // 1MB video RAM
@@ -1239,6 +1239,44 @@ class SecondSight {
                 setup_dma(DMA_DIRECTION_OUT, resp_buffer, 0x0C);
             } else if (command_step == 2) {
                 // DMA complete, we're done.
+                command_step = 0;
+                reg_handshake = 0x00;
+            }
+        }
+
+        // $10 GetCapabilities: u16 total_bytes + TLV mode records (mode, len=5, w, h, depth).
+        void cmd_get_capabilities() {
+            if (command_step == 1) {
+                uint8_t *p = resp_buffer + 2;
+                for (int i = 0; i < (int)(sizeof(vga_modes) / sizeof(vga_mode_t)); i++) {
+                    const vga_mode_t &m = vga_modes[i];
+                    if (!m.vgamode) {
+                        continue;
+                    }
+                    const uint8_t depth = (m.graphics == TG_TEXT) ? 0 : m.color_depth;
+                    *p++ = m.mode;
+                    *p++ = 5;
+                    *p++ = (uint8_t)m.width;
+                    *p++ = (uint8_t)(m.width >> 8);
+                    *p++ = (uint8_t)m.height;
+                    *p++ = (uint8_t)(m.height >> 8);
+                    *p++ = depth;
+                }
+                ss_host_text_raster_t ht{};
+                if (ss_host_text_lookup_raster(SS_HT_MODE_80X43, &ht)) {
+                    *p++ = ht.mode;
+                    *p++ = 5;
+                    *p++ = ht.cols;
+                    *p++ = 0;
+                    *p++ = ht.vis_rows;
+                    *p++ = 0;
+                    *p++ = 0;
+                }
+                const uint16_t nbytes = (uint16_t)(p - (resp_buffer + 2));
+                resp_buffer[0] = (uint8_t)nbytes;
+                resp_buffer[1] = (uint8_t)(nbytes >> 8);
+                setup_dma(DMA_DIRECTION_OUT, resp_buffer, 2u + nbytes);
+            } else if (command_step == 2) {
                 command_step = 0;
                 reg_handshake = 0x00;
             }
@@ -1612,7 +1650,9 @@ class SecondSight {
 
         /* Commands with a DMA from Card to II for response data
             ==> EXECUTE DATA_OUT
-            GetStatus 
+            GetStatus
+            GetCapabilities
+            GetGpuInfo
         */
         /* Commands with DMA from II to card for arguments
            ==> DATA_IN EXECUTE
@@ -1835,6 +1875,7 @@ class SecondSight {
             t[13] = &SecondSight::cmd_get_vga_reg;
             t[14] = &SecondSight::cmd_set_user_mode;
             t[15] = &SecondSight::cmd_set_text_font;
+            t[0x10] = &SecondSight::cmd_get_capabilities;
             t[0x40] = &SecondSight::cmd_reject;
             t[0x41] = &SecondSight::cmd_reject;
             t[0x42] = &SecondSight::cmd_reject;
@@ -1858,6 +1899,7 @@ class SecondSight {
                     cmd_table_gpu[i] = &SecondSight::cmd_reject;
                 }
             }
+            cmd_table_gpu[0x10] = &SecondSight::cmd_get_capabilities;
             cmd_table_gpu[0x40] = &SecondSight::cmd_upload_texture;
             cmd_table_gpu[0x41] = &SecondSight::cmd_free_texture;
             cmd_table_gpu[0x42] = &SecondSight::cmd_exec_cmd_buf;
@@ -1876,6 +1918,7 @@ class SecondSight {
                     cmd_table_hosttext[i] = &SecondSight::cmd_reject;
                 }
             }
+            cmd_table_hosttext[0x10] = &SecondSight::cmd_get_capabilities;
             cmd_table_hosttext[0x40] = &SecondSight::cmd_reject;
             cmd_table_hosttext[0x41] = &SecondSight::cmd_reject;
             cmd_table_hosttext[0x42] = &SecondSight::cmd_reject;
@@ -1895,6 +1938,7 @@ class SecondSight {
                     cmd_table_gputext[i] = &SecondSight::cmd_reject;
                 }
             }
+            cmd_table_gputext[0x10] = &SecondSight::cmd_get_capabilities;
             cmd_table_gputext[0x40] = &SecondSight::cmd_reject;
             cmd_table_gputext[0x41] = &SecondSight::cmd_reject;
             cmd_table_gputext[0x42] = &SecondSight::cmd_reject;

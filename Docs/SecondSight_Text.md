@@ -94,8 +94,9 @@ While `ss_mode == HOSTTEXT`:
 
 | Cmd   | Name             | Role in Host Text                                      |
 | ----- | ---------------- | ------------------------------------------------------ |
-| `$00` | GetStatus        | Detection (unchanged 12-byte record)                   |
+| `$00` | GetStatus        | Detection (12-byte record; version `$20`)              |
 | `$01` | SetMode          | Enter/leave; pick raster by mode number                |
+| `$10` | GetCapabilities  | Mode catalog ([SecondSight_GPU.md](SecondSight_GPU.md) §7.5) |
 | `$04` | ScreenOff        | Blank output                                           |
 | `$05` | ScreenOn         | Enable output (still blank if unarmed)                 |
 | `$06` | SetPalette       | 768-byte RGB; only indices 0–15 are used for cells     |

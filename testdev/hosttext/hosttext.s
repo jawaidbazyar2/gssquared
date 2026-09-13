@@ -17,7 +17,11 @@ HOSTTEXT START
          longa on
          longi on
 
-         jsr   GetStatus
+         lda   #$0003
+         jsr   CheckCard
+         bcc   cardok
+         jmp   quit
+cardok   anop
 
          lda   #$0003
          sta   ss_mode
@@ -510,6 +514,11 @@ ctrl_lo  ds    2
 ctrl_hi  ds    2
 ctrl_aux ds    2
 statusbuf ds   16
+wantmode ds    2
+capleft  ds    2
+reclen   ds    2
+captmp   ds    2
+capbuf   ds    80
 
 pgbase   ds    2
 frow     ds    2

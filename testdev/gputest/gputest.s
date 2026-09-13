@@ -17,7 +17,11 @@ GPUTEST  START
          longa on
          longi on
 
-         jsr   GetStatus
+         lda   #$005C
+         jsr   CheckCard
+         bcc   cardok
+         jmp   quit
+cardok   anop
 
          lda   #$005C
          sta   ss_mode
@@ -326,6 +330,11 @@ tmp      ds    2
 bmax     ds    2
 csblen   ds    4
 statusbuf ds   16
+wantmode ds    2
+capleft  ds    2
+reclen   ds    2
+captmp   ds    2
+capbuf   ds    80
 gpuinfo  ds    20
 
 texhdr   dw    128,128

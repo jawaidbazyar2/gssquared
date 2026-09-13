@@ -4,7 +4,7 @@ GS/OS S16 that talks to Second Sight in **slot 3**: `SetMode($5C, $03)` (640×48
 
 Press any key to free the textures, return to emulation mode, and exit via GS/OS `_Quit`.
 
-This stage assumes the emulator has GPU mode. Do not wait on `GetCapabilities`.
+Requires `GetStatus` version `$20` and a `GetCapabilities` record for mode `$5C` (640×480×16). Otherwise it returns to GS/OS immediately.
 
 ## Build
 

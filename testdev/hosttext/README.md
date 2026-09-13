@@ -1,6 +1,10 @@
 # HOSTTEXT — Second Sight Host Text bounce demo
 
-GS/OS S16 that talks to Second Sight in **slot 3**: `SetMode($03, $04)`
+GS/OS S16 that talks to Second Sight in **slot 3**. Both programs require
+`GetStatus` version `$20` and a `GetCapabilities` record for their raster
+(`$03` or `$43`); otherwise they return to GS/OS immediately.
+
+`HOSTTEXT` uses `SetMode($03, $04)`
 (80×25 Host Text), ANSI 8×16 font, then a planar 80×50 cell buffer in
 hires page 1 (`$E0/2000` chars, `$E0/2FA0` attrs). Control block at
 `$E0/3FE0`, IBM palette at `$E0/3FA0`.

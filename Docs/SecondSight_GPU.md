@@ -1,6 +1,6 @@
 # Second Sight GPU Mode
 
-**Status:** draft v0.1 (2026-08-26)  
+**Status:** draft v0.2 (2026-09-13)  
 **Card mode:** SetMode emulation flag `$03`  
 **Depends on:** [SecondSight.md](SecondSight.md) (classic VGA API, handshake, slot I/O)
 
@@ -98,12 +98,13 @@ While `ss_mode == GPU`:
 **Allowed classic commands**
 
 
-| Cmd   | Name      | Role in GPU mode                                |
-| ----- | --------- | ----------------------------------------------- |
-| `$00` | GetStatus | Detection (unchanged 12-byte record)            |
-| `$01` | SetMode   | Enter/leave GPU; pick resolution by mode number |
-| `$04` | ScreenOff | Blank output                                    |
-| `$05` | ScreenOn  | Enable output                                   |
+| Cmd   | Name            | Role in GPU mode                                |
+| ----- | --------------- | ----------------------------------------------- |
+| `$00` | GetStatus       | Detection (12-byte record; version `$20`)       |
+| `$01` | SetMode         | Enter/leave GPU; pick resolution by mode number |
+| `$04` | ScreenOff       | Blank output                                    |
+| `$05` | ScreenOn        | Enable output                                   |
+| `$10` | GetCapabilities | §7.5 — mode catalog (legal in every engine)     |
 
 
 **GPU host commands** (start at `$40`; not part of the 1995 set)
@@ -115,7 +116,6 @@ While `ss_mode == GPU`:
 | `$41` | FreeTexture     | §7.3                                       |
 | `$42` | ExecCmdBuf      | §7.4                                       |
 | `$43` | GetGpuInfo      | §7.1 (current GPU state, not capabilities) |
-| TBD   | GetCapabilities | §7.5 (feature stream; command byte TBD)    |
 
 
 **Fenced (must return handshake** `$A6` **if issued in GPU mode)**
@@ -171,11 +171,11 @@ They still must not expose modelines — add a row to this table, nothing else.
 format; the card converts on blit. Indexed modes have a 256-entry GPU palette
 (24-bit colors), independent of the VGA DAC.
 
-Whether the card supports GPU mode at all is a `**GetCapabilities**` question
-(§7.5). `GetGpuInfo` reports heap size and current mode so software can see
-if a given resolution fits (two display buffers + working set). `SetMode`
-returns `$A6` if the mode is unknown or the display surfaces cannot be
-allocated.
+`GetCapabilities` (§7.5) lists the mode numbers this card implements and
+their size/depth. `GetGpuInfo` reports heap size and current mode so software
+can see if a given resolution fits (two display buffers + working set).
+`SetMode` returns `$A6` if the mode is unknown or the display surfaces cannot
+be allocated.
 
 Coordinate space: origin **top-left**, **+Y down**, pixel units, signed 16-bit
 coordinates (QuickDraw II `Rect` convention). A `Rect` is
@@ -233,8 +233,9 @@ to the display, is the off-screen / GWorld pattern.
 **GPU RAM (not the 512K VGA window)**
 
 Classic SS VGA memory is 512K. GPU mode has a **separate heap**. `GetGpuInfo`
-returns the current size and free space. Presence of GPU itself is advertised
-by `GetCapabilities` (§7.5). Suggested profiles:
+returns the current size and free space. `GetCapabilities` (§7.5) lists
+which mode numbers exist; it does not advertise engines. Suggested heap
+profiles:
 
 
 | Profile              | Heap     | Who                                                            |
@@ -273,15 +274,16 @@ Only one host command is in flight. The CSB interpreter runs to completion
 
 ## 7. Host API commands
 
-GPU host commands start at `$40`. `$00`–`$0F` remain the 1995 set. Host
-command bytes and CSB opcodes (§8) are separate namespaces.
+GPU host commands start at `$40`. `$00`–`$0E` remain the 1995 set. `$0F` is
+`SetTextFont`. `$10` is `GetCapabilities` (§7.5). Host command bytes and CSB
+opcodes (§8) are separate namespaces.
 
 ### 7.1 GetGpuInfo (`$43`)
 
 Immediate DMA-out after the command byte (same shape as GetStatus). This
 record is **current GPU state** (heap, live mode). It is not a capability
-cookie and has no signature. Card features (GPU present, Swap/Retain, …)
-come from `GetCapabilities` (§7.5).
+cookie and has no signature. Which geometries exist come from
+`GetCapabilities` (§7.5).
 
 
 | Offset | Size | Content                                            |
@@ -301,8 +303,9 @@ come from `GetCapabilities` (§7.5).
 Handshake: DMA `$01`/`$00` (not long-running). Length = `$14` bytes.
 
 If the card is not in GPU mode, width/height/format are 0, `active` is 0, and
-heap fields still report the GPU heap (or 0 if the card has no GPU). Do not
-use a zero heap as “no GPU” — ask `GetCapabilities`.
+heap fields still report the GPU heap (or 0 if the card has no GPU). A missing
+graphics mode in `GetCapabilities` means that geometry is unavailable;
+`SetMode(..., $03)` returning `$A6` means this engine rejected it.
 
 ### 7.2 UploadTexture (`$40`)
 
@@ -358,28 +361,63 @@ v0.1 max `length` is 65536. `GetGpuInfo` reports the cap.
 The CSB is **not** retained. To replay, the host transmits it again. A later
 revision may add `UploadCmdBuf` → handle for static scenes.
 
-### 7.5 GetCapabilities (TBD)
+### 7.5 GetCapabilities (`$10`)
 
-Command byte, record layout, and capability IDs are **to be determined**
-and are out of scope for this document.
+Card-wide query, legal in every engine (emu / VGA / PPU / GPU / Host Text /
+GPU Text). Not a GPU command. BEEF firmware rejects opcodes `≥ $0F` without
+raising handshake `$01`, so **do not issue `$10` unless `GetStatus.version`
+is `$20` or higher**.
 
-Software that needs to know what the card can do — including whether GPU
-mode exists, which present policies (`Swap` / `Retain`) are implemented,
-maximum advertised resolution, and later 3D / QuickDraw extras — issues
-`GetCapabilities` and reads a stream of capability records. That replaces
-any magic signature on `GetGpuInfo` or extra bytes on classic `GetStatus`
-(Cogito keeps the 12-byte `$00` record).
+`GetStatus` keeps the classic 12-byte record (`GSVGA` + `size_rec` `$06` +
+six data bytes). Cogito and VGALib check only the cookie; they do not
+compare `version`. GSSquared reports **`$20`** (2.0). Do not grow
+`size_rec`. Do not put a GPU signature on `GetGpuInfo`.
 
-Detection sketch (library, not card ISA):
+Transport matches `GetGpuInfo`: command, `WaitHSOn`, DMA-out, `WaitHSOff`.
+No dummy read. Not long-running.
 
-1. `GetStatus` — `'G','S','V','G','A'` cookie; firmware version high enough
-  that `GetCapabilities` exists.
-2. `GetCapabilities` — look for a GPU capability in the stream.
-3. `SetMode(..., $03)` / `GetGpuInfo` — enter GPU and read live heap/mode.
+```
+u16 total_bytes          ; bytes after this field (LE)
+repeat until consumed:
+  u8  mode               ; cap id = SetMode mode number
+  u8  len                ; 5
+  u16 width              ; LE
+  u16 height             ; LE
+  u8  depth              ; bits per pixel, or 0 for text
+```
 
-Until `GetCapabilities` is specified, GSSquared GPU mode may be assumed
-present in emulator builds that compile it in; guest software should still
-call through this sequence so it ports to a real capability record later.
+A mode number names a geometry only. The second `SetMode` byte picks the
+engine. Walk the stream; skip unknown ids with `len`. Extra payload bytes
+may be appended later; v1 software reads the first five.
+
+Graphics: `width`/`height` are pixels; `depth` is bpp (`16` = RGB555).
+Text: `width`/`height` are columns × visible rows; `depth` is `0`.
+
+The card lists only rows it implements. `$FA`–`$FE` (internal Apple
+emulation) and `$FF` (SetUserMode) never appear. New size = new number + a
+row here; no modelines.
+
+
+| Mode  | Kind | Size    | Depth | VGA | GPU | Host Text | GPU Text |
+| ----- | ---- | ------- | ----- | --- | --- | --------- | -------- |
+| `$01` | text | 40×25   | 0     | yes | —   | planned   | planned  |
+| `$03` | text | 80×25   | 0     | yes | —   | yes       | yes      |
+| `$13` | gfx  | 320×200 | 8     | yes | yes | —         | —        |
+| `$43` | text | 80×43   | 0     | —   | —   | yes       | yes      |
+| `$50` | text | 80×50   | 0     | —   | —   | planned   | planned  |
+| `$53` | gfx  | 640×480 | 8     | yes | yes | —         | —        |
+| `$5C` | gfx  | 640×480 | 16    | yes | yes | —         | —        |
+| `$5F` | gfx  | 640×480 | 24    | yes | yes | —         | —        |
+| `$61` | gfx  | 640×400 | 8     | yes | yes | —         | —        |
+
+
+Detection (library, not card ISA):
+
+1. `GetStatus` — `'G','S','V','G','A'`; `version >= $20`.
+2. `GetCapabilities` — find the mode number you want (`$5C` for GPUTEST,
+  `$03` / `$43` for Host Text).
+3. `SetMode(number, flag)` — `$A6` if this engine rejects that number.
+4. GPU only: `GetGpuInfo` for live heap / current mode.
 
 ---
 
@@ -610,9 +648,8 @@ GetGpuInfo, SetMode, UploadTexture, ExecCmdBuf, FreeTexture, ScreenOn.
 
 ### 12.2 Procedure
 
-1. `GetStatus` — `'G','S','V','G','A'` present. Firmware version after the
-  cookie is high enough that `GetCapabilities` exists.
-2. `GetCapabilities` — GPU capability present (record format TBD, §7.5).
+1. `GetStatus` — `'G','S','V','G','A'` present; `version >= $20`.
+2. `GetCapabilities` — record for mode `$5C` (640×480×16) present (§7.5).
 3. `GetGpuInfo` — heap size (and later, that the chosen mode fits).
 4. `SetMode($5C, $03)` — 640×480, RGB555, GPU. `$A5`.
 5. Build three CPU-side images, **good-sized** (if heap allows, **128x128**
@@ -787,11 +824,9 @@ CSB opcode, current target, which display texture is front.
   emulator (skip byte-at-a-time `$C0B2`). Faster tests; not 1995-accurate.
    Could be a header flag on `$42`.
 7. **800×600 / 1024×768** — add mode numbers when we care; still no modelines.
-8. **GetStatus version** — left at 1.4 so Cogito is undisturbed. GPU
-  presence and feature bits go through `GetCapabilities` (§7.5), not extra
-   `GetStatus` bytes and not a `GetGpuInfo` signature.
-9. **GetCapabilities record** — command byte, stream format, and capability
-  IDs TBD.
+8. **GetStatus version / GetCapabilities** — decided: version `$20`, command
+  `$10`, stream of mode records (`mode`, `width`, `height`, `depth`). See
+  §7.5. Classic software checks only `GSVGA`.
 
 ---
 
@@ -803,5 +838,6 @@ CSB opcode, current target, which display texture is front.
 | Ver | Date       | Notes                                                                                                                                                                                                 |
 | --- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0.1 | 2026-08-26 | Initial ISA, host cmds `$40`–`$43`; `GetGpuInfo` has no signature; capabilities via TBD `GetCapabilities`; VGA fence, QD rect subset, GS/OS bounce test; GSSquared CSB→SDL_Renderer reference backend |
+| 0.2 | 2026-09-13 | `GetCapabilities` `$10`: mode catalog; `GetStatus.version` `$20`; Cogito/VGALib check `GSVGA` only |
 
 
