@@ -230,6 +230,16 @@ function(configure_sdl_builds)
     # we exclude from the web build, so skip building it entirely there.
     if(NOT EMSCRIPTEN)
         add_subdirectory(${CMAKE_SOURCE_DIR}/vendored/SDL_net)
+        if(MINGW)
+            # MinGW's optional POSIX aliases collide with SDL_net's private
+            # Windows socket read/write helpers. Keep its sources unmodified
+            # and disable only those legacy CRT names for this dependency.
+            foreach(gs2_net_target SDL3_net-shared SDL3_net-static)
+                if(TARGET ${gs2_net_target})
+                    target_compile_definitions(${gs2_net_target} PRIVATE NO_OLDNAMES)
+                endif()
+            endforeach()
+        endif()
     endif()
     set(BUILD_SHARED_LIBS OFF)
 endfunction()
@@ -949,6 +959,23 @@ endif()
 ## Windows packaging targets
 
 if(WIN32)
+    # MSYS2 can live anywhere (including a CI runner's temporary directory).
+    # Locate the runtimes beside the selected compiler so release ZIPs do not
+    # silently rely on a developer's PATH or a hard-coded C:/msys64 install.
+    set(GS2_MINGW_RUNTIME_DLLS)
+    if(MINGW)
+        get_filename_component(_gs2_compiler_bindir "${CMAKE_CXX_COMPILER}" DIRECTORY)
+        foreach(_gs2_runtime libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll)
+            unset(_gs2_runtime_path CACHE)
+            find_file(_gs2_runtime_path NAMES "${_gs2_runtime}"
+                HINTS "${_gs2_compiler_bindir}" NO_DEFAULT_PATH)
+            if(NOT _gs2_runtime_path)
+                message(FATAL_ERROR "Required MinGW runtime ${_gs2_runtime} was not found beside ${CMAKE_CXX_COMPILER}")
+            endif()
+            list(APPEND GS2_MINGW_RUNTIME_DLLS "${_gs2_runtime_path}")
+        endforeach()
+        unset(_gs2_runtime_path CACHE)
+    endif()
     if(GS2_PROGRAM_FILES)
         message(STATUS "Windows: Installing for PROGRAM_FILES (in-place run)")
         # Install main executable
@@ -967,12 +994,9 @@ if(WIN32)
         )
         # Install MinGW runtime DLLs to bin
         install(FILES
-            C:/msys64/mingw64/bin/libgcc_s_seh-1.dll
-            C:/msys64/mingw64/bin/libstdc++-6.dll
-            C:/msys64/mingw64/bin/libwinpthread-1.dll
+            ${GS2_MINGW_RUNTIME_DLLS}
             DESTINATION bin
             COMPONENT Runtime
-            OPTIONAL
         )
         # Install import libs to lib (optional for devs)
         install(FILES
@@ -1005,12 +1029,9 @@ if(WIN32)
         )
         # Install MinGW runtime DLLs to root
         install(FILES
-            C:/msys64/mingw64/bin/libgcc_s_seh-1.dll
-            C:/msys64/mingw64/bin/libstdc++-6.dll
-            C:/msys64/mingw64/bin/libwinpthread-1.dll
+            ${GS2_MINGW_RUNTIME_DLLS}
             DESTINATION .
             COMPONENT Runtime
-            OPTIONAL
         )
         install(FILES
             ${CMAKE_BINARY_DIR}/lib/libSDL3.dll.a

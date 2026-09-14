@@ -98,7 +98,7 @@ static void /* SDLCALL */ file_dialog_callback(void* userdata, const char* const
     // 2. mount new image.
 
     disk_mount_t dm;
-    dm.filename = strndup(filelist[0], 1024);
+    dm.filename = gs2_strndup(filelist[0], 1024);
     dm.slot = data->key.slot;
     dm.drive = data->key.drive;   
     bool result = osd->computer->mounts->mount_media(dm);
@@ -535,7 +535,7 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
                 StorageButton *button = dynamic_cast<StorageButton *>(tile);
                 storage_key_t key = button->get_key();
                 disk_mount_t dm;
-                dm.filename = strndup(event.drop.data, 1024);
+                dm.filename = gs2_strndup(event.drop.data, 1024);
                 dm.slot = key.slot;
                 dm.drive = key.drive;   
                 bool result = computer->mounts->mount_media(dm);
