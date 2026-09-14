@@ -203,6 +203,18 @@ inline std::vector<MotionChunk> split_motion_delta(int dx, int dy) {
     return chunks;
 }
 
+// TODO: this is accessing via mmu->read(), which will probably work here, however, there
+// is potential for side effects if we're not careful, so should modify this to have
+// direct access to SHR status. OR, maybe we can look into the IIgs for quickdraw active also?
+inline bool shr_active(keygloo_state_t *kb_state) {
+    if (!kb_state || !kb_state->mmu) {
+        return false;
+    }
+    // C029 NEWVIDEO bit 7: Super Hi-Res display. Mega II hosts both the
+    // display and MMU_IIgs handlers for this register.
+    return (kb_state->mmu->read(0xC029) & 0x80) != 0;
+}
+
 inline bool compute_em_active(keygloo_state_t *kb_state) {
     if (!kb_state->mmu || !kb_state->computer || !kb_state->computer->cpu ||
         !kb_state->computer->cpu->mmu) {
@@ -224,6 +236,13 @@ inline bool compute_em_active(keygloo_state_t *kb_state) {
         uint8_t active_lo = fpi->read(tool_start + EM_TOOL_ACTIVE_OFFSET);
         uint8_t active_hi = fpi->read(tool_start + EM_TOOL_ACTIVE_OFFSET + 1);
         active = (active_lo | (active_hi << 8)) != 0;
+    }
+
+    // GNO/ME starts Event Manager without the SHR desktop. Targeting —
+    // including hiding the host cursor for the guest pointer — is only
+    // meaningful while Super Hi-Res is on.
+    if (active && !shr_active(kb_state)) {
+        active = false;
     }
 
     if (kb_state->computer->video_system &&
