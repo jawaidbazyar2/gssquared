@@ -24,6 +24,7 @@
 #include <SDL3/SDL_audio.h>
 
 #include "AY8910-2.hpp"
+#include "SSI263.hpp"
 #include "W6522.hpp"
 
 #include "gs2.hpp"
@@ -107,6 +108,7 @@ class Mockingboard {
 private:
     N6522 *n6522[2];
     AY8910s *ay8910s;
+    SSI263 ssi263;
     SDL_AudioStream *stream;
     uint64_t last_cycle;
     uint8_t slot;
@@ -183,6 +185,7 @@ public:
     void debug_registers();
 
     void write(uint32_t addr, uint8_t data) {   // this is address & 0xFF
+        const uint8_t offset = addr & 0xFF;
         uint8_t reg = addr & 0x0F;
         uint8_t chip = (addr & 0x80) ? 0 : 1;
     
@@ -207,12 +210,22 @@ public:
                 n6522[chip]->set_ira(0xFF);
             }
         }
+
+        // Mockingboard SSI writes are an additional decode alongside the
+        // mirrored VIA, not a replacement for it. A6 selects the speech
+        // window over $40-$7F and A2..A0 select the SSI register.
+        if (SSI263::isMockingboardWriteOffset(offset)) {
+            ssi263.write(SSI263::registerForOffset(offset), data);
+        }
     }
     
     uint8_t read(uint32_t addr) {               // this is address & 0xFF
         uint8_t reg = addr & 0x0F;
         uint8_t chip = (addr & 0x80) ? 0 : 1;
     
+        // In Mockingboard mode SSI A/!R is wired to the other VIA's CA1
+        // interrupt input. Slot-page reads always retain their VIA mirrors;
+        // direct D7 reads belong to a future Phasor-native decoder.
         return n6522[chip]->read(reg);
     }
     
@@ -229,6 +242,11 @@ public:
         last_cycle = clock->get_vid_cycles();
     
         ay8910s->generateSamples(samples_this_frame);
+        ssi263.mixSamples(audio_buffer, samples_this_frame);
+        if (ssi263.takeCompletion() && ssi263.interruptsEnabled()) {
+            // The primary SSI socket signals the VIA at $Cx80-$CxFF.
+            n6522[0]->signal_ca1_falling_edge();
+        }
     
         // Clear the audio buffer after each frame to prevent memory buildup
         // Send the generated audio data to the SDL audio stream
@@ -256,6 +274,7 @@ public:
         n6522[0]->reset();
         n6522[1]->reset();
         ay8910s->reset();
+        ssi263.reset();
         // Port A pull-ups on the Mockingboard hold the bus high whenever
         // neither the AY nor the VIA is driving. Pre-seed IRA so the CPU
         // sees $FF on the very first ORA read (before any bus cycle).
@@ -267,6 +286,9 @@ public:
         DebugFormatter *df = new DebugFormatter();
         n6522[0]->debug(df);
         n6522[1]->debug(df);
+        df->addLine("SSI-263: phone=%02X active=%d ready=%d samples=%u",
+                    ssi263.phoneme(), ssi263.active(), ssi263.ready(),
+                    ssi263.samplesRemaining());
         // TODO: add AY-8910s debug
         return df;
     }
