@@ -16,6 +16,10 @@ GS2 supports the following virtual disk media formats:
 
 Woz format is the heart of GS2 floppy emulation. GS2 supports copy-protected 5.25 and 3.5 disks in Woz format, even ones with half tracks, quarter tracks, spiral tracks, weak bits, etc etc. Virtually any copy-protected Woz image should work fine in GS2.
 
+## Creating a blank image
+
+**File → New Disk Image** writes a new `.woz` (5.25″ or 3.5″) or a 32M `.hdv` via the system save dialog. The file is not mounted automatically. See [Blank Disk Images](BlankFloppy.md).
+
 ## Mounting disks
 
 There are several ways to mount disks depending on your preference.

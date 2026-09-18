@@ -101,6 +101,8 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 @interface MenuActionHandler : NSObject <NSMenuItemValidation>
 - (void)fileClose:(id)sender;
+- (void)fileOpenConfig:(id)sender;
+- (void)newDiskImage:(id)sender;
 - (void)fileSaveScreenshot:(id)sender;
 - (void)toggleMountDrivers:(id)sender;
 - (void)appQuit:(id)sender;
@@ -148,6 +150,11 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)fileOpenConfig:(id)sender {
 	getMenuInterface()->openSystemConfig();
 	(void)sender;
+}
+
+- (void)newDiskImage:(id)sender {
+	NSInteger tag = [sender tag];
+	getMenuInterface()->newDiskImage(static_cast<int>(tag));
 }
 
 - (void)fileSaveScreenshot:(id)sender {
@@ -210,6 +217,9 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	}
 	if (menuItem.action == @selector(fileOpenConfig:)) {
 		return !getMenuInterface()->isEmulationRunning();
+	}
+	if (menuItem.action == @selector(newDiskImage:)) {
+		return YES;
 	}
 	// All other items (File, Edit, Machine, Settings, Display) require emulation
 	return getMenuInterface()->isEmulationRunning();
@@ -485,6 +495,30 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[openConfigItem setTarget:sMenuHandler];
 	[fileMenu addItem:openConfigItem];
+
+	NSMenu *newDiskMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"New Disk Image", nil)] autorelease];
+	struct { const char *title; int tag; } newDiskItems[] = {
+		{ "5.25 Unformatted",       MENU_FILE_NEW_DISK_525_UNFMT },
+		{ "5.25 Formatted DOS 3.3", MENU_FILE_NEW_DISK_525_DOS33 },
+		{ "5.25 Formatted ProDOS",  MENU_FILE_NEW_DISK_525_PRODOS },
+		{ "3.5 Formatted ProDOS",   MENU_FILE_NEW_DISK_35_PRODOS },
+		{ "32M HD Unformatted",     MENU_FILE_NEW_DISK_32M_HD },
+	};
+	for (size_t i = 0; i < sizeof(newDiskItems) / sizeof(newDiskItems[0]); ++i) {
+		NSMenuItem *item = [[[NSMenuItem alloc]
+			initWithTitle:NSLocalizedString([NSString stringWithUTF8String:newDiskItems[i].title], nil)
+			       action:@selector(newDiskImage:)
+			keyEquivalent:@""] autorelease];
+		[item setTarget:sMenuHandler];
+		[item setTag:newDiskItems[i].tag];
+		[newDiskMenu addItem:item];
+	}
+	NSMenuItem *newDiskMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"New Disk Image", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[newDiskMenuItem setSubmenu:newDiskMenu];
+	[fileMenu addItem:newDiskMenuItem];
 
 	[fileMenu addItem:[NSMenuItem separatorItem]];
 

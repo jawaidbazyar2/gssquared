@@ -34,6 +34,7 @@
 #include "devices/speaker/speaker.hpp"
 #include "platforms.hpp"
 #include "util/dialog.hpp"
+#include "util/BlankDisk.hpp"
 #include "util/mount.hpp"
 #include "util/Connections.hpp"
 #include "util/SystemConfig.hpp"
@@ -41,6 +42,8 @@
 #include "ui/OSD.hpp"
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
+#elif defined(__APPLE__)
+#include "platform-specific/macos/gs2_save_dialog.hpp"
 #endif
 #include "systemconfig.hpp"
 #include "slots.hpp"
@@ -760,6 +763,104 @@ static void open_system_config_dialog(GS2AppState *state, bool edit_mode = false
 #endif
 }
 
+static bool blank_disk_type_from_menu(Sint32 code, BlankDiskType *out) {
+    switch (code) {
+        case MENU_FILE_NEW_DISK_525_UNFMT:
+            *out = BlankDiskType::Floppy525Unformatted;
+            return true;
+        case MENU_FILE_NEW_DISK_525_DOS33:
+            *out = BlankDiskType::Floppy525Dos33;
+            return true;
+        case MENU_FILE_NEW_DISK_525_PRODOS:
+            *out = BlankDiskType::Floppy525Prodos;
+            return true;
+        case MENU_FILE_NEW_DISK_35_PRODOS:
+            *out = BlankDiskType::Floppy35Prodos;
+            return true;
+        case MENU_FILE_NEW_DISK_32M_HD:
+            *out = BlankDiskType::Hd32M;
+            return true;
+        default:
+            return false;
+    }
+}
+
+static void show_blank_disk_error(const std::string& message) {
+    std::cerr << message << "\n";
+    std::string copy = message;
+    system_diag(copy.data());
+}
+
+struct new_disk_dialog_data_t {
+    BlankDiskType type;
+    std::string default_path;
+};
+
+static void new_disk_dialog_callback(void *userdata, const char *const *filelist, int /*filter*/) {
+    auto *data = static_cast<new_disk_dialog_data_t *>(userdata);
+    BlankDiskType type = data->type;
+    std::string path;
+    if (filelist && filelist[0]) {
+        path = filelist[0];
+    }
+    delete data;
+
+    if (path.empty()) {
+        return;
+    }
+
+    std::string err;
+    if (!write_blank_disk(type, path, err)) {
+        show_blank_disk_error(err);
+        return;
+    }
+    SystemSettings::instance().remember_file_dialog_selection(
+        FileDialogKind::Disk, blank_disk_ensure_extension(type, path));
+}
+
+static void begin_new_disk_image(GS2AppState *state, BlankDiskType type) {
+    if (!state->computer || !state->computer->video_system) {
+        show_blank_disk_error("Cannot create a disk image (no window).");
+        return;
+    }
+
+    auto *cb_data = new new_disk_dialog_data_t{
+        type,
+        SystemSettings::instance().get_file_dialog_save_default_location(
+            FileDialogKind::Disk, blank_disk_suggested_filename(type)),
+    };
+
+    const bool floppy = blank_disk_is_floppy(type);
+    static const SDL_DialogFileFilter woz_filters[] = {
+        {"WOZ images", "woz"},
+    };
+    static const SDL_DialogFileFilter hdv_filters[] = {
+        {"Hard disk images", "hdv"},
+    };
+    const SDL_DialogFileFilter *filters = floppy ? woz_filters : hdv_filters;
+    const int nfilters = 1;
+
+#if defined(__EMSCRIPTEN__)
+    const char *files[2] = { cb_data->default_path.c_str(), nullptr };
+    new_disk_dialog_callback(cb_data, files, -1);
+#elif defined(__APPLE__)
+    (void)filters;
+    (void)nfilters;
+    const char *message = floppy
+        ? "Choose a .woz file to overwrite, or enter a new name."
+        : "Choose a .hdv file to overwrite, or enter a new name.";
+    gs2_show_save_file_dialog(new_disk_dialog_callback, cb_data,
+                              state->computer->video_system->window,
+                              cb_data->default_path.c_str(),
+                              "New Disk Image", message,
+                              blank_disk_suggested_filename(type));
+#else
+    SDL_ShowSaveFileDialog(new_disk_dialog_callback, cb_data,
+                           state->computer->video_system->window, filters, nfilters,
+                           cb_data->default_path.c_str());
+#endif
+}
+
 /*
  * Configure the selected system and transition from system-select to emulation.
  * This is the code that was between select_system->select() and run_cpus() in old main().
@@ -1280,6 +1381,14 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
     // Let the platform menu consume the event first (Linux hamburger/right-click)
     if (handleMenuEvent(event)) return SDL_APP_CONTINUE;
+
+    if (event->type == gs2_app_values.menu_event_type) {
+        BlankDiskType blank_type;
+        if (blank_disk_type_from_menu(event->user.code, &blank_type)) {
+            begin_new_disk_image(state, blank_type);
+            return SDL_APP_CONTINUE;
+        }
+    }
 
     if (state->phase == PHASE_SYSTEM_SELECT) {
         if (event->type == gs2_app_values.menu_event_type

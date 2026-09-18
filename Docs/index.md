@@ -14,6 +14,8 @@
 
 * [Storage & Disks](Storage.md)
 
+* [Blank Disk Images](BlankFloppy.md) — File → New Disk Image
+
 * [Host FST](HostFST.md) — share a host folder with GS/OS
 
 * [Joysticks](Joysticks.md)

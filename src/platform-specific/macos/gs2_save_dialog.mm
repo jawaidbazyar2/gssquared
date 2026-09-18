@@ -1,14 +1,13 @@
 /*
  *   Copyright (c) 2025-2026 Jawaid Bazyar
  *
- *   Free-standing NSSavePanel for .gs2 system configs (title + message visible;
- *   SDL's cocoa save dialog is an untitled sheet).
+ *   Free-standing NSSavePanel (title + message visible; SDL's cocoa save
+ *   dialog is an untitled sheet).
  *
  *   Existing files always appear gray in NSSavePanel on modern macOS — Apple's
  *   NSOpenSavePanelDelegate docs state panel:shouldEnableURL: is not sent for
  *   save panels ("All urls are always disabled"). That is cosmetic: clicking a
- *   dimmed .gs2 still fills Save As for overwrite (same as TextEdit Save As).
- *   Finder Open association is separate (Info.plist UTI) and unrelated.
+ *   dimmed file still fills Save As for overwrite (same as TextEdit Save As).
  */
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -36,16 +35,22 @@ void invokeCallback(SDL_DialogFileCallback callback, void *userdata, const char 
 
 } // namespace
 
-void gs2_show_save_gs2_dialog(SDL_DialogFileCallback callback, void *userdata,
-                              SDL_Window *window, const char *default_location) {
+void gs2_show_save_file_dialog(SDL_DialogFileCallback callback, void *userdata,
+                               SDL_Window *window, const char *default_location,
+                               const char *title, const char *message,
+                               const char *fallback_name) {
     if (!callback) {
         return;
     }
     (void)window;
 
     NSSavePanel *panel = [NSSavePanel savePanel];
-    [panel setTitle:@"Save System Configuration"];
-    [panel setMessage:@"Choose a .gs2 file to overwrite, or enter a new name."];
+    if (title && title[0]) {
+        [panel setTitle:[NSString stringWithUTF8String:title]];
+    }
+    if (message && message[0]) {
+        [panel setMessage:[NSString stringWithUTF8String:message]];
+    }
     [panel setPrompt:@"Save"];
     [panel setNameFieldLabel:@"Save As:"];
     [panel setCanCreateDirectories:YES];
@@ -60,9 +65,11 @@ void gs2_show_save_gs2_dialog(SDL_DialogFileCallback callback, void *userdata,
         }
         if (name.length > 0) {
             [panel setNameFieldStringValue:name];
+        } else if (fallback_name && fallback_name[0]) {
+            [panel setNameFieldStringValue:[NSString stringWithUTF8String:fallback_name]];
         }
-    } else {
-        [panel setNameFieldStringValue:@"system.gs2"];
+    } else if (fallback_name && fallback_name[0]) {
+        [panel setNameFieldStringValue:[NSString stringWithUTF8String:fallback_name]];
     }
 
     const NSInteger result = [panel runModal];
@@ -71,6 +78,14 @@ void gs2_show_save_gs2_dialog(SDL_DialogFileCallback callback, void *userdata,
     } else {
         invokeCallback(callback, userdata, nullptr);
     }
+}
+
+void gs2_show_save_gs2_dialog(SDL_DialogFileCallback callback, void *userdata,
+                              SDL_Window *window, const char *default_location) {
+    gs2_show_save_file_dialog(callback, userdata, window, default_location,
+                              "Save System Configuration",
+                              "Choose a .gs2 file to overwrite, or enter a new name.",
+                              "system.gs2");
 }
 
 #endif // __APPLE__

@@ -129,6 +129,10 @@ public:
     /** Save-dialog default: last config directory + suggested_filename. */
     std::string get_file_dialog_save_default_location(const std::string& suggested_filename) const;
 
+    /** Save-dialog default for Config or Disk last-path + suggested_filename. */
+    std::string get_file_dialog_save_default_location(FileDialogKind kind,
+                                                     const std::string& suggested_filename) const;
+
     /** Persist full selected/saved path for the given dialog kind. */
     void remember_file_dialog_selection(FileDialogKind kind, const std::string& selected_path);
 

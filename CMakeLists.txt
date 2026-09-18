@@ -140,6 +140,7 @@ file(GLOB_RECURSE GS2_ASSET_FILES CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/assets/shaders/*"
     "${CMAKE_SOURCE_DIR}/assets/gs2/*"
     "${CMAKE_SOURCE_DIR}/assets/vdisk/*"
+    "${CMAKE_SOURCE_DIR}/assets/floppyimages/*"
 )
 list(APPEND GS2_ASSET_FILES
     "${CMAKE_SOURCE_DIR}/assets/img/atlas.png"
@@ -157,6 +158,7 @@ set(GS2_RESOURCES_STAMPS
     "${CMAKE_BINARY_DIR}/resources/shaders/.assembled.stamp"
     "${CMAKE_BINARY_DIR}/resources/gs2/.assembled.stamp"
     "${CMAKE_BINARY_DIR}/resources/img/.assembled.stamp"
+    "${CMAKE_BINARY_DIR}/resources/floppyimages/.assembled.stamp"
 )
 
 add_custom_command(
@@ -170,6 +172,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/shaders
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/gs2
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/vdisk
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/resources/floppyimages
 
     # Copy static resources
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/atlas.png ${CMAKE_BINARY_DIR}/resources/img/atlas.png
@@ -181,6 +184,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/shaders ${CMAKE_BINARY_DIR}/resources/shaders
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/gs2 ${CMAKE_BINARY_DIR}/resources/gs2
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/vdisk ${CMAKE_BINARY_DIR}/resources/vdisk
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/floppyimages ${CMAKE_BINARY_DIR}/resources/floppyimages
 
     COMMAND ${CMAKE_COMMAND} -E touch ${GS2_RESOURCES_STAMPS}
     DEPENDS ${GS2_ASSET_FILES}
@@ -494,7 +498,7 @@ add_library(gs2_util src/util/media.cpp src/util/apm.cpp src/util/ResourceFile.c
     src/util/SoundEffect.cpp
     src/util/EventQueue.cpp src/util/Event.cpp src/util/EventTimer.cpp src/util/TextRenderer.cpp
     src/util/HexDecode.cpp src/util/DeviceFrameDispatcher.cpp src/util/Metrics.cpp
-    src/util/MenuInterface.cpp)
+    src/util/MenuInterface.cpp src/util/BlankDisk.cpp)
 
 add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Button.cpp src/ui/AppleDisk_525_Button.cpp src/ui/AppleDisk_35_Button.cpp src/ui/Unidisk_Button.cpp
     src/ui/MousePositionTile.cpp src/ui/OSD.cpp src/ui/Tile.cpp src/ui/Button.cpp src/ui/MainAtlas.cpp src/ui/ModalContainer.cpp
@@ -621,7 +625,7 @@ if(WIN32)
     target_link_libraries(gs2_debugger ws2_32)
 endif()
 # Connections.cpp constructs SerialDevice subclasses; link after gs2_util for GNU ld.
-target_link_libraries(gs2_util PUBLIC gs2_serial_devices ${GS2_SDL3_TTF})
+target_link_libraries(gs2_util PUBLIC gs2_serial_devices ${GS2_SDL3} ${GS2_SDL3_TTF})
 target_link_libraries(gs2_computer ${GS2_SDL3_TTF})
 target_link_libraries(gs2_cpu gs2_trace)
 target_link_libraries(gs2_mmu gs2_trace gs2_cpu)
@@ -1151,6 +1155,10 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
             COMPONENT Runtime
         )
         install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/vdisk"
+            DESTINATION "${GS2_INSTALL_DATADIR}"
+            COMPONENT Runtime
+        )
+        install(DIRECTORY "${CMAKE_BINARY_DIR}/resources/floppyimages"
             DESTINATION "${GS2_INSTALL_DATADIR}"
             COMPONENT Runtime
         )

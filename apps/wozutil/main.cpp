@@ -19,16 +19,18 @@
  * wozutil – command-line tool for the gs2_woz library.
  *
  * Usage:
- *   wozutil info   [-v] <file.woz>
- *   wozutil import [-v] [-V <vol>] <input.(do|po|dsk|2mg)> <output.woz>
- *   wozutil save   [-v] <input.woz> <output.woz>
- *   wozutil export [-v] [-i (do|po)] <input.woz> <output.(do|po|dsk)>
+ *   wozutil info         [-v] <file.woz>
+ *   wozutil import       [-v] [-V <vol>] <input.(do|po|dsk|2mg)> <output.woz>
+ *   wozutil save         [-v] <input.woz> <output.woz>
+ *   wozutil export       [-v] [-i (do|po)] <input.woz> <output.(do|po|dsk)>
+ *   wozutil create-blank [-v] <output.woz>
  *
  * Commands:
- *   info    Load a WOZ file and print its INFO chunk, TMAP, and track summary.
- *   import  Convert a block-based disk image to WOZ2 format.
- *   save    Load a WOZ 1.0 or 2.x file and re-save it as WOZ2 (round-trip test).
- *   export  Convert a WOZ file to a 140K block image (.do/.po/.dsk).
+ *   info          Load a WOZ file and print its INFO chunk, TMAP, and track summary.
+ *   import        Convert a block-based disk image to WOZ2 format.
+ *   save          Load a WOZ 1.0 or 2.x file and re-save it as WOZ2 (round-trip test).
+ *   export        Convert a WOZ file to a 140K block image (.do/.po/.dsk).
+ *   create-blank  Write an empty 5.25″ WOZ2 (TMAP all 0xFF, no track data).
  *
  * Flags:
  *   -v         Verbose: also print TMAP and per-track bit counts.
@@ -59,20 +61,22 @@ uint64_t debug_level = 0;
 static void print_usage(const char* prog) {
     fprintf(stderr,
         "Usage:\n"
-        "  %s info   [-v] <file.woz>\n"
-        "  %s import [-v] [-V <vol>] <input.(do|po|dsk|2mg)> <output.woz>\n"
-        "  %s save   [-v] <input.woz> <output.woz>\n"
-        "  %s export [-v] [-i (do|po)] <input.woz> <output.(do|po|dsk)>\n"
+        "  %s info         [-v] <file.woz>\n"
+        "  %s import       [-v] [-V <vol>] <input.(do|po|dsk|2mg)> <output.woz>\n"
+        "  %s save         [-v] <input.woz> <output.woz>\n"
+        "  %s export       [-v] [-i (do|po)] <input.woz> <output.(do|po|dsk)>\n"
+        "  %s create-blank [-v] <output.woz>\n"
         "\n"
-        "  info    Load and display WOZ file metadata\n"
-        "  import  Convert a block disk image to WOZ2\n"
-        "  save    Load WOZ1 or WOZ2, re-save as WOZ2 (round-trip test)\n"
-        "  export  Convert WOZ to a 140K block image (.do/.po/.dsk)\n"
+        "  info          Load and display WOZ file metadata\n"
+        "  import        Convert a block disk image to WOZ2\n"
+        "  save          Load WOZ1 or WOZ2, re-save as WOZ2 (round-trip test)\n"
+        "  export        Convert WOZ to a 140K block image (.do/.po/.dsk)\n"
+        "  create-blank  Write an empty 5.25\" WOZ2 (no track data)\n"
         "\n"
         "  -v         Verbose: also print TMAP and per-track stats\n"
         "  -V <num>   DOS 3.3 volume number for import (default 254)\n"
         "  -i do|po   Interleave for export (default: inferred from extension)\n",
-        prog, prog, prog, prog);
+        prog, prog, prog, prog, prog);
     exit(1);
 }
 
@@ -248,6 +252,29 @@ static int cmd_save(const std::string& input_woz,
     return 0;
 }
 
+static int cmd_create_blank(const std::string& output_woz, bool verbose) {
+    Woz woz;
+    woz.image().meta["title"] = "Blank 5.25 Unformatted";
+    woz.image().meta["subtitle"] = "Empty 5.25-inch disk, no track data";
+
+    if (woz.save(output_woz) != 0) {
+        fprintf(stderr, "wozutil: save failed\n");
+        return 1;
+    }
+
+    printf("Created blank 5.25\" WOZ '%s'\n", output_woz.c_str());
+
+    if (verbose) {
+        printf("\n--- Result ---\n");
+        woz.dump_info();
+        printf("\n--- TMAP ---\n");
+        woz.dump_tmap();
+        printf("\n--- Tracks ---\n");
+        woz.dump_tracks();
+    }
+    return 0;
+}
+
 // ─── main ─────────────────────────────────────────────────────────────────────
 
 int main(int argc, char* argv[]) {
@@ -300,6 +327,10 @@ int main(int argc, char* argv[]) {
         if (remaining < 2) print_usage(argv[0]);
         return cmd_export(argv[optind], argv[optind + 1],
                           interleave_override, verbose);
+
+    } else if (command == "create-blank") {
+        if (remaining < 1) print_usage(argv[0]);
+        return cmd_create_blank(argv[optind], verbose);
 
     } else {
         fprintf(stderr, "wozutil: unknown command '%s'\n", command.c_str());

@@ -54,6 +54,7 @@ public:
 	void editPasteText();
 	void fileSaveScreenshot();
 	void toggleMountDrivers();
+	void newDiskImage(int menu_code);
 	void openDebugWindow();
 	void diskToggle(storage_key_t key);
 	void openSystemConfig();

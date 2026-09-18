@@ -101,6 +101,23 @@ static void render_drives_menu()
     }
 }
 
+static void render_new_disk_image_menu(MenuInterface *mi)
+{
+    if (ImGui::BeginMenu("New Disk Image")) {
+        if (ImGui::MenuItem("5.25 Unformatted"))
+            mi->newDiskImage(MENU_FILE_NEW_DISK_525_UNFMT);
+        if (ImGui::MenuItem("5.25 Formatted DOS 3.3"))
+            mi->newDiskImage(MENU_FILE_NEW_DISK_525_DOS33);
+        if (ImGui::MenuItem("5.25 Formatted ProDOS"))
+            mi->newDiskImage(MENU_FILE_NEW_DISK_525_PRODOS);
+        if (ImGui::MenuItem("3.5 Formatted ProDOS"))
+            mi->newDiskImage(MENU_FILE_NEW_DISK_35_PRODOS);
+        if (ImGui::MenuItem("32M HD Unformatted"))
+            mi->newDiskImage(MENU_FILE_NEW_DISK_32M_HD);
+        ImGui::EndMenu();
+    }
+}
+
 static void build_menu_bar()
 {
     MenuInterface *mi      = getMenuInterface();
@@ -112,6 +129,7 @@ static void build_menu_bar()
             if (ImGui::MenuItem("Launch Config...")) {
                 mi->openSystemConfig();
             }
+            render_new_disk_image_menu(mi);
             ImGui::Separator();
             if (ImGui::MenuItem("Quit")) {
                 SDL_Event ev = {};
@@ -119,6 +137,7 @@ static void build_menu_bar()
                 SDL_PushEvent(&ev);
             }
         } else {
+            render_new_disk_image_menu(mi);
             if (ImGui::BeginMenu("Drives")) {
                 render_drives_menu();
                 ImGui::EndMenu();

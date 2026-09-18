@@ -380,7 +380,17 @@ std::string SystemSettings::get_file_dialog_default_location(FileDialogKind kind
 
 std::string SystemSettings::get_file_dialog_save_default_location(
     const std::string& suggested_filename) const {
-    return Paths::make_save_dialog_location(last_config_path_, suggested_filename);
+    return get_file_dialog_save_default_location(FileDialogKind::Config, suggested_filename);
+}
+
+std::string SystemSettings::get_file_dialog_save_default_location(
+    FileDialogKind kind, const std::string& suggested_filename) const {
+    std::string stored =
+        kind == FileDialogKind::Config ? last_config_path_ : last_disk_path_;
+    if (stored.empty() && kind == FileDialogKind::Disk) {
+        stored = Paths::documents_folder();
+    }
+    return Paths::make_save_dialog_location(stored, suggested_filename);
 }
 
 void SystemSettings::remember_file_dialog_selection(FileDialogKind kind,

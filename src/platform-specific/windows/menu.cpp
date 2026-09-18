@@ -136,18 +136,19 @@ static void updatePopupState(HMENU popup)
 
     // ── File ────────────────────────────────────────────────────────────────
     if (popup == g_filePopup) {
-        // pos 0 = Launch Config, pos 1 = sep, pos 2 = Drives, pos 3 = Mount Drivers
-        // pos 4 = sep, pos 5 = Save Screenshot, pos 6 = sep, pos 7 = Close Emulation
-        // pos 8 = sep, pos 9 = Quit
+        // pos 0 = Launch Config, pos 1 = New Disk Image, pos 2 = sep, pos 3 = Drives,
+        // pos 4 = Mount Drivers, pos 5 = sep, pos 6 = Save Screenshot, pos 7 = sep,
+        // pos 8 = Close Emulation, pos 9 = sep, pos 10 = Quit
         bool has_bazfast = mi->hasBazFast();
         bool drivers_on  = mi->getMountDrivers();
         setItemEnable(g_filePopup, 0, !running);                    // Launch Config
-        setItemEnable(g_filePopup, 2, running);                     // Drives
-        setItemEnable(g_filePopup, 3, running && has_bazfast);      // Mount Drivers
-        setItemCheck(g_filePopup,  3, drivers_on);
-        setItemEnable(g_filePopup, 5, running);                     // Save Screenshot
-        setItemEnable(g_filePopup, 7, running);                     // Close Emulation
-        setItemEnable(g_filePopup, 9, !running);                    // Quit (only when not running)
+        setItemEnable(g_filePopup, 1, true);                        // New Disk Image
+        setItemEnable(g_filePopup, 3, running);                     // Drives
+        setItemEnable(g_filePopup, 4, running && has_bazfast);      // Mount Drivers
+        setItemCheck(g_filePopup,  4, drivers_on);
+        setItemEnable(g_filePopup, 6, running);                     // Save Screenshot
+        setItemEnable(g_filePopup, 8, running);                     // Close Emulation
+        setItemEnable(g_filePopup, 10, !running);                   // Quit (only when not running)
         return;
     }
 
@@ -367,6 +368,13 @@ static void dispatchCommand(UINT id)
     case MENU_EDIT_PASTE_TEXT:       mi->editPasteText();       return;
     case MENU_FILE_SAVE_SCREENSHOT:  mi->fileSaveScreenshot();  return;
     case MENU_FILE_MOUNT_DRIVERS:    mi->toggleMountDrivers();  return;
+    case MENU_FILE_NEW_DISK_525_UNFMT:
+    case MENU_FILE_NEW_DISK_525_DOS33:
+    case MENU_FILE_NEW_DISK_525_PRODOS:
+    case MENU_FILE_NEW_DISK_35_PRODOS:
+    case MENU_FILE_NEW_DISK_32M_HD:
+        mi->newDiskImage(static_cast<int>(id));
+        return;
 
     // Settings
     case IDM_SETTINGS_SLEEP:        mi->toggleSleepMode();         return;
@@ -458,26 +466,35 @@ static void setupMenus()
     // ── File ────────────────────────────────────────────────────────────────
     g_filePopup  = CreatePopupMenu();
     g_drivesMenu = CreatePopupMenu();
+    HMENU newDiskMenu = CreatePopupMenu();
+    AppendMenuW(newDiskMenu, MF_STRING, MENU_FILE_NEW_DISK_525_UNFMT, L"5.25 Unformatted");
+    AppendMenuW(newDiskMenu, MF_STRING, MENU_FILE_NEW_DISK_525_DOS33, L"5.25 Formatted DOS 3.3");
+    AppendMenuW(newDiskMenu, MF_STRING, MENU_FILE_NEW_DISK_525_PRODOS, L"5.25 Formatted ProDOS");
+    AppendMenuW(newDiskMenu, MF_STRING, MENU_FILE_NEW_DISK_35_PRODOS, L"3.5 Formatted ProDOS");
+    AppendMenuW(newDiskMenu, MF_STRING, MENU_FILE_NEW_DISK_32M_HD, L"32M HD Unformatted");
     // pos 0
     AppendMenuW(g_filePopup, MF_STRING, IDM_FILE_OPEN_CONFIG, L"Launch Config...");
     // pos 1
-    AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(g_filePopup, MF_STRING | MF_POPUP,
+                reinterpret_cast<UINT_PTR>(newDiskMenu), L"New Disk Image");
     // pos 2
+    AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
+    // pos 3
     AppendMenuW(g_filePopup, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_drivesMenu), L"Drives");
-    // pos 3
-    AppendMenuW(g_filePopup, MF_STRING, MENU_FILE_MOUNT_DRIVERS, L"Mount Drivers");
     // pos 4
-    AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(g_filePopup, MF_STRING, MENU_FILE_MOUNT_DRIVERS, L"Mount Drivers");
     // pos 5
-    AppendMenuW(g_filePopup, MF_STRING, MENU_FILE_SAVE_SCREENSHOT, L"Save Screenshot");
+    AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
     // pos 6
-    AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(g_filePopup, MF_STRING, MENU_FILE_SAVE_SCREENSHOT, L"Save Screenshot");
     // pos 7
-    AppendMenuW(g_filePopup, MF_STRING, IDM_FILE_CLOSE, L"Close Emulation");
-    // pos 8
     AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
+    // pos 8
+    AppendMenuW(g_filePopup, MF_STRING, IDM_FILE_CLOSE, L"Close Emulation");
     // pos 9
+    AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
+    // pos 10
     AppendMenuW(g_filePopup, MF_STRING, IDM_APP_QUIT, L"Quit");
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_filePopup), L"File");
