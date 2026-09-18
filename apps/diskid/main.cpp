@@ -238,12 +238,34 @@ static bool test_not_apm() {
     return true;
 }
 
+static bool test_hda_suffix() {
+    const auto path = std::filesystem::temp_directory_path() / "gssquared_plain.hda";
+    FILE *fp = fopen(path.string().c_str(), "wb");
+    CHECK(fp, "create plain hda");
+    std::vector<uint8_t> zeros(64 * 512, 0);
+    fwrite(zeros.data(), 1, zeros.size(), fp);
+    fclose(fp);
+
+    media_descriptor md;
+    md.filename = path.string();
+    CHECK(identify_media(md) == 0, "identify plain hda");
+    CHECK(md.media_type == MEDIA_BLK, ".hda is MEDIA_BLK");
+    CHECK(!md.write_protected, ".hda is not forced WP");
+    CHECK(md.smartport_device_type == SP_DEVICE_HARDDISK, ".hda is SmartPort hard disk");
+    CHECK(md.block_size == 512, ".hda 512-byte blocks");
+    CHECK(md.block_count == 64, ".hda block count");
+
+    std::filesystem::remove(path);
+    return true;
+}
+
 static int run_self_test() {
     int fails = 0;
     if (!test_apm_512()) fails++;
     if (!test_apm_2048()) fails++;
     if (!test_apm_cooked_cd()) fails++;
     if (!test_not_apm()) fails++;
+    if (!test_hda_suffix()) fails++;
     if (fails) {
         std::cerr << fails << " APM self-test(s) failed\n";
         return 1;

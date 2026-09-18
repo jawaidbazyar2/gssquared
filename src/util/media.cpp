@@ -375,6 +375,7 @@ int identify_media(media_descriptor& md) {
         md.dos33_volume = (hdr.flag & FLAG_DOS33) != 0 ? (hdr.flag & FLAG_DOS33_VOL_MASK) : 254; // if not set, then 254
 
     } else if ((compare_suffix(md.filename, ".hdv")) || (compare_suffix(md.filename, ".img"))
+               || (compare_suffix(md.filename, ".hda"))
                || (compare_suffix(md.filename, ".iso"))) {
         md.media_type = MEDIA_BLK;
         // get size of file on disk

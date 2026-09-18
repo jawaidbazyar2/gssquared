@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-17
+
+### Features
+
+- **BlueSCSI `.hda` suffix (#190).** `.hda` files are now accepted and treated the same as `.hdv`.
+
 ## 2026-08-25
 
 Covers commits since the 2026-08-24 changelog entry through 2026-08-25, plus Host Serial (landed 08-24/08-25 but omitted from that entry) and two debugger/mouse fixes from 08-22 that were never listed.

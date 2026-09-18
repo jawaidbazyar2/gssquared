@@ -10,9 +10,9 @@ GS2 supports the following virtual disk media formats:
 | .2mg | 140K, 800K | 5.25 and 3.5 |
 | .woz 1.0 | 140K, 800K | 5.25 and 3.5 |
 | .woz 2.0 | 140K, 800K | 5.25 and 3.5 |
-| .hdv, .img | any | Can be any size, raw block device |
+| .hdv, .img, .hda | any | Can be any size, raw block device |
 | .iso | any | CD-ROM dump: raw 512-byte blocks, always write-protected. If the image has an Apple Partition Map, BazFast mounts each ProDOS and HFS partition as its own SmartPort unit |
-| .pmap | any .2mg, .hdv, .img, .po, .iso | "Partition Map" to mount multiple hard drive images at once |
+| .pmap | any .2mg, .hdv, .img, .hda, .po, .iso | "Partition Map" to mount multiple hard drive images at once |
 
 Woz format is the heart of GS2 floppy emulation. GS2 supports copy-protected 5.25 and 3.5 disks in Woz format, even ones with half tracks, quarter tracks, spiral tracks, weak bits, etc etc. Virtually any copy-protected Woz image should work fine in GS2.
 
@@ -75,7 +75,7 @@ Unlike the other drive types that *replace* any existing image when mounting a n
 
 Clicking on a BazFast drive that has images mounted, will unmount -all- the images under that icon.
 
-In addition to .hdv, .2mg, .po, .img, BazFast can mount a .pmap file. .pmap is a text file that contains a list of filenames of image files. For example:
+In addition to .hdv, .2mg, .po, .img, .hda, BazFast can mount a .pmap file. .pmap is a text file that contains a list of filenames of image files. For example:
 
 wita2gs.pmap:
 ```
@@ -90,7 +90,7 @@ G_Games with Path Mods.hdv
 
 If you mount this pmap on a BazFast device, all 7 images will be mounted at once, a big time-saver for those with complex setups, multi-disk collections like What Is the AppleIIgs or Golden Orchard.
 
-BazFast also understands **Apple Partition Map** (APM) images — the on-disk partition scheme used on many 1990s Macintosh / Apple IIgs CD-ROMs and some hard disks. Mounting an APM `.iso` (or an APM `.hdv` / `.img`) on a BazFast icon expands each `Apple_PRODOS` and `Apple_HFS` partition into its own SmartPort unit, the same way a `.pmap` expands a list of files. Driver, free-space, and partition-map entries are skipped. `.iso` images are always mounted write-protected. They are identified as CD-ROM on the host, but BazFast still reports SmartPort device type `$02` (hard disk): GS/OS treats `$05` as SCSI and prompts for a SCSI driver. A plain ISO 9660 disc with no APM is mounted as a single block device (GS/OS already has an ISO 9660 FST). An APM image that contains no ProDOS or HFS partitions is refused.
+BazFast also understands **Apple Partition Map** (APM) images — the on-disk partition scheme used on many 1990s Macintosh / Apple IIgs CD-ROMs and some hard disks. Mounting an APM `.iso` (or an APM `.hdv` / `.img` / `.hda`) on a BazFast icon expands each `Apple_PRODOS` and `Apple_HFS` partition into its own SmartPort unit, the same way a `.pmap` expands a list of files. Driver, free-space, and partition-map entries are skipped. `.iso` images are always mounted write-protected. They are identified as CD-ROM on the host, but BazFast still reports SmartPort device type `$02` (hard disk): GS/OS treats `$05` as SCSI and prompts for a SCSI driver. A plain ISO 9660 disc with no APM is mounted as a single block device (GS/OS already has an ISO 9660 FST). An APM image that contains no ProDOS or HFS partitions is refused.
 
 ## Host FST
 

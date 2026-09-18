@@ -66,7 +66,7 @@ and WASM fetch is blocked). Always serve over HTTP with the headers above.
 Two ways to mount media in the browser:
 
 - **Drag and drop** a disk image (`.dsk`, `.do`, `.po`, `.woz`, `.hdv`, `.2mg`,
-  `.img`) onto the canvas, dropping it on a drive button in the drives panel.
+  `.img`, `.hda`) onto the canvas, dropping it on a drive button in the drives panel.
   The file is read into the in-memory filesystem and mounted.
 - **File menu -> Drives**, or clicking a drive button, opens a browser file
   picker (replacing the native open dialog, which has no web backend).

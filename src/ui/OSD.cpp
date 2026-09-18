@@ -116,7 +116,7 @@ static void menu_file_dialog_callback(void* userdata, const char* const* filelis
 
 void OSD::open_file_dialog(storage_key_t key) {
     static const SDL_DialogFileFilter filters[] = {
-        { "Disk Images",  "do;po;woz;dsk;hdv;2mg;img" },
+        { "Disk Images",  "do;po;woz;dsk;hdv;2mg;img;hda" },
         //{ "Partition Maps", "pmap" }, // this doesn't go here.
         { "All files",   "*" }
     };
@@ -127,7 +127,7 @@ void OSD::open_file_dialog(storage_key_t key) {
 
 #if defined(__EMSCRIPTEN__)
     web_open_file_dialog(menu_file_dialog_callback, data,
-        ".do,.po,.woz,.dsk,.hdv,.2mg,.img");
+        ".do,.po,.woz,.dsk,.hdv,.2mg,.img,.hda");
 #else
     const std::string last_path =
         SystemSettings::instance().get_file_dialog_default_location(FileDialogKind::Disk);
@@ -223,14 +223,14 @@ void bazfast_button_click(void *userdata) {
     }
     
     static const SDL_DialogFileFilter filters[] = {
-        { "Disk Images",  "po;dsk;hdv;2mg;img;pmap;iso" },
+        { "Disk Images",  "po;dsk;hdv;2mg;img;hda;pmap;iso" },
         { "All files",   "*" }
     };
 
     printf("unidisk button clicked\n");
 #if defined(__EMSCRIPTEN__)
     web_open_file_dialog(file_dialog_callback, userdata,
-        ".po,.dsk,.hdv,.2mg,.img,.pmap,.iso");
+        ".po,.dsk,.hdv,.2mg,.img,.hda,.pmap,.iso");
 #else
     const std::string last_path =
         SystemSettings::instance().get_file_dialog_default_location(FileDialogKind::Disk);
