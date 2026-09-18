@@ -75,11 +75,14 @@ void vga_raster_text_8x8(const uint8_t *vram, int vram_pitch, uint32_t *pixels, 
     if (cols <= 0) {
         cols = VGA_TEXT_8X8_COLS;
     }
-    if (cols > VGA_TEXT_8X8_COLS) {
-        cols = VGA_TEXT_8X8_COLS;
+    if (cols > VGA_TEXT_8X8_COLS_MAX) {
+        cols = VGA_TEXT_8X8_COLS_MAX;
     }
     if (rows <= 0) {
         rows = VGA_TEXT_8X8_ROWS;
+    }
+    if (rows > VGA_TEXT_8X8_ROWS_MAX) {
+        rows = VGA_TEXT_8X8_ROWS_MAX;
     }
     const int screen_h = rows * VGA_TEXT_8X8_CELL_H;
     const GlyphBank8 &masks = *glyph_masks_active8;

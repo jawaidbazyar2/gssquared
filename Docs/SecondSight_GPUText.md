@@ -66,7 +66,8 @@ The 1 MHz bus is a capacity of about two bytes per microsecond. Spend it on
 ## 2. Arming: stream on with SetMode
 
 `SetMode` with flag `$05` and a text raster mode number (`$03` = 80×25 9×16,
-`$43` = 80×43 8×8; same numbers as Host Text) switches the command table,
+`$43` = 80×43, `$50` = 80×50, `$52` = 132×60 8×8; same numbers as Host Text)
+switches the command table,
 allocates a card-side cell buffer if needed, and **turns `C0B1` into a
 free-running word FIFO**.
 
@@ -302,7 +303,7 @@ Necessary and sufficient for **IIe 80-col console firmware** and a
 | `$95` | `Yield` | 0 / 1 | — | `$00` = park (Mega II); `$01` = claim (same VRAM). See §6.7. |
 
 `SetX` + `SetY` replace a packed `MoveTo`. Two words, 8-bit args, IIe `CH`/`CV`
-sized. 80×43 / 80×50 fit.
+sized. 80×43 / 80×50 / 132×60 fit.
 
 Invalid margin (`left > right`, `top > bottom`, outside raster): stay at
 previous margins (do not blank the screen).
@@ -569,6 +570,8 @@ ScreenOn
 ```
 
 80×43: `SetMode($43, $05)`. Same ISA. `SetBottom` 42.
+80×50: `SetMode($50, $05)`. `SetBottom` 49.
+132×60: `SetMode($52, $05)`. `SetBottom` 59.
 
 The ring is sized around one frame of slot traffic (§3). Do not poll `$C0B8`
 per glyph. `LDA $C0B8` until `$01` if you must know the buffer is empty
@@ -581,6 +584,10 @@ per glyph. `LDA $C0B8` until `$01` if you must know the buffer is empty
 **v0.1**
 
 - Rasters `$03` / `$43`.
+
+**Later implemented**
+
+- Rasters `$50` (80×50) / `$52` (132×60).
 - Bit 15 putc vs `$80`–`$93` and `$95` (`$94` experimental).
 - Clamp-advance, margins, no auto wrap.
 - `CursorStyle` (`$91`): enable, blink, block/underline/bar, invert vs attr, scanlines.

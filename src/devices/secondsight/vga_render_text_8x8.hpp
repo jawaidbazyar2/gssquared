@@ -16,8 +16,13 @@ static constexpr int VGA_TEXT_8X8_CELL_W = 8;
 static constexpr int VGA_TEXT_8X8_CELL_H = 8;
 static constexpr int VGA_TEXT_8X8_COLS = 80;
 static constexpr int VGA_TEXT_8X8_ROWS = 43;
+static constexpr int VGA_TEXT_8X8_COLS_MAX = 132;
+static constexpr int VGA_TEXT_8X8_ROWS_MAX = 60;
 static constexpr int VGA_TEXT_8X8_SCREEN_W = VGA_TEXT_8X8_COLS * VGA_TEXT_8X8_CELL_W; // 640
 static constexpr int VGA_TEXT_8X8_SCREEN_H = VGA_TEXT_8X8_ROWS * VGA_TEXT_8X8_CELL_H; // 344
+/** tex_text size: fits 80×25 9×16 (720×400) and 132×60 8×8 (1056×480). */
+static constexpr int VGA_TEXT_TEX_W = VGA_TEXT_8X8_COLS_MAX * VGA_TEXT_8X8_CELL_W; // 1056
+static constexpr int VGA_TEXT_TEX_H = VGA_TEXT_8X8_ROWS_MAX * VGA_TEXT_8X8_CELL_H; // 480
 static constexpr int SS_VRAM_FONT_8X8_GLYPH_BYTES = 8;
 static constexpr int SS_VRAM_FONT_8X8_SIZE = 256 * SS_VRAM_FONT_8X8_GLYPH_BYTES; // 2048
 

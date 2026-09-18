@@ -851,7 +851,7 @@ class SecondSight {
                 printf("SecondSight: failed to create 24bpp texture\n");
             }
             tex_text = SDL_CreateTexture(vs->renderer, SDL_PIXELFORMAT_ARGB8888,
-                SDL_TEXTUREACCESS_STREAMING, VGA_TEXT_SCREEN_W, VGA_TEXT_SCREEN_H);
+                SDL_TEXTUREACCESS_STREAMING, VGA_TEXT_TEX_W, VGA_TEXT_TEX_H);
             if (!tex_text) {
                 printf("SecondSight: failed to create text texture\n");
             } else {
@@ -1262,8 +1262,11 @@ class SecondSight {
                     *p++ = (uint8_t)(m.height >> 8);
                     *p++ = depth;
                 }
-                ss_host_text_raster_t ht{};
-                if (ss_host_text_lookup_raster(SS_HT_MODE_80X43, &ht)) {
+                for (uint8_t extra : SS_HT_EXTRA_MODES) {
+                    ss_host_text_raster_t ht{};
+                    if (!ss_host_text_lookup_raster(extra, &ht)) {
+                        continue;
+                    }
                     *p++ = ht.mode;
                     *p++ = 5;
                     *p++ = ht.cols;
@@ -1378,7 +1381,14 @@ class SecondSight {
                     leave_host_text_if_needed();
                     leave_gpu_if_needed();
                     leave_gpu_text_if_needed();
-                    if (mode_num == 0x03) {
+                    if (ss_host_text_is_host_gpu_only(mode_num)) {
+                        result = 0xA6;
+                        ss_mode = SS_MODE_EMU;
+                        vga_active = 0;
+                        cmd_table = cmd_table_emu;
+                        printf("SecondSight: SetMode vga rejected hosttext-only mode=%02X\n",
+                            mode_num);
+                    } else if (mode_num == 0x03) {
                         apply_rom_vga_mode(&SS_ROM_VGA_TEXT_80X25, 0x03);
                     } else if (mode_num == 0x01) {
                         apply_rom_vga_mode(&SS_ROM_VGA_TEXT_40X25, 0x01);
@@ -1398,14 +1408,16 @@ class SecondSight {
                             }
                         }
                     }
-                    if (emu_flag == 0x00) {
-                        vga_active = 0;
-                        ss_mode = SS_MODE_EMU;
-                    } else {
-                        vga_active = 1;
-                        ss_mode = SS_MODE_VGA;
+                    if (result != 0xA6) {
+                        if (emu_flag == 0x00) {
+                            vga_active = 0;
+                            ss_mode = SS_MODE_EMU;
+                        } else {
+                            vga_active = 1;
+                            ss_mode = SS_MODE_VGA;
+                        }
+                        select_cmd_table();
                     }
-                    select_cmd_table();
                 }
                 trigger_longrun_wait(result);
                 printf("SecondSight: SetMode mode=%02X flag=%02X result=%02X → %s vga_active=%u\n",

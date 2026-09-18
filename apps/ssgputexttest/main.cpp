@@ -51,6 +51,14 @@ static bool test_enter_rasters() {
     CHECK(t.raster().cols == 80 && t.raster().vis_rows == 43, "80x43 size");
     CHECK(t.cell_at(0, 42) != nullptr, "80x43 last row");
     CHECK(t.cell_at(0, 43) == nullptr, "80x43 OOB row");
+    CHECK(t.enter(0x50), "80x50 enter");
+    CHECK(t.raster().cols == 80 && t.raster().vis_rows == 50, "80x50 size");
+    CHECK(t.cell_at(0, 49) != nullptr, "80x50 last row");
+    CHECK(t.cell_at(0, 50) == nullptr, "80x50 OOB row");
+    CHECK(t.enter(0x52), "132x60 enter");
+    CHECK(t.raster().cols == 132 && t.raster().vis_rows == 60, "132x60 size");
+    CHECK(t.cell_at(131, 59) != nullptr, "132x60 last cell");
+    CHECK(t.cell_at(0, 60) == nullptr, "132x60 OOB row");
     t.leave();
     CHECK(!t.is_active(), "leave");
     return true;
