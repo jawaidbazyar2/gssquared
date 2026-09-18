@@ -76,6 +76,8 @@ public:
 
     virtual void set_phase(uint8_t phase, uint8_t onoff) override;
 
+    void write_pulse(uint8_t bit) override;
+
     virtual int get_track() override { return track; }
 
     int16_t get_max_tracks() const { return max_tracks; }

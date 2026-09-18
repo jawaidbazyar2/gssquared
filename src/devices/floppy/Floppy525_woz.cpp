@@ -185,3 +185,44 @@ void Floppy525_woz::phase_change_callback(uint64_t instanceID, void *userData) {
 Woz_Nibblizer* Floppy525_woz::make_nibblizer(media_descriptor *media) {
     return new Woz_Nibblizer_525();
 }
+
+// Fallback if the image has no allocated tracks yet. 51150 bits is a
+// typical 5.25" revolution (~4 µs cells at a slightly under-300 RPM spin).
+static constexpr uint32_t kTypical525BitsAt300Rpm = 51150;
+
+// Use the longer of the nearest allocated tracks on either side of `quarter`
+// so a newly written half-track matches the source disk's revolution length
+// instead of the 51150-bit fallback.
+static uint32_t bit_count_from_nearest_tracks(const woz_image_t &img, int quarter) {
+    uint32_t left_bits = 0;
+    uint32_t right_bits = 0;
+    for (int q = quarter - 1; q >= 0; --q) {
+        const uint8_t idx = img.tmap[q];
+        if (idx == 0xFF || idx >= img.tracks.size()) continue;
+        left_bits = img.tracks[idx].bit_count;
+        break;
+    }
+    for (int q = quarter + 1; q < 160; ++q) {
+        const uint8_t idx = img.tmap[q];
+        if (idx == 0xFF || idx >= img.tracks.size()) continue;
+        right_bits = img.tracks[idx].bit_count;
+        break;
+    }
+    const uint32_t bits = std::max(left_bits, right_bits);
+    return bits ? bits : kTypical525BitsAt300Rpm;
+}
+
+void Floppy525_woz::write_pulse(uint8_t bit) {
+    if (is_mounted && !write_protect && !woz.get_track_ptr(track)) {
+        woz_image_t &img = woz.image();
+        if (track >= 0 && track < 160 && img.tracks.size() < 160) {
+            woz_track_t trk;
+            trk.bit_count = bit_count_from_nearest_tracks(img, track);
+            trk.bits.assign((trk.bit_count + 7) / 8, 0);
+            img.tmap[track] = static_cast<uint8_t>(img.tracks.size());
+            img.tracks.push_back(std::move(trk));
+            update_track_ptr();
+        }
+    }
+    Floppy_woz::write_pulse(bit);
+}
