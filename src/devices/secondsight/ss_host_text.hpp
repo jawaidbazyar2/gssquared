@@ -15,6 +15,15 @@
 static constexpr uint8_t SS_HT_CTRL_BYTES = 32;
 static constexpr uint8_t SS_HT_MODE_80X25 = 0x03;
 static constexpr uint8_t SS_HT_MODE_80X43 = 0x43;
+static constexpr uint8_t SS_HT_MODE_80X50 = 0x50;
+static constexpr uint8_t SS_HT_MODE_132X60 = 0x52;
+
+/** Host/GPU-only rasters (not classic VGA). GetCapabilities appends these. */
+static constexpr uint8_t SS_HT_EXTRA_MODES[] = {
+    SS_HT_MODE_80X43,
+    SS_HT_MODE_80X50,
+    SS_HT_MODE_132X60,
+};
 
 struct ss_host_text_raster_t {
     uint8_t mode = SS_HT_MODE_80X25;
@@ -37,9 +46,21 @@ inline bool ss_host_text_lookup_raster(uint8_t mode_num, ss_host_text_raster_t *
         case SS_HT_MODE_80X43:
             *out = {SS_HT_MODE_80X43, 80, 43, 8, 8, 640, 344};
             return true;
+        case SS_HT_MODE_80X50:
+            *out = {SS_HT_MODE_80X50, 80, 50, 8, 8, 640, 400};
+            return true;
+        case SS_HT_MODE_132X60:
+            *out = {SS_HT_MODE_132X60, 132, 60, 8, 8, 1056, 480};
+            return true;
         default:
             return false;
     }
+}
+
+/** $03 is also classic VGA; $43/$50/$52 are Host/GPU Text only. */
+inline bool ss_host_text_is_host_gpu_only(uint8_t mode_num) {
+    ss_host_text_raster_t raster{};
+    return ss_host_text_lookup_raster(mode_num, &raster) && mode_num != SS_HT_MODE_80X25;
 }
 
 static constexpr uint8_t SS_HT_PLANAR = 0x01;

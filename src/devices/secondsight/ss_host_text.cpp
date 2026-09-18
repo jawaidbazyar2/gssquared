@@ -24,7 +24,7 @@ const uint8_t *ss_host_text_bank(const uint8_t *a2_ram, uint32_t ram_size, bool 
 }
 
 bool ss_host_text_ctrl_valid(const ss_host_text_ctrl_t &c) {
-    if (c.cols != 40 && c.cols != 80) {
+    if (c.cols != 40 && c.cols != 80 && c.cols != 132) {
         return false;
     }
     if (c.vis_rows == 0 || c.virt_rows < c.vis_rows) {

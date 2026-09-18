@@ -20,11 +20,14 @@ void vga_render_text_8x8(video_system_t *vs, SDL_Texture *tex_text, const uint8_
     if (cols <= 0) {
         cols = VGA_TEXT_8X8_COLS;
     }
-    if (cols > VGA_TEXT_8X8_COLS) {
-        cols = VGA_TEXT_8X8_COLS;
+    if (cols > VGA_TEXT_8X8_COLS_MAX) {
+        cols = VGA_TEXT_8X8_COLS_MAX;
     }
     if (rows <= 0) {
         rows = VGA_TEXT_8X8_ROWS;
+    }
+    if (rows > VGA_TEXT_8X8_ROWS_MAX) {
+        rows = VGA_TEXT_8X8_ROWS_MAX;
     }
     void *pixels = nullptr;
     int pitch = 0;

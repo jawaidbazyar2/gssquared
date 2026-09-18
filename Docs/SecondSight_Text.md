@@ -1,6 +1,6 @@
 # Second Sight Host Text Mode
 
-**Status:** draft v0.3 (2026-08-28)
+**Status:** draft v0.4 (2026-09-17)
 **Card mode:** SetMode emulation flag `$04`
 **Depends on:** [SecondSight.md](SecondSight.md) (classic VGA API, handshake, slot I/O)
 
@@ -139,7 +139,8 @@ The mode **number** selects cell geometry and the pixel size of the scanout.
 | `$01` | 40×25   | 9×16   | 360×400  | planned                        |
 | `$03` | 80×25   | 9×16   | 720×400  | required                       |
 | `$43` | 80×43   | 8×8    | 640×344  | `font_ansi_8x8.bin`            |
-| `$50` | 80×50   | 8×8    | 640×400  | planned                        |
+| `$50` | 80×50   | 8×8    | 640×400  | `font_ansi_8x8.bin`            |
+| `$52` | 132×60  | 8×8    | 1056×480 | Host/GPU only; SHR-sized buffer |
 
 `$03` is the GNO default and matches classic SS / IBM mode 03h *geometry*, not
 its VRAM contract.
@@ -438,7 +439,9 @@ end of HGR1 (8K): cells `$2000`–`$3F3F`, palette `$3FA0`, ctrl `$3FE0`.
 
 ---
 
-## 12. Size cheat sheet (80 columns)
+## 12. Size cheat sheet
+
+**80 columns**
 
 | virt_rows | Chars | Attrs | Interleaved | Conventional fit |
 | --------- | ----- | ----- | ----------- | ---------------- |
@@ -449,6 +452,12 @@ end of HGR1 (8K): cells `$2000`–`$3F3F`, palette `$3FA0`, ctrl `$3FE0`.
 
 80×25 in 4K is the default. virt_rows=50 (hardware scroll headroom) takes
 the rest of HGR1 and moves the block to `$3FE0`.
+
+**132 columns** (`$52`)
+
+| virt_rows | Chars | Attrs | Interleaved | Conventional fit |
+| --------- | ----- | ----- | ----------- | ---------------- |
+| 60 | 7920 | 7920 | 15840 | SHR `$2000+` (does not fit HGR) |
 
 ---
 
@@ -479,6 +488,13 @@ SetTextFont($02)                    ; PC ANSI, optional
 card's 8×8 ANSI ROM (`font_ansi_8x8.bin`); `$03` takes the first 8 rows of
 each user 8×16 glyph.
 
+80×50 8×8: `SetMode($50, HOSTTEXT)`, same font. Interleaved 80×50 is 8000
+bytes (still fits HGR1).
+
+132×60 8×8: `SetMode($52, HOSTTEXT)`. Interleaved buffer is **15840 bytes**
+and does **not** fit in HGR; put cells in SHR `$2000+`. Classic VGA
+`SetMode($52, $01)` (and `$50` / `$43`) is `$A6`.
+
 Hot path: stores into planes, `INC start_line` on LF, `chgat` into attrs.
 No SS commands. Alternate screen: second buffer + store `buffer_addr`.
 25 ↔ 43: `SetMode` to a new raster, then rewrite `vis_rows` (keep armed).
@@ -507,9 +523,13 @@ IOCTL reports `cols` × `vis_rows`. Termcap: ANSI, 16-color SGR.
   attr, scanlines. Same word as GPU Text `CursorStyle`. `flags.cursor` is
   legacy only (`$0000` + bit 4 → `$0003`).
 
+**v0.4**
+
+- Rasters `$50` (80×50 8×8) and `$52` (132×60 8×8). Host/GPU Text only.
+
 **Later**
 
-- Rasters `$50` / `$01`.
+- Raster `$01` (40×25 Host/GPU).
 - WaitVBL command if polling `start_line` vs beam ever matters (latch should
   make this unnecessary).
 

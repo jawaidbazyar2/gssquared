@@ -404,7 +404,8 @@ row here; no modelines.
 | `$03` | text | 80×25   | 0     | yes | —   | yes       | yes      |
 | `$13` | gfx  | 320×200 | 8     | yes | yes | —         | —        |
 | `$43` | text | 80×43   | 0     | —   | —   | yes       | yes      |
-| `$50` | text | 80×50   | 0     | —   | —   | planned   | planned  |
+| `$50` | text | 80×50   | 0     | —   | —   | yes       | yes      |
+| `$52` | text | 132×60  | 0     | —   | —   | yes       | yes      |
 | `$53` | gfx  | 640×480 | 8     | yes | yes | —         | —        |
 | `$5C` | gfx  | 640×480 | 16    | yes | yes | —         | —        |
 | `$5F` | gfx  | 640×480 | 24    | yes | yes | —         | —        |
@@ -415,7 +416,7 @@ Detection (library, not card ISA):
 
 1. `GetStatus` — `'G','S','V','G','A'`; `version >= $20`.
 2. `GetCapabilities` — find the mode number you want (`$5C` for GPUTEST,
-  `$03` / `$43` for Host Text).
+  `$03` / `$43` / `$50` / `$52` for Host Text).
 3. `SetMode(number, flag)` — `$A6` if this engine rejects that number.
 4. GPU only: `GetGpuInfo` for live heap / current mode.
 
