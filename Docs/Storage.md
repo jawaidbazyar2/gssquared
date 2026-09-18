@@ -18,7 +18,17 @@ Woz format is the heart of GS2 floppy emulation. GS2 supports copy-protected 5.2
 
 ## Creating a blank image
 
-**File → New Disk Image** writes a new `.woz` (5.25″ or 3.5″) or a 32M `.hdv` via the system save dialog. The file is not mounted automatically. See [Blank Disk Images](BlankFloppy.md).
+**File → New Disk Image** writes a new file via the system save dialog. It does **not** mount the image.
+
+| Menu item | Typical use |
+|---|---|
+| 5.25 Unformatted | Format from DOS / ProDOS / a copier |
+| 5.25 Formatted DOS 3.3 | Immediate DOS 3.3 data disk |
+| 5.25 Formatted ProDOS | Immediate ProDOS 5.25″ volume |
+| 3.5 Formatted ProDOS | Immediate ProDOS 800K volume |
+| 32M HD Unformatted | Format on BazFast from ProDOS or GS/OS |
+
+Full walkthrough: [Blank Disk Images](BlankFloppy.md).
 
 ## Mounting disks
 

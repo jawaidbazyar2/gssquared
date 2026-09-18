@@ -14,7 +14,7 @@
 
 * [Storage & Disks](Storage.md)
 
-* [Blank Disk Images](BlankFloppy.md) — File → New Disk Image
+* [Blank Disk Images](BlankFloppy.md) — File → New Disk Image (create a new .woz or 32M .hdv)
 
 * [Host FST](HostFST.md) — share a host folder with GS/OS
 

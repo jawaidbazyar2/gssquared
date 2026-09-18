@@ -85,11 +85,12 @@ Slow down the OSD open/close a bit, to make it whooshier.
 ## System Menus
 
 * File
-  * New Disk Image...
-    * 5.25 DOS 3.3
-    * 5.25 ProDOS
-    * 800K ProDOS
-    * 32M ProDOS
+  * New Disk Image
+    * 5.25 Unformatted
+    * 5.25 Formatted DOS 3.3
+    * 5.25 Formatted ProDOS
+    * 3.5 Formatted ProDOS
+    * 32M HD Unformatted
   * Open Disk Image...
     * Slot 6, Drive 1 - is xxxx
     * Slot 6, Drive 2 - is xxxx
