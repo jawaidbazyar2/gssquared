@@ -48,7 +48,7 @@ If you omit `[[connections]]`, native builds default the SSC to **Modem**.
 2. Click the serial-port button for the SSC slot.
 3. Choose **None**, **File**, **Clipboard**, **Modem**, or a listed host serial port.
 
-When a **File** attachment closes (idle timeout, reset, or you switch away from File), GSSquared shows a short on-screen toast with the capture filename. **Clipboard** copies the captured text to the host clipboard on close. Guest baud / line settings are passed through to a **host serial** port.
+When a **File** attachment closes (idle timeout, reset, or you switch away from File), GSSquared shows a short on-screen toast with the capture filename. **Clipboard** copies the captured text to the host clipboard on close. Guest baud / line settings are passed through to a **host serial** port, along with CD / CTS / DSR so hang-up is visible to BBS software. Handshake rules: [SerialPortSpec.md](SerialPortSpec.md).
 
 ## Using the virtual modem
 
@@ -58,4 +58,5 @@ With **Modem** attached, use Hayes-style commands from your terminal program. Se
 
 - [Serial & Parallel Connections](SerialConnections.md)
 - [Serial / Modem](Serial_Modem.md)
+- [Serial port spec](SerialPortSpec.md)
 - [Writing Config Files Manually](ConfigFiles.md)

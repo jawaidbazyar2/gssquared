@@ -28,6 +28,8 @@ ATH
 
 (Wait about a second of silence before and after `+++`.)
 
+`+++` returns to command mode but **keeps carrier detect asserted** (the TCP session is still up). `ATH`, a failed dial, or a dropped socket deasserts CD so guest software that watches 6551 `ST_DCD` or SCC RR0 DCD sees hang-up. DSR stays asserted whenever the virtual modem is attached (powered). See [SerialPortSpec.md](SerialPortSpec.md).
+
 ## File capture, clipboard, or a real serial port
 
 Set the port attachment to **File** to save serial output to a host file (a toast shows the filename when the file closes). **Clipboard** copies the captured/printed text to the host clipboard on close. **Serial** attaches a real host serial port. Details: [Serial & Parallel Connections](SerialConnections.md).
@@ -36,4 +38,5 @@ Set the port attachment to **File** to save serial output to a host file (a toas
 
 - [Super Serial Card](Cards_SuperSerial.md)
 - [Serial & Parallel Connections](SerialConnections.md)
+- [Serial port spec](SerialPortSpec.md)
 - [Uthernet II](Cards_UthernetII.md) — full TCP/IP without a serial modem

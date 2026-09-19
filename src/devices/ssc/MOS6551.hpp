@@ -48,6 +48,8 @@ class MOS6551 {
     bool tx_in_progress = false;
     bool rx_in_progress = false;
     bool tx_irq_condition = false;
+    bool modem_irq_condition = false;
+    uint8_t last_modem_inputs = SerialDevice::MODEM_INPUTS_ASSERTED;
 
     float baud_rate = 9600.0f;
 
@@ -87,6 +89,19 @@ public:
     void set_device(SerialDevice *dev) {
         device = dev;
         push_line_params();
+        apply_modem_inputs();
+    }
+
+    bool cts_asserted() const {
+        if (device == nullptr) {
+            return true;
+        }
+        return (device->modem_inputs() & SerialDevice::MODEM_CTS) != 0;
+    }
+
+    void poll_modem_inputs() {
+        apply_modem_inputs();
+        update_queues();
     }
 
     void set_dip_irq_enabled(bool enabled) {
@@ -109,8 +124,11 @@ public:
         tx_in_progress = false;
         rx_in_progress = false;
         tx_irq_condition = false;
+        modem_irq_condition = false;
+        last_modem_inputs = SerialDevice::MODEM_INPUTS_ASSERTED;
         baud_rate = 0.0f;
         update_baud();
+        apply_modem_inputs();
         update_interrupts();
     }
 
@@ -164,6 +182,7 @@ public:
         uint8_t val = status;
         /* Reading status clears IRQ bit (hardware clears /IRQ); keep condition bits */
         status &= ~ST_IRQ;
+        modem_irq_condition = false;
         if (irq_control) {
             irq_control->set_irq(irq_id, false);
         }
@@ -194,6 +213,7 @@ public:
             /* Break — not messaged to backends in v1 */
         }
         push_line_params();
+        apply_modem_inputs();
         update_interrupts();
     }
 
@@ -209,13 +229,15 @@ public:
         control = data;
         update_baud();
         push_line_params();
+        apply_modem_inputs();
     }
 
     void debug_output(DebugFormatter *df) {
         df->addLine("6551 Status:  %02X  Command: %02X  Control: %02X", status, command, control);
         df->addLine("6551 RX: %02X  TX: %02X  baud: %.2f", rx_data, tx_data, baud_rate);
-        df->addLine("6551 tx_busy=%d rx_busy=%d dip_irq=%d", tx_in_progress, rx_in_progress,
-                    dip_irq_enabled);
+        df->addLine("6551 tx_busy=%d rx_busy=%d dip_irq=%d dcd=%d dsr=%d cts=%d",
+                    tx_in_progress, rx_in_progress, dip_irq_enabled,
+                    (status & ST_DCD) == 0, (status & ST_DSR) == 0, cts_asserted());
     }
 
 private:
@@ -305,11 +327,42 @@ private:
         return static_cast<uint64_t>(ACIA_MASTER_CLOCK / cps);
     }
 
-    void update_queues() {
+    void apply_modem_inputs() {
         if (device == nullptr) {
             return;
         }
-        if ((status & ST_RDRF) || rx_in_progress || !receiver_enabled()) {
+        const uint8_t cur = device->modem_inputs();
+        const uint8_t prev = last_modem_inputs;
+        last_modem_inputs = cur;
+
+        if (cur & SerialDevice::MODEM_CD) {
+            status &= ~ST_DCD;
+        } else {
+            status |= ST_DCD;
+        }
+        if (cur & SerialDevice::MODEM_DSR) {
+            status &= ~ST_DSR;
+        } else {
+            status |= ST_DSR;
+        }
+
+        const uint8_t changed = (prev ^ cur) & (SerialDevice::MODEM_CD | SerialDevice::MODEM_DSR);
+        if (changed && dtr_ready()) {
+            modem_irq_condition = true;
+        }
+        update_interrupts();
+    }
+
+    void update_queues() {
+        apply_modem_inputs();
+        if (device == nullptr) {
+            return;
+        }
+        if ((status & ST_RDRF) || rx_in_progress) {
+            return;
+        }
+        /* DTR/RTS off still delivers if carrier is up (CONNECT after ATD). */
+        if (!receiver_enabled() && (status & ST_DCD)) {
             return;
         }
         SerialMessage msg = device->q_dev.get();
@@ -319,7 +372,7 @@ private:
     }
 
     void schedule_rx_char(uint8_t data) {
-        if (!receiver_enabled()) {
+        if (!receiver_enabled() && (status & ST_DCD)) {
             return;
         }
         if (status & ST_RDRF) {
@@ -329,13 +382,9 @@ private:
         }
         rx_data = data;
         rx_in_progress = true;
-        uint64_t cycles = get_cycles_per_char();
-        if (cycles > 0 && event_timer && clock) {
-            uint64_t when = clock->get_c14m() + cycles;
-            event_timer->scheduleEvent(when, rx_complete_callback, timer_base_id + 1, this);
-        } else {
-            rx_complete();
-        }
+        /* Immediate: a stalled RX event leaves CONNECT unread and ProTERM
+         * sitting on "waiting for connect". TX stays baud-paced. */
+        rx_complete();
     }
 
     void start_tx_shift(uint8_t data) {
@@ -386,6 +435,9 @@ private:
                 irq = true;
             }
             if (tx_irq_enabled() && tx_irq_condition && (status & ST_TDRE)) {
+                irq = true;
+            }
+            if (modem_irq_condition) {
                 irq = true;
             }
         }

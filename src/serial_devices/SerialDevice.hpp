@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+#include <cstdio>
 #include <cstdint>
 #include <SDL3/SDL.h>
 
@@ -57,10 +59,21 @@ class SerialQueue {
 };
 
 class SerialDevice {
+    public:
+        static constexpr uint8_t MODEM_CD  = 1 << 0;
+        static constexpr uint8_t MODEM_CTS = 1 << 1;
+        static constexpr uint8_t MODEM_DSR = 1 << 2;
+        static constexpr uint8_t MODEM_INPUTS_ASSERTED = MODEM_CD | MODEM_CTS | MODEM_DSR;
+
     protected:
         const char *name;
         const char *port_id;
         SDL_Thread *thread;
+
+        /* Host-logical handshake inputs: 1 = line asserted (carrier / ready).
+         * Worker writes; emu thread reads. Chips invert where silicon requires it.
+         * Not a queue message — pins are levels; IRQ edges are synthesized on the chip. */
+        std::atomic<uint8_t> modem_inputs_{MODEM_INPUTS_ASSERTED};
 
     public:
         SerialQueue q_host; // host -> dev queue
@@ -73,8 +86,31 @@ class SerialDevice {
            This method only exits when it receives a SHUTDOWN message. Otherwise
            processes in a loop forever.
            Must ONLY q_host->get() and q_dev->send() to prevent race conditions.
+           Handshake inputs are the exception: set_modem_inputs() from the worker.
         */
 
         const char *get_name() { return name; }
+        const char *get_port_id() const { return port_id; }
         virtual void device_loop() = 0;
+
+        void set_modem_inputs(uint8_t bits) {
+            modem_inputs_.store(bits, std::memory_order_relaxed);
+        }
+        uint8_t modem_inputs() const {
+            return modem_inputs_.load(std::memory_order_relaxed);
+        }
+
+        /** HUD: handshake plus backend status. Safe to call from the UI thread. */
+        virtual void format_hud_status(char *buf, size_t n) const {
+            format_handshake(buf, n);
+        }
+
+    protected:
+        void format_handshake(char *buf, size_t n) const {
+            const uint8_t m = modem_inputs();
+            std::snprintf(buf, n, "CD%c CTS%c DSR%c",
+                          (m & MODEM_CD) ? '+' : '-',
+                          (m & MODEM_CTS) ? '+' : '-',
+                          (m & MODEM_DSR) ? '+' : '-');
+        }
 };

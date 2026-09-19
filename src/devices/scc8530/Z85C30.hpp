@@ -81,6 +81,9 @@ class Z85C30 {
     }
     
     SerialDevice *serial_devices[SCC_CHANNEL_COUNT] = { nullptr, nullptr };
+    uint8_t last_modem_inputs[SCC_CHANNEL_COUNT] = {
+        SerialDevice::MODEM_INPUTS_ASSERTED, SerialDevice::MODEM_INPUTS_ASSERTED
+    };
 
     struct scc_channel_state_t {
         uint8_t char_rx;
@@ -401,11 +404,57 @@ class Z85C30 {
             return vector;
         }
 
+        inline void apply_modem_inputs(scc_channel_t channel) {
+            uint8_t cur = SerialDevice::MODEM_INPUTS_ASSERTED;
+            if (serial_devices[channel] != nullptr) {
+                cur = serial_devices[channel]->modem_inputs();
+            }
+            const uint8_t prev = last_modem_inputs[channel];
+            last_modem_inputs[channel] = cur;
+
+            registers[channel].r0_dcd = (cur & SerialDevice::MODEM_CD) ? 1 : 0;
+            registers[channel].r0_cts = (cur & SerialDevice::MODEM_CTS) ? 1 : 0;
+
+            const uint8_t changed = prev ^ cur;
+            if (!registers[channel].r1_ext_int_enable) {
+                return;
+            }
+            bool ext = false;
+            if ((changed & SerialDevice::MODEM_CD) && registers[channel].r15_dcd_ie) {
+                ext = true;
+            }
+            if ((changed & SerialDevice::MODEM_CTS) && registers[channel].r15_cts_ie) {
+                ext = true;
+            }
+            if (!ext) {
+                return;
+            }
+            if (channel == SCC_CHANNEL_A) {
+                registers[SCC_CHANNEL_A].r3_a_ext_pending = 1;
+            } else {
+                registers[SCC_CHANNEL_A].r3_b_ext_pending = 1;
+            }
+        }
+
+        /* Accept device→guest bytes if RX is enabled, or Auto Enables+DCD, or
+         * DCD is already up (Hayes CONNECT must get through even if the guest
+         * has not set WR3 RX Enable yet). */
+        inline bool rx_accepts_input(scc_channel_t channel) const {
+            if (registers[channel].r0_dcd) {
+                return true;
+            }
+            if (registers[channel].r3_auto_enables) {
+                return false;
+            }
+            return registers[channel].r3_rx_enable != 0;
+        }
+
         inline void update_interrupts(scc_channel_t channel) {
             bool interrupt_pending = false;
             
             if (update_tx_ip(channel)) interrupt_pending = true;
             if (update_rx_ip(channel)) interrupt_pending = true;
+            if (registers[SCC_CHANNEL_A].r_reg_3 != 0) interrupt_pending = true;
 
             // if MIE reset, no interrupt asserted.
             if (registers[SCC_CHANNEL_A].r9_mie == 0) interrupt_pending = false;
@@ -432,7 +481,11 @@ class Z85C30 {
                 // TODO: need to process the various commands here. (resetting interrupts, etc.)
                 if (registers[channel].r0_cmd == 0b001) new_register += 8;
                 else if (registers[channel].r0_cmd == 0b010) { // reset ext/status interrupt 
-                    registers[channel].r3_a_ext_pending = 0;
+                    if (channel == SCC_CHANNEL_A) {
+                        registers[SCC_CHANNEL_A].r3_a_ext_pending = 0;
+                    } else {
+                        registers[SCC_CHANNEL_A].r3_b_ext_pending = 0;
+                    }
                 } else if (registers[channel].r0_cmd == 0b101) { // reset Tx int pending
                     if (channel == SCC_CHANNEL_A) {
                         registers[SCC_CHANNEL_A].r3_a_tx_pending = 0;
@@ -549,13 +602,9 @@ class Z85C30 {
 
         /* Reads */
         inline uint8_t read_register_0(scc_channel_t channel) {
-            //printf("SCC: READ  register 0: Ch %d\n", channel);
-            //registers[channel].r0_tx_buffer_empty = 1; // duh, don't override this.
-            registers[channel].r0_dcd = 1; // these belong in update_queues()
-            registers[channel].r0_cts = 1;
             uint8_t retval = registers[channel].r_reg_0;
             print_read_register(channel, RR0, retval);
-            return retval; // TODO: fix. for now fake CTS=1, DCD=1, Tx Buffer Empty=1
+            return retval;
         }
 
         inline uint8_t read_register_1(scc_channel_t channel) {
@@ -661,8 +710,12 @@ class Z85C30 {
             set_bits_by_mask(registers[channel].r_reg_1, 0b1111'1111, 0b0000'0110);
             set_bits_by_mask(registers[channel].r_reg_3, 0b1111'1111, 0b0000'0000);
             set_bits_by_mask(registers[channel].r_reg_10, 0b1111'1111, 0b0000'0000);
+            registers[channel].r0_dcd = 1;
+            registers[channel].r0_cts = 1;
+            last_modem_inputs[channel] = SerialDevice::MODEM_INPUTS_ASSERTED;
 
             update_timing_sources(channel);
+            apply_modem_inputs(channel);
             update_interrupts(channel);
             // need to update interrupts
         }
@@ -694,8 +747,12 @@ class Z85C30 {
             set_bits_by_mask(registers[channel].r_reg_1, 0b1111'1111, 0b0000'0110);
             set_bits_by_mask(registers[channel].r_reg_3, 0b1111'1111, 0b0000'0000);
             set_bits_by_mask(registers[channel].r_reg_10, 0b1111'1111, 0b0000'0000);
+            registers[channel].r0_dcd = 1;
+            registers[channel].r0_cts = 1;
+            last_modem_inputs[channel] = SerialDevice::MODEM_INPUTS_ASSERTED;
 
             update_timing_sources(channel);
+            apply_modem_inputs(channel);
             update_interrupts(channel);
             // need to update interrupts
         }
@@ -817,7 +874,11 @@ class Z85C30 {
         // this used to rely on the IP flag but that's not right! now uses rx_char_available
         void update_queues() {
             for (int channel = 0; channel < SCC_CHANNEL_COUNT; channel++) {
+                apply_modem_inputs((scc_channel_t)channel);
                 if (serial_devices[channel] != nullptr) {
+                    if (!rx_accepts_input((scc_channel_t)channel)) {
+                        continue;
+                    }
                     // Only check for new data if RX buffer is empty and no RX in progress
                     if (registers[channel].r0_rx_char_available == 0 && !registers[channel].rx_in_progress) {
                         SerialMessage msg = serial_devices[channel]->q_dev.get();
@@ -859,6 +920,15 @@ class Z85C30 {
         void set_device_channel(scc_channel_t channel, SerialDevice *device) {
             serial_devices[channel] = device;
             push_line_params(channel);
+            apply_modem_inputs(channel);
+            update_interrupts(channel);
+        }
+
+        void poll_modem_inputs() {
+            apply_modem_inputs(SCC_CHANNEL_A);
+            apply_modem_inputs(SCC_CHANNEL_B);
+            update_queues();
+            update_interrupts(SCC_CHANNEL_A);
         }
         
         void debug_output(DebugFormatter *df) {
@@ -866,7 +936,10 @@ class Z85C30 {
             df->addLine("Clock Mode A: %dX   B: %dX", clock_mode[SCC_CHANNEL_A], clock_mode[SCC_CHANNEL_B]);
             df->addLine("Rx Data A: %02X  B: %02X", registers[SCC_CHANNEL_A].char_rx, registers[SCC_CHANNEL_B].char_rx);
             df->addLine("Tx Data A: %02X  B: %02X", registers[SCC_CHANNEL_A].char_tx, registers[SCC_CHANNEL_B].char_tx);
-            df->addLine("r_reg_0 A: %02X  B: %02X", registers[SCC_CHANNEL_A].r_reg_0, registers[SCC_CHANNEL_B].r_reg_0);
+            df->addLine("r_reg_0 A: %02X  B: %02X  (dcd A/B=%d/%d cts A/B=%d/%d)",
+                        registers[SCC_CHANNEL_A].r_reg_0, registers[SCC_CHANNEL_B].r_reg_0,
+                        registers[SCC_CHANNEL_A].r0_dcd, registers[SCC_CHANNEL_B].r0_dcd,
+                        registers[SCC_CHANNEL_A].r0_cts, registers[SCC_CHANNEL_B].r0_cts);
             df->addLine("r_reg_1 A: %02X  B: %02X", registers[SCC_CHANNEL_A].r_reg_1, registers[SCC_CHANNEL_B].r_reg_1);
             //df->addLine("r_reg_2 A: %02X  B: %02X", registers[SCC_CHANNEL_A].r_reg_2, registers[SCC_CHANNEL_B].r_reg_2);
             df->addLine("r_reg_3 A: %02X  B: 00", registers[SCC_CHANNEL_A].r_reg_3) ;
@@ -928,8 +1001,7 @@ class Z85C30 {
 
         // Schedule reception of a character
         void schedule_rx_char(scc_channel_t channel, uint8_t data) {
-            // Check if RX is enabled
-            if (!registers[channel].r3_rx_enable) {
+            if (!rx_accepts_input(channel)) {
                 if (SCDEBUG) printf("SCC: Ch %c RX disabled, dropping char %02X\n", ch_name(channel), data);
                 return;
             }
@@ -941,24 +1013,11 @@ class Z85C30 {
                 return;
             }
             
-            if (SCDEBUG) printf("SCC: Ch %c scheduling RX of %02X\n", ch_name(channel), data);
-            
             registers[channel].char_rx = data;
             registers[channel].rx_in_progress = true;
-            
-            uint64_t cycles_per_char = get_cycles_per_char(channel, false);
-            
-            if (cycles_per_char > 0 && event_timer && clock) {
-                uint64_t trigger_cycle = clock->get_c14m() + cycles_per_char;
-                event_timer->scheduleEvent(trigger_cycle, rx_complete_callback, rx_timer_id[channel], this);
-                
-                if (SCDEBUG) printf("SCC: Ch %c RX scheduled for %llu cycles\n", 
-                    ch_name(channel), cycles_per_char);
-            } else {
-                // High baud rate or no timer - complete immediately
-                if (SCDEBUG) printf("SCC: Ch %c RX completing immediately\n", ch_name(channel));
-                rx_complete(channel);
-            }
+            /* Complete immediately. A pending RX event that never fires leaves
+             * CONNECT sitting in the chip and ProTERM stuck on "waiting for connect". */
+            rx_complete(channel);
         }
 
         // Static callback wrappers for EventTimer

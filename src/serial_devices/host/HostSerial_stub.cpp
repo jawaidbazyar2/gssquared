@@ -33,6 +33,10 @@ int HostSerial::receive(uint8_t * /*data*/, int /*n*/) {
     return -1;
 }
 
+bool HostSerial::get_modem_inputs(uint8_t * /*bits*/) {
+    return false;
+}
+
 std::vector<host_serial_info_t> host_serial_enumerate() {
     return {};
 }

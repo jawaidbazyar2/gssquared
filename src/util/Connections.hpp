@@ -198,6 +198,7 @@ public:
     bool attach(connection_key_t key, connection_device_type_t type,
                 const std::string &path = {});
     connection_device_type_t current_device(connection_key_t key) const;
+    SerialDevice *device(connection_key_t key) const;
     std::vector<connection_device_type_t> allowed_devices(connection_key_t key) const;
     const std::vector<connection_port_info_t> &get_all_ports() const;
 

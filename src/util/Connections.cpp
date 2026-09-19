@@ -141,6 +141,14 @@ connection_device_type_t Connections::current_device(connection_key_t key) const
     return it->second.current_device;
 }
 
+SerialDevice *Connections::device(connection_key_t key) const {
+    auto it = ports_.find(key);
+    if (it == ports_.end()) {
+        return nullptr;
+    }
+    return it->second.device;
+}
+
 std::vector<connection_device_type_t> Connections::allowed_devices(connection_key_t key) const {
     auto it = ports_.find(key);
     if (it == ports_.end()) {

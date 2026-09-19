@@ -12,6 +12,7 @@
 #include <windows.h>
 
 #include "serial_devices/host/HostSerial.hpp"
+#include "serial_devices/SerialDevice.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -308,6 +309,28 @@ int HostSerial::receive(uint8_t *data, int n) {
         total += static_cast<int>(got);
     }
     return total;
+}
+
+bool HostSerial::get_modem_inputs(uint8_t *bits) {
+    if (handle_ == nullptr || bits == nullptr) {
+        return false;
+    }
+    DWORD st = 0;
+    if (!GetCommModemStatus(as_handle(handle_), &st)) {
+        return false;
+    }
+    uint8_t b = 0;
+    if (st & MS_RLSD_ON) {
+        b |= SerialDevice::MODEM_CD;
+    }
+    if (st & MS_CTS_ON) {
+        b |= SerialDevice::MODEM_CTS;
+    }
+    if (st & MS_DSR_ON) {
+        b |= SerialDevice::MODEM_DSR;
+    }
+    *bits = b;
+    return true;
 }
 
 std::vector<host_serial_info_t> host_serial_enumerate() {

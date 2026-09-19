@@ -42,7 +42,8 @@ There is a 10 x 19 Status FIFO; a 3 byte Rec error FIFO, another 3 byte Rec erro
 
 ## Action Items / Roadmap
 
-[ ] simulate the various serial control signals with messages to the serial device, such as CTS, RTS, DSR/DTR, etc. In theory you can hangup a modem that way.  
+[X] Incoming handshake (CD / CTS / DSR) as levels on `SerialDevice` — see [SerialPortSpec.md](SerialPortSpec.md)  
+[ ] Outgoing DTR/RTS to the host UART (hang up a real modem by dropping DTR)  
 [ ] clear out the various queues on a reset?  
 
 [ ] Implement "file" serial device  

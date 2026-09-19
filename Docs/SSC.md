@@ -58,6 +58,6 @@ SW2-6 (IRQ enable to the slot) is a hardware gate not present in the DIPSW2 read
 
 Main emu thread: MMU handlers, 6551 registers, baud-timed TX/RX via `EventTimer`, slot IRQ via `InterruptController`.
 
-Child thread: `FileDevice` / `ModemDevice` — chip ↔ device only through SPSC `SerialQueue` (`q_host` / `q_dev`).
+Child thread: `FileDevice` / `ModemDevice` / `SerialPortDevice` — bytes and line settings on SPSC `SerialQueue` (`q_host` / `q_dev`); CD/CTS/DSR on `SerialDevice::modem_inputs`.
 
-DCD and DSR are held asserted so guest software does not stall waiting for carrier. Full RS-232 control messaging and config-driven `[[connections]]` are follow-ups shared with SCC work.
+Handshake policy (device + cabling) is in [SerialPortSpec.md](SerialPortSpec.md). File/clipboard keep CD/CTS/DSR asserted. Modem CD follows the TCP session. Host serial passes through live CD/CTS/DSR. Guest → host DTR/RTS is still a follow-up.

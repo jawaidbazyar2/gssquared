@@ -60,7 +60,6 @@ struct ssc_state_t : public SlotData {
     char port_id[16] = {};
     uint8_t dipsw1 = SSC_DEFAULT_DIPSW1;
     uint8_t dipsw2 = SSC_DEFAULT_DIPSW2;
-    bool cts_ready = true; /* live CTS into DIPSW2 bit 0; ready = 0 */
     bool dip_irq_enabled = true;
 };
 
@@ -83,7 +82,7 @@ uint8_t ssc_read_c0xx(void *context, uint32_t address) {
             return st->dipsw1;
         case SSC_DIPSW2: {
             uint8_t v = st->dipsw2 & 0xFE;
-            if (!st->cts_ready) {
+            if (!st->acia || !st->acia->cts_asserted()) {
                 v |= 0x01;
             }
             return v;
@@ -132,7 +131,6 @@ void init_slot_ssc(computer_t *computer, SlotType_t slot) {
     st->irq_control = computer->irq_control;
     st->dipsw1 = SSC_DEFAULT_DIPSW1;
     st->dipsw2 = SSC_DEFAULT_DIPSW2;
-    st->cts_ready = true;
     st->dip_irq_enabled = true;
 
     ResourceFile *rom = new ResourceFile("roms/cards/ssc/341-0065-A.bin", READ_ONLY);
@@ -195,13 +193,20 @@ void init_slot_ssc(computer_t *computer, SlotType_t slot) {
         [st]() -> DebugFormatter * {
             DebugFormatter *df = new DebugFormatter();
             df->addLine("SSC slot %d  DIPSW1=%02X DIPSW2=%02X cts=%d irq_dip=%d",
-                        static_cast<int>(st->_slot), st->dipsw1, st->dipsw2, st->cts_ready,
-                        st->dip_irq_enabled);
+                        static_cast<int>(st->_slot), st->dipsw1, st->dipsw2,
+                        st->acia ? st->acia->cts_asserted() : 0, st->dip_irq_enabled);
             if (st->acia) {
                 st->acia->debug_output(df);
             }
             return df;
         });
+
+    computer->device_frame_dispatcher->registerHandler([st]() {
+        if (st->acia) {
+            st->acia->poll_modem_inputs();
+        }
+        return true;
+    });
 
     computer->register_reset_handler([st](bool /*cold_start*/) {
         if (st->acia) {

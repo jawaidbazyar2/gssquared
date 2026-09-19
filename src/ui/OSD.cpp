@@ -15,6 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cstring>
 #include <stdexcept>
 #include <string>
 #include <SDL3/SDL.h>
@@ -57,6 +58,7 @@
 #include "ConfigSelectors.hpp"
 #include "SerialPortsOSD.hpp"
 #include "util/Connections.hpp"
+#include "serial_devices/SerialDevice.hpp"
 #include "serial_devices/host/HostSerial.hpp"
 #include "serial_devices/host/SerialPortManager.hpp"
 #include "StorageButtonFactory.hpp"
@@ -918,6 +920,36 @@ void OSD::render() {
                     /* vs->get_frame_scan()->get_count() */);
                 SDL_RenderDebugText(renderer, 20, window_height - 50, hud_str);
             //}            
+
+            if (computer->connections) {
+                const auto &ports = computer->connections->get_all_ports();
+                int y = window_height - 20;
+                for (auto it = ports.rbegin(); it != ports.rend(); ++it) {
+                    if (it->kind != connection_port_kind_t::SERIAL) {
+                        continue;
+                    }
+                    if (it->device == connection_device_type_t::NONE) {
+                        continue;
+                    }
+                    char extra[96]{};
+                    if (SerialDevice *dev = computer->connections->device(it->key)) {
+                        dev->format_hud_status(extra, sizeof(extra));
+                    }
+                    char line[160];
+                    snprintf(line, sizeof(line), "%s %s %s",
+                             it->display_name.c_str(),
+                             connection_device_type_name(it->device), extra);
+                    const int tw = static_cast<int>(strlen(line)) * 8;
+                    int x = window_width - tw - 16;
+                    if (x < 8) {
+                        x = 8;
+                    }
+                    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                    SDL_RenderDebugText(renderer, static_cast<float>(x), static_cast<float>(y),
+                                        line);
+                    y -= 16;
+                }
+            }
         }
     }
     // Draw the platform menu overlay (Linux: ☰ hamburger button) at 1:1 scale

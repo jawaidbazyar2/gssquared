@@ -209,7 +209,8 @@ From [UserInterface.md](UserInterface.md), [SystemConfigTOML.md](SystemConfigTOM
 
 From [SCC8530_Serial.md](SCC8530_Serial.md), [Parallel.md](Parallel.md), [Imagewriter.md](Imagewriter.md), [Networking.md](Networking.md), [Documentation.md](Documentation.md):
 
-- [ ] Simulate SCC modem control signals (CTS/RTS/DSR/DTR, etc.)
+- [X] Incoming serial handshake (CD / CTS / DSR) — [SerialPortSpec.md](SerialPortSpec.md)
+- [ ] Outgoing DTR/RTS to the host UART (hang up a real modem by dropping DTR)
 - [ ] Clear SCC queues on reset
 - [X] Implement "file" serial device (complete path)
 - [X] Print to clipboard serial/parallel device (#165)

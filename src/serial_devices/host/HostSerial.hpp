@@ -83,6 +83,8 @@ public:
     bool configure(const host_serial_line_t &line);
     int send(const uint8_t *data, int n);
     int receive(uint8_t *data, int n);
+    /** Host-logical CD/CTS/DSR bits (SerialDevice::MODEM_*). False if not attached. */
+    bool get_modem_inputs(uint8_t *bits);
     bool is_attached() const {
 #ifdef _WIN32
         return handle_ != nullptr;

@@ -62,7 +62,9 @@ device = "serial"
 path = "cu.usbserial-A50285BI"   # macOS; on Windows use path = "COM3"; on Linux, /dev/ttyUSB0
 ```
 
-Guest software programs baud / data / parity / stop bits on the SCC or 6551; those settings are passed through to the host port. If the dongle is unplugged, the emulator keeps the attachment and retries. On Linux, `/dev/ttyUSB*` is owned by group `dialout` (some distros use `uucp`); the local user must be in that group and re-login before GSSquared can open the port.
+Guest software programs baud / data / parity / stop bits on the SCC or 6551; those settings are passed through to the host port. Host **CD, CTS, and DSR** are passed through to the emulated UART so BBS software can see carrier loss. If the dongle is unplugged, the emulator keeps the attachment and retries (handshake lines read as deasserted until it reopens). On Linux, `/dev/ttyUSB*` is owned by group `dialout` (some distros use `uucp`); the local user must be in that group and re-login before GSSquared can open the port.
+
+A **Modem** attachment asserts CD only while the TCP session is connected. File and clipboard attachments keep handshake asserted. Details: [SerialPortSpec.md](SerialPortSpec.md).
 
 If you omit `[[connections]]`, GSSquared applies sensible defaults (IIgs: file on one port and modem on the other on native builds; SSC → modem; parallel → file).
 
@@ -71,4 +73,5 @@ If you omit `[[connections]]`, GSSquared applies sensible defaults (IIgs: file o
 - [Super Serial Card](Cards_SuperSerial.md)
 - [Parallel Interface](Cards_Parallel.md)
 - [Serial / Modem](Serial_Modem.md)
+- [Serial port spec](SerialPortSpec.md)
 - [Writing Config Files Manually](ConfigFiles.md)

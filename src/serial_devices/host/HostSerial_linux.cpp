@@ -8,6 +8,7 @@
  */
 
 #include "serial_devices/host/HostSerial.hpp"
+#include "serial_devices/SerialDevice.hpp"
 
 #ifndef HOSTSERIAL_LINUX_DEBUG
 #define HOSTSERIAL_LINUX_DEBUG 0
@@ -595,6 +596,39 @@ int HostSerial::receive(uint8_t *data, int n) {
         return -1;
     }
     return static_cast<int>(r);
+}
+
+bool HostSerial::get_modem_inputs(uint8_t *bits) {
+    if (fd_ < 0 || bits == nullptr) {
+        return false;
+    }
+#ifdef TIOCMGET
+    int m = 0;
+    if (ioctl(fd_, TIOCMGET, &m) != 0) {
+        return false;
+    }
+    uint8_t b = 0;
+#if defined(TIOCM_CD)
+    if (m & TIOCM_CD) {
+        b |= SerialDevice::MODEM_CD;
+    }
+#elif defined(TIOCM_CAR)
+    if (m & TIOCM_CAR) {
+        b |= SerialDevice::MODEM_CD;
+    }
+#endif
+    if (m & TIOCM_CTS) {
+        b |= SerialDevice::MODEM_CTS;
+    }
+    if (m & TIOCM_DSR) {
+        b |= SerialDevice::MODEM_DSR;
+    }
+    *bits = b;
+    return true;
+#else
+    (void)bits;
+    return false;
+#endif
 }
 
 std::vector<host_serial_info_t> host_serial_enumerate() {

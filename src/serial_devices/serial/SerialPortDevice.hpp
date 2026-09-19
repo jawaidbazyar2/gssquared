@@ -64,6 +64,7 @@ class SerialPortDevice : public SerialDevice {
     host_serial_line_t line_{};
     bool have_line_ = false;
     bool fail_toasted_ = false;
+    std::atomic<bool> attached_hud_{false};
     uint32_t last_try_ms_ = 0;
     char display_msg_[256]{};
     SerialPortStatusQueue status_q_;
@@ -91,6 +92,7 @@ class SerialPortDevice : public SerialDevice {
             if (have_line_) {
                 port_.configure(line_);
             }
+            publish_modem_inputs();
             notify("Serial attached %s", path_.c_str());
             fail_toasted_ = false;
             return;
@@ -101,10 +103,22 @@ class SerialPortDevice : public SerialDevice {
         }
     }
 
+    void publish_modem_inputs() {
+        uint8_t bits = 0;
+        if (port_.is_attached() && port_.get_modem_inputs(&bits)) {
+            attached_hud_.store(true, std::memory_order_relaxed);
+            set_modem_inputs(bits);
+        } else {
+            attached_hud_.store(false, std::memory_order_relaxed);
+            set_modem_inputs(0);
+        }
+    }
+
     void handle_io_error() {
         if (port_.is_attached()) {
             port_.detach();
         }
+        publish_modem_inputs();
         notify("Serial detached %s", path_.c_str());
         fail_toasted_ = false;
         last_try_ms_ = SDL_GetTicks();
@@ -155,6 +169,7 @@ public:
           path_(path),
           event_queue_(event_queue),
           frames_(frames) {
+        set_modem_inputs(0);
         if (frames_) {
             frame_handler_id_ = frames_->registerHandler([this]() {
                 poll();
@@ -180,10 +195,18 @@ public:
         event_queue_ = nullptr;
     }
 
+    void format_hud_status(char *buf, size_t n) const override {
+        char hs[24];
+        format_handshake(hs, sizeof(hs));
+        const char *st = attached_hud_.load(std::memory_order_relaxed) ? "open" : "closed";
+        std::snprintf(buf, n, "%s %s %s", st, hs, host_serial_basename(path_).c_str());
+    }
+
     void device_loop() override {
         while (true) {
             SDL_Delay(5);
             try_attach();
+            publish_modem_inputs();
             drain_host_rx();
 
             while (!q_host.is_empty()) {

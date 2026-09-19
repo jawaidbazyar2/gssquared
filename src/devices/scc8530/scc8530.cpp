@@ -112,6 +112,11 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
         return true;
     });
 
+    computer->device_frame_dispatcher->registerHandler([st]() {
+        st->scc->poll_modem_inputs();
+        return true;
+    });
+
     computer->register_reset_handler([st](bool cold_start) {
         (void)cold_start;
         st->scc->reset();
