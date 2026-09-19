@@ -457,6 +457,66 @@ const char* clock_name(clock_set_t clock_set) {
     }
 }
 
+const char* speed_name(clock_mode_t mode) {
+    switch (mode) {
+        case CLOCK_1_024MHZ: return "1.024mhz";
+        case CLOCK_2_8MHZ: return "2.8mhz";
+        case CLOCK_7_159MHZ: return "7.159mhz";
+        case CLOCK_14_3MHZ: return "14.3mhz";
+        case CLOCK_FREE_RUN: return "ludicrous";
+        default: return "unknown";
+    }
+}
+
+const char* display_name(int display_monitor) {
+    switch (display_monitor) {
+        case DISPLAY_MONITOR_COMPOSITE: return "composite";
+        case DISPLAY_MONITOR_RGB: return "rgb";
+        case DISPLAY_MONITOR_GREEN: return "green";
+        case DISPLAY_MONITOR_AMBER: return "amber";
+        case DISPLAY_MONITOR_WHITE: return "white";
+        default: return "unknown";
+    }
+}
+
+std::optional<clock_mode_t> parse_speed(const std::string& value, std::string& error_out) {
+    std::string lower = value;
+    for (char& c : lower) {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    if (lower == "1.024mhz") return CLOCK_1_024MHZ;
+    if (lower == "2.8mhz") return CLOCK_2_8MHZ;
+    if (lower == "7.159mhz") return CLOCK_7_159MHZ;
+    if (lower == "14.3mhz") return CLOCK_14_3MHZ;
+    if (lower == "ludicrous") return CLOCK_FREE_RUN;
+    error_out = "Unknown speed: " + value;
+    return std::nullopt;
+}
+
+std::optional<int> parse_display(const std::string& value, std::string& error_out) {
+    std::string lower = value;
+    for (char& c : lower) {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    if (lower == "composite" || lower == "color" || lower == "ntsc") {
+        return DISPLAY_MONITOR_COMPOSITE;
+    }
+    if (lower == "rgb") {
+        return DISPLAY_MONITOR_RGB;
+    }
+    if (lower == "green" || lower == "mono") {
+        return DISPLAY_MONITOR_GREEN;
+    }
+    if (lower == "amber") {
+        return DISPLAY_MONITOR_AMBER;
+    }
+    if (lower == "white") {
+        return DISPLAY_MONITOR_WHITE;
+    }
+    error_out = "Unknown display: " + value;
+    return std::nullopt;
+}
+
 const char* scanner_name(video_scanner_t scanner) {
     switch (scanner) {
         case Scanner_AppleII: return "apple2";
@@ -653,6 +713,12 @@ bool SystemConfig::save(const std::string& path, std::string& error_out) {
     out << "platform = \"" << platform_name(config_data_.platform_id) << "\"\n";
     out << "clock = \"" << clock_name(config_data_.clock_set) << "\"\n";
     out << "scanner = \"" << scanner_name(config_data_.scanner_type) << "\"\n";
+    if (config_data_.clock_mode != INVALID_CLOCK_MODE) {
+        out << "speed = \"" << speed_name(config_data_.clock_mode) << "\"\n";
+    }
+    if (config_data_.display_monitor != DISPLAY_MONITOR_UNSET) {
+        out << "display = \"" << display_name(config_data_.display_monitor) << "\"\n";
+    }
     out << "builtin = false\n";
     if (bram_) {
         out << "bram = \"" << encode_bram_hex(*bram_) << "\"\n";
@@ -866,6 +932,26 @@ bool SystemConfig::load_gs2(const std::string& path, std::string& error_out) {
         config_data_.scanner_type = derive_scanner(config_data_.platform_id, clock_set);
     }
 
+    if (const auto speed_node = table["speed"]; speed_node.is_string()) {
+        const auto parsed = parse_speed(std::string(*speed_node.value<std::string>()), error_out);
+        if (!parsed.has_value()) {
+            return false;
+        }
+        config_data_.clock_mode = *parsed;
+    } else {
+        config_data_.clock_mode = INVALID_CLOCK_MODE;
+    }
+
+    if (const auto display_node = table["display"]; display_node.is_string()) {
+        const auto parsed = parse_display(std::string(*display_node.value<std::string>()), error_out);
+        if (!parsed.has_value()) {
+            return false;
+        }
+        config_data_.display_monitor = *parsed;
+    } else {
+        config_data_.display_monitor = DISPLAY_MONITOR_UNSET;
+    }
+
     if (const auto builtin_node = table["builtin"]; builtin_node.is_boolean()) {
         config_data_.builtin = *builtin_node.value<bool>();
     } else {
@@ -1045,6 +1131,10 @@ void SystemConfig::dump(std::ostream& out) const {
         << " (" << static_cast<int>(config_data_.clock_set) << ")\n";
     out << "  scanner: " << scanner_name(config_data_.scanner_type)
         << " (" << static_cast<int>(config_data_.scanner_type) << ")\n";
+    out << "  speed: " << speed_name(config_data_.clock_mode)
+        << " (" << static_cast<int>(config_data_.clock_mode) << ")\n";
+    out << "  display: " << display_name(config_data_.display_monitor)
+        << " (" << config_data_.display_monitor << ")\n";
     out << "  builtin: " << (config_data_.builtin ? "true" : "false") << "\n";
     out << "  bram: " << (bram_ ? "present" : "none") << "\n";
 

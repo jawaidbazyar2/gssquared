@@ -431,21 +431,18 @@ protected:
 
 class NClockFactory {
     public:
-    static NClockII *create_clock(PlatformId_t platform, clock_set_t clock_set) {
+    static NClockII *create_clock(PlatformId_t platform, clock_set_t clock_set,
+                                 clock_mode_t clock_mode) {
         switch (platform) {
             case PLATFORM_APPLE_II:
-                return new NClockII(clock_set);
             case PLATFORM_APPLE_II_PLUS:
-                return new NClockII(clock_set);
             case PLATFORM_APPLE_IIE:
-                return new NClockII(clock_set);
             case PLATFORM_APPLE_IIE_ENHANCED:
-                return new NClockII(clock_set);
             case PLATFORM_APPLE_IIE_65816:
-                return new NClockII(clock_set);
+                return new NClockII(clock_set, clock_mode);
             case PLATFORM_APPLE_IIGS:
             case PLATFORM_APPLE_IIGS_ROM3:
-                return new NClockIIgs(clock_set);
+                return new NClockIIgs(clock_set, clock_mode);
             default:
                 assert(false && "Unknown platform in NClockFactory::create_clock");
                 return nullptr;    

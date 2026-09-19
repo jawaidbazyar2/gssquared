@@ -1,0 +1,4 @@
+gs2_version = 1
+name = "Bad Display"
+platform = "apple2e_enhanced"
+display = "plasma"

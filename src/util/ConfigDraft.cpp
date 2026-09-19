@@ -52,6 +52,19 @@ void push_port(std::vector<connection_port_spec_t>& out, int slot, const std::st
     out.push_back(std::move(spec));
 }
 
+void seed_speed_display(SystemConfig_t& config) {
+    if (config.clock_mode == INVALID_CLOCK_MODE) {
+        config.clock_mode = platform_is_iigs(config.platform_id)
+                                ? CLOCK_2_8MHZ
+                                : CLOCK_1_024MHZ;
+    }
+    if (config.display_monitor == DISPLAY_MONITOR_UNSET) {
+        config.display_monitor = platform_is_iigs(config.platform_id)
+                                     ? DISPLAY_MONITOR_RGB
+                                     : DISPLAY_MONITOR_COMPOSITE;
+    }
+}
+
 bool device_allowed_on_platform(device_id id, PlatformId_t platform) {
     auto choices = cards_allowed_for_slot(platform, 0);
     // Check all slots — some cards are slot-restricted.
@@ -164,6 +177,7 @@ void ConfigDraft::reset_for_platform(PlatformId_t platform_id) {
     config_.builtin = false;
     config_.clock_set = CLOCK_SET_US;
     config_.scanner_type = draft_derive_scanner(platform_id, config_.clock_set);
+    seed_speed_display(config_);
 
     name_ = std::string("New ") + platform_name(platform_id);
     description_ = "Custom system configuration";
@@ -195,6 +209,7 @@ void ConfigDraft::load_from(const SystemConfig& config) {
         bram_.reset();
     }
     prune_orphan_connections();
+    seed_speed_display(config_);
     sync_pointers();
 }
 
@@ -208,6 +223,7 @@ void ConfigDraft::load_from_builtin(const SystemConfig_t& config) {
     mounts_.clear();
     connections_.clear();
     bram_.reset();
+    seed_speed_display(config_);
     sync_pointers();
 }
 
@@ -236,6 +252,9 @@ void ConfigDraft::set_platform(PlatformId_t platform_id) {
         config_.clock_set = CLOCK_SET_US;
     }
     config_.scanner_type = draft_derive_scanner(platform_id, config_.clock_set);
+    config_.clock_mode = INVALID_CLOCK_MODE;
+    config_.display_monitor = DISPLAY_MONITOR_UNSET;
+    seed_speed_display(config_);
 
     for (int slot = 0; slot < NUM_SLOTS; ++slot) {
         device_id id = config_.slot_devices[slot];

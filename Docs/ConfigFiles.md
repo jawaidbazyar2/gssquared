@@ -82,6 +82,8 @@ These go at the start of the file (before any `[[cards]]` blocks).
 | `description` | No | Subtitle or tooltip text. |
 | `clock` | No | `"ntsc"` (default) or `"pal"`. Not valid on IIgs. |
 | `scanner` | No | Video timing. Usually omitted — GS2 picks a sensible default from `platform` and `clock`. |
+| `speed` | No | Host CPU speed at boot: `"1.024mhz"`, `"2.8mhz"`, `"7.159mhz"`, `"14.3mhz"`, `"ludicrous"`. Omitted: 1.024 MHz (II/IIe) or 2.8 MHz (IIgs). F9 / OSD changes are session-only. |
+| `display` | No | Monitor: `"composite"`, `"rgb"`, `"green"`, `"amber"`, `"white"`. Omitted: composite, or RGB on IIgs. |
 
 ### Platforms
 
@@ -111,6 +113,8 @@ If `id` is missing when you load a writable `.gs2`, GSSquared assigns one and ma
 - **`clock = "ntsc"`** — North American timing (default).
 - **`clock = "pal"`** — European timing. Use with II, II+, and IIe family only.
 - **`scanner`** — Advanced. Values: `"apple2"`, `"apple2e"`, `"apple2e_pal"`, `"apple2gs"`. If you are building a PAL //e, set `clock = "pal"` and you can skip `scanner`; GS2 will use `"apple2e_pal"`.
+- **`speed`** — How fast the emulator runs the CPU (not the IIgs Control Panel `$C036` bit). Same choices as the config editor and F4 speed row.
+- **`display`** — Composite (NTSC), RGB, or a monochrome phosphor. Same choices as the config editor monitor row.
 
 Motherboard devices (keyboard, built-in IIgs sound, built-in floppy controller on the GS, and so on) are added automatically from `platform`. You only list **expansion cards** in `[[cards]]`.
 
@@ -402,6 +406,8 @@ video.mode MONO
 | `gssquared.description` | `description` |
 | `gssquared.clock` | `clock` |
 | `gssquared.scanner` | `scanner` |
+| `machine.speed` | `speed` |
+| `video.mode` | `display` |
 | `slot6 disk_ii` | `[[cards]]` with `slot = 6`, `card = "disk_ii"` |
 | `smartport.disk1 path` | `[[storage]]` on the SmartPort slot, `drive = 1` |
 | `floppy.disk1 path` | `[[storage]]` on the floppy controller, `drive = 1` |
@@ -425,7 +431,11 @@ Card names in `slotN` lines use the same names as the `card` column in the table
 
 ### Preference keys (display, speed, audio)
 
-Lines like `machine.speed`, `video.mode`, and `video.scanlines` are **preferences** — how you want to run the machine, not which hardware is installed. GS2 reads and stores these for compatibility with profile packs, but **does not apply all of them at boot yet**. Hardware and disk mounts from the same file still load normally.
+Lines like `machine.speed`, `video.mode`, and `video.scanlines` are **preferences** — how you want to run the machine, not which hardware is installed.
+
+- **`machine.speed`** — Hertz value (for example `2800000`) or a `.gs2` speed name. Mapped to host CPU speed at boot.
+- **`video.mode`** — `COLOR` / `NTSC` / `COMPOSITE`, `RGB`, `MONO` / `GREEN`, `AMBER`, or `WHITE`. Mapped to the monitor type at boot.
+- Other preference keys (`video.scanlines`, `sound`, …) are stored for compatibility but **not applied at boot yet**.
 
 ### `Profiles.txt` and `Global Settings.txt`
 

@@ -39,6 +39,8 @@ struct SystemConfig_t {
     const char *description;
     const char *id;                 // machine identity (UUID)
     device_id slot_devices[NUM_SLOTS];  // slots 0–7, derived from [[cards]]
+    clock_mode_t clock_mode;           // optional host speed; INVALID if omitted
+    int display_monitor;               // optional monitor; DISPLAY_MONITOR_UNSET if omitted
 };
 
 typedef struct {
@@ -57,6 +59,8 @@ typedef struct {
 | `platform` | string | yes | `platform_id` | See [Platform](#platform) |
 | `clock` | string | no | `clock_set` | Default from platform if omitted |
 | `scanner` | string | no | `scanner_type` | Default from platform if omitted |
+| `speed` | string | no | `clock_mode` | Host CPU speed; omit → platform default. See [Speed](#speed) |
+| `display` | string | no | `display_monitor` | Monitor type; omit → composite, or RGB on IIgs. See [Display](#display) |
 | `builtin` | boolean | no | `builtin` | Always `false` for user files; omit or set explicitly |
 | `[[cards]]` | array of tables | no | `slot_devices[]` + per-card config | Hardware only; see [Cards](#cards) |
 | `[[storage]]` | array of tables | no | `disk_mount_t[]` | All pre-mounted disks; see [Storage](#storage) |
@@ -139,6 +143,42 @@ String enum → `video_scanner_t` (`src/devices/displaypp/VideoScanner.hpp`):
 | `"apple2gs"` | `Scanner_AppleIIgs` | IIgs, 65816 //e |
 
 If omitted, derive from `platform` and `clock` (e.g. PAL //e → `"apple2e_pal"`).
+
+---
+
+## Speed
+
+String enum → `clock_mode_t` (`src/NClock.hpp`). This is **host** emulator speed (F9 / OSD / editor), not the IIgs guest `$C036` bit.
+
+| TOML value | C enum |
+|------------|--------|
+| `"1.024mhz"` | `CLOCK_1_024MHZ` |
+| `"2.8mhz"` | `CLOCK_2_8MHZ` |
+| `"7.159mhz"` | `CLOCK_7_159MHZ` |
+| `"14.3mhz"` | `CLOCK_14_3MHZ` |
+| `"ludicrous"` | `CLOCK_FREE_RUN` |
+
+If omitted, use `platform_info.default_clock_mode` (1.024 MHz on II/IIe, 2.8 MHz on IIgs). Runtime F9 / OSD / Insert changes are session-only and are not written back on quit.
+
+Neil `machine.speed` (Hz, e.g. `2800000`) maps to the nearest of the four fixed rates; `0` maps to ludicrous.
+
+---
+
+## Display
+
+String enum → `display_monitor_t` / `MenuMonitorID`. Same five choices as the config editor monitor row.
+
+| TOML value | Monitor |
+|------------|---------|
+| `"composite"` | NTSC color (`DM_ENGINE_NTSC`) |
+| `"rgb"` | RGB (`DM_ENGINE_RGB`) |
+| `"green"` | Mono green |
+| `"amber"` | Mono amber |
+| `"white"` | Mono white |
+
+Aliases accepted on load (including Settings `video.mode`): `color` / `ntsc` → composite; `mono` → green.
+
+If omitted: NTSC composite, except IIgs still defaults to RGB.
 
 ---
 
@@ -633,7 +673,7 @@ All other fields use platform defaults; no disks pre-mounted.
 - **Serial port registry:** Implemented as `Connections` (`src/util/Connections.hpp`); SCC, SSC, and parallel register ports; loader/OSD/EditSystem share the model.
 - **Super Serial Card:** `card = "super_serial"`; `[[connections]]` with `slot` is applied at runtime (same as IIgs SCC).
 - **Built-in migration:** Ship current `BuiltinSystemConfigs[]` as `.gs2` files and load all configs through one code path?
-- **Profile preferences:** Add `[display]`, `[speed]`, `[input]`, `[audio]` (or equivalent) for menu-controlled settings; map Neil `video.*` / `machine.speed` on import.
+- **Profile preferences:** `speed` and `display` are in v1 TOML (and Neil `machine.speed` / `video.mode` on import). Still open: `[input]`, `[audio]`, CRT / scanlines, and other `video.*` keys.
 
 ---
 
@@ -666,7 +706,7 @@ The loader targets one aggregate type (names provisional):
 | **Machine** | `platform`, `clock`, `scanner`, cards | `platform`, `clock`, `scanner`, `[[cards]]` |
 | **Storage** | Pre-mounted disks | `[[storage]]` |
 | **Connections** | Serial port attachments | `[[connections]]` |
-| **Preferences** | Display, CPU speed, joystick mode, audio | not in v1 TOML yet; fields exist scattered in `video_system_t`, `NClock`, `gamec_state_t`, `AudioSystem` |
+| **Preferences** | Display, CPU speed, joystick mode, audio | `speed` and `display` in v1 TOML; other prefs still in `video_system_t`, `gamec_state_t`, `AudioSystem` |
 | **Extensions** | Unmapped Neil / `gssquared.*` keys | round-trip for forward compatibility |
 
 Built-in System Select tiles, user `.gs2` files, and arqyv profile packages all converge on this struct.
@@ -675,7 +715,7 @@ Built-in System Select tiles, user `.gs2` files, and arqyv profile packages all 
 
 **In the profile (hardware truth):** `platform`, `clock_set`, `scanner`, `[[cards]]`, `[[storage]]`, `[[connections]]` — what Mike’s `slotN`, `smartport.disk*`, and slot serial settings describe, plus GS2-specific platform/scanner fields.
 
-**In preferences (how the user runs it):** monitor type (NTSC / RGB / mono), mono color, CRT shader, emulated CPU speed, game-controller mode, volume, etc. — Mike’s `machine.speed`, `video.*`, and similar. These apply to motherboard/host-facing subsystems after compose, analogous to how `[[storage]]` applies after devices register.
+**In preferences (how the user runs it):** monitor type (NTSC / RGB / mono), mono color, CRT shader, emulated CPU speed, game-controller mode, volume, etc. — Mike’s `machine.speed`, `video.*`, and similar. `speed` and `display` apply at boot with hardware compose; remaining prefs are still session / app-global.
 
 **App-global (not per profile):** e.g. sleep/busy-wait, CRT-at-boot default, paths — Mike’s `Global Settings.txt` layer; lives in `gs2_app_t`, not in `.gs2`.
 

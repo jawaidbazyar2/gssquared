@@ -55,6 +55,11 @@ const char* platform_name(PlatformId_t platform);
 const char* clock_name(clock_set_t clock_set);
 const char* scanner_name(video_scanner_t scanner);
 const char* card_type_name(device_id id);
+const char* speed_name(clock_mode_t mode);
+const char* display_name(int display_monitor);
+
+std::optional<clock_mode_t> parse_speed(const std::string& value, std::string& error_out);
+std::optional<int> parse_display(const std::string& value, std::string& error_out);
 
 struct slot_card_choice_t {
     device_id id;

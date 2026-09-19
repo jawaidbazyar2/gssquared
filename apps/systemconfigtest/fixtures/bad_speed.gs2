@@ -1,0 +1,4 @@
+gs2_version = 1
+name = "Bad Speed"
+platform = "apple2e_enhanced"
+speed = "warp"

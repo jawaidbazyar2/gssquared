@@ -898,8 +898,15 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
 
     computer->cpu->set_processor(platform->cpu_type);
     // important to do this before setting up the rest of the computer.
-    NClockII *nclock = NClockFactory::create_clock(platform->id, system_config->clock_set);
+    clock_mode_t boot_speed = system_config->clock_mode;
+    if (boot_speed == INVALID_CLOCK_MODE) {
+        boot_speed = platform->default_clock_mode;
+    }
+    NClockII *nclock = NClockFactory::create_clock(platform->id, system_config->clock_set, boot_speed);
     computer->set_clock(nclock);
+    if (boot_speed == CLOCK_FREE_RUN) {
+        computer->begin_ludicrous_calibration();
+    }
     getMenuInterface()->setComputer(computer);
 
     //computer->set_cpu(new cpu_state(platform->cpu_type));
@@ -1137,12 +1144,38 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
 
 
         computer->cpu->trace_buffer->set_cpu_type(PROCESSOR_65816);
-        computer->video_system->set_display_engine(DM_ENGINE_RGB);
 
         computer->register_reset_handler([state](bool cold_start) {
             state->mmu_iigs->reset(cold_start);
             return true;
         });
+    }
+
+    if (system_config->display_monitor != DISPLAY_MONITOR_UNSET) {
+        switch (system_config->display_monitor) {
+            case DISPLAY_MONITOR_COMPOSITE:
+                vs->set_display_engine(DM_ENGINE_NTSC);
+                break;
+            case DISPLAY_MONITOR_RGB:
+                vs->set_display_engine(DM_ENGINE_RGB);
+                break;
+            case DISPLAY_MONITOR_GREEN:
+                vs->set_display_engine(DM_ENGINE_MONO);
+                vs->set_display_mono_color(DM_MONO_GREEN);
+                break;
+            case DISPLAY_MONITOR_AMBER:
+                vs->set_display_engine(DM_ENGINE_MONO);
+                vs->set_display_mono_color(DM_MONO_AMBER);
+                break;
+            case DISPLAY_MONITOR_WHITE:
+                vs->set_display_engine(DM_ENGINE_MONO);
+                vs->set_display_mono_color(DM_MONO_WHITE);
+                break;
+            default:
+                break;
+        }
+    } else if (platform_is_iigs(system_config->platform_id)) {
+        vs->set_display_engine(DM_ENGINE_RGB);
     }
 
     run_cpus_init(computer);

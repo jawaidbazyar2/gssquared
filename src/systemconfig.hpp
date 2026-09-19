@@ -22,6 +22,16 @@
 #include "NClock.hpp"
 #include "devices/displaypp/VideoScanner.hpp"
 
+/** Host monitor type in .gs2 `display`. Values match MenuMonitorID. */
+enum display_monitor_t {
+    DISPLAY_MONITOR_UNSET = -1,
+    DISPLAY_MONITOR_COMPOSITE = 200,
+    DISPLAY_MONITOR_RGB = 201,
+    DISPLAY_MONITOR_GREEN = 202,
+    DISPLAY_MONITOR_AMBER = 203,
+    DISPLAY_MONITOR_WHITE = 204,
+};
+
 /**
  * a System Configuraiton is a platform, and, a list of devices and their slots.
  */
@@ -36,6 +46,8 @@ struct SystemConfig_t {
     const char *description;
     const char *id;  // machine identity (UUID); IIgs BRAM lives in the .gs2 `bram` field
     device_id slot_devices[NUM_SLOTS];
+    clock_mode_t clock_mode = INVALID_CLOCK_MODE; // host speed; unset → platform default
+    int display_monitor = DISPLAY_MONITOR_UNSET;  // unset → NTSC, or RGB on IIgs
 };
 
 extern SystemConfig_t BuiltinSystemConfigs[];

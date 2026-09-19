@@ -18,6 +18,7 @@
 #include "util/SystemConfig.hpp"
 
 #include <cctype>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -434,6 +435,56 @@ bool SystemConfig::load_settings(const std::string& path, std::string& error_out
         config_data_.scanner_type = derive_scanner(config_data_.platform_id, clock_set);
     }
 
+    config_data_.clock_mode = INVALID_CLOCK_MODE;
+    if (const auto it = entries.find("machine.speed"); it != entries.end()) {
+        std::string speed_err;
+        const auto parsed = parse_speed(it->second, speed_err);
+        if (parsed.has_value()) {
+            config_data_.clock_mode = *parsed;
+        } else {
+            char* end = nullptr;
+            const long hz = std::strtol(it->second.c_str(), &end, 10);
+            if (end != it->second.c_str() && end && *end == '\0') {
+                if (hz == 0) {
+                    config_data_.clock_mode = CLOCK_FREE_RUN;
+                } else {
+                    struct {
+                        long hz;
+                        clock_mode_t mode;
+                    } table[] = {
+                        {1020484, CLOCK_1_024MHZ},
+                        {2857368, CLOCK_2_8MHZ},
+                        {7159090, CLOCK_7_159MHZ},
+                        {14318180, CLOCK_14_3MHZ},
+                    };
+                    long best_diff = std::labs(hz - table[0].hz);
+                    clock_mode_t best = table[0].mode;
+                    for (size_t i = 1; i < sizeof(table) / sizeof(table[0]); ++i) {
+                        const long diff = std::labs(hz - table[i].hz);
+                        if (diff < best_diff) {
+                            best_diff = diff;
+                            best = table[i].mode;
+                        }
+                    }
+                    config_data_.clock_mode = best;
+                }
+            } else {
+                warnings_.push_back("Invalid machine.speed: " + it->second);
+            }
+        }
+    }
+
+    config_data_.display_monitor = DISPLAY_MONITOR_UNSET;
+    if (const auto it = entries.find("video.mode"); it != entries.end()) {
+        std::string display_err;
+        const auto parsed = parse_display(it->second, display_err);
+        if (parsed.has_value()) {
+            config_data_.display_monitor = *parsed;
+        } else {
+            warnings_.push_back("Invalid video.mode: " + it->second);
+        }
+    }
+
     config_data_.builtin = false;
     sync_config_pointers();
 
@@ -522,6 +573,7 @@ bool SystemConfig::load_settings(const std::string& path, std::string& error_out
 
     static const std::unordered_set<std::string> handled_keys = {
         "profile.name", "machine", "gssquared.description", "gssquared.clock", "gssquared.scanner",
+        "machine.speed", "video.mode",
     };
 
     for (const auto& [key, value] : entries) {

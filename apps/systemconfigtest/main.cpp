@@ -61,7 +61,51 @@ static bool test_minimal() {
     CHECK(config.config().clock_set == CLOCK_SET_US, "default clock");
     CHECK(config.config().scanner_type == Scanner_AppleIIe, "derived scanner");
     CHECK(config.config().slot_devices[6] == DEVICE_ID_DISK_II, "disk_ii slot 6");
+    CHECK(config.config().clock_mode == INVALID_CLOCK_MODE, "speed omitted");
+    CHECK(config.config().display_monitor == DISPLAY_MONITOR_UNSET, "display omitted");
     CHECK(config.mounts().empty(), "no storage");
+    return true;
+}
+
+static bool test_speed_display() {
+    const auto path = fixture_dir() / "SpeedDisplay.gs2";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "SpeedDisplay load: " << error);
+    CHECK(config.config().clock_mode == CLOCK_7_159MHZ, "speed 7.159mhz");
+    CHECK(config.config().display_monitor == DISPLAY_MONITOR_RGB, "display rgb");
+
+    const auto tmp = std::filesystem::temp_directory_path() / "gssquared_speed_display_roundtrip.gs2";
+    CHECK(config.save(tmp.string(), error), "save: " << error);
+
+    std::ifstream in(tmp);
+    const std::string contents((std::istreambuf_iterator<char>(in)),
+                               std::istreambuf_iterator<char>());
+    CHECK(contents.find("speed = \"7.159mhz\"") != std::string::npos, "wrote speed");
+    CHECK(contents.find("display = \"rgb\"") != std::string::npos, "wrote display");
+
+    SystemConfig reloaded;
+    CHECK(reloaded.load(tmp.string(), error), "reload: " << error);
+    CHECK(reloaded.config().clock_mode == CLOCK_7_159MHZ, "speed roundtrip");
+    CHECK(reloaded.config().display_monitor == DISPLAY_MONITOR_RGB, "display roundtrip");
+    std::filesystem::remove(tmp);
+    return true;
+}
+
+static bool test_save_omits_unset_speed_display() {
+    const auto path = fixture_dir() / "MinimalIIe.gs2";
+    SystemConfig config;
+    std::string error;
+    CHECK(config.load(path.string(), error), "MinimalIIe load: " << error);
+
+    const auto tmp = std::filesystem::temp_directory_path() / "gssquared_omit_speed_display.gs2";
+    CHECK(config.save(tmp.string(), error), "save: " << error);
+    std::ifstream in(tmp);
+    const std::string contents((std::istreambuf_iterator<char>(in)),
+                               std::istreambuf_iterator<char>());
+    CHECK(contents.find("speed") == std::string::npos, "did not invent speed");
+    CHECK(contents.find("display") == std::string::npos, "did not invent display");
+    std::filesystem::remove(tmp);
     return true;
 }
 
@@ -347,6 +391,8 @@ static bool test_errors() {
     CHECK(test_load_fails("pal_on_gs.gs2", "pal"), "pal on gs");
     CHECK(test_load_fails("dup_storage.gs2", "Duplicate storage"), "dup storage");
     CHECK(test_load_fails("bad_settings_name.txt", "Not a .gs2 or Settings.txt"), "bad settings name");
+    CHECK(test_load_fails("bad_speed.gs2", "speed"), "bad speed");
+    CHECK(test_load_fails("bad_display.gs2", "display"), "bad display");
     return true;
 }
 
@@ -379,6 +425,8 @@ static bool test_settings_choplifter() {
         }
     }
     CHECK(found_zaxxon, "smartport path");
+    CHECK(config.config().clock_mode == CLOCK_2_8MHZ, "machine.speed 2800000");
+    CHECK(config.config().display_monitor == DISPLAY_MONITOR_GREEN, "video.mode MONO");
     return true;
 }
 
@@ -504,6 +552,8 @@ static bool run_self_tests() {
         {"apple2plus", test_apple2plus},
         {"platforms", test_platforms},
         {"clock_scanner", test_clock_scanner},
+        {"speed_display", test_speed_display},
+        {"save_omits_unset_speed_display", test_save_omits_unset_speed_display},
         {"aliases", test_aliases},
         {"dual_mockingboard", test_dual_mockingboard},
         {"storage_multivolume", test_storage_multivolume},

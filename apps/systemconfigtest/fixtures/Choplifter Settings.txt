@@ -9,7 +9,7 @@ smartport.disk1 disks/zaxxon.dsk
 floppy.disk1 disks/zork.woz
 floppy.disk2 disks/zork2.woz
 
-# Preferences (stored, not applied in Phase 1)
+# Preferences: speed and video.mode are applied; other video.* keys are stored only
 machine.speed 2800000
 video.mode MONO
 video.scanlines OFF

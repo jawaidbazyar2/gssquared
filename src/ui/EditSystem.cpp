@@ -216,6 +216,7 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         Tile_t *tile = speed_con->get_tile(i);
         tile->on_click([this, tile](const SDL_Event&) -> bool {
             speed_con->selected_value(tile->value());
+            draft.config().clock_mode = static_cast<clock_mode_t>(tile->value());
             updated = true;
             return true;
         });
@@ -229,6 +230,7 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         Tile_t *tile = display_con->get_tile(i);
         tile->on_click([this, tile](const SDL_Event&) -> bool {
             display_con->selected_value(tile->value());
+            draft.config().display_monitor = tile->value();
             updated = true;
             return true;
         });
@@ -389,6 +391,8 @@ void EditSystem::rebuild_ui_from_draft() {
         serial_ports_panel->rebuild(draft.port_specs());
     }
     platform_con->selected_value(draft.config().platform_id);
+    speed_con->selected_value(draft.config().clock_mode);
+    display_con->selected_value(draft.config().display_monitor);
     refresh_badge();
     updated = true;
 }
