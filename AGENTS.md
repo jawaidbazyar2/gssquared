@@ -39,20 +39,42 @@ cmake --install build
 Windows development uses **MSYS2** with the MinGW64 toolchain (not a native PowerShell/`cmd` environment).
 
 - Open an MSYS2 bash shell (or invoke `C:\msys64\usr\bin\bash.exe`). Home is `/home/<user>` (`C:\msys64\home\<user>`), not `%USERPROFILE%`.
-- **Always `source ~/.profile` first** so compiler, cmake, and other MinGW tools are on `PATH` (`/c/msys64/mingw64/bin`). Without that, `g++`/`clang++`/`cmake` may be missing or the wrong binaries.
-- From a non-login shell (including many agent terminals), use:
+- **Always `source ~/.profile` first** (inside bash) so compiler, cmake, and other MinGW tools are on `PATH` (`/c/msys64/mingw64/bin`). Without that, `g++`/`clang++`/`cmake` may be missing or the wrong binaries.
+- Never, ever ever use PowerShell for anything. I consider it to be garbage. This project's entire build system and ethos is **MSYS2** **MINGW64** **bash**.
+- Do not use PowerShell to run MSYS2. Do not set `$env:MSYSTEM`, do not chain with PowerShell `;` / `&&`, do not call `source ~/.profile` from PowerShell (it is a bash builtin and does nothing there).
+
+Cursor/VS Code agent terminals on Windows still spawn PowerShell as the *host*. You cannot make that host be bash. Force MSYS2 by making the **command itself** an MSYS2 process: `env.exe` then `bash.exe`. That sets MinGW64 on the bash process *before* `--login` runs `/etc/profile`. Wrapping bash in `$env:MSYSTEM='MINGW64'; bash.exe ...` is still PowerShell, and PowerShell will eat nested quotes (e.g. `-G "MinGW Makefiles"` becomes generator `MinGW`, and you may get Windows CMake from Visual Studio instead of `/mingw64/bin/cmake`).
+
+Skip the wrap only when `uname -s` already reports `MINGW64` or `MSYS`.
+
+Every agent command on Windows:
 
 ```
-source ~/.profile
+C:\msys64\usr\bin\env.exe MSYSTEM=MINGW64 CHERE_INVOKING=1 C:\msys64\usr\bin\bash.exe --login -lc '<command>'
 ```
 
-or start bash as a login shell (`bash -lc '…'`), which reads `~/.profile` automatically.
+- `MSYSTEM=MINGW64` — must be set on the bash process before `--login`, so the login profile puts `/mingw64/bin` first.
+- `CHERE_INVOKING=1` — keep the current working directory (otherwise the login shell starts in `/home/<user>`).
+- Put the bash snippet in **single** quotes. Avoid nested `"` inside `-lc` when the agent host is PowerShell; it splits arguments. For cmake's generator, write `MinGW\ Makefiles` (backslash-escaped space) or put the command in a `.sh` and `bash` that file.
+- Inside the bash command, `source ~/.profile` if tools are still missing from `PATH`.
 
 ```
-source ~/.profile
-cmake -G "MinGW Makefiles" -DGS2_PROGRAM_FILES=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B build -S .
-cmake --build build --parallel
+C:\msys64\usr\bin\env.exe MSYSTEM=MINGW64 CHERE_INVOKING=1 C:\msys64\usr\bin\bash.exe --login -lc 'source ~/.profile; cmake -G MinGW\ Makefiles -DGS2_PROGRAM_FILES=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -B build -S .'
+C:\msys64\usr\bin\env.exe MSYSTEM=MINGW64 CHERE_INVOKING=1 C:\msys64\usr\bin\bash.exe --login -lc 'source ~/.profile; cmake --build build --parallel'
 ```
+
+#### CRT shader (DXIL)
+
+Windows D3D12 cannot load HLSL at runtime. After editing `assets/shaders/crt.frag.hlsl`, compile DXIL on a Windows host and commit `assets/shaders/crt.frag.dxil`. Casual builders do not need DXC.
+
+1. Install [DirectX Shader Compiler](https://github.com/microsoft/DirectXShaderCompiler/releases) (`dxc.exe`, `dxcompiler.dll`, `dxil.dll`) into `tools/dxc/` (gitignored) or onto `PATH`. `dxil.dll` must sit next to `dxc.exe` so the output is signed.
+2. From the repo root:
+
+```
+C:\msys64\usr\bin\env.exe MSYSTEM=MINGW64 CHERE_INVOKING=1 C:\msys64\usr\bin\bash.exe --login -lc 'bash scripts/compile_crt_shader.sh'
+```
+
+Or set `DXC` to a `dxc.exe` from the Windows SDK / Vulkan SDK. CMake only copies the committed `.dxil`; it does not run DXC.
 
 ## Debug-protocol smoke tests
 
