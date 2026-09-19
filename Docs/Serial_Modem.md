@@ -1,6 +1,6 @@
 # Serial / Modem
 
-GSSquared includes a virtual Hayes-compatible modem you can attach to a serial port. From Apple II terminal software it behaves like dialing out over a phone line — except the “number” is a TCP host and port on the internet.
+GSSquared includes a virtual Hayes-compatible modem you can attach to a serial port. From Apple II terminal software it behaves like a phone-line modem — except outbound “numbers” are TCP hosts, and inbound telnet on port **6502** rings the guest.
 
 ## What you need
 
@@ -16,6 +16,24 @@ ATDTcqbbs.ddns.net:6800
 ```
 
 That connects to host `cqbbs.ddns.net`, TCP port `6800`.
+
+## How to answer
+
+With **Modem** attached, GSSquared listens on TCP port **6502** (all host interfaces). When a telnet client connects (for example `telnet <your-host> 6502`), the guest sees Hayes **`RING`** — immediately, then about every 3 seconds — and carrier stays down.
+
+Answer from the terminal program:
+
+```
+ATA
+```
+
+(`ATA0` is the same.) The modem raises CD, sends `CONNECT <baud>`, and the telnet session is fully connected. If nothing is ringing, `ATA` returns `NO CARRIER`.
+
+`ATH` (or `ATZ` / `AT&F`) while ringing drops the inbound caller and returns `OK`. If the caller hangs up before you answer, `RING` stops and there is no `NO CARRIER` (the modem never went off-hook).
+
+Only one ModemDevice can bind 6502. A second serial port also set to **Modem** stays outbound-only (the console logs the listen failure). Extra inbound connections while already ringing or online are refused.
+
+There is no `S0` auto-answer in this version — the guest must send `ATA`.
 
 ## How to hang up
 

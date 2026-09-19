@@ -50,8 +50,11 @@ class ModemDevice : public SerialDevice {
         std::atomic<int> hud_state_{STATE_COMMAND};
         char hud_last_cmd_[40]{};
         char hud_peer_[48]{};
+        std::atomic<bool> hud_ringing_{false};
         std::string command_buffer;
-        NET_StreamSocket *socket;
+        NET_StreamSocket *socket;          /* answered / dialed session — CD follows this */
+        NET_StreamSocket *pending_socket;  /* inbound, not yet ATA */
+        NET_Server *server;
         std::string remote_host;
         int remote_port;
         bool command_echo = true;
@@ -61,8 +64,11 @@ class ModemDevice : public SerialDevice {
         
         // Escape sequence detection
         uint64_t last_char_time;
+        uint64_t last_ring_time;
         int escape_count;
         constexpr static uint64_t ESCAPE_GUARD_TIME_MS = 1000; // 1 second guard time
+        constexpr static uint16_t LISTEN_PORT = 6502;
+        constexpr static uint64_t RING_INTERVAL_MS = 3000;
         
         // Telnet protocol handling
         TelnetState telnet_state;
@@ -114,11 +120,118 @@ class ModemDevice : public SerialDevice {
         }
 
         void note_hud_peer() {
-            if (socket) {
+            if (socket || pending_socket) {
                 std::snprintf(hud_peer_, sizeof(hud_peer_), "%s:%d", remote_host.c_str(),
                               remote_port);
             } else {
                 hud_peer_[0] = '\0';
+            }
+        }
+
+        void capture_peer_from_stream(NET_StreamSocket *s) {
+            remote_host = "inbound";
+            remote_port = LISTEN_PORT;
+            if (!s) {
+                return;
+            }
+            NET_Address *addr = NET_GetStreamSocketAddress(s);
+            if (addr) {
+                const char *str = NET_GetAddressString(addr);
+                if (str && str[0] != '\0') {
+                    remote_host = str;
+                }
+                NET_UnrefAddress(addr);
+            }
+        }
+
+        NET_StreamSocket *active_stream() {
+            return socket ? socket : pending_socket;
+        }
+
+        void drop_pending() {
+            if (pending_socket) {
+                printf("ModemDevice: dropping pending inbound\n");
+                NET_DestroyStreamSocket(pending_socket);
+                pending_socket = nullptr;
+            }
+            hud_ringing_.store(false, std::memory_order_relaxed);
+            if (!socket) {
+                telnet_state = TELNET_DATA;
+                tcp_buffer.clear();
+                note_hud_peer();
+            }
+        }
+
+        void start_listen() {
+            server = NET_CreateServer(nullptr, LISTEN_PORT);
+            if (!server) {
+                printf("ModemDevice: listen %u failed: %s (outbound only)\n",
+                       static_cast<unsigned>(LISTEN_PORT), SDL_GetError());
+            } else {
+                printf("ModemDevice: listening on %u\n", static_cast<unsigned>(LISTEN_PORT));
+            }
+        }
+
+        void stop_listen() {
+            if (server) {
+                NET_DestroyServer(server);
+                server = nullptr;
+            }
+        }
+
+        void send_ring() {
+            send_response("\r\nRING\r\n");
+            last_ring_time = SDL_GetTicks();
+            printf("ModemDevice: RING\n");
+        }
+
+        void poll_incoming() {
+            if (!server) {
+                return;
+            }
+            NET_StreamSocket *incoming = nullptr;
+            if (!NET_AcceptClient(server, &incoming)) {
+                printf("ModemDevice: AcceptClient failed: %s\n", SDL_GetError());
+                return;
+            }
+            if (!incoming) {
+                return;
+            }
+            if (socket || pending_socket || state != STATE_COMMAND) {
+                printf("ModemDevice: rejecting inbound (busy)\n");
+                NET_DestroyStreamSocket(incoming);
+                return;
+            }
+            pending_socket = incoming;
+            hud_ringing_.store(true, std::memory_order_relaxed);
+            telnet_state = TELNET_DATA;
+            tcp_buffer.clear();
+            capture_peer_from_stream(pending_socket);
+            note_hud_peer();
+            send_ring();
+        }
+
+        void poll_pending() {
+            if (!pending_socket) {
+                return;
+            }
+
+            const uint64_t now = SDL_GetTicks();
+            if (now - last_ring_time >= RING_INTERVAL_MS) {
+                send_ring();
+            }
+
+            uint8_t buffer[256];
+            const int to_read = (tcp_buffer.size() >= 4096) ? 1 : static_cast<int>(sizeof(buffer));
+            int bytes_read = NET_ReadFromStreamSocket(pending_socket, buffer, to_read);
+            if (bytes_read > 0) {
+                for (int i = 0; i < bytes_read; i++) {
+                    process_telnet_byte(buffer[i]);
+                }
+                /* Hold payload until ATA — do not drain to the guest. */
+            } else if (bytes_read < 0) {
+                printf("ModemDevice: inbound caller hung up before answer\n");
+                drop_pending();
             }
         }
 
@@ -153,6 +266,15 @@ class ModemDevice : public SerialDevice {
                 }
                 const char c = cmd[i++];
                 switch (c) {
+                    case 'A': {
+                        /* ATA / ATA0 — answer inbound RING. */
+                        if (i < cmd.size() && cmd[i] == '0') {
+                            i++;
+                        }
+                        command_buffer.clear();
+                        answer();
+                        return;
+                    }
                     case 'D': {
                         std::string address = cmd.substr(i);
                         if (!address.empty() && (address[0] == 'T' || address[0] == 'P')) {
@@ -277,8 +399,8 @@ class ModemDevice : public SerialDevice {
         void dial(const std::string &address) {
             printf("ModemDevice: Dialing %s\n", address.c_str());
             
-            // Close existing connection if any
-            if (socket) {
+            // Close existing session or unanswered inbound
+            if (socket || pending_socket) {
                 hangup();
             }
 
@@ -380,12 +502,38 @@ class ModemDevice : public SerialDevice {
             send_connect_response();
         }
 
+        void answer() {
+            if (!pending_socket) {
+                send_no_carrier_response();
+                set_state(STATE_COMMAND);
+                return;
+            }
+            printf("ModemDevice: ATA — answering inbound\n");
+            socket = pending_socket;
+            pending_socket = nullptr;
+            hud_ringing_.store(false, std::memory_order_relaxed);
+            set_state(STATE_ONLINE);
+            escape_count = 0;
+            note_hud_peer();
+            push_modem_inputs();
+            SDL_Delay(20); /* let the UART sample CD before CONNECT is queued */
+
+            send_telnet_response(WILL, TELOPT_BINARY);
+            send_telnet_response(DO, TELOPT_BINARY);
+
+            connect_baud_ = line_baud_ ? line_baud_ : 9600u;
+            send_connect_response();
+            drain_tcp_buffer_to_queue();
+            printf("ModemDevice: Connected (inbound)!\n");
+        }
+
         void hangup() {
             if (socket) {
                 printf("ModemDevice: Hanging up\n");
                 NET_DestroyStreamSocket(socket);
                 socket = nullptr;
             }
+            drop_pending();
             push_modem_inputs();
             set_state(STATE_COMMAND);
             telnet_state = TELNET_DATA;  // Reset telnet protocol state
@@ -401,8 +549,12 @@ class ModemDevice : public SerialDevice {
         }
 
         void send_telnet_response(uint8_t command, uint8_t option) {
+            NET_StreamSocket *s = active_stream();
+            if (!s) {
+                return;
+            }
             uint8_t response[3] = { IAC, command, option };
-            NET_WriteToStreamSocket(socket, response, 3);
+            NET_WriteToStreamSocket(s, response, 3);
         }
 
         void process_telnet_byte(uint8_t byte) {
@@ -533,10 +685,14 @@ class ModemDevice : public SerialDevice {
             char hs[24];
             format_handshake(hs, sizeof(hs));
             const char *mode = "CMD";
-            switch (hud_state_.load(std::memory_order_relaxed)) {
-                case STATE_ONLINE: mode = "ONL"; break;
-                case STATE_ESCAPE: mode = "ESC"; break;
-                default: break;
+            if (hud_ringing_.load(std::memory_order_relaxed)) {
+                mode = "RNG";
+            } else {
+                switch (hud_state_.load(std::memory_order_relaxed)) {
+                    case STATE_ONLINE: mode = "ONL"; break;
+                    case STATE_ESCAPE: mode = "ESC"; break;
+                    default: break;
+                }
             }
             if (hud_peer_[0] != '\0' && hud_last_cmd_[0] != '\0') {
                 std::snprintf(buf, n, "%s %s %s [%s]", mode, hs, hud_peer_, hud_last_cmd_);
@@ -552,8 +708,11 @@ class ModemDevice : public SerialDevice {
         ModemDevice(const char *name, const char *port_id) : SerialDevice("ModemDevice", port_id), 
                        state(STATE_COMMAND),
                        socket(nullptr),
+                       pending_socket(nullptr),
+                       server(nullptr),
                        remote_port(23),
                        last_char_time(0),
+                       last_ring_time(0),
                        escape_count(0),
                        telnet_state(TELNET_DATA),
                        telnet_command(0) {
@@ -579,17 +738,28 @@ class ModemDevice : public SerialDevice {
                 NET_DestroyStreamSocket(socket);
                 socket = nullptr;
             }
+            if (pending_socket) {
+                NET_DestroyStreamSocket(pending_socket);
+                pending_socket = nullptr;
+            }
+            if (server) {
+                NET_DestroyServer(server);
+                server = nullptr;
+            }
             NET_Quit();
         }
 
         void device_loop() override {
+            start_listen();
             push_modem_inputs();
             while (true) {
                 SDL_Delay(10); // Check every 10ms for better responsiveness
-                
-                // Check for incoming TCP data if we're online
+
+                poll_incoming();
                 if (state == STATE_ONLINE) {
                     check_tcp_data();
+                } else if (pending_socket) {
+                    poll_pending();
                 }
                 
                 // Process host messages
@@ -600,6 +770,7 @@ class ModemDevice : public SerialDevice {
                         case MESSAGE_SHUTDOWN:
                             printf("ModemDevice: shutting down\n");
                             hangup();
+                            stop_listen();
                             return;
 
                         case MESSAGE_LINE: {

@@ -9,7 +9,7 @@ GSSquared treats each serial or parallel port as a jack you can plug a virtual d
 | **None** | Port idle | Port idle |
 | **File** | Capture TX data to a host file | Capture printer bytes to a host file |
 | **Clipboard** | Capture TX to the host clipboard | Capture printer bytes to the host clipboard |
-| **Modem** | Virtual Hayes modem (TCP dial-out) | — |
+| **Modem** | Virtual Hayes modem (TCP dial-out and inbound telnet on port 6502) | — |
 | **Serial** | Real host UART (macOS `/dev/cu.*`, skipping Bluetooth/debug/wlan system callouts; Windows `COMn`, skipping Bluetooth modem mappings; Linux `/dev/ttyUSB*` `/dev/ttyACM*` `/dev/ttyAMA*`, skipping Bluetooth/debug) | — |
 
 When a **File** attachment closes, a short on-screen message shows the filename. When a **Clipboard** attachment closes (idle ~10s, or Ctrl-Reset on parallel), high-bit-stripped text is copied to the host clipboard and a toast reports the byte count. Newlines are normalized to LF; IIgs “Add LF after CR” CRLF pairs become a single line break.

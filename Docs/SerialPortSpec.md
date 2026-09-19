@@ -7,7 +7,7 @@ Developer spec for GSSquared serial attachments and RS-232 handshake inputs. Use
 A GSSquared `SerialDevice` is the **external device plus the correct cabling for that device** (null-modem vs straight-through, which handshake pins are wired). The emulated 6551 or SCC only sees what that cable would present.
 
 - **File / Clipboard / Echo** — a sink (or loopback) on a ready cable: CD, CTS, and DSR stay asserted so guest firmware that waits for handshake does not stall.
-- **Modem** — a Hayes box on a modem cable: DSR up while the “modem” is powered (device attached), CD only while the TCP session is up. `+++` stays online (CD stays up); `ATO` returns to data; `ATH` or a dropped socket drops CD.
+- **Modem** — a Hayes box on a modem cable: DSR up while the “modem” is powered (device attached), CD only while an **answered or dialed** TCP session is up (`socket`, not a pending inbound). Inbound telnet on port 6502 sends `RING` with CD down until `ATA`. `+++` stays online (CD stays up); `ATO` returns to data; `ATH` or a dropped socket drops CD.
 - **Host serial** — the USB-UART / dongle with its real pins. CD / CTS / DSR are sampled from the host OS.
 
 ## Goal
@@ -61,7 +61,7 @@ SCC RR0 has no DSR bit. DSR is carried for the 6551 only; it is not mashed onto 
 | Device | CD | CTS | DSR |
 |--------|----|-----|-----|
 | **SerialPortDevice** | live host CD | live CTS | live DSR |
-| **ModemDevice** | 1 iff TCP socket exists | 1 | 1 |
+| **ModemDevice** | 1 iff answered/dialed `socket` (not pending RING) | 1 | 1 |
 | **File / Clipboard / Echo** | 1 (default; device does not write) | 1 | 1 |
 
 SerialPortDevice starts and stays at `0` while the host port is detached (unplugged / open failed). First sample after attach is published immediately so a WiModem that boots with CD off is not stuck at the chip default.
@@ -86,7 +86,7 @@ Chips sample on register access and once per video frame so interrupt-driven han
 
 Manual. **Pass** means the guest and the HUD agree; do not treat HUD-only CD as a connect. Fill **Result** with `pass` / `fail` / `partial` / `untested` / `n/a`. Date is `YYYY-MM-DD`.
 
-**Oracle:** HUD Stats (lower right) shows `CMD` / `ONL` / `ESC`, `CD± CTS± DSR±`, and the TCP peer. Guest status is whatever the terminal or BBS actually displays. Console `ModemDevice:` lines are supporting evidence only.
+**Oracle:** HUD Stats (lower right) shows `CMD` / `RNG` / `ONL` / `ESC`, `CD± CTS± DSR±`, and the TCP peer. Guest status is whatever the terminal or BBS actually displays. Console `ModemDevice:` lines are supporting evidence only.
 
 **Default guest** for modem rows is ProTERM 3.1 unless noted. IIe uses SSC (6551). IIgs uses built-in SCC (modem port unless noted).
 
@@ -106,6 +106,10 @@ Manual. **Pass** means the guest and the HUD agree; do not treat HUD-only CD as 
 | M9 | IIgs | SCC printer (A) | Same as M1–M4 on port A | untested | | Confirm channel A path |
 | M10 | either | Modem | Failed resolve / refused TCP → `NO CARRIER`, stay `CMD` | pass | | |
 | M11 | either | Modem | Remote closes socket → CD−, `NO CARRIER` | pass | | Issue #179 analog for TCP |
+| M12 | either | Modem | Inbound telnet :6502 → guest `RING`, HUD `RNG CD-` | untested | | Repeat RING ~3s; CD stays down |
+| M13 | either | Modem | `ATA` / `ATA0` while ringing → `CONNECT`, HUD `ONL CD+` | untested | | Session fully connected |
+| M14 | either | Modem | `ATH` while ringing → pending drop, `OK`, `CMD CD-` | untested | | No `NO CARRIER` |
+| M15 | either | Modem | Second inbound while ringing/online refused | untested | | First call unaffected |
 
 ### Handshake levels (HUD + guest)
 
@@ -137,6 +141,7 @@ Warp6 + USB-UART + WiModem232: hang-up must appear in the guest (6551 `ST_DCD` /
 3. S1–S2 with a real WiModem (#179).
 4. H3 capture attachments (guest firmware that waits for DSR/CTS).
 5. A second terminal (Spectrum) on one ModemDevice cell.
+6. M12–M15 inbound RING / ATA / reject.
 
 ## Related
 
