@@ -28,7 +28,7 @@ ATH
 
 (Wait about a second of silence before and after `+++`.)
 
-`+++` returns to command mode but **keeps carrier detect asserted** (the TCP session is still up). `ATH`, a failed dial, or a dropped socket deasserts CD so guest software that watches 6551 `ST_DCD` or SCC RR0 DCD sees hang-up. DSR stays asserted whenever the virtual modem is attached (powered). See [SerialPortSpec.md](SerialPortSpec.md).
+`+++` returns to command mode but **keeps carrier detect asserted** (the TCP session is still up). `ATO` (or `ATO0`) goes back to data mode and sends `CONNECT` again. `ATH`, a failed dial, or a dropped socket deasserts CD so guest software that watches 6551 `ST_DCD` or SCC RR0 DCD sees hang-up. DSR stays asserted whenever the virtual modem is attached (powered). See [SerialPortSpec.md](SerialPortSpec.md).
 
 ## File capture, clipboard, or a real serial port
 

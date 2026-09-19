@@ -99,11 +99,21 @@ bool HostSerial::attach(const char *path) {
     if (tcgetattr(fd, &tio) == 0) {
         cfmakeraw(&tio);
         tio.c_cflag |= static_cast<tcflag_t>(CLOCAL | CREAD);
+#ifdef HUPCL
+        tio.c_cflag &= ~static_cast<tcflag_t>(HUPCL);
+#endif
         tio.c_cc[VMIN] = 0;
         tio.c_cc[VTIME] = 0;
         tcsetattr(fd, TCSANOW, &tio);
     }
     tcflush(fd, TCIOFLUSH);
+#ifdef TIOCMGET
+    int bits = 0;
+    if (ioctl(fd, TIOCMGET, &bits) == 0) {
+        bits |= TIOCM_DTR | TIOCM_RTS;
+        ioctl(fd, TIOCMSET, &bits);
+    }
+#endif
 
     fd_ = fd;
     return true;
@@ -168,6 +178,15 @@ bool HostSerial::configure(const host_serial_line_t &line) {
 
     speed_t exact = static_cast<speed_t>(baud);
     ioctl(fd_, IOSSIOSPEED, &exact);
+#ifdef TIOCMGET
+    {
+        int bits = 0;
+        if (ioctl(fd_, TIOCMGET, &bits) == 0) {
+            bits |= TIOCM_DTR | TIOCM_RTS;
+            ioctl(fd_, TIOCMSET, &bits);
+        }
+    }
+#endif
     return true;
 }
 

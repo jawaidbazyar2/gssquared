@@ -256,6 +256,7 @@ class Z85C30 {
         uint16_t reg_select[SCC_CHANNEL_COUNT];
         float baud_rate[SCC_CHANNEL_COUNT];
         uint32_t clock_mode[SCC_CHANNEL_COUNT];
+        uint32_t last_published_baud_[SCC_CHANNEL_COUNT] = {0, 0};
 
         // Event timer instance IDs (must be unique across the system)
         uint64_t tx_timer_id[SCC_CHANNEL_COUNT];
@@ -311,6 +312,14 @@ class Z85C30 {
             clock_mode[channel] = new_mode;
             float baud_rate = (float)SCC_RX_CLOCK / (2.0f * (float)new_mode * ((float)time_constant + 2.0f));
             this->baud_rate[channel] = baud_rate;
+            uint32_t published = (baud_rate <= 0.0f) ? 9600u
+                                  : static_cast<uint32_t>(baud_rate + 0.5f);
+            /* $017E / x16 is the IIgs firmware 300-baud TIMECON entry. */
+            if (published != last_published_baud_[channel]) {
+                printf("SCC: Ch %c baud %u (tc=%u x%u)\n",
+                       ch_name(channel), published, time_constant, new_mode);
+                last_published_baud_[channel] = published;
+            }
             if (SCDEBUG) printf("SCC: Ch %d: Clock Mode: %d, Time Constant: %d, Baud Rate: %08.2f\n", channel, new_mode, time_constant, baud_rate);
             push_line_params(channel);
         }

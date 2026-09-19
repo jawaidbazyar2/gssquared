@@ -56,7 +56,8 @@ class ModemDevice : public SerialDevice {
         int remote_port;
         bool command_echo = true;
         uint8_t result_x_ = 0; /* ATXn: 0 = CONNECT only; 1+ = CONNECT <baud> */
-        uint32_t line_baud_ = 9600;
+        uint32_t line_baud_ = 9600;     /* last DTE MESSAGE_LINE */
+        uint32_t connect_baud_ = 9600;  /* DTE baud at CONNECT; ATO must not follow later UART writes */
         
         // Escape sequence detection
         uint64_t last_char_time;
@@ -173,6 +174,15 @@ class ModemDevice : public SerialDevice {
                         }
                         hangup();
                         break;
+                    case 'O': {
+                        /* ATO / ATO0: back to data. ATO1 is retrain — same here. */
+                        if (i < cmd.size() && (cmd[i] == '0' || cmd[i] == '1')) {
+                            i++;
+                        }
+                        command_buffer.clear();
+                        go_online();
+                        return;
+                    }
                     case 'Z':
                         hangup();
                         break;
@@ -341,15 +351,33 @@ class ModemDevice : public SerialDevice {
             send_telnet_response(WILL, TELOPT_BINARY);  // We will send binary
             send_telnet_response(DO, TELOPT_BINARY);    // Please send us binary
 
-            /* ProTERM matches CONNECT text, not DCD. Bare CONNECT covers X0 and
-             * substring parsers; CONNECT <baud> covers speed-specific drivers. */
-            char connect[48];
-            std::snprintf(connect, sizeof(connect), "\r\nCONNECT\r\nCONNECT %u\r\n",
-                          line_baud_ ? line_baud_ : 9600u);
-            printf("ModemDevice: sending to guest: CONNECT / CONNECT %u\n",
-                   line_baud_ ? line_baud_ : 9600u);
-            send_response(connect);
+            connect_baud_ = line_baud_ ? line_baud_ : 9600u;
+            send_connect_response();
             printf("ModemDevice: Connected!\n");
+        }
+
+        void send_connect_response() {
+            /* Only CONNECT <baud>. A bare CONNECT is Hayes 300; ProTERM's
+             * Smartmodem driver then drops the title-bar rate to 300. */
+            const uint32_t baud = connect_baud_ ? connect_baud_
+                                                : (line_baud_ ? line_baud_ : 9600u);
+            char connect[32];
+            std::snprintf(connect, sizeof(connect), "\r\nCONNECT %u\r\n", baud);
+            printf("ModemDevice: sending to guest: CONNECT %u\n", baud);
+            send_response(connect);
+        }
+
+        void go_online() {
+            if (!socket) {
+                send_no_carrier_response();
+                set_state(STATE_COMMAND);
+                return;
+            }
+            printf("ModemDevice: ATO — returning to data mode\n");
+            set_state(STATE_ONLINE);
+            escape_count = 0;
+            push_modem_inputs();
+            send_connect_response();
         }
 
         void hangup() {
@@ -574,12 +602,18 @@ class ModemDevice : public SerialDevice {
                             hangup();
                             return;
 
-                        case MESSAGE_LINE:
-                            line_baud_ = host_serial_unpack_line(msg.data).baud;
-                            if (line_baud_ == 0) {
-                                line_baud_ = 9600;
+                        case MESSAGE_LINE: {
+                            uint32_t b = host_serial_unpack_line(msg.data).baud;
+                            if (b == 0) {
+                                b = 9600;
                             }
+                            if (b != line_baud_) {
+                                printf("ModemDevice: DTE baud %u -> %u (connect stays %u)\n",
+                                       line_baud_, b, connect_baud_);
+                            }
+                            line_baud_ = b;
                             break;
+                        }
                             
                         case MESSAGE_DATA: {
                             uint8_t byte = static_cast<uint8_t>(msg.data);

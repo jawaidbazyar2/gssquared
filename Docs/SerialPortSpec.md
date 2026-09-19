@@ -7,7 +7,7 @@ Developer spec for GSSquared serial attachments and RS-232 handshake inputs. Use
 A GSSquared `SerialDevice` is the **external device plus the correct cabling for that device** (null-modem vs straight-through, which handshake pins are wired). The emulated 6551 or SCC only sees what that cable would present.
 
 - **File / Clipboard / Echo** — a sink (or loopback) on a ready cable: CD, CTS, and DSR stay asserted so guest firmware that waits for handshake does not stall.
-- **Modem** — a Hayes box on a modem cable: DSR up while the “modem” is powered (device attached), CD only while the TCP session is up. `+++` stays online (CD stays up); `ATH` or a dropped socket drops CD.
+- **Modem** — a Hayes box on a modem cable: DSR up while the “modem” is powered (device attached), CD only while the TCP session is up. `+++` stays online (CD stays up); `ATO` returns to data; `ATH` or a dropped socket drops CD.
 - **Host serial** — the USB-UART / dongle with its real pins. CD / CTS / DSR are sampled from the host OS.
 
 ## Goal
@@ -81,6 +81,62 @@ Chips sample on register access and once per video frame so interrupt-driven han
 
 - Guest → host DTR / RTS (ATH-by-dropping-DTR on a real WiModem)
 - IIgs firmware “DSR handshake” as a separate SCC pin (RR0 has none)
+
+## Test matrix
+
+Manual. **Pass** means the guest and the HUD agree; do not treat HUD-only CD as a connect. Fill **Result** with `pass` / `fail` / `partial` / `untested` / `n/a`. Date is `YYYY-MM-DD`.
+
+**Oracle:** HUD Stats (lower right) shows `CMD` / `ONL` / `ESC`, `CD± CTS± DSR±`, and the TCP peer. Guest status is whatever the terminal or BBS actually displays. Console `ModemDevice:` lines are supporting evidence only.
+
+**Default guest** for modem rows is ProTERM 3.1 unless noted. IIe uses SSC (6551). IIgs uses built-in SCC (modem port unless noted).
+
+### ModemDevice + ProTERM
+
+| # | Platform | Port | Scenario | Result | Date | Notes |
+|---|----------|------|----------|--------|------|-------|
+| M1 | IIgs | SCC modem | Init `AT&FE0S7=99` → `OK` | pass | 2026-09-19 | Chained `&F` / `E` / `S7=` |
+| M2 | IIgs | SCC modem | Dial `AT&Q5N1DT<host>` → TCP up | pass | 2026-09-19 | HUD `ONL CD+` + peer |
+| M3 | IIgs | SCC modem | Guest leaves “waiting for connect” | pass | 2026-09-19 | Needs `CONNECT` text, not only DCD |
+| M4 | IIgs | SCC modem | Online: type / remote echo | pass | 2026-09-19 | “ProTERM + ModemDevice seems ok” |
+| M5 | IIe | SSC | Init + dial + `CONNECT` + online | pass | 2026-09-19 | “SSC + modem + IIe seems ok” |
+| M6 | IIgs | SCC modem | `+++` → command mode, CD stays up | pass | | HUD should stay `CD+`, mode `CMD`/`ESC` |
+| M6a | either | Modem | After `+++`, `ATO` / `ATO0` → data + `CONNECT` | untested | | No socket → `NO CARRIER` |
+| M7 | IIgs | SCC modem | `ATH` / `ATE0V1H` hang-up, CD drops | pass | | Guest should see loss / NO CARRIER |
+| M8 | IIe | SSC | `+++` then `ATH`, CD drops | pass | | |
+| M9 | IIgs | SCC printer (A) | Same as M1–M4 on port A | untested | | Confirm channel A path |
+| M10 | either | Modem | Failed resolve / refused TCP → `NO CARRIER`, stay `CMD` | pass | | |
+| M11 | either | Modem | Remote closes socket → CD−, `NO CARRIER` | pass | | Issue #179 analog for TCP |
+
+### Handshake levels (HUD + guest)
+
+| # | Device | Chip | Expect | Result | Date | Notes |
+|---|--------|------|--------|--------|------|-------|
+| H1 | Modem, idle | SCC / 6551 | `CMD CD- CTS+ DSR+` | partial | 2026-09-19 | HUD shown during ProTERM work; guest DCD bit not dumped |
+| H2 | Modem, TCP up | SCC / 6551 | `ONL CD+ CTS+ DSR+` | pass | 2026-09-19 | HUD on IIgs; IIe not separately logged |
+| H3 | File / Clipboard / Echo | either | `CD+ CTS+ DSR+` always | untested | | Capture must not stall on handshake |
+| H4 | Host serial, detached | either | all off | untested | | |
+| H5 | Host serial, attached, CD off | either | `CD-` live | untested | | WiModem idle |
+| H6 | Host serial, carrier up | either | `CD+` live | untested | | |
+
+### Host serial (issue #179)
+
+Warp6 + USB-UART + WiModem232: hang-up must appear in the guest (6551 `ST_DCD` / SCC RR0 DCD), same as KEGS.
+
+| # | Platform | Port | Guest | Scenario | Result | Date | Notes |
+|---|----------|------|-------|----------|--------|------|-------|
+| S1 | IIe | SSC | Warp6 | WiModem connect to BBS | untested | | |
+| S2 | IIe | SSC | Warp6 | Remote hang-up / CD loss | untested | | Original #179 |
+| S3 | IIgs | SCC | Warp6 or ProTERM | Same as S1 | untested | | |
+| S4 | IIgs | SCC | Warp6 or ProTERM | Same as S2 | untested | | |
+| S5 | either | host serial | any | Unplug dongle: CD/CTS/DSR off, retry, no crash | untested | | |
+
+### Next to fill
+
+1. M6 / M6a: `+++` then `ATO` back to data; M7–M8 hang-up.
+2. M11 TCP drop.
+3. S1–S2 with a real WiModem (#179).
+4. H3 capture attachments (guest firmware that waits for DSR/CTS).
+5. A second terminal (Spectrum) on one ModemDevice cell.
 
 ## Related
 

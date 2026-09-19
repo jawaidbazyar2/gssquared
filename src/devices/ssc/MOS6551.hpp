@@ -200,7 +200,7 @@ public:
     }
 
     uint8_t read_command() {
-        /* Command is write-only on real silicon; return last written value. */
+        /* Datasheet: write-only. We still echo the latch; SSC firmware RMWs $C0nA. */
         return command;
     }
 
@@ -218,16 +218,20 @@ public:
     }
 
     uint8_t read_control() {
-        /* Control is write-only on real silicon; return last written value. */
+        /* Datasheet: write-only. Echoing the latch lets ProTERM (and SSC
+         * firmware RMW) see a later $16 as 300 baud. */
+        uint32_t published = (baud_rate <= 0.0f) ? 9600u
+                            : static_cast<uint32_t>(baud_rate + 0.5f);
+        printf("6551: READ CONTROL=%02X baud=%u\n", control, published);
         return control;
     }
 
     void write_control(uint8_t data) {
-        if (ACIA6551_DEBUG) {
-            printf("6551: WRITE CONTROL = %02X\n", data);
-        }
         control = data;
         update_baud();
+        uint32_t published = (baud_rate <= 0.0f) ? 9600u
+                            : static_cast<uint32_t>(baud_rate + 0.5f);
+        printf("6551: WRITE CONTROL=%02X baud=%u\n", data, published);
         push_line_params();
         apply_modem_inputs();
     }
