@@ -89,14 +89,16 @@ public:
             cpu->D = 0; // disable decimal mode
             //cpu->EFFI = 0;
             cpu->rdy = false;
-            printf("stack init: %04X\n", cpu->sp);
+            cpu->_reset_pending = true;
         } else { // TODO: confirm this is correct for all CPUs and then take out of the if above.
             cpu->I = 1;
+            cpu->_reset_pending = true;
             //cpu->EFFI = 1;    
         }
+        printf("stack init: %04X\n", cpu->sp);
 
         // fill in with register reset logic.
-        cpu->pc = read_word_bank0(cpu, RESET_VECTOR);
+        //cpu->pc = read_word_bank0(cpu, RESET_VECTOR);
     }
     
     const char *get_name() override { return CPUTraits::name; }
@@ -2164,6 +2166,25 @@ int execute_next(cpu_state *cpu) override {
         tb->unused = 0;
     }
     )
+
+    // handle reset more like an interrupt.
+    if (cpu->_reset_pending) {
+        cpu->_reset_pending = false;
+
+        incr_cycles(cpu); // read fake BRK
+        incr_cycles(cpu); // read fake BRK signature
+
+        bus_read(cpu, cpu->sp);
+        cpu->sp_lo--;
+        bus_read(cpu, cpu->sp);
+        cpu->sp_lo--;
+        bus_read(cpu, cpu->sp);
+        cpu->sp_lo--;
+
+        // pull vector - cycles 6-7
+        cpu->pc = read_word_bank0(cpu, RESET_VECTOR);
+        return 0;
+    }
 
     //if (!cpu->EFFI && cpu->irq_asserted) { // if IRQ is not disabled, and IRQ is asserted, handle it.
     //if (!cpu->I && (cpu->irq_pipe & 0x02)) { // T1: look back 2 cycles for IRQ assertion

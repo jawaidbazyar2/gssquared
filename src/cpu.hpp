@@ -195,7 +195,7 @@ struct cpu_state {
     bool irq_asserted = 0; /** bits 0-7 correspond to various IRQ sources */
     uint8_t irq_pipe = 0;
     uint64_t reset_asserted = 0; /** bits 0-10 correspond to various RESET sources. */
-    
+    bool _reset_pending = false; /* if set, the CPU is in the process of resetting */
 
     //uint64_t irq_sample1 = 0; /* IRQ level at the start of the last cycle */
     //uint64_t irq_sample0 = 0; /* IRQ level at the start of the current cycle */

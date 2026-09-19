@@ -24,7 +24,8 @@
 cpu_state::cpu_state(processor_type cpu_type) {
     full_db = 0;
     full_pc = 0; // was 0x400 from original tests, ha!
-    sp = rand() & 0xFF; // simulate a random stack pointer
+    //sp = rand() & 0xFF; // simulate a random stack pointer
+    sp = 0x00; // reset will do 3 false reads while decrementing this.
     a = 0;
     x = 0;
     y = 0;
