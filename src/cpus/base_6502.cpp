@@ -95,7 +95,7 @@ public:
             cpu->_reset_pending = true;
             //cpu->EFFI = 1;    
         }
-        printf("stack init: %04X\n", cpu->sp);
+        //printf("stack init: %04X\n", cpu->sp);
 
         // fill in with register reset logic.
         //cpu->pc = read_word_bank0(cpu, RESET_VECTOR);
