@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <array>
+#include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -42,6 +45,7 @@ class ConfigDraft {
     SystemConfig_t config_{};
     std::vector<disk_mount_t> mounts_;
     std::vector<connection_config_t> connections_;
+    std::optional<std::array<uint8_t, 256>> bram_;
 
     void sync_pointers();
     void prune_orphan_connections();
@@ -68,6 +72,8 @@ public:
     const std::string& description() const { return description_; }
     const std::string& path() const { return path_; }
     const std::string& id() const { return id_; }
+    bool has_bram() const { return bram_.has_value(); }
+    const uint8_t* bram_data() const { return bram_ ? bram_->data() : nullptr; }
 
     void set_name(const std::string& name);
     void set_description(const std::string& description);

@@ -155,6 +155,7 @@ void ConfigDraft::reset_for_platform(PlatformId_t platform_id) {
     path_.clear();
     mounts_.clear();
     connections_.clear();
+    bram_.reset();
     config_ = {};
     for (int i = 0; i < NUM_SLOTS; ++i) {
         config_.slot_devices[i] = DEVICE_ID_NONE;
@@ -186,6 +187,13 @@ void ConfigDraft::load_from(const SystemConfig& config) {
     config_ = config.config();
     mounts_ = config.mounts();
     connections_ = config.connections();
+    if (config.has_bram() && config.bram_data()) {
+        std::array<uint8_t, 256> bytes{};
+        std::copy(config.bram_data(), config.bram_data() + 256, bytes.begin());
+        bram_ = bytes;
+    } else {
+        bram_.reset();
+    }
     prune_orphan_connections();
     sync_pointers();
 }
@@ -199,6 +207,7 @@ void ConfigDraft::load_from_builtin(const SystemConfig_t& config) {
     config_.builtin = false;
     mounts_.clear();
     connections_.clear();
+    bram_.reset();
     sync_pointers();
 }
 

@@ -34,6 +34,7 @@ std::string Paths::pref_path;
 std::string Paths::home_folder;
 std::string Paths::docs_folder;
 std::string Paths::desktop_folder;
+std::string Paths::user_systems_path;
 
 namespace {
 
@@ -70,6 +71,14 @@ std::string ensure_trailing_sep(std::string dir) {
     return dir;
 }
 #endif
+
+/** Join dir/file with the native separator (SDL folders already have a trailing sep). */
+std::string join_under(const std::string& dir, const std::string& file) {
+    if (file.empty()) {
+        return std::filesystem::path(dir).lexically_normal().string();
+    }
+    return (std::filesystem::path(dir) / file).lexically_normal().string();
+}
 
 }  // namespace
 
@@ -119,6 +128,12 @@ const std::string& get_base_path(bool console_mode) {
  *   macOS:   ~/Library/Application Support/jawaidbazyar2/GSSquared/
  *   Windows: %APPDATA%\\jawaidbazyar2\\GSSquared\\
  *   Linux:   ~/.local/share/jawaidbazyar2/GSSquared/
+ *
+ * User-visible machine profiles (and builtin IIgs BRAM) live under
+ * SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS) + "GSSquared":
+ *   macOS:   ~/Documents/GSSquared/
+ *   Windows: %USERPROFILE%\\Documents\\GSSquared\\  (or OneDrive\\Documents)
+ *   Linux:   XDG documents dir, usually ~/Documents/GSSquared/
  */
 
 const std::string& get_pref_path(void) {
@@ -146,6 +161,11 @@ void Paths::initialize(bool console_mode) {
         home_folder = home;
     } else {
         const char *env_home = std::getenv("HOME");
+#if defined(_WIN32)
+        if (!(env_home && env_home[0])) {
+            env_home = std::getenv("USERPROFILE");
+        }
+#endif
         home_folder = (env_home && env_home[0]) ? std::string(env_home) : std::string("/");
     }
 
@@ -162,26 +182,66 @@ void Paths::initialize(bool console_mode) {
     } else {
         desktop_folder = home_folder;
     }
+
+#if defined(__EMSCRIPTEN__)
+    user_systems_path = pref_path;
+#else
+    calc_docs(user_systems_path, "GSSquared");
+#endif
 }
 
 void Paths::calc_base(std::string& return_path, std::string file) {
-     return_path = base_path + file;
+     return_path = join_under(base_path, file);
 }
 
 void Paths::calc_pref(std::string& return_path, std::string file) {
-    return_path = pref_path + file;
+    return_path = join_under(pref_path, file);
 }
 
 void Paths::calc_home(std::string& return_path, std::string file) {
-    return_path = home_folder + file;
+    return_path = join_under(home_folder, file);
 }
 
 void Paths::calc_docs(std::string& return_path, std::string file) {
-    return_path = docs_folder + file;
+    return_path = join_under(docs_folder, file);
 }
 
 void Paths::calc_desktop(std::string& return_path, std::string file) {
-    return_path = desktop_folder + file;
+    return_path = join_under(desktop_folder, file);
+}
+
+void Paths::calc_user_systems(std::string& return_path, std::string file) {
+    return_path = (std::filesystem::path(user_systems_path) / file).lexically_normal().string();
+}
+
+std::string Paths::bram_sidecar_path(const std::string& gs2_path) {
+    std::filesystem::path p(gs2_path);
+    p.replace_extension(".bram");
+    return p.lexically_normal().string();
+}
+
+std::string Paths::legacy_pref_bram_path(const std::string& machine_id) {
+    const std::string name = machine_id.empty() ? "default.bin" : machine_id + ".bin";
+    return (std::filesystem::path(pref_path) / "bram" / name).lexically_normal().string();
+}
+
+std::string Paths::make_config_relative(const std::string& base_dir, const std::string& path) {
+    if (path.empty() || base_dir.empty()) {
+        return path;
+    }
+    std::filesystem::path p(path);
+    if (p.is_relative()) {
+        return std::filesystem::path(path).lexically_normal().generic_string();
+    }
+    std::error_code ec;
+    const std::filesystem::path rel =
+        std::filesystem::relative(p.lexically_normal(),
+                                  std::filesystem::path(base_dir).lexically_normal(),
+                                  ec);
+    if (ec || rel.empty() || rel.is_absolute()) {
+        return path;
+    }
+    return rel.generic_string();
 }
 
 std::string Paths::make_screenshot_path() {

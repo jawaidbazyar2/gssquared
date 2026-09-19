@@ -214,7 +214,7 @@ SystemConfig_t BuiltinSystemConfigs[] = {
         },
     },
     /* Extra configs (Dual Mockingboard, IIe 65816, IIe PAL, IIgs Disk II)
-       ship as .gs2 under assets/gs2/ and are seeded into PrefPath/SystemConfigs. */
+       ship as .gs2 under assets/gs2/ and are seeded into Documents/GSSquared. */
     {
         "Apple IIgs",
         PLATFORM_APPLE_IIGS,

@@ -62,20 +62,55 @@ class RTC {
     RTC_State state = RTC_STATE_AWAIT_COMMAND;
 
     std::string bram_filename;
-public:
-    explicit RTC(std::string bram_path) : bram_filename(std::move(bram_path)) {
-        // preload with gibberish
+
+    void init_default_bram() {
         for (int i = 0; i < 256; i++) {
-            bram[i] = i;
+            bram[i] = static_cast<uint8_t>(i);
         }
-        load_bram_from_file(bram_filename.c_str());
+    }
+
+    void finish_construct() {
         last_seconds = 0; // initialize. First time through update_seconds, will set last_seconds and time to current time, same value
         seconds = 0;
         update_seconds();
+    }
+
+public:
+    RTC() {
+        init_default_bram();
+        finish_construct();
+    }
+
+    explicit RTC(const uint8_t initial_bram[256]) {
+        if (initial_bram) {
+            for (int i = 0; i < 256; i++) {
+                bram[i] = initial_bram[i];
+            }
+        } else {
+            init_default_bram();
+        }
+        finish_construct();
+    }
+
+    explicit RTC(std::string bram_path) : bram_filename(std::move(bram_path)) {
+        init_default_bram();
+        load_bram_from_file(bram_filename.c_str());
+        finish_construct();
     };
     ~RTC() {
-        save_bram_to_file(bram_filename.c_str());
+        if (!bram_filename.empty()) {
+            save_bram_to_file(bram_filename.c_str());
+        }
     };
+
+    void copy_bram(uint8_t out[256]) const {
+        if (!out) {
+            return;
+        }
+        for (int i = 0; i < 256; i++) {
+            out[i] = bram[i];
+        }
+    }
 
     inline uint8_t get_bram_value(uint8_t address) {
         return bram[address];

@@ -17,7 +17,7 @@ Hover the **+** or **Edit…** tile to see a short description at the bottom of 
 
 From the System Select screen, use **File → Launch Config…**.
 
-Pick a `.gs2` or `… Settings.txt` file. Unlike **Edit...**, this loads the config and boots it immediately — it does not open the editor. The file dialog starts in your prefs `SystemConfigs` folder (where shipped examples are copied on first run).
+Pick a `.gs2` or `… Settings.txt` file. Unlike **Edit...**, this loads the config and boots it immediately — it does not open the editor. The file dialog starts in `Documents/GSSquared/` (where shipped examples are copied on first run).
 
 Launch Config is only available when the machine is off (at the System Select screen).
 
@@ -59,4 +59,4 @@ After saving, use **Launch Config…**, double-click the `.gs2`, or Open With to
 
 ## Machine identity (BRAM)
 
-Each `.gs2` file gets a stable **`id`** (UUID). On Apple IIgs configs, battery RAM / Control Panel NVRAM is stored per `id` under your prefs `bram/` folder — so two different configs do not overwrite each other’s BRAM. You normally do not need to edit `id` by hand; GSSquared assigns one when missing. See [Writing Config Files Manually](ConfigFiles.md#machine-identity-id).
+Each `.gs2` file gets a stable **`id`** (UUID). On Apple IIgs configs, battery RAM / Control Panel NVRAM is stored in the `.gs2` (`bram`) and written when you close the machine. You normally do not need to edit `id` by hand; GSSquared assigns one when missing. See [Writing Config Files Manually](ConfigFiles.md#machine-identity-id).

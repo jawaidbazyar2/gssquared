@@ -649,6 +649,8 @@ struct GS2AppState {
     int platform_id = PLATFORM_APPLE_II_PLUS;
     std::vector<disk_mount_t> disks_to_mount;
     std::unique_ptr<SystemConfig> loaded_config;
+    /** Persist target for builtin IIgs launches (BRAM written back into a .gs2). */
+    std::unique_ptr<SystemConfig> persist_config;
 
     // True when the user gave -p PLATFORM or a config file path and we skipped
     // the system selector at startup. In that mode, closing the emulator window
@@ -904,14 +906,72 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
 
     computer->set_platform(platform);
     computer->set_video_scanner(system_config->scanner_type);
+    state->persist_config.reset();
+
+    auto wire_bram_persist = [computer](SystemConfig *cfg) {
+        if (!cfg || cfg->is_settings_source() || cfg->path().empty()) {
+            return;
+        }
+        if (cfg->import_legacy_bram()) {
+            std::string err;
+            if (!cfg->save(cfg->path(), err)) {
+                std::cerr << "Failed to embed legacy BRAM in '" << cfg->path()
+                          << "': " << err << std::endl;
+            } else {
+                std::cout << "Embedded legacy BRAM in " << cfg->path() << std::endl;
+            }
+        }
+        if (cfg->has_bram()) {
+            computer->set_initial_bram(cfg->bram_data(), 256);
+            std::cout << "Using BRAM from " << cfg->path() << std::endl;
+        }
+        computer->set_config_path(cfg->path());
+        computer->set_bram_persist_handler([cfg](const uint8_t *data, size_t len) {
+            cfg->set_bram(data, len);
+            std::string err;
+            if (!cfg->save(cfg->path(), err)) {
+                std::cerr << "Failed to persist config/BRAM to '" << cfg->path()
+                          << "': " << err << std::endl;
+            } else {
+                std::cout << "Saved " << cfg->path() << std::endl;
+            }
+        });
+    };
+
     if (state->loaded_config) {
         computer->set_system_id(-1);
         computer->set_system_config(&state->loaded_config->config());
         computer->set_machine_id(state->loaded_config->id());
+        wire_bram_persist(state->loaded_config.get());
     } else {
         computer->set_system_id(builtin_system_id);
         computer->set_system_config(nullptr);
         computer->set_machine_id(system_config->id ? system_config->id : "");
+        computer->set_config_path({});
+
+        if (system_config->id && system_config->id[0]) {
+            state->persist_config = std::make_unique<SystemConfig>();
+            const std::string persist_path =
+                SystemConfig::user_config_path_for_id(system_config->id);
+            std::string err;
+            if (!state->persist_config->load(persist_path, err)) {
+                const std::string found =
+                    SystemConfig::find_user_config_path_for_id(system_config->id);
+                if (found.empty() || !state->persist_config->load(found, err)) {
+                    std::cerr << "Builtin config '" << persist_path
+                              << "' not loaded (" << err << "); using tile defaults"
+                              << std::endl;
+                    state->persist_config->set_from_parts(*system_config,
+                                                          state->disks_to_mount, {});
+                    state->persist_config->set_path(persist_path);
+                    state->persist_config->try_import_bram_from_gs2(persist_path);
+                    if (!found.empty()) {
+                        state->persist_config->try_import_bram_from_gs2(found);
+                    }
+                }
+            }
+            wire_bram_persist(state->persist_config.get());
+        }
     }
     
     // TODO: load platform roms - this info should get stored in the 'computer'
@@ -1155,6 +1215,7 @@ void transition_to_shutdown(GS2AppState *state) {
     state->phase = PHASE_SYSTEM_SELECT;
 
     state->loaded_config.reset();
+    state->persist_config.reset();
     state->disks_to_mount.clear();
     state->auto_launched = false;
 }
@@ -1209,6 +1270,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     // an existing system_settings.toml with empty in-memory state.
     SystemSettings::instance().load();
     SystemConfig::ensure_default_system_configs();
+    for (int i = 0; i < NUM_SYSTEM_CONFIGS; ++i) {
+        SystemConfig::migrate_builtin_bram(BuiltinSystemConfigs[i]);
+    }
 
     // Parse CLI whenever there are arguments. console_mode (isatty) is still used
     // elsewhere; without this, scripted launches (no TTY) would ignore --debug / -p / etc.

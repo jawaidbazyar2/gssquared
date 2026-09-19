@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <cstdint>
 #include <functional>
 #include <vector>
 #include <string>
@@ -126,7 +128,10 @@ struct computer_t {
     // For use by OSD.
     int system_id = -1;
     const SystemConfig_t *system_config_override = nullptr;
-    std::string machine_id;  // UUID from .gs2 / builtin; keys PrefPath/bram/<id>.bin
+    std::string machine_id;   // UUID from .gs2 / builtin
+    std::string config_path;  // loaded .gs2 path; BRAM is stored in that file
+    std::optional<std::array<uint8_t, 256>> initial_bram;
+    std::function<void(const uint8_t *data, size_t len)> bram_persist;
 
     std::vector<ResetHandler> reset_handlers;
     std::vector<ShutdownHandler> shutdown_handlers;
@@ -206,6 +211,12 @@ struct computer_t {
     void set_system_config(const SystemConfig_t *system_config) { this->system_config_override = system_config; }
     void set_machine_id(const std::string& id) { machine_id = id; }
     const std::string& get_machine_id() const { return machine_id; }
+    void set_config_path(const std::string& path) { config_path = path; }
+    const std::string& get_config_path() const { return config_path; }
+    void set_initial_bram(const uint8_t *data, size_t len);
+    bool get_initial_bram(uint8_t out[256]) const;
+    void set_bram_persist_handler(std::function<void(const uint8_t *data, size_t len)> handler);
+    void persist_bram(const uint8_t *data, size_t len) const;
     inline SystemConfig_t *get_system() {
         return system_config_override
             ? const_cast<SystemConfig_t *>(system_config_override)

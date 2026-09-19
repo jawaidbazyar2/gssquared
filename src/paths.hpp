@@ -30,6 +30,7 @@ class Paths {
     static std::string docs_folder;
     static std::string home_folder;
     static std::string desktop_folder;
+    static std::string user_systems_path;
 
     public:
         static void initialize(bool console_mode);
@@ -38,6 +39,7 @@ class Paths {
         static void calc_docs(std::string& return_path, std::string file) ;
         static void calc_home(std::string& return_path, std::string file) ;
         static void calc_desktop(std::string& return_path, std::string file);
+        static void calc_user_systems(std::string& return_path, std::string file);
         /** Full Desktop path for a new screenshot, e.g. ".../GS2 Screenshot 2026-07-17 14.30.05.png". */
         static std::string make_screenshot_path();
 
@@ -58,6 +60,25 @@ class Paths {
 
         /** Documents folder (set by initialize). */
         static const std::string& documents_folder() { return docs_folder; }
+
+        /**
+         * User-visible machine-profile folder: Documents/GSSquared/
+         * (MEMFS root on Emscripten). Set by initialize().
+         */
+        static const std::string& user_systems_dir() { return user_systems_path; }
+
+        /** Sidecar BRAM path for a .gs2: same directory, stem + ".bram". */
+        static std::string bram_sidecar_path(const std::string& gs2_path);
+
+        /** Legacy PrefPath/bram/<id>.bin (or bram/default.bin if id is empty). */
+        static std::string legacy_pref_bram_path(const std::string& machine_id);
+
+        /**
+         * Encode path relative to base_dir for storage in a .gs2. Absolute paths
+         * on another volume are left unchanged. Uses forward slashes.
+         */
+        static std::string make_config_relative(const std::string& base_dir,
+                                                const std::string& path);
 
         static bool is_directory(const std::string& filename);
         static bool ends_with(std::string_view s, std::string_view suffix) noexcept;

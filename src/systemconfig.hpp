@@ -34,7 +34,7 @@ struct SystemConfig_t {
     clock_set_t clock_set;
     video_scanner_t scanner_type;
     const char *description;
-    const char *id;  // machine identity (UUID); keys PrefPath/bram/<id>.bin
+    const char *id;  // machine identity (UUID); IIgs BRAM lives in the .gs2 `bram` field
     device_id slot_devices[NUM_SLOTS];
 };
 

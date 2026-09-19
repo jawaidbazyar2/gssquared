@@ -212,7 +212,7 @@ Cyrene `SystemCall=P8-XX`, `P16-XXXX`, `GSOS-XXXX`, `TOOL-XXXX` and the system-c
 
 #### Battery RAM in snapshot
 
-Cyrene dumps 256 bytes at snapshot offset 768. GS2 stores BRAM in the RTC device (`bram[256]`, persisted under `PrefPath/bram/<uuid>.bin`) with **no** `STATE_GET`/`READMEM` exposure. Intermediary cannot faithfully reproduce this region without a new **`STATE_GET` for `DEVICE_ID_RTC_PRAM`** (256-byte blob) or a dedicated memory domain.
+Cyrene dumps 256 bytes at snapshot offset 768. GS2 stores BRAM in the RTC device (`bram[256]`, persisted as a hex `bram` field in the `.gs2`) with **no** `STATE_GET`/`READMEM` exposure. Intermediary cannot faithfully reproduce this region without a new **`STATE_GET` for `DEVICE_ID_RTC_PRAM`** (256-byte blob) or a dedicated memory domain.
 
 #### Logpoints and file actions
 

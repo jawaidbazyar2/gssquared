@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <iosfwd>
 #include <optional>
@@ -84,6 +85,7 @@ class SystemConfig {
     std::vector<card_extra_t> card_extras_;
     std::vector<std::string> warnings_;
     std::vector<std::pair<std::string, std::string>> extensions_;
+    std::optional<std::array<uint8_t, 256>> bram_;
 
     void sync_config_pointers();
     void clear();
@@ -118,14 +120,45 @@ public:
     bool is_settings_source() const { return settings_source_; }
     const std::string& path() const { return path_; }
     const std::string& id() const { return id_; }
+    void set_path(const std::string& path) { path_ = path; }
+
+    bool has_bram() const { return bram_.has_value(); }
+    const uint8_t* bram_data() const { return bram_ ? bram_->data() : nullptr; }
+    void set_bram(const uint8_t* data, size_t len);
+
+    /**
+     * If this config has no embedded BRAM, try a leftover sidecar or
+     * PrefPath/bram/<id>.bin. Returns true when bytes were imported.
+     */
+    bool import_legacy_bram();
 
     void dump(std::ostream& out) const;
 
     /**
-     * Copy shipped default .gs2 configs from resources/gs2 into PrefPath/SystemConfigs
-     * when those files are not already present. Creates SystemConfigs if needed, and
-     * sets the Launch Config dialog start folder there if unset. When recent history
-     * is empty, also seeds system_settings recent_configs from those bundled paths.
+     * Copy shipped default .gs2 configs from resources/gs2 into Documents/GSSquared
+     * when those files are not already present. Migrates PrefPath/SystemConfigs
+     * and embeds leftover sidecar / PrefPath BRAM into the .gs2. Sets the Launch
+     * Config dialog start folder there if unset. When recent history is empty,
+     * also seeds system_settings recent_configs from those bundled paths.
      */
     static void ensure_default_system_configs();
+
+    /** Documents/GSSquared/<id>.gs2, whether or not the file exists. */
+    static std::string user_config_path_for_id(const std::string& id);
+
+    /**
+     * Documents/GSSquared/<id>.gs2 if that file exists, else the first .gs2
+     * whose embedded id matches. Empty if neither exists.
+     */
+    static std::string find_user_config_path_for_id(const std::string& id);
+
+    /** Read a `bram` field from a .gs2 without replacing the rest of this object. */
+    bool try_import_bram_from_gs2(const std::string& path);
+
+    /**
+     * If leftover PrefPath/bram/<id>.bin exists for this builtin, write or
+     * update Documents/GSSquared/<id>.gs2 with that BRAM. Safe to call when
+     * the leftover file is missing.
+     */
+    static void migrate_builtin_bram(const SystemConfig_t& builtin);
 };

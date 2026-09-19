@@ -10,7 +10,7 @@ This is a **design proposal** — not yet implemented.
 |------|-------|
 | Extension | `.gs2` |
 | Format | TOML 1.0 |
-| Default location | User config directory (e.g. `~/Library/Application Support/GSSquared/systems/` on macOS) |
+| Default location | `Documents/GSSquared/` (user-visible; seeded and migrated here on startup) |
 | Related formats | Project X files (arqyv-generated) are a separate, forward-compatible format |
 
 Every file MUST begin with a format version so future loaders can migrate or reject old files:
@@ -61,23 +61,27 @@ typedef struct {
 | `[[cards]]` | array of tables | no | `slot_devices[]` + per-card config | Hardware only; see [Cards](#cards) |
 | `[[storage]]` | array of tables | no | `disk_mount_t[]` | All pre-mounted disks; see [Storage](#storage) |
 | `[[connections]]` | array of tables | no | serial port attachments | Virtual devices on serial ports; see [Connections](#connections) |
+| `bram` | string | no | IIgs battery RAM | 512 hex digits (256 bytes). Root key; must appear before any `[[cards]]` / `[[storage]]` / `[[connections]]`. Written on machine close. |
 
 \*If `id` is missing on load, GSSquared mints a UUID and rewrites the file when writable. After load, every config has an `id`.
 
 ### Machine identity
 
-`id` is a stable UUID that identifies the *machine*, not the filename. Apple IIgs battery RAM (Control Panel / NVRAM) is stored at:
+`id` is a stable UUID that identifies the *machine*, not the filename. Apple IIgs battery RAM (Control Panel / NVRAM) is stored in the `.gs2` itself:
 
-`PrefPath/bram/<id>.bin`
+```toml
+bram = "00010203...ff"   # 512 hex digits, 256 bytes; omitted until the machine has run
+```
 
-(e.g. `~/Library/Application Support/jawaidbazyar2/GSSquared/bram/<id>.bin` on macOS).
+The emulator writes the `.gs2` (including `bram`) when the machine is closed.
 
 | Behavior | Result |
 |----------|--------|
-| Rename / move `.gs2` | Same `id` → same BRAM |
-| Save As (different path in editor) | New `id` → separate BRAM |
-| Copy `id` into another `.gs2` | Shared BRAM (same machine) |
-| Reseed shipped default from assets | Same preassigned `id` → BRAM survives |
+| Copy / move the `.gs2` | BRAM travels with the file |
+| Save As (different path in editor) | New `id`; BRAM bytes are copied into the new file |
+| Reseed shipped default from assets | Existing user `.gs2` (and its `bram`) is left untouched |
+
+On startup, GSSquared copies `PrefPath/SystemConfigs/*.gs2` into `Documents/GSSquared/` (without overwriting files already there) and rewrites disk/connection paths relative to the new location. Leftover `<stem>.bram` sidecars and `PrefPath/bram/<id>.bin` files are imported into `bram` when missing.
 
 Shipped configs under `assets/gs2/` and builtin selector tiles have fixed UUIDs.
 

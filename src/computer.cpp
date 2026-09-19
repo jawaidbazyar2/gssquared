@@ -1,3 +1,4 @@
+#include <cstring>
 #include <iostream>
 #include <cstdint>
 
@@ -309,6 +310,35 @@ computer_t::~computer_t() {
 
 void computer_t::set_frame_start_cycle() {
     frame_start_cycle = clock->get_c14m();
+}
+
+void computer_t::set_initial_bram(const uint8_t *data, size_t len) {
+    initial_bram.reset();
+    if (!data || len != 256) {
+        return;
+    }
+    std::array<uint8_t, 256> bytes{};
+    std::memcpy(bytes.data(), data, 256);
+    initial_bram = bytes;
+}
+
+bool computer_t::get_initial_bram(uint8_t out[256]) const {
+    if (!initial_bram || !out) {
+        return false;
+    }
+    std::memcpy(out, initial_bram->data(), 256);
+    return true;
+}
+
+void computer_t::set_bram_persist_handler(
+    std::function<void(const uint8_t *data, size_t len)> handler) {
+    bram_persist = std::move(handler);
+}
+
+void computer_t::persist_bram(const uint8_t *data, size_t len) const {
+    if (bram_persist && data && len == 256) {
+        bram_persist(data, len);
+    }
 }
 
 void computer_t::register_reset_handler(ResetHandler handler) {

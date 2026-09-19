@@ -81,7 +81,7 @@ public:
 
     /**
      * On a fresh install (empty recent history), seed recent_configs from the given
-     * paths (typically bundled .gs2 files under PrefPath/SystemConfigs) and save.
+     * paths (typically bundled .gs2 files under Documents/GSSquared) and save.
      * No-op if recent_ is already non-empty. Paths that are missing are skipped.
      * First path becomes MRU; remaining keep input order via last_used.
      */
@@ -138,4 +138,13 @@ public:
 
     /** Seed a dialog kind with a directory only if that kind has no path yet. */
     void set_file_dialog_dir_if_unset(FileDialogKind kind, const std::string& dir);
+
+    /** Rewrite an exact recent / last-config path (used when migrating .gs2 files). */
+    void remap_config_path(const std::string& from, const std::string& to);
+
+    /**
+     * Rewrite recent / last-config paths that live under from_dir so they point
+     * at the same relative path under to_dir.
+     */
+    void remap_config_paths_under(const std::string& from_dir, const std::string& to_dir);
 };

@@ -6,7 +6,9 @@
 
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -81,6 +83,105 @@ static bool test_save_roundtrip() {
     CHECK(reloaded.config().slot_devices[6] == config.config().slot_devices[6], "slot6 roundtrip");
     CHECK(reloaded.mounts().size() == config.mounts().size(), "mount count roundtrip");
     std::filesystem::remove(tmp);
+    return true;
+}
+
+static bool test_save_relative_paths() {
+    namespace fs = std::filesystem;
+    const auto tmp = fs::temp_directory_path() / "gssquared_relpath_test";
+    const auto other = fs::temp_directory_path() / "gssquared_relpath_other";
+    fs::create_directories(tmp / "disks");
+    fs::create_directories(other);
+    const auto gs2 = tmp / "Machine.gs2";
+    const auto image = tmp / "disks" / "game.woz";
+    const auto sibling = other / "vol.po";
+    {
+        std::ofstream(image.string()) << "x";
+        std::ofstream(sibling.string()) << "y";
+    }
+
+    SystemConfig_t sc{};
+    sc.platform_id = PLATFORM_APPLE_IIE_ENHANCED;
+    sc.clock_set = CLOCK_SET_US;
+    sc.scanner_type = Scanner_AppleIIe;
+    sc.name = "Rel";
+
+    disk_mount_t mount;
+    mount.slot = 6;
+    mount.drive = 0;
+    mount.filename = image.string();
+
+    SystemConfig config;
+    config.set_from_parts(sc, {mount}, {});
+    std::string error;
+    CHECK(config.save(gs2.string(), error), "save same-dir relative: " << error);
+
+    std::ifstream in(gs2);
+    const std::string contents((std::istreambuf_iterator<char>(in)),
+                               std::istreambuf_iterator<char>());
+    CHECK(contents.find("image = \"disks/game.woz\"") != std::string::npos,
+          "saved relative image, got:\n" << contents);
+
+    SystemConfig reloaded;
+    CHECK(reloaded.load(gs2.string(), error), "reload: " << error);
+    CHECK(reloaded.mounts().size() == 1, "one mount");
+    CHECK(fs::path(reloaded.mounts()[0].filename).filename() == "game.woz",
+          "resolved image name");
+
+    mount.filename = sibling.string();
+    config.set_from_parts(sc, {mount}, {});
+    CHECK(config.save(gs2.string(), error), "save parent-relative: " << error);
+    std::ifstream in2(gs2);
+    const std::string contents2((std::istreambuf_iterator<char>(in2)),
+                                std::istreambuf_iterator<char>());
+    CHECK(contents2.find("image = \"../gssquared_relpath_other/vol.po\"") != std::string::npos,
+          "saved ../ relative image, got:\n" << contents2);
+
+    fs::remove_all(tmp);
+    fs::remove_all(other);
+    return true;
+}
+
+static bool test_bram_roundtrip() {
+    namespace fs = std::filesystem;
+    const auto tmp = fs::temp_directory_path() / "gssquared_bram_roundtrip.gs2";
+
+    uint8_t bram[256];
+    for (int i = 0; i < 256; ++i) {
+        bram[i] = static_cast<uint8_t>(255 - i);
+    }
+
+    SystemConfig_t sc{};
+    sc.platform_id = PLATFORM_APPLE_IIGS;
+    sc.clock_set = CLOCK_SET_US;
+    sc.scanner_type = Scanner_AppleIIgs;
+    sc.name = "BRAM Machine";
+    sc.slot_devices[3] = DEVICE_ID_SECOND_SIGHT;
+    sc.slot_devices[7] = DEVICE_ID_PD_BLOCK3;
+
+    SystemConfig config;
+    config.set_from_parts(sc, {}, {});
+    config.set_bram(bram, 256);
+    std::string error;
+    CHECK(config.save(tmp.string(), error), "save bram: " << error);
+
+    std::ifstream in(tmp);
+    const std::string contents((std::istreambuf_iterator<char>(in)),
+                               std::istreambuf_iterator<char>());
+    const auto bram_at = contents.find("bram = \"");
+    const auto cards_at = contents.find("[[cards]]");
+    CHECK(bram_at != std::string::npos, "wrote bram field");
+    CHECK(cards_at != std::string::npos, "wrote cards");
+    CHECK(bram_at < cards_at, "bram must be a root key before [[cards]]");
+
+    SystemConfig reloaded;
+    CHECK(reloaded.load(tmp.string(), error), "reload bram: " << error);
+    CHECK(reloaded.has_bram(), "reloaded has bram");
+    CHECK(reloaded.bram_data() != nullptr, "bram pointer");
+    CHECK(reloaded.bram_data()[0] == 255, "bram[0]");
+    CHECK(reloaded.bram_data()[255] == 0, "bram[255]");
+
+    fs::remove(tmp);
     return true;
 }
 
@@ -423,6 +524,8 @@ static bool run_self_tests() {
         {"settings_duplicate_key", test_settings_duplicate_key},
         {"settings_unknown_keys_warn", test_settings_unknown_keys_warn},
         {"save_roundtrip", test_save_roundtrip},
+        {"save_relative_paths", test_save_relative_paths},
+        {"bram_roundtrip", test_bram_roundtrip},
     };
 
     int passed = 0;

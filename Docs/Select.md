@@ -19,9 +19,9 @@ Besides the built-in tiles:
 
 * **+** — create a new custom machine in the [config editor](ConfigEditor.md).
 * **Edit…** / folder — open an existing `.gs2` (or A2Fusion `… Settings.txt`) to edit or launch.
-* **Recent custom configs** — tiles for configs you have opened before (from your prefs `SystemConfigs` folder and recent history). Click one to boot it immediately.
+* **Recent custom configs** — tiles for configs you have opened before (from `Documents/GSSquared/` and recent history). Click one to boot it immediately.
 
-Shipped example `.gs2` files are copied into your application preferences folder on first run (`…/GSSquared/SystemConfigs/` under your OS prefs path). **File → Launch Config…** defaults there when you browse for a config.
+Shipped example `.gs2` files are copied into `Documents/GSSquared/` on first run. **File → Launch Config…** defaults there when you browse for a config. Older installs that used the prefs `SystemConfigs` folder are migrated into Documents on startup.
 
 ## Launching without the tile row
 

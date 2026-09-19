@@ -366,8 +366,11 @@ std::string SystemSettings::get_file_dialog_default_location(FileDialogKind kind
     std::string stored =
         kind == FileDialogKind::Config ? last_config_path_ : last_disk_path_;
     if (stored.empty()) {
+        if (kind == FileDialogKind::Config) {
+            stored = Paths::user_systems_dir();
+        }
 #if defined(__linux__)
-        if (kind == FileDialogKind::Disk) {
+        else if (kind == FileDialogKind::Disk) {
             stored = Paths::documents_folder();
         }
 #endif
@@ -387,8 +390,12 @@ std::string SystemSettings::get_file_dialog_save_default_location(
     FileDialogKind kind, const std::string& suggested_filename) const {
     std::string stored =
         kind == FileDialogKind::Config ? last_config_path_ : last_disk_path_;
-    if (stored.empty() && kind == FileDialogKind::Disk) {
-        stored = Paths::documents_folder();
+    if (stored.empty()) {
+        if (kind == FileDialogKind::Config) {
+            stored = Paths::user_systems_dir();
+        } else if (kind == FileDialogKind::Disk) {
+            stored = Paths::documents_folder();
+        }
     }
     return Paths::make_save_dialog_location(stored, suggested_filename);
 }
@@ -419,6 +426,72 @@ void SystemSettings::set_file_dialog_dir_if_unset(FileDialogKind kind, const std
         set_last_config_path(normalized);
     } else {
         set_last_disk_path(normalized);
+    }
+}
+
+void SystemSettings::remap_config_path(const std::string& from, const std::string& to) {
+    const std::string from_n = normalize_path(from);
+    const std::string to_n = normalize_path(to);
+    if (from_n.empty() || to_n.empty() || paths_are_same(from_n, to_n)) {
+        return;
+    }
+
+    bool changed = false;
+    for (auto& e : recent_) {
+        if (paths_are_same(e.path, from_n)) {
+            e.path = to_n;
+            changed = true;
+        }
+    }
+    if (paths_are_same(last_config_path_, from_n)) {
+        last_config_path_ = to_n;
+        changed = true;
+    }
+    if (changed) {
+        save();
+    }
+}
+
+void SystemSettings::remap_config_paths_under(const std::string& from_dir,
+                                              const std::string& to_dir) {
+    if (from_dir.empty() || to_dir.empty()) {
+        return;
+    }
+    const std::filesystem::path from_p =
+        std::filesystem::path(from_dir).lexically_normal();
+    const std::filesystem::path to_p = std::filesystem::path(to_dir).lexically_normal();
+    if (from_p.empty() || to_p.empty() || from_p == to_p) {
+        return;
+    }
+
+    auto relocate = [&](std::string& path) {
+        if (path.empty()) {
+            return false;
+        }
+        const std::filesystem::path p = std::filesystem::path(path).lexically_normal();
+        const std::filesystem::path rel = p.lexically_relative(from_p);
+        if (rel.empty() || rel.is_absolute()) {
+            return false;
+        }
+        auto it = rel.begin();
+        if (it != rel.end() && *it == "..") {
+            return false;
+        }
+        path = normalize_path((to_p / rel).string());
+        return true;
+    };
+
+    bool changed = false;
+    for (auto& e : recent_) {
+        if (relocate(e.path)) {
+            changed = true;
+        }
+    }
+    if (relocate(last_config_path_)) {
+        changed = true;
+    }
+    if (changed) {
+        save();
     }
 }
 

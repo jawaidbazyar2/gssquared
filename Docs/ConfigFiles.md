@@ -97,17 +97,12 @@ These go at the start of the file (before any `[[cards]]` blocks).
 
 ### Machine identity (`id`)
 
-`id` is a UUID that identifies the *machine*, not the filename. On IIgs platforms, battery RAM (Control Panel / NVRAM) is stored as:
-
-`PrefPath/bram/<id>.bin`
-
-(for example under `~/Library/Application Support/jawaidbazyar2/GSSquared/bram/` on macOS).
+`id` is a UUID that identifies the *machine*, not the filename. On IIgs platforms, battery RAM (Control Panel / NVRAM) is stored in the `.gs2` as a hex `bram` field. Closing the machine writes the file, including any NVRAM changes. Older installs used `PrefPath/bram/<id>.bin` or a `.bram` sidecar; those are imported into the `.gs2` when present.
 
 | Action | BRAM result |
 |--------|-------------|
-| Rename / move the `.gs2` (same `id`) | Same BRAM |
-| Save As to a new file | New `id` → separate BRAM |
-| Copy `id` into another `.gs2` | Shared BRAM (same machine) |
+| Copy or move the `.gs2` | BRAM travels with the file |
+| Save As to a new file | New `id`; BRAM bytes are copied |
 
 If `id` is missing when you load a writable `.gs2`, GSSquared assigns one and may rewrite the file. You rarely need to set it yourself.
 
@@ -476,7 +471,15 @@ MyConfigs/
     ProDOS_32MB.po
 ```
 
-On macOS, user configs will eventually live under Application Support (for example `~/Library/Application Support/GSSquared/systems/`). Until Save System is implemented, you can keep files anywhere and open them with the folder icon or `-c`.
+Default user configs (and builtin IIgs BRAM) live in `Documents/GSSquared/`:
+
+| Platform | Typical folder |
+|----------|----------------|
+| macOS | `~/Documents/GSSquared/` |
+| Windows | `%USERPROFILE%\Documents\GSSquared\` (or OneDrive Documents) |
+| Linux | XDG documents dir, usually `~/Documents/GSSquared/` |
+
+App settings and leftover PrefPath BRAM stay in the per-user prefs directory (`SDL_GetPrefPath`: Application Support / `%APPDATA%` / `~/.local/share`). You can also keep `.gs2` files anywhere and open them with Launch Config… or a path on the command line.
 
 ---
 

@@ -583,6 +583,9 @@ bool EditSystem::write_draft_to_path(const std::string& path) {
     }
     SystemConfig writer;
     writer.set_from_parts(draft.config(), draft.mounts(), draft.connections());
+    if (draft.has_bram()) {
+        writer.set_bram(draft.bram_data(), 256);
+    }
     if (!writer.save(path, error)) {
         status_text = "Save failed: " + error;
         updated = true;

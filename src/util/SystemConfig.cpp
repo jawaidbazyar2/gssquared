@@ -18,6 +18,7 @@
 #include "util/SystemConfig.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <filesystem>
 #include <fstream>
@@ -58,6 +59,52 @@ std::string resolve_path(const std::string& base_dir, const std::string& path) {
         return path;
     }
     return join_path(base_dir, path);
+}
+
+bool decode_bram_hex(const std::string& hex, std::array<uint8_t, 256>& out) {
+    std::string digits;
+    digits.reserve(hex.size());
+    for (unsigned char c : hex) {
+        if (std::isspace(c)) {
+            continue;
+        }
+        if (!std::isxdigit(c)) {
+            return false;
+        }
+        digits.push_back(static_cast<char>(c));
+    }
+    if (digits.size() != 512) {
+        return false;
+    }
+    for (int i = 0; i < 256; ++i) {
+        const int hi = std::isdigit(static_cast<unsigned char>(digits[i * 2]))
+                           ? digits[i * 2] - '0'
+                           : 10 + std::tolower(static_cast<unsigned char>(digits[i * 2])) - 'a';
+        const int lo = std::isdigit(static_cast<unsigned char>(digits[i * 2 + 1]))
+                           ? digits[i * 2 + 1] - '0'
+                           : 10 + std::tolower(static_cast<unsigned char>(digits[i * 2 + 1])) - 'a';
+        out[static_cast<size_t>(i)] = static_cast<uint8_t>((hi << 4) | lo);
+    }
+    return true;
+}
+
+std::string encode_bram_hex(const std::array<uint8_t, 256>& bytes) {
+    static const char kHex[] = "0123456789abcdef";
+    std::string out(512, '0');
+    for (int i = 0; i < 256; ++i) {
+        out[static_cast<size_t>(i * 2)] = kHex[bytes[static_cast<size_t>(i)] >> 4];
+        out[static_cast<size_t>(i * 2 + 1)] = kHex[bytes[static_cast<size_t>(i)] & 0x0F];
+    }
+    return out;
+}
+
+bool read_bram_bin(const std::string& path, std::array<uint8_t, 256>& out) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in) {
+        return false;
+    }
+    in.read(reinterpret_cast<char*>(out.data()), static_cast<std::streamsize>(out.size()));
+    return in && in.gcount() == static_cast<std::streamsize>(out.size());
 }
 
 PlatformFlags_t platform_flag(PlatformId_t platform) {
@@ -543,6 +590,43 @@ void SystemConfig::set_from_parts(const SystemConfig_t& config,
     sync_config_pointers();
 }
 
+void SystemConfig::set_bram(const uint8_t* data, size_t len) {
+    if (!data || len != 256) {
+        bram_.reset();
+        return;
+    }
+    std::array<uint8_t, 256> bytes{};
+    std::copy(data, data + 256, bytes.begin());
+    bram_ = bytes;
+}
+
+bool SystemConfig::import_legacy_bram() {
+    if (bram_) {
+        return false;
+    }
+
+    std::vector<std::string> candidates;
+    if (!path_.empty()) {
+        candidates.push_back(Paths::bram_sidecar_path(path_));
+    }
+    if (!id_.empty()) {
+        candidates.push_back(Paths::legacy_pref_bram_path(id_));
+        std::string docs_id;
+        Paths::calc_user_systems(docs_id, id_ + ".bram");
+        candidates.push_back(docs_id);
+    }
+
+    std::array<uint8_t, 256> bytes{};
+    for (const auto& candidate : candidates) {
+        if (read_bram_bin(candidate, bytes)) {
+            bram_ = bytes;
+            std::cout << "Imported legacy BRAM from " << candidate << std::endl;
+            return true;
+        }
+    }
+    return false;
+}
+
 bool SystemConfig::save(const std::string& path, std::string& error_out) {
     if (name_.empty() && !(config_data_.name && config_data_.name[0])) {
         error_out = "name must not be empty";
@@ -570,6 +654,9 @@ bool SystemConfig::save(const std::string& path, std::string& error_out) {
     out << "clock = \"" << clock_name(config_data_.clock_set) << "\"\n";
     out << "scanner = \"" << scanner_name(config_data_.scanner_type) << "\"\n";
     out << "builtin = false\n";
+    if (bram_) {
+        out << "bram = \"" << encode_bram_hex(*bram_) << "\"\n";
+    }
 
     for (int slot = 0; slot < NUM_SLOTS; ++slot) {
         const device_id id = config_data_.slot_devices[slot];
@@ -584,15 +671,7 @@ bool SystemConfig::save(const std::string& path, std::string& error_out) {
         out << "\n[[storage]]\n";
         out << "slot = " << mount.slot << "\n";
         out << "drive = " << (mount.drive + 1) << "\n";
-        std::string image = mount.filename;
-        // Prefer relative path when image is under the config directory.
-        if (!base_dir.empty() && image.rfind(base_dir, 0) == 0) {
-            std::string rel = image.substr(base_dir.size());
-            while (!rel.empty() && (rel[0] == '/' || rel[0] == '\\')) {
-                rel.erase(rel.begin());
-            }
-            if (!rel.empty()) image = rel;
-        }
+        const std::string image = Paths::make_config_relative(base_dir, mount.filename);
         out << "image = \"" << toml_escape(image) << "\"\n";
     }
 
@@ -603,13 +682,8 @@ bool SystemConfig::save(const std::string& path, std::string& error_out) {
         out << "device = \"" << toml_escape(to_lower(conn.device)) << "\"\n";
         if (!conn.path.empty()) {
             std::string cpath = conn.path;
-            if (to_lower(conn.device) != "serial" && !base_dir.empty() &&
-                cpath.rfind(base_dir, 0) == 0) {
-                std::string rel = cpath.substr(base_dir.size());
-                while (!rel.empty() && (rel[0] == '/' || rel[0] == '\\')) {
-                    rel.erase(rel.begin());
-                }
-                if (!rel.empty()) cpath = rel;
+            if (to_lower(conn.device) != "serial") {
+                cpath = Paths::make_config_relative(base_dir, cpath);
             }
             out << "path = \"" << toml_escape(cpath) << "\"\n";
         }
@@ -622,6 +696,7 @@ bool SystemConfig::save(const std::string& path, std::string& error_out) {
         error_out = "Write failed: " + path;
         return false;
     }
+    path_ = path;
     return true;
 }
 
@@ -654,6 +729,7 @@ void SystemConfig::clear() {
     card_extras_.clear();
     warnings_.clear();
     extensions_.clear();
+    bram_.reset();
     for (int i = 0; i < NUM_SLOTS; ++i) {
         config_data_.slot_devices[i] = DEVICE_ID_NONE;
     }
@@ -927,6 +1003,15 @@ bool SystemConfig::load_gs2(const std::string& path, std::string& error_out) {
         }
     }
 
+    if (const auto bram_node = table["bram"]; bram_node.is_string()) {
+        std::array<uint8_t, 256> bytes{};
+        if (decode_bram_hex(std::string(*bram_node.value<std::string>()), bytes)) {
+            bram_ = bytes;
+        } else {
+            warnings_.push_back("Invalid bram value (expected 256 hex-encoded bytes)");
+        }
+    }
+
     bool minted_id = false;
     if (id_.empty()) {
         id_ = generate_uuid_v4();
@@ -961,6 +1046,7 @@ void SystemConfig::dump(std::ostream& out) const {
     out << "  scanner: " << scanner_name(config_data_.scanner_type)
         << " (" << static_cast<int>(config_data_.scanner_type) << ")\n";
     out << "  builtin: " << (config_data_.builtin ? "true" : "false") << "\n";
+    out << "  bram: " << (bram_ ? "present" : "none") << "\n";
 
     out << "  slot_devices:\n";
     for (int slot = 0; slot < NUM_SLOTS; ++slot) {
@@ -1013,20 +1099,227 @@ void SystemConfig::dump(std::ostream& out) const {
     }
 }
 
+namespace {
+
+std::string peek_gs2_id(const std::string& path) {
+    try {
+        const toml::table table = toml::parse_file(path);
+        if (const auto id = table["id"].value<std::string>()) {
+            return *id;
+        }
+    } catch (const toml::parse_error&) {
+    }
+    return {};
+}
+
+bool is_gs2_file(const std::filesystem::path& path) {
+    return Paths::ends_with_icase(path.filename().string(), ".gs2");
+}
+
+bool embed_legacy_bram(SystemConfig& cfg) {
+    if (!cfg.import_legacy_bram()) {
+        return false;
+    }
+    std::string err;
+    if (!cfg.save(cfg.path(), err)) {
+        std::cerr << "Failed to embed imported BRAM in '" << cfg.path() << "': " << err
+                  << std::endl;
+        return false;
+    }
+    return true;
+}
+
+/** Copy PrefPath/bram/<id>.bin into an existing Documents .gs2 with that id. */
+void migrate_legacy_pref_bram_files() {
+    namespace fs = std::filesystem;
+    std::string bram_dir;
+    Paths::calc_pref(bram_dir, "bram");
+    std::error_code ec;
+    if (!fs::is_directory(bram_dir, ec)) {
+        return;
+    }
+
+    for (const auto& entry : fs::directory_iterator(bram_dir, ec)) {
+        if (ec || !entry.is_regular_file()) {
+            continue;
+        }
+        if (!Paths::ends_with_icase(entry.path().filename().string(), ".bin")) {
+            continue;
+        }
+        const std::string id = entry.path().stem().string();
+        if (id.empty() || id == "default") {
+            continue;
+        }
+
+        std::string dest_path = SystemConfig::find_user_config_path_for_id(id);
+        SystemConfig cfg;
+        std::string err;
+        if (!dest_path.empty() && cfg.load(dest_path, err)) {
+            embed_legacy_bram(cfg);
+            continue;
+        }
+
+        Paths::calc_user_systems(dest_path, id + ".gs2");
+        if (fs::exists(dest_path) && cfg.load(dest_path, err)) {
+            embed_legacy_bram(cfg);
+        }
+    }
+}
+
+void migrate_legacy_system_configs(const std::filesystem::path& dest_dir) {
+    std::string old_str;
+    Paths::calc_pref(old_str, "SystemConfigs");
+    const std::filesystem::path old_dir(old_str);
+    std::error_code ec;
+    if (!std::filesystem::is_directory(old_dir, ec)) {
+        return;
+    }
+
+    for (const auto& entry : std::filesystem::directory_iterator(old_dir, ec)) {
+        if (ec) {
+            std::cerr << "Failed to read legacy SystemConfigs in '" << old_dir.string()
+                      << "': " << ec.message() << std::endl;
+            return;
+        }
+        if (!entry.is_regular_file() || !is_gs2_file(entry.path())) {
+            continue;
+        }
+
+        const std::filesystem::path src = entry.path();
+        const std::filesystem::path dest = dest_dir / src.filename();
+        std::error_code dest_ec;
+        if (!std::filesystem::exists(dest, dest_ec)) {
+            SystemConfig cfg;
+            std::string err;
+            if (!cfg.load(src.string(), err)) {
+                std::cerr << "Skipping migrate of '" << src.string() << "': " << err
+                          << std::endl;
+                continue;
+            }
+            cfg.import_legacy_bram();
+            if (!cfg.save(dest.string(), err)) {
+                std::cerr << "Failed to migrate '" << src.string() << "' to '"
+                          << dest.string() << "': " << err << std::endl;
+                continue;
+            }
+            std::cout << "Migrated system config: " << dest.string() << std::endl;
+        } else {
+            SystemConfig dest_cfg;
+            std::string dest_err;
+            if (dest_cfg.load(dest.string(), dest_err)) {
+                embed_legacy_bram(dest_cfg);
+            }
+        }
+        SystemSettings::instance().remap_config_path(src.string(), dest.string());
+    }
+
+    SystemSettings::instance().remap_config_paths_under(old_dir.string(), dest_dir.string());
+}
+
+}  // namespace
+
+std::string SystemConfig::user_config_path_for_id(const std::string& id) {
+    std::string path;
+    if (!id.empty()) {
+        Paths::calc_user_systems(path, id + ".gs2");
+    }
+    return path;
+}
+
+std::string SystemConfig::find_user_config_path_for_id(const std::string& id) {
+    if (id.empty()) {
+        return {};
+    }
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    const std::string canonical = user_config_path_for_id(id);
+    if (!canonical.empty() && fs::is_regular_file(canonical, ec)) {
+        return fs::path(canonical).lexically_normal().string();
+    }
+    const fs::path dest_dir(Paths::user_systems_dir());
+    if (!fs::is_directory(dest_dir, ec)) {
+        return {};
+    }
+    for (const auto& entry : fs::directory_iterator(dest_dir, ec)) {
+        if (ec || !entry.is_regular_file() || !is_gs2_file(entry.path())) {
+            continue;
+        }
+        if (peek_gs2_id(entry.path().string()) == id) {
+            return entry.path().lexically_normal().string();
+        }
+    }
+    return {};
+}
+
+bool SystemConfig::try_import_bram_from_gs2(const std::string& path) {
+    if (path.empty() || bram_) {
+        return false;
+    }
+    try {
+        const toml::table table = toml::parse_file(path);
+        const auto bram_node = table["bram"];
+        if (!bram_node.is_string()) {
+            return false;
+        }
+        std::array<uint8_t, 256> bytes{};
+        if (!decode_bram_hex(std::string(*bram_node.value<std::string>()), bytes)) {
+            return false;
+        }
+        bram_ = bytes;
+        return true;
+    } catch (const toml::parse_error&) {
+        return false;
+    }
+}
+
+void SystemConfig::migrate_builtin_bram(const SystemConfig_t& builtin) {
+    if (!builtin.id || !builtin.id[0]) {
+        return;
+    }
+    const std::string id(builtin.id);
+
+    std::string dest_path = user_config_path_for_id(id);
+    SystemConfig cfg;
+    std::string err;
+    namespace fs = std::filesystem;
+    if (fs::exists(dest_path) && cfg.load(dest_path, err)) {
+        embed_legacy_bram(cfg);
+        return;
+    }
+
+    const std::string found = find_user_config_path_for_id(id);
+    if (!found.empty() && cfg.load(found, err)) {
+        embed_legacy_bram(cfg);
+        return;
+    }
+
+    cfg.set_from_parts(builtin, {}, {});
+    cfg.set_path(dest_path);
+    if (!cfg.import_legacy_bram()) {
+        return;
+    }
+    if (!cfg.save(dest_path, err)) {
+        std::cerr << "Failed to write builtin BRAM config '" << dest_path
+                  << "': " << err << std::endl;
+    } else {
+        std::cout << "Migrated builtin BRAM into " << dest_path << std::endl;
+    }
+}
+
 void SystemConfig::ensure_default_system_configs() {
     namespace fs = std::filesystem;
 
-    std::string dest_str;
-    Paths::calc_pref(dest_str, "SystemConfigs");
-    const fs::path dest_dir(dest_str);
+    const fs::path dest_dir(Paths::user_systems_dir());
 
     std::error_code ec;
     fs::create_directories(dest_dir, ec);
     if (ec) {
-        std::cerr << "Failed to create SystemConfigs directory '" << dest_dir.string()
+        std::cerr << "Failed to create user systems directory '" << dest_dir.string()
                   << "': " << ec.message() << std::endl;
         return;
     }
+
+    migrate_legacy_system_configs(dest_dir);
 
     SystemSettings::instance().set_file_dialog_dir_if_unset(FileDialogKind::Config,
                                                             dest_dir.string());
@@ -1035,6 +1328,7 @@ void SystemConfig::ensure_default_system_configs() {
     Paths::calc_base(src_str, "gs2");
     const fs::path src_dir(src_str);
     if (!fs::is_directory(src_dir)) {
+        migrate_legacy_pref_bram_files();
         return;
     }
 
@@ -1046,10 +1340,7 @@ void SystemConfig::ensure_default_system_configs() {
                       << "': " << ec.message() << std::endl;
             return;
         }
-        if (!entry.is_regular_file()) {
-            continue;
-        }
-        if (entry.path().extension() != ".gs2") {
+        if (!entry.is_regular_file() || !is_gs2_file(entry.path())) {
             continue;
         }
 
@@ -1068,9 +1359,16 @@ void SystemConfig::ensure_default_system_configs() {
 
         if (fs::exists(dest)) {
             bundled_dest_paths.push_back(dest.string());
+            SystemConfig dest_cfg;
+            std::string dest_err;
+            if (dest_cfg.load(dest.string(), dest_err)) {
+                embed_legacy_bram(dest_cfg);
+            }
         }
     }
 
     std::sort(bundled_dest_paths.begin(), bundled_dest_paths.end());
     SystemSettings::instance().seed_recent_if_empty(bundled_dest_paths);
+
+    migrate_legacy_pref_bram_files();
 }
