@@ -712,12 +712,14 @@ class IWM : public StorageDevice {
         /* Only queue audio data if sound is enabled */
         //static int running_chunknumber = 0;
         if (enbl_asserted()) {
-            int dl = (int) sounds[SE_SHUGART_DRIVE].si->wav_data_len / 10;
-            if (sound_effect->get_queued(SE_SHUGART_DRIVE) < dl * 2) {
-                sound_effect->play_specific(SE_SHUGART_DRIVE, dl * running_chunknumber, dl, ch);
-                running_chunknumber++;
-                if (running_chunknumber > 8) {
-                    running_chunknumber = 0;
+            if (SoundInfo_t *si = sounds[SE_SHUGART_DRIVE].si) {
+                int dl = (int) si->wav_data_len / 10;
+                if (sound_effect->get_queued(SE_SHUGART_DRIVE) < dl * 2) {
+                    sound_effect->play_specific(SE_SHUGART_DRIVE, dl * running_chunknumber, dl, ch);
+                    running_chunknumber++;
+                    if (running_chunknumber > 8) {
+                        running_chunknumber = 0;
+                    }
                 }
             }
         }
@@ -726,13 +728,15 @@ class IWM : public StorageDevice {
         if (tracknumber >= 0 && (tracknumber_last != tracknumber)) {
             // if we have a track movement, play the head movement sound
             // head can move 16.7 / 2.5 tracks per second, about 7.
-            int ind = 200 * 2 * std::abs(start_track_movement-tracknumber);
+            if (SoundInfo_t *si = sounds[SE_SHUGART_HEAD].si) {
+                int ind = 200 * 2 * std::abs(start_track_movement-tracknumber);
     
-            int len = ((int) (200 * 2) * std::abs(tracknumber_last-tracknumber));
-            if (ind + len > sounds[SE_SHUGART_HEAD].si->wav_data_len) {
-                len = sounds[SE_SHUGART_HEAD].si->wav_data_len - ind;
+                int len = ((int) (200 * 2) * std::abs(tracknumber_last-tracknumber));
+                if (ind + len > si->wav_data_len) {
+                    len = si->wav_data_len - ind;
+                }
+                sound_effect->play_specific(SE_SHUGART_HEAD, ind, len, ch);
             }
-            sound_effect->play_specific(SE_SHUGART_HEAD, ind, len, ch);
 
             if (start_track_movement == -1) start_track_movement = tracknumber_last;
             tracknumber_last = tracknumber;
