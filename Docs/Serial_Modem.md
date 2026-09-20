@@ -17,6 +17,10 @@ ATDTcqbbs.ddns.net:6800
 
 That connects to host `cqbbs.ddns.net`, TCP port `6800`.
 
+Result codes default to words (`OK`, `CONNECT 9600`, `RING`, `NO CARRIER`, `ERROR`). `ATV0` switches to Hayes numeric codes; `ATV1` restores words. `AT&F` also restores `V1`.
+
+Numeric (`V0`): `0` OK, `1` CONNECT (300 / unknown), `2` RING, `3` NO CARRIER, `4` ERROR, `5`/`10`/`11`/`12`/`14`/`28` CONNECT at 1200 / 2400 / 4800 / 9600 / 19200 / 38400 (Hayes Smartmodem + GBBS).
+
 ## How to answer
 
 With **Modem** attached, GSSquared listens on TCP port **6502** (all host interfaces). When a telnet client connects (for example `telnet <your-host> 6502`), the guest sees Hayes **`RING`** — immediately, then about every 3 seconds — and carrier stays down.
@@ -31,9 +35,9 @@ ATA
 
 `ATH` (or `ATZ` / `AT&F`) while ringing drops the inbound caller and returns `OK`. If the caller hangs up before you answer, `RING` stops and there is no `NO CARRIER` (the modem never went off-hook).
 
-Only one ModemDevice can bind 6502. A second serial port also set to **Modem** stays outbound-only (the console logs the listen failure). Extra inbound connections while already ringing or online are refused.
+`ATS0=n` auto-answers after **n** `RING` results (`ATS0=1` on the first ring). `ATS0=0` (default, also after `AT&F`) turns auto-answer off so the guest must send `ATA`. `ATS0?` reports the current value.
 
-There is no `S0` auto-answer in this version — the guest must send `ATA`.
+Only one ModemDevice can bind 6502. A second serial port also set to **Modem** stays outbound-only (the console logs the listen failure). Extra inbound connections while already ringing or online are refused.
 
 ## How to hang up
 

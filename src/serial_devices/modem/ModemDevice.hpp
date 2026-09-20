@@ -58,7 +58,10 @@ class ModemDevice : public SerialDevice {
         std::string remote_host;
         int remote_port;
         bool command_echo = true;
+        bool verbose_ = true; /* ATV1 words; ATV0 numeric */
         uint8_t result_x_ = 0; /* ATXn: 0 = CONNECT only; 1+ = CONNECT <baud> */
+        uint8_t s0_ = 0;       /* ATS0=n auto-answer after n RINGs; 0 = off */
+        uint8_t ring_count_ = 0;
         uint32_t line_baud_ = 9600;     /* last DTE MESSAGE_LINE */
         uint32_t connect_baud_ = 9600;  /* DTE baud at CONNECT; ATO must not follow later UART writes */
         
@@ -90,16 +93,60 @@ class ModemDevice : public SerialDevice {
             }
         }
 
+        uint8_t connect_result_code(uint32_t baud) const {
+            /* Hayes Smartmodem V0 + GBBS: 1/5/10/11/12/14, later 28. */
+            switch (baud) {
+                case 1200: return 5;
+                case 2400: return 10;
+                case 4800: return 11;
+                case 9600: return 12;
+                case 19200: return 14;
+                case 38400: return 28;
+                default: return 1; /* CONNECT 300 / unknown */
+            }
+        }
+
+        void send_result(uint8_t code) {
+            if (!verbose_) {
+                char buf[16];
+                std::snprintf(buf, sizeof(buf), "\r\n%u\r\n", static_cast<unsigned>(code));
+                send_response(buf);
+                return;
+            }
+            switch (code) {
+                case 0:
+                    send_response("\r\nOK\r\n");
+                    break;
+                case 2:
+                    send_response("\r\nRING\r\n");
+                    break;
+                case 3:
+                    send_response("\r\nNO CARRIER\r\n");
+                    break;
+                case 4:
+                    send_response("\r\nERROR\r\n");
+                    break;
+                default: {
+                    const uint32_t baud = connect_baud_ ? connect_baud_
+                                                        : (line_baud_ ? line_baud_ : 9600u);
+                    char connect[32];
+                    std::snprintf(connect, sizeof(connect), "\r\nCONNECT %u\r\n", baud);
+                    send_response(connect);
+                    break;
+                }
+            }
+        }
+
         void send_ok_response() {
-            send_response("\r\nOK\r\n");
+            send_result(0);
         }
 
         void send_error_response() {
-            send_response("\r\nERROR\r\n");
+            send_result(4);
         }
 
         void send_no_carrier_response() {
-            send_response("\r\nNO CARRIER\r\n");
+            send_result(3);
         }
 
         void push_modem_inputs() {
@@ -155,6 +202,7 @@ class ModemDevice : public SerialDevice {
                 pending_socket = nullptr;
             }
             hud_ringing_.store(false, std::memory_order_relaxed);
+            ring_count_ = 0;
             if (!socket) {
                 telnet_state = TELNET_DATA;
                 tcp_buffer.clear();
@@ -180,9 +228,16 @@ class ModemDevice : public SerialDevice {
         }
 
         void send_ring() {
-            send_response("\r\nRING\r\n");
+            send_result(2);
             last_ring_time = SDL_GetTicks();
-            printf("ModemDevice: RING\n");
+            if (ring_count_ < 255) {
+                ring_count_++;
+            }
+            printf("ModemDevice: RING %u (S0=%u)\n", static_cast<unsigned>(ring_count_),
+                   static_cast<unsigned>(s0_));
+            if (s0_ > 0 && ring_count_ >= s0_) {
+                answer();
+            }
         }
 
         void poll_incoming() {
@@ -208,6 +263,7 @@ class ModemDevice : public SerialDevice {
             tcp_buffer.clear();
             capture_peer_from_stream(pending_socket);
             note_hud_peer();
+            ring_count_ = 0;
             send_ring();
         }
 
@@ -219,6 +275,9 @@ class ModemDevice : public SerialDevice {
             const uint64_t now = SDL_GetTicks();
             if (now - last_ring_time >= RING_INTERVAL_MS) {
                 send_ring();
+                if (!pending_socket) {
+                    return;
+                }
             }
 
             uint8_t buffer[256];
@@ -320,6 +379,19 @@ class ModemDevice : public SerialDevice {
                         }
                         break;
                     case 'V':
+                        /* ATV / ATV0 = numeric; ATV1 = words. */
+                        if (i < cmd.size() && cmd[i] == '0') {
+                            verbose_ = false;
+                            i++;
+                        } else if (i < cmd.size() && cmd[i] == '1') {
+                            verbose_ = true;
+                            i++;
+                        } else if (i < cmd.size() && isdigit(static_cast<unsigned char>(cmd[i]))) {
+                            ok = false;
+                        } else {
+                            verbose_ = false;
+                        }
+                        break;
                     case 'Q':
                     case 'N': /* automode */
                     case 'M': /* speaker */
@@ -351,33 +423,54 @@ class ModemDevice : public SerialDevice {
                         if (amp == 'F') {
                             hangup();
                             command_echo = true;
+                            verbose_ = true;
                             result_x_ = 0;
+                            s0_ = 0;
                         }
                         break;
                     }
                     case 'S': {
-                        /* Sn or Sn=value / Sn? — store nothing; ProTERM sets S7 wait-for-carrier. */
+                        /* Sn / Sn=value / Sn? — S0 is auto-answer rings; others accepted no-ops. */
                         if (i >= cmd.size() || !isdigit(static_cast<unsigned char>(cmd[i]))) {
                             ok = false;
                             break;
                         }
+                        unsigned reg = 0;
                         while (i < cmd.size() && isdigit(static_cast<unsigned char>(cmd[i]))) {
-                            i++;
+                            const unsigned d = static_cast<unsigned>(cmd[i++] - '0');
+                            reg = (reg > 25) ? 255u : (reg * 10u + d);
                         }
                         if (i < cmd.size() && cmd[i] == '?') {
                             i++;
-                            send_response("255\r\n");
+                            char buf[16];
+                            if (reg == 0) {
+                                std::snprintf(buf, sizeof(buf), "%u\r\n",
+                                              static_cast<unsigned>(s0_));
+                            } else {
+                                std::snprintf(buf, sizeof(buf), "255\r\n");
+                            }
+                            send_response(buf);
                         } else if (i < cmd.size() && cmd[i] == '=') {
                             i++;
+                            bool neg = false;
                             if (i < cmd.size() && cmd[i] == '-') {
+                                neg = true;
                                 i++;
                             }
                             if (i >= cmd.size() || !isdigit(static_cast<unsigned char>(cmd[i]))) {
                                 ok = false;
                                 break;
                             }
+                            unsigned val = 0;
                             while (i < cmd.size() && isdigit(static_cast<unsigned char>(cmd[i]))) {
-                                i++;
+                                const unsigned d = static_cast<unsigned>(cmd[i++] - '0');
+                                val = (val > 25) ? 255u : (val * 10u + d);
+                            }
+                            if (neg) {
+                                val = 0;
+                            }
+                            if (reg == 0) {
+                                s0_ = static_cast<uint8_t>(val);
                             }
                         }
                         break;
@@ -483,10 +576,10 @@ class ModemDevice : public SerialDevice {
              * Smartmodem driver then drops the title-bar rate to 300. */
             const uint32_t baud = connect_baud_ ? connect_baud_
                                                 : (line_baud_ ? line_baud_ : 9600u);
-            char connect[32];
-            std::snprintf(connect, sizeof(connect), "\r\nCONNECT %u\r\n", baud);
-            printf("ModemDevice: sending to guest: CONNECT %u\n", baud);
-            send_response(connect);
+            const uint8_t code = connect_result_code(baud);
+            printf("ModemDevice: sending to guest: CONNECT %u (result %u)\n", baud,
+                   static_cast<unsigned>(code));
+            send_result(code);
         }
 
         void go_online() {
@@ -512,6 +605,7 @@ class ModemDevice : public SerialDevice {
             socket = pending_socket;
             pending_socket = nullptr;
             hud_ringing_.store(false, std::memory_order_relaxed);
+            ring_count_ = 0;
             set_state(STATE_ONLINE);
             escape_count = 0;
             note_hud_peer();
@@ -653,7 +747,7 @@ class ModemDevice : public SerialDevice {
             } else if (bytes_read < 0) {
                 // Error or connection closed
                 printf("ModemDevice: Connection lost\n");
-                send_response("\r\nNO CARRIER\r\n");
+                send_no_carrier_response();
                 hangup();
             }
         }
@@ -667,14 +761,14 @@ class ModemDevice : public SerialDevice {
                 bool result = NET_WriteToStreamSocket(socket, escaped, 2);
                 if (!result) {
                     printf("ModemDevice: Failed to send data: %s\n", SDL_GetError());
-                    send_response("\r\nNO CARRIER\r\n");
+                    send_no_carrier_response();
                     hangup();
                 }
             } else {
                 bool result = NET_WriteToStreamSocket(socket, &byte, 1);
                 if (!result) {
                     printf("ModemDevice: Failed to send data: %s\n", SDL_GetError());
-                    send_response("\r\nNO CARRIER\r\n");
+                    send_no_carrier_response();
                     hangup();
                 }
             }

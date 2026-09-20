@@ -110,6 +110,8 @@ Manual. **Pass** means the guest and the HUD agree; do not treat HUD-only CD as 
 | M13 | either | Modem | `ATA` / `ATA0` while ringing → `CONNECT`, HUD `ONL CD+` | untested | | Session fully connected |
 | M14 | either | Modem | `ATH` while ringing → pending drop, `OK`, `CMD CD-` | untested | | No `NO CARRIER` |
 | M15 | either | Modem | Second inbound while ringing/online refused | untested | | First call unaffected |
+| M16 | either | Modem | `ATV0` then `AT` → `0`; `ATV1` restores `OK` | untested | | RING=`2`; CONNECT 9600=`12` |
+| M17 | either | Modem | `ATS0=1` inbound → RING then CONNECT (no ATA) | untested | | `ATS0=0` still needs ATA |
 
 ### Handshake levels (HUD + guest)
 
@@ -142,6 +144,8 @@ Warp6 + USB-UART + WiModem232: hang-up must appear in the guest (6551 `ST_DCD` /
 4. H3 capture attachments (guest firmware that waits for DSR/CTS).
 5. A second terminal (Spectrum) on one ModemDevice cell.
 6. M12–M15 inbound RING / ATA / reject.
+7. M16 `ATV0` numeric results.
+8. M17 `ATS0=n` auto-answer.
 
 ## Related
 
