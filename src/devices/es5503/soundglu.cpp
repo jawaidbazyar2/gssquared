@@ -276,7 +276,15 @@ static uint8_t ensoniq_doc_data_read_pipeline(ensoniq_state_t *st) {
     if (st->soundctl & 0x40) {
         st->sounddata = st->doc_ram[full_address];
     } else {
-        st->sounddata = st->chip->read(st->soundadrl);
+        // Reading $E0 acks the lowest pending oscillator IRQ. The ROM's IRQ
+        // dispatcher reads $C03D twice (priming read, then data read), which would
+        // ack two oscillators while servicing only one — the second oscillator's
+        // buffer then never gets refilled. Fetch $E0 at most once per transaction;
+        // the next $C03C/$C03E/$C03F write starts a new one.
+        if (st->soundadrl != 0xE0 || !st->e0_fetched_this_txn) {
+            st->e0_fetched_this_txn = (st->soundadrl == 0xE0);
+            st->sounddata = st->chip->read(st->soundadrl);
+        }
     }
 
     st->soundctl &= ~0x80; // never leave DOC busy stuck after a data read
@@ -329,6 +337,11 @@ void ensoniq_write_C0xx(void *context, uint32_t address, uint8_t data) {
     // with the old register/RAM state. Mirrors MAME write(). Covers both DOC
     // register writes and DOC RAM writes.
     ensoniq_catch_up(st, st->clock->get_c14m());
+
+    // Control/address writes start a new DOC transaction.
+    if (address != 0xC03D) {
+        st->e0_fetched_this_txn = false;
+    }
 
     switch (address) {
         case 0xC03C:  // Sound Control

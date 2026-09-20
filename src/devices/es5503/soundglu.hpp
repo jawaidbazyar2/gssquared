@@ -43,6 +43,11 @@ struct ensoniq_state_t {
     // $C03E between the pipeline priming read and the data read.
     uint16_t doc_read_latched_addr = 0;
 
+    // Set once $E0 has been fetched in the current DOC transaction. Reading $E0
+    // acks the lowest pending oscillator IRQ, so the ROM handler's two-read idiom
+    // would otherwise consume (and discard) a second oscillator's interrupt.
+    bool e0_fetched_this_txn = false;
+
     // Fast-forward / catch-up state. Samples and oscillator IRQs are advanced to
     // the current 14M-clock time on every register/RAM access and on the periodic
     // cycle handler, rather than only once per video frame.

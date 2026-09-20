@@ -12676,3 +12676,37 @@ Another thing: the AI itself waiting for input and switching disks is slow. This
 For example: re-testing is pretty slow when it's all manual. After each serious modification, we need to run a regression test. That should also be under control of a python. Some folks have done this with mame LUA scripting, but would python be more expressive and easier for an AI to write? The regression test can be simple like: boot, wait 20 seconds, snapshot screen. Or more complex, like exercising stuff.
 
 Anyway that work is on lappy branch iwmtest.
+
+## Sep 19, 2026
+
+Added a bunch of stuff related to serial/modems. improved the Hayes modem emulation. added V (for verbose), S0=n for auto answer, and especially, support around DCD, CTS/RTS, etc. Got GBBS running on both IIe/Super Serial and IIgs/builtin. 
+
+Oh, and of course, this means support for inbound telnet "calls", on port 6502 of course.
+
+If you use actual 'telnet' from the mac shell, it formats weird. It might be because we throw the telnet session into binary mode, and mac telnet doesn't know what to do with that. coolterm doesn't have the same issue around what happens on a CRLF. Yes, that was a bug, and is now fixed.
+
+## Sep 20, 2026
+
+ok! GSIRC demo intro plays weird : there is some cracking noise while the sound is played in one speaker, and then eventually the same/similar is played in the other speaker. 
+On real hardware, it plays correctly of course.
+The weird thing is, Crossrunner plays it wrong in exactly the same way. I wonder if this is a bug that is coming from MAME. having the AI set up MAME for me cuz it breaks my brain.
+
+There are other known defects:
+in No Hard Feelings: as we navigate the maze, the maze that is all windows/+'s has a big slowdown. The music playback slows down as well as the video. Check this on CR.
+Yes, well what do you know, GS2, CR, and Mame all share the exact same GSIRC playback error. I wonder why that is. tee hee. So I'm guessing CR is based on MAME also (for this part) and thus we all share the same bug.
+Uh, ok, KEGS has the exact same bug too. WTAF.
+
+there are some osc playing the wrong bytes.. something about paired osc is not right.
+
+The Kernkompetenz bug might be related to the scanline interrupts. Not fixed with this and not made worse.
+
+This is the Claude-applied fix:
+    // Reading $E0 acks the lowest pending oscillator IRQ. The ROM's IRQ
+    // dispatcher reads $C03D twice (priming read, then data read), which would
+    // ack two oscillators while servicing only one — the second oscillator's
+    // buffer then never gets refilled. Fetch $E0 at most once per transaction;
+    // the next $C03C/$C03E/$C03F write starts a new one.
+
+So far in my testing it's working well. This may have fixed the Wolf3D issue too. This was introduced when we did the big "fix other IRQ problems" push, and so we likely regressed to match this bug in MAME.
+
+This patch might be a little too specific. In the real soundglu, once a tx is kicked off, ANY tx won't be repeated until it's done. The timing here is squiggly due to us not really having an 895KHz clock (tho we sort of emulate it with 14Ms). 
