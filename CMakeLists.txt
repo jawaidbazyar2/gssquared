@@ -145,6 +145,7 @@ file(GLOB_RECURSE GS2_ASSET_FILES CONFIGURE_DEPENDS
 list(APPEND GS2_ASSET_FILES
     "${CMAKE_SOURCE_DIR}/assets/img/atlas.png"
     "${CMAKE_SOURCE_DIR}/assets/img/gs2.icns"
+    "${CMAKE_SOURCE_DIR}/assets/img/gs2-config.icns"
     "${CMAKE_SOURCE_DIR}/assets/img/IBM_VGA_8x16.png"
 )
 
@@ -177,6 +178,7 @@ add_custom_command(
     # Copy static resources
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/atlas.png ${CMAKE_BINARY_DIR}/resources/img/atlas.png
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns ${CMAKE_BINARY_DIR}/resources/gs2.icns
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/gs2-config.icns ${CMAKE_BINARY_DIR}/resources/gs2-config.icns
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/IBM_VGA_8x16.png ${CMAKE_BINARY_DIR}/resources/img/IBM_VGA_8x16.png
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/roms ${CMAKE_BINARY_DIR}/resources/roms
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/sounds ${CMAKE_BINARY_DIR}/resources/sounds
@@ -505,7 +507,7 @@ add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Butt
     src/ui/FadeButton.cpp src/ui/Clipboard.cpp src/ui/ScreenshotWriter.cpp src/ui/TextInput.cpp src/ui/SelectSystem.cpp src/ui/SystemButton.cpp
     src/ui/LabeledButton.cpp src/ui/FadeContainer.cpp src/ui/SlotButton.cpp src/ui/StatusMessage.cpp src/ui/DrivesHUD.cpp
     src/ui/SpeedSelect.cpp src/ui/HoverControls.cpp src/ui/DisplaySelect.cpp src/ui/DrivesOSD.cpp src/ui/HD20SC_Button.cpp
-    src/ui/DirtyDiskSave.cpp src/ui/QuitModal.cpp src/ui/ScrollBar.cpp src/ui/WrapContainer.cpp
+    src/ui/DirtyDiskSave.cpp src/ui/QuitModal.cpp src/ui/LaunchConfigModal.cpp src/ui/ScrollBar.cpp src/ui/WrapContainer.cpp
     src/ui/StorageButtonFactory.cpp src/ui/SlotsPanel.cpp src/ui/SystemBadge.cpp src/ui/ConfigSelectors.cpp
     src/ui/EditSystem.cpp
     src/ui/SerialPortButton.cpp src/ui/SerialPortsOSD.cpp
@@ -637,7 +639,9 @@ target_link_libraries(gs2_devices_diskii_woz gs2_devices_floppy_woz gs2_util)
 # leave it out on other targets (Emscripten would try to compile it).
 set(GS2_PLATFORM_SOURCES "")
 if(APPLE)
-    list(APPEND GS2_PLATFORM_SOURCES ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns)
+    list(APPEND GS2_PLATFORM_SOURCES
+        ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns
+        ${CMAKE_SOURCE_DIR}/assets/img/gs2-config.icns)
 endif()
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
     src/platforms.cpp
@@ -873,7 +877,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
         # now, we always create a bundle, so we don't need to create a custom target for it
         # Add icon file as a resource for macOS bundles
-        set_source_files_properties(${CMAKE_SOURCE_DIR}/assets/img/gs2.icns PROPERTIES RESOURCE TRUE)
+        set_source_files_properties(
+            ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns
+            ${CMAKE_SOURCE_DIR}/assets/img/gs2-config.icns
+            PROPERTIES RESOURCE TRUE)
         set_target_properties(GSSquared PROPERTIES
             OUTPUT_NAME "GSSquared"
             MACOSX_BUNDLE TRUE

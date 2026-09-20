@@ -35,6 +35,8 @@
         <dict>
             <key>CFBundleTypeName</key>
             <string>GS2 System Configuration</string>
+            <key>CFBundleTypeIconFile</key>
+            <string>gs2-config.icns</string>
             <key>CFBundleTypeRole</key>
             <string>Editor</string>
             <key>LSHandlerRank</key>
@@ -52,6 +54,8 @@
             <string>com.bazyar.gs2.config</string>
             <key>UTTypeDescription</key>
             <string>GS2 System Configuration</string>
+            <key>UTTypeIconFile</key>
+            <string>gs2-config.icns</string>
             <key>UTTypeConformsTo</key>
             <array>
                 <string>public.text</string>

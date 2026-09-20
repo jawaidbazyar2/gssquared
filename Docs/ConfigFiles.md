@@ -22,7 +22,7 @@ There is also **`Profiles.txt`**, which is a **catalog** listing available profi
 ## Opening a config
 
 - **System Select screen** — use **Launch Config…** (or the folder icon) and choose a `.gs2` or `… Settings.txt` file.
-- **macOS Finder** — double-click a `.gs2` file (or Open With GSSquared). If the System Select screen is showing, GSSquared loads and launches that config. If emulation is already running, it shows a short message asking you to quit emulation first.
+- **macOS Finder** — double-click a `.gs2` file (or Open With GSSquared). If the System Select screen is showing, GSSquared loads and launches that config. If emulation is already running, a prompt asks whether to stop the current machine and launch the new config (Cancel keeps the current machine). See [File types and URL protocols](ProtocolHandlers.md).
 - **Command line** — pass the file path as a positional argument:
 
   ```bash

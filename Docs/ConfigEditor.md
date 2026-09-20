@@ -26,9 +26,11 @@ Launch Config is only available when the machine is off (at the System Select sc
 On macOS, `.gs2` files are associated with GSSquared. Double-click one in Finder (or use Open With → GSSquared).
 
 * If the System Select screen is showing, GSSquared loads that config and launches it.
-* If emulation is already running, you'll see a short message asking you to quit emulation first.
+* If emulation is already running, a prompt asks whether to stop the current machine and launch the new config. Cancel keeps the current machine. Launch saves any dirty disks, then boots the new profile.
 
 You can also drag a `.gs2` (or `… Settings.txt`) onto the GSSquared window while at System Select — same result as launching it.
+
+File types, Finder icons, and the planned `gssquared:` URL scheme are specified in [File types and URL protocols](ProtocolHandlers.md).
 
 ## Open With… for `Settings.txt` files
 

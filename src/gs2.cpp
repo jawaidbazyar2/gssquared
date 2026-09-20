@@ -659,6 +659,11 @@ struct GS2AppState {
     // "back" to return to.
     bool auto_launched = false;
 
+    // Finder / Open With of a .gs2 while emulating: confirm, then halt and
+    // boot this path without exiting the process or flashing System Select.
+    std::string pending_config_path;
+    bool switch_after_halt = false;
+
     // System selection / config editor
     SelectSystem *select_system = nullptr;
     EditSystem *edit_system = nullptr;
@@ -688,6 +693,68 @@ static bool apply_system_config_file(GS2AppState *state, const std::string& path
     state->platform_id = state->loaded_config->config().platform_id;
     SystemSettings::instance().record_use(path);
     return true;
+}
+
+static bool is_launchable_config_path(const char *path) {
+    if (path == nullptr) {
+        return false;
+    }
+    const ConfigFileKind kind = detect_config_file_kind(path);
+    return kind == ConfigFileKind::Gs2 || kind == ConfigFileKind::Settings;
+}
+
+static bool launch_config_and_emulate(GS2AppState *state, const std::string& path,
+                                      bool document_session, std::string& error_out) {
+    if (!apply_system_config_file(state, path, error_out)) {
+        return false;
+    }
+    std::cout << "Auto-launching system config: " << path << std::endl;
+    transition_to_emulation(state, &state->loaded_config->config(), -1);
+    state->auto_launched = document_session;
+    if (state->computer && state->computer->video_system) {
+        state->computer->video_system->raise();
+    }
+    return true;
+}
+
+static void request_open_config(GS2AppState *state, const char *path) {
+    if (!is_launchable_config_path(path)) {
+        return;
+    }
+    if (state->phase == PHASE_SYSTEM_SELECT) {
+        std::string error;
+        if (!launch_config_and_emulate(state, path, true, error)) {
+            std::string diag = "Failed to load system config '" + std::string(path) + "':\n" + error;
+            std::cerr << diag << "\n";
+            system_diag(diag.data());
+        }
+        return;
+    }
+    if (state->phase == PHASE_EDIT_SYSTEM) {
+        // Do not discard an unsaved editor draft.
+        return;
+    }
+    if (state->phase == PHASE_EMULATION) {
+        if (osd == nullptr) {
+            return;
+        }
+        std::string error;
+        SystemConfig probe;
+        if (!probe.load(path, error)) {
+            std::string diag = "Failed to load system config '" + std::string(path) + "':\n" + error;
+            std::cerr << diag << "\n";
+            osd->set_heads_up_message("Failed to load config", 180);
+            return;
+        }
+        const std::string path_copy(path);
+        osd->prompt_launch_config(path_copy, [state, path_copy]() {
+            state->pending_config_path = path_copy;
+            state->switch_after_halt = true;
+            if (state->computer && state->computer->cpu) {
+                state->computer->cpu->halt = HLT_USER;
+            }
+        });
+    }
 }
 
 struct open_config_dialog_data_t {
@@ -1487,28 +1554,17 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         }
     }
 
+    if (event->type == SDL_EVENT_DROP_FILE && event->drop.data
+        && is_launchable_config_path(event->drop.data)) {
+        request_open_config(state, event->drop.data);
+        return SDL_APP_CONTINUE;
+    }
+
     if (state->phase == PHASE_SYSTEM_SELECT) {
         if (event->type == gs2_app_values.menu_event_type
             && event->user.code == MENU_OPEN_CONFIG) {
             open_system_config_dialog(state, false);
             return SDL_APP_CONTINUE;
-        }
-        if (event->type == SDL_EVENT_DROP_FILE && event->drop.data) {
-            const ConfigFileKind kind = detect_config_file_kind(event->drop.data);
-            if (kind == ConfigFileKind::Gs2 || kind == ConfigFileKind::Settings) {
-                std::string error;
-                if (!apply_system_config_file(state, event->drop.data, error)) {
-                    std::string diag = "Failed to load system config '" + std::string(event->drop.data) + "':\n" + error;
-                    std::cerr << diag << "\n";
-                    system_diag(diag.data());
-                    return SDL_APP_CONTINUE;
-                }
-                std::cout << "Auto-launching system config: " << event->drop.data << std::endl;
-                transition_to_emulation(state, &state->loaded_config->config(), -1);
-                state->auto_launched = true;
-                state->computer->video_system->raise();
-                return SDL_APP_CONTINUE;
-            }
         }
         state->select_system->event(*event);
         if (event->type == SDL_EVENT_QUIT) {
@@ -1650,6 +1706,22 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         osd->update();
 
         if (!run_one_frame(computer)) {
+            // Finder Open of another .gs2 while emulating: tear down and
+            // boot the pending config. Must not take the auto_launched exit
+            // path — that would quit the process before the switch.
+            if (state->switch_after_halt && !state->pending_config_path.empty()) {
+                const std::string path = std::move(state->pending_config_path);
+                state->pending_config_path.clear();
+                state->switch_after_halt = false;
+                transition_to_shutdown(state);
+                std::string error;
+                if (!launch_config_and_emulate(state, path, true, error)) {
+                    std::string diag = "Failed to load system config '" + path + "':\n" + error;
+                    std::cerr << diag << "\n";
+                    system_diag(diag.data());
+                }
+                return SDL_APP_CONTINUE;
+            }
             // User requested halt. Snapshot before transition_to_shutdown
             // clears auto_launched. When exiting the process, skip selector
             // recreation — SDL_AppQuit tears down; recreating first leaks

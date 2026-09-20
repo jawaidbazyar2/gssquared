@@ -55,6 +55,8 @@
 #include "HoverControls.hpp"
 #include "DirtyDiskSave.hpp"
 #include "QuitModal.hpp"
+#include "LaunchConfigModal.hpp"
+#include <filesystem>
 #include "ConfigSelectors.hpp"
 #include "SerialPortsOSD.hpp"
 #include "util/Connections.hpp"
@@ -511,10 +513,11 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     });
     computer->sys_event->registerHandler(SDL_EVENT_DROP_FILE, [this,computer](const SDL_Event &event) {
         printf("SDL_EVENT_DROP_FILE: %s\n", event.drop.data);
+        // Config files (.gs2 / Settings.txt) are handled in SDL_AppEvent
+        // (prompt-to-switch). Ignore them here so we do not try to mount them.
         if (event.drop.data) {
             const ConfigFileKind kind = detect_config_file_kind(event.drop.data);
             if (kind == ConfigFileKind::Gs2 || kind == ConfigFileKind::Settings) {
-                computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Quit emulation first"));
                 return true;
             }
         }
@@ -1108,6 +1111,18 @@ void OSD::show_diskii_modal(storage_key_t key, uint64_t data) {
     computer->video_system->osd_control_panel_open = true;
     diskii_save_con->set_key(key);
     diskii_save_con->set_data(data);
+}
+
+void OSD::prompt_launch_config(const std::string &path, std::function<void()> on_confirm) {
+    if (!mstack.stack.empty()) {
+        set_heads_up_message("Finish the current dialog first", 180);
+        return;
+    }
+    const std::string basename = std::filesystem::path(path).filename().string();
+    const std::string msg = "Launch " + basename + "? Current machine will stop.";
+    mstack.stack.push(new LaunchConfigModal_t(&ui_ctx, msg.c_str(), ModalStyle,
+        computer->mounts, mstack, std::move(on_confirm)));
+    computer->video_system->osd_control_panel_open = true;
 }
 
 bool OSD::check_for_dirty_disks() {

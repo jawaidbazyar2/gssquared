@@ -92,12 +92,13 @@
 ## Release 1.0
 
 [X] implement shaders on Linux
-[ ] Full international keyboard support for GS
+[ ] clean up HUD buttons
+[ ] Implement file type and URL associations — [ProtocolHandlers](ProtocolHandlers.md)
 [ ] Fix all known / pending bugs  
-
 
 ## Post-1.0
 
+[ ] Full international keyboard support for GS
 [ ] Refactor MB to use new fixed-point synth  
 [ ] Optimize / cache UI elements  
 [ ] AppleTalk-shaped Host folder / network file server support for ProDOS

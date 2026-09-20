@@ -18,6 +18,8 @@
 
 #include <vector>
 #include <map>
+#include <functional>
+#include <string>
 
 #include <SDL3/SDL.h>
 #include "util/MenuInterface.h"
@@ -210,6 +212,9 @@ public:
     void refresh_serial_ports();
 
     void show_diskii_modal(storage_key_t key, uint64_t data);
+
+    /** Prompt to stop the current machine and launch a config. No-op if a modal is already up. */
+    void prompt_launch_config(const std::string &path, std::function<void()> on_confirm);
 
     void set_heads_up_message(const std::string &text, int count);
 
