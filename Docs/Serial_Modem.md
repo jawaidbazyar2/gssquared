@@ -37,6 +37,14 @@ ATA
 
 `ATS0=n` auto-answers after **n** `RING` results (`ATS0=1` on the first ring). `ATS0=0` (default, also after `AT&F`) turns auto-answer off so the guest must send `ATA`. `ATS0?` reports the current value.
 
+### What the caller sees
+
+Plain `telnet <your-host> 6502` is enough — no `set binary`, no `mode character`, no client-side stty games. On answer, GSSquared negotiates as a telnet **server**: it offers `WILL ECHO`, `WILL SUPPRESS-GO-AHEAD`, and binary in both directions, which puts a standard client in character-at-a-time mode with local echo off. Every keystroke reaches the BBS as you type it, and the BBS does the echoing.
+
+A caller that refuses binary mode gets NVT line ends bridged for it: the guest's bare `CR` goes out as `CR LF` so the screen scrolls, and the caller's `CR LF` or `CR NUL` for Return arrives as a single `CR`. So even a client that refuses every option gets a readable session.
+
+Once binary mode is agreed — which any normal telnet client accepts — that translation is off and the session is 8-bit transparent in both directions, so **ZMODEM and XMODEM transfers work**. GBBS sends its own linefeeds anyway, so nothing is lost either way.
+
 Only one ModemDevice can bind 6502. A second serial port also set to **Modem** stays outbound-only (the console logs the listen failure). Extra inbound connections while already ringing or online are refused.
 
 ## How to hang up

@@ -76,6 +76,16 @@ class ModemDevice : public SerialDevice {
         // Telnet protocol handling
         TelnetState telnet_state;
         uint8_t telnet_command;
+        /* Inbound call: we are the telnet server, so we echo and drive the
+         * client into character-at-a-time mode. Outbound dial leaves the
+         * stream alone. NVT line-end bridging applies per RFC 856: only on a
+         * direction that is *not* in binary mode, so ZMODEM and other 8-bit
+         * transfers stay byte-transparent. */
+        bool server_role_ = false;
+        bool binary_tx_ = false;  /* peer agreed DO BINARY: we may send raw */
+        bool binary_rx_ = false;  /* peer agreed WILL BINARY: it sends raw */
+        bool remote_saw_cr_ = false;
+        bool guest_saw_cr_ = false;
         
         // TCP receive buffer
         std::vector<uint8_t> tcp_buffer;
@@ -157,6 +167,16 @@ class ModemDevice : public SerialDevice {
             set_modem_inputs(bits);
         }
 
+        /* Fresh telnet session: nothing negotiated, no half-seen CR. */
+        void reset_telnet(bool server_role) {
+            telnet_state = TELNET_DATA;
+            server_role_ = server_role;
+            binary_tx_ = false;
+            binary_rx_ = false;
+            remote_saw_cr_ = false;
+            guest_saw_cr_ = false;
+        }
+
         void set_state(ModemState s) {
             state = s;
             hud_state_.store(static_cast<int>(s), std::memory_order_relaxed);
@@ -204,7 +224,7 @@ class ModemDevice : public SerialDevice {
             hud_ringing_.store(false, std::memory_order_relaxed);
             ring_count_ = 0;
             if (!socket) {
-                telnet_state = TELNET_DATA;
+                reset_telnet(false);
                 tcp_buffer.clear();
                 note_hud_peer();
             }
@@ -259,7 +279,7 @@ class ModemDevice : public SerialDevice {
             }
             pending_socket = incoming;
             hud_ringing_.store(true, std::memory_order_relaxed);
-            telnet_state = TELNET_DATA;
+            reset_telnet(true);
             tcp_buffer.clear();
             capture_peer_from_stream(pending_socket);
             note_hud_peer();
@@ -556,8 +576,8 @@ class ModemDevice : public SerialDevice {
             // auto-enables) treat carrier as the online gate; result text after
             // DCD is still low is often ignored.
             set_state(STATE_ONLINE);
-            telnet_state = TELNET_DATA;  // Reset telnet protocol state
-            tcp_buffer.clear();  // Clear any buffered data
+            reset_telnet(false);  // We are the telnet client here
+            tcp_buffer.clear();   // Clear any buffered data
             note_hud_peer();
             push_modem_inputs();
             SDL_Delay(20); /* let the UART sample CD before CONNECT is queued */
@@ -612,8 +632,14 @@ class ModemDevice : public SerialDevice {
             push_modem_inputs();
             SDL_Delay(20); /* let the UART sample CD before CONNECT is queued */
 
+            /* Server-side offers. Without WILL ECHO + WILL SGA a BSD telnet
+             * client stays in line mode with local echo: GBBS sees nothing
+             * until Return, and single-keystroke menus never fire. */
             send_telnet_response(WILL, TELOPT_BINARY);
             send_telnet_response(DO, TELOPT_BINARY);
+            send_telnet_response(WILL, TELOPT_ECHO);
+            send_telnet_response(WILL, TELOPT_SUPPRESS_GO_AHEAD);
+            send_telnet_response(DO, TELOPT_SUPPRESS_GO_AHEAD);
 
             connect_baud_ = line_baud_ ? line_baud_ : 9600u;
             send_connect_response();
@@ -630,8 +656,8 @@ class ModemDevice : public SerialDevice {
             drop_pending();
             push_modem_inputs();
             set_state(STATE_COMMAND);
-            telnet_state = TELNET_DATA;  // Reset telnet protocol state
-            tcp_buffer.clear();  // Clear any buffered data
+            reset_telnet(false);  // Reset telnet protocol state
+            tcp_buffer.clear();   // Clear any buffered data
             note_hud_peer();
         }
 
@@ -651,6 +677,23 @@ class ModemDevice : public SerialDevice {
             NET_WriteToStreamSocket(s, response, 3);
         }
 
+        void push_remote_byte(uint8_t byte) {
+            if (binary_rx_ || !server_role_) {
+                tcp_buffer.push_back(byte);  // transparent: no NVT rewriting
+                return;
+            }
+            if (remote_saw_cr_) {
+                remote_saw_cr_ = false;
+                /* NVT sends CR LF or CR NUL for Return; the Apple II wants
+                 * the bare CR, and a stray NUL confuses GBBS input. */
+                if (byte == 0x00 || byte == 0x0A) {
+                    return;
+                }
+            }
+            remote_saw_cr_ = (byte == 0x0D);
+            tcp_buffer.push_back(byte);
+        }
+
         void process_telnet_byte(uint8_t byte) {
             switch (telnet_state) {
                 case TELNET_DATA:
@@ -658,14 +701,14 @@ class ModemDevice : public SerialDevice {
                         telnet_state = TELNET_IAC;
                     } else {
                         // Normal data - buffer it
-                        tcp_buffer.push_back(byte);
+                        push_remote_byte(byte);
                     }
                     break;
 
                 case TELNET_IAC:
                     if (byte == IAC) {
                         // Escaped IAC - buffer single 0xFF
-                        tcp_buffer.push_back(IAC);
+                        push_remote_byte(IAC);
                         telnet_state = TELNET_DATA;
                     } else if (byte == WILL || byte == WONT || byte == DO || byte == DONT) {
                         // Negotiation command - wait for option byte
@@ -683,25 +726,31 @@ class ModemDevice : public SerialDevice {
                 case TELNET_NEGOTIATE:
                     // Received option byte - respond appropriately
                     if (telnet_command == WILL) {
-                        // Server wants to enable option
-                        if (byte == TELOPT_BINARY || byte == TELOPT_ECHO || byte == TELOPT_SUPPRESS_GO_AHEAD) {
-                            // Accept BINARY, ECHO, and SUPPRESS_GO_AHEAD
-                            send_telnet_response(DO, byte);
-                        } else {
-                            // Refuse other options
-                            send_telnet_response(DONT, byte);
+                        // Peer wants to enable option on its side. Only a
+                        // dialed-out server may echo for us; an inbound caller
+                        // must not, since the BBS is doing the echoing.
+                        const bool accept = (byte == TELOPT_BINARY ||
+                                             byte == TELOPT_SUPPRESS_GO_AHEAD ||
+                                             (!server_role_ && byte == TELOPT_ECHO));
+                        send_telnet_response(accept ? DO : DONT, byte);
+                        if (byte == TELOPT_BINARY) {
+                            binary_rx_ = accept;
                         }
                     } else if (telnet_command == DO) {
-                        // Server wants us to enable option
+                        // Peer wants us to enable option. ECHO only as server;
+                        // a telnet client must never echo the host back.
+                        const bool accept = (byte == TELOPT_BINARY ||
+                                             byte == TELOPT_SUPPRESS_GO_AHEAD ||
+                                             (server_role_ && byte == TELOPT_ECHO));
+                        send_telnet_response(accept ? WILL : WONT, byte);
                         if (byte == TELOPT_BINARY) {
-                            // Accept BINARY mode
-                            send_telnet_response(WILL, byte);
-                        } else {
-                            // Refuse other options
-                            send_telnet_response(WONT, byte);
+                            binary_tx_ = accept;
                         }
+                    } else if (telnet_command == WONT && byte == TELOPT_BINARY) {
+                        binary_rx_ = false;  // peer will not send us binary
+                    } else if (telnet_command == DONT && byte == TELOPT_BINARY) {
+                        binary_tx_ = false;  // peer will not take binary from us
                     }
-                    // For WONT and DONT, no response needed
                     telnet_state = TELNET_DATA;
                     break;
             }
@@ -752,25 +801,38 @@ class ModemDevice : public SerialDevice {
             }
         }
 
+        void write_stream(const uint8_t *data, int len) {
+            if (!NET_WriteToStreamSocket(socket, data, len)) {
+                printf("ModemDevice: Failed to send data: %s\n", SDL_GetError());
+                send_no_carrier_response();
+                hangup();
+            }
+        }
+
         void send_tcp_data(uint8_t byte) {
             if (!socket) return;
 
+            if (server_role_ && !binary_tx_) {
+                /* NVT: a bare CR is illegal, and a client that refused binary
+                 * needs the LF or the next line overwrites this one. */
+                const bool after_cr = guest_saw_cr_;
+                guest_saw_cr_ = (byte == 0x0D);
+                if (after_cr && byte == 0x0A) {
+                    return; /* guest already sent CR LF */
+                }
+                if (byte == 0x0D) {
+                    const uint8_t crlf[2] = { 0x0D, 0x0A };
+                    write_stream(crlf, 2);
+                    return;
+                }
+            }
+
             // If byte is IAC (0xFF), we need to escape it by sending IAC IAC
             if (byte == IAC) {
-                uint8_t escaped[2] = { IAC, IAC };
-                bool result = NET_WriteToStreamSocket(socket, escaped, 2);
-                if (!result) {
-                    printf("ModemDevice: Failed to send data: %s\n", SDL_GetError());
-                    send_no_carrier_response();
-                    hangup();
-                }
+                const uint8_t escaped[2] = { IAC, IAC };
+                write_stream(escaped, 2);
             } else {
-                bool result = NET_WriteToStreamSocket(socket, &byte, 1);
-                if (!result) {
-                    printf("ModemDevice: Failed to send data: %s\n", SDL_GetError());
-                    send_no_carrier_response();
-                    hangup();
-                }
+                write_stream(&byte, 1);
             }
         }
 
