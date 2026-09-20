@@ -59,8 +59,11 @@ mkdir -p $RPM_BUILD_ROOT/usr/share/doc/gssquared
 %doc README.md Docs
 %{_bindir}/GSSquared
 /usr/share/applications/GSSquared.desktop
+/usr/share/mime/packages/gssquared.xml
 /usr/share/GSSquared
 /usr/share/icons/hicolor/scalable/apps/GSSquared.svg
+/usr/share/icons/hicolor/*/apps/GSSquared.png
+/usr/share/icons/hicolor/*/mimetypes/application-x-gs2-config.png
 
 
 %changelog

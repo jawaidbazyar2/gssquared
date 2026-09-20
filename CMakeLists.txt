@@ -147,6 +147,11 @@ list(APPEND GS2_ASSET_FILES
     "${CMAKE_SOURCE_DIR}/assets/img/gs2.icns"
     "${CMAKE_SOURCE_DIR}/assets/img/gs2-config.icns"
     "${CMAKE_SOURCE_DIR}/assets/img/IBM_VGA_8x16.png"
+    "${CMAKE_SOURCE_DIR}/assets/img/gs2-config.iconset/icon_16x16.png"
+    "${CMAKE_SOURCE_DIR}/assets/img/gs2-config.iconset/icon_32x32.png"
+    "${CMAKE_SOURCE_DIR}/assets/img/gs2-config.iconset/icon_48x48.png"
+    "${CMAKE_SOURCE_DIR}/assets/img/gs2-config.iconset/icon_128x128.png"
+    "${CMAKE_SOURCE_DIR}/assets/img/gs2-config.iconset/icon_256x256.png"
 )
 
 # Per-directory stamps: if a tree is deleted (e.g. build/resources/roms), its
@@ -180,6 +185,11 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns ${CMAKE_BINARY_DIR}/resources/gs2.icns
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/gs2-config.icns ${CMAKE_BINARY_DIR}/resources/gs2-config.icns
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/IBM_VGA_8x16.png ${CMAKE_BINARY_DIR}/resources/img/IBM_VGA_8x16.png
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/gs2-config.iconset/icon_16x16.png ${CMAKE_BINARY_DIR}/resources/img/mimetype-gs2-16.png
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/gs2-config.iconset/icon_32x32.png ${CMAKE_BINARY_DIR}/resources/img/mimetype-gs2-32.png
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/gs2-config.iconset/icon_48x48.png ${CMAKE_BINARY_DIR}/resources/img/mimetype-gs2-48.png
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/gs2-config.iconset/icon_128x128.png ${CMAKE_BINARY_DIR}/resources/img/mimetype-gs2-128.png
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/img/gs2-config.iconset/icon_256x256.png ${CMAKE_BINARY_DIR}/resources/img/mimetype-gs2-256.png
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/roms ${CMAKE_BINARY_DIR}/resources/roms
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/sounds ${CMAKE_BINARY_DIR}/resources/sounds
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/assets/fonts ${CMAKE_BINARY_DIR}/resources/fonts
@@ -643,11 +653,24 @@ if(APPLE)
         ${CMAKE_SOURCE_DIR}/assets/img/gs2.icns
         ${CMAKE_SOURCE_DIR}/assets/img/gs2-config.icns)
 endif()
+if(WIN32)
+    enable_language(RC)
+    file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}/assets/img/gs2.ico" GS2_ICO_PATH)
+    file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}/assets/img/gs2-config.ico" GS2_CONFIG_ICO_PATH)
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/assets/windows/gssquared.rc.in"
+        "${PROJECT_BINARY_DIR}/generated/gssquared.rc"
+        @ONLY
+    )
+    list(APPEND GS2_PLATFORM_SOURCES
+        ${PROJECT_BINARY_DIR}/generated/gssquared.rc)
+endif()
 add_executable(GSSquared src/gs2.cpp src/debug.cpp  src/opcodes.cpp 
     src/platforms.cpp
     src/slots.cpp src/systemconfig.cpp
     src/videosystem.cpp
     src/util/AudioSystem.cpp
+    src/FileAssociations.cpp
     ${GS2_PLATFORM_SOURCES}
     )
 
@@ -660,6 +683,7 @@ target_link_libraries(GSSquared PRIVATE
 if(WIN32)
     # We'll bundle the MinGW runtime DLLs instead of static linking
     # This is more reliable and easier to manage
+    target_link_libraries(GSSquared PRIVATE shell32)
 endif()
 target_link_libraries(GSSquared 
     PUBLIC
@@ -1177,6 +1201,15 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
             DESTINATION "${GS2_INSTALL_DATADIR}/img"
             COMPONENT Runtime
         )
+        install(FILES
+            "${CMAKE_BINARY_DIR}/resources/img/mimetype-gs2-16.png"
+            "${CMAKE_BINARY_DIR}/resources/img/mimetype-gs2-32.png"
+            "${CMAKE_BINARY_DIR}/resources/img/mimetype-gs2-48.png"
+            "${CMAKE_BINARY_DIR}/resources/img/mimetype-gs2-128.png"
+            "${CMAKE_BINARY_DIR}/resources/img/mimetype-gs2-256.png"
+            DESTINATION "${GS2_INSTALL_DATADIR}/img"
+            COMPONENT Runtime
+        )
         if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             # The files here are only used by Linux, not other platforms
             # These are also required for AppDirs, when producing AppImage
@@ -1210,8 +1243,37 @@ if((UNIX) AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EMSCRIPTEN)
                 RENAME GSSquared.png
                 COMPONENT Runtime
             )
+            install(FILES assets/img/gs2-config.iconset/icon_16x16.png
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/16x16/mimetypes"
+                RENAME application-x-gs2-config.png
+                COMPONENT Runtime
+            )
+            install(FILES assets/img/gs2-config.iconset/icon_32x32.png
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/32x32/mimetypes"
+                RENAME application-x-gs2-config.png
+                COMPONENT Runtime
+            )
+            install(FILES assets/img/gs2-config.iconset/icon_48x48.png
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/48x48/mimetypes"
+                RENAME application-x-gs2-config.png
+                COMPONENT Runtime
+            )
+            install(FILES assets/img/gs2-config.iconset/icon_128x128.png
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/128x128/mimetypes"
+                RENAME application-x-gs2-config.png
+                COMPONENT Runtime
+            )
+            install(FILES assets/img/gs2-config.iconset/icon_256x256.png
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/mimetypes"
+                RENAME application-x-gs2-config.png
+                COMPONENT Runtime
+            )
             install(FILES assets/GSSquared.desktop
                 DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+                COMPONENT Runtime
+            )
+            install(FILES assets/mime/gssquared.xml
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/mime/packages"
                 COMPONENT Runtime
             )
         endif()

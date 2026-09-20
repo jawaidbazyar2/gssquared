@@ -1,0 +1,3 @@
+// Windows icon resources. Index 0 is the application; index 1 is .gs2.
+1 ICON "@GS2_ICO_PATH@"
+2 ICON "@GS2_CONFIG_ICO_PATH@"

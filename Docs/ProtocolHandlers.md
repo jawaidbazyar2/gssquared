@@ -11,6 +11,7 @@ SDL3 does **not** have a separate “document open” event. On macOS, Finder Op
 | How the user opened something | What GS2 sees |
 |-------------------------------|---------------|
 | Finder double-click / Open With / `open Foo.gs2` | `SDL_EVENT_DROP_FILE` with `window == NULL`. No hover target. |
+| Explorer / file-manager double-click of `.gs2` | Not a drop. The shell starts `GSSquared` with the path in `argv`. A second click while GS2 is already running starts a **second process** (unlike macOS, which delivers `DROP_FILE` to the existing instance). |
 | Drag onto the GS2 window | `DROP_BEGIN` → `DROP_POSITION` (OSD hover) → `DROP_FILE` with a window → `DROP_COMPLETE`. |
 | Terminal `GSSquared file.gs2` | Not a drop. [`src/gs2.cpp`](../src/gs2.cpp) `SDL_AppInit` reads `argv` and auto-launches. |
 | Click `gssquared:https://…` (future) | Same `DROP_FILE`, but `event.drop.data` is the **URL string**, not a local path. |
@@ -45,6 +46,47 @@ lsregister -f /path/to/GSSquared.app
 ```
 
 or log out. Existing `.gs2` files may keep the old generic icon until Launch Services rebuilds its database.
+
+## Windows `.gs2` document type
+
+The zip has no installer. [`src/FileAssociations.cpp`](../src/FileAssociations.cpp) rewrites the per-user association on every launch (skipped when `--debug` is set so smoke tests do not steal the handler).
+
+HKCU (no admin):
+
+* `Software\Classes\.gs2` → ProgID `GSSquared.gs2`, `Content Type` `application/x-gs2-config`
+* `Software\Classes\GSSquared.gs2` — “GS2 System Configuration”
+* `DefaultIcon` = `"<exe>",1` (document icon embedded in the EXE)
+* `shell\open\command` = `"<exe>" "%1"`
+
+`<exe>` is `GetModuleFileNameW`, so a moved zip keeps working. `SHChangeNotify(SHCNE_ASSOCCHANGED)` runs only when the written values changed.
+
+### Icon
+
+[`assets/windows/gssquared.rc.in`](../assets/windows/gssquared.rc.in) embeds two icons (MinGW `windres`):
+
+* Index 0 — `gs2.ico` (application)
+* Index 1 — `gs2-config.ico` (`.gs2` document)
+
+Source art and `build.sh` live in `~/src/gs2_icons/`; the committed `.ico` files are in `assets/img/`.
+
+## Linux `.gs2` document type
+
+MIME type **`application/x-gs2-config`**, glob `*.gs2`. We do not claim `*.txt`.
+
+Packaged (FHS / AppImage AppDir / RPM):
+
+* [`assets/GSSquared.desktop`](../assets/GSSquared.desktop) — `Exec=GSSquared %f`, `MimeType=application/x-gs2-config;`
+* [`assets/mime/gssquared.xml`](../assets/mime/gssquared.xml)
+* Mimetype icons from `assets/img/gs2-config.iconset/` → `share/icons/hicolor/<size>/mimetypes/application-x-gs2-config.png`
+
+The AppImage / zip-style launch also rewrites the **user** tree on every launch so a moved AppImage stays associated:
+
+* `~/.local/share/applications/GSSquared.desktop` with absolute `Exec=` (`$APPIMAGE` or `/proc/self/exe`)
+* `~/.local/share/mime/packages/gssquared.xml`
+* Mimetype PNGs copied from `resources/img/mimetype-gs2-*.png`
+* `xdg-mime default GSSquared.desktop application/x-gs2-config`
+
+`update-desktop-database` and `update-mime-database` run only when those files actually changed.
 
 ## Opening a config: UX
 
@@ -176,8 +218,9 @@ That matches Steam AutoCloud: download zips before launch, upload zips after exi
 | Spec (this file) | Now |
 | Local `.gs2` / Settings open while emulating (prompt, dirty-disk, switch) | Now |
 | `.gs2` Finder document icon | Now |
+| Windows / Linux `.gs2` file-type and document icon | Now |
 | Disk-image UTIs + Finder-open-to-mount policy | Later |
 | `gssquared:` URL fetch + cache + confirm | Later |
 | `.gs2pack` zip (extract / mount / atomic rewrite) | Later |
 | Cloud folder / Steam AutoCloud (zip only in the synced tree) | Later |
-| Windows / Linux file-type and protocol registration | Later |
+| Windows / Linux `gssquared:` protocol registration | Later |

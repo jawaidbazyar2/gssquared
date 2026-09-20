@@ -28,7 +28,7 @@
 
 * [Writing Config Files Manually](ConfigFiles.md)
 
-* [File types and URL protocols](ProtocolHandlers.md) — `.gs2` associations, Finder icons, planned `gssquared:` links
+* [File types and URL protocols](ProtocolHandlers.md) — `.gs2` associations and document icons (macOS / Windows / Linux), planned `gssquared:` links
 
 * [Using the Debugger](UsingTheDebugger.md)
 

@@ -29,6 +29,7 @@
 #include "platform-specific/menu.h"
 #include "Module_ID.hpp"
 #include "paths.hpp"
+#include "FileAssociations.hpp"
 #include "cpu.hpp"
 #include "display/display.hpp"
 #include "devices/speaker/speaker.hpp"
@@ -1454,6 +1455,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         if (optind < argc) {
             config_path = argv[optind];
         }
+    }
+
+    if (debug_socket_path.empty()) {
+        register_gs2_file_association();
     }
 
     if (!config_path.empty()) {

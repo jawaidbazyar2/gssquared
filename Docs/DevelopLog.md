@@ -12710,3 +12710,13 @@ This is the Claude-applied fix:
 So far in my testing it's working well. This may have fixed the Wolf3D issue too. This was introduced when we did the big "fix other IRQ problems" push, and so we likely regressed to match this bug in MAME.
 
 This patch might be a little too specific. In the real soundglu, once a tx is kicked off, ANY tx won't be repeated until it's done. The timing here is squiggly due to us not really having an 895KHz clock (tho we sort of emulate it with 14Ms). 
+
+## Self-updating
+
+so I like the idea of self-updating by having users bounce back to the gssquared web site.
+They can go to a url that is:
+https://gssquared.net/updates/this-version-and-commit-number-and-platform
+
+Then it will tell the user whether there's a new version or not. And, periodically inform them of cool new stuff. It means I need to keep gssquared.net going indefinitely or eventually bounce users to somewhere else. but this is good for now.
+
+then they download and install manually.
