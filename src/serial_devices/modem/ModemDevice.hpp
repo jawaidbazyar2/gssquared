@@ -104,7 +104,7 @@ class ModemDevice : public SerialDevice {
         }
 
         uint8_t connect_result_code(uint32_t baud) const {
-            /* Hayes Smartmodem V0 + GBBS: 1/5/10/11/12/14, later 28. */
+            /* Hayes V0 + GBBS: 1/5/10/11/12/14. Accura / Warp Six: 28 = 38400, 18 = 57600. */
             switch (baud) {
                 case 1200: return 5;
                 case 2400: return 10;
@@ -112,6 +112,7 @@ class ModemDevice : public SerialDevice {
                 case 9600: return 12;
                 case 19200: return 14;
                 case 38400: return 28;
+                case 57600: return 18;
                 default: return 1; /* CONNECT 300 / unknown */
             }
         }

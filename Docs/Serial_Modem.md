@@ -19,7 +19,7 @@ That connects to host `cqbbs.ddns.net`, TCP port `6800`.
 
 Result codes default to words (`OK`, `CONNECT 9600`, `RING`, `NO CARRIER`, `ERROR`). `ATV0` switches to Hayes numeric codes; `ATV1` restores words. `AT&F` also restores `V1`.
 
-Numeric (`V0`): `0` OK, `1` CONNECT (300 / unknown), `2` RING, `3` NO CARRIER, `4` ERROR, `5`/`10`/`11`/`12`/`14`/`28` CONNECT at 1200 / 2400 / 4800 / 9600 / 19200 / 38400 (Hayes Smartmodem + GBBS).
+Numeric (`V0`): `0` OK, `1` CONNECT (300 / unknown), `2` RING, `3` NO CARRIER, `4` ERROR, `5`/`10`/`11`/`12`/`14`/`28`/`18` CONNECT at 1200 / 2400 / 4800 / 9600 / 19200 / 38400 / 57600 (Hayes Smartmodem + GBBS; `28` and `18` are Accura / Warp Six).
 
 ## How to answer
 
