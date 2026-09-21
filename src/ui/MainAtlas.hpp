@@ -52,6 +52,7 @@ enum MainAtlas {
     WriteProtected,
     AppleDisk_Face,
     Apple_HD20SC,
+    GS2ConfigGear,
     MainAtlas_count
 };
 

@@ -3,6 +3,8 @@
 #include <string>
 
 #include "SystemButton.hpp"
+#include "MainAtlas.hpp"
+#include "AssetAtlas.hpp"
 
 namespace {
 
@@ -36,19 +38,17 @@ void SystemButton::render() {
     Button_t::render();
 
     if (is_custom) {
-        // Small "file" iconlet in the upper-right corner to mark custom configs.
-        constexpr float mark = 18.0f;
+        constexpr float mark = 32.0f;
         constexpr float pad = 10.0f;
         const float x = tp.x + tp.w - mark - pad;
         const float y = tp.y + pad;
-        ctx->fill_rect({x, y, mark, mark}, 0x2A2A2AFF);
-        ctx->draw_rect({x, y, mark, mark}, 0xFFFFFFFF);
-        // Folded corner
-        ctx->fill_rect({x + mark - 7.0f, y, 7.0f, 7.0f}, 0xFFFFFFFF);
-        ctx->line(static_cast<int>(x + mark - 7.0f), static_cast<int>(y),
-                  static_cast<int>(x + mark - 7.0f), static_cast<int>(y + 7.0f), 0x2A2A2AFF);
-        ctx->line(static_cast<int>(x + mark - 7.0f), static_cast<int>(y + 7.0f),
-                  static_cast<int>(x + mark), static_cast<int>(y + 7.0f), 0x2A2A2AFF);
+        if (ctx->asset_atlas) {
+            Asset_t gear;
+            ctx->asset_atlas->get_asset(GS2ConfigGear, gear);
+            const SDL_FRect src = gear.rect;
+            const SDL_FRect dst = {x, y, mark, mark};
+            SDL_RenderTexture(ctx->renderer, gear.image, &src, &dst);
+        }
 
         TextRenderer *label_tr = name_renderer ? name_renderer : ctx->text_render;
         if (system_config && system_config->name && system_config->name[0] && label_tr) {
