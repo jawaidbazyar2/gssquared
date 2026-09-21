@@ -510,7 +510,8 @@ add_library(gs2_util src/util/media.cpp src/util/apm.cpp src/util/ResourceFile.c
     src/util/SoundEffect.cpp
     src/util/EventQueue.cpp src/util/Event.cpp src/util/EventTimer.cpp src/util/TextRenderer.cpp
     src/util/HexDecode.cpp src/util/DeviceFrameDispatcher.cpp src/util/Metrics.cpp
-    src/util/MenuInterface.cpp src/util/BlankDisk.cpp src/util/ProDOSFormat.cpp)
+    src/util/MenuInterface.cpp src/util/BlankDisk.cpp src/util/ProDOSFormat.cpp
+    src/util/CheckForUpdates.cpp)
 
 add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Button.cpp src/ui/AppleDisk_525_Button.cpp src/ui/AppleDisk_35_Button.cpp src/ui/Unidisk_Button.cpp
     src/ui/MousePositionTile.cpp src/ui/OSD.cpp src/ui/Tile.cpp src/ui/Button.cpp src/ui/MainAtlas.cpp src/ui/ModalContainer.cpp
@@ -806,6 +807,7 @@ if(APPLE)
 
     target_link_libraries(platform_specific PRIVATE
         ${GS2_SDL3}
+        gs2_util
         "-framework Cocoa"
     )
 
@@ -847,6 +849,7 @@ if((UNIX AND NOT APPLE) OR EMSCRIPTEN)
     target_link_libraries(platform_specific PRIVATE
         ${GS2_SDL3}
         gs2_imgui
+        gs2_util
     )
 endif()
 
@@ -855,6 +858,7 @@ if(WIN32)
 
     target_link_libraries(platform_specific PRIVATE
         ${GS2_SDL3}
+        gs2_util
     )
 endif()
 

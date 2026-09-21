@@ -10,6 +10,7 @@
 
 #include <SDL3/SDL.h>
 #include "platform-specific/menu.h"
+#include "util/CheckForUpdates.hpp"
 #include "util/MenuInterface.h"
 
 // ── Local command IDs (items not in MenuEventCode) ────────────────────────────
@@ -22,6 +23,7 @@
 #define IDM_FILE_OPEN_CONFIG      805
 #define IDM_HELP_OPEN_DOCS        900
 #define IDM_HELP_DONATE           901
+#define IDM_HELP_CHECK_UPDATES    902
 
 // DEPRECATED: see commented-out WM_ENTERMENULOOP/WM_EXITMENULOOP/WM_TIMER block below.
 // #define MENU_TIMER_ID   1
@@ -383,6 +385,9 @@ static void dispatchCommand(UINT id)
     case IDM_SETTINGS_RMB_ACCEL:    mi->toggleRightMouseAccel();    return;
 
     // Help
+    case IDM_HELP_CHECK_UPDATES:
+        openCheckForUpdates();
+        return;
     case IDM_HELP_OPEN_DOCS:
         SDL_OpenURL("https://jawaidbazyar2.github.io/gssquared/");
         return;
@@ -579,6 +584,7 @@ static void setupMenus()
 
     // ── Docs ─────────────────────────────────────────────────────────────────
     g_helpPopup = CreatePopupMenu();
+    AppendMenuW(g_helpPopup, MF_STRING, IDM_HELP_CHECK_UPDATES, L"Check For Updates");
     AppendMenuW(g_helpPopup, MF_STRING, IDM_HELP_OPEN_DOCS, L"Online Documentation");
     AppendMenuW(g_helpPopup, MF_STRING, IDM_HELP_DONATE, L"Donate");
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,

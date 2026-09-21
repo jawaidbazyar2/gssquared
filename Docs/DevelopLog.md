@@ -12720,3 +12720,5 @@ https://gssquared.net/updates/this-version-and-commit-number-and-platform
 Then it will tell the user whether there's a new version or not. And, periodically inform them of cool new stuff. It means I need to keep gssquared.net going indefinitely or eventually bounce users to somewhere else. but this is good for now.
 
 then they download and install manually.
+
+ok, so we'll do Help > Check For Updates

@@ -9,6 +9,7 @@
 #include "imgui/backends/imgui_impl_sdlrenderer3.h"
 
 #include "platform-specific/menu.h"
+#include "util/CheckForUpdates.hpp"
 #include "util/MenuInterface.h"
 #include "gs2.hpp"
 
@@ -328,6 +329,8 @@ static void build_menu_bar()
 
     // ── Docs ──────────────────────────────────────────────────────────────────
     if (ImGui::BeginMenu("Docs")) {
+        if (ImGui::MenuItem("Check For Updates"))
+            openCheckForUpdates();
         if (ImGui::MenuItem("Online Documentation"))
             SDL_OpenURL("https://jawaidbazyar2.github.io/gssquared/");
         if (ImGui::MenuItem("Donate"))

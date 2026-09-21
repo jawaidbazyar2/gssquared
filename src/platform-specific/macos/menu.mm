@@ -5,6 +5,7 @@
 #include <SDL3/SDL.h>
 
 #include "util/MenuInterface.h"
+#include "util/CheckForUpdates.hpp"
 #include "platform-specific/menu.h"
 #include "gs2.hpp"
 
@@ -135,6 +136,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)diskToggleDrive:(id)sender;
 - (void)helpOpenDocs:(id)sender;
 - (void)helpDonate:(id)sender;
+- (void)helpCheckForUpdates:(id)sender;
 @end
 
 @implementation MenuActionHandler
@@ -212,7 +214,8 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	}
 	// Help items are always available regardless of emulation state
 	if (menuItem.action == @selector(helpOpenDocs:) ||
-	    menuItem.action == @selector(helpDonate:)) {
+	    menuItem.action == @selector(helpDonate:) ||
+	    menuItem.action == @selector(helpCheckForUpdates:)) {
 		return YES;
 	}
 	if (menuItem.action == @selector(fileOpenConfig:)) {
@@ -281,6 +284,11 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 - (void)helpDonate:(id)sender {
 	SDL_OpenURL("https://gssquared.net/support");
+	(void)sender;
+}
+
+- (void)helpCheckForUpdates:(id)sender {
+	openCheckForUpdates();
 	(void)sender;
 }
 @end
@@ -811,6 +819,13 @@ static void setupMenus(void) {
 	// and to stop macOS from intercepting Cmd+? which must pass through
 	// to the emulated Apple II.
 	NSMenu *helpMenu = addMenu(NSLocalizedString(@"Docs", nil));
+
+	NSMenuItem *checkUpdatesItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Check For Updates", nil)
+		       action:@selector(helpCheckForUpdates:)
+		keyEquivalent:@""] autorelease];
+	[checkUpdatesItem setTarget:sMenuHandler];
+	[helpMenu addItem:checkUpdatesItem];
 
 	NSMenuItem *onlineDocsItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Online Documentation", nil)
