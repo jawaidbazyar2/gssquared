@@ -24,6 +24,7 @@
 #include <SDL3/SDL.h>
 
 #include "paths.hpp"
+#include "util/ProDOSFormat.hpp"
 
 const char *blank_disk_resource_name(BlankDiskType type) {
     switch (type) {
@@ -32,6 +33,7 @@ const char *blank_disk_resource_name(BlankDiskType type) {
         case BlankDiskType::Floppy525Prodos:      return "blank-525-prodos.woz";
         case BlankDiskType::Floppy35Prodos:       return "blank-35-prodos.woz";
         case BlankDiskType::Hd32M:                return nullptr;
+        case BlankDiskType::Hd32MProdos:          return nullptr;
     }
     return nullptr;
 }
@@ -43,6 +45,7 @@ const char *blank_disk_suggested_filename(BlankDiskType type) {
         case BlankDiskType::Floppy525Prodos:      return "Blank 5.25 ProDOS.woz";
         case BlankDiskType::Floppy35Prodos:       return "Blank 3.5 ProDOS.woz";
         case BlankDiskType::Hd32M:                return "Blank 32M HD.hdv";
+        case BlankDiskType::Hd32MProdos:          return "Blank 32M ProDOS.hdv";
     }
     return "Blank Disk";
 }
@@ -52,7 +55,7 @@ const char *blank_disk_extension(BlankDiskType type) {
 }
 
 bool blank_disk_is_floppy(BlankDiskType type) {
-    return type != BlankDiskType::Hd32M;
+    return type != BlankDiskType::Hd32M && type != BlankDiskType::Hd32MProdos;
 }
 
 std::string blank_disk_ensure_extension(BlankDiskType type, std::string path) {
@@ -88,6 +91,18 @@ bool write_blank_disk(BlankDiskType type, const std::string& dest_in, std::strin
 
     if (type == BlankDiskType::Hd32M) {
         return write_zero_hd(dest, err);
+    }
+
+    if (type == BlankDiskType::Hd32MProdos) {
+        if (!write_zero_hd(dest, err)) return false;
+        std::string volume = prodos_volume_name_from_path(dest);
+        if (volume.empty()) volume = kProDOSDefaultVolumeName;
+        if (!prodos_format_image(dest, kBlankHd32MProdosBlocks, volume, err)) {
+            std::error_code rec;
+            std::filesystem::remove(dest, rec);
+            return false;
+        }
+        return true;
     }
 
     const char *resource = blank_disk_resource_name(type);

@@ -114,6 +114,8 @@ static void render_new_disk_image_menu(MenuInterface *mi)
             mi->newDiskImage(MENU_FILE_NEW_DISK_35_PRODOS);
         if (ImGui::MenuItem("32M HD Unformatted"))
             mi->newDiskImage(MENU_FILE_NEW_DISK_32M_HD);
+        if (ImGui::MenuItem("32M HD Formatted ProDOS"))
+            mi->newDiskImage(MENU_FILE_NEW_DISK_32M_PRODOS);
         ImGui::EndMenu();
     }
 }

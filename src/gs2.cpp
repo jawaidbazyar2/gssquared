@@ -850,6 +850,9 @@ static bool blank_disk_type_from_menu(Sint32 code, BlankDiskType *out) {
         case MENU_FILE_NEW_DISK_32M_HD:
             *out = BlankDiskType::Hd32M;
             return true;
+        case MENU_FILE_NEW_DISK_32M_PRODOS:
+            *out = BlankDiskType::Hd32MProdos;
+            return true;
         default:
             return false;
     }

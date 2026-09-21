@@ -10,6 +10,7 @@ GSSquared provides a top menu bar appropriate to your platform: a top menu bar o
     * 5.25 Formatted ProDOS
     * 3.5 Formatted ProDOS
     * 32M HD Unformatted
+    * 32M HD Formatted ProDOS
   * Open Disk Image...
     * Slot 6, Drive 1 - is xxxx
     * Slot 6, Drive 2 - is xxxx
@@ -24,7 +25,7 @@ GSSquared provides a top menu bar appropriate to your platform: a top menu bar o
 
 **Launch Config…** picks a `.gs2` or `… Settings.txt` and boots it immediately (System Select only).
 
-**New Disk Image** opens a save dialog and writes a blank image to the chosen path. It does not mount the file — use **File → Drives**, the Control Panel, or drag-and-drop afterwards. Floppy types copy a shipped `.woz` template; **32M HD Unformatted** creates a 32M file of zeros (`.hdv`). Available whether or not a machine is running. See [Blank Disk Images](BlankFloppy.md).
+**New Disk Image** opens a save dialog and writes a blank image to the chosen path. It does not mount the file — use **File → Drives**, the Control Panel, or drag-and-drop afterwards. Floppy types copy a shipped `.woz` template; **32M HD Unformatted** creates a 32M file of zeros (`.hdv`), and **32M HD Formatted ProDOS** creates the same file with an empty ProDOS volume already on it. Available whether or not a machine is running. See [Blank Disk Images](BlankFloppy.md).
 
 Open Disk Image lets you select the storage device, then you will select the disk image file to mount to that device.
 

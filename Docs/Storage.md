@@ -26,7 +26,8 @@ Woz format is the heart of GS2 floppy emulation. GS2 supports copy-protected 5.2
 | 5.25 Formatted DOS 3.3 | Immediate DOS 3.3 data disk |
 | 5.25 Formatted ProDOS | Immediate ProDOS 5.25″ volume |
 | 3.5 Formatted ProDOS | Immediate ProDOS 800K volume |
-| 32M HD Unformatted | Format on BazFast from ProDOS or GS/OS |
+| 32M HD Unformatted | Raw 32M image, for formatting as HFS or another filesystem from GS/OS |
+| 32M HD Formatted ProDOS | Immediate 32M ProDOS volume on BazFast |
 
 Full walkthrough: [Blank Disk Images](BlankFloppy.md).
 

@@ -503,6 +503,7 @@ static void setupMenus(void) {
 		{ "5.25 Formatted ProDOS",  MENU_FILE_NEW_DISK_525_PRODOS },
 		{ "3.5 Formatted ProDOS",   MENU_FILE_NEW_DISK_35_PRODOS },
 		{ "32M HD Unformatted",     MENU_FILE_NEW_DISK_32M_HD },
+		{ "32M HD Formatted ProDOS", MENU_FILE_NEW_DISK_32M_PRODOS },
 	};
 	for (size_t i = 0; i < sizeof(newDiskItems) / sizeof(newDiskItems[0]); ++i) {
 		NSMenuItem *item = [[[NSMenuItem alloc]

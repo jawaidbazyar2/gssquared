@@ -373,6 +373,7 @@ static void dispatchCommand(UINT id)
     case MENU_FILE_NEW_DISK_525_PRODOS:
     case MENU_FILE_NEW_DISK_35_PRODOS:
     case MENU_FILE_NEW_DISK_32M_HD:
+    case MENU_FILE_NEW_DISK_32M_PRODOS:
         mi->newDiskImage(static_cast<int>(id));
         return;
 
@@ -472,6 +473,7 @@ static void setupMenus()
     AppendMenuW(newDiskMenu, MF_STRING, MENU_FILE_NEW_DISK_525_PRODOS, L"5.25 Formatted ProDOS");
     AppendMenuW(newDiskMenu, MF_STRING, MENU_FILE_NEW_DISK_35_PRODOS, L"3.5 Formatted ProDOS");
     AppendMenuW(newDiskMenu, MF_STRING, MENU_FILE_NEW_DISK_32M_HD, L"32M HD Unformatted");
+    AppendMenuW(newDiskMenu, MF_STRING, MENU_FILE_NEW_DISK_32M_PRODOS, L"32M HD Formatted ProDOS");
     // pos 0
     AppendMenuW(g_filePopup, MF_STRING, IDM_FILE_OPEN_CONFIG, L"Launch Config...");
     // pos 1
