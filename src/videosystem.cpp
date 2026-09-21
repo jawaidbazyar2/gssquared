@@ -11,6 +11,9 @@
 #include <cmath>
 #include "util/dialog.hpp"
 #include "display/shaders/GpuShaderLoader.hpp"
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
 
 video_system_t::video_system_t(computer_t *computer) {
 
@@ -48,8 +51,12 @@ video_system_t::video_system_t(computer_t *computer) {
     SDL_SetWindowMinimumSize(window, window_width / 2, window_height / 2);  // Half size
     //SDL_SetWindowMaximumSize(window, window_width * 2, window_height * 2);  // 4x size
     
-    // Set the window's aspect ratio to match the Apple II display (560:384)
+    // Set the window's aspect ratio to match the Apple II display (560:384).
+    // Not on the web: the "window" is the <canvas>, whose size the page stylesheet
+    // owns, and SDL enforces this by writing the canvas CSS size itself.
+#if !defined(__EMSCRIPTEN__)
     SDL_SetWindowAspectRatio(window, aspect_ratio, aspect_ratio);
+#endif
 
     /* for (int i = 0; i < SDL_GetNumRenderDrivers(); i++) {
         const char *name = SDL_GetRenderDriver(i);
@@ -97,6 +104,24 @@ video_system_t::video_system_t(computer_t *computer) {
 
     SDL_RaiseWindow(window);
 
+    computer->dispatch->registerHandler(SDL_EVENT_WINDOW_RESIZED, [this](const SDL_Event &event) {
+        window_resize(event);
+        return true;
+    });
+    computer->dispatch->registerHandler(SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED, [this](const SDL_Event &event) {
+        window_resize(event);
+        return true;
+    });
+
+#if defined(__EMSCRIPTEN__)
+    // SDL CreateWindow probes CSS by setting the canvas to 1×1; that can
+    // snapshot a pre-layout size. A real window resize re-reads CSS and is
+    // the path that already looks correct — run it once now.
+    MAIN_THREAD_EM_ASM({
+        window.dispatchEvent(new Event('resize'));
+    });
+#endif
+
     {
         int point_w = 0, point_h = 0;
         int pixel_w = 0, pixel_h = 0;
@@ -109,15 +134,6 @@ video_system_t::video_system_t(computer_t *computer) {
     }
 
     update_target_from_output();
-
-    computer->dispatch->registerHandler(SDL_EVENT_WINDOW_RESIZED, [this](const SDL_Event &event) {
-        window_resize(event);
-        return true;
-    });
-    computer->dispatch->registerHandler(SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED, [this](const SDL_Event &event) {
-        window_resize(event);
-        return true;
-    });
     computer->sys_event->registerHandler(SDL_EVENT_KEY_UP, [this, computer](const SDL_Event &event) {
         int key = event.key.key;
         if (key == SDLK_F3) {

@@ -101,6 +101,16 @@ public:
     bool update();
     /** Force a full redraw on the next render() (e.g. ImGui menu needs a frame). */
     void mark_dirty() { updated = true; }
+
+    /**
+     * @brief Makes the renderer's design-space LETTERBOX presentation current.
+     *
+     * Active outside render() too, so event() converts mouse positions with the
+     * same mapping it draws with. The frame loop drops it to draw the ImGui menu
+     * bar in window points, then re-applies it. See SelectSystem.
+     */
+    void apply_logical_presentation();
+
     void render();
     bool event(const SDL_Event &event);
 

@@ -270,6 +270,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 if(EMSCRIPTEN)
     add_compile_options(-pthread)
     add_link_options(-pthread)
+    # Emscripten defaults to DISABLE_EXCEPTION_CATCHING, which turns every throw
+    # into an abort even where we catch it (toml++ throws parse_error when a .gs2
+    # is missing or malformed — SystemConfig::load catches that and falls back).
+    add_compile_options(-fexceptions)
+    add_link_options(-fexceptions)
 endif()
 
 configure_sdl_builds()
@@ -1421,6 +1426,8 @@ if(EMSCRIPTEN)
 
     # Emit GSSquared.html (+ .js/.wasm/.data) instead of a bare executable.
     set_target_properties(GSSquared PROPERTIES SUFFIX ".html")
+    set_property(TARGET GSSquared APPEND PROPERTY
+        LINK_DEPENDS "${CMAKE_SOURCE_DIR}/assets/web/shell.html")
 
     # The preload step must run after resources are assembled.
     add_dependencies(GSSquared assemble_resources)

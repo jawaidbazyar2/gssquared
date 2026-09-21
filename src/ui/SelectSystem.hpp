@@ -67,6 +67,15 @@ public:
     void mark_dirty() { updated = true; }
 
     /**
+     * @brief Makes the renderer's design-space LETTERBOX presentation current.
+     *
+     * Active for the selector's lifetime so event() can convert mouse positions
+     * with the same mapping it draws with. The frame loop has to drop it to draw
+     * the ImGui menu bar in window points, so it re-applies it afterwards.
+     */
+    void apply_logical_presentation();
+
+    /**
      * @brief Renders the OSD and all its components.
      */
     void render();

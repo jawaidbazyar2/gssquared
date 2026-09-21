@@ -26,6 +26,23 @@ debug_window_t::debug_window_t(computer_t *computer) {
 
     panel_visible[DEBUG_PANEL_TRACE] = 1; // all default to off, so enable here.
 
+#if defined(__EMSCRIPTEN__)
+    // The web build has no debugger: Emscripten supports a single window, so a
+    // second SDL_Renderer here would share the one WebGL context with the
+    // emulator's renderer. Each renderer caches GL state independently, so
+    // creating this one resets the shared clear color (GLES2_CreateRenderer
+    // issues glClearColor(1,1,1,1)) while the emulator's renderer still
+    // believes it is black — every later SDL_RenderClear() paints white.
+    window = nullptr;
+    renderer = nullptr;
+    window_id = 0;
+    text_renderer = nullptr;
+    tab_container = nullptr;
+    step_container = nullptr;
+    mon_textinput = nullptr;
+    return;
+#endif
+
     // create a new window
     window = SDL_CreateWindow("GSSquared Debugger", window_width, window_height, SDL_WINDOW_RESIZABLE|SDL_WINDOW_HIDDEN);
     // create a new renderer
@@ -1238,7 +1255,7 @@ void debug_window_t::render_pane_memory() {
 void debug_window_t::render() {
     char buffer[256];
 
-    if (!window_open) {
+    if (!renderer || !window_open) {
         return;
     }
 
@@ -1610,6 +1627,9 @@ bool debug_window_t::is_open() {
 }
 
 void debug_window_t::set_open() {
+    if (!window) { // no debugger window on the web
+        return;
+    }
     disasm = new Disassembler(mmu, cpu->cpu_type); // used in monitor pane
     step_disasm = new Disassembler(mmu, cpu->cpu_type); // used in trace pane
     monitor_.bind(mmu, &memory_watches, computer->breakpoints, disasm, &debug_displays, cpu->trace_buffer,

@@ -96,8 +96,7 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
     design_width = vs->window_width > 0 ? vs->window_width : 1288;
     design_height = vs->window_height > 0 ? vs->window_height : 928;
 
-    SDL_SetRenderLogicalPresentation(vs->renderer, design_width, design_height,
-                                     SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    apply_logical_presentation();
 
     // Content block in design coords before offset: x 30..900 (w=870). Center it;
     // shift everything except the title down 30px; panels below badge/fields +25 more.
@@ -672,6 +671,11 @@ bool EditSystem::update() {
         updated = true;
     }
     return updated;
+}
+
+void EditSystem::apply_logical_presentation() {
+    SDL_SetRenderLogicalPresentation(vs->renderer, design_width, design_height,
+                                     SDL_LOGICAL_PRESENTATION_LETTERBOX);
 }
 
 void EditSystem::render() {

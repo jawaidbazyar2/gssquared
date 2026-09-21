@@ -12722,3 +12722,14 @@ Then it will tell the user whether there's a new version or not. And, periodical
 then they download and install manually.
 
 ok, so we'll do Help > Check For Updates
+
+## Emscripten
+
+it's coming together!!
+
+[ ] windows and alt may be reversed in the emscripten build? Something wacky when I hit ctrl-alt-reset, it tries to do the self-test or the "boot time menu"
+
+[ ] it wants to run at exactly 60fps. may not be a way around that.
+[ ] but when we close and re-open an emulation, it wants to run 75. So there is a thing we're missing here on a re-start.
+[ ] When running an emu, the menu is at the very top of window where it belongs. but in SelectSystem it's right next to the content area, and, the mouse is offset. So something needs to be tweaked there (or more likely, untweaked).
+[ ] check menu on linux. gs2.cpp

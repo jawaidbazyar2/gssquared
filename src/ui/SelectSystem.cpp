@@ -69,14 +69,11 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 
     // Render the selector through a fixed design-resolution logical presentation.
     // LETTERBOX keeps the aspect ratio correct and all content on-screen no
-    // matter the real window/canvas size. We set it for the whole lifetime of
-    // the selector (not just inside render()) because SDL fills the letterbox
-    // bars with black during SDL_RenderPresent() ONLY while this mode is active
-    // — and present() happens in the app's iterate callback, after render()
-    // returns. It is reset back to DISABLED in transition_to_emulation() so the
-    // emulator/OSD/debugger don't inherit our transform.
-    SDL_SetRenderLogicalPresentation(vs->renderer, design_width, design_height,
-                                     SDL_LOGICAL_PRESENTATION_LETTERBOX);
+    // matter the real window/canvas size. Kept active outside render() as well so
+    // event() converts mouse positions with the same mapping. It is reset back to
+    // DISABLED in transition_to_emulation() so the emulator/OSD/debugger don't
+    // inherit our transform.
+    apply_logical_presentation();
 
     selected_system = SELECT_PENDING;
 
@@ -191,6 +188,11 @@ SelectSystem::~SelectSystem() {
     delete container;
     delete text_renderer;
     delete name_renderer;
+}
+
+void SelectSystem::apply_logical_presentation() {
+    SDL_SetRenderLogicalPresentation(vs->renderer, design_width, design_height,
+                                     SDL_LOGICAL_PRESENTATION_LETTERBOX);
 }
 
 bool SelectSystem::event(const SDL_Event &event) {

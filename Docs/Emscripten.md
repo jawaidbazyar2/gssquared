@@ -36,10 +36,9 @@ cmake --build build-web --target GSSquared -j
 This produces, in `build-web/`:
 
 - `GSSquared.html`  – the page (generated from `assets/web/shell.html`)
-- `GSSquared.js`    – loader/runtime glue
+- `GSSquared.js`    – loader/runtime glue (also the pthread worker entry point)
 - `GSSquared.wasm`  – the compiled emulator
 - `GSSquared.data`  – the preloaded resource bundle (ROMs, fonts, images)
-- `GSSquared.worker.js` (and friends) – pthread workers
 
 ## Run it
 
@@ -60,6 +59,36 @@ python3 assets/web/serve.py 8000 build-web
 
 Opening `GSSquared.html` directly from `file://` will **not** work (no headers,
 and WASM fetch is blocked). Always serve over HTTP with the headers above.
+
+## Deploying to gssquared.net/live
+
+```bash
+scripts/deploy-web.sh              # builds, then rsyncs to the server
+scripts/deploy-web.sh --dry-run    # show what would be uploaded
+scripts/deploy-web.sh --skip-build # upload the current build-web as-is
+```
+
+The script stages the four build products and uploads them to
+`bazyar@gssquared.net:/var/www/gssquared.net/public/live/`
+(override with `GS2_WEB_HOST` / `GS2_WEB_PATH` / `GS2_WEB_BUILD_DIR`). On the
+server the directory looks like this:
+
+- `index.php`   – the generated page, i.e. `GSSquared.html` renamed. It is plain
+  HTML today; the `.php` extension only leaves room to `require` the site's
+  layout helpers later.
+- `GSSquared.js` / `.wasm` / `.data`
+- `.htaccess`   – copied from `assets/web/live.htaccess`; this is what sets the
+  COOP/COEP headers, the `application/wasm` type, and `Cache-Control: no-cache`
+  (the artifacts keep their names across builds, so clients must revalidate).
+
+`/live` is **generated**, not tracked in the `gssquared-web` repo: 11 MB of wasm
+per build has no place in a marketing site's git history, and `public/live/` is
+gitignored there. A `git pull` on the server will therefore never restore it —
+after a fresh clone, run this script again.
+
+The site nav bar at the top of the page is hardcoded in
+`assets/web/shell.html`. If the nav in `gssquared-web`'s
+`includes/layout.php` changes, update the shell to match.
 
 ## Using disk images
 

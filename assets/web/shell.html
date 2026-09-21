@@ -12,32 +12,89 @@
       height: 100%;
       background: #000;
       color: #ddd;
+      color-scheme: dark;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       overflow: hidden;
     }
-    #app {
-      position: absolute;
-      inset: 0;
+    /* Site chrome on top, emulator fills whatever is left. */
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+    }
+    /* A compact dark take on the gssquared.net header. Deliberately
+       self-contained instead of loading the site's /assets/css/site.css: that
+       sheet is a light theme whose body / .site / .site-main rules would fight
+       a full-bleed black canvas, and it is not reachable from the dev server. */
+    .gs2-chrome {
+      flex: 0 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.25rem 1.5rem;
+      padding: 0.35rem 1rem;
+      background: #14181c;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .gs2-brand {
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 0.5rem;
+      color: #f3f0ea;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+    .gs2-brand img {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+    .gs2-nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.15rem 1.1rem;
+      font-size: 0.9rem;
+    }
+    .gs2-nav a {
+      color: #9aa6b2;
+      font-weight: 600;
+      text-decoration: none;
+      padding-bottom: 2px;
+      border-bottom: 2px solid transparent;
+    }
+    .gs2-nav a:hover,
+    .gs2-nav a.is-active {
+      color: #fff;
+      border-bottom-color: #00a1de;
+    }
+    /* Emulator host. Do not letterbox here: SDL's CreateWindow probe reads this
+       CSS size (after a 1×1 backing-store test), and mouse events are scaled
+       from the canvas CSS box to the SDL window, so a second CSS aspect box
+       would make those two disagree. The emulator letterboxes internally.
+       min-height:0 lets this flex item shrink below the canvas's own size. */
+    #app {
+      flex: 1 1 auto;
+      position: relative;
+      min-height: 0;
       background: #000;
     }
-    /* The canvas must have no border or padding or SDL/Emscripten mouse
-       coordinates and sizing break. The default GSSquared window is 1288x928
-       (see (BASE_WIDTH+border)*SCALE in src/videosystem.cpp); keep that aspect
-       ratio so the SelectSystem screen (which lays out a fixed 1024x768 area
-       read from the window size) has enough room and isn't squished square. */
+    /* Fill #app. No border/padding/margin — SDL/Emscripten mouse coords break. */
     canvas.emscripten {
+      position: absolute;
+      inset: 0;
+      display: block;
       border: 0 none;
       padding: 0;
-      background: #000;
-      display: block;
-      aspect-ratio: 1288 / 928;
-      width: auto;
+      margin: 0;
+      width: 100%;
       height: 100%;
-      max-width: 100%;
-      max-height: 100%;
+      background: #000;
     }
     #overlay {
       position: absolute;
@@ -73,18 +130,38 @@
   </style>
 </head>
 <body>
+  <!-- Site navigation. Links are absolute gssquared.net paths: dead under the
+       dev server, correct once deployed to /live/. The logo lives in the site
+       repo, so onerror drops the <img> when it 404s locally. -->
+  <header class="gs2-chrome">
+    <a class="gs2-brand" href="/">
+      <img src="/assets/img/gssquared-mark.png" alt="" onerror="this.remove()">
+      <span>GSSquared</span>
+    </a>
+    <nav class="gs2-nav">
+      <a href="/">Home</a>
+      <a href="/features">Features</a>
+      <a href="/screenshots">Screenshots</a>
+      <a class="is-active" href="/live/">Live</a>
+      <a href="/news">What's New</a>
+      <a href="/download">Download</a>
+      <a href="/support">Support</a>
+      <a href="/help">Help</a>
+    </nav>
+  </header>
+
   <div id="app">
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1" width="1288" height="928"></canvas>
-  </div>
 
-  <div id="overlay">
-    <h1>GSSquared</h1>
-    <p>Apple II Emulator</p>
-    <p id="overlay-hint">Loading&hellip;</p>
-    <div class="spinner" id="overlay-spinner"></div>
-  </div>
+    <div id="overlay">
+      <h1>GSSquared</h1>
+      <p>Apple II Emulator</p>
+      <p id="overlay-hint">Loading&hellip;</p>
+      <div class="spinner" id="overlay-spinner"></div>
+    </div>
 
-  <div id="status">initializing&hellip;</div>
+    <div id="status">initializing&hellip;</div>
+  </div>
 
   <script type="text/javascript">
     var statusElement  = document.getElementById('status');
@@ -132,6 +209,12 @@
           runtimeReady = true;
           overlaySpinner.style.display = 'none';
           overlayHint.textContent = 'Click to start';
+          // After layout/paint, ask SDL to re-read CSS (same as a window resize).
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              window.dispatchEvent(new Event('resize'));
+            });
+          });
         }
       },
       totalDependencies: 0,
@@ -155,6 +238,7 @@
         Module.canvas.focus();
       }
     }
+
     window.addEventListener('focus', focusCanvas);
     document.addEventListener('click', focusCanvas);
 
@@ -164,7 +248,20 @@
       if (!runtimeReady) return;
       overlayElement.style.display = 'none';
       focusCanvas();
+      // Same path as a browser resize: SDL re-reads CSS and sizes the backing store.
+      window.dispatchEvent(new Event('resize'));
     });
+
+    // Keep the canvas backing store matched to its host if layout changes
+    // without a window resize (first paint, overlay, docked DevTools, etc.).
+    if (typeof ResizeObserver !== 'undefined') {
+      var host = document.getElementById('app');
+      if (host) {
+        new ResizeObserver(function () {
+          window.dispatchEvent(new Event('resize'));
+        }).observe(host);
+      }
+    }
 
     window.onerror = function (msg) {
       Module.setStatus('Exception thrown, see JavaScript console');

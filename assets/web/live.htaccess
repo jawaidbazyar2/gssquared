@@ -1,0 +1,24 @@
+# Apache config for gssquared.net/live — deployed as /live/.htaccess by
+# scripts/deploy-web.sh. Every directive here is in the FileInfo override class,
+# which is what the site's vhost grants (AllowOverride FileInfo).
+
+<IfModule mod_headers.c>
+    # The build uses pthreads, so it needs SharedArrayBuffer, which browsers
+    # only expose to cross-origin isolated pages. require-corp rather than
+    # credentialless: Safari does not implement credentialless.
+    Header set Cross-Origin-Opener-Policy "same-origin"
+    Header set Cross-Origin-Embedder-Policy "require-corp"
+    Header set Cross-Origin-Resource-Policy "same-origin"
+
+    # "no-cache" means revalidate, not "never cache". The artifacts keep the
+    # same names across builds, so a client must never pin a stale .wasm to a
+    # fresh .js; ETags make unchanged repeat visits cheap 304s.
+    Header set Cache-Control "no-cache"
+</IfModule>
+
+# Apache needs this for WebAssembly.instantiateStreaming().
+AddType application/wasm .wasm
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE application/wasm application/javascript text/html
+</IfModule>

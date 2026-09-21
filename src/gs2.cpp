@@ -1027,6 +1027,11 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
         computer->set_machine_id(system_config->id ? system_config->id : "");
         computer->set_config_path({});
 
+        // The web build has no persistent user config directory (MEMFS starts
+        // empty every load), so there is no saved BRAM to read back and nowhere
+        // to save it. Skip the persist config entirely and let the machine boot
+        // with default BRAM.
+#if !defined(__EMSCRIPTEN__)
         if (system_config->id && system_config->id[0]) {
             state->persist_config = std::make_unique<SystemConfig>();
             const std::string persist_path =
@@ -1050,6 +1055,7 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
             }
             wire_bram_persist(state->persist_config.get());
         }
+#endif
     }
     
     // TODO: load platform roms - this info should get stored in the 'computer'
@@ -1605,6 +1611,42 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     return SDL_APP_CONTINUE;
 }
 
+/**
+ * Draw the menu bar for the SelectSystem / EditSystem phases.
+ *
+ * On the ImGui platforms this mirrors what the emulation path does around
+ * osd->render(): the bar is drawn through a window-points 1:1 presentation, so
+ * it lands at the top of the window. ImGui works entirely in window points —
+ * handleMenuEvent feeds it raw SDL events and ImGui_ImplSDL3_NewFrame takes
+ * DisplaySize from SDL_GetWindowSize — but the selector keeps a design-space
+ * LETTERBOX presentation active, which breaks the bar two ways once the window
+ * is taller than the design aspect: it draws into the centered content rect (so
+ * the bar sits well below the top of the window while its clicks still land at
+ * the top), and SDL_RenderPresent() then repaints the letterbox bars black,
+ * erasing a bar drawn at the very top. So we also leave the presentation
+ * DISABLED for present(): the frame's opening SDL_RenderClear() already blacked
+ * the whole target (clear ignores viewport and clip), making SDL's present-time
+ * border fill redundant. Callers re-apply their presentation afterwards, since
+ * event() converts mouse positions with it.
+ */
+static void render_menu_overlay_for_ui_phase(video_system_t *vs) {
+#if defined(__linux__) || defined(__EMSCRIPTEN__)   // ImGui menu (see menu.h)
+    int points_w = 0, points_h = 0;
+    SDL_GetWindowSize(vs->window, &points_w, &points_h);
+    SDL_SetRenderLogicalPresentation(vs->renderer, points_w, points_h,
+        SDL_LOGICAL_PRESENTATION_STRETCH);
+
+    renderMenuOverlay(vs->renderer, vs->window_width, vs->window_height);
+
+    SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+#else
+    // macOS / Windows have a native menu bar: this draws nothing into the
+    // renderer, so leave the caller's presentation alone and let SDL fill the
+    // letterbox bars at present() as before.
+    renderMenuOverlay(vs->renderer, vs->window_width, vs->window_height);
+#endif
+}
+
 SDL_AppResult SDL_AppIterate(void *appstate) {
     GS2AppState *state = (GS2AppState *)appstate;
 
@@ -1631,8 +1673,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
             vs->clear();
             state->select_system->render();
-            renderMenuOverlay(vs->renderer, vs->window_width, vs->window_height);
+            render_menu_overlay_for_ui_phase(vs);
             vs->present();
+            state->select_system->apply_logical_presentation();
         }
 
         int system_id = state->select_system->get_selected_system();
@@ -1691,8 +1734,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
             vs->clear();
             state->edit_system->render();
-            renderMenuOverlay(vs->renderer, vs->window_width, vs->window_height);
+            render_menu_overlay_for_ui_phase(vs);
             vs->present();
+            state->edit_system->apply_logical_presentation();
         }
 
         int edit_result = state->edit_system->get_result();
