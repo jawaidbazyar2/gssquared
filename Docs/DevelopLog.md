@@ -12729,8 +12729,8 @@ it's coming together!!
 
 [ ] windows and alt may be reversed in the emscripten build? Something wacky when I hit ctrl-alt-reset, it tries to do the self-test or the "boot time menu" This might be the required way to get around CMD-Q etc. make user-settable.
 [ ] how to get around Cmd-Q closing browser? (this is a mac thing)
-[ ] it wants to run at exactly 60fps. may not be a way around that.
-[ ] but when we close and re-open an emulation, it wants to run 75. So there is a thing we're missing here on a re-start.
+[X] it wants to run at exactly 60fps. may not be a way around that.
+[X] but when we close and re-open an emulation, it wants to run 75. So there is a thing we're missing here on a re-start.
 [ ] When running an emu, the menu is at the very top of window where it belongs. but in SelectSystem it's right next to the content area, and, the mouse is offset. So something needs to be tweaked there (or more likely, untweaked).
 [ ] check menu on linux. gs2.cpp
 [ ] preferences storage: IDBFS in /prefs
