@@ -142,15 +142,29 @@ void ImGui_ImplSDLRenderer3_RenderDrawData(ImDrawData* draw_data, SDL_Renderer* 
 {
     ImGui_ImplSDLRenderer3_Data* bd = ImGui_ImplSDLRenderer3_GetBackendData();
 
-    // If there's a scale factor set by the user, use that instead
-    // If the user has specified a scale factor to SDL_Renderer already via SDL_RenderSetScale(), SDL will scale whatever we pass
-    // to SDL_RenderGeometryRaw() by that scale factor. In that case we don't want to be also scaling it ourselves here.
+    // Clip rects must stay in the same space as the vertex positions we hand to
+    // SDL_RenderGeometryRaw(). That call scales positions by the renderer's
+    // current scale, and SDL_SetRenderClipRect() scales clip rects the same way.
+    //
+    // SDL_GetRenderScale() reports only SDL_SetRenderScale(), not the scale from
+    // SDL_SetRenderLogicalPresentation(). On a retina canvas the logical
+    // presentation (window points stretched onto the pixel backbuffer) is
+    // already that scale — the same factor as FramebufferScale. Multiplying
+    // clips by FramebufferScale again pushes them to 4× while the geometry
+    // stays at 2×, so menu labels are scissored away and only the window fill
+    // remains (a black bar). 1× displays hide this because both factors are 1.
     float rsx = 1.0f;
     float rsy = 1.0f;
     SDL_GetRenderScale(renderer, &rsx, &rsy);
+    int logical_w = 0, logical_h = 0;
+    SDL_RendererLogicalPresentation logical_mode = SDL_LOGICAL_PRESENTATION_DISABLED;
+    SDL_GetRenderLogicalPresentation(renderer, &logical_w, &logical_h, &logical_mode);
+    const bool sdl_scales_clips =
+        (rsx != 1.0f || rsy != 1.0f) ||
+        (logical_mode != SDL_LOGICAL_PRESENTATION_DISABLED);
     ImVec2 render_scale;
-    render_scale.x = (rsx == 1.0f) ? draw_data->FramebufferScale.x : 1.0f;
-    render_scale.y = (rsy == 1.0f) ? draw_data->FramebufferScale.y : 1.0f;
+    render_scale.x = sdl_scales_clips ? 1.0f : draw_data->FramebufferScale.x;
+    render_scale.y = sdl_scales_clips ? 1.0f : draw_data->FramebufferScale.y;
 
     // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
     int fb_width = (int)(draw_data->DisplaySize.x * render_scale.x);
