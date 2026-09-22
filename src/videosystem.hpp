@@ -139,6 +139,10 @@ public:
         uint8_t border_r, uint8_t border_g, uint8_t border_b, bool respect_mode = true);
     void clear();
     void present();
+    // The letterboxed display dest (`target`) expressed in window points, so
+    // overlay UI (ImGui menu) can sit immediately above it instead of in the
+    // unused bars that SDL paints black at present().
+    SDL_FRect target_rect_in_window_points() const;
     bool display_capture_mouse(bool capture);
     bool display_capture_mouse_message(bool capture);
     bool is_mouse_captured();

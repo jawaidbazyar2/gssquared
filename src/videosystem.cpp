@@ -273,6 +273,19 @@ void video_system_t::present() {
     SDL_RenderPresent(renderer);
 }
 
+SDL_FRect video_system_t::target_rect_in_window_points() const {
+    int points_w = 0, points_h = 0;
+    int pixel_w = 0, pixel_h = 0;
+    SDL_GetWindowSize(window, &points_w, &points_h);
+    SDL_GetCurrentRenderOutputSize(renderer, &pixel_w, &pixel_h);
+    if (pixel_w <= 0 || pixel_h <= 0 || target.w <= 0.0f || target.h <= 0.0f) {
+        return { 0.0f, 0.0f, (float)points_w, (float)points_h };
+    }
+    const float sx = (float)points_w / (float)pixel_w;
+    const float sy = (float)points_h / (float)pixel_h;
+    return { target.x * sx, target.y * sy, target.w * sx, target.h * sy };
+}
+
 void video_system_t::set_window_title(const char *title) {
     SDL_SetWindowTitle(window, title);
 }

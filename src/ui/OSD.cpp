@@ -25,6 +25,7 @@
 #include "SDL3/SDL_events.h"
 #include "computer.hpp"
 #include "gs2.hpp"
+#include "videosystem.hpp"
 #include "LabeledButton.hpp"
 #include "Container.hpp"
 #include "AssetAtlas.hpp"
@@ -955,8 +956,9 @@ void OSD::render() {
             }
         }
     }
-    // Draw the platform menu overlay (Linux: ☰ hamburger button) at 1:1 scale
-    renderMenuOverlay(renderer, window_width, window_height);
+    // ImGui menu sits on the letterboxed display dest (window points).
+    SDL_FRect menu_content = computer->video_system->target_rect_in_window_points();
+    renderMenuOverlay(renderer, &menu_content);
 
     // Restore scale
     //SDL_SetRenderScale(renderer, ox,oy);

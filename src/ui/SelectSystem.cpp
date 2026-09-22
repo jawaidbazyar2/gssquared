@@ -10,6 +10,7 @@
 #include "SystemButton.hpp"
 #include "Button.hpp"
 #include "version.h"
+#include "platform-specific/menu.h"
 
 #include <iostream>
 #include <cstdio>
@@ -61,11 +62,15 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     ui_ctx.description_x = design_width / 2.0f;
     ui_ctx.description_y = 880.0f;
 
+    // ImGui menu sits on the dest top (wide canvas) or just above it (tall).
+    // Keep this strip empty so the bar does not cover the title / tiles.
+    const float menu_inset = menuBarHeight();
+
     // Slightly shorter than the old full-bleed grid so +/Edit sit below tiles, not in them.
     const int grid_w = 1024;
-    const int grid_h = 700;
+    const int grid_h = 700 - static_cast<int>(menu_inset);
     container->size(grid_w, grid_h);
-    container->set_position((design_width - grid_w) / 2, 70);
+    container->set_position((design_width - grid_w) / 2, 70 + static_cast<int>(menu_inset));
 
     // Render the selector through a fixed design-resolution logical presentation.
     // LETTERBOX keeps the aspect ratio correct and all content on-screen no
@@ -262,7 +267,8 @@ void SelectSystem::render() {
         }
 
         text_renderer->set_color(255,255,255,255);
-        text_renderer->render("Choose your retro experience", (design_width / 2), 20, TEXT_ALIGN_CENTER);
+        text_renderer->render("Choose your retro experience", (design_width / 2),
+                              20 + static_cast<int>(menuBarHeight()), TEXT_ALIGN_CENTER);
 
         // Same footer position as SystemButton config descriptions.
         const char *hint = nullptr;

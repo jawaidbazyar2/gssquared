@@ -43,6 +43,7 @@
 #include "ui/OSD.hpp"
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
+#include <emscripten.h>
 #elif defined(__APPLE__)
 #include "platform-specific/macos/gs2_save_dialog.hpp"
 #endif
@@ -231,15 +232,53 @@ void frame_video_update(computer_t *computer, bool force_full_frame = false) {
     vs->present();
 }
 
+#if defined(__EMSCRIPTEN__)
+// Keep SDL_AppIterate on requestAnimationFrame.
+//
+// SDL_SetRenderVSync(1) before the emscripten main loop exists fails the
+// swap-interval check and SDL arms a software vsync at a hardcoded 60 Hz
+// (the emscripten video driver never reports a refresh rate). After a
+// close/reopen the main loop is already RAF, that SetVSync succeeds, the
+// software cap stays off, and the guest runs at the panel rate — 75 Hz on
+// a 48–75 FreeSync display. Do not use SDL_SetRenderVSync on the web.
+//
+// PumpEvents can also apply a deferred swap interval of 0, which switches
+// the loop to setTimeout(0). Re-assert RAF every iterate, after that pump.
+static void gs2_web_lock_raf() {
+    emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
+}
+
+// The next guest frame cannot start until the browser calls us back, which is
+// after we return. Spinning all the way to the deadline stacks that delay on
+// top of the frame, and the slower wasm work then slips. Return this much
+// early so the callback lands on the deadline. Adapted from how late the
+// previous wake actually was.
+static uint64_t gs2_web_wake_lead_ns = 2'000'000;
+static uint64_t gs2_web_target_start_ns = 0;
+
+static void gs2_web_begin_frame(computer_t *computer) {
+    (void)computer;
+    uint64_t now = SDL_GetTicksNS();
+    if (gs2_web_target_start_ns == 0) {
+        return;
+    }
+    int64_t late = (int64_t)now - (int64_t)gs2_web_target_start_ns;
+    int64_t lead = (int64_t)gs2_web_wake_lead_ns + late / 2;
+    if (lead < 0) lead = 0;
+    if (lead > 8'000'000) lead = 8'000'000;
+    gs2_web_wake_lead_ns = (uint64_t)lead;
+    // The browser often calls back before the guest deadline. Starting the
+    // frame then, and rebasing last_cycle_time to that early wake, shortens
+    // every frame (measured 60.5 fps). Hold until the stamped boundary.
+    if (now < gs2_web_target_start_ns) {
+        while (SDL_GetTicksNS() < gs2_web_target_start_ns) {
+        }
+    }
+}
+#endif
+
 void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per_frame)
     /* uint64_t frame_count) */ {
-#ifdef __EMSCRIPTEN__
-    // In the browser the main thread must return promptly so requestAnimationFrame
-    // can drive the next SDL_AppIterate. Busy-waiting / sleeping here would hang the
-    // tab, so we let vsync (RAF) pace the frame instead.
-    computer->frame_slipped = false;
-    return;
-#endif
     computer->frame_slipped = false;
     if (gs2_app_values.modal_tracking) return;
 
@@ -251,9 +290,27 @@ void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per
     if (current_time > wakeup_time) {
         computer->clock_slip++;
         computer->frame_slipped = true;
+#if defined(__EMSCRIPTEN__)
+        gs2_web_target_start_ns = 0;
+#endif
         // TODO: log clock slip for later display.
         //printf("Clock slip: event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", event_time, audio_time, display_time, app_event_time, event_time + audio_time + display_time + app_event_time);
     } else {
+#if defined(__EMSCRIPTEN__)
+        // No Asyncify, so this cannot yield. Return early by the lead so the
+        // browser can deliver the next callback at the guest deadline.
+        // gs2_web_begin_frame() holds if that callback arrives early; that
+        // hold is what keeps the rate at 59.9227 Hz instead of creeping up.
+        uint64_t lead = gs2_web_wake_lead_ns;
+        if (lead > ns_per_frame / 2) lead = ns_per_frame / 2;
+        uint64_t return_at = wakeup_time - lead;
+        if (current_time < return_at) {
+            while (SDL_GetTicksNS() < return_at) {
+                sleep_loops++;
+            }
+        }
+        gs2_web_target_start_ns = wakeup_time;
+#else
         if (gs2_app_values.sleep_mode) { // sleep most of it, but more aggressively sneak up on target than SDL_DelayPrecise does itself
             SDL_DelayPrecise((wakeup_time - SDL_GetTicksNS())*0.95);
         }
@@ -261,7 +318,7 @@ void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per
         do {
             sleep_loops++;
         } while (SDL_GetTicksNS() < wakeup_time);
-
+#endif
     }
 }
 
@@ -410,6 +467,9 @@ bool run_one_frame(computer_t *computer) {
         
     } else if (computer->execution_mode == EXEC_NORMAL) {
 
+#if defined(__EMSCRIPTEN__)
+        gs2_web_begin_frame(computer);
+#endif
         computer->set_frame_start_cycle();
         uint64_t frame_cpu_start = clock->get_cycles();
 
@@ -622,7 +682,18 @@ bool run_one_frame(computer_t *computer) {
         computer->update_ludicrous_calibration(
             gs2_app_values.modal_tracking,
             clock->get_cycles() - frame_cpu_start);
-        computer->last_cycle_time = SDL_GetTicksNS(); 
+#if defined(__EMSCRIPTEN__)
+        // Stamp the guest boundary, not the early return. The next callback
+        // is the rest of the wait; stamping "now" would shrink every frame
+        // by the lead and run fast.
+        if (!computer->frame_slipped && gs2_web_target_start_ns != 0) {
+            computer->last_cycle_time = gs2_web_target_start_ns;
+        } else {
+            computer->last_cycle_time = SDL_GetTicksNS();
+        }
+#else
+        computer->last_cycle_time = SDL_GetTicksNS();
+#endif 
 
     }
 
@@ -947,12 +1018,11 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
 
     // Emulation manages its own timing, so turn off vsync.
-    // On the web we keep vsync on so SDL's Emscripten backend drives
-    // SDL_AppIterate via requestAnimationFrame (the frame_sleep busy-wait
-    // is disabled there — see frame_sleep()).
-#ifdef __EMSCRIPTEN__
-    SDL_SetRenderVSync(vs->renderer, 1);
-#else
+    // On the web, frame_sleep holds the guest frame and gs2_web_lock_raf()
+    // keeps requestAnimationFrame. SDL_SetRenderVSync(1) must not be used
+    // there: it arms a one-shot 60 Hz software vsync that does not survive
+    // close/reopen (the second renderer then runs at the panel refresh).
+#ifndef __EMSCRIPTEN__
     SDL_SetRenderVSync(vs->renderer, 0);
 #endif
 
@@ -1321,7 +1391,11 @@ void transition_to_shutdown(GS2AppState *state) {
     state->select_system = new SelectSystem(vs, state->aa);
 
     // Let vsync throttle the selection UI instead of spinning.
+    // On the web, RAF does that (gs2_web_lock_raf in SDL_AppIterate).
+    // SDL_SetRenderVSync(1) here would arm SDL's 60 Hz software fallback.
+#ifndef __EMSCRIPTEN__
     SDL_SetRenderVSync(vs->renderer, 1);
+#endif
     state->phase = PHASE_SYSTEM_SELECT;
 
     state->loaded_config.reset();
@@ -1520,7 +1594,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     state->select_system = new SelectSystem(vs, state->aa);
 
     // Let vsync throttle the selection UI instead of spinning.
+    // On the web, RAF does that (gs2_web_lock_raf in SDL_AppIterate).
+    // SDL_SetRenderVSync(1) here would arm SDL's 60 Hz software fallback.
+#ifndef __EMSCRIPTEN__
     SDL_SetRenderVSync(vs->renderer, 1);
+#endif
     state->phase = PHASE_SYSTEM_SELECT;
 
     // If the caller passed a config file path, skip the system-selector UI and
@@ -1614,41 +1692,44 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 /**
  * Draw the menu bar for the SelectSystem / EditSystem phases.
  *
- * On the ImGui platforms this mirrors what the emulation path does around
- * osd->render(): the bar is drawn through a window-points 1:1 presentation, so
- * it lands at the top of the window. ImGui works entirely in window points —
- * handleMenuEvent feeds it raw SDL events and ImGui_ImplSDL3_NewFrame takes
- * DisplaySize from SDL_GetWindowSize — but the selector keeps a design-space
- * LETTERBOX presentation active, which breaks the bar two ways once the window
- * is taller than the design aspect: it draws into the centered content rect (so
- * the bar sits well below the top of the window while its clicks still land at
- * the top), and SDL_RenderPresent() then repaints the letterbox bars black,
- * erasing a bar drawn at the very top. So we also leave the presentation
- * DISABLED for present(): the frame's opening SDL_RenderClear() already blacked
- * the whole target (clear ignores viewport and clip), making SDL's present-time
- * border fill redundant. Callers re-apply their presentation afterwards, since
- * event() converts mouse positions with it.
+ * ImGui works in window points (handleMenuEvent feeds it raw SDL events;
+ * ImGui_ImplSDL3_NewFrame takes DisplaySize from SDL_GetWindowSize), so we
+ * switch to a points-sized STRETCH presentation for the overlay. The bar sits
+ * immediately above the letterboxed dest (or on its top edge when the canvas
+ * is wide), so present-time letterbox fill cannot erase it or its menus, and
+ * the selector / editor leave a strip so widgets are not covered. Callers
+ * re-apply their presentation afterwards, since event() converts mouse
+ * positions with it.
  */
 static void render_menu_overlay_for_ui_phase(video_system_t *vs) {
 #if defined(__linux__) || defined(__EMSCRIPTEN__)   // ImGui menu (see menu.h)
+    SDL_FRect content = vs->target_rect_in_window_points();
     int points_w = 0, points_h = 0;
     SDL_GetWindowSize(vs->window, &points_w, &points_h);
     SDL_SetRenderLogicalPresentation(vs->renderer, points_w, points_h,
         SDL_LOGICAL_PRESENTATION_STRETCH);
 
-    renderMenuOverlay(vs->renderer, vs->window_width, vs->window_height);
+    renderMenuOverlay(vs->renderer, &content);
 
+    // Leave presentation DISABLED for present(): the opening SDL_RenderClear()
+    // already blacked the whole target. Callers restore LETTERBOX after present
+    // so event() conversion stays in design space.
     SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
 #else
     // macOS / Windows have a native menu bar: this draws nothing into the
     // renderer, so leave the caller's presentation alone and let SDL fill the
     // letterbox bars at present() as before.
-    renderMenuOverlay(vs->renderer, vs->window_width, vs->window_height);
+    renderMenuOverlay(vs->renderer, nullptr);
 #endif
 }
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
     GS2AppState *state = (GS2AppState *)appstate;
+
+#if defined(__EMSCRIPTEN__)
+    // After SDL_PumpEvents, which may have applied a deferred swap interval.
+    gs2_web_lock_raf();
+#endif
 
     // Pump any pending GTK/GDK events (Linux menu). Called here rather than
     // in SDL_AppEvent to avoid blocking SDL's X11 connection (deadlock risk).

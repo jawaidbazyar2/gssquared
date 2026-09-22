@@ -443,7 +443,7 @@ bool menuNeedsFrame()
     return io.WantCaptureMouse || io.WantCaptureKeyboard;
 }
 
-void renderMenuOverlay(SDL_Renderer *renderer, int /*win_w*/, int /*win_h*/)
+void renderMenuOverlay(SDL_Renderer *renderer, const SDL_FRect *content)
 {
     if (!g_imgui_inited) return;
 
@@ -464,10 +464,43 @@ void renderMenuOverlay(SDL_Renderer *renderer, int /*win_w*/, int /*win_h*/)
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 
-    if (ImGui::BeginMainMenuBar()) {
-        build_menu_bar();
-        ImGui::EndMainMenuBar();
+    // Sit the bar immediately above the letterboxed dest (same width), not at
+    // the raw window top and not over the dest's widgets. SDL_RenderPresent
+    // paints LETTERBOX bars black, so a window-top bar — or a dropdown that
+    // hangs into a side bar — gets erased on many Emscripten backends. Flush
+    // against the dest keeps open menus over the content; when there is no
+    // room above (wide canvas) the bar shares the dest top and the selector /
+    // editor layouts leave menuBarHeight() of room underneath.
+    float bar_x = 0.0f;
+    float bar_y = 0.0f;
+    float bar_w = ImGui::GetIO().DisplaySize.x;
+    const float bar_h = ImGui::GetFrameHeight();
+    if (content && content->w > 0.0f) {
+        bar_x = content->x;
+        bar_w = content->w;
+        bar_y = (content->y >= bar_h) ? (content->y - bar_h) : content->y;
     }
+
+    ImGui::SetNextWindowPos(ImVec2(bar_x, bar_y));
+    ImGui::SetNextWindowSize(ImVec2(bar_w, bar_h));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
+    const ImGuiWindowFlags bar_flags =
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus;
+    if (ImGui::Begin("##GS2MenuBar", nullptr, bar_flags)) {
+        if (ImGui::BeginMenuBar()) {
+            build_menu_bar();
+            ImGui::EndMenuBar();
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar(4);
 
     ImGui::Render();
     ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);

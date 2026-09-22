@@ -17,6 +17,7 @@
 #include "util/SystemConfig.hpp"
 #include "util/SystemSettings.hpp"
 #include "util/uuid.hpp"
+#include "platform-specific/menu.h"
 
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
@@ -100,10 +101,11 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
 
     // Content block in design coords before offset: x 30..900 (w=870). Center it;
     // shift everything except the title down 30px; panels below badge/fields +25 more.
+    // Extra menuBarHeight() keeps the ImGui bar from covering the title / panel.
     constexpr float kContentLeft = 30.0f;
     constexpr float kContentWidth = 870.0f;
     layout_dx = (design_width - kContentWidth) * 0.5f - kContentLeft;
-    layout_dy = 30.0f;
+    layout_dy = 30.0f + menuBarHeight();
     body_dy = layout_dy + 25.0f;
 
     Style_t SB{
@@ -684,11 +686,12 @@ void EditSystem::render() {
     platform_info *plat = get_platform(draft.config().platform_id);
     uint32_t case_color = plat ? (plat->case_color & 0xFFFFFF00) | 0xE0 : 0x808080E0;
 
+    const float menu_inset = menuBarHeight();
     ui_ctx.fill_rect({0, 0, (float)design_width, (float)design_height}, 0x000000FF);
-    ui_ctx.fill_rect({20, 30, (float)(design_width - 40), (float)(design_height - 60)}, case_color);
+    ui_ctx.fill_rect({20, 30 + menu_inset, (float)(design_width - 40), (float)(design_height - 60 - menu_inset)}, case_color);
 
     title_renderer->set_color(0, 0, 0, 0xFF);
-    title_renderer->render("Edit System Configuration", design_width / 2, 30, TEXT_ALIGN_CENTER);
+    title_renderer->render("Edit System Configuration", design_width / 2, 30 + static_cast<int>(menu_inset), TEXT_ALIGN_CENTER);
 
     // Match OSD: translucent container fills (e.g. storage 0x00000040) need blend.
     SDL_SetRenderDrawBlendMode(vs->renderer, SDL_BLENDMODE_BLEND);

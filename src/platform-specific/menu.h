@@ -62,13 +62,21 @@ void setMenuTrackingCallback(MenuIterateCallback callback, void *appstate);
 // other platforms get no-ops.
 #if defined(__linux__) || defined(__EMSCRIPTEN__)
 bool handleMenuEvent(const SDL_Event *event);
-void renderMenuOverlay(SDL_Renderer *renderer, int win_w, int win_h);
+// Draw the ImGui menu immediately above `content` (window points) when there
+// is room, otherwise flush with the dest top. `content` is the letterboxed
+// display dest; passing NULL uses the full window. SelectSystem / EditSystem
+// must leave `menuBarHeight()` of design-space room under that strip.
+void renderMenuOverlay(SDL_Renderer *renderer, const SDL_FRect *content);
 void pumpMenuEvents();
 /** True when ImGui is capturing input (menu bar hover / open menu) and needs another frame. */
 bool menuNeedsFrame();
+// ImGui bar height in window/design points (font + frame padding). 0 on
+// platforms that use a native menu.
+inline float menuBarHeight() { return 28.0f; }
 #else
 inline bool handleMenuEvent(const SDL_Event * /*event*/) { return false; }
-inline void renderMenuOverlay(SDL_Renderer * /*renderer*/, int /*win_w*/, int /*win_h*/) {}
+inline void renderMenuOverlay(SDL_Renderer * /*renderer*/, const SDL_FRect * /*content*/) {}
 inline void pumpMenuEvents() {}
 inline bool menuNeedsFrame() { return false; }
+inline float menuBarHeight() { return 0.0f; }
 #endif
