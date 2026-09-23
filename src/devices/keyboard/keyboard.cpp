@@ -157,7 +157,11 @@ void handle_keydown_iiplus(const SDL_Event &event, keyboard_state_t *kb_state) {
         // Convert lowercase to control code (0x01-0x1A)
         if (mod & SDL_KMOD_SHIFT && key == 'p') { // handle control-shift-P as a special case.
             kb_key_pressed(kb_state, 0x00);
+        } else if (mod & SDL_KMOD_SHIFT && key == '2') { // this is where most keyboards expect it..
+            kb_key_pressed(kb_state, 0x00);
         } else if (mod & SDL_KMOD_SHIFT && key == 'n') { // handle control-shift-N as a special case.
+            kb_key_pressed(kb_state, 0x1E);
+        } else if (mod & SDL_KMOD_SHIFT && key == '6') {
             kb_key_pressed(kb_state, 0x1E);
         } else {
             if (key >= 'a' && key <= 'z') {
