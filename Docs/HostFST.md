@@ -34,8 +34,8 @@ After the FST is installed and loaded, the shared folder appears in the GS/OS Fi
 
 - Requires an **Apple IIgs** platform and **GS/OS** (not plain ProDOS 8 on a //e).
 - On **Windows**, Host FST stores ProDOS type/auxtype, Finder info, and resource forks in NTFS Alternate Data Streams (`:AFP_AfpInfo` and `:AFP_Resource`, the same convention as CiderPress and Services for Macintosh). Use an **NTFS** folder; FAT/exFAT and some network shares will not keep that metadata.
-- The **Host Folder…** picker is not available in the [browser build](Web.md).
-- Mount Drivers only supplies the installer disk; you only need to install the drivers/FST on each bootable GS/OS volume you use.
+- The **Host Folder…** picker is not available in the [GSSquared Live!](Web.md).
+- Mount Drivers only supplies the installer disk; you use it to install the drivers/FST on each bootable GS/OS volume you use.
 
 ## Related
 
