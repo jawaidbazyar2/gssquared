@@ -1,0 +1,4998 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Second Sight GPU Mode - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#second-sight-gpu-mode" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Second Sight GPU Mode
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../Cards_UthernetII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../UserInterface/" class="md-tabs__link">
+          
+  
+  
+  Misc
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CommandLine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BlankFloppy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blank Disk Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HostFST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host FST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SerialConnections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial & Parallel
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Serial_Modem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial / Modem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Play in the Browser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Editor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigFiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Config Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProtocolHandlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    File Types & URLs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UsingTheDebugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using the Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_UthernetII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Uthernet II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SuperSerial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Super Serial Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VOC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Overlay Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SecondSight/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Second Sight
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard (user)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Videx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Videx VideoTerm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VIDHD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VIDHD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock cards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Misc
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Misc
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-why-a-distinct-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Why a distinct mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-gpu-vs-quickdraw-one-isa-two-client-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. GPU vs QuickDraw: one ISA, two client policies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-the-vga-fence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. The VGA fence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-display-modes-resolution-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Display modes (resolution numbers)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-resources-and-handles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Resources and handles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-host-io-unchanged-transport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Host I/O (unchanged transport)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-host-api-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Host API commands
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Host API commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-getgpuinfo-43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 GetGpuInfo ($43)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-uploadtexture-40" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 UploadTexture ($40)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-freetexture-41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 FreeTexture ($41)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74-execcmdbuf-42-transmit-and-execute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 ExecCmdBuf ($42) — transmit and execute
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#75-getcapabilities-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.5 GetCapabilities ($10)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-command-sequence-buffer-csb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Command sequence buffer (CSB)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Command sequence buffer (CSB)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-opcode-map-isa-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 Opcode map (ISA v1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-interpreter-state-reset-at-each-execcmdbuf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 Interpreter state (reset at each ExecCmdBuf)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83-present-targets-policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 Present, targets, policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#84-texture-primitives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.4 Texture primitives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#85-quickdraw-ii-rect-primitives-v01" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.5 QuickDraw II rect primitives (v0.1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-3d-out-of-scope-reserved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 3D (out of scope, reserved)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-entering-gpu-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Entering GPU mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-initial-test-gsos-texture-bounce" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Initial test: GS/OS texture bounce
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. Initial test: GS/OS texture bounce">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#121-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.1 Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#122-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.2 Procedure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#123-pass-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.3 Pass criteria
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-worked-csb-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Worked CSB example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-reference-implementation-gssquared" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Reference implementation: GSSquared
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="14. Reference implementation: GSSquared">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#141-csb-sdl_renderer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.1 CSB → SDL_Renderer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#142-present-threading-and-renderer-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.2 Present, threading, and renderer state
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#143-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.3 Formats
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#144-quickdraw-is-a-different-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.4 QuickDraw is a different backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#145-wiring-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.5 Wiring notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-open-questions-iterate-here" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Open questions (iterate here)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-document-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. Document history
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="second-sight-gpu-mode">Second Sight GPU Mode<a class="headerlink" href="#second-sight-gpu-mode" title="Permanent link">&para;</a></h1>
+<p><strong>Status:</strong> draft v0.2 (2026-09-13)<br />
+<strong>Card mode:</strong> SetMode emulation flag <code>$03</code><br />
+<strong>Depends on:</strong> <a href="../SecondSight/">SecondSight.md</a> (classic VGA API, handshake, slot I/O)</p>
+<p>This is a <em>new</em> high-level drawing architecture that reuses the Second Sight
+command port, handshake, and VGA <em>resolution numbers</em>. It does <strong>not</strong> reuse
+the Oak/VGA register model, CRTC programming, or a programmer-visible linear
+framebuffer.</p>
+<p>GPU mode is the drawing backend implied by <a href="../AppleIIx/">AppleIIx.md</a>: the 1 MHz
+Apple II bus is too slow to push pixels, so the host submits resources and a
+command sequence; the card (or emulator) executes them at GPU speed.</p>
+<p>Original 1995 Second Sight silicon is <strong>not</strong> expected to implement this. The
+point of the fence is that we should have exposed this level of abstraction in
+1995 instead of teaching every application to program VGA modelines.</p>
+<hr />
+<h2 id="1-why-a-distinct-mode">1. Why a distinct mode<a class="headerlink" href="#1-why-a-distinct-mode" title="Permanent link">&para;</a></h2>
+<p>Classic Second Sight VGA mode (<code>SetMode</code> flag <code>$01</code>) is a <em>display controller</em>:</p>
+<ul>
+<li>software picks a mode number <strong>or</strong> pokes Sequencer / CRTC / GDC / Attribute /
+Oak extended registers (<code>SetVGAReg</code>, <code>SetUserMode</code>);</li>
+<li>software uploads a linear framebuffer and (sometimes) a palette;</li>
+<li>the card scans that buffer out.</li>
+</ul>
+<p>That model is what Cogito and the existing emulator speak. It stays frozen.</p>
+<p>GPU mode (<code>SetMode</code> flag <code>$03</code>) is a <em>drawing processor</em>:</p>
+<ul>
+<li>software picks a resolution by the same <strong>mode number</strong> (size + native depth);</li>
+<li>software uploads <strong>textures</strong> (and later fonts, patterns, meshes);</li>
+<li>software transmits a <strong>command sequence buffer</strong> (CSB) of primitives;</li>
+<li>the card maintains off-screen surfaces and a presentable display;</li>
+<li><code>Present</code> makes a completed image visible.</li>
+</ul>
+<p>The host never computes a pixel address, never programs a modeline, and never
+owns the scanout buffer.</p>
+<pre><code>  1995 VGA path                         GPU path
+  ─────────────                         ────────
+  SetMode(num, VGA)                     SetMode(num, GPU)
+  SetVGAReg / SetUserMode               (illegal)
+  UploadData → linear VRAM              UploadTexture → handle
+  CPU writes pixels                     ExecCmdBuf(Clear, Draw*, Present)
+  CRTC scans VRAM                       card composites, then presents
+</code></pre>
+<p>PPU mode (<code>$02</code>) stays a third, NES-style path. GPU does not replace it.</p>
+<hr />
+<h2 id="2-gpu-vs-quickdraw-one-isa-two-client-policies">2. GPU vs QuickDraw: one ISA, two client policies<a class="headerlink" href="#2-gpu-vs-quickdraw-one-isa-two-client-policies" title="Permanent link">&para;</a></h2>
+<p>QuickDraw II desktop apps and action games want different <em>update models</em>, not
+necessarily different hardware:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Frame renderer</strong> (games)</th>
+<th><strong>Retained framebuffer</strong> (desktop / QD)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Typical loop</td>
+<td>Clear → draw whole scene → Present</td>
+<td>Draw dirty rects → Present</td>
+</tr>
+<tr>
+<td>Backbuffer</td>
+<td>Discarded each frame</td>
+<td>Survives across submits</td>
+</tr>
+<tr>
+<td>Tear control</td>
+<td>Double-buffer swap at VBL</td>
+<td>Same Present, but no mandatory Clear</td>
+</tr>
+<tr>
+<td>CPU work</td>
+<td>Build a small CSB of world state</td>
+<td>Translate QD calls to CSB opcodes</td>
+</tr>
+<tr>
+<td>Good for</td>
+<td>Sprites, scrolling worlds</td>
+<td>Windows, menus, text, incremental updates</td>
+</tr>
+</tbody>
+</table>
+<p><strong>v0.1 decision:</strong> one card mode, one command ISA, two present policies
+(§8.3). QuickDraw primitives (<code>FrameRect</code>, <code>PaintRect</code>, <code>FillRect</code>,
+<code>InvertRect</code>, …) are opcodes in that ISA. They are not a second <code>SetMode</code> flag.</p>
+<p>A future GS/OS QuickDraw patch is a <em>translator</em> (toolbox call → CSB), not a
+second GPU. If desktop compositing later needs window surfaces, vsync cursor,
+or a display server, that is software on top of render-to-texture + Present —
+still this ISA.</p>
+<p>Revisit splitting “QD mode” only if retained-framebuffer scheduling or
+compatibility with classic IIgs <code>GrafPort</code> semantics fights the game path
+badly. Until then, do not fork the card.</p>
+<hr />
+<h2 id="3-the-vga-fence">3. The VGA fence<a class="headerlink" href="#3-the-vga-fence" title="Permanent link">&para;</a></h2>
+<p>While <code>ss_mode == GPU</code>:</p>
+<p><strong>Allowed classic commands</strong></p>
+<table>
+<thead>
+<tr>
+<th>Cmd</th>
+<th>Name</th>
+<th>Role in GPU mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td>GetStatus</td>
+<td>Detection (12-byte record; version <code>$20</code>)</td>
+</tr>
+<tr>
+<td><code>$01</code></td>
+<td>SetMode</td>
+<td>Enter/leave GPU; pick resolution by mode number</td>
+</tr>
+<tr>
+<td><code>$04</code></td>
+<td>ScreenOff</td>
+<td>Blank output</td>
+</tr>
+<tr>
+<td><code>$05</code></td>
+<td>ScreenOn</td>
+<td>Enable output</td>
+</tr>
+<tr>
+<td><code>$10</code></td>
+<td>GetCapabilities</td>
+<td>§7.5 — mode catalog (legal in every engine)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>GPU host commands</strong> (start at <code>$40</code>; not part of the 1995 set)</p>
+<table>
+<thead>
+<tr>
+<th>Cmd</th>
+<th>Name</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$40</code></td>
+<td>UploadTexture</td>
+<td>§7.2</td>
+</tr>
+<tr>
+<td><code>$41</code></td>
+<td>FreeTexture</td>
+<td>§7.3</td>
+</tr>
+<tr>
+<td><code>$42</code></td>
+<td>ExecCmdBuf</td>
+<td>§7.4</td>
+</tr>
+<tr>
+<td><code>$43</code></td>
+<td>GetGpuInfo</td>
+<td>§7.1 (current GPU state, not capabilities)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Fenced (must return handshake</strong> <code>$A6</code> <strong>if issued in GPU mode)</strong></p>
+<table>
+<thead>
+<tr>
+<th>Cmd</th>
+<th>Name</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$02</code></td>
+<td>UploadData</td>
+<td>Linear VRAM is not a GPU resource</td>
+</tr>
+<tr>
+<td><code>$03</code></td>
+<td>ScrollScreen</td>
+<td>No CRTC start address</td>
+</tr>
+<tr>
+<td><code>$06</code> / <code>$07</code></td>
+<td>SetPalette / SetPaletteEntry</td>
+<td>VGA DAC; use CSB <code>SetPalette</code></td>
+</tr>
+<tr>
+<td><code>$08</code></td>
+<td>SetBorder</td>
+<td>No overscan modeline</td>
+</tr>
+<tr>
+<td><code>$0A</code></td>
+<td>ClearScreen</td>
+<td>Address+length fill of VRAM; use CSB <code>Clear</code></td>
+</tr>
+<tr>
+<td><code>$0C</code> / <code>$0D</code></td>
+<td>SetVGAReg / GetVGAReg</td>
+<td>Modeline / Oak programming</td>
+</tr>
+<tr>
+<td><code>$0E</code></td>
+<td>SetUserMode</td>
+<td>84-byte VGA register block</td>
+</tr>
+</tbody>
+</table>
+<p>Leaving GPU mode (<code>SetMode</code> with flag <code>$00</code> or <code>$01</code>) drops all GPU handles
+and display surfaces. Classic VGA state is restored to a defined idle
+(Apple II emulation or last VGA mode — implementer choice, must be documented
+when implemented).</p>
+<p>GPU mode <strong>ignores</strong> CRTC registers even if old software pokes them. Scanout
+size comes only from the SetMode mode number.</p>
+<hr />
+<h2 id="4-display-modes-resolution-numbers">4. Display modes (resolution numbers)<a class="headerlink" href="#4-display-modes-resolution-numbers" title="Permanent link">&para;</a></h2>
+<p>GPU mode accepts the <strong>graphics</strong> entries of the existing Second Sight mode
+table (<code>vga_modes[]</code> in <code>secondsight.hpp</code>). The number selects <em>width,
+height, and native color depth only</em>. Timing, pitch, planar layout, and
+Oak bits are not part of the contract.</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Size</th>
+<th>Native depth</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$13</code></td>
+<td>320×200</td>
+<td>8 bpp indexed</td>
+<td>Classic VGA 13h geometry</td>
+</tr>
+<tr>
+<td><code>$53</code></td>
+<td>640×480</td>
+<td>8 bpp indexed</td>
+<td></td>
+</tr>
+<tr>
+<td><code>$5C</code></td>
+<td>640×480</td>
+<td>16 bpp (RGB555)</td>
+<td>15 color bits, matching SS 16-bit modes</td>
+</tr>
+<tr>
+<td><code>$5F</code></td>
+<td>640×480</td>
+<td>24 bpp (RGB888)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>$61</code></td>
+<td>640×400</td>
+<td>8 bpp indexed</td>
+<td>AppleColor-sized</td>
+</tr>
+</tbody>
+</table>
+<p>Text modes <code>$01</code> / <code>$03</code> and the internal “emulated Apple” IDs <code>$FA</code>–<code>$FE</code>
+are <strong>invalid</strong> in GPU mode (<code>$A6</code>).</p>
+<p>Additional sizes (800×600, 1024×768, …) may be added later as new numbers.
+They still must not expose modelines — add a row to this table, nothing else.</p>
+<p><strong>Native depth</strong> is the display surface format. Textures may use a different
+format; the card converts on blit. Indexed modes have a 256-entry GPU palette
+(24-bit colors), independent of the VGA DAC.</p>
+<p><code>GetCapabilities</code> (§7.5) lists the mode numbers this card implements and
+their size/depth. <code>GetGpuInfo</code> reports heap size and current mode so software
+can see if a given resolution fits (two display buffers + working set).
+<code>SetMode</code> returns <code>$A6</code> if the mode is unknown or the display surfaces cannot
+be allocated.</p>
+<p>Coordinate space: origin <strong>top-left</strong>, <strong>+Y down</strong>, pixel units, signed 16-bit
+coordinates (QuickDraw II <code>Rect</code> convention). A <code>Rect</code> is
+<code>{top, left, bottom, right}</code> with <strong>exclusive</strong> <code>bottom</code> and <code>right</code>.</p>
+<hr />
+<h2 id="5-resources-and-handles">5. Resources and handles<a class="headerlink" href="#5-resources-and-handles" title="Permanent link">&para;</a></h2>
+<p>Everything the GPU retains across CSB submissions is a <strong>resource</strong> identified
+by a 16-bit <strong>handle</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Handle</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$0000</code></td>
+<td>Display target (backbuffer of the swap chain, or the retained FB — §8.3). <strong>Never</strong> returned by <code>UploadTexture</code>.</td>
+</tr>
+<tr>
+<td><code>$0001</code>–<code>$FFFE</code></td>
+<td>Allocated resources (textures in v0.1)</td>
+</tr>
+<tr>
+<td><code>$FFFF</code></td>
+<td>Invalid; error return</td>
+</tr>
+</tbody>
+</table>
+<p>v0.1 resource type: <strong>texture</strong> (2D pixel rectangle). Later types (command
+buffers, fonts, index/vertex buffers) share this handle namespace; <code>FreeTexture</code>
+becomes a generic <code>FreeResource</code> or keeps working for textures only.</p>
+<p><strong>Texture upload parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>width</td>
+<td>u16</td>
+<td>Pixels, ≥ 1</td>
+</tr>
+<tr>
+<td>height</td>
+<td>u16</td>
+<td>Pixels, ≥ 1</td>
+</tr>
+<tr>
+<td>format</td>
+<td>u8</td>
+<td>See below</td>
+</tr>
+<tr>
+<td>flags</td>
+<td>u8</td>
+<td>bit 0: renderable (may be a <code>SetRenderTarget</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Formats (v0.1)</strong></p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+<th>Bytes/pixel</th>
+<th>Layout (row-major, tightly packed, top-left origin)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$01</code></td>
+<td><code>IDX8</code></td>
+<td>1</td>
+<td>Palette index</td>
+</tr>
+<tr>
+<td><code>$02</code></td>
+<td><code>RGB555</code></td>
+<td>2</td>
+<td>LE: <code>0rrrrrgg gggbbbbb</code> (bit 15 = 0)</td>
+</tr>
+<tr>
+<td><code>$03</code></td>
+<td><code>RGB888</code></td>
+<td>3</td>
+<td><code>R, G, B</code></td>
+</tr>
+<tr>
+<td><code>$04</code></td>
+<td><code>ARGB8888</code></td>
+<td>4</td>
+<td><code>B, G, R, A</code> in memory (LE 32-bit <code>AARRGGBB</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Pixel byte length is always <code>width * height * bpp</code>. No row padding in v0.1.</p>
+<p>A renderable texture is a valid <code>SetRenderTarget</code>. The display (<code>handle 0</code>)
+is always renderable. Drawing to a texture, then <code>DrawTexture</code> of that handle
+to the display, is the off-screen / GWorld pattern.</p>
+<p><strong>GPU RAM (not the 512K VGA window)</strong></p>
+<p>Classic SS VGA memory is 512K. GPU mode has a <strong>separate heap</strong>. <code>GetGpuInfo</code>
+returns the current size and free space. <code>GetCapabilities</code> (§7.5) lists
+which mode numbers exist; it does not advertise engines. Suggested heap
+profiles:</p>
+<table>
+<thead>
+<tr>
+<th>Profile</th>
+<th>Heap</th>
+<th>Who</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full</td>
+<td>≥ 16 MiB</td>
+<td>GSSquared emulator, future IIx / modern cards</td>
+</tr>
+<tr>
+<td>Minimum to claim GPU</td>
+<td>≥ 4 MiB</td>
+<td>Enough for 640×480×16 double-buffer + several 128×128 textures</td>
+</tr>
+</tbody>
+</table>
+<p>Display surfaces (front + back, or one retained FB) are allocated from this
+heap at <code>SetMode</code> and are <strong>not</strong> handles the guest frees.</p>
+<hr />
+<h2 id="6-host-io-unchanged-transport">6. Host I/O (unchanged transport)<a class="headerlink" href="#6-host-io-unchanged-transport" title="Permanent link">&para;</a></h2>
+<p>Slot 3 device-select: command <code>$C0B0</code>, data <code>$C0B1</code>/<code>$C0B2</code>, handshake <code>$C0B8</code>
+(see <a href="../SecondSight/">SecondSight.md</a> § Handshaking).</p>
+<p>GPU host commands use the existing patterns:</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Handshake</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DMA</td>
+<td><code>$01</code> ready → bytes → <code>$00</code> done</td>
+<td>args, pixels, CSB body, info records</td>
+</tr>
+<tr>
+<td>Long-running</td>
+<td><code>$A5</code> success / <code>$A6</code> error</td>
+<td><code>SetMode</code>, <code>ExecCmdBuf</code>, <code>FreeTexture</code> after work</td>
+</tr>
+</tbody>
+</table>
+<p>Only one host command is in flight. The CSB interpreter runs to completion
+(or error) before <code>$A5</code>/<code>$A6</code>.</p>
+<hr />
+<h2 id="7-host-api-commands">7. Host API commands<a class="headerlink" href="#7-host-api-commands" title="Permanent link">&para;</a></h2>
+<p>GPU host commands start at <code>$40</code>. <code>$00</code>–<code>$0E</code> remain the 1995 set. <code>$0F</code> is
+<code>SetTextFont</code>. <code>$10</code> is <code>GetCapabilities</code> (§7.5). Host command bytes and CSB
+opcodes (§8) are separate namespaces.</p>
+<h3 id="71-getgpuinfo-43">7.1 GetGpuInfo (<code>$43</code>)<a class="headerlink" href="#71-getgpuinfo-43" title="Permanent link">&para;</a></h3>
+<p>Immediate DMA-out after the command byte (same shape as GetStatus). This
+record is <strong>current GPU state</strong> (heap, live mode). It is not a capability
+cookie and has no signature. Which geometries exist come from
+<code>GetCapabilities</code> (§7.5).</p>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td>1</td>
+<td>CSB ISA version (<code>1</code> for this document)</td>
+</tr>
+<tr>
+<td><code>$01</code></td>
+<td>4</td>
+<td>GPU heap size in bytes (u32 LE)</td>
+</tr>
+<tr>
+<td><code>$05</code></td>
+<td>4</td>
+<td>GPU heap free (u32 LE)</td>
+</tr>
+<tr>
+<td><code>$09</code></td>
+<td>2</td>
+<td>Maximum textures</td>
+</tr>
+<tr>
+<td><code>$0B</code></td>
+<td>2</td>
+<td>Maximum CSB bytes per <code>ExecCmdBuf</code></td>
+</tr>
+<tr>
+<td><code>$0D</code></td>
+<td>2</td>
+<td>Native width of current GPU mode (0 if not in GPU)</td>
+</tr>
+<tr>
+<td><code>$0F</code></td>
+<td>2</td>
+<td>Native height</td>
+</tr>
+<tr>
+<td><code>$11</code></td>
+<td>1</td>
+<td>Native format (<code>$01</code>–<code>$04</code>)</td>
+</tr>
+<tr>
+<td><code>$12</code></td>
+<td>1</td>
+<td>Current present policy (§8.3)</td>
+</tr>
+<tr>
+<td><code>$13</code></td>
+<td>1</td>
+<td>Active flag: 1 if currently in GPU mode</td>
+</tr>
+</tbody>
+</table>
+<p>Handshake: DMA <code>$01</code>/<code>$00</code> (not long-running). Length = <code>$14</code> bytes.</p>
+<p>If the card is not in GPU mode, width/height/format are 0, <code>active</code> is 0, and
+heap fields still report the GPU heap (or 0 if the card has no GPU). A missing
+graphics mode in <code>GetCapabilities</code> means that geometry is unavailable;
+<code>SetMode(..., $03)</code> returning <code>$A6</code> means this engine rejected it.</p>
+<h3 id="72-uploadtexture-40">7.2 UploadTexture (<code>$40</code>)<a class="headerlink" href="#72-uploadtexture-40" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Command <code>$40</code>.</li>
+<li>DMA in header (8 bytes):</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td>2</td>
+<td>width</td>
+</tr>
+<tr>
+<td><code>$02</code></td>
+<td>2</td>
+<td>height</td>
+</tr>
+<tr>
+<td><code>$04</code></td>
+<td>1</td>
+<td>format</td>
+</tr>
+<tr>
+<td><code>$05</code></td>
+<td>1</td>
+<td>flags</td>
+</tr>
+<tr>
+<td><code>$06</code></td>
+<td>2</td>
+<td>reserved (<code>0</code>)</td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>DMA in <code>width * height * bpp</code> pixel bytes.</li>
+<li>DMA out 2-byte handle (LE). <code>$FFFF</code> on failure.</li>
+<li>Long-running <code>$A5</code> / <code>$A6</code>.</li>
+</ol>
+<p>Failure cases: not in GPU mode, bad format, zero size, heap exhaustion,
+too many textures.</p>
+<p>Uploaded data may be discarded from Apple memory after <code>$A5</code>; the card owns
+its copy.</p>
+<h3 id="73-freetexture-41">7.3 FreeTexture (<code>$41</code>)<a class="headerlink" href="#73-freetexture-41" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Command <code>$41</code>.</li>
+<li>DMA in 2-byte handle.</li>
+<li><code>$A5</code> if freed; <code>$A6</code> if handle is <code>$0000</code>, <code>$FFFF</code>, unknown, or the
+  texture is the current render target.</li>
+</ol>
+<p>Freeing does not implicit-Present. Draw commands in a later CSB that cite a
+freed handle error the whole buffer (§9).</p>
+<h3 id="74-execcmdbuf-42-transmit-and-execute">7.4 ExecCmdBuf (<code>$42</code>) — transmit and execute<a class="headerlink" href="#74-execcmdbuf-42-transmit-and-execute" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Command <code>$42</code>.</li>
+<li>DMA in header (4 bytes):</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Offset</th>
+<th>Size</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td>3</td>
+<td>length (u24 LE), CSB bytes that follow</td>
+</tr>
+<tr>
+<td><code>$03</code></td>
+<td>1</td>
+<td>flags: bit 0 = abort on first error (must be 1 in v0.1)</td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>DMA in <code>length</code> bytes — the command sequence buffer.</li>
+<li>Card executes the CSB in order.</li>
+<li><code>$A5</code> if every opcode succeeded; <code>$A6</code> if not (no partial-commit
+  guarantee in v0.1: a failed CSB may have already mutated the current
+   target; see §9).</li>
+</ol>
+<p>v0.1 max <code>length</code> is 65536. <code>GetGpuInfo</code> reports the cap.</p>
+<p>The CSB is <strong>not</strong> retained. To replay, the host transmits it again. A later
+revision may add <code>UploadCmdBuf</code> → handle for static scenes.</p>
+<h3 id="75-getcapabilities-10">7.5 GetCapabilities (<code>$10</code>)<a class="headerlink" href="#75-getcapabilities-10" title="Permanent link">&para;</a></h3>
+<p>Card-wide query, legal in every engine (emu / VGA / PPU / GPU / Host Text /
+GPU Text). Not a GPU command. BEEF firmware rejects opcodes <code>≥ $0F</code> without
+raising handshake <code>$01</code>, so <strong>do not issue <code>$10</code> unless <code>GetStatus.version</code>
+is <code>$20</code> or higher</strong>.</p>
+<p><code>GetStatus</code> keeps the classic 12-byte record (<code>GSVGA</code> + <code>size_rec</code> <code>$06</code> +
+six data bytes). Cogito and VGALib check only the cookie; they do not
+compare <code>version</code>. GSSquared reports <strong><code>$20</code></strong> (2.0). Do not grow
+<code>size_rec</code>. Do not put a GPU signature on <code>GetGpuInfo</code>.</p>
+<p>Transport matches <code>GetGpuInfo</code>: command, <code>WaitHSOn</code>, DMA-out, <code>WaitHSOff</code>.
+No dummy read. Not long-running.</p>
+<pre><code>u16 total_bytes          ; bytes after this field (LE)
+repeat until consumed:
+  u8  mode               ; cap id = SetMode mode number
+  u8  len                ; 5
+  u16 width              ; LE
+  u16 height             ; LE
+  u8  depth              ; bits per pixel, or 0 for text
+</code></pre>
+<p>A mode number names a geometry only. The second <code>SetMode</code> byte picks the
+engine. Walk the stream; skip unknown ids with <code>len</code>. Extra payload bytes
+may be appended later; v1 software reads the first five.</p>
+<p>Graphics: <code>width</code>/<code>height</code> are pixels; <code>depth</code> is bpp (<code>16</code> = RGB555).
+Text: <code>width</code>/<code>height</code> are columns × visible rows; <code>depth</code> is <code>0</code>.</p>
+<p>The card lists only rows it implements. <code>$FA</code>–<code>$FE</code> (internal Apple
+emulation) and <code>$FF</code> (SetUserMode) never appear. New size = new number + a
+row here; no modelines.</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Kind</th>
+<th>Size</th>
+<th>Depth</th>
+<th>VGA</th>
+<th>GPU</th>
+<th>Host Text</th>
+<th>GPU Text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$01</code></td>
+<td>text</td>
+<td>40×25</td>
+<td>0</td>
+<td>yes</td>
+<td>—</td>
+<td>planned</td>
+<td>planned</td>
+</tr>
+<tr>
+<td><code>$03</code></td>
+<td>text</td>
+<td>80×25</td>
+<td>0</td>
+<td>yes</td>
+<td>—</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>$13</code></td>
+<td>gfx</td>
+<td>320×200</td>
+<td>8</td>
+<td>yes</td>
+<td>yes</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>$43</code></td>
+<td>text</td>
+<td>80×43</td>
+<td>0</td>
+<td>—</td>
+<td>—</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>$50</code></td>
+<td>text</td>
+<td>80×50</td>
+<td>0</td>
+<td>—</td>
+<td>—</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>$52</code></td>
+<td>text</td>
+<td>132×60</td>
+<td>0</td>
+<td>—</td>
+<td>—</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>$53</code></td>
+<td>gfx</td>
+<td>640×480</td>
+<td>8</td>
+<td>yes</td>
+<td>yes</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>$5C</code></td>
+<td>gfx</td>
+<td>640×480</td>
+<td>16</td>
+<td>yes</td>
+<td>yes</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>$5F</code></td>
+<td>gfx</td>
+<td>640×480</td>
+<td>24</td>
+<td>yes</td>
+<td>yes</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>$61</code></td>
+<td>gfx</td>
+<td>640×400</td>
+<td>8</td>
+<td>yes</td>
+<td>yes</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Detection (library, not card ISA):</p>
+<ol>
+<li><code>GetStatus</code> — <code>'G','S','V','G','A'</code>; <code>version &gt;= $20</code>.</li>
+<li><code>GetCapabilities</code> — find the mode number you want (<code>$5C</code> for GPUTEST,
+  <code>$03</code> / <code>$43</code> / <code>$50</code> / <code>$52</code> for Host Text).</li>
+<li><code>SetMode(number, flag)</code> — <code>$A6</code> if this engine rejects that number.</li>
+<li>GPU only: <code>GetGpuInfo</code> for live heap / current mode.</li>
+</ol>
+<hr />
+<h2 id="8-command-sequence-buffer-csb">8. Command sequence buffer (CSB)<a class="headerlink" href="#8-command-sequence-buffer-csb" title="Permanent link">&para;</a></h2>
+<p>A CSB is a packed byte stream, little-endian, 8-bit opcodes, no padding.
+Execution is serial. After <code>End</code> (or end of buffer), the interpreter stops.
+These opcodes are <strong>not</strong> host command bytes written to <code>$C0B0</code> (those start
+at <code>$40</code>; see §7). A CSB <code>$40</code> would be a 3D opcode, not <code>UploadTexture</code>.</p>
+<h3 id="81-opcode-map-isa-v1">8.1 Opcode map (ISA v1)<a class="headerlink" href="#81-opcode-map-isa-v1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Op</th>
+<th>Name</th>
+<th>Args</th>
+<th>v0.1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td><code>End</code></td>
+<td>—</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$01</code></td>
+<td><code>Clear</code></td>
+<td>color:u32</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$02</code></td>
+<td><code>Present</code></td>
+<td>flags:u8</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$03</code></td>
+<td><code>SetRenderTarget</code></td>
+<td>handle:u16</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$04</code></td>
+<td><code>DrawTexture</code></td>
+<td>handle:u16, x:i16, y:i16</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$05</code></td>
+<td><code>DrawTextureRect</code></td>
+<td>handle:u16, src:Rect, dst:Rect</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$06</code></td>
+<td><code>DrawTextureTiled</code></td>
+<td>handle:u16, dst:Rect</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$10</code></td>
+<td><code>SetClip</code></td>
+<td>rect:Rect</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$11</code></td>
+<td><code>SetColor</code></td>
+<td>color:u32</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$12</code></td>
+<td><code>SetPattern</code></td>
+<td>8 bytes (1-bit 8×8)</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$13</code></td>
+<td><code>SetDrawMode</code></td>
+<td>mode:u8</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$14</code></td>
+<td><code>SetPalette</code></td>
+<td>start:u8, count:u8, then <code>count×3</code> RGB bytes</td>
+<td>8 bpp modes</td>
+</tr>
+<tr>
+<td><code>$15</code></td>
+<td><code>SetPresentPolicy</code></td>
+<td>policy:u8</td>
+<td>required</td>
+</tr>
+<tr>
+<td><code>$20</code></td>
+<td><code>FrameRect</code></td>
+<td>rect:Rect</td>
+<td>QD, required</td>
+</tr>
+<tr>
+<td><code>$21</code></td>
+<td><code>PaintRect</code></td>
+<td>rect:Rect</td>
+<td>QD, required</td>
+</tr>
+<tr>
+<td><code>$22</code></td>
+<td><code>FillRect</code></td>
+<td>rect:Rect</td>
+<td>QD, required</td>
+</tr>
+<tr>
+<td><code>$23</code></td>
+<td><code>InvertRect</code></td>
+<td>rect:Rect</td>
+<td>QD, required</td>
+</tr>
+<tr>
+<td><code>$30</code>–<code>$3F</code></td>
+<td><em>more QD</em></td>
+<td></td>
+<td>reserved (Line, Oval, RoundRect, …)</td>
+</tr>
+<tr>
+<td><code>$40</code>–<code>$5F</code></td>
+<td><em>3D</em></td>
+<td></td>
+<td>reserved</td>
+</tr>
+<tr>
+<td><code>$E0</code>–<code>$EF</code></td>
+<td><em>vendor / debug</em></td>
+<td></td>
+<td>reserved</td>
+</tr>
+<tr>
+<td><code>$FF</code></td>
+<td><code>End</code></td>
+<td>alias of <code>$00</code></td>
+<td>optional</td>
+</tr>
+</tbody>
+</table>
+<p><code>Rect</code> = four i16: <code>top, left, bottom, right</code> (8 bytes). Empty or inverted
+rects (bottom ≤ top or right ≤ left) are no-ops, not errors.</p>
+<p><code>color:u32</code> is <strong>always</strong> <code>AARRGGBB</code> in the CSB (A=<code>$FF</code> = opaque). The card
+converts to the target’s native format. In <code>IDX8</code> targets, the implementation
+maps RGB to the nearest palette entry unless <code>SetDrawMode</code> bit 7 is set, in
+which case the <strong>low 8 bits</strong> of the color are used as an index (alpha
+ignored).</p>
+<h3 id="82-interpreter-state-reset-at-each-execcmdbuf">8.2 Interpreter state (reset at each ExecCmdBuf)<a class="headerlink" href="#82-interpreter-state-reset-at-each-execcmdbuf" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Reset value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Render target</td>
+<td>handle <code>$0000</code> (display)</td>
+</tr>
+<tr>
+<td>Clip</td>
+<td>full current target</td>
+</tr>
+<tr>
+<td>Color</td>
+<td>opaque black <code>$FF000000</code></td>
+</tr>
+<tr>
+<td>Pattern</td>
+<td>8×8 all-ones (solid, so <code>FillRect</code> ≡ <code>PaintRect</code> until set)</td>
+</tr>
+<tr>
+<td>Draw mode</td>
+<td><code>Copy</code> (<code>$00</code>)</td>
+</tr>
+<tr>
+<td>Palette</td>
+<td>unchanged across CSBs (owned by the GPU mode, not the CSB)</td>
+</tr>
+<tr>
+<td>Present policy</td>
+<td>unchanged across CSBs (set by <code>SetPresentPolicy</code> or <code>SetMode</code> default)</td>
+</tr>
+</tbody>
+</table>
+<p>Resetting clip/color/mode per submit keeps a CSB self-contained — important
+when games and a QD translator share the card. Palette and present policy are
+session state because they are expensive / semantic.</p>
+<h3 id="83-present-targets-policies">8.3 Present, targets, policies<a class="headerlink" href="#83-present-targets-policies" title="Permanent link">&para;</a></h3>
+<p><code>SetRenderTarget handle</code></p>
+<ul>
+<li><code>$0000</code> — display (the buffer that <code>Present</code> will show).</li>
+<li>Other — a renderable texture. Size of the target becomes the clip default
+until the next <code>SetClip</code>.</li>
+</ul>
+<p>Drawing is always into the <strong>current</strong> target. It is not visible on the
+monitor until <code>Present</code>, except as noted for retain policy.</p>
+<p><code>Present</code> flags</p>
+<table>
+<thead>
+<tr>
+<th>Bit</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Wait for display VBL before the new image is scanned out (should be 1 for the GS/OS animation test)</td>
+</tr>
+<tr>
+<td>1–7</td>
+<td>Reserved, 0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Present policy</strong> (<code>SetPresentPolicy</code>, default <code>Swap</code> on <code>SetMode</code> GPU):</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td><code>Swap</code></td>
+<td>Two display buffers. <code>Present</code> queues a swap at VBL. The next CSB draws into the <strong>other</strong> buffer. Games should <code>Clear</code> (or fully cover) each frame.</td>
+</tr>
+<tr>
+<td><code>$01</code></td>
+<td><code>Retain</code></td>
+<td>One display buffer. Draws accumulate. <code>Present</code> waits VBL (if flag 0) but does not discard contents. Desktop / QD.</td>
+</tr>
+</tbody>
+</table>
+<p><code>Clear</code> fills the <strong>current target</strong> (clipped) with <code>color</code>. It does not
+Present.</p>
+<h3 id="84-texture-primitives">8.4 Texture primitives<a class="headerlink" href="#84-texture-primitives" title="Permanent link">&para;</a></h3>
+<p><code>DrawTexture handle, x, y</code><br />
+Blit the full texture to <code>(x,y)</code> on the current target, 1:1 pixels. Pixels
+outside the clip / target are discarded. Negative <code>x</code>/<code>y</code> are legal (partially
+off-screen).</p>
+<p><code>DrawTextureRect handle, src, dst</code><br />
+Blit <code>src</code> in texture space to <code>dst</code> in target space. If <code>dst</code> size ≠ <code>src</code>
+size, the card scales (nearest-neighbor in v0.1). Empty src/dst → no-op.</p>
+<p><code>DrawTextureTiled handle, dst</code><br />
+Replicate the full texture over <code>dst</code> (modulo wrap). This is the “stamp a
+texture across the display” primitive.</p>
+<p>v0.1 blending: <strong>copy</strong> all pixels (including 0). Color-key and alpha come
+later (<code>SetColorKey</code>, <code>ARGB8888</code> source with <code>SrcOver</code>). Indexed <code>$00</code> is
+<strong>not</strong> automatically transparent — that is PPU-mode semantics.</p>
+<h3 id="85-quickdraw-ii-rect-primitives-v01">8.5 QuickDraw II rect primitives (v0.1)<a class="headerlink" href="#85-quickdraw-ii-rect-primitives-v01" title="Permanent link">&para;</a></h3>
+<p>These follow IIgs QuickDraw II <em>shapes</em>, not a full <code>GrafPort</code>. Pen size is
+<strong>1×1</strong> until a later <code>SetPenSize</code>. Pattern is the CSB 8×8 1-bit pattern
+with <strong>foreground = current color</strong> and <strong>background = transparent</strong> for
+<code>FillRect</code>? No: QD <code>FillRect</code> uses the pattern with both bits as colors.</p>
+<p>v0.1 pattern model (simplest useful QD subset):</p>
+<ul>
+<li><code>SetPattern</code>: 8 bytes, row 0 … row 7, MSB = leftmost pixel.</li>
+<li><code>PaintRect</code>: fill with current <strong>color</strong> (ignore pattern), <code>Copy</code> or current
+draw mode.</li>
+<li><code>FillRect</code>: for each pixel, pattern bit 1 → current color, bit 0 → skip
+(leave target pixel). That is “stencil with color,” good enough for desktop
+dither once a second color exists.</li>
+<li><code>FrameRect</code>: 1-pixel outline on the four edges of <code>rect</code> (inside the
+exclusive bounds: top row, bottom-1 row, left col, right-1 col).</li>
+<li><code>InvertRect</code>: bitwise XOR of each native pixel with all-ones (1s complement
+of the stored pixel). Independent of color/pattern.</li>
+</ul>
+<p><code>SetDrawMode</code></p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Name</th>
+<th>Apply to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td><code>Copy</code></td>
+<td>Replace dest with source/color</td>
+</tr>
+<tr>
+<td><code>$02</code></td>
+<td><code>Xor</code></td>
+<td>Dest XOR source (QD <code>modeXOR</code>)</td>
+</tr>
+<tr>
+<td><code>$80</code></td>
+<td><code>Copy</code> + indexed-as-index</td>
+<td>See color rule in §8.1</td>
+</tr>
+</tbody>
+</table>
+<p><code>OR</code> / <code>BIC</code> / not-variants are a later QD increment. <code>InvertRect</code> is the
+v0.1 inversion path (QD <code>InvertRect</code>).</p>
+<p>Iterate here: round rect, oval, line, region, text, color pattern (32-byte
+IIgs <code>Pattern</code>), <code>pnSize</code>, transfer modes 0–15.</p>
+<hr />
+<h2 id="9-errors">9. Errors<a class="headerlink" href="#9-errors" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Host handshake</th>
+<th>CSB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unknown host command</td>
+<td>ignore / no <code>$A5</code> (classic)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Host GPU cmd while not in GPU</td>
+<td><code>$A6</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Fenced VGA cmd while GPU</td>
+<td><code>$A6</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Upload OOM / bad args</td>
+<td><code>$A6</code>, handle <code>$FFFF</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Unknown CSB opcode</td>
+<td><code>$A6</code></td>
+<td>stop</td>
+</tr>
+<tr>
+<td>Invalid handle in CSB</td>
+<td><code>$A6</code></td>
+<td>stop</td>
+</tr>
+<tr>
+<td><code>SetRenderTarget</code> to non-renderable</td>
+<td><code>$A6</code></td>
+<td>stop</td>
+</tr>
+<tr>
+<td>CSB longer than cap / truncated opcode</td>
+<td><code>$A6</code></td>
+<td>stop</td>
+</tr>
+</tbody>
+</table>
+<p>v0.1 does <strong>not</strong> roll back the target on CSB error. Guest should <code>Clear</code> or
+redraw after <code>$A6</code>. A later “transaction” flag can add rollback.</p>
+<hr />
+<h2 id="10-3d-out-of-scope-reserved">10. 3D (out of scope, reserved)<a class="headerlink" href="#10-3d-out-of-scope-reserved" title="Permanent link">&para;</a></h2>
+<p>ISA <code>$40</code>–<code>$5F</code> is reserved for a later 3D increment (vertex upload, triangle,
+depth, transform). That is <strong>CSB opcode</strong> space, not host <code>$C0B0</code> commands.
+v0.1 implementations must <code>$A6</code> if they ever see these.
+No vertex formats or matrices in this document.</p>
+<hr />
+<h2 id="11-entering-gpu-mode">11. Entering GPU mode<a class="headerlink" href="#11-entering-gpu-mode" title="Permanent link">&para;</a></h2>
+<pre><code>SetMode(mode_number, $03)
+</code></pre>
+<p><code>mode_number</code> is a row from §4. Sequence:</p>
+<ol>
+<li>If already GPU and same mode: <code>$A5</code>, no-op (handles preserved).</li>
+<li>If already GPU and different mode: drop all handles, realloc display
+  surfaces, <code>$A5</code> or <code>$A6</code>.</li>
+<li>If coming from VGA/PPU/emu: fence VGA state, alloc GPU heap surfaces,
+  default policy <code>Swap</code>, identity palette (index i → gray or VGA-like ramp —
+   document in implementation), <code>$A5</code>.</li>
+</ol>
+<p><code>GetStatus</code> byte <code>$08</code> (<code>vga_active</code>) is <strong>1</strong> in GPU mode so existing “not
+Apple video” checks still treat the card as owning the monitor. Byte <code>$09</code>
+(<code>vga_mode_num</code>) is the GPU mode number. Do not put <code>$03</code> (the <em>flag</em>) in
+<code>$09</code>.</p>
+<hr />
+<h2 id="12-initial-test-gsos-texture-bounce">12. Initial test: GS/OS texture bounce<a class="headerlink" href="#12-initial-test-gsos-texture-bounce" title="Permanent link">&para;</a></h2>
+<p>Goal: prove the 1 MHz bus is only used for <strong>handles and a tiny CSB</strong>, while
+the card moves more pixels per frame than a IIgs could blit.</p>
+<h3 id="121-setup">12.1 Setup<a class="headerlink" href="#121-setup" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Apple IIgs, Second Sight in slot 3, GS/OS.</li>
+<li>S16 (or EXE) with a small SS library: GetStatus, GetCapabilities,
+GetGpuInfo, SetMode, UploadTexture, ExecCmdBuf, FreeTexture, ScreenOn.</li>
+</ul>
+<h3 id="122-procedure">12.2 Procedure<a class="headerlink" href="#122-procedure" title="Permanent link">&para;</a></h3>
+<ol>
+<li><code>GetStatus</code> — <code>'G','S','V','G','A'</code> present; <code>version &gt;= $20</code>.</li>
+<li><code>GetCapabilities</code> — record for mode <code>$5C</code> (640×480×16) present (§7.5).</li>
+<li><code>GetGpuInfo</code> — heap size (and later, that the chosen mode fits).</li>
+<li><code>SetMode($5C, $03)</code> — 640×480, RGB555, GPU. <code>$A5</code>.</li>
+<li>Build three CPU-side images, <strong>good-sized</strong> (if heap allows, <strong>128x128</strong>
+  <code>RGB555</code> each = 32 KiB). Distinct art (solid + checker</li>
+<li>gradient is enough).</li>
+<li><code>UploadTexture</code> × 3 → handles <code>A, B, C</code>.</li>
+<li>Each frame, build a CSB (~40–80 bytes):
+  <code>Clear       $FF202040
+   DrawTexture A, x0, y0
+   DrawTexture B, x1, y1
+   DrawTexture C, x2, y2
+   Present     (VBL wait)
+   End</code>
+   Positions follow independent velocities; bounce on the 640×480 edges
+   (account for texture size). Optional: <code>DrawTextureRect</code> with a changing
+   <code>dst</code> size for a cheap “scale” stress.</li>
+<li><code>ExecCmdBuf</code> every frame. The 65816 must <strong>not</strong> write the 640×480
+  framebuffer.</li>
+<li>On quit: <code>FreeTexture</code> × 3, <code>SetMode</code> back to Apple emulation (<code>$00</code>).</li>
+</ol>
+<h3 id="123-pass-criteria">12.3 Pass criteria<a class="headerlink" href="#123-pass-criteria" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Three textures visible, moving <strong>every display frame</strong> (60 Hz with VBL
+Present) without tearing.</li>
+<li>Host per-frame traffic is the CSB plus handshake, not <code>width*height</code> pixels.</li>
+<li>Motion remains smooth at CPU speeds where a naive 65816 blit of one 256×256
+16-bit image per frame would fail.</li>
+</ul>
+<p>This is a <strong>frame renderer</strong> (<code>Swap</code> + <code>Clear</code>). A second test (later) should
+exercise <code>Retain</code> + <code>FrameRect</code> / <code>PaintRect</code> / <code>FillRect</code> / <code>InvertRect</code>
+without clearing.</p>
+<hr />
+<h2 id="13-worked-csb-example">13. Worked CSB example<a class="headerlink" href="#13-worked-csb-example" title="Permanent link">&para;</a></h2>
+<p>Handles: <code>$0001</code> texture A. Bounce position (40, 80). Clear dark blue,
+present with VBL.</p>
+<pre><code>00: 01                      Clear
+01: 40 20 20 FF             color AARRGGBB = FF202040 (LE bytes 40 20 20 FF)
+05: 04                      DrawTexture
+06: 01 00                   handle 0001
+08: 28 00                   x = 40
+0A: 50 00                   y = 80
+0C: 02                      Present
+0D: 01                      flags = VBL
+0E: 00                      End
+</code></pre>
+<p>14 bytes. The 256×256 blit is entirely on-card.</p>
+<hr />
+<h2 id="14-reference-implementation-gssquared">14. Reference implementation: GSSquared<a class="headerlink" href="#14-reference-implementation-gssquared" title="Permanent link">&para;</a></h2>
+<p>Not part of the guest contract. Other cards (or a future IIx GPU) may execute
+the same ISA with a real rasterizer. In GSSquared, <strong>true GPU mode</strong> (the
+game path: textures, clear, blit, present) is a thin translator from CSB
+opcodes onto <strong>SDL3</strong> <code>SDL_Renderer</code>. The emulator does not reimplement a
+software GPU for that path, and it does not drop to the low-level <code>SDL_GPU</code>
+API (Metal/Vulkan-style command buffers) for v0.1 2D.</p>
+<p>GSSquared already has one window <code>SDL_Renderer</code>, off-screen <code>TARGET</code>
+textures, and an optional CRT post-process that uses <code>SDL_GPU</code> <em>after</em> the
+frame is composed. GPU mode is another guest-sized <code>TARGET</code> texture that the
+existing Second Sight frame handler feeds to <code>video_system_t::render_frame()</code>,
+same as VGA and PPU.</p>
+<h3 id="141-csb-sdl_renderer">14.1 CSB → <code>SDL_Renderer</code><a class="headerlink" href="#141-csb-sdl_renderer" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>CSB / host op</th>
+<th>SDL3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UploadTexture</code></td>
+<td><code>SDL_CreateTexture</code> + <code>SDL_UpdateTexture</code></td>
+</tr>
+<tr>
+<td><code>FreeTexture</code></td>
+<td><code>SDL_DestroyTexture</code></td>
+</tr>
+<tr>
+<td><code>SetRenderTarget</code></td>
+<td><code>SDL_SetRenderTarget</code> (GPU-owned texture only)</td>
+</tr>
+<tr>
+<td><code>Clear</code></td>
+<td><code>SDL_RenderClear</code> / <code>SDL_RenderFillRect</code></td>
+</tr>
+<tr>
+<td><code>DrawTexture</code> / <code>DrawTextureRect</code></td>
+<td><code>SDL_RenderTexture</code></td>
+</tr>
+<tr>
+<td><code>DrawTextureTiled</code></td>
+<td><code>SDL_RenderTextureTiled</code></td>
+</tr>
+<tr>
+<td><code>SetClip</code></td>
+<td><code>SDL_SetRenderClipRect</code></td>
+</tr>
+<tr>
+<td><code>SetColor</code></td>
+<td><code>SDL_SetRenderDrawColor</code></td>
+</tr>
+<tr>
+<td><code>PaintRect</code> / <code>FrameRect</code></td>
+<td><code>SDL_RenderFillRect</code> / <code>SDL_RenderRect</code></td>
+</tr>
+<tr>
+<td><code>Present</code></td>
+<td>Flip which guest buffer is <strong>front</strong>; do <strong>not</strong> call <code>SDL_RenderPresent</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>SDL_GPU</code> stays the CRT shader path. Guest CSBs are 2D blit lists; wrapping
+them in GPU render passes and pipelines buys nothing visible to the IIgs.
+A later 3D increment (§10) is the point at which a second backend on
+<code>SDL_GPU</code> would make sense.</p>
+<h3 id="142-present-threading-and-renderer-state">14.2 Present, threading, and renderer state<a class="headerlink" href="#142-present-threading-and-renderer-state" title="Permanent link">&para;</a></h3>
+<p><code>Present</code> in the ISA means “this guest surface is ready,” not “flip the host
+window.” Window present, host vsync, bezel, OSD, and CRT remain in
+<code>video_system</code>. <code>ExecCmdBuf</code> runs on the 65816 I/O timeslice; the frame
+handler runs later.</p>
+<p>Rules:</p>
+<ul>
+<li>Draw only into GPU-owned <code>SDL_TEXTUREACCESS_TARGET</code> textures (display
+backbuffers and renderable guest textures). Never set the render target to
+<code>nullptr</code> (the window) from the CSB interpreter.</li>
+<li>Save and restore renderer target, clip, viewport, and draw color around
+CSB execute so OSD / ImGui / the frame handler are not disturbed.</li>
+<li>Guest VBL wait (Present flag bit 0) is the emulator frame turn (same idea
+as PPU WaitVBL), <strong>not</strong> SDL vsync. Do not busy-wait inside a <code>$C0B8</code> poll
+for “GPU time.”</li>
+<li><code>Swap</code> is two guest <code>TARGET</code> textures and a pointer flip. <code>Retain</code> is one.</li>
+</ul>
+<h3 id="143-formats">14.3 Formats<a class="headerlink" href="#143-formats" title="Permanent link">&para;</a></h3>
+<p>The SDL renderer is effectively RGBA. Convert on upload (and on palette
+change for <code>IDX8</code>):</p>
+<ul>
+<li><code>RGB555</code> / <code>RGB888</code> / <code>ARGB8888</code> → renderer-native once at <code>UploadTexture</code>.</li>
+<li><code>IDX8</code> → RGBA at upload and whenever <code>SetPalette</code> runs.</li>
+</ul>
+<p>The guest still sees handles and the native <em>mode</em> depth from §4. It never
+sees SDL’s pixel format.</p>
+<h3 id="144-quickdraw-is-a-different-backend">14.4 QuickDraw is a different backend<a class="headerlink" href="#144-quickdraw-is-a-different-backend" title="Permanent link">&para;</a></h3>
+<p><code>InvertRect</code>, 1-bit <code>FillRect</code>, XOR, pen sizes, and regions are
+framebuffer raster ops. <code>SDL_Renderer</code> is a compositor. Forcing those through
+blend-mode tricks will get the wrong <code>InvertRect</code> and a pile of special cases.</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>GSSquared backend</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>True GPU / games</td>
+<td>CSB → <code>SDL_Renderer</code> (this section)</td>
+</tr>
+<tr>
+<td>QuickDraw / desktop</td>
+<td>CSB → CPU blit into a linear or <code>STREAMING</code> surface; Present copies it to the same display texture</td>
+</tr>
+</tbody>
+</table>
+<p>Same guest ISA. The emulator may dispatch per opcode family. Split QD into a
+separate <code>SetMode</code> flag only if the two interpreters get in each other’s way
+(see §2, §15.1). Do not block the bounce test (§12) on solving QD.</p>
+<h3 id="145-wiring-notes">14.5 Wiring notes<a class="headerlink" href="#145-wiring-notes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Do <strong>not</strong> share the classic 1 MiB linear <code>frame_buffer</code> interpreters
+(<code>vga_render_8/16/24</code>). GPU surfaces are SDL textures on the GPU heap.</li>
+<li><code>SetMode(..., $03)</code> must set <code>ss_mode = SS_MODE_GPU</code> and must <strong>not</strong> fall
+through to the VGA <code>emu_flag != 0</code> path that only sets <code>SS_MODE_VGA</code>.</li>
+<li>Debug panel: heap used, handle table (SDL texture pointer per handle), last
+CSB opcode, current target, which display texture is front.</li>
+</ul>
+<hr />
+<h2 id="15-open-questions-iterate-here">15. Open questions (iterate here)<a class="headerlink" href="#15-open-questions-iterate-here" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>QD as a separate</strong> <code>SetMode</code> <strong>flag</strong> — deferred; see §2. Reopen if <code>Retain</code>
+  vs <code>Swap</code> is not enough for a real QD patch.</li>
+<li><strong>Color pattern</strong> — IIgs 32-byte <code>Pattern</code> vs 1-bit <code>SetPattern</code> + color.</li>
+<li><strong>Pen size / frame inset</strong> — QD <code>FrameRect</code> uses <code>pnSize</code>; v0.1 is 1×1.</li>
+<li><strong>Alpha / color key</strong> — needed before this is a sprite engine.</li>
+<li><strong>CSB as a resource</strong> — upload once, exec by handle, patchable commands.</li>
+<li><strong>Paravirtual Exec</strong> — CSB pointer in IIgs RAM read directly by the
+  emulator (skip byte-at-a-time <code>$C0B2</code>). Faster tests; not 1995-accurate.
+   Could be a header flag on <code>$42</code>.</li>
+<li><strong>800×600 / 1024×768</strong> — add mode numbers when we care; still no modelines.</li>
+<li><strong>GetStatus version / GetCapabilities</strong> — decided: version <code>$20</code>, command
+  <code>$10</code>, stream of mode records (<code>mode</code>, <code>width</code>, <code>height</code>, <code>depth</code>). See
+  §7.5. Classic software checks only <code>GSVGA</code>.</li>
+</ol>
+<hr />
+<h2 id="16-document-history">16. Document history<a class="headerlink" href="#16-document-history" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Ver</th>
+<th>Date</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.1</td>
+<td>2026-08-26</td>
+<td>Initial ISA, host cmds <code>$40</code>–<code>$43</code>; <code>GetGpuInfo</code> has no signature; capabilities via TBD <code>GetCapabilities</code>; VGA fence, QD rect subset, GS/OS bounce test; GSSquared CSB→SDL_Renderer reference backend</td>
+</tr>
+<tr>
+<td>0.2</td>
+<td>2026-09-13</td>
+<td><code>GetCapabilities</code> <code>$10</code>: mode catalog; <code>GetStatus.version</code> <code>$20</code>; Cogito/VGALib check <code>GSVGA</code> only</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

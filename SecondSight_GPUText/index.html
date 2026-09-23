@@ -1,0 +1,4411 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Second Sight GPU Text Mode - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#second-sight-gpu-text-mode" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Second Sight GPU Text Mode
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../Cards_UthernetII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../UserInterface/" class="md-tabs__link">
+          
+  
+  
+  Misc
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CommandLine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BlankFloppy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blank Disk Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HostFST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host FST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SerialConnections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial & Parallel
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Serial_Modem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial / Modem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Play in the Browser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Editor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigFiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Config Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProtocolHandlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    File Types & URLs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UsingTheDebugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using the Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_UthernetII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Uthernet II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SuperSerial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Super Serial Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VOC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Overlay Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SecondSight/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Second Sight
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard (user)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Videx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Videx VideoTerm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VIDHD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VIDHD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock cards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Misc
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Misc
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-why-a-distinct-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Why a distinct mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-arming-stream-on-with-setmode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Arming: stream on with SetMode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-card-side-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Card-side execution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-split-of-responsibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Split of responsibility
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-word-stream" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Word stream
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Word stream">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-ports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Ports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-tag-bit-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Tag: bit 15
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-quoted-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 Quoted payload
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-command-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Command codes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Command codes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-erase-subcodes-low-byte" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 Erase subcodes (low byte)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-cursorstyle-91" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 CursorStyle ($91)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-setsync-93" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 SetSync ($93)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64-ring-idle-c0b8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 Ring idle ($C0B8)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#65-readcells-94-experimental" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.5 ReadCells ($94) — experimental
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#66-not-on-the-card" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.6 Not on the card
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#67-yield-95" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.7 Yield ($95)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-current-attribute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Current attribute
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-iie-console-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. IIe console mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-vt100-linux-ansi-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. VT100 / linux (ANSI) mapping
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-cost-why-this-beats-host-text-without-start_line" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Cost (why this beats Host Text without start_line)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-bring-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Bring-up
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-v01-vs-later" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. v0.1 vs later
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="second-sight-gpu-text-mode">Second Sight GPU Text Mode<a class="headerlink" href="#second-sight-gpu-text-mode" title="Permanent link">&para;</a></h1>
+<p><strong>Status:</strong> implemented in emulator, v0.1 (no <code>$94</code> ReadCells) — 2026-09-09
+<strong>Card mode:</strong> SetMode emulation flag <code>$05</code>
+<strong>Depends on:</strong> <a href="../SecondSight/">SecondSight.md</a> (classic VGA API, handshake, slot I/O)
+<strong>Host yield:</strong> <a href="../Specs/SSConsole.md">Specs/SSConsole.md</a> §13 (<code>$95</code>)</p>
+<p>This is a <em>new</em> mode: the card owns a VGA-style text cell buffer in <strong>card
+VRAM</strong> and accepts a <strong>16-bit word stream</strong> on <code>C0B1</code>. The host is a terminal
+encoder, not a framebuffer painter. Scroll, insert/delete line, and fills run
+on the card. Unique glyphs cross the 1 MHz bus once.</p>
+<p>Same fence as GPU mode (<a href="../SecondSight_GPU/">SecondSight_GPU.md</a>) and Host Text
+(<a href="../SecondSight_Text/">SecondSight_Text.md</a>): this is the API the card should
+have grown, not a modeline. Classic mode 03h VRAM upload stays frozen for
+Cogito / Spectrum.</p>
+<p>Origin of the split (host policy vs card VRAM, stream-on <code>STA C0B1</code>, GPU-ish
+text primitives, why <em>not</em> to memmove a linear buffer in bank 0) is the
+<strong>27 Aug 2026</strong> note in <a href="../DevelopLog/">DevelopLog.md</a>. This document is that
+design after the tagging / IIe / DP refinements that followed.</p>
+<pre><code>  Host Text ($04)                       GPU Text ($05)
+  ───────────────                       ──────────────
+  cells in shadowed Apple RAM           cells in card VRAM
+  STA into $2000                        STA C0B1 word stream
+  start_line / wrap for LF              ScrollUp command (any region)
+  insert/delete line = host memmove     InsertLine / DeleteLine on card
+  readback is free                      host shadow (ReadCells is experimental)
+</code></pre>
+<p>Original 1995 Second Sight silicon is <strong>not</strong> required to implement this.
+A write-IRQ into a ring buffer plus a consumer that blits cells in local RAM
+is enough; the Z180 path is one way to get there. The emulator can execute
+the stream in C++ next to the existing text renderer.</p>
+<hr />
+<h2 id="1-why-a-distinct-mode">1. Why a distinct mode<a class="headerlink" href="#1-why-a-distinct-mode" title="Permanent link">&para;</a></h2>
+<p>Three ways to get a GNO / ANSI / IIe console on Second Sight were on the
+table (DevelopLog, 27 Aug 2026):</p>
+<ol>
+<li><strong>VT100/ANSI in a GS/OS or GNO process</strong>, painting Host Text RAM (or
+   classic uploads). Flexible. The 65816 still <strong>moves</strong> cells. A software
+   scroll of an 80×25 interleaved buffer is on the order of a video frame of
+   Mega II time. GNO insert/delete line cannot use <code>start_line</code>.</li>
+<li><strong>Terminal entirely on the card.</strong> Host sends a byte stream; the card
+   parses ANSI. Fastest to prototype in the emulator. The II and the card
+   fight over cursor/wrap unless the parser is perfect, and IIe firmware
+   (<code>CH</code>/<code>CV</code>, text window) is a different language than VT100.</li>
+<li><strong>GPU text commands.</strong> Host translates <em>its</em> language (IIe <code>COUT</code>, GNO
+   termcap, a VT100 state machine) into a small blit ISA. The card never
+   wraps or scrolls unless told. Unique characters are cheap stores. Motion
+   is a one-word command.</li>
+</ol>
+<p>This mode is (3). It is not Host Text (scanout of <code>$2000</code>). It is not GPU
+mode <code>$03</code> (pixel CSB). It is not classic VGA text (handshake per DMA).</p>
+<p>The 1 MHz bus is a capacity of about two bytes per microsecond. Spend it on
+<strong>new</strong> cells. Never spend it on <strong>moving old ones.</strong></p>
+<hr />
+<h2 id="2-arming-stream-on-with-setmode">2. Arming: stream on with SetMode<a class="headerlink" href="#2-arming-stream-on-with-setmode" title="Permanent link">&para;</a></h2>
+<p><code>SetMode</code> with flag <code>$05</code> and a text raster mode number (<code>$03</code> = 80×25 9×16,
+<code>$43</code> = 80×43, <code>$50</code> = 80×50, <code>$52</code> = 132×60 8×8; same numbers as Host Text)
+switches the command table,
+allocates a card-side cell buffer if needed, and <strong>turns <code>C0B1</code> into a
+free-running word FIFO</strong>.</p>
+<p><code>SetMode($05)</code> is <strong>not</strong> a clear. It does not <code>Reset</code> or <code>Erase</code>. Same
+raster again keeps VRAM, cursor, margins, and sync. A new raster (or first
+arm) allocates a buffer whose cells are unspecified until the host
+<code>Reset</code>s or <code>Erase</code>s. Apps that want a known page send <code>$92</code> / <code>Erase</code>
+after <code>SetMode</code>.</p>
+<p>Until <code>SetMode($05)</code> succeeds:</p>
+<ul>
+<li>output is <strong>blank</strong> (same pixels as <code>ScreenOff</code>);</li>
+<li>writes to <code>C0B1</code> are classic DMA data, not this ISA.</li>
+</ul>
+<p>Leaving GPU Text (<code>SetMode</code> with flag <code>$00</code> / <code>$01</code> / <code>$02</code> / <code>$03</code> / <code>$04</code>)
+<strong>ends the stream</strong> and discards FIFO contents and VRAM. That is a leave,
+not an implicit clear of an armed page.</p>
+<p>To show Mega II <strong>without</strong> leaving the mode, use <strong><code>Yield</code> (<code>$95</code>)</strong> (§6.7).
+VRAM, cursor, margins, and the armed stream stay. No SetMode, no replay.</p>
+<p><code>ScreenOff</code> / <code>ScreenOn</code>, <code>SetPalette</code> / <code>SetPaletteEntry</code>, <code>SetBorder</code>,
+<code>SetTextFont</code> stay on <strong><code>C0B0</code> handshake</strong> (same fence as Host Text). They are
+not 16-bit stream opcodes. <code>UploadData</code>, <code>ScrollScreen</code>, <code>ClearScreen</code>,
+<code>SetVGAReg</code>, GPU <code>$40</code>–<code>$43</code> are <strong>fenced</strong> (<code>$A6</code>).</p>
+<p><code>ScreenOff</code> is <strong>black while we still own VGA</strong>. <code>Yield</code> is <strong>Mega II scanout</strong>
+(<code>vga_active</code> clear). They are not the same.</p>
+<p>There is no per-word <code>$A5</code>. Putc does not poll. While the GPU Text stream is
+armed, <strong><code>$C0B8</code> is the classic handshake</strong> (§3): <strong><code>$00</code> = not ready</strong> (ring
+still has work), <strong><code>$01</code> = ready</strong> (buffer empty). Same sense as DMA
+(<code>$01</code> = ready). No opcode. Classic <code>SetMode</code> / <code>SetPalette</code> still use
+<code>$C0B0</code> plus <code>$C0B8</code> as in <a href="../SecondSight/">SecondSight.md</a> when those
+handshake commands are in flight.</p>
+<hr />
+<h2 id="3-card-side-execution">3. Card-side execution<a class="headerlink" href="#3-card-side-execution" title="Permanent link">&para;</a></h2>
+<p>Every implementing card (FPGA, Z180, emulator thread) does this:</p>
+<ol>
+<li>A write to <code>C0B1</code> <strong>interrupts</strong> (or equivalent: the slot decoder strobes
+   a “byte/word arrived” event).</li>
+<li>The ISR (or decoder) <strong>only</strong> pushes into a <strong>ring buffer</strong>. It does not
+   run <code>ScrollUp</code>.</li>
+<li>A <strong>consumer</strong> (second thread, main loop, Z180 foreground) pulls words
+   and executes the ISA in order.</li>
+</ol>
+<p>Assume every opcode finishes in <strong>a few microseconds</strong> — faster than a 1 MHz
+(or 2.8 MHz with 1 MHz I/O) Apple II can emit the next word. The ring exists
+so the ISR stays short, not because the consumer is slow.</p>
+<p><strong>Scanout.</strong> Host selects with <strong><code>SetSync</code> (<code>$93</code>)</strong> (§6.3). Default on
+<code>SetMode</code> entry: <strong>immediate</strong>. <code>Reset</code> (<code>$92</code>) does not change this.</p>
+<ul>
+<li><strong>Immediate (arg <code>$00</code>):</strong> consumer runs as soon as the ring is non-empty;
+  the next VGA frame shows whatever VRAM has become. Low-latency <code>COUT</code>.</li>
+<li><strong>VBL (arg <code>$01</code>):</strong> consumer (or present) applies queued words at the
+  card’s next VBL. Tear-free. <code>$C0B8</code> = <code>$01</code> means the <strong>ring</strong> is empty
+  (ready); scanout may still be one frame behind.</li>
+</ul>
+<p><code>SetSync</code> is <strong>in-order</strong>: it takes effect when the consumer executes it.
+If the card is already in VBL mode, a switch to immediate sits in the ring
+until that VBL, then the rest of the ring drains eager.</p>
+<p><strong>Bandwidth bound.</strong> Slot I/O is Mega II speed: at most one byte per 1 MHz
+cycle. An NTSC frame is <strong>17 030</strong> CPU/slow cycles (262 × 65), so the bus
+cannot deliver more than <strong>17 030 bytes/frame</strong> into the card. A real
+console never hits that: each word is an <code>LDA</code> plus a <code>STA</code>, so perhaps
+<strong>~¼</strong> of the ceiling (~4 KB/frame) is the planning number.</p>
+<p>Size the ring for <strong>one frame at the bound</strong> (17 KB is the hard cap; 4–8 KB
+is enough in practice). If VBL-batched, that is also the maximum command
+list presented in one frame.</p>
+<p><strong><code>$C0B8</code> (no command).</strong> Same polarity as classic SS: <code>$00</code> = not ready,
+<code>$01</code> = ready.</p>
+<table>
+<thead>
+<tr>
+<th><code>$C0B8</code></th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td>Not ready — data still to process (ring not empty)</td>
+</tr>
+<tr>
+<td><code>$01</code></td>
+<td>Ready — buffer empty</td>
+</tr>
+</tbody>
+</table>
+<p>The host may <code>LDA $C0B8</code> at any time. Ready means the consumer has taken
+every enqueued word (immediate: VRAM matches the stream). Writes after a <code>$01</code>
+sample start a new fill; <code>$C0B8</code> goes <code>$00</code> (not ready) again.</p>
+<pre><code>wait    LDA   $C0B8
+        CMP   #$01
+        BNE   wait          ; until ready — ring empty
+</code></pre>
+<p>Do not poll per glyph. Use it before <code>SetMode</code> away if you must not discard
+queued words.</p>
+<p><strong>Backpressure</strong> is left open. If the ring would overrun (host faster than
+drain for a pathological burst, or a stuck consumer), possible valves —
+none required in v0.1:</p>
+<ul>
+<li>Stretch/stall the <code>C0B1</code> write until there is space (the II just sees a
+  slow cycle).</li>
+<li>Leave <code>$C0B8</code> at <code>$00</code> (not ready; host already has that bit).</li>
+<li>Drop oldest or newest (hostile to a terminal; last resort).</li>
+</ul>
+<p>The ISA is <strong>one-way</strong> (host → ring → VRAM). <code>$C0B8</code> is status, not reverse
+traffic. <code>ReadCells</code> still turns <code>C0B1</code> around; see §6.5.</p>
+<hr />
+<h2 id="4-split-of-responsibility">4. Split of responsibility<a class="headerlink" href="#4-split-of-responsibility" title="Permanent link">&para;</a></h2>
+<p><strong>Host owns policy.</strong> It keeps <code>CH</code>/<code>CV</code> (or VT100 cursor), wrap vs stick,
+when LF becomes <code>ScrollUp</code>, the ANSI/GNO/IIe parser, tab stops, and (if
+needed) a fast-RAM shadow of the cells for curses readback.</p>
+<p><strong>Card owns VRAM.</strong> It tracks a cursor <code>(x,y)</code> used only to place the next
+putc and to clip. After a putc it does <code>x++</code> and <strong>clamps</strong> at the right
+margin. It does <strong>not</strong> wrap, does <strong>not</strong> scroll, does <strong>not</strong> interpret
+<code>CR</code>/<code>LF</code>/<code>BS</code>. If the host would wrap or index off the bottom of the region,
+the host sends <code>ScrollUp</code> / <code>SetY</code> itself.</p>
+<p>That is the “don’t get too fancy” rule from the 27 Aug note: if the card
+only advances under this clamp, the host never has to read cursor x/y back
+to stay synced with Apple II land.</p>
+<p>Coordinates are <strong>absolute</strong> in the raster (column 0 is left of the screen).
+The host adds <code>WNDLFT</code> / <code>WNDTOP</code> when talking IIe window-relative <code>CH</code>/<code>CV</code>.
+Margin registers clip scroll, insert/delete, erase, and putc clamp — they
+do not rebase <code>(0,0)</code>.</p>
+<hr />
+<h2 id="5-word-stream">5. Word stream<a class="headerlink" href="#5-word-stream" title="Permanent link">&para;</a></h2>
+<p>Every unit is a <strong>16-bit word</strong>, little-endian on the wire.</p>
+<h3 id="51-ports">5.1 Ports<a class="headerlink" href="#51-ports" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>CPU</th>
+<th>How a word lands</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>65816, <code>M=0</code></td>
+<td><code>STA $C0B1</code> writes lo → <code>$C0B1</code>, hi → <code>$C0B2</code></td>
+</tr>
+<tr>
+<td>6502 / 65C02</td>
+<td><code>STA $C0B1</code> (lo), <code>STA $C0B1</code> (hi) — two byte writes into the same FIFO</td>
+</tr>
+<tr>
+<td>65816 hot loop</td>
+<td><code>D = $C000</code> (page-aligned), <code>STA $B1</code> — <strong>4</strong> cycles vs <strong>5</strong> absolute; still two 1 MHz writes. <code>PHD</code> / <code>TCD</code> / <code>PLD</code> around a burst. Do <strong>not</strong> set <code>D = $C0B1</code> (<code>DL ≠ 0</code> eats the saving). Restore <code>D</code>; <code>$C000</code> as DP turns <code>LDA $24</code> into I/O.</td>
+</tr>
+</tbody>
+</table>
+<p><code>C0B2</code> as a <em>classic</em> read-data register is not used for this FIFO. 16-bit
+<code>STA $C0B1</code> must not be followed by <code>STA $C0B2</code> with <code>M=0</code> (that is
+<code>$C0B2</code>/<code>$C0B3</code>).</p>
+<p>Stay in <strong>16-bit A</strong> on the 816. <code>SEP</code>/<code>REP</code> around 8-bit opcodes costs more
+than packing commands as 16-bit words. VGA cells are 16-bit; so are opcodes.</p>
+<h3 id="52-tag-bit-15">5.2 Tag: bit 15<a class="headerlink" href="#52-tag-bit-15" title="Permanent link">&para;</a></h3>
+<p>Pack <strong>character in the low byte, attribute in the high byte</strong> (IBM <code>AL</code> /
+<code>AH</code>).</p>
+<table>
+<thead>
+<tr>
+<th>High byte</th>
+<th>Meaning</th>
+<th>Low byte</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code>–<code>$7F</code></td>
+<td><strong>putc</strong> — one cell, clamp-advance</td>
+<td>CP437</td>
+</tr>
+<tr>
+<td><code>$80</code>–<code>$FF</code></td>
+<td><strong>command</strong> (128 opcodes)</td>
+<td>8-bit argument</td>
+</tr>
+</tbody>
+</table>
+<p>Bit 15 is attr bit 7. The fast path therefore has <strong>16 fg × 8 bg</strong>, bold
+(fg intensity, attr bit 3) included, <strong>no blink</strong> and <strong>no bright
+backgrounds</strong>. That matches IIe 80-column firmware (inverse is a 7-bit attr
+in zp; there is no VGA blink). Linux/ANSI SGR <code>30–37</code> / <code>40–47</code> / bold /
+reverse fit. SGR <code>100–107</code> and blink use <strong>FullCell</strong> (<code>$80</code>).</p>
+<pre><code>; 816, M=0, A = char in lo (bit 15 already clear)
+ORA   zp_attr      ; 3   attr in $00–$7F
+STA   $C0B1        ; 4–5
+</code></pre>
+<pre><code>; IIe 65C02, A = glyph (COUT)
+STA   $C0B1        ; 4   char
+LDA   attr         ; 3   zp, $00–$7F
+STA   $C0B1        ; 4   attr
+</code></pre>
+<p>Eleven cycles on a IIe vs BASCALC + <code>80STORE</code> + aux/main. That is the
+firmware-replacement win.</p>
+<p><strong>Count convention:</strong> argument <code>0</code> means <strong>1</strong> (same as the 27 Aug sketch).
+Repeat/scroll/ins/del never need a true zero. A 2000-cell clear is <code>Erase</code>,
+not a 2000-count Repeat.</p>
+<h3 id="53-quoted-payload">5.3 Quoted payload<a class="headerlink" href="#53-quoted-payload" title="Permanent link">&para;</a></h3>
+<p>After a command that takes a <strong>cell operand</strong>, the next word is <strong>untagged</strong>:
+a full IBM <code>attr:char</code>, bit 15 allowed. It is <strong>not</strong> parsed as an opcode.
+That is how blink / 16-bg cells exist at all.</p>
+<p><code>FullCell</code> (<code>$80</code>) is that quote for a single putc: opcode word, then opaque
+cell, then clamp-advance. Slightly more expensive; rare.</p>
+<hr />
+<h2 id="6-command-codes">6. Command codes<a class="headerlink" href="#6-command-codes" title="Permanent link">&para;</a></h2>
+<p>128 opcodes <code>$80</code>–<code>$FF</code>. v0.1 uses <code>$80</code>–<code>$93</code> and <code>$95</code> (<code>$94</code> experimental).
+Unused codes must <code>$NOP</code>-safe or <code>$A6</code> the FIFO until StreamEnd —
+<strong>reserved = ignore one word</strong>, so a future host can skip.</p>
+<p>Necessary and sufficient for <strong>IIe 80-col console firmware</strong> and a
+<strong>VT100 / linux (ANSI) emulator</strong> on the host. The card does not parse ESC.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Name</th>
+<th>Arg</th>
+<th>Extra word</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$80</code></td>
+<td><code>FullCell</code></td>
+<td>ignored</td>
+<td>untagged cell</td>
+<td>Putc with 8-bit attr (blink / 16 bg). Clamp-advance.</td>
+</tr>
+<tr>
+<td><code>$81</code></td>
+<td><code>Repeat</code></td>
+<td>count</td>
+<td>untagged cell</td>
+<td>Overwrite <code>count</code> cells at cursor with that cell; <code>x += count</code>, clamp. No shift. <code>clrtoeol</code> / <code>ECH</code> / tabs-as-spaces / box fill.</td>
+</tr>
+<tr>
+<td><code>$82</code></td>
+<td><code>SetX</code></td>
+<td>column</td>
+<td>—</td>
+<td>Absolute column. Clipped to raster then to right margin for subsequent putc.</td>
+</tr>
+<tr>
+<td><code>$83</code></td>
+<td><code>SetY</code></td>
+<td>row</td>
+<td>—</td>
+<td>Absolute row.</td>
+</tr>
+<tr>
+<td><code>$84</code></td>
+<td><code>ScrollUp</code></td>
+<td>lines</td>
+<td>—</td>
+<td>Region inside margins moves up; new bottom rows filled with space + <strong>current attr</strong>.</td>
+</tr>
+<tr>
+<td><code>$85</code></td>
+<td><code>ScrollDown</code></td>
+<td>lines</td>
+<td>—</td>
+<td>Opposite (VT100 <code>SD</code>, RI at top).</td>
+</tr>
+<tr>
+<td><code>$86</code></td>
+<td><code>InsertLine</code></td>
+<td>count</td>
+<td>—</td>
+<td>IL inside margins (GNO / VT100 <code>IL</code>).</td>
+</tr>
+<tr>
+<td><code>$87</code></td>
+<td><code>DeleteLine</code></td>
+<td>count</td>
+<td>—</td>
+<td>DL inside margins.</td>
+</tr>
+<tr>
+<td><code>$88</code></td>
+<td><code>InsertChar</code></td>
+<td>count</td>
+<td>—</td>
+<td>ICH: shift rest of line right, fill with space + current attr.</td>
+</tr>
+<tr>
+<td><code>$89</code></td>
+<td><code>DeleteChar</code></td>
+<td>count</td>
+<td>—</td>
+<td>DCH: shift rest of line left, fill at margin.</td>
+</tr>
+<tr>
+<td><code>$8A</code></td>
+<td><code>Erase</code></td>
+<td>sub</td>
+<td>—</td>
+<td>See §6.1. Uses space + <strong>current attr</strong>. Clipped to margins unless sub says full raster.</td>
+</tr>
+<tr>
+<td><code>$8B</code></td>
+<td><code>SetAttr</code></td>
+<td>attr <code>$00</code>–<code>$7F</code></td>
+<td>—</td>
+<td>Current SGR for Erase / IL fill / scroll fill. Does not change already-written cells.</td>
+</tr>
+<tr>
+<td><code>$8C</code></td>
+<td><code>SetAttrFull</code></td>
+<td>ignored</td>
+<td>untagged cell</td>
+<td>Current SGR ← payload high byte (full IBM attr). Low byte ignored.</td>
+</tr>
+<tr>
+<td><code>$8D</code></td>
+<td><code>SetLeft</code></td>
+<td>column</td>
+<td>—</td>
+<td>Left margin (IIe <code>WNDLFT</code>, DEC <code>DECSLRM</code>).</td>
+</tr>
+<tr>
+<td><code>$8E</code></td>
+<td><code>SetRight</code></td>
+<td>column</td>
+<td>—</td>
+<td>Inclusive right column (<code>WNDLFT+WNDWDTH-1</code>).</td>
+</tr>
+<tr>
+<td><code>$8F</code></td>
+<td><code>SetTop</code></td>
+<td>row</td>
+<td>—</td>
+<td>Top of scroll region (<code>WNDTOP</code>, <code>DECSTBM</code>).</td>
+</tr>
+<tr>
+<td><code>$90</code></td>
+<td><code>SetBottom</code></td>
+<td>row</td>
+<td>—</td>
+<td>Inclusive bottom row.</td>
+</tr>
+<tr>
+<td><code>$91</code></td>
+<td><code>CursorStyle</code></td>
+<td>ignored</td>
+<td>style word</td>
+<td>Hardware cursor at card <code>(x,y)</code>. See §6.2.</td>
+</tr>
+<tr>
+<td><code>$92</code></td>
+<td><code>Reset</code></td>
+<td>ignored</td>
+<td>—</td>
+<td>Margins = full raster, <code>(x,y)=(0,0)</code>, attr <code>$07</code>, cursor on (blink block), erase full raster. Does <strong>not</strong> change <code>SetSync</code> or <code>Yield</code>.</td>
+</tr>
+<tr>
+<td><code>$93</code></td>
+<td><code>SetSync</code></td>
+<td>0 / 1</td>
+<td>—</td>
+<td><code>$00</code> = process immediately; <code>$01</code> = batch until VBL. See §6.3.</td>
+</tr>
+<tr>
+<td><code>$94</code></td>
+<td><code>ReadCells</code></td>
+<td>count</td>
+<td><em>host reads</em> <code>count</code> words</td>
+<td><strong>Experimental.</strong> See §6.5.</td>
+</tr>
+<tr>
+<td><code>$95</code></td>
+<td><code>Yield</code></td>
+<td>0 / 1</td>
+<td>—</td>
+<td><code>$00</code> = park (Mega II); <code>$01</code> = claim (same VRAM). See §6.7.</td>
+</tr>
+</tbody>
+</table>
+<p><code>SetX</code> + <code>SetY</code> replace a packed <code>MoveTo</code>. Two words, 8-bit args, IIe <code>CH</code>/<code>CV</code>
+sized. 80×43 / 80×50 / 132×60 fit.</p>
+<p>Invalid margin (<code>left &gt; right</code>, <code>top &gt; bottom</code>, outside raster): stay at
+previous margins (do not blank the screen).</p>
+<h3 id="61-erase-subcodes-low-byte">6.1 <code>Erase</code> subcodes (low byte)<a class="headerlink" href="#61-erase-subcodes-low-byte" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Arg</th>
+<th>VT100 / linux</th>
+<th>IIe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td><code>EL 0</code> — cursor to end of line</td>
+<td><code>CLREOL</code></td>
+</tr>
+<tr>
+<td><code>$01</code></td>
+<td><code>EL 1</code> — start of line to cursor</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>$02</code></td>
+<td><code>EL 2</code> — whole line</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>$03</code></td>
+<td><code>ED 0</code> — cursor to end of screen</td>
+<td><code>CLREOP</code></td>
+</tr>
+<tr>
+<td><code>$04</code></td>
+<td><code>ED 1</code> — home to cursor</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>$05</code></td>
+<td><code>ED 2</code> — whole <strong>margin rectangle</strong></td>
+<td><code>HOME</code> clear (window)</td>
+</tr>
+<tr>
+<td><code>$06</code></td>
+<td><code>ED 2</code> of the <strong>full raster</strong></td>
+<td>rare (ignore window)</td>
+</tr>
+<tr>
+<td><code>$07</code></td>
+<td><code>ECH</code> 1 at cursor (no advance)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><code>ECH</code> of N is <code>Repeat</code> of space, or N× <code>$07</code>. Prefer <code>Repeat</code>.</p>
+<p>Linux <code>ED 3</code> (clear scrollback) is host-side if the host keeps scrollback;
+the card has no scrollback buffer in v0.1.</p>
+<h3 id="62-cursorstyle-91">6.2 <code>CursorStyle</code> (<code>$91</code>)<a class="headerlink" href="#62-cursorstyle-91" title="Permanent link">&para;</a></h3>
+<p>Hardware cursor at the card’s <code>(x,y)</code> — the same cell putc uses. It is not
+a glyph in VRAM; scanout overlays it. Position follows <code>SetX</code>/<code>SetY</code> / putc
+advance.</p>
+<p>Opcode arg is ignored. The <strong>next word is untagged</strong> (full 16 bits, not a
+putc/command tag):</p>
+<table>
+<thead>
+<tr>
+<th>Bits</th>
+<th>Name</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>enable</code></td>
+<td>0 = hidden (<code>DECTCEM</code> off). 1 = draw.</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>blink</code></td>
+<td>1 = hardware blink (~2 Hz, card-defined). 0 = steady.</td>
+</tr>
+<tr>
+<td>2–3</td>
+<td><code>shape</code></td>
+<td><code>00</code> block (full cell), <code>01</code> underline, <code>10</code> bar (insert; left of cell), <code>11</code> reserved (= block).</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>replace</code></td>
+<td>0 = <strong>invert</strong> the cell (IIe flash). 1 = draw in <strong>current attr</strong> (SGR / <code>SetAttr</code>).</td>
+</tr>
+<tr>
+<td>5–7</td>
+<td>reserved</td>
+<td>0</td>
+</tr>
+<tr>
+<td>8–11</td>
+<td><code>start</code></td>
+<td>First scanline of the glyph cell (0 = top). <code>$F</code> = default for <code>shape</code>.</td>
+</tr>
+<tr>
+<td>12–15</td>
+<td><code>end</code></td>
+<td>Last scanline, inclusive. <code>$F</code> = default. If <code>start &gt; end</code>, treat as default.</td>
+</tr>
+</tbody>
+</table>
+<p>Defaults when <code>start</code>/<code>end</code> are <code>$F</code>: block = full cell height (8 or 16);
+underline = last two rows; bar = full height, 1–2 pixels wide (not a CRTC
+scanline pair).</p>
+<pre><code>        LDA   #$9100
+        STA   $C0B1
+        LDA   #$0003        ; enable + blink, block, invert, default lines
+        STA   $C0B1
+        LDA   #$9100
+        STA   $C0B1
+        LDA   #$0000        ; hidden
+        STA   $C0B1
+</code></pre>
+<p><code>Reset</code> loads <code>$0003</code>. IIe 80-col: show = <code>$0003</code>, hide = <code>$0000</code>. Linux
+<code>DECSCUSR</code> / <code>CSI ? 25 h/l</code> map to this word; the host does not send
+scanlines unless it wants a custom underline.</p>
+<h3 id="63-setsync-93">6.3 <code>SetSync</code> (<code>$93</code>)<a class="headerlink" href="#63-setsync-93" title="Permanent link">&para;</a></h3>
+<pre><code>        LDA   #$9300        ; immediate
+        STA   $C0B1
+        LDA   #$9301        ; VBL batch
+        STA   $C0B1
+</code></pre>
+<p>Arg other than <code>$00</code>/<code>$01</code>: ignore, keep previous mode.</p>
+<p>IIe firmware / GNO <code>COUT</code>: leave <strong>immediate</strong>. Full-screen redraws or
+scroll that must not tear: <strong>VBL</strong>, then optional poll <code>$C0B8</code> = <code>$01</code> after
+the burst (ready / empty ring; picture updates at that VBL).</p>
+<h3 id="64-ring-idle-c0b8">6.4 Ring idle (<code>$C0B8</code>)<a class="headerlink" href="#64-ring-idle-c0b8" title="Permanent link">&para;</a></h3>
+<p>Not an opcode. See §3. Poll <code>$C0B8</code> until <code>$01</code> (ready) if you need the
+buffer empty.</p>
+<h3 id="65-readcells-94-experimental">6.5 <code>ReadCells</code> (<code>$94</code>) — experimental<a class="headerlink" href="#65-readcells-94-experimental" title="Permanent link">&para;</a></h3>
+<p><strong>Not a v0.1 requirement.</strong> Cards may ignore the opcode (treat as a one-word
+<code>NOP</code>). Hosts must not depend on it. Prefer a <strong>fast-RAM shadow</strong> of cells
+the host already wrote.</p>
+<p>The rest of this ISA is <strong>one-way</strong>: <code>STA $C0B1</code> → ring → consumer → VRAM.
+<code>ReadCells</code> turns <code>C0B1</code> around. That fights the interrupt/ring model:</p>
+<ul>
+<li><strong>When does the card execute it?</strong> Immediate: microseconds later. VBL:
+  not until the next VBL, so earlier words in the same ring have not hit
+  VRAM yet either.</li>
+<li><strong>How does the II know it can <code>LDA</code>?</strong> <code>$C0B8</code> = <code>$01</code> means the <strong>write
+  ring</strong> is empty (ready), not that <code>C0B1</code> has become a read port. You would
+  still <code>STA</code> <code>ReadCells</code> (which makes <code>$C0B8</code> = <code>$00</code> again) and then need a
+  second ready-wait before <code>LDA</code> — and VBL-batch plus port turnaround stay
+  racy.</li>
+</ul>
+<p>If a future card implements it, the sketch is:</p>
+<p>After the opcode, <code>C0B1</code> is a <strong>read</strong> port for exactly <code>count</code> 16-bit words
+(<code>0</code> = 1). Each word is an <strong>untagged</strong> IBM cell (<code>attr:char</code>, bit 15 may be
+set). Then <code>C0B1</code> is a write FIFO again. Starts at the current cursor; each
+word consumed advances like putc (clamp, no wrap).</p>
+<pre><code>; 816, M=0 — experimental
+        LDA   #$94CC
+        STA   $C0B1
+        ; $C0B8 empty-wait still unspecified vs port turnaround
+        LDA   $C0B1
+        STA   BUF
+        ; …
+</code></pre>
+<p>Do not ship firmware that needs this.</p>
+<h3 id="66-not-on-the-card">6.6 Not on the card<a class="headerlink" href="#66-not-on-the-card" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Host-side</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CR</code> / <code>LF</code> / <code>BS</code> / <code>HT</code> / <code>NEL</code> / <code>IND</code> / <code>RI</code></td>
+<td>Policy: host issues <code>SetX</code>/<code>SetY</code>/<code>Scroll*</code></td>
+</tr>
+<tr>
+<td>Tab stops (<code>HTS</code>/<code>TBC</code>)</td>
+<td>Host</td>
+</tr>
+<tr>
+<td>Save/restore cursor (<code>DECSC</code>)</td>
+<td>Host stack</td>
+</tr>
+<tr>
+<td>SGR parser, UTF-8, GNO termcap</td>
+<td>Host maps to <code>SetAttr</code> + putc</td>
+</tr>
+<tr>
+<td>Bell</td>
+<td>Speaker, not VRAM</td>
+</tr>
+<tr>
+<td>Full-screen / curses readback</td>
+<td>Host shadow in fast RAM. <code>ReadCells</code> is experimental (§6.5).</td>
+</tr>
+</tbody>
+</table>
+<p>Insert/delete <strong>character</strong> <em>is</em> on the card so curses does not read the
+rest of the line across 1 MHz.</p>
+<h3 id="67-yield-95">6.7 <code>Yield</code> (<code>$95</code>)<a class="headerlink" href="#67-yield-95" title="Permanent link">&para;</a></h3>
+<p>Temporarily give the display back to Mega II <strong>without</strong> leaving GPU Text.
+Host policy (when to park for a CDA, a GS/OS dialog, etc.) is
+<a href="../Specs/SSConsole.md">Specs/SSConsole.md</a> §13.</p>
+<pre><code>        ; park: drain first so $9500 is last
+wait    LDA   $C0B8
+        CMP   #$01
+        BNE   wait
+        LDA   #$9500
+        STA   $C0B1
+        ; Mega II is on the glass. VRAM unchanged.
+        LDA   #$9501            ; claim
+        STA   $C0B1
+        ; same page — no SetMode, no replay
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Arg</th>
+<th>Name</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$00</code></td>
+<td>park / yield</td>
+<td><code>vga_active</code> ← 0. Frame path draws Mega II. Stream stays armed.</td>
+</tr>
+<tr>
+<td><code>$01</code></td>
+<td>claim / unpark</td>
+<td><code>vga_active</code> ← 1. Next frame presents card VRAM.</td>
+</tr>
+<tr>
+<td>other</td>
+<td>—</td>
+<td>Ignore; keep previous yield state.</td>
+</tr>
+</tbody>
+</table>
+<p><code>Reset</code> (<code>$92</code>) does <strong>not</strong> change yield. <code>SetMode</code> away still ends the
+stream and discards VRAM. <code>SetMode($05)</code> again is not a clear. <code>ScreenOff</code>
+still means “black, we own VGA.”</p>
+<hr />
+<h2 id="7-current-attribute">7. Current attribute<a class="headerlink" href="#7-current-attribute" title="Permanent link">&para;</a></h2>
+<p><code>SetAttr</code> / <code>SetAttrFull</code> load the fill/erase pen. Putc <strong>does not</strong> change
+it (the cell’s attr is in the putc word). After <code>Reset</code>, current attr is
+<code>$07</code> (IBM gray on black).</p>
+<p>IIe inverse: host sets zp <code>attr</code> to reversed nibbles (e.g. <code>$70</code>) and uses
+the fast putc path; also <code>SetAttr</code> so <code>HOME</code>/<code>CLREOL</code> fill inverse spaces if
+that is what firmware would do.</p>
+<hr />
+<h2 id="8-iie-console-mapping">8. IIe console mapping<a class="headerlink" href="#8-iie-console-mapping" title="Permanent link">&para;</a></h2>
+<p>Replacement slot-3 / 80-col firmware (or a <code>COUT</code> hook). Apple high bits
+stripped to <code>$20</code>–<code>$7F</code> (or mapped to CP437). Inverse → 7-bit attr. Flash →
+inverse or ignored (no <code>$80</code> FullCell required).</p>
+<table>
+<thead>
+<tr>
+<th>Firmware</th>
+<th>Stream</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>COUT</code> glyph</td>
+<td>putc (two <code>STA $C0B1</code> or one 16-bit store)</td>
+</tr>
+<tr>
+<td><code>CR</code></td>
+<td><code>SetX</code> left margin</td>
+</tr>
+<tr>
+<td><code>LF</code></td>
+<td>if <code>CV</code> at bottom: <code>ScrollUp 1</code>; else <code>SetY CV+1</code>. <code>SetX</code> left if you want <code>NEL</code>.</td>
+</tr>
+<tr>
+<td><code>BS</code></td>
+<td><code>SetX x-1</code> (clamp left); optional space-overwrite is host</td>
+</tr>
+<tr>
+<td><code>TAB</code></td>
+<td><code>SetX</code> next stop, or <code>Repeat</code> spaces</td>
+</tr>
+<tr>
+<td><code>HOME</code></td>
+<td><code>SetX</code>/<code>SetY</code> origin, <code>Erase $05</code></td>
+</tr>
+<tr>
+<td><code>CLREOL</code></td>
+<td><code>Erase $00</code></td>
+</tr>
+<tr>
+<td><code>CLREOP</code></td>
+<td><code>Erase $03</code></td>
+</tr>
+<tr>
+<td><code>VT</code> / <code>ESC</code></td>
+<td>host</td>
+</tr>
+<tr>
+<td><code>WNDLFT/WDTH/TOP/BTM</code></td>
+<td><code>SetLeft/Right/Top/Bottom</code></td>
+</tr>
+<tr>
+<td>Cursor on / off</td>
+<td><code>CursorStyle</code> extra <code>$0003</code> / <code>$0000</code></td>
+</tr>
+<tr>
+<td>Scroll at window bottom</td>
+<td><code>ScrollUp</code> — <strong>not</strong> a host copy of <code>$400</code>/<code>$E1</code></td>
+</tr>
+</tbody>
+</table>
+<p>Window setup once when <code>WND*</code> changes. Per-character path never touches
+<code>80STORE</code> or BASCALC.</p>
+<hr />
+<h2 id="9-vt100-linux-ansi-mapping">9. VT100 / linux (ANSI) mapping<a class="headerlink" href="#9-vt100-linux-ansi-mapping" title="Permanent link">&para;</a></h2>
+<p>Host is a state machine (<a href="https://man7.org/linux/man-pages/man4/console_codes.4.html"><code>console_codes(4)</code></a>,
+<a href="https://en.wikipedia.org/wiki/ANSI_escape_code">ANSI</a>). Card sees only the
+ISA above.</p>
+<table>
+<thead>
+<tr>
+<th>Sequence</th>
+<th>Stream</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>printable / UTF-8 → CP437</td>
+<td>putc or <code>FullCell</code></td>
+</tr>
+<tr>
+<td><code>CSI n C/D/A/B</code></td>
+<td><code>SetX</code>/<code>SetY</code></td>
+</tr>
+<tr>
+<td><code>CSI y;x H</code> / <code>f</code></td>
+<td><code>SetX</code> <code>SetY</code> (absolute; host adds origin if <code>DECOM</code>)</td>
+</tr>
+<tr>
+<td><code>CSI n S</code> / <code>T</code></td>
+<td><code>ScrollUp</code> / <code>ScrollDown</code></td>
+</tr>
+<tr>
+<td><code>CSI n L</code> / <code>M</code></td>
+<td><code>InsertLine</code> / <code>DeleteLine</code></td>
+</tr>
+<tr>
+<td><code>CSI n @</code> / <code>P</code></td>
+<td><code>InsertChar</code> / <code>DeleteChar</code></td>
+</tr>
+<tr>
+<td><code>CSI n K</code></td>
+<td><code>Erase $00/$01/$02</code></td>
+</tr>
+<tr>
+<td><code>CSI n J</code></td>
+<td><code>Erase $03/$04/$05</code></td>
+</tr>
+<tr>
+<td><code>CSI n X</code></td>
+<td><code>Repeat</code> space</td>
+</tr>
+<tr>
+<td><code>CSI n b</code> (REP)</td>
+<td><code>Repeat</code> last cell (host remembers) or N putcs</td>
+</tr>
+<tr>
+<td><code>CSI n;m r</code> <code>DECSTBM</code></td>
+<td><code>SetTop</code> <code>SetBottom</code></td>
+</tr>
+<tr>
+<td><code>DECSLRM</code> / IIe width</td>
+<td><code>SetLeft</code> <code>SetRight</code></td>
+</tr>
+<tr>
+<td><code>SGR</code></td>
+<td><code>SetAttr</code> / <code>SetAttrFull</code>; following putcs carry the attr in-band too</td>
+</tr>
+<tr>
+<td><code>RIS</code> / <code>CSI 2 J</code> + home</td>
+<td><code>Reset</code> or <code>Erase $06</code> + <code>SetX 0</code> <code>SetY 0</code></td>
+</tr>
+<tr>
+<td><code>CSI ? 25 h/l</code> <code>DECTCEM</code></td>
+<td><code>CursorStyle</code> enable bit</td>
+</tr>
+<tr>
+<td><code>CSI n q</code> <code>DECSCUSR</code></td>
+<td><code>CursorStyle</code> blink + shape (0–2 block, 3–4 underline, 5–6 bar)</td>
+</tr>
+<tr>
+<td><code>DECSC</code>/<code>DECRC</code></td>
+<td>host</td>
+</tr>
+<tr>
+<td><code>IND</code>/<code>RI</code>/<code>NEL</code></td>
+<td><code>SetY</code> ± 1 or <code>Scroll*</code> at edge</td>
+</tr>
+<tr>
+<td><code>ESC 7/8</code>, charset G0/G1</td>
+<td>host (map to CP437)</td>
+</tr>
+</tbody>
+</table>
+<p>16-color GNOME/linux console is in scope. 256-color / truecolor SGR is
+<strong>not</strong> (VGA text DAC is 16 entries; use <code>SetPalette</code> for themes).</p>
+<p>GNO insert/delete line is <code>$86</code>/<code>$87</code> — the case Host Text <code>start_line</code>
+cannot accelerate (DevelopLog, 27 Aug).</p>
+<hr />
+<h2 id="10-cost-why-this-beats-host-text-without-start_line">10. Cost (why this beats Host Text <em>without</em> <code>start_line</code>)<a class="headerlink" href="#10-cost-why-this-beats-host-text-without-start_line" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Op</th>
+<th>Host Text, software scroll</th>
+<th>GPU Text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fast putc (816)</td>
+<td><code>STA abs,X</code> ~2 slow writes</td>
+<td>1× 16-bit <code>STA $C0B1</code> ~2 slow writes</td>
+</tr>
+<tr>
+<td>IIe putc</td>
+<td>BASCALC + 80-col banks</td>
+<td>11 cycles, two <code>STA $C0B1</code></td>
+</tr>
+<tr>
+<td>LF at bottom</td>
+<td>~24–28k cycles / ~0.6–1 frame</td>
+<td><code>ScrollUp</code> one word</td>
+</tr>
+<tr>
+<td>IL/DL in the middle</td>
+<td>host <code>memmove</code></td>
+<td>one word</td>
+</tr>
+<tr>
+<td><code>HOME</code> / <code>ED 2</code></td>
+<td>4000 stores</td>
+<td><code>Erase $05</code> one word</td>
+</tr>
+</tbody>
+</table>
+<p>A two-word <code>command + cell</code> putc was the 27 Aug sketch (~16 cycles, four
+slow writes). Bit 15 tagging makes the common glyph <strong>one word</strong>. <code>Repeat</code>
+(<code>$81 $10</code> + space cell) is <code>0510 00A0</code> from that note, as a command plus
+quoted cell.</p>
+<hr />
+<h2 id="11-bring-up">11. Bring-up<a class="headerlink" href="#11-bring-up" title="Permanent link">&para;</a></h2>
+<pre><code>SetMode($03, $05)          ; 80×25 GPU Text, C0B1 is the FIFO
+SetTextFont($02)           ; PC ANSI, optional
+SetPalette / SetBorder     ; optional; IBM default otherwise
+Reset                      ; $92: clear, attr $07, cursor home, blink block
+; SetSync $9300 immediate (default) or $9301 VBL
+ScreenOn
+; then putc / SetAttr / ScrollUp …
+</code></pre>
+<p>80×43: <code>SetMode($43, $05)</code>. Same ISA. <code>SetBottom</code> 42.
+80×50: <code>SetMode($50, $05)</code>. <code>SetBottom</code> 49.
+132×60: <code>SetMode($52, $05)</code>. <code>SetBottom</code> 59.</p>
+<p>The ring is sized around one frame of slot traffic (§3). Do not poll <code>$C0B8</code>
+per glyph. <code>LDA $C0B8</code> until <code>$01</code> if you must know the buffer is empty
+(e.g. before <code>SetMode</code> away). Leaving the mode may discard unread ring words.</p>
+<hr />
+<h2 id="12-v01-vs-later">12. v0.1 vs later<a class="headerlink" href="#12-v01-vs-later" title="Permanent link">&para;</a></h2>
+<p><strong>v0.1</strong></p>
+<ul>
+<li>Rasters <code>$03</code> / <code>$43</code>.</li>
+</ul>
+<p><strong>Later implemented</strong></p>
+<ul>
+<li>Rasters <code>$50</code> (80×50) / <code>$52</code> (132×60).</li>
+<li>Bit 15 putc vs <code>$80</code>–<code>$93</code> and <code>$95</code> (<code>$94</code> experimental).</li>
+<li>Clamp-advance, margins, no auto wrap.</li>
+<li><code>CursorStyle</code> (<code>$91</code>): enable, blink, block/underline/bar, invert vs attr, scanlines.</li>
+<li>Write-IRQ → ring → consumer; one-way stream.</li>
+<li><code>SetSync</code> (<code>$93</code>): <code>$00</code> immediate, <code>$01</code> VBL. Default immediate.</li>
+<li><code>Yield</code> (<code>$95</code>): <code>$00</code> park (Mega II), <code>$01</code> claim. No SetMode, no replay.</li>
+<li><code>$C0B8</code>: <code>$00</code> = not ready (work in ring), <code>$01</code> = ready (empty). No idle opcode.</li>
+<li>IIe two-byte <code>C0B1</code> path and 816 16-bit / <code>D=$C000</code> path.</li>
+</ul>
+<p><strong>Later</strong></p>
+<ul>
+<li><code>ReadCells</code> (<code>$94</code>) if turnaround after <code>$C0B8</code> = <code>$01</code> is ever made precise.
+  Until then: host shadow.</li>
+<li>Backpressure if a card ever drains slower than the 17 KB/frame bound (§3).</li>
+<li>Packed <code>SetXY</code> extra word.</li>
+<li>Horizontal pan (rarely needed for VT100).</li>
+<li>Scrollback on the card (<code>ED 3</code>).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
