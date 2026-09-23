@@ -148,9 +148,48 @@ void OSD::open_file_dialog(storage_key_t key) {
 
 namespace {
 
+constexpr float kHostFstButtonSpan = 300.f;
+constexpr float kHostFstLabelGap = 8.f;
+constexpr const char *kHostFstButtonLabel = "Host Folder…";
+constexpr const char *kHostFstEllipsis = "…";
+
 struct host_fst_dialog_data_t {
     OSD *osd = nullptr;
 };
+
+size_t utf8_codepoint_len(unsigned char lead) {
+    if ((lead & 0x80) == 0x00) return 1;
+    if ((lead & 0xE0) == 0xC0) return 2;
+    if ((lead & 0xF0) == 0xE0) return 3;
+    if ((lead & 0xF8) == 0xF0) return 4;
+    return 1;
+}
+
+/** Keep the tail of `path`, prefixing an ellipsis when the front must be dropped. */
+std::string crop_path_front_to_width(TextRenderer *tr, const std::string &path, float max_w) {
+    if (path.empty() || max_w <= 0.f || tr == nullptr) {
+        return {};
+    }
+    if (static_cast<float>(tr->string_width(path)) <= max_w) {
+        return path;
+    }
+    if (static_cast<float>(tr->string_width(kHostFstEllipsis)) > max_w) {
+        return {};
+    }
+    size_t i = 0;
+    while (i < path.size()) {
+        size_t len = utf8_codepoint_len(static_cast<unsigned char>(path[i]));
+        if (i + len > path.size()) {
+            len = 1;
+        }
+        i += len;
+        const std::string tail = std::string(kHostFstEllipsis) + path.substr(i);
+        if (static_cast<float>(tr->string_width(tail)) <= max_w) {
+            return tail;
+        }
+    }
+    return kHostFstEllipsis;
+}
 
 void host_fst_folder_dialog_callback(void *userdata, const char *const *filelist, int /*filter*/) {
     auto *data = static_cast<host_fst_dialog_data_t *>(userdata);
@@ -451,8 +490,12 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         host_fst_con->size(320, 50);
         containers.push_back(host_fst_con);
 
-        host_fst_btn = new Button_t(&ui_ctx, "Host Folder…", hostFstBtnStyle);
-        host_fst_btn->size(300, 36);
+        host_fst_btn = new Button_t(&ui_ctx, kHostFstButtonLabel, hostFstBtnStyle);
+        const float label_w = static_cast<float>(text_render->string_width(kHostFstButtonLabel));
+        const float btn_w = label_w
+            + static_cast<float>(hostFstBtnStyle.padding * 2)
+            + static_cast<float>(hostFstBtnStyle.border_width * 2);
+        host_fst_btn->size(btn_w, 36);
         host_fst_btn->on_click([this](const SDL_Event&) -> bool {
             open_host_fst_folder_dialog();
             return true;
@@ -848,6 +891,23 @@ void OSD::render() {
         SDL_SetRenderTarget(renderer, cpTexture);
         for (Container_t* container : containers) {
             container->render();
+        }
+
+        if (host_fst_btn != nullptr) {
+            float bx = 0, by = 0, bw = 0, bh = 0;
+            host_fst_btn->get_tile_position(bx, by);
+            host_fst_btn->get_tile_size(&bw, &bh);
+            const float max_w = kHostFstButtonSpan - bw - kHostFstLabelGap;
+            const std::string path_label = crop_path_front_to_width(
+                text_render, hostfst_resolved_dir(), max_w);
+            if (!path_label.empty()) {
+                const float line_h = static_cast<float>(text_render->get_font_line_height());
+                const float label_x = bx + bw + kHostFstLabelGap;
+                const float label_y = by + (bh - line_h) / 2.f;
+                text_render->set_color(0xFF, 0xFF, 0xFF, 0xFF);
+                text_render->render(path_label, static_cast<int>(label_x), static_cast<int>(label_y),
+                                     TEXT_ALIGN_LEFT);
+            }
         }
 
         if (connection_picker) {
