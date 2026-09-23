@@ -24,7 +24,7 @@ Numeric (`V0`): `0` OK, `1` CONNECT (300 / unknown), `2` RING, `3` NO CARRIER, `
 
 ## How to answer
 
-With **Modem** attached, GSSquared listens on TCP port **6502** (all host interfaces). When a telnet client connects (for example `telnet <your-host> 6502`), the guest sees Hayes **`RING`** — immediately, then about every 3 seconds — and carrier stays down.
+With **Modem** attached, GSSquared listens on TCP port **6502** (on all host interfaces). When a telnet client connects (for example `telnet <your-host> 6502`), the guest sees Hayes **`RING`** — immediately, then about every 3 seconds — and carrier stays down.
 
 Answer from the terminal program:
 
@@ -42,7 +42,7 @@ ATA
 
 Plain `telnet <your-host> 6502` is enough — no `set binary`, no `mode character`, no client-side stty games. On answer, GSSquared negotiates as a telnet **server**: it offers `WILL ECHO`, `WILL SUPPRESS-GO-AHEAD`, and binary in both directions, which puts a standard client in character-at-a-time mode with local echo off. Every keystroke reaches the BBS as you type it, and the BBS does the echoing.
 
-A caller that refuses binary mode gets NVT line ends bridged for it: the guest's bare `CR` goes out as `CR LF` so the screen scrolls, and the caller's `CR LF` or `CR NUL` for Return arrives as a single `CR`. So even a client that refuses every option gets a readable session.
+A caller that refuses binary mode gets NVT line ends (carriage return/newline) bridged for it: the guest's bare `CR` goes out as `CR LF` so the screen scrolls, and the caller's `CR LF` or `CR NUL` for Return arrives as a single `CR`. So even a client that refuses every option gets a readable session.
 
 Once binary mode is agreed — which any normal telnet client accepts — that translation is off and the session is 8-bit transparent in both directions, so **ZMODEM and XMODEM transfers work**. GBBS sends its own linefeeds anyway, so nothing is lost either way.
 
@@ -63,7 +63,7 @@ ATH
 
 ## File capture, clipboard, or a real serial port
 
-Set the port attachment to **File** to save serial output to a host file (a toast shows the filename when the file closes). **Clipboard** copies the captured/printed text to the host clipboard on close. **Serial** attaches a real host serial port. Details: [Serial & Parallel Connections](SerialConnections.md).
+Set the port attachment to **File** to save serial output to a host file (a toast shows the filename when the file closes, which happens automatically after 10 seconds of no data). **Clipboard** copies the captured/printed text to the host clipboard on close. **Serial** attaches a real host serial port. Details: [Serial & Parallel Connections](SerialConnections.md).
 
 ## Related
 
