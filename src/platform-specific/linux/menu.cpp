@@ -465,11 +465,18 @@ bool menuNeedsFrame()
     return io.WantCaptureMouse || io.WantCaptureKeyboard;
 }
 
-void renderMenuOverlay(SDL_Renderer *renderer, const SDL_FRect *content)
+static bool g_menu_frame_open = false;
+
+static void render_menu_overlay_impl(SDL_Renderer *renderer, const SDL_FRect *content, bool draw)
 {
     if (!g_imgui_inited) return;
 
     if (emulated_mouse_captured())
+        return;
+
+    // A DOM click can re-enter while NewFrame is still building the bar
+    // (the file input's own click). Don't start a second ImGui frame.
+    if (g_menu_frame_open)
         return;
 
     // Manage mouse grab: release while ImGui wants the mouse, restore when done.
@@ -482,6 +489,7 @@ void renderMenuOverlay(SDL_Renderer *renderer, const SDL_FRect *content)
         }
     }
 
+    g_menu_frame_open = true;
     ImGui_ImplSDLRenderer3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
@@ -525,7 +533,19 @@ void renderMenuOverlay(SDL_Renderer *renderer, const SDL_FRect *content)
     ImGui::PopStyleVar(4);
 
     ImGui::Render();
-    ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
+    g_menu_frame_open = false;
+    if (draw && renderer)
+        ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
+}
+
+void renderMenuOverlay(SDL_Renderer *renderer, const SDL_FRect *content)
+{
+    render_menu_overlay_impl(renderer, content, true);
+}
+
+void advanceMenuFrameForGesture(SDL_Renderer *renderer, const SDL_FRect *content)
+{
+    render_menu_overlay_impl(renderer, content, false);
 }
 
 #endif // __linux__ || __EMSCRIPTEN__

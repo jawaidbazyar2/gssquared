@@ -1408,6 +1408,12 @@ void transition_to_shutdown(GS2AppState *state) {
    SDL3 App Callback Entry Points
    ======================================================================== */
 
+#if defined(__EMSCRIPTEN__)
+static GS2AppState *g_web_gesture_state = nullptr;
+static SDL_AppResult g_web_gesture_result = SDL_APP_CONTINUE;
+static int g_web_gesture_depth = 0;
+#endif
+
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     std::cout << "Booting GSSquared!" << std::endl;
 
@@ -1626,6 +1632,13 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     *appstate = state;
 
+#if defined(__EMSCRIPTEN__)
+    g_web_gesture_state = state;
+    // Safari opens a file picker only from the DOM click that started the
+    // gesture. Install the listener now that app state exists.
+    web_install_file_dialog_hook();
+#endif
+
     // Register callback so emulation continues during macOS menu tracking and window resize
     setMenuTrackingCallback(SDL_AppIterate, state);
 
@@ -1689,6 +1702,64 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     return SDL_APP_CONTINUE;
 }
 
+#if defined(__EMSCRIPTEN__)
+// Pull SDL events off the queue and run them through SDL_AppEvent. The main
+// loop does this on the next animation frame, which is too late for Safari's
+// file-picker check (it requires the DOM click call stack, not just transient
+// activation). Returns false when the queue was empty.
+static bool gs2_web_dispatch_queued(GS2AppState *state)
+{
+    SDL_PumpEvents();
+    bool any = false;
+    SDL_Event ev;
+    for (int n = 0; n < 64; ++n) {
+        const int got = SDL_PeepEvents(&ev, 1, SDL_GETEVENT, SDL_EVENT_FIRST, SDL_EVENT_LAST);
+        if (got <= 0)
+            break;
+        any = true;
+        const SDL_AppResult rc = SDL_AppEvent(state, &ev);
+        if (rc != SDL_APP_CONTINUE) {
+            // Direct SDL_AppEvent skips SDL's callback-result atomic. Remember
+            // it so the next iterate actually quits.
+            g_web_gesture_result = rc;
+            break;
+        }
+    }
+    return any;
+}
+
+// DOM click listener (see web_install_file_dialog_hook). ImGui trickles a
+// button down and the matching up onto separate frames, and File > Drives
+// then pushes another SDL event. Two frames plus a trailing drain turn that
+// click into web_open_file_dialog before this function returns.
+extern "C" EMSCRIPTEN_KEEPALIVE void gs2_web_user_gesture(void)
+{
+    if (g_web_gesture_depth)
+        return;
+    GS2AppState *state = g_web_gesture_state;
+    if (!state || !state->computer || !state->computer->video_system)
+        return;
+    video_system_t *vs = state->computer->video_system;
+    if (!vs->renderer)
+        return;
+
+    g_web_gesture_depth++;
+    for (int pass = 0; pass < 3; ++pass) {
+        const int generation = web_file_dialog_generation();
+        gs2_web_dispatch_queued(state);
+        if (g_web_gesture_result != SDL_APP_CONTINUE)
+            break;
+        if (web_file_dialog_generation() != generation)
+            break; // picker is up; don't synthesize a second one
+        if (pass == 2)
+            break;
+        const SDL_FRect content = vs->target_rect_in_window_points();
+        advanceMenuFrameForGesture(vs->renderer, &content);
+    }
+    g_web_gesture_depth--;
+}
+#endif
+
 /**
  * Draw the menu bar for the SelectSystem / EditSystem phases.
  *
@@ -1727,6 +1798,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     GS2AppState *state = (GS2AppState *)appstate;
 
 #if defined(__EMSCRIPTEN__)
+    if (g_web_gesture_result != SDL_APP_CONTINUE) {
+        const SDL_AppResult rc = g_web_gesture_result;
+        g_web_gesture_result = SDL_APP_CONTINUE;
+        return rc;
+    }
     // After SDL_PumpEvents, which may have applied a deferred swap interval.
     gs2_web_lock_raf();
 #endif
@@ -1877,6 +1953,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     //(void)result;
     GS2AppState *state = (GS2AppState *)appstate;
+#if defined(__EMSCRIPTEN__)
+    g_web_gesture_state = nullptr;
+#endif
     if (!state) return;
 
     // Stop the debug protocol thread before tearing down computer/SDL objects;
