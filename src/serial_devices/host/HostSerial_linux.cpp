@@ -26,6 +26,7 @@
 
 #include <fcntl.h>
 #include <glob.h>
+#include <linux/serial.h>
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <termios.h>
@@ -439,6 +440,34 @@ void glob_paths(const char *pattern, std::vector<std::string> &out) {
     globfree(&g);
 }
 
+/** Probed 8250 UART. Empty ttyS* placeholders stay PORT_UNKNOWN.
+ *  Read sysfs; do not open the node (enumerate runs every 2s, and open asserts DTR). */
+bool tty_s_has_uart(const std::string &dev_path) {
+    const char *slash = std::strrchr(dev_path.c_str(), '/');
+    const char *name = slash ? slash + 1 : dev_path.c_str();
+    if (name[0] == '\0') {
+        return false;
+    }
+    const std::string sysfs = std::string("/sys/class/tty/") + name + "/type";
+    const int fd = open(sysfs.c_str(), O_RDONLY | O_CLOEXEC);
+    if (fd < 0) {
+        return false;
+    }
+    char buf[32];
+    const ssize_t n = read(fd, buf, sizeof(buf) - 1);
+    close(fd);
+    if (n <= 0) {
+        return false;
+    }
+    buf[n] = '\0';
+    char *end = nullptr;
+    const long type = std::strtol(buf, &end, 10);
+    if (end == buf) {
+        return false;
+    }
+    return type != PORT_UNKNOWN;
+}
+
 /** Kernel node (/dev/ttyUSB0), not a long udev by-id symlink. */
 std::string canonical_port_path(const std::string &path) {
     char real[PATH_MAX];
@@ -641,6 +670,15 @@ std::vector<host_serial_info_t> host_serial_enumerate() {
     glob_paths("/dev/ttyAMA*", paths);
 
     for (const std::string &path : paths) {
+        add_port(out, path, seen_real);
+    }
+
+    std::vector<std::string> tty_s;
+    glob_paths("/dev/ttyS*", tty_s);
+    for (const std::string &path : tty_s) {
+        if (!tty_s_has_uart(path)) {
+            continue;
+        }
         add_port(out, path, seen_real);
     }
 

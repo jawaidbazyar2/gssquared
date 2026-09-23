@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-23
+
+### Features
+
+- **Linux motherboard serial ports.** The Host Serial picker lists real `/dev/ttyS*` UARTs (PC COM ports and similar). Empty 8250 nodes with no UART are omitted.
+
 ## 2026-09-17
 
 ### Features

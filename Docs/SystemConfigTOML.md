@@ -328,7 +328,7 @@ Aligned with `src/serial_devices/`:
 | `"clipboard"` | Capture to host clipboard (high-bit stripped; CR/LF/CRLF → one LF; idle-close like file) |
 | `"echo"` | Loopback for testing (schema only; not offered in UI) |
 | `"modem"` | Hayes-compatible virtual modem (native builds; serial ports only) |
-| `"serial"` | Real host UART; `path` is the OS port name (macOS `/dev/cu.*`, Windows `COMn`, Linux `/dev/ttyUSB*`) |
+| `"serial"` | Real host UART; `path` is the OS port name (macOS `/dev/cu.*`, Windows `COMn`, Linux `/dev/ttyS*` `/dev/ttyUSB*` `/dev/ttyACM*` `/dev/ttyAMA*`) |
 
 **Allowed devices by port kind:** serial (SCC, SSC) → none / file / clipboard / modem / serial; parallel → none / file / clipboard.
 
