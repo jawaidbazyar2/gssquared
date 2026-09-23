@@ -1,6 +1,5 @@
 #include "SpeedSelect.hpp"
-#include "SelectButton.hpp"
-#include "MainAtlas.hpp"
+#include "ConfigSelectors.hpp"
 #include "NClock.hpp"
 #include "computer.hpp"
 #include "display/display.hpp"
@@ -17,11 +16,7 @@ SpeedSelect_t::SpeedSelect_t(UIContext *ctx, const Style_t& initial_style, compu
 
     // don't set position yet, we'll do that when we open the submenu.
     size(360, 65);
-    add(new SelectButton_t(ctx, MHz1_0Button, CB, CLOCK_1_024MHZ));
-    add(new SelectButton_t(ctx, MHz2_8Button, CB, CLOCK_2_8MHZ));
-    add(new SelectButton_t(ctx, MHz7_159Button, CB, CLOCK_7_159MHZ));
-    add(new SelectButton_t(ctx, MHz14_318Button, CB, CLOCK_14_3MHZ));
-    add(new SelectButton_t(ctx, MHzInfinityButton, CB, CLOCK_FREE_RUN));
+    populate_speed_selector(this, ctx, CB, nullptr);
     set_visible(false);
 
     // iterate tiles and set onclick for each

@@ -9,6 +9,7 @@
 
 #include "ConfigSelectors.hpp"
 
+#include "FaceButton.hpp"
 #include "MainAtlas.hpp"
 #include "NClock.hpp"
 #include "util/MenuInterface.h"
@@ -25,13 +26,17 @@ Style_t config_selector_button_style() {
 
 void populate_speed_selector(Container_t *container, UIContext *ctx, const Style_t& button_style,
                              SelectButton_t **out_btns) {
-    SelectButton_t *btns[5] = {
-        new SelectButton_t(ctx, MHz1_0Button, button_style, CLOCK_1_024MHZ),
-        new SelectButton_t(ctx, MHz2_8Button, button_style, CLOCK_2_8MHZ),
-        new SelectButton_t(ctx, MHz7_159Button, button_style, CLOCK_7_159MHZ),
-        new SelectButton_t(ctx, MHz14_318Button, button_style, CLOCK_14_3MHZ),
-        new SelectButton_t(ctx, MHzInfinityButton, button_style, CLOCK_FREE_RUN),
+    const clock_mode_t modes[4] = {
+        CLOCK_1_024MHZ, CLOCK_2_8MHZ, CLOCK_7_159MHZ, CLOCK_14_3MHZ,
     };
+    SelectButton_t *btns[5] = {};
+    for (int i = 0; i < 4; i++) {
+        FaceButton *face = new FaceButton(ctx, speed_button_label(modes[i]), button_style, modes[i]);
+        face->set_accent(0x5C78FFFF);
+        face->size(56, 56);
+        btns[i] = face;
+    }
+    btns[4] = new SelectButton_t(ctx, MHzInfinityButton, button_style, CLOCK_FREE_RUN);
     for (int i = 0; i < 5; i++) {
         container->add(btns[i]);
         if (out_btns) out_btns[i] = btns[i];
