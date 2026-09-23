@@ -4,7 +4,7 @@ GSSquared includes a built-in debugger for inspecting CPU execution, memory, vid
 
 The debugger opens in a **separate window** from the main display (desktop builds only — it is not available in the web/Emscripten build).
 
-For automated control from scripts or external tools, see [gs2debug — Python API for agents](gs2debug.md). Developer design notes live in [Debugger.md](Debugger.md); wire-format details are in [DebugProtocol.md](DebugProtocol.md).
+For automated control from scripts or external tools, start the emulator with [`--debug PATH`](CommandLine.md) and use [gs2debug — Python API for agents](gs2debug.md). An external **Go MCP sidecar** (not in the app bundle) exposes the same protocol to LLM hosts — see [McpServer.md](McpServer.md). Developer design notes live in [Debugger.md](Debugger.md); wire-format details are in [DebugProtocol.md](DebugProtocol.md).
 
 ---
 

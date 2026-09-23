@@ -3,7 +3,7 @@
 The ambition for this project is large - and it will take a while to get it done. So at any given point in time, consider it a work-in-progress complete with bugs, missing features, and experiments. Of course there will be plenty that "just works".
 
 Looking for how to use GSSquared?
-[Click here for User Documentation](index.md)
+[Click here for User Documentation](index.md) — including the [feature catalog](Features.md) (capabilities, host integrations, automation hooks).
 
 Keep reading for Project Status, Design, and development journals.
 
@@ -107,19 +107,21 @@ Additional notes: 5.25 Floppy does not support quarter or half tracks.
 | .woz 2.0 | ✅ Read/Write | 140K 800K | |
 | .woz 2.1 | ❌ | 140K 800K | |
 
+## Sound
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Basic Speaker | ✅ Complete |  |
-| Ensoniq / IIGS Sound | In progress |
+| Basic Speaker | ✅ Complete | |
+| Ensoniq / IIGS Sound | ✅ | No more known bugs |
+| Mockingboard | ✅ Complete | Passes mb-audit |
 
 ## I/O Devices
 
 | Device | Status | Notes |
 |--------|--------|-------|
 | Printer / parallel port | Work in progress | Right now just dumps binary data to file, no processsing or printer emulation |
-| Printer / serial port | Partial | GS-only, support SCC chip and "print to file" |
-| Modem / serial port | Partial | IIgs SCC8530 + Hayes modem; IIe Super Serial Card (`super_serial`) + same ModemDevice — see [SSC.md](SSC.md). Host UART attach (#155) on macOS, Windows, and Linux (`device = "serial"`). Incoming CD/CTS/DSR: [SerialPortSpec.md](SerialPortSpec.md). |
+| Printer / serial port | Partial | Support SCC 8530 + Super Serial and "print to file" |
+| Modem / serial port | Complete | IIgs SCC8530 + Hayes modem; IIe Super Serial Card (`super_serial`) + same ModemDevice — see [SSC.md](SSC.md). Host UART attach (#155) on macOS, Windows, and Linux (`device = "serial"`). Incoming CD/CTS/DSR: [SerialPortSpec.md](SerialPortSpec.md). |
 | ImageWriter printer emulation | Not started | |
 | Joystick / paddles | ✅ Complete | Mouse emulation of Joystick; Gamepads;  |
 | Sirius JoyPort (Atari) | ✅ | Two Atari sticks via AN0 / Controller Select; enable mode with F6 |
@@ -145,7 +147,7 @@ On the Mac, you will want to disable "Pressing Option 5 Times enables Mouse Keys
 
 BTW, Control-OpenApple-Reset will also "force reboot" a II+ mode, because it's super-useful, even though OpenApple and ClosedApple are NOT mapped to the game controller buttons on the II+.
 
-1. control keys: YES
+1. control keys: YES. Control-Shift-P is Control-@ (`$00`); Control-Shift-N is Control-^ (`$1E`). See [Keyboard Shortcuts](KeyboardShortcuts.md).
 1. shift keys: YES
 1. arrow keys: YES. II+ only has left and right arrow keys, so only those work on II+.
 1. Escape key: YES

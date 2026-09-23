@@ -12731,10 +12731,19 @@ it's coming together!!
 [ ] how to get around Cmd-Q closing browser? (this is a mac thing)
 [X] it wants to run at exactly 60fps. may not be a way around that.
 [X] but when we close and re-open an emulation, it wants to run 75. So there is a thing we're missing here on a re-start.
-[ ] When running an emu, the menu is at the very top of window where it belongs. but in SelectSystem it's right next to the content area, and, the mouse is offset. So something needs to be tweaked there (or more likely, untweaked).
+[X] When running an emu, the menu is at the very top of window where it belongs. but in SelectSystem it's right next to the content area, and, the mouse is offset. So something needs to be tweaked there (or more likely, untweaked).
 [ ] check menu on linux. gs2.cpp
 [ ] preferences storage: IDBFS in /prefs
 [ ] Document feature limitations for web build
 
 Geoff Body has a photo of the SOUNDGLU die. Follow up with him periodically. he says he will share when he's done, and, "has been working through the die when he has time".
+
+OK. So here's the final 1.0 roadmap.
+
+I'd *like* to test and validate:
+[ ] VOC
+[ ] GBBS / Captain's Quarters using real cables.
+
+Things that are strictly web bugs can wait, since we can instantly push web updates out.
+
 

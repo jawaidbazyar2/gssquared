@@ -8,7 +8,7 @@ The Parallel Interface card sends printer (or other Centronics-style) output fro
 - Captures guest output to a host file (one byte stream per “job”).
 - Shows a short on-screen toast with the filename when a capture file closes.
 
-ImageWriter / PDF printer emulation is not required for basic capture — any software that prints to a parallel card will write to the attached file.
+This is **byte capture only**. There is no ImageWriter, Epson, or PDF printer emulation — those are planned. Any software that prints to a parallel card writes a raw stream to the attached file or clipboard.
 
 ## How to enable it
 

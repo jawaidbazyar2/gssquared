@@ -10,14 +10,25 @@ nav:
 
   - User Guide:
     - Getting Started: index.md
+    - Feature catalog: Features.md
     - Menus: Menus.md
     - Selecting a System: Select.md
+    - Command Line: CommandLine.md
     - On Screen Display (OSD): OSD.md
     - Using a Keyboard: KeyboardShortcuts.md
     - Using a Mouse: Mouse.md
     - Joysticks: Joysticks.md
     - Displays: Displays.md
     - Storage & Disks: Storage.md
+    - Blank Disk Images: BlankFloppy.md
+    - Host FST: HostFST.md
+    - Serial & Parallel: SerialConnections.md
+    - Serial / Modem: Serial_Modem.md
+    - Play in the Browser: Web.md
+    - Config Editor: ConfigEditor.md
+    - Writing Config Files: ConfigFiles.md
+    - File Types & URLs: ProtocolHandlers.md
+    - Using the Debugger: UsingTheDebugger.md
 
   - Supported Systems:
     - Apple IIe: AppleIIe.md
@@ -28,6 +39,16 @@ nav:
     - Compatibility (IIgs): CompatibilityGS.md
 
   - Cards & Devices:
+    - Uthernet II: Cards_UthernetII.md
+    - Super Serial Card: Cards_SuperSerial.md
+    - Apple Mouse III: Cards_AppleMouse.md
+    - Parallel Interface: Cards_Parallel.md
+    - Video Overlay Card: Cards_VOC.md
+    - Second Sight: Cards_SecondSight.md
+    - Mockingboard (user): Cards_Mockingboard.md
+    - Videx VideoTerm: Cards_Videx.md
+    - VIDHD: Cards_VIDHD.md
+    - Clock cards: Cards_Clock.md
     - Disk II: DiskII.md
     - SmartPort: SmartPort.md
     - IWM: IWM.md

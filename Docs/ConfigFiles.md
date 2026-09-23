@@ -30,9 +30,9 @@ There is also **`Profiles.txt`**, which is a **catalog** listing available profi
   gssquared "Choplifter Settings.txt"
   ```
 
-When you launch with a config file path, GSSquared skips the System Select screen and boots straight into that configuration.
+When you launch with a config file path, GSSquared skips the System Select screen and boots straight into that configuration. See [Command Line](CommandLine.md).
 
-**Save System** (writing your current session back to disk) is planned but not fully wired up yet. For now, create configs by editing a `.gs2` file in a text editor.
+To write a config from the UI, use **+** or **Edit…** on System Select and click **Save** (or **Save As**). That writes a `.gs2` with platform, slots, pre-mounted disks, and serial/parallel attachments — not CPU/RAM state. **Save As** to a new path mints a new machine `id` (IIgs BRAM is copied). Full machine **save states** (CPU, RAM, devices) are [planned and not shipped](SaveAndRestore.md).
 
 ---
 
@@ -144,20 +144,20 @@ Rules that bite people:
 
 | `card` value | What it is |
 |--------------|------------|
-| `"language_card"` | Language card (slot 0, II / II+ only) |
+| `"language_card"` | Language card (slot 0, II / II+ only) — 16K bank-switched RAM |
 | `"disk_ii"` | Disk II controller (two 5.25" drives) |
-| `"prodos_clock"` | ProDOS real-time clock |
-| `"thunder_clock"` | Thunder Clock Plus |
+| `"prodos_clock"` | [Generic ProDOS clock](Cards_Clock.md) (read-only) |
+| `"thunder_clock"` | [Thunderclock Plus](Cards_Clock.md) |
 | `"parallel"` | [Parallel Interface](Cards_Parallel.md) |
-| `"mockingboard"` | Mockingboard sound |
+| `"mockingboard"` | [Mockingboard](Cards_Mockingboard.md) |
 | `"mouse"` | [Apple Mouse III](Cards_AppleMouse.md); `"applemouseiii"` is an alias |
-| `"videx"` | Videx 80-column (II / II+ only, slot 3) |
-| `"mem_expansion"` | RAM expansion (Slinky-style) |
-| `"prodos_block"` | Deprecated - do not use |
-| `"prodos_block2"` | Deprecated - do not use |
+| `"videx"` | [Videx VideoTerm](Cards_Videx.md) 80-column (II / II+ only, slot 3) |
+| `"mem_expansion"` | Slinky-style RAM expansion (up to 1 MB) |
+| `"prodos_block"` | Deprecated - do not use; prefer `"bazfast3"` |
+| `"prodos_block2"` | Deprecated - do not use; prefer `"bazfast3"` |
 | `"bazfast3"` | SmartPort / hard-disk controller (also accepts `"smartport"` or `"pdblock3"`) |
-| `"vidhd"` | VIDHD (65816 //e only) |
-| `"second_sight"` | Second Sight (IIgs only) |
+| `"vidhd"` | [VIDHD](Cards_VIDHD.md) (65816 //e only) |
+| `"second_sight"` | [Second Sight](Cards_SecondSight.md) (IIgs only) |
 | `"voc"` | [Video Overlay Card](Cards_VOC.md) (IIgs only, slot 3) |
 | `"super_serial"` | [Super Serial Card](Cards_SuperSerial.md) |
 | `"uthernet2"` | [Uthernet II](Cards_UthernetII.md) (IIe + IIgs; slots 1–7) |
@@ -260,7 +260,7 @@ path = "printouts/session.bin"
 |----------|---------|
 | `port` | IIgs SCC only: `"a"` or `"b"`. Defaults to `"a"` if omitted. |
 | `slot` | Expansion-slot card (SSC, parallel, …). Use instead of `port`. |
-| `device` | `"none"`, `"file"`, `"clipboard"`, `"echo"`, `"modem"`, or `"serial"`. Parallel allows `"none"` / `"file"` / `"clipboard"` only. |
+| `device` | `"none"`, `"file"`, `"clipboard"`, `"echo"`, `"modem"`, or `"serial"`. Parallel allows `"none"` / `"file"` / `"clipboard"` only. **`echo` is TOML-only** — it is not offered in the Control Panel or config editor. |
 | `path` | Host file when `device = "file"` (relative paths work like disk images). Host port name when `device = "serial"` (stored as-is, e.g. `cu.usbserial-…`, `/dev/cu.usbserial-…`, `COM3`, or `/dev/ttyUSB0`). |
 
 If you omit `[[connections]]` entirely, GS2 uses platform defaults (IIgs: file + modem on native builds; SSC → modem; parallel → file).
@@ -450,6 +450,18 @@ Lines like `machine.speed`, `video.mode`, and `video.scanlines` are **preference
 | Share a config with another GS2 user | `.gs2` + relative disk paths |
 | Run a curated arqyv / A2Fusion pack | The pack’s `… Settings.txt` as-is |
 | Match every validation rule and enum | [SystemConfigTOML.md](SystemConfigTOML.md) |
+
+---
+
+## Clocks
+
+| Clock | How you get it | What it does |
+|-------|----------------|--------------|
+| **Thunderclock Plus** | Slot card `"thunder_clock"` | ProDOS timestamps, TIME SET, host-synced counter. See [Clock cards](Cards_Clock.md). |
+| **Generic ProDOS clock** | Slot card `"prodos_clock"` | Read-only date/time for ProDOS. |
+| **IIgs realtime clock** | Built into IIgs platforms | Matches the **host time zone**. Battery RAM / Control Panel NVRAM is stored in the `.gs2` as `bram` when you close the machine. |
+
+PAL (`clock = "pal"`) is video/timing, not these clock cards. It runs II / II+ / IIe at 50 Hz. See [Displays](Displays.md).
 
 ---
 

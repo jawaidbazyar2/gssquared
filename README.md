@@ -31,6 +31,8 @@ It uses the SDL3 library for graphics, sound, and I/O. This is a video game-orie
 
 Check out the [User Documentation](Docs/index.md) for detailed instructions on how to use GSSquared.
 
+For a structured list of capabilities (including host integrations and automation hooks), see the [Feature catalog](Docs/Features.md).
+
 # Pre-compiled Packages
 
 A binary release is available at [https://github.com/jawaidbazyar2/gssquared/releases](https://github.com/jawaidbazyar2/gssquared/releases).

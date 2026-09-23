@@ -6,6 +6,7 @@ GSSquared includes a virtual Hayes-compatible modem you can attach to a serial p
 
 1. A serial port: IIgs built-in SCC, or a [Super Serial Card](Cards_SuperSerial.md) in a slot.
 2. That port’s attachment set to **Modem** — see [Serial & Parallel Connections](SerialConnections.md).
+3. A **native** build. The [browser build](Web.md) does not include the modem (no SDL_net).
 
 ## How to dial
 
@@ -70,3 +71,4 @@ Set the port attachment to **File** to save serial output to a host file (a toas
 - [Serial & Parallel Connections](SerialConnections.md)
 - [Serial port spec](SerialPortSpec.md)
 - [Uthernet II](Cards_UthernetII.md) — full TCP/IP without a serial modem
+- [Play in the browser](Web.md) — modem is native-only

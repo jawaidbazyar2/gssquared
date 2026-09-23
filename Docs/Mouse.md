@@ -9,7 +9,7 @@ GS2 supports a Mouse in two ways:
 
 ## Mouse Capture
 
-When you're using emulated Mouse software, you will probably want to turn on Mouse Capture.
+When you're using emulated Mouse software anywhere except a IIgs GS/OS Desktop, you will probably want to turn on Mouse Capture.
 
 Do this by using the Mouse Capture menu, Mouse Capture button, or by pressing F1.
 
@@ -19,8 +19,13 @@ To release Mouse Capture, you must press **F1**, or Alt-Tab to switch windows. (
 
 Opening the Control Panel via **F4** or the Control Panel button will also temporarily release Mouse Capture. When you close the Control Panel, the original Mouse Capture state will be restored.
 
-Mouse capture also turns off the "mouse movement shows on-screen controls" feature. It locks you into that keyboard-oriented Apple II experience.
+Mouse capture also hides the hover controls (RESET, Capture, Debug, speed, Display). It locks you into that keyboard-oriented Apple II experience.
 
+## Right Mouse Button Accelerate
+
+**Settings → Right Mouse Button Accelerate** (off by default) lets you hold the right mouse button to run the emulator at a faster CPU speed — the same idea as holding INS on some other emulators. Useful for skipping long loads without leaving the 1.0 / 2.8 / 7.1 / 14.3 presets. Preference is remembered in app settings.
+
+When this option is disabled, right mouse clicks are passed into GS/OS and can interact with desktop software.
 
 ## IIgs - GS/OS Mouse Tracking
 

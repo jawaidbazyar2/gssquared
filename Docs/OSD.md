@@ -1,9 +1,9 @@
 # OSD - On-Screen Display
 
-Aside from Menus, you can interact with the emulated system through use of a couple different OSD (On-Screen Display) elements:
+Aside from Menus, you can interact with the emulated system through a few On-Screen Display (OSD) elements:
 
 * [Control Panel](#control-panel)
-* [OSD Buttons](#osd-buttons)
+* [Hover controls](#hover-controls)
 * [Disk Drive Status](#disk-drive-status)
 
 
@@ -11,7 +11,7 @@ Aside from Menus, you can interact with the emulated system through use of a cou
 
 This is the "Control Panel" of the system.
 
-To open, press **F4** or click the OSD Button (Triangle tab) that appears near the upper left corner of the display when the mouse is moving.
+To open, press **F4** or click the triangle tab that appears near the upper left corner of the display when the mouse is moving.
 
 Inside the Control Panel, you can select:
 
@@ -21,7 +21,7 @@ NTSC, RGB, and three colors of monochrome
 
 ### Speed
 
-1MHz, 2.8MHz, 7.1MHz, 14.3MHz, and Ludicrous speed. Ludicrous speed still ties into the normal 1MHz video system so speaker, Ensoniq, and disk devices keep running (if ludicrously).
+1 MHz, 2.8 MHz, 7.1 MHz, 14.3 MHz, and Ludicrous speed. Ludicrous speed still ties into the normal 1 MHz video system so speaker, Ensoniq, and disk devices keep running (if ludicrously).
 
 ### Slots
 
@@ -35,20 +35,34 @@ Buttons for each serial or parallel port on the machine (IIgs built-in SCC, Supe
 
 ### Disk Drives / Storage
 
-You can see Disk drive status here (also see [Disk Drive Status](#disk-drive-status) below)
+Drive icons show slot, drive, and the mounted filename (if any).
 
-See [Storage](Storage.md) for more details on managing mounted disk images.
+* Click an **empty** drive to open a file picker and mount an image.
+* Click a **mounted** floppy to unmount. If the image has buffered writes, you are asked to Save, Discard, or Cancel.
+* Drag a disk image onto the window: the Control Panel opens so you can drop the file on the drive you want.
 
-On Apple IIgs systems, **Host Folder…** chooses which real-computer directory is shared through Host FST (volume `:Host`). See [Host FST](HostFST.md).
+See [Storage](Storage.md) for formats, write-back, BazFast, and errors.
 
-## OSD Buttons
+On Apple IIgs systems, **Host Folder…** chooses which real-computer directory is shared through Host FST (volume `:Host`). Not available in the [browser build](Web.md). See [Host FST](HostFST.md).
 
-These buttons allow you to control various aspects of the system: speed, display type, full screen, etc.
+## Hover controls
 
-OSD Buttons are hidden when Mouse Capture is enabled. This is to prevent accidentally triggering buttons when using Mouse software.
+When the mouse is over the main window and is **not** captured, a strip of face buttons fades in on the left:
+
+| Button | Action |
+|--------|--------|
+| **RESET** | Same as Machine → Reset (Ctrl-Reset) |
+| **Capture** | Capture the mouse for guest pointer software |
+| **Debug** | Open the debugger window (same as **F10**) |
+| **Speed** | Shows the current throttle (`1.0`, `2.8`, `7.1`, `14.3`, or an infinity glyph for Ludicrous). Click to open a picker. |
+| **Display** | Opens a picker for Composite / RGB / mono. The button accent follows the current monitor. |
+
+The strip hides automatically when **Capture Mouse** is on, so you do not click buttons while using mouse-aware software. There is no Display → Hover Enable menu; the strip appears whenever hover is possible.
+
+The triangle **Control Panel** tab (upper left) is separate from this strip.
 
 ## Disk Drive Status
 
 When the Control Panel is not open, if disk drives are active, they will be displayed at the bottom of the screen, indicating slot, drive, track number, and disk image filename if an image is present.
 
-You can hide this strip with **Display → HUD → Drives**. The stats overlay (if enabled) is toggled with **Display → HUD → Stats**. See [Menus](Menus.md).
+You can hide this strip with **Display → HUD → Drives**. The stats overlay (if enabled) is toggled with **Display → HUD → Stats**. See [Menus](Menus.md) and [Displays](Displays.md).

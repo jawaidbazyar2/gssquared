@@ -31,13 +31,13 @@ The 32M HD images are raw block files (not WOZ, not 2MG). Mount them on **BazFas
 
 ### Volume name
 
-A formatted image gets its volume name from the filename you choose: `My Games.hdv` becomes `/MY.GAMES`. Names are upper-cased and anything ProDOS does not allow (spaces, punctuation) becomes a period. If the result would not be a legal ProDOS name — more than 15 characters, or not starting with a letter — the volume is named `BLANK` instead.
+When you create a formatted hard disk image, the volume name is set from the filename you choose: `My Games.hdv` becomes `/MY.GAMES`. Names are upper-cased and anything ProDOS does not allow (spaces, punctuation) becomes a period. If the result would not be a legal ProDOS name — more than 15 characters, or not starting with a letter — the volume is named `BLANK` instead.
 
 The volume is bootable in the sense that it carries a ProDOS boot block, so once you copy `PRODOS` and a system file onto it, the machine can start from it.
 
 ## After you save
 
-The new file is just a file on your Mac, PC, or Linux machine. Insert it the same way you would a disk you downloaded:
+A new disk image file is just a file on your Mac, PC, or Linux machine. Insert it the same way you would a disk you downloaded:
 
 - **File → Drives** — pick the slot/drive
 - Control Panel (**F4**) — click an empty drive

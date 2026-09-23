@@ -2,6 +2,8 @@
 
 How GSSquared is opened from the host: Finder / Explorer, drag-and-drop, the command line, and (later) web links. Implementation notes live here; user-facing launch steps are in [Creating Custom System Configs](ConfigEditor.md) and [Writing Config Files Manually](ConfigFiles.md).
 
+**Windows:** double-clicking a `.gs2` while GSSquared is already running starts a **second process** (the path goes to `argv`). macOS delivers the open to the existing instance. Disk-image associations and the `gssquared:` URL scheme are [planned](Roadmap.md), not shipped.
+
 Roadmap 1.0 lists “file type and URL associations.” This document is the spec for that work.
 
 ## How the host talks to GS2

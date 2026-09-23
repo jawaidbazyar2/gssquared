@@ -4,6 +4,8 @@
 
 * [Selecting a system](Select.md)
 
+* [Command line](CommandLine.md) — `-p`, mounts, `--debug`, `--no-quit-confirm`
+
 * [OSD - On Screen Display](OSD.md)
 
 * [Using a Keyboard](KeyboardShortcuts.md)
@@ -24,6 +26,8 @@
 
 * [Serial / Modem](Serial_Modem.md)
 
+* [Play in the browser](Web.md) — gssquared.net/live and web limits
+
 * [Creating Custom System Configs](ConfigEditor.md)
 
 * [Writing Config Files Manually](ConfigFiles.md)
@@ -42,6 +46,25 @@ Slot cards and how to use them:
 
 * [Apple Mouse III](Cards_AppleMouse.md) — mouse card for //e
 
-* [Parallel Interface](Cards_Parallel.md) — printer / parallel capture to file or clipboard
+* [Parallel Interface](Cards_Parallel.md) — printer / parallel capture to file or clipboard (no ImageWriter)
 
 * [Video Overlay Card](Cards_VOC.md) — IIgs 640×400 SHR interlace
+
+* [Second Sight](Cards_SecondSight.md) — IIgs VGA path and Second Sight Text
+
+* [Mockingboard](Cards_Mockingboard.md) — AY/6522 sound
+
+* [Videx VideoTerm](Cards_Videx.md) — 80-column text for II / II+
+
+* [VIDHD](Cards_VIDHD.md) — high-density video on //e 65816
+
+* [Clock cards](Cards_Clock.md) — Thunderclock Plus and generic ProDOS clock
+
+## A catalog of features primarily for use by agents
+
+* [Feature catalog](Features.md) — what GSSquared offers (users and power users)
+
+## Not offered / not shipped yet
+
+* [Intentionally unimplemented](Unimplemented.md) — cassette tape, REPT key, RAMfast SCSI, and other omissions by choice
+* Full machine [save states](SaveAndRestore.md), ImageWriter-class printing, WOZ 2.1, and `gssquared:` URL handlers are planned — see the [feature catalog](Features.md)

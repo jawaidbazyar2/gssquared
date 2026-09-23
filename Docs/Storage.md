@@ -10,11 +10,14 @@ GS2 supports the following virtual disk media formats:
 | .2mg | 140K, 800K | 5.25 and 3.5 |
 | .woz 1.0 | 140K, 800K | 5.25 and 3.5 |
 | .woz 2.0 | 140K, 800K | 5.25 and 3.5 |
-| .hdv, .img, .hda | any | Can be any size, raw block device |
-| .iso | any | CD-ROM dump: raw 512-byte blocks, always write-protected. If the image has an Apple Partition Map, BazFast mounts each ProDOS and HFS partition as its own SmartPort unit |
+| .woz 2.1 | — | Not supported yet |
+| .hdv, .img, .hda | any | Can be any size, raw block device. * |
+| .iso | any | CD-ROM dump: raw 512-byte blocks, always write-protected * |
 | .pmap | any .2mg, .hdv, .img, .hda, .po, .iso | "Partition Map" to mount multiple hard drive images at once |
 
-Woz format is the heart of GS2 floppy emulation. GS2 supports copy-protected 5.25 and 3.5 disks in Woz format, even ones with half tracks, quarter tracks, spiral tracks, weak bits, etc etc. Virtually any copy-protected Woz image should work fine in GS2.
+* If the image has an Apple Partition Map, BazFast mounts each ProDOS and HFS partition as its own SmartPort unit 
+
+Woz format is the heart of GS2 floppy emulation. GS2 supports copy-protected 5.25 and 3.5 disks in WOZ 1.0 and 2.0, including weak bits and spiral tracks. **Half- and quarter-track seeks on 5.25″ are supported**. Cassette tape load/save is [intentionally omitted](Unimplemented.md).
 
 ## Creating a blank image
 
@@ -53,15 +56,24 @@ Once done, Close the OSD (F4 again or the OSD Button).
 
 You can choose a storage device from the menu (**File → Drives**), and mount/unmount images to the device the same as above.
 
+### Drag and Drop
+
+If you drag a file from your operating system Finder / Explorer / Linuxything on top of GS2, the Control Panel will automatically open, and then you can drag the disk image on top of the drive you want to mount on.
+
+In the [browser build](Web.md), mounts use a file picker or drag-drop into an in-memory filesystem. They are **not saved across a page reload**.
+
 ### Mount Drivers
 
 **File → Mount Drivers** mounts GSSquared’s built-in drivers disk (`/GS2.DRIVERS`) onto an empty BazFast drive. Check the menu item to mount; uncheck it to unmount that same drive.
 
 The image is write-protected. Run the installer on that volume; it has options to install **Host FST**, **Marinetti**, and **Uthernet II**. See [Host FST](HostFST.md) and [Uthernet II](Cards_UthernetII.md). The menu item is grayed out if the current machine has no BazFast card, or if emulation is not running. If all six BazFast icons already have media mounted, Mount Drivers does nothing until you free a drive.
 
-### Drag and Drop
+## Controllers
 
-If you drag a file from your operating system Finder / Explorer / Linuxything on top of GS2, the Control Panel will automatically open, and then you can drag the disk image on top of the drive you want to mount on.
+* **Disk II** (`disk_ii`) — expansion card, typically slot 6, two 5.25″ drives. You can install more than one controller. See the 5.25″ notes below.
+* **IWM** (Integrated Woz Machine) — built into Apple IIgs platforms (not a slot card). Provides 5.25″ and 3.5″ (800K) drives. The HUD / Control Panel drive icons are the IIgs AppleDisk set.
+* **BazFast** (`bazfast3`) — SmartPort block storage, up to six drive icons. See below.
+* **`prodos_block` / `prodos_block2`** — older generic ProDOS block cards. Deprecated; use BazFast for new configs.
 
 ## Drive-specific details:
 
@@ -73,7 +85,7 @@ Because .nib format loses information about which FF nybbles are 10-bit sync byt
 
 * 3.5" Drives
 
-You can mount any 800K image onto a 3.5 drive. As with a 5.25 floppy, changes are hald in memory until you unmount, and you'll be asked then if you want to save changes back to the original disk image file.
+You can mount any 800K image onto a 3.5 drive. As with a 5.25 floppy, changes are held in memory until you unmount, and you'll be asked then if you want to save changes back to the original disk image file.
 
 
 * BazFast
@@ -105,7 +117,7 @@ G_Games with Path Mods.hdv
 
 If you mount this pmap on a BazFast device, all 7 images will be mounted at once, a big time-saver for those with complex setups, multi-disk collections like What Is the AppleIIgs or Golden Orchard.
 
-BazFast also understands **Apple Partition Map** (APM) images — the on-disk partition scheme used on many 1990s Macintosh / Apple IIgs CD-ROMs and some hard disks. Mounting an APM `.iso` (or an APM `.hdv` / `.img` / `.hda`) on a BazFast icon expands each `Apple_PRODOS` and `Apple_HFS` partition into its own SmartPort unit, the same way a `.pmap` expands a list of files. Driver, free-space, and partition-map entries are skipped. `.iso` images are always mounted write-protected. They are identified as CD-ROM on the host, but BazFast still reports SmartPort device type `$02` (hard disk): GS/OS treats `$05` as SCSI and prompts for a SCSI driver. A plain ISO 9660 disc with no APM is mounted as a single block device (GS/OS already has an ISO 9660 FST). An APM image that contains no ProDOS or HFS partitions is refused.
+BazFast also understands **Apple Partition Map** (APM) images — the on-disk partition scheme used on many 1990s Macintosh / Apple IIgs CD-ROMs and some hard disks such as BlueSCSI images. Mounting an APM `.iso` (or an APM `.hdv` / `.img` / `.hda`) on a BazFast icon expands each `Apple_PRODOS` and `Apple_HFS` partition into its own SmartPort unit, the same way a `.pmap` expands a list of files. Driver, free-space, and partition-map entries are skipped. `.iso` images are always mounted write-protected. They are identified as CD-ROM on the host, but BazFast still reports SmartPort device type `$02` (hard disk) - and GS/OS shows the hard drive icon. This is a GS/OS-SmartPort limitation. A plain ISO 9660 disc with no APM is mounted as a single block device (GS/OS already has an ISO 9660 FST). An APM image that contains no ProDOS or HFS partitions is refused.
 
 ## Host FST
 

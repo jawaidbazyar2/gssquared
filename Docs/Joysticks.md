@@ -1,6 +1,6 @@
 # Joysticks
 
-We support and emulate:
+GS2 supports and emulate:
 
 * Joystick & Paddles - Gamepad
 * Joystick & Paddles - Mouse
@@ -18,7 +18,7 @@ When **Joystick - Gamepad** mode is selected but no gamepad is connected, GSSqua
 
 If you prefer hardware-accurate behavior — paddle timers that never expire, so the machine looks like no joystick is connected — enable **Settings → Game Controller → Disconnected When No Gamepad**. The preference is stored in the app-level `system_settings.toml` file and persists across sessions.
 
-Gamepad support: I have and have tested a 8BitDo Pro2 Gamepad. However, the underlying SDL library is known to work with hundreds of Gamepad models.
+Gamepad support: I have personally tested only an 8BitDo Pro2 Gamepad. However, the underlying SDL library is known to work with hundreds of Gamepad models.
 
 Joystick axes and buttons are mapped like so:
 
@@ -49,7 +49,7 @@ In Joyport mode, GS2 emulates a Sirius Joyport. A variety of early to mid 80s ga
 
 The real Joyport had a compatibility problem which would cause control-reset to always throw the machine into self-test mode, on IIes and IIgs.
 
-Unlike the real Joyport, GS2's Joyport is compatible with II+, IIe, AND IIgs by disabling Joyport functions after a reset (~100ms on II/IIe, ~200ms on IIgs).
+Unlike the real Joyport, GS2's Joyport is compatible with II+, IIe, AND IIgs as it automatically disables Joyport functions for a time after a reset (~100ms on II/IIe, ~200ms on IIgs).
 
 Enable Atari Joyport mode by using the menu, the OSD Buttons, or by pressing F6 on your keyboard until the message says Joyport mode is activated. (Switch back to regular Apple Joystick mode by pressing F6 again).
 

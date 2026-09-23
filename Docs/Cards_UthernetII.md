@@ -8,7 +8,7 @@ Uthernet II is an Ethernet card for the Apple IIe and Apple IIgs. In GSSquared i
 - Uses user-space networking (slirp): HTTP, DHCP, and many TCP apps work out of the box on macOS, Windows, and Linux.
 - No root/admin privileges, TAP device, or WinPcap/Npcap install required for normal use.
 
-**Limits:** The guest is behind NAT. Local LAN broadcast / SMB discovery of machines on your real network generally will not work. Passive browsing and many TCP clients are fine; active-mode FTP is unreliable under double NAT.
+**Limits:** The guest is behind NAT. Local LAN broadcast / SMB discovery of machines on your real network generally will not work. Passive browsing and many TCP clients are fine; active-mode FTP is unreliable under double NAT. Uthernet II / slirp is **not available** in the [browser build](Web.md).
 
 ## How to enable it
 

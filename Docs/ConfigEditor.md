@@ -23,7 +23,7 @@ Launch Config is only available when the machine is off (at the System Select sc
 
 ## Double-click a `.gs2` file
 
-On macOS, `.gs2` files are associated with GSSquared. Double-click one in Finder (or use Open With → GSSquared).
+On macOS, `.gs2` files are associated with GSSquared. Double-click one in Finder (or use Open With → GSSquared). On Windows, double-click starts GSSquared with the path on the command line; a second click while the app is already running starts **another** instance.
 
 * If the System Select screen is showing, GSSquared loads that config and launches it.
 * If emulation is already running, a prompt asks whether to stop the current machine and launch the new config. Cancel keeps the current machine. Launch saves any dirty disks, then boots the new profile.
@@ -49,13 +49,13 @@ The editor title is **Edit System Configuration**. You can set:
 
 * **Name** and **description** — shown on the badge / for your own reference.
 * **Platform** — Apple II, II+, //e, Enhanced //e, IIgs ROM 01, IIgs ROM 03, etc.
-* **Slots** — click a slot to pick which card goes there (or None). Card choices include Disk II, BazFast, Mockingboard, [Uthernet II](Cards_UthernetII.md), [Super Serial](Cards_SuperSerial.md), [Apple Mouse](Cards_AppleMouse.md), [Parallel](Cards_Parallel.md), [Video Overlay Card](Cards_VOC.md) (IIgs slot 3), and others.
+* **Slots** — click a slot to pick which card goes there (or None). Card choices include Disk II, BazFast, [Mockingboard](Cards_Mockingboard.md), [Uthernet II](Cards_UthernetII.md), [Super Serial](Cards_SuperSerial.md), [Apple Mouse](Cards_AppleMouse.md), [Parallel](Cards_Parallel.md), [Videx](Cards_Videx.md) (II/II+ slot 3), [clock cards](Cards_Clock.md), [VIDHD](Cards_VIDHD.md) (65816 //e), [Second Sight](Cards_SecondSight.md) or [Video Overlay Card](Cards_VOC.md) (IIgs slot 3), language card (slot 0), and Slinky memory expansion.
 * **Storage (pre-mount)** — click a drive to choose a disk image that will be mounted when you later launch this config. Click again to clear it. Any valid disk image including .pmap (BazFast multi-image) can be "pre-mounted" this way.
 * **Serial / Parallel** — click a port button and choose **None**, **File**, **Clipboard**, **Modem**, or a listed host serial port (serial jacks only). See [Serial & Parallel Connections](SerialConnections.md).
 
 Speed and Display controls on this screen are for preview only; they are **not saved** into the config file.
 
-**Save** writes a `.gs2` file (you'll get a save dialog). **Cancel** returns to System Select without saving.
+**Save** writes a `.gs2` file (you'll get a save dialog). **Save As** to a new path mints a new machine `id` (IIgs BRAM is copied). This is configuration only — not a full CPU/RAM save state (that is planned). **Cancel** returns to System Select without saving.
 
 After saving, use **Launch Config…**, double-click the `.gs2`, or Open With to run it. Recent configs also appear as tiles on System Select.
 
