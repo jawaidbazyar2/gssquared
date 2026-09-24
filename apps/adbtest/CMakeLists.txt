@@ -5,6 +5,7 @@ if(APPLE)
 
     target_link_libraries(adbtest PRIVATE
         gs2_util
+        gs2_systemconfig
         SDL3::SDL3-shared
         gs2_headers
         "-framework Cocoa"
