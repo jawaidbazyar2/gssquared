@@ -91,6 +91,7 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
         button->style.background_color = platform->case_color;
 
         button->on_click([this,i](const SDL_Event& event) -> bool {
+            if (event.button.button != SDL_BUTTON_LEFT) return false;
             selected_system = i;
             return true;
         });
@@ -121,7 +122,8 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
         button->size(200, 200);
         button->position_content(CP_CENTER, CP_CENTER);
         button->style.background_color = platform->case_color;
-        button->on_click([this, recent_index](const SDL_Event&) -> bool {
+        button->on_click([this, recent_index](const SDL_Event& event) -> bool {
+            if (event.button.button != SDL_BUTTON_LEFT) return false;
             selected_system = SELECT_RECENT_BASE + recent_index;
             return true;
         });
@@ -148,7 +150,8 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 
     Button_t *new_btn = new Button_t(&ui_ctx, "+ New", ActionStyle);
     new_btn->size(120, 36);
-    new_btn->on_click([this](const SDL_Event&) -> bool {
+    new_btn->on_click([this](const SDL_Event& event) -> bool {
+        if (event.button.button != SDL_BUTTON_LEFT) return false;
         selected_system = SELECT_NEW;
         return true;
     });
@@ -157,7 +160,8 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 
     Button_t *launch_btn = new Button_t(&ui_ctx, "Launch", ActionStyle);
     launch_btn->size(120, 36);
-    launch_btn->on_click([this](const SDL_Event&) -> bool {
+    launch_btn->on_click([this](const SDL_Event& event) -> bool {
+        if (event.button.button != SDL_BUTTON_LEFT) return false;
         selected_system = SELECT_OPEN_LAUNCH;
         return true;
     });
@@ -166,7 +170,8 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
 
     Button_t *edit_btn = new Button_t(&ui_ctx, "Edit...", ActionStyle);
     edit_btn->size(120, 36);
-    edit_btn->on_click([this](const SDL_Event&) -> bool {
+    edit_btn->on_click([this](const SDL_Event& event) -> bool {
+        if (event.button.button != SDL_BUTTON_LEFT) return false;
         selected_system = SELECT_OPEN_EDIT;
         return true;
     });

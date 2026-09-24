@@ -183,7 +183,13 @@ struct computer_t {
     int powerup_reset_cycles = 2;
     uint64_t last_reset = 0;
 
-    clock_mode_t old_speed;
+    clock_mode_t old_speed = CLOCK_1_024MHZ;
+    /** True only after RMB / Insert captured old_speed. An unpaired release must not restore it. */
+    bool temp_speed_saved = false;
+
+    void begin_temp_speed_boost();
+    /** Restore the captured speed. Returns false when no boost is active. */
+    bool end_temp_speed_boost();
 
     void set_clock(NClockII *clock); 
     inline void set_idle_percent(float idle_percent) { this->idle_percent = idle_percent; }
