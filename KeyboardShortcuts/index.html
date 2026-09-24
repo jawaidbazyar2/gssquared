@@ -3265,71 +3265,39 @@
 </table>
 <p>F5 is a <strong>scaling</strong> preference, not a switch between “accurate NTSC” and a legacy renderer. Composite / RGB / mono is <strong>F2</strong>. See <a href="../Displays/">Displays</a>.</p>
 <h1 id="apple-keys-modifier-keys">Apple Keys - Modifier Keys<a class="headerlink" href="#apple-keys-modifier-keys" title="Permanent link">&para;</a></h1>
-<p>Linux / Windows</p>
+<p><strong>Settings → Apple Keys</strong> chooses which host keys are Open Apple and Closed Apple. The choice is stored in <code>system_settings.toml</code> as <code>keyboard.apple_keys</code> and is remembered across sessions. The default depends on the platform: Command = Open Apple on macOS, Alt = Open Apple on Windows and Linux, and Left Option = Open Apple in the browser.</p>
 <table>
 <thead>
 <tr>
-<th>Key</th>
-<th>//e Modifier</th>
-<th>IIgs Modifier</th>
+<th>Menu</th>
+<th>Settings file</th>
+<th>Open Apple</th>
+<th>Closed Apple</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>ALT</td>
-<td>Open Apple</td>
-<td>Command</td>
+<td>Command = Open Apple</td>
+<td><code>command_open_apple</code></td>
+<td>Command / Windows (both)</td>
+<td>Option / Alt (both)</td>
 </tr>
 <tr>
-<td>Windows</td>
-<td>Closed Apple</td>
-<td>Option</td>
+<td>Alt = Open Apple</td>
+<td><code>alt_open_apple</code></td>
+<td>Alt / Option (both)</td>
+<td>Command / Windows (both)</td>
 </tr>
 <tr>
-<td>Shift</td>
-<td>Shift</td>
-<td>Shift</td>
-</tr>
-<tr>
-<td>Caps Lock</td>
-<td>Caps Lock</td>
-<td>Caps Lock</td>
+<td>Left Option = Open Apple</td>
+<td><code>left_option_open_apple</code></td>
+<td>Left Option</td>
+<td>Right Option</td>
 </tr>
 </tbody>
 </table>
-<p>MacOS</p>
-<table>
-<thead>
-<tr>
-<th>Key</th>
-<th>//e Modifier</th>
-<th>IIgs Modifier</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Command</td>
-<td>Open Apple</td>
-<td>Command</td>
-</tr>
-<tr>
-<td>Option</td>
-<td>Closed Apple</td>
-<td>Option</td>
-</tr>
-<tr>
-<td>Shift</td>
-<td>Shift</td>
-<td>Shift</td>
-</tr>
-<tr>
-<td>Caps Lock</td>
-<td>Caps Lock</td>
-<td>Caps Lock</td>
-</tr>
-</tbody>
-</table>
-<p>There is no host menu to swap Open-Apple / Closed-Apple mappings.</p>
+<p>On a Mac keyboard, Command is the GUI key and Option is Alt. On a PC keyboard, the Windows key is the GUI key. Left Option uses only the left Alt key for Open Apple and the right Alt key for Closed Apple, so browser Command shortcuts stay with the browser.</p>
+<p>Shift and Caps Lock are unchanged on every layout.</p>
 <h1 id="platform-keyboards">Platform keyboards<a class="headerlink" href="#platform-keyboards" title="Permanent link">&para;</a></h1>
 <h2 id="apple-ii">Apple II+<a class="headerlink" href="#apple-ii" title="Permanent link">&para;</a></h2>
 <p>Control, Shift, Escape, Reset, Backspace, and left/right arrows work. A real II+ has no up/down arrows, so those keys do nothing in II+ mode. There is no <strong>REPT</strong> key — use your host keyboard’s autorepeat.</p>

@@ -3395,10 +3395,10 @@
 <p><strong>Formatted</strong> images can be catalogued and written immediately. <strong>Unformatted</strong> images are blank media: the guest OS has to format them first. ProDOS 8 has no built-in format command, so an unformatted HD image needs a utility such as Copy II Plus, System Utilities, or GS/OS Advanced Disk Utility — pick <strong>32M HD Formatted ProDOS</strong> if you just want a hard disk you can use.</p>
 <p>The 32M HD images are raw block files (not WOZ, not 2MG). Mount them on <strong>BazFast</strong>. ProDOS 8’s usual size limit is 32M.</p>
 <h3 id="volume-name">Volume name<a class="headerlink" href="#volume-name" title="Permanent link">&para;</a></h3>
-<p>A formatted image gets its volume name from the filename you choose: <code>My Games.hdv</code> becomes <code>/MY.GAMES</code>. Names are upper-cased and anything ProDOS does not allow (spaces, punctuation) becomes a period. If the result would not be a legal ProDOS name — more than 15 characters, or not starting with a letter — the volume is named <code>BLANK</code> instead.</p>
+<p>When you create a formatted hard disk image, the volume name is set from the filename you choose: <code>My Games.hdv</code> becomes <code>/MY.GAMES</code>. Names are upper-cased and anything ProDOS does not allow (spaces, punctuation) becomes a period. If the result would not be a legal ProDOS name — more than 15 characters, or not starting with a letter — the volume is named <code>BLANK</code> instead.</p>
 <p>The volume is bootable in the sense that it carries a ProDOS boot block, so once you copy <code>PRODOS</code> and a system file onto it, the machine can start from it.</p>
 <h2 id="after-you-save">After you save<a class="headerlink" href="#after-you-save" title="Permanent link">&para;</a></h2>
-<p>The new file is just a file on your Mac, PC, or Linux machine. Insert it the same way you would a disk you downloaded:</p>
+<p>A new disk image file is just a file on your Mac, PC, or Linux machine. Insert it the same way you would a disk you downloaded:</p>
 <ul>
 <li><strong>File → Drives</strong> — pick the slot/drive</li>
 <li>Control Panel (<strong>F4</strong>) — click an empty drive</li>

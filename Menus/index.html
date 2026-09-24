@@ -3372,7 +3372,7 @@
 
 
 <h1 id="menus">Menus<a class="headerlink" href="#menus" title="Permanent link">&para;</a></h1>
-<p>GSSquared provides a top menu bar appropriate to your platform: a native menu bar on macOS, an in-window menu bar on Windows and Linux.</p>
+<p>GSSquared provides a top menu bar appropriate to your platform: a native menu bar on macOS, an in-window menu bar on Windows, Linux and Web.</p>
 <p>Saving a machine configuration is done from the <a href="../ConfigEditor/">config editor</a> (<strong>Save</strong> / <strong>Save As</strong>), not from the File menu. To launch a saved <code>.gs2</code> or <code>… Settings.txt</code> without editing it, use <strong>File → Launch Config…</strong> or a <a href="../Select/">System Select</a> tile.</p>
 <p>On Linux, several File items appear only when they apply: <strong>Launch Config…</strong> and <strong>Quit</strong> at System Select; <strong>Drives</strong>, <strong>Mount Drivers</strong>, <strong>Save Screenshot</strong>, and <strong>Close Emulation</strong> while a machine is running.</p>
 <h3 id="file">File<a class="headerlink" href="#file" title="Permanent link">&para;</a></h3>
@@ -3446,6 +3446,12 @@ Capture Mouse - see <a href="../Mouse/">Using a Mouse</a></p>
 <li>Disconnected When No Gamepad</li>
 </ul>
 </li>
+<li>Apple Keys<ul>
+<li>Command = Open Apple</li>
+<li>Alt = Open Apple</li>
+<li>Left Option = Open Apple</li>
+</ul>
+</li>
 <li>Sleep / Busy Wait</li>
 <li>Mono Helper</li>
 <li>Right Mouse Button Accelerate</li>
@@ -3453,6 +3459,7 @@ Capture Mouse - see <a href="../Mouse/">Using a Mouse</a></p>
 <p><strong>Speed</strong> sets the host CPU throttle. <strong>Ludicrous / Unlimited</strong> (video still runs at about 1 MHz so speaker, Ensoniq, and disks keep working) is not in this submenu — use <strong>F9</strong>, the Control Panel speed row, or the hover speed button. See <a href="../OSD/">On-Screen Display</a> and <a href="../CommandLine/">Command Line</a>.</p>
 <p><strong>Joyport Controller Select</strong> emulates the physical Left / Center / Right switch on a Sirius Joyport. Center (default) lets software pick joystick 1 vs 2 with Annunciator 0. The submenu is available only in Joyport mode. See <a href="../Joysticks/">Joysticks</a>.</p>
 <p><strong>Disconnected When No Gamepad</strong> — when checked, paddle/button lines float as if no joystick were plugged in. When unchecked (default), an absent gamepad still reports a centered stick so software like Total Replay keeps joystick titles visible. See <a href="../Joysticks/">Joysticks</a>.</p>
+<p><strong>Apple Keys</strong> chooses the host keys for Open Apple and Closed Apple. Available whether or not a machine is running. See <a href="../KeyboardShortcuts/">Using a Keyboard</a>.</p>
 <p><strong>Sleep / Busy Wait</strong> — when checked, the emulator sleeps between frames instead of busy-waiting (lower host CPU). Same as the <a href="../CommandLine/"><code>-s</code></a> flag.</p>
 <p><strong>Mono Helper</strong> widens Mockingboard stereo (decorrelates the right channel) so it is easier to hear on a mono speaker or mixed-down recording. Available whether or not a machine is running. See <a href="../Cards_Mockingboard/">Mockingboard</a>.</p>
 <p><strong>Right Mouse Button Accelerate</strong> — hold the right mouse button to run at a faster CPU speed (same idea as the INS accelerate path). See <a href="../Mouse/">Using a Mouse</a>.</p>

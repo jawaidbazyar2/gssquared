@@ -3281,8 +3281,12 @@ server the directory looks like this:</p>
   layout helpers later.</li>
 <li><code>GSSquared.js</code> / <code>.wasm</code> / <code>.data</code></li>
 <li><code>.htaccess</code>   – copied from <code>assets/web/live.htaccess</code>; this is what sets the
-  COOP/COEP headers, the <code>application/wasm</code> type, and <code>Cache-Control: no-cache</code>
-  (the artifacts keep their names across builds, so clients must revalidate).</li>
+  COOP/COEP headers, the <code>application/wasm</code> type, and
+  <code>Cache-Control: public, max-age=86400</code> (a day). The artifacts keep their
+  names across builds, so a browser may keep the previous build until that
+  cache expires. The local helper <code>assets/web/serve.py</code> sends
+  <code>Cache-Control: no-store, no-cache, must-revalidate, max-age=0</code> instead, so
+  a rebuild shows up on the next reload.</li>
 </ul>
 <p><code>/live</code> is <strong>generated</strong>, not tracked in the <code>gssquared-web</code> repo: 11 MB of wasm
 per build has no place in a marketing site's git history, and <code>public/live/</code> is

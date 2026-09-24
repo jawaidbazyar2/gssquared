@@ -3094,6 +3094,111 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#gsos-desk-scrap-host-clipboard-spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GS/OS desk scrap ↔ host clipboard (spec)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GS/OS desk scrap ↔ host clipboard (spec)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mailbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mailbox
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-entry-is-newer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which entry is newer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guest-copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guest copy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guest-paste" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guest paste
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Host
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#startup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Startup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overlap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overlap
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3241,6 +3346,111 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#gsos-desk-scrap-host-clipboard-spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GS/OS desk scrap ↔ host clipboard (spec)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GS/OS desk scrap ↔ host clipboard (spec)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mailbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mailbox
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-entry-is-newer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which entry is newer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guest-copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guest copy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guest-paste" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guest paste
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#host" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Host
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#startup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Startup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overlap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overlap
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3279,6 +3489,81 @@
 <p><strong>II / IIe:</strong> each time <code>$C000</code> is read, if the strobe is clear (bit 7 = 0), inject the next character from the buffer. If the strobe is set, the guest has not processed the current keystroke. Shift+Insert, Edit → Paste Text, and debug-protocol <code>PASTE_TEXT</code> fill this buffer.</p>
 <p><strong>IIgs (KeyGloo / ADB):</strong> meter from the KeyGloo <code>frame_handler</code> (once per frame). If paste text remains and the <code>$C000</code> latch strobe is clear, inject one ASCII character via <code>store_key_to_buffer()</code> (<code>'\n'</code> becomes <code>'\r'</code>). Reset and keyboard flush abort the paste. Shift+Insert, Edit → Paste Text, and debug-protocol <code>PASTE_TEXT</code> all fill this buffer.</p>
 <p>Implemented!</p>
+<h2 id="gsos-desk-scrap-host-clipboard-spec">GS/OS desk scrap ↔ host clipboard (spec)<a class="headerlink" href="#gsos-desk-scrap-host-clipboard-spec" title="Permanent link">&para;</a></h2>
+<p>Theoretical. Not implemented. Needs a Scrap Manager built from GS/OS source, which has not been built yet.</p>
+<p>Edit → Copy and Edit → Paste in a GS/OS app exchange <strong>text</strong> with the host clipboard. PrintScreen, Shift+Insert, Edit → Paste Text, and the serial/parallel clipboard device stay as they are.</p>
+<p>The logic lives in a modified <strong>Scrap Manager</strong> (tool <code>$16</code>). The tool keeps the desk scrap. On scrap calls it also reads or writes a mailbox in its own static data. The emulator finds that mailbox by signature and samples it <strong>once per frame</strong>, from the existing frame tick. The CPU loop does not watch toolbox dispatch. The tool does not use a WDM opcode.</p>
+<p>On a real IIgs, or an emulator that never writes the mailbox, the host generation never moves and the tool behaves as the stock Scrap Manager. Ship the rebuilt tool on <code>/GS2.DRIVERS</code> and install it over tool <code>$16</code> in <code>*:System:Tools</code>. An emulator that does not find the signature leaves the desk scrap alone.</p>
+<h3 id="mailbox">Mailbox<a class="headerlink" href="#mailbox" title="Permanent link">&para;</a></h3>
+<p>One current entry, plus a cursor on each side.</p>
+<pre><code class="language-text">entry:                  mailbox, in the tool's static data
+    magic      &quot;GS2SCRAP&quot;
+    version
+    gen        integer, starts at 0
+    origin     guest | host | none
+    length
+    text       raw IIgs bytes (scrap type $0000), CR line endings
+
+guest.last              in the tool: last gen absorbed
+host.last               in the emulator: last gen absorbed
+host.echo_gen           gen just pushed to SDL, or 0
+</code></pre>
+<p>Cap <code>text</code> (16KB is enough; the Scrap Manager is meant for small scraps). A larger copy still goes into the desk scrap. The host side truncates.</p>
+<p>Writers use a seqlock: store an odd generation, copy the bytes, store the even generation. A frame boundary can split the copy. The reader retries next frame when the generation is odd or the second read disagrees.</p>
+<p>The emulator scans guest RAM for <code>"GS2SCRAP"</code>, caches the address, and drops the cache on reset. After that, the per-frame cost is one generation compare.</p>
+<p>The mailbox holds IIgs text. The emulator converts Macintosh Roman ↔ UTF-8 and CR ↔ LF when it talks to SDL.</p>
+<h3 id="which-entry-is-newer">Which entry is newer<a class="headerlink" href="#which-entry-is-newer" title="Permanent link">&para;</a></h3>
+<pre><code class="language-text">newer_for_guest = entry.gen &gt; guest.last  and  entry.origin == host
+newer_for_host  = entry.gen &gt; host.last   and  entry.origin == guest
+</code></pre>
+<p>A read uses the other side when that side owns a generation this side has not absorbed. A real copy mints the next generation and becomes the entry the other side will use.</p>
+<h3 id="guest-copy">Guest copy<a class="headerlink" href="#guest-copy" title="Permanent link">&para;</a></h3>
+<p>A real <code>ZeroScrap</code> or <code>PutScrap</code> (including <code>LEToScrap</code> and <code>TEToScrap</code>):</p>
+<pre><code class="language-text">update the desk scrap
+entry.text   = desk scrap text ($0000), which may be empty
+entry.origin = guest
+entry.gen    = entry.gen + 1
+guest.last   = entry.gen
+</code></pre>
+<h3 id="guest-paste">Guest paste<a class="headerlink" href="#guest-paste" title="Permanent link">&para;</a></h3>
+<p>At the start of <code>GetScrap</code>, <code>GetScrapSize</code>, <code>GetScrapHandle</code>, <code>GetScrapCount</code>, <code>GetScrapState</code>, <code>GetIndScrap</code>, and <code>LoadScrap</code>:</p>
+<pre><code class="language-text">if newer_for_guest:
+    replace the desk scrap with entry.text
+        through the tool's internal store
+        (this replace does not take the guest-copy path)
+    guest.last = entry.gen
+answer the call from the desk scrap
+</code></pre>
+<p><code>GetScrapCount</code> changes when the host entry is folded in, so the Clipboard NDA and Edit → Paste follow on their next poll.</p>
+<h3 id="host">Host<a class="headerlink" href="#host" title="Permanent link">&para;</a></h3>
+<p>Once per frame:</p>
+<pre><code class="language-text">if newer_for_host:
+    set the SDL clipboard to entry.text
+    host.echo_gen = entry.gen
+    host.last     = entry.gen
+</code></pre>
+<p>When SDL reports a clipboard change:</p>
+<pre><code class="language-text">if the new text is the echo of host.echo_gen:
+    done
+else:
+    entry.text   = host text
+    entry.origin = host
+    entry.gen    = entry.gen + 1
+    host.last    = entry.gen
+</code></pre>
+<p>The echo check is what keeps one copy from bouncing between the two clipboards.</p>
+<h3 id="startup">Startup<a class="headerlink" href="#startup" title="Permanent link">&para;</a></h3>
+<p><code>ScrapStartUp</code> and loading <code>*:System:Clipboard</code> do not mint a generation. Booting GS/OS must not replace the host clipboard with the scrap left on disk.</p>
+<p><code>guest.last</code> and <code>host.last</code> start at 0. When the emulator first finds the mailbox, if the host clipboard is non-empty, it publishes that text as <code>origin = host</code>, <code>gen = 1</code>. The next guest scrap read uses it. An empty host clipboard does not publish, so a restored desk scrap is left in place until a real copy on either side.</p>
+<h3 id="overlap">Overlap<a class="headerlink" href="#overlap" title="Permanent link">&para;</a></h3>
+<p>Each writer publishes <code>gen + 1</code> as one sequence. If a guest copy and a host copy overlap, the write that finishes last has the higher generation. The other side uses that entry.</p>
+<h3 id="out-of-scope">Out of scope<a class="headerlink" href="#out-of-scope" title="Permanent link">&para;</a></h3>
+<ul>
+<li>An app with a private scrap publishes when it calls the Scrap Manager (suspend, desk-accessory activate, <code>LEToScrap</code>, <code>TEToScrap</code>). That is the same moment other GS/OS apps can paste.</li>
+<li><code>LEFromScrap</code> still rejects a desk scrap larger than 256 bytes. That limit is in LineEdit. TextEdit does not have it.</li>
+<li>Picture (<code>$0001</code>), TextEdit style (<code>$0064</code>), sound, and icon scraps stay in the desk scrap and are not copied into the mailbox. A guest publish still updates <code>entry.text</code> from the text scrap, so a picture-only copy clears the host text clipboard.</li>
+<li>Keyboard paste remains the path for ProDOS 8 and for dialogs that do not use the desk scrap.</li>
+</ul>
 
 
 
