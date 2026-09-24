@@ -29,9 +29,8 @@ class NClockIIMB : public NClock {
     
         // II, II+, IIe
         inline virtual void slow_incr_cycles() override {
-            cycles++; 
-            c_14M += current.c_14M_per_cpu_cycle;
-            
+            add_cpu();
+            add_c14m(current.c_14M_per_cpu_cycle);
 
                 video_cycle_14M_count += current.c_14M_per_cpu_cycle;
                 scanline_14M_count += current.c_14M_per_cpu_cycle;
@@ -39,14 +38,14 @@ class NClockIIMB : public NClock {
                 if (video_cycle_14M_count >= 14) {
                     video_cycle_14M_count -= 14;
                     //video_scanner->video_cycle();
-                    video_cycles++;
+                    tick_vid();
                     
                     for (auto &cycle_handler : cycle_handlers) {
                         cycle_handler();
                     }
                 }
                 if (scanline_14M_count >= 910) {  // end of scanline
-                    c_14M += current.extra_per_scanline;
+                    add_c14m(current.extra_per_scanline);
                     scanline_14M_count = 0;
                 }
         }

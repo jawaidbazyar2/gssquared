@@ -36,7 +36,7 @@
 #include "util/mount.hpp"
 
 computer_t::computer_t(NClockII *clock) {
-    this->clock = clock;
+    set_clock(clock);
     breakpoints = new BreakpointTable();
 
     // initialize module store to nullptr.
@@ -84,11 +84,6 @@ computer_t::computer_t(NClockII *clock) {
     sound_effect = new SoundEffect(audio_system);
 
     cpu = new cpu_state(PROCESSOR_6502); // default to 6502, then we will override later.
-
-    //  clock needs to be set before here
-    event_timer = new EventTimer(clock); // runs at 14MHz clock speed.
-    vid_event_timer = new EventTimer(clock); // runs at video clock speed (always 1MHz)
-    cpu_event_timer = new EventTimer(clock); // runs at cpu clock speed.
 
     slot_manager = new SlotManager_t();
     mounts = new Mounts();
@@ -302,7 +297,6 @@ computer_t::~computer_t() {
     delete video_system;
     delete debug_window;
     delete breakpoints;
-    delete event_timer;
     delete sys_event;
     delete dispatch;
     delete device_frame_dispatcher;
@@ -408,7 +402,15 @@ void computer_t::reset(bool cold_start) {
 
 void computer_t::set_clock(NClockII *clock) {
     this->clock = clock;
-    event_timer->set_clock(clock);
+    if (clock) {
+        event_timer = &clock->c14m.events();
+        vid_event_timer = &clock->vid.events();
+        cpu_event_timer = &clock->cpu.events();
+    } else {
+        event_timer = nullptr;
+        vid_event_timer = nullptr;
+        cpu_event_timer = nullptr;
+    }
 }
 
 /** State storage for non-slot devices. */

@@ -100,6 +100,7 @@ reg_record_t *recs[] = {
 class NClockIIMB : public NClock {
     protected:
         bool slow_mode = false;
+        EventTimer event_vid;
     
     public:
         NClockIIMB(clock_set_t clock_set = CLOCK_SET_US, clock_mode_t clock_mode = CLOCK_1_024MHZ) : NClock(clock_set, clock_mode) {
@@ -108,9 +109,8 @@ class NClockIIMB : public NClock {
     
         // II, II+, IIe
         inline virtual void slow_incr_cycles() override {
-            cycles++; 
-            c_14M += current.c_14M_per_cpu_cycle;
-            
+            add_cpu();
+            add_c14m(current.c_14M_per_cpu_cycle);
 
                 video_cycle_14M_count += current.c_14M_per_cpu_cycle;
                 scanline_14M_count += current.c_14M_per_cpu_cycle;
@@ -118,11 +118,11 @@ class NClockIIMB : public NClock {
                 if (video_cycle_14M_count >= 14) {
                     video_cycle_14M_count -= 14;
                     //video_scanner->video_cycle();
-                    video_cycles++;
-                    event_vid.processEvents(video_cycles);
+                    tick_vid();
+                    event_vid.processEvents(get_vid_cycles());
                 }
                 if (scanline_14M_count >= 910) {  // end of scanline
-                    c_14M += current.extra_per_scanline;
+                    add_c14m(current.extra_per_scanline);
                     scanline_14M_count = 0;
                 }
 

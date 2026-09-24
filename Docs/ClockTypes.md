@@ -510,6 +510,8 @@ Suggested order (increasing coupling):
 
 No compatibility typedef from `EventTimer*` to a rail.
 
+Manual checks for each of these steps are in [Manual regression tests](#manual-regression-tests).
+
 ### Phase 3 — strong tick wrappers
 
 Only after every schedule site is on a rail.
@@ -519,6 +521,160 @@ Replace rail `uint64_t` with distinct structs (`CpuCycles`, `VidCycles`, `C14mTi
 Leave `get_cycles()` / `get_c14m()` / `get_vid_cycles()` as `uint64_t` unless you want a second, larger sweep of HUD / speaker / debugger sites. Safety belongs at the schedule edge.
 
 Heap storage stays `uint64_t` inside EventTimer; unwrap at the rail boundary.
+
+## Manual regression tests
+
+Perform these by hand after the named phase or phase-2 step. Do not skip the **shared smoke** after phase 1; later steps assume increment + poll still work.
+
+**Pass** means the listed behavior happens and nothing in the shared smoke regresses. **Fail** is a hang, a silent no-op (IRQ/event never fires), an event that fires immediately (wrong domain / past-check), tempo or baud that tracks CPU speed when it should not, or a motor that never spins down.
+
+Shipped configs worth using: `assets/gs2/IIe_ThunderClock.gs2`, `IIPlus_ThunderClock.gs2`, `IIe_AppleMouseIII.gs2`, `DualMockingboard.gs2`, `IIgs_DiskII.gs2`. Use your usual IIe Enhanced and IIgs profiles for the rest.
+
+Speeds: **1 MHz** is `CLOCK_1_024MHZ`. **Fast** is 2.8 MHz on IIgs (default) and 2.8 or 14.3 on IIe. Change with F9 / OSD. After a speed change, reset or reboot the guest if the title is picky.
+
+### Shared smoke (every phase-1 landing, and once after phase 3)
+
+Do this on **IIe Enhanced** and **IIgs**.
+
+1. Cold boot to BASIC or the usual boot disk. Reset (F10 / Control-Reset). Quit cleanly (`c.quit()` / menu; no hung Quit modal).
+2. F9 through 1 MHz and one fast speed. Video keeps scanning; speaker click is sane; no `scheduleEvent: Event in the past` spam (that path is gone after phase 1).
+3. Debugger step-into for a few instructions, then continue. Events must still fire in step mode (`process_due` lives in that loop too).
+4. IIe: boot a 5.25 DOS 3.3 or ProDOS disk, `CATALOG`, load a small file.
+5. IIgs: boot a 3.5 System / GS/OS disk far enough to see the desktop or a splash, then a 5.25 disk if you have `IIgs_DiskII.gs2`.
+6. IIgs: Control Panel clock advances; ADB mouse moves the firmware cursor (this is not the slot-mouse EventTimer; it only proves increment/poll).
+7. Optional: enter ludicrous, run ~10 seconds, drop back to 1 MHz or 2.8. 3.5 motor must still be able to spin down afterward; IIgs 1-second interrupt must still tick. Those were the past-check victims.
+
+### After phase 1 (rails inside NClock, API unchanged)
+
+Shared smoke, then every scheduled device once. Phase 1 can break *all* of them (wrong `now` in increment, poll order, or heap pointer).
+
+| # | What | How | Pass |
+|---|---|---|---|
+| 1 | ThunderClock | `IIe_ThunderClock.gs2`, ProDOS boot | `DATE` / `TIME` match host wall clock (no year on the chip; ProDOS invents one). Do not hang in the clock driver. |
+| 2 | IIgs RTC 1 s | IIgs, Control Panel or GS/OS | Clock advances in real seconds, not instantly and not frozen. Leave it running >2 s. |
+| 3 | Slot mouse | `IIe_AppleMouseIII.gs2` or Mouse card + Shufflepuck | Moves; VBL-dependent titles get past the VBL wait. If VBL events die, firmware spins. |
+| 4 | SSC | IIe, Super Serial, ProTERM (or any terminal), modem device | `AT` → `OK`. Type a few dozen characters; they appear paced, not in one blast. Repeat at 1 MHz and fast: **baud must not change** with CPU speed. |
+| 5 | SCC | IIgs, same modem / terminal idea (Spectrum / ProTERM GS) | Same as SSC: `AT` → `OK`; baud independent of CPU speed. |
+| 6 | 3.5 motor-off | IIgs 3.5 boot, then idle | Drive HUD / spin sound goes off about 0.5 s after the last access. Motor stuck on = event never fired. Motor dies mid-boot = fired immediately. |
+| 7 | Mockingboard | `DualMockingboard.gs2` + Cybernoid music disk, Skyfox, or a Total Replay MB title | Music plays. At fast CPU, **tempo stays 1 MHz** (video rail). Too-fast music at 2.8/14 = wrong domain. |
+| 8 | Disk II 5.25 | IIe slot-6 Disk II | Boot, `CATALOG`, seek (load a file that is not the first). Works at 1 MHz **and** fast (CPU-clocked drive). |
+| 9 | IWM 5.25 + 3.5 | IIgs | 5.25 boot (`IIgs_DiskII.gs2`) and 3.5 boot both work. After phase 1 the IWM 5.25 units bug is **unchanged** (still CPU stamps on the 14M heap); do not treat a long-standing 5.25-at-fast IWM quirk as a new regression unless you just introduced it. |
+
+### After each phase-2 step
+
+Do the row for **that** step, then a 60-second shared-smoke subset: IIe boot + IIgs boot, one speed change, reset. Full shared smoke only if that subset fails.
+
+#### 2.1 ThunderClock, RTC, mouse / mouse III
+
+1. `IIe_ThunderClock.gs2` (and `IIPlus_ThunderClock.gs2` if you touch II+ ROM mapping). ProDOS `DATE`. Reset and read time again.
+2. If you use TP IRQ / 64–2048 Hz pulse: enable IRQ as in [Thunderclock.md](Thunderclock.md); confirm IRQs keep arriving at 1 MHz and at fast (14M rail — rate must not scale with CPU).
+3. IIgs: watch the Control Panel or GS/OS clock for ≥3 seconds. Toggle the 1-second interrupt if you have a C023 test; it must re-arm (callback reschedules itself).
+4. `IIe_AppleMouseIII.gs2`: move, click, reset while the pointer is live, then move again (VBL event re-scheduled). Shufflepuck or another VBL+mouse title if you have it.
+5. Slot Mouse II (not III) if that card is still a separate init path — same VBL check.
+
+ADB / KeyGloo is out of scope for this step.
+
+#### 2.2 MOS6551, then SCC
+
+Do 6551 **before** SCC. Test 6551, then migrate SCC and test both.
+
+1. IIe SSC + modem: `AT`, `ATI`, `ATS0?`. `AT` → `OK` within a beat, not after a long stall and not before the last character is sent (TX complete event).
+2. Type a line of text at 300 and at 9600 (or whatever the terminal is set to). 300 is obviously paced; 9600 is faster but still not instant.
+3. Change CPU to fast, same baud in the terminal. Character pacing must match step 2. If TX suddenly completes immediately, the event is on the wrong rail or `schedule_after` used CPU ticks.
+4. Incoming: if you have a loopback or a second session, a short receive still sets RDRF / does not freeze ProTERM on “waiting for connect.”
+5. Reset / `IN#2` / hang up (`ATH`). Next `AT` still works (TX timer cancelled and rescheduled).
+6. Repeat 1–5 on IIgs SCC (slot-free built-in). Both channels if you have a title that uses B.
+
+#### 2.3 Floppy35 motor-off
+
+IWM still passes one timer into both drive types. You are only changing how 3.5 **schedules**.
+
+1. IIgs: boot 3.5, idle. Motor off ≈ 0.5 s after last IWM access. Time it roughly; it should feel the same at 1 MHz and at 2.8 (14M delay).
+2. Boot a second 3.5 disk (eject / mount). Motor comes back, then spins down again. Cancel-then-reschedule on the same `instanceID`.
+3. Reset while the motor is on. Motor must not stay on forever after reset.
+4. 5.25 on IWM: boot `IIgs_DiskII.gs2` once. This step must not break 5.25 (still the old heap until 2.6).
+
+#### 2.4 Mockingboard / N6522
+
+1. `DualMockingboard.gs2` + a known-good MB title (Cybernoid music disk, Skyfox, Ultima V, Apple Cider Spider). Title detect + music/SFX.
+2. Same title at 1 MHz and at fast. **Pitch/tempo stay put** (video rail). CPU-speed music is a fail.
+3. Reset mid-tune, reboot the title. Timers re-arm from the MB init path (`vid + 65536` oneshots).
+4. If you have a two-card / dual-6522 title, both halves still play.
+5. IIgs + MB in a slot, if you use that: music still at 1 MHz while the GS CPU is at 2.8.
+
+#### 2.5 Standalone Disk II 5.25 (not IWM)
+
+1. IIe / II+ slot-6 `disk_ii`. Boot DOS 3.3, `CATALOG`, `BRUN` or `LOAD` a file that seeks.
+2. Repeat at fast. Must still work (CPU rail — this is the feature).
+3. Two drives if configured: boot D1, catalog D2.
+4. Write / format only if you have a disposable image. Recatalog after write.
+5. IIgs with a **slot Disk II** (not built-in IWM) if you have that config — same boot.
+
+Phase-settle is the 520-cycle event. Failures look like missed seeks, hang in boot, or “wrong track” more than a silent motor.
+
+#### 2.6 IWM constructor split (5.25 → cpu, 3.5 → c14m)
+
+This is the step that can **change** IWM 5.25 behavior. Test 5.25 and 3.5 as separate stories.
+
+**3.5 (must stay the same)**
+
+1. Repeat 2.3 motor-off (idle spin-down at 1 MHz and 2.8).
+2. Boot GS/OS or a 3.5 game (Tomahawk / Alien Mind if you use those). Format a blank 3.5 only on a disposable image.
+
+**5.25 (may start working better at fast if the old units bug was biting)**
+
+1. `IIgs_DiskII.gs2` (or IIgs 5.25 in the built-in IWM). Boot, catalog, seek, at **1 MHz** first.
+2. Same at **2.8** and one faster IIgs speed. Drive must keep up with the CPU (same product choice as slot Disk II).
+3. Switch 5.25 ↔ 3.5 (`$C031` / DiskReg) in one session: boot 3.5, then a 5.25, then 3.5 again. No stuck motor, no stolen `instanceID`.
+4. IIe IWM is not a thing; do not skip slot Disk II (2.5) when judging IIe 5.25.
+
+A new hang at 1 MHz is a real regression. A change only at fast IWM 5.25 may be the intended units fix — compare to slot Disk II at the same speed.
+
+#### 2.7 `apps/mbtest`
+
+1. Build and run `mbtest` (`apps/mbtest`). It must complete without asserting or looping.
+2. If it is a cycle-script vs the 6522, T1/T2 fire at the recorded video-cycle marks, not CPU marks.
+
+#### 2.8 Delete `computer_t` EventTimer pointers
+
+No new device logic. Shared smoke on IIe and IIgs. Cold boot, reset, quit. If anything still compiled against `computer->event_timer`, it will not link — that is the test.
+
+### After phase 3 (strong tick wrappers)
+
+Mostly a compile test. Then shared smoke once. Re-run only the devices you touched in the wrapper sweep (usually MB `t1_triggered_cycles`, mouse `vbl_cycle`, RTC first-fire). If `get_*` stayed `uint64_t`, speaker / paddles / Ensoniq / HUD need no extra pass.
+
+### Suggested session log
+
+Copy and tick.
+
+```text
+Phase 1
+  [ ] IIe smoke  [ ] IIgs smoke  [ ] step-into  [ ] speed change
+  [ ] ThunderClock DATE  [ ] IIgs 1 s  [ ] slot mouse VBL
+  [ ] SSC AT/OK 1M + fast  [ ] SCC AT/OK 1M + fast
+  [ ] 3.5 motor-off  [ ] MB tempo 1M + fast
+  [ ] Disk II 5.25 1M + fast  [ ] IWM 5.25 + 3.5
+
+Phase 2.1 Thunder / RTC / mouse
+  [ ] DATE  [ ] 1 s  [ ] mouse VBL  [ ] subset smoke
+Phase 2.2 6551 / SCC
+  [ ] SSC AT 1M+fast  [ ] SCC AT 1M+fast  [ ] subset smoke
+Phase 2.3 Floppy35 motor
+  [ ] spin-down 1M+2.8  [ ] remount  [ ] reset  [ ] IWM 5.25 still boots
+Phase 2.4 Mockingboard
+  [ ] music  [ ] tempo vs CPU  [ ] reset  [ ] subset smoke
+Phase 2.5 Disk II
+  [ ] boot/seek 1M+fast  [ ] subset smoke
+Phase 2.6 IWM split
+  [ ] 3.5 motor + boot  [ ] 5.25 1M  [ ] 5.25 fast  [ ] 5.25↔3.5
+Phase 2.7 mbtest
+  [ ] harness exits clean
+Phase 2.8 drop EventTimer*
+  [ ] IIe + IIgs smoke
+
+Phase 3
+  [ ] build  [ ] shared smoke
+```
 
 ## What not to do
 

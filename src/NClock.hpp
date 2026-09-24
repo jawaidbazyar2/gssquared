@@ -21,7 +21,7 @@
 #include "ui/MainAtlas.hpp" 
 #include "devices/displaypp/VideoScannerII.hpp"
 #include "PlatformIDs.hpp"
-#include "util/EventTimer.hpp"
+#include "util/ClockRail.hpp"
 #include "util/DebugFormatter.hpp"
 #include <functional>
 
@@ -108,11 +108,6 @@ protected:
 
     clock_mode_t clock_mode = INVALID_CLOCK_MODE;
 
-    // don't let anyone else touch these.
-    uint64_t cycles;                // CPU cycle count
-    uint64_t c_14M = 0;             // 14MHz cycles count
-    uint64_t video_cycles = 0;      // video cycle count
-
     // tight integration aka cross-dependency here.
     uint64_t video_cycle_14M_count = 0;  // 14MHz cycles since last video cycle
     uint64_t scanline_14M_count = 0;  // 14MHz cycles since last scanline
@@ -127,18 +122,22 @@ protected:
     uint32_t cpu_div = 0;
 
     VideoScannerII *video_scanner = nullptr;
-    //EventTimer event_vid;
     // have a predefined vector of max 8 cycle handlers.
     std::vector<std::function<void()>> cycle_handlers;
 
+    inline void add_cpu(uint64_t n = 1) { cpu.add(n); }
+    inline void add_c14m(uint64_t n) { c14m.add(n); }
+    inline void tick_vid() { vid.tick(); }
+
 public:
+    CpuRail cpu;
+    VidRail vid;
+    C14mRail c14m;
+
     
     NClock(clock_set_t clock_set = CLOCK_SET_US, clock_mode_t clock_mode = CLOCK_1_024MHZ) {
         select_system_clock(clock_set);
         set_clock_mode(clock_mode);
-        cycles = 0;
-        c_14M = 0;
-        video_cycles = 0;
         video_cycle_14M_count = 0;
         scanline_14M_count = 0;
 
@@ -150,18 +149,17 @@ public:
         // preallocate max size of 8
         cycle_handlers.reserve(8);
     }
-   /*  inline void schedule_vid_event(uint64_t trigger_at, void (*callback)(uint64_t, void*), uint64_t instanceID, void* userData = nullptr) {
-        event_vid.scheduleEvent(trigger_at, callback, instanceID, userData);
-    }
-    inline void cancel_vid_event(uint64_t instanceID) {
-        event_vid.cancelEvents(instanceID);
-    } */
     void set_cycle_handler(std::function<void()> cycle_handler) {
         cycle_handlers.push_back(cycle_handler);
     }
-    inline uint64_t get_cycles() { return cycles; } // this should make accessing cycles fast still.
-    inline uint64_t get_c14m() { return c_14M; }
-    inline uint64_t get_vid_cycles() { return video_cycles; }
+    inline uint64_t get_cycles() { return cpu.now(); } // this should make accessing cycles fast still.
+    inline uint64_t get_c14m() { return c14m.now(); }
+    inline uint64_t get_vid_cycles() { return vid.now(); }
+    inline void process_due() {
+        c14m.process_due();
+        vid.process_due();
+        cpu.process_due();
+    }
     inline uint64_t get_hz_rate() {
         if (clock_mode == CLOCK_FREE_RUN) {
             return current.c14M_per_second * (uint64_t)cpu_per_14m;
@@ -193,7 +191,7 @@ public:
     inline uint64_t get_vid_cycles_per_frame() { return current.vid_cycles_per_frame; }
     inline uint64_t get_vid_cycles_per_second() { return current.vid_cycles_per_second; }
     inline VideoScannerII *get_video_scanner() { return video_scanner; }
-    inline void adjust_c14m(uint64_t amount) { c_14M += amount; }
+    inline void adjust_c14m(uint64_t amount) { c14m.add(amount); }
     inline uint64_t get_frame_start_c14M() { return frame_start_c14M; }
     inline uint64_t get_frame_end_c14M() { return frame_end_c14M; }
     inline void next_frame() {
@@ -246,7 +244,7 @@ public:
     }
 
     inline virtual void slow_incr_cycles() {
-        cycles++; 
+        cpu.add(1);
     }
     
     inline void incr_cycles() {
@@ -279,7 +277,7 @@ public:
     // II, II+, IIe
     // When cpu_per_14m > 1 (ludicrous): N CPU cycles share one 14M tick / scanner step.
     inline virtual void slow_incr_cycles() override {
-        cycles++;
+        cpu.add(1);
         if (cpu_per_14m > 1) {
             if (++cpu_div < cpu_per_14m) {
                 return;
@@ -287,7 +285,7 @@ public:
             cpu_div = 0;
         }
 
-        c_14M += current.c_14M_per_cpu_cycle;
+        c14m.add(current.c_14M_per_cpu_cycle);
         
         if (video_scanner) {
             video_cycle_14M_count += current.c_14M_per_cpu_cycle;
@@ -296,14 +294,14 @@ public:
             if (video_cycle_14M_count >= 14) {
                 video_cycle_14M_count -= 14;
                 video_scanner->video_cycle();
-                video_cycles++;
+                vid.tick();
                 
                 for (auto &cycle_handler : cycle_handlers) {
                     cycle_handler();
                 }
             }
             if (scanline_14M_count >= 910) {  // end of scanline
-                c_14M += current.extra_per_scanline;
+                c14m.add(current.extra_per_scanline);
                 scanline_14M_count = 0;
             }
         }
@@ -341,7 +339,7 @@ protected:
     // IIgs
     // Fast path: N CPU cycles per 14M when ludicrous. SYNC / slow / 1 MHz ignore N.
     inline void slow_incr_cycles() override {
-        cycles++;
+        cpu.add(1);
         if (slow_mode) cycle_type = CYCLE_TYPE_SYNC;
         if (current.hz_rate == 1020484) cycle_type = CYCLE_TYPE_SYNC; // also get refresh for "free" here.
 
@@ -384,7 +382,7 @@ protected:
                 c14m_this_cycle += 5; // a refresh cycle is 10 14M's long total.
             } 
         } 
-        c_14M += c14m_this_cycle;
+        c14m.add(c14m_this_cycle);
     
         // if a slow cycle we can use 14-video_accum (or, 16-video_accum for h=64) to get the number of 14Ms to add to
         // c_14M to sync.
@@ -394,18 +392,18 @@ protected:
             // the previous video clock is video_c14m.
     
             // delta between previous video clock and current CPU clock.
-            uint64_t delta = c_14M - video_c14m;
+            uint64_t delta = c14m.now() - video_c14m;
             video_cycle_14M_count += delta;
             //scanline_14M += delta;
     
-            video_c14m = c_14M; // this is now caught up
+            video_c14m = c14m.now(); // this is now caught up
     
             while (video_cycle_14M_count >= 14) {
                 video_cycle_14M_count -= 14;
                 // Do-video-cycle here
                 
                 video_scanner->video_cycle();
-                video_cycles++;
+                vid.tick();
                 
                 for (auto &cycle_handler : cycle_handlers) {
                     cycle_handler();
@@ -415,7 +413,7 @@ protected:
             }
             if (vidlinecycles >= 65) {  // end of scanline
                 vidlinecycles -= 65;
-                c_14M += current.extra_per_scanline;
+                c14m.add(current.extra_per_scanline);
                 video_c14m += current.extra_per_scanline;
             }
         }

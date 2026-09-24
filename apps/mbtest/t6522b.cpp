@@ -52,7 +52,7 @@ class NClockIIt : public NClock {
             }
         } */
         inline virtual void slow_incr_cycles() override {
-            cycles++; 
+            add_cpu();
             device_cycle(device_data);
         }
 
