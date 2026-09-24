@@ -431,6 +431,14 @@ inline void KeyGloo::update_em_host_cursor(float wx, float wy) {
         return;
     }
 
+    // SDL_HideCursor is process-wide, and SDL_GetMouseState reports position
+    // relative to whichever window has mouse focus. A pointer over the
+    // debugger (or any other window) must not be treated as guest content.
+    if (SDL_GetMouseFocus() != vs->window) {
+        restore_em_host_cursor();
+        return;
+    }
+
     float rx = wx;
     float ry = wy;
     keygloo_mouse_sync::window_to_render_coords(vs, wx, wy, rx, ry);
