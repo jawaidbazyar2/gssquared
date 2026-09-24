@@ -241,17 +241,14 @@ class IWM : public StorageDevice {
         }
 
     public:
-        IWM(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer) : StorageDevice()/* ,
-            drives_525{Floppy525_woz(sound_effect, clock, event_timer),
-                       Floppy525_woz(sound_effect, clock, event_timer)},
-            drives_35 {Floppy35_woz (sound_effect, clock, event_timer),
-                       Floppy35_woz (sound_effect, clock, event_timer)} */
+        IWM(SoundEffect *sound_effect, NClockII *clock) : StorageDevice()
         {
-            // Slot 6 is the IWM's 5.25" pair (matches Mounts registration).
-            drives[0][0] = new Floppy525_woz(sound_effect, clock, event_timer, 6, 0);
-            drives[0][1] = new Floppy525_woz(sound_effect, clock, event_timer, 6, 1);
-            drives[1][0] = new Floppy35_woz(sound_effect, clock, event_timer,0 );
-            drives[1][1] = new Floppy35_woz(sound_effect, clock, event_timer,1 );
+            // 5.25 phase-settle is CPU cycles on the CPU rail. 3.5 motor-off
+            // schedules itself on clock->c14m.
+            drives[0][0] = new Floppy525_woz(sound_effect, clock, clock->cpu, 6, 0);
+            drives[0][1] = new Floppy525_woz(sound_effect, clock, clock->cpu, 6, 1);
+            drives[1][0] = new Floppy35_woz(sound_effect, clock, 0);
+            drives[1][1] = new Floppy35_woz(sound_effect, clock, 1);
             reset();
 
             this->sound_effect = sound_effect;

@@ -152,8 +152,7 @@ void init_slot_ssc(computer_t *computer, SlotType_t slot) {
 
     const device_irq_id irq_id = static_cast<device_irq_id>(slot);
     const uint64_t timer_base = 0x65510000ull | (static_cast<uint64_t>(slot) << 8);
-    st->acia = new MOS6551(st->irq_control, computer->event_timer, computer->clock, irq_id,
-                           timer_base);
+    st->acia = new MOS6551(st->irq_control, &computer->clock->c14m, irq_id, timer_base);
     st->acia->set_dip_irq_enabled(st->dip_irq_enabled);
 
     /* $Cn00 is the last page of the 2K image. */

@@ -38,7 +38,6 @@
 #include "devices/displaypp/VideoScanGenerator_Comp.hpp"
 #include "mbus/MessageBus.hpp"
 #include "mbus/KeyboardMessage.hpp"
-#include "util/EventTimer.hpp"
 
 #include "devices/displaypp/VideoScanGenerator.cpp"
 #include "devices/displaypp/VideoScannerIIgs.hpp"
@@ -722,8 +721,8 @@ void rtc_pram_1sec_interrupt(uint64_t instanceID, void *context) {
     ds->f_onesec_asserted = true;
     update_vgc_interrupt(ds, true);
     // reschedule ourselves for 1 second.
-    uint64_t trigger_cycle = ds->clock->get_c14m() + ds->clock->get_c14m_per_second() /* 14318180 */;
-    ds->computer->event_timer->scheduleEvent(trigger_cycle, rtc_pram_1sec_interrupt, instanceID, ds);
+    ds->computer->clock->c14m.schedule_after(C14mTicks{ds->clock->get_c14m_per_second()},
+                                            rtc_pram_1sec_interrupt, instanceID, ds);
 }
 
 void display_write_c032(void *context, uint32_t address, uint8_t value) {
@@ -1025,7 +1024,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         // calculate number of 14M ticks (14318180hz) are in remain nanoseconds
         uint64_t ticks_14m = remain / ns_14m;
         // set the 14M timer to the number of ticks
-        computer->event_timer->scheduleEvent(ticks_14m, rtc_pram_1sec_interrupt, 0xFF112200, ds);
+        computer->clock->c14m.schedule(C14mTicks{ticks_14m}, rtc_pram_1sec_interrupt, 0xFF112200, ds);
     }
     computer->register_debug_display_handler(
         "display",

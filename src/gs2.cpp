@@ -58,7 +58,6 @@
 #include "mmus/mmu_iie.hpp"
 #include "mmus/mmu_iigs.hpp"
 #include "mmus/iigs_memory.hpp"
-#include "util/EventTimer.hpp"
 #include "ui/SelectSystem.hpp"
 #include "ui/EditSystem.hpp"
 #include "ui/MainAtlas.hpp"
@@ -415,15 +414,7 @@ bool run_one_frame(computer_t *computer) {
         /* This will run about 60fps, primarily waiting on user input in the debugger window. */
         const bool had_work = computer->instructions_left > 0;
         while (computer->instructions_left) {
-            if (computer->event_timer->isEventPassed(clock->get_c14m())) {
-                computer->event_timer->processEvents(clock->get_c14m());
-            }
-            if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
-                computer->vid_event_timer->processEvents(clock->get_vid_cycles());
-            }
-            if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
-                computer->cpu_event_timer->processEvents(clock->get_cycles());
-            }
+            clock->process_due();
             (cpu->cpun->execute_next)(cpu);
             computer->instructions_left--;
         }
@@ -485,15 +476,7 @@ bool run_one_frame(computer_t *computer) {
 
             if (computer->debug_window->needs_breakpoint_checks()) {
                 while (SDL_GetTicksNS() < deadline) {
-                    if (computer->event_timer->isEventPassed(clock->get_c14m())) {
-                        computer->event_timer->processEvents(clock->get_c14m());
-                    }
-                    if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
-                        computer->vid_event_timer->processEvents(clock->get_vid_cycles());
-                    }
-                    if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
-                        computer->cpu_event_timer->processEvents(clock->get_cycles());
-                    }
+                    clock->process_due();
                     StopHit hit{};
                     if (computer->debug_window->check_pre_breakpoint(cpu, &hit)) {
                         uint32_t prev = computer->execution_mode;
@@ -532,15 +515,7 @@ bool run_one_frame(computer_t *computer) {
                 }
             } else {
                 while (SDL_GetTicksNS() < deadline) {
-                    if (computer->event_timer->isEventPassed(clock->get_c14m())) {
-                        computer->event_timer->processEvents(clock->get_c14m());
-                    }
-                    if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
-                        computer->vid_event_timer->processEvents(clock->get_vid_cycles());
-                    }
-                    if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
-                        computer->cpu_event_timer->processEvents(clock->get_cycles());
-                    }
+                    clock->process_due();
                     (cpu->cpun->execute_next)(cpu);
                     if (clock->get_c14m() >= clock->get_frame_end_c14M()) {
                         clock->next_frame();
@@ -582,15 +557,7 @@ bool run_one_frame(computer_t *computer) {
 
         if (computer->debug_window->needs_breakpoint_checks()) {
             while (clock->get_c14m() < clock->get_frame_end_c14M()) { // 1/60th second.
-                if (computer->event_timer->isEventPassed(clock->get_c14m())) {
-                    computer->event_timer->processEvents(clock->get_c14m());
-                }
-                if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
-                    computer->vid_event_timer->processEvents(clock->get_vid_cycles());
-                }
-                if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
-                    computer->cpu_event_timer->processEvents(clock->get_cycles());
-                }
+                clock->process_due();
                 StopHit hit{};
                 if (computer->debug_window->check_pre_breakpoint(cpu, &hit)) {
                     uint32_t prev = computer->execution_mode;
@@ -628,15 +595,7 @@ bool run_one_frame(computer_t *computer) {
             }
         } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts 
             while (clock->get_c14m() < clock->get_frame_end_c14M()) {
-                if (computer->event_timer->isEventPassed(clock->get_c14m())) {
-                    computer->event_timer->processEvents(clock->get_c14m());
-                }
-                if (computer->vid_event_timer->isEventPassed(clock->get_vid_cycles())) {
-                    computer->vid_event_timer->processEvents(clock->get_vid_cycles());
-                }
-                if (computer->cpu_event_timer->isEventPassed(clock->get_cycles())) {
-                    computer->cpu_event_timer->processEvents(clock->get_cycles());
-                }
+                clock->process_due();
                 (cpu->cpun->execute_next)(cpu);
             }
         }

@@ -21,7 +21,6 @@
 #include "Floppy525_woz.hpp"
 #include "util/media.hpp"
 #include "util/woz_nibblizer_525.hpp"
-#include "util/EventTimer.hpp"
 
 // ─── Mount / head range ─────────────────────────────────────────────────────
 
@@ -83,8 +82,7 @@ void Floppy525_woz::set_phase(uint8_t phase, uint8_t onoff) {
     // multi-phase toggles (typical DOS head-step sequence) collapse into
     // a single head-settling event. instanceID is unique per slot/drive so
     // concurrent Disk II / IWM 5.25 drives do not steal each other's events.
-    event_timer->scheduleEvent(clock->get_cycles() + 520, phase_change_callback,
-                               instanceID, this);
+    cpu_rail->schedule_after(CpuCycles{520}, phase_change_callback, instanceID, this);
 }
 
 uint8_t Floppy525_woz::read_sense() {

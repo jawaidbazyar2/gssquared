@@ -13,14 +13,13 @@
 
 #include "computer.hpp"
 #include "NClock.hpp"
-#include "util/EventTimer.hpp"
 #include "util/InterruptController.hpp"
 #include "util/ResourceFile.hpp"
 
 struct thunderclock_state : public SlotData {
     computer_t *computer = nullptr;
     NClock *clock = nullptr;
-    EventTimer *event_timer = nullptr;
+    C14mRail *c14m = nullptr;
     InterruptController *irq_control = nullptr;
     ResourceFile *rom = nullptr;
     MMU_II *mmu = nullptr;

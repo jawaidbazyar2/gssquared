@@ -32,7 +32,7 @@ From [jawaidbazyar2/gssquared](https://github.com/jawaidbazyar2/gssquared/issues
 - [X] [#133](https://github.com/jawaidbazyar2/gssquared/issues/133) Unclaimed Sound Interrupt — QFTO (standard Sound Tools) dies to blue-screen after intro sound starts
 - [ ] [#125](https://github.com/jawaidbazyar2/gssquared/issues/125) 5.25" drive missing when returning to Finder from GS/OS app; returning via P8 can leave continuous polling
 - [X] [#124](https://github.com/jawaidbazyar2/gssquared/issues/124) Floating bus / edge artifacts on Sather Little Text Window demo
-- [ ] [#117](https://github.com/jawaidbazyar2/gssquared/issues/117) Locksmith 6.0 fails to copy Bilestoad (half/quarter-track read)
+- [X] [#117](https://github.com/jawaidbazyar2/gssquared/issues/117) Locksmith 6.0 fails to copy Bilestoad (half/quarter-track read)
 - [ ] [#112](https://github.com/jawaidbazyar2/gssquared/issues/112) `$C021` (IIgs): determine correct RESET state (mono bit not cleared by RESET)
 - [X] [#101](https://github.com/jawaidbazyar2/gssquared/issues/101) textfunk timing incorrect — white border starts too early (memory access slowdown missing?)
 

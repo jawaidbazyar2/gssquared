@@ -29,7 +29,6 @@
 #include "gs2.hpp"
 #include "mb2.hpp"
 #include "debug.hpp"
-#include "util/EventTimer.hpp"
 #include "util/DebugFormatter.hpp"
 #include "util/DebugHandlerIDs.hpp"
 
@@ -110,7 +109,7 @@ private:
     SDL_AudioStream *stream;
     uint64_t last_cycle;
     uint8_t slot;
-    EventTimer *event_timer;
+    VidRail *vid;
     InterruptController *irq_control = nullptr;
     AudioSystem *audio_system;
 
@@ -128,7 +127,7 @@ private:
 
 
 public:
-    Mockingboard(NClock *clock, InterruptController *irq_control, EventTimer *event_timer, AudioSystem *audio_system, uint8_t slot) {
+    Mockingboard(NClock *clock, InterruptController *irq_control, VidRail *vid, AudioSystem *audio_system, uint8_t slot) {
         // we need a local InterruptController to merge the IRQs from the two 6522 chips.
         InterruptController *local_irq_control = new InterruptController();
         local_irq_control->register_irq_receiver([this,slot](bool irq) {
@@ -146,11 +145,11 @@ public:
         });
 
         // TODO: this doesn't need irq_control or slot
-        ay8910s = new AY8910s(&audio_buffer, event_timer, clock, audio_system /* , irq_control, slot */);
+        ay8910s = new AY8910s(&audio_buffer, clock, audio_system /* , irq_control, slot */);
 
         this->clock = clock;
         this->irq_control = irq_control;
-        this->event_timer = event_timer;
+        this->vid = vid;
         this->slot = slot;
         this->audio_system = audio_system;
         last_cycle = 0;
@@ -292,8 +291,8 @@ void init_slot_mockingboard(computer_t *computer, SlotType_t slot) {
     mb_d->clock = computer->clock;
     mb_d->audio_system = computer->audio_system;
     mb_d->irq_control = computer->irq_control;
-    mb_d->event_timer = computer->vid_event_timer;
-    mb_d->mockingboard = new Mockingboard(computer->clock, computer->irq_control, mb_d->event_timer, computer->audio_system, slot);
+    mb_d->vid = &computer->clock->vid;
+    mb_d->mockingboard = new Mockingboard(computer->clock, computer->irq_control, mb_d->vid, computer->audio_system, slot);
     
     mb_d->slot = slot;
 

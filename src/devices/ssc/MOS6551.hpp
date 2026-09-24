@@ -3,11 +3,10 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "NClock.hpp"
 #include "serial_devices/SerialDevice.hpp"
 #include "serial_devices/host/HostSerial.hpp"
 #include "util/DebugFormatter.hpp"
-#include "util/EventTimer.hpp"
+#include "util/ClockRail.hpp"
 #include "util/InterruptController.hpp"
 #include "device_irq_id.hpp"
 
@@ -23,13 +22,12 @@ constexpr float ACIA_MAX_TIMED_BAUD = 115'200.0f;
 
 /**
  * MOS/Synertek 6551 ACIA — register model from the datasheet and Apple SSC docs.
- * TX/RX are paced on the emu thread via EventTimer; SerialDevice backends run
+ * TX is paced on the emu thread via the 14M rail; SerialDevice backends run
  * on a child thread and communicate only through SPSC queues.
  */
 class MOS6551 {
     InterruptController *irq_control = nullptr;
-    EventTimer *event_timer = nullptr;
-    NClockII *clock = nullptr;
+    C14mRail *c14m = nullptr;
     device_irq_id irq_id = IRQ_SLOT_2;
     uint64_t timer_base_id = 0x65510000ull;
     SerialDevice *device = nullptr;
@@ -76,11 +74,10 @@ class MOS6551 {
     inline bool transmitter_enabled() const { return dtr_ready() && tx_ctrl() != 0b00; }
 
 public:
-    MOS6551(InterruptController *irq_control, EventTimer *event_timer, NClockII *clock,
+    MOS6551(InterruptController *irq_control, C14mRail *c14m,
             device_irq_id irq_id, uint64_t timer_base_id = 0x65510000ull)
         : irq_control(irq_control),
-          event_timer(event_timer),
-          clock(clock),
+          c14m(c14m),
           irq_id(irq_id),
           timer_base_id(timer_base_id) {
         reset();
@@ -110,9 +107,9 @@ public:
     }
 
     void reset() {
-        if (event_timer) {
-            event_timer->cancelEvents(timer_base_id + 0); /* TX */
-            event_timer->cancelEvents(timer_base_id + 1); /* RX */
+        if (c14m) {
+            c14m->cancel(timer_base_id + 0); /* TX */
+            c14m->cancel(timer_base_id + 1); /* RX */
         }
         status = ST_TDRE; /* TDRE set; DCD/DSR asserted (bits clear) */
         command = 0;
@@ -395,9 +392,8 @@ private:
         tx_data = data;
         tx_in_progress = true;
         uint64_t cycles = get_cycles_per_char();
-        if (cycles > 0 && event_timer && clock) {
-            uint64_t when = clock->get_c14m() + cycles;
-            event_timer->scheduleEvent(when, tx_complete_callback, timer_base_id + 0, this);
+        if (cycles > 0 && c14m) {
+            c14m->schedule_after(C14mTicks{cycles}, tx_complete_callback, timer_base_id + 0, this);
         } else {
             tx_complete();
         }

@@ -4,8 +4,7 @@
 #include <cassert>
 #include "util/DebugFormatter.hpp"
 #include "util/InterruptController.hpp"
-#include "util/EventTimer.hpp"
-#include "NClock.hpp"
+#include "util/ClockRail.hpp"
 #include "serial_devices/SerialDevice.hpp"
 #include "serial_devices/host/HostSerial.hpp"
 
@@ -68,8 +67,7 @@ enum scc_register_t {
 
 class Z85C30 {
     InterruptController *irq_control = nullptr;
-    EventTimer *event_timer = nullptr;
-    NClockII *clock = nullptr;
+    C14mRail *c14m = nullptr;
 
     /* FILE *data_files[SCC_CHANNEL_COUNT] = { NULL, NULL }; */
 
@@ -666,8 +664,8 @@ class Z85C30 {
         }
 
     public:
-        Z85C30(InterruptController *irq_control, EventTimer *event_timer = nullptr, NClockII *clock = nullptr, uint64_t base_instance_id = 0x5CC0000) 
-            : irq_control(irq_control), event_timer(event_timer), clock(clock) {
+        Z85C30(InterruptController *irq_control, C14mRail *c14m = nullptr, uint64_t base_instance_id = 0x5CC0000)
+            : irq_control(irq_control), c14m(c14m) {
             // Set up unique instance IDs for each channel's TX and RX timers
             tx_timer_id[SCC_CHANNEL_A] = base_instance_id + 0;
             tx_timer_id[SCC_CHANNEL_B] = base_instance_id + 1;
@@ -696,9 +694,9 @@ class Z85C30 {
         */
         void hw_reset_channel(scc_channel_t channel) {
             // Cancel any pending TX/RX events
-            if (event_timer) {
-                event_timer->cancelEvents(tx_timer_id[channel]);
-                event_timer->cancelEvents(rx_timer_id[channel]);
+            if (c14m) {
+                c14m->cancel(tx_timer_id[channel]);
+                c14m->cancel(rx_timer_id[channel]);
             }
             
             registers[channel].tx_in_progress = false;
@@ -733,9 +731,9 @@ class Z85C30 {
             it's identical with 3 differences */
         void soft_reset_channel(scc_channel_t channel) {
             // Cancel any pending TX/RX events
-            if (event_timer) {
-                event_timer->cancelEvents(tx_timer_id[channel]);
-                event_timer->cancelEvents(rx_timer_id[channel]);
+            if (c14m) {
+                c14m->cancel(tx_timer_id[channel]);
+                c14m->cancel(rx_timer_id[channel]);
             }
             
             registers[channel].tx_in_progress = false;
@@ -834,10 +832,8 @@ class Z85C30 {
                 // Calculate timing and schedule TX completion
                 uint64_t cycles_per_char = get_cycles_per_char(channel, true);
                 
-                if (cycles_per_char > 0 && event_timer && clock) {
-                    // Schedule the TX completion event
-                    uint64_t trigger_cycle = clock->get_c14m() + cycles_per_char;
-                    event_timer->scheduleEvent(trigger_cycle, tx_complete_callback, tx_timer_id[channel], this);
+                if (cycles_per_char > 0 && c14m) {
+                    c14m->schedule_after(C14mTicks{cycles_per_char}, tx_complete_callback, tx_timer_id[channel], this);
                     
                     if (SCDEBUG) printf("SCC: Ch %c TX scheduled for %llu cycles (baud: %.2f)\n", 
                         ch_name(channel), cycles_per_char, baud_rate[channel]);
@@ -1029,7 +1025,7 @@ class Z85C30 {
             rx_complete(channel);
         }
 
-        // Static callback wrappers for EventTimer
+        // Static callback wrappers for the 14M rail
         static void tx_complete_callback(uint64_t instanceID, void* userData) {
             Z85C30* scc = static_cast<Z85C30*>(userData);
             // Determine channel from instance ID

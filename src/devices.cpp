@@ -31,7 +31,7 @@
 #include "devices/pdblock3/pdblock3.hpp"
 #include "devices/parallel/parallel.hpp"
 #include "devices/videx/videx.hpp"
-#include "devices/mockingboard/mb.hpp"
+#include "devices/mockingboard/mb2.hpp"
 #include "devices/iiememory/iiememory.hpp"
 #include "devices/applemouseiii/applemouseiii.hpp"
 #include "devices/cassette/cassette.hpp"

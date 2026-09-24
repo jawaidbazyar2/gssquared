@@ -56,7 +56,7 @@ void init_scc8530_slot(computer_t *computer, SlotType_t slot) {
     scc8530_state_t *st = new scc8530_state_t();
     st->irq_control = computer->irq_control;
 
-    Z85C30 *scc = new Z85C30(st->irq_control, computer->event_timer, computer->clock);
+    Z85C30 *scc = new Z85C30(st->irq_control, &computer->clock->c14m);
     st->scc = scc;
 
     for (uint32_t i = 0xC038; i <= 0xC03B; i++) {

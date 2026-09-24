@@ -110,8 +110,8 @@ protected:
     int      current_tmap_index()     const override { return (track_num << 1) | side; }
 
 public:
-    Floppy35_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer, uint16_t drive_index)
-        : Floppy_woz(sound_effect, clock, event_timer) {
+    Floppy35_woz(SoundEffect *sound_effect, NClockII *clock, uint16_t drive_index)
+        : Floppy_woz(sound_effect, clock, nullptr) {
             instanceID = 0xABAC0000 + drive_index;
             //dbglog = fopen("3.5_woz.dbg", "w");
         }
@@ -135,7 +135,7 @@ public:
             // TODO: if a head movement is in progress, the motor off must be delayed until after the movement is complete, so have a "pending motor off" flag.
         }
         if (on) {
-            event_timer->cancelEvents(instanceID); // cancel any pending motor off event
+            clock->c14m.cancel(instanceID); // cancel any pending motor off event
         }
         enable = on;
         update_spinning();
