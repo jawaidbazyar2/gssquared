@@ -112,11 +112,11 @@ class DiskII_WOZ_Controller : public StorageDevice {
     }
 
 public:
-    DiskII_WOZ_Controller(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer,
+    DiskII_WOZ_Controller(SoundEffect *sound_effect, NClockII *clock, CpuRail &cpu,
                           uint16_t slot)
         : StorageDevice(),
-          drives{Floppy525_woz(sound_effect, clock, event_timer, slot, 0),
-                 Floppy525_woz(sound_effect, clock, event_timer, slot, 1)}
+          drives{Floppy525_woz(sound_effect, clock, cpu, slot, 0),
+                 Floppy525_woz(sound_effect, clock, cpu, slot, 1)}
     {
         this->sound_effect = sound_effect;
         this->clock        = clock;

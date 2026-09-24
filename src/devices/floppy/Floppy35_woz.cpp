@@ -125,14 +125,7 @@ void Floppy35_woz::motor_off_callback(uint64_t cycles, void *userData) {
 }
 
 void Floppy35_woz::schedule_motor_off() {
-    // The shared `event_timer` is processed against clock->get_c14m()
-    // (see gs2.cpp's processEvents calls and IWM2::request_enable_off()
-    // which uses get_c14m_per_second() for its own 1-second timer).
-    // Scheduling in CPU-cycle units against a 14M-driven event timer
-    // would fire ~immediately because c_14M outpaces (cycles + hz_rate)
-    // within the first ~80 ms of emulation, so use 14M units here.
-
-    event_timer->scheduleEvent(clock->get_c14m() + clock->get_c14m_per_second()*0.5,
+    clock->c14m.schedule_after(clock->get_c14m_per_second() / 2,
                                motor_off_callback, instanceID, this);
 }
 
@@ -250,7 +243,7 @@ void Floppy35_woz::trigger_control() {
         case 0b0100: { // spindle motor on
             if (!motor_on) last_cycle = get_current_time();
             motor_on = true;
-            event_timer->cancelEvents(instanceID); // cancel any pending motor off event
+            clock->c14m.cancel(instanceID); // cancel any pending motor off event
             update_spinning();
             ready_cycles_end = clock->get_vid_cycles() + 5000; disk_ready = false;
         }

@@ -100,7 +100,6 @@ reg_record_t *recs[] = {
 class NClockIIMB : public NClock {
     protected:
         bool slow_mode = false;
-        EventTimer event_vid;
     
     public:
         NClockIIMB(clock_set_t clock_set = CLOCK_SET_US, clock_mode_t clock_mode = CLOCK_1_024MHZ) : NClock(clock_set, clock_mode) {
@@ -119,7 +118,6 @@ class NClockIIMB : public NClock {
                     video_cycle_14M_count -= 14;
                     //video_scanner->video_cycle();
                     tick_vid();
-                    event_vid.processEvents(get_vid_cycles());
                 }
                 if (scanline_14M_count >= 910) {  // end of scanline
                     add_c14m(current.extra_per_scanline);
@@ -143,10 +141,9 @@ class NClockIIMB : public NClock {
 
 int main(int argc, char *argv[]) {
     InterruptController irq_controller;
-    EventTimer event_timer;
     NClockIIMB clock(CLOCK_SET_US, CLOCK_1_024MHZ);
 
-    N6522 chip("6522 #1 $80", &clock, &irq_controller, &event_timer);
+    N6522 chip("6522 #1 $80", &clock, &irq_controller, &clock.vid);
 
     int recindex = 0;
     reg_record_t *test_recs = recs[0];
@@ -183,15 +180,16 @@ int main(int argc, char *argv[]) {
         NOT DO. This may be a distinction w/o a difference in real code, but, bear in mind that
         we may be required to use the single-cycle version.
         */
-        /* if (event_timer.isEventPassed(clock.get_vid_cycles())) {
-            event_timer.processEvents(clock.get_vid_cycles());
-        } */
+        clock.vid.process_due();
        
         // here, basically reads/writes registers in same position our CPU will
         printf("%8llu: ",system_cycles); chip.debug_one();
 
-        if (test_recs[recindex].action != END) { // end all tests with a dummy cycle 0 entry.
-            if (system_cycles >= test_recs[recindex].cycle) {
+        if (test_recs[recindex].action == END) {
+            if (test_recs[recindex].cycle == 0 || system_cycles >= test_recs[recindex].cycle) {
+                break;
+            }
+        } else if (system_cycles >= test_recs[recindex].cycle) {
                 if (test_recs[recindex].action == WRITE) {
                     chip.write(test_recs[recindex].reg, test_recs[recindex].value);
                     //printf("write: Reg %02X <= %02X\n", recs[recindex].reg, recs[recindex].value);
@@ -200,7 +198,6 @@ int main(int argc, char *argv[]) {
                     //printf("read: Reg %02X => %02X\n", recs[recindex].reg, value);
                 }
                 recindex++;
-            }
         }
 
         clock.incr_cycles();

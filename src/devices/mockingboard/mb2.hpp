@@ -59,7 +59,7 @@ struct mb_cpu_data: public SlotData {
     //SDL_AudioStream *stream;
 
     uint8_t slot;
-    EventTimer *event_timer;
+    VidRail *vid;
     InterruptController *irq_control = nullptr;
 
 };

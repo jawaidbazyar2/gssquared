@@ -45,12 +45,12 @@ void applemouseiii_vbl_interrupt(uint64_t instanceID, void *user_data) {
         ds->vbl_timer_armed = false;
         return;
     }
-    ds->event_timer->scheduleEvent(ds->vbl_cycle, applemouseiii_vbl_interrupt, instanceID, ds);
+    ds->c14m->schedule(ds->vbl_cycle, applemouseiii_vbl_interrupt, instanceID, ds);
     ds->vbl_timer_armed = true;
 }
 
 void applemouseiii_schedule_vbl(applemouseiii_state_t *ds) {
-    if (!ds || !ds->event_timer || !ds->computer || !ds->clock) {
+    if (!ds || !ds->c14m || !ds->computer || !ds->clock) {
         return;
     }
     if (ds->vbl_timer_armed) {
@@ -59,7 +59,7 @@ void applemouseiii_schedule_vbl(applemouseiii_state_t *ds) {
     const uint64_t when = ds->computer->get_frame_start_cycle() + ds->clock->get_c14m_per_frame()
                           + ds->clock->get_c14m_per_scanline() * 192;
     const uint64_t instance = 0x11000000ull | (static_cast<uint64_t>(ds->_slot) << 8);
-    ds->event_timer->scheduleEvent(when, applemouseiii_vbl_interrupt, instance, ds);
+    ds->c14m->schedule(when, applemouseiii_vbl_interrupt, instance, ds);
     ds->vbl_timer_armed = true;
 }
 
@@ -151,7 +151,7 @@ void init_applemouseiii(computer_t *computer, SlotType_t slot) {
     ds->computer = computer;
     ds->irq_control = computer->irq_control;
     ds->clock = computer->clock;
-    ds->event_timer = computer->event_timer;
+    ds->c14m = &computer->clock->c14m;
     ds->_slot = slot;
 
     ResourceFile *rom = new ResourceFile("roms/cards/applemouseiii/342-0270-C.bin", READ_ONLY);

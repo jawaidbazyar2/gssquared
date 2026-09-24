@@ -135,7 +135,7 @@ public:
             // TODO: if a head movement is in progress, the motor off must be delayed until after the movement is complete, so have a "pending motor off" flag.
         }
         if (on) {
-            event_timer->cancelEvents(instanceID); // cancel any pending motor off event
+            clock->c14m.cancel(instanceID); // cancel any pending motor off event
         }
         enable = on;
         update_spinning();

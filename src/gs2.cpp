@@ -56,7 +56,6 @@
 #include "mmus/mmu_iie.hpp"
 #include "mmus/mmu_iigs.hpp"
 #include "mmus/iigs_memory.hpp"
-#include "util/EventTimer.hpp"
 #include "ui/SelectSystem.hpp"
 #include "ui/EditSystem.hpp"
 #include "ui/MainAtlas.hpp"

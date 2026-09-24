@@ -11,7 +11,6 @@
 #include "debugger/debugwindow.hpp"
 #include "debugger/BreakpointTable.hpp"
 #include "util/EventDispatcher.hpp"
-#include "util/EventTimer.hpp"
 #include "videosystem.hpp"
 #include "util/mount.hpp"
 #include "platforms.hpp"
@@ -402,15 +401,6 @@ void computer_t::reset(bool cold_start) {
 
 void computer_t::set_clock(NClockII *clock) {
     this->clock = clock;
-    if (clock) {
-        event_timer = &clock->c14m.events();
-        vid_event_timer = &clock->vid.events();
-        cpu_event_timer = &clock->cpu.events();
-    } else {
-        event_timer = nullptr;
-        vid_event_timer = nullptr;
-        cpu_event_timer = nullptr;
-    }
 }
 
 /** State storage for non-slot devices. */

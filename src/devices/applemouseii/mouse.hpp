@@ -7,7 +7,6 @@
 #include <cstdint>
 #include "computer.hpp"
 #include "NClock.hpp"
-#include "util/EventTimer.hpp"
 
 #define R_POS_XL        0xC080
 #define R_POS_XH        0xC081
@@ -72,7 +71,7 @@ struct mouse_state_t: public SlotData {
     uint8_t *rom;
     computer_t *computer;
     NClock *clock;
-    EventTimer *event_timer;
+    C14mRail *c14m = nullptr;
     InterruptController *irq_control = nullptr;
 
     m_i16 x_pos;

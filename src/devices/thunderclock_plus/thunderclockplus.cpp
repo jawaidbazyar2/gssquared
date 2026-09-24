@@ -170,14 +170,14 @@ void update_irq(thunderclock_state *st) {
 
 void cancel_tp(thunderclock_state *st) {
     st->tp_hz = 0;
-    if (st->event_timer) {
-        st->event_timer->cancelEvents(timer_id_tp(st->_slot));
+    if (st->c14m) {
+        st->c14m->cancel(timer_id_tp(st->_slot));
     }
 }
 
 void cancel_1hz(thunderclock_state *st) {
-    if (st->event_timer) {
-        st->event_timer->cancelEvents(timer_id_1hz(st->_slot));
+    if (st->c14m) {
+        st->c14m->cancel(timer_id_1hz(st->_slot));
     }
 }
 
@@ -203,28 +203,27 @@ void thunderclock_1hz_tick(uint64_t /*instanceID*/, void *user) {
 }
 
 void schedule_tp(thunderclock_state *st) {
-    if (!st->event_timer || !st->clock || st->tp_hz == 0) {
+    if (!st->c14m || !st->clock || st->tp_hz == 0) {
         return;
     }
     uint64_t period = st->clock->get_c14m_per_second() / st->tp_hz;
     if (period == 0) {
         period = 1;
     }
-    st->event_timer->scheduleEvent(st->clock->get_c14m() + period, thunderclock_tp_tick,
-                                   timer_id_tp(st->_slot), st);
+    st->c14m->schedule_after(period, thunderclock_tp_tick, timer_id_tp(st->_slot), st);
 }
 
 void schedule_1hz(thunderclock_state *st) {
-    if (!st->event_timer || !st->clock) {
+    if (!st->c14m || !st->clock) {
         return;
     }
-    st->event_timer->scheduleEvent(st->clock->get_c14m() + st->clock->get_c14m_per_second(),
-                                   thunderclock_1hz_tick, timer_id_1hz(st->_slot), st);
+    st->c14m->schedule_after(st->clock->get_c14m_per_second(),
+                             thunderclock_1hz_tick, timer_id_1hz(st->_slot), st);
 }
 
 void start_tp(thunderclock_state *st, uint32_t hz) {
-    if (st->event_timer) {
-        st->event_timer->cancelEvents(timer_id_tp(st->_slot));
+    if (st->c14m) {
+        st->c14m->cancel(timer_id_tp(st->_slot));
     }
     st->tp_hz = hz;
     schedule_tp(st);
@@ -390,7 +389,7 @@ void init_slot_thunderclock(computer_t *computer, SlotType_t slot) {
     st->mmu = computer->mmu;
     st->irq_control = computer->irq_control;
     st->clock = computer->clock;
-    st->event_timer = computer->event_timer;
+    st->c14m = &computer->clock->c14m;
 
     ResourceFile *rom = new ResourceFile("roms/cards/tcp/tcp.rom", READ_ONLY);
     if (rom == nullptr) {

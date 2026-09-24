@@ -35,7 +35,6 @@ struct video_system_t; // same.
 class Mounts;
 class Connections;
 class SerialPortManager;
-class EventTimer;
 class VideoScannerII;
 class ResetController;
 class BreakpointTable;
@@ -109,10 +108,6 @@ struct computer_t {
 
     AudioSystem *audio_system = nullptr;
     SoundEffect *sound_effect = nullptr;
-    
-    EventTimer *event_timer = nullptr;
-    EventTimer *vid_event_timer = nullptr;
-    EventTimer *cpu_event_timer = nullptr;
 
     EventQueue *event_queue = nullptr;
 

@@ -5,7 +5,6 @@
 #include <deque>
 #include <vector>
 #include "debug.hpp"
-#include "util/EventTimer.hpp"
 #include "util/InterruptController.hpp"
 #include "util/AudioSystem.hpp"
 #include "NClock.hpp"
@@ -120,7 +119,7 @@ static const float normalized_levels[16] = {
         }
 
     public:
-        AY8910s(std::vector<float>* buffer, EventTimer *event_timer,  NClock *clock, AudioSystem *audio_system /* , InterruptController *irq_control, uint8_t slot */) 
+        AY8910s(std::vector<float>* buffer, NClock *clock, AudioSystem *audio_system /* , InterruptController *irq_control, uint8_t slot */) 
             : current_time(0.0), time_accumulator(0.0), envelope_time_accumulator(0.0), audio_buffer(buffer), audio_system(audio_system) {
             // Initialize per-chip bus address latch to "invalid / no register
             // selected" so writes without a preceding LATCH are ignored

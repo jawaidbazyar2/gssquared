@@ -5,14 +5,13 @@
 #include "computer.hpp"
 #include "MouseController.hpp"
 #include "NClock.hpp"
-#include "util/EventTimer.hpp"
 #include "util/InterruptController.hpp"
 #include "util/ResourceFile.hpp"
 
 struct applemouseiii_state_t : public SlotData {
     computer_t *computer = nullptr;
     NClock *clock = nullptr;
-    EventTimer *event_timer = nullptr;
+    C14mRail *c14m = nullptr;
     InterruptController *irq_control = nullptr;
     ResourceFile *rom_file = nullptr;
     uint8_t *rom = nullptr;

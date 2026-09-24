@@ -234,7 +234,7 @@ void mouse_vbl_interrupt(uint64_t instanceID, void *user_data) {
         fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", u64_t(ds->vbl_cycle), u64_t(ds->clock->get_c14m()));
         return;
     }
-    ds->event_timer->scheduleEvent(ds->vbl_cycle, mouse_vbl_interrupt, instanceID, ds);
+    ds->c14m->schedule(ds->vbl_cycle, mouse_vbl_interrupt, instanceID, ds);
 }
 
 DebugFormatter * debug_mouse(mouse_state_t *ds) {
@@ -259,7 +259,7 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     ds->computer = computer;
     ds->irq_control = computer->irq_control;
     ds->clock = computer->clock;
-    ds->event_timer = computer->event_timer;
+    ds->c14m = &computer->clock->c14m;
     ds->_slot = slot;
     
     mouse_reset(ds);
@@ -320,7 +320,7 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     );
     
     // schedule timer for vbl to start during vbl of next frame.
-    ds->event_timer->scheduleEvent(computer->get_frame_start_cycle() /* + ds->vbl_offset */, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
+    ds->c14m->schedule(computer->get_frame_start_cycle() /* + ds->vbl_offset */, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
 
 
     if (DEBUG(DEBUG_MOUSE)) fprintf(stdout, "Mouse initialized\n");

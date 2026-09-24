@@ -4,7 +4,8 @@
 
 #include "debug.hpp"
 #include "util/InterruptController.hpp"
-#include "util/EventTimer.hpp"
+#include "util/ClockRail.hpp"
+#include "NClock.hpp"
 
 #define MB_6522_DDRA 0x03
 #define MB_6522_DDRB 0x02
@@ -93,7 +94,7 @@ private:
     const char *chip_id;
     InterruptController *irq_control = nullptr;
     NClock *clock = nullptr;
-    EventTimer *event_timer = nullptr;
+    VidRail *vid = nullptr;
 
     const char *reg_names[16] = {
         "ORB/IRB", "ORA/IRA", "DDRB", "DDRA",
@@ -103,13 +104,13 @@ private:
     };
     
 public:
-    N6522(const char *chip_id, NClock *clock, InterruptController *irq_controller, EventTimer *event_timer,
-        uint8_t slot = 0, uint8_t chip = 0) : chip_id(chip_id), slot(slot), chip(chip), clock(clock), irq_control(irq_controller), event_timer(event_timer) {
+    N6522(const char *chip_id, NClock *clock, InterruptController *irq_controller, VidRail *vid,
+        uint8_t slot = 0, uint8_t chip = 0) : chip_id(chip_id), slot(slot), chip(chip), clock(clock), irq_control(irq_controller), vid(vid) {
         if (chip_id == nullptr) {
             throw std::invalid_argument("N6522: chip_id must be provided and non-null");
         }
-        if ((!clock) || (!irq_controller) || (!event_timer)) {
-            throw std::invalid_argument("N6522: clock, irq_controller, and event_timer must be provided and non-null");
+        if ((!clock) || (!irq_controller) || (!vid)) {
+            throw std::invalid_argument("N6522: clock, irq_controller, and vid must be provided and non-null");
         }
         if (slot < 0 || slot > 7) {
             throw std::invalid_argument("N6522: slot must be between 0 and 7");
@@ -165,21 +166,19 @@ public:
         this->irq_control = irq_controller;
     }
 
-    void set_event_timer(EventTimer *event_timer) {
-        this->event_timer = event_timer;
+    void set_event_timer(VidRail *vid) {
+        this->vid = vid;
     }
 
     void schedule_t1(uint64_t fromnow) {
         t1_trigger_at = get_clock_cycles() + fromnow + 2;
-        //event_timer->scheduleEvent(t1_trigger_at, mb_t1_timer_callback, t1_instanceID, this);
-        clock->schedule_vid_event(t1_trigger_at, mb_t1_timer_callback, t1_instanceID, this);
+        vid->schedule(t1_trigger_at, mb_t1_timer_callback, t1_instanceID, this);
         if (DEBUG(DEBUG_MOCKINGBOARD)) printf("(%s) scheduled %08llx at %08lld for timer1\n", chip_id, t1_instanceID, t1_trigger_at);
     }
 
     void schedule_t2(uint64_t fromnow) {
         t2_trigger_at = get_clock_cycles() + fromnow + 2;
-        //event_timer->scheduleEvent(t2_trigger_at, mb_t2_timer_callback, t2_instanceID, this);
-        clock->schedule_vid_event(t2_trigger_at, mb_t2_timer_callback, t2_instanceID, this);
+        vid->schedule(t2_trigger_at, mb_t2_timer_callback, t2_instanceID, this);
         if (DEBUG(DEBUG_MOCKINGBOARD)) printf("(%s) scheduled %08llx at %08lld for timer2\n", chip_id, t2_instanceID, t2_trigger_at);
     }
     /*
@@ -359,8 +358,7 @@ gate whether the system generates an IRQ out for it.
                             schedule_t1(read_t1_counter());
                         }
                     } else {
-                        //event_timer->cancelEvents(t1_instanceID);
-                        clock->cancel_vid_event(t1_instanceID);
+                        vid->cancel(t1_instanceID);
                     }
 
                     if (ier.bits.timer2) {
@@ -368,8 +366,7 @@ gate whether the system generates an IRQ out for it.
                             schedule_t2(read_t2_counter());
                         }
                     } else {
-                        //event_timer->cancelEvents(t2_instanceID);
-                        clock->cancel_vid_event(t2_instanceID);
+                        vid->cancel(t2_instanceID);
                     }
                 }
                 break;
