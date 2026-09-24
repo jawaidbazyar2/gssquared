@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util/EventTimer.hpp"
+#include <cassert>
 #include <cstdint>
 
 class NClock;
@@ -43,6 +44,9 @@ protected:
     uint64_t next_event_raw() const { return events_.getNextEventCycle(); }
 
     void schedule_raw(uint64_t when, void (*cb)(uint64_t, void*), uint64_t instanceID, void *userData = nullptr) {
+        // when == now_ is legal (next poll). when < now_ is a programmer error.
+        // Debug asserts; release still queues so process_due runs it immediately.
+        assert(when >= now_);
         events_.scheduleEvent(when, cb, instanceID, userData);
     }
 
