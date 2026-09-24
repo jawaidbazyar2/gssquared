@@ -152,9 +152,9 @@ public:
     void set_cycle_handler(std::function<void()> cycle_handler) {
         cycle_handlers.push_back(cycle_handler);
     }
-    inline uint64_t get_cycles() { return cpu.now(); } // this should make accessing cycles fast still.
-    inline uint64_t get_c14m() { return c14m.now(); }
-    inline uint64_t get_vid_cycles() { return vid.now(); }
+    inline uint64_t get_cycles() { return cpu.now().v; } // this should make accessing cycles fast still.
+    inline uint64_t get_c14m() { return c14m.now().v; }
+    inline uint64_t get_vid_cycles() { return vid.now().v; }
     inline void process_due() {
         c14m.process_due();
         vid.process_due();
@@ -392,11 +392,11 @@ protected:
             // the previous video clock is video_c14m.
     
             // delta between previous video clock and current CPU clock.
-            uint64_t delta = c14m.now() - video_c14m;
+            uint64_t delta = c14m.now().v - video_c14m;
             video_cycle_14M_count += delta;
             //scanline_14M += delta;
     
-            video_c14m = c14m.now(); // this is now caught up
+            video_c14m = c14m.now().v; // this is now caught up
     
             while (video_cycle_14M_count >= 14) {
                 video_cycle_14M_count -= 14;

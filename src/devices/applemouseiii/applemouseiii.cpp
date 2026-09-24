@@ -36,12 +36,12 @@ void applemouseiii_schedule_vbl(applemouseiii_state_t *ds);
 
 void applemouseiii_vbl_interrupt(uint64_t instanceID, void *user_data) {
     auto *ds = static_cast<applemouseiii_state_t *>(user_data);
-    ds->vbl_cycle = ds->computer->get_frame_start_cycle() + ds->clock->get_c14m_per_frame()
-                    + ds->clock->get_c14m_per_scanline() * 192;
+    ds->vbl_cycle = C14mTicks{ds->computer->get_frame_start_cycle() + ds->clock->get_c14m_per_frame()
+                    + ds->clock->get_c14m_per_scanline() * 192};
     ds->controller.on_vbl();
-    if (ds->vbl_cycle <= ds->clock->get_c14m()) {
+    if (ds->vbl_cycle.v <= ds->clock->get_c14m()) {
         fprintf(stdout, "AppleMouse III vbl cycle is before current cycle: %llu < %llu\n",
-                u64_t(ds->vbl_cycle), u64_t(ds->clock->get_c14m()));
+                u64_t(ds->vbl_cycle.v), u64_t(ds->clock->get_c14m()));
         ds->vbl_timer_armed = false;
         return;
     }
@@ -59,7 +59,7 @@ void applemouseiii_schedule_vbl(applemouseiii_state_t *ds) {
     const uint64_t when = ds->computer->get_frame_start_cycle() + ds->clock->get_c14m_per_frame()
                           + ds->clock->get_c14m_per_scanline() * 192;
     const uint64_t instance = 0x11000000ull | (static_cast<uint64_t>(ds->_slot) << 8);
-    ds->c14m->schedule(when, applemouseiii_vbl_interrupt, instance, ds);
+    ds->c14m->schedule(C14mTicks{when}, applemouseiii_vbl_interrupt, instance, ds);
     ds->vbl_timer_armed = true;
 }
 

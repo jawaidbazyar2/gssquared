@@ -41,8 +41,7 @@ class Floppy525_woz : public Floppy_woz {
     // Floppy525_woz instances sharing a timer (multi Disk II + IWM drive pairs).
     // Layout: 0xABAB0000 | (slot << 8) | drive  — distinct from Floppy35's 0xABAC*.
     uint64_t instanceID = 0;
-    // Slot Disk II schedules phase-settle on this rail. Null for IWM drives,
-    // which still use the EventTimer passed into Floppy_woz.
+    // Phase-settle is a CPU-cycle delay on the CPU rail (slot Disk II and IWM).
     CpuRail *cpu_rail = nullptr;
     // 0 = Drive 1 (left channel), 1 = Drive 2 (right channel).
     uint16_t drive_index = 0;
@@ -60,12 +59,6 @@ protected:
     int      current_tmap_index()     const override { return track; }
 
 public:
-    Floppy525_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer,
-                  uint16_t slot, uint16_t drive)
-        : Floppy_woz(sound_effect, clock, event_timer), drive_index(drive) {
-            instanceID = 0xABAB0000ull | (static_cast<uint64_t>(slot) << 8) | drive;
-        }
-
     Floppy525_woz(SoundEffect *sound_effect, NClockII *clock, CpuRail &cpu,
                   uint16_t slot, uint16_t drive)
         : Floppy_woz(sound_effect, clock, &cpu.events()), cpu_rail(&cpu), drive_index(drive) {

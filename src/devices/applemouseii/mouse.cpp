@@ -226,12 +226,12 @@ void mouse_vbl_interrupt(uint64_t instanceID, void *user_data) {
     //ds->vbl_cycle = ds->computer->get_frame_start_cycle() + (ds->computer->cpu->cycles_per_scanline * 192);
     // current frame - plus cycle per frame (next frame) at scanline 192.
     // going from ludicrous (or likely any higher speed to a lower speed). 
-    ds->vbl_cycle = ds->computer->get_frame_start_cycle() + ds->clock->get_c14m_per_frame()  + ds->clock->get_c14m_per_scanline() * 192;
+    ds->vbl_cycle = C14mTicks{ds->computer->get_frame_start_cycle() + ds->clock->get_c14m_per_frame()  + ds->clock->get_c14m_per_scanline() * 192};
     
     ds->status.int_vbl = 1;
     mouse_propagate_interrupt(ds);
-    if (ds->vbl_cycle <= ds->clock->get_c14m()) {
-        fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", u64_t(ds->vbl_cycle), u64_t(ds->clock->get_c14m()));
+    if (ds->vbl_cycle.v <= ds->clock->get_c14m()) {
+        fprintf(stdout, "Mouse vbl cycle is before current cycle: %llu < %llu\n", u64_t(ds->vbl_cycle.v), u64_t(ds->clock->get_c14m()));
         return;
     }
     ds->c14m->schedule(ds->vbl_cycle, mouse_vbl_interrupt, instanceID, ds);
@@ -263,7 +263,7 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     ds->_slot = slot;
     
     mouse_reset(ds);
-    ds->vbl_cycle = (ds->clock->get_c14m_per_scanline() * 192);
+    ds->vbl_cycle = C14mTicks{ds->clock->get_c14m_per_scanline() * 192};
 
     SDL_SetHint(SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE,"1");
 
@@ -320,7 +320,7 @@ void init_mouse(computer_t *computer, SlotType_t slot) {
     );
     
     // schedule timer for vbl to start during vbl of next frame.
-    ds->c14m->schedule(computer->get_frame_start_cycle() /* + ds->vbl_offset */, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
+    ds->c14m->schedule(C14mTicks{computer->get_frame_start_cycle()} /* + ds->vbl_offset */, mouse_vbl_interrupt, 0x10000000 | (slot << 8) | 0, ds);
 
 
     if (DEBUG(DEBUG_MOUSE)) fprintf(stdout, "Mouse initialized\n");

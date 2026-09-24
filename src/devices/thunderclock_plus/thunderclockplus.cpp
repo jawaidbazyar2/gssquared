@@ -210,14 +210,14 @@ void schedule_tp(thunderclock_state *st) {
     if (period == 0) {
         period = 1;
     }
-    st->c14m->schedule_after(period, thunderclock_tp_tick, timer_id_tp(st->_slot), st);
+    st->c14m->schedule_after(C14mTicks{period}, thunderclock_tp_tick, timer_id_tp(st->_slot), st);
 }
 
 void schedule_1hz(thunderclock_state *st) {
     if (!st->c14m || !st->clock) {
         return;
     }
-    st->c14m->schedule_after(st->clock->get_c14m_per_second(),
+    st->c14m->schedule_after(C14mTicks{st->clock->get_c14m_per_second()},
                              thunderclock_1hz_tick, timer_id_1hz(st->_slot), st);
 }
 

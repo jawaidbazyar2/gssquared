@@ -16,7 +16,7 @@ struct applemouseiii_state_t : public SlotData {
     ResourceFile *rom_file = nullptr;
     uint8_t *rom = nullptr;
     MouseController controller;
-    uint64_t vbl_cycle = 0;
+    C14mTicks vbl_cycle{0};
     bool vbl_timer_armed = false;
 };
 

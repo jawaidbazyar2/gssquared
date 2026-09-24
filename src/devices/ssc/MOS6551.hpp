@@ -393,7 +393,7 @@ private:
         tx_in_progress = true;
         uint64_t cycles = get_cycles_per_char();
         if (cycles > 0 && c14m) {
-            c14m->schedule_after(cycles, tx_complete_callback, timer_base_id + 0, this);
+            c14m->schedule_after(C14mTicks{cycles}, tx_complete_callback, timer_base_id + 0, this);
         } else {
             tx_complete();
         }

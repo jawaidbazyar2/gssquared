@@ -125,7 +125,7 @@ void Floppy35_woz::motor_off_callback(uint64_t cycles, void *userData) {
 }
 
 void Floppy35_woz::schedule_motor_off() {
-    clock->c14m.schedule_after(clock->get_c14m_per_second() / 2,
+    clock->c14m.schedule_after(C14mTicks{clock->get_c14m_per_second() / 2},
                                motor_off_callback, instanceID, this);
 }
 

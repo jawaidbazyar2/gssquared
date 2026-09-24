@@ -85,7 +85,7 @@ struct mouse_state_t: public SlotData {
 
     bool button_last_read;
 
-    uint64_t vbl_cycle;
+    C14mTicks vbl_cycle{0};
     /* uint64_t vbl_offset = 0; */
     uint16_t last_x_pos;
     uint16_t last_y_pos;

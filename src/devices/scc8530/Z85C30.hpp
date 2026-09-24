@@ -833,7 +833,7 @@ class Z85C30 {
                 uint64_t cycles_per_char = get_cycles_per_char(channel, true);
                 
                 if (cycles_per_char > 0 && c14m) {
-                    c14m->schedule_after(cycles_per_char, tx_complete_callback, tx_timer_id[channel], this);
+                    c14m->schedule_after(C14mTicks{cycles_per_char}, tx_complete_callback, tx_timer_id[channel], this);
                     
                     if (SCDEBUG) printf("SCC: Ch %c TX scheduled for %llu cycles (baud: %.2f)\n", 
                         ch_name(channel), cycles_per_char, baud_rate[channel]);

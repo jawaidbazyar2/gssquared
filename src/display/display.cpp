@@ -721,7 +721,7 @@ void rtc_pram_1sec_interrupt(uint64_t instanceID, void *context) {
     ds->f_onesec_asserted = true;
     update_vgc_interrupt(ds, true);
     // reschedule ourselves for 1 second.
-    ds->computer->clock->c14m.schedule_after(ds->clock->get_c14m_per_second(),
+    ds->computer->clock->c14m.schedule_after(C14mTicks{ds->clock->get_c14m_per_second()},
                                             rtc_pram_1sec_interrupt, instanceID, ds);
 }
 
@@ -1024,7 +1024,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         // calculate number of 14M ticks (14318180hz) are in remain nanoseconds
         uint64_t ticks_14m = remain / ns_14m;
         // set the 14M timer to the number of ticks
-        computer->clock->c14m.schedule(ticks_14m, rtc_pram_1sec_interrupt, 0xFF112200, ds);
+        computer->clock->c14m.schedule(C14mTicks{ticks_14m}, rtc_pram_1sec_interrupt, 0xFF112200, ds);
     }
     computer->register_debug_display_handler(
         "display",

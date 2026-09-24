@@ -85,8 +85,8 @@ private:
     uint16_t t2_set_value;
     bool t1_continuous = false;
     
-    uint64_t t1_trigger_at;
-    uint64_t t2_trigger_at;
+    VidCycles t1_trigger_at{0};
+    VidCycles t2_trigger_at{0};
     
     uint64_t t1_instanceID;
     uint64_t t2_instanceID;
@@ -137,8 +137,8 @@ public:
         t1_set_value = 0;
         t2_set_value = 0;
         t1_continuous = false;
-        t1_trigger_at = 0;
-        t2_trigger_at = 0;
+        t1_trigger_at = VidCycles{0};
+        t2_trigger_at = VidCycles{0};
         // Calculate instance ID for each timer based on slot and chip.
         t1_instanceID = 0x10000000 | (slot << 8) | chip;
         t2_instanceID = 0x10010000 | (slot << 8) | chip;
@@ -171,15 +171,15 @@ public:
     }
 
     void schedule_t1(uint64_t fromnow) {
-        t1_trigger_at = get_clock_cycles() + fromnow + 2;
+        t1_trigger_at = VidCycles{get_clock_cycles() + fromnow + 2};
         vid->schedule(t1_trigger_at, mb_t1_timer_callback, t1_instanceID, this);
-        if (DEBUG(DEBUG_MOCKINGBOARD)) printf("(%s) scheduled %08llx at %08lld for timer1\n", chip_id, t1_instanceID, t1_trigger_at);
+        if (DEBUG(DEBUG_MOCKINGBOARD)) printf("(%s) scheduled %08llx at %08lld for timer1\n", chip_id, t1_instanceID, t1_trigger_at.v);
     }
 
     void schedule_t2(uint64_t fromnow) {
-        t2_trigger_at = get_clock_cycles() + fromnow + 2;
+        t2_trigger_at = VidCycles{get_clock_cycles() + fromnow + 2};
         vid->schedule(t2_trigger_at, mb_t2_timer_callback, t2_instanceID, this);
-        if (DEBUG(DEBUG_MOCKINGBOARD)) printf("(%s) scheduled %08llx at %08lld for timer2\n", chip_id, t2_instanceID, t2_trigger_at);
+        if (DEBUG(DEBUG_MOCKINGBOARD)) printf("(%s) scheduled %08llx at %08lld for timer2\n", chip_id, t2_instanceID, t2_trigger_at.v);
     }
     /*
 TODO: 
@@ -495,7 +495,7 @@ gate whether the system generates an IRQ out for it.
             t1_latch, read_t1_counter(), t2_latch, read_t2_counter());
         df->addLine("SR  : %02X    ACR : %02X    PCR : %02X   IFR : %02X    IER: %02X", 
             sr, acr, pcr, ifr.value, ier.value|0x80);
-        df->addLine("T1 Int Timer: %08lld  T2 Int Timer: %08lld", t1_trigger_at, t2_trigger_at);
+        df->addLine("T1 Int Timer: %08lld  T2 Int Timer: %08lld", t1_trigger_at.v, t2_trigger_at.v);
     }
 
     void debug_one() {

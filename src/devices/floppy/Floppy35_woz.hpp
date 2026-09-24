@@ -110,8 +110,8 @@ protected:
     int      current_tmap_index()     const override { return (track_num << 1) | side; }
 
 public:
-    Floppy35_woz(SoundEffect *sound_effect, NClockII *clock, EventTimer *event_timer, uint16_t drive_index)
-        : Floppy_woz(sound_effect, clock, event_timer) {
+    Floppy35_woz(SoundEffect *sound_effect, NClockII *clock, uint16_t drive_index)
+        : Floppy_woz(sound_effect, clock, nullptr) {
             instanceID = 0xABAC0000 + drive_index;
             //dbglog = fopen("3.5_woz.dbg", "w");
         }
