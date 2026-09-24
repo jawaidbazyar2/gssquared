@@ -10,10 +10,10 @@
     Header set Cross-Origin-Embedder-Policy "require-corp"
     Header set Cross-Origin-Resource-Policy "same-origin"
 
-    # "no-cache" means revalidate, not "never cache". The artifacts keep the
-    # same names across builds, so a client must never pin a stale .wasm to a
-    # fresh .js; ETags make unchanged repeat visits cheap 304s.
-    Header set Cache-Control "no-cache"
+    # The build products keep the same names across deploys. Cache them for a
+    # day so repeat visits do not re-download the wasm. A new deploy can take
+    # up to 24 hours to replace what a browser already stored.
+    Header set Cache-Control "public, max-age=86400"
 </IfModule>
 
 # Apache needs this for WebAssembly.instantiateStreaming().

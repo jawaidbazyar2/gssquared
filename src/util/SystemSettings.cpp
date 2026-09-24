@@ -25,6 +25,7 @@
 #include <iostream>
 
 #include "paths.hpp"
+#include "util/applekeys.hpp"
 #include "util/toml.hpp"
 
 namespace {
@@ -127,6 +128,7 @@ bool SystemSettings::load() {
     last_config_path_.clear();
     last_disk_path_.clear();
     host_fst_dir_.clear();
+    apple_keys_ = apple_key_layout_id(default_apple_key_layout());
 
     const std::string path = settings_path();
     if (!file_exists(path)) {
@@ -194,6 +196,11 @@ bool SystemSettings::load() {
                 host_fst_dir_ = *p;
             }
         }
+        if (const auto* kb = table["keyboard"].as_table()) {
+            if (const auto id = (*kb)["apple_keys"].value<std::string>()) {
+                apple_keys_ = apple_key_layout_id(apple_key_layout_from_id(*id));
+            }
+        }
     } catch (const toml::parse_error& err) {
         std::cerr << "Failed to parse system_settings.toml: " << err.what() << std::endl;
         recent_.clear();
@@ -246,6 +253,12 @@ bool SystemSettings::save() const {
     toml::table host_fst;
     host_fst.insert("dir", host_fst_dir_);
     table.insert("host_fst", std::move(host_fst));
+
+    toml::table keyboard;
+    keyboard.insert("apple_keys", apple_keys_.empty()
+                                      ? apple_key_layout_id(default_apple_key_layout())
+                                      : apple_keys_);
+    table.insert("keyboard", std::move(keyboard));
 
     const std::string path = settings_path();
     try {
@@ -342,6 +355,15 @@ void SystemSettings::set_last_disk_path(const std::string& path) {
         return;
     }
     last_disk_path_ = normalized;
+    save();
+}
+
+void SystemSettings::set_apple_keys(const std::string& id) {
+    const std::string canonical = apple_key_layout_id(apple_key_layout_from_id(id));
+    if (apple_keys_ == canonical) {
+        return;
+    }
+    apple_keys_ = canonical;
     save();
 }
 

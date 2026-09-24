@@ -54,6 +54,13 @@ class SystemSettings {
     /** Host FST shared folder (empty = Documents). */
     std::string host_fst_dir_;
 
+    /**
+     * Open Apple / Closed Apple host layout. Empty until load(); readers treat
+     * an empty or unknown value as the platform default. Stored values:
+     * command_open_apple, alt_open_apple, left_option_open_apple.
+     */
+    std::string apple_keys_;
+
     SystemSettings() = default;
 
     static std::string settings_path();
@@ -115,10 +122,12 @@ public:
     const std::string& last_config_path() const { return last_config_path_; }
     const std::string& last_disk_path() const { return last_disk_path_; }
     const std::string& host_fst_dir() const { return host_fst_dir_; }
+    const std::string& apple_keys() const { return apple_keys_; }
 
     void set_last_config_path(const std::string& path);
     void set_last_disk_path(const std::string& path);
     void set_host_fst_dir(const std::string& path);
+    void set_apple_keys(const std::string& id);
 
     /**
      * Platform-adjusted default_location for SDL open dialogs.

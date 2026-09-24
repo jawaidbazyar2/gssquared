@@ -92,7 +92,8 @@
 ## Release 1.0
 
 [X] implement shaders on Linux
-[ ] clean up HUD buttons
+[X] Web build!
+[X] clean up HUD buttons
 [ ] Implement file type and URL associations — [ProtocolHandlers](ProtocolHandlers.md)
 [ ] Fix all known / pending bugs  
 

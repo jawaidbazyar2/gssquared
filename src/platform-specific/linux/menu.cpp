@@ -276,6 +276,23 @@ static void build_menu_bar()
 
         ImGui::Separator();
 
+        if (begin_menu("Apple Keys")) {
+            int cur = mi->getAppleKeyLayout();
+            struct { const char *label; int layout; } layouts[] = {
+                { "Command = Open Apple",     0 },
+                { "Alt = Open Apple",         1 },
+                { "Left Option = Open Apple", 2 },
+            };
+            for (auto &layout : layouts) {
+                bool checked = (cur == layout.layout);
+                if (ImGui::MenuItem(layout.label, nullptr, checked))
+                    mi->setAppleKeyLayout(layout.layout);
+            }
+            end_menu();
+        }
+
+        ImGui::Separator();
+
         // Sleep / Busy Wait — available regardless of running state
         bool sleep_on = mi->getSleepMode();
         if (ImGui::MenuItem("Sleep / Busy Wait", nullptr, sleep_on))

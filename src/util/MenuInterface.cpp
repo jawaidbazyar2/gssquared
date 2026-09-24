@@ -8,6 +8,7 @@
 #include "util/AudioSystem.hpp"
 #include "util/mount.hpp"
 #include "util/SystemSettings.hpp"
+#include "util/applekeys.hpp"
 #include "devices/game/gamecontroller.hpp"
 #include "Module_ID.hpp"
 
@@ -192,6 +193,18 @@ void MenuInterface::setJoyportSelect(int select) {
 
 int MenuInterface::getJoyportSelect() {
 	return (int)get_joyport_select();
+}
+
+void MenuInterface::setAppleKeyLayout(int layout) {
+	if (layout < 0 || layout > static_cast<int>(AppleKeyLayout::LeftOptionOpenApple)) {
+		return;
+	}
+	SystemSettings::instance().set_apple_keys(
+		apple_key_layout_id(static_cast<AppleKeyLayout>(layout)));
+}
+
+int MenuInterface::getAppleKeyLayout() {
+	return static_cast<int>(current_apple_key_layout());
 }
 
 std::vector<MenuDriveInfo> MenuInterface::getDriveList() {

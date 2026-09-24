@@ -61,6 +61,7 @@ public:
 
 	void setControllerMode(int mode);
 	void setJoyportSelect(int select);
+	void setAppleKeyLayout(int layout);
 
 	int  getCurrentSpeed();
 	int  getCurrentMonitor();
@@ -81,6 +82,7 @@ public:
 	bool getMountDrivers();
 	int  getCurrentControllerMode();
 	int  getJoyportSelect();
+	int  getAppleKeyLayout();
 	std::vector<MenuDriveInfo> getDriveList();
 };
 

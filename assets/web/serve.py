@@ -18,8 +18,11 @@ class COOPCOEPRequestHandler(SimpleHTTPRequestHandler):
         # Required for SharedArrayBuffer (pthreads) to be available.
         self.send_header("Cross-Origin-Opener-Policy", "same-origin")
         self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
-        # Avoid stale .wasm/.js/.data during development.
-        self.send_header("Cache-Control", "no-store")
+        # Local rebuilds keep the same filenames. Force every cache off so the
+        # next reload picks up the files just written.
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
         super().end_headers()
 
 

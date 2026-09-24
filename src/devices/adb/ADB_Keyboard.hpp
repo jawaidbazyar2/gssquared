@@ -372,12 +372,12 @@ class ADB_Keyboard : public ADB_Device
         0xFF,
         ADB_CONTROL, // SDL_SCANCODE_LCTRL = 224,
         ADB_LEFT_SHIFT, // SDL_SCANCODE_LSHIFT = 225,
-        ADB_OPTION, // SDL_SCANCODE_LGUI = 226,
-        ADB_COMMAND, // SDL_SCANCODE_LALT = 227,
+        0xFF, // SDL_SCANCODE_LGUI — Open/Closed Apple comes from the Apple Keys setting
+        0xFF, // SDL_SCANCODE_LALT
         ADB_CONTROL, // SDL_SCANCODE_RCTRL = 228,
         ADB_LEFT_SHIFT, // SDL_SCANCODE_RSHIFT = 229,
-        ADB_OPTION, // SDL_SCANCODE_RGUI = 230,
-        ADB_COMMAND, // SDL_SCANCODE_RALT = 231,
+        0xFF, // SDL_SCANCODE_RGUI
+        0xFF, // SDL_SCANCODE_RALT
     };
 
     void print_key_buffer() {
@@ -426,10 +426,6 @@ class ADB_Keyboard : public ADB_Device
             * Bit 12: Reserved, must be 0.
             * Bit 11-8: Device address.
             * Bit 7-0: Device handler. */
-        sdl_to_adb_key_map[KEY_OPTION_L] = ADB_OPTION;
-        sdl_to_adb_key_map[KEY_OPTION_R] = ADB_OPTION;
-        sdl_to_adb_key_map[KEY_COMMAND_L] = ADB_COMMAND;
-        sdl_to_adb_key_map[KEY_COMMAND_R] = ADB_COMMAND;
         sdl_to_adb_key_map[KEY_RESET&(SDL_SCANCODE_COUNT-1)] = ADB_POWER;
         // ISO <> key (HID 0x64). Distinct from GRAVE (pos 1,1 → @/# on French).
         sdl_to_adb_key_map[SDL_SCANCODE_NONUSBACKSLASH] = ADB_ISO_102;
@@ -502,7 +498,16 @@ class ADB_Keyboard : public ADB_Device
         key_event_t key = {};
         uint32_t scancode = event.key.scancode;
         scancode &= (SDL_SCANCODE_COUNT-1);
-        uint8_t scancode_mapped = sdl_to_adb_key_map[scancode];
+        uint8_t scancode_mapped = 0xFF;
+        bool is_open = false;
+        if (apple_modifier_scancode(static_cast<SDL_Scancode>(scancode), &is_open)) {
+            scancode_mapped = is_open ? ADB_COMMAND : ADB_OPTION;
+        } else if (scancode == SDL_SCANCODE_LALT || scancode == SDL_SCANCODE_RALT
+                   || scancode == SDL_SCANCODE_LGUI || scancode == SDL_SCANCODE_RGUI) {
+            return; // the other modifier in this layout is not an Apple key
+        } else {
+            scancode_mapped = sdl_to_adb_key_map[scancode];
+        }
         if (scancode_mapped == 0xFF) return; // unmapped, ignore
         key.keycode = scancode_mapped;
         key.status = (event.type == SDL_EVENT_KEY_DOWN) ? KEY_STATUS_DOWN : KEY_STATUS_UP;

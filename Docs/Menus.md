@@ -73,6 +73,10 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
       * Center
       * Right
     * Disconnected When No Gamepad
+  * Apple Keys
+    * Command = Open Apple
+    * Alt = Open Apple
+    * Left Option = Open Apple
   * Sleep / Busy Wait
   * Mono Helper
   * Right Mouse Button Accelerate
@@ -82,6 +86,8 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
 **Joyport Controller Select** emulates the physical Left / Center / Right switch on a Sirius Joyport. Center (default) lets software pick joystick 1 vs 2 with Annunciator 0. The submenu is available only in Joyport mode. See [Joysticks](Joysticks.md).
 
 **Disconnected When No Gamepad** — when checked, paddle/button lines float as if no joystick were plugged in. When unchecked (default), an absent gamepad still reports a centered stick so software like Total Replay keeps joystick titles visible. See [Joysticks](Joysticks.md).
+
+**Apple Keys** chooses the host keys for Open Apple and Closed Apple. Available whether or not a machine is running. See [Using a Keyboard](KeyboardShortcuts.md).
 
 **Sleep / Busy Wait** — when checked, the emulator sleeps between frames instead of busy-waiting (lower host CPU). Same as the [`-s`](CommandLine.md) flag.
 

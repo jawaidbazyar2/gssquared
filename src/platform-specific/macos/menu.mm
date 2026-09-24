@@ -120,6 +120,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)toggleRightMouseAccel:(id)sender;
 - (void)controllerMode:(id)sender;
 - (void)joyportSelect:(id)sender;
+- (void)appleKeyLayout:(id)sender;
 - (void)toggleDisconnectedWhenNoGamepad:(id)sender;
 - (void)monitorComposite:(id)sender;
 - (void)monitorGSRGB:(id)sender;
@@ -191,6 +192,14 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 		return getMenuInterface()->isEmulationRunning()
 			&& getMenuInterface()->getCurrentControllerMode() == 2;
 	}
+	if (menuItem.action == @selector(appleKeyLayout:)) {
+		int current = getMenuInterface()->getAppleKeyLayout();
+		[menuItem setState:([menuItem tag] == current) ? NSControlStateValueOn : NSControlStateValueOff];
+		return YES;
+	}
+	if ([[menuItem title] isEqualToString:NSLocalizedString(@"Apple Keys", nil)]) {
+		return YES;
+	}
 	if (menuItem.action == @selector(toggleDisconnectedWhenNoGamepad:)) {
 		[menuItem setState:getMenuInterface()->getDisconnectedWhenNoGamepad() ? NSControlStateValueOn : NSControlStateValueOff];
 	}
@@ -250,6 +259,11 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)joyportSelect:(id)sender {
 	NSMenuItem *item = (NSMenuItem *)sender;
 	getMenuInterface()->setJoyportSelect((int)[item tag]);
+}
+
+- (void)appleKeyLayout:(id)sender {
+	NSMenuItem *item = (NSMenuItem *)sender;
+	getMenuInterface()->setAppleKeyLayout((int)[item tag]);
 }
 
 - (void)toggleDisconnectedWhenNoGamepad:(id)sender {
@@ -709,6 +723,29 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[controllerMenuItem setSubmenu:controllerMenu];
 	[settingsMenu addItem:controllerMenuItem];
+
+	NSMenu *appleKeysMenu = [[[NSMenu alloc]
+		initWithTitle:NSLocalizedString(@"Apple Keys", nil)] autorelease];
+	struct { NSString *title; NSInteger tag; } appleKeyItems[] = {
+		{ @"Command = Open Apple",     0 },
+		{ @"Alt = Open Apple",         1 },
+		{ @"Left Option = Open Apple", 2 },
+	};
+	for (auto &ak : appleKeyItems) {
+		NSMenuItem *item = [[[NSMenuItem alloc]
+			initWithTitle:ak.title
+			       action:@selector(appleKeyLayout:)
+			keyEquivalent:@""] autorelease];
+		[item setTarget:sMenuHandler];
+		[item setTag:ak.tag];
+		[appleKeysMenu addItem:item];
+	}
+	NSMenuItem *appleKeysMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Apple Keys", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[appleKeysMenuItem setSubmenu:appleKeysMenu];
+	[settingsMenu addItem:appleKeysMenuItem];
 
 	NSMenuItem *sleepItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Sleep / Busy Wait", nil)

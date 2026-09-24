@@ -50,6 +50,10 @@ enum MenuEventCode {
 	MENU_CONTROLLER_JOYPORT_CENTER,
 	MENU_CONTROLLER_JOYPORT_RIGHT,
 
+	MENU_APPLE_KEYS_COMMAND = 710,
+	MENU_APPLE_KEYS_ALT,
+	MENU_APPLE_KEYS_LEFT_OPTION,
+
 };
 
 typedef SDL_AppResult (*MenuIterateCallback)(void *appstate);

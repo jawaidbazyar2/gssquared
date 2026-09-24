@@ -30,25 +30,17 @@ F5 is a **scaling** preference, not a switch between “accurate NTSC” and a l
 
 # Apple Keys - Modifier Keys
 
-Linux / Windows
+**Settings → Apple Keys** chooses which host keys are Open Apple and Closed Apple. The choice is stored in `system_settings.toml` as `keyboard.apple_keys` and is remembered across sessions. The default depends on the platform: Command = Open Apple on macOS, Alt = Open Apple on Windows and Linux, and Left Option = Open Apple in the browser.
 
-| Key | //e Modifier | IIgs Modifier |
-| --- | --- | --- |
-| ALT | Open Apple | Command |
-| Windows | Closed Apple | Option |
-| Shift | Shift | Shift |
-| Caps Lock | Caps Lock | Caps Lock |
+| Menu | Settings file | Open Apple | Closed Apple |
+| --- | --- | --- | --- |
+| Command = Open Apple | `command_open_apple` | Command / Windows (both) | Option / Alt (both) |
+| Alt = Open Apple | `alt_open_apple` | Alt / Option (both) | Command / Windows (both) |
+| Left Option = Open Apple | `left_option_open_apple` | Left Option | Right Option |
 
-MacOS
+On a Mac keyboard, Command is the GUI key and Option is Alt. On a PC keyboard, the Windows key is the GUI key. Left Option uses only the left Alt key for Open Apple and the right Alt key for Closed Apple, so browser Command shortcuts stay with the browser.
 
-| Key | //e Modifier | IIgs Modifier |
-| --- | --- | --- |
-| Command | Open Apple | Command |
-| Option | Closed Apple | Option |
-| Shift | Shift | Shift |
-| Caps Lock | Caps Lock | Caps Lock |
-
-There is no host menu to swap Open-Apple / Closed-Apple mappings.
+Shift and Caps Lock are unchanged on every layout.
 
 # Platform keyboards
 

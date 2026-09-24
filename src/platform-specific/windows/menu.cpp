@@ -37,6 +37,7 @@ static HMENU g_settingsPopup  = NULL;
 static HMENU g_speedMenu      = NULL;
 static HMENU g_controllerMenu = NULL;
 static HMENU g_joyportSelectMenu = NULL;
+static HMENU g_appleKeysMenu = NULL;
 static HMENU g_monitorMenu    = NULL;
 static HMENU g_hudMenu        = NULL;
 static HMENU g_displayPopup   = NULL;
@@ -212,6 +213,18 @@ static void updatePopupState(HMENU popup)
         return;
     }
 
+    if (popup == g_appleKeysMenu) {
+        int current = mi->getAppleKeyLayout();
+        int n = GetMenuItemCount(g_appleKeysMenu);
+        for (int i = 0; i < n; ++i) {
+            int id = static_cast<int>(getItemId(g_appleKeysMenu, i));
+            int layout = id - static_cast<int>(MENU_APPLE_KEYS_COMMAND);
+            setItemCheck(g_appleKeysMenu, i, layout == current);
+            setItemEnable(g_appleKeysMenu, i, true);
+        }
+        return;
+    }
+
     if (popup == g_joyportSelectMenu) {
         int current = mi->getJoyportSelect(); // 0=left, 1=center, 2=right
         bool joyport_on = (mi->getCurrentControllerMode() == 2);
@@ -261,8 +274,13 @@ static void updatePopupState(HMENU popup)
                 setItemCheck(g_settingsPopup,  i, rmb_accel);
                 setItemEnable(g_settingsPopup, i, running);
             } else {
-                // Speed and Controller submenu parent items (id == 0 for submenus)
-                setItemEnable(g_settingsPopup, i, running);
+                MENUITEMINFOW mii = {};
+                mii.cbSize = sizeof(mii);
+                mii.fMask  = MIIM_SUBMENU;
+                GetMenuItemInfoW(g_settingsPopup, static_cast<UINT>(i), TRUE, &mii);
+                // Apple Keys is a host preference; Speed and Game Controller need a machine.
+                bool enable = running || (mii.hSubMenu == g_appleKeysMenu);
+                setItemEnable(g_settingsPopup, i, enable);
             }
         }
         return;
@@ -403,6 +421,10 @@ static void dispatchCommand(UINT id)
     case MENU_CONTROLLER_JOYPORT_LEFT:   mi->setJoyportSelect(0); return;
     case MENU_CONTROLLER_JOYPORT_CENTER: mi->setJoyportSelect(1); return;
     case MENU_CONTROLLER_JOYPORT_RIGHT:  mi->setJoyportSelect(2); return;
+
+    case MENU_APPLE_KEYS_COMMAND:     mi->setAppleKeyLayout(0); return;
+    case MENU_APPLE_KEYS_ALT:         mi->setAppleKeyLayout(1); return;
+    case MENU_APPLE_KEYS_LEFT_OPTION: mi->setAppleKeyLayout(2); return;
 
     default:
         // Drive toggle: IDs [MENU_DISK_TOGGLE, MENU_DISK_TOGGLE + N)
@@ -550,6 +572,13 @@ static void setupMenus()
                 L"Disconnected When No Gamepad");
     AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_controllerMenu), L"Game Controller");
+
+    g_appleKeysMenu = CreatePopupMenu();
+    AppendMenuW(g_appleKeysMenu, MF_STRING, MENU_APPLE_KEYS_COMMAND,     L"Command = Open Apple");
+    AppendMenuW(g_appleKeysMenu, MF_STRING, MENU_APPLE_KEYS_ALT,         L"Alt = Open Apple");
+    AppendMenuW(g_appleKeysMenu, MF_STRING, MENU_APPLE_KEYS_LEFT_OPTION, L"Left Option = Open Apple");
+    AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP,
+                reinterpret_cast<UINT_PTR>(g_appleKeysMenu), L"Apple Keys");
 
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_SLEEP,        L"Sleep / Busy Wait");
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_AUDIO_DECORR, L"Mono Helper");

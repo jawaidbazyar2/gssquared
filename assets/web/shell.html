@@ -208,7 +208,7 @@
           // Runtime is up; let the user click to start (audio gesture).
           runtimeReady = true;
           overlaySpinner.style.display = 'none';
-          overlayHint.textContent = 'Click to start';
+          overlayHint.innerHTML = 'Click to start<br>Left Option / Windows = Open Apple<br>Right Option/Windows = Close Apple';
           // After layout/paint, ask SDL to re-read CSS (same as a window resize).
           requestAnimationFrame(function () {
             requestAnimationFrame(function () {
