@@ -37,6 +37,8 @@
 #include "util/mount.hpp"
 #include "util/strndup.h"
 #include "ModalContainer.hpp"
+#include "PackDiskBrowser.hpp"
+#include "util/Gs2Pack.hpp"
 #include "UIContext.hpp"
 #include "util/printf_helper.hpp"
 #include "util/MenuInterface.h"
@@ -120,6 +122,15 @@ static void menu_file_dialog_callback(void* userdata, const char* const* filelis
 }
 
 void OSD::open_file_dialog(storage_key_t key) {
+    if (gs2pack::active() != nullptr) {
+        mstack.stack.push(new PackDiskBrowser_t(&ui_ctx, ModalStyle, mstack, this, key));
+        computer->video_system->osd_control_panel_open = true;
+        return;
+    }
+    open_local_file_dialog(key);
+}
+
+void OSD::open_local_file_dialog(storage_key_t key) {
     static const SDL_DialogFileFilter filters[] = {
         { "Disk Images",  "do;po;woz;dsk;hdv;2mg;img;hda" },
         //{ "Partition Maps", "pmap" }, // this doesn't go here.
@@ -272,6 +283,11 @@ void bazfast_button_click(void *userdata) {
     };
 
     printf("unidisk button clicked\n");
+    if (gs2pack::active() != nullptr) {
+        osd->open_file_dialog(data->key);
+        delete data;
+        return;
+    }
 #if defined(__EMSCRIPTEN__)
     web_open_file_dialog(file_dialog_callback, userdata,
         ".po,.dsk,.hdv,.2mg,.img,.hda,.pmap,.iso");
@@ -561,7 +577,8 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
         // (prompt-to-switch). Ignore them here so we do not try to mount them.
         if (event.drop.data) {
             const ConfigFileKind kind = detect_config_file_kind(event.drop.data);
-            if (kind == ConfigFileKind::Gs2 || kind == ConfigFileKind::Settings) {
+            if (kind == ConfigFileKind::Gs2 || kind == ConfigFileKind::Settings
+                || kind == ConfigFileKind::Pack) {
                 return true;
             }
         }

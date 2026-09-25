@@ -5,4 +5,8 @@
     <icon name="application-x-gs2-config"/>
     <glob pattern="*.gs2"/>
   </mime-type>
+  <mime-type type="application/x-gs2-pack">
+    <comment>GS2 Pack</comment>
+    <glob pattern="*.gs2pack"/>
+  </mime-type>
 </mime-info>

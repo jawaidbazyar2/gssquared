@@ -167,11 +167,13 @@ An equivalent query form is `gssquared://open?config=https%3A%2F%2F…`. Do **no
 * Same switch-while-running modal as local configs.
 * Windows and Linux protocol registration (registry / `.desktop` `x-scheme-handler`), not only macOS `CFBundleURLTypes`.
 
-## `.gs2pack` (future)
+## `.gs2pack`
 
-A **pack** is one file that holds a machine config plus its disk images. Extension **`.gs2pack`**. Format is a **zip** (one file on every OS — no macOS directory-package illusion required).
+A **pack** is one file that holds a machine config plus its disk images. Extension **`.gs2pack`**. Opening it (Finder, Explorer, Steam, or the CLI) launches that machine with those disks mounted. System Select is skipped. Loose `.gs2` stays the editable text format. A pack is “this machine and its disks, as one document.”
 
-Typical layout inside the zip:
+Format is **uncompressed POSIX ustar** (the `ustar` tar dialect: magic `ustar`, version `00`). One file on every OS — no macOS directory-package illusion required. Stock `tar` lists and extracts it (`tar -tf pack.gs2pack`). Composing with stock `tar` must pass `--format ustar`. A plain `tar -cf` writes pax on macOS and Windows and GNU tar on Linux; those extended headers are not a pack.
+
+Typical members:
 
 ```
 machine.gs2
@@ -179,39 +181,49 @@ disks/boot.woz
 disks/data.hdv
 ```
 
-Loose `.gs2` stays the editable text format. A pack is “this machine and its disks, as one document.”
+ustar limits a member name to 100 bytes plus a 155-byte prefix. `machine.gs2` and `disks/boot.woz` fit. Each member is a 512-byte header, then the raw bytes, then padding to 512. The header checksum covers the header only. Two 512-byte zero blocks end the archive. Disk-image members are stored raw. Their length does not change when the guest writes.
 
 ### Runtime: extract, mount, rewrite
 
-GS2 cannot mount zip members. Floppies write back with `fopen`; SmartPort / `.hdv` write **through** to a real file.
+GSSquared mounts the temporary-extracted archive members. Floppies write back with `fopen`; SmartPort / `.hdv` write **through** to a real file (or to MEMFS). Gzip is not part of the format and is not accepted.
 
-1. Open the `.gs2pack` path (Finder / Steam / CLI).
-2. Extract to a **local** working directory (not the cloud folder).
+1. Open the `.gs2pack` path.
+2. Extract to a **local** working directory (not the cloud folder) Local disk or MEMFS.
 3. Launch `machine.gs2` from that tree. Relative `image =` paths work as they do today.
-4. On power-off, config switch, or app quit: rewrite the zip if anything changed (always rewriting is fine — packs are ≤200 MB).
+4. On power-off, config switch, or app quit: rewrite the ustar if anything changed (always rewriting is fine — packs are ≤200 MB).
 5. Atomic replace: write `name.gs2pack.tmp`, then `rename` over the old file.
 
-Do not update the zip per sector. Do not extract into a synced folder.
+Do not update the archive per sector. Do not extract into a synced folder - extract into a TEMP folder.
+
+### In-place reader (RP2350)
+
+An RP2350-class reader (520 KB SRAM, no PSRAM on Pico 2) treats the ustar as the filesystem and does not extract. A member starts on a 512-byte boundary. A disk image that cannot grow is a fixed span after its header, so a sector write is a write to that offset on the SD card. The pack itself is uncompressed ustar. GSSquared on desktop and web still extracts and rewrites; it does not poke the archive.
+
+So, this works for pretty much any image - except .WOZ where tracks are added. read/write to .WOZ where all tracks are already specified and stored should work fine.
+
+### Composing a pack as a stream
+
+A writer that already knows each member’s size can emit the archive in one forward pass: 512-byte header, member bytes, pad to 512, and two zero blocks at the end. A generated `machine.gs2` is small enough to finish in memory, count, and then emit. Catalog disk blobs already have sizes. No temp file is required to assemble the pack. arQyv’s compose path is in [arqyv-gs2pack.md](arqyv-gs2pack.md).
 
 ### Cloud-backed store (Steam as the model)
 
 Steam Cloud (and the same idea on iCloud / Dropbox / OneDrive) syncs **files in a known folder**, usually at session boundaries (Steam) or continuously (generic cloud).
 
-**Only the `.gs2pack` zip lives in the synced tree.** The extract cache is machine-local (`~/Library/Caches/…`, `%LOCALAPPDATA%`, …). If the workdir is inside the cloud folder, every HD write-through becomes a sync event and conflict bait.
+**Only the `.gs2pack` lives in the synced tree.** The extract cache is machine-local (`~/Library/Caches/…`, `%LOCALAPPDATA%`, …). If the workdir is inside the cloud folder, every HD write-through becomes a sync event and conflict bait.
 
-That matches Steam AutoCloud: download zips before launch, upload zips after exit. GS2 packs on quit so the file Steam uploads is complete. A crash loses work since the last successful rewrite — same as any other document; periodic rewrite is optional, not required for size.
+That matches Steam AutoCloud: download the pack before launch, upload the pack after exit. GS2 packs on quit so the file Steam uploads is complete. A crash loses work since the last successful rewrite — same as any other document; periodic rewrite is optional, not required for size.
 
-**Conflicts** are last-write-wins on a binary blob. Two machines that both extract, play, and pack will drop one session. Acceptable if we treat a pack like a save file. Optional later: notice the zip’s mtime/size changed while we had it open, and warn before overwriting.
+**Conflicts** are last-write-wins on a binary blob. Two machines that both extract, play, and pack will drop one session. Acceptable if we treat a pack like a save file. Optional later: notice the pack’s mtime/size changed while we had it open, and warn before overwriting.
 
 **Quota:** Steam Cloud is **per app, per user**, set by us in Steamworks (`Byte quota per user`), not something a player can buy more of. Valve’s published ceiling is on the order of **10 GB** per game (and a 100 MiB cap on a single `FileWrite`; larger packs need the stream write API or AutoCloud). A few 200 MB packs still eat that budget fast.
 
 **Intended product split**
 
 * **Steam** distributes **GSSquared** (the player). Steam Cloud on that app, if enabled at all, is tiny — settings, not a pack library. Players cannot buy more Steam Cloud, and one 10 GB quota cannot be “my whole disk collection.”
-* **[arqyv.net](https://arqyv.net)** is the paid **collection**: subscribe for cloud-backed `.gs2pack` storage and the same library on every computer. Open via `gssquared:https://arqyv.net/…` (or an in-app signed-in browser). Same extract / mount / rewrite rules; the zip that arqyv stores is the document. Curated `… Settings.txt` packs are the current arqyv shape; `.gs2pack` is the later unit.
-* Optional extra channel: a **third-party Steam title** that *is* one pack (“Choplifter for GSSquared”) can use *that* app’s Steam Cloud for its own zip. DLC on the GS2 app does not get a separate quota.
+* **[arqyv.net](https://arqyv.net)** is the paid **collection**: subscribe for cloud-backed `.gs2pack` storage and the same library on every computer. Open via `gssquared:https://arqyv.net/…` (or an in-app signed-in browser). Same extract / mount / rewrite rules; the ustar that arqyv stores is the document. Curated `… Settings.txt` packs are the current arqyv shape; `.gs2pack` is the later unit.
+* Optional extra channel: a **third-party Steam title** that *is* one pack (“Choplifter for GSSquared”) can use *that* app’s Steam Cloud for its own pack. DLC on the GS2 app does not get a separate quota.
 
-`gssquared:` downloads can land as a cache `.gs2pack` (zip the fetched config + images) and then follow the same extract / launch / rewrite path. If that cache is not in a cloud folder, nothing uploads until the user saves a copy there.
+`gssquared:` downloads can land as a cache `.gs2pack` (ustar of the fetched config + images) and then follow the same extract / launch / rewrite path. If that cache is not in a cloud folder, nothing uploads until the user saves a copy there.
 
 ## Phasing
 
@@ -223,6 +235,6 @@ That matches Steam AutoCloud: download zips before launch, upload zips after exi
 | Windows / Linux `.gs2` file-type and document icon | Now |
 | Disk-image UTIs + Finder-open-to-mount policy | Later |
 | `gssquared:` URL fetch + cache + confirm | Later |
-| `.gs2pack` zip (extract / mount / atomic rewrite) | Later |
-| Cloud folder / Steam AutoCloud (zip only in the synced tree) | Later |
+| `.gs2pack` ustar (extract / mount / atomic rewrite, Simple Browser) | Now |
+| Cloud folder / Steam AutoCloud (the pack only in the synced tree) | Later |
 | Windows / Linux `gssquared:` protocol registration | Later |

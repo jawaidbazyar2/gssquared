@@ -46,6 +46,7 @@ enum class ConfigFileKind {
     Gs2,
     Settings,
     Profiles,
+    Pack,
     Unknown,
 };
 
@@ -117,6 +118,7 @@ public:
 
     const SystemConfig_t& config() const { return config_data_; }
     const std::vector<disk_mount_t>& mounts() const { return mounts_; }
+    void set_mounts(std::vector<disk_mount_t> mounts) { mounts_ = std::move(mounts); }
     const std::vector<connection_config_t>& connections() const { return connections_; }
     const std::vector<card_extra_t>& card_extras() const { return card_extras_; }
     const std::vector<std::string>& warnings() const { return warnings_; }

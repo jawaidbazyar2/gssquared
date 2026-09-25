@@ -6,14 +6,17 @@
 #include "util/TextRenderer.hpp"
 #include "util/SystemConfig.hpp"
 #include "util/SystemSettings.hpp"
+#include "util/Gs2Pack.hpp"
 #include "AssetAtlas.hpp"
 #include "SystemButton.hpp"
 #include "Button.hpp"
 #include "version.h"
 #include "platform-specific/menu.h"
 
-#include <iostream>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 
 SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     : vs(vs), aa(aa) {
@@ -102,10 +105,34 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     for (const auto& entry : SystemSettings::instance().display_entries()) {
         auto loaded = std::make_unique<SystemConfig>();
         std::string error;
-        if (!loaded->load(entry.path, error)) {
+        std::filesystem::path pack_config;
+        if (gs2pack::is_pack_path(entry.path)) {
+            std::string bytes;
+            if (!gs2pack::read_member(entry.path, "machine.gs2", bytes, error)) {
+                std::cerr << "SelectSystem: skip recent config '" << entry.path
+                          << "': " << error << std::endl;
+                continue;
+            }
+            pack_config = std::filesystem::temp_directory_path() / "gs2pack-recent-machine.gs2";
+            std::ofstream out(pack_config, std::ios::binary | std::ios::trunc);
+            out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+            if (!out) {
+                std::cerr << "SelectSystem: skip recent config '" << entry.path
+                          << "': failed to stage machine.gs2\n";
+                continue;
+            }
+        }
+        const std::string load_path = pack_config.empty() ? entry.path : pack_config.string();
+        if (!loaded->load(load_path, error)) {
             std::cerr << "SelectSystem: skip recent config '" << entry.path
                       << "': " << error << std::endl;
+            std::error_code ec;
+            std::filesystem::remove(pack_config, ec);
             continue;
+        }
+        if (!pack_config.empty()) {
+            std::error_code ec;
+            std::filesystem::remove(pack_config, ec);
         }
 
         platform_info* platform = get_platform(loaded->config().platform_id);

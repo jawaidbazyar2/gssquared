@@ -514,6 +514,8 @@ static bool test_detect_config_kind() {
     CHECK(detect_config_file_kind("choplifter settings.TXT") == Kind::Settings, "detect settings icase");
     CHECK(detect_config_file_kind("Profiles.txt") == Kind::Profiles, "detect Profiles.txt");
     CHECK(detect_config_file_kind("bad.txt") == Kind::Unknown, "detect unknown");
+    CHECK(detect_config_file_kind("Demo.gs2pack") == Kind::Pack, "detect .gs2pack");
+    CHECK(detect_config_file_kind("Demo.GS2PACK") == Kind::Pack, "detect .gs2pack icase");
     return true;
 }
 

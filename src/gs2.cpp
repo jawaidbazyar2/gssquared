@@ -39,6 +39,7 @@
 #include "util/mount.hpp"
 #include "util/Connections.hpp"
 #include "util/SystemConfig.hpp"
+#include "util/Gs2Pack.hpp"
 #include "util/SystemSettings.hpp"
 #include "ui/OSD.hpp"
 #if defined(__EMSCRIPTEN__)
@@ -695,6 +696,9 @@ struct GS2AppState {
     std::string pending_config_path;
     bool switch_after_halt = false;
 
+    /** Extracted .gs2pack. Rewritten when this session ends. */
+    std::unique_ptr<gs2pack::Session> pack;
+
     // System selection / config editor
     SelectSystem *select_system = nullptr;
     EditSystem *edit_system = nullptr;
@@ -715,14 +719,32 @@ struct GS2AppState {
 void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_config, int builtin_system_id);
 
 static bool apply_system_config_file(GS2AppState *state, const std::string& path, std::string& error_out) {
+    std::string config_path = path;
+    std::unique_ptr<gs2pack::Session> extracted;
+    if (gs2pack::is_pack_path(path)) {
+        extracted = std::make_unique<gs2pack::Session>();
+        if (!gs2pack::extract(path, *extracted, error_out)) {
+            extracted.reset();
+            return false;
+        }
+        config_path = gs2pack::machine_gs2_path(*extracted);
+    }
     state->loaded_config = std::make_unique<SystemConfig>();
-    if (!state->loaded_config->load(path, error_out)) {
+    if (!state->loaded_config->load(config_path, error_out)) {
         state->loaded_config.reset();
+        if (extracted) {
+            gs2pack::cleanup(*extracted);
+        }
         return false;
     }
     state->disks_to_mount = state->loaded_config->mounts();
     state->platform_id = state->loaded_config->config().platform_id;
     SystemSettings::instance().record_use(path);
+    if (extracted) {
+        extracted->config = state->loaded_config.get();
+        state->pack = std::move(extracted);
+        gs2pack::set_active(state->pack.get());
+    }
     return true;
 }
 
@@ -731,7 +753,8 @@ static bool is_launchable_config_path(const char *path) {
         return false;
     }
     const ConfigFileKind kind = detect_config_file_kind(path);
-    return kind == ConfigFileKind::Gs2 || kind == ConfigFileKind::Settings;
+    return kind == ConfigFileKind::Gs2 || kind == ConfigFileKind::Settings
+        || kind == ConfigFileKind::Pack;
 }
 
 static bool launch_config_and_emulate(GS2AppState *state, const std::string& path,
@@ -770,12 +793,21 @@ static void request_open_config(GS2AppState *state, const char *path) {
             return;
         }
         std::string error;
-        SystemConfig probe;
-        if (!probe.load(path, error)) {
-            std::string diag = "Failed to load system config '" + std::string(path) + "':\n" + error;
-            std::cerr << diag << "\n";
-            osd->set_heads_up_message("Failed to load config", 180);
-            return;
+        if (gs2pack::is_pack_path(path)) {
+            if (!gs2pack::validate(path, error)) {
+                std::string diag = "Failed to open pack '" + std::string(path) + "':\n" + error;
+                std::cerr << diag << "\n";
+                osd->set_heads_up_message("Failed to open pack", 180);
+                return;
+            }
+        } else {
+            SystemConfig probe;
+            if (!probe.load(path, error)) {
+                std::string diag = "Failed to load system config '" + std::string(path) + "':\n" + error;
+                std::cerr << diag << "\n";
+                osd->set_heads_up_message("Failed to load config", 180);
+                return;
+            }
         }
         const std::string path_copy(path);
         osd->prompt_launch_config(path_copy, [state, path_copy]() {
@@ -819,6 +851,13 @@ static void system_config_dialog_callback(void *userdata, const char *const *fil
         return;
     }
 
+    if (edit_mode && gs2pack::is_pack_path(filelist[0])) {
+        std::string diag = "A .gs2pack launches a machine. Use Launch Config to open it.";
+        std::cerr << diag << "\n";
+        system_diag(diag.data());
+        return;
+    }
+
     SystemSettings::instance().remember_file_dialog_selection(FileDialogKind::Config, filelist[0]);
 
     std::string error;
@@ -841,6 +880,7 @@ static void system_config_dialog_callback(void *userdata, const char *const *fil
 static void open_system_config_dialog(GS2AppState *state, bool edit_mode = false) {
     static const SDL_DialogFileFilter filters[] = {
         { "GS2 System Config (.gs2)", "gs2" },
+        { "GS2 Pack (.gs2pack)", "gs2pack" },
         { "Profiles Settings (.txt)", "txt" },
         { "All files", "*" }
     };
@@ -848,7 +888,7 @@ static void open_system_config_dialog(GS2AppState *state, bool edit_mode = false
     auto *data = new open_config_dialog_data_t{ state, edit_mode };
 
 #if defined(__EMSCRIPTEN__)
-    web_open_file_dialog(system_config_dialog_callback, data, ".gs2");
+    web_open_file_dialog(system_config_dialog_callback, data, ".gs2,.gs2pack");
 #else
     const std::string last_path =
         SystemSettings::instance().get_file_dialog_default_location(FileDialogKind::Config);
@@ -1292,10 +1332,41 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     state->phase = PHASE_EMULATION;
 }
 
+/** Flush guest writes into the work tree, then atomically replace the .gs2pack. */
+static void finish_pack_session(GS2AppState *state, computer_t *computer) {
+    if (!state->pack) {
+        return;
+    }
+    if (computer && computer->mounts) {
+        std::vector<storage_key_t> dirty;
+        for (const drive_info_t& drive : computer->mounts->get_all_drives()) {
+            if (drive.status.is_modified) {
+                dirty.push_back(drive.key);
+            }
+        }
+        for (storage_key_t key : dirty) {
+            computer->mounts->unmount_media(key, SAVE_AND_UNMOUNT);
+        }
+    }
+    std::string error;
+    if (!gs2pack::rewrite(*state->pack, error)) {
+        std::string diag = "Failed to save pack '" + state->pack->source_path + "':\n" + error
+            + "\nWorking files left in " + state->pack->work_dir;
+        std::cerr << diag << "\n";
+        system_diag(diag.data());
+        gs2pack::set_active(nullptr);
+        state->pack.reset();
+        return;
+    }
+    gs2pack::cleanup(*state->pack);
+    state->pack.reset();
+}
+
 /*
  * Clean up emulation state and transition to system select or exit.
  */
 void transition_to_shutdown(GS2AppState *state) {
+    finish_pack_session(state, state->computer);
     computer_t *computer = state->computer;
 
     // save cpu trace buffer, then exit.
@@ -1473,8 +1544,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     gs2_app_values.no_quit_confirm = true;
                     break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [file.gs2|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm]\n";
+                    std::cerr << "Usage: " << argv[0] << " [file.gs2|file.gs2pack|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm]\n";
                     std::cerr << "  file.gs2|*Settings.txt: load system configuration from a .gs2 TOML file\n";
+                    std::cerr << "  file.gs2pack: extract a machine and its disks, then launch machine.gs2\n";
                     std::cerr << "        or Neil Profiles Settings.txt file, skip the system-selector UI,\n";
                     std::cerr << "        and auto-launch that system.\n";
                     std::cerr << "        Closing the emulator window then quits the app rather\n";
@@ -1896,6 +1968,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             // SDL objects and can hang on an assertion dialog.
             const bool exit_app = state->auto_launched || gs2_app_values.force_app_exit;
             if (exit_app) {
+                finish_pack_session(state, computer);
                 std::string tracepath;
                 Paths::calc_docs(tracepath, "gssquared-trace.bin");
                 computer->cpu->trace_buffer->save_to_file(tracepath);

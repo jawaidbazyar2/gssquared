@@ -46,6 +46,18 @@
                 <string>com.bazyar.gs2.config</string>
             </array>
         </dict>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>GS2 Pack</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.bazyar.gs2.pack</string>
+            </array>
+        </dict>
     </array>
     <key>UTExportedTypeDeclarations</key>
     <array>
@@ -66,6 +78,23 @@
                 <key>public.filename-extension</key>
                 <array>
                     <string>gs2</string>
+                </array>
+            </dict>
+        </dict>
+        <dict>
+            <key>UTTypeIdentifier</key>
+            <string>com.bazyar.gs2.pack</string>
+            <key>UTTypeDescription</key>
+            <string>GS2 Pack</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>public.data</string>
+            </array>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>gs2pack</string>
                 </array>
             </dict>
         </dict>

@@ -523,7 +523,7 @@ add_library(gs2_ui src/ui/AssetAtlas.cpp src/ui/Container.cpp src/ui/DiskII_Butt
     src/ui/FadeButton.cpp src/ui/Clipboard.cpp src/ui/ScreenshotWriter.cpp src/ui/TextInput.cpp src/ui/SelectSystem.cpp src/ui/SystemButton.cpp
     src/ui/LabeledButton.cpp src/ui/FaceButton.cpp src/ui/FadeContainer.cpp src/ui/SlotButton.cpp src/ui/StatusMessage.cpp src/ui/DrivesHUD.cpp
     src/ui/SpeedSelect.cpp src/ui/HoverControls.cpp src/ui/DisplaySelect.cpp src/ui/DrivesOSD.cpp src/ui/HD20SC_Button.cpp
-    src/ui/DirtyDiskSave.cpp src/ui/QuitModal.cpp src/ui/LaunchConfigModal.cpp src/ui/ScrollBar.cpp src/ui/WrapContainer.cpp
+    src/ui/DirtyDiskSave.cpp src/ui/QuitModal.cpp src/ui/LaunchConfigModal.cpp src/ui/PackDiskBrowser.cpp src/ui/ScrollBar.cpp src/ui/WrapContainer.cpp
     src/ui/StorageButtonFactory.cpp src/ui/SlotsPanel.cpp src/ui/SystemBadge.cpp src/ui/ConfigSelectors.cpp
     src/ui/EditSystem.cpp
     src/ui/SerialPortButton.cpp src/ui/SerialPortsOSD.cpp
@@ -619,6 +619,7 @@ add_library(gs2_systemconfig
     src/util/ConfigDraft.cpp
     src/util/SystemSettings.cpp
     src/util/uuid.cpp
+    src/util/Gs2Pack.cpp
 )
 target_link_libraries(gs2_systemconfig PUBLIC gs2_paths gs2_device_info gs2_toml)
 
@@ -795,6 +796,7 @@ if(NOT EMSCRIPTEN)
     add_subdirectory(apps/mousebugtest)
 
     add_subdirectory(apps/systemconfigtest)
+    add_subdirectory(apps/gs2packtest)
 
     add_subdirectory(apps/ssgputexttest)
 endif()

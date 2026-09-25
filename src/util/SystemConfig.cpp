@@ -811,6 +811,9 @@ ConfigFileKind detect_config_file_kind(const std::string& path) {
     if (Paths::ends_with_icase(basename, "Settings.txt")) {
         return ConfigFileKind::Settings;
     }
+    if (Paths::ends_with_icase(basename, ".gs2pack")) {
+        return ConfigFileKind::Pack;
+    }
     if (Paths::ends_with_icase(basename, ".gs2")) {
         return ConfigFileKind::Gs2;
     }
@@ -829,6 +832,9 @@ bool SystemConfig::load(const std::string& path, std::string& error_out) {
             return load_settings(path, error_out);
         case ConfigFileKind::Profiles:
             error_out = "Profiles.txt is a catalog file, not a system configuration";
+            return false;
+        case ConfigFileKind::Pack:
+            error_out = "A .gs2pack must be extracted before it can be loaded";
             return false;
         case ConfigFileKind::Unknown:
             error_out = "Not a .gs2 or Settings.txt file";

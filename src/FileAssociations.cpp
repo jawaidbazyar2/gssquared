@@ -86,6 +86,16 @@ void register_gs2_file_association() {
     changed |= write_reg_sz(L"Software\\Classes\\GSSquared.gs2\\shell\\open\\command",
                             nullptr, command);
 
+    const std::wstring pack_icon = quoted + L",0";
+    changed |= write_reg_sz(L"Software\\Classes\\.gs2pack", nullptr, L"GSSquared.gs2pack");
+    changed |= write_reg_sz(L"Software\\Classes\\.gs2pack", L"Content Type",
+                            L"application/x-gs2-pack");
+    changed |= write_reg_sz(L"Software\\Classes\\GSSquared.gs2pack", nullptr, L"GS2 Pack");
+    changed |= write_reg_sz(L"Software\\Classes\\GSSquared.gs2pack\\DefaultIcon", nullptr,
+                            pack_icon);
+    changed |= write_reg_sz(L"Software\\Classes\\GSSquared.gs2pack\\shell\\open\\command",
+                            nullptr, command);
+
     if (changed) {
         SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     }
@@ -111,6 +121,10 @@ constexpr const char *kMimeXml =
     "    <comment>GS2 System Configuration</comment>\n"
     "    <icon name=\"application-x-gs2-config\"/>\n"
     "    <glob pattern=\"*.gs2\"/>\n"
+    "  </mime-type>\n"
+    "  <mime-type type=\"application/x-gs2-pack\">\n"
+    "    <comment>GS2 Pack</comment>\n"
+    "    <glob pattern=\"*.gs2pack\"/>\n"
     "  </mime-type>\n"
     "</mime-info>\n";
 
@@ -192,7 +206,7 @@ std::string desktop_entry(const std::string& exe) {
            "\" %f\n"
            "GenericName=GSSquared\n"
            "Categories=Game;\n"
-           "MimeType=application/x-gs2-config;\n"
+           "MimeType=application/x-gs2-config;application/x-gs2-pack;\n"
            "Terminal=false\n";
 }
 
@@ -232,6 +246,7 @@ void register_gs2_file_association() {
         run_quiet("update-mime-database \"" + (data / "mime").string() + "\"");
     }
     run_quiet("xdg-mime default GSSquared.desktop application/x-gs2-config");
+    run_quiet("xdg-mime default GSSquared.desktop application/x-gs2-pack");
 }
 
 #endif

@@ -7,5 +7,5 @@ Comment=A complete Apple II series emulator
 Exec=GSSquared %f
 GenericName=GSSquared
 Categories=Game;
-MimeType=application/x-gs2-config;
+MimeType=application/x-gs2-config;application/x-gs2-pack;
 Terminal=false
