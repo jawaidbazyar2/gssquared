@@ -357,7 +357,23 @@ C493:FF
 C492:FF
 ```
 
-Oh, it says C490-C493 are for talking to the speech chip. I never did figure out what memory locations are used on a regular mockingboard for that..
+In Mockingboard-compatible mode the primary SSI-263 write decode occupies slot
+page offsets `$40-$7F` (`$C440-$C47F` in slot 4). A2-A0 select SSI registers
+0-7, with 4-7 aliasing the filter-frequency latch. These writes also reach the
+mirrored `$Cx00` VIA; the speech decode is a side effect, not a replacement for
+the VIA decode.
+
+Mockingboard-mode reads continue to return the mirrored VIA. SSI A/!R phoneme
+completion is wired to CA1 of the VIA at `$Cx80`; when the SSI duration mode
+enables interrupts and PCR selects the falling edge, completion latches
+IFR.CA1 and the VIA applies its normal IER/IRQ gating. Accessing that VIA's
+handshaking Port A register, or explicitly writing IFR.CA1, clears the flag.
+Direct D7 polling is a Phasor-native feature and is not exposed by the
+Mockingboard card.
+
+The current audio backend is an approximate three-formant synthesizer.
+Completion advances with generated audio samples, rather than cycle-exact
+SSI timing. Hardware validation and full Phasor mode remain outstanding.
 
 It seems like you can write to both AYs at the same time. So each 6522 controls a left/right pair? Interesting.
-Unclear what C0CD is. 
+Unclear what C0CD is.
