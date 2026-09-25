@@ -55,7 +55,7 @@ Enable Atari Joyport mode by using the menu, the OSD Buttons, or by pressing F6 
 
 Joyport emulation only works with Gamepads, not the Mouse.
 
-The Gamepad D-PAD (+ shaped control) is what is used for the Atari Joystick - NOT the regular joystick. 
+The Gamepad D-PAD (+ shaped control) is what is used for the Atari Joystick - NOT the regular joystick. The A and B face buttons (Xbox A/B, Switch B/A, PlayStation Cross/Circle) both act as the Atari fire button. 
 
 Joyport can use one or two host gamepads. **Settings → Game Controller → Joyport Controller Select** emulates the physical switch on the Sirius box (grayed out unless Joyport mode is active):
 
