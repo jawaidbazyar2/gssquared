@@ -4,9 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef _WIN32
-// Windows implementation of strndup
-static inline char* strndup(const char* s, size_t n) {
+// Use a project prefix because newer Windows runtimes also declare strndup.
+static inline char* gs2_strndup(const char* s, size_t n) {
     size_t len = strnlen(s, n);
     char* dup = (char*)malloc(len + 1);
     if (dup) {
@@ -15,6 +14,4 @@ static inline char* strndup(const char* s, size_t n) {
     }
     return dup;
 }
-#endif
-
-#endif // STRNDUP_H 
+#endif // STRNDUP_H
