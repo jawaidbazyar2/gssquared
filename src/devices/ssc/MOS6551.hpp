@@ -383,9 +383,13 @@ private:
         }
         rx_data = data;
         rx_in_progress = true;
-        /* Immediate: a stalled RX event leaves CONNECT unread and ProTERM
-         * sitting on "waiting for connect". TX stays baud-paced. */
-        rx_complete();
+        uint64_t cycles = get_cycles_per_char();
+        if (cycles > 0 && c14m) {
+            c14m->schedule_after(C14mTicks{cycles}, rx_complete_callback, timer_base_id + 1, this);
+        } else {
+            /* Baud 0, above ACIA_MAX_TIMED_BAUD, or no rail — same as TX. */
+            rx_complete();
+        }
     }
 
     void start_tx_shift(uint8_t data) {

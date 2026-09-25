@@ -1020,9 +1020,16 @@ class Z85C30 {
             
             registers[channel].char_rx = data;
             registers[channel].rx_in_progress = true;
-            /* Complete immediately. A pending RX event that never fires leaves
-             * CONNECT sitting in the chip and ProTERM stuck on "waiting for connect". */
-            rx_complete(channel);
+
+            uint64_t cycles_per_char = get_cycles_per_char(channel, false);
+            if (cycles_per_char > 0 && c14m) {
+                c14m->schedule_after(C14mTicks{cycles_per_char}, rx_complete_callback, rx_timer_id[channel], this);
+                if (SCDEBUG) printf("SCC: Ch %c RX scheduled for %llu cycles (baud: %.2f)\n",
+                    ch_name(channel), cycles_per_char, baud_rate[channel]);
+            } else {
+                /* Baud 0, above MAX_TIMED_BAUD, or no rail — same as TX. */
+                rx_complete(channel);
+            }
         }
 
         // Static callback wrappers for the 14M rail
