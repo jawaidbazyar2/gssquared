@@ -8,9 +8,28 @@ A loose `.gs2` file is still the format you edit by hand or from the config edit
 
 ---
 
+## The Problem GS2 Packs solve
+
+There are many places on the net where users obtain disk images to run on Apple IIs or on Apple II emulators. One of the big ones, the Asimov archive, has a large collection, but the disk images are by themselves and lack metadata:
+
+1. it's not clear what type of machine the images will run on
+1. it's not always clear what type of disk the media is (5.25, 3.5, hard disk)
+
+While most titles run on an Apple IIe, some don't run on enhanced, while others require enhanced.
+
+Figuring out the right machine / settings can be a frustrating experience for users.
+
+While some disk image formats have metadata fields, these are typically not populated, nor is there any current standard for what metadata could go in them.
+
+The metadata we need for fullest use of legacy software is:
+
+1. Machine type
+1. Machine configuration (e.g., how much memory, what cards, what slots they are in)
+1. disk media, including which media is the intial boot media, and what drives the media go in
+
 ## Purpose and use cases
 
-Use a pack when the thing you want to keep or hand to someone is **a machine together with its media**, as one file.
+Use a pack when the thing you want to keep or hand to someone is **a machine together with its media**, bundled as one file.
 
 * **Launch a ready-made machine.** Double-click the pack, choose it with **File → Launch Config…**, or pass the path on the [command line](CommandLine.md). GSSquared boots `machine.gs2` and mounts the images it names.
 
