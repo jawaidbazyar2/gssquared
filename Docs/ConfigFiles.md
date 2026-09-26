@@ -15,6 +15,8 @@ This guide is written for people who want to **create or edit their own configs*
 
 Both formats describe the same thing internally. GS2 converts either one into the same machine setup at boot time.
 
+To keep a `.gs2` and the disk images it mounts in a single file, put them in a [GS2 pack](Gs2Pack.md) (`.gs2pack`). The config inside that archive is still a `.gs2`, named `machine.gs2`.
+
 There is also **`Profiles.txt`**, which is a **catalog** listing available profiles in a pack. You cannot boot from `Profiles.txt` directly — open a specific `… Settings.txt` file (or let the Profiles browser pick one for you).
 
 ---

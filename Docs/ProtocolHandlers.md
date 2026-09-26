@@ -1,8 +1,8 @@
 # File types and URL protocols
 
-How GSSquared is opened from the host: Finder / Explorer, drag-and-drop, the command line, and (later) web links. Implementation notes live here; user-facing launch steps are in [Creating Custom System Configs](ConfigEditor.md) and [Writing Config Files Manually](ConfigFiles.md).
+How GSSquared is opened from the host: Finder / Explorer, drag-and-drop, the command line, and (later) web links. Implementation notes live here; user-facing launch steps are in [Creating Custom System Configs](ConfigEditor.md) and [Writing Config Files Manually](ConfigFiles.md). The `.gs2pack` file format is in [GS2 Packs](Gs2Pack.md).
 
-**Windows:** double-clicking a `.gs2` while GSSquared is already running starts a **second process** (the path goes to `argv`). macOS delivers the open to the existing instance. Disk-image associations and the `gssquared:` URL scheme are [planned](Roadmap.md), not shipped.
+**Windows:** double-clicking a `.gs2` while GSSquared is already running starts a **second process** (the path goes to `argv`). macOS delivers the open to the existing instance. A `gssquared:https://…/name.gs2pack` link confirms, downloads that one pack, and launches it. Disk-image associations, a `.gs2` or Settings URL, and sending a save back to arQyv are [planned](Roadmap.md), not shipped.
 
 Roadmap 1.0 lists “file type and URL associations.” This document is the spec for that work.
 
@@ -16,7 +16,7 @@ SDL3 does **not** have a separate “document open” event. On macOS, Finder Op
 | Explorer / file-manager double-click of `.gs2` | Not a drop. The shell starts `GSSquared` with the path in `argv`. A second click while GS2 is already running starts a **second process** (unlike macOS, which delivers `DROP_FILE` to the existing instance). |
 | Drag onto the GS2 window | `DROP_BEGIN` → `DROP_POSITION` (OSD hover) → `DROP_FILE` with a window → `DROP_COMPLETE`. |
 | Terminal `GSSquared file.gs2` | Not a drop. [`src/gs2.cpp`](../src/gs2.cpp) `SDL_AppInit` reads `argv` and auto-launches. |
-| Click `gssquared:https://…` (future) | Same `DROP_FILE`, but `event.drop.data` is the **URL string**, not a local path. |
+| Click `gssquared:https://…/name.gs2pack` | macOS: `DROP_FILE` whose data is the URL string. Windows and Linux: the URL is `argv` (a second process, same as `.gs2`). |
 
 On macOS, SDL’s Cocoa delegate maps:
 
@@ -129,45 +129,72 @@ Wanted types include `.woz`, `.dsk`, `.do`, `.po`, `.2mg`, `.hdv`, `.img`, `.hda
 
 Finder Open of a disk image has **no hover target**. That needs an explicit policy, not the current “mount on the highlighted drive button” drop path. Candidates: first empty compatible drive, a drive picker, or (cold start) pick/last-used machine then mount. Until that policy exists, do not register disk types — an association that lands on System Select and does nothing is worse than no association.
 
-## URL protocol (future)
+## URL protocol
 
-A custom scheme is how a web page launches GS2. Finder suffix matching is irrelevant, which is why this is the path for `… Settings.txt` packs.
+A custom scheme is how a web page launches GS2. The shipped path is one `.gs2pack`. A `.gs2` or Settings URL is refused until the multi-file walk below.
 
 ### Scheme
 
-Register **`gssquared`** in `CFBundleURLTypes` (matches the app, low collision risk). Optional later alias: `gs2`.
+Register **`gssquared`** in macOS `CFBundleURLTypes`, Windows `HKCU\Software\Classes\gssquared` (`URL Protocol`), and the Linux desktop entry `x-scheme-handler/gssquared`. Optional later alias: `gs2`.
 
-Recommended form — our scheme, then a normal https config URL:
+Recommended form — our scheme, then a normal https pack URL:
 
 ```
-gssquared:https://example.com/pack/Choplifter%20Settings.txt
+gssquared:https://example.com/pack/Choplifter.gs2pack
 ```
 
-A page uses `<a href="gssquared:https://…">Play in GSSquared</a>`. The browser asks “Open GSSquared?” and Launch Services hands us the string.
+A page uses `<a href="gssquared:https://…">Play in GSSquared</a>`. The browser asks “Open GSSquared?” and the host hands us the string. macOS delivers it to the running instance as `DROP_FILE`. Windows and Linux start `GSSquared` with the URL in `argv`. A `file://` URL from a desktop `%u` field is decoded to a local path and opened as a document. A string that starts with `gssquared:` is not passed to `apply_system_config_file`.
 
 An equivalent query form is `gssquared://open?config=https%3A%2F%2F…`. Do **not** silently rewrite `gssquared://example.com/…` to https unless that rewrite is documented and stable.
 
 ### After the click
 
-1. `DROP_FILE` data is the full URL. Do not treat `gssquared:…` as a filesystem path.
-2. Parse out the https config URL.
-3. Prompt: “Download *N* files from example.com and launch?”
-4. Download the config into a cache directory.
-5. Walk `image =` (and Settings disk lines, and `.pmap` members). Resolve those paths against the **config URL’s directory**.
-6. Download each image next to the config, then launch as a local profile (same already-running modal as a local `.gs2`).
+1. The URL is `DROP_FILE` data (macOS) or `argv` (Windows and Linux). Do not treat `gssquared:…` as a filesystem path.
+2. Accept only `gssquared:https://` whose path ends in `.gs2pack`. Forward that https URL unchanged, query included, fragment dropped. Reject `http`, `file`, a bare `gssquared://host/…`, and anything that is not a pack.
+3. Prompt before any download. The prompt names the host and the pack filename. It does not display the query string. The machine title is inside the archive, so it is not known yet.
+4. HTTPS GET into the cache directory (below), then the existing extract-and-boot path. While a machine is already running, the download finishes first and the existing launch prompt walks dirty disks before the new pack boots. The config editor ignores the URL so a draft is not discarded.
 
-`detect_config_file_kind` still applies after download (basename ends with `.gs2` or `Settings.txt`).
+The later `.gs2` and `… Settings.txt` case still walks `image =` (and Settings disk lines, and `.pmap` members), resolves those paths against the config URL’s directory, and downloads each image with the same GET. That walk is not implemented. Those URLs show an error and do not download.
 
-### Must-haves before shipping the scheme
+### HTTPS GET
 
-* HTTPS only (or an explicit, documented exception).
-* Reject `file:`, unexpected schemes, and absolute image URLs off-host.
-* Size cap.
-* Confirm prompt before any download.
-* Same switch-while-running modal as local configs.
-* Windows and Linux protocol registration (registry / `.desktop` `x-scheme-handler`), not only macOS `CFBundleURLTypes`.
+Desktop downloads go through a platform module under `src/platform-specific/`, the same split as the menu and the macOS save dialog. The web player downloads with `fetch()` in the page.
+
+SDL_net stays the modem’s TCP and UDP layer. It has no HTTP and no TLS, so it is not this module.
+
+| Host | Call |
+|------|------|
+| macOS | `NSURLSession` (`src/platform-specific/macos/`) |
+| Windows | WinHTTP (`src/platform-specific/windows/`) |
+| Linux | libcurl (`src/platform-specific/linux/`) |
+
+The module streams the body to a file and forwards the https URL unchanged, query string included. It does not parse a credential or move one into a header. A public URL has none. A server that must authorize the GET puts a short-lived opaque query parameter on the URL it hands us. The module also surfaces the final status and the response header `X-GS2-Save-Token`, so that same response can carry a follow-on credential beside the body. GSSquared stores that header in a sidecar next to the cache pack and does not send it anywhere yet. arQyv’s launch and save tokens are in [arqyv-gs2pack.md](arqyv-gs2pack.md).
+
+Redirects are the stack’s. The app’s only rule is that every redirect target stays `https`.
+
+* **macOS.** `NSURLSession` will follow a redirect onto `http`, so the redirect delegate allows the proposed request only when its scheme is `https`.
+* **Windows.** WinHTTP follows redirects and already refuses an `https` to `http` downgrade.
+* **Linux.** Set `CURLOPT_FOLLOWLOCATION`, and set `CURLOPT_REDIR_PROTOCOLS_STR` to `https`.
+
+The final response must be status 200, and its body must be the document that was requested: the ustar for a `.gs2pack`, or the config or one disk image for the multi-file case. The 200 MB cap applies to that final response. A `Content-Length` over the cap fails before the body is read. A body that passes the cap mid-stream aborts the transfer.
+
+Write a partial file in the cache directory and `rename` it into place only after the response succeeds. Delete the partial on failure or cancel, so a killed transfer leaves nothing that looks like a pack. The cache is machine-local (`~/Library/Caches/…`, `%LOCALAPPDATA%`, `$XDG_CACHE_HOME` or `~/.cache`). The transfer runs off the frame loop so the confirm UI can cancel it. Certificate verification belongs to the platform stack.
+
+### Shipped for a pack URL
+
+* HTTPS only, including every redirect target.
+* Reject `http`, `file`, a bare `gssquared://host/…`, and a URL that is not a `.gs2pack`.
+* Size cap on the final response.
+* Confirm prompt before any download. The prompt names the host and the pack filename, not the query string. Cancel aborts the transfer and deletes the partial.
+* Same switch-while-running modal as local configs, after the download.
+* Protocol registration on macOS, Windows, and Linux.
+* `X-GS2-Save-Token` stored beside the cache pack. Upload is later.
+
+Still later: the multi-file `.gs2` / Settings walk, and sending the save token back.
 
 ## `.gs2pack`
+
+User-facing explanation of the format, `machine.gs2`, and how to open or build a pack is in [GS2 Packs](Gs2Pack.md). This section is the runtime contract.
 
 A **pack** is one file that holds a machine config plus its disk images. Extension **`.gs2pack`**. Opening it (Finder, Explorer, Steam, or the CLI) launches that machine with those disks mounted. System Select is skipped. Loose `.gs2` stays the editable text format. A pack is “this machine and its disks, as one document.”
 
@@ -234,7 +261,8 @@ That matches Steam AutoCloud: download the pack before launch, upload the pack a
 | `.gs2` Finder document icon | Now |
 | Windows / Linux `.gs2` file-type and document icon | Now |
 | Disk-image UTIs + Finder-open-to-mount policy | Later |
-| `gssquared:` URL fetch + cache + confirm | Later |
+| `gssquared:` pack download (confirm, platform HTTPS GET, cache, extract and launch) | Now |
 | `.gs2pack` ustar (extract / mount / atomic rewrite, Simple Browser) | Now |
+| `gssquared:` protocol registration (macOS, Windows, Linux) | Now |
+| `gssquared:` multi-file `.gs2` / Settings walk, and save-token upload | Later |
 | Cloud folder / Steam AutoCloud (the pack only in the synced tree) | Later |
-| Windows / Linux `gssquared:` protocol registration | Later |

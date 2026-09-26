@@ -17,7 +17,7 @@ Hover the **+** or **Edit…** tile to see a short description at the bottom of 
 
 From the System Select screen, use **File → Launch Config…**.
 
-Pick a `.gs2` or `… Settings.txt` file. Unlike **Edit...**, this loads the config and boots it immediately — it does not open the editor. The file dialog starts in `Documents/GSSquared/` (where shipped examples are copied on first run).
+Pick a `.gs2`, a `.gs2pack`, or `… Settings.txt` file. Unlike **Edit...**, this loads the config and boots it immediately — it does not open the editor. A `.gs2pack` is a machine plus its disks in one file; see [GS2 Packs](Gs2Pack.md). **Edit...** does not open a pack. The file dialog starts in `Documents/GSSquared/` (where shipped examples are copied on first run).
 
 Launch Config is only available when the machine is off (at the System Select screen).
 
@@ -30,7 +30,7 @@ On macOS, `.gs2` files are associated with GSSquared. Double-click one in Finder
 
 You can also drag a `.gs2` (or `… Settings.txt`) onto the GSSquared window while at System Select — same result as launching it.
 
-File types, Finder icons, and the planned `gssquared:` URL scheme are specified in [File types and URL protocols](ProtocolHandlers.md).
+File types, Finder icons, and the `gssquared:` pack URL are specified in [File types and URL protocols](ProtocolHandlers.md).
 
 ## Open With… for `Settings.txt` files
 

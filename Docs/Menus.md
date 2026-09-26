@@ -2,7 +2,7 @@
 
 GSSquared provides a top menu bar appropriate to your platform: a native menu bar on macOS, an in-window menu bar on Windows, Linux and Web.
 
-Saving a machine configuration is done from the [config editor](ConfigEditor.md) (**Save** / **Save As**), not from the File menu. To launch a saved `.gs2` or `… Settings.txt` without editing it, use **File → Launch Config…** or a [System Select](Select.md) tile.
+Saving a machine configuration is done from the [config editor](ConfigEditor.md) (**Save** / **Save As**), not from the File menu. To launch a saved `.gs2`, `.gs2pack`, or `… Settings.txt` without editing it, use **File → Launch Config…** or a [System Select](Select.md) tile. A pack is a config plus its disk images; see [GS2 Packs](Gs2Pack.md).
 
 On Linux, several File items appear only when they apply: **Launch Config…** and **Quit** at System Select; **Drives**, **Mount Drivers**, **Save Screenshot**, and **Close Emulation** while a machine is running.
 
@@ -24,7 +24,7 @@ On Linux, several File items appear only when they apply: **Launch Config…** a
   * Close Emulation (when a machine is running)
   * Quit
 
-**Launch Config…** picks a `.gs2` or `… Settings.txt` and boots it immediately (System Select only). See [Selecting a System](Select.md).
+**Launch Config…** picks a `.gs2`, a `.gs2pack`, or `… Settings.txt` and boots it immediately (System Select only). See [Selecting a System](Select.md) and [GS2 Packs](Gs2Pack.md).
 
 **New Disk Image** opens a save dialog and writes a blank image to the chosen path. It does not mount the file — use **File → Drives**, the Control Panel, or drag-and-drop afterwards. Floppy types copy a shipped `.woz` template; **32M HD Unformatted** creates a 32M file of zeros (`.hdv`), and **32M HD Formatted ProDOS** creates the same file with an empty ProDOS volume already on it. Available whether or not a machine is running. See [Blank Disk Images](BlankFloppy.md).
 

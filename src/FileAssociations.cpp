@@ -96,6 +96,10 @@ void register_gs2_file_association() {
     changed |= write_reg_sz(L"Software\\Classes\\GSSquared.gs2pack\\shell\\open\\command",
                             nullptr, command);
 
+    changed |= write_reg_sz(L"Software\\Classes\\gssquared", nullptr, L"URL:GSSquared Protocol");
+    changed |= write_reg_sz(L"Software\\Classes\\gssquared", L"URL Protocol", L"");
+    changed |= write_reg_sz(L"Software\\Classes\\gssquared\\shell\\open\\command", nullptr, command);
+
     if (changed) {
         SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     }
@@ -203,10 +207,10 @@ std::string desktop_entry(const std::string& exe) {
                "Comment=A complete Apple II series emulator\n"
                "Exec=\"") +
            exe +
-           "\" %f\n"
+           "\" %u\n"
            "GenericName=GSSquared\n"
            "Categories=Game;\n"
-           "MimeType=application/x-gs2-config;application/x-gs2-pack;\n"
+           "MimeType=application/x-gs2-config;application/x-gs2-pack;x-scheme-handler/gssquared;\n"
            "Terminal=false\n";
 }
 
@@ -247,6 +251,7 @@ void register_gs2_file_association() {
     }
     run_quiet("xdg-mime default GSSquared.desktop application/x-gs2-config");
     run_quiet("xdg-mime default GSSquared.desktop application/x-gs2-pack");
+    run_quiet("xdg-mime default GSSquared.desktop x-scheme-handler/gssquared");
 }
 
 #endif

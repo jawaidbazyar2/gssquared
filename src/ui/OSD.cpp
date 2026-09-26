@@ -1192,6 +1192,23 @@ void OSD::show_diskii_modal(storage_key_t key, uint64_t data) {
     diskii_save_con->set_data(data);
 }
 
+void OSD::push_modal(ModalContainer_t *modal) {
+    if (modal == nullptr) {
+        return;
+    }
+    mstack.stack.push(modal);
+    if (computer != nullptr && computer->video_system != nullptr) {
+        computer->video_system->osd_control_panel_open = true;
+    }
+}
+
+void OSD::take_modal(ModalContainer_t *modal) {
+    if (modal == nullptr || mstack.stack.empty() || mstack.stack.top() != modal) {
+        return;
+    }
+    mstack.stack.pop();
+}
+
 void OSD::prompt_launch_config(const std::string &path, std::function<void()> on_confirm) {
     if (!mstack.stack.empty()) {
         set_heads_up_message("Finish the current dialog first", 180);

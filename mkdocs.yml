@@ -27,6 +27,7 @@ nav:
     - Play in the Browser: Web.md
     - Config Editor: ConfigEditor.md
     - Writing Config Files: ConfigFiles.md
+    - GS2 Packs: Gs2Pack.md
     - File Types & URLs: ProtocolHandlers.md
     - Using the Debugger: UsingTheDebugger.md
 

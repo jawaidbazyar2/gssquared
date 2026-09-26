@@ -42,6 +42,10 @@
 #include "util/Gs2Pack.hpp"
 #include "util/SystemSettings.hpp"
 #include "ui/OSD.hpp"
+#ifndef __EMSCRIPTEN__
+#include "ui/PackFetchModal.hpp"
+#include "util/Gs2Url.hpp"
+#endif
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
 #include <emscripten.h>
@@ -699,6 +703,13 @@ struct GS2AppState {
     /** Extracted .gs2pack. Rewritten when this session ends. */
     std::unique_ptr<gs2pack::Session> pack;
 
+#ifndef __EMSCRIPTEN__
+    /** gssquared: confirm/download. Not the cloud upload. */
+    modal_stack pack_fetch_stack;
+    std::unique_ptr<PackFetchModal_t> pack_fetch;
+    std::string pending_pack_url;
+#endif
+
     // System selection / config editor
     SelectSystem *select_system = nullptr;
     EditSystem *edit_system = nullptr;
@@ -757,6 +768,11 @@ static bool is_launchable_config_path(const char *path) {
         || kind == ConfigFileKind::Pack;
 }
 
+#ifndef __EMSCRIPTEN__
+static void finish_pack_fetch(GS2AppState *state);
+static void start_pack_url(GS2AppState *state, const std::string& text);
+#endif
+
 static bool launch_config_and_emulate(GS2AppState *state, const std::string& path,
                                       bool document_session, std::string& error_out) {
     if (!apply_system_config_file(state, path, error_out)) {
@@ -771,10 +787,25 @@ static bool launch_config_and_emulate(GS2AppState *state, const std::string& pat
     return true;
 }
 
+#ifndef __EMSCRIPTEN__
+static void clear_pack_fetch(GS2AppState *state) {
+    if (state->pack_fetch == nullptr) {
+        return;
+    }
+    if (osd != nullptr) {
+        osd->take_modal(state->pack_fetch.get());
+    }
+    state->pack_fetch.reset();
+}
+#endif
+
 static void request_open_config(GS2AppState *state, const char *path) {
     if (!is_launchable_config_path(path)) {
         return;
     }
+#ifndef __EMSCRIPTEN__
+    clear_pack_fetch(state);
+#endif
     if (state->phase == PHASE_SYSTEM_SELECT) {
         std::string error;
         if (!launch_config_and_emulate(state, path, true, error)) {
@@ -1366,6 +1397,9 @@ static void finish_pack_session(GS2AppState *state, computer_t *computer) {
  * Clean up emulation state and transition to system select or exit.
  */
 void transition_to_shutdown(GS2AppState *state) {
+#ifndef __EMSCRIPTEN__
+    clear_pack_fetch(state);
+#endif
     finish_pack_session(state, state->computer);
     computer_t *computer = state->computer;
 
@@ -1433,6 +1467,77 @@ void transition_to_shutdown(GS2AppState *state) {
     state->disks_to_mount.clear();
     state->auto_launched = false;
 }
+
+#ifndef __EMSCRIPTEN__
+static UIContext *pack_fetch_context(GS2AppState *state) {
+    if (state->phase == PHASE_EMULATION && osd != nullptr) {
+        return &osd->ui_context();
+    }
+    if (state->select_system != nullptr) {
+        return &state->select_system->ui_context();
+    }
+    return nullptr;
+}
+
+static void finish_pack_fetch(GS2AppState *state) {
+    if (state->pack_fetch == nullptr || !state->pack_fetch->is_completed()) {
+        return;
+    }
+    const PackFetchModal_t::Result result = state->pack_fetch->result();
+    const std::string path = state->pack_fetch->cache_path();
+    state->pack_fetch.reset();
+    if (result != PackFetchModal_t::Result::Ready) {
+        return;
+    }
+    if (state->phase == PHASE_EMULATION && osd != nullptr) {
+        osd->prompt_launch_config(path, [state, path]() {
+            state->pending_config_path = path;
+            state->switch_after_halt = true;
+            if (state->computer != nullptr && state->computer->cpu != nullptr) {
+                state->computer->cpu->halt = HLT_USER;
+            }
+        });
+        return;
+    }
+    std::string error;
+    if (!launch_config_and_emulate(state, path, true, error)) {
+        std::string diag = "Failed to launch pack '" + path + "':\n" + error;
+        std::cerr << diag << "\n";
+        system_diag(diag.data());
+    }
+}
+
+static void start_pack_url(GS2AppState *state, const std::string& text) {
+    if (state->phase == PHASE_EDIT_SYSTEM) {
+        return;
+    }
+    if (state->pack_fetch != nullptr && state->pack_fetch->is_completed()) {
+        finish_pack_fetch(state);
+    }
+    if (state->pack_fetch != nullptr) {
+        return;
+    }
+    UIContext *ctx = pack_fetch_context(state);
+    if (ctx == nullptr) {
+        state->pending_pack_url = text;
+        return;
+    }
+    auto modal = std::make_unique<PackFetchModal_t>(ctx, state->pack_fetch_stack);
+    gs2url::PackUrl url;
+    std::string error;
+    if (!gs2url::parse_pack_url(text, url, error)) {
+        modal->present_error(error.empty() ? "Not a GSSquared pack link" : error);
+    } else {
+        modal->present_confirm(url, gs2url::pack_cache_file(url));
+    }
+    if (state->phase == PHASE_EMULATION && osd != nullptr) {
+        osd->push_modal(modal.get());
+    } else if (state->select_system != nullptr) {
+        state->select_system->mark_dirty();
+    }
+    state->pack_fetch = std::move(modal);
+}
+#endif
 
 /* ========================================================================
    SDL3 App Callback Entry Points
@@ -1544,7 +1649,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     gs2_app_values.no_quit_confirm = true;
                     break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [file.gs2|file.gs2pack|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm]\n";
+                    std::cerr << "Usage: " << argv[0] << " [file.gs2|file.gs2pack|*Settings.txt|gssquared:https://…/name.gs2pack] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm]\n";
                     std::cerr << "  file.gs2|*Settings.txt: load system configuration from a .gs2 TOML file\n";
                     std::cerr << "  file.gs2pack: extract a machine and its disks, then launch machine.gs2\n";
                     std::cerr << "        or Neil Profiles Settings.txt file, skip the system-selector UI,\n";
@@ -1576,6 +1681,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
             config_path = argv[optind];
         }
     }
+
+#ifndef __EMSCRIPTEN__
+    {
+        std::string file_url_path;
+        if (gs2url::is_gssquared_url(config_path)) {
+            state->pending_pack_url = config_path;
+            config_path.clear();
+        } else if (gs2url::decode_file_url(config_path, file_url_path)) {
+            config_path = file_url_path;
+        }
+    }
+#endif
 
     if (debug_socket_path.empty()) {
         register_gs2_file_association();
@@ -1645,7 +1762,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         transition_to_emulation(state, &state->loaded_config->config(), -1);
         state->auto_launched = true;
         vs->raise();
-    } else if (platform_explicit) {
+    } else if (platform_explicit
+#ifndef __EMSCRIPTEN__
+               && state->pending_pack_url.empty()
+#endif
+               ) {
         // If the caller passed `-p PLATFORM`, skip the system-selector UI
         // and jump straight into emulation using the first builtin system
         // whose platform_id matches.
@@ -1673,6 +1794,14 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     // Register callback so emulation continues during macOS menu tracking and window resize
     setMenuTrackingCallback(SDL_AppIterate, state);
 
+#ifndef __EMSCRIPTEN__
+    if (!state->pending_pack_url.empty()) {
+        const std::string url = std::move(state->pending_pack_url);
+        state->pending_pack_url.clear();
+        start_pack_url(state, url);
+    }
+#endif
+
     return SDL_APP_CONTINUE;
 }
 
@@ -1690,13 +1819,37 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         }
     }
 
-    if (event->type == SDL_EVENT_DROP_FILE && event->drop.data
-        && is_launchable_config_path(event->drop.data)) {
-        request_open_config(state, event->drop.data);
-        return SDL_APP_CONTINUE;
+    if (event->type == SDL_EVENT_DROP_FILE && event->drop.data) {
+#ifndef __EMSCRIPTEN__
+        if (gs2url::is_gssquared_url(event->drop.data)) {
+            start_pack_url(state, event->drop.data);
+            return SDL_APP_CONTINUE;
+        }
+        std::string file_url_path;
+        if (gs2url::decode_file_url(event->drop.data, file_url_path)) {
+            request_open_config(state, file_url_path.c_str());
+            return SDL_APP_CONTINUE;
+        }
+#endif
+        if (is_launchable_config_path(event->drop.data)) {
+            request_open_config(state, event->drop.data);
+            return SDL_APP_CONTINUE;
+        }
     }
 
     if (state->phase == PHASE_SYSTEM_SELECT) {
+#ifndef __EMSCRIPTEN__
+        if (state->pack_fetch != nullptr && event->type != SDL_EVENT_QUIT) {
+            SDL_Event ev = *event;
+            if (state->computer != nullptr && state->computer->video_system != nullptr
+                && state->computer->video_system->renderer != nullptr) {
+                SDL_ConvertEventToRenderCoordinates(state->computer->video_system->renderer, &ev);
+            }
+            state->pack_fetch->handle_mouse_event(ev);
+            state->select_system->mark_dirty();
+            return SDL_APP_CONTINUE;
+        }
+#endif
         if (event->type == gs2_app_values.menu_event_type
             && event->user.code == MENU_OPEN_CONFIG) {
             open_system_config_dialog(state, false);
@@ -1857,10 +2010,25 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         if (menuNeedsFrame()) {
             state->select_system->mark_dirty();
         }
+#ifndef __EMSCRIPTEN__
+        if (state->pack_fetch != nullptr) {
+            state->select_system->mark_dirty();
+            state->pack_fetch->update();
+            if (state->pack_fetch->is_completed()) {
+                finish_pack_fetch(state);
+                return SDL_APP_CONTINUE;
+            }
+        }
+#endif
         if (state->select_system->update()) {
             SDL_SetRenderDrawColor(vs->renderer, 0, 0, 0, 255);
             vs->clear();
             state->select_system->render();
+#ifndef __EMSCRIPTEN__
+            if (state->pack_fetch != nullptr) {
+                state->pack_fetch->render();
+            }
+#endif
             render_menu_overlay_for_ui_phase(vs);
             vs->present();
             state->select_system->apply_logical_presentation();
@@ -1945,6 +2113,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
         osd->update();
 
+#ifndef __EMSCRIPTEN__
+        if (state->pack_fetch != nullptr && state->pack_fetch->is_completed()) {
+            finish_pack_fetch(state);
+        }
+#endif
+
         if (!run_one_frame(computer)) {
             // Finder Open of another .gs2 while emulating: tear down and
             // boot the pending config. Must not take the auto_launched exit
@@ -2000,6 +2174,9 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
         state->debug_protocol.reset();
     }
 
+#ifndef __EMSCRIPTEN__
+    clear_pack_fetch(state);
+#endif
     if (osd) {
         delete osd;
         osd = nullptr;

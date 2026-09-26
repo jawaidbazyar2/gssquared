@@ -30,7 +30,7 @@ Shipped example `.gs2` files are copied into `Documents/GSSquared/` on first run
 
 ## Launching without the tile row
 
-* **File → Launch Config…** — pick a `.gs2` or `… Settings.txt` and boot it.
+* **File → Launch Config…** — pick a `.gs2`, a `.gs2pack`, or `… Settings.txt` and boot it. A pack is described in [GS2 Packs](Gs2Pack.md).
 * Double-click a `.gs2` (macOS, single instance) or use Open With. On **Windows**, a second double-click starts a **second process**. See [File types and URL protocols](ProtocolHandlers.md).
 * Drag a `.gs2` onto the System Select window.
 * Pass a config path or `-p N` on the [command line](CommandLine.md) (skips this screen; closing then quits).

@@ -16,9 +16,18 @@
  */
 
 #include "util/Gs2Pack.hpp"
+#include "util/Gs2Url.hpp"
+#ifndef __EMSCRIPTEN__
+#include "platform-specific/HttpsGet.hpp"
+#endif
 
+#include <atomic>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
+#if !defined(_WIN32)
+#include <sys/stat.h>
+#endif
 #include <filesystem>
 #include <iterator>
 #include <fstream>
@@ -198,7 +207,124 @@ static bool test_size_cap_does_not_read_body() {
     return true;
 }
 
-int main() {
+static uint32_t fnv1a(const std::string& text) {
+    uint32_t hash = 2166136261u;
+    for (unsigned char c : text) {
+        hash ^= c;
+        hash *= 16777619u;
+    }
+    return hash;
+}
+
+static std::string lower_copy(std::string text) {
+    for (char& c : text) {
+        if (c >= 'A' && c <= 'Z') {
+            c = static_cast<char>(c - 'A' + 'a');
+        }
+    }
+    return text;
+}
+
+static bool test_pack_urls() {
+    gs2url::PackUrl url;
+    std::string error;
+    const std::string text =
+        "gssquared:https://Example.com:8443/pack/Choplifter%20boot.gs2pack?token=secret#frag";
+    CHECK(gs2url::parse_pack_url(text, url, error), error);
+    CHECK(url.https_url == "https://Example.com:8443/pack/Choplifter%20boot.gs2pack?token=secret",
+          "query kept, fragment dropped");
+    CHECK(url.host == "Example.com", "host drops the port");
+    CHECK(url.filename == "Choplifter boot.gs2pack", "filename is decoded");
+    CHECK(url.cache_name.find("secret") == std::string::npos, "query is not in the cache name");
+    const uint32_t hash = fnv1a(lower_copy("Example.com") + "\n" + "/pack/Choplifter boot.gs2pack");
+    char expect[64];
+    std::snprintf(expect, sizeof(expect), "Choplifter_boot-%08x.gs2pack", hash);
+    CHECK(url.cache_name == expect, url.cache_name);
+
+    gs2url::PackUrl same_query;
+    CHECK(gs2url::parse_pack_url(
+              "GSSQUARED:https://example.com:8443/pack/Choplifter%20boot.gs2pack?token=other",
+              same_query, error),
+          error);
+    CHECK(same_query.cache_name == url.cache_name, "query and host case do not change the cache name");
+
+    gs2url::PackUrl other_host;
+    CHECK(gs2url::parse_pack_url("gssquared:https://other.example/boot.gs2pack", other_host, error),
+          error);
+    gs2url::PackUrl other_path;
+    CHECK(gs2url::parse_pack_url("gssquared:https://other.example/disks/boot.gs2pack", other_path, error),
+          error);
+    CHECK(other_host.cache_name != other_path.cache_name, "two boot.gs2pack paths do not collide");
+
+    CHECK(!gs2url::parse_pack_url("gssquared:http://example.com/a.gs2pack", url, error), "http");
+    CHECK(!gs2url::parse_pack_url("gssquared://example.com/a.gs2pack", url, error), "bare scheme");
+    CHECK(!gs2url::parse_pack_url("gssquared:file:///tmp/a.gs2pack", url, error), "file");
+    CHECK(!gs2url::parse_pack_url("gssquared:https://user:pw@example.com/a.gs2pack", url, error),
+          "userinfo");
+    CHECK(!gs2url::parse_pack_url("gssquared:https://example.com/machine.gs2", url, error), ".gs2");
+    CHECK(!gs2url::parse_pack_url("gssquared:https://example.com/Settings.txt", url, error),
+          "settings");
+    CHECK(gs2url::is_gssquared_url("gssquared:https://example.com/machine.gs2"), "scheme prefix");
+    CHECK(!gs2url::is_gssquared_url("/tmp/machine.gs2"), "plain path");
+
+    gs2url::PackUrl v6;
+    CHECK(gs2url::parse_pack_url("gssquared:https://[2001:db8::1]/a.gs2pack", v6, error), error);
+    CHECK(v6.host == "2001:db8::1", "ipv6 host");
+
+    std::string path;
+    CHECK(gs2url::decode_file_url("file:///tmp/Foo%20bar.gs2", path), "file url");
+    CHECK(path == "/tmp/Foo bar.gs2", path);
+    CHECK(gs2url::decode_file_url("file://localhost/tmp/a.gs2pack", path), "localhost file url");
+    CHECK(path == "/tmp/a.gs2pack", path);
+    CHECK(!gs2url::decode_file_url("/tmp/a.gs2pack", path), "plain path is not a file url");
+
+    const std::string cache = gs2url::pack_cache_file(url);
+    CHECK(cache.find("Library/Caches/GSSquared/packs") != std::string::npos, cache);
+    CHECK(cache.size() >= url.cache_name.size()
+              && cache.compare(cache.size() - url.cache_name.size(), url.cache_name.size(),
+                               url.cache_name) == 0,
+          "cache file uses the cache name");
+
+    const auto dir = std::filesystem::temp_directory_path() / "gs2packtest-token";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    const auto pack = (dir / "demo.gs2pack").string();
+    CHECK(gs2url::write_save_token_sidecar(pack, "tok-1", error), error);
+    {
+        std::ifstream in(pack + ".save-token");
+        std::string body;
+        std::getline(in, body);
+        CHECK(body == "tok-1", "sidecar body");
+    }
+#if !defined(_WIN32)
+    struct stat st {};
+    CHECK(::stat((pack + ".save-token").c_str(), &st) == 0, "sidecar stat");
+    CHECK((st.st_mode & 0777) == 0600, "sidecar mode 0600");
+#endif
+    CHECK(!gs2url::write_save_token_sidecar(pack, "bad\ntoken", error), "newline token");
+    CHECK(gs2url::write_save_token_sidecar(pack, "", error), error);
+    CHECK(!std::filesystem::exists(pack + ".save-token"), "empty token removes the sidecar");
+    std::filesystem::remove_all(dir);
+    return true;
+}
+
+static bool test_https_get() {
+    const auto dest = (std::filesystem::temp_directory_path() / "gs2packtest-https-body").string();
+    std::filesystem::remove(dest);
+    std::filesystem::remove(dest + ".partial");
+    std::atomic<bool> cancel{false};
+    HttpsGetResult result;
+    const bool ok = https_get_to_file("https://example.com/", dest, gs2pack::kMaxBytes, &cancel, result);
+    CHECK(ok, result.error);
+    CHECK(result.status == 200, "https status");
+    CHECK(std::filesystem::exists(dest), "cache file");
+    CHECK(!std::filesystem::exists(dest + ".partial"), "partial removed");
+    CHECK(std::filesystem::file_size(dest) > 0, "body");
+    std::filesystem::remove(dest);
+    return true;
+}
+
+int main(int argc, char **argv) {
     if (!test_round_trip()) {
         return 1;
     }
@@ -207,6 +333,15 @@ int main() {
     }
     if (!test_size_cap_does_not_read_body()) {
         return 1;
+    }
+    if (!test_pack_urls()) {
+        return 1;
+    }
+    if (argc > 1 && std::string(argv[1]) == "--https") {
+        if (!test_https_get()) {
+            return 1;
+        }
+        std::cout << "https get ok\n";
     }
     std::cout << "gs2packtest ok\n";
     return 0;

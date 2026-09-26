@@ -90,6 +90,8 @@ public:
 
     int get_selected_system();
 
+    UIContext& ui_context() { return ui_ctx; }
+
     /** Path for a recent-tile selection id (SELECT_RECENT_BASE + i). */
     const std::string& get_recent_path(int selection_id) const;
 

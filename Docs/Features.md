@@ -533,7 +533,7 @@ Aux / main memory layout for //e family — platform-composed, not user-pluggabl
 | `host.open.gs2-macos-drop` | macOS Open → existing instance | Complete | macOS | Installed `.app` | `DROP_FILE` | manual | [ProtocolHandlers.md](ProtocolHandlers.md) |
 | `host.open.gs2-windows-argv` | Windows double-click → argv | Complete | win | — | Second instance | manual | [ProtocolHandlers.md](ProtocolHandlers.md) |
 | `host.open.gs2-associations` | Full OS file-type registration | Planned | all | — | — | — | Roadmap 1.0 |
-| `host.url.gssquared-scheme` | `gssquared:` URL handler | Planned | all | — | — | — | Spec in ProtocolHandlers |
+| `host.url.gssquared-scheme` | `gssquared:` pack download | Partial | macOS, win, linux | — | Confirm host and filename, then the pack boots | manual | Upload and multi-file `.gs2` URLs are later. Web uses `fetch()`. |
 
 ---
 

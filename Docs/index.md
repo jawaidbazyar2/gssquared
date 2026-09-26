@@ -32,7 +32,9 @@
 
 * [Writing Config Files Manually](ConfigFiles.md)
 
-* [File types and URL protocols](ProtocolHandlers.md) — `.gs2` associations and document icons (macOS / Windows / Linux), planned `gssquared:` links
+* [GS2 Packs](Gs2Pack.md) — `.gs2pack`: a machine config and its disk images in one ustar file
+
+* [File types and URL protocols](ProtocolHandlers.md) — `.gs2` associations and document icons (macOS / Windows / Linux), `gssquared:` pack links
 
 * [Using the Debugger](UsingTheDebugger.md)
 
@@ -67,4 +69,4 @@ Slot cards and how to use them:
 ## Not offered / not shipped yet
 
 * [Intentionally unimplemented](Unimplemented.md) — cassette tape, REPT key, RAMfast SCSI, and other omissions by choice
-* Full machine [save states](SaveAndRestore.md), ImageWriter-class printing, WOZ 2.1, and `gssquared:` URL handlers are planned — see the [feature catalog](Features.md)
+* Full machine [save states](SaveAndRestore.md), ImageWriter-class printing, WOZ 2.1, and sending a `gssquared:` save back to arQyv are planned — see the [feature catalog](Features.md)

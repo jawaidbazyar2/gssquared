@@ -17,6 +17,8 @@ GS2 supports the following virtual disk media formats:
 
 * If the image has an Apple Partition Map, BazFast mounts each ProDOS and HFS partition as its own SmartPort unit 
 
+A `.gs2pack` is a container that holds a machine config together with disk images in the formats above. See [GS2 Packs](Gs2Pack.md).
+
 Woz format is the heart of GS2 floppy emulation. GS2 supports copy-protected 5.25 and 3.5 disks in WOZ 1.0 and 2.0, including weak bits and spiral tracks. **Half- and quarter-track seeks on 5.25″ are supported**. Cassette tape load/save is [intentionally omitted](Unimplemented.md).
 
 ## Creating a blank image

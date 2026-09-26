@@ -3,21 +3,22 @@
 Native GSSquared accepts a config path and several flags. Closing the window after a CLI launch **quits the app** instead of returning to System Select.
 
 ```text
-GSSquared [file.gs2|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm]
+GSSquared [file.gs2|file.gs2pack|*Settings.txt] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm]
 ```
 
 On macOS the binary is inside the app bundle (`GSSquared.app/Contents/MacOS/GSSquared`). On Windows it is `GSSquared.exe` in the portable ZIP. On Linux it is the AppImage or the `GSSquared` binary from a local build.
 
 ## Config path
 
-Pass a `.gs2` or `… Settings.txt` as the first positional argument:
+Pass a `.gs2`, a `.gs2pack`, or `… Settings.txt` as the first positional argument:
 
 ```bash
 GSSquared ~/Documents/GSSquared/MyIIe.gs2
+GSSquared Choplifter.gs2pack
 GSSquared "Choplifter Settings.txt"
 ```
 
-That skips System Select and boots the config immediately. Disk mounts in the file can still be overridden with `-dsXdY=` below.
+That skips System Select and boots the config immediately. A `.gs2pack` unpacks its `machine.gs2` and disk images first; see [GS2 Packs](Gs2Pack.md). Disk mounts in the file can still be overridden with `-dsXdY=` below.
 
 ## `-p N` — built-in platform
 
@@ -76,4 +77,5 @@ Without this flag, closing the window or sending SIGTERM can open “Are you sur
 
 - [Selecting a System](Select.md)
 - [Writing Config Files Manually](ConfigFiles.md)
+- [GS2 Packs](Gs2Pack.md)
 - [Using the Debugger](UsingTheDebugger.md)
