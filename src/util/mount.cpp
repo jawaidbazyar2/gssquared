@@ -136,6 +136,14 @@ bool Mounts::mount_media(disk_mount_t disk_mount, bool force_write_protected) {
     return true;
 }
 
+bool Mounts::writeback_media(storage_key_t key) {
+    auto it = storage_devices.find(key);
+    if (it == storage_devices.end()) {
+        return false;
+    }
+    return it->second.device->writeback(key);
+}
+
 bool Mounts::unmount_media(storage_key_t key, unmount_action_t action) {
     auto it = storage_devices.find(key);
     if (it == storage_devices.end()) {

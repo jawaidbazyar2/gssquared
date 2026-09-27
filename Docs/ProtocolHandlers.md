@@ -2,7 +2,7 @@
 
 How GSSquared is opened from the host: Finder / Explorer, drag-and-drop, the command line, and (later) web links. Implementation notes live here; user-facing launch steps are in [Creating Custom System Configs](ConfigEditor.md) and [Writing Config Files Manually](ConfigFiles.md). The `.gs2pack` file format is in [GS2 Packs](Gs2Pack.md).
 
-**Windows:** double-clicking a `.gs2` while GSSquared is already running starts a **second process** (the path goes to `argv`). macOS delivers the open to the existing instance. A `gssquared:https://…/name.gs2pack` link confirms, downloads that one pack, and launches it. Disk-image associations, a `.gs2` or Settings URL, and sending a save back to arQyv are [planned](Roadmap.md), not shipped.
+**Windows:** double-clicking a `.gs2` while GSSquared is already running starts a **second process** (the path goes to `argv`). macOS delivers the open to the existing instance. A `gssquared:https://…/name.gs2pack` link confirms, downloads that one pack, and launches it. A Collection download that returns `X-GS2-Save-Token` uploads the rewritten pack on save. Disk-image associations, a `.gs2` or Settings URL, Title fetch, and the web player’s Collection save are [planned](Roadmap.md), not shipped.
 
 Roadmap 1.0 lists “file type and URL associations.” This document is the spec for that work.
 
@@ -168,7 +168,7 @@ SDL_net stays the modem’s TCP and UDP layer. It has no HTTP and no TLS, so it 
 | Windows | WinHTTP (`src/platform-specific/windows/`) |
 | Linux | libcurl (`src/platform-specific/linux/`) |
 
-The module streams the body to a file and forwards the https URL unchanged, query string included. It does not parse a credential or move one into a header. A public URL has none. A server that must authorize the GET puts a short-lived opaque query parameter on the URL it hands us. The module also surfaces the final status and the response header `X-GS2-Save-Token`, so that same response can carry a follow-on credential beside the body. GSSquared stores that header in a sidecar next to the cache pack and does not send it anywhere yet. arQyv’s launch and save tokens are in [arqyv-gs2pack.md](arqyv-gs2pack.md).
+The module streams the body to a file and forwards the https URL unchanged, query string included. It does not parse a credential or move one into a header. A public URL has none. A server that must authorize the GET puts a short-lived opaque query parameter on the URL it hands us. The module also surfaces the final status and the response header `X-GS2-Save-Token`, so that same response can carry a follow-on credential beside the body. GSSquared stores that header in `<pack>.save-token` and the requested https URL, query and fragment removed, in `<pack>.save-url`. On save it PUTs the rewritten `.gs2pack` to that URL with the header `X-GS2-Save-Token`. The PUT follows the same https-only redirect rule as the GET. Success is status 204. arQyv’s launch and save tokens are in [arqyv-gs2pack.md](arqyv-gs2pack.md).
 
 Redirects are the stack’s. The app’s only rule is that every redirect target stays `https`.
 
@@ -188,9 +188,10 @@ Write a partial file in the cache directory and `rename` it into place only afte
 * Confirm prompt before any download. The prompt names the host and the pack filename, not the query string. Cancel aborts the transfer and deletes the partial.
 * Same switch-while-running modal as local configs, after the download.
 * Protocol registration on macOS, Windows, and Linux.
-* `X-GS2-Save-Token` stored beside the cache pack. Upload is later.
+* `X-GS2-Save-Token` and the writeback URL stored beside the cache pack.
+* Collection writeback: PUT the rewritten `.gs2pack` when its members changed. File → Save to Collection, leaving the title, and quit.
 
-Still later: the multi-file `.gs2` / Settings walk, and sending the save token back.
+Still later: the multi-file `.gs2` / Settings walk.
 
 ## `.gs2pack`
 
@@ -250,7 +251,7 @@ That matches Steam AutoCloud: download the pack before launch, upload the pack a
 * **[arqyv.net](https://arqyv.net)** is the paid **collection**: subscribe for cloud-backed `.gs2pack` storage and the same library on every computer. Open via `gssquared:https://arqyv.net/…` (or an in-app signed-in browser). Same extract / mount / rewrite rules; the ustar that arqyv stores is the document. Curated `… Settings.txt` packs are the current arqyv shape; `.gs2pack` is the later unit.
 * Optional extra channel: a **third-party Steam title** that *is* one pack (“Choplifter for GSSquared”) can use *that* app’s Steam Cloud for its own pack. DLC on the GS2 app does not get a separate quota.
 
-`gssquared:` downloads can land as a cache `.gs2pack` (ustar of the fetched config + images) and then follow the same extract / launch / rewrite path. If that cache is not in a cloud folder, nothing uploads until the user saves a copy there.
+`gssquared:` downloads can land as a cache `.gs2pack` (ustar of the fetched config + images) and then follow the same extract / launch / rewrite path. A Collection pack with a save token uploads that rewritten file to arQyv. A pack with no save token stays local.
 
 ## Phasing
 
@@ -264,5 +265,6 @@ That matches Steam AutoCloud: download the pack before launch, upload the pack a
 | `gssquared:` pack download (confirm, platform HTTPS GET, cache, extract and launch) | Now |
 | `.gs2pack` ustar (extract / mount / atomic rewrite, Simple Browser) | Now |
 | `gssquared:` protocol registration (macOS, Windows, Linux) | Now |
-| `gssquared:` multi-file `.gs2` / Settings walk, and save-token upload | Later |
+| Collection save-token upload (full ustar PUT) | Now |
+| `gssquared:` multi-file `.gs2` / Settings walk | Later |
 | Cloud folder / Steam AutoCloud (the pack only in the synced tree) | Later |

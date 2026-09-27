@@ -1,4 +1,5 @@
 #include "util/MenuInterface.h"
+#include "util/Gs2Pack.hpp"
 #include "gs2.hpp"
 #include "NClock.hpp"
 #include "videosystem.hpp"
@@ -53,6 +54,12 @@ void MenuInterface::displayFullScreen() { pushMenuEvent(MENU_DISPLAY_FULLSCREEN)
 void MenuInterface::editCopyScreen()   { pushMenuEvent(MENU_EDIT_COPY_SCREEN); }
 void MenuInterface::editPasteText()    { pushMenuEvent(MENU_EDIT_PASTE_TEXT); }
 void MenuInterface::fileSaveScreenshot() { pushMenuEvent(MENU_FILE_SAVE_SCREENSHOT); }
+void MenuInterface::fileSaveCollection() { pushMenuEvent(MENU_FILE_SAVE_COLLECTION); }
+
+bool MenuInterface::canSaveCollection() const {
+	const gs2pack::Session *session = gs2pack::active();
+	return session != nullptr && !session->save_token.empty() && !session->save_url.empty();
+}
 void MenuInterface::toggleMountDrivers() { pushMenuEvent(MENU_FILE_MOUNT_DRIVERS); }
 void MenuInterface::newDiskImage(int menu_code) { pushMenuEvent(menu_code); }
 

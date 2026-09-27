@@ -52,8 +52,28 @@ std::string pack_cache_file(const PackUrl& url);
  */
 bool decode_file_url(const std::string& text, std::string& path_out);
 
-/** Write or remove the save-token sidecar next to a cached pack. Empty token removes it. */
+/**
+ * https URL with the query and fragment removed. Empty when `https_url` is not https.
+ * This is the Collection PUT target. The launch token stays on the GET only.
+ */
+std::string save_url_from_https(const std::string& https_url);
+
+/** Write or remove the save-token sidecar next to a cached pack. Empty token removes it and the save-url sidecar. */
 bool write_save_token_sidecar(const std::string& pack_path, const std::string& token,
                               std::string& error_out);
+
+/** Write or remove `<pack>.save-url`. Empty url removes it. The url must be https with no query. */
+bool write_save_url_sidecar(const std::string& pack_path, const std::string& url,
+                            std::string& error_out);
+
+/** Remove `<pack>.save-token` and `<pack>.save-url`. */
+void clear_save_sidecars(const std::string& pack_path);
+
+/**
+ * Read both sidecars. False when either is missing or not usable.
+ * A pack can upload only when both are present.
+ */
+bool read_save_credentials(const std::string& pack_path, std::string& token_out,
+                           std::string& url_out);
 
 }  // namespace gs2url

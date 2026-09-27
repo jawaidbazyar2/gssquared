@@ -562,6 +562,117 @@ bool write_archive(const std::string& dest_path,
     return true;
 }
 
+bool compare_payload(std::istream& archive, const std::string& path, uint64_t size, bool& same_out,
+                     std::string& error_out) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        error_out = "Missing pack member " + path;
+        return false;
+    }
+    file.seekg(0, std::ios::end);
+    if (!file) {
+        error_out = "Failed to read " + path;
+        return false;
+    }
+    const auto file_size = static_cast<uint64_t>(file.tellg());
+    if (file_size != size) {
+        same_out = false;
+        return true;
+    }
+    file.seekg(0, std::ios::beg);
+    std::vector<char> left(64 * 1024);
+    std::vector<char> right(64 * 1024);
+    uint64_t remain = size;
+    while (remain > 0) {
+        const size_t chunk = static_cast<size_t>(std::min<uint64_t>(remain, left.size()));
+        archive.read(left.data(), static_cast<std::streamsize>(chunk));
+        file.read(right.data(), static_cast<std::streamsize>(chunk));
+        if (static_cast<size_t>(archive.gcount()) != chunk || static_cast<size_t>(file.gcount()) != chunk) {
+            error_out = "Truncated archive member";
+            return false;
+        }
+        if (std::memcmp(left.data(), right.data(), chunk) != 0) {
+            same_out = false;
+            return true;
+        }
+        remain -= chunk;
+    }
+    same_out = true;
+    return true;
+}
+
+bool payloads_match(const Session& session, bool& same_out, std::string& error_out) {
+    same_out = false;
+    if (session.source_path.empty() || session.members.empty()) {
+        error_out = "Pack session has nothing to compare";
+        return false;
+    }
+    std::ifstream in(session.source_path, std::ios::binary);
+    if (!in) {
+        error_out = "Failed to open pack";
+        return false;
+    }
+    std::vector<char> seen(session.members.size(), 0);
+    uint64_t used = 0;
+    for (;;) {
+        HeaderInfo info;
+        if (!read_header(in, info, error_out)) {
+            return false;
+        }
+        if (info.end) {
+            break;
+        }
+        if (!check_payload_budget(used, info.size, error_out)) {
+            return false;
+        }
+        if (info.typeflag == '5') {
+            in.seekg(static_cast<std::streamoff>(info.size), std::ios::cur);
+            if (!in || !skip_padding(in, info.size, error_out)) {
+                if (error_out.empty()) {
+                    error_out = "Truncated archive member";
+                }
+                return false;
+            }
+            continue;
+        }
+        if (info.typeflag != '0' && info.typeflag != '\0') {
+            error_out = std::string("Unsupported ustar member type in ") + info.name;
+            return false;
+        }
+        const Member *member = nullptr;
+        size_t index = 0;
+        for (size_t i = 0; i < session.members.size(); ++i) {
+            if (session.members[i].name == info.name) {
+                member = &session.members[i];
+                index = i;
+                break;
+            }
+        }
+        if (member == nullptr) {
+            same_out = false;
+            return true;
+        }
+        if (!compare_payload(in, member->path, info.size, same_out, error_out)) {
+            return false;
+        }
+        if (!same_out) {
+            return true;
+        }
+        if (!skip_padding(in, info.size, error_out)) {
+            return false;
+        }
+        seen[index] = 1;
+    }
+    for (char flag : seen) {
+        if (flag == 0) {
+            same_out = false;
+            return true;
+        }
+    }
+    same_out = true;
+    return true;
+}
+
 bool rewrite(const Session& session, std::string& error_out) {
     if (session.source_path.empty() || session.members.empty()) {
         error_out = "Pack session has nothing to write";

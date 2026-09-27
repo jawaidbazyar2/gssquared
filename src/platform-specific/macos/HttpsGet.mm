@@ -21,6 +21,7 @@
 #import <Foundation/Foundation.h>
 
 #include <atomic>
+#include <filesystem>
 #include <string>
 
 namespace {
@@ -235,6 +236,176 @@ bool https_get_to_file(const std::string& url, const std::string& dest_path, uin
         out.ok = !delegate.failed && delegate.statusCode == 200 && error.empty();
         if (!out.ok && out.error.empty()) {
             out.error = "Download failed";
+        }
+
+        [task release];
+        [session finishTasksAndInvalidate];
+        dispatch_release(delegate.done);
+        delegate.done = nullptr;
+        [delegate release];
+        return out.ok;
+    }
+}
+
+@interface Gs2HttpsPutDelegate : NSObject <NSURLSessionDataDelegate>
+@property (nonatomic, assign) const std::atomic<bool> *cancelFlag;
+@property (nonatomic, copy) NSString *saveToken;
+@property (nonatomic, assign) int statusCode;
+@property (nonatomic, assign) bool failed;
+@property (nonatomic, assign) std::string *errorText;
+@property (nonatomic, assign) dispatch_semaphore_t done;
+@end
+
+@implementation Gs2HttpsPutDelegate
+
+- (void)URLSession:(NSURLSession *)session
+                  task:(NSURLSessionTask *)task
+    willPerformHTTPRedirection:(NSHTTPURLResponse *)response
+                    newRequest:(NSURLRequest *)request
+             completionHandler:(void (^)(NSURLRequest *))completionHandler {
+    (void)session;
+    (void)task;
+    (void)response;
+    if (!https_scheme(request.URL.scheme)) {
+        if (self.errorText != nullptr && self.errorText->empty()) {
+            *self.errorText = "Redirect left https";
+        }
+        self.failed = true;
+        completionHandler(nil);
+        return;
+    }
+    NSMutableURLRequest *next = [request mutableCopy];
+    if (self.saveToken != nil) {
+        [next setValue:self.saveToken forHTTPHeaderField:@"X-GS2-Save-Token"];
+    }
+    [next setValue:@"application/x-tar" forHTTPHeaderField:@"Content-Type"];
+    [next setValue:@"GSSquared" forHTTPHeaderField:@"User-Agent"];
+    completionHandler(next);
+}
+
+- (void)URLSession:(NSURLSession *)session
+              dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveResponse:(NSURLResponse *)response
+     completionHandler:(void (^)(NSURLSessionResponseDisposition))completionHandler {
+    (void)session;
+    (void)dataTask;
+    NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
+    self.statusCode = static_cast<int>(http.statusCode);
+    if (http.statusCode != 204) {
+        if (self.errorText != nullptr && self.errorText->empty()) {
+            *self.errorText = "Server returned status " + std::to_string(http.statusCode);
+        }
+        self.failed = true;
+    }
+    completionHandler(NSURLSessionResponseAllow);
+}
+
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveData:(NSData *)data {
+    (void)session;
+    (void)dataTask;
+    (void)data;
+    if (self.cancelFlag != nullptr && self.cancelFlag->load()) {
+        if (self.errorText != nullptr && self.errorText->empty()) {
+            *self.errorText = "Upload canceled";
+        }
+        self.failed = true;
+        [dataTask cancel];
+    }
+}
+
+- (void)URLSession:(NSURLSession *)session
+                    task:(NSURLSessionTask *)task
+    didCompleteWithError:(NSError *)error {
+    (void)session;
+    (void)task;
+    if (error != nil && !self.failed && self.errorText != nullptr && self.errorText->empty()) {
+        NSString *message = error.localizedDescription;
+        *self.errorText = message != nil ? std::string(message.UTF8String) : "Upload failed";
+        self.failed = true;
+    }
+    if (self.failed && self.errorText != nullptr && self.errorText->empty()) {
+        *self.errorText = "Upload failed";
+    }
+    if (self.done != nullptr) {
+        dispatch_semaphore_signal(self.done);
+    }
+}
+
+@end
+
+bool https_put_file(const std::string& url, const std::string& src_path, const std::string& save_token,
+                    uint64_t max_bytes, const std::atomic<bool> *cancel, HttpsPutResult& out) {
+    out = HttpsPutResult{};
+    if (save_token.empty() || save_token.find('\n') != std::string::npos
+        || save_token.find('\r') != std::string::npos) {
+        out.error = "Save token is not usable";
+        return false;
+    }
+    std::error_code ec;
+    const auto file_size = std::filesystem::file_size(src_path, ec);
+    if (ec) {
+        out.error = "Failed to open pack";
+        return false;
+    }
+    if (file_size > max_bytes) {
+        out.error = "Pack exceeds 200 MB";
+        return false;
+    }
+    @autoreleasepool {
+        NSString *url_text = [NSString stringWithUTF8String:url.c_str()];
+        NSURL *nsurl = url_text != nil ? [NSURL URLWithString:url_text] : nil;
+        if (!https_scheme(nsurl.scheme) || nsurl.host.length == 0) {
+            out.error = "Pack URL must be https";
+            return false;
+        }
+        NSString *path_text = [NSString stringWithUTF8String:src_path.c_str()];
+        NSURL *file_url = path_text != nil ? [NSURL fileURLWithPath:path_text] : nil;
+        if (file_url == nil) {
+            out.error = "Failed to open pack";
+            return false;
+        }
+
+        std::string error;
+        Gs2HttpsPutDelegate *delegate = [[Gs2HttpsPutDelegate alloc] init];
+        delegate.cancelFlag = cancel;
+        delegate.saveToken = [NSString stringWithUTF8String:save_token.c_str()];
+        delegate.errorText = &error;
+        delegate.done = dispatch_semaphore_create(0);
+
+        NSURLSessionConfiguration *config = [NSURLSessionConfiguration ephemeralSessionConfiguration];
+        config.timeoutIntervalForRequest = 60;
+        config.timeoutIntervalForResource = 3600;
+        config.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
+        NSURLSession *session = [NSURLSession sessionWithConfiguration:config
+                                                              delegate:delegate
+                                                         delegateQueue:nil];
+        NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:nsurl];
+        request.HTTPMethod = @"PUT";
+        [request setValue:@"GSSquared" forHTTPHeaderField:@"User-Agent"];
+        [request setValue:@"application/x-tar" forHTTPHeaderField:@"Content-Type"];
+        [request setValue:delegate.saveToken forHTTPHeaderField:@"X-GS2-Save-Token"];
+        NSURLSessionUploadTask *task = [session uploadTaskWithRequest:request fromFile:file_url];
+        [task retain];
+        [task resume];
+
+        for (;;) {
+            const long wait = dispatch_semaphore_wait(
+                delegate.done, dispatch_time(DISPATCH_TIME_NOW, 200 * NSEC_PER_MSEC));
+            if (wait == 0) {
+                break;
+            }
+            if (cancel != nullptr && cancel->load()) {
+                [task cancel];
+            }
+        }
+
+        out.status = delegate.statusCode;
+        out.error = error;
+        out.ok = !delegate.failed && delegate.statusCode == 204 && error.empty();
+        if (!out.ok && out.error.empty()) {
+            out.error = "Upload failed";
         }
 
         [task release];

@@ -40,6 +40,13 @@ struct Session {
     std::vector<Member> members;
     /** Not owned. Set by the app after the extracted machine.gs2 is loaded. */
     SystemConfig *config = nullptr;
+    /**
+     * Collection writeback. Set when both sidecars were present at extract.
+     * A successful upload deletes the files and leaves these in memory so a
+     * later save in this process can still PUT.
+     */
+    std::string save_token;
+    std::string save_url;
 };
 
 bool is_pack_path(const std::string& path);
@@ -55,6 +62,13 @@ bool extract(const std::string& pack_path, Session& out, std::string& error_out)
 
 /** Write `source.gs2pack.tmp` then rename over `source_path`. */
 bool rewrite(const Session& session, std::string& error_out);
+
+/**
+ * Compare each work-tree member's bytes to the same member in `source_path`.
+ * Header fields are ignored. `same_out` is true only when every payload matches.
+ * Returns false on an archive or file error.
+ */
+bool payloads_match(const Session& session, bool& same_out, std::string& error_out);
 
 void cleanup(Session& session);
 

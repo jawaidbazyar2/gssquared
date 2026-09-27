@@ -127,6 +127,7 @@ struct computer_t {
     std::string config_path;  // loaded .gs2 path; BRAM is stored in that file
     std::optional<std::array<uint8_t, 256>> initial_bram;
     std::function<void(const uint8_t *data, size_t len)> bram_persist;
+    std::function<void()> bram_flush;
 
     std::vector<ResetHandler> reset_handlers;
     std::vector<ShutdownHandler> shutdown_handlers;
@@ -218,6 +219,9 @@ struct computer_t {
     bool get_initial_bram(uint8_t out[256]) const;
     void set_bram_persist_handler(std::function<void(const uint8_t *data, size_t len)> handler);
     void persist_bram(const uint8_t *data, size_t len) const;
+    /** Copy live IIgs battery RAM into the config file without tearing the machine down. */
+    void set_bram_flush_handler(std::function<void()> handler);
+    void flush_bram() const;
     inline SystemConfig_t *get_system() {
         return system_config_override
             ? const_cast<SystemConfig_t *>(system_config_override)

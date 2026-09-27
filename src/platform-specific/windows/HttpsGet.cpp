@@ -24,6 +24,8 @@
 #include <windows.h>
 #include <winhttp.h>
 
+#include <filesystem>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -227,6 +229,205 @@ bool https_get_to_file(const std::string& url, const std::string& dest_path, uin
     out.ok = ok;
     if (!out.ok && out.error.empty()) {
         out.error = "Download failed";
+    }
+    return out.ok;
+}
+
+bool resolve_redirect(const std::wstring& current, const std::string& location, std::wstring& next,
+                      std::string& error) {
+    if (location.empty()) {
+        error = "Redirect left https";
+        return false;
+    }
+    std::wstring wide = widen(location);
+    if (location.size() >= 8 && (location.compare(0, 8, "https://") == 0 || location.compare(0, 8, "HTTPS://") == 0)) {
+        next = wide;
+        return true;
+    }
+    if (location.size() >= 7 && (location.compare(0, 7, "http://") == 0 || location.compare(0, 7, "HTTP://") == 0)) {
+        error = "Redirect left https";
+        return false;
+    }
+    if (location.front() != '/') {
+        error = "Redirect left https";
+        return false;
+    }
+    URL_COMPONENTS parts{};
+    parts.dwStructSize = sizeof(parts);
+    wchar_t host[512];
+    parts.lpszHostName = host;
+    parts.dwHostNameLength = sizeof(host) / sizeof(host[0]);
+    if (!WinHttpCrackUrl(current.c_str(), 0, 0, &parts) || parts.nScheme != INTERNET_SCHEME_HTTPS) {
+        error = "Redirect left https";
+        return false;
+    }
+    std::wstring url = L"https://" + std::wstring(host, parts.dwHostNameLength);
+    if (parts.nPort != INTERNET_DEFAULT_HTTPS_PORT) {
+        url += L":" + std::to_wstring(parts.nPort);
+    }
+    url += wide;
+    next = url;
+    return true;
+}
+
+bool https_put_file(const std::string& url, const std::string& src_path, const std::string& save_token,
+                    uint64_t max_bytes, const std::atomic<bool> *cancel, HttpsPutResult& out) {
+    out = HttpsPutResult{};
+    if (save_token.empty() || save_token.find('\n') != std::string::npos
+        || save_token.find('\r') != std::string::npos) {
+        out.error = "Save token is not usable";
+        return false;
+    }
+    std::error_code ec;
+    const auto file_size = std::filesystem::file_size(src_path, ec);
+    if (ec) {
+        out.error = "Failed to open pack";
+        return false;
+    }
+    if (file_size > max_bytes) {
+        out.error = "Pack exceeds 200 MB";
+        return false;
+    }
+    if (file_size > 0xFFFFFFFFull) {
+        out.error = "Pack exceeds 200 MB";
+        return false;
+    }
+
+    std::wstring current = widen(url);
+    if (current.empty()) {
+        out.error = "Pack URL must be https";
+        return false;
+    }
+
+    HINTERNET session = WinHttpOpen(L"GSSquared", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+                                    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+    if (session == nullptr) {
+        out.error = "Failed to open HTTP session";
+        return false;
+    }
+    WinHttpSetTimeouts(session, 10000, 30000, 60000, 0);
+    const std::wstring headers = L"Content-Type: application/x-tar\r\nX-GS2-Save-Token: " + widen(save_token) + L"\r\n";
+
+    bool finished = false;
+    for (int hop = 0; hop < 10 && !finished; ++hop) {
+        URL_COMPONENTS parts{};
+        parts.dwStructSize = sizeof(parts);
+        wchar_t host[512];
+        wchar_t path[4096];
+        wchar_t extra[4096];
+        parts.lpszHostName = host;
+        parts.dwHostNameLength = sizeof(host) / sizeof(host[0]);
+        parts.lpszUrlPath = path;
+        parts.dwUrlPathLength = sizeof(path) / sizeof(path[0]);
+        parts.lpszExtraInfo = extra;
+        parts.dwExtraInfoLength = sizeof(extra) / sizeof(extra[0]);
+        if (!WinHttpCrackUrl(current.c_str(), 0, 0, &parts) || parts.nScheme != INTERNET_SCHEME_HTTPS) {
+            out.error = "Pack URL must be https";
+            break;
+        }
+        HINTERNET connection = WinHttpConnect(session, host, parts.nPort, 0);
+        if (connection == nullptr) {
+            out.error = "Failed to connect";
+            break;
+        }
+        const std::wstring object = std::wstring(path, parts.dwUrlPathLength)
+            + std::wstring(extra, parts.dwExtraInfoLength);
+        HINTERNET request = WinHttpOpenRequest(connection, L"PUT", object.c_str(), nullptr,
+                                               WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
+                                               WINHTTP_FLAG_SECURE);
+        if (request == nullptr) {
+            WinHttpCloseHandle(connection);
+            out.error = "Failed to open HTTP request";
+            break;
+        }
+        DWORD policy = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
+        WinHttpSetOption(request, WINHTTP_OPTION_REDIRECT_POLICY, &policy, sizeof(policy));
+
+        const DWORD total = static_cast<DWORD>(file_size);
+        bool sent = false;
+        if (cancel != nullptr && cancel->load()) {
+            out.error = "Upload canceled";
+        } else if (!WinHttpSendRequest(request, headers.c_str(), static_cast<DWORD>(-1),
+                                       WINHTTP_NO_REQUEST_DATA, 0, total, 0)) {
+            out.error = "Upload failed";
+        } else {
+            std::ifstream file(src_path, std::ios::binary);
+            std::vector<char> buf(64 * 1024);
+            DWORD left = total;
+            sent = true;
+            while (left > 0 && sent) {
+                if (cancel != nullptr && cancel->load()) {
+                    out.error = "Upload canceled";
+                    sent = false;
+                    break;
+                }
+                const DWORD chunk = left > buf.size() ? static_cast<DWORD>(buf.size()) : left;
+                file.read(buf.data(), chunk);
+                if (static_cast<DWORD>(file.gcount()) != chunk) {
+                    out.error = "Failed to read pack";
+                    sent = false;
+                    break;
+                }
+                DWORD wrote = 0;
+                if (!WinHttpWriteData(request, buf.data(), chunk, &wrote) || wrote != chunk) {
+                    out.error = "Upload failed";
+                    sent = false;
+                    break;
+                }
+                left -= chunk;
+            }
+        }
+        if (sent && !WinHttpReceiveResponse(request, nullptr)) {
+            out.error = "Upload failed";
+            sent = false;
+        }
+        if (sent) {
+            std::string status_text;
+            if (!query_header(request, WINHTTP_QUERY_STATUS_CODE, WINHTTP_HEADER_NAME_BY_INDEX, status_text)) {
+                out.error = "Upload failed";
+            } else {
+                try {
+                    out.status = std::stoi(status_text);
+                } catch (...) {
+                    out.status = 0;
+                }
+                if (out.status == 301 || out.status == 302 || out.status == 307 || out.status == 308) {
+                    std::string location;
+                    if (!query_header(request, WINHTTP_QUERY_LOCATION, WINHTTP_HEADER_NAME_BY_INDEX, location)) {
+                        out.error = "Redirect left https";
+                    } else {
+                        while (!location.empty() && (location.back() == '\0' || location.back() == '\r'
+                                                     || location.back() == '\n' || location.back() == ' ')) {
+                            location.pop_back();
+                        }
+                        if (!resolve_redirect(current, location, current, out.error)) {
+                            if (out.error.empty()) {
+                                out.error = "Redirect left https";
+                            }
+                        }
+                    }
+                } else if (out.status == 204) {
+                    out.ok = true;
+                    finished = true;
+                } else {
+                    out.error = "Server returned status " + std::to_string(out.status);
+                    finished = true;
+                }
+            }
+        }
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        if (!out.error.empty()) {
+            break;
+        }
+    }
+    if (!out.ok && !finished && out.error.empty()) {
+        out.error = "Upload failed";
+    }
+
+    WinHttpCloseHandle(session);
+    if (!out.ok && out.error.empty()) {
+        out.error = "Upload failed";
     }
     return out.ok;
 }
