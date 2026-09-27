@@ -39,7 +39,7 @@ Use a pack when the thing you want to keep or hand to someone is **a machine tog
 
 * **Swap disks that belong to the title.** While a pack is running, the drive picker lists the images stored in the pack. Mounting one of them records that choice in `machine.gs2`, and the next time the pack opens, that disk is the one in the drive.
 
-* **Open a pack from a link.** A `gssquared:https://…/name.gs2pack` link asks you to confirm, downloads that one pack, and launches it. The downloaded file is the same ustar document described here. Details of the link itself are in [File types and URL protocols](ProtocolHandlers.md).
+* **Open a pack from a link (web).** A `gssquared:https://…/name.gs2pack` link asks you to confirm, downloads that one pack, and launches it. The downloaded file is the same ustar document described here. Details of the link itself are in [File types and URL protocols](ProtocolHandlers.md).
 
 * **Look inside, or build one, with ordinary tools.** A pack is an uncompressed ustar archive. `tar -tf pack.gs2pack` lists the contents. `tar -xf pack.gs2pack` extracts `machine.gs2` and the disk images. Publishers and tinkerers can assemble a pack with `tar`, as [below](#building-a-pack).
 

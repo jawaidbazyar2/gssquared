@@ -70,3 +70,7 @@ Slot cards and how to use them:
 
 * [Intentionally unimplemented](Unimplemented.md) — cassette tape, REPT key, RAMfast SCSI, and other omissions by choice
 * Full machine [save states](SaveAndRestore.md), ImageWriter-class printing, WOZ 2.1, and sending a `gssquared:` save back to arQyv are planned — see the [feature catalog](Features.md)
+
+## Test Suites
+
+[Test Suites](Tests.md) is a detailed list of test suites GS2 passes.

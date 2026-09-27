@@ -11,6 +11,7 @@ nav:
   - User Guide:
     - Getting Started: index.md
     - Feature catalog: Features.md
+    - Test Suites: Tests.md
     - Menus: Menus.md
     - Selecting a System: Select.md
     - Command Line: CommandLine.md

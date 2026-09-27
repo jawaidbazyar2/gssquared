@@ -38,7 +38,7 @@ From [jawaidbazyar2/gssquared](https://github.com/jawaidbazyar2/gssquared/issues
 
 ### Enhancements / features
 - [ ] [#140](https://github.com/jawaidbazyar2/gssquared/issues/140) International keyboards on GS (e.g. AZERTY)
-- [ ] [#81](https://github.com/jawaidbazyar2/gssquared/issues/81) Make OA / CA key assignments configurable
+- [X] [#81](https://github.com/jawaidbazyar2/gssquared/issues/81) Make OA / CA key assignments configurable
 - [X] [#77](https://github.com/jawaidbazyar2/gssquared/issues/77) Debugger: render specified display page (`hgr1`, `80text1`, …) into Video pane
 - [ ] [#73](https://github.com/jawaidbazyar2/gssquared/issues/73) Disasm: share trace disassembly; M/X width commands; track REP/SEP
 - [X] [#69](https://github.com/jawaidbazyar2/gssquared/issues/69) Debugger UI: play/pause/step/step-over buttons; scrollbar click; section panes; monitor scrollback
@@ -138,17 +138,17 @@ From [Documentation.md](Documentation.md), [MockingboardBugAnalysis.md](Mockingb
 - [-] Configurable speaker output rate
 - [ ] Mute / drain disk sound-effect queues in Ludicrous Speed (or on ctrl-reset)
 - [ ] Pause / mute audio when emulator window minimized
-- [ ] Chiptunes (Skull Island, Crazy Cycles 2): stop unending warning/spam streams
+- [X] Chiptunes (Skull Island, Crazy Cycles 2): stop unending warning/spam streams
 - [X] Add Mockingboard cycle hook into `NClockIIgs`
-- [ ] Rescue Raiders speech synth (or don't advertise speech chip) ([Compatibility.md](Compatibility.md))
-
+- [-] Rescue Raiders speech synth (or don't advertise speech chip) ([Compatibility.md](Compatibility.md)) (works on Total Replay, may just be a bad crack)
+ 
 ---
 
 ## Input, ADB, mouse, keyboard
 
 From [ADB.md](ADB.md), [UserInterface.md](UserInterface.md), [Networking.md](Networking.md), [DevelopLog.md](DevelopLog.md):
 
-- [ ] Mouse interrupts only during VBL, max ~60 Hz
+- [X] Mouse interrupts only during VBL, max ~60 Hz
 - [-] Cap mouse delta (±63 counts / ~0.8")
 - [X] Button 1 support / correct XY+button read order
 - [-] At RESET, disable mouse interrupts
@@ -197,11 +197,11 @@ From [UserInterface.md](UserInterface.md), [SystemConfigTOML.md](SystemConfigTOM
 - [X] Create / Save / Load system configs from UI (File menu + Select screen `+` / folder) — verify vs current Config Editor
 - [X] On first run, copy default extra configs into user systems folder
 - [ ] Cache Control Panel template texture (static chrome vs dynamic widgets)
+- [ ] UI texture redraw only when dirty
 - [ ] Platform specifies allowed CPU speed settings in OSD
 - [-] Remove "IIgs with 5.25 only" test config tile
 - [ ] Professional cleanup of artwork / higher-res assets scaled down
-- [ ] UI texture redraw only when dirty
-- [ ] "Lots of buttons" polish pass
+- [X] "Lots of buttons" polish pass
 
 ---
 
@@ -243,8 +243,8 @@ From [CPUs.md](CPUs.md), [DevelopLog.md](DevelopLog.md), [Documentation.md](Docu
 - [ ] Bank latch / direct bank `$E1` tests and analysis
 - [ ] MMU SoA + static aligned page table experiment (perf)
 - [ ] Address mask + debug OOB warnings on MMU
-- [ ] Thunderclock: interrupts, writing clock, more testing
-- [ ] Fast accesses for IIgs memory softswitches ([AppleIIgs-Memory.md](AppleIIgs-Memory.md))
+- [X] Thunderclock: interrupts, writing clock, more testing
+- [X] Fast accesses for IIgs memory softswitches ([AppleIIgs-Memory.md](AppleIIgs-Memory.md))
 - [X] Only-one-instance flags where hardware uniqueness matters (e.g. some cards)
 
 ---
@@ -257,11 +257,11 @@ From [Compatibility.md](Compatibility.md) and [CompatibilityGS.md](Compatibility
 - [X] Mad Effects #2 (Mockingboard / VBL timing)
 - [X] keywin.2mg (800K) does not boot
 - [X] Locksmith nibble copying / quarter-track cases
-- [ ] ProTerm 2.2: loops asking for keyboard after "confirm hardware"
+- [-] ProTerm 2.2: loops asking for keyboard after "confirm hardware" (ProTerm 3 works fine)
 - [ ] Wizardry + Videx: shows only Videx screen on II+ (fine on //e)
 
 ### Apple IIgs
-- [ ] Zany Golf: black playfield once in a level (still after KEGS-matching RAM size; LocInfo/blit)
+- [X] Zany Golf: black playfield once in a level (still after KEGS-matching RAM size; LocInfo/blit)
 - [X] Bard's Tale I/II: re-verify current status (had Ensoniq / SmartPort issues)
 - [X] A2Desktop text editor/viewer crash (AUX/MAIN?)
 - [X] A2Desktop with floppies enabled: hang reading floppies
@@ -270,7 +270,7 @@ From [Compatibility.md](Compatibility.md) and [CompatibilityGS.md](Compatibility
 - [X] Nucleus / Sales Demo-class instrument artifacts (if still present)
 - [X] Photonix: direct 3.5 access / "Non bootable disk" loop
 - [X] Airheart standalone on GS vs //e (5.25 bootloader / `C0EC` loop)
-- [ ] DreamVoir (Golden Orchard variant) BRK after splash
+- [-] DreamVoir (Golden Orchard variant) BRK after splash
 
 ---
 
@@ -282,7 +282,7 @@ From [DevelopLog.md](DevelopLog.md), [Woz.md](Woz.md), [runloop.md](runloop.md):
 - [ ] Pull SDL init/deinit out of power on/off loop
 - [ ] Improve debug emitters in diskii_controller / Floppy525
 - [ ] Optimize rdpulse/wrpulse (avoid recalculating bit index every call)
-- [ ] 74LS259 latch registers as bools
+- [-] 74LS259 latch registers as bools
 - [ ] `slot_rom_ptable` 16 entries for clearer loops
 - [ ] Evaluate shadow+optimized vs full-frame draw
 - [ ] Menu-hold / timer interaction causing audio slips (Mac menus)
