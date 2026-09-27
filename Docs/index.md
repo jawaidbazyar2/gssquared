@@ -69,4 +69,4 @@ Slot cards and how to use them:
 ## Not offered / not shipped yet
 
 * [Intentionally unimplemented](Unimplemented.md) — cassette tape, REPT key, RAMfast SCSI, and other omissions by choice
-* Full machine [save states](SaveAndRestore.md), ImageWriter-class printing, WOZ 2.1, and sending a `gssquared:` save back to arQyv are planned — see the [feature catalog](Features.md)
+* Full machine [save states](SaveAndRestore.md), ImageWriter-class printing, and WOZ 2.1 are planned — see the [feature catalog](Features.md). Desktop Collection writeback is in [arQyv-served GS2 packs](arqyv-gs2pack.md); Title fetch and the web player are not.

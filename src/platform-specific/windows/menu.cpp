@@ -140,8 +140,8 @@ static void updatePopupState(HMENU popup)
     // ── File ────────────────────────────────────────────────────────────────
     if (popup == g_filePopup) {
         // pos 0 = Launch Config, pos 1 = New Disk Image, pos 2 = sep, pos 3 = Drives,
-        // pos 4 = Mount Drivers, pos 5 = sep, pos 6 = Save Screenshot, pos 7 = sep,
-        // pos 8 = Close Emulation, pos 9 = sep, pos 10 = Quit
+        // pos 4 = Mount Drivers, pos 5 = sep, pos 6 = Save to Collection,
+        // pos 7 = Save Screenshot, pos 8 = sep, pos 9 = Close Emulation, pos 10 = sep, pos 11 = Quit
         bool has_bazfast = mi->hasBazFast();
         bool drivers_on  = mi->getMountDrivers();
         setItemEnable(g_filePopup, 0, !running);                    // Launch Config
@@ -149,9 +149,10 @@ static void updatePopupState(HMENU popup)
         setItemEnable(g_filePopup, 3, running);                     // Drives
         setItemEnable(g_filePopup, 4, running && has_bazfast);      // Mount Drivers
         setItemCheck(g_filePopup,  4, drivers_on);
-        setItemEnable(g_filePopup, 6, running);                     // Save Screenshot
-        setItemEnable(g_filePopup, 8, running);                     // Close Emulation
-        setItemEnable(g_filePopup, 10, !running);                   // Quit (only when not running)
+        setItemEnable(g_filePopup, 6, running && mi->canSaveCollection()); // Save to Collection
+        setItemEnable(g_filePopup, 7, running);                     // Save Screenshot
+        setItemEnable(g_filePopup, 9, running);                     // Close Emulation
+        setItemEnable(g_filePopup, 11, !running);                   // Quit (only when not running)
         return;
     }
 
@@ -387,6 +388,7 @@ static void dispatchCommand(UINT id)
     case MENU_EDIT_COPY_SCREEN:      mi->editCopyScreen();      return;
     case MENU_EDIT_PASTE_TEXT:       mi->editPasteText();       return;
     case MENU_FILE_SAVE_SCREENSHOT:  mi->fileSaveScreenshot();  return;
+    case MENU_FILE_SAVE_COLLECTION:  mi->fileSaveCollection();  return;
     case MENU_FILE_MOUNT_DRIVERS:    mi->toggleMountDrivers();  return;
     case MENU_FILE_NEW_DISK_525_UNFMT:
     case MENU_FILE_NEW_DISK_525_DOS33:
@@ -516,14 +518,16 @@ static void setupMenus()
     // pos 5
     AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
     // pos 6
-    AppendMenuW(g_filePopup, MF_STRING, MENU_FILE_SAVE_SCREENSHOT, L"Save Screenshot");
+    AppendMenuW(g_filePopup, MF_STRING, MENU_FILE_SAVE_COLLECTION, L"Save to Collection");
     // pos 7
-    AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(g_filePopup, MF_STRING, MENU_FILE_SAVE_SCREENSHOT, L"Save Screenshot");
     // pos 8
-    AppendMenuW(g_filePopup, MF_STRING, IDM_FILE_CLOSE, L"Close Emulation");
-    // pos 9
     AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
+    // pos 9
+    AppendMenuW(g_filePopup, MF_STRING, IDM_FILE_CLOSE, L"Close Emulation");
     // pos 10
+    AppendMenuW(g_filePopup, MF_SEPARATOR, 0, nullptr);
+    // pos 11
     AppendMenuW(g_filePopup, MF_STRING, IDM_APP_QUIT, L"Quit");
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_filePopup), L"File");

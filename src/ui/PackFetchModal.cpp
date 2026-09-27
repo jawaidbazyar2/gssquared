@@ -196,8 +196,18 @@ void PackFetchModal_t::update() {
     thread_ = nullptr;
     if (job_->result.ok) {
         std::string error;
-        if (!gs2url::write_save_token_sidecar(dest_, job_->result.save_token, error) && !error.empty()) {
+        const bool wrote_token = gs2url::write_save_token_sidecar(dest_, job_->result.save_token, error);
+        if (!wrote_token && !error.empty()) {
             std::cerr << "Save token: " << error << "\n";
+        }
+        if (wrote_token && !job_->result.save_token.empty()) {
+            const std::string save_url = gs2url::save_url_from_https(url_.https_url);
+            std::string url_error;
+            if (save_url.empty() || !gs2url::write_save_url_sidecar(dest_, save_url, url_error)) {
+                std::cerr << "Save URL: " << (url_error.empty() ? "missing" : url_error) << "\n";
+                std::string clear_error;
+                gs2url::write_save_token_sidecar(dest_, "", clear_error);
+            }
         }
         result_ = Result::Ready;
         completed = true;

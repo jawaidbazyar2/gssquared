@@ -36,3 +36,13 @@ struct HttpsGetResult {
  */
 bool https_get_to_file(const std::string& url, const std::string& dest_path, uint64_t max_bytes,
                        const std::atomic<bool> *cancel, HttpsGetResult& out);
+
+/** Desktop HTTPS PUT of one file. Success is status 204. `cancel` may be null. */
+struct HttpsPutResult {
+    bool ok = false;
+    int status = 0;
+    std::string error;
+};
+
+bool https_put_file(const std::string& url, const std::string& src_path, const std::string& save_token,
+                    uint64_t max_bytes, const std::atomic<bool> *cancel, HttpsPutResult& out);

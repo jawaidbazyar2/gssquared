@@ -1,6 +1,6 @@
 # arQyv-served GS2 packs
 
-Status: arQyv Title/Collection fetch and cloud save are not implemented. Local `.gs2pack` open, extract, rewrite, and the Simple Browser are implemented (see ProtocolHandlers).
+Status: desktop Collection download and full-ustar writeback are implemented in GSSquared. The Arqyv routes in [Collection HTTP](#collection-http) are the other repo. Title fetch, the web player, and the Collection picker are not done. Local `.gs2pack` open, extract, rewrite, and the Simple Browser are implemented (see ProtocolHandlers).
 
 This is how GSSquared, desktop and web, plays an [arQyv](https://arqyv.net) **Title** or **Collection** item: fetch the pack, boot it, let the user swap disks inside that pack, and store disk writes back to that user’s arQyv cloud storage.
 
@@ -35,22 +35,22 @@ If the player stays on `gssquared.net/live` later:
 
 ## Titles and Collection
 
-Both resolve to one ustar. The player does not crawl the catalog. The server builds that archive as a forward stream: for each member a 512-byte ustar header (the size is already known), the bytes, then padding to 512, and two zero blocks at the end. A generated `machine.gs2` is finished in memory so its size is known before its header. Catalog disk blobs already have sizes. Nothing is staged in a temp file. The stream is uncompressed ustar. Gzip is not accepted.
+Both resolve to one ustar. The player does not crawl the catalog. When arQyv composes an object for the first time, it builds that archive as a forward stream: for each member a 512-byte ustar header (the size is already known), the bytes, then padding to 512, and two zero blocks at the end. A generated `machine.gs2` is finished in memory so its size is known before its header. Catalog disk blobs already have sizes. Nothing is staged in a temp file. The stream is uncompressed ustar. Gzip is not accepted. A Collection row that has been saved is that stored object; GET streams it and does not compose it again.
 
 - **Title** — public curated catalog entry (`/titles/<slug>`). Metadata the player needs: platform badge, and the ordered disk list (role, filename, URL). Example: 221B Baker Street is two WOZs; Choplifter is one WOZ and the page says it will not run on later models. `Profiles.txt` is a catalog index and is not a boot file.
 - **Collection** — the signed-in user’s saved titles (`/collection`, login required). A row is a title plus that user’s saved images, when they have any.
 
-Public catalog objects are immutable. Playing a Title streams the catalog snapshot as that ustar. The first save creates or updates the user’s Collection copy. Nothing writes back onto `/catalog/<id>/`.
+Public catalog objects are immutable. Playing a Title streams the catalog snapshot as that ustar. Nothing writes back onto `/catalog/<id>/`. A Title download has no save token, so desktop GSSquared does not create a Collection row from a Title.
 
-Playing a Collection item streams the same way, with the user’s saved images already in place of the catalog members they replace.
+Playing a Collection item streams that row’s ustar object. arQyv may compose the object once, when the row is created, from catalog blobs. After a save, the object is the ustar the client uploaded. GET does not merge members on the way out.
 
 ## Credentials
 
 The browser session stays in the browser. Desktop GSSquared has no cookie jar, so a Collection link carries its own credential. A Title link carries none. The web player is already on arqyv.net, so it keeps using the first-party session cookie and does not use these tokens.
 
-**Launch token.** arQyv mints one opaque query parameter when it renders a Collection Play link. It authorizes the GET for that one pack, and it lives for minutes: long enough for the confirm dialog and a download up to 200 MB. It is not the session cookie. GSSquared forwards the https URL unchanged, query string included, and the confirm dialog shows the host and the pack filename rather than the query string. arQyv checks the token on the first request. A redirect Location does not need to repeat it.
+**Launch token.** arQyv mints one opaque query parameter, `launch`, when it renders a Collection Play link. It authorizes the GET for that one pack, and it lives for minutes: long enough for the confirm dialog and a download up to 200 MB. It is not the session cookie. It is reusable until it expires, so a canceled download can be retried from the same link. GSSquared forwards the https URL unchanged, query string included, and the confirm dialog shows the host and the pack filename rather than the query string. arQyv checks the token on the first request. A redirect Location does not need to repeat it.
 
-**Save token.** Playing can go on for days, across quits, so the launch token is not the save credential. The 200 that delivers the ustar carries a second token in the response header `X-GS2-Save-Token`. An absent header is fine; Title downloads have none. That token authorizes writing the same pack, and it lives for days. GSSquared stores it in a sidecar next to the cache `.gs2pack` (`<pack>.save-token`, mode `0600` on POSIX), in the machine-local cache directory. Desktop GSSquared stores the header and does not upload it yet. The sidecar is not a member of the ustar, it is not put in a URL, and it is not placed in a synced folder. When upload exists, Explicit Save, leaving the title, and quit send it with the upload. A successful upload deletes the sidecar. So does expiry.
+**Save token.** Playing can go on for days, across quits, so the launch token is not the save credential. The 200 that delivers the ustar carries a second token in the response header `X-GS2-Save-Token`. An absent header is fine; Title downloads have none. That token authorizes writing the same pack, and it lives for days. GSSquared stores it in a sidecar next to the cache `.gs2pack` (`<pack>.save-token`, mode `0600` on POSIX), in the machine-local cache directory. It also stores `<pack>.save-url` (same mode): the https URL that was requested, with the query and fragment removed. That is the PUT target. It is taken from the request URL, not from a redirect. The sidecars are not members of the ustar, they are not put in a URL, and they are not placed in a synced folder. Explicit Save, leaving the title, and quit send the token in the `X-GS2-Save-Token` request header. A successful upload deletes both sidecars and keeps the token in memory for a later save in the same process. Expiry deletes both sidecars and forgets the in-memory token. A network failure leaves both sidecars in place.
 
 A leaked sidecar can update that one pack until it expires. It cannot open the rest of the Collection, and it is not a login.
 
@@ -110,7 +110,7 @@ In pack mode the drive button opens this modal. “Open from this computer…”
 
 ## Saving back to arQyv
 
-Guest writes already land in the mounted file: floppies via `fopen`, SmartPort / `.hdv` write-through. For a pack image that file is in the working tree (a temp directory on desktop, MEMFS on the web). On save the player rebuilds a ustar from that tree. The upload is the dirty members and a config that changed. On desktop it sends the save token from Credentials; on the web it uses the session cookie. The server streams a new ustar for the user’s pack and fills unchanged members from catalog blobs. An expired save token still rewrites the local pack; the Collection copy is left unchanged and the player reports that the upload did not happen. For a local-picker image that file is the one on this computer, and the write is the save. Do not upload pack images per sector, and do not upload on every block.
+Guest writes already land in the mounted file: floppies via `fopen`, SmartPort / `.hdv` write-through. For a pack image that file is in the working tree (a temp directory on desktop, MEMFS on the web). On save the player rebuilds a complete ustar from that tree and, on desktop, PUTs that file. The body is the whole archive, the same document just rewritten locally. arQyv stores those bytes as the Collection object. A bucket cannot replace one ustar member in place, and the server does not open the archive to patch members. On desktop the request sends the save token from Credentials. On the web, when that player exists, the same PUT uses the session cookie. An expired save token still rewrites the local pack; the Collection copy is left unchanged and the player reports that the upload did not happen. For a local-picker image that file is the one on this computer, and the write is the save. It is not a member of the ustar, so it is not in the PUT. Do not upload pack images per sector, and do not upload on every block. A clean quit, where the work tree still matches the ustar on disk, skips the PUT.
 
 Save points:
 
@@ -125,12 +125,12 @@ A killed process or a crash never delivers that prompt. Changes since the last s
 
 What gets uploaded is the user’s document, not the catalog:
 
-- Dirty disk images, and a config that changed (mounted set, BRAM on a IIgs).
-- The server keeps the user’s pack. Unchanged images stay references to the catalog blobs; the client does not re-upload a pristine WOZ.
+- The complete rewritten `.gs2pack`: `machine.gs2` (mounted set, and BRAM on a IIgs) and every pack disk image.
+- The server replaces the Collection object with that file. The next Play GET streams the object that was stored.
 - A disk opened from this computer is not part of the pack. Its writes go to that local file and are not uploaded.
 - The public `/catalog/<id>/` object is never the PUT target.
 
-Relaunch overlays those saved images on a fresh catalog snapshot.
+A later Play downloads that stored object. It does not overlay saved images onto a fresh catalog snapshot.
 
 Conflicts are last-write-wins on the user’s pack, as in ProtocolHandlers. Two sessions that both save will drop one of them. Warning when the server copy changed while we had it open can come later.
 
@@ -140,11 +140,53 @@ Packs stay within the size already assumed for `.gs2pack` (on the order of 200 M
 
 | Slice | |
 |-------|--|
-| Fetch one Title’s ustar (desktop: platform HTTPS GET into a cache `.gs2pack`; web: `fetch` into MEMFS), unpack, auto-start | First |
-| Web player page on arqyv.net, COOP/COEP, same-origin fetch | First |
-| Synthesized `machine.gs2` in the streamed ustar | First |
-| Simple Browser as the drive-open dialog in this mode; local picker secondary | Local pack: now. arQyv session: first |
-| Save to the user’s Collection copy, including desktop quit and the web tab-close prompt; overlay on next launch | First |
+| Desktop Collection download (`GET` with `launch`) and full-ustar writeback (`PUT` with `X-GS2-Save-Token`) | Now in GSSquared. Arqyv routes are the other repo |
+| Fetch one Title’s ustar (desktop: platform HTTPS GET into a cache `.gs2pack`; web: `fetch` into MEMFS), unpack, auto-start | Later |
+| Web player page on arqyv.net, COOP/COEP, same-origin fetch, and web Collection save (session cookie on the same PUT) | Later |
+| Synthesized `machine.gs2` in the streamed ustar | When arQyv composes a row |
+| Simple Browser as the drive-open dialog in this mode; local picker secondary | Local pack: now |
 | Stored `machine.gs2` for titles the badge cannot describe | When a title needs it |
-| Collection picker (signed-in list) launching the same way | After Save exists |
+| Collection picker (signed-in list) launching the same way | Later |
 | Token handoff so `gssquared.net/live` can launch a pack | Later, only if the player must stay on that host |
+
+## Collection HTTP
+
+Implemented in the arQyv repo. GSSquared does not parse the path. It forwards the Play-link URL on GET and later PUTs the same path with the query removed.
+
+Play link, minted by the signed-in Collection page (session cookie). Not called by GSSquared:
+
+```
+gssquared:https://arqyv.net/api/gs2/collection/{id}.gs2pack?launch={token}
+```
+
+`{id}` is that user’s Collection row.
+
+### `GET /api/gs2/collection/{id}.gs2pack?launch={token}`
+
+Streams the Collection object: one uncompressed ustar. No gzip. `Content-Type: application/x-tar`. Status 200. Body cap 200 MB.
+
+Response header `X-GS2-Save-Token`: opaque write credential for this row. Write-only. It cannot list or open the rest of the Collection.
+
+Redirects stay `https`. The bytes may be redirected. The writeback target is still the original path, without the query. Nothing writes `/catalog/{id}/`.
+
+Failures: `401` bad or expired launch token, `404` no such row, `413` over the cap.
+
+### `PUT /api/gs2/collection/{id}.gs2pack`
+
+Replaces that row’s object. No launch query.
+
+Request headers: `X-GS2-Save-Token` and `Content-Type: application/x-tar`.
+
+Body: the complete uncompressed ustar. arQyv stores those bytes as the object (`PutObject` on S3, or the same on another bucket). It does not open the archive and patch members. Last-write-wins for the whole object.
+
+Reject a body that is not an uncompressed ustar containing `machine.gs2` (`400`), and leave the stored object as it was. Cap the body at 200 MB (`413`).
+
+Responses:
+
+- `204` empty — object replaced
+- `401` — token missing, expired, or for another row. Object unchanged
+- `400` / `413` / `5xx` — object unchanged
+
+The PUT response is not a new ustar. The next Play GET streams the object that was stored.
+
+Title GET/PUT, and the web session cookie on this same PUT, are later.

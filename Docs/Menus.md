@@ -4,7 +4,7 @@ GSSquared provides a top menu bar appropriate to your platform: a native menu ba
 
 Saving a machine configuration is done from the [config editor](ConfigEditor.md) (**Save** / **Save As**), not from the File menu. To launch a saved `.gs2`, `.gs2pack`, or `… Settings.txt` without editing it, use **File → Launch Config…** or a [System Select](Select.md) tile. A pack is a config plus its disk images; see [GS2 Packs](Gs2Pack.md).
 
-On Linux, several File items appear only when they apply: **Launch Config…** and **Quit** at System Select; **Drives**, **Mount Drivers**, **Save Screenshot**, and **Close Emulation** while a machine is running.
+On Linux, several File items appear only when they apply: **Launch Config…** and **Quit** at System Select; **Drives**, **Mount Drivers**, **Save to Collection**, **Save Screenshot**, and **Close Emulation** while a machine is running.
 
 ### File
   * Launch Config… (only when the machine is off)
@@ -20,6 +20,7 @@ On Linux, several File items appear only when they apply: **Launch Config…** a
     * Slot 6, Drive 2 — …
     * (one item per mounted or empty drive)
   * Mount Drivers
+  * Save to Collection
   * Save Screenshot
   * Close Emulation (when a machine is running)
   * Quit
@@ -31,6 +32,8 @@ On Linux, several File items appear only when they apply: **Launch Config…** a
 **Drives** is a dynamic per-drive list. Choose a drive to mount or unmount an image the same way as the Control Panel. See [Storage](Storage.md).
 
 **Mount Drivers** is a checkable item that mounts or unmounts the built-in `/GS2.DRIVERS` volume on BazFast (write-protected). Grayed out when BazFast is not in the current machine. The installer on that disk has options to install **Host FST**, **Marinetti**, and **Uthernet II**. See [Host FST](HostFST.md) and [Uthernet II](Cards_UthernetII.md).
+
+**Save to Collection** rewrites the running `.gs2pack` and uploads that file to arQyv. It is available only while a Collection pack with a save token is running. The machine keeps running. See [arQyv-served GS2 packs](arqyv-gs2pack.md).
 
 **Save Screenshot** writes the current display (with borders) to a PNG on your Desktop, named like `GS2 Screenshot YYYY-MM-DD HH.MM.SS.png`. Shortcut: Shift+PrintScreen. Only one screenshot write can be in progress at a time.
 

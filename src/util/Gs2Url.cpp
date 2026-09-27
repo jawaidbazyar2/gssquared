@@ -24,6 +24,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <iterator>
 #include <sstream>
 
 #if !defined(_WIN32)
@@ -276,33 +277,108 @@ bool decode_file_url(const std::string& text, std::string& path_out) {
     return true;
 }
 
-bool write_save_token_sidecar(const std::string& pack_path, const std::string& token,
-                              std::string& error_out) {
-    const std::filesystem::path sidecar = pack_path + ".save-token";
-    std::error_code ec;
-    if (token.empty()) {
-        std::filesystem::remove(sidecar, ec);
-        return true;
-    }
-    if (token.find('\n') != std::string::npos || token.find('\r') != std::string::npos
-        || token.size() > 4096) {
-        error_out = "Save token is not usable";
+bool write_secret_file(const std::filesystem::path& sidecar, const std::string& body,
+                       const char *what, std::string& error_out) {
+    if (body.find('\n') != std::string::npos || body.find('\r') != std::string::npos
+        || body.empty() || body.size() > 4096) {
+        error_out = std::string(what) + " is not usable";
         return false;
     }
     std::ofstream out(sidecar, std::ios::binary | std::ios::trunc);
     if (!out) {
-        error_out = "Failed to write save token";
+        error_out = std::string("Failed to write ") + what;
         return false;
     }
-    out << token;
+    out << body;
     out.close();
     if (!out) {
-        error_out = "Failed to write save token";
+        error_out = std::string("Failed to write ") + what;
         return false;
     }
 #if !defined(_WIN32)
     chmod(sidecar.c_str(), 0600);
 #endif
+    return true;
+}
+
+bool read_secret_file(const std::filesystem::path& sidecar, std::string& out) {
+    std::ifstream in(sidecar, std::ios::binary);
+    if (!in) {
+        return false;
+    }
+    std::string body((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    if (body.empty() || body.size() > 4096 || body.find('\n') != std::string::npos
+        || body.find('\r') != std::string::npos) {
+        return false;
+    }
+    out = std::move(body);
+    return true;
+}
+
+std::string save_url_from_https(const std::string& https_url) {
+    if (!starts_with_icase(https_url, "https://") || https_url.size() <= 8) {
+        return {};
+    }
+    std::string url = https_url;
+    const auto hash = url.find('#');
+    if (hash != std::string::npos) {
+        url.resize(hash);
+    }
+    const auto query = url.find('?');
+    if (query != std::string::npos) {
+        url.resize(query);
+    }
+    if (url.size() <= 8) {
+        return {};
+    }
+    return url;
+}
+
+void clear_save_sidecars(const std::string& pack_path) {
+    std::error_code ec;
+    std::filesystem::remove(pack_path + ".save-token", ec);
+    std::filesystem::remove(pack_path + ".save-url", ec);
+}
+
+bool write_save_token_sidecar(const std::string& pack_path, const std::string& token,
+                              std::string& error_out) {
+    if (token.empty()) {
+        clear_save_sidecars(pack_path);
+        return true;
+    }
+    return write_secret_file(pack_path + ".save-token", token, "Save token", error_out);
+}
+
+bool write_save_url_sidecar(const std::string& pack_path, const std::string& url,
+                            std::string& error_out) {
+    const std::filesystem::path sidecar = pack_path + ".save-url";
+    if (url.empty()) {
+        std::error_code ec;
+        std::filesystem::remove(sidecar, ec);
+        return true;
+    }
+    if (!starts_with_icase(url, "https://") || url.find('?') != std::string::npos
+        || url.find('#') != std::string::npos) {
+        error_out = "Save URL is not usable";
+        return false;
+    }
+    return write_secret_file(sidecar, url, "Save URL", error_out);
+}
+
+bool read_save_credentials(const std::string& pack_path, std::string& token_out,
+                           std::string& url_out) {
+    token_out.clear();
+    url_out.clear();
+    if (!read_secret_file(pack_path + ".save-token", token_out)) {
+        token_out.clear();
+        return false;
+    }
+    if (!read_secret_file(pack_path + ".save-url", url_out) || !starts_with_icase(url_out, "https://")
+        || url_out.find('?') != std::string::npos || url_out.find('#') != std::string::npos) {
+        token_out.clear();
+        url_out.clear();
+        return false;
+    }
     return true;
 }
 

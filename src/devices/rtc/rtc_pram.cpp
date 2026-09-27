@@ -61,11 +61,15 @@ void init_slot_rtc_pram(computer_t *computer, SlotType_t slot) {
 
     computer->mmu->set_C0XX_write_handler(0xC034, { rtc_pram_write_C034, st });
     computer->mmu->set_C0XX_read_handler(0xC034, { rtc_pram_read_C034, st });
-    
-    computer->register_shutdown_handler([st, computer]() {
+
+    auto persist_now = [st, computer]() {
         uint8_t bram[256];
         st->rtc->copy_bram(bram);
         computer->persist_bram(bram, 256);
+    };
+    computer->set_bram_flush_handler(persist_now);
+    computer->register_shutdown_handler([st, persist_now]() {
+        persist_now();
         delete st->rtc;
         delete st;
         return true;

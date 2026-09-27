@@ -339,6 +339,16 @@ void computer_t::persist_bram(const uint8_t *data, size_t len) const {
     }
 }
 
+void computer_t::set_bram_flush_handler(std::function<void()> handler) {
+    bram_flush = std::move(handler);
+}
+
+void computer_t::flush_bram() const {
+    if (bram_flush) {
+        bram_flush();
+    }
+}
+
 void computer_t::register_reset_handler(ResetHandler handler) {
     reset_handlers.push_back(handler);
 }

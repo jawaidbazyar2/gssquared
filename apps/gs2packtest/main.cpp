@@ -68,6 +68,9 @@ static bool test_round_trip() {
     std::string member;
     CHECK(gs2pack::read_member(pack, "machine.gs2", member, error), error);
     CHECK(member == "name = \"Demo\"\n", "read_member machine.gs2");
+    bool same = false;
+    CHECK(gs2pack::payloads_match(session, same, error), error);
+    CHECK(same, "fresh extract matches the archive");
 
     const auto images = gs2pack::list_disk_images(session);
     CHECK(images.size() == 2, "disk count");
@@ -80,6 +83,8 @@ static bool test_round_trip() {
         }
     }
     CHECK(wrote, "found boot.woz");
+    CHECK(gs2pack::payloads_match(session, same, error), error);
+    CHECK(!same, "edited image does not match the archive");
     CHECK(gs2pack::rewrite(session, error), error);
 
     gs2pack::Session again;
@@ -289,21 +294,41 @@ static bool test_pack_urls() {
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
     const auto pack = (dir / "demo.gs2pack").string();
+    CHECK(gs2url::save_url_from_https(
+              "https://Example.com:8443/pack/Choplifter%20boot.gs2pack?token=secret")
+              == "https://Example.com:8443/pack/Choplifter%20boot.gs2pack",
+          "save url drops the query");
+    CHECK(gs2url::save_url_from_https("https://example.com/a.gs2pack#frag") == "https://example.com/a.gs2pack",
+          "save url drops the fragment");
+    CHECK(gs2url::save_url_from_https("http://example.com/a.gs2pack").empty(), "save url rejects http");
+
     CHECK(gs2url::write_save_token_sidecar(pack, "tok-1", error), error);
+    const std::string save_url = "https://example.com/api/gs2/collection/1.gs2pack";
+    CHECK(gs2url::write_save_url_sidecar(pack, save_url, error), error);
     {
         std::ifstream in(pack + ".save-token");
         std::string body;
         std::getline(in, body);
         CHECK(body == "tok-1", "sidecar body");
     }
+    std::string token;
+    std::string loaded_url;
+    CHECK(gs2url::read_save_credentials(pack, token, loaded_url), "read both sidecars");
+    CHECK(token == "tok-1", "token");
+    CHECK(loaded_url == save_url, "save url");
 #if !defined(_WIN32)
     struct stat st {};
     CHECK(::stat((pack + ".save-token").c_str(), &st) == 0, "sidecar stat");
     CHECK((st.st_mode & 0777) == 0600, "sidecar mode 0600");
+    CHECK(::stat((pack + ".save-url").c_str(), &st) == 0, "save-url stat");
+    CHECK((st.st_mode & 0777) == 0600, "save-url mode 0600");
 #endif
     CHECK(!gs2url::write_save_token_sidecar(pack, "bad\ntoken", error), "newline token");
+    CHECK(!gs2url::write_save_url_sidecar(pack, "https://example.com/a.gs2pack?launch=1", error),
+          "query is not a save url");
     CHECK(gs2url::write_save_token_sidecar(pack, "", error), error);
     CHECK(!std::filesystem::exists(pack + ".save-token"), "empty token removes the sidecar");
+    CHECK(!std::filesystem::exists(pack + ".save-url"), "empty token removes the save url");
     std::filesystem::remove_all(dir);
     return true;
 }

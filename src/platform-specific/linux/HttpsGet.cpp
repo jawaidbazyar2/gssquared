@@ -21,8 +21,10 @@
 #include <curl/curl.h>
 
 #include <atomic>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <mutex>
 #include <string>
 
@@ -228,6 +230,149 @@ bool https_get_to_file(const std::string& url, const std::string& dest_path, uin
     out.ok = rc == CURLE_OK && !download.failed && out.status == 200 && download.error.empty();
     if (!out.ok && out.error.empty()) {
         out.error = "Download failed";
+    }
+    return out.ok;
+}
+
+namespace {
+
+struct CurlUpload {
+    const std::atomic<bool> *cancel = nullptr;
+    int status = 0;
+    bool failed = false;
+    std::string error;
+};
+
+size_t put_header_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
+    auto *upload = static_cast<CurlUpload *>(userdata);
+    const size_t len = size * nitems;
+    if (upload->cancel != nullptr && upload->cancel->load()) {
+        upload->error = "Upload canceled";
+        upload->failed = true;
+        return 0;
+    }
+    if (len >= 5 && std::strncmp(buffer, "HTTP/", 5) == 0) {
+        upload->status = 0;
+        const char *space = static_cast<const char *>(std::memchr(buffer, ' ', len));
+        if (space != nullptr && space + 1 < buffer + len) {
+            upload->status = std::atoi(space + 1);
+        }
+    }
+    return len;
+}
+
+size_t put_discard_cb(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    (void)ptr;
+    auto *upload = static_cast<CurlUpload *>(userdata);
+    if (upload->cancel != nullptr && upload->cancel->load()) {
+        upload->error = "Upload canceled";
+        upload->failed = true;
+        return 0;
+    }
+    return size * nmemb;
+}
+
+int put_xfer_cb(void *userdata, curl_off_t, curl_off_t, curl_off_t, curl_off_t) {
+    auto *upload = static_cast<CurlUpload *>(userdata);
+    if (upload->cancel != nullptr && upload->cancel->load()) {
+        upload->error = "Upload canceled";
+        upload->failed = true;
+        return 1;
+    }
+    return 0;
+}
+
+}  // namespace
+
+bool https_put_file(const std::string& url, const std::string& src_path, const std::string& save_token,
+                    uint64_t max_bytes, const std::atomic<bool> *cancel, HttpsPutResult& out) {
+    out = HttpsPutResult{};
+    if (save_token.empty() || save_token.find('\n') != std::string::npos
+        || save_token.find('\r') != std::string::npos) {
+        out.error = "Save token is not usable";
+        return false;
+    }
+    if (url.compare(0, 8, "https://") != 0 && url.compare(0, 8, "HTTPS://") != 0) {
+        out.error = "Pack URL must be https";
+        return false;
+    }
+    std::error_code ec;
+    const auto file_size = std::filesystem::file_size(src_path, ec);
+    if (ec) {
+        out.error = "Failed to open pack";
+        return false;
+    }
+    if (file_size > max_bytes) {
+        out.error = "Pack exceeds 200 MB";
+        return false;
+    }
+
+    static std::once_flag curl_once;
+    std::call_once(curl_once, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
+    CURL *curl = curl_easy_init();
+    if (curl == nullptr) {
+        out.error = "Failed to start upload";
+        return false;
+    }
+    FILE *file = std::fopen(src_path.c_str(), "rb");
+    if (file == nullptr) {
+        curl_easy_cleanup(curl);
+        out.error = "Failed to open pack";
+        return false;
+    }
+
+    CurlUpload upload;
+    upload.cancel = cancel;
+    const std::string token_header = "X-GS2-Save-Token: " + save_token;
+    struct curl_slist *headers = nullptr;
+    headers = curl_slist_append(headers, "Content-Type: application/x-tar");
+    headers = curl_slist_append(headers, token_header.c_str());
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+    curl_easy_setopt(curl, CURLOPT_READDATA, file);
+    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, static_cast<curl_off_t>(file_size));
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "GSSquared");
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 10L);
+    curl_easy_setopt(curl, CURLOPT_POSTREDIR,
+                     CURL_REDIR_POST_301 | CURL_REDIR_POST_302 | CURL_REDIR_POST_303);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, put_header_cb);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &upload);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, put_discard_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &upload);
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, put_xfer_cb);
+    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &upload);
+#if LIBCURL_VERSION_NUM >= 0x075500
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "https");
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "https");
+#else
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
+#endif
+
+    const CURLcode rc = curl_easy_perform(curl);
+    long status = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+    out.status = static_cast<int>(status != 0 ? status : upload.status);
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+    std::fclose(file);
+
+    if (rc != CURLE_OK && upload.error.empty()) {
+        upload.error = curl_easy_strerror(rc);
+        upload.failed = true;
+    }
+    if (out.status != 204 && upload.error.empty()) {
+        upload.error = "Server returned status " + std::to_string(out.status);
+        upload.failed = true;
+    }
+    out.error = upload.error;
+    out.ok = rc == CURLE_OK && !upload.failed && out.status == 204 && upload.error.empty();
+    if (!out.ok && out.error.empty()) {
+        out.error = "Upload failed";
     }
     return out.ok;
 }

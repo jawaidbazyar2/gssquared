@@ -105,6 +105,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)fileOpenConfig:(id)sender;
 - (void)newDiskImage:(id)sender;
 - (void)fileSaveScreenshot:(id)sender;
+- (void)fileSaveCollection:(id)sender;
 - (void)toggleMountDrivers:(id)sender;
 - (void)appQuit:(id)sender;
 - (void)machineReset:(id)sender;
@@ -162,6 +163,11 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 - (void)fileSaveScreenshot:(id)sender {
 	getMenuInterface()->fileSaveScreenshot();
+	(void)sender;
+}
+
+- (void)fileSaveCollection:(id)sender {
+	getMenuInterface()->fileSaveCollection();
 	(void)sender;
 }
 
@@ -229,6 +235,9 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	}
 	if (menuItem.action == @selector(fileOpenConfig:)) {
 		return !getMenuInterface()->isEmulationRunning();
+	}
+	if (menuItem.action == @selector(fileSaveCollection:)) {
+		return getMenuInterface()->isEmulationRunning() && getMenuInterface()->canSaveCollection();
 	}
 	if (menuItem.action == @selector(newDiskImage:)) {
 		return YES;
@@ -564,6 +573,13 @@ static void setupMenus(void) {
 	[fileMenu addItem:mountDriversItem];
 
 	[fileMenu addItem:[NSMenuItem separatorItem]];
+
+	NSMenuItem *saveCollectionItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Save to Collection", nil)
+		       action:@selector(fileSaveCollection:)
+		keyEquivalent:@""] autorelease];
+	[saveCollectionItem setTarget:sMenuHandler];
+	[fileMenu addItem:saveCollectionItem];
 
 	NSMenuItem *saveScreenshotItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Save Screenshot", nil)

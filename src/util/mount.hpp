@@ -80,6 +80,8 @@ public:
     Mounts() {}
     bool mount_media(disk_mount_t disk_mount, bool force_write_protected = false);
     bool unmount_media(storage_key_t key, unmount_action_t action);
+    /** Write a mounted image back to its file and leave it mounted. */
+    bool writeback_media(storage_key_t key);
     drive_status_t media_status(storage_key_t key);
     /** True if a storage device is registered at this slot/drive key. */
     bool has_drive(storage_key_t key) const;

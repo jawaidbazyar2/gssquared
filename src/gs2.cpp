@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <cstdio>
+#include <atomic>
 #include <unistd.h>
 #include <time.h>
 #include <getopt.h>
@@ -45,6 +46,7 @@
 #ifndef __EMSCRIPTEN__
 #include "ui/PackFetchModal.hpp"
 #include "util/Gs2Url.hpp"
+#include "platform-specific/HttpsGet.hpp"
 #endif
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
@@ -752,6 +754,14 @@ static bool apply_system_config_file(GS2AppState *state, const std::string& path
     state->platform_id = state->loaded_config->config().platform_id;
     SystemSettings::instance().record_use(path);
     if (extracted) {
+#ifndef __EMSCRIPTEN__
+        std::string token;
+        std::string save_url;
+        if (gs2url::read_save_credentials(path, token, save_url)) {
+            extracted->save_token = std::move(token);
+            extracted->save_url = std::move(save_url);
+        }
+#endif
         extracted->config = state->loaded_config.get();
         state->pack = std::move(extracted);
         gs2pack::set_active(state->pack.get());
@@ -1363,12 +1373,11 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     state->phase = PHASE_EMULATION;
 }
 
-/** Flush guest writes into the work tree, then atomically replace the .gs2pack. */
-static void finish_pack_session(GS2AppState *state, computer_t *computer) {
-    if (!state->pack) {
+static void flush_pack_files(computer_t *computer, bool unmount) {
+    if (computer == nullptr) {
         return;
     }
-    if (computer && computer->mounts) {
+    if (computer->mounts != nullptr) {
         std::vector<storage_key_t> dirty;
         for (const drive_info_t& drive : computer->mounts->get_all_drives()) {
             if (drive.status.is_modified) {
@@ -1376,22 +1385,176 @@ static void finish_pack_session(GS2AppState *state, computer_t *computer) {
             }
         }
         for (storage_key_t key : dirty) {
-            computer->mounts->unmount_media(key, SAVE_AND_UNMOUNT);
+            if (unmount) {
+                computer->mounts->unmount_media(key, SAVE_AND_UNMOUNT);
+            } else {
+                computer->mounts->writeback_media(key);
+            }
         }
     }
-    std::string error;
-    if (!gs2pack::rewrite(*state->pack, error)) {
-        std::string diag = "Failed to save pack '" + state->pack->source_path + "':\n" + error
-            + "\nWorking files left in " + state->pack->work_dir;
+    computer->flush_bram();
+}
+
+/** Compare payloads, then rewrite the local ustar. A compare error still rewrites. */
+static bool rewrite_pack(gs2pack::Session& session, bool& changed, std::string& error) {
+    bool same = false;
+    std::string compare_error;
+    if (!gs2pack::payloads_match(session, same, compare_error)) {
+        changed = true;
+    } else {
+        changed = !same;
+    }
+    return gs2pack::rewrite(session, error);
+}
+
+#ifndef __EMSCRIPTEN__
+enum class CollectionPut {
+    Skipped,
+    Stored,
+    Expired,
+    Failed,
+};
+
+struct CollectionPutJob {
+    std::string url;
+    std::string path;
+    std::string token;
+    HttpsPutResult result;
+    std::atomic<bool> done{false};
+};
+
+static int collection_put_thread(void *userdata) {
+    auto *job = static_cast<CollectionPutJob *>(userdata);
+    https_put_file(job->url, job->path, job->token, gs2pack::kMaxBytes, nullptr, job->result);
+    job->done.store(true);
+    return 0;
+}
+
+static void paint_saving_to_arqyv(SDL_Renderer *renderer) {
+    if (renderer == nullptr) {
+        return;
+    }
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderDebugText(renderer, 24.f, 24.f, "Saving to arQyv...");
+    SDL_RenderPresent(renderer);
+}
+
+static CollectionPut put_collection(gs2pack::Session& session, SDL_Renderer *renderer, std::string& error_out) {
+    if (session.save_token.empty() || session.save_url.empty()) {
+        return CollectionPut::Skipped;
+    }
+    CollectionPutJob job;
+    job.url = session.save_url;
+    job.path = session.source_path;
+    job.token = session.save_token;
+    paint_saving_to_arqyv(renderer);
+    SDL_Thread *thread = SDL_CreateThread(collection_put_thread, "pack-put", &job);
+    if (thread == nullptr) {
+        https_put_file(job.url, job.path, job.token, gs2pack::kMaxBytes, nullptr, job.result);
+    } else {
+        while (!job.done.load()) {
+            paint_saving_to_arqyv(renderer);
+            SDL_PumpEvents();
+            SDL_Delay(16);
+        }
+        SDL_WaitThread(thread, nullptr);
+    }
+    error_out = job.result.error;
+    if (job.result.ok && job.result.status == 204) {
+        gs2url::clear_save_sidecars(session.source_path);
+        return CollectionPut::Stored;
+    }
+    if (job.result.status == 401) {
+        gs2url::clear_save_sidecars(session.source_path);
+        session.save_token.clear();
+        session.save_url.clear();
+        return CollectionPut::Expired;
+    }
+    return CollectionPut::Failed;
+}
+
+static void report_collection_put(CollectionPut result, const std::string& error) {
+    if (result == CollectionPut::Expired) {
+        std::string diag = "The Collection copy was not updated. Play the title again to save to arQyv.";
         std::cerr << diag << "\n";
         system_diag(diag.data());
-        gs2pack::set_active(nullptr);
-        state->pack.reset();
+    } else if (result == CollectionPut::Failed) {
+        std::string diag = "The Collection copy was not updated.";
+        if (!error.empty()) {
+            diag += "\n" + error;
+        }
+        std::cerr << diag << "\n";
+        system_diag(diag.data());
+    }
+}
+
+static SDL_Renderer *pack_renderer(computer_t *computer) {
+    if (computer == nullptr || computer->video_system == nullptr) {
+        return nullptr;
+    }
+    return computer->video_system->renderer;
+}
+#endif
+
+/**
+ * Flush guest writes into the work tree, replace the local .gs2pack, and on
+ * desktop PUT that file when it changed and a Collection save token is present.
+ * `end_session` unmounts disks and drops the working tree. Explicit Save leaves
+ * the machine running.
+ */
+static void save_pack_session(GS2AppState *state, computer_t *computer, bool end_session) {
+    if (!state->pack) {
+        return;
+    }
+    flush_pack_files(computer, end_session);
+    bool changed = true;
+    std::string error;
+    if (!rewrite_pack(*state->pack, changed, error)) {
+        std::string diag = "Failed to save pack '" + state->pack->source_path + "':\n" + error;
+        if (end_session) {
+            diag += "\nWorking files left in " + state->pack->work_dir;
+        }
+        std::cerr << diag << "\n";
+        system_diag(diag.data());
+        if (end_session) {
+            gs2pack::set_active(nullptr);
+            state->pack.reset();
+        }
+        return;
+    }
+#ifndef __EMSCRIPTEN__
+    if (changed) {
+        std::string put_error;
+        const CollectionPut result = put_collection(*state->pack, pack_renderer(computer), put_error);
+        report_collection_put(result, put_error);
+    }
+    if (end_session && computer != nullptr) {
+        computer->set_bram_persist_handler(nullptr);
+        computer->set_bram_flush_handler(nullptr);
+    }
+#endif
+    if (!end_session) {
         return;
     }
     gs2pack::cleanup(*state->pack);
     state->pack.reset();
 }
+
+/** Flush guest writes into the work tree, then atomically replace the .gs2pack. */
+static void finish_pack_session(GS2AppState *state, computer_t *computer) {
+    save_pack_session(state, computer, true);
+}
+
+#ifndef __EMSCRIPTEN__
+static void save_collection_now(GS2AppState *state) {
+    if (state->pack == nullptr || state->pack->save_token.empty() || state->pack->save_url.empty()) {
+        return;
+    }
+    save_pack_session(state, state->computer, false);
+}
+#endif
 
 /*
  * Clean up emulation state and transition to system select or exit.
@@ -1874,6 +2037,13 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         computer_t *computer = state->computer;
         cpu_state *cpu = computer->cpu;
 
+#ifndef __EMSCRIPTEN__
+        if (event->type == gs2_app_values.menu_event_type
+            && event->user.code == MENU_FILE_SAVE_COLLECTION) {
+            save_collection_now(state);
+            return SDL_APP_CONTINUE;
+        }
+#endif
         handle_single_event(computer, cpu, *event);
 
         // handled in computer now
