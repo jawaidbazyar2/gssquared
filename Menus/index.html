@@ -9,7 +9,7 @@
       
       
       
-        <link rel="prev" href="../Features/">
+        <link rel="prev" href="../Tests/">
       
       
         <link rel="next" href="../Select/">
@@ -590,6 +590,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Suites
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1145,6 +1173,34 @@
     
   
     Writing Config Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gs2Pack/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS2 Packs
   
 
     
@@ -3373,7 +3429,7 @@
 
 <h1 id="menus">Menus<a class="headerlink" href="#menus" title="Permanent link">&para;</a></h1>
 <p>GSSquared provides a top menu bar appropriate to your platform: a native menu bar on macOS, an in-window menu bar on Windows, Linux and Web.</p>
-<p>Saving a machine configuration is done from the <a href="../ConfigEditor/">config editor</a> (<strong>Save</strong> / <strong>Save As</strong>), not from the File menu. To launch a saved <code>.gs2</code> or <code>… Settings.txt</code> without editing it, use <strong>File → Launch Config…</strong> or a <a href="../Select/">System Select</a> tile.</p>
+<p>Saving a machine configuration is done from the <a href="../ConfigEditor/">config editor</a> (<strong>Save</strong> / <strong>Save As</strong>), not from the File menu. To launch a saved <code>.gs2</code>, <code>.gs2pack</code>, or <code>… Settings.txt</code> without editing it, use <strong>File → Launch Config…</strong> or a <a href="../Select/">System Select</a> tile. A pack is a config plus its disk images; see <a href="../Gs2Pack/">GS2 Packs</a>.</p>
 <p>On Linux, several File items appear only when they apply: <strong>Launch Config…</strong> and <strong>Quit</strong> at System Select; <strong>Drives</strong>, <strong>Mount Drivers</strong>, <strong>Save Screenshot</strong>, and <strong>Close Emulation</strong> while a machine is running.</p>
 <h3 id="file">File<a class="headerlink" href="#file" title="Permanent link">&para;</a></h3>
 <ul>
@@ -3398,7 +3454,7 @@
 <li>Close Emulation (when a machine is running)</li>
 <li>Quit</li>
 </ul>
-<p><strong>Launch Config…</strong> picks a <code>.gs2</code> or <code>… Settings.txt</code> and boots it immediately (System Select only). See <a href="../Select/">Selecting a System</a>.</p>
+<p><strong>Launch Config…</strong> picks a <code>.gs2</code>, a <code>.gs2pack</code>, or <code>… Settings.txt</code> and boots it immediately (System Select only). See <a href="../Select/">Selecting a System</a> and <a href="../Gs2Pack/">GS2 Packs</a>.</p>
 <p><strong>New Disk Image</strong> opens a save dialog and writes a blank image to the chosen path. It does not mount the file — use <strong>File → Drives</strong>, the Control Panel, or drag-and-drop afterwards. Floppy types copy a shipped <code>.woz</code> template; <strong>32M HD Unformatted</strong> creates a 32M file of zeros (<code>.hdv</code>), and <strong>32M HD Formatted ProDOS</strong> creates the same file with an empty ProDOS volume already on it. Available whether or not a machine is running. See <a href="../BlankFloppy/">Blank Disk Images</a>.</p>
 <p><strong>Drives</strong> is a dynamic per-drive list. Choose a drive to mount or unmount an image the same way as the Control Panel. See <a href="../Storage/">Storage</a>.</p>
 <p><strong>Mount Drivers</strong> is a checkable item that mounts or unmounts the built-in <code>/GS2.DRIVERS</code> volume on BazFast (write-protected). Grayed out when BazFast is not in the current machine. The installer on that disk has options to install <strong>Host FST</strong>, <strong>Marinetti</strong>, and <strong>Uthernet II</strong>. See <a href="../HostFST/">Host FST</a> and <a href="../Cards_UthernetII/">Uthernet II</a>.</p>

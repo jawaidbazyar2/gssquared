@@ -582,6 +582,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../Tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Suites
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../Menus/" class="md-nav__link">
         
   
@@ -1010,6 +1038,34 @@
     
   
     Writing Config Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gs2Pack/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS2 Packs
   
 
     
@@ -3173,6 +3229,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credentials
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#working-tree-and-auto-start" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3265,16 +3332,16 @@
 
 
 <h1 id="arqyv-served-gs2-packs">arQyv-served GS2 packs<a class="headerlink" href="#arqyv-served-gs2-packs" title="Permanent link">&para;</a></h1>
-<p>Status: spec. Not implemented.</p>
-<p>This is how the Emscripten build plays an <a href="https://arqyv.net">arQyv</a> <strong>Title</strong> or <strong>Collection</strong> item: fetch the pack, boot it, let the user swap disks inside that pack, and store disk writes back to that user’s arQyv cloud storage.</p>
-<p>The document model is the <code>.gs2pack</code> in <a href="../ProtocolHandlers/">ProtocolHandlers.md</a>: one config plus its disk images, extracted to a working tree, mounted as ordinary files, rewritten as a unit when the session saves. This file is the web session of that model. Native <code>gssquared:</code> URLs, Finder open, and Steam Cloud stay in ProtocolHandlers. Web disk mounting as it works today is in <a href="../Emscripten/">Emscripten.md</a>.</p>
+<p>Status: arQyv Title/Collection fetch and cloud save are not implemented. Local <code>.gs2pack</code> open, extract, rewrite, and the Simple Browser are implemented (see ProtocolHandlers).</p>
+<p>This is how GSSquared, desktop and web, plays an <a href="https://arqyv.net">arQyv</a> <strong>Title</strong> or <strong>Collection</strong> item: fetch the pack, boot it, let the user swap disks inside that pack, and store disk writes back to that user’s arQyv cloud storage.</p>
+<p>The document model is the <code>.gs2pack</code> in <a href="../ProtocolHandlers/">ProtocolHandlers.md</a>: one uncompressed ustar holding a config plus its disk images. This file is the arQyv session of that model, on both hosts. The player unpacks the ustar into a working tree, mounts those files, and on save rebuilds a ustar. Opening a <code>.gs2pack</code> the user already has (Finder, Explorer, or a web drop), <code>gssquared:</code> URLs, and Steam Cloud stay in ProtocolHandlers. Web disk mounting as it works today is in <a href="../Emscripten/">Emscripten.md</a>.</p>
 <h2 id="mode">Mode<a class="headerlink" href="#mode" title="Permanent link">&para;</a></h2>
 <p><strong>arQyv-served-gs2pack</strong> is a session mode, not a second emulator.</p>
 <table>
 <thead>
 <tr>
 <th></th>
-<th>Ordinary web session</th>
+<th>Ordinary session</th>
 <th>arQyv-served-gs2pack</th>
 </tr>
 </thead>
@@ -3282,11 +3349,11 @@
 <tr>
 <td>How it starts</td>
 <td>System Select. User mounts disks themselves.</td>
-<td>A Title or Collection item. Shell fetches the pack and auto-starts that config.</td>
+<td>A Title or Collection item. The player fetches the pack and auto-starts that config.</td>
 </tr>
 <tr>
 <td>Drive “open”</td>
-<td>Browser file picker (this computer).</td>
+<td>This computer’s file picker.</td>
 <td>Simple Browser (this pack’s images).</td>
 </tr>
 <tr>
@@ -3298,7 +3365,8 @@
 </table>
 <p>The local picker still exists in pack mode, as a secondary action (“Open from this computer…”). The drive button’s primary dialog is the Simple Browser. A disk opened that way writes back to the local image, in either mode. It is not stored in the Collection copy.</p>
 <h2 id="where-the-player-runs">Where the player runs<a class="headerlink" href="#where-the-player-runs" title="Permanent link">&para;</a></h2>
-<p>Host the player on arqyv.net, on a path that sends the same COOP/COEP headers the web build needs for pthreads (<code>Cross-Origin-Opener-Policy: same-origin</code>, <code>Cross-Origin-Embedder-Policy: require-corp</code>).</p>
+<p>Desktop GSSquared fetches the ustar with the platform HTTPS GET in <a href="../ProtocolHandlers/">ProtocolHandlers.md</a> (<code>NSURLSession</code>, WinHTTP, or libcurl), writes a cache <code>.gs2pack</code>, and then follows the extract / launch / rewrite path there. The https URL inside <code>gssquared:</code> is that one GET. The stack follows redirects, a redirect that leaves <code>https</code> fails, and the final response is status 200 with the ustar as its body. A Title fetch sends no credential. A Collection fetch carries the launch token below.</p>
+<p>The web player is hosted on arqyv.net, on a path that sends the same COOP/COEP headers the web build needs for pthreads (<code>Cross-Origin-Opener-Policy: same-origin</code>, <code>Cross-Origin-Embedder-Policy: require-corp</code>).</p>
 <p>Title disk files already live on arqyv.net under <code>/catalog/&lt;id&gt;/disks/…</code>. Same-origin fetches are allowed under <code>require-corp</code>. The Collection session cookie is first-party there.</p>
 <p><code>gssquared.net/live</code> cannot do this as it stands. That page is cross-origin isolated, and catalog responses send neither CORS nor <code>Cross-Origin-Resource-Policy</code>, so a <code>fetch()</code> of a disk (and an iframe of <code>/titles</code> or <code>/collection</code>) is blocked. <code>Cross-Origin-Opener-Policy: same-origin</code> also clears <code>window.opener</code>, so a popup on arqyv.net cannot post a selection back.</p>
 <p>If the player stays on <code>gssquared.net/live</code> later:</p>
@@ -3307,25 +3375,32 @@
 <li>Collection needs a sign-in redirect that returns a short-lived token for that one item. A credentialed cross-site fetch of the arqyv session cookie is not the plan.</li>
 </ul>
 <h2 id="titles-and-collection">Titles and Collection<a class="headerlink" href="#titles-and-collection" title="Permanent link">&para;</a></h2>
-<p>Both resolve to a pack. The shell does not crawl the archive.</p>
+<p>Both resolve to one ustar. The player does not crawl the catalog. The server builds that archive as a forward stream: for each member a 512-byte ustar header (the size is already known), the bytes, then padding to 512, and two zero blocks at the end. A generated <code>machine.gs2</code> is finished in memory so its size is known before its header. Catalog disk blobs already have sizes. Nothing is staged in a temp file. The stream is uncompressed ustar. Gzip is not accepted.</p>
 <ul>
 <li><strong>Title</strong> — public curated catalog entry (<code>/titles/&lt;slug&gt;</code>). Metadata the player needs: platform badge, and the ordered disk list (role, filename, URL). Example: 221B Baker Street is two WOZs; Choplifter is one WOZ and the page says it will not run on later models. <code>Profiles.txt</code> is a catalog index and is not a boot file.</li>
 <li><strong>Collection</strong> — the signed-in user’s saved titles (<code>/collection</code>, login required). A row is a title plus that user’s saved images, when they have any.</li>
 </ul>
-<p>Public catalog objects are immutable. Playing a Title downloads that snapshot into the working tree. The first save creates or updates the user’s Collection copy. Nothing writes back onto <code>/catalog/&lt;id&gt;/</code>.</p>
-<p>Playing a Collection item that already has saved images downloads the catalog snapshot, then overlays the user’s copies.</p>
+<p>Public catalog objects are immutable. Playing a Title streams the catalog snapshot as that ustar. The first save creates or updates the user’s Collection copy. Nothing writes back onto <code>/catalog/&lt;id&gt;/</code>.</p>
+<p>Playing a Collection item streams the same way, with the user’s saved images already in place of the catalog members they replace.</p>
+<h2 id="credentials">Credentials<a class="headerlink" href="#credentials" title="Permanent link">&para;</a></h2>
+<p>The browser session stays in the browser. Desktop GSSquared has no cookie jar, so a Collection link carries its own credential. A Title link carries none. The web player is already on arqyv.net, so it keeps using the first-party session cookie and does not use these tokens.</p>
+<p><strong>Launch token.</strong> arQyv mints one opaque query parameter when it renders a Collection Play link. It authorizes the GET for that one pack, and it lives for minutes: long enough for the confirm dialog and a download up to 200 MB. It is not the session cookie. GSSquared forwards the https URL unchanged, query string included, and the confirm dialog shows the host and the pack filename rather than the query string. arQyv checks the token on the first request. A redirect Location does not need to repeat it.</p>
+<p><strong>Save token.</strong> Playing can go on for days, across quits, so the launch token is not the save credential. The 200 that delivers the ustar carries a second token in the response header <code>X-GS2-Save-Token</code>. An absent header is fine; Title downloads have none. That token authorizes writing the same pack, and it lives for days. GSSquared stores it in a sidecar next to the cache <code>.gs2pack</code> (<code>&lt;pack&gt;.save-token</code>, mode <code>0600</code> on POSIX), in the machine-local cache directory. Desktop GSSquared stores the header and does not upload it yet. The sidecar is not a member of the ustar, it is not put in a URL, and it is not placed in a synced folder. When upload exists, Explicit Save, leaving the title, and quit send it with the upload. A successful upload deletes the sidecar. So does expiry.</p>
+<p>A leaked sidecar can update that one pack until it expires. It cannot open the rest of the Collection, and it is not a login.</p>
+<p>If the save token has expired when a save happens, the local pack is still rewritten. The Collection copy is left unchanged, and the player tells the user the upload did not happen. The next Play click mints a new launch token and a new save token.</p>
 <h2 id="working-tree-and-auto-start">Working tree and auto-start<a class="headerlink" href="#working-tree-and-auto-start" title="Permanent link">&para;</a></h2>
-<p>GSSquared cannot mount zip members. The shell unpacks into the in-memory filesystem (MEMFS) before the emulator opens anything:</p>
+<p>GSSquared cannot mount archive members. Both hosts unpack the ustar into a working tree before the emulator opens anything, then launch <code>machine.gs2</code> from that tree. Relative <code>image</code> paths resolve from the config file, and <code>mount_media</code> opens those paths.</p>
+<p>Desktop extracts to a local temp directory, not a cloud folder, and passes that <code>machine.gs2</code> on <code>argv</code>. <code>SDL_AppInit</code> already loads a config on <code>argv</code> and skips System Select. On close it rewrites the ustar, as in ProtocolHandlers.</p>
+<p>The web shell unpacks into MEMFS, the Emscripten in-memory filesystem:</p>
 <pre><code>/packs/&lt;id&gt;/machine.gs2
 /packs/&lt;id&gt;/disks/boot.woz
 /packs/&lt;id&gt;/disks/data.woz
 </code></pre>
-<p><code>[[storage]]</code> <code>image</code> paths are resolved relative to the config file. With that layout, the paths in the config are the MEMFS paths <code>mount_media</code> already opens.</p>
-<p>The emulator already auto-starts when a config path is on <code>argv</code> (<code>SDL_AppInit</code> loads it and skips System Select). The web shell does not set <code>Module.arguments</code> today. Pack mode does, from <code>preRun</code>, after the writes:</p>
+<p>The web shell does not set <code>Module.arguments</code> today. Pack mode does, from <code>preRun</code>, after the writes:</p>
 <pre><code class="language-javascript">Module.arguments = ['/packs/&lt;id&gt;/machine.gs2'];
 </code></pre>
-<p><code>preRun</code> may be asynchronous so the runtime waits while the pack downloads. The click that chooses Play is the user gesture that unlocks audio.</p>
-<p>A stored <code>machine.gs2</code> (or a <code>… Settings.txt</code>) ships with the title when the machine is not “floppies in slot 6”: IIgs, hard disk, a card the badge does not imply. Otherwise the shell writes a minimal config from the badge and the disk list:</p>
+<p><code>preRun</code> may be asynchronous so the runtime waits while the pack downloads. The click that chooses Play is the user gesture that unlocks audio. A <code>.gs2pack</code> the user opens in the page (picker or drop) takes this same unpack path.</p>
+<p>The streamed ustar always contains <code>machine.gs2</code>. The GS2 file should have full title and description filled out for display purposes. A stored config (and a <code>… Settings.txt</code>) ships with the title when the machine is not “floppies in slot 6”: IIgs, hard disk, a card the badge does not imply. Otherwise the server writes a minimal config into the archive from the badge and the disk list:</p>
 <ul>
 <li>Platform from the badge (<code>apple2</code> / <code>apple2plus</code> / <code>apple2e</code> / <code>apple2e_enhanced</code> / <code>apple2gs</code>, per <a href="../ConfigFiles/">ConfigFiles.md</a>). Choplifter’s badge is Apple II or ][+, not a IIe.</li>
 <li>A Disk II in slot 6.</li>
@@ -3335,23 +3410,25 @@
 <h2 id="two-ways-to-pick-a-disk-image">Two ways to pick a disk image<a class="headerlink" href="#two-ways-to-pick-a-disk-image" title="Permanent link">&para;</a></h2>
 <p>Mounting only needs a path string. <code>mount_media</code> opens whatever path it is given. The two pickers differ in where that path comes from.</p>
 <h3 id="local-computer">Local computer<a class="headerlink" href="#local-computer" title="Permanent link">&para;</a></h3>
-<p>The drive button (outside pack mode) and “Open from this computer…” (inside it) open a file picker for a disk image on this computer. Guest writes go back to that file, the same way a desktop mount writes through to the image path.</p>
-<p>That write-through needs a writable file handle (<code>showOpenFilePicker</code>). The dialog the web build uses now does not provide one. <code>&lt;input type="file"&gt;</code> only supplies bytes; the shell copies them to <code>/uploads/&lt;name&gt;</code> and mounts that MEMFS file, so later writes stay in the copy and never reach the disk the user picked. Drag-and-drop works the same way. The local picker in this spec replaces that dialog.</p>
+<p>The drive button (outside pack mode) and “Open from this computer…” (inside it) open a file picker for a disk image on this computer. Guest writes go back to that file.</p>
+<p>Desktop already does this: the native dialog returns a path, and the mount writes through to it.</p>
+<p>On the web, write-through needs a writable file handle (<code>showOpenFilePicker</code>). The dialog the web build uses now does not provide one. <code>&lt;input type="file"&gt;</code> only supplies bytes; the shell copies them to <code>/uploads/&lt;name&gt;</code> and mounts that MEMFS file, so later writes stay in the copy and never reach the disk the user picked. Drag-and-drop works the same way. The local picker in this spec replaces that dialog.</p>
 <h3 id="simple-browser">Simple Browser<a class="headerlink" href="#simple-browser" title="Permanent link">&para;</a></h3>
 <p>A modal we draw. It is not a filesystem explorer. It lists the disk images that belong to this pack: filename, and which drive currently has it mounted, if any.</p>
-<p>Choosing one mounts that existing MEMFS path on the drive whose button was clicked. No download, no <code>&lt;input type="file"&gt;</code>.</p>
-<p>The list is the pack’s images, not every file under MEMFS (<code>/resources</code>, <code>/uploads</code>, the config). A directory walk of <code>/packs/&lt;id&gt;/disks</code> is enough; the shell can also pass the list in when the session starts.</p>
+<p>Choosing one mounts that existing working-tree path on the drive whose button was clicked. No download, and on the web no <code>&lt;input type="file"&gt;</code>.</p>
+<p>The list is the pack’s images, not every file in the working tree (on the web: <code>/resources</code>, <code>/uploads</code>, the config). A directory walk of the pack’s <code>disks/</code> directory is enough; the player can also pass the list in when the session starts.</p>
 <p>In pack mode the drive button opens this modal. “Open from this computer…” on the modal opens the local picker and mounts that file on the same drive. Writes to it go to the local image. They are not copied into the pack and they are not uploaded with the Collection save.</p>
 <h2 id="saving-back-to-arqyv">Saving back to arQyv<a class="headerlink" href="#saving-back-to-arqyv" title="Permanent link">&para;</a></h2>
-<p>Guest writes already land in the mounted file: floppies via <code>fopen</code>, SmartPort / <code>.hdv</code> write-through. For a pack image that file is in MEMFS, and Save uploads the dirty images. For a local-picker image that file is the one on this computer, and the write is the save. Do not upload pack images per sector, and do not upload on every block.</p>
+<p>Guest writes already land in the mounted file: floppies via <code>fopen</code>, SmartPort / <code>.hdv</code> write-through. For a pack image that file is in the working tree (a temp directory on desktop, MEMFS on the web). On save the player rebuilds a ustar from that tree. The upload is the dirty members and a config that changed. On desktop it sends the save token from Credentials; on the web it uses the session cookie. The server streams a new ustar for the user’s pack and fills unchanged members from catalog blobs. An expired save token still rewrites the local pack; the Collection copy is left unchanged and the player reports that the upload did not happen. For a local-picker image that file is the one on this computer, and the write is the save. Do not upload pack images per sector, and do not upload on every block.</p>
 <p>Save points:</p>
 <ol>
 <li>An explicit <strong>Save</strong> in the player.</li>
-<li>Leaving the title (power-off back to the picker, or launching a different item), after any dirty-disk prompt the desktop build already uses.</li>
-<li>An attempt to close the tab, when the pack’s MEMFS images are dirty.</li>
+<li>Leaving the title (power-off back to the picker, or launching a different item), after the dirty-disk prompt.</li>
+<li>Quitting the desktop app, after that same prompt. The rewrite is the one in ProtocolHandlers; the upload to arQyv finishes before the process exits.</li>
+<li>An attempt to close the browser tab, when the pack’s working-tree images are dirty.</li>
 </ol>
-<p>The shell captures that close attempt. <code>beforeunload</code> cannot show our own dialog and cannot wait for an upload, and <code>fetch</code> keepalive / <code>sendBeacon</code> cannot carry a disk image, so the handler cancels the close and the shell then asks: save the MEMFS pack back to the user’s Collection, or close without saving. Save runs to completion, then the tab may close. Choosing not to save closes with the Collection copy unchanged.</p>
-<p>A killed tab or a crash never delivers that prompt. Changes since the last successful upload are dropped — same rule as a native pack that never finished its rewrite.</p>
+<p>On the web, the shell captures that close attempt. <code>beforeunload</code> cannot show our own dialog and cannot wait for an upload, and <code>fetch</code> keepalive / <code>sendBeacon</code> cannot carry a disk image, so the handler cancels the close and the shell then asks: save the pack back to the user’s Collection, or close without saving. Save runs to completion, then the tab may close. Choosing not to save closes with the Collection copy unchanged.</p>
+<p>A killed process or a crash never delivers that prompt. Changes since the last successful upload are dropped — same rule as a local pack that never finished its rewrite.</p>
 <p>What gets uploaded is the user’s document, not the catalog:</p>
 <ul>
 <li>Dirty disk images, and a config that changed (mounted set, BRAM on a IIgs).</li>
@@ -3361,7 +3438,7 @@
 </ul>
 <p>Relaunch overlays those saved images on a fresh catalog snapshot.</p>
 <p>Conflicts are last-write-wins on the user’s pack, as in ProtocolHandlers. Two sessions that both save will drop one of them. Warning when the server copy changed while we had it open can come later.</p>
-<p>Packs stay within the size already assumed for <code>.gs2pack</code> (on the order of 200 MB). The web heap is 256 MB to start and 1 GB maximum, and MEMFS holds the whole working tree plus the guest RAM, so a pack that fits the native cap can still be tight here. The shell should refuse to start a pack it cannot fetch and write, with a clear error, rather than booting a machine with missing images.</p>
+<p>Packs stay within the size already assumed for <code>.gs2pack</code> (on the order of 200 MB). On the web the heap is 256 MB to start and 1 GB maximum, and MEMFS holds the whole working tree plus the guest RAM, so a pack that fits the desktop cap can still be tight there. Either host should refuse to start a pack it cannot fetch and write, with a clear error, rather than booting a machine with missing images.</p>
 <h2 id="phasing">Phasing<a class="headerlink" href="#phasing" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3372,19 +3449,23 @@
 </thead>
 <tbody>
 <tr>
-<td>Player page on arqyv.net, COOP/COEP, same-origin fetch of one Title’s disks</td>
+<td>Fetch one Title’s ustar (desktop: platform HTTPS GET into a cache <code>.gs2pack</code>; web: <code>fetch</code> into MEMFS), unpack, auto-start</td>
 <td>First</td>
 </tr>
 <tr>
-<td>Synthesized <code>.gs2</code>, <code>Module.arguments</code>, auto-start</td>
+<td>Web player page on arqyv.net, COOP/COEP, same-origin fetch</td>
+<td>First</td>
+</tr>
+<tr>
+<td>Synthesized <code>machine.gs2</code> in the streamed ustar</td>
 <td>First</td>
 </tr>
 <tr>
 <td>Simple Browser as the drive-open dialog in this mode; local picker secondary</td>
-<td>First</td>
+<td>Local pack: now. arQyv session: first</td>
 </tr>
 <tr>
-<td>Save to the user’s Collection copy, including the tab-close prompt; overlay on next launch</td>
+<td>Save to the user’s Collection copy, including desktop quit and the web tab-close prompt; overlay on next launch</td>
 <td>First</td>
 </tr>
 <tr>

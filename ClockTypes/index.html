@@ -1,0 +1,4601 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Clock rails - GSSquared Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#clock-rails" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GSSquared Documentation" class="md-header__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GSSquared Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Clock rails
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="green"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Documentation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../AppleIIe/" class="md-tabs__link">
+          
+  
+  
+  Supported Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../Cards_UthernetII/" class="md-tabs__link">
+          
+  
+  
+  Cards & Devices
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CPUs/" class="md-tabs__link">
+          
+  
+  
+  Internals
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../UserInterface/" class="md-tabs__link">
+          
+  
+  
+  Misc
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../DevelopLog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Journal
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GSSquared Documentation" class="md-nav__button md-logo" aria-label="GSSquared Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GSSquared Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/jawaidbazyar2/gssquared" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    jawaidbazyar2/gssquared
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Feature catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Suites
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Menus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Menus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Selecting a System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CommandLine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OSD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    On Screen Display (OSD)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KeyboardShortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Keyboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using a Mouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joysticks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joysticks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Displays/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Displays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Storage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage & Disks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BlankFloppy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blank Disk Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HostFST/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host FST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SerialConnections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial & Parallel
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Serial_Modem/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial / Modem
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Play in the Browser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Editor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ConfigFiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Config Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Gs2Pack/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS2 Packs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProtocolHandlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    File Types & URLs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UsingTheDebugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using the Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Systems
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Supported Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (II/IIe/IIc)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CompatibilityGS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility (IIgs)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cards & Devices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Cards & Devices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_UthernetII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Uthernet II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SuperSerial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Super Serial Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse III
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VOC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Overlay Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_SecondSight/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Second Sight
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard (user)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Videx/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Videx VideoTerm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_VIDHD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VIDHD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Cards_Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock cards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DiskII/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disk II
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SmartPort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SmartPort
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IWM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IWM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ProDOS_Block/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ProDOS Block
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMouse/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Mouse Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleMemoryExpansionCard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple Memory Expansion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Mockingboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ensoniq5503/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ensoniq ES5503
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIDI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MIDI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Networking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Networking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Parallel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Port
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SCC8530_Serial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serial (SCC8530)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clock Card
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Thunderclock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thunderclock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GSClockBatteryRAM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GS Clock & Battery RAM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoTerm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Term
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../EpsonMX80/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Epson MX-80
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Imagewriter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Imagewriter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ADB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Joyport/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Joyport
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WDM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WDM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Internals
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPUs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPUs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../65816/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    65816
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MMU/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MMU
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgs-Memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Apple IIgs Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hi-Res Graphics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DoubleHiRes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Double Hi-Res
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayNG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Next Gen)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DisplayPP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Display (Post-Processing)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../VideoScanner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Scanner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PAL/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PAL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../XRGB/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    XRGB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../C800-CFFF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C800-CFFF
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../runloop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Run Loop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppCallbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    App Callbacks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PowerOnStates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Power-On States
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AppleIIgsDiagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IIgs Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MockingboardBugAnalysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mockingboard Bug Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CPURefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CPU Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../StateRefactor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    State Refactor Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Misc
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Misc
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UserInterface/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ControlOverlay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Overlay
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Clipboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clipboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SaveAndRestore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Save & Restore State
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Debugger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debugger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DevelopLog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Journal
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current state
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hierarchy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hierarchy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-lives-where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What lives where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#friendship-and-mutation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Friendship and mutation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types-do-not-add-a-virtual-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Types do not add a virtual layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Types do not add a virtual layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#increment-locality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Increment locality
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#eventtimer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EventTimer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nclock-additions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NClock additions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#process_due" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process_due
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="process_due">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#poll-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Poll order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#re-entrancy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-entrancy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ludicrous-step-into-breakpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ludicrous / step-into / breakpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#construction-and-lifetime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Construction and lifetime
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#who-holds-what" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who holds what
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#call-site-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Call-site examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Call-site examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#6551-tx-14m-delay-known" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6551 TX (14M, delay known)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mockingboard-t1-video-delay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mockingboard T1 (video, delay)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mockingboard-t1-video-absolute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mockingboard T1 (video, absolute)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disk-ii-525-settle-cpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Disk II 5.25 settle (CPU)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-motor-off-14m" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 motor-off (14M)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mouse-rtc-14m-absolute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mouse / RTC (14M, absolute)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thunderclock" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thunderclock
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#device-migration-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device migration table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#existing-getters-and-call-sites-that-only-read-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Existing getters and call sites that only read time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tests-and-apps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests and apps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-event-horizon-out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future: event horizon (out of scope)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation sequence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation sequence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-rails-inside-nclock-external-api-unchanged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 — rails inside NClock, external API unchanged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-migrate-call-sites-one-by-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — migrate call sites one by one
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-strong-tick-wrappers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 — strong tick wrappers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-regression-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual regression tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Manual regression tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shared-smoke-every-phase-1-landing-and-once-after-phase-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared smoke (every phase-1 landing, and once after phase 3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after-phase-1-rails-inside-nclock-api-unchanged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After phase 1 (rails inside NClock, API unchanged)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after-each-phase-2-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After each phase-2 step
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="After each phase-2 step">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-thunderclock-rtc-mouse-mouse-iii" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 ThunderClock, RTC, mouse / mouse III
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-mos6551-then-scc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 MOS6551, then SCC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-floppy35-motor-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Floppy35 motor-off
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-mockingboard-n6522" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Mockingboard / N6522
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-standalone-disk-ii-525-not-iwm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5 Standalone Disk II 5.25 (not IWM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#26-iwm-constructor-split-525-cpu-35-c14m" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.6 IWM constructor split (5.25 → cpu, 3.5 → c14m)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#27-appsmbtest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.7 apps/mbtest
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#28-delete-computer_t-eventtimer-pointers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.8 Delete computer_t EventTimer pointers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#after-phase-3-strong-tick-wrappers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After phase 3 (strong tick wrappers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suggested-session-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Suggested session log
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-not-to-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What not to do
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-product-decision-not-blocked-not-locked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open product decision (not blocked, not locked)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="clock-rails">Clock rails<a class="headerlink" href="#clock-rails" title="Permanent link">&para;</a></h1>
+<p>Spec for binding each event queue to the counter it is processed against, so a deadline cannot be stamped in one domain and fired in another.</p>
+<p>Related: <a href="../Clock/">Clock.md</a> (how NClock increment and modes evolved), <a href="../AppCallbacks/">AppCallbacks.md</a> (run loop), <a href="../IWM/">IWM.md</a> / <a href="../SCC8530_Serial/">SCC8530_Serial.md</a> (prior domain mix-ups).</p>
+<p>This document is the design. Do not treat it as already implemented.</p>
+<h2 id="problem">Problem<a class="headerlink" href="#problem" title="Permanent link">&para;</a></h2>
+<p><code>EventTimer</code> is a min-heap of <code>uint64_t</code> deadlines. It does not own a “now.” NClock owns three counters that increment together but are not interchangeable:</p>
+<table>
+<thead>
+<tr>
+<th>Counter</th>
+<th>Getter</th>
+<th>Typical rate</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CPU</td>
+<td><code>get_cycles()</code></td>
+<td>1.02 / 2.8 / 7 / 14 MHz, or ludicrous N×14M</td>
+<td>Instruction retirement</td>
+</tr>
+<tr>
+<td>Video / PH0</td>
+<td><code>get_vid_cycles()</code></td>
+<td>~1.023 MHz always</td>
+<td>Video scanner, 1 MHz bus</td>
+</tr>
+<tr>
+<td>14M</td>
+<td><code>get_c14m()</code></td>
+<td>~14.318 MHz always</td>
+<td>Master crystal, wall-clock-ish</td>
+</tr>
+</tbody>
+</table>
+<p><code>computer_t</code> holds three heaps (<code>event_timer</code>, <code>vid_event_timer</code>, <code>cpu_event_timer</code>), all constructed with the same <code>NClockII*</code>. <code>gs2.cpp</code> must pair each heap with the matching getter when polling. Devices hold <code>NClock*</code> and <code>EventTimer*</code> independently and compute <code>clock-&gt;get_&lt;domain&gt;() + delay</code> themselves.</p>
+<p>Three places have to agree: which heap, which getter at schedule, which getter at process. They do not always agree. <code>EventTimer::scheduleEvent</code> then compares every deadline to <code>clock-&gt;get_cycles()</code>, which is only valid for the CPU heap. After a speed-up or ludicrous stretch, CPU time can lead 14M or video, and a correctly stamped 14M/video event is dropped as “in the past.”</p>
+<p>That is a structural bug, not a missing <code>assert</code> at call sites. A call-site assert still names “now” separately from the queue.</p>
+<h2 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Domain is a type. A VIA cannot be handed a 14M rail.</li>
+<li><code>now</code> and the heap travel together. <code>schedule_after(delay)</code> cannot mix units.</li>
+<li>Existing tick getters stay one load from a constant offset (<code>[reg + constexpr]</code>). No extra pointer chase, no virtual <code>now()</code>.</li>
+<li>Inner-loop poll becomes one call. Still between instructions, not inside <code>incr_cycles()</code>.</li>
+<li><code>computer_t</code> stops owning three <code>EventTimer*</code>.</li>
+<li>Debug builds assert a past deadline; release queues it so the next poll fires it. Never skip.</li>
+</ul>
+<h2 id="non-goals">Non-goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
+<ul>
+<li>One 14M heap for everything. “After N CPU cycles” is not a fixed 14M delta on a IIgs (slow access, ROM, refresh, stretch). Three schedulers remain.</li>
+<li>Firing events from <code>incr_cycles()</code>. Callbacks re-enter devices; the increment path stays a counter update.</li>
+<li>Event-horizon execution (“run until next event”) in this refactor. Keep <code>next_event()</code> public so that can be added later.</li>
+<li>A fourth Ensoniq rail. DOC timing stays on 14M / its own catch-up.</li>
+<li>Changing baud math, VIA periods, or mouse VBL formulas except to stamp them on the correct rail.</li>
+</ul>
+<h2 id="current-state">Current state<a class="headerlink" href="#current-state" title="Permanent link">&para;</a></h2>
+<p>Construction (<code>computer.cpp</code>):</p>
+<pre><code class="language-text">event_timer     = new EventTimer(clock);  // processed vs get_c14m()
+vid_event_timer = new EventTimer(clock);  // processed vs get_vid_cycles()
+cpu_event_timer = new EventTimer(clock);  // processed vs get_cycles()
+</code></pre>
+<p>Poll (<code>gs2.cpp</code>, five copies: step-into, ludicrous probe, breakpoint loop, 1 MHz / 2.8 / 14 M loops):</p>
+<pre><code class="language-text">if (event_timer-&gt;isEventPassed(clock-&gt;get_c14m()))
+    event_timer-&gt;processEvents(clock-&gt;get_c14m());
+if (vid_event_timer-&gt;isEventPassed(clock-&gt;get_vid_cycles()))
+    vid_event_timer-&gt;processEvents(clock-&gt;get_vid_cycles());
+if (cpu_event_timer-&gt;isEventPassed(clock-&gt;get_cycles()))
+    cpu_event_timer-&gt;processEvents(clock-&gt;get_cycles());
+</code></pre>
+<p>NClock increment (II vs IIgs) already couples the three counters. Frame window (<code>frame_start_c14M</code> / <code>frame_end_c14M</code>) is 14M. Video-scanner kicks and per-video-cycle handlers are increment side effects, not EventTimer work.</p>
+<p><code>EventTimer</code> stores <code>NClockII* clock</code> only for the past-check. <code>processEvents(currentCycles)</code> already takes “now” from the caller.</p>
+<p>Incidental rot this refactor should swallow:</p>
+<ul>
+<li><code>computer_t</code> destructor deletes <code>event_timer</code> only; <code>vid_event_timer</code> and <code>cpu_event_timer</code> leak.</li>
+<li><code>set_clock()</code> updates <code>event_timer</code> only.</li>
+<li>IWM constructs both 5.25 and 3.5 drives with <code>computer-&gt;event_timer</code> (14M heap). <code>Floppy525_woz</code> stamps <code>get_cycles() + 520</code>. Slot Disk II uses <code>cpu_event_timer</code> correctly. IWM 5.25 settle is the same class of units bug as the past-check.</li>
+</ul>
+<h2 id="hierarchy">Hierarchy<a class="headerlink" href="#hierarchy" title="Permanent link">&para;</a></h2>
+<p>Rails are not subclasses of NClock. NClock <strong>owns</strong> three typed rails and is the only thing that advances their counters. II vs IIgs stay increment strategies.</p>
+<pre><code class="language-text">NClock                          // coupling engine
+ ├── CpuRail  cpu               // CPU-cycle counter + heap
+ ├── VidRail  vid               // PH0 / video-cycle counter + heap
+ └── C14mRail c14m              // 14M counter + heap
+
+NClockII   : NClock             // IIe increment
+NClockIIgs : NClockII           // variable 14M/cycle, refresh, slow sync
+NClockFactory                   // unchanged
+</code></pre>
+<pre><code class="language-text">ClockRail                       // one body; no virtuals; not a clock
+ ├── now_                       // uint64_t, first field
+ ├── EventTimer events_         // heap only; no NClock*
+ ├── now() / schedule() / schedule_after() / cancel()
+ ├── due() / next_event() / process_due()
+ └── add() / tick()             // private; NClock* are friends
+
+CpuRail  : ClockRail            // empty; type identity only
+VidRail  : ClockRail
+C14mRail : ClockRail
+</code></pre>
+<p>Prefer empty subclasses over <code>ClockRail&lt;ClockDomain::D&gt;</code>. One method body is kinder to I-cache; <code>VidRail&amp;</code> still will not accept a <code>C14mRail</code>; no vptr if <code>ClockRail</code> has no virtuals. A template would emit three copies of every non-inlined wrapper for no gain unless a rail later needs per-domain code (it does not).</p>
+<p><code>now()</code> returns <code>uint64_t</code> until the late tightening pass (strong <code>CpuCycles</code> / <code>VidCycles</code> / <code>C14mTicks</code> structs). Do not use <code>typedef uint64_t CpuCycles_t</code> — that is an alias, not a type.</p>
+<h3 id="what-lives-where">What lives where<a class="headerlink" href="#what-lives-where" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>On NClock (coupling)</th>
+<th>On each rail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>US/PAL / ludicrous mode tables</td>
+<td><code>now_</code></td>
+</tr>
+<tr>
+<td><code>incr_cycles()</code> / <code>slow_incr_cycles()</code></td>
+<td>event heap</td>
+</tr>
+<tr>
+<td>Video scanner kick, <code>cycle_handlers</code></td>
+<td><code>next_event</code></td>
+</tr>
+<tr>
+<td>Frame start/end in 14M</td>
+<td><code>schedule</code> / <code>cancel</code> / <code>process_due</code></td>
+</tr>
+<tr>
+<td>Rate helpers (<code>get_c14m_per_second()</code>, …)</td>
+<td>debug assert vs <code>now_</code></td>
+</tr>
+<tr>
+<td>Existing getters as inline wrappers</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><code>cycle_handlers</code> (every video tick) stay on NClock. They are not scheduled events.</p>
+<h3 id="friendship-and-mutation">Friendship and mutation<a class="headerlink" href="#friendship-and-mutation" title="Permanent link">&para;</a></h3>
+<p><code>now_</code> is read-only to devices. <code>add(n)</code> / <code>tick()</code> are private. Friends: <code>NClock</code>, <code>NClockII</code>, <code>NClockIIgs</code>. Devices cannot advance time by holding a rail.</p>
+<h2 id="types-do-not-add-a-virtual-layer">Types do not add a virtual layer<a class="headerlink" href="#types-do-not-add-a-virtual-layer" title="Permanent link">&para;</a></h2>
+<p>NClock already has virtuals (<code>slow_incr_cycles</code>, <code>debug</code>). That vptr is unchanged and is not on the <code>now()</code> path.</p>
+<p>A rail must satisfy all of:</p>
+<ol>
+<li>No virtual functions, so no vptr on <code>ClockRail</code>.</li>
+<li>Stored <strong>by value</strong> on NClock (<code>CpuRail cpu;</code>), not <code>CpuRail*</code>.</li>
+<li><code>now()</code> is <code>inline</code> in the header and returns <code>now_</code> (first member).</li>
+<li>NClock wrappers stay inline in the header:</li>
+</ol>
+<pre><code class="language-cpp">inline uint64_t get_cycles()     { return cpu.now(); }
+inline uint64_t get_vid_cycles() { return vid.now(); }
+inline uint64_t get_c14m()       { return c14m.now(); }
+</code></pre>
+<p>Expected codegen, same as today:</p>
+<pre><code class="language-text">clock-&gt;get_cycles()
+clock-&gt;cpu.now()
+    → mov rax, [rdi + offsetof(NClock, cpu) + offsetof(ClockRail, now_)]
+</code></pre>
+<p>One load, constant displacement. Today’s offsets are already large (mode tables sit in front of the counters). A different displacement is fine; a second load is not.</p>
+<p>What would break the contract:</p>
+<table>
+<thead>
+<tr>
+<th>Choice</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CpuRail* cpu</code> on NClock</td>
+<td>load pointer, then <code>now_</code></td>
+</tr>
+<tr>
+<td><code>uint64_t*</code> in the rail back to an NClock field</td>
+<td>two loads for <code>rail.now()</code></td>
+</tr>
+<tr>
+<td><code>virtual now()</code> or <code>std::function</code> time source</td>
+<td>indirect call</td>
+</tr>
+<tr>
+<td><code>now()</code> only in a <code>.cpp</code> without LTO</td>
+<td>real call</td>
+</tr>
+<tr>
+<td>Device holds <code>ClockRail&lt;D&gt;*</code> to a heap-allocated rail</td>
+<td>extra load; also a lifetime footgun</td>
+</tr>
+</tbody>
+</table>
+<p>Devices may hold <code>C14mRail*</code> <strong>into</strong> the NClock member (<code>&amp;clock-&gt;c14m</code>). That pointer is the rail object. <code>c14m-&gt;now()</code> is <code>[rail + 0]</code>, still one load. Do not heap-allocate rails.</p>
+<h3 id="increment-locality">Increment locality<a class="headerlink" href="#increment-locality" title="Permanent link">&para;</a></h3>
+<p><code>incr_cycles()</code> touches CPU, 14M, and video together. If each <code>now_</code> sits at the front of a rail that also contains <code>EventTimer</code> (<code>std::vector</code> plus <code>next_event</code>), the three counters are no longer adjacent.</p>
+<p>Accept that for the first cut: getters stay one load; increment may touch three cache lines instead of one cluster. Do <strong>not</strong> “fix” it with a pointer from the rail back to a clustered counter — that makes <code>rail.now()</code> two loads, and devices will call <code>rail.now()</code>.</p>
+<p>If increment clustering shows up in profiles, the counters can move to a hot <code>struct { uint64_t cpu, vid, c14m; }</code> at the top of NClock <strong>only</strong> if the rail type is a typed overlay of that field (the rail object address is a fixed displacement from its counter). A handle that points at the cluster is disallowed.</p>
+<h2 id="api">API<a class="headerlink" href="#api" title="Permanent link">&para;</a></h2>
+<p>Callback signature stays <code>void (*)(uint64_t instanceID, void* userData)</code> so existing static wrappers keep working.</p>
+<pre><code class="language-cpp">enum class ClockDomain { Cpu, Vid, C14m };
+
+template&lt;ClockDomain D&gt;
+class ClockRail {
+public:
+    uint64_t now() const;
+    void schedule(uint64_t when,
+                  void (*cb)(uint64_t, void*),
+                  uint64_t instanceID,
+                  void* userData = nullptr);
+    void schedule_after(uint64_t delay,
+                        void (*cb)(uint64_t, void*),
+                        uint64_t instanceID,
+                        void* userData = nullptr);
+    void cancel(uint64_t instanceID);
+    bool due() const;
+    uint64_t next_event() const;
+    void process_due();
+    bool has_pending() const;
+};
+</code></pre>
+<p>Semantics:</p>
+<ul>
+<li><code>schedule(when, …)</code> — absolute deadline on <strong>this</strong> rail. Same <code>instanceID</code> replaces the existing event (current EventTimer behavior).</li>
+<li><code>schedule_after(delay, …)</code> — <code>schedule(now() + delay, …)</code>. Preferred. Units cannot be wrong.</li>
+<li><code>when == now()</code> is legal (fire on the next poll).</li>
+<li><code>when &lt; now()</code> is a programmer error: <code>assert(when &gt;= now())</code> in debug; in release <strong>queue it</strong> so <code>process_due</code> runs it immediately. Do not skip. Do not print-and-return.</li>
+<li><code>cancel</code> is the current <code>cancelEvents</code>.</li>
+<li><code>due()</code> is <code>now() &gt;= next_event()</code>. Empty heap ⇒ <code>next_event()</code> is <code>uint64_t</code> max, <code>due()</code> is false.</li>
+<li><code>process_due()</code> calls the heap with <code>now()</code>. No getter argument.</li>
+</ul>
+<p><code>schedule_after</code> is the common path. Use absolute <code>schedule</code> when the deadline is already in this rail’s units (mouse VBL, VIA <code>t1_triggered_cycles</code>, RTC first-fire alignment).</p>
+<p>Do not put the assert at every call site as the primary guard. Call-site asserts still name the wrong “now.” The rail assert is the invariant. Callers who compute a deadline far from <code>schedule</code> may assert locally for earlier failure; that is optional documentation.</p>
+<h3 id="eventtimer">EventTimer<a class="headerlink" href="#eventtimer" title="Permanent link">&para;</a></h3>
+<p>Keep it as the heap implementation inside the rail.</p>
+<ul>
+<li>Drop <code>NClockII* clock</code>, <code>set_clock</code>, and the past-check.</li>
+<li><code>processEvents(uint64_t now)</code> stays; the rail passes <code>now_</code>.</li>
+<li>Public surface can remain for <code>apps/mbtest</code> until that app takes a <code>VidRail&amp;</code>.</li>
+<li>Devices in <code>src/</code> do not include EventTimer after the migration.</li>
+</ul>
+<h3 id="nclock-additions">NClock additions<a class="headerlink" href="#nclock-additions" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">class NClock {
+public:
+    CpuRail  cpu;
+    VidRail  vid;
+    C14mRail c14m;
+
+    inline uint64_t get_cycles()     { return cpu.now(); }
+    inline uint64_t get_vid_cycles() { return vid.now(); }
+    inline uint64_t get_c14m()       { return c14m.now(); }
+
+    inline void process_due() {
+        c14m.process_due();
+        vid.process_due();
+        cpu.process_due();
+    }
+};
+</code></pre>
+<p>Public members so construction is <code>&amp;computer-&gt;clock-&gt;c14m</code> with no accessor call. Increment still uses private <code>add</code>/<code>tick</code> via friendship (the public <code>cpu</code> object’s counter is not writable from outside if <code>now_</code> is private and <code>now()</code> is const). Implementation choice: public rail object, private <code>now_</code>.</p>
+<p>Keep every existing NClock query (<code>get_c14m_per_second</code>, frame bounds, mode names, …). This refactor does not relocate rate tables onto rails.</p>
+<p>Commented-out <code>event_vid</code> / <code>schedule_vid_event</code> in NClock.hpp go away; <code>vid.schedule</code> replaces them.</p>
+<h2 id="process_due"><code>process_due</code><a class="headerlink" href="#process_due" title="Permanent link">&para;</a></h2>
+<p>Today each poll site repeats six calls and must remember the pairing. After:</p>
+<pre><code class="language-cpp">clock-&gt;process_due();
+</code></pre>
+<p><code>NClock::process_due()</code> polls all three rails. Each rail’s <code>process_due()</code> is:</p>
+<pre><code class="language-cpp">inline void process_due() {
+    if (due())
+        events_.processEvents(now_);
+}
+</code></pre>
+<p><code>due()</code> is the current <code>isEventPassed</code> cheap path: compare <code>now_</code> to the cached earliest deadline, skip the heap if nothing is ready.</p>
+<p><strong>Do not</strong> call <code>process_due()</code> from <code>incr_cycles()</code> / <code>slow_incr_cycles()</code>. Call it where the six-call block lives today: once per instruction in the run loops and the step-into loop (<code>gs2.cpp</code>). Five copies collapse to five one-liners (or a single helper used by each loop).</p>
+<h3 id="poll-order">Poll order<a class="headerlink" href="#poll-order" title="Permanent link">&para;</a></h3>
+<p>Keep <strong>14M, then video, then CPU</strong>. Callbacks may schedule onto any rail. A CPU callback that schedules a 14M event already in the past will not run until the next instruction if 14M was already processed this poll. That matches today. Do not shuffle order without a reason.</p>
+<h3 id="re-entrancy">Re-entrancy<a class="headerlink" href="#re-entrancy" title="Permanent link">&para;</a></h3>
+<p><code>processEvents</code> already drains the heap in a loop; a callback that <code>schedule</code>s another due event on the <strong>same</strong> rail can run in the same drain. A callback that <code>cancel</code>s its own <code>instanceID</code> is fine (already popped). A callback must not destroy the rail or the clock.</p>
+<h3 id="ludicrous-step-into-breakpoints">Ludicrous / step-into / breakpoints<a class="headerlink" href="#ludicrous-step-into-breakpoints" title="Permanent link">&para;</a></h3>
+<p>All of those loops poll events before <code>execute_next</code>. They all become <code>clock-&gt;process_due()</code>. No special rail rules for ludicrous: 14M and video still advance (sometimes more slowly relative to CPU); events on those rails still fire in their own units.</p>
+<h2 id="construction-and-lifetime">Construction and lifetime<a class="headerlink" href="#construction-and-lifetime" title="Permanent link">&para;</a></h2>
+<p>Clock is created first, as today. Rails are value members; they die with the clock.</p>
+<pre><code class="language-cpp">// computer.cpp — delete
+event_timer = new EventTimer(clock);
+vid_event_timer = new EventTimer(clock);
+cpu_event_timer = new EventTimer(clock);
+
+// computer.hpp — delete
+EventTimer *event_timer;
+EventTimer *vid_event_timer;
+EventTimer *cpu_event_timer;
+</code></pre>
+<p><code>set_clock(NClockII*)</code> after devices have taken <code>&amp;old-&gt;c14m</code> dangles those pointers. Today <code>set_clock</code> only rebinds <code>event_timer</code>’s clock pointer and is already racy vs devices that cached <code>computer-&gt;clock</code>. Rule: the clock is created once for the <code>computer_t</code> lifetime; <code>set_clock</code> is startup-only, before device init. Prefer devices that need rates to hold <code>NClock*</code> and use <code>clock-&gt;c14m</code> rather than a long-lived <code>C14mRail*</code> if a swap is ever required.</p>
+<p>Destructor: no EventTimer pointers to delete. Rails clean up their heaps.</p>
+<p>Reset does <strong>not</strong> auto-cancel all events. Devices already cancel in their reset handlers. Optional later: <code>NClock::cancel_all()</code> on cold reset. Not required for this cut.</p>
+<h2 id="who-holds-what">Who holds what<a class="headerlink" href="#who-holds-what" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Client</th>
+<th>Takes</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MOS6551, Z85C30 TX, Thunderclock, RTC 1 s, 3.5 motor-off, mouse VBL</td>
+<td><code>C14mRail&amp;</code> (or <code>NClock*</code> and <code>clock-&gt;c14m</code>)</td>
+<td>Wall-clock / baud / frame-relative 14M</td>
+</tr>
+<tr>
+<td>Mockingboard / 6522</td>
+<td><code>VidRail&amp;</code></td>
+<td>PH0-timed VIA</td>
+</tr>
+<tr>
+<td>Disk II 5.25 phase-settle</td>
+<td><code>CpuRail&amp;</code></td>
+<td>“N instruction cycles” (until someone moves it)</td>
+</tr>
+<tr>
+<td>IWM</td>
+<td><code>NClock&amp;</code> or both 14M and CPU (and video if 3.5 stepping stays on vid internally)</td>
+<td>Two domains in one device</td>
+</tr>
+<tr>
+<td>Rate math (14M per second, per frame, per scanline)</td>
+<td><code>NClock&amp;</code></td>
+<td>Coupling, not rail state</td>
+</tr>
+</tbody>
+</table>
+<p>If a device only schedules and never needs Hz, pass the rail. If it needs both, pass <code>NClock&amp;</code> and use <code>clock.c14m</code> / <code>clock.vid</code> / <code>clock.cpu</code>. Do not pass <code>NClock&amp;</code> plus a <em>different</em> rail.</p>
+<p><code>instanceID</code> uniqueness is <strong>per rail</strong>, as today per heap. MB IDs and SCC IDs can overlap across rails. Do not merge heaps; IDs would collide.</p>
+<h2 id="call-site-examples">Call-site examples<a class="headerlink" href="#call-site-examples" title="Permanent link">&para;</a></h2>
+<h3 id="6551-tx-14m-delay-known">6551 TX (14M, delay known)<a class="headerlink" href="#6551-tx-14m-delay-known" title="Permanent link">&para;</a></h3>
+<p>Today (<code>MOS6551.hpp</code>):</p>
+<pre><code class="language-cpp">uint64_t cycles = get_cycles_per_char();
+if (cycles &gt; 0 &amp;&amp; event_timer &amp;&amp; clock) {
+    uint64_t when = clock-&gt;get_c14m() + cycles;
+    event_timer-&gt;scheduleEvent(when, tx_complete_callback, timer_base_id + 0, this);
+}
+</code></pre>
+<p>After. <code>get_cycles_per_char()</code> already returns 14M ticks; <code>clock</code> was only used for <code>get_c14m()</code>.</p>
+<pre><code class="language-cpp">// ssc.cpp
+st-&gt;acia = new MOS6551(st-&gt;irq_control, &amp;computer-&gt;clock-&gt;c14m, irq_id, timer_base);
+
+uint64_t cycles = get_cycles_per_char();
+if (cycles &gt; 0 &amp;&amp; c14m) {
+    c14m-&gt;schedule_after(cycles, tx_complete_callback, timer_base_id + 0, this);
+}
+</code></pre>
+<p>SCC TX is the same shape: <code>c14m-&gt;schedule_after(cycles_per_char, …)</code>.</p>
+<h3 id="mockingboard-t1-video-delay">Mockingboard T1 (video, delay)<a class="headerlink" href="#mockingboard-t1-video-delay" title="Permanent link">&para;</a></h3>
+<p>Today:</p>
+<pre><code class="language-cpp">mb_d-&gt;event_timer-&gt;scheduleEvent(
+    mb_d-&gt;clock-&gt;get_vid_cycles() + next_counter + 1,
+    mb_t1_timer_callback, instanceID, mb_d);
+</code></pre>
+<p>After:</p>
+<pre><code class="language-cpp">// init
+mb_d-&gt;vid = &amp;computer-&gt;clock-&gt;vid;
+
+mb_d-&gt;vid-&gt;schedule_after(next_counter + 1, mb_t1_timer_callback, instanceID, mb_d);
+</code></pre>
+<p>Passing <code>&amp;computer-&gt;clock-&gt;c14m</code> here is a type error.</p>
+<h3 id="mockingboard-t1-video-absolute">Mockingboard T1 (video, absolute)<a class="headerlink" href="#mockingboard-t1-video-absolute" title="Permanent link">&para;</a></h3>
+<p>Today already has <code>tc-&gt;t1_triggered_cycles</code> in video ticks:</p>
+<pre><code class="language-cpp">mb_d-&gt;event_timer-&gt;scheduleEvent(tc-&gt;t1_triggered_cycles, mb_t1_timer_callback, id, mb_d);
+</code></pre>
+<p>After:</p>
+<pre><code class="language-cpp">mb_d-&gt;vid-&gt;schedule(tc-&gt;t1_triggered_cycles, mb_t1_timer_callback, id, mb_d);
+</code></pre>
+<h3 id="disk-ii-525-settle-cpu">Disk II 5.25 settle (CPU)<a class="headerlink" href="#disk-ii-525-settle-cpu" title="Permanent link">&para;</a></h3>
+<p>Today (standalone Disk II, correct heap):</p>
+<pre><code class="language-cpp">event_timer-&gt;scheduleEvent(clock-&gt;get_cycles() + 520, phase_change_callback, instanceID, this);
+</code></pre>
+<p>After:</p>
+<pre><code class="language-cpp">cpu-&gt;schedule_after(520, phase_change_callback, instanceID, this);
+</code></pre>
+<p>IWM must construct 5.25 drives with <code>clock-&gt;cpu</code>, not <code>clock-&gt;c14m</code>. See migration table.</p>
+<h3 id="35-motor-off-14m">3.5 motor-off (14M)<a class="headerlink" href="#35-motor-off-14m" title="Permanent link">&para;</a></h3>
+<p>Today:</p>
+<pre><code class="language-cpp">event_timer-&gt;scheduleEvent(
+    clock-&gt;get_c14m() + clock-&gt;get_c14m_per_second() * 0.5,
+    motor_off_callback, instanceID, this);
+</code></pre>
+<p>After. Period still needs the rate helper on NClock:</p>
+<pre><code class="language-cpp">c14m-&gt;schedule_after(clock-&gt;get_c14m_per_second() / 2,
+                     motor_off_callback, instanceID, this);
+</code></pre>
+<h3 id="mouse-rtc-14m-absolute">Mouse / RTC (14M, absolute)<a class="headerlink" href="#mouse-rtc-14m-absolute" title="Permanent link">&para;</a></h3>
+<p>Mouse VBL is an absolute 14M deadline already computed on that domain:</p>
+<pre><code class="language-cpp">c14m-&gt;schedule(ds-&gt;vbl_cycle, mouse_vbl_interrupt, instanceID, ds);
+</code></pre>
+<p>RTC one-second interrupt:</p>
+<pre><code class="language-cpp">c14m-&gt;schedule_after(ds-&gt;clock-&gt;get_c14m_per_second(),
+                     rtc_pram_1sec_interrupt, instanceID, ds);
+</code></pre>
+<p>First-fire alignment that computes an absolute 14M tick (<code>display.cpp</code> init) stays <code>c14m-&gt;schedule(ticks_14m, …)</code> if that value is in 14M units from the same epoch as <code>c14m.now()</code> (zero at clock construct). Do not convert it through <code>get_cycles()</code>.</p>
+<h3 id="thunderclock">Thunderclock<a class="headerlink" href="#thunderclock" title="Permanent link">&para;</a></h3>
+<pre><code class="language-cpp">c14m-&gt;schedule_after(period, thunderclock_tp_tick, timer_id_tp(slot), st);
+c14m-&gt;schedule_after(clock-&gt;get_c14m_per_second(), thunderclock_1hz, timer_id_1hz(slot), st);
+</code></pre>
+<h3 id="run-loop">Run loop<a class="headerlink" href="#run-loop" title="Permanent link">&para;</a></h3>
+<p>Today: six calls, three pairings, five copies.</p>
+<p>After, every copy:</p>
+<pre><code class="language-cpp">clock-&gt;process_due();
+(cpu-&gt;cpun-&gt;execute_next)(cpu);
+</code></pre>
+<h2 id="device-migration-table">Device migration table<a class="headerlink" href="#device-migration-table" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Site</th>
+<th>Today</th>
+<th>Rail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ssc.cpp</code> / <code>MOS6551</code></td>
+<td><code>event_timer</code> + <code>clock</code></td>
+<td><code>C14mRail</code></td>
+</tr>
+<tr>
+<td><code>scc8530.cpp</code> / <code>Z85C30</code></td>
+<td><code>event_timer</code> + <code>clock</code></td>
+<td><code>C14mRail</code> (keep <code>NClock*</code> if baud still reads rates)</td>
+</tr>
+<tr>
+<td><code>thunderclockplus.cpp</code></td>
+<td><code>event_timer</code></td>
+<td><code>C14mRail</code> + <code>NClock*</code> for period</td>
+</tr>
+<tr>
+<td><code>display.cpp</code> RTC</td>
+<td><code>computer-&gt;event_timer</code></td>
+<td><code>clock-&gt;c14m</code></td>
+</tr>
+<tr>
+<td><code>mouse.cpp</code> / <code>applemouseiii.cpp</code></td>
+<td><code>event_timer</code></td>
+<td><code>C14mRail</code></td>
+</tr>
+<tr>
+<td><code>Floppy35_woz</code> motor-off</td>
+<td><code>event_timer</code> (14M heap)</td>
+<td><code>C14mRail</code></td>
+</tr>
+<tr>
+<td><code>mb.cpp</code> / <code>mb2.cpp</code> / <code>N6522</code></td>
+<td><code>vid_event_timer</code></td>
+<td><code>VidRail</code></td>
+</tr>
+<tr>
+<td><code>ndiskii_woz.cpp</code> / <code>Floppy525_woz</code></td>
+<td><code>cpu_event_timer</code></td>
+<td><code>CpuRail</code></td>
+</tr>
+<tr>
+<td><code>iwm_device.cpp</code> / <code>IWM2</code></td>
+<td>one <code>event_timer</code> for both drive types</td>
+<td>5.25 → <code>CpuRail</code>, 3.5 → <code>C14mRail</code></td>
+</tr>
+<tr>
+<td><code>apps/mbtest</code></td>
+<td>stack <code>EventTimer</code> + <code>NClock</code></td>
+<td><code>VidRail</code> on a test clock, or keep EventTimer until last</td>
+</tr>
+</tbody>
+</table>
+<p><code>Floppy_woz</code> base currently takes one <code>EventTimer*</code>. Split the constructor or pass <code>NClock&amp;</code> and let each subclass pick <code>clock.cpu</code> vs <code>clock.c14m</code>.</p>
+<h2 id="existing-getters-and-call-sites-that-only-read-time">Existing getters and call sites that only read time<a class="headerlink" href="#existing-getters-and-call-sites-that-only-read-time" title="Permanent link">&para;</a></h2>
+<p>Most of the emulator only reads <code>get_cycles()</code> / <code>get_c14m()</code> / <code>get_vid_cycles()</code>. Those wrappers stay. No need to rewrite speaker, Ensoniq catch-up, game paddles, debugger, etc. This refactor is about <strong>scheduling</strong>, ownership of the heaps, and the poll site.</p>
+<p>Debug HUD lines that print the three counters keep using the wrappers.</p>
+<h2 id="tests-and-apps">Tests and apps<a class="headerlink" href="#tests-and-apps" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>apps/mbtest</code> constructs <code>EventTimer</code> on the stack. After N6522 takes <code>VidRail&amp;</code>, the test clock’s <code>vid</code> member is enough.</li>
+<li><code>apps/cycletest</code> / <code>cputest</code> / <code>cpu816test</code> only increment and read <code>get_cycles()</code>. No rail work.</li>
+<li>Any test that called <code>scheduleEvent</code> on a bare EventTimer with a fake clock must use a rail so the past-check domain is defined.</li>
+</ul>
+<h2 id="future-event-horizon-out-of-scope">Future: event horizon (out of scope)<a class="headerlink" href="#future-event-horizon-out-of-scope" title="Permanent link">&para;</a></h2>
+<p><code>next_event()</code> on each rail is the earliest deadline in that rail’s units. A later “run until next event” would need a conversion into a common unit. IIgs makes “next video event in CPU cycles” approximate. Do not build the converter now. Do not process events inside increment in the name of that future.</p>
+<h2 id="implementation-sequence">Implementation sequence<a class="headerlink" href="#implementation-sequence" title="Permanent link">&para;</a></h2>
+<p>Three phases. Do not mix strong tick wrappers into phase 1–2.</p>
+<h3 id="phase-1-rails-inside-nclock-external-api-unchanged">Phase 1 — rails inside NClock, external API unchanged<a class="headerlink" href="#phase-1-rails-inside-nclock-external-api-unchanged" title="Permanent link">&para;</a></h3>
+<p>Goal: a bootable emulator with the same getters, the same <code>computer_t</code> EventTimer pointers, and the same device call sites. Only the <em>location</em> of counters and heaps changes.</p>
+<ol>
+<li>Add <code>ClockRail</code> + empty <code>CpuRail</code> / <code>VidRail</code> / <code>C14mRail</code>. <code>now_</code> first. Heap inside. Header-inline <code>now()</code>. Friends for <code>add</code> / <code>tick</code>.</li>
+<li>Move <code>cycles</code> / <code>c_14M</code> / <code>video_cycles</code> into the three rail members. Existing getters become wrappers (<code>return cpu.now()</code> etc.). Increment writes through <code>cpu.add(1)</code> / <code>c14m.add(n)</code> / <code>vid.tick()</code>. Semantics of <code>get_cycles()</code> / <code>get_c14m()</code> / <code>get_vid_cycles()</code> stay identical.</li>
+<li>Put the three heaps in the rails. <code>computer_t</code>’s <code>event_timer</code> / <code>vid_event_timer</code> / <code>cpu_event_timer</code> become pointers <strong>into</strong> those heaps (<code>&amp;clock-&gt;c14m.events()</code> etc.), not separately <code>new</code>’d objects. Device <code>scheduleEvent</code> call sites do not change yet. Destructor / <code>set_clock</code> rot goes away because there is nothing extra to free or rebind.</li>
+<li>Strip EventTimer’s <code>NClock*</code> and the <code>get_cycles()</code> past-check. That check is a behavior bug; removing it is part of making phase 1 “same semantics” for <em>correct</em> schedules. Do not replace it with a skip. The rail assert can wait until a device actually calls <code>rail.schedule</code>.</li>
+<li>Add <code>NClock::process_due()</code>. Switch the five <code>gs2.cpp</code> blocks to it. Devices still enqueue via the EventTimer pointers. One poll path, not two.</li>
+<li>Smoke-test a IIe and a IIgs at 1 MHz and at least one fast speed (serial TX, MB, Disk II, IWM 3.5 motor, mouse, RTC if GS). Confirm a Release getter still folds to one load if you care to check.</li>
+</ol>
+<p>After phase 1, <code>clock-&gt;get_c14m()</code> is still <code>uint64_t</code>. A device can still stamp the wrong units into the right heap. You have not made that a type error yet; you have stopped the heap and the counter from living in different objects, and you have stopped the CPU-domain past-check from dropping 14M/video events.</p>
+<h3 id="phase-2-migrate-call-sites-one-by-one">Phase 2 — migrate call sites one by one<a class="headerlink" href="#phase-2-migrate-call-sites-one-by-one" title="Permanent link">&para;</a></h3>
+<p>One device (or one tight group) per change. Test that device before touching the next. <code>schedule</code> / <code>schedule_after</code> still take <code>uint64_t</code>.</p>
+<p>Suggested order (increasing coupling):</p>
+<ol>
+<li>Thunderclock, RTC, mouse / mouse III (14M, easy to see if VBL / 1 Hz dies)</li>
+<li>MOS6551, then SCC (14M baud)</li>
+<li>Floppy35 motor-off (14M; IWM still passes one timer until the split)</li>
+<li>Mockingboard / N6522 (video)</li>
+<li>Standalone Disk II 5.25 (CPU)</li>
+<li>IWM constructor split: 5.25 → <code>cpu</code>, 3.5 → <code>c14m</code>. This is the one that changes behavior if 5.25 settle was misfiring on the 14M heap. Test seek / boot / format separately from the 3.5 motor timeout.</li>
+<li><code>apps/mbtest</code> last</li>
+<li>Delete <code>computer_t</code>’s three <code>EventTimer*</code> only when nothing in <code>src/</code> takes an <code>EventTimer*</code> from computer.</li>
+</ol>
+<p>No compatibility typedef from <code>EventTimer*</code> to a rail.</p>
+<p>Manual checks for each of these steps are in <a href="#manual-regression-tests">Manual regression tests</a>.</p>
+<h3 id="phase-3-strong-tick-wrappers">Phase 3 — strong tick wrappers<a class="headerlink" href="#phase-3-strong-tick-wrappers" title="Permanent link">&para;</a></h3>
+<p>Only after every schedule site is on a rail.</p>
+<p>Replace rail <code>uint64_t</code> with distinct structs (<code>CpuCycles</code>, <code>VidCycles</code>, <code>C14mTicks</code>), not typedefs. <code>now()</code>, <code>schedule</code>, and <code>schedule_after</code> use those types. Stored deadlines that already live next to a rail (<code>t1_triggered_cycles</code>, <code>vbl_cycle</code>) become the matching struct.</p>
+<p>Leave <code>get_cycles()</code> / <code>get_c14m()</code> / <code>get_vid_cycles()</code> as <code>uint64_t</code> unless you want a second, larger sweep of HUD / speaker / debugger sites. Safety belongs at the schedule edge.</p>
+<p>Heap storage stays <code>uint64_t</code> inside EventTimer; unwrap at the rail boundary.</p>
+<h2 id="manual-regression-tests">Manual regression tests<a class="headerlink" href="#manual-regression-tests" title="Permanent link">&para;</a></h2>
+<p>Perform these by hand after the named phase or phase-2 step. Do not skip the <strong>shared smoke</strong> after phase 1; later steps assume increment + poll still work.</p>
+<p><strong>Pass</strong> means the listed behavior happens and nothing in the shared smoke regresses. <strong>Fail</strong> is a hang, a silent no-op (IRQ/event never fires), an event that fires immediately (wrong domain / past-check), tempo or baud that tracks CPU speed when it should not, or a motor that never spins down.</p>
+<p>Shipped configs worth using: <code>assets/gs2/IIe_ThunderClock.gs2</code>, <code>IIPlus_ThunderClock.gs2</code>, <code>IIe_AppleMouseIII.gs2</code>, <code>DualMockingboard.gs2</code>, <code>IIgs_DiskII.gs2</code>. Use your usual IIe Enhanced and IIgs profiles for the rest.</p>
+<p>Speeds: <strong>1 MHz</strong> is <code>CLOCK_1_024MHZ</code>. <strong>Fast</strong> is 2.8 MHz on IIgs (default) and 2.8 or 14.3 on IIe. Change with F9 / OSD. After a speed change, reset or reboot the guest if the title is picky.</p>
+<h3 id="shared-smoke-every-phase-1-landing-and-once-after-phase-3">Shared smoke (every phase-1 landing, and once after phase 3)<a class="headerlink" href="#shared-smoke-every-phase-1-landing-and-once-after-phase-3" title="Permanent link">&para;</a></h3>
+<p>Do this on <strong>IIe Enhanced</strong> and <strong>IIgs</strong>.</p>
+<ol>
+<li>Cold boot to BASIC or the usual boot disk. Reset (F10 / Control-Reset). Quit cleanly (<code>c.quit()</code> / menu; no hung Quit modal).</li>
+<li>F9 through 1 MHz and one fast speed. Video keeps scanning; speaker click is sane; no <code>scheduleEvent: Event in the past</code> spam (that path is gone after phase 1).</li>
+<li>Debugger step-into for a few instructions, then continue. Events must still fire in step mode (<code>process_due</code> lives in that loop too).</li>
+<li>IIe: boot a 5.25 DOS 3.3 or ProDOS disk, <code>CATALOG</code>, load a small file.</li>
+<li>IIgs: boot a 3.5 System / GS/OS disk far enough to see the desktop or a splash, then a 5.25 disk if you have <code>IIgs_DiskII.gs2</code>.</li>
+<li>IIgs: Control Panel clock advances; ADB mouse moves the firmware cursor (this is not the slot-mouse EventTimer; it only proves increment/poll).</li>
+<li>Optional: enter ludicrous, run ~10 seconds, drop back to 1 MHz or 2.8. 3.5 motor must still be able to spin down afterward; IIgs 1-second interrupt must still tick. Those were the past-check victims.</li>
+</ol>
+<h3 id="after-phase-1-rails-inside-nclock-api-unchanged">After phase 1 (rails inside NClock, API unchanged)<a class="headerlink" href="#after-phase-1-rails-inside-nclock-api-unchanged" title="Permanent link">&para;</a></h3>
+<p>Shared smoke, then every scheduled device once. Phase 1 can break <em>all</em> of them (wrong <code>now</code> in increment, poll order, or heap pointer).</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>What</th>
+<th>How</th>
+<th>Pass</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>ThunderClock</td>
+<td><code>IIe_ThunderClock.gs2</code>, ProDOS boot</td>
+<td><code>DATE</code> / <code>TIME</code> match host wall clock (no year on the chip; ProDOS invents one). Do not hang in the clock driver.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>IIgs RTC 1 s</td>
+<td>IIgs, Control Panel or GS/OS</td>
+<td>Clock advances in real seconds, not instantly and not frozen. Leave it running &gt;2 s.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Slot mouse</td>
+<td><code>IIe_AppleMouseIII.gs2</code> or Mouse card + Shufflepuck</td>
+<td>Moves; VBL-dependent titles get past the VBL wait. If VBL events die, firmware spins.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>SSC</td>
+<td>IIe, Super Serial, ProTERM (or any terminal), modem device</td>
+<td><code>AT</code> → <code>OK</code>. Type a few dozen characters; they appear paced, not in one blast. Repeat at 1 MHz and fast: <strong>baud must not change</strong> with CPU speed.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>SCC</td>
+<td>IIgs, same modem / terminal idea (Spectrum / ProTERM GS)</td>
+<td>Same as SSC: <code>AT</code> → <code>OK</code>; baud independent of CPU speed.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>3.5 motor-off</td>
+<td>IIgs 3.5 boot, then idle</td>
+<td>Drive HUD / spin sound goes off about 0.5 s after the last access. Motor stuck on = event never fired. Motor dies mid-boot = fired immediately.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Mockingboard</td>
+<td><code>DualMockingboard.gs2</code> + Cybernoid music disk, Skyfox, or a Total Replay MB title</td>
+<td>Music plays. At fast CPU, <strong>tempo stays 1 MHz</strong> (video rail). Too-fast music at 2.8/14 = wrong domain.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Disk II 5.25</td>
+<td>IIe slot-6 Disk II</td>
+<td>Boot, <code>CATALOG</code>, seek (load a file that is not the first). Works at 1 MHz <strong>and</strong> fast (CPU-clocked drive).</td>
+</tr>
+<tr>
+<td>9</td>
+<td>IWM 5.25 + 3.5</td>
+<td>IIgs</td>
+<td>5.25 boot (<code>IIgs_DiskII.gs2</code>) and 3.5 boot both work. After phase 1 the IWM 5.25 units bug is <strong>unchanged</strong> (still CPU stamps on the 14M heap); do not treat a long-standing 5.25-at-fast IWM quirk as a new regression unless you just introduced it.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="after-each-phase-2-step">After each phase-2 step<a class="headerlink" href="#after-each-phase-2-step" title="Permanent link">&para;</a></h3>
+<p>Do the row for <strong>that</strong> step, then a 60-second shared-smoke subset: IIe boot + IIgs boot, one speed change, reset. Full shared smoke only if that subset fails.</p>
+<h4 id="21-thunderclock-rtc-mouse-mouse-iii">2.1 ThunderClock, RTC, mouse / mouse III<a class="headerlink" href="#21-thunderclock-rtc-mouse-mouse-iii" title="Permanent link">&para;</a></h4>
+<ol>
+<li><code>IIe_ThunderClock.gs2</code> (and <code>IIPlus_ThunderClock.gs2</code> if you touch II+ ROM mapping). ProDOS <code>DATE</code>. Reset and read time again.</li>
+<li>If you use TP IRQ / 64–2048 Hz pulse: enable IRQ as in <a href="../Thunderclock/">Thunderclock.md</a>; confirm IRQs keep arriving at 1 MHz and at fast (14M rail — rate must not scale with CPU).</li>
+<li>IIgs: watch the Control Panel or GS/OS clock for ≥3 seconds. Toggle the 1-second interrupt if you have a C023 test; it must re-arm (callback reschedules itself).</li>
+<li><code>IIe_AppleMouseIII.gs2</code>: move, click, reset while the pointer is live, then move again (VBL event re-scheduled). Shufflepuck or another VBL+mouse title if you have it.</li>
+<li>Slot Mouse II (not III) if that card is still a separate init path — same VBL check.</li>
+</ol>
+<p>ADB / KeyGloo is out of scope for this step.</p>
+<h4 id="22-mos6551-then-scc">2.2 MOS6551, then SCC<a class="headerlink" href="#22-mos6551-then-scc" title="Permanent link">&para;</a></h4>
+<p>Do 6551 <strong>before</strong> SCC. Test 6551, then migrate SCC and test both.</p>
+<ol>
+<li>IIe SSC + modem: <code>AT</code>, <code>ATI</code>, <code>ATS0?</code>. <code>AT</code> → <code>OK</code> within a beat, not after a long stall and not before the last character is sent (TX complete event).</li>
+<li>Type a line of text at 300 and at 9600 (or whatever the terminal is set to). 300 is obviously paced; 9600 is faster but still not instant.</li>
+<li>Change CPU to fast, same baud in the terminal. Character pacing must match step 2. If TX suddenly completes immediately, the event is on the wrong rail or <code>schedule_after</code> used CPU ticks.</li>
+<li>Incoming: if you have a loopback or a second session, a short receive still sets RDRF / does not freeze ProTERM on “waiting for connect.”</li>
+<li>Reset / <code>IN#2</code> / hang up (<code>ATH</code>). Next <code>AT</code> still works (TX timer cancelled and rescheduled).</li>
+<li>Repeat 1–5 on IIgs SCC (slot-free built-in). Both channels if you have a title that uses B.</li>
+</ol>
+<h4 id="23-floppy35-motor-off">2.3 Floppy35 motor-off<a class="headerlink" href="#23-floppy35-motor-off" title="Permanent link">&para;</a></h4>
+<p>IWM still passes one timer into both drive types. You are only changing how 3.5 <strong>schedules</strong>.</p>
+<ol>
+<li>IIgs: boot 3.5, idle. Motor off ≈ 0.5 s after last IWM access. Time it roughly; it should feel the same at 1 MHz and at 2.8 (14M delay).</li>
+<li>Boot a second 3.5 disk (eject / mount). Motor comes back, then spins down again. Cancel-then-reschedule on the same <code>instanceID</code>.</li>
+<li>Reset while the motor is on. Motor must not stay on forever after reset.</li>
+<li>5.25 on IWM: boot <code>IIgs_DiskII.gs2</code> once. This step must not break 5.25 (still the old heap until 2.6).</li>
+</ol>
+<h4 id="24-mockingboard-n6522">2.4 Mockingboard / N6522<a class="headerlink" href="#24-mockingboard-n6522" title="Permanent link">&para;</a></h4>
+<ol>
+<li><code>DualMockingboard.gs2</code> + a known-good MB title (Cybernoid music disk, Skyfox, Ultima V, Apple Cider Spider). Title detect + music/SFX.</li>
+<li>Same title at 1 MHz and at fast. <strong>Pitch/tempo stay put</strong> (video rail). CPU-speed music is a fail.</li>
+<li>Reset mid-tune, reboot the title. Timers re-arm from the MB init path (<code>vid + 65536</code> oneshots).</li>
+<li>If you have a two-card / dual-6522 title, both halves still play.</li>
+<li>IIgs + MB in a slot, if you use that: music still at 1 MHz while the GS CPU is at 2.8.</li>
+</ol>
+<h4 id="25-standalone-disk-ii-525-not-iwm">2.5 Standalone Disk II 5.25 (not IWM)<a class="headerlink" href="#25-standalone-disk-ii-525-not-iwm" title="Permanent link">&para;</a></h4>
+<ol>
+<li>IIe / II+ slot-6 <code>disk_ii</code>. Boot DOS 3.3, <code>CATALOG</code>, <code>BRUN</code> or <code>LOAD</code> a file that seeks.</li>
+<li>Repeat at fast. Must still work (CPU rail — this is the feature).</li>
+<li>Two drives if configured: boot D1, catalog D2.</li>
+<li>Write / format only if you have a disposable image. Recatalog after write.</li>
+<li>IIgs with a <strong>slot Disk II</strong> (not built-in IWM) if you have that config — same boot.</li>
+</ol>
+<p>Phase-settle is the 520-cycle event. Failures look like missed seeks, hang in boot, or “wrong track” more than a silent motor.</p>
+<h4 id="26-iwm-constructor-split-525-cpu-35-c14m">2.6 IWM constructor split (5.25 → cpu, 3.5 → c14m)<a class="headerlink" href="#26-iwm-constructor-split-525-cpu-35-c14m" title="Permanent link">&para;</a></h4>
+<p>This is the step that can <strong>change</strong> IWM 5.25 behavior. Test 5.25 and 3.5 as separate stories.</p>
+<p><strong>3.5 (must stay the same)</strong></p>
+<ol>
+<li>Repeat 2.3 motor-off (idle spin-down at 1 MHz and 2.8).</li>
+<li>Boot GS/OS or a 3.5 game (Tomahawk / Alien Mind if you use those). Format a blank 3.5 only on a disposable image.</li>
+</ol>
+<p><strong>5.25 (may start working better at fast if the old units bug was biting)</strong></p>
+<ol>
+<li><code>IIgs_DiskII.gs2</code> (or IIgs 5.25 in the built-in IWM). Boot, catalog, seek, at <strong>1 MHz</strong> first.</li>
+<li>Same at <strong>2.8</strong> and one faster IIgs speed. Drive must keep up with the CPU (same product choice as slot Disk II).</li>
+<li>Switch 5.25 ↔ 3.5 (<code>$C031</code> / DiskReg) in one session: boot 3.5, then a 5.25, then 3.5 again. No stuck motor, no stolen <code>instanceID</code>.</li>
+<li>IIe IWM is not a thing; do not skip slot Disk II (2.5) when judging IIe 5.25.</li>
+</ol>
+<p>A new hang at 1 MHz is a real regression. A change only at fast IWM 5.25 may be the intended units fix — compare to slot Disk II at the same speed.</p>
+<h4 id="27-appsmbtest">2.7 <code>apps/mbtest</code><a class="headerlink" href="#27-appsmbtest" title="Permanent link">&para;</a></h4>
+<ol>
+<li>Build and run <code>mbtest</code> (<code>apps/mbtest</code>). It must complete without asserting or looping.</li>
+<li>If it is a cycle-script vs the 6522, T1/T2 fire at the recorded video-cycle marks, not CPU marks.</li>
+</ol>
+<h4 id="28-delete-computer_t-eventtimer-pointers">2.8 Delete <code>computer_t</code> EventTimer pointers<a class="headerlink" href="#28-delete-computer_t-eventtimer-pointers" title="Permanent link">&para;</a></h4>
+<p>No new device logic. Shared smoke on IIe and IIgs. Cold boot, reset, quit. If anything still compiled against <code>computer-&gt;event_timer</code>, it will not link — that is the test.</p>
+<h3 id="after-phase-3-strong-tick-wrappers">After phase 3 (strong tick wrappers)<a class="headerlink" href="#after-phase-3-strong-tick-wrappers" title="Permanent link">&para;</a></h3>
+<p>Mostly a compile test. Then shared smoke once. Re-run only the devices you touched in the wrapper sweep (usually MB <code>t1_triggered_cycles</code>, mouse <code>vbl_cycle</code>, RTC first-fire). If <code>get_*</code> stayed <code>uint64_t</code>, speaker / paddles / Ensoniq / HUD need no extra pass.</p>
+<h3 id="suggested-session-log">Suggested session log<a class="headerlink" href="#suggested-session-log" title="Permanent link">&para;</a></h3>
+<p>Copy and tick.</p>
+<pre><code class="language-text">Phase 1
+  [ ] IIe smoke  [ ] IIgs smoke  [ ] step-into  [ ] speed change
+  [ ] ThunderClock DATE  [ ] IIgs 1 s  [ ] slot mouse VBL
+  [ ] SSC AT/OK 1M + fast  [ ] SCC AT/OK 1M + fast
+  [ ] 3.5 motor-off  [ ] MB tempo 1M + fast
+  [ ] Disk II 5.25 1M + fast  [ ] IWM 5.25 + 3.5
+
+Phase 2.1 Thunder / RTC / mouse
+  [ ] DATE  [ ] 1 s  [ ] mouse VBL  [ ] subset smoke
+Phase 2.2 6551 / SCC
+  [ ] SSC AT 1M+fast  [ ] SCC AT 1M+fast  [ ] subset smoke
+Phase 2.3 Floppy35 motor
+  [ ] spin-down 1M+2.8  [ ] remount  [ ] reset  [ ] IWM 5.25 still boots
+Phase 2.4 Mockingboard
+  [ ] music  [ ] tempo vs CPU  [ ] reset  [ ] subset smoke
+Phase 2.5 Disk II
+  [ ] boot/seek 1M+fast  [ ] subset smoke
+Phase 2.6 IWM split
+  [ ] 3.5 motor + boot  [ ] 5.25 1M  [ ] 5.25 fast  [ ] 5.25↔3.5
+Phase 2.7 mbtest
+  [ ] harness exits clean
+Phase 2.8 drop EventTimer*
+  [ ] IIe + IIgs smoke
+
+Phase 3
+  [ ] build  [ ] shared smoke
+</code></pre>
+<h2 id="what-not-to-do">What not to do<a class="headerlink" href="#what-not-to-do" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>schedule_c14m(when)</code> / <code>schedule_vid(when)</code> methods on NClock that still take a raw <code>uint64_t</code>. Domain in the method name does not stop <code>get_cycles() + n</code>.</li>
+<li>A single 14M queue with converted CPU delays.</li>
+<li><code>process_due()</code> inside <code>incr_cycles()</code>.</li>
+<li>Runtime skip of past events.</li>
+<li>Call-site asserts as the only guard.</li>
+<li><code>ClockRail</code> as a virtual <code>TimeSource</code>.</li>
+<li>Heap-allocated rails hanging off <code>computer_t</code>.</li>
+<li>Storing <code>NClock*</code> inside EventTimer “to have a now.”</li>
+</ul>
+<h2 id="open-product-decision-not-blocked-not-locked">Open product decision (not blocked, not locked)<a class="headerlink" href="#open-product-decision-not-blocked-not-locked" title="Permanent link">&para;</a></h2>
+<p>5.25 stays on the <strong>CPU</strong> rail. This refactor does not change that domain. IWM’s bug is only that 5.25 settle was stamped in CPU cycles onto the 14M heap; the fix is to enqueue it on <code>cpu</code>, same units as standalone Disk II.</p>
+<p>Why CPU, not video / 14M: guest floppy code is written in CPU cycles (phase pulses, nibble loops, settle delays). If the CPU runs fast and the drive stays on PH0/14M, the firmware outruns the drive and 5.25 I/O fails. Clocking the drive in CPU time is a feature choice — the stepper and data path accelerate with the CPU — and it is why floppy still works at 2.8 / 7 / 14 MHz. That pairing is known to be fine on IIe.</p>
+<p>On GS/IWM the same choice may have side effects that are not fully thought through (IWM’s own state machine, 3.5 vs 5.25 select, ludicrous stretch vs 1 MHz Mega II slots). That is context, not a mandate to move 5.25 off the CPU rail in this work. If it is revisited later, formal rails make it a constructor change.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "search.suggest", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
