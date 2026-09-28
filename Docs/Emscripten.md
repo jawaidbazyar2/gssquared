@@ -107,6 +107,39 @@ Two ways to mount media in the browser:
 Mounted images live in the in-memory filesystem and are not persisted across
 page reloads.
 
+## Playing an arQyv pack
+
+A Play link opens this page with the pack URL in the fragment:
+
+```
+https://gssquared.net/live/#pack=<urlencoded https URL ending in .gs2pack>
+```
+
+The fragment is removed before analytics runs, so the launch token is not sent
+to gssquared.net. The page asks to download, naming the host and the file, then
+fetches that URL (CORS, no cookies) into MEMFS at `/packs/<filename>.gs2pack`.
+Only `https://arqyv.net` is accepted. The emulator extracts the archive under
+`/tmp` and boots it, skipping System Select. When the response includes
+`X-GS2-Save-Token`, **File → Save to Collection** uploads the rewritten pack.
+Closing the tab while that copy is dirty asks whether to save.
+
+The downloaded archive and the extracted work tree are both in the WASM heap.
+`INITIAL_MEMORY` is 256 MB and `MAXIMUM_MEMORY` is 1 GB, so a pack near the
+200 MB cap can fail to start. The page shows the error and boots System Select
+instead of a machine with missing disks.
+
+To try this without arQyv, serve a directory of `.gs2pack` files on a second
+port. That server sends the CORS headers, a fake `X-GS2-Save-Token`
+(`dev-save-token`), and accepts `PUT`:
+
+```bash
+python3 assets/web/serve.py 8000 build-web --pack-port 8001 --pack-dir /tmp/packs
+# http://localhost:8000/GSSquared.html#pack=http%3A%2F%2Flocalhost%3A8001%2Fdemo.gs2pack
+```
+
+`http://localhost` and `http://127.0.0.1` are allowed only for this. A file
+named `reject-put` in the pack directory makes every `PUT` return 401.
+
 ## Notes / limitations
 
 - **Audio** starts only after the first user gesture (browser autoplay policy).

@@ -856,7 +856,8 @@ if((UNIX AND NOT APPLE) OR EMSCRIPTEN)
     if(EMSCRIPTEN)
         # Browser file picker used in place of SDL_ShowOpenFileDialog.
         list(APPEND GS2_PLATFORM_SPECIFIC_SOURCES
-            src/platform-specific/emscripten/web_file_dialog.cpp)
+            src/platform-specific/emscripten/web_file_dialog.cpp
+            src/platform-specific/emscripten/web_collection_put.cpp)
     endif()
 
     add_library(platform_specific ${GS2_PLATFORM_SPECIFIC_SOURCES})

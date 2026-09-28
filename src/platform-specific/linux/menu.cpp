@@ -177,7 +177,6 @@ static void build_menu_bar()
                 if (!can_mount) ImGui::EndDisabled();
             }
             ImGui::Separator();
-#ifndef __EMSCRIPTEN__
             {
                 const bool can_save = mi->canSaveCollection();
                 if (!can_save) ImGui::BeginDisabled();
@@ -186,7 +185,6 @@ static void build_menu_bar()
                 }
                 if (!can_save) ImGui::EndDisabled();
             }
-#endif
             if (ImGui::MenuItem("Save Screenshot", "Shift+PrintScreen")) {
                 mi->fileSaveScreenshot();
             }

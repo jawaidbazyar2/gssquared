@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <cstdio>
+#include <cstring>
 #include <atomic>
 #include <unistd.h>
 #include <time.h>
@@ -41,15 +42,16 @@
 #include "util/Connections.hpp"
 #include "util/SystemConfig.hpp"
 #include "util/Gs2Pack.hpp"
+#include "util/Gs2Url.hpp"
 #include "util/SystemSettings.hpp"
 #include "ui/OSD.hpp"
 #ifndef __EMSCRIPTEN__
 #include "ui/PackFetchModal.hpp"
-#include "util/Gs2Url.hpp"
 #include "platform-specific/HttpsGet.hpp"
 #endif
 #if defined(__EMSCRIPTEN__)
 #include "platform-specific/emscripten/web_file_dialog.hpp"
+#include "platform-specific/emscripten/web_collection_put.hpp"
 #include <emscripten.h>
 #elif defined(__APPLE__)
 #include "platform-specific/macos/gs2_save_dialog.hpp"
@@ -710,6 +712,9 @@ struct GS2AppState {
     modal_stack pack_fetch_stack;
     std::unique_ptr<PackFetchModal_t> pack_fetch;
     std::string pending_pack_url;
+#else
+    /** Power-off of an auto-launched pack waits for the Collection PUT. */
+    bool web_exit_after_save = false;
 #endif
 
     // System selection / config editor
@@ -754,14 +759,12 @@ static bool apply_system_config_file(GS2AppState *state, const std::string& path
     state->platform_id = state->loaded_config->config().platform_id;
     SystemSettings::instance().record_use(path);
     if (extracted) {
-#ifndef __EMSCRIPTEN__
         std::string token;
         std::string save_url;
         if (gs2url::read_save_credentials(path, token, save_url)) {
             extracted->save_token = std::move(token);
             extracted->save_url = std::move(save_url);
         }
-#endif
         extracted->config = state->loaded_config.get();
         state->pack = std::move(extracted);
         gs2pack::set_active(state->pack.get());
@@ -1407,7 +1410,6 @@ static bool rewrite_pack(gs2pack::Session& session, bool& changed, std::string& 
     return gs2pack::rewrite(session, error);
 }
 
-#ifndef __EMSCRIPTEN__
 enum class CollectionPut {
     Skipped,
     Stored,
@@ -1415,6 +1417,22 @@ enum class CollectionPut {
     Failed,
 };
 
+static void report_collection_put(CollectionPut result, const std::string& error) {
+    if (result == CollectionPut::Expired) {
+        std::string diag = "The Collection copy was not updated. Play the title again to save to arQyv.";
+        std::cerr << diag << "\n";
+        system_diag(diag.data());
+    } else if (result == CollectionPut::Failed) {
+        std::string diag = "The Collection copy was not updated.";
+        if (!error.empty()) {
+            diag += "\n" + error;
+        }
+        std::cerr << diag << "\n";
+        system_diag(diag.data());
+    }
+}
+
+#ifndef __EMSCRIPTEN__
 struct CollectionPutJob {
     std::string url;
     std::string path;
@@ -1475,21 +1493,6 @@ static CollectionPut put_collection(gs2pack::Session& session, SDL_Renderer *ren
     return CollectionPut::Failed;
 }
 
-static void report_collection_put(CollectionPut result, const std::string& error) {
-    if (result == CollectionPut::Expired) {
-        std::string diag = "The Collection copy was not updated. Play the title again to save to arQyv.";
-        std::cerr << diag << "\n";
-        system_diag(diag.data());
-    } else if (result == CollectionPut::Failed) {
-        std::string diag = "The Collection copy was not updated.";
-        if (!error.empty()) {
-            diag += "\n" + error;
-        }
-        std::cerr << diag << "\n";
-        system_diag(diag.data());
-    }
-}
-
 static SDL_Renderer *pack_renderer(computer_t *computer) {
     if (computer == nullptr || computer->video_system == nullptr) {
         return nullptr;
@@ -1498,11 +1501,86 @@ static SDL_Renderer *pack_renderer(computer_t *computer) {
 }
 #endif
 
+#if defined(__EMSCRIPTEN__)
+struct WebCollectionPut {
+    bool in_flight = false;
+    bool save_again = false;
+    bool save_again_ends_session = false;
+    /** A rewrite changed the pack and the Collection PUT has not returned 204. */
+    bool upload_owed = false;
+    int generation = 0;
+    std::string source_path;
+    /** Latest archive to upload after the in-flight PUT, which snapshotted older bytes. */
+    std::string again_url;
+    std::string again_token;
+    std::string again_path;
+};
+
+static WebCollectionPut g_web_put;
+
+struct WebPutDone {
+    int generation = -1;
+    int status = 0;
+    std::string error;
+    bool ready = false;
+};
+
+static WebPutDone g_web_put_done;
+
+extern "C" EMSCRIPTEN_KEEPALIVE
+void gs2_web_put_done(int generation, int status, const char *error) {
+    g_web_put_done.generation = generation;
+    g_web_put_done.status = status;
+    g_web_put_done.error = error ? error : "";
+    g_web_put_done.ready = true;
+}
+
+static void notify_web_put_done(int status, const std::string& error) {
+    EM_ASM({
+        if (typeof window.__gs2OnPutDone === 'function') {
+            window.__gs2OnPutDone($0, UTF8ToString($1));
+        }
+    }, status, error.c_str());
+}
+
+static void show_saving_to_arqyv(GS2AppState *state) {
+    if (osd != nullptr && state != nullptr && state->phase == PHASE_EMULATION) {
+        osd->set_heads_up_message("Saving to arQyv...", 180);
+    }
+}
+
+static bool web_collection_busy() {
+    return g_web_put.in_flight || g_web_put.save_again;
+}
+
+static void begin_web_collection_put(gs2pack::Session& session) {
+    g_web_put.generation += 1;
+    g_web_put.in_flight = true;
+    g_web_put.upload_owed = true;
+    g_web_put.source_path = session.source_path;
+    g_web_put_done.ready = false;
+    web_put_pack(session.save_url, session.source_path, session.save_token, g_web_put.generation);
+}
+
+static void release_pack_session(GS2AppState *state, computer_t *computer) {
+    if (computer != nullptr) {
+        computer->set_bram_persist_handler(nullptr);
+        computer->set_bram_flush_handler(nullptr);
+        computer->set_bram_copy_handler(nullptr);
+    }
+    if (!state->pack) {
+        return;
+    }
+    gs2pack::cleanup(*state->pack);
+    state->pack.reset();
+}
+#endif
+
 /**
- * Flush guest writes into the work tree, replace the local .gs2pack, and on
- * desktop PUT that file when it changed and a Collection save token is present.
+ * Flush guest writes into the work tree, replace the local .gs2pack, and PUT
+ * that file when it changed and a Collection save token is present.
  * `end_session` unmounts disks and drops the working tree. Explicit Save leaves
- * the machine running.
+ * the machine running. On the web the PUT is asynchronous.
  */
 static void save_pack_session(GS2AppState *state, computer_t *computer, bool end_session) {
     if (!state->pack) {
@@ -1530,11 +1608,28 @@ static void save_pack_session(GS2AppState *state, computer_t *computer, bool end
         const CollectionPut result = put_collection(*state->pack, pack_renderer(computer), put_error);
         report_collection_put(result, put_error);
     }
+#else
+    const bool can_put = !state->pack->save_token.empty() && !state->pack->save_url.empty();
+    if (can_put && (changed || g_web_put.upload_owed)) {
+        if (g_web_put.in_flight) {
+            g_web_put.save_again = true;
+            g_web_put.again_url = state->pack->save_url;
+            g_web_put.again_token = state->pack->save_token;
+            g_web_put.again_path = state->pack->source_path;
+            if (end_session) {
+                g_web_put.save_again_ends_session = true;
+            }
+        } else {
+            begin_web_collection_put(*state->pack);
+            show_saving_to_arqyv(state);
+        }
+    }
+#endif
     if (end_session && computer != nullptr) {
         computer->set_bram_persist_handler(nullptr);
         computer->set_bram_flush_handler(nullptr);
+        computer->set_bram_copy_handler(nullptr);
     }
-#endif
     if (!end_session) {
         return;
     }
@@ -1547,12 +1642,116 @@ static void finish_pack_session(GS2AppState *state, computer_t *computer) {
     save_pack_session(state, computer, true);
 }
 
-#ifndef __EMSCRIPTEN__
 static void save_collection_now(GS2AppState *state) {
     if (state->pack == nullptr || state->pack->save_token.empty() || state->pack->save_url.empty()) {
         return;
     }
     save_pack_session(state, state->computer, false);
+}
+
+#if defined(__EMSCRIPTEN__)
+static void apply_web_put_result(GS2AppState *state, int status, const std::string& error) {
+    g_web_put.in_flight = false;
+    const std::string path = g_web_put.source_path;
+    gs2pack::Session *session = state->pack.get();
+    const bool same = session != nullptr && session->source_path == path;
+    if (status == 204) {
+        gs2url::clear_save_sidecars(path);
+        g_web_put.upload_owed = false;
+        if (osd != nullptr && state->phase == PHASE_EMULATION) {
+            osd->set_heads_up_message("Saved to arQyv", 180);
+        }
+    } else if (status == 401) {
+        gs2url::clear_save_sidecars(path);
+        g_web_put.upload_owed = false;
+        if (same) {
+            session->save_token.clear();
+            session->save_url.clear();
+        }
+        report_collection_put(CollectionPut::Expired, error);
+    } else {
+        report_collection_put(CollectionPut::Failed, error);
+    }
+    notify_web_put_done(status, error);
+
+    const bool again = g_web_put.save_again;
+    const bool end = g_web_put.save_again_ends_session;
+    const std::string again_url = g_web_put.again_url;
+    const std::string again_token = g_web_put.again_token;
+    const std::string again_path = g_web_put.again_path;
+    g_web_put.save_again = false;
+    g_web_put.save_again_ends_session = false;
+    g_web_put.again_url.clear();
+    g_web_put.again_token.clear();
+    g_web_put.again_path.clear();
+    if (again && status != 401) {
+        if (!end && state->pack != nullptr) {
+            // The PUT that just finished snapshotted older bytes. Force another
+            // upload even when this rewrite matches the archive on disk.
+            g_web_put.upload_owed = true;
+            save_pack_session(state, state->computer, false);
+            return;
+        }
+        if (!again_url.empty() && !again_token.empty() && !again_path.empty()) {
+            g_web_put.generation += 1;
+            g_web_put.in_flight = true;
+            g_web_put.upload_owed = true;
+            g_web_put.source_path = again_path;
+            g_web_put_done.ready = false;
+            web_put_pack(again_url, again_path, again_token, g_web_put.generation);
+            show_saving_to_arqyv(state);
+            return;
+        }
+    }
+    if (end && state->pack != nullptr) {
+        release_pack_session(state, nullptr);
+    }
+}
+
+static void poll_web_collection_put(GS2AppState *state) {
+    if (state == nullptr || !g_web_put.in_flight) {
+        return;
+    }
+    show_saving_to_arqyv(state);
+    if (!g_web_put_done.ready || g_web_put_done.generation != g_web_put.generation) {
+        return;
+    }
+    g_web_put_done.ready = false;
+    const int status = g_web_put_done.status;
+    const std::string error = std::move(g_web_put_done.error);
+    apply_web_put_result(state, status, error);
+}
+
+static bool web_disks_dirty(computer_t *computer) {
+    if (computer == nullptr || computer->mounts == nullptr) {
+        return false;
+    }
+    for (const drive_info_t& drive : computer->mounts->get_all_drives()) {
+        if (drive.status.is_modified) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool web_bram_dirty(const GS2AppState *state) {
+    if (state->computer == nullptr) {
+        return false;
+    }
+    uint8_t live[256];
+    if (!state->computer->copy_live_bram(live)) {
+        return false;
+    }
+    const SystemConfig *cfg = state->loaded_config.get();
+    if (cfg != nullptr && cfg->has_bram() && cfg->bram_data() != nullptr) {
+        return std::memcmp(live, cfg->bram_data(), 256) != 0;
+    }
+    for (int i = 0; i < 256; ++i) {
+        if (live[i] != static_cast<uint8_t>(i)) {
+            return true;
+        }
+    }
+    return false;
 }
 #endif
 
@@ -1625,7 +1824,9 @@ void transition_to_shutdown(GS2AppState *state) {
 #endif
     state->phase = PHASE_SYSTEM_SELECT;
 
-    state->loaded_config.reset();
+    if (state->pack == nullptr) {
+        state->loaded_config.reset();
+    }
     state->persist_config.reset();
     state->disks_to_mount.clear();
     state->auto_launched = false;
@@ -1710,6 +1911,32 @@ static void start_pack_url(GS2AppState *state, const std::string& text) {
 static GS2AppState *g_web_gesture_state = nullptr;
 static SDL_AppResult g_web_gesture_result = SDL_APP_CONTINUE;
 static int g_web_gesture_depth = 0;
+
+extern "C" EMSCRIPTEN_KEEPALIVE
+int gs2_web_pack_needs_save(void) {
+    GS2AppState *state = g_web_gesture_state;
+    if (state == nullptr || state->pack == nullptr) {
+        return 0;
+    }
+    if (state->pack->save_token.empty() || state->pack->save_url.empty()) {
+        return 0;
+    }
+    if (g_web_put.in_flight || g_web_put.upload_owed) {
+        return 1;
+    }
+    if (web_disks_dirty(state->computer) || web_bram_dirty(state)) {
+        return 1;
+    }
+    return 0;
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE
+void gs2_web_save_collection(void) {
+    if (g_web_gesture_state == nullptr) {
+        return;
+    }
+    getMenuInterface()->fileSaveCollection();
+}
 #endif
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
@@ -2037,13 +2264,11 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         computer_t *computer = state->computer;
         cpu_state *cpu = computer->cpu;
 
-#ifndef __EMSCRIPTEN__
         if (event->type == gs2_app_values.menu_event_type
             && event->user.code == MENU_FILE_SAVE_COLLECTION) {
             save_collection_now(state);
             return SDL_APP_CONTINUE;
         }
-#endif
         handle_single_event(computer, cpu, *event);
 
         // handled in computer now
@@ -2152,6 +2377,16 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     GS2AppState *state = (GS2AppState *)appstate;
 
 #if defined(__EMSCRIPTEN__)
+    poll_web_collection_put(state);
+    if (state->web_exit_after_save && !web_collection_busy()) {
+        if (state->computer != nullptr && state->computer->cpu != nullptr
+            && state->computer->cpu->trace_buffer != nullptr) {
+            std::string tracepath;
+            Paths::calc_docs(tracepath, "gssquared-trace.bin");
+            state->computer->cpu->trace_buffer->save_to_file(tracepath);
+        }
+        return SDL_APP_SUCCESS;
+    }
     if (g_web_gesture_result != SDL_APP_CONTINUE) {
         const SDL_AppResult rc = g_web_gesture_result;
         g_web_gesture_result = SDL_APP_CONTINUE;
@@ -2293,6 +2528,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             // Finder Open of another .gs2 while emulating: tear down and
             // boot the pending config. Must not take the auto_launched exit
             // path — that would quit the process before the switch.
+#if defined(__EMSCRIPTEN__)
+            if (state->web_exit_after_save) {
+                return SDL_APP_CONTINUE;
+            }
+#endif
             if (state->switch_after_halt && !state->pending_config_path.empty()) {
                 const std::string path = std::move(state->pending_config_path);
                 state->pending_config_path.clear();
@@ -2313,6 +2553,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             const bool exit_app = state->auto_launched || gs2_app_values.force_app_exit;
             if (exit_app) {
                 finish_pack_session(state, computer);
+#if defined(__EMSCRIPTEN__)
+                if (web_collection_busy()) {
+                    state->web_exit_after_save = true;
+                    return SDL_APP_CONTINUE;
+                }
+#endif
                 std::string tracepath;
                 Paths::calc_docs(tracepath, "gssquared-trace.bin");
                 computer->cpu->trace_buffer->save_to_file(tracepath);

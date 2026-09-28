@@ -2,7 +2,7 @@
 
 How GSSquared is opened from the host: Finder / Explorer, drag-and-drop, the command line, and (later) web links. Implementation notes live here; user-facing launch steps are in [Creating Custom System Configs](ConfigEditor.md) and [Writing Config Files Manually](ConfigFiles.md). The `.gs2pack` file format is in [GS2 Packs](Gs2Pack.md).
 
-**Windows:** double-clicking a `.gs2` while GSSquared is already running starts a **second process** (the path goes to `argv`). macOS delivers the open to the existing instance. A `gssquared:https://…/name.gs2pack` link confirms, downloads that one pack, and launches it. A Collection download that returns `X-GS2-Save-Token` uploads the rewritten pack on save. Disk-image associations, a `.gs2` or Settings URL, Title fetch, and the web player’s Collection save are [planned](Roadmap.md), not shipped.
+**Windows:** double-clicking a `.gs2` while GSSquared is already running starts a **second process** (the path goes to `argv`). macOS delivers the open to the existing instance. A `gssquared:https://…/name.gs2pack` link confirms, downloads that one pack, and launches it. A Collection download that returns `X-GS2-Save-Token` uploads the rewritten pack on save. The web build does the same fetch and upload from `gssquared.net/live/#pack=` (see [arqyv-gs2pack.md](arqyv-gs2pack.md)). Disk-image associations, a `.gs2` or Settings URL, and desktop Title fetch are [planned](Roadmap.md), not shipped.
 
 Roadmap 1.0 lists “file type and URL associations.” This document is the spec for that work.
 

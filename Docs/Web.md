@@ -9,6 +9,7 @@ The page must be served with cross-origin isolation headers (`Cross-Origin-Opene
 - Built-in machines from System Select (same tiles as native).
 - Keyboard, mouse, gamepad, display engines, CRT shader (when the browser GPU path is available).
 - Mounting disks with **File → Drives**, clicking a Control Panel drive icon (browser file picker), or **drag-and-drop** onto a drive.
+- Playing an arQyv pack from a `gssquared.net/live/#pack=` link, and **File → Save to Collection** when that download included a save token. The pack lives in the tab’s memory. See [Arqyv Integration](Arqyv.md).
 
 ## What does not
 

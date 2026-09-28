@@ -349,6 +349,17 @@ void computer_t::flush_bram() const {
     }
 }
 
+void computer_t::set_bram_copy_handler(std::function<bool(uint8_t *out)> handler) {
+    bram_copy = std::move(handler);
+}
+
+bool computer_t::copy_live_bram(uint8_t out[256]) const {
+    if (!bram_copy || !out) {
+        return false;
+    }
+    return bram_copy(out);
+}
+
 void computer_t::register_reset_handler(ResetHandler handler) {
     reset_handlers.push_back(handler);
 }

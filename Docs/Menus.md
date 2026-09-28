@@ -33,7 +33,7 @@ On Linux, several File items appear only when they apply: **Launch Config…** a
 
 **Mount Drivers** is a checkable item that mounts or unmounts the built-in `/GS2.DRIVERS` volume on BazFast (write-protected). Grayed out when BazFast is not in the current machine. The installer on that disk has options to install **Host FST**, **Marinetti**, and **Uthernet II**. See [Host FST](HostFST.md) and [Uthernet II](Cards_UthernetII.md).
 
-**Save to Collection** rewrites the running `.gs2pack` and uploads that file to arQyv. It is available only while a Collection pack with a save token is running. The machine keeps running. See [arQyv-served GS2 packs](arqyv-gs2pack.md).
+**Save to Collection** rewrites the running `.gs2pack` and uploads that file to arQyv. It is available only while a Collection title that can be saved is running. The machine keeps running. See [Arqyv Integration](Arqyv.md).
 
 **Save Screenshot** writes the current display (with borders) to a PNG on your Desktop, named like `GS2 Screenshot YYYY-MM-DD HH.MM.SS.png`. Shortcut: Shift+PrintScreen. Only one screenshot write can be in progress at a time.
 

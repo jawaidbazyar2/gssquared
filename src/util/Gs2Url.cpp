@@ -315,6 +315,31 @@ bool read_secret_file(const std::filesystem::path& sidecar, std::string& out) {
     return true;
 }
 
+static bool usable_save_url(const std::string& url) {
+    if (url.find('?') != std::string::npos || url.find('#') != std::string::npos) {
+        return false;
+    }
+    if (starts_with_icase(url, "https://") && url.size() > 8) {
+        return true;
+    }
+#if defined(__EMSCRIPTEN__)
+    // The local pack server in assets/web/serve.py is http://localhost. The
+    // page only writes a save URL for an allowlisted origin.
+    auto loopback = [&](const char *prefix) {
+        const size_t n = std::char_traits<char>::length(prefix);
+        if (url.size() <= n || !starts_with_icase(url, prefix)) {
+            return false;
+        }
+        const char next = url[n];
+        return next == ':' || next == '/';
+    };
+    if (loopback("http://localhost") || loopback("http://127.0.0.1")) {
+        return true;
+    }
+#endif
+    return false;
+}
+
 std::string save_url_from_https(const std::string& https_url) {
     if (!starts_with_icase(https_url, "https://") || https_url.size() <= 8) {
         return {};
@@ -357,8 +382,7 @@ bool write_save_url_sidecar(const std::string& pack_path, const std::string& url
         std::filesystem::remove(sidecar, ec);
         return true;
     }
-    if (!starts_with_icase(url, "https://") || url.find('?') != std::string::npos
-        || url.find('#') != std::string::npos) {
+    if (!usable_save_url(url)) {
         error_out = "Save URL is not usable";
         return false;
     }
@@ -373,8 +397,7 @@ bool read_save_credentials(const std::string& pack_path, std::string& token_out,
         token_out.clear();
         return false;
     }
-    if (!read_secret_file(pack_path + ".save-url", url_out) || !starts_with_icase(url_out, "https://")
-        || url_out.find('?') != std::string::npos || url_out.find('#') != std::string::npos) {
+    if (!read_secret_file(pack_path + ".save-url", url_out) || !usable_save_url(url_out)) {
         token_out.clear();
         url_out.clear();
         return false;

@@ -68,6 +68,13 @@ void init_slot_rtc_pram(computer_t *computer, SlotType_t slot) {
         computer->persist_bram(bram, 256);
     };
     computer->set_bram_flush_handler(persist_now);
+    computer->set_bram_copy_handler([st](uint8_t *out) {
+        if (st->rtc == nullptr || out == nullptr) {
+            return false;
+        }
+        st->rtc->copy_bram(out);
+        return true;
+    });
     computer->register_shutdown_handler([st, persist_now]() {
         persist_now();
         delete st->rtc;

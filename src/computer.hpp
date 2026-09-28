@@ -128,6 +128,7 @@ struct computer_t {
     std::optional<std::array<uint8_t, 256>> initial_bram;
     std::function<void(const uint8_t *data, size_t len)> bram_persist;
     std::function<void()> bram_flush;
+    std::function<bool(uint8_t *out)> bram_copy;
 
     std::vector<ResetHandler> reset_handlers;
     std::vector<ShutdownHandler> shutdown_handlers;
@@ -222,6 +223,9 @@ struct computer_t {
     /** Copy live IIgs battery RAM into the config file without tearing the machine down. */
     void set_bram_flush_handler(std::function<void()> handler);
     void flush_bram() const;
+    /** Copy live IIgs battery RAM. False when this machine has no RTC. */
+    void set_bram_copy_handler(std::function<bool(uint8_t *out)> handler);
+    bool copy_live_bram(uint8_t out[256]) const;
     inline SystemConfig_t *get_system() {
         return system_config_override
             ? const_cast<SystemConfig_t *>(system_config_override)

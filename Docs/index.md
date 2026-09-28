@@ -32,6 +32,8 @@
 
 * [Writing Config Files Manually](ConfigFiles.md)
 
+* [Arqyv Integration](Arqyv.md) — play a Collection title in GSSquared and save it back
+
 * [GS2 Packs](Gs2Pack.md) — `.gs2pack`: a machine config and its disk images in one ustar file
 
 * [File types and URL protocols](ProtocolHandlers.md) — `.gs2` associations and document icons (macOS / Windows / Linux), `gssquared:` pack links

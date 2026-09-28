@@ -127,7 +127,58 @@
       animation: spin 1s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    #pack-close {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: 30;
+      text-align: center;
+    }
+    #pack-close .pack-close-card {
+      max-width: 28rem;
+      padding: 1.5rem;
+    }
+    #pack-close p { margin: 0.4rem 0; }
+    #pack-close-detail { opacity: 0.75; font-size: 0.9rem; }
+    #pack-close button {
+      margin: 0.75rem 0.4rem 0;
+      padding: 0.45rem 0.9rem;
+      font: inherit;
+      font-weight: 600;
+      color: #111;
+      background: #e8e8e8;
+      border: 0;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
+  <script>
+    // Read #pack= before analytics. The fragment is the arQyv pack URL,
+    // including a short-lived launch token. A query parameter would be sent
+    // to this host; the fragment is not. Strip it before any other script,
+    // including gtag, so the token is not stored in analytics or history.
+    (function () {
+      var hash = window.location.hash || '';
+      if (hash.indexOf('#pack=') !== 0) return;
+      var raw = hash.slice('#pack='.length);
+      try { raw = decodeURIComponent(raw); } catch (e) { /* keep the raw text */ }
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      window.__gs2PackRequest = raw;
+      // Some browsers apply the fragment after the first head script. Strip
+      // again once the document is parsed and once it has loaded.
+      var strip = function () {
+        if ((window.location.hash || '').indexOf('#pack=') !== 0) return;
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      };
+      document.addEventListener('DOMContentLoaded', strip);
+      window.addEventListener('load', strip);
+    })();
+  </script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JWJK6DM7XJ"></script>
   <script>
@@ -170,6 +221,15 @@
     </div>
 
     <div id="status">initializing&hellip;</div>
+
+    <div id="pack-close" style="display:none">
+      <div class="pack-close-card">
+        <p id="pack-close-text">Save this title to your arQyv Collection before closing?</p>
+        <p id="pack-close-detail"></p>
+        <button id="pack-close-save" type="button">Save to Collection</button>
+        <button id="pack-close-discard" type="button">Close without saving</button>
+      </div>
+    </div>
   </div>
 
   <script type="text/javascript">
@@ -178,6 +238,139 @@
     var overlayHint    = document.getElementById('overlay-hint');
     var overlaySpinner = document.getElementById('overlay-spinner');
     var runtimeReady   = false;
+    var GS2_PACK_MAX_BYTES = 200 * 1024 * 1024;
+
+    function gs2PackFail(message) {
+      var err = new Error(message);
+      err.gs2Pack = true;
+      return err;
+    }
+
+    function gs2ShowPackError(message) {
+      window.__gs2PackFailed = true;
+      runtimeReady = true;
+      if (overlaySpinner) overlaySpinner.style.display = 'none';
+      if (overlayHint) overlayHint.textContent = message;
+      if (overlayElement) overlayElement.style.display = 'flex';
+      if (statusElement) statusElement.textContent = message;
+    }
+
+    // https://arqyv.net, plus the local pack server (http://localhost or 127.0.0.1).
+    function gs2ParsePackUrl(raw) {
+      if (!raw || raw.length > 8192) return null;
+      var u;
+      try { u = new URL(raw); } catch (e) { return null; }
+      var allowed = (u.protocol === 'https:' && u.hostname === 'arqyv.net')
+        || (u.protocol === 'http:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1'));
+      if (!allowed || u.username || u.password) return null;
+      var name = u.pathname.slice(u.pathname.lastIndexOf('/') + 1);
+      try { name = decodeURIComponent(name); } catch (e) { return null; }
+      if (!name || name === '.' || name === '..' || name.indexOf('/') >= 0 || name.indexOf('\\') >= 0) {
+        return null;
+      }
+      if (name.length < 8 || name.slice(-8).toLowerCase() !== '.gs2pack') return null;
+      return {
+        url: u.toString(),
+        name: name,
+        host: u.host,
+        saveUrl: u.origin + u.pathname
+      };
+    }
+
+    function gs2UsableSecret(text) {
+      return typeof text === 'string' && text.length > 0 && text.length <= 4096
+        && text.indexOf('\n') < 0 && text.indexOf('\r') < 0;
+    }
+
+    function gs2PackErrorMessage(status) {
+      if (status === 401) return 'This Play link has expired. Click Play again on arQyv.';
+      if (status === 404) return 'That title was not found on arQyv.';
+      if (status === 413) return 'That pack is too large to open.';
+      return 'Could not download the pack (HTTP ' + status + ').';
+    }
+
+    function gs2ReadPackBody(resp, pack) {
+      if (!resp.body || typeof resp.body.getReader !== 'function') {
+        return resp.arrayBuffer().then(function (buf) {
+          if (buf.byteLength > GS2_PACK_MAX_BYTES) throw gs2PackFail('That pack is larger than 200 MB.');
+          return new Uint8Array(buf);
+        });
+      }
+      var reader = resp.body.getReader();
+      var chunks = [];
+      var received = 0;
+      function pump() {
+        return reader.read().then(function (result) {
+          if (result.done) {
+            var out = new Uint8Array(received);
+            var off = 0;
+            for (var i = 0; i < chunks.length; i++) {
+              out.set(chunks[i], off);
+              off += chunks[i].byteLength;
+            }
+            return out;
+          }
+          received += result.value.byteLength;
+          if (received > GS2_PACK_MAX_BYTES) {
+            reader.cancel();
+            throw gs2PackFail('That pack is larger than 200 MB.');
+          }
+          chunks.push(result.value);
+          if (statusElement) {
+            statusElement.textContent = 'Downloading ' + pack.name + '… '
+              + (received / (1024 * 1024)).toFixed(1) + ' MB';
+          }
+          return pump();
+        });
+      }
+      return pump();
+    }
+
+    function gs2FetchPack(pack) {
+      return fetch(pack.url, { mode: 'cors', credentials: 'omit' }).then(function (resp) {
+        if (!resp.ok) throw gs2PackFail(gs2PackErrorMessage(resp.status));
+        var declared = Number(resp.headers.get('Content-Length') || '0');
+        if (declared > GS2_PACK_MAX_BYTES) throw gs2PackFail('That pack is larger than 200 MB.');
+        return gs2ReadPackBody(resp, pack).then(function (bytes) {
+          return { resp: resp, bytes: bytes };
+        });
+      }).then(function (loaded) {
+        var token = loaded.resp.headers.get('X-GS2-Save-Token') || '';
+        try { FS.mkdir('/packs'); } catch (e) { /* already exists */ }
+        var memPath = '/packs/' + pack.name;
+        FS.writeFile(memPath, loaded.bytes);
+        if (gs2UsableSecret(token) && gs2UsableSecret(pack.saveUrl)) {
+          FS.writeFile(memPath + '.save-token', token);
+          FS.writeFile(memPath + '.save-url', pack.saveUrl);
+        }
+        return memPath;
+      }).catch(function (err) {
+        if (err && err.gs2Pack) throw err;
+        throw gs2PackFail('Could not download the pack from arQyv.');
+      });
+    }
+
+    function gs2ShowCloseModal() {
+      var modal = document.getElementById('pack-close');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      document.getElementById('pack-close-text').textContent =
+        'Save this title to your arQyv Collection before closing?';
+      document.getElementById('pack-close-detail').textContent = '';
+      document.getElementById('pack-close-save').style.display = '';
+      document.getElementById('pack-close-discard').style.display = '';
+    }
+
+    if (window.__gs2PackRequest) {
+      window.__gs2Pack = gs2ParsePackUrl(window.__gs2PackRequest);
+      if (!window.__gs2Pack) {
+        gs2ShowPackError('GSSquared only opens packs from arqyv.net.');
+      } else {
+        overlaySpinner.style.display = 'none';
+        overlayHint.textContent = 'Download ' + window.__gs2Pack.name
+          + ' from ' + window.__gs2Pack.host + ' and launch?';
+      }
+    }
 
     var Module = {
       canvas: (function () {
@@ -208,16 +401,47 @@
           try { return origRmdir(path); }
           catch (e) { if (e && e.errno === 44) return undefined; throw e; }
         };
+      }, function () {
+        // Hold startup until the confirmed pack is in MEMFS, then pass that
+        // path as argv. C++ extracts it to /tmp the same way as a local pack.
+        if (window.__gs2PackFailed || !window.__gs2Pack) return;
+        addRunDependency('gs2pack');
+        window.__gs2StartPackFetch = function () {
+          if (window.__gs2PackFetchStarted) return;
+          window.__gs2PackFetchStarted = true;
+          gs2FetchPack(window.__gs2Pack).then(function (memPath) {
+            // run() already captured programArgs. Mutate that array; replacing
+            // Module.arguments now would not reach main.
+            if (typeof programArgs !== 'undefined' && programArgs) {
+              programArgs.length = 0;
+              programArgs.push(memPath);
+              Module.arguments = programArgs;
+            } else {
+              Module.arguments = [memPath];
+            }
+            removeRunDependency('gs2pack');
+          }).catch(function (err) {
+            gs2ShowPackError(err && err.message ? err.message : 'Could not download the pack from arQyv.');
+            removeRunDependency('gs2pack');
+          });
+        };
+        if (window.__gs2PackConfirmed) window.__gs2StartPackFetch();
       }],
       print: function (text) { console.log(text); },
       printErr: function (text) { console.error(text); },
       setStatus: function (text) {
         if (statusElement) statusElement.textContent = text;
         if (text === '') {
-          // Runtime is up; let the user click to start (audio gesture).
           runtimeReady = true;
-          overlaySpinner.style.display = 'none';
-          overlayHint.innerHTML = 'Click to start<br>Left Option / Windows = Open Apple<br>Right Option/Windows = Close Apple';
+          if (window.__gs2PackFailed) return;
+          if (window.__gs2PackConfirmed) {
+            // The confirm click already unlocked audio.
+            overlayElement.style.display = 'none';
+          } else if (!window.__gs2Pack) {
+            // Runtime is up; let the user click to start (audio gesture).
+            overlaySpinner.style.display = 'none';
+            overlayHint.innerHTML = 'Click to start<br>Left Option / Windows = Open Apple<br>Right Option/Windows = Close Apple';
+          }
           // After layout/paint, ask SDL to re-read CSS (same as a window resize).
           requestAnimationFrame(function () {
             requestAnimationFrame(function () {
@@ -251,14 +475,86 @@
     window.addEventListener('focus', focusCanvas);
     document.addEventListener('click', focusCanvas);
 
-    // The browser blocks audio until a user gesture. Hide the overlay on the
-    // first click once the runtime is ready, and focus the canvas for keyboard.
+    // The browser blocks audio until a user gesture. A pack link uses this
+    // click as the download confirmation. Otherwise hide the overlay once the
+    // runtime is ready, and focus the canvas for keyboard.
     overlayElement.addEventListener('click', function () {
+      if (window.__gs2Pack && !window.__gs2PackConfirmed && !window.__gs2PackFailed) {
+        window.__gs2PackConfirmed = true;
+        overlayElement.style.display = 'none';
+        focusCanvas();
+        window.dispatchEvent(new Event('resize'));
+        if (window.__gs2StartPackFetch) window.__gs2StartPackFetch();
+        return;
+      }
+      if (window.__gs2PackFailed) {
+        overlayElement.style.display = 'none';
+        focusCanvas();
+        window.dispatchEvent(new Event('resize'));
+        return;
+      }
       if (!runtimeReady) return;
       overlayElement.style.display = 'none';
       focusCanvas();
       // Same path as a browser resize: SDL re-reads CSS and sizes the backing store.
       window.dispatchEvent(new Event('resize'));
+    });
+
+    document.getElementById('pack-close-save').addEventListener('click', function () {
+      document.getElementById('pack-close-text').textContent = 'Saving to arQyv...';
+      document.getElementById('pack-close-detail').textContent = '';
+      try {
+        ccall('gs2_web_save_collection', null, [], []);
+      } catch (err) {
+        console.error('gs2_web_save_collection', err);
+      }
+    });
+
+    document.getElementById('pack-close-discard').addEventListener('click', function () {
+      window.__gs2AllowClose = true;
+      document.getElementById('pack-close-text').textContent =
+        'You can close this tab. The Collection copy is unchanged.';
+      document.getElementById('pack-close-detail').textContent = '';
+      document.getElementById('pack-close-save').style.display = 'none';
+      document.getElementById('pack-close-discard').style.display = 'none';
+    });
+
+    // C++ calls this when a Collection PUT finishes. Only the close modal cares;
+    // an in-app Save to Collection reports through the emulator dialog.
+    window.__gs2OnPutDone = function (status, error) {
+      var modal = document.getElementById('pack-close');
+      if (!modal || modal.style.display === 'none') return;
+      if (status === 204) {
+        window.__gs2AllowClose = true;
+        document.getElementById('pack-close-text').textContent = 'Saved to arQyv. You can close this tab.';
+        document.getElementById('pack-close-detail').textContent = '';
+        document.getElementById('pack-close-save').style.display = 'none';
+        document.getElementById('pack-close-discard').style.display = 'none';
+        return;
+      }
+      document.getElementById('pack-close-text').textContent = 'The Collection copy was not updated.';
+      var detail = error || 'Save to Collection again, or close this tab without saving.';
+      if (status === 401) {
+        detail = 'Play the title again to save to arQyv.';
+      }
+      document.getElementById('pack-close-detail').textContent = detail;
+    };
+
+    // beforeunload cannot show our dialog or wait for an upload. Cancel the
+    // close, then ask. MEMFS does not survive a reload, so this is the only
+    // chance to upload unsaved Collection changes.
+    window.addEventListener('beforeunload', function (e) {
+      if (window.__gs2AllowClose) return;
+      var needs = 0;
+      try {
+        needs = ccall('gs2_web_pack_needs_save', 'number', [], []);
+      } catch (err) {
+        return;
+      }
+      if (!needs) return;
+      e.preventDefault();
+      e.returnValue = '';
+      setTimeout(gs2ShowCloseModal, 0);
     });
 
     // Keep the canvas backing store matched to its host if layout changes
