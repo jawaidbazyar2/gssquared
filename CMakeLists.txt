@@ -689,8 +689,9 @@ target_link_libraries(GSSquared PRIVATE
     ${GS2_SDL3_NET}
 )
 if(WIN32)
-    # We'll bundle the MinGW runtime DLLs instead of static linking
-    # This is more reliable and easier to manage
+    # MinGW runtime stays dynamic. Those DLLs are copied next to the exe
+    # (build tree and install) so Explorer and gssquared: launches work
+    # without MinGW's bin directory on PATH.
     target_link_libraries(GSSquared PRIVATE shell32)
 endif()
 target_link_libraries(GSSquared 
@@ -1021,6 +1022,55 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     endif()
 endif()
 
+# MinGW runtime DLLs. The build-tree exe is what Windows file associations
+# and the gssquared: protocol launch. Without these beside it, that start
+# fails with "libwinpthread-1.dll was not found" because the browser does
+# not inherit a MinGW PATH. SDL3_ttf.dll imports libwinpthread as well.
+if(WIN32 AND MINGW)
+    set(_gs2_mingw_bin "")
+    if(IS_ABSOLUTE "${CMAKE_CXX_COMPILER}")
+        get_filename_component(_gs2_mingw_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    else()
+        find_program(GS2_CXX_COMPILER_ABS NAMES "${CMAKE_CXX_COMPILER}" clang++ g++)
+        if(GS2_CXX_COMPILER_ABS)
+            get_filename_component(_gs2_mingw_bin "${GS2_CXX_COMPILER_ABS}" DIRECTORY)
+        endif()
+    endif()
+
+    set(GS2_MINGW_RUNTIME_DLLS "")
+    foreach(_gs2_runtime_name IN ITEMS libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll)
+        set(_gs2_runtime_found "")
+        foreach(_gs2_runtime_dir IN ITEMS
+                "${_gs2_mingw_bin}"
+                "$ENV{MINGW_PREFIX}/bin"
+                "C:/msys64/mingw64/bin")
+            if(_gs2_runtime_dir AND EXISTS "${_gs2_runtime_dir}/${_gs2_runtime_name}")
+                set(_gs2_runtime_found "${_gs2_runtime_dir}/${_gs2_runtime_name}")
+                break()
+            endif()
+        endforeach()
+        if(NOT _gs2_runtime_found)
+            message(FATAL_ERROR
+                "MinGW runtime ${_gs2_runtime_name} was not found next to the compiler. "
+                "GSSquared cannot start from Explorer or a gssquared: link without it.")
+        endif()
+        list(APPEND GS2_MINGW_RUNTIME_DLLS "${_gs2_runtime_found}")
+    endforeach()
+    message(STATUS "MinGW runtime DLLs: ${GS2_MINGW_RUNTIME_DLLS}")
+
+    # Configure-time copy covers an already-linked exe. POST_BUILD refreshes
+    # the copies when the toolchain DLLs change.
+    file(COPY ${GS2_MINGW_RUNTIME_DLLS}
+        DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+    add_custom_command(TARGET GSSquared POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            ${GS2_MINGW_RUNTIME_DLLS}
+            "$<TARGET_FILE_DIR:GSSquared>"
+        COMMENT "Copy MinGW runtime DLLs next to GSSquared"
+        VERBATIM
+    )
+endif()
+
 ## Windows packaging targets
 
 if(WIN32)
@@ -1041,13 +1091,9 @@ if(WIN32)
             COMPONENT Runtime
         )
         # Install MinGW runtime DLLs to bin
-        install(FILES
-            C:/msys64/mingw64/bin/libgcc_s_seh-1.dll
-            C:/msys64/mingw64/bin/libstdc++-6.dll
-            C:/msys64/mingw64/bin/libwinpthread-1.dll
+        install(FILES ${GS2_MINGW_RUNTIME_DLLS}
             DESTINATION bin
             COMPONENT Runtime
-            OPTIONAL
         )
         # Install import libs to lib (optional for devs)
         install(FILES
@@ -1079,13 +1125,9 @@ if(WIN32)
             COMPONENT Runtime
         )
         # Install MinGW runtime DLLs to root
-        install(FILES
-            C:/msys64/mingw64/bin/libgcc_s_seh-1.dll
-            C:/msys64/mingw64/bin/libstdc++-6.dll
-            C:/msys64/mingw64/bin/libwinpthread-1.dll
+        install(FILES ${GS2_MINGW_RUNTIME_DLLS}
             DESTINATION .
             COMPONENT Runtime
-            OPTIONAL
         )
         install(FILES
             ${CMAKE_BINARY_DIR}/lib/libSDL3.dll.a
