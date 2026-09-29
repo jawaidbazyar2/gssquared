@@ -154,6 +154,7 @@ You need the following libraries installed:
 * libasound2-dev
 * libpulse-dev
 * libudev-dev
+* libcurl4-openssl-dev
 * libimgui-dev
 
 ```
