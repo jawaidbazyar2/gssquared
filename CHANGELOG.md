@@ -1,16 +1,45 @@
 # Changelog
 
-## 2026-09-23
+## 1.0 (2026-09-29)
+
+Covers commits since the v0.11.0 release through 2026-09-29.
 
 ### Features
 
-- **Linux motherboard serial ports.** The Host Serial picker lists real `/dev/ttyS*` UARTs (PC COM ports and similar). Empty 8250 nodes with no UART are omitted.
+- **GS2 packs (`.gs2pack`).** One uncompressed ustar holds `machine.gs2` plus its disk images. Opening a pack (double-click, drag, **File → Launch Config…**, or the command line) extracts it, boots that machine, and rewrites the archive when the session ends so guest disk writes stay with the pack. While a pack is running, the drive button lists that pack’s images; **Open from this computer…** still mounts a local file that is not stored back into the pack. Associations are registered on macOS, Windows, and Linux. Packs are capped at 200 MB; gzip is not a pack. (`fb6d074`)
+- **arQyv packs.** Desktop and the web player can fetch a pack served by arQyv. A Collection item writes back on close, or from **File → Save to Collection**. The browser build at gssquared.net/live plays a pack from `#pack=`. (`13b8df5`, `0f071cc`, `1651597`, `5e8243f`)
+- **Web player.** The Web build is paced to the Apple II frame (~59.92 Hz) instead of the display’s vsync, so a session is not locked to 60 Hz or to the panel rate. (`60049b8`)
+- **`.gs2` documents.** A color-band gear icon and file associations on macOS, Windows, and Linux; double-clicking a `.gs2` launches that machine. IIgs battery RAM is stored in the `.gs2` (legacy BRAM files are imported). User machine profiles live in a user-visible systems folder. (`de39c18`, `b59054e`, `de0ceea`, `4a14e98`) 
+- **New Disk Image.** **File → New Disk Image** writes a blank image and does not mount it: 5.25" WOZ (unformatted, DOS 3.3, or ProDOS), 3.5" ProDOS WOZ, or a 32 MB hard disk (raw zeros, or formatted ProDOS). (`023b657`, `318ecda`)
+- **BlueSCSI `.hda` suffix (#190).** `.hda` files are accepted and treated the same as `.hdv`. (`cb8ff63`)
+- **Video Overlay Card (#175).** IIgs slot 3 can take the VOC and show 640×400 SHR by interlacing the `$E0` and `$E1` buffers, presented as a progressive 60 Hz frame. (`da900dc`)
+- **Second Sight Host Text and GPU text.** Memory-mapped Host Text (including 80×43, 80×50, and 132×60), a GPU drawing mode, and GPU text (word stream on `C0B1`). These modes render inside a border so they occupy the same window area as Apple II video. Glyphs load from both legacy and modern locations, VGA mode can be toggled, and Version / GetCapabilities are implemented. (`88c9a8e`, `6df4af4`, `d5b6375`, `2346091`, `7092605`, `599db0a`, `7d23dae`, `d4db2e5`)
+- **ThunderClock Plus (#178).** Full card: uPD1990 protocol, timer-pulse IRQ, and the firmware utilities ProDOS uses to read the clock. ProDOS 2.4.3 no longer crashes when the card is installed. (`bd4ca81`)
+- **Virtual modem / inbound telnet.** With Modem attached, GSSquared listens on TCP port 6502. A telnet client rings the guest; `ATA` answers, `ATS0=n` auto-answers, and `ATV0` / `ATV1` select numeric or word result codes (including CONNECT 57600). Carrier detect follows the TCP session. Inbound sessions negotiate telnet binary so ZMODEM and XMODEM work. (`5875176`, `7cc19e0`, `6824aab`, `4e3d591`, `63f1717`)
+- **Linux motherboard serial ports.** The Host Serial picker lists real `/dev/ttyS*` UARTs (PC COM ports and similar). Empty 8250 nodes with no UART are omitted. (`59d7823`)
+- **Sirius Joyport (#184, #195).** **Settings → Game Controller → Joyport Controller Select** emulates the Left / Center / Right switch (Center lets software pick stick 1 or 2 with Annunciator 0). Either gamepad face button acts as fire, so an Xbox-style A button works as well as B. (`a65700e`, `7eb2907`)
+- **Speed and display in the config (#177).** A `.gs2` saves host speed (1.0 / 2.8 / 7.1 / 14.3 MHz) and monitor type (composite, GS RGB, green, amber, white). (`9dbe113`)
+- **Apple Keys (#81).** **Settings → Apple Keys** chooses which host keys are Open Apple and Closed Apple (Command, Alt, or Left Option). (`c704602`)
+- **Check For Updates.** **Docs → Check For Updates** opens the gssquared.net updates page for this version, build, and platform. (`27b8821`)
+- **HUD.** Speed and side buttons restyled. The Host FST control is a smaller **Host Folder…** button. (`bfbced8`, `c2f4efd`)
 
-## 2026-09-17
+### Bug Fixes
 
-### Features
-
-- **BlueSCSI `.hda` suffix (#190).** `.hda` files are now accepted and treated the same as `.hdv`.
+- **Uthernet II receive buffer (#172).** Socket data is no longer dropped when more arrived than the chip buffer could take in one pull. a2stream cover art and audio were garbled because of this. (`6fe6106`)
+- **65816 8-bit index registers.** Switching X/Y to 8-bit now clears the high byte. (`c9883d9`)
+- **6502 RESET (#148).** Reset matches the real sequence (vector fetch modeled like `BRK`, read-only stack walk). The stack pointer is set to `$00` on power-on only. (`8652715`)
+- **Ensoniq DOC (`$E0`).** A Sound GLU data read acks the oscillator-IRQ register at most once per transaction, so the ROM’s double read of `$C03D` no longer retires two IRQs. Fixes the GSIRC intro (the same bug is in the MAME reference). (`7634b15`)
+- **IIgs mouse clicks (#180).** Clicks outside the guest display (letterbox, chrome) no longer reach the ADB mouse while Event Manager tracking is on. Tracking also requires SHR to be active. (`533d876`, `d380e05`)
+- **IIgs mouse vs other windows (#191).** A pointer over the debugger (or any window other than the emulation window) is not treated as guest content, and does not hide the host cursor. (`b22a234`)
+- **Right-click on System Select (#194).** Right-clicking a System Select tile started the machine with the button still down, then restored a garbage speed and could crash. Tiles respond only to the left button, and releasing the right button or Insert without a matching press no longer restores a stale speed (including the ludicrous multiplier). (`87f56ac`)
+- **No audio device.** Drive sound no longer crashes when the host has no audio device. (`ae574e1`)
+- **Serial receive pacing (#193).** SCC and Super Serial Card receive data is metered to the programmed baud rate. IIgs ProTERM on port B at 2400 no longer overruns. (`0f774f4`)
+- **Inbound telnet.** Protocol fixes for sessions answered on port 6502. (`38334fe`)
+- **Web file dialog (Safari).** Open-file works around Safari’s file-input limits. (`ab3d782`)
+- **WOZ writes to an empty track (#117).** A 5.25" write onto a quarter-track (or any track) that has no WOZ data allocates a track, sized from a neighbor or 51150 bits if the image has none. Locksmith 6.0 can nibble-copy Bilestoad onto a blank WOZ and the copy boots. (`d9b67a8`)
+- **EventTimer clock (#192).** The “event is before the current cycle” check always compared against CPU cycles, including events scheduled on another clock. Each event is now checked against its own clock. (`49ca2a3`, `84f172e`, `271b254`, `77f95eb`)
+- **High-DPI menus (#173).** The in-window menu (web, and Linux at high DPI) is drawn on the right scale, so item text is visible and the highlighted item matches the cursor. (`2e4b2e5`)
+- **arQyv launch under MSYS2.** Opening an arQyv pack works when the Windows build is started from an MSYS2 shell. (`6047e50`)
 
 ## 2026-08-25
 
