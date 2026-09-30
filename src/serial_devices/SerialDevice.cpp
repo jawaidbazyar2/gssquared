@@ -13,9 +13,13 @@ int SDLCALL SerialDeviceThreadHandler(void *data) {
 SerialDevice::SerialDevice(const char *name, const char *port_id) {
     this->name = name ? name : "SerialDevice";
     this->port_id = port_id ? port_id : "UNK";
+}
 
-    // start the thread, and call it
-    this->thread = SDL_CreateThread(SerialDeviceThreadHandler, name, (void *) this);
+void SerialDevice::start_worker() {
+    if (thread) {
+        return;
+    }
+    thread = SDL_CreateThread(SerialDeviceThreadHandler, name, (void *) this);
 }
 
 SerialDevice::~SerialDevice() {

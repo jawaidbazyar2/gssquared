@@ -879,6 +879,7 @@ class ModemDevice : public SerialDevice {
             } else {
                 printf("ModemDevice: Initialized\n");
             }
+            start_worker();
         }
 
         ~ModemDevice() {

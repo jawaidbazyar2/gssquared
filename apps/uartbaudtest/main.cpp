@@ -28,7 +28,9 @@ static int g_fails = 0;
 
 class StubSerial : public SerialDevice {
 public:
-    StubSerial() : SerialDevice("uartbaudtest", "T") {}
+    StubSerial() : SerialDevice("uartbaudtest", "T") {
+        start_worker();
+    }
     ~StubSerial() override {
         /* Join while this override is still the dynamic type. The base
          * destructor runs too late: the worker may not have entered

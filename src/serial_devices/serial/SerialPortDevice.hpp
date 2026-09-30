@@ -176,6 +176,7 @@ public:
                 return true;
             });
         }
+        start_worker();
     }
 
     ~SerialPortDevice() {

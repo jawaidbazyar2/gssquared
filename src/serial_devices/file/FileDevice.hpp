@@ -103,6 +103,7 @@ class FileDevice : public SerialDevice {
                     return true;
                 });
             }
+            start_worker();
         }
 
         ~FileDevice() {

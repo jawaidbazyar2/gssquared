@@ -68,7 +68,7 @@ class SerialDevice {
     protected:
         const char *name;
         const char *port_id;
-        SDL_Thread *thread;
+        SDL_Thread *thread = nullptr;
 
         /* Host-logical handshake inputs: 1 = line asserted (carrier / ready).
          * Worker writes; emu thread reads. Chips invert where silicon requires it.
@@ -113,4 +113,8 @@ class SerialDevice {
                           (m & MODEM_CTS) ? '+' : '-',
                           (m & MODEM_DSR) ? '+' : '-');
         }
+
+        /* Call at the end of the derived constructor. The worker invokes
+         * device_loop(), which is not safe until that object is fully built. */
+        void start_worker();
 };

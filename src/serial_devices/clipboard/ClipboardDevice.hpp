@@ -178,6 +178,7 @@ class ClipboardDevice : public SerialDevice {
                     return true;
                 });
             }
+            start_worker();
         }
 
         ~ClipboardDevice() {
