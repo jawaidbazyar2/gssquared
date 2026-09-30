@@ -3251,6 +3251,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#playing-an-arqyv-pack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Playing an arQyv pack
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#notes-limitations" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3362,6 +3373,29 @@ after a fresh clone, run this script again.</p>
 </ul>
 <p>Mounted images live in the in-memory filesystem and are not persisted across
 page reloads.</p>
+<h2 id="playing-an-arqyv-pack">Playing an arQyv pack<a class="headerlink" href="#playing-an-arqyv-pack" title="Permanent link">&para;</a></h2>
+<p>A Play link opens this page with the pack URL in the fragment:</p>
+<pre><code>https://gssquared.net/live/#pack=&lt;urlencoded https URL ending in .gs2pack&gt;
+</code></pre>
+<p>The fragment is removed before analytics runs, so the launch token is not sent
+to gssquared.net. The page asks to download, naming the host and the file, then
+fetches that URL (CORS, no cookies) into MEMFS at <code>/packs/&lt;filename&gt;.gs2pack</code>.
+Only <code>https://arqyv.net</code> is accepted. The emulator extracts the archive under
+<code>/tmp</code> and boots it, skipping System Select. When the response includes
+<code>X-GS2-Save-Token</code>, <strong>File → Save to Collection</strong> uploads the rewritten pack.
+Closing the tab while that copy is dirty asks whether to save.</p>
+<p>The downloaded archive and the extracted work tree are both in the WASM heap.
+<code>INITIAL_MEMORY</code> is 256 MB and <code>MAXIMUM_MEMORY</code> is 1 GB, so a pack near the
+200 MB cap can fail to start. The page shows the error and boots System Select
+instead of a machine with missing disks.</p>
+<p>To try this without arQyv, serve a directory of <code>.gs2pack</code> files on a second
+port. That server sends the CORS headers, a fake <code>X-GS2-Save-Token</code>
+(<code>dev-save-token</code>), and accepts <code>PUT</code>:</p>
+<pre><code class="language-bash">python3 assets/web/serve.py 8000 build-web --pack-port 8001 --pack-dir /tmp/packs
+# http://localhost:8000/GSSquared.html#pack=http%3A%2F%2Flocalhost%3A8001%2Fdemo.gs2pack
+</code></pre>
+<p><code>http://localhost</code> and <code>http://127.0.0.1</code> are allowed only for this. A file
+named <code>reject-put</code> in the pack directory makes every <code>PUT</code> return 401.</p>
 <h2 id="notes-limitations">Notes / limitations<a class="headerlink" href="#notes-limitations" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Audio</strong> starts only after the first user gesture (browser autoplay policy).

@@ -3763,7 +3763,7 @@
 
 <h1 id="file-types-and-url-protocols">File types and URL protocols<a class="headerlink" href="#file-types-and-url-protocols" title="Permanent link">&para;</a></h1>
 <p>How GSSquared is opened from the host: Finder / Explorer, drag-and-drop, the command line, and (later) web links. Implementation notes live here; user-facing launch steps are in <a href="../ConfigEditor/">Creating Custom System Configs</a> and <a href="../ConfigFiles/">Writing Config Files Manually</a>. The <code>.gs2pack</code> file format is in <a href="../Gs2Pack/">GS2 Packs</a>.</p>
-<p><strong>Windows:</strong> double-clicking a <code>.gs2</code> while GSSquared is already running starts a <strong>second process</strong> (the path goes to <code>argv</code>). macOS delivers the open to the existing instance. A <code>gssquared:https://…/name.gs2pack</code> link confirms, downloads that one pack, and launches it. Disk-image associations, a <code>.gs2</code> or Settings URL, and sending a save back to arQyv are <a href="../Roadmap/">planned</a>, not shipped.</p>
+<p><strong>Windows:</strong> double-clicking a <code>.gs2</code> while GSSquared is already running starts a <strong>second process</strong> (the path goes to <code>argv</code>). macOS delivers the open to the existing instance. A <code>gssquared:https://…/name.gs2pack</code> link confirms, downloads that one pack, and launches it. A Collection download that returns <code>X-GS2-Save-Token</code> uploads the rewritten pack on save. The web build does the same fetch and upload from <code>gssquared.net/live/#pack=</code> (see <a href="../arqyv-gs2pack/">arqyv-gs2pack.md</a>). Disk-image associations, a <code>.gs2</code> or Settings URL, and desktop Title fetch are <a href="../Roadmap/">planned</a>, not shipped.</p>
 <p>Roadmap 1.0 lists “file type and URL associations.” This document is the spec for that work.</p>
 <h2 id="how-the-host-talks-to-gs2">How the host talks to GS2<a class="headerlink" href="#how-the-host-talks-to-gs2" title="Permanent link">&para;</a></h2>
 <p>SDL3 does <strong>not</strong> have a separate “document open” event. On macOS, Finder Open, Open With, and custom URL schemes all become <code>SDL_EVENT_DROP_FILE</code>. SDL documents that event as “the system requests a file open.”</p>
@@ -3941,7 +3941,7 @@
 </tr>
 </tbody>
 </table>
-<p>The module streams the body to a file and forwards the https URL unchanged, query string included. It does not parse a credential or move one into a header. A public URL has none. A server that must authorize the GET puts a short-lived opaque query parameter on the URL it hands us. The module also surfaces the final status and the response header <code>X-GS2-Save-Token</code>, so that same response can carry a follow-on credential beside the body. GSSquared stores that header in a sidecar next to the cache pack and does not send it anywhere yet. arQyv’s launch and save tokens are in <a href="../arqyv-gs2pack/">arqyv-gs2pack.md</a>.</p>
+<p>The module streams the body to a file and forwards the https URL unchanged, query string included. It does not parse a credential or move one into a header. A public URL has none. A server that must authorize the GET puts a short-lived opaque query parameter on the URL it hands us. The module also surfaces the final status and the response header <code>X-GS2-Save-Token</code>, so that same response can carry a follow-on credential beside the body. GSSquared stores that header in <code>&lt;pack&gt;.save-token</code> and the requested https URL, query and fragment removed, in <code>&lt;pack&gt;.save-url</code>. On save it PUTs the rewritten <code>.gs2pack</code> to that URL with the header <code>X-GS2-Save-Token</code>. The PUT follows the same https-only redirect rule as the GET. Success is status 204. arQyv’s launch and save tokens are in <a href="../arqyv-gs2pack/">arqyv-gs2pack.md</a>.</p>
 <p>Redirects are the stack’s. The app’s only rule is that every redirect target stays <code>https</code>.</p>
 <ul>
 <li><strong>macOS.</strong> <code>NSURLSession</code> will follow a redirect onto <code>http</code>, so the redirect delegate allows the proposed request only when its scheme is <code>https</code>.</li>
@@ -3958,9 +3958,10 @@
 <li>Confirm prompt before any download. The prompt names the host and the pack filename, not the query string. Cancel aborts the transfer and deletes the partial.</li>
 <li>Same switch-while-running modal as local configs, after the download.</li>
 <li>Protocol registration on macOS, Windows, and Linux.</li>
-<li><code>X-GS2-Save-Token</code> stored beside the cache pack. Upload is later.</li>
+<li><code>X-GS2-Save-Token</code> and the writeback URL stored beside the cache pack.</li>
+<li>Collection writeback: PUT the rewritten <code>.gs2pack</code> when its members changed. File → Save to Collection, leaving the title, and quit.</li>
 </ul>
-<p>Still later: the multi-file <code>.gs2</code> / Settings walk, and sending the save token back.</p>
+<p>Still later: the multi-file <code>.gs2</code> / Settings walk.</p>
 <h2 id="gs2pack"><code>.gs2pack</code><a class="headerlink" href="#gs2pack" title="Permanent link">&para;</a></h2>
 <p>User-facing explanation of the format, <code>machine.gs2</code>, and how to open or build a pack is in <a href="../Gs2Pack/">GS2 Packs</a>. This section is the runtime contract.</p>
 <p>A <strong>pack</strong> is one file that holds a machine config plus its disk images. Extension <strong><code>.gs2pack</code></strong>. Opening it (Finder, Explorer, Steam, or the CLI) launches that machine with those disks mounted. System Select is skipped. Loose <code>.gs2</code> stays the editable text format. A pack is “this machine and its disks, as one document.”</p>
@@ -3998,7 +3999,7 @@ disks/data.hdv
 <li><strong><a href="https://arqyv.net">arqyv.net</a></strong> is the paid <strong>collection</strong>: subscribe for cloud-backed <code>.gs2pack</code> storage and the same library on every computer. Open via <code>gssquared:https://arqyv.net/…</code> (or an in-app signed-in browser). Same extract / mount / rewrite rules; the ustar that arqyv stores is the document. Curated <code>… Settings.txt</code> packs are the current arqyv shape; <code>.gs2pack</code> is the later unit.</li>
 <li>Optional extra channel: a <strong>third-party Steam title</strong> that <em>is</em> one pack (“Choplifter for GSSquared”) can use <em>that</em> app’s Steam Cloud for its own pack. DLC on the GS2 app does not get a separate quota.</li>
 </ul>
-<p><code>gssquared:</code> downloads can land as a cache <code>.gs2pack</code> (ustar of the fetched config + images) and then follow the same extract / launch / rewrite path. If that cache is not in a cloud folder, nothing uploads until the user saves a copy there.</p>
+<p><code>gssquared:</code> downloads can land as a cache <code>.gs2pack</code> (ustar of the fetched config + images) and then follow the same extract / launch / rewrite path. A Collection pack with a save token uploads that rewritten file to arQyv. A pack with no save token stays local.</p>
 <h2 id="phasing">Phasing<a class="headerlink" href="#phasing" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -4041,7 +4042,11 @@ disks/data.hdv
 <td>Now</td>
 </tr>
 <tr>
-<td><code>gssquared:</code> multi-file <code>.gs2</code> / Settings walk, and save-token upload</td>
+<td>Collection save-token upload (full ustar PUT)</td>
+<td>Now</td>
+</tr>
+<tr>
+<td><code>gssquared:</code> multi-file <code>.gs2</code> / Settings walk</td>
 <td>Later</td>
 </tr>
 <tr>
