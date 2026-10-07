@@ -115,6 +115,10 @@ public:
         return stream[0];
     }
 
+    inline bs_t *line(uint32_t y) noexcept {
+        return stream[y];
+    }
+
     inline void advance(int count = 1) noexcept {
         hloc += count;
     }

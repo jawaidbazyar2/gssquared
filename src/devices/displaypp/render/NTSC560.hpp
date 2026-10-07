@@ -18,58 +18,62 @@ public:
     };
     ~NTSC560() {};
 
+    // Reads and writes rows through local __restrict pointers instead of Frame::push/pull:
+    // uint8_t and the RGBA_t union may alias anything, which otherwise forces the compiler
+    // to reload and store Frame::row / Frame::hloc on every pixel.
     virtual void render(Frame560 *frame_byte, FrameVSG *frame_rgba) override {
-        // Process each scanline
-        uint16_t framewidth = frame_byte->width();
+        constexpr uint32_t TOP_BIT = 1u << (NUM_TAPS * 2);
+        const uint32_t framewidth = frame_byte->width();
+        const uint32_t body_end = framewidth - NUM_TAPS; // last x with a lookahead bit available
+        const RGBA_t mono = mono_color;
 
-        for (uint16_t y = 0; y < 192; y++)
+        for (uint32_t y = 0; y < 192; y++)
         {
-            color_mode_t color_mode = frame_byte->get_color_mode(y); // get color mode for this frame (based on scanline 0)
-            uint16_t phase_offset = color_mode.phase_offset;
-            uint32_t bits = 0;
-            frame_byte->set_line(y);
-            frame_rgba->set_line(y+35);
-            frame_rgba->advance(168-7*shift_enabled);
+            color_mode_t color_mode = frame_byte->get_color_mode(y);
+            uint32_t phase_offset = color_mode.phase_offset;
+            const uint8_t * __restrict in = frame_byte->line(y);
+            RGBA_t * __restrict out = frame_rgba->line(y + 35) + (168 - 7 * shift_enabled);
 
             if (phase_offset == 0 && shift_enabled) {
-                frame_rgba->push_n(black, 7);
+                for (int i = 0; i < 7; i++) *out++ = black;
             }
             if (color_mode.colorburst == 0) {
-                // do nothing
-                for (uint16_t x = 0; x < framewidth; x++) {
-                    uint8_t bit = frame_byte->pull();
-                    frame_rgba->push(bit ? mono_color : black);
+                for (uint32_t x = 0; x < framewidth; x++) {
+                    out[x] = in[x] ? mono : black;
                 }
             } else {
-                // do color burst
-
                 // for x = 0, we need bits preloaded with the first NUM_TAPS+1 bits in 
                 // 16-8, and 0's in 0-7.
                 // if num_taps = 6, 
                 // 11111 1X000000
-                //bool transparent_start = frame_byte->peek() & 0b10 ? 1 : 0;
-                for (uint16_t i = 0; i < NUM_TAPS; i++)
-                {
-                    bits = bits >> 1;
-                    if (frame_byte->pull())
-                        bits = bits | (1 << ((NUM_TAPS*2)));
+                uint32_t bits = 0;
+                for (uint32_t i = 0; i < NUM_TAPS; i++) {
+                    bits = (bits >> 1) | (in[i] ? TOP_BIT : 0);
                 }
-                
-                // Process the scanline
-                for (uint16_t x = 0; x < framewidth; x++)
-                {
-                    bits = bits >> 1;
-                    if ((x < framewidth-NUM_TAPS) && (frame_byte->pull())) // at end of line insert 0s
-                        bits = bits | (1 << ((NUM_TAPS*2)));
 
-                    uint32_t phase = (phase_offset + x) % 4;
+                const RGBA_t *lut0 = g_hgr_LUT[(phase_offset + 0) & 3];
+                const RGBA_t *lut1 = g_hgr_LUT[(phase_offset + 1) & 3];
+                const RGBA_t *lut2 = g_hgr_LUT[(phase_offset + 2) & 3];
+                const RGBA_t *lut3 = g_hgr_LUT[(phase_offset + 3) & 3];
+                const uint8_t * __restrict ahead = in + NUM_TAPS;
 
-                    //  Use the phase and the bits as the index
-                    frame_rgba->push(g_hgr_LUT[phase][bits]);
+                uint32_t x = 0;
+                for (; x + 4 <= body_end; x += 4) {
+                    bits = (bits >> 1) | (ahead[x + 0] ? TOP_BIT : 0); out[x + 0] = lut0[bits];
+                    bits = (bits >> 1) | (ahead[x + 1] ? TOP_BIT : 0); out[x + 1] = lut1[bits];
+                    bits = (bits >> 1) | (ahead[x + 2] ? TOP_BIT : 0); out[x + 2] = lut2[bits];
+                    bits = (bits >> 1) | (ahead[x + 3] ? TOP_BIT : 0); out[x + 3] = lut3[bits];
+                }
+                const RGBA_t *luts[4] = { lut0, lut1, lut2, lut3 };
+                for (; x < framewidth; x++) {
+                    // at end of line insert 0s
+                    bits = (bits >> 1) | ((x < body_end && ahead[x]) ? TOP_BIT : 0);
+                    out[x] = luts[x & 3][bits];
                 }
             }
+            out += framewidth;
             if (phase_offset == 1 && shift_enabled) {
-                frame_rgba->push_n(black, 7);
+                for (int i = 0; i < 7; i++) *out++ = black;
             }
         }
     }
