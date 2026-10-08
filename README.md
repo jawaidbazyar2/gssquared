@@ -33,6 +33,8 @@ Check out the [User Documentation](Docs/index.md) for detailed instructions on h
 
 For a structured list of capabilities (including host integrations and automation hooks), see the [Feature catalog](Docs/Features.md).
 
+To report a bug or send a change, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 # Pre-compiled Packages
 
 A binary release is available at [https://github.com/jawaidbazyar2/gssquared/releases](https://github.com/jawaidbazyar2/gssquared/releases).
