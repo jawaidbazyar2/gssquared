@@ -24,6 +24,11 @@
 //#include "videosystem.hpp"
 #include "devices/displaypp/RGBA.hpp"
 
+#define FRAME_WIDTH 560
+#define FRAME_HEIGHT 192
+#define NUM_TAPS 7  //  5 = 11 bits (32K) (same)  6 = 13 bits (128K) (same)  7 = 15 bits (512K) (same)  8 = 17 bits (2M) (diff)  
+#define CHEBYSHEV_SIDELOBE_DB 45
+
 // Define types
 
 
@@ -46,12 +51,17 @@ struct ntsc_config {
 
     // precalculated YUV lookup table. only two input pixel values (0 and 255)
     float pixelYUV[2][4][3] = {};
-};
 
-#define FRAME_WIDTH 560
-#define FRAME_HEIGHT 192
-#define NUM_TAPS 7  //  5 = 11 bits (32K) (same)  6 = 13 bits (128K) (same)  7 = 15 bits (512K) (same)  8 = 17 bits (2M) (diff)  
-#define CHEBYSHEV_SIDELOBE_DB 45
+    // Held-dot model: each dot is a level held for one 4fsc sample period, so its
+    // contribution is the demodulated filter kernel integrated across the dot,
+    // rather than sampled at a single point. Indexed [tap offset + NUM_TAPS][dot phase][Y,I,Q].
+    bool heldDots = true;
+    float heldWeights[2 * NUM_TAPS + 1][4][3] = {};
+
+    // Chroma trap for the held-dot weights: Gaussian luma with an exact null at the
+    // subcarrier, plus wider I/Q. Off uses the classic luma / chroma bandwidths.
+    bool lumaTrap = true;
+};
 
 // Constants
 const float NTSC_FSC = 3.579545e6; // NTSC colorburst frequency

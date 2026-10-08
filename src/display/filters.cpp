@@ -1,3 +1,6 @@
+#include <cmath>
+#include <vector>
+
 #include "OEVector.h"
 
 #include "ntsc.hpp"
@@ -17,6 +20,11 @@ typedef enum
 #define NTSC_I_CUTOFF               1300000
 #define NTSC_Q_CUTOFF               600000
 #define NTSC_IQ_DELTA               (NTSC_I_CUTOFF - NTSC_Q_CUTOFF)
+
+// Held-dot weights with the chroma trap: Gaussian luma 1/e frequency, I and Q cutoffs.
+#define TRAP_LUMA_BANDWIDTH         3'500'000.0f
+#define TRAP_I_BANDWIDTH            2'000'000.0f
+#define TRAP_Q_BANDWIDTH            1'300'000.0f
 
 struct DisplayConfiguration {
     float videoBandwidth;
@@ -40,6 +48,106 @@ void init_display_configuration() {
     displayConfiguration.videoWhiteOnly = 0;
     displayConfiguration.imageSampleRate = NTSC_4FSC;
     displayConfiguration.imageSubcarrier = NTSC_FSC;
+}
+
+/**
+ * Held-dot filter weights.
+ *
+ * The Apple II holds each dot's level for a full 4fsc sample period, so the
+ * analog decoder sees a square pulse, not an impulse. A dot's contribution to
+ * the output is the demodulated kernel integrated across that pulse. This
+ * attenuates chroma by a frequency-dependent amount (about 10% at fsc), which
+ * the point-sampled model cannot represent with a constant saturation factor.
+ *
+ * The Chebyshev window only exists at tap positions; it is linearly
+ * interpolated between them. Its endpoint taps were halved by chebyshevWindow
+ * (periodic-window convention), so they are restored here, and the window is
+ * zero beyond +/- num_taps, which leaves the outermost dots half covered.
+ *
+ * With trap set, luma is a Gaussian lowpass (response exp(-(f/yBandwidth)^2),
+ * which barely rings) minus a windowed subcarrier cosine scaled so the response
+ * at the subcarrier is exactly zero, like a monitor's chroma trap. The carrier
+ * then cannot stripe solid colours however wide luma is.
+ */
+static void generate_held_weights(OEVector &w, int num_taps,
+                                  float yBandwidth, float uBandwidth, float vBandwidth, bool trap) {
+    constexpr int SUBSTEPS = 64;
+    const int total_samples = num_taps * 2 + 1;
+
+    std::vector<float> win(total_samples);
+    for (int i = 0; i < total_samples; i++) win[i] = w.getValue(i);
+    win[0] *= 2;
+    win[total_samples - 1] *= 2;
+
+    auto window_at = [&](float t) -> float {
+        float pos = t + num_taps;
+        if (pos < 0.0f || pos > (float)(total_samples - 1)) return 0.0f;
+        int i = (int)pos;
+        if (i >= total_samples - 1) return win[total_samples - 1];
+        float frac = pos - i;
+        return win[i] + (win[i + 1] - win[i]) * frac;
+    };
+    auto sinc_at = [](float t, float fc) -> float {
+        float x = 2.0f * (float)M_PI * fc * t;
+        return (x == 0.0f) ? 1.0f : sinf(x) / x;
+    };
+    auto carrier_at = [](float t) -> float {
+        return cosf(2.0f * (float)M_PI * config.subcarrier * t);
+    };
+
+    float alpha = 0.0f;
+    if (trap) {
+        double rh = 0, rc = 0;
+        for (int k = -num_taps; k <= num_taps; k++) {
+            for (int s = 0; s < SUBSTEPS; s++) {
+                float t = k - 0.5f + (s + 0.5f) / SUBSTEPS;
+                float wt = window_at(t);
+                float a = (float)M_PI * yBandwidth * t;
+                rh += wt * expf(-a * a) * carrier_at(t);
+                rc += wt * carrier_at(t) * carrier_at(t);
+            }
+        }
+        alpha = (float)(rh / rc);
+    }
+    auto luma_at = [&](float t) -> float {
+        if (!trap) return sinc_at(t, yBandwidth);
+        float a = (float)M_PI * yBandwidth * t;
+        return expf(-a * a) - alpha * carrier_at(t);
+    };
+
+    // Integrate the plain kernels first so they can be normalized the same way
+    // generate_filters normalizes the discrete taps (luma DC gain 1, chroma 2).
+    double sum_y = 0, sum_u = 0, sum_v = 0;
+    for (int k = -num_taps; k <= num_taps; k++) {
+        for (int s = 0; s < SUBSTEPS; s++) {
+            float t = k - 0.5f + (s + 0.5f) / SUBSTEPS;
+            float wt = window_at(t);
+            sum_y += wt * luma_at(t);
+            sum_u += wt * sinc_at(t, uBandwidth);
+            sum_v += wt * sinc_at(t, vBandwidth);
+        }
+    }
+    const float gain_y = (float)(SUBSTEPS / sum_y);
+    const float gain_u = (float)(2.0 * SUBSTEPS / sum_u);
+    const float gain_v = (float)(2.0 * SUBSTEPS / sum_v);
+
+    for (int k = -num_taps; k <= num_taps; k++) {
+        for (int ph = 0; ph < 4; ph++) {
+            double y = 0, i = 0, q = 0;
+            for (int s = 0; s < SUBSTEPS; s++) {
+                float u = -0.5f + (s + 0.5f) / SUBSTEPS;
+                float t = k + u;
+                float wt = window_at(t);
+                float phase = 2.0f * (float)M_PI * (config.subcarrier * (ph + u) + config.phaseInfo[0]);
+                y += wt * luma_at(t) * gain_y;
+                i += wt * sinc_at(t, uBandwidth) * gain_u * sinf(phase);
+                q += wt * sinc_at(t, vBandwidth) * gain_v * cosf(phase);
+            }
+            config.heldWeights[k + num_taps][ph][0] = (float)(y / SUBSTEPS);
+            config.heldWeights[k + num_taps][ph][1] = (float)(i / SUBSTEPS);
+            config.heldWeights[k + num_taps][ph][2] = (float)(q / SUBSTEPS);
+        }
+    }
 }
 
 void generate_filters(int num_taps) {
@@ -104,4 +212,11 @@ printf("vBandwidth: %f\n", vBandwidth);
         config.filterCoefficients[i][2] = wv.getValue(ind);
     }
 
+    if (config.lumaTrap) {
+        generate_held_weights(w, num_taps, TRAP_LUMA_BANDWIDTH / displayConfiguration.imageSampleRate,
+                              TRAP_I_BANDWIDTH / displayConfiguration.imageSampleRate,
+                              TRAP_Q_BANDWIDTH / displayConfiguration.imageSampleRate, true);
+    } else {
+        generate_held_weights(w, num_taps, yBandwidth, uBandwidth, vBandwidth, false);
+    }
 }

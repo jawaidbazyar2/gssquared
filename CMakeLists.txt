@@ -761,6 +761,8 @@ if(NOT EMSCRIPTEN)
     #add_subdirectory(apps/denibblizer)
     add_subdirectory(apps/vgatext)
 
+    add_subdirectory(apps/ntsc1120)
+
     add_subdirectory(apps/ssppu)
 
     add_subdirectory(apps/diskid)

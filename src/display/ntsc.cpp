@@ -181,13 +181,22 @@ RGBA_t  processAppleIIScanline_lut3(
         int x = pixelposition + offset;
         int coeffIdx = std::abs(offset);
         bool bit = (inputBits & 1); // this might be backwards.
-        float y = config.pixelYUV[bit][x % 4][0];
-        float i = config.pixelYUV[bit][x % 4][1];
-        float q = config.pixelYUV[bit][x % 4][2];
+        if (config.heldDots) {
+            if (bit) {
+                const float *hw = config.heldWeights[offset + NUM_TAPS][x % 4];
+                oy += hw[0];
+                oi += hw[1];
+                oq += hw[2];
+            }
+        } else {
+            float y = config.pixelYUV[bit][x % 4][0];
+            float i = config.pixelYUV[bit][x % 4][1];
+            float q = config.pixelYUV[bit][x % 4][2];
 
-        oy += y * config.filterCoefficients[coeffIdx][0];  // Y
-        oi += i * config.filterCoefficients[coeffIdx][1];  // I
-        oq += q * config.filterCoefficients[coeffIdx][2];  // Q
+            oy += y * config.filterCoefficients[coeffIdx][0];  // Y
+            oi += i * config.filterCoefficients[coeffIdx][1];  // I
+            oq += q * config.filterCoefficients[coeffIdx][2];  // Q
+        }
 
         inputBits >>= 1; // this might be backwards.
     }
