@@ -29,6 +29,7 @@
 #include "util/dialog.hpp"
 
 #include "display/ntsc.hpp"
+#include "display/filters.hpp"
 
 #include "videosystem.hpp"
 #include "devices/displaypp/CharRom.hpp"
@@ -331,6 +332,15 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
         init_hgr_LUT();
         ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
             config.heldDots ? "NTSC: held-dot model" : "NTSC: point-sample model (legacy)"));
+        return true;
+    }
+    if ((mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT)) && key == SDLK_KP_DIVIDE) {
+        config.lumaTrap = !config.lumaTrap;
+        generate_filters(NUM_TAPS);
+        init_hgr_LUT();
+        ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
+            config.lumaTrap ? "NTSC: chroma trap, luma 3.5 / I 2.0 / Q 1.3 MHz"
+                            : "NTSC: classic filter, luma 2.0 / I 1.3 / Q 0.6 MHz"));
         return true;
     }
     // TODO: get rid of these for production
@@ -897,7 +907,7 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         if (/* (key == SDLK_F7) ||  */(key == SDLK_F8) || (key == SDLK_KP_PLUS) || (key == SDLK_KP_MINUS)) {
             return true; // eat the keydown
         }
-        if (key == SDLK_KP_MULTIPLY && (event.key.mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT))) {
+        if ((key == SDLK_KP_MULTIPLY || key == SDLK_KP_DIVIDE) && (event.key.mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT))) {
             return true;
         }
         return false;

@@ -57,6 +57,10 @@ struct ntsc_config {
     // rather than sampled at a single point. Indexed [tap offset + NUM_TAPS][dot phase][Y,I,Q].
     bool heldDots = true;
     float heldWeights[2 * NUM_TAPS + 1][4][3] = {};
+
+    // Chroma trap for the held-dot weights: Gaussian luma with an exact null at the
+    // subcarrier, plus wider I/Q. Off uses the classic luma / chroma bandwidths.
+    bool lumaTrap = true;
 };
 
 // Constants

@@ -21,6 +21,11 @@ typedef enum
 #define NTSC_Q_CUTOFF               600000
 #define NTSC_IQ_DELTA               (NTSC_I_CUTOFF - NTSC_Q_CUTOFF)
 
+// Held-dot weights with the chroma trap: Gaussian luma 1/e frequency, I and Q cutoffs.
+#define TRAP_LUMA_BANDWIDTH         3'500'000.0f
+#define TRAP_I_BANDWIDTH            2'000'000.0f
+#define TRAP_Q_BANDWIDTH            1'300'000.0f
+
 struct DisplayConfiguration {
     float videoBandwidth;
     float videoLumaBandwidth;
@@ -58,9 +63,14 @@ void init_display_configuration() {
  * interpolated between them. Its endpoint taps were halved by chebyshevWindow
  * (periodic-window convention), so they are restored here, and the window is
  * zero beyond +/- num_taps, which leaves the outermost dots half covered.
+ *
+ * With trap set, luma is a Gaussian lowpass (response exp(-(f/yBandwidth)^2),
+ * which barely rings) minus a windowed subcarrier cosine scaled so the response
+ * at the subcarrier is exactly zero, like a monitor's chroma trap. The carrier
+ * then cannot stripe solid colours however wide luma is.
  */
 static void generate_held_weights(OEVector &w, int num_taps,
-                                  float yBandwidth, float uBandwidth, float vBandwidth) {
+                                  float yBandwidth, float uBandwidth, float vBandwidth, bool trap) {
     constexpr int SUBSTEPS = 64;
     const int total_samples = num_taps * 2 + 1;
 
@@ -81,6 +91,29 @@ static void generate_held_weights(OEVector &w, int num_taps,
         float x = 2.0f * (float)M_PI * fc * t;
         return (x == 0.0f) ? 1.0f : sinf(x) / x;
     };
+    auto carrier_at = [](float t) -> float {
+        return cosf(2.0f * (float)M_PI * config.subcarrier * t);
+    };
+
+    float alpha = 0.0f;
+    if (trap) {
+        double rh = 0, rc = 0;
+        for (int k = -num_taps; k <= num_taps; k++) {
+            for (int s = 0; s < SUBSTEPS; s++) {
+                float t = k - 0.5f + (s + 0.5f) / SUBSTEPS;
+                float wt = window_at(t);
+                float a = (float)M_PI * yBandwidth * t;
+                rh += wt * expf(-a * a) * carrier_at(t);
+                rc += wt * carrier_at(t) * carrier_at(t);
+            }
+        }
+        alpha = (float)(rh / rc);
+    }
+    auto luma_at = [&](float t) -> float {
+        if (!trap) return sinc_at(t, yBandwidth);
+        float a = (float)M_PI * yBandwidth * t;
+        return expf(-a * a) - alpha * carrier_at(t);
+    };
 
     // Integrate the plain kernels first so they can be normalized the same way
     // generate_filters normalizes the discrete taps (luma DC gain 1, chroma 2).
@@ -89,7 +122,7 @@ static void generate_held_weights(OEVector &w, int num_taps,
         for (int s = 0; s < SUBSTEPS; s++) {
             float t = k - 0.5f + (s + 0.5f) / SUBSTEPS;
             float wt = window_at(t);
-            sum_y += wt * sinc_at(t, yBandwidth);
+            sum_y += wt * luma_at(t);
             sum_u += wt * sinc_at(t, uBandwidth);
             sum_v += wt * sinc_at(t, vBandwidth);
         }
@@ -106,7 +139,7 @@ static void generate_held_weights(OEVector &w, int num_taps,
                 float t = k + u;
                 float wt = window_at(t);
                 float phase = 2.0f * (float)M_PI * (config.subcarrier * (ph + u) + config.phaseInfo[0]);
-                y += wt * sinc_at(t, yBandwidth) * gain_y;
+                y += wt * luma_at(t) * gain_y;
                 i += wt * sinc_at(t, uBandwidth) * gain_u * sinf(phase);
                 q += wt * sinc_at(t, vBandwidth) * gain_v * cosf(phase);
             }
@@ -179,5 +212,11 @@ printf("vBandwidth: %f\n", vBandwidth);
         config.filterCoefficients[i][2] = wv.getValue(ind);
     }
 
-    generate_held_weights(w, num_taps, yBandwidth, uBandwidth, vBandwidth);
+    if (config.lumaTrap) {
+        generate_held_weights(w, num_taps, TRAP_LUMA_BANDWIDTH / displayConfiguration.imageSampleRate,
+                              TRAP_I_BANDWIDTH / displayConfiguration.imageSampleRate,
+                              TRAP_Q_BANDWIDTH / displayConfiguration.imageSampleRate, true);
+    } else {
+        generate_held_weights(w, num_taps, yBandwidth, uBandwidth, vBandwidth, false);
+    }
 }
