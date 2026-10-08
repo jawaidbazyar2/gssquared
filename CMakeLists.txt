@@ -788,6 +788,7 @@ if(NOT EMSCRIPTEN)
 
     #add_subdirectory(apps/dpp)
     add_subdirectory(apps/vpp)
+    add_subdirectory(apps/vsgtest)
 
     add_subdirectory(apps/iieromcsum)
 

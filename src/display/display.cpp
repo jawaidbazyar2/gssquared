@@ -78,15 +78,16 @@ bool update_display_apple2_cycle(display_state_t *ds) {
 
     // TODO: This stuff takes basically no time, but it might make more sense to encap this in a helper routine somewhere else
 
+    // Mono renderers write white; the monitor tint is a color multiply on the texture.
+    RGBA_t tint = RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF);
     switch (vs->display_color_engine) {
         case DM_ENGINE_MONO:
             ds->vsg = ds->vsgc;
-            ds->mon_mono.set_mono_color(vs->get_mono_color());
+            tint = vs->get_mono_color();
             ds->vsg->set_render(&ds->mon_mono);
             break;
         case DM_ENGINE_NTSC:
             ds->vsg = ds->vsgc;
-            ds->mon_mono.set_mono_color(RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF)); // white
             ds->vsg->set_render(&ds->mon_ntsc);
             break;
         case DM_ENGINE_RGB:
@@ -118,6 +119,7 @@ bool update_display_apple2_cycle(display_state_t *ds) {
     const SDL_FRect &content_inset =
         (ds->new_video & 0x80) ? shr_content_inset : ii_content_inset;
 
+    SDL_SetTextureColorMod(ds->frame_vsg->get_texture(), tint.r, tint.g, tint.b);
     ds->video_system->render_frame(ds->frame_vsg->get_texture(), &ii_frame_src, nullptr, true,
         &content_inset);
 
@@ -871,6 +873,17 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         ds->vsg = ds->vsgc;
     }
 
+    // Only the IIe has the 80-column half-cycle shift. II / II Plus have no 80 columns,
+    // and the IIgs generates legacy modes without the offset.
+    if (ds->video_scanner_type == Scanner_AppleII
+        || computer->platform->id == PLATFORM_APPLE_IIE_65816
+        || platform_is_iigs(computer->platform->id)) {
+        ds->vsgc->set_display_shift(false);
+        ds->vsgr->set_display_shift(false);
+        ds->mon_mono.set_shift_enabled(false);
+        ds->mon_ntsc.set_shift_enabled(false);
+    }
+
     ds->char_rom = charrom;
  
     // LINEAR gets us appropriately blurred pixels, NEAREST gets us sharp pixels, PIXELART is sharper pixels that are more accurate
@@ -1013,10 +1026,6 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         mmu->set_C0XX_write_handler(0xC022, { display_write_C022, ds });
         mmu->set_C0XX_read_handler(0xC034, { display_read_C034, ds });
         mmu->set_C0XX_write_handler(0xC034, { display_write_C034, ds });
-        ds->vsg->set_display_shift(false); // no shift in Apple IIgs mode.
-        ds->mon_mono.set_shift_enabled(false);
-        ds->mon_ntsc.set_shift_enabled(false);
-        //ds->mon_rgb.set_shift_enabled(false);
         
         // Set default video scanner colors for Apple IIgs. (F, 6, 6)
         set_tbcolor(ds, 0xF0);
