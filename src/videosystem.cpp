@@ -36,8 +36,9 @@ video_system_t::video_system_t(computer_t *computer) {
     window_height = (BASE_HEIGHT + border_height*2) * SCALE_Y;
     aspect_ratio = (float)window_width / (float)window_height;
 
+    const std::string initial_title = gs2_window_title("GSSquared - Apple ][ Emulator");
     window = SDL_CreateWindow(
-        "GSSquared - Apple ][ Emulator", 
+        initial_title.c_str(),
         (BASE_WIDTH + border_width*2) * SCALE_X, 
         (BASE_HEIGHT + border_height*2) * SCALE_Y, 
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY
@@ -287,7 +288,8 @@ SDL_FRect video_system_t::target_rect_in_window_points() const {
 }
 
 void video_system_t::set_window_title(const char *title) {
-    SDL_SetWindowTitle(window, title);
+    const std::string decorated = gs2_window_title(title);
+    SDL_SetWindowTitle(window, decorated.c_str());
 }
 
 void video_system_t::render_frame(SDL_Texture *texture, SDL_FRect *srcrect, SDL_FRect *dstadj, bool respect_mode,

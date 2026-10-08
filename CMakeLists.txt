@@ -332,6 +332,10 @@ target_include_directories(gs2_headers
     INTERFACE ${PROJECT_BINARY_DIR}/generated
     INTERFACE ${CMAKE_BINARY_DIR}/cfg
 )
+# Debug builds append " [Debug]" to window titles (see gs2_window_title).
+target_compile_definitions(gs2_headers INTERFACE
+    $<$<CONFIG:Debug>:GS2_DEBUG_BUILD>
+)
 
 # all following targets will link to SDL3
 link_libraries(gs2_headers ${GS2_SDL3} ${GS2_SDL3_NET})

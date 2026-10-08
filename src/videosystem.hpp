@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <SDL3/SDL.h>
 #include <functional>
 #include <map>
@@ -14,6 +15,15 @@
 // somewhere calculate the window size properly (42+49, and 19+21)
 #define BORDER_WIDTH 42
 #define BORDER_HEIGHT 20
+
+// Debug builds advertise themselves in the native window title bar.
+inline std::string gs2_window_title(const char *title) {
+    std::string out = title ? title : "";
+#if defined(GS2_DEBUG_BUILD)
+    out += " [Debug]";
+#endif
+    return out;
+}
 
 typedef enum {
     DISPLAY_WINDOWED_MODE = 0,

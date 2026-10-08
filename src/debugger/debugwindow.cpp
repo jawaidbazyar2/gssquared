@@ -44,7 +44,8 @@ debug_window_t::debug_window_t(computer_t *computer) {
 #endif
 
     // create a new window
-    window = SDL_CreateWindow("GSSquared Debugger", window_width, window_height, SDL_WINDOW_RESIZABLE|SDL_WINDOW_HIDDEN);
+    const std::string debugger_title = gs2_window_title("GSSquared Debugger");
+    window = SDL_CreateWindow(debugger_title.c_str(), window_width, window_height, SDL_WINDOW_RESIZABLE|SDL_WINDOW_HIDDEN);
     // create a new renderer
     renderer = SDL_CreateRenderer(window, nullptr);
 
