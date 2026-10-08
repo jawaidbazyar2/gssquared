@@ -318,12 +318,19 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
         } else if (mod & SDL_KMOD_SHIFT) { // WINDOWS == brightness
             config.videoSaturation += ((key == SDLK_KP_PLUS) ? 0.1f : -0.1f);
             if (config.videoSaturation < 0.0f) config.videoSaturation = 0.0f;
-            if (config.videoSaturation > 1.0f) config.videoSaturation = 1.0f;
+            if (config.videoSaturation > 2.0f) config.videoSaturation = 2.0f;
         }
         init_hgr_LUT();
         static char msgbuf[256];
         snprintf(msgbuf, sizeof(msgbuf), "Hue set to: %f, Saturation to: %f\n", config.videoHue, config.videoSaturation);
         ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
+        return true;
+    }
+    if ((mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT)) && key == SDLK_KP_MULTIPLY) {
+        config.heldDots = !config.heldDots;
+        init_hgr_LUT();
+        ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
+            config.heldDots ? "NTSC: held-dot model" : "NTSC: point-sample model (legacy)"));
         return true;
     }
     // TODO: get rid of these for production
@@ -889,6 +896,9 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         int key = event.key.key;
         if (/* (key == SDLK_F7) ||  */(key == SDLK_F8) || (key == SDLK_KP_PLUS) || (key == SDLK_KP_MINUS)) {
             return true; // eat the keydown
+        }
+        if (key == SDLK_KP_MULTIPLY && (event.key.mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT))) {
+            return true;
         }
         return false;
     });
