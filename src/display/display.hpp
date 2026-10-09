@@ -27,6 +27,7 @@
 
 #include "devices/displaypp/render/Monochrome560.hpp"
 #include "devices/displaypp/render/NTSC560.hpp"
+#include "devices/displaypp/render/PackedOnly.hpp"
 //#include "devices/displaypp/render/GSRGB560.hpp"
 //#include "devices/displaypp/generate/AppleII.cpp"
 #include "devices/displaypp/VideoScanner.hpp"
@@ -167,6 +168,8 @@ public:
     CharRom *char_rom = nullptr;
 
     FrameVSG     *frame_vsg = nullptr;
+    // GPU NTSC/mono decode target (910x263); null when the CPU decoders are used.
+    SDL_Texture  *frame_ntsc = nullptr;
     VideoScanGeneratorIntf *vsg = nullptr; // current VideoGenerator
     VideoScanGenerator_Comp *vsgc = nullptr;
     VideoScanGenerator_RGB *vsgr = nullptr;
@@ -180,6 +183,7 @@ public:
 
     Monochrome560 mon_mono;
     NTSC560 mon_ntsc;
+    PackedOnly mon_packed;
     //GSRGB560 mon_rgb;
     MessageBus *mbus;
 

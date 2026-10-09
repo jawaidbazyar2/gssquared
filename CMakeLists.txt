@@ -543,6 +543,8 @@ add_library(gs2_ntsc
     src/display/OEVector.cpp
     src/display/filters.cpp
     src/display/shaders/GpuShaderLoader.cpp
+    src/display/shaders/GpuFragmentPass.cpp
+    src/display/NtscGpu.cpp
 )
 
 target_link_libraries(gs2_displaypp PUBLIC gs2_ntsc)

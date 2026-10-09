@@ -23,6 +23,7 @@ public:
         constexpr uint32_t DATA_DOTS = 560;
         const uint32_t width = region_width();
         uint32_t buf[22];
+        ensure_hgr_LUT();
 
         for (uint32_t y = 0; y < FrameBits::LINES; y++) {
             load_line(bits, y, buf);

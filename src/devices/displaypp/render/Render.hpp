@@ -13,6 +13,7 @@ class Render {
         virtual ~Render() {};
 
         void set_shift_enabled(bool shift_enabled) { this->shift_enabled = shift_enabled; }
+        bool get_shift_enabled() const { return shift_enabled; }
 
         // frame_vsg must be open (locked); its rows are 910 pixels.
         void render(const FrameBits &bits, FrameVSG *frame_vsg) {

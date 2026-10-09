@@ -38,6 +38,8 @@ typedef struct gs2_app_t {
     // When true, enable the CRT post-process shader when guest emulation starts
     // (same effect as pressing F7 with the shader off).
     bool crt_shader_at_boot = false;
+    /** Decode composite/monochrome video on the CPU even when the GPU NTSC shader is available. */
+    bool ntsc_cpu = false;
     bool right_mouse_accelerate = true;
     /** Skip QuitModal / dirty-disk prompts on SDL_EVENT_QUIT (tests / --no-quit-confirm). */
     bool no_quit_confirm = false;

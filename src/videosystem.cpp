@@ -10,7 +10,7 @@
 #include "util/Event.hpp"
 #include <cmath>
 #include "util/dialog.hpp"
-#include "display/shaders/GpuShaderLoader.hpp"
+#include "display/NtscGpu.hpp"
 #if defined(__EMSCRIPTEN__)
 #include <emscripten.h>
 #endif
@@ -87,6 +87,7 @@ video_system_t::video_system_t(computer_t *computer) {
     printf("Renderer: %s (GPU device: %s)\n", rname, gpu_device ? "yes" : "no");
 
     init_crt_shader();
+    init_ntsc_gpu();
 
     screencap_texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, 910, 263);
     if (!screencap_texture) {
@@ -201,8 +202,11 @@ video_system_t::~video_system_t() {
         screenshot_writer = nullptr;
     }
     if (scene_target) SDL_DestroyTexture(scene_target);
-    if (crt_state) SDL_DestroyGPURenderState(crt_state);
-    if (crt_shader && gpu_device) SDL_ReleaseGPUShader(gpu_device, crt_shader);
+    if (ntsc_gpu) {
+        ntsc_gpu->shutdown(gpu_device);
+        delete ntsc_gpu;
+    }
+    crt_pass.destroy(gpu_device);
     if (renderer) SDL_DestroyRenderer(renderer);
     if (window) SDL_DestroyWindow(window);
     if (clip) delete clip;
@@ -223,46 +227,30 @@ bool video_system_t::init_crt_shader() {
         return false; // classic renderer: no shader support.
     }
 
-    SDL_GPUShaderFormat formats = SDL_GetGPUShaderFormats(gpu_device);
-    const char *shader_path = nullptr;
-    const char *entrypoint = nullptr;
-    if (formats & SDL_GPU_SHADERFORMAT_MSL) {
-        shader_path = "shaders/crt.frag.metal";
-        entrypoint = nullptr; // Metal default: main0
-    } else if (formats & SDL_GPU_SHADERFORMAT_DXIL) {
-        shader_path = "shaders/crt.frag.dxil";
-        entrypoint = "main";
-    } else if (formats & SDL_GPU_SHADERFORMAT_SPIRV) {
-        shader_path = "shaders/crt.frag.spv";
-        entrypoint = "main";
-    } else {
-        printf("CRT shader: no supported shader format (need MSL, DXIL, or SPIR-V); shader disabled\n");
+    if (!crt_pass.create(renderer, gpu_device, "crt", 1, 1)) {
         return false;
     }
-
-    crt_shader = create_gpu_shader_from_resource(
-        gpu_device,
-        shader_path,
-        SDL_GPU_SHADERSTAGE_FRAGMENT,
-        1,
-        1,
-        entrypoint);
-    if (!crt_shader) {
-        return false;
-    }
-
-    SDL_GPURenderStateDesc desc;
-    SDL_INIT_INTERFACE(&desc);
-    desc.fragment_shader = crt_shader;
-    crt_state = SDL_CreateGPURenderState(renderer, &desc);
-    if (!crt_state) {
-        printf("CRT shader: SDL_CreateGPURenderState failed: %s\n", SDL_GetError());
-        SDL_ReleaseGPUShader(gpu_device, crt_shader);
-        crt_shader = nullptr;
-        return false;
-    }
-
     printf("CRT shader: initialized\n");
+    return true;
+}
+
+bool video_system_t::init_ntsc_gpu() {
+    if (!gpu_device) {
+        return false;
+    }
+    if (gs2_app_values.ntsc_cpu) {
+        printf("NTSC shader: disabled by --ntsc-cpu; using CPU decoder\n");
+        return false;
+    }
+    NtscGpu *gpu = new NtscGpu();
+    if (!gpu->init(renderer, gpu_device)) {
+        printf("NTSC shader: unavailable on this backend; using CPU decoder\n");
+        gpu->shutdown(gpu_device);
+        delete gpu;
+        return false;
+    }
+    ntsc_gpu = gpu;
+    printf("NTSC shader: initialized\n");
     return true;
 }
 
@@ -423,7 +411,7 @@ void video_system_t::update_target_from_output() {
 }
 
 void video_system_t::ensure_scene_target(int w, int h) {
-    if (!crt_state) {
+    if (!crt_pass.ok()) {
         return; // shader unavailable: scene_target is never used.
     }
     if (w <= 0 || h <= 0) {
@@ -577,7 +565,7 @@ void video_system_t::show_crt_shader_unavailable() {
     const char *message;
     if (!gpu_device) {
         message = "CRT Shader unavailable (GPU renderer could not be initialized)";
-    } else if (!crt_shader) {
+    } else if (crt_pass.status == GpuFragmentPass::NO_SHADER) {
         message = "CRT Shader unavailable (failed to load shader source)";
     } else {
         message = "CRT Shader unavailable (failed to create shader render state)";
@@ -644,7 +632,7 @@ void video_system_t::update_display(bool force_full_frame) {
     // When the CRT shader is active, draw the emulator frame into the offscreen
     // scene_target so it can be post-processed during present_scene(). Otherwise
     // draw straight to the swapchain exactly as before.
-    bool use_scene = crt_shader_enabled && crt_state && scene_target;
+    bool use_scene = crt_shader_enabled && crt_pass.ok() && scene_target;
     if (use_scene) {
         SDL_SetRenderTarget(renderer, scene_target);
     }
@@ -663,7 +651,7 @@ void video_system_t::update_display(bool force_full_frame) {
 }
 
 void video_system_t::present_scene() {
-    if (!(crt_shader_enabled && crt_state && scene_target)) {
+    if (!(crt_shader_enabled && crt_pass.ok() && scene_target)) {
         return; // shader disabled/unavailable: update_display drew to the swapchain.
     }
     // Feed the CRT shader a resolution that matches the emulated source texture
@@ -678,10 +666,10 @@ void video_system_t::present_scene() {
     crt_uniforms_t uniforms = {};
     uniforms.texture_width = (float)scene_target_w * src_w / content_w;
     uniforms.texture_height = 2.0f * (float)scene_target_h * src_h / content_h;
-    SDL_SetGPURenderStateFragmentUniforms(crt_state, 0, &uniforms, sizeof(uniforms));
+    SDL_SetGPURenderStateFragmentUniforms(crt_pass.state, 0, &uniforms, sizeof(uniforms));
 
     // Blit the offscreen scene onto the swapchain 1:1 through the CRT shader.
-    SDL_SetRenderGPUState(renderer, crt_state);
+    SDL_SetRenderGPUState(renderer, crt_pass.state);
     SDL_RenderTexture(renderer, scene_target, nullptr, nullptr);
     SDL_SetRenderGPUState(renderer, nullptr);
 }

@@ -11,6 +11,9 @@
 #include "ui/Clipboard.hpp"
 #include "ui/ScreenshotWriter.hpp"
 #include "devices/displaypp/RGBA.hpp"
+#include "display/shaders/GpuFragmentPass.hpp"
+
+class NtscGpu;
 
 // somewhere calculate the window size properly (42+49, and 19+21)
 #define BORDER_WIDTH 42
@@ -65,10 +68,11 @@ struct video_system_t {
     // custom fragment-shader post-processing). Null means we fell back to the
     // classic renderer and shader effects are unavailable.
     SDL_GPUDevice *gpu_device = nullptr;
-    // CRT post-process fragment shader and its render state. Only created when
-    // gpu_device is non-null. Null when unavailable.
-    SDL_GPUShader *crt_shader = nullptr;
-    SDL_GPURenderState *crt_state = nullptr;
+    // CRT post-process pass. Only created when gpu_device is non-null.
+    GpuFragmentPass crt_pass;
+    // GPU NTSC / monochrome decoder for the composite path. Null when unavailable
+    // (classic renderer, no shader for this backend, or --ntsc-cpu).
+    NtscGpu *ntsc_gpu = nullptr;
     // Offscreen render target the emulator frame is drawn into when the CRT
     // shader is active; it is then blitted to the swapchain through the shader.
     // Sized to the renderer's pixel output and recreated on resize.
@@ -76,7 +80,7 @@ struct video_system_t {
     int scene_target_w = 0;
     int scene_target_h = 0;
     // User toggle for the CRT post-process shader. Only takes effect when the
-    // GPU renderer + shader are available (gpu_device and crt_state non-null).
+    // GPU renderer + shader are available (crt_pass.ok()).
     bool crt_shader_enabled = false;
     SDL_Texture *screencap_texture = nullptr;
     
@@ -124,6 +128,8 @@ protected:
     // Create the CRT fragment shader and its GPU render state. No-op (returns
     // false) when the GPU renderer is not in use. Safe to call once at init.
     bool init_crt_shader();
+    // Create the GPU NTSC decoder when the backend has an ntsc shader and --ntsc-cpu is not set.
+    bool init_ntsc_gpu();
     // Create/recreate the offscreen scene_target to match (w x h) pixels. No-op
     // when the CRT shader is unavailable. Called at init and on resize.
     void ensure_scene_target(int w, int h);
@@ -168,7 +174,8 @@ public:
     void save_screenshot();
     void flip_display_scale_mode();
     // True when the CRT post-process shader is available to be used.
-    bool crt_shader_available() const { return crt_state != nullptr; }
+    bool crt_shader_available() const { return crt_pass.ok(); }
+    NtscGpu *get_ntsc_gpu() const { return ntsc_gpu; }
     bool get_crt_shader_enabled() const { return crt_shader_enabled; }
     void set_crt_shader_enabled(bool enabled, bool show_message = false);
     void toggle_crt_shader();

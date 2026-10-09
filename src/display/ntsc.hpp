@@ -73,5 +73,13 @@ extern ntsc_config config ;
 
 void setupConfig();
 void init_hgr_LUT();
+// After a config change: rebuild decoderMatrix now and the 512 KB LUT on next use
+// (ensure_hgr_LUT). The GPU decoder only needs the matrix, so it never pays for the LUT.
+void ntsc_config_changed();
+void ensure_hgr_LUT();
+// GPU decoder inputs, from the current config (same math as g_hgr_LUT):
+// w[p][o + NUM_TAPS] = YIQ contribution of a lit dot at offset o for output phase p;
+// m = decoderMatrix rows (xyz). Call after init_hgr_LUT() has set decoderMatrix.
+void build_ntsc_gpu_weights(float w[4][2 * NUM_TAPS + 1][4], float m[3][4]);
 void processAppleIIFrame_LUT(uint8_t* frameData, RGBA_t * outputImage, int y_start, int y_end);
 void processAppleIIFrame_Mono(uint8_t* frameData, RGBA_t * outputImage, int y_start, int y_end, RGBA_t color_value);

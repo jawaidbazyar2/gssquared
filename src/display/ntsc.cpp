@@ -222,9 +222,11 @@ RGBA_t  processAppleIIScanline_lut3(
  * videoSaturation: 1.0f
  * videoHue: 0.05f
  * videoBrightness: 0.0f
- * whenever you change these values, re-call init_hgr_LUT().
+ * whenever you change these values, re-call init_hgr_LUT() or ntsc_config_changed().
  */
-void init_hgr_LUT()
+static bool g_hgr_LUT_stale = true;
+
+static void build_decoder_matrix()
 {
     // identity matrix?
     Matrix3x3 decoderMatrix(
@@ -259,7 +261,10 @@ void init_hgr_LUT()
     decoderMatrix.multiply(yiqMatrix);
     decoderMatrix.print();
     config.decoderMatrix = decoderMatrix;
+}
 
+static void build_hgr_LUT()
+{
     for (int phaseCount = 0; phaseCount < 4; phaseCount++)
     {
         for (uint32_t bitCount = 0; bitCount < (1 << ((NUM_TAPS * 2) + 1)); bitCount++)
@@ -271,6 +276,52 @@ void init_hgr_LUT()
             RGBA_t rval = processAppleIIScanline_lut3(bitCount,/*  outputImage, */ center /* , width, yiqBuffer, filteredYiq */);
             g_hgr_LUT[phaseCount][bitCount] = rval;  //  Pull out the center pixel and save it.
         }
+    }
+    g_hgr_LUT_stale = false;
+}
+
+void init_hgr_LUT()
+{
+    build_decoder_matrix();
+    build_hgr_LUT();
+}
+
+void ntsc_config_changed()
+{
+    build_decoder_matrix();
+    g_hgr_LUT_stale = true;
+}
+
+void ensure_hgr_LUT()
+{
+    if (g_hgr_LUT_stale) build_hgr_LUT();
+}
+
+void build_ntsc_gpu_weights(float w[4][2 * NUM_TAPS + 1][4], float m[3][4])
+{
+    for (int p = 0; p < 4; p++) {
+        for (int offset = -NUM_TAPS; offset <= NUM_TAPS; offset++) {
+            int ph = (p + offset) & 3;
+            float *out = w[p][offset + NUM_TAPS];
+            if (config.heldDots) {
+                const float *hw = config.heldWeights[offset + NUM_TAPS][ph];
+                out[0] = hw[0];
+                out[1] = hw[1];
+                out[2] = hw[2];
+            } else {
+                int coeffIdx = std::abs(offset);
+                out[0] = config.pixelYUV[1][ph][0] * config.filterCoefficients[coeffIdx][0];
+                out[1] = config.pixelYUV[1][ph][1] * config.filterCoefficients[coeffIdx][1];
+                out[2] = config.pixelYUV[1][ph][2] * config.filterCoefficients[coeffIdx][2];
+            }
+            out[3] = 0.0f;
+        }
+    }
+    for (int r = 0; r < 3; r++) {
+        m[r][0] = config.decoderMatrix[r * 3 + 0];
+        m[r][1] = config.decoderMatrix[r * 3 + 1];
+        m[r][2] = config.decoderMatrix[r * 3 + 2];
+        m[r][3] = 0.0f;
     }
 }
 

@@ -1,6 +1,9 @@
 # Packed Bitstream and GPU NTSC Decoder (design)
 
-Status: design only, nothing implemented.
+Status: phase 1 implemented (all platforms). Phase 2 implemented for macOS /
+Metal only; Windows (DXIL) and Linux (SPIR-V) builds of the shader are not made
+yet, so those hosts use the phase 1 CPU decoders. See "Phase 2 as built" for
+where the implementation differs from the design below.
 
 ## Goal
 
@@ -254,6 +257,48 @@ Move the decode into a fragment shader when the SDL GPU renderer is active,
 i.e. when `video_system_t::gpu_device` is non-null. The classic renderer keeps
 the phase 1 CPU decoders.
 
+### Phase 2 as built
+
+- **Shader source and build.** `assets/shaders/ntsc.frag.hlsl` is SDL3-convention
+  HLSL (same register spaces and PSInput as `crt.frag.hlsl`).
+  `scripts/compile_shaders_macos.sh` compiles it HLSL → SPIR-V (glslang) → MSL
+  (spirv-cross) and writes the committed `ntsc.frag.metal`. That is the only
+  backend built today. DXIL and SPIR-V will also come from the HLSL (DXC or a
+  shader cross-compiler service), not from GLSL as the deliverables list below
+  says. Without `ntsc.frag.dxil` / `.spv`, Windows and Linux fall back to the
+  CPU decoders automatically.
+- **YIQ weights plus matrix, not `Wrgb`.** The uniforms are the YIQ weights
+  `w[phase][tap]` (60 `float4`) and the decoder matrix rows `m[3]`. The shader
+  sums YIQ over the lit taps in the same order as the CPU, then applies `m`,
+  then truncates. Folding `M` into the weights (the `Wrgb` form below) is
+  mathematically equal but rounds differently. With the CPU's order, the GPU
+  output on Apple Silicon matches the CPU bit for bit (vsgtest: 0 pixels off by
+  one). The uniform block is 1024 bytes:
+  `float4 w[60]; float4 m[3]; float2 region_origin; uint black_padding; uint force_mono;`.
+- **Weights are rebuilt every frame** (`build_ntsc_gpu_weights()` in
+  `ntsc.cpp`, from `config`). It is 60 small entries, so hue / saturation /
+  filter hotkeys take effect on the next frame with no hook into
+  `init_hgr_LUT()`. The 512 KB LUT is still built because the CPU decoders
+  remain the fallback.
+- **Pieces.** `GpuFragmentPass` (`src/display/shaders/`) owns a fragment
+  shader plus its `SDL_GPURenderState`, and picks `.metal` / `.dxil` / `.spv` by
+  device format. The CRT post-process now uses it too (`video_system_t::crt_pass`);
+  later post-process stages can reuse it. `NtscGpu` (`src/display/NtscGpu.*`)
+  owns the NTSC pass and the 19×192 `ntsc_bits` texture, and does steps 4-5 of
+  the integration below in `decode()`. `video_system_t` creates it at startup
+  (`get_ntsc_gpu()` is null when unavailable). The generator's renderer on the
+  GPU path is `PackedOnly`, a no-op `Render`. `display_state_t::frame_ntsc` is
+  the 910×263 target.
+- **Override.** `--ntsc-cpu` forces the CPU decoders even when the shader is available.
+- **IIgs composite border.** `frame_ntsc` is cleared to black outside the
+  decoded region every frame, so the IIgs border is black in the composite and
+  monochrome engines on the GPU path. The CPU path leaves whatever `frame_vsg`
+  last held there.
+- **Verification.** `vsgtest --gpu` decodes every vsgtest frame on both paths,
+  reads `frame_ntsc` back, and requires mono to match exactly and NTSC within 1
+  per channel (it reports how many pixels are off by one). `vsgtest --gpu --bench`
+  times the decode call.
+
 ### What the CPU decode computes
 
 `init_hgr_LUT()` bakes, for each output phase `p` (0..3) and each 15-dot window,
@@ -372,8 +417,8 @@ The PSInput layout and register spaces must follow the conventions in
 GPU cost: ~109K fragments × 15 taps per frame. That is negligible even on a Pi GPU.
 
 Deliverables, matching the CRT shader layout in `assets/shaders/`:
-`ntsc.frag.metal`, `ntsc.frag.spv` (from GLSL), `ntsc.frag.hlsl` +
-`ntsc.frag.dxil` (compiled on Windows; see AGENTS.md).
+`ntsc.frag.hlsl` (source), `ntsc.frag.metal` (generated on macOS), and later
+`ntsc.frag.spv` and `ntsc.frag.dxil`, both compiled from the HLSL.
 
 ### Integration
 

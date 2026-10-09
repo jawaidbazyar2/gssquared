@@ -32,6 +32,7 @@
 #include "display/filters.hpp"
 
 #include "videosystem.hpp"
+#include "display/NtscGpu.hpp"
 #include "devices/displaypp/CharRom.hpp"
 #include "devices/displaypp/VideoScanGenerator.hpp"
 #include "devices/displaypp/VideoScanGenerator_Intf.hpp"
@@ -80,15 +81,19 @@ bool update_display_apple2_cycle(display_state_t *ds) {
 
     // Mono renderers write white; the monitor tint is a color multiply on the texture.
     RGBA_t tint = RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF);
+    NtscGpu *ntsc_gpu = ds->frame_ntsc ? vs->get_ntsc_gpu() : nullptr;
+    bool gpu_decode = false;
     switch (vs->display_color_engine) {
         case DM_ENGINE_MONO:
             ds->vsg = ds->vsgc;
             tint = vs->get_mono_color();
-            ds->vsg->set_render(&ds->mon_mono);
+            gpu_decode = ntsc_gpu != nullptr;
+            ds->vsg->set_render(gpu_decode ? (Render *)&ds->mon_packed : &ds->mon_mono);
             break;
         case DM_ENGINE_NTSC:
             ds->vsg = ds->vsgc;
-            ds->vsg->set_render(&ds->mon_ntsc);
+            gpu_decode = ntsc_gpu != nullptr;
+            ds->vsg->set_render(gpu_decode ? (Render *)&ds->mon_packed : &ds->mon_ntsc);
             break;
         case DM_ENGINE_RGB:
             ds->vsg = ds->vsgr;
@@ -97,9 +102,19 @@ bool update_display_apple2_cycle(display_state_t *ds) {
             assert(false && "Invalid display color engine");
     }
 
-    ds->frame_vsg->open();
-    ds->vsg->generate_frame(scanbuf);
-    ds->frame_vsg->close();
+    SDL_Texture *frame_tex;
+    if (gpu_decode) {
+        ds->vsg->generate_frame(scanbuf);
+        uint32_t shift = ds->mon_ntsc.get_shift_enabled() ? 7 : 0;
+        ntsc_gpu->decode(*ds->vsgc->get_frame_bits(), ds->frame_ntsc, shift,
+                         vs->display_color_engine == DM_ENGINE_MONO);
+        frame_tex = ds->frame_ntsc;
+    } else {
+        ds->frame_vsg->open();
+        ds->vsg->generate_frame(scanbuf);
+        ds->frame_vsg->close();
+        frame_tex = ds->frame_vsg->get_texture();
+    }
 
     SDL_FRect ii_frame_src;
     ii_frame_src = content_rec_vsg2[ds->video_scanner_type][(ds->new_video & 0x80) ? 1 : 0];
@@ -119,9 +134,8 @@ bool update_display_apple2_cycle(display_state_t *ds) {
     const SDL_FRect &content_inset =
         (ds->new_video & 0x80) ? shr_content_inset : ii_content_inset;
 
-    SDL_SetTextureColorMod(ds->frame_vsg->get_texture(), tint.r, tint.g, tint.b);
-    ds->video_system->render_frame(ds->frame_vsg->get_texture(), &ii_frame_src, nullptr, true,
-        &content_inset);
+    SDL_SetTextureColorMod(frame_tex, tint.r, tint.g, tint.b);
+    ds->video_system->render_frame(frame_tex, &ii_frame_src, nullptr, true, &content_inset);
 
     return true;
 }
@@ -302,6 +316,7 @@ display_state_t::display_state_t() {
 }
 
 display_state_t::~display_state_t() {
+    if (frame_ntsc) SDL_DestroyTexture(frame_ntsc);
     delete vsg;
     delete video_scanner;
     delete char_rom;
@@ -323,7 +338,7 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
             if (config.videoSaturation < 0.0f) config.videoSaturation = 0.0f;
             if (config.videoSaturation > 2.0f) config.videoSaturation = 2.0f;
         }
-        init_hgr_LUT();
+        ntsc_config_changed();
         static char msgbuf[256];
         snprintf(msgbuf, sizeof(msgbuf), "Hue set to: %f, Saturation to: %f\n", config.videoHue, config.videoSaturation);
         ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
@@ -331,7 +346,7 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
     }
     if ((mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT)) && key == SDLK_KP_MULTIPLY) {
         config.heldDots = !config.heldDots;
-        init_hgr_LUT();
+        ntsc_config_changed();
         ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
             config.heldDots ? "NTSC: held-dot model" : "NTSC: point-sample model (legacy)"));
         return true;
@@ -339,7 +354,7 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
     if ((mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT)) && key == SDLK_KP_DIVIDE) {
         config.lumaTrap = !config.lumaTrap;
         generate_filters(NUM_TAPS);
-        init_hgr_LUT();
+        ntsc_config_changed();
         ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
             config.lumaTrap ? "NTSC: chroma trap, luma 3.5 / I 2.0 / Q 1.3 MHz"
                             : "NTSC: classic filter, luma 2.0 / I 1.3 / Q 0.6 MHz"));
@@ -889,6 +904,16 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     // LINEAR gets us appropriately blurred pixels, NEAREST gets us sharp pixels, PIXELART is sharper pixels that are more accurate
     // linear/pixelart are set in vs->render_frame.
     SDL_SetTextureBlendMode(ds->frame_vsg->get_texture(), SDL_BLENDMODE_NONE);
+
+    // Composite IIgs borders are not decoded on the GPU path; they draw black.
+    if (vs->get_ntsc_gpu()) {
+        ds->frame_ntsc = SDL_CreateTexture(vs->renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, 910, 263);
+        if (ds->frame_ntsc) {
+            SDL_SetTextureBlendMode(ds->frame_ntsc, SDL_BLENDMODE_NONE);
+        } else {
+            printf("NTSC shader: frame texture creation failed (%s); using CPU decoder\n", SDL_GetError());
+        }
+    }
 
     // set in CPU so we can reference later
     computer->set_module_state(MODULE_DISPLAY, ds);
