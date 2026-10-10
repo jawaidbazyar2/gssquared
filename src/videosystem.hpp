@@ -14,6 +14,7 @@
 #include "display/shaders/GpuFragmentPass.hpp"
 
 class NtscGpu;
+class GsCompositeGpu;
 
 // somewhere calculate the window size properly (42+49, and 19+21)
 #define BORDER_WIDTH 42
@@ -40,6 +41,7 @@ typedef enum {
     DM_ENGINE_NTSC = 0,
     DM_ENGINE_RGB,
     DM_ENGINE_MONO,
+    DM_ENGINE_GSCOMPOSITE,  // IIgs: RGB output through a modeled RGB-to-composite encoder
     DM_NUM_COLOR_ENGINES
 } display_color_engine_t;
 
@@ -73,6 +75,7 @@ struct video_system_t {
     // GPU NTSC / monochrome decoder for the composite path. Null when unavailable
     // (classic renderer, no shader for this backend, or --ntsc-cpu).
     NtscGpu *ntsc_gpu = nullptr;
+    GsCompositeGpu *gscomposite_gpu = nullptr;
     // Offscreen render target the emulator frame is drawn into when the CRT
     // shader is active; it is then blitted to the swapchain through the shader.
     // Sized to the renderer's pixel output and recreated on resize.
@@ -86,6 +89,8 @@ struct video_system_t {
     
     display_fullscreen_mode_t display_fullscreen_mode = DISPLAY_WINDOWED_MODE;
     display_color_engine_t display_color_engine = DM_ENGINE_NTSC;
+    // Set by the display for IIgs platforms; F2 skips GS Composite otherwise.
+    bool gscomposite_allowed = false;
     display_mono_color_t display_mono_color = DM_MONO_GREEN;
     display_pixel_mode_t display_pixel_mode = DM_PIXEL_FUZZ;
 
@@ -130,6 +135,7 @@ protected:
     bool init_crt_shader();
     // Create the GPU NTSC decoder when the backend has an ntsc shader and --ntsc-cpu is not set.
     bool init_ntsc_gpu();
+    bool init_gscomposite_gpu();
     // Create/recreate the offscreen scene_target to match (w x h) pixels. No-op
     // when the CRT shader is unavailable. Called at init and on resize.
     void ensure_scene_target(int w, int h);
@@ -176,6 +182,7 @@ public:
     // True when the CRT post-process shader is available to be used.
     bool crt_shader_available() const { return crt_pass.ok(); }
     NtscGpu *get_ntsc_gpu() const { return ntsc_gpu; }
+    GsCompositeGpu *get_gscomposite_gpu() const { return gscomposite_gpu; }
     bool get_crt_shader_enabled() const { return crt_shader_enabled; }
     void set_crt_shader_enabled(bool enabled, bool show_message = false);
     void toggle_crt_shader();

@@ -26,6 +26,7 @@ enum MenuMonitorID {
 	MONITOR_MONO_GREEN = 202,
 	MONITOR_MONO_AMBER = 203,
 	MONITOR_MONO_WHITE = 204,
+	MONITOR_GS_COMPOSITE = 205,
 };
 
 struct computer_t;

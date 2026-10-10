@@ -327,6 +327,7 @@ static void build_menu_bar()
             struct { const char *label; int id; } monitors[] = {
                 { "Composite",          MONITOR_COMPOSITE  },
                 { "GS RGB",             MONITOR_GS_RGB     },
+                { "GS Composite",       MONITOR_GS_COMPOSITE },
                 { "Monochrome - Green", MONITOR_MONO_GREEN },
                 { "Monochrome - Amber", MONITOR_MONO_AMBER },
                 { "Monochrome - White", MONITOR_MONO_WHITE },

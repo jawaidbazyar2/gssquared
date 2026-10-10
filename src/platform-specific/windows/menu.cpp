@@ -373,6 +373,7 @@ static void dispatchCommand(UINT id)
     // Monitor
     case MENU_MONITOR_COMPOSITE:  mi->setMonitor(MONITOR_COMPOSITE);  return;
     case MENU_MONITOR_GS_RGB:     mi->setMonitor(MONITOR_GS_RGB);     return;
+    case MENU_MONITOR_GS_COMPOSITE: mi->setMonitor(MONITOR_GS_COMPOSITE); return;
     case MENU_MONITOR_MONO_GREEN: mi->setMonitor(MONITOR_MONO_GREEN); return;
     case MENU_MONITOR_MONO_AMBER: mi->setMonitor(MONITOR_MONO_AMBER); return;
     case MENU_MONITOR_MONO_WHITE: mi->setMonitor(MONITOR_MONO_WHITE); return;
@@ -598,6 +599,7 @@ static void setupMenus()
 
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_COMPOSITE,  L"Composite");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_GS_RGB,     L"GS RGB");
+    AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_GS_COMPOSITE, L"GS Composite");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_MONO_GREEN, L"Monochrome - Green");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_MONO_AMBER, L"Monochrome - Amber");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_MONO_WHITE, L"Monochrome - White");

@@ -7,14 +7,14 @@
 # Requires: brew install glslang spirv-cross; Xcode (xcrun metal).
 #
 # Usage: scripts/compile_shaders_macos.sh [name...]
-# Default: ntsc. (crt.frag.metal is hand-maintained; it is not regenerated here.)
+# Default: ntsc gscomposite. (crt.frag.metal is hand-maintained; it is not regenerated here.)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SHADERS="$ROOT/assets/shaders"
 
 if [[ $# -eq 0 ]]; then
-    set -- ntsc
+    set -- ntsc gscomposite
 fi
 
 for tool in glslangValidator spirv-cross; do

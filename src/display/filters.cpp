@@ -150,50 +150,118 @@ static void generate_held_weights(OEVector &w, int num_taps,
     }
 }
 
+// Classic point-sample filter (Chebyshev window x Lanczos) for a given sample rate.
+static void design_point_filters(int num_taps, float sample_rate, OEVector &w,
+                                 OEVector &wy, OEVector &wu, OEVector &wv,
+                                 float &yBandwidth, float &uBandwidth, float &vBandwidth)
+{
+    int total_samples = num_taps * 2 + 1;
+
+    w = OEVector::chebyshevWindow(total_samples, CHEBYSHEV_SIDELOBE_DB); // orig 50.
+    w = w.normalize();
+
+    float bandwidth = displayConfiguration.videoBandwidth / sample_rate;
+    yBandwidth = displayConfiguration.videoLumaBandwidth / sample_rate;
+    uBandwidth = displayConfiguration.videoChromaBandwidth / sample_rate;
+    vBandwidth = uBandwidth;
+
+    /* if (displayConfiguration.videoDecoder == CANVAS_YIQ) */
+        uBandwidth = uBandwidth + NTSC_IQ_DELTA / sample_rate;
+
+    // Switch to video bandwidth when no subcarrier
+    if ((displayConfiguration.imageSubcarrier == 0.0) ||
+        (displayConfiguration.videoWhiteOnly))
+    {
+        yBandwidth = bandwidth;
+        uBandwidth = bandwidth;
+        vBandwidth = bandwidth;
+    }
+
+    wy = w * OEVector::lanczosWindow(total_samples, yBandwidth);
+    wy = wy.normalize();
+
+    wu = w * OEVector::lanczosWindow(total_samples, uBandwidth);
+    wu = wu.normalize() * 2;
+
+    wv = w * OEVector::lanczosWindow(total_samples, vBandwidth);
+    wv = wv.normalize() * 2;
+}
+
+// Point-sample version of the held-dot trap weights, taps 0..num_taps: Gaussian
+// luma (1/e at luma_bandwidth Hz) with an exact null at the subcarrier, and
+// windowed-sinc I / Q (cutoffs i_bandwidth, q_bandwidth Hz).
+// rate_scale multiplies the 4fsc sample rate (16/14 for SHR lines), which moves
+// the subcarrier to config.subcarrier / rate_scale cycles per sample.
+void generate_trap_point_filters(float rate_scale, int num_taps, float luma_bandwidth,
+                                 float i_bandwidth, float q_bandwidth, float out[][3]) {
+    init_display_configuration();
+    const int total_samples = num_taps * 2 + 1;
+    const float rate = displayConfiguration.imageSampleRate * rate_scale;
+    const float yb = luma_bandwidth / rate;
+    const float ib = i_bandwidth / rate;
+    const float qb = q_bandwidth / rate;
+    const float fsc = config.subcarrier / rate_scale;
+
+    OEVector w = OEVector::chebyshevWindow(total_samples, CHEBYSHEV_SIDELOBE_DB).normalize();
+    auto win = [&](int k) { return w.getValue(k + num_taps); };
+    auto gauss = [&](int k) { float a = (float)M_PI * yb * k; return expf(-a * a); };
+    auto carrier = [&](int k) { return cosf(2.0f * (float)M_PI * fsc * k); };
+    auto sinc = [](int k, float fc) { float x = 2.0f * (float)M_PI * fc * k; return k == 0 ? 1.0f : sinf(x) / x; };
+
+    auto carrier2 = [&](int k) { return cosf(4.0f * (float)M_PI * fsc * k); };
+
+    double rh = 0, rc = 0;
+    for (int k = -num_taps; k <= num_taps; k++) {
+        rh += win(k) * gauss(k) * carrier(k);
+        rc += win(k) * carrier(k) * carrier(k);
+    }
+    const float alpha = (float)(rh / rc);
+
+    // Chroma: subtract a * carrier + b * carrier2 so the response is zero at fsc
+    // (luma leaking into I / Q tints solid colors) and at 2 fsc (demodulation image).
+    auto chroma_nulls = [&](float fc, float &a, float &b) {
+        double m11 = 0, m12 = 0, m21 = 0, m22 = 0, r1 = 0, r2 = 0;
+        for (int k = -num_taps; k <= num_taps; k++) {
+            double wk = win(k), c1 = carrier(k), c2 = carrier2(k), s = sinc(k, fc);
+            m11 += wk * c1 * c1; m12 += wk * c2 * c1; r1 += wk * s * c1;
+            m21 += wk * c1 * c2; m22 += wk * c2 * c2; r2 += wk * s * c2;
+        }
+        double det = m11 * m22 - m12 * m21;
+        a = (float)((r1 * m22 - m12 * r2) / det);
+        b = (float)((m11 * r2 - m21 * r1) / det);
+    };
+    float ia, ib2, qa, qb2;
+    chroma_nulls(ib, ia, ib2);
+    chroma_nulls(qb, qa, qb2);
+    auto ifilt = [&](int k) { return win(k) * (sinc(k, ib) - ia * carrier(k) - ib2 * carrier2(k)); };
+    auto qfilt = [&](int k) { return win(k) * (sinc(k, qb) - qa * carrier(k) - qb2 * carrier2(k)); };
+
+    double sy = 0, si = 0, sq = 0;
+    for (int k = -num_taps; k <= num_taps; k++) {
+        sy += win(k) * (gauss(k) - alpha * carrier(k));
+        si += ifilt(k);
+        sq += qfilt(k);
+    }
+    for (int k = 0; k <= num_taps; k++) {
+        out[k][0] = (float)(win(k) * (gauss(k) - alpha * carrier(k)) / sy);
+        out[k][1] = (float)(2.0 * ifilt(k) / si);
+        out[k][2] = (float)(2.0 * qfilt(k) / sq);
+    }
+}
+
 void generate_filters(int num_taps) {
     init_display_configuration();
 
-    int total_samples = num_taps * 2 + 1;
-
-    // Filters
-    OEVector w = OEVector::chebyshevWindow(total_samples, CHEBYSHEV_SIDELOBE_DB); // orig 50.
-    w = w.normalize();
+    OEVector w, wy, wu, wv;
+    float yBandwidth, uBandwidth, vBandwidth;
+    design_point_filters(num_taps, displayConfiguration.imageSampleRate, w, wy, wu, wv,
+                         yBandwidth, uBandwidth, vBandwidth);
     printf("Chebyshev window\n");
     w.print();
-    
-    OEVector wy, wu, wv;
-    
-    float bandwidth = displayConfiguration.videoBandwidth / displayConfiguration.imageSampleRate;
-    
 
-        float yBandwidth = displayConfiguration.videoLumaBandwidth / displayConfiguration.imageSampleRate;
-        float uBandwidth = displayConfiguration.videoChromaBandwidth / displayConfiguration.imageSampleRate;
-        float vBandwidth = uBandwidth;
-        
 printf("yBandwidth: %f\n", yBandwidth);
 printf("uBandwidth: %f\n", uBandwidth);
 printf("vBandwidth: %f\n", vBandwidth);
-
-       /*  if (displayConfiguration.videoDecoder == CANVAS_YIQ) */
-            uBandwidth = uBandwidth + NTSC_IQ_DELTA / displayConfiguration.imageSampleRate;
-        
-        // Switch to video bandwidth when no subcarrier
-        if ((displayConfiguration.imageSubcarrier == 0.0) ||
-            (displayConfiguration.videoWhiteOnly))
-        {
-            yBandwidth = bandwidth;
-            uBandwidth = bandwidth;
-            vBandwidth = bandwidth;
-        }
-        
-        wy = w * OEVector::lanczosWindow(total_samples, yBandwidth);
-        wy = wy.normalize();
-        
-        wu = w * OEVector::lanczosWindow(total_samples, uBandwidth);
-        wu = wu.normalize() * 2;
-        
-        wv = w * OEVector::lanczosWindow(total_samples, vBandwidth);
-        wv = wv.normalize() * 2;
 
     printf("wy\n");
     wy.print();

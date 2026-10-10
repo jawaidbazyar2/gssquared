@@ -125,6 +125,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)toggleDisconnectedWhenNoGamepad:(id)sender;
 - (void)monitorComposite:(id)sender;
 - (void)monitorGSRGB:(id)sender;
+- (void)monitorGSComposite:(id)sender;
 - (void)monitorMonoGreen:(id)sender;
 - (void)monitorMonoAmber:(id)sender;
 - (void)monitorMonoWhite:(id)sender;
@@ -282,6 +283,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 
 - (void)monitorComposite:(id)sender { getMenuInterface()->setMonitor(MONITOR_COMPOSITE); (void)sender; }
 - (void)monitorGSRGB:(id)sender     { getMenuInterface()->setMonitor(MONITOR_GS_RGB); (void)sender; }
+- (void)monitorGSComposite:(id)sender { getMenuInterface()->setMonitor(MONITOR_GS_COMPOSITE); (void)sender; }
 - (void)monitorMonoGreen:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_GREEN); (void)sender; }
 - (void)monitorMonoAmber:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_AMBER); (void)sender; }
 - (void)monitorMonoWhite:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_WHITE); (void)sender; }
@@ -798,6 +800,7 @@ static void setupMenus(void) {
 	struct { NSString *title; SEL action; NSInteger tag; } monitorItems[] = {
 		{ @"Composite",          @selector(monitorComposite:),  MONITOR_COMPOSITE },
 		{ @"GS RGB",             @selector(monitorGSRGB:),      MONITOR_GS_RGB },
+		{ @"GS Composite",       @selector(monitorGSComposite:), MONITOR_GS_COMPOSITE },
 		{ @"Monochrome - Green", @selector(monitorMonoGreen:),  MONITOR_MONO_GREEN },
 		{ @"Monochrome - Amber", @selector(monitorMonoAmber:),  MONITOR_MONO_AMBER },
 		{ @"Monochrome - White", @selector(monitorMonoWhite:),  MONITOR_MONO_WHITE },

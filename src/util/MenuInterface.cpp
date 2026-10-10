@@ -107,6 +107,7 @@ int MenuInterface::getCurrentMonitor() {
 
 	if (vs->display_color_engine == DM_ENGINE_NTSC) return MONITOR_COMPOSITE;
 	if (vs->display_color_engine == DM_ENGINE_RGB)  return MONITOR_GS_RGB;
+	if (vs->display_color_engine == DM_ENGINE_GSCOMPOSITE) return MONITOR_GS_COMPOSITE;
 
 	switch (vs->display_mono_color) {
 		case DM_MONO_GREEN: return MONITOR_MONO_GREEN;

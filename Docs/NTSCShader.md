@@ -3,7 +3,10 @@
 Status: phase 1 implemented (all platforms). Phase 2 implemented for macOS /
 Metal only; Windows (DXIL) and Linux (SPIR-V) builds of the shader are not made
 yet, so those hosts use the phase 1 CPU decoders. See "Phase 2 as built" for
-where the implementation differs from the design below.
+where the implementation differs from the design below. Phase 3 (IIgs composite
+from the RGB stream through a modeled encoder chip) is implemented for macOS /
+Metal; see "Phase 3 as built". Phase 4 lists follow-ups for cycle-accurate IIgs
+video switches.
 
 ## Goal
 
@@ -481,6 +484,299 @@ Engine switching needs no special handling: each frame picks its path from
 - **Live adjustments:** hue/saturation hotkeys change the output with no LUT rebuild.
 - **Timing:** compare `display_times` before and after on macOS, Windows, and a
   Raspberry Pi 4/5.
+
+## Phase 3: IIgs composite as an RGB-to-composite encoder (design)
+
+Status: implemented for macOS / Metal (the only shader format built so far).
+Other hosts fall back to the Composite path. See "Phase 3 as built" for where
+the implementation differs from the design below.
+
+### Phase 3 as built
+
+- **Engine and UI (core only).** `DM_ENGINE_GSCOMPOSITE` is appended after
+  Monochrome, named "GS Composite". F2 skips it unless
+  `video_system_t::gscomposite_allowed`, which display init sets for IIgs
+  platforms. The native Monitor menus (macOS, Windows, Linux) have a
+  "GS Composite" item (`MONITOR_GS_COMPOSITE` / `MENU_MONITOR_GS_COMPOSITE` = 205).
+  The OSD buttons, DisplaySelect, ConfigSelectors and saved config do not offer
+  it yet. Selected on a non-IIgs machine (through the menu), it renders as Composite.
+- **Per-line information** goes in the uniform block, not a texture:
+  `uint4 lines[66]`, one line per component (`lines[y >> 2][y & 3]`), bit 0
+  colorburst and bit 1 16-dot clock. `VideoScanGenerator_RGB` records
+  `LineInfo { burst, clock16 }` at each HSYNC and at VSYNC. `burst` is
+  `line_colorburst && !mono_mode`. The line's colorburst is set by its first data
+  scan (off for TEXT40 / TEXT80, on for other modes including SHR). Border-only
+  lines keep the last value.
+- **Pre-gray switch.** `VideoScanGenerator_RGB::set_composite_encode(true)`
+  stops MONOCOLOR from graying the text / hires LUTs and the SHR palette.
+  The display sets it each frame: on while the pass runs, off otherwise.
+  Toggling rebuilds the LUTs and `palette.active` from `palette.colors`.
+- **Filters.** `generate_trap_point_filters()` in `filters.cpp`: a point-sample
+  version of the phase 2 trap design (the encoder's output is an analog sample,
+  not a held 1-bit dot). Luma is a Gaussian (1/e at `GS_LUMA_BANDWIDTH` in
+  `ntsc.cpp`, 3.5 MHz, separate from the Apple II decoder's
+  `TRAP_LUMA_BANDWIDTH`) with an exact null at the subcarrier. The AppleColor
+  IIe spec is 3 MHz video bandwidth in color mode; the Gaussian's −3 dB point is
+  about 0.59 × its 1/e frequency (about 2.1 MHz now; 5.1 MHz would put −3 dB at
+  3 MHz). Hires luma looks right on hardware comparison, so it stays at 3.5 MHz.
+- **Chroma bandwidth and taps.** I and Q are cut at `GS_CHROMA_BANDWIDTH`
+  (0.6 MHz, the usual consumer-monitor figure) with `GS_NUM_TAPS` = 15 per side
+  (31 taps; the 15-tap kernel cannot be that narrow). The phase 2 trap I / Q
+  bandwidths (2.0 / 1.3 MHz) let Finder's 640-mode desktop dither, which repeats
+  every 4 SHR dots (4.09 MHz, 0.51 MHz from the subcarrier), beat into broad
+  violet / green bands every 32 dots; on hardware they are faint. At 0.6 MHz the
+  beat passes at about 66% (0.3 MHz with 23 taps per side would be about 26%).
+  Still to calibrate against hardware.
+- **SHR phase knob.** SHR fringe colors depend on when SHR pixels come out
+  relative to the subcarrier, which is not known: the VGC's SHR pipeline delay
+  and the MC1377's burst placement. The model assumes SHR data starts in phase
+  with legacy data at cycle 12. `config.gsShrPhase` (turns) is added
+  to the 16-dot basis only. It rotates SHR artifact colors without changing solid
+  colors. Alt+Shift+keypad +/- steps it by 1/32 turn (11.25°) and shows the
+  value. Default −1/8 turn (−45°), chosen on a IIgs into an AppleColor IIe by
+  comparing the File and Apple menu fringes. With 0, the 'F' of File fringed
+  green, where hardware shows blue; −90° was also wrong. −45° and −33.75° looked closest.
+  −45° is one tick of the IIgs's 28.636 MHz master clock, which also drives the
+  VGC (the SHR dot clock is 28.636 × 4/7 MHz), so a one-tick SHR pipeline
+  difference is a plausible cause. −33.75° would only coincidentally cancel the
+  33° `phaseInfo[0]` convention. I / Q are windowed sincs at 2.0 / 1.3 MHz with exact nulls at the
+  subcarrier (so luma does not leak into chroma and tint solid colors) and at
+  twice the subcarrier (the demodulation image). The 16-dot taps are the same
+  design at 16/14 × 4fsc, where the subcarrier is 14/16 as many cycles per
+  sample. The classic 2 MHz Lanczos luma was tried first and blurred
+  noticeably.
+- **Colorburst off is per-pixel luma.** Lines without colorburst (text,
+  MONOCOLOR, Monochrome engine) output `enc` row 0 · rgb of the pixel itself,
+  with no filter. This matches hardware notes in DevelopLog ("Color disabled":
+  solid grays, no dot pattern; text shows its colors as grays) and keeps text
+  as sharp as RGB. Running these lines through the composite luma filter made
+  80-column text blurry. Checked on a IIgs with an AppleColor IIe: text with
+  the monitor in color mode is indistinguishable from the mono switch (8 MHz),
+  so the monitor's color killer also removes the chroma trap.
+- **Basis instead of weight tables.** The uniforms hold the demodulation basis
+  (`b14[4]` = sin/cos of `x & 3`, `b16[32]` = sin/cos of `x & 31` at a step of
+  `subcarrier × 14/16`), the taps by |offset| (`f14[8]`, `f16[8]`), the decoder
+  matrix `m` and the encoder matrix `enc`. The shader computes
+  `s = enc·rgb · (1, sin, cos)` per tap and accumulates
+  `f[|o|] · s · (1, sin, cos)`. The basis is the same one the decoder uses, so
+  `phi0` cancels and is not a uniform.
+- **Encoder hue.** `enc` is the inverse of the decoder's YIQ→RGB matrix, rotated
+  by −0.05 turn (`GS_ENCODER_HUE`, the default `videoHue`). At default settings a
+  solid color decodes back to itself (within 3 per channel in tests). The
+  hue / saturation hotkeys still act on the decoder.
+- **Monochrome engine on the IIgs.** When the pass is available, IIgs Monochrome
+  also runs the RGB generator and the pass with `force_mono` (luma only on every
+  line), then the monitor tint. Without the pass it keeps the phase 2 mono path.
+- **Fallback.** With no pass (classic renderer, no shader for the backend,
+  `--ntsc-cpu`) GS Composite renders as Composite. `frame_ntsc` is created when
+  either GPU pass exists.
+- **Code.** `assets/shaders/gscomposite.frag.hlsl` (+ generated `.metal`),
+  `src/display/GsCompositeGpu.{hpp,cpp}` (created in `video_system_t` next to
+  `NtscGpu`), `build_gscomposite_uniforms()` in `ntsc.cpp`, wiring in
+  `update_display_apple2_cycle()`.
+- **Tests.** `vsgtest --gpu` checks: solid-color round trip (exact at default
+  settings); burst-off luma gray; `force_mono` equal to burst off; a 1-pixel
+  black/white pattern on a burst-off line passes unchanged; black and white exact;
+  a period-4 dot pattern on 16-dot lines shows chroma, solid gray does not, and
+  burst off shows none. On the RGB generator it checks per-line colorburst
+  (text, lores, carried by border lines), a border change at scan k landing at
+  dot 14k in both `frame_vsg` and the decoded luma, and MONOCOLOR (no burst, no
+  pre-gray with `composite_encode`, pre-gray without it).
+
+### Problem
+
+The composite path above models an Apple II / IIe, where the video circuit
+produces a 1-bit dot stream and the monitor's decoder creates the colors. A real
+IIgs doesn't work that way. Its VGC produces RGB for every mode, and the
+composite output is made from that RGB by a separate RGB-to-composite encoder
+chip. Running IIgs video through `VideoScanGenerator_Comp` gets several things wrong:
+
+- **No border.** The composite generator ignores `VM_BORDER_COLOR`, and its
+  output region is only the 560×192 picture. On the CPU path the border that
+  appeared in composite was a frozen leftover of the last RGB frame in
+  `frame_vsg`. The phase 2 GPU path clears `frame_ntsc`, so the border is black.
+- **Border and text colors in text mode.** On a real IIgs in text mode the
+  colorburst is off, so the monitor shows the luma of the encoded signal: the
+  border and colored text appear as shades of gray. The composite generator
+  draws text white on black and ignores `TEXTCOLOR`.
+- **Super hi-res.** SHR is compiled out of the composite generator. On a real
+  IIgs, SHR through the encoder picks up color artifacts, especially on 640-mode
+  text, because 640-mode pixels alternate fast enough to land in the chroma band.
+
+Extending the composite generator to cover all of this (border placement by
+beam position, a second dot clock for SHR, border phase compensation on
+80-column lines, IIgs text colors) makes it much harder to follow. Instead,
+model the chip.
+
+### Approach
+
+For the IIgs, generate the frame with the RGB engine as today, then run a GPU
+pass that encodes each RGB pixel to a composite signal and decodes it with
+the same filter the phase 2 shader uses:
+
+```mermaid
+flowchart LR
+    Scan[ScanBuffer] --> RGB[VideoScanGenerator_RGB]
+    RGB --> FV["frame_vsg (RGB: picture, border, SHR, text colors)"]
+    RGB --> Lines["per-line info: colorburst, dot clock"]
+    FV --> Enc["gscomposite pass: RGB to composite, then decode"]
+    Lines --> Enc
+    Enc --> FN["frame_ntsc"]
+    FN --> Out["render_frame, CRT pass"]
+```
+
+This handles the cases above without special code:
+
+- **Border:** the RGB generator already paints it into `frame_vsg`, cycle by
+  cycle, including mid-line and mid-frame color changes.
+- **Gray in text mode:** with colorburst off, the monitor's color killer turns
+  off chroma decoding, so the output is luma only. A colored border or colored
+  text comes out as the matching gray.
+- **SHR artifacts:** SHR is clocked at 16 dots per 1 MHz cycle instead of 14, so
+  each SHR pixel advances the subcarrier phase by 78.75° instead of 90°.
+  Alternating 640-mode pixels then decode with color fringes, as on hardware.
+
+### Display option
+
+This is a new display engine, **GS Composite** (`DM_ENGINE_GSCOMPOSITE`),
+offered only on the IIgs, next to Composite, RGB and Monochrome. It changes
+how legacy modes look on the IIgs: HGR, lores and text come from the RGB
+generator's colors, softened by the composite filter, instead of IIe-style
+dot-pattern colors. The existing Composite engine keeps today's path, for
+people who prefer the IIe look.
+
+### Encode
+
+Per `frame_vsg` pixel at column `x` on a line with dot clock `k` (14 or 16 dots
+per 1 MHz cycle):
+
+```
+yiq  = RGB_to_YIQ(rgb)                          // inverse of yiqMatrix in init_hgr_LUT()
+phi  = x * (2*pi * 14 / (4 * k)) + phi0         // 90° per dot when k = 14, 78.75° when k = 16
+s(x) = Y + I * cos(phi) + Q * sin(phi)
+```
+
+Start with the same color phase reference (`phi0`) as the legacy decoder, so a
+solid color with colorburst on decodes back to about the color it started as.
+Tune `phi0`, and whether the chip low-passes chroma before modulating, against
+photos of real hardware. Treat the line as having a constant phase (the Apple II
+long cycle keeps the phase constant from line to line); no 180° alternation.
+
+### Decode
+
+The phase 2 weights `w[phase][tap]` are the demodulation basis times the filter
+for a lit dot of amplitude 1. With an analog sample in place of the dot:
+
+```
+yiq = sum over o in -7..7 of s(x+o) * W_k[p][o]
+rgb = M * yiq
+```
+
+- 14-dot lines use `build_ntsc_gpu_weights()` unchanged.
+- 16-dot (SHR) lines need a second table, built with the 78.75° phase step and
+  the filter taps spaced for the faster clock. The phase no longer repeats every
+  4 dots, so this table is indexed by the dot position within the phase cycle
+  (it repeats every 32 dots: 32 × 78.75° = 7 × 360°), or the shader computes the
+  demodulation `cos`/`sin` directly.
+- Colorburst off: luma only (`rgb = Y`, gray).
+- Monochrome engine on a IIgs: always luma only. The monitor color is the same
+  texture color multiply as today.
+- Cost: one pass over about 742×240 pixels with about 15 taps each. That is
+  negligible on a GPU. It is a `GpuFragmentPass` stage between the main render
+  and the CRT pass.
+
+### Per-line information
+
+The pass needs two values per beam line, which only the generator knows:
+
+- **colorburst:** off for text lines. `VideoScanGenerator_RGB` already computes
+  `color_mode.colorburst` per line and then drops it. Keep the current rule:
+  only TEXT40 / TEXT80 lines are off, so the text lines at the bottom of mixed
+  mode keep colorburst on, as on the IIe.
+- **dot clock:** `scanner_freq` (14 or 16).
+
+The generator records both in a 263-entry array at each HSYNC. The pass gets them
+as a small texture (one texel per line) uploaded with the frame.
+
+### MONOCOLOR ($C021)
+
+On the IIgs, bit 7 of MONOCOLOR selects color or monochrome composite. It
+controls whether the VGC feeds colorburst to the MC1377 encoder, so "mono" means
+colorburst off on every line. Measured on hardware ("Color disabled" in the
+Control Panel): text is unchanged, lores becomes luma-only bars, and LORES_7M
+becomes a clean grayscale. That is not the same as color with the saturation
+turned to 0.
+
+In GS Composite:
+
+- The generator records `colorburst = (not a text line) and not MONOCOLOR`
+  for each line. The pass needs nothing else.
+- The RGB generator must **not** pre-gray its colors (`mono_mode`, the
+  `txt_mono_lut` / `hgr_mono_lut` / mono palette swap) while GS Composite is
+  active. Graying first removes the chroma before the encoder sees it, so the
+  output would be a smooth gray instead of the luma path's response to the
+  still-modulated signal.
+- The RGB engine keeps its current behavior: MONOCOLOR pre-grays the RGB output.
+
+MONOCOLOR is applied per frame, as it is today (see phase 4).
+
+### Integration
+
+- `update_display_apple2_cycle()` with `DM_ENGINE_GSCOMPOSITE` on a IIgs and the
+  pass available: run `VideoScanGenerator_RGB` into `frame_vsg` exactly as the
+  RGB engine does (open/close, full upload), upload the per-line texture, then
+  draw `frame_vsg` into `frame_ntsc` through the pass, and
+  `render_frame(frame_ntsc, …)`.
+- The source and content rectangles are the RGB ones for the current mode (SHR
+  or legacy), since the pass maps `frame_vsg` to `frame_ntsc` 1:1.
+- No speedup: the IIgs keeps paying the full `frame_vsg` upload, as the RGB
+  engine does now. Reducing that is left for later.
+- **Fallback:** when the pass is unavailable (classic renderer, no shader for the
+  backend, or `--ntsc-cpu`), GS Composite uses the current Composite path.
+- Shader source: `assets/shaders/gscomposite.frag.hlsl`, compiled with
+  `scripts/compile_shaders_macos.sh gscomposite`. Uniforms: the two weight
+  tables, the decoder matrix, `phi0`, and `force_mono`.
+
+### Phase 3 verification
+
+There is no exact CPU reference for this model, so the tests check its properties
+in `vsgtest --gpu`:
+
+- A solid color with colorburst on decodes back to approximately the input color.
+- The same color with colorburst off decodes to its luma gray.
+- MONOCOLOR set: every line decodes with colorburst off, and the RGB generator
+  output is not pre-grayed.
+- A border color change partway through a line shows up at the right cycle.
+- An alternating 640-mode SHR pattern produces chroma; a solid SHR fill does not.
+- Black and white decode to black and white.
+
+Then compare against photos of a real IIgs on a composite monitor: text mode
+with a colored border, 640-mode SHR text, HGR, and lores, each with MONOCOLOR
+off and on.
+
+## Phase 4: cycle-accurate IIgs video switches (design notes)
+
+Status: not started. Follow-ups that phase 3 does not need.
+
+- **Mid-frame MONOCOLOR and C029 bit 5.** `display_write_C021` and the C029
+  bit-5 (DHGR mono) handler set state on the generator directly, and
+  `generate_frame` runs at the end of the frame. A change partway through a
+  frame therefore applies to the whole frame. To make them cycle-accurate, send
+  them through the ScanBuffer as a side-band scan, only when the register
+  changes (as palette data is handled), and have the generators apply them at
+  that point in the beam.
+- **Switch state reaches only the current generator.** `display_write_C021` and
+  the C029 handler call `ds->vsg`, which is whichever generator ran last. After
+  an engine switch, the other generator keeps the old setting. Set both
+  generators (or keep the state in `display_state_t` and apply it each frame).
+  This is a bug today and can be fixed independently.
+- **Composite engine on the IIgs ignores MONOCOLOR.** `VideoScanGenerator_Comp`
+  stores the flag and never uses it. With GS Composite available this may not
+  matter; if it does, the fix is colorburst off on every line in the composite
+  generator.
+- **Luma path calibration.** Whether bars look sharper with MONOCOLOR set because
+  the monitor has no chroma trap or because of the luma bandwidth: tune against
+  photos, together with the phase 3 encoder details.
 
 ## Open questions
 

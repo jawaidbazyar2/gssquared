@@ -29,6 +29,7 @@
 #include "Matrix3x3.hpp"
 #include "display/types.hpp"
 #include "display/ntsc.hpp"
+#include "display/filters.hpp"
 #include "devices/displaypp/RGBA.hpp"
 
 ntsc_config config ;
@@ -323,6 +324,81 @@ void build_ntsc_gpu_weights(float w[4][2 * NUM_TAPS + 1][4], float m[3][4])
         m[r][2] = config.decoderMatrix[r * 3 + 2];
         m[r][3] = 0.0f;
     }
+}
+
+// Hue the encoder cancels: the default videoHue, so a solid color round-trips at default settings.
+static const float GS_ENCODER_HUE = 0.05f;
+// GS Composite luma (Gaussian 1/e frequency, Hz) on colorburst lines. Separate from the
+// Apple II decoder's TRAP_LUMA_BANDWIDTH so the AppleColor model can be tuned on its own.
+static const float GS_LUMA_BANDWIDTH = 3'500'000.0f;
+// GS Composite I and Q cutoff (Hz). A consumer monitor decodes both color axes at about
+// 0.5-0.6 MHz; wider lets SHR dither patterns near the subcarrier beat into broad color bands.
+static const float GS_CHROMA_BANDWIDTH = 600'000.0f;
+
+void build_gscomposite_uniforms(float b14[4][4], float b16[32][4], float f14[GS_NUM_TAPS + 1][4],
+                                float f16[GS_NUM_TAPS + 1][4], float m[3][4], float enc[3][4])
+{
+    static bool filters_built = false;
+    static float taps14[GS_NUM_TAPS + 1][3];
+    static float taps16[GS_NUM_TAPS + 1][3];
+    if (!filters_built) {
+        generate_trap_point_filters(1.0f, GS_NUM_TAPS, GS_LUMA_BANDWIDTH,
+                                    GS_CHROMA_BANDWIDTH, GS_CHROMA_BANDWIDTH, taps14);
+        generate_trap_point_filters(16.0f / 14.0f, GS_NUM_TAPS, GS_LUMA_BANDWIDTH,
+                                    GS_CHROMA_BANDWIDTH, GS_CHROMA_BANDWIDTH, taps16);
+        filters_built = true;
+    }
+
+    for (int ph = 0; ph < 4; ph++) {
+        b14[ph][0] = config.phase_sin[ph];
+        b14[ph][1] = config.phase_cos[ph];
+        b14[ph][2] = b14[ph][3] = 0.0f;
+    }
+    for (int ph = 0; ph < 32; ph++) {
+        float a = 2.0f * (float)M_PI * (config.subcarrier * 14.0f / 16.0f * ph + config.phaseInfo[0] + config.gsShrPhase);
+        b16[ph][0] = sinf(a);
+        b16[ph][1] = cosf(a);
+        b16[ph][2] = b16[ph][3] = 0.0f;
+    }
+    for (int i = 0; i <= GS_NUM_TAPS; i++) {
+        for (int c = 0; c < 3; c++) {
+            f14[i][c] = taps14[i][c];
+            f16[i][c] = taps16[i][c];
+        }
+        f14[i][3] = f16[i][3] = 0.0f;
+    }
+    for (int r = 0; r < 3; r++) {
+        m[r][0] = config.decoderMatrix[r * 3 + 0];
+        m[r][1] = config.decoderMatrix[r * 3 + 1];
+        m[r][2] = config.decoderMatrix[r * 3 + 2];
+        m[r][3] = 0.0f;
+    }
+
+    // Inverse of the decoder's YIQ -> RGB matrix (see build_decoder_matrix).
+    const double a[3][3] = {
+        { 1, 0, 1.13983 },
+        { 1, -0.39465, -0.58060 },
+        { 1, 2.03206, 0 },
+    };
+    double det = a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1])
+               - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0])
+               + a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]);
+    double inv[3][3];
+    for (int r = 0; r < 3; r++) {
+        for (int c = 0; c < 3; c++) {
+            int r1 = (c + 1) % 3, r2 = (c + 2) % 3, c1 = (r + 1) % 3, c2 = (r + 2) % 3;
+            inv[r][c] = (a[r1][c1] * a[r2][c2] - a[r1][c2] * a[r2][c1]) / det;
+        }
+    }
+    // Rotate (I, Q) by -GS_ENCODER_HUE (inverse of build_decoder_matrix's hueMatrix).
+    double h = 2.0 * M_PI * GS_ENCODER_HUE;
+    double ch = cos(h), sh = sin(h);
+    for (int c = 0; c < 3; c++) {
+        enc[0][c] = (float)inv[0][c];
+        enc[1][c] = (float)( ch * inv[1][c] + sh * inv[2][c]);
+        enc[2][c] = (float)(-sh * inv[1][c] + ch * inv[2][c]);
+    }
+    enc[0][3] = enc[1][3] = enc[2][3] = 0.0f;
 }
 
 /** Generate a 'frame' (i.e., a group of 8 scanlines) of video output data using the lookup table.  */

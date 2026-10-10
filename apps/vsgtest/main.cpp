@@ -11,6 +11,8 @@
  *                    compare to the CPU decoders: mono exact, NTSC within 1 per
  *                    channel. Skips when no GPU renderer / shader is available.
  *                    With --bench, also times the GPU decode.
+ *                    Also checks the IIgs GS Composite encoder pass
+ *                    (GsCompositeGpu) and the RGB generator's line info.
  */
 
 #include <algorithm>
@@ -36,6 +38,8 @@
 #include "devices/displaypp/render/NTSC560.hpp"
 #include "mmus/mmu_iie.hpp"
 #include "display/NtscGpu.hpp"
+#include "display/GsCompositeGpu.hpp"
+#include "devices/displaypp/VideoScanGenerator_RGB.hpp"
 #include "gs2.hpp"
 
 #include "RefComposite.hpp"
@@ -114,6 +118,9 @@ struct Gpu {
     SDL_Renderer *renderer = nullptr;
     SDL_GPUDevice *device = nullptr;
     NtscGpu ntsc;
+    GsCompositeGpu gs;
+    bool gs_ok = false;
+    SDL_Texture *src = nullptr;    // synthetic 910x263 RGB frames for gs
     SDL_Texture *target = nullptr;
     uint64_t ntsc_pixels = 0;   // NTSC pixels compared
     uint64_t ntsc_off1 = 0;     // NTSC pixels off by exactly 1 in some channel
@@ -145,11 +152,17 @@ struct Gpu {
             return false;
         }
         SDL_SetTextureBlendMode(target, SDL_BLENDMODE_NONE);
+        gs_ok = gs.init(renderer, device);
+        if (!gs_ok) printf("gpu: GS Composite shader unavailable for this backend\n");
+        src = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_STREAMING, W, H);
+        if (src) SDL_SetTextureBlendMode(src, SDL_BLENDMODE_NONE);
         return true;
     }
 
     void shutdown() {
         if (target) SDL_DestroyTexture(target);
+        if (src) SDL_DestroyTexture(src);
+        gs.shutdown(device);
         ntsc.shutdown(device);
         if (renderer) SDL_DestroyRenderer(renderer);
         if (window) SDL_DestroyWindow(window);
@@ -159,6 +172,33 @@ struct Gpu {
     // Decodes bits on the GPU and reads the full 910x263 frame back into out.
     bool decode_readback(const FrameBits &bits, bool shift, bool mono, std::vector<RGBA_t> &out) {
         ntsc.decode(bits, target, shift ? 7 : 0, mono);
+        return readback(out);
+    }
+
+    // GS Composite of a 910x263 RGB texture.
+    bool gs_readback(SDL_Texture *rgb, const VideoScanGenerator_RGB::LineInfo *lines, bool mono,
+                     std::vector<RGBA_t> &out) {
+        gs.decode(rgb, lines, target, mono);
+        return readback(out);
+    }
+
+    bool gs_image(const std::vector<RGBA_t> &img, const VideoScanGenerator_RGB::LineInfo *lines, bool mono,
+                  std::vector<RGBA_t> &out) {
+        SDL_UpdateTexture(src, nullptr, img.data(), W * sizeof(RGBA_t));
+        return gs_readback(src, lines, mono, out);
+    }
+
+    // Plain 1:1 copy of a 910x263 texture.
+    bool copy_readback(SDL_Texture *tex, std::vector<RGBA_t> &out) {
+        SDL_Texture *saved = SDL_GetRenderTarget(renderer);
+        SDL_SetRenderTarget(renderer, target);
+        SDL_FRect dst = { 0, 0, (float)W, (float)H };
+        SDL_RenderTexture(renderer, tex, nullptr, &dst);
+        SDL_SetRenderTarget(renderer, saved);
+        return readback(out);
+    }
+
+    bool readback(std::vector<RGBA_t> &out) {
         SDL_Texture *saved = SDL_GetRenderTarget(renderer);
         SDL_SetRenderTarget(renderer, target);
         SDL_Surface *s = SDL_RenderReadPixels(renderer, nullptr);
@@ -463,6 +503,177 @@ std::vector<Scenario> scenarios() {
     return v;
 }
 
+// ---- GS Composite (IIgs RGB -> composite encoder -> decoder) ----
+
+using LineInfo = VideoScanGenerator_RGB::LineInfo;
+
+void gs_fail(const char *what) { failures++; printf("\n  FAIL %s", what); }
+
+int luma8(RGBA_t c) { return (int)std::lround(0.299 * c.r + 0.587 * c.g + 0.114 * c.b); }
+int chroma_span(RGBA_t c) { return std::max({ c.r, c.g, c.b }) - std::min({ c.r, c.g, c.b }); }
+
+void check_gscomposite_image(Context &ctx) {
+    printf("%-44s ", "gscomposite: round trip, luma, black/white");
+    int before = failures;
+    Gpu &gpu = *ctx.gpu;
+    std::vector<RGBA_t> img(W * H), out(W * H);
+    LineInfo burst14[H], burst16[H], mono14[H];
+    for (uint32_t y = 0; y < H; y++) { burst14[y] = { 1, 0 }; burst16[y] = { 1, 1 }; mono14[y] = { 0, 0 }; }
+    const uint32_t cx = 455, cy = 130;
+
+    const RGBA_t colors[] = {
+        RGBA_t::make(0xFF, 0x00, 0x00, 0xFF), RGBA_t::make(0x00, 0xFF, 0x00, 0xFF), RGBA_t::make(0x00, 0x00, 0xFF, 0xFF),
+        RGBA_t::make(0xFF, 0xFF, 0x00, 0xFF), RGBA_t::make(0x00, 0xFF, 0xFF, 0xFF), RGBA_t::make(0xFF, 0x00, 0xFF, 0xFF),
+        RGBA_t::make(0xFF, 0x66, 0x00, 0xFF), RGBA_t::make(0x66, 0x55, 0xBB, 0xFF), RGBA_t::make(0x88, 0x88, 0x88, 0xFF),
+        RGBA_t::make(0x11, 0xDD, 0x00, 0xFF), RGBA_t::make(0x44, 0x22, 0x00, 0xFF), RGBA_t::make(0xCC, 0xCC, 0xFF, 0xFF),
+    };
+    int worst = 0, worst_luma = 0;
+    for (RGBA_t c : colors) {
+        std::fill(img.begin(), img.end(), c);
+        for (const LineInfo *li : { burst14, burst16 }) {
+            if (!gpu.gs_image(img, li, false, out)) { gs_fail("readback"); return; }
+            for (uint32_t x = cx - 40; x < cx + 40; x++) worst = std::max(worst, channel_diff(out[cy * W + x], c));
+        }
+        if (!gpu.gs_image(img, mono14, false, out)) { gs_fail("readback"); return; }
+        for (uint32_t x = cx - 40; x < cx + 40; x++) {
+            RGBA_t p = out[cy * W + x];
+            if (p.r != p.g || p.g != p.b) { gs_fail("burst-off line is not gray"); break; }
+            worst_luma = std::max(worst_luma, std::abs(p.r - luma8(c)));
+        }
+        // force_mono on a burst line matches the burst-off line.
+        std::vector<RGBA_t> forced(W * H);
+        if (!gpu.gs_image(img, burst14, true, forced)) { gs_fail("readback"); return; }
+        if (forced[cy * W + cx] != out[cy * W + cx]) gs_fail("force_mono differs from burst-off");
+    }
+    if (worst > 8) { char b[96]; snprintf(b, sizeof b, "solid color round trip off by %d", worst); gs_fail(b); }
+    if (worst_luma > 8) { char b[96]; snprintf(b, sizeof b, "burst-off luma off by %d", worst_luma); gs_fail(b); }
+
+    for (RGBA_t c : { RGBA_t::make(0, 0, 0, 0xFF), RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) }) {
+        std::fill(img.begin(), img.end(), c);
+        for (const LineInfo *li : { burst14, burst16, mono14 }) {
+            if (!gpu.gs_image(img, li, false, out)) { gs_fail("readback"); return; }
+            for (uint32_t x = 20; x < W - 20; x++) {
+                if (out[cy * W + x] != c) {
+                    char b[96]; snprintf(b, sizeof b, "%s not exact at x=%u: %08X", c.r ? "white" : "black", x, out[cy * W + x].rgba);
+                    gs_fail(b); break;
+                }
+            }
+        }
+    }
+    printf("%s(round trip max %d, luma max %d)\n", failures == before ? "ok " : "\n  ", worst, worst_luma);
+
+    // SHR 640-mode-like dot pattern near the subcarrier shows chroma; a solid fill of the same
+    // average does not; burst off shows none.
+    printf("%-44s ", "gscomposite: 16-dot pattern chroma");
+    before = failures;
+    for (uint32_t y = 0; y < H; y++)
+        for (uint32_t x = 0; x < W; x++)
+            img[y * W + x] = ((x >> 1) & 1) ? RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) : RGBA_t::make(0, 0, 0, 0xFF);
+    int pat_chroma = 0, mono_chroma = 0, solid_chroma = 0;
+    if (!gpu.gs_image(img, burst16, false, out)) { gs_fail("readback"); return; }
+    for (uint32_t x = cx - 40; x < cx + 40; x++) pat_chroma = std::max(pat_chroma, chroma_span(out[cy * W + x]));
+    if (!gpu.gs_image(img, mono14, false, out)) { gs_fail("readback"); return; }
+    for (uint32_t x = cx - 40; x < cx + 40; x++) mono_chroma = std::max(mono_chroma, chroma_span(out[cy * W + x]));
+    std::fill(img.begin(), img.end(), RGBA_t::make(0x80, 0x80, 0x80, 0xFF));
+    if (!gpu.gs_image(img, burst16, false, out)) { gs_fail("readback"); return; }
+    for (uint32_t x = cx - 40; x < cx + 40; x++) solid_chroma = std::max(solid_chroma, chroma_span(out[cy * W + x]));
+    if (pat_chroma < 32) gs_fail("dot pattern shows no chroma");
+    if (solid_chroma > 4) gs_fail("solid gray shows chroma");
+    if (mono_chroma != 0) gs_fail("burst-off dot pattern shows chroma");
+    // Burst off is the per-pixel luma: single-pixel detail stays sharp.
+    for (uint32_t y = 0; y < H; y++)
+        for (uint32_t x = 0; x < W; x++)
+            img[y * W + x] = (x & 1) ? RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF) : RGBA_t::make(0, 0, 0, 0xFF);
+    if (!gpu.gs_image(img, mono14, false, out)) { gs_fail("readback"); return; }
+    for (uint32_t x = 0; x < W; x++) {
+        if (channel_diff(out[cy * W + x], img[cy * W + x]) > 1) { gs_fail("burst-off 1-pixel pattern is not sharp"); break; }
+    }
+    printf("%s(pattern %d, solid %d, burst off %d)\n", failures == before ? "ok " : "\n  ", pat_chroma, solid_chroma, mono_chroma);
+}
+
+// RGB generator: one synthetic frame of border scans (65 per line, 14 dots each).
+// Line 50 is TEXT40, line 60 LORES; line 100 switches border black -> white at scan k.
+std::vector<Scan_t> gs_border_frame(uint32_t k, uint8_t border) {
+    StreamBuilder sb;
+    for (uint32_t y = 0; y < H; y++) {
+        if (y) sb.hsync();
+        for (uint32_t c = 0; c < 65; c++) {
+            if (y == 50 && c >= 25 && c < 65) sb.data(VM_TEXT40, 0, 0xA0);
+            else if (y == 60 && c >= 25 && c < 65) sb.data(VM_LORES, 0, 0x11);
+            else if (y == 100) sb.data(VM_BORDER_COLOR, 0, c < k ? 0x00 : 0x0F);
+            else sb.data(VM_BORDER_COLOR, 0, border);
+        }
+    }
+    sb.vsync();
+    return sb.s;
+}
+
+void check_gscomposite_rgb(Context &ctx) {
+    printf("%-44s ", "gscomposite: RGB line info, border, MONOCOLOR");
+    int before = failures;
+    Gpu &gpu = *ctx.gpu;
+    FrameVSG frame(W, H, gpu.renderer, PIXEL_FORMAT);
+    VideoScanGenerator_RGB vsgr(ctx.rom_iie, true, &frame);
+    vsgr.set_composite_encode(true);
+    auto buf = std::make_unique<ScanBuffer>();
+    std::vector<RGBA_t> rgb(W * H), out(W * H);
+
+    auto run = [&](uint32_t k, uint8_t border) {
+        buf->clear();
+        for (const Scan_t &s : gs_border_frame(k, border)) buf->push(s);
+        frame.open();
+        vsgr.generate_frame(buf.get());
+        frame.close();
+    };
+
+    // Colorburst follows the line's mode; border-only lines keep the last value.
+    run(30, 0x01);
+    const LineInfo *li = vsgr.get_line_info();
+    if (li[50].burst != 0) gs_fail("TEXT40 line has colorburst");
+    if (li[60].burst != 1) gs_fail("LORES line has no colorburst");
+    if (li[61].burst != 1 || li[49].burst != 1) gs_fail("border line burst not carried from LORES");
+    if (li[51].burst != 0) gs_fail("border line burst not carried from TEXT40");
+    for (uint32_t y = 0; y < H; y++) if (li[y].clock16) { gs_fail("14-dot line marked 16-dot"); break; }
+
+    // Border change at scan k lands at dot 14k in the RGB frame and in the decoded luma.
+    int first_x[2] = { -1, -1 };
+    for (int i = 0; i < 2; i++) {
+        uint32_t k = 30 + i;
+        run(k, 0x01);
+        if (!gpu.copy_readback(frame.get_texture(), rgb)) { gs_fail("readback"); return; }
+        for (uint32_t x = 0; x < W; x++) {
+            if (rgb[100 * W + x].r != 0) {
+                if (x != 14 * k) { char b[96]; snprintf(b, sizeof b, "RGB border change at %u, expected %u", x, 14 * k); gs_fail(b); }
+                break;
+            }
+        }
+        if (!gpu.gs_readback(frame.get_texture(), vsgr.get_line_info(), false, out)) { gs_fail("readback"); return; }
+        for (uint32_t x = 0; x < W; x++) if (luma8(out[100 * W + x]) >= 128) { first_x[i] = (int)x; break; }
+        if (std::abs(first_x[i] - (int)(14 * k)) > 1) {
+            char b[96]; snprintf(b, sizeof b, "decoded border change at %d, expected %u", first_x[i], 14 * k); gs_fail(b);
+        }
+    }
+    if (first_x[1] - first_x[0] != 14) gs_fail("decoded border change does not move 14 dots per cycle");
+
+    // MONOCOLOR: no colorburst anywhere, and the RGB frame keeps its color (no pre-gray).
+    vsgr.set_mono_mode(true);
+    run(30, 0x01);
+    for (uint32_t y = 0; y < H; y++) if (li[y].burst) { gs_fail("MONOCOLOR line has colorburst"); break; }
+    if (!gpu.copy_readback(frame.get_texture(), rgb)) { gs_fail("readback"); return; }
+    RGBA_t bc = rgb[20 * W + 455];
+    if (bc.r == bc.g && bc.g == bc.b) gs_fail("MONOCOLOR pre-grayed the RGB frame in composite_encode");
+    if (!gpu.gs_readback(frame.get_texture(), li, false, out)) { gs_fail("readback"); return; }
+    RGBA_t dc = out[20 * W + 455];
+    if (dc.r != dc.g || dc.g != dc.b) gs_fail("MONOCOLOR decode is not gray");
+    // Without composite_encode (GS RGB), MONOCOLOR pre-grays as before.
+    vsgr.set_composite_encode(false);
+    run(30, 0x01);
+    if (!gpu.copy_readback(frame.get_texture(), rgb)) { gs_fail("readback"); return; }
+    bc = rgb[20 * W + 455];
+    if (bc.r != bc.g || bc.g != bc.b) gs_fail("MONOCOLOR without composite_encode is not gray");
+    printf("%s\n", failures == before ? "ok" : "");
+}
+
 // Captures exactly one generate_frame worth of scans: everything after a VSYNC up to and including the next.
 std::vector<Scan_t> capture_frame(Context &ctx, ScannerKind k, const std::function<void(VideoScannerII *)> &setup) {
     fill_ram(ctx.mmu, 7);
@@ -629,6 +840,12 @@ int main(int argc, char **argv) {
     for (const Scenario &sc : scenarios()) run_scenario(ctx, sc, seed++);
     check_geometry(ctx);
     check_bounds(ctx);
+    if (ctx.gpu && ctx.gpu->gs_ok && ctx.gpu->src) {
+        check_gscomposite_image(ctx);
+        check_gscomposite_rgb(ctx);
+    } else if (ctx.gpu) {
+        printf("gscomposite: SKIPPED (GS Composite shader unavailable)\n");
+    }
 
     if (ctx.gpu) {
         printf("\ngpu: %llu frames compared; NTSC pixels off by 1: %llu of %llu (%.4f%%)\n",

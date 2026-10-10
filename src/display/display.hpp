@@ -170,6 +170,7 @@ public:
     FrameVSG     *frame_vsg = nullptr;
     // GPU NTSC/mono decode target (910x263); null when the CPU decoders are used.
     SDL_Texture  *frame_ntsc = nullptr;
+    bool is_iigs = false;  // GS Composite applies (IIgs RGB through the composite encoder)
     VideoScanGeneratorIntf *vsg = nullptr; // current VideoGenerator
     VideoScanGenerator_Comp *vsgc = nullptr;
     VideoScanGenerator_RGB *vsgr = nullptr;

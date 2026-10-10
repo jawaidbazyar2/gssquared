@@ -61,6 +61,12 @@ struct ntsc_config {
     // Chroma trap for the held-dot weights: Gaussian luma with an exact null at the
     // subcarrier, plus wider I/Q. Off uses the classic luma / chroma bandwidths.
     bool lumaTrap = true;
+
+    // GS Composite: subcarrier phase of SHR (16-dot) samples relative to 14-dot ones, in
+    // turns. Calibration knob (Alt+Shift+keypad +/-); rotates only SHR artifact colors.
+    // -1/8 = one 28.636 MHz master-clock tick (45 degrees of subcarrier), matched to a
+    // IIgs into an AppleColor IIe.
+    float gsShrPhase = -0.125f;
 };
 
 // Constants
@@ -81,5 +87,16 @@ void ensure_hgr_LUT();
 // w[p][o + NUM_TAPS] = YIQ contribution of a lit dot at offset o for output phase p;
 // m = decoderMatrix rows (xyz). Call after init_hgr_LUT() has set decoderMatrix.
 void build_ntsc_gpu_weights(float w[4][2 * NUM_TAPS + 1][4], float m[3][4]);
+// GS Composite (RGB-to-composite encoder, then the decoder) inputs. Sample rate is
+// 4fsc for 14-dot lines and 16/14 x 4fsc for 16-dot (SHR) lines.
+//   b14[ph], b16[ph] = (sin, cos) of the subcarrier phase of a sample;
+//   f14[|o|], f16[|o|] = Y, I, Q filter taps;
+//   m = decoderMatrix rows; enc = RGB -> YIQ rows of the encoder, rotated so the
+//   default hue decodes a solid color back to itself.
+// Taps per side of the GS Composite decoder. Wider than NUM_TAPS so the narrow
+// chroma filter of a consumer monitor can be represented.
+#define GS_NUM_TAPS 15
+void build_gscomposite_uniforms(float b14[4][4], float b16[32][4], float f14[GS_NUM_TAPS + 1][4],
+                                float f16[GS_NUM_TAPS + 1][4], float m[3][4], float enc[3][4]);
 void processAppleIIFrame_LUT(uint8_t* frameData, RGBA_t * outputImage, int y_start, int y_end);
 void processAppleIIFrame_Mono(uint8_t* frameData, RGBA_t * outputImage, int y_start, int y_end, RGBA_t color_value);

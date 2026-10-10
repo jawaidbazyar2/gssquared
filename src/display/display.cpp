@@ -15,6 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cmath>
 #include <SDL3/SDL.h>
 
 #include "SDL3/SDL_render.h"
@@ -33,6 +34,7 @@
 
 #include "videosystem.hpp"
 #include "display/NtscGpu.hpp"
+#include "display/GsCompositeGpu.hpp"
 #include "devices/displaypp/CharRom.hpp"
 #include "devices/displaypp/VideoScanGenerator.hpp"
 #include "devices/displaypp/VideoScanGenerator_Intf.hpp"
@@ -82,13 +84,27 @@ bool update_display_apple2_cycle(display_state_t *ds) {
     // Mono renderers write white; the monitor tint is a color multiply on the texture.
     RGBA_t tint = RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF);
     NtscGpu *ntsc_gpu = ds->frame_ntsc ? vs->get_ntsc_gpu() : nullptr;
+    GsCompositeGpu *gs_gpu = (ds->frame_ntsc && ds->is_iigs) ? vs->get_gscomposite_gpu() : nullptr;
     bool gpu_decode = false;
-    switch (vs->display_color_engine) {
+    bool gs_decode = false;
+    display_color_engine_t engine = vs->display_color_engine;
+    // Without the IIgs encoder pass, GS Composite is plain Composite.
+    if (engine == DM_ENGINE_GSCOMPOSITE && !gs_gpu) engine = DM_ENGINE_NTSC;
+    switch (engine) {
         case DM_ENGINE_MONO:
-            ds->vsg = ds->vsgc;
             tint = vs->get_mono_color();
+            if (gs_gpu) {
+                ds->vsg = ds->vsgr;
+                gs_decode = true;
+                break;
+            }
+            ds->vsg = ds->vsgc;
             gpu_decode = ntsc_gpu != nullptr;
             ds->vsg->set_render(gpu_decode ? (Render *)&ds->mon_packed : &ds->mon_mono);
+            break;
+        case DM_ENGINE_GSCOMPOSITE:
+            ds->vsg = ds->vsgr;
+            gs_decode = true;
             break;
         case DM_ENGINE_NTSC:
             ds->vsg = ds->vsgc;
@@ -102,8 +118,17 @@ bool update_display_apple2_cycle(display_state_t *ds) {
             assert(false && "Invalid display color engine");
     }
 
+    ds->vsgr->set_composite_encode(gs_decode);
+
     SDL_Texture *frame_tex;
-    if (gpu_decode) {
+    if (gs_decode) {
+        ds->frame_vsg->open();
+        ds->vsg->generate_frame(scanbuf);
+        ds->frame_vsg->close();
+        gs_gpu->decode(ds->frame_vsg->get_texture(), ds->vsgr->get_line_info(), ds->frame_ntsc,
+                       engine == DM_ENGINE_MONO);
+        frame_tex = ds->frame_ntsc;
+    } else if (gpu_decode) {
         ds->vsg->generate_frame(scanbuf);
         uint32_t shift = ds->mon_ntsc.get_shift_enabled() ? 7 : 0;
         ntsc_gpu->decode(*ds->vsgc->get_frame_bits(), ds->frame_ntsc, shift,
@@ -326,6 +351,14 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
     SDL_Keymod mod = event.key.mod;
     SDL_Keycode key = event.key.key;
    
+    if ((mod & SDL_KMOD_ALT) && (mod & SDL_KMOD_SHIFT) && (key == SDLK_KP_PLUS || key == SDLK_KP_MINUS)) {
+        config.gsShrPhase += (key == SDLK_KP_PLUS) ? 1.0f / 32.0f : -1.0f / 32.0f;
+        config.gsShrPhase -= std::floor(config.gsShrPhase + 0.5f);  // keep in [-0.5, 0.5)
+        static char msgbuf[128];
+        snprintf(msgbuf, sizeof(msgbuf), "GS Composite SHR phase: %+.2f deg", config.gsShrPhase * 360.0f);
+        ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
+        return true;
+    }
     if ( (mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT)) && (key == SDLK_KP_PLUS || key == SDLK_KP_MINUS)) {
         printf("key: %x, mod: %x\n", key, mod);
         if (mod & SDL_KMOD_ALT) { // ALT == hue (windows key on my mac)
@@ -905,8 +938,12 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
     // linear/pixelart are set in vs->render_frame.
     SDL_SetTextureBlendMode(ds->frame_vsg->get_texture(), SDL_BLENDMODE_NONE);
 
-    // Composite IIgs borders are not decoded on the GPU path; they draw black.
-    if (vs->get_ntsc_gpu()) {
+    ds->is_iigs = platform_is_iigs(computer->platform->id);
+    vs->gscomposite_allowed = ds->is_iigs;
+
+    // Apple II composite decodes FrameBits (IIgs borders draw black); IIgs GS Composite
+    // and Monochrome encode and decode the RGB frame.
+    if (vs->get_ntsc_gpu() || (ds->is_iigs && vs->get_gscomposite_gpu())) {
         ds->frame_ntsc = SDL_CreateTexture(vs->renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, 910, 263);
         if (ds->frame_ntsc) {
             SDL_SetTextureBlendMode(ds->frame_ntsc, SDL_BLENDMODE_NONE);

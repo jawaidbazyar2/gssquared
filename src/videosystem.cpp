@@ -11,6 +11,7 @@
 #include <cmath>
 #include "util/dialog.hpp"
 #include "display/NtscGpu.hpp"
+#include "display/GsCompositeGpu.hpp"
 #if defined(__EMSCRIPTEN__)
 #include <emscripten.h>
 #endif
@@ -88,6 +89,7 @@ video_system_t::video_system_t(computer_t *computer) {
 
     init_crt_shader();
     init_ntsc_gpu();
+    init_gscomposite_gpu();
 
     screencap_texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, 910, 263);
     if (!screencap_texture) {
@@ -206,6 +208,10 @@ video_system_t::~video_system_t() {
         ntsc_gpu->shutdown(gpu_device);
         delete ntsc_gpu;
     }
+    if (gscomposite_gpu) {
+        gscomposite_gpu->shutdown(gpu_device);
+        delete gscomposite_gpu;
+    }
     crt_pass.destroy(gpu_device);
     if (renderer) SDL_DestroyRenderer(renderer);
     if (window) SDL_DestroyWindow(window);
@@ -251,6 +257,22 @@ bool video_system_t::init_ntsc_gpu() {
     }
     ntsc_gpu = gpu;
     printf("NTSC shader: initialized\n");
+    return true;
+}
+
+bool video_system_t::init_gscomposite_gpu() {
+    if (!gpu_device || gs2_app_values.ntsc_cpu) {
+        return false;
+    }
+    GsCompositeGpu *gpu = new GsCompositeGpu();
+    if (!gpu->init(renderer, gpu_device)) {
+        printf("GS Composite shader: unavailable on this backend; using CPU composite\n");
+        gpu->shutdown(gpu_device);
+        delete gpu;
+        return false;
+    }
+    gscomposite_gpu = gpu;
+    printf("GS Composite shader: initialized\n");
     return true;
 }
 
@@ -514,7 +536,8 @@ void video_system_t::send_engine_message() {
     const char *display_color_engine_names[] = {
         "NTSC",
         "RGB",
-        "Monochrome"
+        "Monochrome",
+        "GS Composite"
     };
 
     snprintf(buffer, sizeof(buffer), "Display Engine Set to %s", display_color_engine_names[display_color_engine]);
@@ -523,6 +546,9 @@ void video_system_t::send_engine_message() {
 
 void video_system_t::toggle_display_engine() {
     display_color_engine = (display_color_engine_t)((display_color_engine + 1) % DM_NUM_COLOR_ENGINES);
+    if (display_color_engine == DM_ENGINE_GSCOMPOSITE && !gscomposite_allowed) {
+        display_color_engine = (display_color_engine_t)((display_color_engine + 1) % DM_NUM_COLOR_ENGINES);
+    }
     send_engine_message();
 }
 
