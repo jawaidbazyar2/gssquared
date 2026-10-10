@@ -35,6 +35,7 @@
 #include "videosystem.hpp"
 #include "display/NtscGpu.hpp"
 #include "display/GsCompositeGpu.hpp"
+#include "display/PhosphorPersist.hpp"
 #include "devices/displaypp/CharRom.hpp"
 #include "devices/displaypp/VideoScanGenerator.hpp"
 #include "devices/displaypp/VideoScanGenerator_Intf.hpp"
@@ -139,6 +140,14 @@ bool update_display_apple2_cycle(display_state_t *ds) {
         ds->vsg->generate_frame(scanbuf);
         ds->frame_vsg->close();
         frame_tex = ds->frame_vsg->get_texture();
+    }
+
+    if (ds->persist) {
+        if (engine == DM_ENGINE_MONO && (gs_decode || gpu_decode)) {
+            frame_tex = ds->persist->apply(ds->frame_ntsc, vs->get_mono_persistence());
+        } else {
+            ds->persist->invalidate();
+        }
     }
 
     SDL_FRect ii_frame_src;
@@ -341,6 +350,10 @@ display_state_t::display_state_t() {
 }
 
 display_state_t::~display_state_t() {
+    if (persist) {
+        persist->shutdown();
+        delete persist;
+    }
     if (frame_ntsc) SDL_DestroyTexture(frame_ntsc);
     delete vsg;
     delete video_scanner;
@@ -947,6 +960,11 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         ds->frame_ntsc = SDL_CreateTexture(vs->renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, 910, 263);
         if (ds->frame_ntsc) {
             SDL_SetTextureBlendMode(ds->frame_ntsc, SDL_BLENDMODE_NONE);
+            ds->persist = new PhosphorPersist();
+            if (!ds->persist->init(vs->renderer)) {
+                delete ds->persist;
+                ds->persist = nullptr;
+            }
         } else {
             printf("NTSC shader: frame texture creation failed (%s); using CPU decoder\n", SDL_GetError());
         }

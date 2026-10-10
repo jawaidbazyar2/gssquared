@@ -124,6 +124,12 @@ struct video_system_t {
         RGBA_t::make(0x00, 0xFF, 0x4A), // green (was 55) chosen from measuring @ 549nm
         RGBA_t::make(0xFF, 0xBF, 0x00)  // amber
     };
+    // GPU mono phosphor persistence: fraction of brightness kept per emulated frame.
+    float mono_persistence_table[DM_NUM_MONO_MODES] = {
+        0.40f, // white
+        0.75f, // green
+        0.60f  // amber
+    };
 
 protected:
     void calculate_target_rect(int new_w, int new_h);
@@ -195,4 +201,5 @@ public:
     void push_mouse_capture(bool capture);
     void pop_mouse_capture();
     RGBA_t get_mono_color() { return mono_color_table[display_mono_color]; };
+    float get_mono_persistence() { return mono_persistence_table[display_mono_color]; };
 };
