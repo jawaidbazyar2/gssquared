@@ -143,7 +143,7 @@ bool update_display_apple2_cycle(display_state_t *ds) {
     }
 
     if (ds->persist) {
-        if (engine == DM_ENGINE_MONO && (gs_decode || gpu_decode)) {
+        if (engine == DM_ENGINE_MONO && (gs_decode || gpu_decode) && vs->mono_persistence_enabled) {
             frame_tex = ds->persist->apply(ds->frame_ntsc, vs->get_mono_persistence());
         } else {
             ds->persist->invalidate();

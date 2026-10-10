@@ -93,6 +93,7 @@ struct video_system_t {
     bool gscomposite_allowed = false;
     display_mono_color_t display_mono_color = DM_MONO_GREEN;
     display_pixel_mode_t display_pixel_mode = DM_PIXEL_FUZZ;
+    bool mono_persistence_enabled = true;
 
     SDL_FRect target = { 0.0f, 0.0f, 0.0f, 0.0f };
     // Guest-visible screen area within the render target (excludes bezel borders).
@@ -185,6 +186,10 @@ public:
     void copy_screen();
     void save_screenshot();
     void flip_display_scale_mode();
+    void set_display_pixel_mode(display_pixel_mode_t mode);
+    void set_mono_persistence(bool enabled);
+    // Persistence needs a GPU decoder (Apple II composite or IIgs GS composite).
+    bool mono_persistence_available() const { return ntsc_gpu || gscomposite_gpu; }
     // True when the CRT post-process shader is available to be used.
     bool crt_shader_available() const { return crt_pass.ok(); }
     NtscGpu *get_ntsc_gpu() const { return ntsc_gpu; }

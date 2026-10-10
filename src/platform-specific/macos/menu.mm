@@ -131,6 +131,9 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)monitorMonoWhite:(id)sender;
 - (void)displayFullScreen:(id)sender;
 - (void)toggleCrtShader:(id)sender;
+- (void)togglePersistence:(id)sender;
+- (void)scalingSmooth:(id)sender;
+- (void)scalingSharp:(id)sender;
 - (void)toggleHudStats:(id)sender;
 - (void)toggleHudDrives:(id)sender;
 - (void)toggleSsTextMode:(id)sender;
@@ -224,6 +227,16 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 		[menuItem setState:getMenuInterface()->getCrtShader() ? NSControlStateValueOn : NSControlStateValueOff];
 		return getMenuInterface()->isEmulationRunning() && getMenuInterface()->getCrtShaderAvailable();
 	}
+	if (menuItem.action == @selector(togglePersistence:)) {
+		[menuItem setState:getMenuInterface()->getMonoPersistence() ? NSControlStateValueOn : NSControlStateValueOff];
+		return getMenuInterface()->isEmulationRunning() && getMenuInterface()->getMonoPersistenceAvailable();
+	}
+	if (menuItem.action == @selector(scalingSmooth:) || menuItem.action == @selector(scalingSharp:)) {
+		bool sharp = getMenuInterface()->getScalingSharp();
+		bool is_sharp_item = menuItem.action == @selector(scalingSharp:);
+		[menuItem setState:(sharp == is_sharp_item) ? NSControlStateValueOn : NSControlStateValueOff];
+		return getMenuInterface()->isEmulationRunning();
+	}
 	if (menuItem.action == @selector(toggleMountDrivers:)) {
 		[menuItem setState:getMenuInterface()->getMountDrivers() ? NSControlStateValueOn : NSControlStateValueOff];
 		return getMenuInterface()->isEmulationRunning() && getMenuInterface()->hasBazFast();
@@ -289,6 +302,9 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)monitorMonoWhite:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_WHITE); (void)sender; }
 - (void)displayFullScreen:(id)sender { getMenuInterface()->displayFullScreen(); (void)sender; }
 - (void)toggleCrtShader:(id)sender   { getMenuInterface()->toggleCrtShader(); (void)sender; }
+- (void)togglePersistence:(id)sender { getMenuInterface()->toggleMonoPersistence(); (void)sender; }
+- (void)scalingSmooth:(id)sender     { getMenuInterface()->setScaling(false); (void)sender; }
+- (void)scalingSharp:(id)sender      { getMenuInterface()->setScaling(true); (void)sender; }
 - (void)toggleHudStats:(id)sender    { getMenuInterface()->toggleHudStats(); (void)sender; }
 - (void)toggleHudDrives:(id)sender   { getMenuInterface()->toggleHudDrives(); (void)sender; }
 - (void)toggleSsTextMode:(id)sender  { getMenuInterface()->toggleSsTextMode(); (void)sender; }
@@ -822,6 +838,27 @@ static void setupMenus(void) {
 	[monitorMenuItem setSubmenu:monitorMenu];
 	[displayMenu addItem:monitorMenuItem];
 
+	NSMenu *scalingMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Scaling", nil)] autorelease];
+	struct { NSString *title; SEL action; } scalingItems[] = {
+		{ @"Smooth", @selector(scalingSmooth:) },
+		{ @"Sharp",  @selector(scalingSharp:) },
+	};
+	for (auto &si : scalingItems) {
+		NSMenuItem *item = [[[NSMenuItem alloc]
+			initWithTitle:NSLocalizedString(si.title, nil)
+			       action:si.action
+			keyEquivalent:@""] autorelease];
+		[item setTarget:sMenuHandler];
+		[scalingMenu addItem:item];
+	}
+
+	NSMenuItem *scalingMenuItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Scaling", nil)
+		       action:nil
+		keyEquivalent:@""] autorelease];
+	[scalingMenuItem setSubmenu:scalingMenu];
+	[displayMenu addItem:scalingMenuItem];
+
 	sHudMenuDelegate = [[HudMenuDelegate alloc] init];
 	NSMenu *hudMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"HUD", nil)] autorelease];
 	[hudMenu setDelegate:sHudMenuDelegate];
@@ -864,11 +901,18 @@ static void setupMenus(void) {
 	[displayMenu addItem:ssTextItem];
 
 	NSMenuItem *crtShaderItem = [[[NSMenuItem alloc]
-		initWithTitle:NSLocalizedString(@"CRT Shader", nil)
+		initWithTitle:NSLocalizedString(@"Shadow Mask", nil)
 		       action:@selector(toggleCrtShader:)
 		keyEquivalent:@""] autorelease];
 	[crtShaderItem setTarget:sMenuHandler];
 	[displayMenu addItem:crtShaderItem];
+
+	NSMenuItem *persistenceItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Phosphor Persistence", nil)
+		       action:@selector(togglePersistence:)
+		keyEquivalent:@""] autorelease];
+	[persistenceItem setTarget:sMenuHandler];
+	[displayMenu addItem:persistenceItem];
 
 	// Docs menu — intentionally NOT named "Help" to prevent macOS from
 	// injecting its search bar (which requires an Apple Help Book bundle)

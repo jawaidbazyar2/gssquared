@@ -10,6 +10,7 @@
 #include "util/Event.hpp"
 #include <cmath>
 #include "util/dialog.hpp"
+#include "util/SystemSettings.hpp"
 #include "display/NtscGpu.hpp"
 #include "display/GsCompositeGpu.hpp"
 #if defined(__EMSCRIPTEN__)
@@ -27,7 +28,8 @@ video_system_t::video_system_t(computer_t *computer) {
 
     display_color_engine = DM_ENGINE_NTSC;
     display_mono_color = DM_MONO_GREEN;
-    display_pixel_mode = DM_PIXEL_FUZZ;
+    display_pixel_mode = SystemSettings::instance().scaling_sharp() ? DM_PIXEL_SQUARE : DM_PIXEL_FUZZ;
+    mono_persistence_enabled = SystemSettings::instance().mono_persistence();
 
     display_fullscreen_mode = DISPLAY_WINDOWED_MODE;
     event_queue = computer->event_queue;
@@ -562,15 +564,17 @@ void video_system_t::set_display_mono_color(display_mono_color_t mode) {
 }
 
 void video_system_t::flip_display_scale_mode() {
-    SDL_ScaleMode scale_mode;
+    set_display_pixel_mode(display_pixel_mode == DM_PIXEL_FUZZ ? DM_PIXEL_SQUARE : DM_PIXEL_FUZZ);
+}
 
-    if (display_pixel_mode == DM_PIXEL_FUZZ) {
-        display_pixel_mode = DM_PIXEL_SQUARE;
-        scale_mode = SDL_SCALEMODE_PIXELART;
-    } else {
-        display_pixel_mode = DM_PIXEL_FUZZ;
-        scale_mode = SDL_SCALEMODE_LINEAR;
-    }
+void video_system_t::set_display_pixel_mode(display_pixel_mode_t mode) {
+    display_pixel_mode = mode;
+    SystemSettings::instance().set_scaling_sharp(mode == DM_PIXEL_SQUARE);
+}
+
+void video_system_t::set_mono_persistence(bool enabled) {
+    mono_persistence_enabled = enabled;
+    SystemSettings::instance().set_mono_persistence(enabled);
 }
 
 void video_system_t::set_crt_shader_enabled(bool enabled, bool show_message) {

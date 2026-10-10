@@ -340,6 +340,15 @@ static void build_menu_bar()
             end_menu();
         }
 
+        if (begin_menu("Scaling")) {
+            bool sharp = mi->getScalingSharp();
+            if (ImGui::MenuItem("Smooth", "F5", !sharp))
+                mi->setScaling(false);
+            if (ImGui::MenuItem("Sharp", "F5", sharp))
+                mi->setScaling(true);
+            end_menu();
+        }
+
         if (begin_menu("HUD")) {
             bool stats_on = mi->getHudStats();
             if (ImGui::MenuItem("Stats", nullptr, stats_on))
@@ -366,9 +375,18 @@ static void build_menu_bar()
             bool crt_on = mi->getCrtShader();
             bool crt_avail = mi->getCrtShaderAvailable();
             if (!crt_avail) ImGui::BeginDisabled();
-            if (ImGui::MenuItem("CRT Shader", "F7", crt_on))
+            if (ImGui::MenuItem("Shadow Mask", "F7", crt_on))
                 mi->toggleCrtShader();
             if (!crt_avail) ImGui::EndDisabled();
+        }
+
+        {
+            bool persist_on = mi->getMonoPersistence();
+            bool persist_avail = mi->getMonoPersistenceAvailable();
+            if (!persist_avail) ImGui::BeginDisabled();
+            if (ImGui::MenuItem("Phosphor Persistence", nullptr, persist_on))
+                mi->toggleMonoPersistence();
+            if (!persist_avail) ImGui::EndDisabled();
         }
 
         if (!running) ImGui::EndDisabled();
