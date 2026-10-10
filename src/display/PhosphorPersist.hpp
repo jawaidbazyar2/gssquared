@@ -13,8 +13,8 @@ public:
     bool init(SDL_Renderer *renderer);
     void shutdown();
 
-    // frame is a WIDTH x HEIGHT texture; k is the fraction of history brightness
-    // kept. Restores the render target and draw state; returns the history texture.
+    // frame is a WIDTH x HEIGHT texture; k is the fraction of light kept.
+    // Restores the render target and draw state; returns the history texture.
     SDL_Texture *apply(SDL_Texture *frame, float k);
 
     // The next apply() starts from black.

@@ -778,6 +778,48 @@ Status: not started. Follow-ups that phase 3 does not need.
   the monitor has no chroma trap or because of the luma bandwidth: tune against
   photos, together with the phase 3 encoder details.
 
+## Phase 5: CRT glow / halation (design notes)
+
+Status: not started. A first attempt is parked on branch `1.1/phosphor-glow`
+(commit `c53d485`) and is not the design to follow.
+
+### What the parked attempt did, and why it looked wrong
+
+It blurred the 910x263 mono persistence history: two half-size downsamples, a
+7-tap Gaussian built from additive draws with per-tap color-mod weights, then
+history + glow × 0.15. The result smeared text vertically:
+
+- **Wrong space.** The blur was symmetric in source pixels, but the source is
+  stretched about 2x horizontally and 4x or more vertically on screen. A round
+  kernel at source resolution becomes a tall ellipse on screen.
+- **Not a shader.** Fixed-function blending did the blur in gamma (sRGB) space,
+  not linear light. It had no threshold or soft knee, and the weights were
+  limited to what color mod can express.
+
+### Design
+
+- **Persistence stays at source resolution.** It is a temporal effect, one value
+  per phosphor dot, so it belongs on the 910x263 texture (`PhosphorPersist`).
+- **Glow runs in screen space, after scaling.** Halation is light scattering in
+  the faceplate glass, with a fixed physical radius, so define the radius in
+  output pixels (for example, a fraction of the output height). It also comes
+  after scanlines and the shadow mask: glow partly filling the scanline gaps and
+  softening the mask is part of the look.
+- **Pipeline order:** decode → persistence → scale, scanlines, shadow mask →
+  glow → present.
+- **Hook.** `video_system_t::update_display()` already draws into the full-size
+  `scene_target` when the shadow mask is on, and `present_scene()` shows it
+  through the CRT shader. Glow is another stage in that chain. It needs
+  `scene_target` whenever glow is on, not only when the shadow mask is on.
+- **Shader passes** (`GpuFragmentPass`). Work in linear light: a bright-pass with
+  a soft-knee threshold, separable or dual-Kawase blur, and a final composite.
+- **Cost.** A Retina window can be 10–15 million pixels, too many for a wide blur
+  at full resolution. Use the standard bloom approach: downsample the scaled
+  image through a short chain of half-size textures (dual-Kawase or a mip
+  pyramid), blur at those low resolutions, then upsample and add. The radius
+  stays defined in screen space, so it stays round. Only the final composite
+  runs at full resolution.
+
 ## Open questions
 
 - Is the uniform buffer the right home for 60 `float4`s on all three backends?

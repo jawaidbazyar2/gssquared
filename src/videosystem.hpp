@@ -125,7 +125,7 @@ struct video_system_t {
         RGBA_t::make(0x00, 0xFF, 0x4A), // green (was 55) chosen from measuring @ 549nm
         RGBA_t::make(0xFF, 0xBF, 0x00)  // amber
     };
-    // GPU mono phosphor persistence: fraction of brightness kept per emulated frame.
+    // GPU mono phosphor persistence: fraction of light (linear) kept per emulated frame.
     float mono_persistence_table[DM_NUM_MONO_MODES] = {
         0.40f, // white
         0.75f, // green

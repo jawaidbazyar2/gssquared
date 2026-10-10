@@ -1,15 +1,24 @@
 #include "display/PhosphorPersist.hpp"
 #include "devices/displaypp/RGBA.hpp"
 
+#include <cmath>
 #include <cstdio>
 
 static constexpr float FLOOR_STEP = 2.0f / 255.0f;
 
 bool PhosphorPersist::init(SDL_Renderer *r) {
     renderer = r;
-    // Float history so slow fades do not stall on 8-bit rounding.
-    history = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA64_FLOAT, SDL_TEXTUREACCESS_TARGET,
-                                WIDTH, HEIGHT);
+    // Float history so slow fades do not stall on 8-bit rounding. SDL treats float
+    // textures as linear light unless told otherwise; keep it sRGB like the decoded
+    // frame so the fade and floor colors are used as-is and black decays to zero.
+    SDL_PropertiesID props = SDL_CreateProperties();
+    SDL_SetNumberProperty(props, SDL_PROP_TEXTURE_CREATE_FORMAT_NUMBER, SDL_PIXELFORMAT_RGBA64_FLOAT);
+    SDL_SetNumberProperty(props, SDL_PROP_TEXTURE_CREATE_ACCESS_NUMBER, SDL_TEXTUREACCESS_TARGET);
+    SDL_SetNumberProperty(props, SDL_PROP_TEXTURE_CREATE_WIDTH_NUMBER, WIDTH);
+    SDL_SetNumberProperty(props, SDL_PROP_TEXTURE_CREATE_HEIGHT_NUMBER, HEIGHT);
+    SDL_SetNumberProperty(props, SDL_PROP_TEXTURE_CREATE_COLORSPACE_NUMBER, SDL_COLORSPACE_SRGB);
+    history = SDL_CreateTextureWithProperties(renderer, props);
+    SDL_DestroyProperties(props);
     if (!history) {
         history = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, WIDTH, HEIGHT);
     }
@@ -50,9 +59,10 @@ SDL_Texture *PhosphorPersist::apply(SDL_Texture *frame, float k) {
         SDL_RenderClear(renderer);
         valid = true;
     } else {
-        // history *= k
+        // k is the fraction of light kept; the history is gamma-encoded, so scale by k^(1/2.2).
+        const float k_gamma = std::pow(k, 1.0f / 2.2f);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColorFloat(renderer, 0.0f, 0.0f, 0.0f, 1.0f - k);
+        SDL_SetRenderDrawColorFloat(renderer, 0.0f, 0.0f, 0.0f, 1.0f - k_gamma);
         SDL_RenderFillRect(renderer, nullptr);
 
         SDL_SetRenderDrawBlendMode(renderer, sub_blend);
