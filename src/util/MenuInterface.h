@@ -26,6 +26,7 @@ enum MenuMonitorID {
 	MONITOR_MONO_GREEN = 202,
 	MONITOR_MONO_AMBER = 203,
 	MONITOR_MONO_WHITE = 204,
+	MONITOR_GS_COMPOSITE = 205,
 };
 
 struct computer_t;
@@ -45,6 +46,8 @@ public:
 	void toggleAudioDecorrelation();
 	void toggleRightMouseAccel();
 	void toggleCrtShader();
+	void toggleMonoPersistence();
+	void setScaling(bool sharp);
 	void toggleHudStats();
 	void toggleHudDrives();
 	void toggleDisconnectedWhenNoGamepad();
@@ -72,6 +75,9 @@ public:
 	bool getRightMouseAccel();
 	bool getCrtShader();
 	bool getCrtShaderAvailable();
+	bool getMonoPersistence();
+	bool getMonoPersistenceAvailable();
+	bool getScalingSharp();
 	bool getHudStats();
 	bool getHudDrives();
 	bool getDisconnectedWhenNoGamepad();

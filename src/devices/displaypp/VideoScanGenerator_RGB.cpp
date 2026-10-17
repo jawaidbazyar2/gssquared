@@ -203,6 +203,9 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
 
     while (fcnt--) {
         Scan_t scan = frame_scan->pull();
+        if (modeChecks && scan.mode <= VM_SHR) {
+            line_burst = !(scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80);
+        }
         if (modeChecks && scan.mode <= VM_DHIRES) {
             color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
             color_mode.mixed_mode = scan.flags & VS_FL_MIXED ? 1 : 0;
@@ -220,6 +223,7 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
                 //frame_vsg->push_n(RGBA_t::make(0x00, 0x00, 0x00, 0xFF), scanner_freq);
                 break;
             case VM_VSYNC:
+                record_line();
                 vcount = 0;
                 beam_v = 0;
                 beam_h = 0;
@@ -229,6 +233,7 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
                 //break;
 
             case VM_HSYNC: {
+                    record_line();
                     lastByte = 0x00; // for hires
                     hcount = 0; if (sawdata) vcount++;
                     beam_h = 0; beam_v++;
@@ -290,13 +295,8 @@ void VideoScanGenerator_RGB::generate_frame(ScanBuffer *frame_scan)
             case VM_SHR_PALETTE: { // load the palette values into palette based on index.
                     palette.colors[palette_index].v = scan.shr_bytes & 0xFFFF;
                     palette.colors[palette_index+1].v = (scan.shr_bytes >> 16) & 0xFFFF;
-                    if (mono_mode) {
-                        palette.active[palette_index] = convert24bitColorToMono(convert12bitTo24bit(palette.colors[palette_index]));
-                        palette.active[palette_index+1] = convert24bitColorToMono(convert12bitTo24bit(palette.colors[palette_index+1]));
-                    } else {
-                        palette.active[palette_index] = convert12bitTo24bit(palette.colors[palette_index]);
-                        palette.active[palette_index+1] = convert12bitTo24bit(palette.colors[palette_index+1]);
-                    }
+                    palette.active[palette_index] = palette_rgb(palette.colors[palette_index]);
+                    palette.active[palette_index+1] = palette_rgb(palette.colors[palette_index+1]);
                     palette_index = (palette_index + 2) % 16;
                 }
                 break;

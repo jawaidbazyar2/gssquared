@@ -200,6 +200,9 @@ computer_t::computer_t(NClockII *clock) {
             case MENU_MONITOR_GS_RGB:
                 video_system->set_display_engine(DM_ENGINE_RGB);
                 return true;
+            case MENU_MONITOR_GS_COMPOSITE:
+                video_system->set_display_engine(DM_ENGINE_GSCOMPOSITE);
+                return true;
             case MENU_MONITOR_MONO_GREEN:
                 video_system->set_display_engine(DM_ENGINE_MONO);
                 video_system->set_display_mono_color(DM_MONO_GREEN);

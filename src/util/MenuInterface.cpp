@@ -79,6 +79,18 @@ void MenuInterface::toggleCrtShader() {
 	if (computer_ && computer_->video_system) computer_->video_system->toggle_crt_shader();
 }
 
+void MenuInterface::toggleMonoPersistence() {
+	if (computer_ && computer_->video_system) {
+		video_system_t *vs = computer_->video_system;
+		vs->set_mono_persistence(!vs->mono_persistence_enabled);
+	}
+}
+
+void MenuInterface::setScaling(bool sharp) {
+	if (computer_ && computer_->video_system)
+		computer_->video_system->set_display_pixel_mode(sharp ? DM_PIXEL_SQUARE : DM_PIXEL_FUZZ);
+}
+
 void MenuInterface::toggleHudStats() {
 	SystemSettings::instance().toggle_hud_stats();
 }
@@ -107,6 +119,7 @@ int MenuInterface::getCurrentMonitor() {
 
 	if (vs->display_color_engine == DM_ENGINE_NTSC) return MONITOR_COMPOSITE;
 	if (vs->display_color_engine == DM_ENGINE_RGB)  return MONITOR_GS_RGB;
+	if (vs->display_color_engine == DM_ENGINE_GSCOMPOSITE) return MONITOR_GS_COMPOSITE;
 
 	switch (vs->display_mono_color) {
 		case DM_MONO_GREEN: return MONITOR_MONO_GREEN;
@@ -133,6 +146,20 @@ bool MenuInterface::getCrtShader() {
 
 bool MenuInterface::getCrtShaderAvailable() {
 	return computer_ && computer_->video_system ? computer_->video_system->crt_shader_available() : false;
+}
+
+bool MenuInterface::getMonoPersistence() {
+	return computer_ && computer_->video_system ? computer_->video_system->mono_persistence_enabled
+	                                            : SystemSettings::instance().mono_persistence();
+}
+
+bool MenuInterface::getMonoPersistenceAvailable() {
+	return computer_ && computer_->video_system ? computer_->video_system->mono_persistence_available() : false;
+}
+
+bool MenuInterface::getScalingSharp() {
+	return computer_ && computer_->video_system ? computer_->video_system->display_pixel_mode == DM_PIXEL_SQUARE
+	                                            : SystemSettings::instance().scaling_sharp();
 }
 
 bool MenuInterface::getHudStats() {

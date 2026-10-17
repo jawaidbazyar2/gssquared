@@ -27,6 +27,7 @@
 
 #include "devices/displaypp/render/Monochrome560.hpp"
 #include "devices/displaypp/render/NTSC560.hpp"
+#include "devices/displaypp/render/PackedOnly.hpp"
 //#include "devices/displaypp/render/GSRGB560.hpp"
 //#include "devices/displaypp/generate/AppleII.cpp"
 #include "devices/displaypp/VideoScanner.hpp"
@@ -36,6 +37,7 @@ class VideoScanGeneratorIntf;
 class VideoScanGenerator_Comp;
 class VideoScanGenerator_RGB;
 class CharRom;
+class PhosphorPersist;
 
 // Graphics vs Text, C050 / C051
 typedef enum {
@@ -167,6 +169,11 @@ public:
     CharRom *char_rom = nullptr;
 
     FrameVSG     *frame_vsg = nullptr;
+    // GPU NTSC/mono decode target (910x263); null when the CPU decoders are used.
+    SDL_Texture  *frame_ntsc = nullptr;
+    // GPU monochrome phosphor persistence; null when frame_ntsc is null.
+    PhosphorPersist *persist = nullptr;
+    bool is_iigs = false;  // GS Composite applies (IIgs RGB through the composite encoder)
     VideoScanGeneratorIntf *vsg = nullptr; // current VideoGenerator
     VideoScanGenerator_Comp *vsgc = nullptr;
     VideoScanGenerator_RGB *vsgr = nullptr;
@@ -180,6 +187,7 @@ public:
 
     Monochrome560 mon_mono;
     NTSC560 mon_ntsc;
+    PackedOnly mon_packed;
     //GSRGB560 mon_rgb;
     MessageBus *mbus;
 

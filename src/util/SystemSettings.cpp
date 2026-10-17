@@ -125,6 +125,8 @@ bool SystemSettings::load() {
     disconnected_when_no_gamepad_ = false;
     joyport_select_ = 1; // center
     ss_text_mode_ = false;
+    mono_persistence_ = true;
+    scaling_sharp_ = false;
     last_config_path_.clear();
     last_disk_path_.clear();
     host_fst_dir_.clear();
@@ -182,6 +184,10 @@ bool SystemSettings::load() {
         }
         if (const auto* display = table["display"].as_table()) {
             ss_text_mode_ = (*display)["ss_text_mode"].value_or(false);
+            mono_persistence_ = (*display)["mono_persistence"].value_or(true);
+            if (const auto s = (*display)["scaling"].value<std::string>()) {
+                scaling_sharp_ = (*s == "sharp");
+            }
         }
         if (const auto* fd = table["file_dialogs"].as_table()) {
             if (const auto p = (*fd)["last_config_path"].value<std::string>()) {
@@ -243,6 +249,8 @@ bool SystemSettings::save() const {
 
     toml::table display;
     display.insert("ss_text_mode", ss_text_mode_);
+    display.insert("mono_persistence", mono_persistence_);
+    display.insert("scaling", scaling_sharp_ ? "sharp" : "smooth");
     table.insert("display", std::move(display));
 
     toml::table file_dialogs;
@@ -332,6 +340,22 @@ void SystemSettings::set_ss_text_mode(bool enabled) {
         return;
     }
     ss_text_mode_ = enabled;
+    save();
+}
+
+void SystemSettings::set_mono_persistence(bool enabled) {
+    if (mono_persistence_ == enabled) {
+        return;
+    }
+    mono_persistence_ = enabled;
+    save();
+}
+
+void SystemSettings::set_scaling_sharp(bool sharp) {
+    if (scaling_sharp_ == sharp) {
+        return;
+    }
+    scaling_sharp_ = sharp;
     save();
 }
 

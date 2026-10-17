@@ -327,6 +327,7 @@ static void build_menu_bar()
             struct { const char *label; int id; } monitors[] = {
                 { "Composite",          MONITOR_COMPOSITE  },
                 { "GS RGB",             MONITOR_GS_RGB     },
+                { "GS Composite",       MONITOR_GS_COMPOSITE },
                 { "Monochrome - Green", MONITOR_MONO_GREEN },
                 { "Monochrome - Amber", MONITOR_MONO_AMBER },
                 { "Monochrome - White", MONITOR_MONO_WHITE },
@@ -336,6 +337,15 @@ static void build_menu_bar()
                 if (ImGui::MenuItem(m.label, nullptr, checked))
                     mi->setMonitor(m.id);
             }
+            end_menu();
+        }
+
+        if (begin_menu("Scaling")) {
+            bool sharp = mi->getScalingSharp();
+            if (ImGui::MenuItem("Smooth", "F5", !sharp))
+                mi->setScaling(false);
+            if (ImGui::MenuItem("Sharp", "F5", sharp))
+                mi->setScaling(true);
             end_menu();
         }
 
@@ -365,9 +375,18 @@ static void build_menu_bar()
             bool crt_on = mi->getCrtShader();
             bool crt_avail = mi->getCrtShaderAvailable();
             if (!crt_avail) ImGui::BeginDisabled();
-            if (ImGui::MenuItem("CRT Shader", "F7", crt_on))
+            if (ImGui::MenuItem("Shadow Mask", "F7", crt_on))
                 mi->toggleCrtShader();
             if (!crt_avail) ImGui::EndDisabled();
+        }
+
+        {
+            bool persist_on = mi->getMonoPersistence();
+            bool persist_avail = mi->getMonoPersistenceAvailable();
+            if (!persist_avail) ImGui::BeginDisabled();
+            if (ImGui::MenuItem("Phosphor Persistence", nullptr, persist_on))
+                mi->toggleMonoPersistence();
+            if (!persist_avail) ImGui::EndDisabled();
         }
 
         if (!running) ImGui::EndDisabled();

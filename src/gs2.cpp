@@ -1996,10 +1996,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     // elsewhere; without this, scripted launches (no TTY) would ignore --debug / -p / etc.
     if (gs2_app_values.console_mode || argc > 1) {
         // parse command line options
-        enum { OPT_NO_QUIT_CONFIRM = 1000 };
+        enum { OPT_NO_QUIT_CONFIRM = 1000, OPT_NTSC_CPU };
         static struct option long_options[] = {
             {"debug", required_argument, nullptr, 'D'},
             {"no-quit-confirm", no_argument, nullptr, OPT_NO_QUIT_CONFIRM},
+            {"ntsc-cpu", no_argument, nullptr, OPT_NTSC_CPU},
             {nullptr, 0, nullptr, 0}
         };
         while ((opt = getopt_long(argc, argv, "sxgp:d:D:", long_options, nullptr)) != -1) {
@@ -2041,8 +2042,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 case OPT_NO_QUIT_CONFIRM:
                     gs2_app_values.no_quit_confirm = true;
                     break;
+                case OPT_NTSC_CPU:
+                    gs2_app_values.ntsc_cpu = true;
+                    break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [file.gs2|file.gs2pack|*Settings.txt|gssquared:https://…/name.gs2pack] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm]\n";
+                    std::cerr << "Usage: " << argv[0] << " [file.gs2|file.gs2pack|*Settings.txt|gssquared:https://…/name.gs2pack] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm] [--ntsc-cpu]\n";
                     std::cerr << "  file.gs2|*Settings.txt: load system configuration from a .gs2 TOML file\n";
                     std::cerr << "  file.gs2pack: extract a machine and its disks, then launch machine.gs2\n";
                     std::cerr << "        or Neil Profiles Settings.txt file, skip the system-selector UI,\n";
@@ -2067,6 +2071,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     std::cerr << "        Unix-domain socket PATH (see Docs/DebugProtocol.md).\n";
                     std::cerr << "  --no-quit-confirm: skip QuitModal / dirty-disk prompts on\n";
                     std::cerr << "        SDL_EVENT_QUIT (useful for tests that SIGTERM/kill the process).\n";
+                    std::cerr << "  --ntsc-cpu: decode composite/monochrome video on the CPU instead\n";
+                    std::cerr << "        of the GPU NTSC shader (for A/B comparison and bug reports).\n";
                     return SDL_APP_FAILURE;
             }
         }

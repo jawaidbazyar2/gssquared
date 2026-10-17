@@ -11,6 +11,10 @@
 #include "ui/Clipboard.hpp"
 #include "ui/ScreenshotWriter.hpp"
 #include "devices/displaypp/RGBA.hpp"
+#include "display/shaders/GpuFragmentPass.hpp"
+
+class NtscGpu;
+class GsCompositeGpu;
 
 // somewhere calculate the window size properly (42+49, and 19+21)
 #define BORDER_WIDTH 42
@@ -37,6 +41,7 @@ typedef enum {
     DM_ENGINE_NTSC = 0,
     DM_ENGINE_RGB,
     DM_ENGINE_MONO,
+    DM_ENGINE_GSCOMPOSITE,  // IIgs: RGB output through a modeled RGB-to-composite encoder
     DM_NUM_COLOR_ENGINES
 } display_color_engine_t;
 
@@ -65,10 +70,12 @@ struct video_system_t {
     // custom fragment-shader post-processing). Null means we fell back to the
     // classic renderer and shader effects are unavailable.
     SDL_GPUDevice *gpu_device = nullptr;
-    // CRT post-process fragment shader and its render state. Only created when
-    // gpu_device is non-null. Null when unavailable.
-    SDL_GPUShader *crt_shader = nullptr;
-    SDL_GPURenderState *crt_state = nullptr;
+    // CRT post-process pass. Only created when gpu_device is non-null.
+    GpuFragmentPass crt_pass;
+    // GPU NTSC / monochrome decoder for the composite path. Null when unavailable
+    // (classic renderer, no shader for this backend, or --ntsc-cpu).
+    NtscGpu *ntsc_gpu = nullptr;
+    GsCompositeGpu *gscomposite_gpu = nullptr;
     // Offscreen render target the emulator frame is drawn into when the CRT
     // shader is active; it is then blitted to the swapchain through the shader.
     // Sized to the renderer's pixel output and recreated on resize.
@@ -76,14 +83,17 @@ struct video_system_t {
     int scene_target_w = 0;
     int scene_target_h = 0;
     // User toggle for the CRT post-process shader. Only takes effect when the
-    // GPU renderer + shader are available (gpu_device and crt_state non-null).
+    // GPU renderer + shader are available (crt_pass.ok()).
     bool crt_shader_enabled = false;
     SDL_Texture *screencap_texture = nullptr;
     
     display_fullscreen_mode_t display_fullscreen_mode = DISPLAY_WINDOWED_MODE;
     display_color_engine_t display_color_engine = DM_ENGINE_NTSC;
+    // Set by the display for IIgs platforms; F2 skips GS Composite otherwise.
+    bool gscomposite_allowed = false;
     display_mono_color_t display_mono_color = DM_MONO_GREEN;
     display_pixel_mode_t display_pixel_mode = DM_PIXEL_FUZZ;
+    bool mono_persistence_enabled = true;
 
     SDL_FRect target = { 0.0f, 0.0f, 0.0f, 0.0f };
     // Guest-visible screen area within the render target (excludes bezel borders).
@@ -115,12 +125,21 @@ struct video_system_t {
         RGBA_t::make(0x00, 0xFF, 0x4A), // green (was 55) chosen from measuring @ 549nm
         RGBA_t::make(0xFF, 0xBF, 0x00)  // amber
     };
+    // GPU mono phosphor persistence: fraction of light (linear) kept per emulated frame.
+    float mono_persistence_table[DM_NUM_MONO_MODES] = {
+        0.40f, // white
+        0.75f, // green
+        0.60f  // amber
+    };
 
 protected:
     void calculate_target_rect(int new_w, int new_h);
     // Create the CRT fragment shader and its GPU render state. No-op (returns
     // false) when the GPU renderer is not in use. Safe to call once at init.
     bool init_crt_shader();
+    // Create the GPU NTSC decoder when the backend has an ntsc shader and --ntsc-cpu is not set.
+    bool init_ntsc_gpu();
+    bool init_gscomposite_gpu();
     // Create/recreate the offscreen scene_target to match (w x h) pixels. No-op
     // when the CRT shader is unavailable. Called at init and on resize.
     void ensure_scene_target(int w, int h);
@@ -167,8 +186,14 @@ public:
     void copy_screen();
     void save_screenshot();
     void flip_display_scale_mode();
+    void set_display_pixel_mode(display_pixel_mode_t mode);
+    void set_mono_persistence(bool enabled);
+    // Persistence needs a GPU decoder (Apple II composite or IIgs GS composite).
+    bool mono_persistence_available() const { return ntsc_gpu || gscomposite_gpu; }
     // True when the CRT post-process shader is available to be used.
-    bool crt_shader_available() const { return crt_state != nullptr; }
+    bool crt_shader_available() const { return crt_pass.ok(); }
+    NtscGpu *get_ntsc_gpu() const { return ntsc_gpu; }
+    GsCompositeGpu *get_gscomposite_gpu() const { return gscomposite_gpu; }
     bool get_crt_shader_enabled() const { return crt_shader_enabled; }
     void set_crt_shader_enabled(bool enabled, bool show_message = false);
     void toggle_crt_shader();
@@ -181,4 +206,5 @@ public:
     void push_mouse_capture(bool capture);
     void pop_mouse_capture();
     RGBA_t get_mono_color() { return mono_color_table[display_mono_color]; };
+    float get_mono_persistence() { return mono_persistence_table[display_mono_color]; };
 };

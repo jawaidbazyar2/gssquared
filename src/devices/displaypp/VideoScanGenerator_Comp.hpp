@@ -1,6 +1,7 @@
 #pragma once
 
 #include "frame/Frames.hpp"
+#include "frame/FrameBits.hpp"
 #include "CharRom.hpp"
 #include "ScanBuffer.hpp"
 #include "generate/AppleIIgs.hpp"
@@ -14,8 +15,13 @@
 class VideoScanGenerator_Comp : public VideoScanGeneratorIntf
 {
 private:
-    uint8_t hires40Font[2 * CHAR_NUM * CHAR_WIDTH];
-    void build_hires40Font(bool delayEnabled);
+    // 14-dot patterns, bit 0 = leftmost dot.
+    uint16_t dbl7[128];          // 7 bits, each doubled
+    uint16_t lores14[16][2];     // [nibble][hcount & 1]
+    uint16_t lores7m[16][2];     // 7 rotated bits, each doubled
+    uint16_t lo7[16][2];         // 7 rotated bits (DLORES half)
+    uint16_t hires14[2 * CHAR_NUM]; // [byte | (lastByte & 0x40) << 2]
+    void build_patterns(bool delayEnabled);
     CharRom *char_rom = nullptr;
     uint16_t char_set = 0;
     bool flash_state = false;
@@ -48,11 +54,45 @@ private:
     bool modeChecks = true;
 
     FrameVSG *frame_vsg = nullptr;
-    Frame560 *frame_byte = nullptr;
+    FrameBits *frame_bits = nullptr;
     Render *render = nullptr;
+
+    // Packed line writer. cur is null when vcount is past the visible lines.
+    uint32_t *cur = nullptr;
+    uint64_t acc = 0;
+    uint32_t nbits = 0;
+    uint32_t word = 0;
+
+    inline void select_line(uint32_t y) noexcept {
+        cur = (y < FrameBits::LINES) ? frame_bits->line(y) : nullptr;
+        acc = 0; nbits = 0; word = FrameBits::DOT_WORDS;
+    }
+
+    inline void start_line(color_mode_t cmode) noexcept {
+        if (!cur) return;
+        uint32_t line_start = (display_shift_enabled && cmode.phase_offset == 0) ? 7 : 0;
+        cur[FrameBits::DOT_WORDS] = FrameBits::make_mode(cmode.colorburst, cmode.phase_offset, line_start);
+        acc = 0; nbits = line_start; word = 0;
+    }
+
+    inline void emit14(uint32_t pattern) noexcept {
+        acc |= (uint64_t)pattern << nbits;
+        nbits += 14;
+        if (nbits >= 32) {
+            if (word < FrameBits::DOT_WORDS) cur[word++] = (uint32_t)acc;
+            acc >>= 32;
+            nbits -= 32;
+        }
+    }
+
+    inline void flush_line() noexcept {
+        if (nbits > 0 && word < FrameBits::DOT_WORDS) cur[word] = (uint32_t)acc;
+        acc = 0; nbits = 0; word = FrameBits::DOT_WORDS;
+    }
 
 public:
     VideoScanGenerator_Comp(CharRom *charrom, bool border_enabled = false, FrameVSG *frame_vsg = nullptr);
+    ~VideoScanGenerator_Comp() { delete frame_bits; }
 
     virtual void generate_frame(ScanBuffer *frame_scan);
     virtual void set_display_shift(bool enable) { display_shift_enabled = enable; }
@@ -62,6 +102,7 @@ public:
     virtual bool get_mono_mode() const { return mono_mode; }
     virtual void set_char_set(uint16_t char_set) { this->char_set = char_set; }
     virtual void set_render(Render *render) { this->render = render; }
+    const FrameBits *get_frame_bits() const { return frame_bits; }
     virtual void setDumpNextFrame(bool dump) { dump_next_frame = dump; }
     virtual uint32_t get_h() const { return beam_h; }
     virtual uint32_t get_v() const { return beam_v; }
