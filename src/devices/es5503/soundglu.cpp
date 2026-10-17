@@ -495,19 +495,6 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
         computer->mmu->set_C0XX_read_handler(i, { ensoniq_read_C0xx, st });
     }
 
-    // TEMP: $C04E is not a real IIgs register. Write the $C03C volume glide
-    // time in ms (0 = instant); read returns the current value.
-    computer->mmu->set_C0XX_write_handler(0xC04E, { [](void *ctx, uint32_t, uint8_t data) {
-        ensoniq_state_t *s = (ensoniq_state_t *)ctx;
-        if (!s->chip) return;
-        ensoniq_catch_up(s, s->clock->get_c14m());
-        s->chip->set_vol_slew_ms(data);
-    }, st });
-    computer->mmu->set_C0XX_read_handler(0xC04E, { [](void *ctx, uint32_t) -> uint8_t {
-        ensoniq_state_t *s = (ensoniq_state_t *)ctx;
-        return s->chip ? s->chip->get_vol_slew_ms() : 0;
-    }, st });
-
     // Calculate frame rate
     st->frame_rate = (double)computer->clock->get_c14m_per_second() / (double)computer->clock->get_c14m_per_frame();
     

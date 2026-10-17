@@ -30,6 +30,9 @@ static constexpr int32_t k_sys_atten_q8[16] = {
 // same int64 product as the slot divide so the remainder is not thrown away first.
 static constexpr int32_t k_doc_makeup = 64;
 
+// MC3340 control voltage does not follow sub-ms $C03C blips. One-pole, 20 ms.
+static constexpr float k_vol_slew_ms = 20.0f;
+
 //==============================================================================
 // ES5503 Implementation
 //==============================================================================
@@ -268,7 +271,7 @@ void ES5503::generate_samples(int16_t *buffer, int num_samples, uint8_t sys_volu
     // The DAC walks N enabled oscillators plus 2 extra slots per frame, and the
     // analog filter averages those slots. The last oscillator was already added
     // three times (it occupies the two extra slots). System volume only cuts,
-    // gliding toward the step (m_vol_slew_ms). Makeup is the amplifier after
+    // gliding toward the step (k_vol_slew_ms). Makeup is the amplifier after
     // that. One product, then one divide:
     //   (sum * volume_q16 * makeup) / (slots * 65536)
     // int64 holds it: the largest sum (~1.1e6) times 65536 times 64 is ~4e12.
@@ -276,11 +279,8 @@ void ES5503::generate_samples(int16_t *buffer, int num_samples, uint8_t sys_volu
     const int32_t atten = k_sys_atten_q8[sys_volume & 15];
     const float target = (atten == 0) ? 0.0f : 256.0f / (float)atten;
     if (m_vol_gain < 0.0f) m_vol_gain = target;
-    float alpha = 1.0f;
-    if (m_vol_slew_ms > 0) {
-        const float dt = 1.0f / (float)calculate_output_rate();
-        alpha = 1.0f - std::exp(-dt / ((float)m_vol_slew_ms * 0.001f));
-    }
+    const float dt = 1.0f / (float)calculate_output_rate();
+    const float alpha = 1.0f - std::exp(-dt / (k_vol_slew_ms * 0.001f));
     float g = m_vol_gain;
     int32_t *mixp = &m_mix_buffer[0];
     for (int s = 0; s < num_samples; s++) {
