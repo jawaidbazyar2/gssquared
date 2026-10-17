@@ -45,6 +45,7 @@ protected:
     int assetID = 0;
     //int group_id = 0;          // For grouping related buttons
     ButtonType_t buttonType;    // Type of button (text or image)
+    bool enabled_ = true;
 
     /**
      * @brief Updates button size based on the current asset.
@@ -100,6 +101,10 @@ public:
      * @param id The new asset ID
      */
     void set_assetID(int id);
+
+    /** Dims the button and ignores clicks when false. */
+    void set_enabled(bool enabled);
+    bool is_enabled() const { return enabled_; }
 
     /**
      * @brief Gets the button's group ID.

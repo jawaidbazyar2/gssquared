@@ -37,6 +37,17 @@ Style_t panel_style() {
     };
 }
 
+/** Same padding as a panel, with no fill, so buttons sit on the case color. */
+Style_t clear_panel_style() {
+    return Style_t{
+        .background_color = 0x00000000,
+        .border_color = 0x00000000,
+        .hover_color = 0x00000000,
+        .padding = 4,
+        .border_width = 0,
+    };
+}
+
 Style_t drive_style() {
     return Style_t{
         .background_color = 0x00000000,
@@ -179,7 +190,6 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
     };
     drives_panel = new DrivesOSD_t(&ui_ctx, DC);
     drives_panel->set_position(600 + layout_dx, 140 + body_dy);
-    // Tall enough that Platform (below) can sit with its bottom on the Save/Cancel line.
     drives_panel->size(400, 450);
     drives_panel->set_button_style(drive_style());
     drives_panel->set_click_handler([this](StorageButton *button, const SDL_Event&) {
@@ -209,7 +219,7 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
     });
 
     Style_t CB = config_selector_button_style();
-    speed_con = new Container_t(&ui_ctx, SC);
+    speed_con = new Container_t(&ui_ctx, clear_panel_style());
     speed_con->set_position(30 + layout_dx, 480 + body_dy);
     speed_con->size(320, 65);
     populate_speed_selector(speed_con, &ui_ctx, CB);
@@ -223,7 +233,7 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
         });
     }
 
-    display_con = new Container_t(&ui_ctx, SC);
+    display_con = new Container_t(&ui_ctx, clear_panel_style());
     display_con->set_position(30 + layout_dx, 575 + body_dy);
     display_con->size(320, 65);
     populate_display_selector(display_con, &ui_ctx, CB);
@@ -238,41 +248,69 @@ EditSystem::EditSystem(video_system_t *vs, AssetAtlas_t *aa)
     }
 
     platform_con = new Container_t(&ui_ctx, SC);
-    // Bottom aligns with action_con (y=655, h=50 → 705) before body_dy.
     platform_con->set_position(600 + layout_dx, 625 + body_dy);
-    platform_con->size(400, 80);
+    constexpr float kPlatBtnW = 150.0f;
+    constexpr float kPlatBtnH = 28.0f;
+    constexpr float kPlatConW = 400.0f;
+    int nplat = 0;
     for (int p = 0; p < PLATFORM_END; p++) {
         platform_info *plat = get_platform(p);
         if (!plat) continue;
         SelectButton_t *pb = new SelectButton_t(&ui_ctx, plat->name, platform_btn_style(), p);
-        pb->size(150, 28);
+        pb->size(kPlatBtnW, kPlatBtnH);
         pb->on_click([this, p](const SDL_Event&) -> bool {
             draft.set_platform(static_cast<PlatformId_t>(p));
             rebuild_ui_from_draft();
             return true;
         });
         platform_con->add(pb);
+        nplat++;
     }
+    // Height follows layout()'s grid so every platform button stays inside the fill.
+    const float plat_pad = static_cast<float>(SC.padding);
+    const float plat_cell_w = kPlatBtnW + plat_pad * 2.0f;
+    const float plat_cell_h = kPlatBtnH + plat_pad * 2.0f;
+    size_t plat_cols = static_cast<size_t>(kPlatConW / plat_cell_w);
+    if (plat_cols == 0) plat_cols = 1;
+    const size_t plat_rows = (static_cast<size_t>(nplat) + plat_cols - 1) / plat_cols;
+    platform_con->size(kPlatConW, plat_cell_h * static_cast<float>(plat_rows));
     platform_con->layout();
 
-    action_con = new Container_t(&ui_ctx, SC);
-    // Below Display (y=575, h=65 → ends ~640); leave a small gap.
-    action_con->set_position(30 + layout_dx, 655 + body_dy);
-    action_con->size(320, 50);
+    action_con = new Container_t(&ui_ctx, clear_panel_style());
+    // Same button size so layout()'s max-tile grid has even gaps. Width is
+    // exactly one row of those cells. Sit just above the status line.
+    constexpr float kActionBtnW = 110.0f;
+    constexpr float kActionBtnH = 36.0f;
+    constexpr float kActionBarH = 50.0f;
+    const float action_pad = static_cast<float>(clear_panel_style().padding);
+    const float action_cell_w = kActionBtnW + action_pad * 2.0f;
+    const float action_y = static_cast<float>(design_height) - 56.0f - kActionBarH;
+    action_con->set_position(30 + layout_dx, action_y);
+    action_con->size(action_cell_w * 3.0f, kActionBarH);
     save_btn = new Button_t(&ui_ctx, "Save", text_btn_style());
-    save_btn->size(100, 36);
-    save_btn->on_click([this](const SDL_Event&) -> bool {
+    save_btn->size(kActionBtnW, kActionBtnH);
+    save_btn->on_click([this](const SDL_Event& event) -> bool {
+        if (event.button.button != SDL_BUTTON_LEFT) return false;
         begin_save();
         return true;
     });
+    save_as_btn = new Button_t(&ui_ctx, "Save As", text_btn_style());
+    save_as_btn->size(kActionBtnW, kActionBtnH);
+    save_as_btn->on_click([this](const SDL_Event& event) -> bool {
+        if (event.button.button != SDL_BUTTON_LEFT) return false;
+        begin_save_as();
+        return true;
+    });
     cancel_btn = new Button_t(&ui_ctx, "Cancel", text_btn_style());
-    cancel_btn->size(100, 36);
-    cancel_btn->on_click([this](const SDL_Event&) -> bool {
+    cancel_btn->size(kActionBtnW, kActionBtnH);
+    cancel_btn->on_click([this](const SDL_Event& event) -> bool {
+        if (event.button.button != SDL_BUTTON_LEFT) return false;
         result = EDIT_CANCEL;
         updated = true;
         return true;
     });
     action_con->add(save_btn);
+    action_con->add(save_as_btn);
     action_con->add(cancel_btn);
     action_con->layout();
 
@@ -395,6 +433,7 @@ void EditSystem::rebuild_ui_from_draft() {
     speed_con->selected_value(draft.config().clock_mode);
     display_con->selected_value(draft.config().display_monitor);
     refresh_badge();
+    sync_save_buttons();
     updated = true;
 }
 
@@ -562,7 +601,7 @@ void EditSystem::open_premount_dialog(storage_key_t key) {
 }
 
 std::string EditSystem::default_save_path() const {
-    if (!draft.path().empty()) {
+    if (Paths::ends_with_icase(draft.path(), ".gs2")) {
         return draft.path();
     }
     std::string filename = draft.name();
@@ -603,7 +642,37 @@ bool EditSystem::write_draft_to_path(const std::string& path) {
     return true;
 }
 
+bool EditSystem::can_overwrite_path() const {
+    return Paths::ends_with_icase(draft.path(), ".gs2");
+}
+
+void EditSystem::sync_save_buttons() {
+    // Save overwrites the current .gs2. A brand-new edit has no file yet, so
+    // Save stays gray and Save As is the dialog that names the first file.
+    if (save_btn) {
+        save_btn->set_enabled(can_overwrite_path());
+    }
+    if (save_as_btn) {
+        save_as_btn->set_enabled(true);
+    }
+}
+
+void EditSystem::finish_save(const std::string& path) {
+    if (!write_draft_to_path(path)) {
+        return;
+    }
+    SystemSettings::instance().remember_file_dialog_selection(FileDialogKind::Config, path);
+    result = EDIT_SAVED;
+}
+
 void EditSystem::begin_save() {
+    if (!can_overwrite_path()) {
+        return;
+    }
+    finish_save(draft.path());
+}
+
+void EditSystem::begin_save_as() {
     // Only .gs2 — with the UTI exported in Info.plist, existing .gs2 files match
     // the allowed type and are not shown grayed (macOS "other file types" look).
     static const SDL_DialogFileFilter filters[] = {
@@ -632,20 +701,12 @@ void EditSystem::begin_save() {
         if (!Paths::ends_with_icase(path, ".gs2")) {
             path += ".gs2";
         }
-        if (editor->write_draft_to_path(path)) {
-            SystemSettings::instance().remember_file_dialog_selection(FileDialogKind::Config,
-                                                                      path);
-            editor->result = EDIT_SAVED;
-        }
+        editor->finish_save(path);
     };
 
 #if defined(__EMSCRIPTEN__)
     // No browser save-dialog helper yet; write to the default path directly.
-    if (write_draft_to_path(cb_data->default_path)) {
-        SystemSettings::instance().remember_file_dialog_selection(FileDialogKind::Config,
-                                                                  cb_data->default_path);
-        result = EDIT_SAVED;
-    }
+    finish_save(cb_data->default_path);
     delete cb_data;
 #elif defined(__APPLE__)
     // Use UTI-aware panel so existing .gs2 files are not grayed out.
@@ -711,8 +772,8 @@ void EditSystem::render() {
     text_renderer->render("Slots", 30 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Serial", 360 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Storage (pre-mount)", 600 + layout_dx, 120 + body_dy, TEXT_ALIGN_LEFT);
-    text_renderer->render("Speed (not saved)", 30 + layout_dx, 455 + body_dy, TEXT_ALIGN_LEFT);
-    text_renderer->render("Display (not saved)", 30 + layout_dx, 550 + body_dy, TEXT_ALIGN_LEFT);
+    text_renderer->render("Speed", 30 + layout_dx, 455 + body_dy, TEXT_ALIGN_LEFT);
+    text_renderer->render("Display", 30 + layout_dx, 550 + body_dy, TEXT_ALIGN_LEFT);
     text_renderer->render("Platform", 600 + layout_dx, 600 + body_dy, TEXT_ALIGN_LEFT);
 
     if (!status_text.empty()) {

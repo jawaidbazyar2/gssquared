@@ -2459,6 +2459,29 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             open_system_config_dialog(state, true);
             return SDL_APP_CONTINUE;
         }
+        if (system_id >= SELECT_EDIT_RECENT_BASE) {
+            const std::string path = state->select_system->get_recent_path(system_id);
+            state->select_system->clear_selection();
+            if (path.empty()) {
+                return SDL_APP_CONTINUE;
+            }
+            if (gs2pack::is_pack_path(path)) {
+                std::string diag = "A .gs2pack launches a machine. Use Launch Config to open it.";
+                std::cerr << diag << "\n";
+                system_diag(diag.data());
+                return SDL_APP_CONTINUE;
+            }
+            std::string error;
+            if (!apply_system_config_file(state, path, error)) {
+                std::string diag = "Failed to load system config '" + path + "':\n" + error;
+                std::cerr << diag << "\n";
+                system_diag(diag.data());
+                return SDL_APP_CONTINUE;
+            }
+            transition_to_edit_system(state);
+            state->edit_system->start_from_config(*state->loaded_config);
+            return SDL_APP_CONTINUE;
+        }
         if (system_id >= SELECT_RECENT_BASE) {
             const std::string& path = state->select_system->get_recent_path(system_id);
             state->select_system->clear_selection();

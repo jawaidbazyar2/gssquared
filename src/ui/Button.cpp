@@ -85,6 +85,10 @@ void Button_t::set_assetID(int id) {
     set_size_from_asset(); 
 }
 
+void Button_t::set_enabled(bool enabled) {
+    enabled_ = enabled;
+}
+
 /**
  * @brief Gets the button's group ID.
  * @return The group ID this button belongs to.
@@ -98,10 +102,18 @@ void Button_t::set_assetID(int id) {
 void Button_t::render() {
     if (!visible) return;
 
-    // Store current background color and temporarily set it based on hover state
+    // Store current background color and temporarily set it based on hover state.
+    // A disabled button keeps its resting colors and draws dimmed.
     uint32_t original_bg_color = style.background_color;
-    if (is_hovering) {
+    uint32_t original_hover_color = style.hover_color;
+    if (!enabled_) {
+        style.hover_color = style.background_color;
+    } else if (is_hovering) {
         style.background_color = style.hover_color;
+    }
+    const int saved_opacity = opacity;
+    if (!enabled_ && opacity > 96) {
+        opacity = 96;
     }
 
     // Call parent class render to draw background and border
@@ -109,6 +121,8 @@ void Button_t::render() {
 
     // Restore original background color
     style.background_color = original_bg_color;
+    style.hover_color = original_hover_color;
+    opacity = saved_opacity;
 
     // Draw button-specific content (text or image).
     // Use estyle (set by calc_style in Tile_t::render) so SelectButton can
@@ -137,7 +151,8 @@ void Button_t::render() {
 } */
 
 void Button_t::do_click(const SDL_Event& event) {
-    // Button-specific click behavior could go here
-    // For now, just call the base class implementation
+    if (!enabled_) {
+        return;
+    }
     Tile_t::do_click(event);
 }
