@@ -290,12 +290,6 @@ void ES5503::generate_samples(int16_t *buffer, int num_samples, uint8_t sys_volu
         for (int c = 0; c < m_output_channels; c++) {
             const int32_t mixed = *mixp++;
             int32_t sample = (int32_t)(((int64_t)mixed * vol_q16 * k_doc_makeup) / denom);
-            const int32_t am = mixed < 0 ? -mixed : mixed;
-            const int32_t as = sample < 0 ? -sample : sample;
-            if (am > probe_peak_mix) probe_peak_mix = am;
-            if (as > probe_peak_out) probe_peak_out = as;
-            probe_samples++;
-            if (sample > 32767 || sample < -32768) probe_clips++;
             if (sample > 32767) sample = 32767;
             if (sample < -32768) sample = -32768;
             buffer[s * m_output_channels + c] = (int16_t)sample;

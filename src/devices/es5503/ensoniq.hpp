@@ -117,14 +117,6 @@ public:
     // that read $C03C back as $xF and write it); this models that lag.
     uint8_t get_vol_slew_ms() const { return m_vol_slew_ms; }
     void set_vol_slew_ms(uint8_t ms) { m_vol_slew_ms = ms; }
-    float get_vol_gain() const { return m_vol_gain; }
-
-    // TEMP clip probe: peak |mix| before the system-volume divide, peak |sample|
-    // after it, and how many samples hit the int16 clamp.
-    int32_t probe_peak_mix = 0;
-    int32_t probe_peak_out = 0;
-    uint32_t probe_clips = 0;
-    uint64_t probe_samples = 0;
 
     private:
     uint8_t m_vol_slew_ms = 20;

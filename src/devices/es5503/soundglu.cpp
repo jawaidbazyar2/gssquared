@@ -1,7 +1,6 @@
 #include <cstdint>
 #include <cassert>
 #include <cstring>
-#include <cstdio>
 #include <SDL3/SDL.h>
 #include "computer.hpp"
 #include "devices/es5503/ensoniq.hpp"
@@ -14,26 +13,6 @@
 #include "device_irq_id.hpp"
 
 #include "NClock.hpp"
-#include "cpu.hpp"
-
-#include <chrono>
-#include <ctime>
-
-// TEMP clip probe output, shared by the per-second summary and $C03C logging.
-static FILE *doc_probe_file() {
-    static FILE *f = fopen("/tmp/gs2-doc-probe.log", "w");
-    return f;
-}
-
-static void doc_probe_stamp(FILE *f) {
-    using namespace std::chrono;
-    const auto now = system_clock::now();
-    const std::time_t t = system_clock::to_time_t(now);
-    const int ms = (int)(duration_cast<milliseconds>(now.time_since_epoch()).count() % 1000);
-    std::tm lt;
-    localtime_r(&t, &lt);
-    fprintf(f, "%02d:%02d:%02d.%03d ", lt.tm_hour, lt.tm_min, lt.tm_sec, ms);
-}
 
 //==============================================================================
 // Fast-forward / catch-up
@@ -346,22 +325,6 @@ void ensoniq_write_C0xx(void *context, uint32_t address, uint8_t data) {
             }
             // System volume nibble. Stored here; the next generate_samples call
             // divides the mix by this step (~2 dB each, 15 = no cut).
-            {
-                const unsigned old_vol = st->audio_system->get_volume();
-                const unsigned new_vol = data & 0x0F;
-                FILE *pf = doc_probe_file();
-                if (pf && old_vol != new_vol) {
-                    doc_probe_stamp(pf);
-                    unsigned pb = 0, pc = 0;
-                    if (st->computer && st->computer->cpu) {
-                        pb = st->computer->cpu->pb;
-                        pc = st->computer->cpu->pc;
-                    }
-                    fprintf(pf, "C03C vol %u -> %u  data=%02X  PC=%02X/%04X\n",
-                            old_vol, new_vol, data, pb, pc);
-                    fflush(pf);
-                }
-            }
             st->audio_system->set_volume(data & 0x0F);
             break;
             
@@ -423,28 +386,6 @@ void generate_ensoniq_frame(ensoniq_state_t *st) {
     ensoniq_catch_up(st, st->clock->get_c14m());
     // Deliver ~1 frame of DOC audio to SDL in one Put.
     ensoniq_flush_sdl_staging(st);
-
-    // TEMP clip probe, about once a second.
-    static int probe_frames = 0;
-    if (++probe_frames >= 60) {
-        probe_frames = 0;
-        ES5503 *c = st->chip;
-        FILE *probe_log = doc_probe_file();
-        if (c->probe_samples && probe_log) {
-            doc_probe_stamp(probe_log);
-            fprintf(probe_log, "DOC probe: slew=%ums gain=%.4f vol=%u oscs=%d peak_mix=%d peak_out=%d clips=%u/%llu (%.3f%%) SDLq=%d\n",
-                    (unsigned)c->get_vol_slew_ms(), c->get_vol_gain(),
-                    (unsigned)st->audio_system->get_volume(), c->get_oscsenabled(),
-                    c->probe_peak_mix, c->probe_peak_out, c->probe_clips,
-                    (unsigned long long)c->probe_samples,
-                    100.0 * c->probe_clips / (double)c->probe_samples,
-                    SDL_GetAudioStreamQueued(st->stream));
-            fflush(probe_log);
-        }
-        c->probe_peak_mix = c->probe_peak_out = 0;
-        c->probe_clips = 0;
-        c->probe_samples = 0;
-    }
 }
 
 DebugFormatter * debug_ensoniq(ensoniq_state_t *st) {
@@ -561,11 +502,6 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
         if (!s->chip) return;
         ensoniq_catch_up(s, s->clock->get_c14m());
         s->chip->set_vol_slew_ms(data);
-        if (FILE *pf = doc_probe_file()) {
-            doc_probe_stamp(pf);
-            fprintf(pf, "C04E slew -> %u ms\n", (unsigned)data);
-            fflush(pf);
-        }
     }, st });
     computer->mmu->set_C0XX_read_handler(0xC04E, { [](void *ctx, uint32_t) -> uint8_t {
         ensoniq_state_t *s = (ensoniq_state_t *)ctx;
