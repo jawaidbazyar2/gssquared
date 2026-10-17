@@ -17,6 +17,11 @@
 
 video_system_t::video_system_t(computer_t *computer) {
 
+    // SDL disables the screensaver on video init unless this is set. GSSquared
+    // takes the display-sleep assertion itself, and only while a machine is
+    // running and a window has focus (update_display_sleep in gs2.cpp).
+    SDL_SetHint(SDL_HINT_VIDEO_ALLOW_SCREENSAVER, "1");
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "Error initializing SDL: %s\n", SDL_GetError());
     }

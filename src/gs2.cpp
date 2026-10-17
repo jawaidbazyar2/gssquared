@@ -2373,6 +2373,37 @@ static void render_menu_overlay_for_ui_phase(video_system_t *vs) {
 #endif
 }
 
+static bool window_has_input_focus(SDL_Window *window) {
+    if (window == nullptr) {
+        return false;
+    }
+    return (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0;
+}
+
+// Block display sleep only while a machine is running and the user is in this
+// app. Selector, editor, pause, a stopped debugger, and an unfocused window
+// follow the normal OS idle timer. SDL_Enable/DisableScreenSaver are no-ops
+// when already in the requested state, so this is safe to call every frame.
+static void update_display_sleep(GS2AppState *state) {
+    computer_t *computer = state->computer;
+    bool inhibit = false;
+    if (state->phase == PHASE_EMULATION && computer != nullptr
+        && computer->execution_mode == EXEC_NORMAL) {
+        video_system_t *vs = computer->video_system;
+        if (vs != nullptr && window_has_input_focus(vs->window)) {
+            inhibit = true;
+        } else if (computer->debug_window != nullptr && computer->debug_window->window_open
+                   && window_has_input_focus(computer->debug_window->window)) {
+            inhibit = true;
+        }
+    }
+    if (inhibit) {
+        SDL_DisableScreenSaver();
+    } else {
+        SDL_EnableScreenSaver();
+    }
+}
+
 SDL_AppResult SDL_AppIterate(void *appstate) {
     GS2AppState *state = (GS2AppState *)appstate;
 
@@ -2404,6 +2435,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     if (state->debug_protocol) {
         state->debug_protocol->process_main_thread(state->computer);
     }
+
+    // After debug commands, so a pause/continue this frame is reflected immediately.
+    update_display_sleep(state);
 
     if (state->phase == PHASE_SYSTEM_SELECT) {
         /* Render the selection UI (one frame). Events already dispatched by SDL_AppEvent. */
