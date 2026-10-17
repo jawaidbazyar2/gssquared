@@ -60,6 +60,7 @@ protected:
     Container_t *platform_con = nullptr;
     Container_t *action_con = nullptr;
     Button_t *save_btn = nullptr;
+    Button_t *save_as_btn = nullptr;
     Button_t *cancel_btn = nullptr;
 
     modal_stack mstack;
@@ -83,8 +84,16 @@ protected:
     void show_connection_picker(connection_key_t key, connection_port_kind_t kind);
     void dismiss_connection_picker();
     void open_premount_dialog(storage_key_t key);
-    /** Open save dialog; on success sets EDIT_SAVED, on cancel stays in editor. */
+    /** Overwrite the current .gs2. No-op when there is no file yet. */
     void begin_save();
+    /** Always open the save dialog (new path / new machine id). */
+    void begin_save_as();
+    /** Gray out Save until this profile has a .gs2 to overwrite. */
+    void sync_save_buttons();
+    /** True when Save can write draft.path() without a dialog. */
+    bool can_overwrite_path() const;
+    /** Write draft to path; on success sets EDIT_SAVED. */
+    void finish_save(const std::string& path);
     /** Write draft to path; returns false and sets status_text on failure. */
     bool write_draft_to_path(const std::string& path);
     std::string default_save_path() const;

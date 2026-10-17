@@ -66,17 +66,23 @@ void SystemButton::render() {
     }
 
     // draw the system description
-    if (is_hovering && system_config && system_config->description && system_config->description[0]) {
-        ctx->text_render->set_color(0xFF, 0xFF, 0xFF, 0xFF);
-        ctx->text_render->render(system_config->description,
-                                 static_cast<int>(ctx->description_x),
-                                 static_cast<int>(ctx->description_y),
-                                 TEXT_ALIGN_CENTER);
-    } else if (is_hovering && system_config && system_config->name && system_config->name[0]) {
-        ctx->text_render->set_color(0xFF, 0xFF, 0xFF, 0xFF);
-        ctx->text_render->render(system_config->name,
-                                 static_cast<int>(ctx->description_x),
-                                 static_cast<int>(ctx->description_y),
-                                 TEXT_ALIGN_CENTER);
+    if (is_hovering && system_config && ctx->text_render) {
+        const char *line = nullptr;
+        if (system_config->description && system_config->description[0]) {
+            line = system_config->description;
+        } else if (system_config->name && system_config->name[0]) {
+            line = system_config->name;
+        }
+        if (line) {
+            std::string text = line;
+            if (is_custom) {
+                text += "    —  Right-click or Cmd/Alt-click to edit";
+            }
+            ctx->text_render->set_color(0xFF, 0xFF, 0xFF, 0xFF);
+            ctx->text_render->render(text,
+                                     static_cast<int>(ctx->description_x),
+                                     static_cast<int>(ctx->description_y),
+                                     TEXT_ALIGN_CENTER);
+        }
     }
 }

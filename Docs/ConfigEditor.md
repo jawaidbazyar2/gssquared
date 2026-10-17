@@ -10,6 +10,7 @@ When you start GSSquared, you see **Choose your retro experience** with the buil
 
 * **+** — create a new custom config from scratch. Opens the config editor with a default Enhanced //e setup you can change.
 * **Edit...** — open an existing config file (`.gs2` or `… Settings.txt`) and load it into the editor so you can change it and save.
+* **Recent profile tile** — click boots it. Right-click, or Cmd-click / Alt-click, opens that profile in the editor (same as **Edit...** after picking the file). Hover the tile for a reminder. A `.gs2pack` tile only launches.
 
 Hover the **+** or **Edit…** tile to see a short description at the bottom of the screen.
 
@@ -55,7 +56,7 @@ The editor title is **Edit System Configuration**. You can set:
 
 Speed and Display controls on this screen are for preview only; they are **not saved** into the config file.
 
-**Save** writes a `.gs2` file (you'll get a save dialog). **Save As** to a new path mints a new machine `id` (IIgs BRAM is copied). This is configuration only — not a full CPU/RAM save state (that is planned). **Cancel** returns to System Select without saving.
+**Save** overwrites the current `.gs2` and skips the dialog. On a brand-new profile (and when editing a `Settings.txt`, which is not a `.gs2`), Save stays grayed out. **Save As** asks for a path. A new path mints a new machine `id` (IIgs BRAM is copied). A brand-new edit uses Save As to name the first file. This is configuration only — not a full CPU/RAM save state (that is planned). **Cancel** returns to System Select without saving.
 
 After saving, use **Launch Config…**, double-click the `.gs2`, or Open With to run it. Recent configs also appear as tiles on System Select.
 

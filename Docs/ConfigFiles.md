@@ -34,7 +34,7 @@ There is also **`Profiles.txt`**, which is a **catalog** listing available profi
 
 When you launch with a config file path, GSSquared skips the System Select screen and boots straight into that configuration. See [Command Line](CommandLine.md).
 
-To write a config from the UI, use **+** or **Edit…** on System Select and click **Save** (or **Save As**). That writes a `.gs2` with platform, slots, pre-mounted disks, and serial/parallel attachments — not CPU/RAM state. **Save As** to a new path mints a new machine `id` (IIgs BRAM is copied). Full machine **save states** (CPU, RAM, devices) are [planned and not shipped](SaveAndRestore.md).
+To write a config from the UI, use **+** or **Edit…** on System Select (or right-click / Cmd-click / Alt-click a recent profile tile) and click **Save** or **Save As**. **Save** overwrites an existing `.gs2` and stays grayed out on a brand-new profile. **Save As** asks for a path; a new path mints a new machine `id` (IIgs BRAM is copied). Either button writes a `.gs2` with platform, slots, pre-mounted disks, and serial/parallel attachments — not CPU/RAM state. Full machine **save states** (CPU, RAM, devices) are [planned and not shipped](SaveAndRestore.md).
 
 ---
 
