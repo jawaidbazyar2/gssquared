@@ -14,6 +14,26 @@
 #include "device_irq_id.hpp"
 
 #include "NClock.hpp"
+#include "cpu.hpp"
+
+#include <chrono>
+#include <ctime>
+
+// TEMP clip probe output, shared by the per-second summary and $C03C logging.
+static FILE *doc_probe_file() {
+    static FILE *f = fopen("/tmp/gs2-doc-probe.log", "w");
+    return f;
+}
+
+static void doc_probe_stamp(FILE *f) {
+    using namespace std::chrono;
+    const auto now = system_clock::now();
+    const std::time_t t = system_clock::to_time_t(now);
+    const int ms = (int)(duration_cast<milliseconds>(now.time_since_epoch()).count() % 1000);
+    std::tm lt;
+    localtime_r(&t, &lt);
+    fprintf(f, "%02d:%02d:%02d.%03d ", lt.tm_hour, lt.tm_min, lt.tm_sec, ms);
+}
 
 //==============================================================================
 // Fast-forward / catch-up
@@ -184,39 +204,11 @@ static void ensoniq_catch_up(ensoniq_state_t *st, uint64_t now_c14m) {
     const uint32_t BATCH = 256;
     while (samples_due > 0) {
         uint32_t n = (samples_due > BATCH) ? BATCH : (uint32_t)samples_due;
-        st->chip->generate_samples(st->audio_buffer, n);
+        // $C03C nibble. generate_samples divides the mix by that step only.
+        // Catch-up runs before a $C03C write, so this batch still uses the old step.
+        const uint8_t sysvol = st->audio_system ? (uint8_t)st->audio_system->get_volume() : 6;
+        st->chip->generate_samples(st->audio_buffer, n, sysvol);
         ensoniq_mirror_mono_to_stereo(st, n);
-
-        // TEMP (MAME-like / stereo-card test): do not apply $C03C volume to DOC
-        // output. Real motherboard amp uses this nibble; stereo cards tap DOC
-        // channels pre-volume, and Alien Mind stereo sets the nibble to 0.
-        // Also avoids double attenuation with host volume. Restore easily.
-#if 0
-        // Apply the $C03C volume nibble at emulated time. Routing it through
-        // SDL_SetAudioStreamGain applied volume changes to whole ~23ms callback
-        // chunks at playback time, smearing sub-ms hardware volume dips into
-        // audible amplitude chops. Slew the gain with a ~20ms one-pole ramp:
-        // firmware/demos flip the nibble (e.g. 15→5→15 for 0.6–7.7ms) around DOC
-        // access bursts, and applying that instantly chops the waveform into
-        // low-frequency distortion; the real analog volume path smooths it.
-        // One gain step per DOC frame; same gain applied to L and R.
-        {
-            const float target = (float)st->audio_system->get_volume(); // 0..15
-            if (st->vol_smooth < 0.0f) st->vol_smooth = target;
-            const float dt = (float)c14m_per_sample / 14318181.0f; // seconds per DOC sample
-            const float alpha = dt / 0.020f;
-            float g = st->vol_smooth;
-            for (uint32_t i = 0; i < n; i++) {
-                g += alpha * (target - g);
-                const float scale = g * (1.0f / 16.0f);
-                for (int c = 0; c < ch; c++) {
-                    st->audio_buffer[i * ch + c] =
-                        (int16_t)((float)st->audio_buffer[i * ch + c] * scale);
-                }
-            }
-            st->vol_smooth = g;
-        }
-#endif
 
         // Queue DOC frames only — SDL is fed once per frame in generate_ensoniq_frame.
         if (st->sdl_staging) {
@@ -352,7 +344,24 @@ void ensoniq_write_C0xx(void *context, uint32_t address, uint8_t data) {
             if (!(st->soundctl & 0x40)) {
                 st->soundadrh = 0;
             }
-            // System volume nibble; applied per-sample (slewed) in ensoniq_catch_up.
+            // System volume nibble. Stored here; the next generate_samples call
+            // divides the mix by this step (~2 dB each, 15 = no cut).
+            {
+                const unsigned old_vol = st->audio_system->get_volume();
+                const unsigned new_vol = data & 0x0F;
+                FILE *pf = doc_probe_file();
+                if (pf && old_vol != new_vol) {
+                    doc_probe_stamp(pf);
+                    unsigned pb = 0, pc = 0;
+                    if (st->computer && st->computer->cpu) {
+                        pb = st->computer->cpu->pb;
+                        pc = st->computer->cpu->pc;
+                    }
+                    fprintf(pf, "C03C vol %u -> %u  data=%02X  PC=%02X/%04X\n",
+                            old_vol, new_vol, data, pb, pc);
+                    fflush(pf);
+                }
+            }
             st->audio_system->set_volume(data & 0x0F);
             break;
             
@@ -414,20 +423,43 @@ void generate_ensoniq_frame(ensoniq_state_t *st) {
     ensoniq_catch_up(st, st->clock->get_c14m());
     // Deliver ~1 frame of DOC audio to SDL in one Put.
     ensoniq_flush_sdl_staging(st);
+
+    // TEMP clip probe, about once a second.
+    static int probe_frames = 0;
+    if (++probe_frames >= 60) {
+        probe_frames = 0;
+        ES5503 *c = st->chip;
+        FILE *probe_log = doc_probe_file();
+        if (c->probe_samples && probe_log) {
+            doc_probe_stamp(probe_log);
+            fprintf(probe_log, "DOC probe: slew=%ums gain=%.4f vol=%u oscs=%d peak_mix=%d peak_out=%d clips=%u/%llu (%.3f%%) SDLq=%d\n",
+                    (unsigned)c->get_vol_slew_ms(), c->get_vol_gain(),
+                    (unsigned)st->audio_system->get_volume(), c->get_oscsenabled(),
+                    c->probe_peak_mix, c->probe_peak_out, c->probe_clips,
+                    (unsigned long long)c->probe_samples,
+                    100.0 * c->probe_clips / (double)c->probe_samples,
+                    SDL_GetAudioStreamQueued(st->stream));
+            fflush(probe_log);
+        }
+        c->probe_peak_mix = c->probe_peak_out = 0;
+        c->probe_clips = 0;
+        c->probe_samples = 0;
+    }
 }
 
 DebugFormatter * debug_ensoniq(ensoniq_state_t *st) {
     DebugFormatter *df = new DebugFormatter();
-    df->addLine("Control: %02X Address: %04X", st->soundctl, (st->soundadrh << 8) | st->soundadrl);
+    df->addLine("CTL: %02X  ADDR: %04X", st->soundctl, (st->soundadrh << 8) | st->soundadrl);
     //df->addLine("  Sound Data: %02X", st->sounddata);
     ES5503 *chip = st->chip;
     df->addLine("E0: %02X   E1: %02X   E2: %02X", chip->get_rege0(), chip->get_rege1(), 0  /* , chip->get_adc_callback() */ );
 
     uint32_t es5503_output_rate = st->chip->calculate_output_rate();
-    df->addLine("OutRate: %u Hz  OSCs: %d", es5503_output_rate, chip->get_oscsenabled());
+    int numosc = chip->get_oscsenabled();
+    df->addLine("OutRate: %u Hz  OSCs: %d", es5503_output_rate, numosc);
 
     df->addLine("Osc Freq WtSize Ctrl Vol Data WtPtr WtSize Res Acc       Irq");
-    for (int o = 0; o < 32; o++) {
+    for (int o = 0; o < numosc; o++) {
         Oscillator *osc = chip->get_oscillator(o);
         df->addLine(" %2d %04X   %04X  %02X  %02X  %02X   %04X  %02X    %02X  %08X %02X", 
             o, osc->freq, osc->wtsize, osc->control, osc->vol, 
@@ -522,6 +554,24 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
         computer->mmu->set_C0XX_read_handler(i, { ensoniq_read_C0xx, st });
     }
 
+    // TEMP: $C04E is not a real IIgs register. Write the $C03C volume glide
+    // time in ms (0 = instant); read returns the current value.
+    computer->mmu->set_C0XX_write_handler(0xC04E, { [](void *ctx, uint32_t, uint8_t data) {
+        ensoniq_state_t *s = (ensoniq_state_t *)ctx;
+        if (!s->chip) return;
+        ensoniq_catch_up(s, s->clock->get_c14m());
+        s->chip->set_vol_slew_ms(data);
+        if (FILE *pf = doc_probe_file()) {
+            doc_probe_stamp(pf);
+            fprintf(pf, "C04E slew -> %u ms\n", (unsigned)data);
+            fflush(pf);
+        }
+    }, st });
+    computer->mmu->set_C0XX_read_handler(0xC04E, { [](void *ctx, uint32_t) -> uint8_t {
+        ensoniq_state_t *s = (ensoniq_state_t *)ctx;
+        return s->chip ? s->chip->get_vol_slew_ms() : 0;
+    }, st });
+
     // Calculate frame rate
     st->frame_rate = (double)computer->clock->get_c14m_per_second() / (double)computer->clock->get_c14m_per_frame();
     
@@ -530,9 +580,8 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     uint32_t es5503_output_rate = st->chip->calculate_output_rate();
     st->samples_per_frame = (float)es5503_output_rate / st->frame_rate;
     st->samples_accumulated = 0.0f;
-    // apply_volume=false: the $C03C volume is applied per-sample at generation
-    // time in ensoniq_catch_up (SDL stream gain acts at playback time, which
-    // smears sub-ms hardware volume dips across whole callback buffers).
+    // apply_volume=false: $C03C only divides the DOC mix inside generate_samples,
+    // before the int16 clamp. SDL stream gain is a second control and is not used.
     st->stream = st->audio_system->create_stream(st->sdl_device_rate, ch, SDL_AUDIO_S16LE, false);
     st->chip->set_sdl_stream(st->stream);
 

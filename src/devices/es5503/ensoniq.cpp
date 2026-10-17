@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cassert>
+#include <cmath>
 
 #include "devices/speaker/speaker.hpp"
 #include "util/DebugHandlerIDs.hpp"
@@ -13,6 +14,15 @@ static constexpr uint16_t wavesizes[8] = { 256, 512, 1024, 2048, 4096, 8192, 163
 static constexpr uint32_t wavemasks[8] = { 0x1ff00, 0x1fe00, 0x1fc00, 0x1f800, 0x1f000, 0x1e000, 0x1c000, 0x18000 };
 static constexpr uint32_t accmasks[8]  = { 0xff, 0x1ff, 0x3ff, 0x7ff, 0xfff, 0x1fff, 0x3fff, 0x7fff };
 static constexpr int      resshifts[8] = { 9, 10, 11, 12, 13, 14, 15, 16 };
+
+// $C03C attenuator, Q8 divisors. Same ~2 dB steps as SpeakerFX::volume_table.
+// The mix is divided by (entry/256). Step 15 is 256, so the mix is unchanged.
+// Step 0 is mute. Every other step is a cut. There is no /8 and no boost.
+static constexpr int32_t k_sys_atten_q8[16] = {
+    0,
+    6434, 5108, 4058, 3222, 2560, 2034, 1615,
+    1283, 1019, 809, 643, 511, 406, 322, 256
+};
 
 //==============================================================================
 // ES5503 Implementation
@@ -148,7 +158,7 @@ void ES5503::halt_osc(int onum, int type, uint32_t *accumulator, int resshift, u
     }
 }
 
-void ES5503::generate_samples(int16_t *buffer, int num_samples) {
+void ES5503::generate_samples(int16_t *buffer, int num_samples, uint8_t sys_volume) {
     if (!m_wave_memory) {
         // No wave memory, output silence
         std::fill_n(buffer, num_samples * m_output_channels, 0);
@@ -249,14 +259,37 @@ void ES5503::generate_samples(int16_t *buffer, int num_samples) {
         }
     }
 
-    // Convert mix buffer to output buffer
-    int32_t *mixp = &m_mix_buffer[0];
-    for (int i = 0; i < num_samples * m_output_channels; i++) {
-        int32_t sample = *mixp++ / 8;  // Scale down
-        if (sample > 32767) sample = 32767;
-        if (sample < -32768) sample = -32768;
-        buffer[i] = (int16_t)sample;
+    // Attenuate the oscillator sum by the system-volume step: step 15 is gain 1,
+    // lower steps are cuts, 0 is mute. There is no fixed /8 and no boost. The
+    // gain glides toward the step with a one-pole lag (m_vol_slew_ms) so a
+    // sub-ms nibble blip barely moves it. Clamp only after the cut.
+    const int32_t atten = k_sys_atten_q8[sys_volume & 15];
+    const float target = (atten == 0) ? 0.0f : 256.0f / (float)atten;
+    if (m_vol_gain < 0.0f) m_vol_gain = target;
+    float alpha = 1.0f;
+    if (m_vol_slew_ms > 0) {
+        const float dt = 1.0f / (float)calculate_output_rate();
+        alpha = 1.0f - std::exp(-dt / ((float)m_vol_slew_ms * 0.001f));
     }
+    float g = m_vol_gain;
+    int32_t *mixp = &m_mix_buffer[0];
+    for (int s = 0; s < num_samples; s++) {
+        g += alpha * (target - g);
+        for (int c = 0; c < m_output_channels; c++) {
+            const int32_t mixed = *mixp++;
+            int32_t sample = (int32_t)((float)mixed * g);
+            const int32_t am = mixed < 0 ? -mixed : mixed;
+            const int32_t as = sample < 0 ? -sample : sample;
+            if (am > probe_peak_mix) probe_peak_mix = am;
+            if (as > probe_peak_out) probe_peak_out = as;
+            probe_samples++;
+            if (sample > 32767 || sample < -32768) probe_clips++;
+            if (sample > 32767) sample = 32767;
+            if (sample < -32768) sample = -32768;
+            buffer[s * m_output_channels + c] = (int16_t)sample;
+        }
+    }
+    m_vol_gain = g;
 }
 
 /* the idea here is we actively update the E0 register whenever a OSC IRQ is asserted or cleared

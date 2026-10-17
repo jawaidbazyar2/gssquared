@@ -53,12 +53,6 @@ struct ensoniq_state_t {
     // cycle handler, rather than only once per video frame.
     uint64_t last_catchup_c14m = 0;  // 14M timestamp of the last generated sample boundary
     uint64_t c14m_accum = 0;         // fractional-c14m remainder carried between catch-ups
-
-    // Smoothed $C03C volume nibble (0..15), slewed with ~20ms time constant.
-    // Firmware/demos flip the nibble 15→5→15 for 0.6–7.7ms around DOC accesses;
-    // applying that instantly chops the waveform (audible LF distortion), while
-    // the real analog volume path smooths such transients. <0 = uninitialized.
-    float vol_smooth = -1.0f;
 };
 
 void init_ensoniq_slot(computer_t *computer, SlotType_t slot);

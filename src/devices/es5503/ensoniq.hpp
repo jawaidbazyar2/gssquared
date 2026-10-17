@@ -40,8 +40,10 @@ public:
     uint8_t read(uint8_t offset);
     void write(uint8_t offset, uint8_t data);
     
-    // Generate audio samples
-    void generate_samples(int16_t *buffer, int num_samples);
+    // Generate audio samples. sys_volume is the $C03C nibble (0..15). It only
+    // attenuates the mix (~2 dB/step, 15 = no cut, 0 = mute). Default 6 is a
+    // cold AudioSystem.
+    void generate_samples(int16_t *buffer, int num_samples, uint8_t sys_volume = 6);
     
     // Set callbacks
     void set_irq_callback(std::function<void(bool)> callback) { m_irq_callback = callback; }
@@ -109,4 +111,22 @@ public:
     uint8_t get_rege0() { return m_rege0; }
     uint8_t get_rege1() { return m_rege1; /* m_oscsenabled; */ }
     uint8_t get_oscsenabled() { return m_oscsenabled; }
+
+    // $C03C volume glide time constant in ms (0 = instant). The analog volume
+    // control on the board does not follow sub-ms nibble blips (e.g. players
+    // that read $C03C back as $xF and write it); this models that lag.
+    uint8_t get_vol_slew_ms() const { return m_vol_slew_ms; }
+    void set_vol_slew_ms(uint8_t ms) { m_vol_slew_ms = ms; }
+    float get_vol_gain() const { return m_vol_gain; }
+
+    // TEMP clip probe: peak |mix| before the system-volume divide, peak |sample|
+    // after it, and how many samples hit the int16 clamp.
+    int32_t probe_peak_mix = 0;
+    int32_t probe_peak_out = 0;
+    uint32_t probe_clips = 0;
+    uint64_t probe_samples = 0;
+
+    private:
+    uint8_t m_vol_slew_ms = 20;
+    float m_vol_gain = -1.0f;   // current linear gain 0..1; <0 = snap on first use
 };
