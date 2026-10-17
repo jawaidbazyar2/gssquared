@@ -55,7 +55,7 @@ void HD20SC_Button_t::render() {
     char text[32];
     if (status.is_mounted && status.motor_on) {
         // if mounted and hovering, show the track number over the drive
-        snprintf(text, sizeof(text), "%d/%d %06X", key.slot, key.drive+1, status.position / 2);
+        snprintf(text, sizeof(text), "%d/%d %06X", key.slot, key.drive+1, status.position);
     } else {
         snprintf(text, sizeof(text), "%d/%d", key.slot, key.drive+1);
     }

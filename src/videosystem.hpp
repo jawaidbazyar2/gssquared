@@ -118,9 +118,6 @@ struct video_system_t {
 
 protected:
     void calculate_target_rect(int new_w, int new_h);
-    // Recompute the target rect from the renderer's real pixel output size
-    // (not window points), so the emulator image is sized for the high-DPI backbuffer.
-    void update_target_from_output();
     // Create the CRT fragment shader and its GPU render state. No-op (returns
     // false) when the GPU renderer is not in use. Safe to call once at init.
     bool init_crt_shader();
@@ -136,6 +133,9 @@ public:
     ~video_system_t();
     void set_window_title(const char *title);
     void window_resize(const SDL_Event &event);
+    // Recompute the target rect from the renderer's real pixel output size
+    // (not window points), so the emulator image is sized for the high-DPI backbuffer.
+    void update_target_from_output();
     void toggle_fullscreen();
     void set_window_fullscreen(display_fullscreen_mode_t mode);
     display_fullscreen_mode_t get_window_fullscreen();

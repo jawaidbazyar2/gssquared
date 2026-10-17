@@ -1059,6 +1059,9 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     // The system selector renders through a LETTERBOX logical presentation; the
     // emulator draws in real output pixels, so clear it before emulation starts.
     SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+    // Resizes during select/edit never reach video_system_t, so its target rect
+    // may be stale. Must run after LETTERBOX is disabled to read real output pixels.
+    vs->update_target_from_output();
 
     // Emulation manages its own timing, so turn off vsync.
     // On the web, frame_sleep holds the guest frame and gs2_web_lock_raf()

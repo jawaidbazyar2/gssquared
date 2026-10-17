@@ -2086,6 +2086,7 @@ inline void brk_cop(cpu_state *cpu, uint16_t vector) {
         }
         cpu->pc = read_word_bank0(cpu,vector);
     }
+    TRACE(cpu->trace_entry.operand = sign ; cpu->trace_entry.f_op_sz = 1; )
     //cpu->EFFI = cpu->I;
 }
 

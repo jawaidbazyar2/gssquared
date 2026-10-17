@@ -484,6 +484,7 @@ void emit_insn_mnemonic_operand(line_buffer &buffer, const trace_column_layout &
         case REL_S_Y:
         case ABS_IND_LONG:
         case IMM_S:
+        case IMM_INT:
             snprintf(snpbuf, sizeof(snpbuf), am->format, operand);
             buffer.put(snpbuf);
             break;
