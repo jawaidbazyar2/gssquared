@@ -40,9 +40,9 @@ public:
     uint8_t read(uint8_t offset);
     void write(uint8_t offset, uint8_t data);
     
-    // Generate audio samples. sys_volume is the $C03C nibble (0..15). It only
-    // attenuates the mix (~2 dB/step, 15 = no cut, 0 = mute). Default 6 is a
-    // cold AudioSystem.
+    // Generate audio samples. The oscillator sum is averaged over N+2 DAC slots,
+    // sys_volume ($C03C, 0..15) only cuts that, then a fixed +36 dB makeup is
+    // applied. Default 6 is a cold AudioSystem.
     void generate_samples(int16_t *buffer, int num_samples, uint8_t sys_volume = 6);
     
     // Set callbacks

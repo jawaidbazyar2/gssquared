@@ -24,6 +24,12 @@ static constexpr int32_t k_sys_atten_q8[16] = {
     1283, 1019, 809, 643, 511, 406, 322, 256
 };
 
+// Analog gain after the DOC attenuator. One averaged slot at system volume 6
+// would otherwise sit at −18 dBFS; 64× (+36 dB) brings a $3C voice on the
+// highest oscillator of a 4-oscillator frame to about 0 dBFS. Applied in the
+// same int64 product as the slot divide so the remainder is not thrown away first.
+static constexpr int32_t k_doc_makeup = 64;
+
 //==============================================================================
 // ES5503 Implementation
 //==============================================================================
@@ -259,10 +265,14 @@ void ES5503::generate_samples(int16_t *buffer, int num_samples, uint8_t sys_volu
         }
     }
 
-    // Attenuate the oscillator sum by the system-volume step: step 15 is gain 1,
-    // lower steps are cuts, 0 is mute. There is no fixed /8 and no boost. The
-    // gain glides toward the step with a one-pole lag (m_vol_slew_ms) so a
-    // sub-ms nibble blip barely moves it. Clamp only after the cut.
+    // The DAC walks N enabled oscillators plus 2 extra slots per frame, and the
+    // analog filter averages those slots. The last oscillator was already added
+    // three times (it occupies the two extra slots). System volume only cuts,
+    // gliding toward the step (m_vol_slew_ms). Makeup is the amplifier after
+    // that. One product, then one divide:
+    //   (sum * volume_q16 * makeup) / (slots * 65536)
+    // int64 holds it: the largest sum (~1.1e6) times 65536 times 64 is ~4e12.
+    const int32_t slots = m_oscsenabled + 2;
     const int32_t atten = k_sys_atten_q8[sys_volume & 15];
     const float target = (atten == 0) ? 0.0f : 256.0f / (float)atten;
     if (m_vol_gain < 0.0f) m_vol_gain = target;
@@ -275,9 +285,11 @@ void ES5503::generate_samples(int16_t *buffer, int num_samples, uint8_t sys_volu
     int32_t *mixp = &m_mix_buffer[0];
     for (int s = 0; s < num_samples; s++) {
         g += alpha * (target - g);
+        const int32_t vol_q16 = (int32_t)(g * 65536.0f);
+        const int64_t denom = (int64_t)slots << 16;
         for (int c = 0; c < m_output_channels; c++) {
             const int32_t mixed = *mixp++;
-            int32_t sample = (int32_t)((float)mixed * g);
+            int32_t sample = (int32_t)(((int64_t)mixed * vol_q16 * k_doc_makeup) / denom);
             const int32_t am = mixed < 0 ? -mixed : mixed;
             const int32_t as = sample < 0 ? -sample : sample;
             if (am > probe_peak_mix) probe_peak_mix = am;
