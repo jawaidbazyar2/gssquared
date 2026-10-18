@@ -79,6 +79,20 @@ static void ensoniq_flush_sdl_staging(ensoniq_state_t *st) {
 
     const int queued_now = SDL_GetAudioStreamQueued(st->stream);
 
+    // During a macOS window resize the host queue stops draining while the
+    // tracking timer keeps generating a frame of DOC audio. The ±0.5% trim
+    // below cannot absorb a full extra frame every tick, so the queue grows
+    // for the whole drag and playback stays late after the mouse is released.
+    // Once the host is already holding ~100ms, drop this frame. Oscillator
+    // state was already advanced in catch-up. Same idea as the speaker
+    // MAX_QUEUE skip.
+    const int cap_bytes = (int)((uint64_t)dst_rate * (uint32_t)ch * sizeof(int16_t) * 100 / 1000);
+    if (cap_bytes > 0 && queued_now > cap_bytes) {
+        st->sdl_staging_count = 0;
+        st->resample_pos = 0.0;
+        return;
+    }
+
     // Keep ~60ms queued. The device callback pulls a whole buffer at once (e.g.
     // 1024 frames); if the queue dips below that, the callback pads with silence,
     // which is an audible dropout. Prefill on (re)start, then trim the resample
