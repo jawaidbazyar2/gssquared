@@ -418,10 +418,17 @@ void generate_ensoniq_frame(ensoniq_state_t *st) {
 
 DebugFormatter * debug_ensoniq(ensoniq_state_t *st) {
     DebugFormatter *df = new DebugFormatter();
-    df->addLine("Control: %02X Address: %04X", st->soundctl, (st->soundadrh << 8) | st->soundadrl);
-    //df->addLine("  Sound Data: %02X", st->sounddata);
     ES5503 *chip = st->chip;
-    df->addLine("E0: %02X   E1: %02X   E2: %02X", chip->get_rege0(), chip->get_rege1(), 0  /* , chip->get_adc_callback() */ );
+
+    df->addLine("Control: %02X Address: %04X  E0: %02X   E1: %02X", 
+        st->soundctl, 
+        (st->soundadrh << 8) | st->soundadrl,
+        chip->get_rege0(), 
+        chip->get_rege1()
+    );
+    //df->addLine("  Sound Data: %02X", st->sounddata);
+    //df->addLine("E0: %02X   E1: %02X   E2: %02X", chip->get_rege0(), chip->get_rege1(), 0  /* , chip->get_adc_callback() */ );
+    df->addLine("  Queue: %d", SDL_GetAudioStreamQueued(st->stream));
 
     uint32_t es5503_output_rate = st->chip->calculate_output_rate();
     df->addLine("OutRate: %u Hz  OSCs: %d", es5503_output_rate, chip->get_oscsenabled());
