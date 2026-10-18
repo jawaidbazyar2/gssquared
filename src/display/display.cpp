@@ -15,6 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cmath>
 #include <SDL3/SDL.h>
 
 #include "SDL3/SDL_render.h"
@@ -32,6 +33,9 @@
 #include "display/filters.hpp"
 
 #include "videosystem.hpp"
+#include "display/NtscGpu.hpp"
+#include "display/GsCompositeGpu.hpp"
+#include "display/PhosphorPersist.hpp"
 #include "devices/displaypp/CharRom.hpp"
 #include "devices/displaypp/VideoScanGenerator.hpp"
 #include "devices/displaypp/VideoScanGenerator_Intf.hpp"
@@ -78,16 +82,35 @@ bool update_display_apple2_cycle(display_state_t *ds) {
 
     // TODO: This stuff takes basically no time, but it might make more sense to encap this in a helper routine somewhere else
 
-    switch (vs->display_color_engine) {
+    // Mono renderers write white; the monitor tint is a color multiply on the texture.
+    RGBA_t tint = RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF);
+    NtscGpu *ntsc_gpu = ds->frame_ntsc ? vs->get_ntsc_gpu() : nullptr;
+    GsCompositeGpu *gs_gpu = (ds->frame_ntsc && ds->is_iigs) ? vs->get_gscomposite_gpu() : nullptr;
+    bool gpu_decode = false;
+    bool gs_decode = false;
+    display_color_engine_t engine = vs->display_color_engine;
+    // Without the IIgs encoder pass, GS Composite is plain Composite.
+    if (engine == DM_ENGINE_GSCOMPOSITE && !gs_gpu) engine = DM_ENGINE_NTSC;
+    switch (engine) {
         case DM_ENGINE_MONO:
+            tint = vs->get_mono_color();
+            if (gs_gpu) {
+                ds->vsg = ds->vsgr;
+                gs_decode = true;
+                break;
+            }
             ds->vsg = ds->vsgc;
-            ds->mon_mono.set_mono_color(vs->get_mono_color());
-            ds->vsg->set_render(&ds->mon_mono);
+            gpu_decode = ntsc_gpu != nullptr;
+            ds->vsg->set_render(gpu_decode ? (Render *)&ds->mon_packed : &ds->mon_mono);
+            break;
+        case DM_ENGINE_GSCOMPOSITE:
+            ds->vsg = ds->vsgr;
+            gs_decode = true;
             break;
         case DM_ENGINE_NTSC:
             ds->vsg = ds->vsgc;
-            ds->mon_mono.set_mono_color(RGBA_t::make(0xFF, 0xFF, 0xFF, 0xFF)); // white
-            ds->vsg->set_render(&ds->mon_ntsc);
+            gpu_decode = ntsc_gpu != nullptr;
+            ds->vsg->set_render(gpu_decode ? (Render *)&ds->mon_packed : &ds->mon_ntsc);
             break;
         case DM_ENGINE_RGB:
             ds->vsg = ds->vsgr;
@@ -96,9 +119,36 @@ bool update_display_apple2_cycle(display_state_t *ds) {
             assert(false && "Invalid display color engine");
     }
 
-    ds->frame_vsg->open();
-    ds->vsg->generate_frame(scanbuf);
-    ds->frame_vsg->close();
+    ds->vsgr->set_composite_encode(gs_decode);
+
+    SDL_Texture *frame_tex;
+    if (gs_decode) {
+        ds->frame_vsg->open();
+        ds->vsg->generate_frame(scanbuf);
+        ds->frame_vsg->close();
+        gs_gpu->decode(ds->frame_vsg->get_texture(), ds->vsgr->get_line_info(), ds->frame_ntsc,
+                       engine == DM_ENGINE_MONO);
+        frame_tex = ds->frame_ntsc;
+    } else if (gpu_decode) {
+        ds->vsg->generate_frame(scanbuf);
+        uint32_t shift = ds->mon_ntsc.get_shift_enabled() ? 7 : 0;
+        ntsc_gpu->decode(*ds->vsgc->get_frame_bits(), ds->frame_ntsc, shift,
+                         vs->display_color_engine == DM_ENGINE_MONO);
+        frame_tex = ds->frame_ntsc;
+    } else {
+        ds->frame_vsg->open();
+        ds->vsg->generate_frame(scanbuf);
+        ds->frame_vsg->close();
+        frame_tex = ds->frame_vsg->get_texture();
+    }
+
+    if (ds->persist) {
+        if (engine == DM_ENGINE_MONO && (gs_decode || gpu_decode) && vs->mono_persistence_enabled) {
+            frame_tex = ds->persist->apply(ds->frame_ntsc, vs->get_mono_persistence());
+        } else {
+            ds->persist->invalidate();
+        }
+    }
 
     SDL_FRect ii_frame_src;
     ii_frame_src = content_rec_vsg2[ds->video_scanner_type][(ds->new_video & 0x80) ? 1 : 0];
@@ -118,8 +168,8 @@ bool update_display_apple2_cycle(display_state_t *ds) {
     const SDL_FRect &content_inset =
         (ds->new_video & 0x80) ? shr_content_inset : ii_content_inset;
 
-    ds->video_system->render_frame(ds->frame_vsg->get_texture(), &ii_frame_src, nullptr, true,
-        &content_inset);
+    SDL_SetTextureColorMod(frame_tex, tint.r, tint.g, tint.b);
+    ds->video_system->render_frame(frame_tex, &ii_frame_src, nullptr, true, &content_inset);
 
     return true;
 }
@@ -300,6 +350,11 @@ display_state_t::display_state_t() {
 }
 
 display_state_t::~display_state_t() {
+    if (persist) {
+        persist->shutdown();
+        delete persist;
+    }
+    if (frame_ntsc) SDL_DestroyTexture(frame_ntsc);
     delete vsg;
     delete video_scanner;
     delete char_rom;
@@ -309,6 +364,14 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
     SDL_Keymod mod = event.key.mod;
     SDL_Keycode key = event.key.key;
    
+    if ((mod & SDL_KMOD_ALT) && (mod & SDL_KMOD_SHIFT) && (key == SDLK_KP_PLUS || key == SDLK_KP_MINUS)) {
+        config.gsShrPhase += (key == SDLK_KP_PLUS) ? 1.0f / 32.0f : -1.0f / 32.0f;
+        config.gsShrPhase -= std::floor(config.gsShrPhase + 0.5f);  // keep in [-0.5, 0.5)
+        static char msgbuf[128];
+        snprintf(msgbuf, sizeof(msgbuf), "GS Composite SHR phase: %+.2f deg", config.gsShrPhase * 360.0f);
+        ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
+        return true;
+    }
     if ( (mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT)) && (key == SDLK_KP_PLUS || key == SDLK_KP_MINUS)) {
         printf("key: %x, mod: %x\n", key, mod);
         if (mod & SDL_KMOD_ALT) { // ALT == hue (windows key on my mac)
@@ -321,7 +384,7 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
             if (config.videoSaturation < 0.0f) config.videoSaturation = 0.0f;
             if (config.videoSaturation > 2.0f) config.videoSaturation = 2.0f;
         }
-        init_hgr_LUT();
+        ntsc_config_changed();
         static char msgbuf[256];
         snprintf(msgbuf, sizeof(msgbuf), "Hue set to: %f, Saturation to: %f\n", config.videoHue, config.videoSaturation);
         ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, msgbuf));
@@ -329,7 +392,7 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
     }
     if ((mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT)) && key == SDLK_KP_MULTIPLY) {
         config.heldDots = !config.heldDots;
-        init_hgr_LUT();
+        ntsc_config_changed();
         ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
             config.heldDots ? "NTSC: held-dot model" : "NTSC: point-sample model (legacy)"));
         return true;
@@ -337,7 +400,7 @@ bool handle_display_event(display_state_t *ds, const SDL_Event &event) {
     if ((mod & (SDL_KMOD_ALT | SDL_KMOD_SHIFT)) && key == SDLK_KP_DIVIDE) {
         config.lumaTrap = !config.lumaTrap;
         generate_filters(NUM_TAPS);
-        init_hgr_LUT();
+        ntsc_config_changed();
         ds->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0,
             config.lumaTrap ? "NTSC: chroma trap, luma 3.5 / I 2.0 / Q 1.3 MHz"
                             : "NTSC: classic filter, luma 2.0 / I 1.3 / Q 0.6 MHz"));
@@ -871,11 +934,41 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         ds->vsg = ds->vsgc;
     }
 
+    // Only the IIe has the 80-column half-cycle shift. II / II Plus have no 80 columns,
+    // and the IIgs generates legacy modes without the offset.
+    if (ds->video_scanner_type == Scanner_AppleII
+        || computer->platform->id == PLATFORM_APPLE_IIE_65816
+        || platform_is_iigs(computer->platform->id)) {
+        ds->vsgc->set_display_shift(false);
+        ds->vsgr->set_display_shift(false);
+        ds->mon_mono.set_shift_enabled(false);
+        ds->mon_ntsc.set_shift_enabled(false);
+    }
+
     ds->char_rom = charrom;
  
     // LINEAR gets us appropriately blurred pixels, NEAREST gets us sharp pixels, PIXELART is sharper pixels that are more accurate
     // linear/pixelart are set in vs->render_frame.
     SDL_SetTextureBlendMode(ds->frame_vsg->get_texture(), SDL_BLENDMODE_NONE);
+
+    ds->is_iigs = platform_is_iigs(computer->platform->id);
+    vs->gscomposite_allowed = ds->is_iigs;
+
+    // Apple II composite decodes FrameBits (IIgs borders draw black); IIgs GS Composite
+    // and Monochrome encode and decode the RGB frame.
+    if (vs->get_ntsc_gpu() || (ds->is_iigs && vs->get_gscomposite_gpu())) {
+        ds->frame_ntsc = SDL_CreateTexture(vs->renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, 910, 263);
+        if (ds->frame_ntsc) {
+            SDL_SetTextureBlendMode(ds->frame_ntsc, SDL_BLENDMODE_NONE);
+            ds->persist = new PhosphorPersist();
+            if (!ds->persist->init(vs->renderer)) {
+                delete ds->persist;
+                ds->persist = nullptr;
+            }
+        } else {
+            printf("NTSC shader: frame texture creation failed (%s); using CPU decoder\n", SDL_GetError());
+        }
+    }
 
     // set in CPU so we can reference later
     computer->set_module_state(MODULE_DISPLAY, ds);
@@ -1013,10 +1106,6 @@ void init_mb_device_display_common(computer_t *computer, SlotType_t slot, bool c
         mmu->set_C0XX_write_handler(0xC022, { display_write_C022, ds });
         mmu->set_C0XX_read_handler(0xC034, { display_read_C034, ds });
         mmu->set_C0XX_write_handler(0xC034, { display_write_C034, ds });
-        ds->vsg->set_display_shift(false); // no shift in Apple IIgs mode.
-        ds->mon_mono.set_shift_enabled(false);
-        ds->mon_ntsc.set_shift_enabled(false);
-        //ds->mon_rgb.set_shift_enabled(false);
         
         // Set default video scanner colors for Apple IIgs. (F, 6, 6)
         set_tbcolor(ds, 0xF0);

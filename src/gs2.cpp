@@ -1059,6 +1059,9 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     // The system selector renders through a LETTERBOX logical presentation; the
     // emulator draws in real output pixels, so clear it before emulation starts.
     SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+    // Resizes during select/edit never reach video_system_t, so its target rect
+    // may be stale. Must run after LETTERBOX is disabled to read real output pixels.
+    vs->update_target_from_output();
 
     // Emulation manages its own timing, so turn off vsync.
     // On the web, frame_sleep holds the guest frame and gs2_web_lock_raf()
@@ -1993,10 +1996,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     // elsewhere; without this, scripted launches (no TTY) would ignore --debug / -p / etc.
     if (gs2_app_values.console_mode || argc > 1) {
         // parse command line options
-        enum { OPT_NO_QUIT_CONFIRM = 1000 };
+        enum { OPT_NO_QUIT_CONFIRM = 1000, OPT_NTSC_CPU };
         static struct option long_options[] = {
             {"debug", required_argument, nullptr, 'D'},
             {"no-quit-confirm", no_argument, nullptr, OPT_NO_QUIT_CONFIRM},
+            {"ntsc-cpu", no_argument, nullptr, OPT_NTSC_CPU},
             {nullptr, 0, nullptr, 0}
         };
         while ((opt = getopt_long(argc, argv, "sxgp:d:D:", long_options, nullptr)) != -1) {
@@ -2038,8 +2042,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                 case OPT_NO_QUIT_CONFIRM:
                     gs2_app_values.no_quit_confirm = true;
                     break;
+                case OPT_NTSC_CPU:
+                    gs2_app_values.ntsc_cpu = true;
+                    break;
                 default:
-                    std::cerr << "Usage: " << argv[0] << " [file.gs2|file.gs2pack|*Settings.txt|gssquared:https://…/name.gs2pack] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm]\n";
+                    std::cerr << "Usage: " << argv[0] << " [file.gs2|file.gs2pack|*Settings.txt|gssquared:https://…/name.gs2pack] [-p platform] [-dsXdY=filename] [-s] [-g] [--debug PATH] [--no-quit-confirm] [--ntsc-cpu]\n";
                     std::cerr << "  file.gs2|*Settings.txt: load system configuration from a .gs2 TOML file\n";
                     std::cerr << "  file.gs2pack: extract a machine and its disks, then launch machine.gs2\n";
                     std::cerr << "        or Neil Profiles Settings.txt file, skip the system-selector UI,\n";
@@ -2064,6 +2071,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
                     std::cerr << "        Unix-domain socket PATH (see Docs/DebugProtocol.md).\n";
                     std::cerr << "  --no-quit-confirm: skip QuitModal / dirty-disk prompts on\n";
                     std::cerr << "        SDL_EVENT_QUIT (useful for tests that SIGTERM/kill the process).\n";
+                    std::cerr << "  --ntsc-cpu: decode composite/monochrome video on the CPU instead\n";
+                    std::cerr << "        of the GPU NTSC shader (for A/B comparison and bug reports).\n";
                     return SDL_APP_FAILURE;
             }
         }
@@ -2491,6 +2500,29 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         if (system_id == SELECT_OPEN_EDIT) {
             state->select_system->clear_selection();
             open_system_config_dialog(state, true);
+            return SDL_APP_CONTINUE;
+        }
+        if (system_id >= SELECT_EDIT_RECENT_BASE) {
+            const std::string path = state->select_system->get_recent_path(system_id);
+            state->select_system->clear_selection();
+            if (path.empty()) {
+                return SDL_APP_CONTINUE;
+            }
+            if (gs2pack::is_pack_path(path)) {
+                std::string diag = "A .gs2pack launches a machine. Use Launch Config to open it.";
+                std::cerr << diag << "\n";
+                system_diag(diag.data());
+                return SDL_APP_CONTINUE;
+            }
+            std::string error;
+            if (!apply_system_config_file(state, path, error)) {
+                std::string diag = "Failed to load system config '" + path + "':\n" + error;
+                std::cerr << diag << "\n";
+                system_diag(diag.data());
+                return SDL_APP_CONTINUE;
+            }
+            transition_to_edit_system(state);
+            state->edit_system->start_from_config(*state->loaded_config);
             return SDL_APP_CONTINUE;
         }
         if (system_id >= SELECT_RECENT_BASE) {

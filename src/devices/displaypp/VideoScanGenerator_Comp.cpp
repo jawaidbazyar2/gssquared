@@ -14,7 +14,7 @@
 
 VideoScanGenerator_Comp::VideoScanGenerator_Comp(CharRom *charrom, bool border_enabled, FrameVSG *frame_vsg)
 {
-    build_hires40Font(true);
+    build_patterns(true);
     this->char_rom = charrom;
     //this->border_enabled = border_enabled;
 
@@ -41,24 +41,51 @@ VideoScanGenerator_Comp::VideoScanGenerator_Comp(CharRom *charrom, bool border_e
 
     mono_mode = false;
 
-    frame_byte = new Frame560(560, 263);
-    frame_vsg->set_line(0);
-    frame_byte->set_line(0);
+    frame_bits = new FrameBits();
+    frame_bits->clear();
+    select_line(0);
 }
 
-void VideoScanGenerator_Comp::build_hires40Font(bool delayEnabled) 
+void VideoScanGenerator_Comp::build_patterns(bool delayEnabled)
 {
+    for (uint32_t c = 0; c < 128; c++) {
+        uint16_t p = 0;
+        for (uint32_t n = 0; n < 7; n++) {
+            if ((c >> n) & 1) p |= 0b11 << (n * 2);
+        }
+        dbl7[c] = p;
+    }
+
+    // lores dot rotation starts at (hcount * 14) % 4, which is 0 or 2.
+    for (uint32_t nib = 0; nib < 16; nib++) {
+        for (uint32_t odd = 0; odd < 2; odd++) {
+            uint32_t off = odd ? 2 : 0;
+            uint16_t p14 = 0, p7m = 0, p7 = 0;
+            for (uint32_t i = 0; i < 14; i++) {
+                if ((nib >> ((off + i) & 3)) & 1) p14 |= 1 << i;
+            }
+            for (uint32_t i = 0; i < 7; i++) {
+                if ((nib >> ((off + i) & 3)) & 1) {
+                    p7m |= 0b11 << (i * 2);
+                    p7 |= 1 << i;
+                }
+            }
+            lores14[nib][odd] = p14;
+            lores7m[nib][odd] = p7m;
+            lo7[nib][odd] = p7;
+        }
+    }
+
     for (int i = 0; i < 2 * CHAR_NUM; i++)
     {
         uint8_t value = (i & 0x7f) << 1 | (i >> 8);
         bool delay = delayEnabled && (i & 0x80);
-        
-        for (int x = 0; x < CHAR_WIDTH; x++)
+        uint16_t p = 0;
+        for (int x = 0; x < CELL_WIDTH; x++)
         {
-            bool bit = (value >> ((x + 2 - delay) >> 1)) & 0x1;
-            
-            hires40Font[i * CHAR_WIDTH + x] = bit ? 1 : 0;
+            if ((value >> ((x + 2 - delay) >> 1)) & 0x1) p |= 1 << x;
         }
+        hires14[i] = p;
     }
 }
 
@@ -116,19 +143,22 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                 //frame_vsg->advance(scanner_freq); // advance by scanner_freq pixels
                 break;
             case VM_VSYNC:  // end of frame
+                    flush_line();
                     vcount = 0;
                     beam_v = 0;
                     beam_h = 0;
-                    frame_byte->set_line_v(vcount);
+                    select_line(vcount);
                     sawdata = false;
                     fcnt=0;
                     break;
 
             case VM_HSYNC: {
+                    flush_line();
                     lastByte = 0x00; // for hires
                     hcount = 0; if (sawdata) vcount++;
                     beam_h = 0; beam_v++;
-                    frame_byte->set_line(vcount);
+                    select_line(vcount);
+                    if (cur) frame_bits->clear_line(vcount);
                     modeChecks = true;
 
                     // from MAME
@@ -209,7 +239,7 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     if (hcount == 0) {
                         color_mode_t cmode = color_mode;
                         cmode.phase_offset = 0;
-                        frame_byte->set_color_mode(vcount, cmode);
+                        start_line(cmode);
                     }
                     
                     //char_rom->set_char_set(scan.flags & VS_FL_ALTCHARSET ? 1 : 0);
@@ -227,12 +257,7 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     uint8_t cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
                     cdata ^= invert;
 
-                    for (int n = 0; n < 7; n++) { // it's ok compiler will unroll this
-                        frame_byte->push_n((cdata & 1), 2);
-                        /* frame_byte->push((cdata & 1) ? tc : td); 
-                        frame_byte->push((cdata & 1) ? tc : td);  */
-                        cdata>>=1;
-                    }
+                    emit14(dbl7[cdata & 0x7F]);
                 }
                 hcount++;
                 break;
@@ -243,7 +268,7 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     if (hcount == 0) {
                         color_mode_t cmode = color_mode;
                         cmode.phase_offset = 1;
-                        frame_byte->set_color_mode(vcount, cmode);
+                        start_line(cmode);
                     }
                     uint8_t invert;
 
@@ -258,12 +283,7 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                         invert = 0x00;
                     }
                     cdata ^= invert;
-                    /* uint8_t tc = (scan.shr_bytes & 0xF0) | 1;
-                    uint8_t td = (scan.shr_bytes & 0x0F) << 4; */
-
-                    for (int n = 0; n < 7; n++) {
-                        frame_byte->push((cdata & 1)); cdata>>=1;
-                    }
+                    uint32_t aux7 = cdata & 0x7F;
 
                     tchar = scan.mainbyte;
                     cdata = char_rom->get_char_scanline(tchar, vcount & 0b111);
@@ -273,11 +293,7 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                         invert = 0x00;
                     }
                     cdata ^= invert;
-                    /* tc = (scan.shr_bytes & 0xF0) | 1;
-                    td = (scan.shr_bytes & 0x0F) << 4; */
-                    for (int n = 0; n < 7; n++) {
-                        frame_byte->push((cdata & 1)); cdata>>=1;
-                    }
+                    emit14(aux7 | (uint32_t)(cdata & 0x7F) << 7);
                 }
                 hcount++;
                 break;
@@ -287,22 +303,14 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
 
                     if (hcount == 0) {
                         color_mode_t cmode = {1,0, 0};
-                        frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
+                        start_line(cmode);
                     }
                     uint8_t tchar = scan.mainbyte;
                     
                     if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
                         tchar = tchar >> 4;
                     }
-                    uint32_t pixeloff = (hcount * 14) % 4;
-    
-                    for (size_t bits = 0; bits < CELL_WIDTH/2; bits++) {
-                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
-                        frame_byte->push_n(bit, 2);
-                        /* frame_byte->push(bit);
-                        frame_byte->push(bit); */
-                        pixeloff = (pixeloff + 1) % 4;
-                    }
+                    emit14(lores7m[tchar & 0x0F][hcount & 1]);
                 }
                 hcount++;
                 break;
@@ -312,20 +320,14 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
 
                     if (hcount == 0) {
                         color_mode_t cmode = {1,0, 0};
-                        frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
+                        start_line(cmode);
                     }
                     uint8_t tchar = scan.mainbyte;
                     
                     if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
                         tchar = tchar >> 4;
                     }
-                    uint32_t pixeloff = (hcount * 14) % 4;
-    
-                    for (size_t bits = 0; bits < CELL_WIDTH; bits++) {
-                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
-                        frame_byte->push(bit);
-                        pixeloff = (pixeloff + 1) % 4;
-                    }
+                    emit14(lores14[tchar & 0x0F][hcount & 1]);
                 }
                 hcount++;
                 break;
@@ -335,35 +337,19 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
 
                     if (hcount == 0) {
                         color_mode_t cmode = {1,0, 1};
-                        frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
+                        start_line(cmode);
                     }
                 
-                    uint8_t tchar = scan.auxbyte;
+                    uint8_t auxc = scan.auxbyte;
+                    uint8_t mainc = scan.mainbyte;
 
                     if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
-                        tchar = tchar >> 4;
+                        auxc >>= 4;
+                        mainc >>= 4;
                     }
-                    uint32_t pixeloff = (hcount * 14) % 4;
-    
-                    for (size_t bits = 0; bits < 7; bits++) {
-                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
-                        frame_byte->push(bit);
-                        pixeloff = (pixeloff + 1) % 4;
-                    }
-
-                    tchar = scan.mainbyte;
-                    
-                    if (vcount & 4) { // if we're in the second half of the scanline, shift the byte right 4 bits to get the other nibble
-                        tchar = tchar >> 4;
-                    }
-                    // this is correct.
-                    pixeloff = (hcount * 14) % 4;
-    
-                    for (size_t bits = 0; bits < 7; bits++) {
-                        uint8_t bit = ((tchar >> pixeloff) & 0x01);
-                        frame_byte->push(bit);
-                        pixeloff = (pixeloff + 1) % 4;
-                    }        
+                    // both halves start at the same rotation.
+                    uint32_t odd = hcount & 1;
+                    emit14(lo7[auxc & 0x0F][odd] | (uint32_t)lo7[mainc & 0x0F][odd] << 7);
                 }
                 hcount++;
                 break;
@@ -376,14 +362,10 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     scanner_freq = 14;
                     if (hcount == 0) {
                         color_mode_t cmode = {1,0, 0};
-                        frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
+                        start_line(cmode);
                     }
                     uint8_t byte = scan.mainbyte & color_delay_mask;
-                    size_t fontIndex = (byte | ((lastByte & 0x40) << 2)) * CHAR_WIDTH; // bit 6 from last byte selects 2nd half of font
-            
-                    for (size_t i = 0; i < 14; i++) {
-                        frame_byte->push(hires40Font[fontIndex + i]);
-                    }
+                    emit14(hires14[byte | ((lastByte & 0x40) << 2)]); // bit 6 from last byte selects 2nd half of table
                     lastByte = byte;
                 }
                 color_delay_mask = 0xFF;
@@ -398,20 +380,9 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                         color_mode_t cmode = {1,0, 1};
                         // TODO: this is where we insert colorburst off to implement the IIgs monochrome modes.
                         if (dhgr_mono_mode) cmode.colorburst = 0; // this is sufficient for NTSC. but rgb.. 
-                        frame_byte->set_color_mode(vcount, cmode); // COLORBURST_ON);
+                        start_line(cmode);
                     }
-                    //uint8_t oncolor = (dhgr_mono_mode) ? 0xF1 : 1; // 0xF0 is mono mode - with no colorburst we have to provide the color...
-                        
-                    uint8_t byteM = scan.mainbyte;
-                    uint8_t byteA = scan.auxbyte;
-                    for (size_t i = 0; i < 7; i++ ) {
-                        frame_byte->push((byteA & 0x01) /* ? oncolor : 0 */);
-                        byteA >>= 1;
-                    }
-                    for (size_t i = 0; i < 7; i++ ) {
-                        frame_byte->push((byteM & 0x01) /* ? oncolor : 0 */);
-                        byteM >>= 1;
-                    }
+                    emit14((scan.auxbyte & 0x7F) | (uint32_t)(scan.mainbyte & 0x7F) << 7);
                 }
                 hcount++;
                 break;
@@ -423,7 +394,7 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
     // TODO: insert here call to the selected renderer.
     // save our hloc/scanline.
     // call renderer
-    render->render(frame_byte, frame_vsg);
+    render->render(*frame_bits, frame_vsg);
     // restore hloc/scanline.
 }
 

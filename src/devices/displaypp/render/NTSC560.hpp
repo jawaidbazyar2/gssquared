@@ -1,10 +1,10 @@
 #pragma once
 
+#include <cstring>
+
 #include "Render.hpp"
 #include "display/ntsc.hpp"
 #include "display/filters.hpp"
-
-/** Generate a 'frame' (i.e., a group of 8 scanlines) of video output data using the lookup table.  */
 
 extern RGBA_t g_hgr_LUT[4][(1 << ((NUM_TAPS * 2) + 1))];
 
@@ -18,62 +18,48 @@ public:
     };
     ~NTSC560() {};
 
-    // Reads and writes rows through local __restrict pointers instead of Frame::push/pull:
-    // uint8_t and the RGBA_t union may alias anything, which otherwise forces the compiler
-    // to reload and store Frame::row / Frame::hloc on every pixel.
-    virtual void render(Frame560 *frame_byte, FrameVSG *frame_rgba) override {
-        constexpr uint32_t TOP_BIT = 1u << (NUM_TAPS * 2);
-        const uint32_t framewidth = frame_byte->width();
-        const uint32_t body_end = framewidth - NUM_TAPS; // last x with a lookahead bit available
-        const RGBA_t mono = mono_color;
+    virtual void render_lines(const FrameBits &bits, RGBA_t *base, uint32_t pitch_pixels) override {
+        constexpr uint32_t WINDOW_MASK = (1u << (NUM_TAPS * 2 + 1)) - 1;
+        constexpr uint32_t DATA_DOTS = 560;
+        const uint32_t width = region_width();
+        uint32_t buf[22];
+        ensure_hgr_LUT();
 
-        for (uint32_t y = 0; y < 192; y++)
-        {
-            color_mode_t color_mode = frame_byte->get_color_mode(y);
-            uint32_t phase_offset = color_mode.phase_offset;
-            const uint8_t * __restrict in = frame_byte->line(y);
-            RGBA_t * __restrict out = frame_rgba->line(y + 35) + (168 - 7 * shift_enabled);
+        for (uint32_t y = 0; y < FrameBits::LINES; y++) {
+            load_line(bits, y, buf);
+            RGBA_t * __restrict out = base + (size_t)(y + 35) * pitch_pixels + region_x();
 
-            if (phase_offset == 0 && shift_enabled) {
-                for (int i = 0; i < 7; i++) *out++ = black;
+            if (bits.colorburst(y) == 0) {
+                expand_mono(buf, out, width);
+                continue;
             }
-            if (color_mode.colorburst == 0) {
-                for (uint32_t x = 0; x < framewidth; x++) {
-                    out[x] = in[x] ? mono : black;
-                }
-            } else {
-                // for x = 0, we need bits preloaded with the first NUM_TAPS+1 bits in 
-                // 16-8, and 0's in 0-7.
-                // if num_taps = 6, 
-                // 11111 1X000000
-                uint32_t bits = 0;
-                for (uint32_t i = 0; i < NUM_TAPS; i++) {
-                    bits = (bits >> 1) | (in[i] ? TOP_BIT : 0);
-                }
 
-                const RGBA_t *lut0 = g_hgr_LUT[(phase_offset + 0) & 3];
-                const RGBA_t *lut1 = g_hgr_LUT[(phase_offset + 1) & 3];
-                const RGBA_t *lut2 = g_hgr_LUT[(phase_offset + 2) & 3];
-                const RGBA_t *lut3 = g_hgr_LUT[(phase_offset + 3) & 3];
-                const uint8_t * __restrict ahead = in + NUM_TAPS;
+            const uint32_t line_start = bits.line_start(y);
+            const uint32_t phase_offset = bits.phase_offset(y);
+            const uint32_t data_end = line_start + DATA_DOTS;
 
-                uint32_t x = 0;
-                for (; x + 4 <= body_end; x += 4) {
-                    bits = (bits >> 1) | (ahead[x + 0] ? TOP_BIT : 0); out[x + 0] = lut0[bits];
-                    bits = (bits >> 1) | (ahead[x + 1] ? TOP_BIT : 0); out[x + 1] = lut1[bits];
-                    bits = (bits >> 1) | (ahead[x + 2] ? TOP_BIT : 0); out[x + 2] = lut2[bits];
-                    bits = (bits >> 1) | (ahead[x + 3] ? TOP_BIT : 0); out[x + 3] = lut3[bits];
-                }
-                const RGBA_t *luts[4] = { lut0, lut1, lut2, lut3 };
-                for (; x < framewidth; x++) {
-                    // at end of line insert 0s
-                    bits = (bits >> 1) | ((x < body_end && ahead[x]) ? TOP_BIT : 0);
-                    out[x] = luts[x & 3][bits];
-                }
-            }
-            out += framewidth;
-            if (phase_offset == 1 && shift_enabled) {
-                for (int i = 0; i < 7; i++) *out++ = black;
+            for (uint32_t c = 0; c < line_start; c++) out[c] = black;
+            for (uint32_t c = data_end; c < width; c++) out[c] = black;
+
+            const RGBA_t * __restrict lut0 = g_hgr_LUT[(phase_offset + 0) & 3];
+            const RGBA_t * __restrict lut1 = g_hgr_LUT[(phase_offset + 1) & 3];
+            const RGBA_t * __restrict lut2 = g_hgr_LUT[(phase_offset + 2) & 3];
+            const RGBA_t * __restrict lut3 = g_hgr_LUT[(phase_offset + 3) & 3];
+
+            // Window bit k is dot c - NUM_TAPS + k. buf[1] holds dot 0, so dot d is bit d + 32 of buf.
+            const uint8_t *bytes = reinterpret_cast<const uint8_t *>(buf);
+            auto window = [bytes](uint32_t c) -> uint32_t {
+                uint32_t pos = c + 32 - NUM_TAPS;
+                uint64_t v;
+                std::memcpy(&v, bytes + (pos >> 3), sizeof(v));
+                return (uint32_t)(v >> (pos & 7)) & WINDOW_MASK;
+            };
+
+            for (uint32_t c = line_start; c < data_end; c += 4) {
+                out[c + 0] = lut0[window(c + 0)];
+                out[c + 1] = lut1[window(c + 1)];
+                out[c + 2] = lut2[window(c + 2)];
+                out[c + 3] = lut3[window(c + 3)];
             }
         }
     }

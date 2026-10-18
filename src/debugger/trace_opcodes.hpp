@@ -31,6 +31,7 @@ enum address_mode {
     ABS_IND_LONG = 23, // 65816
     IMM_S = 24, // 65816
     MOVE = 25, // 65816
+    IMM_INT = 26, // 65816
 };
 
 #define CPU_6502 0x0001

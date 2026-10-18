@@ -19,6 +19,13 @@
 
 class VideoScanGenerator_RGB : public VideoScanGeneratorIntf
 {
+public:
+    // Per beam line, for the GS Composite encoder pass.
+    struct LineInfo {
+        uint8_t burst;    // colorburst on (graphics line and MONOCOLOR off)
+        uint8_t clock16;  // 16 dots per 1 MHz cycle (SHR) instead of 14
+    };
+
 private:
 
     CharRom *char_rom = nullptr;
@@ -30,6 +37,10 @@ private:
 
     bool dhgr_mono_mode = false;
     bool mono_mode = false;
+    // GS Composite: MONOCOLOR turns colorburst off instead of pre-graying the RGB output.
+    bool composite_encode = false;
+    LineInfo line_info[FrameVSG::max_height()] = {};
+    bool line_burst = true;   // colorburst of the line being generated (last known until its first data scan)
     /* bool dump_next_frame = false; */
 
     SHRMode mode = { .p = 0 }; 
@@ -82,8 +93,18 @@ private:
     void emit_hires_pixels(uint16_t shift);
     void render_hires_mono();
     void build_mono_lut(RGBA_t *ct, RGBA_t *mt);
+    inline bool pregray() const { return mono_mode && !composite_encode; }
+    inline RGBA_t palette_rgb(SHRColor c) const {
+        return pregray() ? convert24bitColorToMono(convert12bitTo24bit(c)) : convert12bitTo24bit(c);
+    }
+    inline void record_line() {
+        if (beam_v < FrameVSG::max_height()) {
+            line_info[beam_v] = { (uint8_t)(line_burst && !mono_mode), (uint8_t)(scanner_freq == 16) };
+        }
+    }
     inline void update_mono_lut() { 
-        if (mono_mode) {
+        for (int i = 0; i < 16; i++) palette.active[i] = palette_rgb(palette.colors[i]);
+        if (pregray()) {
             for (int i = 0; i < 16; i++) {
                 txt_lut[i] = txt_mono_lut[i];
                 hgr_lut[i] = hgr_mono_lut[i];
@@ -105,6 +126,10 @@ public:
     virtual bool get_dhgr_mono_mode() const { return dhgr_mono_mode; }
     virtual void set_mono_mode(bool mono) { mono_mode = mono; update_mono_lut();}
     virtual bool get_mono_mode() const { return mono_mode; }
+    void set_composite_encode(bool on) {
+        if (on != composite_encode) { composite_encode = on; update_mono_lut(); }
+    }
+    const LineInfo *get_line_info() const { return line_info; }
     virtual void set_char_set(uint16_t char_set) { this->char_set = char_set; }
     /* void saveScanBufferToFile(ScanBuffer *frame_scan, const char *filename);*/
     virtual void setDumpNextFrame(bool dump) { dump_next_frame = dump; }

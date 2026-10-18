@@ -18,6 +18,8 @@
 #define SELECT_OPEN_LAUNCH -5
 /** recent tile ids are SELECT_RECENT_BASE + index into recent_paths_ */
 #define SELECT_RECENT_BASE 1000
+/** edit-that-recent-tile ids are SELECT_EDIT_RECENT_BASE + the same index */
+#define SELECT_EDIT_RECENT_BASE 2000
 
 class SelectSystem {
 protected:
@@ -92,7 +94,7 @@ public:
 
     UIContext& ui_context() { return ui_ctx; }
 
-    /** Path for a recent-tile selection id (SELECT_RECENT_BASE + i). */
+    /** Path for a recent-tile id (SELECT_RECENT_BASE or SELECT_EDIT_RECENT_BASE + i). */
     const std::string& get_recent_path(int selection_id) const;
 
     /** Reset selection back to pending (after consuming NEW / OPEN_LAUNCH / OPEN_EDIT). */

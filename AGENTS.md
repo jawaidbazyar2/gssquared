@@ -34,6 +34,17 @@ cmake --build build --parallel
 cmake --install build
 ```
 
+#### Shaders (macOS / Metal)
+
+`assets/shaders/ntsc.frag.hlsl` and `assets/shaders/gscomposite.frag.hlsl` are SDL3-convention HLSL. After editing one, regenerate and commit the matching `.frag.metal`:
+
+```
+brew install glslang spirv-cross   # once
+scripts/compile_shaders_macos.sh   # default: ntsc gscomposite
+```
+
+The script compiles HLSL → SPIR-V (glslang) → MSL (spirv-cross), then compile-checks with `xcrun metal` when Xcode's Metal Toolchain is installed (`xcodebuild -downloadComponent MetalToolchain`). DXIL/SPIR-V for `ntsc` and `gscomposite` are not built yet. `crt.frag.metal` is hand-maintained; do not regenerate it with this script.
+
 ### Windows (MSYS2 / MinGW64)
 
 Windows development uses **MSYS2** with the MinGW64 toolchain (not a native PowerShell/`cmd` environment).

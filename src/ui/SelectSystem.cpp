@@ -18,6 +18,22 @@
 #include <fstream>
 #include <iostream>
 
+namespace {
+
+/** Right-click, or left-click with Cmd (GUI) or Alt, opens the profile editor. */
+bool tile_edit_gesture(const SDL_Event& event) {
+    if (event.button.button == SDL_BUTTON_RIGHT) {
+        return true;
+    }
+    if (event.button.button != SDL_BUTTON_LEFT) {
+        return false;
+    }
+    const SDL_Keymod mods = SDL_GetModState();
+    return (mods & (SDL_KMOD_GUI | SDL_KMOD_ALT)) != 0;
+}
+
+}  // namespace
+
 SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
     : vs(vs), aa(aa) {
 
@@ -150,6 +166,10 @@ SelectSystem::SelectSystem(video_system_t *vs, AssetAtlas_t *aa)
         button->position_content(CP_CENTER, CP_CENTER);
         button->style.background_color = platform->case_color;
         button->on_click([this, recent_index](const SDL_Event& event) -> bool {
+            if (tile_edit_gesture(event)) {
+                selected_system = SELECT_EDIT_RECENT_BASE + recent_index;
+                return true;
+            }
             if (event.button.button != SDL_BUTTON_LEFT) return false;
             selected_system = SELECT_RECENT_BASE + recent_index;
             return true;
@@ -277,7 +297,12 @@ int SelectSystem::get_selected_system() {
 
 const std::string& SelectSystem::get_recent_path(int selection_id) const {
     static const std::string empty;
-    const int index = selection_id - SELECT_RECENT_BASE;
+    int index = -1;
+    if (selection_id >= SELECT_EDIT_RECENT_BASE) {
+        index = selection_id - SELECT_EDIT_RECENT_BASE;
+    } else if (selection_id >= SELECT_RECENT_BASE) {
+        index = selection_id - SELECT_RECENT_BASE;
+    }
     if (index < 0 || index >= static_cast<int>(recent_paths_.size())) {
         return empty;
     }

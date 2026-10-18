@@ -187,3 +187,37 @@ Alternatively, can we just construct this from the softswitches? That requires i
 
 [ ] when we hit a breakpoint, make a beepy sound. This should be easy to do with a soundeffect.  
 
+# Some notes from Matt's MCP interface:
+
+Mine has these:
+Advancing time step (cycles — fast = 1 CPU cycle, rtl = one 14M tick, ×14)
+step_inst (instructions via SYNC),
+resume (to breakpoint),
+
+* I like these below because it's a one-step for the AI instead of: set breakpoint, resume, clear breakpoint.
+
+and three run-until forms: 
+  until_pc, 
+  until_write, and 
+  run_until — the semantic one, taking exactly one of pc / write_addr / text, where text matches the merged 80-col display. Fast backend only.
+
+Debugger
+
+regs, 
+peek/poke (banks main/aux/rom1/rom2/romv), 
+disasm, 
+
+break_set/break_clear/break_list,
+step_over, 
+step_out. 
+
+Plus the forensics: watch_changed (break on whoever writes a bad byte), 
+mem_diff (snapshot then report what changed), 
+mem_profile (per-byte coverage — what an app never touches), 
+trace_window (deduped trail), 
+trace_capture (every cycle, to file), 
+softswitch_trail ($C000-$C07F accesses).
+
+
+From this I like the trace capture - along with "start trace after X and run Y instructions and save to file automatically".
+the mem_diff is cool. we'd need to let it do a range.

@@ -549,6 +549,7 @@ int main(int argc, char **argv) {
                     case SDLK_N:
                         render_mode = 2;
                         vsgc->set_render(&ntsc_render);
+                        SDL_SetTextureColorMod(fr_vsg->get_texture(), 0xFF, 0xFF, 0xFF);
                         break;
                     
                     case SDLK_M:
@@ -558,12 +559,13 @@ int main(int argc, char **argv) {
                         } else {
                             render_mode = 1;
                             vsgc->set_render(&monochrome);
-                            monochrome.set_mono_color(RGBA_t::make(0x00, 0xFF, 0x00, 0xFF));
+                            SDL_SetTextureColorMod(fr_vsg->get_texture(), 0x00, 0xFF, 0x00);
                         }
                         break;
                     
                     case SDLK_R:
                         render_mode = 3;
+                        SDL_SetTextureColorMod(fr_vsg->get_texture(), 0xFF, 0xFF, 0xFF);
                         break;
 
                     case SDLK_A:

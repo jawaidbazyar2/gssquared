@@ -44,12 +44,13 @@ const address_mode_entry address_mode_formats[] = {
     { "[$%04X]", 3},       // ABS_IND_LONG
     { "$%04X", 3},       // IMM_S
     { "$%02X,$%02X", 3},       // MOVE
+    { "$%02X", 2},       // IMM_INT
 };
 
 const disasm_entry disasm_table[256] = { 
-    { "BRK", IMP, MIN_6502 },  /* 00 */
+    { "BRK", IMM_INT, MIN_6502 },  /* 00 */
     { "ORA", INDEX_INDIR, MIN_6502 }, /* 01 */
-    { "COP",  IMP, MIN_65816 }, /* 02 */
+    { "COP",  IMM_INT, MIN_65816 }, /* 02 */
     { "ORA",  REL_S, MIN_65816 }, /* 03 */
     { "TSB",  ZP, MIN_65C02 }, /* 04 */
     { "ORA", ZP, MIN_6502 }, /* 05 */
@@ -113,7 +114,7 @@ const disasm_entry disasm_table[256] = {
     { "AND", ABSL_X, MIN_65816 }, /* 3f */
     { "RTI", IMP, MIN_6502 }, /* 40 */
     { "EOR", INDEX_INDIR, MIN_6502 }, /* 41 */
-    { "WDM",  IMP, MIN_65816 }, /* 42 */
+    { "WDM",  IMM_INT, MIN_65816 }, /* 42 */
     { "EOR",  REL_S, MIN_65816 }, /* 43 */
     { "MVP",  MOVE, MIN_65816 }, /* 44 */
     { "EOR", ZP, MIN_6502 }, /* 45 */

@@ -40,6 +40,7 @@ static HMENU g_joyportSelectMenu = NULL;
 static HMENU g_appleKeysMenu = NULL;
 static HMENU g_monitorMenu    = NULL;
 static HMENU g_hudMenu        = NULL;
+static HMENU g_scalingMenu    = NULL;
 static HMENU g_displayPopup   = NULL;
 static HMENU g_helpPopup      = NULL;
 static std::vector<storage_key_t> g_driveKeys;
@@ -239,6 +240,19 @@ static void updatePopupState(HMENU popup)
         return;
     }
 
+    // ── Scaling ──────────────────────────────────────────────────────────────
+    if (popup == g_scalingMenu) {
+        bool sharp = mi->getScalingSharp();
+        int n = GetMenuItemCount(g_scalingMenu);
+        for (int i = 0; i < n; ++i) {
+            UINT id = getItemId(g_scalingMenu, i);
+            setItemCheck(g_scalingMenu, i,
+                         (id == static_cast<UINT>(MENU_DISPLAY_SCALE_SHARP)) == sharp);
+            setItemEnable(g_scalingMenu, i, running);
+        }
+        return;
+    }
+
     // ── HUD ──────────────────────────────────────────────────────────────────
     if (popup == g_hudMenu) {
         bool stats_on  = mi->getHudStats();
@@ -300,10 +314,13 @@ static void updatePopupState(HMENU popup)
             } else if (id == static_cast<UINT>(MENU_DISPLAY_CRT_SHADER)) {
                 setItemCheck(g_displayPopup, i, mi->getCrtShader());
                 setItemEnable(g_displayPopup, i, running && mi->getCrtShaderAvailable());
+            } else if (id == static_cast<UINT>(MENU_DISPLAY_PERSISTENCE)) {
+                setItemCheck(g_displayPopup, i, mi->getMonoPersistence());
+                setItemEnable(g_displayPopup, i, running && mi->getMonoPersistenceAvailable());
             } else if (id == static_cast<UINT>(MENU_DISPLAY_FULLSCREEN)) {
                 setItemEnable(g_displayPopup, i, running);
             } else {
-                // Monitor / HUD submenu parents
+                // Monitor / Scaling / HUD submenu parents
                 setItemEnable(g_displayPopup, i, running);
             }
         }
@@ -373,6 +390,7 @@ static void dispatchCommand(UINT id)
     // Monitor
     case MENU_MONITOR_COMPOSITE:  mi->setMonitor(MONITOR_COMPOSITE);  return;
     case MENU_MONITOR_GS_RGB:     mi->setMonitor(MONITOR_GS_RGB);     return;
+    case MENU_MONITOR_GS_COMPOSITE: mi->setMonitor(MONITOR_GS_COMPOSITE); return;
     case MENU_MONITOR_MONO_GREEN: mi->setMonitor(MONITOR_MONO_GREEN); return;
     case MENU_MONITOR_MONO_AMBER: mi->setMonitor(MONITOR_MONO_AMBER); return;
     case MENU_MONITOR_MONO_WHITE: mi->setMonitor(MONITOR_MONO_WHITE); return;
@@ -383,6 +401,9 @@ static void dispatchCommand(UINT id)
     case MENU_HUD_DRIVES:         mi->toggleHudDrives();   return;
     case MENU_DISPLAY_SS_TEXT:    mi->toggleSsTextMode();  return;
     case MENU_DISPLAY_CRT_SHADER: mi->toggleCrtShader();   return;
+    case MENU_DISPLAY_PERSISTENCE:  mi->toggleMonoPersistence(); return;
+    case MENU_DISPLAY_SCALE_SMOOTH: mi->setScaling(false);       return;
+    case MENU_DISPLAY_SCALE_SHARP:  mi->setScaling(true);        return;
 
     // Edit / File
     case MENU_EDIT_COPY_SCREEN:      mi->editCopyScreen();      return;
@@ -595,14 +616,21 @@ static void setupMenus()
     g_displayPopup = CreatePopupMenu();
     g_monitorMenu  = CreatePopupMenu();
     g_hudMenu      = CreatePopupMenu();
+    g_scalingMenu  = CreatePopupMenu();
 
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_COMPOSITE,  L"Composite");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_GS_RGB,     L"GS RGB");
+    AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_GS_COMPOSITE, L"GS Composite");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_MONO_GREEN, L"Monochrome - Green");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_MONO_AMBER, L"Monochrome - Amber");
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_MONO_WHITE, L"Monochrome - White");
     AppendMenuW(g_displayPopup, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_monitorMenu), L"Monitor");
+
+    AppendMenuW(g_scalingMenu, MF_STRING, MENU_DISPLAY_SCALE_SMOOTH, L"Smooth\tF5");
+    AppendMenuW(g_scalingMenu, MF_STRING, MENU_DISPLAY_SCALE_SHARP,  L"Sharp\tF5");
+    AppendMenuW(g_displayPopup, MF_STRING | MF_POPUP,
+                reinterpret_cast<UINT_PTR>(g_scalingMenu), L"Scaling");
 
     AppendMenuW(g_hudMenu, MF_STRING, MENU_HUD_STATS,  L"Stats");
     AppendMenuW(g_hudMenu, MF_STRING, MENU_HUD_DRIVES, L"Drives");
@@ -611,7 +639,8 @@ static void setupMenus()
 
     AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_FULLSCREEN, L"Full Screen");
     AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_SS_TEXT, L"Second Sight Text");
-    AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_CRT_SHADER, L"CRT Shader");
+    AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_CRT_SHADER, L"Shadow Mask");
+    AppendMenuW(g_displayPopup, MF_STRING, MENU_DISPLAY_PERSISTENCE, L"Phosphor Persistence");
     AppendMenuW(g_menuBar, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_displayPopup), L"Display");
 

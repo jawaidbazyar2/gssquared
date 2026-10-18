@@ -543,6 +543,10 @@ add_library(gs2_ntsc
     src/display/OEVector.cpp
     src/display/filters.cpp
     src/display/shaders/GpuShaderLoader.cpp
+    src/display/shaders/GpuFragmentPass.cpp
+    src/display/NtscGpu.cpp
+    src/display/GsCompositeGpu.cpp
+    src/display/PhosphorPersist.cpp
 )
 
 target_link_libraries(gs2_displaypp PUBLIC gs2_ntsc)
@@ -788,6 +792,7 @@ if(NOT EMSCRIPTEN)
 
     #add_subdirectory(apps/dpp)
     add_subdirectory(apps/vpp)
+    add_subdirectory(apps/vsgtest)
 
     add_subdirectory(apps/iieromcsum)
 

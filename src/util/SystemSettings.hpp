@@ -45,6 +45,10 @@ class SystemSettings {
     int joyport_select_ = 1;
     /** When true and Apple II is in full-screen TEXT, Second Sight renders A2 text via VGA text. */
     bool ss_text_mode_ = false;
+    /** GPU monochrome phosphor persistence. */
+    bool mono_persistence_ = true;
+    /** Display scaling: false = smooth (linear), true = sharp (pixel art). */
+    bool scaling_sharp_ = false;
 
     /** Last .gs2 open/save selection (full file path when known). */
     std::string last_config_path_;
@@ -107,12 +111,16 @@ public:
     bool disconnected_when_no_gamepad() const { return disconnected_when_no_gamepad_; }
     int joyport_select() const { return joyport_select_; }
     bool ss_text_mode() const { return ss_text_mode_; }
+    bool mono_persistence() const { return mono_persistence_; }
+    bool scaling_sharp() const { return scaling_sharp_; }
 
     void set_hud_stats(bool enabled);
     void set_hud_drives(bool enabled);
     void set_disconnected_when_no_gamepad(bool enabled);
     void set_joyport_select(int select);
     void set_ss_text_mode(bool enabled);
+    void set_mono_persistence(bool enabled);
+    void set_scaling_sharp(bool sharp);
 
     void toggle_hud_stats();
     void toggle_hud_drives();

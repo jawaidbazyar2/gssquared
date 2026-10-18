@@ -10762,7 +10762,7 @@ Outstanding bugs:
 
 Features pending:
 [X] .woz file support
-[ ] Multi-volume Hard Drive
+[X] Multi-volume Hard Drive
 [ ] ImageWriter printer
 
 User Interface stuff:
@@ -12732,7 +12732,7 @@ it's coming together!!
 [X] it wants to run at exactly 60fps. may not be a way around that.
 [X] but when we close and re-open an emulation, it wants to run 75. So there is a thing we're missing here on a re-start.
 [X] When running an emu, the menu is at the very top of window where it belongs. but in SelectSystem it's right next to the content area, and, the mouse is offset. So something needs to be tweaked there (or more likely, untweaked).
-[ ] check menu on linux. gs2.cpp
+[X] check menu on linux. gs2.cpp
 [ ] preferences storage: IDBFS in /prefs
 [ ] Document feature limitations for web build
 
@@ -12746,4 +12746,38 @@ I'd *like* to test and validate:
 
 Things that are strictly web bugs can wait, since we can instantly push web updates out.
 
+
+## Oct 8, 2026
+
+whee!! Making some what turn out to be easy display optimizations, as part of preparing for shader-rendered NTSC.
+
+First is using bit-packed field instead of byte. This reduces memory I/O. Another is including the bit field as a member of VSG, and not via a pointer, which enables all the bitpack stuff to be fully inlined. This is super efficient, I think. Having the agent look at the assembly has been a turning point in optimization.
+
+This is going to wreck the debug single-step stuff but that was all broken anyway. So we'll redo all this, then circle back to debugger later.
+
+Got the ntsc shader in. This is **bananas**. display_time is down to 95uS with CRT shader, or 85 uS without. the CRT shader only taking 10uS is also bananas. 
+
+Hm, so how to think about the monitor controls. We've got:
+
+* Hue
+* Saturation
+* H/V size/pos
+* CRT shadow mask (we'll have 2-3 types ultimately...)
+* Barrel
+* Chroma / Luma bandwidth
+
+## Oct 9, 2026
+
+doing some thinking about how to properly handle the GS 14/16MHz pixel clock shifts. This is in "NTSC pipeline performance optimizations". The short version is, it thinks it's best to do the scaling/mixing in CPU, that there is no benefit to moving the raw data to the GPU and then having the GPU do it. Probably correct.
+
+The short version of this recent work, is that the Composite and the GS RGB pipelines are diverging even more. And this is ok, because at this point figuring out what colors pixels are supposed to be isn't the hard part. 
+
+## Oct 17, 2026
+
+Implemented a GS Composite mode that takes the RGB output and converts it to NTSC. I think the bandwidths may be a little off as maybe the NTSC 3.58MHz beats might be a little too strong, but the desktop looks super close to real GS on AppleColor IIe! The beats might be on regular ntsc also, so this bears some further investigation. (They both look amazing on retina tho)
+
+Testing a "fix" for "screensaver never kicks in" report.
+[X] Screen should idle when System Select is on
+[X] Screen should idle when Emulation is running but window is not the focus
+[X] Screen should -not- idle when emulation running and window is focus.
 
