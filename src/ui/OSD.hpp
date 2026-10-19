@@ -159,13 +159,7 @@ protected:
         {SPEED_14_3, MHz14_318Button},
     }; */
 
-    Style_t ModalStyle = {
-        .background_color = 0xFFFFFFFF,
-        .border_color = 0xFF0000FF,
-        .padding = 3,
-        .border_width = 5,
-        .text_color = 0x000000FF,
-    };
+    Style_t ModalStyle = dialog_panel_style();
     
 public:
     /**

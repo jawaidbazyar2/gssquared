@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include "Container.hpp"
 #include "UIContext.hpp"
@@ -24,6 +25,16 @@
 #include <stack>
 
 struct modal_stack;
+
+/** Dark slate card used by every modal. Callers cannot override it. */
+Style_t dialog_panel_style();
+/** Ocean-blue confirm / launch / save / download. */
+Style_t dialog_primary_button();
+/** Quieter cancel, dismiss, discard, and list rows. */
+Style_t dialog_secondary_button();
+
+/** Dimmer body copy on the dialog (filenames, detail lines). */
+constexpr uint32_t kDialogDetailColor = 0xB7C9D6FF;
 
 class ModalContainer_t : public Container_t {
 protected:

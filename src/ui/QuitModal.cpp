@@ -14,16 +14,8 @@ QuitModal_t::QuitModal_t(UIContext *ctx, const char* msg_text, const Style_t& in
     set_position((window_w - 500) / 2, (window_h - 200) / 2);
     size(500, 200);
 
-    // Create text buttons for the disk save dialog
-    Style_t TextButtonCfg;
-    TextButtonCfg.background_color = 0xE0E0FFFF;
-    TextButtonCfg.text_color = 0x000000FF;
-    TextButtonCfg.border_width = 1;
-    TextButtonCfg.border_color = 0x000000FF;
-    TextButtonCfg.padding = 2;
-    
-    yes_btn = new Button_t(ctx, "Yes", TextButtonCfg);
-    no_btn = new Button_t(ctx, "No", TextButtonCfg);
+    yes_btn = new Button_t(ctx, "Yes", dialog_primary_button());
+    no_btn = new Button_t(ctx, "No", dialog_secondary_button());
     
     yes_btn->size(100, 30);
     no_btn->size(100, 30);

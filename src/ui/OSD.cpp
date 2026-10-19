@@ -939,13 +939,6 @@ void OSD::render() {
             text_render->render(VERSION_STRING, version_x, version_y, TEXT_ALIGN_LEFT);
         }
 
-        if (!mstack.stack.empty()) {
-            mstack.stack.top()->render();
-        }
-/*         if (activeModal) {
-            activeModal->render();
-        } */
-
         SDL_SetRenderTarget(renderer, nullptr);
 
         // now render the cpTexture into window

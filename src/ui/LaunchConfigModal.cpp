@@ -14,15 +14,8 @@ LaunchConfigModal_t::LaunchConfigModal_t(UIContext *ctx, const char* msg_text, c
     set_position((window_w - 500) / 2, (window_h - 200) / 2);
     size(500, 200);
 
-    Style_t TextButtonCfg;
-    TextButtonCfg.background_color = 0xE0E0FFFF;
-    TextButtonCfg.text_color = 0x000000FF;
-    TextButtonCfg.border_width = 1;
-    TextButtonCfg.border_color = 0x000000FF;
-    TextButtonCfg.padding = 2;
-
-    launch_btn = new Button_t(ctx, "Launch", TextButtonCfg);
-    cancel_btn = new Button_t(ctx, "Cancel", TextButtonCfg);
+    launch_btn = new Button_t(ctx, "Launch", dialog_primary_button());
+    cancel_btn = new Button_t(ctx, "Cancel", dialog_secondary_button());
 
     launch_btn->size(100, 30);
     cancel_btn->size(100, 30);

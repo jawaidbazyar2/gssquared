@@ -20,14 +20,82 @@
 #include "UIContext.hpp"
 #include "util/StorageDevice.hpp"
 
-ModalContainer_t::ModalContainer_t(UIContext *ctx, const char* msg_text, const Style_t& initial_style, modal_stack &stack)
-    : Container_t(ctx, initial_style), stack(stack) {
+namespace {
+
+constexpr uint32_t kAccentColor = 0x2E86ABFF;
+constexpr float kAccentHeight = 4.f;
+constexpr float kShadowOffset = 6.f;
+constexpr uint32_t kShadowColor = 0x00000066;
+constexpr uint32_t kScrimColor = 0x00000099;
+
+void viewport_size(UIContext *ctx, int &width, int &height) {
+    width = 0;
+    height = 0;
+    SDL_RendererLogicalPresentation mode = SDL_LOGICAL_PRESENTATION_DISABLED;
+    if (ctx != nullptr && ctx->renderer != nullptr) {
+        SDL_GetRenderLogicalPresentation(ctx->renderer, &width, &height, &mode);
+    }
+    if ((width <= 0 || height <= 0) && ctx != nullptr && ctx->window != nullptr) {
+        SDL_GetWindowSize(ctx->window, &width, &height);
+    }
+    if (width <= 0) {
+        width = 800;
+    }
+    if (height <= 0) {
+        height = 600;
+    }
+}
+
+void set_text_color(TextRenderer *tr, uint32_t rgba) {
+    if (tr == nullptr) {
+        return;
+    }
+    tr->set_color((rgba >> 24) & 0xFF, (rgba >> 16) & 0xFF, (rgba >> 8) & 0xFF, rgba & 0xFF);
+}
+
+}  // namespace
+
+Style_t dialog_panel_style() {
+    return Style_t{
+        .background_color = 0x1A2332FF,
+        .border_color = 0x7EB8D8FF,
+        .hover_color = 0x1A2332FF,
+        .padding = 3,
+        .border_width = 1,
+        .text_color = 0xF4F7FAFF,
+    };
+}
+
+Style_t dialog_primary_button() {
+    return Style_t{
+        .background_color = 0x2E86ABFF,
+        .border_color = 0xF0F7FAFF,
+        .hover_color = 0x3D9BC4FF,
+        .padding = 2,
+        .border_width = 1,
+        .text_color = 0xFFFFFFFF,
+    };
+}
+
+Style_t dialog_secondary_button() {
+    return Style_t{
+        .background_color = 0x243044FF,
+        .border_color = 0x5A7084FF,
+        .hover_color = 0x314258FF,
+        .padding = 2,
+        .border_width = 1,
+        .text_color = 0xE8EEF2FF,
+    };
+}
+
+ModalContainer_t::ModalContainer_t(UIContext *ctx, const char* msg_text, const Style_t&, modal_stack &stack)
+    : Container_t(ctx, dialog_panel_style()), stack(stack) {
         if (msg_text == nullptr) msg_text = "";
         this->msg_text = std::string(msg_text);
 }
 
 ModalContainer_t::ModalContainer_t(UIContext *ctx, const char* msg_text, modal_stack &stack)
-    : Container_t(ctx, Style_t()), msg_text(msg_text), stack(stack) {
+    : Container_t(ctx, dialog_panel_style()), stack(stack) {
         if (msg_text == nullptr) msg_text = "";
         this->msg_text = std::string(msg_text);
 }
@@ -35,42 +103,61 @@ ModalContainer_t::ModalContainer_t(UIContext *ctx, const char* msg_text, modal_s
 void ModalContainer_t::layout() {
     if (!visible || tiles.empty()) return;
 
-    // TODO: actually add up the widths of the tiles (don't assume/set them);
-    // and iterate based on each actual tile width
-
-    // Center buttons in the container
-    // Calculate total width of all tiles and gaps
-    float buttons_width = (tiles.size() * 90.0f) + ((tiles.size() - 1) * 10.0f);
-    // Center the starting position
-    float buttons_x = (tp.w - buttons_width) / 2;
-    float buttons_y = 100.0f;
-    printf("x: %f y: %f w: %f h: %f\n", tp.x, tp.y, tp.w, tp.h);
-    printf("buttons_x: %f buttons_y: %f buttons_width: %f\n", buttons_x, buttons_y, buttons_width);
-    for (size_t i = 0; i < tiles.size(); i++) {
-        if (tiles[i] && tiles[i]->is_visible()) {
-            tiles[i]->set_position(tp.x + buttons_x, tp.y + buttons_y);
-            tiles[i]->size(90.0f, 20.0f);  // Set each tile to 100 width, 20 height
-            buttons_x += 100.0f;  // Add some spacing between tiles
-            printf("tile %zu: %f %f\n", i, tp.x+buttons_x, tp.y+buttons_y);
+    const float gap = 16.f;
+    float total = 0.f;
+    int visible_count = 0;
+    for (Tile_t *tile : tiles) {
+        if (tile == nullptr || !tile->is_visible()) {
+            continue;
         }
+        float tile_w = 0.f;
+        float tile_h = 0.f;
+        tile->get_tile_size(&tile_w, &tile_h);
+        (void)tile_h;
+        total += tile_w;
+        ++visible_count;
+    }
+    if (visible_count > 1) {
+        total += gap * static_cast<float>(visible_count - 1);
+    }
+    float x = tp.x + (tp.w - total) / 2.f;
+    const float y = tp.y + tp.h - 56.f;
+    for (Tile_t *tile : tiles) {
+        if (tile == nullptr || !tile->is_visible()) {
+            continue;
+        }
+        float tile_w = 0.f;
+        float tile_h = 0.f;
+        tile->get_tile_size(&tile_w, &tile_h);
+        (void)tile_h;
+        tile->set_position(x, y);
+        x += tile_w + gap;
     }
 }
 
 void ModalContainer_t::render() {
-    //if (!visible) return;
-    // Call the parent class's render method to handle background, border, etc.
+    if (!visible || ctx == nullptr || ctx->renderer == nullptr) return;
+
+    SDL_BlendMode previous = SDL_BLENDMODE_NONE;
+    SDL_GetRenderDrawBlendMode(ctx->renderer, &previous);
+    SDL_SetRenderDrawBlendMode(ctx->renderer, SDL_BLENDMODE_BLEND);
+
+    int width = 0;
+    int height = 0;
+    viewport_size(ctx, width, height);
+    ctx->fill_rect({0.f, 0.f, static_cast<float>(width), static_cast<float>(height)}, kScrimColor);
+    ctx->fill_rect({tp.x + kShadowOffset, tp.y + kShadowOffset, tp.w, tp.h}, kShadowColor);
+
     Container_t::render();
 
-    // Draw the message text
-    if (!msg_text.empty()) {
-        // For now, we'll just print the message to console
-        // TODO: Implement proper text rendering
-        //printf("Modal Message: %s\n", msg_text.c_str());
-        float content_x = (tp.w - strlen(msg_text.c_str()) * SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE) / 2;
-        //printf("content_x: %f X: %f Y: %f %s %08X\n", content_x, x, y, msg_text.c_str(), style.text_color);
-        ctx->text_render->set_color(style.text_color >> 24, style.text_color >> 16, style.text_color >> 8, style.text_color & 0xFF);
-        ctx->text_render->render(msg_text, tp.x + (tp.w / 2), tp.y + 30, TEXT_ALIGN_CENTER );
+    ctx->fill_rect({tp.x + 1.f, tp.y + 1.f, tp.w - 2.f, kAccentHeight}, kAccentColor);
+
+    if (!msg_text.empty() && ctx->text_render != nullptr) {
+        set_text_color(ctx->text_render, style.text_color);
+        ctx->text_render->render(msg_text, tp.x + (tp.w / 2), tp.y + 30, TEXT_ALIGN_CENTER);
     }
+
+    SDL_SetRenderDrawBlendMode(ctx->renderer, previous);
 }
 
 void ModalContainer_t::set_key(storage_key_t key) {

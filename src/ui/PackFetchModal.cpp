@@ -29,26 +29,6 @@
 
 namespace {
 
-Style_t button_style() {
-    Style_t style;
-    style.background_color = 0xE0E0FFFF;
-    style.text_color = 0x000000FF;
-    style.border_width = 1;
-    style.border_color = 0x000000FF;
-    style.padding = 2;
-    return style;
-}
-
-Style_t panel_style() {
-    Style_t style;
-    style.background_color = 0xFFFFFFFF;
-    style.border_color = 0xFF0000FF;
-    style.padding = 3;
-    style.border_width = 5;
-    style.text_color = 0x000000FF;
-    return style;
-}
-
 std::string fit_line(TextRenderer *tr, const std::string& text, int max_w) {
     if (text.empty() || tr == nullptr || tr->string_width(text) <= max_w) {
         return text;
@@ -83,14 +63,13 @@ int PackFetchModal_t::thread_main(void *userdata) {
 }
 
 PackFetchModal_t::PackFetchModal_t(UIContext *ctx, modal_stack& stack)
-    : ModalContainer_t(ctx, "", panel_style(), stack) {
+    : ModalContainer_t(ctx, "", dialog_panel_style(), stack) {
     if (ctx != nullptr && ctx->renderer != nullptr) {
         body_text_ = std::make_unique<TextRenderer>(ctx->renderer, "fonts/OpenSans-Regular.ttf", 15.0f);
     }
-    const Style_t style = button_style();
-    download_btn_ = new Button_t(ctx, "Download", style);
-    cancel_btn_ = new Button_t(ctx, "Cancel", style);
-    dismiss_btn_ = new Button_t(ctx, "Dismiss", style);
+    download_btn_ = new Button_t(ctx, "Download", dialog_primary_button());
+    cancel_btn_ = new Button_t(ctx, "Cancel", dialog_secondary_button());
+    dismiss_btn_ = new Button_t(ctx, "Dismiss", dialog_secondary_button());
     download_btn_->size(140, 32);
     cancel_btn_->size(120, 32);
     dismiss_btn_->size(120, 32);
@@ -222,7 +201,7 @@ void PackFetchModal_t::update() {
 }
 
 void PackFetchModal_t::render() {
-    Container_t::render();
+    ModalContainer_t::render();
     if (body_text_ == nullptr || (prompt_.empty() && detail_.empty())) {
         return;
     }
@@ -237,6 +216,8 @@ void PackFetchModal_t::render() {
         y += line_h + 8;
     }
     if (!detail_.empty()) {
+        const uint32_t c = kDialogDetailColor;
+        body_text_->set_color((c >> 24) & 0xFF, (c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF);
         body_text_->render(fit_line(body_text_.get(), detail_, max_w), cx, y, TEXT_ALIGN_CENTER);
     }
 }

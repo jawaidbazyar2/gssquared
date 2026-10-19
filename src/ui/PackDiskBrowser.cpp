@@ -73,19 +73,14 @@ PackDiskBrowser_t::PackDiskBrowser_t(UIContext *ctx, const Style_t& initial_styl
     set_position((window_w - width) / 2.f, (window_h - height) / 2.f);
     size(width, height);
 
-    Style_t button_style;
-    button_style.background_color = 0xE0E0FFFF;
-    button_style.text_color = 0x000000FF;
-    button_style.border_width = 1;
-    button_style.border_color = 0x000000FF;
-    button_style.padding = 2;
+    const Style_t row_style = dialog_secondary_button();
 
     Mounts *mounts = (osd && osd->computer) ? osd->computer->mounts : nullptr;
     for (const std::string& image : images) {
         const std::string filename = std::filesystem::path(image).filename().string();
         const std::string where = mounted_on(mounts, image);
         const std::string label = where.empty() ? filename : filename + "  (" + where + ")";
-        Button_t *button = new Button_t(ctx, label, button_style);
+        Button_t *button = new Button_t(ctx, label, row_style);
         button->size(width - 40.f, row_h);
         button->on_click([this, osd, image](const SDL_Event&) -> bool {
             gs2pack::Session *active = gs2pack::active();
@@ -113,7 +108,7 @@ PackDiskBrowser_t::PackDiskBrowser_t(UIContext *ctx, const Style_t& initial_styl
         add(button);
     }
 
-    Button_t *local_btn = new Button_t(ctx, "Open from this computer...", button_style);
+    Button_t *local_btn = new Button_t(ctx, "Open from this computer...", dialog_primary_button());
     local_btn->size(240.f, row_h);
     local_btn->on_click([this, osd](const SDL_Event&) -> bool {
         if (osd != nullptr) {
@@ -124,7 +119,7 @@ PackDiskBrowser_t::PackDiskBrowser_t(UIContext *ctx, const Style_t& initial_styl
     });
     add(local_btn);
 
-    Button_t *cancel_btn = new Button_t(ctx, "Cancel", button_style);
+    Button_t *cancel_btn = new Button_t(ctx, "Cancel", row_style);
     cancel_btn->size(100.f, row_h);
     cancel_btn->on_click([this](const SDL_Event&) -> bool {
         canceled = true;

@@ -20,18 +20,10 @@ DirtyDiskSave_t::DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Sty
     filename = std::string(slot_drive) + " " + mounts->media_status(key).filename;
     if (filename.empty()) filename = "(empty)";
     
-    // Create text buttons for the disk save dialog
-    Style_t TextButtonCfg;
-    TextButtonCfg.background_color = 0xE0E0FFFF;
-    TextButtonCfg.text_color = 0x000000FF;
-    TextButtonCfg.border_width = 1;
-    TextButtonCfg.border_color = 0x000000FF;
-    TextButtonCfg.padding = 2;
-    
-    save_btn = new Button_t(ctx, "Save", TextButtonCfg);
+    save_btn = new Button_t(ctx, "Save", dialog_primary_button());
     //save_as_btn = new Button_t(ctx, "Save As", TextButtonCfg);
-    discard_btn = new Button_t(ctx, "Discard", TextButtonCfg);
-    cancel_btn = new Button_t(ctx, "Cancel", TextButtonCfg);
+    discard_btn = new Button_t(ctx, "Discard", dialog_secondary_button());
+    cancel_btn = new Button_t(ctx, "Cancel", dialog_secondary_button());
     
     save_btn->size(100, 30);
     //save_as_btn->size(100, 30);
@@ -73,5 +65,10 @@ DirtyDiskSave_t::DirtyDiskSave_t(UIContext *ctx, const char* msg_text, const Sty
 
 void DirtyDiskSave_t::render() {
     ModalContainer_t::render();
+    if (ctx->text_render == nullptr) {
+        return;
+    }
+    const uint32_t c = kDialogDetailColor;
+    ctx->text_render->set_color((c >> 24) & 0xFF, (c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF);
     ctx->text_render->render(filename, tp.x + 250, tp.y + 65, TEXT_ALIGN_CENTER);
 }
