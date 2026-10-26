@@ -127,8 +127,10 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
 
     while (fcnt--) {
         Scan_t scan = frame_scan->pull();
+        latch_colorburst(color_mode, burstLatched, scan.flags);
         if (modeChecks && scan.mode <= VM_DHIRES) {
-            color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
+            if (!burstLatched)
+                color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
             color_mode.mixed_mode = scan.flags & VS_FL_MIXED ? 1 : 0;
             modeChecks = false;
         }
@@ -160,6 +162,7 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     select_line(vcount);
                     if (cur) frame_bits->clear_line(vcount);
                     modeChecks = true;
+                    burstLatched = false;
 
                     // from MAME
                     // the low 5 bits of the SCB determine the initial fillmode color
@@ -302,7 +305,8 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     scanner_freq = 14;
 
                     if (hcount == 0) {
-                        color_mode_t cmode = {1,0, 0};
+                        color_mode_t cmode = color_mode;
+                        cmode.phase_offset = 0;
                         start_line(cmode);
                     }
                     uint8_t tchar = scan.mainbyte;
@@ -319,7 +323,8 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     scanner_freq = 14;
 
                     if (hcount == 0) {
-                        color_mode_t cmode = {1,0, 0};
+                        color_mode_t cmode = color_mode;
+                        cmode.phase_offset = 0;
                         start_line(cmode);
                     }
                     uint8_t tchar = scan.mainbyte;
@@ -336,7 +341,8 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     scanner_freq = 14;
 
                     if (hcount == 0) {
-                        color_mode_t cmode = {1,0, 1};
+                        color_mode_t cmode = color_mode;
+                        cmode.phase_offset = 1;
                         start_line(cmode);
                     }
                 
@@ -361,7 +367,8 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     sawdata = true;
                     scanner_freq = 14;
                     if (hcount == 0) {
-                        color_mode_t cmode = {1,0, 0};
+                        color_mode_t cmode = color_mode;
+                        cmode.phase_offset = 0;
                         start_line(cmode);
                     }
                     uint8_t byte = scan.mainbyte & color_delay_mask;
@@ -377,7 +384,8 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
 
                     if (hcount == 0) {
                         // dhgr starts at horz offset 0
-                        color_mode_t cmode = {1,0, 1};
+                        color_mode_t cmode = color_mode;
+                        cmode.phase_offset = 1;
                         // TODO: this is where we insert colorburst off to implement the IIgs monochrome modes.
                         if (dhgr_mono_mode) cmode.colorburst = 0; // this is sufficient for NTSC. but rgb.. 
                         start_line(cmode);

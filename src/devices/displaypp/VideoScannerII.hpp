@@ -64,6 +64,18 @@ constexpr const char *video_mode_names[] = {
 #define VS_FL_MIXED      0x02
 #define VS_FL_80COL      0x04
 #define VS_FL_COLORBURST 0x08
+// Set on the HBL scans that fall in the color-burst window (see tag_colorburst).
+#define VS_FL_BURST_WIN  0x10
+
+// Sather IIe: picture is clocks 0-39, color burst is clocks 53-56.
+// Horz cycle 0 is Sather clock 40, so the burst is horz cycles 13-16,
+// nine to twelve cycles before the first picture byte at horz 25.
+inline void latch_colorburst(color_mode_t &cm, bool &latched, uint8_t flags) noexcept {
+    if (!(flags & VS_FL_BURST_WIN)) return;
+    if (flags & VS_FL_COLORBURST) cm.colorburst = 1;
+    else if (!latched) cm.colorburst = 0;
+    latched = true;
+}
 
 #define SA_FLAG_HBL 0x01
 #define SA_FLAG_VBL 0x02
@@ -212,6 +224,17 @@ protected:
         if (mode_q_count) {
             drain_due_mode_changes();
         }
+    }
+
+    // Mark an HBL sample when it falls in the color-burst window, and record
+    // whether graphics (not TEXT40/TEXT80) is selected on that cycle. The burst
+    // gate looks here, not at the first picture byte.
+    inline void tag_colorburst(Scan_t &scan) const {
+        const uint16_t hc = static_cast<uint16_t>(scan_index % 65);
+        if (hc < 13 || hc > 16) return;
+        scan.flags = static_cast<uint8_t>(scan.flags | VS_FL_BURST_WIN);
+        if (video_mode != VM_TEXT40 && video_mode != VM_TEXT80)
+            scan.flags = static_cast<uint8_t>(scan.flags | VS_FL_COLORBURST);
     }
 
 public:

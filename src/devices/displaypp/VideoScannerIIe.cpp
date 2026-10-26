@@ -100,6 +100,7 @@ void VideoScannerIIe::video_cycle()
         scan.mode = (uint8_t)VM_BLANK;
         scan.mainbyte = 0;
         scan.flags = mode_flags;
+        tag_colorburst(scan);
         frame_scan->push(scan);
     } else {
     //if (!(sa.flags & SA_FLAG_BLANK)) {

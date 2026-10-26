@@ -52,6 +52,7 @@ private:
 
     int palette_index = 0; // reset to 0 each scanline.
     bool modeChecks = true;
+    bool burstLatched = false; // colorburst taken from the HBL burst window, not the first picture byte
 
     FrameVSG *frame_vsg = nullptr;
     FrameBits *frame_bits = nullptr;
