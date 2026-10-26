@@ -94,11 +94,12 @@
 [X] implement shaders on Linux
 [X] Web build!
 [X] clean up HUD buttons
-[ ] Implement file type and URL associations — [ProtocolHandlers](ProtocolHandlers.md)
-[ ] Fix all known / pending bugs  
+[X] Implement file type and URL associations — [ProtocolHandlers](ProtocolHandlers.md)
+[X] Fix all known / pending bugs  
 
 ## Post-1.0
 
+[ ] Woz 2.1 Flux tracks
 [ ] Full international keyboard support for GS
 [ ] Refactor MB to use new fixed-point synth  
 [ ] Optimize / cache UI elements  

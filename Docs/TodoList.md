@@ -279,13 +279,13 @@ From [Compatibility.md](Compatibility.md) and [CompatibilityGS.md](Compatibility
 From [DevelopLog.md](DevelopLog.md), [Woz.md](Woz.md), [runloop.md](runloop.md):
 
 - [ ] Clean memory allocation on VM shutdown
-- [ ] Pull SDL init/deinit out of power on/off loop
+- [-] Pull SDL init/deinit out of power on/off loop
 - [ ] Improve debug emitters in diskii_controller / Floppy525
 - [ ] Optimize rdpulse/wrpulse (avoid recalculating bit index every call)
 - [-] 74LS259 latch registers as bools
 - [ ] `slot_rom_ptable` 16 entries for clearer loops
-- [ ] Evaluate shadow+optimized vs full-frame draw
-- [ ] Menu-hold / timer interaction causing audio slips (Mac menus)
+- [-] Evaluate shadow+optimized vs full-frame draw
+- [-] Menu-hold / timer interaction causing audio slips (Mac menus) (worked around it)
 
 ---
 
@@ -310,3 +310,70 @@ Primary docs consulted:
 | [GitHub issues](https://github.com/jawaidbazyar2/gssquared/issues) | Tracked bugs & feature requests |
 
 When closing an item, prefer also updating the source doc checkbox (and closing the GitHub issue when applicable) so this list, the feature docs, and `gh` stay aligned.
+
+# V1.x Work
+
+## V1.x Features
+
+The goal of 1.X train features is: only one major feature per release. Slow the Releases to maybe 6 or 4 per year (maybe 4) so I can reduce the time I'm spending on the emulator.
+
+Shaders Galore to move a lot of rendering into GPU:
+
+    [X] Increase resolution of ntsc rendering - switch NTSC render to shader and simulate against not 560 but say 1120 pixel positions. This ought to improve clarity and accuracy of the render, as well as performance. (this would be very hard with current LUT approach). Keep current approach as fallback if user lacks GPU. (this was ish but did produce crisper ntsc)
+
+    [X] Shader to model SHR-on-Composite based on above
+
+    [X] Switch monochrome render to shader and handle phosphor persistence on green/amber/white displays. Implemented as a single GPU history texture: each frame it is faded by a per-color factor (mono_persistence_table) and the new mono frame is max-blended in (PhosphorPersist).
+
+    [ ] SHR Shader to correctly render 14/16mhz pixel dot rate speed shifts
+
+    [ ] IIgs PAL timing mode (50Hz/60Hz switching)
+
+    [ ] Bunch of postprocessor shaders (the ones I like!)
+
+    [ ] Model unique shadow masks for Composite, RGB, and green screen
+
+[ ] ProDOS 8 host "FST".
+
+[ ] Implement the new fixed-point mockingboard AY synths
+
+[ ] Auto Updating.
+
+[ ] Get added to AppImage directory with a "correct" ubuntu 22 build.
+
+[x] if debug build display that in title bar
+
+[ ] Mockingboard Speech support
+
+[ ] AppleTini card
+
+[ ] IIgs Virtual Memory: memory protection, paging
+
+[ ] IIgs other foreign language keyboard layouts
+
+[ ] IIgs ADB - emulate the microcontroller itself
+
+[ ] Midi Support for IIe and IIgs
+
+[ ] Debug enhancements (see Debugger.md)
+
+## V1.x Bug Fixes
+
+[ ] debugger single-step video desynchronize
+
+[ ] Eliminate some Code Smells (display could use some reorg)
+
+[ ] GS MMU performance improvement by using LUTs instead of tons of IFs.
+
+[ ] correctly model colorburst change latency
+
+[ ] pass IWM test suite
+
+[ ] pass SWITCHES test suite
+
+[ ] don't drop trace files all the time
+
+## V1.x Optimizations
+
+[X] Optimization in ntsc_render so it's not calling out to a method all the time; 2X-2.6X speed improvement;
+

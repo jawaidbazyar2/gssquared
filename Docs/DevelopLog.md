@@ -12781,3 +12781,8 @@ Testing a "fix" for "screensaver never kicks in" report.
 [X] Screen should idle when Emulation is running but window is not the focus
 [X] Screen should -not- idle when emulation running and window is focus.
 
+## Oct 21, 2026
+
+doing some of the same performance work on VSG_RGB that we did on VSG_Comp.
+
+Also cleaning up composite's handling and generation of colorburst. The timing of when we detect colorburst now matches IIe.
