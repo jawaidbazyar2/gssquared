@@ -123,6 +123,7 @@ class RefComp {
     color_mode_t color_mode = {};
     uint8_t color_delay_mask = 0xFF;
     bool modeChecks = true;
+    bool burstLatched = false;
 
     Frame560 *frame_byte = nullptr;
     RefRender *render = nullptr;
@@ -168,8 +169,10 @@ public:
 
         while (fcnt--) {
             Scan_t scan = frame_scan->pull();
+            latch_colorburst(color_mode, burstLatched, scan.flags);
             if (modeChecks && scan.mode <= VM_DHIRES) {
-                color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
+                if (!burstLatched)
+                    color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
                 color_mode.mixed_mode = scan.flags & VS_FL_MIXED ? 1 : 0;
                 modeChecks = false;
             }
@@ -192,6 +195,7 @@ public:
                     hcount = 0; if (sawdata) vcount++;
                     frame_byte->set_line(vcount);
                     modeChecks = true;
+                    burstLatched = false;
                     break;
 
                 case VM_TEXT40: {
@@ -244,7 +248,8 @@ public:
                 case VM_LORES_7M: {
                         sawdata = true;
                         if (hcount == 0) {
-                            color_mode_t cmode = {1, 0, 0};
+                            color_mode_t cmode = color_mode;
+                            cmode.phase_offset = 0;
                             frame_byte->set_color_mode(vcount, cmode);
                         }
                         uint8_t tchar = scan.mainbyte;
@@ -261,7 +266,8 @@ public:
                 case VM_LORES: {
                         sawdata = true;
                         if (hcount == 0) {
-                            color_mode_t cmode = {1, 0, 0};
+                            color_mode_t cmode = color_mode;
+                            cmode.phase_offset = 0;
                             frame_byte->set_color_mode(vcount, cmode);
                         }
                         uint8_t tchar = scan.mainbyte;
@@ -278,7 +284,8 @@ public:
                 case VM_DLORES: {
                         sawdata = true;
                         if (hcount == 0) {
-                            color_mode_t cmode = {1, 0, 1};
+                            color_mode_t cmode = color_mode;
+                            cmode.phase_offset = 1;
                             frame_byte->set_color_mode(vcount, cmode);
                         }
                         uint8_t tchar = scan.auxbyte;
@@ -307,7 +314,8 @@ public:
                 case VM_HIRES: {
                         sawdata = true;
                         if (hcount == 0) {
-                            color_mode_t cmode = {1, 0, 0};
+                            color_mode_t cmode = color_mode;
+                            cmode.phase_offset = 0;
                             frame_byte->set_color_mode(vcount, cmode);
                         }
                         uint8_t byte = scan.mainbyte & color_delay_mask;
@@ -323,7 +331,8 @@ public:
                 case VM_DHIRES: {
                         sawdata = true;
                         if (hcount == 0) {
-                            color_mode_t cmode = {1, 0, 1};
+                            color_mode_t cmode = color_mode;
+                            cmode.phase_offset = 1;
                             if (dhgr_mono_mode) cmode.colorburst = 0;
                             frame_byte->set_color_mode(vcount, cmode);
                         }
