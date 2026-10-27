@@ -127,9 +127,9 @@ struct video_system_t {
     };
     // GPU mono phosphor persistence: fraction of light (linear) kept per emulated frame.
     float mono_persistence_table[DM_NUM_MONO_MODES] = {
-        0.40f, // white
-        0.75f, // green
-        0.60f  // amber
+        0.0256f,     // white
+        0.31640625f, // green
+        0.1296f      // amber
     };
 
 protected:
