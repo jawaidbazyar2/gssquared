@@ -47,3 +47,5 @@ struct iiememory_state_t {
 };
 
 void init_iiememory(computer_t *computer, SlotType_t slot);
+/** Point the CPU's auxiliary bank at `bank` (masked to 0x7F) and republish the map. */
+void iiememory_set_aux_bank(computer_t *computer, uint8_t bank);

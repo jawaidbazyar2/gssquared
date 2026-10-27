@@ -2,34 +2,22 @@
 
 Implementation spec for an Applied Engineering RamWorks-style auxiliary memory card on the Apple IIe models. Not implemented yet.
 
-RamWorks is not the Apple II Memory Expansion Card ("Slinky"). Slinky is a slotted RAM disk with its own address registers. RamWorks replaces the 64K on the IIe auxiliary slot with N banks of 64K and leaves the motherboard's soft switches in charge of *when* the CPU sees auxiliary memory.
+RamWorks is not the Apple II Memory Expansion Card ("Slinky"). Slinky is a slotted RAM disk with its own address registers. RamWorks replaces the 64K on the IIe auxiliary slot with 128 banks of 64K (8MB) and leaves the motherboard's soft switches in charge of *when* the CPU sees auxiliary memory.
 
 ## Model
 
-N auxiliary banks, numbered **AUX 0 .. AUX N-1**.
+The card is always **8MB**: 128 auxiliary banks, numbered **AUX 0 .. AUX 127**. There is no size setting.
 
 - **AUX 0** is the stock IIe auxiliary 64K (the extended 80-column card).
-- **AUX 1 .. AUX N-1** are the additional banks.
+- **AUX 1 .. AUX 127** are the additional banks.
 - Each bank is a full 64K, including the `$C000–$CFFF` hole where language-card bank 1 is stored.
 - The motherboard still decides main versus auxiliary: `RAMRD`, `RAMWRT`, `ALTZP`, `80STORE`, `PAGE2`, `HIRES`.
 - The card only decides *which* 64K auxiliary bank those accesses hit.
 - **Video always reads AUX 0.** The scanner does not follow the bank register.
 
-A machine with no RamWorks card is N = 1. That is the IIe we already emulate. Do not change that allocation, those pointers, or those page mappings.
+A machine with no RamWorks card keeps the single auxiliary bank we already emulate. Do not change that allocation, those pointers, or those page mappings.
 
-Supported sizes are powers of two, from 2 banks upward:
-
-| `banks` | Auxiliary RAM | Bank numbers |
-|---------|---------------|--------------|
-| 2 | 128K | AUX 0–1 |
-| 4 | 256K | AUX 0–3 |
-| 8 | 512K | AUX 0–7 |
-| 16 | 1MB | AUX 0–15 |
-| 32 | 2MB | AUX 0–31 |
-| 64 | 4MB | AUX 0–63 |
-| 128 | 8MB | AUX 0–127 |
-
-A written bank number is masked with `N - 1`. Non-power-of-two sizes (the 3MB / 48-bank RamWorks III population) are out of scope.
+A written bank number is masked with `0x7F`.
 
 ## Where it sits
 
@@ -47,10 +35,9 @@ The card has no slot ROM and no `$C800` firmware. Its only bus presence is the b
 [[cards]]
 slot = 0
 card = "ramworks"
-banks = 16
 ```
 
-`banks` counts auxiliary banks and **includes AUX 0**. It is required, and it must be one of the sizes in the table above. The config editor offers the card in slot 0 on the IIe platforms, with a size control that writes `banks`.
+The config editor offers the card in slot 0 on the IIe platforms. Installing it is the whole choice; the card always brings 8MB.
 
 Slinky stays a separate slot 1–7 card and can be installed next to RamWorks.
 
@@ -66,7 +53,7 @@ aux_extra + 0x10000  AUX 2
 ...
 ```
 
-`aux_extra` is `(N - 1) * 64K`, allocated by the card at startup. `get_memory_base()` / `get_memory_size()` continue to describe the 128K block. Video, 80-column text, the debug video view, and anything else that already adds `0x10000` keeps meaning AUX 0.
+`aux_extra` is 127 × 64K, allocated by the card at startup. Together with AUX 0 that is 8MB. `get_memory_base()` / `get_memory_size()` continue to describe the 128K block. Video, 80-column text, the debug video view, and anything else that already adds `0x10000` keeps meaning AUX 0.
 
 Fill `aux_extra` with the same power-on pattern `MMU_IIe` writes into AUX 0 (`CC CC 00 00` repeating).
 
@@ -111,8 +98,8 @@ The scanner caches `get_memory_base()` at construction. That is safe because thi
 
 | Address | Access | Effect |
 |---------|--------|--------|
-| `$C073` | write | Select the auxiliary bank. Value is masked with `N - 1`. |
-| `$C071` | read | Return the current bank number. Bits above the mask read as 0. |
+| `$C073` | write | Select the auxiliary bank. Value is masked with `0x7F` (AUX 0–127). |
+| `$C071` | read | Return the current bank number, `0`–`127`. Bit 7 reads as 0. |
 
 Any access in `$C070–$C07F` also strobes the paddle timers, as on a stock IIe. The game controller already owns that range.
 
@@ -129,7 +116,7 @@ Order today, which this design relies on:
 
 1. `MMU_IIe` allocates 128K. Constructor sets `cpu_aux = main_ram + 0x10000`.
 2. Built-in `power_on`. Display caches the RAM base. IIe memory caches it and composes the map against `cpu_aux`. The game controller hooks `$C070–$C07F`.
-3. Slot `power_on`. RamWorks calls `MMU_IIe::install_ramworks(N)`, which allocates `aux_extra` and leaves `main_ram` in place, then registers `$C071` and `$C073`.
+3. Slot `power_on`. RamWorks calls `MMU_IIe::install_ramworks()`, which allocates the 127 extra banks and leaves `main_ram` in place, then registers `$C071` and `$C073`.
 4. CPU reset. The bank is already 0; reset makes that explicit.
 
 No guest code has run at step 3, and nothing that cached `main_ram` needs to be told about the extra banks.
@@ -148,5 +135,4 @@ CPU reads and writes through the MMU see the selected bank. A raw dump of `get_m
 - Forcing `80STORE` text/hires windows to stay on AUX 0.
 - IIgs / Mega II.
 - Slot ROM or a `$C800` driver.
-- RamWorks III sizes that are not a power of two.
-- The 3MB expander's partial-decode aliasing.
+- A configurable card size. The installed card is 8MB.

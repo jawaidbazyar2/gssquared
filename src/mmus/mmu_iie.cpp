@@ -300,11 +300,40 @@ MMU_IIe::MMU_IIe(int page_table_size, int ram_amount, uint8_t *rom_pointer) : MM
     for (int i = 1; i < 16; i++) {
         map_c1cf_internal_rom(0xC0 + i, main_rom_D0 + i * GS2_PAGE_SIZE, "SYS_ROM");
     }
+
+    cpu_aux = main_ram + kAuxBankBytes;
+    aux_bank = 0;
+}
+
+void MMU_IIe::install_ramworks() {
+    if (aux_extra != nullptr) {
+        return;
+    }
+    const uint32_t extra = static_cast<uint32_t>(kRamWorksBankCount - 1) * kAuxBankBytes;
+    aux_extra = new uint8_t[extra];
+    for (uint32_t i = 0; i < extra; i += 4) {
+        aux_extra[i] = 0xCC;
+        aux_extra[i + 1] = 0xCC;
+        aux_extra[i + 2] = 0x00;
+        aux_extra[i + 3] = 0x00;
+    }
+    set_aux_bank(0);
+}
+
+void MMU_IIe::set_aux_bank(uint8_t bank) {
+    bank &= 0x7F;
+    if (aux_extra == nullptr) {
+        bank = 0;
+    }
+    aux_bank = bank;
+    if (bank == 0) {
+        cpu_aux = main_ram + kAuxBankBytes;
+    } else {
+        cpu_aux = aux_extra + (static_cast<uint32_t>(bank - 1) * kAuxBankBytes);
+    }
 }
 
 MMU_IIe::~MMU_IIe() {
-    // free up memory areas.
-    //delete[] main_ram;
-    //delete[] main_io_4;
-    //delete[] main_rom_D0;
+    delete[] aux_extra;
+    aux_extra = nullptr;
 }
