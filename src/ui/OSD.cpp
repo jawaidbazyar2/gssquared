@@ -433,6 +433,8 @@ OSD::OSD(computer_t *computer, SDL_Renderer *rendererp, SDL_Window *windowp, Slo
     slot_container->set_position(30, 140);
     slot_container->size(320, 304);
     slot_container->layout();
+    slot_container->set_slot0_aux(
+        computer->platform && platform_has_aux_slot(computer->platform->id));
     containers.push_back(slot_container);
 
     Style_t CB = config_selector_button_style();

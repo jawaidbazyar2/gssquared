@@ -28,3 +28,10 @@ const PlatformFlags_t PLATFLAG_ANY_IIGS = PLATFLAG_APPLE_IIGS | PLATFLAG_APPLE_I
 inline bool platform_is_iigs(PlatformId_t id) {
     return id == PLATFORM_APPLE_IIGS || id == PLATFORM_APPLE_IIGS_ROM3;
 }
+
+/** IIe family has no peripheral slot 0; config slot 0 is the auxiliary slot. */
+inline bool platform_has_aux_slot(PlatformId_t id) {
+    return id == PLATFORM_APPLE_IIE
+        || id == PLATFORM_APPLE_IIE_ENHANCED
+        || id == PLATFORM_APPLE_IIE_65816;
+}

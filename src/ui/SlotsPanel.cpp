@@ -37,6 +37,12 @@ void SlotsPanel_t::refresh_names() {
     }
 }
 
+void SlotsPanel_t::set_slot0_aux(bool aux) {
+    if (slot_buttons[0]) {
+        slot_buttons[0]->set_label(aux ? "Aux" : "0");
+    }
+}
+
 SlotButton *SlotsPanel_t::get_slot_button(int slot) const {
     if (slot < 0 || slot >= NUM_SLOTS) return nullptr;
     return slot_buttons[slot];
