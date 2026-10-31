@@ -115,7 +115,7 @@ Offsets are from the selected base. Language-card bank 1 is the `$C000` hole in 
 | `$D0`–`$DF` | LC read-enable ? bank RAM : ROM | LC write-enable ? bank RAM : `NONE` |
 | `$E0`–`$FF` | LC read-enable ? RAM : ROM | LC write-enable ? RAM : `NONE` |
 
-`$C0` is the handler table, not a page pointer. `$C8`–`$CF` also changes when `$C3xx` is accessed while `SLOTC3ROM` is clear (`iie_map_rom_slot3`). That is an access side effect, not one of the switches in the cross product.
+`$C0` is the handler table, not a page pointer. `$C8`–`$CF` also changes when `$C3xx` is accessed while `SLOTC3ROM` is clear (`iie_map_rom_slot3`). That is an access side effect. `$C1`–`$CF` does not share switches with the rows above it, so the characterization golden splits there. The `$C8` cases live in the `$Cxxx` suite.
 
 Write-enable is `_FF_WRITE_ENABLE == 0` (active low). `PRE_WRITE` does not change the map.
 
@@ -131,27 +131,29 @@ Drive switches by bus access. Do not call `compose_map` and do not poke flags. `
 
 ### What one state records
 
-For every page `$00`–`$BF` and `$C1`–`$FF`, record read and write separately:
+Both suites use the same encoding. Record read and write separately:
 
 | Pointer | Record |
 |---|---|
-| inside `main_ram` | `MAIN+offset` |
-| inside `cpu_aux` | `AUX+offset` |
+| inside the 128K block (`main_ram` .. `main_ram + 0x20000`) | `RAM+offset` |
 | inside `get_rom_base()` | `ROM+offset` |
 | null | `NONE` |
 
-Run-length encode. One state is a list of spans, for example `04-07 R AUX+0x0400 W AUX+0x0400`. Store one line per state: the switch bits, then the spans.
+`offset` is `pointer - main_ram`, 17 bits (`0x00000`–`0x1FFFF`). Bit 16 set is auxiliary bank 0, so text page 1 in aux is `RAM+0x10400` and language-card bank 1 under `ALTZP` is `RAM+0x1C000`. A pointer outside that window is not a `RAM+` span.
+
+Run-length encode. One state is a list of spans, for example `04-07 R RAM+0x10400 W RAM+0x10400`. Store one line per state: the switch bits, then the spans.
 
 Leave out function pointers, `read_d` / `write_d`, and page `$C0`. A handler address is not a map, and the debug tags will get renamed.
 
+The aux/language-card suite records `$00`–`$BF` and `$D0`–`$FF`. The `$Cxxx` suite records `$C1`–`$CF`.
+
 On mismatch, print the switch values and the first page whose read or write descriptor differs.
 
-### Cross product
+### Aux and language card
 
-2048 states. These axes, each on or off, except the language card which is three bits:
+512 states. These axes, each on or off, except the language card which is three bits:
 
 - `80STORE`, `RAMRD`, `RAMWRT`, `ALTZP`, `PAGE2`, `HIRES` (64)
-- `INTCXROM`, `SLOTC3ROM` (×4)
 - language-card bank, read-enable, write-enable (×8)
 
 Reach the eight language-card map states through `$C080`–`$C08F`, using `LanguageCardLogic`'s rules:
@@ -160,14 +162,32 @@ Reach the eight language-card map states through `$C080`–`$C08F`, using `Langu
 - Address bits 1:0 equal 00 or 11 enable RAM read. 01 or 10 select ROM.
 - Write-enable takes two successive reads of an odd address (`$C081`, `$C083`, `$C089`, `$C08B`, and the `+$4` aliases). One read leaves write protect on. `PRE_WRITE` itself is not an axis. The golden includes both the one-access and the two-access result.
 
+`INTCXROM` and `SLOTC3ROM` are not axes. One check walks all four combinations and requires the same `$00`–`$BF` / `$D0`–`$FF` snapshot.
+
 `TEXT`, `MIXED`, `80COL`, and alt charset are not axes. One extra check toggles them and requires the same snapshot.
 
-### Suites kept out of the 2048
+### Suites kept out of the 512
 
-- Slot register × `INTCXROM` × `SLOTC3ROM`. Six slot bits that `compose_c1cf` honors, times the two ROM switches. Slot 3 follows `SLOTC3ROM`, not the slot-register bit.
-- RamWorks bank 0 and bank 1, for a few flag combinations (at least `ALTZP`, `RAMRD`, and `80STORE`+`PAGE2`+`HIRES`). Offsets are taken from the current `cpu_aux`, so both banks must produce the same snapshot. A separate assertion checks that `cpu_aux` moved to the selected bank.
-- One reset snapshot: main RAM everywhere the aux switches control, language card reading ROM and writing RAM bank 2, `INTCXROM` off, `SLOTC3ROM` off, aux bank 0.
-- Two `$C3xx` cases: with `SLOTC3ROM` clear, an access to `$C3xx` maps `$C800`–`$CFFF` to motherboard ROM. With `SLOTC3ROM` set, it does not.
+- RamWorks bank 0 and bank 1, for a few flag combinations (at least `ALTZP`, `RAMRD`, and `80STORE`+`PAGE2`+`HIRES`). Bank 0 auxiliary pages record as `RAM+0x1xxxx`. Bank 1 is `aux_extra` and falls outside the 17-bit window. A separate assertion checks that `cpu_aux` moved to the selected bank.
+- One reset snapshot: main RAM everywhere the aux switches control, language card reading ROM and writing RAM bank 2. `$C1`–`$CF` is not on this line.
+
+### $Cxxx
+
+`$C1`–`$CF` has its own lines in the same golden. `80STORE`, `RAMRD`, `RAMWRT`, `ALTZP`, `PAGE2`, `HIRES`, and the language card do not change it. One check sets those and requires the same `$C1`–`$CF` snapshot.
+
+`INTCXROM` on publishes motherboard ROM for the whole window. The slot register, `SLOTC3ROM`, a `$C3xx` access, and `$CFFF` do not change that snapshot. One line, plus those checks.
+
+`INTCXROM` off, with `$C8`–`$CF` still the default empty slot table: the six slot-register bits `compose_c1cf` honors, times `SLOTC3ROM` (128). Slot 3 follows `SLOTC3ROM`, not the slot-register bit. One check sets that bit and requires the same snapshot.
+
+`$C8`–`$CF` is an access side effect, not crossed with the 64 slot-register values. With no card ROMs installed, and the slot register held at its power-on value:
+
+- Default, and after `$CFFF`: `NONE`.
+- `$C3xx` with `SLOTC3ROM` clear: motherboard ROM at `ROM+0x0800`.
+- `$C3xx` with `SLOTC3ROM` set: stays `NONE`.
+- An access in `$C1`, `$C2`, or `$C4`–`$C7` has no `$C8` handler, so the window stays `NONE`.
+- `$C3xx` while `INTCXROM` is on still shows internal ROM. Clearing `INTCXROM` reveals the `$C8` ROM that access stored.
+
+One `$Cxxx` reset snapshot: `INTCXROM` off, `SLOTC3ROM` off, slot register at its power-on value, `$C8`–`$CF` cleared.
 
 ### Setter companion
 

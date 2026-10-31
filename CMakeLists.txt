@@ -782,6 +782,8 @@ if(NOT EMSCRIPTEN)
 
     add_subdirectory(apps/mmutest)
 
+    add_subdirectory(apps/iiemmutest)
+
     add_subdirectory(apps/cputest)
 
     add_subdirectory(apps/montest)
