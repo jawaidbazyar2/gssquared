@@ -19,9 +19,14 @@
 
 #include "../iiemmutest/iie_mmu_oracle.hpp"
 
+#include "mmus/mmu.hpp"
 #include "mmus/mmu_iie2.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <memory>
 #include <string>
 
@@ -73,7 +78,49 @@ static void check_setters() {
     }
 }
 
+// 10M reads through MMU*, addresses in $0000-$BFFF. One warmup, five timed passes.
+static int run_bench() {
+    constexpr uint32_t kReads = 10000000;
+    constexpr int kPasses = 5;
+
+    Fixture f;
+    MMU *mmu = f.mmu;
+
+    auto pass = [&]() {
+        uint64_t sum = 0;
+        for (uint32_t i = 0; i < kReads; i++) {
+            sum += mmu->read(i % 0xC000u);
+        }
+        return sum;
+    };
+
+    (void)pass();
+
+    double ns_per[kPasses];
+    uint64_t sum = 0;
+    for (int p = 0; p < kPasses; p++) {
+        const auto t0 = std::chrono::steady_clock::now();
+        sum = pass();
+        const auto t1 = std::chrono::steady_clock::now();
+        const double ns = std::chrono::duration<double, std::nano>(t1 - t0).count();
+        ns_per[p] = ns / static_cast<double>(kReads);
+    }
+    std::sort(ns_per, ns_per + kPasses);
+    const double median = ns_per[kPasses / 2];
+
+    std::printf("checksum %llu\n", static_cast<unsigned long long>(sum));
+    std::printf("ns/read:");
+    for (int p = 0; p < kPasses; p++) {
+        std::printf(" %.3f", ns_per[p]);
+    }
+    std::printf("\nmedian %.3f ns/read  %.3f MHz\n", median, 1000.0 / median);
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    if (argc >= 2 && std::strcmp(argv[1], "--bench") == 0) {
+        return run_bench();
+    }
     const int rc = iie_oracle::run<Fixture>(argc, argv);
     if (rc != 0) {
         return rc;

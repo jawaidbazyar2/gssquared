@@ -38,18 +38,18 @@ void MMU_IIe2::set_default_C8xx_map() {
 void MMU_IIe2::compose_c1cf() {
     if (!f_intcxrom) {
         for (int i = 8; i < 16; i++) {
-            page_table[0xC0 + i] = slot_rom_ptable[i - 1];
+            set_page_table_entry(0xC0 + i, &slot_rom_ptable[i - 1]);
         }
-        page_table[0xC1] = reg_slot & 0x02 ? slot_rom_ptable[0] : int_rom_ptable[0];
-        page_table[0xC2] = reg_slot & 0x04 ? slot_rom_ptable[1] : int_rom_ptable[1];
-        page_table[0xC3] = f_slotc3rom ? slot_rom_ptable[2] : int_rom_ptable[2];
-        page_table[0xC4] = reg_slot & 0x10 ? slot_rom_ptable[3] : int_rom_ptable[3];
-        page_table[0xC5] = reg_slot & 0x20 ? slot_rom_ptable[4] : int_rom_ptable[4];
-        page_table[0xC6] = reg_slot & 0x40 ? slot_rom_ptable[5] : int_rom_ptable[5];
-        page_table[0xC7] = reg_slot & 0x80 ? slot_rom_ptable[6] : int_rom_ptable[6];
+        set_page_table_entry(0xC1, reg_slot & 0x02 ? &slot_rom_ptable[0] : &int_rom_ptable[0]);
+        set_page_table_entry(0xC2, reg_slot & 0x04 ? &slot_rom_ptable[1] : &int_rom_ptable[1]);
+        set_page_table_entry(0xC3, f_slotc3rom ? &slot_rom_ptable[2] : &int_rom_ptable[2]);
+        set_page_table_entry(0xC4, reg_slot & 0x10 ? &slot_rom_ptable[3] : &int_rom_ptable[3]);
+        set_page_table_entry(0xC5, reg_slot & 0x20 ? &slot_rom_ptable[4] : &int_rom_ptable[4]);
+        set_page_table_entry(0xC6, reg_slot & 0x40 ? &slot_rom_ptable[5] : &int_rom_ptable[5]);
+        set_page_table_entry(0xC7, reg_slot & 0x80 ? &slot_rom_ptable[6] : &int_rom_ptable[6]);
     } else {
         for (int i = 1; i < 16; i++) {
-            page_table[0xC0 + i] = int_rom_ptable[i - 1];
+            set_page_table_entry(0xC0 + i, &int_rom_ptable[i - 1]);
         }
     }
 }

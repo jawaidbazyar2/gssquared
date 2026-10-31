@@ -236,3 +236,74 @@ A bus write can still compose twice: Mega II slot 0 (`c00x_write`) and IIgs slot
 - `iigsmmutest -l` and `iigsmmutest -l -3` pass.
 - A IIgs ROM built-in diagnostic still runs.
 - Mega II has no language-card handlers on `$C080`–`$C08F` (`install_memory_switches` is false). IIgs owns those addresses.
+
+## Phase 3 — page table struct-of-arrays
+
+The main page table is an array of `page_table_entry_t`. Each record is 80 bytes: `read_p`, `write_p`, three handler pairs, and two debug strings. A CPU read uses `read_p` only. Consecutive `read_p` values are 80 bytes apart, so each one occupies its own 64-byte cache line, and the index scale does not fit an addressing mode (those stop at 8).
+
+Store each field in its own array, length `num_pages`:
+
+```cpp
+uint8_t *read_p;
+uint8_t *write_p;
+read_handler_t *read_h;
+write_handler_t *write_h;
+write_handler_t *shadow_h;
+const char **read_d;
+const char **write_d;
+```
+
+A read indexes `read_p[page]` (scale 8) and, on a null pointer, `read_h[page]`. A write indexes `write_h[page]`, then `write_p[page]`, then `shadow_h[page]`. Same order as today. `page` and the byte offset still come from `page_size_bits` and `page_size_mask`. `MMU_II` is 256 pages of 256 bytes. `MMU_IIgs` is one entry per 64K bank. Both go through this table.
+
+`page_table_entry_t` stays the value type. `get_page_table_entry` gathers one page into a struct. `set_page_table_entry` scatters a struct into the arrays. `map_page_*`, `set_page_read_h`, `set_page_write_h`, and `set_page_shadow` keep their signatures and write one field.
+
+### Who indexes the arrays
+
+The live methods are inline in `src/mmus/mmu.hpp`. `src/mmus/mmu.cpp` is inside `#if 0`. Leave it.
+
+These read and write the main table by taking `&page_table[page]` today:
+
+- `MMU::read`, `write`, `read_raw`, `write_raw`, the mappers, the dump, and `get_page_base_address` in `mmu.hpp`
+- `MMU_II::read` and `write` in `mmu_ii.cpp`
+- `MMU_IIe::read` and `write` in `mmu_iie.cpp`
+
+`MMU_IIe2` does not override `read` or `write`. `MMU_IIgs::read` and `write` call `MMU::read` and `MMU::write`.
+
+`compose_c1cf` publishes a side-table record with `page_table[page] = entry` in `mmu_ii.cpp`, `mmu_iie.cpp`, and `mmu_iie2.cpp`. Those three call `set_page_table_entry` instead.
+
+### Side tables stay arrays of structs
+
+`MMU_II::slot_rom_ptable[15]`, `MMU_IIe::int_rom_ptable[15]`, and `MMU_IIe2::int_rom_ptable[15]` stay `page_table_entry_t` arrays. They are filled on slot-ROM changes and copied into the main table by `compose_c1cf`. They are not on the per-cycle path.
+
+`apps/iiemmutest/iie_mmu_oracle.hpp` keeps calling `get_page_table_entry` and reading `read_p` / `write_p` on the returned struct.
+
+Devices, `MMU_IIgs` composers, and the CPU test apps keep calling `map_page_read`, `map_page_write`, `map_page_both`, and the `set_page_*` handlers. They do not see the storage.
+
+### Out
+
+- A compiled per-mode reader. Region bounds are the same in every mode; mode only changes pointers.
+- Devirtualizing `MMU::read` / `write`.
+- A direct `zp_base` / language-card base in front of the table.
+- `alignas(64)` or a statically allocated table.
+- A new page size.
+- Turning the 15-entry side tables into parallel arrays.
+
+### Baseline
+
+`iiemmu2test --bench`, Release, array-of-structs. `MMU *` to `MMU_IIe2`, 10,000,000 reads of `i % 0xC000`, one warmup, five timed passes.
+
+median 1.324 ns/read, 755.102 MHz. Passes: 1.319, 1.324, 1.324, 1.329, 1.331. Checksum 1275000000.
+
+### After
+
+Same bench, struct-of-arrays.
+
+median 1.385 ns/read, 721.872 MHz. Passes: 1.382, 1.383, 1.385, 1.413, 1.432. Checksum 1275000000.
+
+The median is 0.061 ns/read slower (about 4.6%). Checksum matches the baseline. Both tables fit in L1; this loop did not show a gain from the scale-8 index.
+
+### Done when
+
+- The IIe golden map is unchanged. Same bus sequences, same `RAM+` / `ROM+` / `NONE` spans.
+- `iigsmmutest -l` and `iigsmmutest -l -3` pass. IIgs reads still go through `MMU::read`.
+- `get_page_table_entry` returns the same pointers, handlers, and debug tags as the old record.

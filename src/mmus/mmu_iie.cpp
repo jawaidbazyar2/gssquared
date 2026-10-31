@@ -44,22 +44,22 @@ void MMU_IIe::compose_c1cf() {
     if (!f_intcxrom) { // INTCXROM off - C1-CF is for cards, with possible exception for C3 if SLOTC3ROM is on.
         // the C8 routines put this here. this is correct.
         for (int i = 8; i < 16; i++) {
-            page_table[0xC0 + i] = slot_rom_ptable[i-1];
+            set_page_table_entry(0xC0 + i, &slot_rom_ptable[i-1]);
         }
-        page_table[0xC1] = reg_slot & 0x02 ? slot_rom_ptable[0] : int_rom_ptable[0];
-        page_table[0xC2] = reg_slot & 0x04 ? slot_rom_ptable[1] : int_rom_ptable[1];
-        page_table[0xC3] = (f_slotc3rom) ? slot_rom_ptable[2] : int_rom_ptable[2]; // different flag here.
-        page_table[0xC4] = reg_slot & 0x10 ? slot_rom_ptable[3] : int_rom_ptable[3];
-        page_table[0xC5] = reg_slot & 0x20 ? slot_rom_ptable[4] : int_rom_ptable[4];
-        page_table[0xC6] = reg_slot & 0x40 ? slot_rom_ptable[5] : int_rom_ptable[5];
-        page_table[0xC7] = reg_slot & 0x80 ? slot_rom_ptable[6] : int_rom_ptable[6];
+        set_page_table_entry(0xC1, reg_slot & 0x02 ? &slot_rom_ptable[0] : &int_rom_ptable[0]);
+        set_page_table_entry(0xC2, reg_slot & 0x04 ? &slot_rom_ptable[1] : &int_rom_ptable[1]);
+        set_page_table_entry(0xC3, (f_slotc3rom) ? &slot_rom_ptable[2] : &int_rom_ptable[2]); // different flag here.
+        set_page_table_entry(0xC4, reg_slot & 0x10 ? &slot_rom_ptable[3] : &int_rom_ptable[3]);
+        set_page_table_entry(0xC5, reg_slot & 0x20 ? &slot_rom_ptable[4] : &int_rom_ptable[4]);
+        set_page_table_entry(0xC6, reg_slot & 0x40 ? &slot_rom_ptable[5] : &int_rom_ptable[5]);
+        set_page_table_entry(0xC7, reg_slot & 0x80 ? &slot_rom_ptable[6] : &int_rom_ptable[6]);
         
         /* if (!f_slotc3rom) { // this has effect in A2Ts only if intcxrom is off.
             map_page_read_only(0xC3, main_rom_D0 + 0x0300, "SYS_ROM");
         } */
     } else { // INTCXROM is on - C1-CF is all ROM.
         for (int i = 1; i < 16; i++) {
-            page_table[0xC0 + i] = int_rom_ptable[i-1];
+            set_page_table_entry(0xC0 + i, &int_rom_ptable[i-1]);
             //map_page_read_only(0xC0 + i, main_rom_D0 + i * GS2_PAGE_SIZE, "SYS_ROM");
         }
     }
@@ -153,9 +153,9 @@ uint8_t MMU_IIe::read(uint32_t address) {
         } else 
             if (address == 0xCFFF) set_default_C8xx_map(); // When CFFF is read, reset the C8xx map to default, then execute the underlying read of CFFF.
     }
-    page_table_entry_t *pte = &page_table[page];
-    if (pte->read_p != nullptr) return pte->read_p[address & 0xFF];
-    else if (pte->read_h.read != nullptr) return pte->read_h.read(pte->read_h.context, address);
+    uint8_t *p = read_p[page];
+    if (p != nullptr) return p[address & 0xFF];
+    else if (read_h[page].read != nullptr) return read_h[page].read(read_h[page].context, address);
     else return floating_bus_read();
     /* return MMU::read(address); */
 }
@@ -182,10 +182,9 @@ void MMU_IIe::write(uint32_t address, uint8_t value) {
     }
 
     // if there is a write handler, call it instead of writing directly.
-    page_table_entry_t *pte = &page_table[page];
-    if (pte->write_h.write != nullptr) pte->write_h.write(pte->write_h.context, address, value);
-    else if (pte->write_p) pte->write_p[address & 0xFF] = value;
-    if (pte->shadow_h.write != nullptr) pte->shadow_h.write(pte->shadow_h.context, address, value);
+    if (write_h[page].write != nullptr) write_h[page].write(write_h[page].context, address, value);
+    else if (write_p[page]) write_p[page][address & 0xFF] = value;
+    if (shadow_h[page].write != nullptr) shadow_h[page].write(shadow_h[page].context, address, value);
 
     /* MMU::write(address, value); */
 }

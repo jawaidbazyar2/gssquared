@@ -156,7 +156,7 @@ void MMU_II::call_C8xx_handler(SlotType_t slot) {
 void MMU_II::compose_c1cf() {
     // only thing we do is set based on this. IIe expands on this.
     for (int i = 0; i < 15; i++) {
-        page_table[0xC1 + i] = slot_rom_ptable[i];
+        set_page_table_entry(0xC1 + i, &slot_rom_ptable[i]);
     }
 }
 
@@ -208,9 +208,9 @@ uint8_t MMU_II::read(uint32_t address) {
         } else 
             if (eaddress == 0xCFFF) set_default_C8xx_map(); // When CFFF is read, reset the C8xx map to default, then execute the underlying read of CFFF.
     }
-    page_table_entry_t *pte = &page_table[page];
-    if (pte->read_p != nullptr) return pte->read_p[eaddress & 0xFF];
-    else if (pte->read_h.read != nullptr) return pte->read_h.read(pte->read_h.context, eaddress);
+    uint8_t *p = read_p[page];
+    if (p != nullptr) return p[eaddress & 0xFF];
+    else if (read_h[page].read != nullptr) return read_h[page].read(read_h[page].context, eaddress);
     else return floating_bus_read();
     /* return MMU::read(address); */
 }
@@ -246,10 +246,9 @@ void MMU_II::write(uint32_t address, uint8_t value) {
     }
 
     // if there is a write handler, call it instead of writing directly.
-    page_table_entry_t *pte = &page_table[page];
-    if (pte->write_h.write != nullptr) pte->write_h.write(pte->write_h.context, eaddress, value);
-    else if (pte->write_p) pte->write_p[eaddress & 0xFF] = value;
-    if (pte->shadow_h.write != nullptr) pte->shadow_h.write(pte->shadow_h.context, eaddress, value);
+    if (write_h[page].write != nullptr) write_h[page].write(write_h[page].context, eaddress, value);
+    else if (write_p[page]) write_p[page][eaddress & 0xFF] = value;
+    if (shadow_h[page].write != nullptr) shadow_h[page].write(shadow_h[page].context, eaddress, value);
 
     /* MMU::write(address, value); */
 }

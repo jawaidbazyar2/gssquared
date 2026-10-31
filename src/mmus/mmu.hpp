@@ -55,8 +55,14 @@ class MMU {
     protected:
         //cpu_state *cpu;
         int num_pages = 0;
-        // this is an array of info about each page.
-        page_table_entry_t *page_table;
+        // One array per field. A read loads read_p[page] (stride 8).
+        uint8_t **read_p = nullptr;
+        uint8_t **write_p = nullptr;
+        read_handler_t *read_h = nullptr;
+        write_handler_t *write_h = nullptr;
+        write_handler_t *shadow_h = nullptr;
+        const char **read_d = nullptr;
+        const char **write_d = nullptr;
         uint8_t floating_bus_val = 0xEE;
         uint32_t page_size = 0;
         uint32_t page_size_bits = 0;
@@ -81,22 +87,23 @@ class MMU {
             this->page_size_bits = __builtin_ctz(page_size);
             this->page_size_mask = page_size - 1;
             
-            page_table = new page_table_entry_t[num_pages];
-            for (int i = 0 ; i < num_pages ; i++) {
-                //page_table[i].readable = 0;
-                //page_table[i].writeable = 0;
-                //page_table[i].type_r = M_NON;
-                //page_table[i].type_w = M_NON;
-                page_table[i].read_p = nullptr;
-                page_table[i].write_p = nullptr;
-                page_table[i].read_h = {nullptr, nullptr};
-                page_table[i].write_h = {nullptr, nullptr};
-                page_table[i].shadow_h = {nullptr, nullptr};
-            }
+            read_p = new uint8_t *[num_pages]();
+            write_p = new uint8_t *[num_pages]();
+            read_h = new read_handler_t[num_pages]();
+            write_h = new write_handler_t[num_pages]();
+            shadow_h = new write_handler_t[num_pages]();
+            read_d = new const char *[num_pages]();
+            write_d = new const char *[num_pages]();
         }
 
         virtual ~MMU() {
-            delete[] page_table;
+            delete[] read_p;
+            delete[] write_p;
+            delete[] read_h;
+            delete[] write_h;
+            delete[] shadow_h;
+            delete[] read_d;
+            delete[] write_d;
         }
 
         /** Contiguous RAM allocation, if any. Linear offsets for MAIN_RAW / MEGAII_RAW. */
@@ -108,9 +115,9 @@ class MMU {
             uint16_t page = address >> page_size_bits; // / GS2_PAGE_SIZE;
             uint16_t offset = address & page_size_mask; // % GS2_PAGE_SIZE;
             if (page > num_pages) return floating_bus_read();
-            page_table_entry_t *pte = &page_table[page];
-            if (pte->read_p == nullptr) return floating_bus_read();
-            return pte->read_p[offset];
+            uint8_t *p = read_p[page];
+            if (p == nullptr) return floating_bus_read();
+            return p[offset];
         }
 
         // no writable check here, do it higher up - this needs to be able to write to 
@@ -119,9 +126,8 @@ class MMU {
             uint16_t page = address >> page_size_bits; // / GS2_PAGE_SIZE;
             uint16_t offset = address & page_size_mask; // % GS2_PAGE_SIZE;
             if (page > num_pages) return;
-            page_table_entry_t *pte = &page_table[page];
-            if (pte->read_p == nullptr) return;
-            pte->write_p[offset] = value;
+            if (read_p[page] == nullptr) return;
+            write_p[page][offset] = value;
         }
 
         /* void write_raw_word(uint32_t address, uint16_t value) {
@@ -135,10 +141,9 @@ class MMU {
             uint16_t offset = address & page_size_mask; // % GS2_PAGE_SIZE;
             assert(page < num_pages);
 
-            page_table_entry_t *pte = &page_table[page];
-
-            if (pte->read_p != nullptr) return pte->read_p[offset];
-            else if (pte->read_h.read != nullptr) return pte->read_h.read(pte->read_h.context, address);
+            uint8_t *p = read_p[page];
+            if (p != nullptr) return p[offset];
+            else if (read_h[page].read != nullptr) return read_h[page].read(read_h[page].context, address);
             else return floating_bus_read();
         }
 
@@ -157,13 +162,12 @@ class MMU {
             uint16_t offset = address & page_size_mask; // % GS2_PAGE_SIZE;
 
             assert(page < num_pages);
-            page_table_entry_t *pte = &page_table[page];
-            
-            // if there is a write handler, call it instead of writing directly.
-            if (pte->write_h.write != nullptr) pte->write_h.write(pte->write_h.context, address, value);
-            else if (pte->write_p) pte->write_p[offset] = value;
 
-            if (pte->shadow_h.write != nullptr) pte->shadow_h.write(pte->shadow_h.context, address, value);
+            // if there is a write handler, call it instead of writing directly.
+            if (write_h[page].write != nullptr) write_h[page].write(write_h[page].context, address, value);
+            else if (write_p[page]) write_p[page][offset] = value;
+
+            if (shadow_h[page].write != nullptr) shadow_h[page].write(shadow_h[page].context, address, value);
 
             // if none of those things were set, silently do nothing.
         }
@@ -179,21 +183,19 @@ class MMU {
     
 
         uint8_t *get_page_base_address(page_t page) {
-            return page_table[page].read_p;
+            return read_p[page];
         }
 
         void map_page_both(page_t page, uint8_t *data, const char *read_d) {
             if (page > num_pages) {
                 return;
             }
-            page_table_entry_t *pte = &page_table[page];
-
-            pte->read_p = data;
-            pte->write_p = data;
-            pte->read_h = {nullptr, nullptr};
-            pte->write_h = {nullptr, nullptr};
-            pte->read_d = read_d;
-            pte->write_d = read_d;
+            read_p[page] = data;
+            write_p[page] = data;
+            read_h[page] = {nullptr, nullptr};
+            write_h[page] = {nullptr, nullptr};
+            this->read_d[page] = read_d;
+            write_d[page] = read_d;
         }
 
         // map page to read only
@@ -201,31 +203,26 @@ class MMU {
             if (page > num_pages) {
                 return;
             }
-            page_table_entry_t *pte = &page_table[page];
-
-            pte->read_p = data;
-            pte->write_p = nullptr;
-            pte->read_d = read_d;
-            pte->write_d = nullptr;
+            read_p[page] = data;
+            write_p[page] = nullptr;
+            this->read_d[page] = read_d;
+            write_d[page] = nullptr;
         }
 
         void map_page_read(page_t page, uint8_t *data, const char *read_d) {
             if (page > num_pages) {
                 return;
             }
-            page_table_entry_t *pte = &page_table[page];
-            pte->read_p = data;
-            pte->read_d = read_d;
+            read_p[page] = data;
+            this->read_d[page] = read_d;
         }
 
         void map_page_write(page_t page, uint8_t *data, const char *write_d) {
             if (page > num_pages) {
                 return;
             }
-            page_table_entry_t *pte = &page_table[page];
-            
-            pte->write_p = data;
-            pte->write_d = write_d;
+            write_p[page] = data;
+            this->write_d[page] = write_d;
         }
 
         // Pages [lo, hi] map to consecutive page_size blocks. base is the pointer
@@ -251,17 +248,17 @@ class MMU {
         }
 
         void set_page_shadow(page_t page, write_handler_t handler) {
-            page_table[page].shadow_h = handler;
+            shadow_h[page] = handler;
         }
 
         void set_page_read_h(page_t page, read_handler_t handler, const char *read_d) {
-            page_table[page].read_h = handler;
-            page_table[page].read_d = read_d;
+            read_h[page] = handler;
+            this->read_d[page] = read_d;
         }
 
         void set_page_write_h(page_t page, write_handler_t handler, const char *write_d) {
-            page_table[page].write_h = handler;
-            page_table[page].write_d = write_d;
+            write_h[page] = handler;
+            this->write_d[page] = write_d;
         }
 
         void dump_page_table(page_t start_page, page_t end_page) {
@@ -271,12 +268,12 @@ class MMU {
             for (int i = start_page ; i <= end_page ; i++) {
                 printf("%02X (%8s %8s): %16p %16p %16p(%16p) %16p(%16p) %16p(%16p)\n", 
                     i, 
-                    page_table[i].read_d, page_table[i].write_d, //page_table[i].readable, page_table[i].writeable,
-                    page_table[i].read_p,
-                    page_table[i].write_p, 
-                    page_table[i].read_h.read, page_table[i].read_h.context,
-                    page_table[i].write_h.write, page_table[i].write_h.context,
-                    page_table[i].shadow_h.write, page_table[i].shadow_h.context
+                    read_d[i], write_d[i],
+                    read_p[i],
+                    write_p[i], 
+                    read_h[i].read, read_h[i].context,
+                    write_h[i].write, write_h[i].context,
+                    shadow_h[i].write, shadow_h[i].context
                 );
             }
         }
@@ -288,12 +285,12 @@ class MMU {
             }
             f->addLine("%02X (%8s %8s): %16p %16p %16p(%16p) %16p(%16p) %16p(%16p)\n", 
                 page, 
-                page_table[page].read_d, page_table[page].write_d, //page_table[i].readable, page_table[i].writeable,
-                page_table[page].read_p,
-                page_table[page].write_p, 
-                page_table[page].read_h.read, page_table[page].read_h.context,
-                page_table[page].write_h.write, page_table[page].write_h.context,
-                page_table[page].shadow_h.write, page_table[page].shadow_h.context
+                read_d[page], write_d[page],
+                read_p[page],
+                write_p[page], 
+                read_h[page].read, read_h[page].context,
+                write_h[page].write, write_h[page].context,
+                shadow_h[page].write, shadow_h[page].context
             );
         }
 
@@ -323,19 +320,31 @@ class MMU {
         virtual MMU *get_megaii_mmu() { return nullptr; }
 
         const char *get_read_d(page_t page) {
-            return page_table[page].read_d;
+            return read_d[page];
         }
 
         const char *get_write_d(page_t page) {
-            return page_table[page].write_d;
+            return write_d[page];
         }
 
         void get_page_table_entry(page_t page, page_table_entry_t *pte) {
-            *pte = page_table[page];
+            pte->read_p = read_p[page];
+            pte->write_p = write_p[page];
+            pte->read_h = read_h[page];
+            pte->write_h = write_h[page];
+            pte->shadow_h = shadow_h[page];
+            pte->read_d = read_d[page];
+            pte->write_d = write_d[page];
         }
 
         void set_page_table_entry(page_t page, page_table_entry_t *pte) {
-            page_table[page] = *pte;
+            read_p[page] = pte->read_p;
+            write_p[page] = pte->write_p;
+            read_h[page] = pte->read_h;
+            write_h[page] = pte->write_h;
+            shadow_h[page] = pte->shadow_h;
+            read_d[page] = pte->read_d;
+            write_d[page] = pte->write_d;
         }
 
 };
