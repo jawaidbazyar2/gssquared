@@ -7,7 +7,7 @@
 #include "tests.hpp"
 
 #include "mmus/mmu_iigs.hpp"
-#include "mmus/mmu_iie.hpp"
+#include "mmus/mmu_iie2.hpp"
 #include "mmus/iigs_memory.hpp"
 
 uint64_t debug_level = 0;
@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
                rom_path, rom_size, use_rom03 ? 1 : 0, fast_ram,
                iigs_memory::last_ram_bank(fast_ram));
 
-        MMU_IIe *mmu_iie = new MMU_IIe(256, 128*1024, rom.data() + rom_bank_ff_offset + 0xC000);
+        MMU_IIe2 *mmu_iie = new MMU_IIe2(256, 128*1024, rom.data() + rom_bank_ff_offset + 0xC000, false);
         MMU_IIgs *mmu_iigs = new MMU_IIgs(256, (int)fast_ram, (uint32_t)rom_size, rom.data(), mmu_iie);
         mmu_iigs->init_map();
         for (const auto& test : MMUTest::ALL_TESTS) {

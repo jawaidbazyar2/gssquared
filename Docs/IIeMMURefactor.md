@@ -45,6 +45,8 @@ MMU_IIe(int page_table_size, int ram_amount, uint8_t *rom_pointer,
         bool install_memory_switches = true);
 ```
 
+The flag lives on `MMU_IIe2`. Phase 2 constructs that class for the Mega II. The rules below are the same.
+
 `install_memory_switches == true` is the IIe. The MMU registers the handlers that `init_iiememory` registers today, composes the initial map, and on `reset` clears the aux switches, resets the language card, sets the aux bank to 0, and recomposes with force.
 
 `install_memory_switches == false` is the Mega II inside `MMU_IIgs`.
@@ -62,7 +64,7 @@ Pass `false` at the two Mega II construction sites:
 - `src/gs2.cpp`, `MMU_MMU_IIGS`
 - `apps/iigsmmutest/main.cpp`
 
-Every other `new MMU_IIe` keeps the default.
+Every other `new MMU_IIe2` keeps the default (`true`).
 
 The flag has to cover reset, not only registration. `computer_t::reset` calls `mmu->reset` on the Mega II before the IIgs reset handler runs `megaii_compose_map`. That compose republishes a region only when the IIgs `m_*` flags change. An `MMU_IIe::reset` that rewrote the page table from its own flags would leave the IIgs flags saying "already published."
 
@@ -196,7 +198,41 @@ After the setters exist, a short second test calls them for a handful of states 
 ## Done when
 
 - The golden file was generated from `iiememory` before the move, and the same test passes with the logic on `MMU_IIe`.
-- A IIgs build still composes Mega II pages only through `megaii_compose_map` and `MMU_IIgs::bsr_map_memory`. `install_memory_switches` is false for that `MMU_IIe`.
+- A IIgs build still composes Mega II pages `$00`–`$BF` and `$D0`–`$FF` only through `megaii_compose_map` and `MMU_IIgs::bsr_map_memory`. The Mega II instance is `MMU_IIe2` with `install_memory_switches` false (Phase 2).
 - RamWorks bank select republishes via `set_aux_bank`.
 - `$C011` / `$C012` have one read handler. `$C01x` still returns the keyboard low bits ORed with the flag.
 - Display still owns `TEXT`, `MIXED`, `80COL`, and alt charset, and still shares `80STORE`, `PAGE2`, and `HIRES` through the second `$C0xx` slot.
+
+## Phase 2 — Mega II uses MMU_IIe2
+
+Replace the embedded Mega II with `MMU_IIe2`. `MMU_IIgs` still publishes `$00`–`$BF` and `$D0`–`$FF` only through `megaii_compose_map` and `bsr_map_memory`. Unifying those composers with `MMU_IIe2::compose_map` / `calc_aux_read` / `calc_aux_write` stays out of scope.
+
+### Construction
+
+`install_memory_switches == false` at the two Mega II sites:
+
+- `src/gs2.cpp`, `MMU_MMU_IIGS`
+- `apps/iigsmmutest/main.cpp`
+
+Standalone IIe stays `MMU_IIe2` with the default (`true`) and a message bus. Do not attach a message bus to the Mega II. IIgs keyboard and status reads go through IIgs handlers, not `MMU_IIe2::c01x_read`.
+
+`MMU_IIgs::megaii` is `MMU_IIe2 *`.
+
+With the flag false, the Mega II still installs slot-ROM writes (`$C006`, `$C007`, `$C00A`, `$C00B`) and the slot-3 `$C8` side effect. It does not install aux, language-card, or display handlers, and `reset` does not republish aux or language-card pages. IIgs `reset` still runs `megaii_compose_map` and `bsr_map_memory` after that.
+
+### INTCXROM and SLOTC3ROM
+
+`MMU_IIe2::set_intcxrom` and `set_slotc3rom` store the flag and call `compose_c1cf()`. On a IIgs, `MMU_IIgs::set_intcxrom` mirrors `g_intcxrom` and then calls `megaii->set_intcxrom`. Do not call `compose_c1cf()` again in that helper. `$C00A` / `$C00B` on the IIgs path call `megaii->set_slotc3rom` the same way.
+
+A bus write can still compose twice: Mega II slot 0 (`c00x_write`) and IIgs slot 1 (`write_c0xx`) both run. Deduplicating that stack is out of scope.
+
+### Still out
+
+- Delegating `megaii_compose_map` to `MMU_IIe2::compose_map`.
+- Removing the `iiememory` device or `MMU_IIe` (still used by `iiemmutest`, `iiememory`, and the video test apps).
+
+### Done when
+
+- `iigsmmutest -l` and `iigsmmutest -l -3` pass.
+- A IIgs ROM built-in diagnostic still runs.
+- Mega II has no language-card handlers on `$C080`–`$C08F` (`install_memory_switches` is false). IIgs owns those addresses.

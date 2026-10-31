@@ -64,7 +64,6 @@
 #include "debugger/BreakpointTable.hpp"
 #include "computer.hpp"
 #include "mmus/mmu_ii.hpp"
-#include "mmus/mmu_iie.hpp"
 #include "mmus/mmu_iie2.hpp"
 #include "mmus/mmu_iigs.hpp"
 #include "mmus/iigs_memory.hpp"
@@ -731,7 +730,7 @@ struct GS2AppState {
 
     // MMU pointers tracked for cleanup
     MMU_II *mmu_ii = nullptr;
-    MMU_II *mmu_iie = nullptr; // IIe: MMU_IIe2. IIgs Mega II: MMU_IIe.
+    MMU_II *mmu_iie = nullptr; // IIe: MMU_IIe2. IIgs Mega II: MMU_IIe2 (switches off).
     MMU_IIgs *mmu_iigs = nullptr;
 };
 
@@ -1235,7 +1234,7 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
                    exp_ram / (1024 * 1024),
                    fast_ram,
                    last_bank);
-            auto *mega = new MMU_IIe(256, 128 * 1024, rd->main_rom_data + rom_bank_ff_offset + 0xC000);
+            auto *mega = new MMU_IIe2(256, 128 * 1024, rd->main_rom_data + rom_bank_ff_offset + 0xC000, false);
             state->mmu_iie = mega;
             state->mmu_iigs = new MMU_IIgs(256, (int)fast_ram, (uint32_t)main_rom_size, rd->main_rom_data, mega);
         }

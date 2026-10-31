@@ -70,23 +70,8 @@ inline void bank_e1_write(void *context, uint32_t address, uint8_t value) {
 }
 
 inline void MMU_IIgs::set_intcxrom(bool value) {
-    megaii->f_intcxrom = value;
+    megaii->set_intcxrom(value);
     g_intcxrom = value;
-    megaii->compose_c1cf();
-
-/*     if (value) {
-        // enable main ROM in pages $C1 - $CF
-        megaii->f_intcxrom = true;
-        g_intcxrom = true;
-        megaii->compose_c1cf();
-    } else {
-        // TODO: this isn't taking into account that C8xx might be active for slot 3 (i.e., what sather calls INTC8ROM). (but test on real GS seems to behave differently?)
-        // enable slot ROM in pages $C1 - $CF
-        megaii->f_intcxrom = false;
-        g_intcxrom = false;
-        megaii->compose_c1cf();
-        //megaii->set_default_C8xx_map(); // TODO: is this right?  https://zellyn.com/a2audit/v0/#e000b
-    }     */
 }
 
 inline void MMU_IIgs::write_c0xx(uint16_t address, uint8_t value) {
@@ -117,12 +102,10 @@ inline void MMU_IIgs::write_c0xx(uint16_t address, uint8_t value) {
             //printf("IIe Memory: INTCXROMON\n"); */
             break;
         case 0xC00A: // SLOTC3ROM
-            megaii->f_slotc3rom = false;
-            megaii->compose_c1cf();
+            megaii->set_slotc3rom(false);
             break;
         case 0xC00B: // SLOTC3ROM
-            megaii->f_slotc3rom = true;
-            megaii->compose_c1cf();
+            megaii->set_slotc3rom(true);
             break;
         case 0xC054: g_page2 = false;  break;
         case 0xC055: g_page2 = true;  break;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mmu.hpp"
-#include "mmu_iie.hpp"
+#include "mmu_iie2.hpp"
 #include "iigs_shadow_flags.hpp"
 #include "iigs_aux_linear.hpp"
 #include "debug.hpp"
@@ -75,10 +75,10 @@ class MMU_IIgs : public MMU {
         NClock *clock = nullptr;
 
     public:
-        MMU_IIe *megaii = nullptr;
+        MMU_IIe2 *megaii = nullptr;
         LanguageCardLogic ll;
 
-        MMU_IIgs(size_t num_banks, int ram_size, uint32_t rom_size, uint8_t *rom, MMU_IIe *mmu_iie) : MMU(num_banks, BANK_SIZE), megaii(mmu_iie) {
+        MMU_IIgs(size_t num_banks, int ram_size, uint32_t rom_size, uint8_t *rom, MMU_IIe2 *mmu_iie2) : MMU(num_banks, BANK_SIZE), megaii(mmu_iie2) {
             ram_banks = ram_size / BANK_SIZE;
             main_ram = new uint8_t[ram_banks * BANK_SIZE];
             rom_banks = rom_size / BANK_SIZE;

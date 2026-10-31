@@ -12798,3 +12798,7 @@ Working on the MMU is, of course, fraught with peril.
 The AI here is thinking that switching mmu to struct-of-arrays could yield some significant performance benefits. and I'm inclined to do it. However, I am going to finish this cleanup first.
 
 The next step is for the iigs_mmu to use the new iie mmu for megaii. it should "just work". famous last words.
+
+Phase 2: Mega II is `MMU_IIe2` with `install_memory_switches` false. Aux and language-card pages still come from `megaii_compose_map` / `bsr_map_memory`. IIgs INTCXROM and SLOTC3ROM go through `megaii->set_intcxrom` / `set_slotc3rom` (those already call `compose_c1cf`).
+
+c024 , c02c; c027, c02f in SWITCHES do not behave the same way as the v1.0.0 release. I don't think this is going to be this MMU work.
