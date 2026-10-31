@@ -20,6 +20,10 @@ testdev/hosttext/*
 !testdev/hosttext/*.s
 !testdev/hosttext/Makefile
 !testdev/hosttext/README.md
+!testdev/adbtest/
+testdev/adbtest/*
+!testdev/adbtest/*.s
+!testdev/adbtest/Makefile
 CMakeCache.txt
 **/cmake_install.cmake
 cmake_install.cmake
