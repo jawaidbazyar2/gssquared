@@ -228,6 +228,28 @@ class MMU {
             pte->write_d = write_d;
         }
 
+        // Pages [lo, hi] map to consecutive page_size blocks. base is the pointer
+        // for page lo (not for page 0). A null base is stored as-is on every page.
+        void map_range_read(page_t lo, page_t hi, uint8_t *base, const char *read_d) {
+            if (lo > hi) {
+                return;
+            }
+            for (page_t page = lo; page <= hi; page++) {
+                uint8_t *ptr = base == nullptr ? nullptr : base + (page - lo) * page_size;
+                map_page_read(page, ptr, read_d);
+            }
+        }
+
+        void map_range_write(page_t lo, page_t hi, uint8_t *base, const char *write_d) {
+            if (lo > hi) {
+                return;
+            }
+            for (page_t page = lo; page <= hi; page++) {
+                uint8_t *ptr = base == nullptr ? nullptr : base + (page - lo) * page_size;
+                map_page_write(page, ptr, write_d);
+            }
+        }
+
         void set_page_shadow(page_t page, write_handler_t handler) {
             page_table[page].shadow_h = handler;
         }

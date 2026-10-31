@@ -12786,3 +12786,15 @@ Testing a "fix" for "screensaver never kicks in" report.
 doing some of the same performance work on VSG_RGB that we did on VSG_Comp.
 
 Also cleaning up composite's handling and generation of colorburst. The timing of when we detect colorburst now matches IIe.
+
+## Oct 31, 2026
+
+boo!!
+
+So I refactored the iie mmu code to be hella cleaner by merging iiememory and mmu_iie. I had taken that approach with mmu_iigs, and this is definitely better. I executed an exhaustive test of all possible memory map combinations. So we had a baseline of operation. So far, the blast radius is pretty small and I can't find any errors.
+
+Working on the MMU is, of course, fraught with peril. 
+
+The AI here is thinking that switching mmu to struct-of-arrays could yield some significant performance benefits. and I'm inclined to do it. However, I am going to finish this cleanup first.
+
+The next step is for the iigs_mmu to use the new iie mmu for megaii. it should "just work". famous last words.
