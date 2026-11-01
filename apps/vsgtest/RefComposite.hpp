@@ -8,6 +8,8 @@
  * and mono dots are white.
  *
  * Do not "fix" or optimize this file; it is the oracle for vsgtest.
+ * The AppleColor burst gate is the exception: it must match VideoScanGenerator_Comp
+ * or the NTSC pixel compare fails.
  */
 
 #include <cstdint>
@@ -16,6 +18,7 @@
 #include "devices/displaypp/CharRom.hpp"
 #include "devices/displaypp/ScanBuffer.hpp"
 #include "devices/displaypp/VideoScannerII.hpp"
+#include "devices/displaypp/AppleColorKiller.hpp"
 #include "display/ntsc.hpp"
 
 extern RGBA_t g_hgr_LUT[4][(1 << ((NUM_TAPS * 2) + 1))];
@@ -124,6 +127,7 @@ class RefComp {
     uint8_t color_delay_mask = 0xFF;
     bool modeChecks = true;
     bool burstLatched = false;
+    AppleColorBurstGate burst_gate;
 
     Frame560 *frame_byte = nullptr;
     RefRender *render = nullptr;
@@ -169,10 +173,10 @@ public:
 
         while (fcnt--) {
             Scan_t scan = frame_scan->pull();
-            latch_colorburst(color_mode, burstLatched, scan.flags);
-            if (modeChecks && scan.mode <= VM_DHIRES) {
-                if (!burstLatched)
-                    color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
+            const bool mode_fallback = modeChecks && scan.mode <= VM_DHIRES;
+            const bool fallback_burst = !(scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80);
+            burst_gate.on_scan(color_mode, burstLatched, scan.flags, mode_fallback, fallback_burst, dhgr_mono_mode);
+            if (mode_fallback) {
                 color_mode.mixed_mode = scan.flags & VS_FL_MIXED ? 1 : 0;
                 modeChecks = false;
             }
@@ -196,6 +200,7 @@ public:
                     frame_byte->set_line(vcount);
                     modeChecks = true;
                     burstLatched = false;
+                    burst_gate.begin_line();
                     break;
 
                 case VM_TEXT40: {
@@ -333,7 +338,6 @@ public:
                         if (hcount == 0) {
                             color_mode_t cmode = color_mode;
                             cmode.phase_offset = 1;
-                            if (dhgr_mono_mode) cmode.colorburst = 0;
                             frame_byte->set_color_mode(vcount, cmode);
                         }
                         uint8_t byteM = scan.mainbyte;

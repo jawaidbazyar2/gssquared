@@ -127,10 +127,10 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
 
     while (fcnt--) {
         Scan_t scan = frame_scan->pull();
-        latch_colorburst(color_mode, burstLatched, scan.flags);
-        if (modeChecks && scan.mode <= VM_DHIRES) {
-            if (!burstLatched)
-                color_mode.colorburst = (scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80) ? 0 : 1;
+        const bool mode_fallback = modeChecks && scan.mode <= VM_DHIRES;
+        const bool fallback_burst = !(scan.mode == VM_TEXT40 || scan.mode == VM_TEXT80);
+        burst_gate.on_scan(color_mode, burstLatched, scan.flags, mode_fallback, fallback_burst, dhgr_mono_mode);
+        if (mode_fallback) {
             color_mode.mixed_mode = scan.flags & VS_FL_MIXED ? 1 : 0;
             modeChecks = false;
         }
@@ -163,6 +163,7 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     if (cur) frame_bits->clear_line(vcount);
                     modeChecks = true;
                     burstLatched = false;
+                    burst_gate.begin_line();
 
                     // from MAME
                     // the low 5 bits of the SCB determine the initial fillmode color
@@ -383,11 +384,10 @@ void VideoScanGenerator_Comp::generate_frame(ScanBuffer *frame_scan)
                     scanner_freq = 14;
 
                     if (hcount == 0) {
-                        // dhgr starts at horz offset 0
+                        // dhgr starts at horz offset 0. dhgr mono suppresses the emitted
+                        // burst inside the killer, so the off-hold still applies.
                         color_mode_t cmode = color_mode;
                         cmode.phase_offset = 1;
-                        // TODO: this is where we insert colorburst off to implement the IIgs monochrome modes.
-                        if (dhgr_mono_mode) cmode.colorburst = 0; // this is sufficient for NTSC. but rgb.. 
                         start_line(cmode);
                     }
                     emit14((scan.auxbyte & 0x7F) | (uint32_t)(scan.mainbyte & 0x7F) << 7);

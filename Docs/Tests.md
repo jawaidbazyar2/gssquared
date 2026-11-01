@@ -54,7 +54,7 @@ Generally speaking, GS2 is:
 
 [ ] Doing it about half right
 
-[ ] not correctly reflecting colorburst hold latency. We are determining colorburst per scanline based on the video mode at start of scanline. real monitors hold colorburst for some period via a PLL even after II stops sending colorburst.
+[x] AppleColor composite monitor colorburst latency. The IIe still emits burst on the burst window of the next scanline. The monitor waits 6 scanlines before decoding color, and keeps color for 131 scanlines (half a frame) after burst stops, including through VBL.
 
 [ ] not switching character widths quite right (e.g. when switching from 40 to 80, latency in the switch interacting with the video shift registers )
 

@@ -395,9 +395,14 @@ void check_bounds(Context &ctx) {
             break;
         }
     }
-    if (bits->line_start(1) != 7 || bits->colorburst(1) != 1 || bits->phase_offset(1) != 0) {
+    // Cold killer: the first 6 burst lines stay mono; color starts on line 6.
+    if (bits->line_start(1) != 7 || bits->colorburst(1) != 0 || bits->phase_offset(1) != 0) {
         failures++;
         printf("\n  FAIL line 1 mode word %08X\n", l1[FrameBits::DOT_WORDS]);
+    }
+    if (bits->colorburst(5) != 0 || bits->colorburst(6) != 1) {
+        failures++;
+        printf("\n  FAIL on-delay colorburst line5=%u line6=%u\n", bits->colorburst(5), bits->colorburst(6));
     }
     const uint32_t *l191 = bits->line(191);
     if (l191[17] != 0xFFFFFFFFu || bits->line_start(191) != 0 || bits->phase_offset(191) != 1) {
@@ -674,6 +679,55 @@ void check_gscomposite_rgb(Context &ctx) {
     printf("%s\n", failures == before ? "ok" : "");
 }
 
+// Issue #217: hires from VBL end, text at line 100, hires again next frame.
+// Lines 0-5 stay mono (on delay). Lines 6-191 stay color, including the text
+// after the switch (off hold). The hold expires in VBL, so the next frame's
+// lines 0-5 are mono again.
+void check_colorburst_latency(Context &ctx) {
+    printf("%-44s ", "AppleColor colorburst on/off latency");
+    fflush(stdout);
+    int before = failures;
+
+    VideoScannerII *scanner = make_scanner(SC_IIE, ctx.mmu);
+    VideoScanGenerator_Comp vsgc(ctx.rom_iie, false, nullptr);
+    vsgc.set_display_shift(true);
+    struct Capture : Render {
+        void render_lines(const FrameBits &, RGBA_t *, uint32_t) override {}
+    } capture;
+    vsgc.set_render(&capture);
+
+    auto check = [&](const char *which) {
+        const FrameBits *bits = vsgc.get_frame_bits();
+        for (uint32_t y = 0; y < FrameBits::LINES; y++) {
+            const uint32_t want = (y < AppleColorKiller::kOnDelay) ? 0u : 1u;
+            if (bits->colorburst(y) != want) {
+                failures++;
+                printf("\n  FAIL %s line %u colorburst %u, expected %u\n",
+                       which, y, bits->colorburst(y), want);
+                return;
+            }
+        }
+    };
+
+    for (int frame = 0; frame < 2; frame++) {
+        for (uint32_t c = 0; c < CYCLES_PER_FRAME; c++) {
+            const uint32_t line = c / 65;
+            const uint32_t hc = c % 65;
+            if (hc == 0 && line == 0) {
+                scanner->set_graf();
+                scanner->set_hires();
+            } else if (hc == 0 && line == 100) {
+                scanner->set_text();
+            }
+            scanner->video_cycle();
+        }
+        vsgc.generate_frame(scanner->get_frame_scan());
+        check(frame == 0 ? "switch frame" : "next frame");
+    }
+    delete scanner;
+    printf("%s\n", failures == before ? "ok" : "");
+}
+
 // Captures exactly one generate_frame worth of scans: everything after a VSYNC up to and including the next.
 std::vector<Scan_t> capture_frame(Context &ctx, ScannerKind k, const std::function<void(VideoScannerII *)> &setup) {
     fill_ram(ctx.mmu, 7);
@@ -840,6 +894,7 @@ int main(int argc, char **argv) {
     for (const Scenario &sc : scenarios()) run_scenario(ctx, sc, seed++);
     check_geometry(ctx);
     check_bounds(ctx);
+    check_colorburst_latency(ctx);
     if (ctx.gpu && ctx.gpu->gs_ok && ctx.gpu->src) {
         check_gscomposite_image(ctx);
         check_gscomposite_rgb(ctx);
