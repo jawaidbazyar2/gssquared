@@ -285,6 +285,30 @@ static void gs2_web_begin_frame(computer_t *computer) {
 }
 #endif
 
+static bool window_has_input_focus(SDL_Window *window) {
+    if (window == nullptr) {
+        return false;
+    }
+    return (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0;
+}
+
+// The user is still in this app if the emulation window or an open debugger
+// window has input focus. Same rule as display-sleep inhibition.
+static bool emulator_or_debugger_focused(computer_t *computer) {
+    if (computer == nullptr) {
+        return false;
+    }
+    video_system_t *vs = computer->video_system;
+    if (vs != nullptr && window_has_input_focus(vs->window)) {
+        return true;
+    }
+    if (computer->debug_window != nullptr && computer->debug_window->window_open
+        && window_has_input_focus(computer->debug_window->window)) {
+        return true;
+    }
+    return false;
+}
+
 void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per_frame)
     /* uint64_t frame_count) */ {
     computer->frame_slipped = false;
@@ -319,7 +343,11 @@ void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per
         }
         gs2_web_target_start_ns = wakeup_time;
 #else
-        if (gs2_app_values.sleep_mode) { // sleep most of it, but more aggressively sneak up on target than SDL_DelayPrecise does itself
+        // Sleep toggle, or the app is not focused. The menu checkmark stays the
+        // user's choice; unfocus only overrides the wait for this frame.
+        // Sleep most of it, but sneak up on the target more aggressively than
+        // SDL_DelayPrecise does itself.
+        if (gs2_app_values.sleep_mode || !emulator_or_debugger_focused(computer)) {
             SDL_DelayPrecise((wakeup_time - SDL_GetTicksNS())*0.95);
         }
         // busy wait sync cycle time
@@ -2382,13 +2410,6 @@ static void render_menu_overlay_for_ui_phase(video_system_t *vs) {
 #endif
 }
 
-static bool window_has_input_focus(SDL_Window *window) {
-    if (window == nullptr) {
-        return false;
-    }
-    return (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0;
-}
-
 // Block display sleep only while a machine is running and the user is in this
 // app. Selector, editor, pause, a stopped debugger, and an unfocused window
 // follow the normal OS idle timer. SDL_Enable/DisableScreenSaver are no-ops
@@ -2397,14 +2418,9 @@ static void update_display_sleep(GS2AppState *state) {
     computer_t *computer = state->computer;
     bool inhibit = false;
     if (state->phase == PHASE_EMULATION && computer != nullptr
-        && computer->execution_mode == EXEC_NORMAL) {
-        video_system_t *vs = computer->video_system;
-        if (vs != nullptr && window_has_input_focus(vs->window)) {
-            inhibit = true;
-        } else if (computer->debug_window != nullptr && computer->debug_window->window_open
-                   && window_has_input_focus(computer->debug_window->window)) {
-            inhibit = true;
-        }
+        && computer->execution_mode == EXEC_NORMAL
+        && emulator_or_debugger_focused(computer)) {
+        inhibit = true;
     }
     if (inhibit) {
         SDL_DisableScreenSaver();
@@ -2412,6 +2428,28 @@ static void update_display_sleep(GS2AppState *state) {
         SDL_EnableScreenSaver();
     }
 }
+
+#ifndef __EMSCRIPTEN__
+// Freeze the guest while the main window is minimized when the user opted in.
+// A focused debugger window still counts as being in the app.
+static bool should_pause_for_minimize(computer_t *computer) {
+    if (computer == nullptr || !SystemSettings::instance().pause_when_minimized()) {
+        return false;
+    }
+    video_system_t *vs = computer->video_system;
+    if (vs == nullptr || vs->window == nullptr) {
+        return false;
+    }
+    if ((SDL_GetWindowFlags(vs->window) & SDL_WINDOW_MINIMIZED) == 0) {
+        return false;
+    }
+    if (computer->debug_window != nullptr && computer->debug_window->window_open
+        && window_has_input_focus(computer->debug_window->window)) {
+        return false;
+    }
+    return true;
+}
+#endif
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
     GS2AppState *state = (GS2AppState *)appstate;
@@ -2581,6 +2619,24 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     if (state->phase == PHASE_EMULATION) {
         computer_t *computer = state->computer;
+
+#ifndef __EMSCRIPTEN__
+        // Opt-in: don't run the guest while minimized. SDL_AppIterate otherwise
+        // spins, and a bare pause return would peg a core. Leave execution_mode
+        // alone so a manual pause or debugger step is still there on restore.
+        static bool was_minimize_held = false;
+        if (should_pause_for_minimize(computer)) {
+            was_minimize_held = true;
+            SDL_Delay(16);
+            return SDL_APP_CONTINUE;
+        }
+        if (was_minimize_held) {
+            was_minimize_held = false;
+            if (computer != nullptr) {
+                computer->last_cycle_time = SDL_GetTicksNS();
+            }
+        }
+#endif
 
         osd->update();
 

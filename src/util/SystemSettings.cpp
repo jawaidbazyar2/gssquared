@@ -127,6 +127,7 @@ bool SystemSettings::load() {
     ss_text_mode_ = false;
     mono_persistence_ = true;
     scaling_sharp_ = false;
+    pause_when_minimized_ = false;
     last_config_path_.clear();
     last_disk_path_.clear();
     host_fst_dir_.clear();
@@ -202,6 +203,9 @@ bool SystemSettings::load() {
                 host_fst_dir_ = *p;
             }
         }
+        if (const auto* emulation = table["emulation"].as_table()) {
+            pause_when_minimized_ = (*emulation)["pause_when_minimized"].value_or(false);
+        }
         if (const auto* kb = table["keyboard"].as_table()) {
             if (const auto id = (*kb)["apple_keys"].value<std::string>()) {
                 apple_keys_ = apple_key_layout_id(apple_key_layout_from_id(*id));
@@ -261,6 +265,10 @@ bool SystemSettings::save() const {
     toml::table host_fst;
     host_fst.insert("dir", host_fst_dir_);
     table.insert("host_fst", std::move(host_fst));
+
+    toml::table emulation;
+    emulation.insert("pause_when_minimized", pause_when_minimized_);
+    table.insert("emulation", std::move(emulation));
 
     toml::table keyboard;
     keyboard.insert("apple_keys", apple_keys_.empty()
@@ -359,8 +367,21 @@ void SystemSettings::set_scaling_sharp(bool sharp) {
     save();
 }
 
+void SystemSettings::set_pause_when_minimized(bool enabled) {
+    if (pause_when_minimized_ == enabled) {
+        return;
+    }
+    pause_when_minimized_ = enabled;
+    save();
+}
+
 void SystemSettings::toggle_ss_text_mode() {
     ss_text_mode_ = !ss_text_mode_;
+    save();
+}
+
+void SystemSettings::toggle_pause_when_minimized() {
+    pause_when_minimized_ = !pause_when_minimized_;
     save();
 }
 

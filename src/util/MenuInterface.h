@@ -43,6 +43,7 @@ public:
 	void setSpeed(int speed_id);
 	void setMonitor(int monitor_id);
 	void toggleSleepMode();
+	void togglePauseWhenMinimized();
 	void toggleAudioDecorrelation();
 	void toggleRightMouseAccel();
 	void toggleCrtShader();
@@ -71,6 +72,7 @@ public:
 	int  getCurrentSpeed();
 	int  getCurrentMonitor();
 	bool getSleepMode();
+	bool getPauseWhenMinimized();
 	bool getAudioDecorrelation();
 	bool getRightMouseAccel();
 	bool getCrtShader();
