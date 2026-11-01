@@ -213,6 +213,7 @@ std::optional<device_id> parse_card_type(const std::string& value, std::string& 
         {"uthernet2", DEVICE_ID_UTHERNET2},
         {"super_serial", DEVICE_ID_SUPER_SERIAL},
         {"voc", DEVICE_ID_VOC},
+        {"ramworks", DEVICE_ID_RAMWORKS},
     };
     const std::string canonical = canonical_card_name(value);
     const auto it = map.find(canonical);
@@ -546,6 +547,7 @@ const char* card_type_name(device_id id) {
         case DEVICE_ID_UTHERNET2: return "uthernet2";
         case DEVICE_ID_SUPER_SERIAL: return "super_serial";
         case DEVICE_ID_VOC: return "voc";
+        case DEVICE_ID_RAMWORKS: return "ramworks";
         default: return "none";
     }
 }
@@ -569,6 +571,7 @@ static const char* card_display_name(device_id id) {
         case DEVICE_ID_UTHERNET2: return "Uthernet II";
         case DEVICE_ID_SUPER_SERIAL: return "Super Serial Card";
         case DEVICE_ID_VOC: return "Video Overlay Card";
+        case DEVICE_ID_RAMWORKS: return "RamWorks";
         default: return "None";
     }
 }

@@ -117,6 +117,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)speed7_1:(id)sender;
 - (void)speed14_3:(id)sender;
 - (void)toggleSleepMode:(id)sender;
+- (void)togglePauseWhenMinimized:(id)sender;
 - (void)toggleAudioDecorrelation:(id)sender;
 - (void)toggleRightMouseAccel:(id)sender;
 - (void)controllerMode:(id)sender;
@@ -256,6 +257,9 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	if (menuItem.action == @selector(newDiskImage:)) {
 		return YES;
 	}
+	if (menuItem.action == @selector(togglePauseWhenMinimized:)) {
+		return YES;
+	}
 	// All other items (File, Edit, Machine, Settings, Display) require emulation
 	return getMenuInterface()->isEmulationRunning();
 }
@@ -271,6 +275,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)speed14_3:(id)sender { getMenuInterface()->setSpeed(SPEED_14_3); (void)sender; }
 
 - (void)toggleSleepMode:(id)sender { getMenuInterface()->toggleSleepMode(); (void)sender; }
+- (void)togglePauseWhenMinimized:(id)sender { getMenuInterface()->togglePauseWhenMinimized(); (void)sender; }
 - (void)toggleAudioDecorrelation:(id)sender { getMenuInterface()->toggleAudioDecorrelation(); (void)sender; }
 - (void)toggleRightMouseAccel:(id)sender { getMenuInterface()->toggleRightMouseAccel(); (void)sender; }
 
@@ -349,6 +354,7 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 #define SETTINGS_TAG_SLEEP_MODE    1
 #define SETTINGS_TAG_AUDIO_DECORR  2
 #define SETTINGS_TAG_RMB_ACCEL     3
+#define SETTINGS_TAG_PAUSE_MINIMIZED 4
 
 @interface SettingsMenuDelegate : NSObject <NSMenuDelegate>
 @end
@@ -358,6 +364,8 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 	for (NSMenuItem *item in [menu itemArray]) {
 		if ([item tag] == SETTINGS_TAG_SLEEP_MODE) {
 			[item setState:getMenuInterface()->getSleepMode() ? NSControlStateValueOn : NSControlStateValueOff];
+		} else if ([item tag] == SETTINGS_TAG_PAUSE_MINIMIZED) {
+			[item setState:getMenuInterface()->getPauseWhenMinimized() ? NSControlStateValueOn : NSControlStateValueOff];
 		} else if ([item tag] == SETTINGS_TAG_AUDIO_DECORR) {
 			[item setState:getMenuInterface()->getAudioDecorrelation() ? NSControlStateValueOn : NSControlStateValueOff];
 		} else if ([item tag] == SETTINGS_TAG_RMB_ACCEL) {
@@ -788,6 +796,14 @@ static void setupMenus(void) {
 	[sleepItem setTarget:sMenuHandler];
 	[sleepItem setTag:SETTINGS_TAG_SLEEP_MODE];
 	[settingsMenu addItem:sleepItem];
+
+	NSMenuItem *pauseMinimizedItem = [[[NSMenuItem alloc]
+		initWithTitle:NSLocalizedString(@"Pause when Minimized", nil)
+		       action:@selector(togglePauseWhenMinimized:)
+		keyEquivalent:@""] autorelease];
+	[pauseMinimizedItem setTarget:sMenuHandler];
+	[pauseMinimizedItem setTag:SETTINGS_TAG_PAUSE_MINIMIZED];
+	[settingsMenu addItem:pauseMinimizedItem];
 
 	NSMenuItem *audioDecorrItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Mono Helper", nil)

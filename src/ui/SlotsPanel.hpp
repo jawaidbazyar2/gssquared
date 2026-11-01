@@ -36,6 +36,8 @@ public:
 
     void set_name_resolver(SlotNameResolver resolver);
     void refresh_names();
+    /** Slot 0 reads "Aux" on IIe family profiles, "0" otherwise. */
+    void set_slot0_aux(bool aux);
     SlotButton *get_slot_button(int slot) const;
 };
 

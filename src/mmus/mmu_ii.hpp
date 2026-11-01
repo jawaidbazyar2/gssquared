@@ -20,6 +20,8 @@ class MMU_II : public MMU {
 
         read_handler_pair_t C0xx_memory_read_handlers[C0X0_SIZE] = { {nullptr, nullptr}, {nullptr, nullptr} };          // Table of memory read handlers
         write_handler_pair_t C0xx_memory_write_handlers[C0X0_SIZE] = { {nullptr, nullptr}, {nullptr, nullptr} };        // Table of memory write handlers
+        /** When set, the second $C0xx read handler replaces the bus value instead of OR-ing. */
+        bool C0xx_read_slot1_replaces[C0X0_SIZE] = {};
 
         int8_t C8xx_slot;
         C8XX_handler_t C8xx_handlers[8] = {nullptr};
@@ -39,6 +41,8 @@ class MMU_II : public MMU {
         virtual void set_C8xx_handler(SlotType_t slot, void (*handler)(void *context, SlotType_t slot), void *context);
         virtual void set_C0XX_read_handler(uint16_t address, read_handler_t handler);
         virtual void set_C0XX_write_handler(uint16_t address, write_handler_t handler);
+        /** Second read handler at this $C0xx address drives the whole data bus. */
+        virtual void set_C0XX_read_replaces(uint16_t address);
 /*         virtual void get_C0XX_read_handler(uint16_t address, read_handler_t &handler);
         virtual void get_C0XX_write_handler(uint16_t address, write_handler_t &handler); */
         

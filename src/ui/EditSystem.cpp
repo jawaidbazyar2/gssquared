@@ -425,6 +425,7 @@ void EditSystem::rebuild_ui_from_draft() {
     }
     slots_panel->set_name_resolver([this](int slot) { return draft.slot_device_name(slot); });
     slots_panel->refresh_names();
+    slots_panel->set_slot0_aux(platform_has_aux_slot(draft.config().platform_id));
     drives_panel->rebuild(draft.drive_specs());
     if (serial_ports_panel) {
         serial_ports_panel->rebuild(draft.port_specs());
@@ -782,7 +783,11 @@ void EditSystem::render() {
 
     if (card_picker) {
         char title[64];
-        snprintf(title, sizeof(title), "Card for slot %d", picking_slot);
+        if (picking_slot == 0 && platform_has_aux_slot(draft.config().platform_id)) {
+            snprintf(title, sizeof(title), "Card for Aux");
+        } else {
+            snprintf(title, sizeof(title), "Card for slot %d", picking_slot);
+        }
         text_renderer->set_color(0xFF, 0xFF, 0xFF, 0xFF);
         text_renderer->render(title, 370 + layout_dx, 140 + body_dy, TEXT_ALIGN_LEFT);
         card_picker->render();

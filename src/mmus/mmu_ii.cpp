@@ -187,7 +187,12 @@ uint8_t MMU_II::read(uint32_t address) {
             }
             read_handler_t funcptr2 = C0xx_memory_read_handlers[subaddr].hs[1];
             if (funcptr2.read != nullptr) {
-                retval |= (*funcptr2.read)(funcptr2.context, eaddress);
+                uint8_t second = (*funcptr2.read)(funcptr2.context, eaddress);
+                if (C0xx_read_slot1_replaces[subaddr]) {
+                    retval = second;
+                } else {
+                    retval |= second;
+                }
             }
             // if neither was called then get floating bus here.
             //retval |= floating_bus_read();
@@ -268,6 +273,11 @@ void MMU_II::set_C0XX_read_handler(uint16_t address, read_handler_t handler) {
         assert(false); // Bug out if out of handler slots
     }
     //C0xx_memory_read_handlers[address - C0X0_BASE] = handler;
+}
+
+void MMU_II::set_C0XX_read_replaces(uint16_t address) {
+    assert(address >= C0X0_BASE && address < C0X0_BASE + C0X0_SIZE);
+    C0xx_read_slot1_replaces[address & 0xFF] = true;
 }
 
 void MMU_II::set_C0XX_write_handler(uint16_t address, write_handler_t handler) {

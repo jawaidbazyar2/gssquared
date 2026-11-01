@@ -22,12 +22,21 @@ void SlotButton::set_device_name(const std::string& name) {
     slot_device_name = name;
 }
 
+void SlotButton::set_label(const std::string& label) {
+    slot_string = label;
+}
+
 void SlotButton::render() {
     
     Button_t::render();
-    
+
+    // Right edge stays a few pixels left of the button. A digit lands where
+    // the old left-aligned "tp.x - 15" did; "Aux" grows left into the margin.
+    const int label_y = static_cast<int>(tp.y + cp.y + (cp.h - ctx->text_render->get_font_line_height()));
+    const int label_w = ctx->text_render->string_width(slot_string);
+    const int label_x = static_cast<int>(tp.x) - 6 - label_w;
     ctx->text_render->set_color(0x00, 0x00, 0x00, opacity);
-    ctx->text_render->render(slot_string, tp.x -15, tp.y + cp.y + (cp.h - ctx->text_render->get_font_line_height()), TEXT_ALIGN_LEFT);
+    ctx->text_render->render(slot_string, label_x, label_y, TEXT_ALIGN_LEFT);
 
     ctx->text_render->set_color(0xFF, 0xFF, 0xFF, opacity);
     if (slot_device_name.length() > 0) {
