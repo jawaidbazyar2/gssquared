@@ -7,6 +7,7 @@
 #include "generate/AppleIIgs.hpp"
 #include "render/Render.hpp"
 #include "VideoScanGenerator_Intf.hpp"
+#include "AppleColorKiller.hpp"
 
 #define CHAR_NUM 256
 #define CHAR_WIDTH 16
@@ -53,6 +54,7 @@ private:
     int palette_index = 0; // reset to 0 each scanline.
     bool modeChecks = true;
     bool burstLatched = false; // colorburst taken from the HBL burst window, not the first picture byte
+    AppleColorBurstGate burst_gate; // monitor decision written into the line mode word
 
     FrameVSG *frame_vsg = nullptr;
     FrameBits *frame_bits = nullptr;
@@ -72,6 +74,7 @@ private:
     inline void start_line(color_mode_t cmode) noexcept {
         if (!cur) return;
         uint32_t line_start = (display_shift_enabled && cmode.phase_offset == 0) ? 7 : 0;
+        // cmode.colorburst is the AppleColor killer output, not the raw burst latch.
         cur[FrameBits::DOT_WORDS] = FrameBits::make_mode(cmode.colorburst, cmode.phase_offset, line_start);
         acc = 0; nbits = line_start; word = 0;
     }
