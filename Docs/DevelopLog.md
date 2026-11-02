@@ -12802,3 +12802,13 @@ The next step is for the iigs_mmu to use the new iie mmu for megaii. it should "
 Phase 2: Mega II is `MMU_IIe2` with `install_memory_switches` false. Aux and language-card pages still come from `megaii_compose_map` / `bsr_map_memory`. IIgs INTCXROM and SLOTC3ROM go through `megaii->set_intcxrom` / `set_slotc3rom` (those already call `compose_c1cf`).
 
 c024 , c02c; c027, c02f in SWITCHES do not behave the same way as the v1.0.0 release. I don't think this is going to be this MMU work.
+
+## Nov 2, 2026
+
+rikkles hit us with a big test report. cool! @IIGS-MMU-COMPARISONS.html is the file. First up, some low-hanging fruit.
+
+C029 should be masked with E1 on writes and reads, because C029[4-1] are unused bits "must be 0" according to firmware reference.
+
+C02D should be masked with F6. This is interesting. So even if I write C02D=81, it should come back 80. because C02D[0] and C02D[3] are "must be 0".
+
+C036 is the disk speed register aka CYAREG. This is saying we're good, and yes, I guess we are.

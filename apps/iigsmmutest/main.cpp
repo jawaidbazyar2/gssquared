@@ -135,6 +135,8 @@ void EmitTestAssembly(const MMUTest::Test& test, AsmFile *a) {
 void EmitAssemblyPreamble(AsmFile *a) {
     std::vector<std::string> testnames = {
         "        org $0800",
+        "        php",   // IRQs off: IOLC-inhibit tests make $FFFE read RAM, not ROM
+        "        sei",
         "        ldy #00",
         "        lda #00",
         };
@@ -149,7 +151,8 @@ void EmitAssemblyPostamble(AsmFile *a) {
     "testfailed   cpy #00",
     "        beq exittest",
     "        jsr displayfail",
-    "exittest     rts",
+    "exittest     plp",
+    "        rts",
 
     "recordfail",
     "        sta failtable,Y",  // test number

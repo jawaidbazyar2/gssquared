@@ -400,17 +400,34 @@ inline const std::vector<Test> ALL_TESTS = {
     },
     /* This used to do C068:68 then C068:28, but that includes ROM3 "inhibit text page 2 shadow". 
        Have separate test for shadow and ROM03 */
+    /* Physical placement of the two LC banks, seen through IOLC-inhibited bank $00.
+       Each bank gets a distinct marker so the flat reads can tell them apart (test 17
+       leaves $12 in bank 2 $D000, so a single shared value cannot). Expected values
+       are the ROM 1 / ROM 3 / KEGS / MAME result from issue #224: LC bank 2 lives at
+       flat $C000-$CFFF and LC bank 1 at flat $D000-$DFFF. */
     Test{
         20,
-        "main LC bank $00 (LC Bank 1) write $D000, disable IOLC shadow, readable at $C000",
+        "IOLC inhibited: flat $C000 is LC bank 2, flat $D000 is LC bank 1",
         {
-            ReadOp(0xE0'C08B,0x00), // make LC bank 1 ram r/w
-            ReadOp(0xE0'C08B,0x00), // make LC bank 1 ram r/w
-            WriteOp(0x00'D000,0x12), // write to LC bank 1 ram
-            ReadOp(0xE0'C08A,0x00), // set back to ROM
+            WriteOp(0xE0'C008,0x00), // ALTZP off: main LC
+            WriteOp(0xE0'C004,0x00), // RAMWRT off
+            ReadOp(0xE0'C083,0x00),  // LC bank 2, read/write RAM
+            ReadOp(0xE0'C083,0x00),
+            WriteOp(0x00'D000,0x19), // bank 2 marker
+            ReadOp(0xE0'C08B,0x00),  // LC bank 1, read/write RAM
+            ReadOp(0xE0'C08B,0x00),
+            WriteOp(0x00'D000,0x2B), // bank 1 marker
+            WriteOp(0x00'E000,0x3D), // common $E000 marker
+            ReadOp(0xE0'C083,0x00),  // select bank 2 before inhibiting
             WriteOp(0xE0'C035,0x48), // inhibit IOLC shadow
-            AssertOp(0x00'C000,0x12), // read from flat bank 0 ram
+            AssertOp(0x00'C000,0x19),
+            AssertOp(0x00'D000,0x2B),
+            AssertOp(0x00'E000,0x3D),
+            ReadOp(0xE0'C08B,0x00),  // LC bank switch while inhibited: no effect on bank $00
+            AssertOp(0x00'C000,0x19),
+            AssertOp(0x00'D000,0x2B),
             WriteOp(0xE0'C035,0x08), // re-enable IOLC shadow
+            ReadOp(0xE0'C082,0x00),  // restore: LC bank 2, read ROM
         }
     },
     Test{
@@ -445,9 +462,9 @@ inline const std::vector<Test> ALL_TESTS = {
         24, 
         "LC Bank 2 Does Not Trigger aux_read 0x1'0000 offset - calc_aux_write",
         {
-            WriteOp{0x00'0036, {0x12, 0x34}},
+            WriteOp{0x00'0006, {0x12, 0x34}},
             WriteOp{0xE0'C068, 0x0C},
-            AssertOp{0x00'0036, {0x12, 0x34}},
+            AssertOp{0x00'0006, {0x12, 0x34}},
             WriteOp{0xE0'C068, 0x08},
         }
     },
@@ -456,9 +473,9 @@ inline const std::vector<Test> ALL_TESTS = {
         "LC Bank 2 Does Not Trigger aux_read 0x1'0000 offset - calc_aux_write",
         {
             WriteOp{0xE0'C068, 0x0C},
-            WriteOp{0x00'0036, {0x12, 0x34}},
+            WriteOp{0x00'0006, {0x12, 0x34}},
             WriteOp{0xE0'C068, 0x08},
-            AssertOp{0x00'0036, {0x12, 0x34}},
+            AssertOp{0x00'0006, {0x12, 0x34}},
         }
     },
 
