@@ -312,7 +312,7 @@ In Speed Register, bit 4 = 1 means shadowing in all banks $00 - $7F; otherwise s
 So we can either shadow (and make I/O & LC appear) in banks 0/1; OR, in all RAM banks.
 
 For purposes of the LC, if shadowing is enabled for a particular bank, and the IOLC is enabled, then transform the address. for LC ROM, it's always going to point to the same real ROM. for LC RAM, we're mapping the addresses potentially like so:
-D000-DFFF: either C000-CFFF (bank 1), or D000-DFFF (bank 2)
+D000-DFFF: either C000-CFFF (bank 2), or D000-DFFF (bank 1)
 E000-FFFF: E000-FFFF.
 0000 - 01FF: 0000 - 01FF either in main bank, or in aux bank.
 Then re-add to base address of bank.

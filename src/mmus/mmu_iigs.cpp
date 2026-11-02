@@ -378,7 +378,7 @@ void MMU_IIgs::megaii_compose_map() {
 
 void MMU_IIgs::bsr_map_memory() {
 
-    uint32_t bankd0offset = (ll.FF_BANK_1 == 1) ? 0xC000 : 0xD000;
+    uint32_t bankd0offset = (ll.FF_BANK_1 == 1) ? 0xD000 : 0xC000;
     uint32_t banke0offset = 0xE000;
     if (g_altzp) {
         bankd0offset += 0x1'0000; // alternate bank!
@@ -580,8 +580,8 @@ uint8_t bank_shadow_read(void *context, uint32_t address) {
     if (mmu_iigs->is_iolc_shadowed() && (page >= 0xD0 && page <= 0xFF)) {
         
         if (mmu_iigs->is_lc_read_enable()) { // ram
-            if (mmu_iigs->is_lc_bank1()) {
-                if (page >= 0xD0 && page <= 0xDF) address -= 0x1000; // only this area.
+            if (!mmu_iigs->is_lc_bank1()) {
+                if (page >= 0xD0 && page <= 0xDF) address -= 0x1000; // bank 2 lives at $C000
             }
         } else {
             //uint8_t *addr;
@@ -620,8 +620,8 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
     if (mmu_iigs->is_iolc_shadowed() && (page >= 0xD0 && page <= 0xFF)) {
         
         if (mmu_iigs->is_lc_write_enable()) { // is LC RAM writable?
-            if (mmu_iigs->is_lc_bank1()) {
-                if (page >= 0xD0 && page <= 0xDF) address -= 0x1000; // only this area.
+            if (!mmu_iigs->is_lc_bank1()) {
+                if (page >= 0xD0 && page <= 0xDF) address -= 0x1000; // bank 2 lives at $C000
             }
         } else {
             // ROM - do nothing, just fall through to here.

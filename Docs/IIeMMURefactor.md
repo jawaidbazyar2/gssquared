@@ -105,7 +105,7 @@ Public setters, private static handlers. A later IIgs phase can call `megaii->se
 
 ## Map the composer publishes
 
-Offsets are from the selected base. Language-card bank 1 is the `$C000` hole in that 64K (`base + 0xC000`). Bank 2 is `base + 0xD000`. `$E000`–`$FFFF` RAM is `base + 0xE000`. The IIe ROM image starts at `$C000`, so ROM `$D000` is `get_rom_base() + 0x1000` and ROM `$E000` is `get_rom_base() + 0x2000`.
+Offsets are from the selected base. Language-card bank 2 is the `$C000` hole in that 64K (`base + 0xC000`). Bank 1 is `base + 0xD000`. `$E000`–`$FFFF` RAM is `base + 0xE000`. The IIe ROM image starts at `$C000`, so ROM `$D000` is `get_rom_base() + 0x1000` and ROM `$E000` is `get_rom_base() + 0x2000`.
 
 | Pages | Read | Write |
 |---|---|---|
@@ -141,7 +141,7 @@ Both suites use the same encoding. Record read and write separately:
 | inside `get_rom_base()` | `ROM+offset` |
 | null | `NONE` |
 
-`offset` is `pointer - main_ram`, 17 bits (`0x00000`–`0x1FFFF`). Bit 16 set is auxiliary bank 0, so text page 1 in aux is `RAM+0x10400` and language-card bank 1 under `ALTZP` is `RAM+0x1C000`. A pointer outside that window is not a `RAM+` span.
+`offset` is `pointer - main_ram`, 17 bits (`0x00000`–`0x1FFFF`). Bit 16 set is auxiliary bank 0, so text page 1 in aux is `RAM+0x10400` and language-card bank 2 under `ALTZP` is `RAM+0x1C000`. A pointer outside that window is not a `RAM+` span.
 
 Run-length encode. One state is a list of spans, for example `04-07 R RAM+0x10400 W RAM+0x10400`. Store one line per state: the switch bits, then the spans.
 

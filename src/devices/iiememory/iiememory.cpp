@@ -37,15 +37,15 @@
  * ROM: C1-CF     ROM + 0x0100 
  * ROM: D0-DF     ROM + 0x1000
  * ROM: E0-FF     ROM + 0x2000 (- 0x3FFF)
- * RAM: D0-DF     Bank 1:  RAM + 0xC000
- * RAM: D0-DF     Bank 2:  RAM + 0xD000
+ * RAM: D0-DF     Bank 2:  RAM + 0xC000
+ * RAM: D0-DF     Bank 1:  RAM + 0xD000
  * RAM: E0-FF              RAM + 0xE000
  * ALT RAM:       add 0x10000 to address 
  */
 
 void bsr_map_memory(iiememory_state_t *lc) {
 
-    uint32_t bankd0offset = (lc->ll.FF_BANK_1 == 1) ? 0xC000 : 0xD000;
+    uint32_t bankd0offset = (lc->ll.FF_BANK_1 == 1) ? 0xD000 : 0xC000;
     uint32_t banke0offset = 0xE000;
     if (lc->f_altzp) {
         bankd0offset += 0x1'0000; // alternate bank!

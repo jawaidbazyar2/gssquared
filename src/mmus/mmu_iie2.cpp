@@ -113,7 +113,7 @@ void MMU_IIe2::map_range(int lo, int hi, bool aux, bool is_write) {
 }
 
 void MMU_IIe2::bsr_map_memory() {
-    uint32_t bankd0offset = (ll.FF_BANK_1 == 1) ? 0xC000 : 0xD000;
+    uint32_t bankd0offset = (ll.FF_BANK_1 == 1) ? 0xD000 : 0xC000;
     uint32_t banke0offset = 0xE000;
     if (f_altzp) {
         bankd0offset += 0x1'0000;

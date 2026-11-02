@@ -172,11 +172,11 @@ class MMU_IIgs : public MMU {
 
         /* Physical aux index for a direct bank $E1 access (bank latch on). Aux is
            forced, so ALTZP / RAMRD / RAMWRT / 80STORE / PAGE2 do not apply here -
-           those select main vs aux for bank $E0. The LC bank 1 $D000 image (parked in
+           those select main vs aux for bank $E0. The LC bank 2 $D000 image (parked in
            the $C000 I/O hole, as in bsr_map_memory) and the linear/SHR aux mapping do
            still apply; the two ranges are disjoint. */
         inline uint32_t e1_aux_index(uint16_t a16) {
-            if (a16 >= 0xD000 && a16 <= 0xDFFF && is_lc_bank1()) return 0x1'0000 | (a16 - 0x1000);
+            if (a16 >= 0xD000 && a16 <= 0xDFFF && !is_lc_bank1()) return 0x1'0000 | (a16 - 0x1000);
             if (is_aux_linear()) return 0x1'0000 | iigs_aux_linear_to_phys(a16);
             return 0x1'0000 | a16;
         }
