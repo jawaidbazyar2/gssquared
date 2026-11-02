@@ -4,6 +4,30 @@
 #include "mmus/mmu.hpp"
 #include "memoryspecs.hpp"
 
+#include <cstring>
+
+void MMU_IIgs::fill_shadow_mask() {
+    std::memset(shadow_mask, 0, sizeof(shadow_mask));
+    shadow_mask[1] = SHADOW_INH_TEXT1;
+    shadow_mask[65] = SHADOW_INH_TEXT1;
+    if (is_rom03) {
+        shadow_mask[2] = SHADOW_INH_TEXT2;
+        shadow_mask[66] = SHADOW_INH_TEXT2;
+    }
+    for (int slot = 8; slot <= 15; slot++) {
+        shadow_mask[slot] = SHADOW_INH_HGR1;
+    }
+    for (int slot = 16; slot <= 23; slot++) {
+        shadow_mask[slot] = SHADOW_INH_HGR2;
+    }
+    for (int slot = 72; slot <= 87; slot++) {
+        shadow_mask[slot] = static_cast<uint8_t>(SHADOW_INH_SHR | SHADOW_INH_AUXHGR);
+    }
+    for (int slot = 88; slot <= 103; slot++) {
+        shadow_mask[slot] = SHADOW_INH_SHR;
+    }
+}
+
 uint8_t float_area_read(void *context, uint32_t address) {
     if (DEBUG(DEBUG_MMUGS)) printf("Float area read at address %06X\n", address);
     return address >> 16 ;

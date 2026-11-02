@@ -23,6 +23,10 @@ class MMU_IIgs : public MMU {
 
         uint8_t reg_slot = 0;
         uint8_t reg_shadow = 0;
+        /* 1K slots in the low 17 address bits. Filled once in the constructor.
+           reg_shadow stays live; a slot byte is the OR of inhibit bits that cover it. */
+        uint8_t shadow_mask[128]{};
+        void fill_shadow_mask();
         uint8_t reg_speed = 0x08;
         union {
             uint8_t reg_state = 0;
@@ -83,6 +87,7 @@ class MMU_IIgs : public MMU {
             main_ram = new uint8_t[ram_banks * BANK_SIZE];
             rom_banks = rom_size / BANK_SIZE;
             is_rom03 = rom_banks >= 4;
+            fill_shadow_mask();
             main_rom = rom;
             map_initialized = false;
             dma_bank_register = 0;
@@ -103,37 +108,13 @@ class MMU_IIgs : public MMU {
             MMU::write(address, value);
         }
 
+        /* Odd $2000-$5FFF is SHR|AUXHGR (0x18): shadow is on when either inhibit bit is clear. */
         inline bool shadow_is_enabled(uint32_t address) {
-            uint32_t address_16 = address & 0xFFFF;
-            uint32_t address_17 = address & 0x1FFFF;
-            const bool odd_bank = (address & 0x10000) != 0;
-            
-            if ((address_16 >= 0x0400 && address_16 <= 0x07FF) && !(reg_shadow & SHADOW_INH_TEXT1)) {
-                return true;
-            }
-            if (is_rom03 && ((address_16 >= 0x0800 && address_16 <= 0x0BFF) && !(reg_shadow & SHADOW_INH_TEXT2))) {
-                return true;
-            }
-            // HGR1/HGR2: even banks only. Odd-bank $2000-$5FFF is gated by AUXHGR|SHR
-            // (inhibit only when both are set; see SHADOW.s inhbt1).
-            if (!odd_bank) {
-                if ((address_16 >= 0x2000 && address_16 <= 0x3FFF) && !(reg_shadow & SHADOW_INH_HGR1)) {
-                    return true;
-                }
-                if ((address_16 >= 0x4000 && address_16 <= 0x5FFF) && !(reg_shadow & SHADOW_INH_HGR2)) {
-                    return true;
-                }
-            }
-            if ((address_17 >= 0x12000 && address_17 <= 0x19FFF) && !(reg_shadow & SHADOW_INH_SHR)) {
-                return true;
-            }
-            if ((address_17 >= 0x12000 && address_17 <= 0x15FFF) && !(reg_shadow & SHADOW_INH_AUXHGR)) {
-                return true;
-            }
-            
-            
-            return false;
+            const uint32_t slot = (address >> 10) & 0x7F;
+            return (shadow_mask[slot] & static_cast<uint8_t>(~reg_shadow)) != 0;
         }
+
+        const uint8_t *shadow_mask_bytes() const { return shadow_mask; }
 
         // TODO: remove, not used anywhere any more. bank_e1_read handles bank latch directly.
         /* inline uint8_t megaiiRead(uint32_t address) {

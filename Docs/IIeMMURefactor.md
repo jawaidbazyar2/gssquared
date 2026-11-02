@@ -2,7 +2,7 @@
 
 Phase 1 moves the Apple IIe auxiliary-memory and language-card map into `MMU_IIe`, behind a constructor flag so a IIgs Mega II keeps today's page tables. A characterization test records the current map first and is the gate for the move.
 
-Later phases (IIgs calling the same composer, one predicate shared with `calc_aux_read` / `calc_aux_write`) are out of scope here. The IIgs composers stay as they are.
+Unifying the IIgs composers with `calc_aux_read` / `calc_aux_write` stays out of scope. `shadow_is_enabled` is a separate change, specified at the end.
 
 ## Current split
 
@@ -307,3 +307,121 @@ The median is 0.061 ns/read slower (about 4.6%). Checksum matches the baseline. 
 - The IIe golden map is unchanged. Same bus sequences, same `RAM+` / `ROM+` / `NONE` spans.
 - `iigsmmutest -l` and `iigsmmutest -l -3` pass. IIgs reads still go through `MMU::read`.
 - `get_page_table_entry` returns the same pointers, handlers, and debug tags as the old record.
+
+## GS MMU — shadow_is_enabled
+
+`bank_shadow_write` is the only caller. It runs after `calc_aux_write`, so bit 16 of the address is the post-aux bank. The predicate does not see the bank number above that. `SPEED_SHADOW_ALL` only decides which banks install `bank_shadow_write`. It does not change the predicate.
+
+The range tests rechecked six windows against `reg_shadow` on every call. Every range is a whole number of 1K blocks, and 1K is the coarsest step that stays exact: `$0000–$03FF` is not shadowed and `$0400–$07FF` is text page 1. `shadow_is_enabled` is now the mask lookup below.
+
+### One mask table
+
+128 bytes, one per 1K slot in the low 17 address bits. Filled in the `MMU_IIgs` constructor, after `is_rom03` is known. Nothing writes it after that. `$C035` and the `reg_shadow = 0x08` in `reset` change the register only.
+
+```text
+slot    = (address >> 10) & 0x7F
+enabled = (shadow_mask[slot] & ~reg_shadow) != 0
+```
+
+The byte is the OR of the inhibit bits of every region that contains that slot. `reg_shadow` stays live. A bit set in the register inhibits that region. The AND with the inverted register is nonzero when at least one covering region is still enabled. A slot no region covers holds `0` and stays disabled for every register value.
+
+Bits 0–5 are the bits this function reads. Bit 6 (`IOLC`) and bit 7 (reserved) are not in the table. `$C000–$FFFF` stays 0 here; `bank_shadow_write` handles that window before this call.
+
+`is_rom03` is the only construction input. On a ROM03, slots 2 and 66 hold `TEXT2` (`0x20`). On a ROM01 those slots hold `0`.
+
+| Slots | Addresses | Mask |
+|---|---|---|
+| 1 and 65 | `$x400–$x7FF` | `TEXT1` `0x01` |
+| 2 and 66 | `$x800–$xBFF` | `TEXT2` `0x20` on ROM03, else `0` |
+| 8–15 | even `$2000–$3FFF` | `HGR1` `0x02` |
+| 16–23 | even `$4000–$5FFF` | `HGR2` `0x04` |
+| 72–87 | odd `$2000–$5FFF` | `SHR\|AUXHGR` `0x18` |
+| 88–103 | odd `$6000–$9FFF` | `SHR` `0x08` |
+
+Odd `$2000–$5FFF` is the overlap. Shadow is on when either inhibit bit is clear, which is the OR already stored in `0x18`. Odd `$6000–$9FFF` is SHR only. Even `$6000–$FFFF` is 0.
+
+Power-on `reg_shadow = 0x08` inhibits SHR and leaves the other display regions enabled. Odd `$2000` is on (`0x18 & ~0x08 = 0x10`). Odd `$6000` is off.
+
+### Out
+
+- No second table, and no pointer swap when `reg_shadow` changes.
+- `IOLC` stays in `bank_shadow_read` / `bank_shadow_write`. A nonzero mask is a Mega II write-through, which is the wrong action for `$C000–$CFFF`.
+- `calc_aux_read`, `calc_aux_write`, and the `$C0–$FF` dispatch in the shadow handlers stay as they are.
+- No sub-64K page table.
+
+### Compare
+
+`iigsmmutest --shadow`. It does not load a ROM file and does not run the assembly suites.
+
+Construct two `MMU_IIgs` objects with a zeroed ROM buffer and a Mega II built with `install_memory_switches` false. 128K selects ROM01. 256K selects ROM03. Same shape as the `-l` path in `apps/iigsmmutest/main.cpp`.
+
+Copy today's range tests into the harness as the oracle. The lookup calls production `shadow_is_enabled`, which indexes `shadow_mask` on the object. The harness does not keep a second table.
+
+Sweep, and fail on the first mismatch. Print machine, `reg_shadow`, address, oracle, and lookup.
+
+- `reg_shadow` from `0x00` through `0xFF`, via `set_shadow_register`. Bits 6 and 7 must not change the result.
+- 128 addresses, `(slot << 10)` for slot `0..127`.
+- The same 128 addresses with bit 17 set (`| 0x20000`). Bank `$02` matches bank `$00` and bank `$03` matches bank `$01`.
+
+That is 2 × 256 × 128 × 2 comparisons. 1K boundaries are the grid. The speed-test checksum below covers the bytes inside each block for the register values it times.
+
+Snapshot the 128 mask bytes after construction. After the sweep, and after `reset`, the bytes are unchanged and `reg_shadow` is `0x08`.
+
+### Speed
+
+The same `--shadow` run times the oracle and the lookup after the compare passes. A compare failure skips the timing and returns non-zero. The timing does not fail the process.
+
+Release build. 10,000,000 calls, address `i & 0x1FFFF`, one warmup, five timed passes, median of the five. Same arrangement as `iiemmu2test --bench`.
+
+The timed loop calls a `noinline` wrapper compiled in `apps/iigsmmutest/shadow_predicate_fn.cpp`, not in the loop's file. `noinline` in the same translation unit is not enough. Clang still sees the body, rewrites the call to pass the register in a register, and deletes every timed pass but the last. A separate file hides the body. There is no link-time optimization on this target.
+
+```cpp
+[[gnu::noinline]] bool shadow_pred::oracle(MMU_IIgs *mmu, uint32_t address);
+[[gnu::noinline]] bool shadow_pred::lookup(MMU_IIgs *mmu, uint32_t address);
+```
+
+The oracle is today's range tests. It reads `shadow_register()` and `is_rom03_machine()` on each call. The lookup calls `shadow_is_enabled`, so the inline mask load is compiled into the wrapper. Neither is `pure` or `const`. `reg_shadow` is not a constant argument. The timed loop also puts a memory clobber around each pass so a visible caller cannot drop the call.
+
+Time the two pass loops separately. Inside the loop accumulate `sum += (uint64_t)result * (address | 1)`. Compare checksums after the passes, not inside them. The checksums must be equal.
+
+Three register values, both machines:
+
+| `reg_shadow` | What the old tests do |
+|---|---|
+| `0x08` | Power-on. SHR inhibited, the other display regions enabled. |
+| `0x00` | Every display region enabled. Hits return at the first matching range. |
+| `0x3F` | All six display inhibits set. Every range fails. |
+
+### Release
+
+`./build/iigsmmutest --shadow`, existing Release tree. Median of five passes.
+
+```text
+ROM01 reg 08 oracle ns/call: 1.916 1.795 1.633 1.617 1.647  median 1.647
+ROM01 reg 08 lookup ns/call: 0.695 0.691 0.697 0.696 0.694  median 0.695
+ROM01 reg 08 checksum 128015925248
+ROM01 reg 00 oracle ns/call: 1.594 1.599 1.598 1.606 1.587  median 1.598
+ROM01 reg 00 lookup ns/call: 0.697 0.699 0.689 0.692 0.707  median 0.697
+ROM01 reg 00 checksum 250422493184
+ROM01 reg 3F oracle ns/call: 1.816 1.735 1.791 1.737 1.747  median 1.747
+ROM01 reg 3F lookup ns/call: 0.701 0.696 0.686 0.705 0.695  median 0.696
+ROM01 reg 3F checksum 0
+ROM03 reg 08 oracle ns/call: 1.618 1.629 1.630 1.634 1.657  median 1.630
+ROM03 reg 08 lookup ns/call: 0.715 0.694 0.697 0.695 0.699  median 0.697
+ROM03 reg 08 checksum 133517279232
+ROM03 reg 00 oracle ns/call: 1.592 1.586 1.574 1.594 1.591  median 1.591
+ROM03 reg 00 lookup ns/call: 0.694 0.698 0.710 0.694 0.704  median 0.698
+ROM03 reg 00 checksum 255923847168
+ROM03 reg 3F oracle ns/call: 1.777 1.789 1.783 1.772 1.787  median 1.783
+ROM03 reg 3F lookup ns/call: 0.712 0.701 0.703 0.689 0.700  median 0.701
+ROM03 reg 3F checksum 0
+```
+
+Lookup median is 0.69–0.70 ns/call. Oracle median is 1.59–1.78 ns/call. Checksums match the pre-swap run. The fully-inhibited case (`$3F`, checksum 0) is the one where every range test fails, and the lookup is still one load and a test. The lookup column is production `shadow_is_enabled`.
+
+### Done when
+
+- The compare passes for ROM01 and ROM03.
+- The mask bytes survive `set_shadow_register` and `reset`.
+- Each bench pair prints one checksum, shared by the oracle and the lookup.
+- `iigsmmutest -l` and `iigsmmutest -l -3` still pass. The write-through behavior is unchanged.
