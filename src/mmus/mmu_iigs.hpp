@@ -27,6 +27,12 @@ class MMU_IIgs : public MMU {
            reg_shadow stays live; a slot byte is the OR of inhibit bits that cover it. */
         uint8_t shadow_mask[128]{};
         void fill_shadow_mask();
+        /* One region bit per 256-byte page. Filled once in the constructor.
+           aux_read_flags / aux_write_flags stay live and are packed by megaii_compose_map. */
+        uint8_t aux_region[256]{};
+        uint8_t aux_read_flags{};
+        uint8_t aux_write_flags{};
+        void fill_aux_region();
         uint8_t reg_speed = 0x08;
         union {
             uint8_t reg_state = 0;
@@ -88,6 +94,7 @@ class MMU_IIgs : public MMU {
             rom_banks = rom_size / BANK_SIZE;
             is_rom03 = rom_banks >= 4;
             fill_shadow_mask();
+            fill_aux_region();
             main_rom = rom;
             map_initialized = false;
             dma_bank_register = 0;
@@ -115,6 +122,22 @@ class MMU_IIgs : public MMU {
         }
 
         const uint8_t *shadow_mask_bytes() const { return shadow_mask; }
+
+        /* Odd bank returns 0. Otherwise one region bit selects main (0) or aux (0x10000). */
+        inline uint32_t calc_aux_read(uint32_t address) {
+            if (address & 0x10000) return 0;
+            const uint32_t page = (address >> 8) & 0xFF;
+            const bool use_aux = (aux_read_flags & aux_region[page]) != 0;
+            return static_cast<uint32_t>(use_aux) << 16;
+        }
+        inline uint32_t calc_aux_write(uint32_t address) {
+            if (address & 0x10000) return 0;
+            const uint32_t page = (address >> 8) & 0xFF;
+            const bool use_aux = (aux_write_flags & aux_region[page]) != 0;
+            return static_cast<uint32_t>(use_aux) << 16;
+        }
+
+        const uint8_t *aux_region_bytes() const { return aux_region; }
 
         // TODO: remove, not used anywhere any more. bank_e1_read handles bank latch directly.
         /* inline uint8_t megaiiRead(uint32_t address) {
@@ -194,7 +217,9 @@ class MMU_IIgs : public MMU {
         inline void set_mixed(bool value) { g_mixed = value; }
         inline bool is_altzp() { return g_altzp; }
         inline void set_altzp(bool value) { g_altzp = value; }
-        
+        inline bool is_ramrd() { return g_ramrd; }
+        inline bool is_ramwrt() { return g_ramwrt; }
+
         inline bool is_80store() { return g_80store ? true : false; }
         inline bool is_slotc3rom() { return megaii->f_slotc3rom ? true : false; }
         inline void set_intcxrom(bool value);
@@ -208,8 +233,6 @@ class MMU_IIgs : public MMU {
         void bsr_map_memory();
         virtual uint8_t vp_read(uint32_t address) override;
 
-        uint32_t calc_aux_write(uint32_t address);
-        uint32_t calc_aux_read(uint32_t address);
         void init_c0xx_handlers();
         void write_c0xx(uint16_t address, uint8_t value);
         uint8_t read_c0xx(uint16_t address);

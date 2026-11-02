@@ -2,7 +2,7 @@
 
 Phase 1 moves the Apple IIe auxiliary-memory and language-card map into `MMU_IIe`, behind a constructor flag so a IIgs Mega II keeps today's page tables. A characterization test records the current map first and is the gate for the move.
 
-Unifying the IIgs composers with `calc_aux_read` / `calc_aux_write` stays out of scope. `shadow_is_enabled` is a separate change, specified at the end.
+Unifying the IIgs composers with `calc_aux_read` / `calc_aux_write` stays out of scope. `shadow_is_enabled` is specified below, and so is the aux-page table that replaces `calc_aux_read` / `calc_aux_write`.
 
 ## Current split
 
@@ -425,3 +425,146 @@ Lookup median is 0.69–0.70 ns/call. Oracle median is 1.59–1.78 ns/call. Chec
 - The mask bytes survive `set_shadow_register` and `reset`.
 - Each bench pair prints one checksum, shared by the oracle and the lookup.
 - `iigsmmutest -l` and `iigsmmutest -l -3` still pass. The write-through behavior is unchanged.
+
+## GS MMU — calc_aux_read / calc_aux_write
+
+`bank_shadow_read` calls `calc_aux_read`. `bank_shadow_write` calls `calc_aux_write` before `shadow_is_enabled`. Both return `0` or `0x10000`, added to the address. The range tests rechecked the soft switches on every call. `calc_aux_read` and `calc_aux_write` are now the mask lookup below.
+
+An odd bank (`address & 0x10000`) returns `0` and does not consult the table. The page byte is only meaningful for an even bank.
+
+### Not a table of addends
+
+A 256-byte table cannot hold `0x10000`. The stored value is `0` or `1`. The caller makes the addend:
+
+```text
+use_aux = (flags & aux_region[page]) != 0;
+address += (uint32_t)use_aux << 16;
+```
+
+### Same shape as shadow_is_enabled
+
+`shadow_mask` ORs every inhibit bit that covers a slot, because a hit means any of those regions is enabled. Aux pages do not overlap. Each page belongs to one region, so each map byte is a single bit.
+
+The bit is not a raw soft switch. A text page is not "`PAGE2` or `RAMRD`." With `80STORE` on and `PAGE2` off, the page stays in main even when `RAMRD` is on. With `80STORE` off, `PAGE2` does not move the page. Hires is the same mux, and `HIRES` chooses whether `PAGE2` or `RAMRD`/`RAMWRT` is the live flag. Those muxes are already what `megaii_compose_map` stores in `n_text1_*` and `n_hires1_*`. Fold them into the flags byte. The static map never mentions `80STORE`.
+
+| Bit | Read byte | Write byte |
+|---|---|---|
+| `ZP` | `n_zp` | `n_zp` |
+| `TEXT` | `n_text1_r` | `n_text1_w` |
+| `HIRES` | `n_hires1_r` | `n_hires1_w` |
+| `ALL` | `n_all_r` | `n_all_w` |
+
+`n_text1_*` is `80STORE ? PAGE2 : RAMRD/RAMWRT`. `n_hires1_*` is `(80STORE && HIRES) ? PAGE2 : RAMRD/RAMWRT`. A set bit means "this region is in aux." There is no invert. Shadow bits are inhibits; these are not.
+
+Read and write share one 256-byte map, filled once:
+
+| Pages | Map bit |
+|---|---|
+| `$00–$01`, `$C0–$FF` | `ZP` |
+| `$04–$07` | `TEXT` |
+| `$20–$3F` | `HIRES` |
+| `$02–$03`, `$08–$1F`, `$40–$BF` | `ALL` |
+
+`$C0–$FF` takes `ZP` because that is what `calc_aux_*` does. The Mega II pointer loops do not publish those pages as RAM. That is why this fill is not those loops.
+
+### Where it is rebuilt
+
+Pack the two flag bytes at the bottom of `megaii_compose_map`, from the locals it just computed. One store per byte on a soft-switch write. The callers are `write_c0xx`, `read_c0xx`, `write_c068`, and `reset`. A second function invoked at each of those would recompute the same booleans and would be easy to leave off the next caller.
+
+The pointer updates above that pack are deltas (`n_zp != m_zp`, and so on). The flag bytes are not. Write both bytes from the current booleans on every compose.
+
+Construction never composes. The constructor's `reset(true)` runs with `map_initialized` false, and `init_map` sets `map_initialized` without calling `megaii_compose_map`. Zero-initialize both flag bytes in the class, the same way `m_*` start `false`. That matches the power-on state: `reg_state = 0x0C` clears `RAMRD`, `RAMWRT`, `PAGE2`, and `ALTZP`, and `reset` clears `80STORE` and `HIRES`.
+
+### Out
+
+- No `uint32_t[256]` of raw `0` / `0x10000` addends.
+- No second 256-byte map for write. Write has its own flags byte and the same region map.
+- Raw `80STORE`, `PAGE2`, `HIRES`, `RAMRD`, and `RAMWRT` do not go in the map or in the flags byte. The `n_*` locals already resolved them.
+- `IOLC`, language-card adjust, and `shadow_is_enabled` stay where they are. An odd bank still returns `0` before the load.
+
+Region bits, low to high: `ZP` `0x01`, `TEXT` `0x02`, `HIRES` `0x04`, `ALL` `0x08`.
+
+### Compare
+
+`iigsmmutest --aux`. Same early exit as `--shadow`: no ROM file, no assembly suites. One machine. `is_rom03` is not an input. Construct it the way `--shadow` constructs ROM01: a zeroed 128K ROM and a Mega II with `install_memory_switches` false.
+
+The oracle is a copy of the old range tests. The lookup calls production `calc_aux_read` and `calc_aux_write`, which index `aux_region` and the flag bytes on the object. The harness does not keep a second table. `write_c0xx` calls `megaii_compose_map`, which packs the flag bytes. The same handoff `--shadow` already made.
+
+Both live in `apps/iigsmmutest/aux_predicate_fn.cpp`, `noinline`, not in the loop's file. The reasons are the ones in the shadow speed section. The oracle reads the live `g_80store`, `g_page2`, `g_hires`, `g_altzp`, `g_ramrd`, and `g_ramwrt` on each call. The lookup does not read the Mega II pointer tables.
+
+The constructor fills the 256-byte map once. Each switch state packs the two flag bytes inside `megaii_compose_map`:
+
+```text
+text  = 80STORE ? PAGE2 : ram
+hires = (80STORE && HIRES) ? PAGE2 : ram
+flags = (ALTZP ? ZP : 0) | (text ? TEXT : 0) | (hires ? HIRES : 0) | (ram ? ALL : 0)
+```
+
+`ram` is `RAMRD` for the read byte and `RAMWRT` for the write byte. An odd bank returns `0`. Otherwise:
+
+```text
+page    = (address >> 8) & 0xFF
+use_aux = (flags & aux_region[page]) != 0
+return (uint32_t)use_aux << 16
+```
+
+Drive the six switches through `write_c0xx`: `$C000`/`$C001`, `$C002`/`$C003`, `$C004`/`$C005`, `$C008`/`$C009`, `$C054`/`$C055`, `$C056`/`$C057`. That is the path that stores `g_*`. All 64 combinations. `TEXT`, `MIXED`, `IOLC`, and `reg_shadow` are not inputs.
+
+Sweep, and fail on the first mismatch. Print direction, the six switches, address, oracle, and lookup.
+
+- Read and write.
+- 256 even-bank addresses, `page << 8` for page `0..255`. Page alignment is exact. `$00–$01` and `$C0–$FF` are `ZP`. `$04–$07` is `TEXT`. `$20–$3F` is `HIRES`. The rest of `$02–$BF` is `ALL`.
+- The same 256 addresses with bit 17 set (`| 0x20000`). Bits above 16 do not change the result.
+- The same 256 addresses with bit 16 set (`| 0x10000`). Both sides return `0`.
+
+That is 64 × 2 × 256 × 3 comparisons. The sweep includes `80STORE` on, `PAGE2` off, and `RAMRD` on at a text page. The oracle returns `0` there. A lookup that puts raw `RAMRD` in the flags byte returns `0x10000` and fails.
+
+Snapshot the 256 map bytes after the fill. They are unchanged after the sweep. The flag bytes change with the switches.
+
+### Speed
+
+The same `--aux` run times the oracle and the lookup after the compare passes. A compare failure skips the timing and returns non-zero. The timing does not fail the process.
+
+Release build. 10,000,000 calls, address `i & 0x1FFFF`, one warmup, five timed passes, median of the five. Same arrangement as `--shadow`, including the memory clobber around each pass. Time read and write separately, and time the two pass loops separately. Inside the loop accumulate `sum += (uint64_t)result * (address | 1)`. `result` is the full return value, `0` or `0x10000`, so a wrong addend fails the checksum. Compare checksums after the passes. Each pair prints one checksum.
+
+Three switch states. The other switches are off.
+
+| State | What the old tests do |
+|---|---|
+| all off | Power-on. Every test fails. |
+| `RAMRD`, `RAMWRT`, `ALTZP` | No `80STORE` early return. Aux comes from the last tests. Read and write match. |
+| `80STORE`, `HIRES`, `RAMRD` | Text and hires return `0` before `RAMRD`. Write stays `0` because `RAMWRT` is off. |
+
+### Release
+
+`./build/iigsmmutest --aux`, existing Release tree. Median of five passes. Compare passed before the timing.
+
+```text
+off read oracle ns/call: 1.284 1.271 1.260 1.277 1.172  median 1.271
+off read lookup ns/call: 0.883 0.889 0.884 0.896 0.891  median 0.889
+off read checksum 0
+off write oracle ns/call: 1.247 1.246 1.257 1.259 1.263  median 1.257
+off write lookup ns/call: 0.895 0.885 0.887 0.889 0.871  median 0.887
+off write checksum 0
+ram read oracle ns/call: 1.184 1.201 1.173 1.197 1.189  median 1.189
+ram read lookup ns/call: 0.876 0.891 0.882 0.899 0.905  median 0.891
+ram read checksum 10744690156503040
+ram write oracle ns/call: 1.261 1.232 1.240 1.236 1.267  median 1.240
+ram write lookup ns/call: 0.984 0.891 0.895 0.904 0.889  median 0.895
+ram write checksum 10744690156503040
+store read oracle ns/call: 1.244 1.250 1.215 1.234 1.248  median 1.244
+store read lookup ns/call: 0.894 0.885 0.889 0.882 0.894  median 0.889
+store read checksum 5548595772129280
+store write oracle ns/call: 1.306 1.303 1.277 1.291 1.307  median 1.303
+store write lookup ns/call: 0.885 0.916 0.904 0.891 0.900  median 0.900
+store write checksum 0
+```
+
+Lookup median is 0.89–0.90 ns/call. Oracle median is 1.19–1.30 ns/call. Checksums match the pre-swap run. `off` is all zeros. `ram` read and write match. `store` write is zero because `RAMWRT` is off. The lookup column is production `calc_aux_read` / `calc_aux_write`.
+
+### Done when
+
+- The compare passes for all 64 switch combinations, both directions, the even page, its bit-17 alias, and the odd bank.
+- The region-map bytes are unchanged after the sweep.
+- Each bench pair prints one checksum, shared by the oracle and the lookup.
+- `iigsmmutest -l` and `iigsmmutest -l -3` still pass. Production `calc_aux_read` and `calc_aux_write` are the lookup.

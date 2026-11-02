@@ -28,6 +28,24 @@ void MMU_IIgs::fill_shadow_mask() {
     }
 }
 
+void MMU_IIgs::fill_aux_region() {
+    constexpr uint8_t kZp = 0x01;
+    constexpr uint8_t kText = 0x02;
+    constexpr uint8_t kHires = 0x04;
+    constexpr uint8_t kAll = 0x08;
+
+    std::memset(aux_region, 0, sizeof(aux_region));
+    aux_region[0x00] = kZp;
+    aux_region[0x01] = kZp;
+    for (int page = 0xC0; page <= 0xFF; page++) aux_region[page] = kZp;
+    for (int page = 0x04; page <= 0x07; page++) aux_region[page] = kText;
+    for (int page = 0x20; page <= 0x3F; page++) aux_region[page] = kHires;
+    aux_region[0x02] = kAll;
+    aux_region[0x03] = kAll;
+    for (int page = 0x08; page <= 0x1F; page++) aux_region[page] = kAll;
+    for (int page = 0x40; page <= 0xBF; page++) aux_region[page] = kAll;
+}
+
 uint8_t float_area_read(void *context, uint32_t address) {
     if (DEBUG(DEBUG_MMUGS)) printf("Float area read at address %06X\n", address);
     return address >> 16 ;
@@ -338,6 +356,17 @@ void MMU_IIgs::megaii_compose_map() {
     m_hires1_w = n_hires1_w;
     m_all_r = n_all_r;
     m_all_w = n_all_w;
+
+    // Absolute, not a delta. n_* already resolved 80STORE / PAGE2 / HIRES.
+    constexpr uint8_t kZp = 0x01;
+    constexpr uint8_t kText = 0x02;
+    constexpr uint8_t kHires = 0x04;
+    constexpr uint8_t kAll = 0x08;
+    auto pack = [](bool zp, bool text, bool hires, bool all) -> uint8_t {
+        return static_cast<uint8_t>((zp ? kZp : 0) | (text ? kText : 0) | (hires ? kHires : 0) | (all ? kAll : 0));
+    };
+    aux_read_flags = pack(n_zp, n_text1_r, n_hires1_r, n_all_r);
+    aux_write_flags = pack(n_zp, n_text1_w, n_hires1_w, n_all_w);
 }
 
 void MMU_IIgs::bsr_map_memory() {
@@ -526,44 +555,6 @@ uint32_t MMU_IIgs::calc_aux_read(uint32_t address) {
     if ((page >= 0x02 && page <= 0xBF) && (g_ramrd)) return 0x1'0000;
     return 0x0'0000;
 } */
-
-uint32_t MMU_IIgs::calc_aux_write(uint32_t address) {
-    if (address & 0x1'0000) return 0x0'0000;
-    uint32_t page = (address & 0xFF00) >> 8;
-    //if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramwrt))) return 0x1'0000;
-    //if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramwrt))) return 0x1'0000;
-    if (g_80store && (page >= 0x04 && page <= 0x07) ) {
-        if (g_page2) return 0x1'0000;
-        else return 0x0'0000;
-    }
-    if (g_80store && g_hires && (page >= 0x20 && page <= 0x3F) ) {
-        if (g_page2) return 0x1'0000;
-        else return 0x0'0000;
-    }
-    // we know at this point we were not originally C0 IO space. so.. 
-    if (((page >= 0x00 && page <= 0x01) || (page >= 0xC0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
-    if ((page >= 0x02 && page <= 0xBF) && (g_ramwrt)) return 0x1'0000;
-    return 0x0'0000;
-}
-
-uint32_t MMU_IIgs::calc_aux_read(uint32_t address) {
-    if (address & 0x1'0000) return 0x0'0000;
-    uint32_t page = (address & 0xFF00) >> 8;
-    //if ((page >= 0x04 && page <= 0x07) && ((g_80store && g_page2) || (!g_80store && g_ramrd))) return 0x1'0000;
-    //if ((page >= 0x20 && page <= 0x3F) && ((g_80store && g_page2  && g_hires) || (!g_80store && g_ramrd ))) return 0x1'0000;
-    if (g_80store && (page >= 0x04 && page <= 0x07) ) {
-        if (g_page2) return 0x1'0000;
-        else return 0x0'0000;
-    }
-    if (g_80store && g_hires && (page >= 0x20 && page <= 0x3F) ) {
-        if (g_page2) return 0x1'0000;
-        else return 0x0'0000;
-    }
-    // we know at this point we were not originally C0 IO space. so.. 
-    if (((page >= 0x00 && page <= 0x01) || (page >= 0xC0 && page <= 0xFF)) && (g_altzp)) return 0x1'0000;
-    if ((page >= 0x02 && page <= 0xBF) && (g_ramrd)) return 0x1'0000;
-    return 0x0'0000;
-}
 
 /* Any ram bank that has shadowing enabled of any kind comes through here. */
 uint8_t bank_shadow_read(void *context, uint32_t address) {

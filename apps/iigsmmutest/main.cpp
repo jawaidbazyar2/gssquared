@@ -265,15 +265,18 @@ static FILE *open_rom_file(const char *path) {
 }
 
 int run_shadow_predicate();
+int run_aux_predicate();
 
 void printUsage(const char *progname) {
     printf("Usage: %s [-a] [-l] [-3] [-p] [testnum]\n", progname);
     printf("       %s --shadow\n", progname);
+    printf("       %s --aux\n", progname);
     printf("  -a  Emit assembly output (test.asm)\n");
     printf("  -l  Run live test against MMU module (ROM01 128K by default)\n");
     printf("  -3  With -l: use ROM03 256K image (enables is_rom03 / text page 2 shadow)\n");
     printf("  -p  Print the tests\n");
     printf("  --shadow  Compare embedded shadow predicates and time them\n");
+    printf("  --aux     Compare embedded calc_aux predicates and time them\n");
     printf("\nIf no flags are specified, all operations are performed.\n");
 }
 
@@ -282,6 +285,9 @@ int main(int argc, char *argv[])
     for (int i = 1; i < argc; i++) {
         if (std::strcmp(argv[i], "--shadow") == 0) {
             return run_shadow_predicate();
+        }
+        if (std::strcmp(argv[i], "--aux") == 0) {
+            return run_aux_predicate();
         }
     }
 
