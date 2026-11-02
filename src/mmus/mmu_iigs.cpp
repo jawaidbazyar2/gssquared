@@ -6,6 +6,10 @@
 
 #include <cstring>
 
+// These two routines create static lookup tables for shadow memory, and aux-mapping.
+
+// shadow_mask is used to quickly determine which memory pages (in 1K units) are currently shadowed
+// by the IIgs FPI. The index is the IIgs shadow register value.
 void MMU_IIgs::fill_shadow_mask() {
     std::memset(shadow_mask, 0, sizeof(shadow_mask));
     shadow_mask[1] = SHADOW_INH_TEXT1;
@@ -28,6 +32,8 @@ void MMU_IIgs::fill_shadow_mask() {
     }
 }
 
+// aux_region is used to quickly determine which memory pages (256-byte units) are
+// currently mapped to aux bank. The index is packed read or write flag bits.
 void MMU_IIgs::fill_aux_region() {
     constexpr uint8_t kZp = 0x01;
     constexpr uint8_t kText = 0x02;
@@ -127,7 +133,7 @@ inline void MMU_IIgs::write_c0xx(uint16_t address, uint8_t value) {
         case 0xC005: g_ramwrt = true; break;
         case 0xC008: g_altzp = false; break;
         case 0xC009: g_altzp = true; break;
-        case 0xC029: reg_new_video = value; break;
+        case 0xC029: reg_new_video = static_cast<uint8_t>(value & 0xE1); break;
         case 0xC006: // INTCXROMOFF
             set_intcxrom(false);
             /* // enable slot ROM in pages $C1 - $CF
@@ -167,7 +173,7 @@ inline uint8_t MMU_IIgs::read_c0xx(uint16_t address) {
         case 0xC055: g_page2 = true; /* Call Display; */; break;
         case 0xC056: g_hires = false; /* Call Display; */; break;
         case 0xC057: g_hires = true; /* Call Display; */; break;
-        case 0xC029: retval = reg_new_video; break;
+        case 0xC029: retval = static_cast<uint8_t>(reg_new_video & 0xE1); break;
         default:
             assert(false && "MMU_IIgs: Unhandled C0XX read");
     }
@@ -218,15 +224,16 @@ void MMU_IIgs::set_slot_register(uint8_t value) {
     //megaii->compose_c1cf(); // redundant since megaii->set_slot_register() does this.
 }
 
+// "Bit 3,0 must 0"
 void write_c02d(void *context, uint32_t address, uint8_t value) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
-    mmu_iigs->set_slot_register(value);
+    mmu_iigs->set_slot_register(static_cast<uint8_t>(value & 0xF6));
 }
 
 uint8_t read_c02d(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
-    return mmu_iigs->get_slot_register();
+    return (static_cast<uint8_t>(mmu_iigs->get_slot_register() & 0xF6));
 }
 
 // read/write handlers for C0XX registers as handed to the MegaII.
