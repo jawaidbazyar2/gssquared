@@ -12812,3 +12812,5 @@ C029 should be masked with E1 on writes and reads, because C029[4-1] are unused 
 C02D should be masked with F6. This is interesting. So even if I write C02D=81, it should come back 80. because C02D[0] and C02D[3] are "must be 0".
 
 C036 is the disk speed register aka CYAREG. This is saying we're good, and yes, I guess we are.
+
+Also, LC Bank 1 / 2 were flipped from where they ought to be. Bank 1 is at D000, Bank 2 is at C000. So it's Bank 2 that is the "odd man out". I have fixed this in the GS and in the IIe.

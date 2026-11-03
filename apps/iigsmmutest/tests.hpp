@@ -507,10 +507,12 @@ inline const std::vector<Test> ALL_TESTS = {
         }
     },
 
-    // AUXHGR|SHR: odd-bank HGR shadows unless BOTH inhibits are set (SHADOW.s inhbt1=$18).
+    // Bank 01 $2000-$5FFF copies when the page inhibit and AUXHGR are both clear,
+    // or when SHR is clear. SHADOW.s inhbt1=$18 is the both-AUXHGR-and-SHR case.
+    // HGR1 is clear in these tests, so AUXHGR alone still enables the page.
     Test{
         28,
-        "odd HGR1 shadows with SHR inhibit only (AUXHGR still enables)",
+        "odd HGR1 shadows with SHR inhibit only (HGR1 and AUXHGR both clear)",
         {
             WriteOp{0xE1'2000, {0x00, 0x00}},
             WriteOp{0xE0'C029, 0x01},
@@ -565,6 +567,52 @@ inline const std::vector<Test> ALL_TESTS = {
             WriteOp{0xE0'C035, SHADOW_INH_SHR | SHADOW_INH_AUXHGR},
             WriteOp{0x01'4000, {0x56, 0x78}},
             AssertOp{0xE1'4000, {0x00, 0x00}},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+        }
+    },
+    // SHADOW=$0A is HGR1|SHR. AUXHGR is clear, and that is not enough: the page
+    // inhibit blocks bank 01 hi-res page 1, and SHR no longer covers it.
+    // Hi-res page 2 still copies. Measured on ROM 1 and ROM 3.
+    Test{
+        48,
+        "SHADOW=$0A does not copy 01:2000; 01:4000 still copies",
+        {
+            WriteOp{0xE0'2000, {0x00, 0x00}},
+            WriteOp{0xE1'2000, {0x00, 0x00}},
+            WriteOp{0xE0'4000, {0x00, 0x00}},
+            WriteOp{0xE1'4000, {0x00, 0x00}},
+            WriteOp{0xE1'6000, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, SHADOW_INH_HGR1 | SHADOW_INH_SHR},
+            WriteOp{0x01'2000, {0x56, 0x78}},
+            WriteOp{0x00'2000, {0x9A, 0xBC}},
+            WriteOp{0x01'4000, {0x11, 0x22}},
+            WriteOp{0x00'4000, {0x33, 0x44}},
+            WriteOp{0x01'6000, {0x55, 0x66}},
+            AssertOp{0xE1'2000, {0x00, 0x00}},
+            AssertOp{0x01'2000, {0x56, 0x78}},
+            AssertOp{0xE0'2000, {0x00, 0x00}},
+            AssertOp{0xE1'4000, {0x11, 0x22}},
+            AssertOp{0xE0'4000, {0x33, 0x44}},
+            AssertOp{0xE1'6000, {0x00, 0x00}},
+            AssertOp{0x01'6000, {0x55, 0x66}},
+            WriteOp{0xE0'C035, SHADOW_INH_SHR},
+        }
+    },
+    // HGR1 inhibit does not remove the SHR window. Bank 00 has no SHR term.
+    Test{
+        49,
+        "SHADOW=$02 still copies 01:2000 via SHR and blocks 00:2000",
+        {
+            WriteOp{0xE1'2000, {0x00, 0x00}},
+            WriteOp{0xE0'2000, {0x00, 0x00}},
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C035, SHADOW_INH_HGR1},
+            WriteOp{0x01'2000, {0x56, 0x78}},
+            WriteOp{0x00'2000, {0x9A, 0xBC}},
+            AssertOp{0xE1'2000, {0x56, 0x78}},
+            AssertOp{0xE0'2000, {0x00, 0x00}},
+            AssertOp{0x01'2000, {0x56, 0x78}},
             WriteOp{0xE0'C035, SHADOW_INH_SHR},
         }
     },

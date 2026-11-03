@@ -24,8 +24,16 @@ class MMU_IIgs : public MMU {
         uint8_t reg_slot = 0;
         uint8_t reg_shadow = 0;
         /* 1K slots in the low 17 address bits. Filled once in the constructor.
-           reg_shadow stays live; a slot byte is the OR of inhibit bits that cover it. */
-        uint8_t shadow_mask[128]{};
+           reg_shadow stays live.
+           or_mask: shadow when any listed inhibit bit is clear.
+           and_mask: shadow when the mask is nonzero and every listed bit is clear.
+           An OR of inhibit bits cannot express odd $2000-$5FFF: that page copies
+           when its page inhibit and AUXHGR are both clear, and also when SHR is clear. */
+        struct shadow_slot {
+            uint8_t or_mask;
+            uint8_t and_mask;
+        };
+        shadow_slot shadow_mask[128]{};
         void fill_shadow_mask();
         /* One region bit per 256-byte page. Filled once in the constructor.
            aux_read_flags / aux_write_flags stay live and are packed by megaii_compose_map. */
@@ -115,13 +123,21 @@ class MMU_IIgs : public MMU {
             MMU::write(address, value);
         }
 
-        /* Odd $2000-$5FFF is SHR|AUXHGR (0x18): shadow is on when either inhibit bit is clear. */
+        /* Odd $2000-$3FFF: (HGR1 clear AND AUXHGR clear) OR SHR clear.
+           Odd $4000-$5FFF: (HGR2 clear AND AUXHGR clear) OR SHR clear. */
         inline bool shadow_is_enabled(uint32_t address) {
             const uint32_t slot = (address >> 10) & 0x7F;
-            return (shadow_mask[slot] & static_cast<uint8_t>(~reg_shadow)) != 0;
+            const shadow_slot &entry = shadow_mask[slot];
+            const uint8_t reg = reg_shadow;
+            const bool or_enabled = (entry.or_mask & static_cast<uint8_t>(~reg)) != 0;
+            const bool and_enabled = entry.and_mask != 0 && (entry.and_mask & reg) == 0;
+            return or_enabled || and_enabled;
         }
 
-        const uint8_t *shadow_mask_bytes() const { return shadow_mask; }
+        const uint8_t *shadow_mask_bytes() const {
+            return reinterpret_cast<const uint8_t *>(shadow_mask);
+        }
+        size_t shadow_mask_nbytes() const { return sizeof(shadow_mask); }
 
         /* Odd bank returns 0. Otherwise one region bit selects main (0) or aux (0x10000). */
         inline uint32_t calc_aux_read(uint32_t address) {

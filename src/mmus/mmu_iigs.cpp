@@ -8,27 +8,34 @@
 
 // These two routines create static lookup tables for shadow memory, and aux-mapping.
 
-// shadow_mask is used to quickly determine which memory pages (in 1K units) are currently shadowed
-// by the IIgs FPI. The index is the IIgs shadow register value.
+// shadow_mask is one entry per 1K of the low 17 address bits. or_mask enables
+// the slot when any listed inhibit is clear. and_mask enables it only when
+// every listed inhibit is clear. Odd hi-res needs both: the page bit and
+// AUXHGR are an AND, and that term is OR'd with SHR.
 void MMU_IIgs::fill_shadow_mask() {
     std::memset(shadow_mask, 0, sizeof(shadow_mask));
-    shadow_mask[1] = SHADOW_INH_TEXT1;
-    shadow_mask[65] = SHADOW_INH_TEXT1;
+    shadow_mask[1].or_mask = SHADOW_INH_TEXT1;
+    shadow_mask[65].or_mask = SHADOW_INH_TEXT1;
     if (is_rom03) {
-        shadow_mask[2] = SHADOW_INH_TEXT2;
-        shadow_mask[66] = SHADOW_INH_TEXT2;
+        shadow_mask[2].or_mask = SHADOW_INH_TEXT2;
+        shadow_mask[66].or_mask = SHADOW_INH_TEXT2;
     }
     for (int slot = 8; slot <= 15; slot++) {
-        shadow_mask[slot] = SHADOW_INH_HGR1;
+        shadow_mask[slot].or_mask = SHADOW_INH_HGR1;
     }
     for (int slot = 16; slot <= 23; slot++) {
-        shadow_mask[slot] = SHADOW_INH_HGR2;
+        shadow_mask[slot].or_mask = SHADOW_INH_HGR2;
     }
-    for (int slot = 72; slot <= 87; slot++) {
-        shadow_mask[slot] = static_cast<uint8_t>(SHADOW_INH_SHR | SHADOW_INH_AUXHGR);
+    for (int slot = 72; slot <= 79; slot++) {
+        shadow_mask[slot].or_mask = SHADOW_INH_SHR;
+        shadow_mask[slot].and_mask = static_cast<uint8_t>(SHADOW_INH_HGR1 | SHADOW_INH_AUXHGR);
+    }
+    for (int slot = 80; slot <= 87; slot++) {
+        shadow_mask[slot].or_mask = SHADOW_INH_SHR;
+        shadow_mask[slot].and_mask = static_cast<uint8_t>(SHADOW_INH_HGR2 | SHADOW_INH_AUXHGR);
     }
     for (int slot = 88; slot <= 103; slot++) {
-        shadow_mask[slot] = SHADOW_INH_SHR;
+        shadow_mask[slot].or_mask = SHADOW_INH_SHR;
     }
 }
 

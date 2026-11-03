@@ -316,31 +316,34 @@ The range tests rechecked six windows against `reg_shadow` on every call. Every 
 
 ### One mask table
 
-128 bytes, one per 1K slot in the low 17 address bits. Filled in the `MMU_IIgs` constructor, after `is_rom03` is known. Nothing writes it after that. `$C035` and the `reg_shadow = 0x08` in `reset` change the register only.
+128 slots, one per 1K in the low 17 address bits, two bytes each. Filled in the `MMU_IIgs` constructor, after `is_rom03` is known. Nothing writes it after that. `$C035` and the `reg_shadow = 0x08` in `reset` change the register only.
 
 ```text
 slot    = (address >> 10) & 0x7F
-enabled = (shadow_mask[slot] & ~reg_shadow) != 0
+or_hit  = (or_mask & ~reg_shadow) != 0
+and_hit = and_mask != 0 && (and_mask & reg_shadow) == 0
+enabled = or_hit || and_hit
 ```
 
-The byte is the OR of the inhibit bits of every region that contains that slot. `reg_shadow` stays live. A bit set in the register inhibits that region. The AND with the inverted register is nonzero when at least one covering region is still enabled. A slot no region covers holds `0` and stays disabled for every register value.
+`or_mask` lists inhibit bits that enable the slot when any one of them is clear. `and_mask` lists inhibit bits that enable the slot only when every one of them is clear. An empty `and_mask` does not enable the slot. `reg_shadow` stays live. A slot neither mask covers stays disabled for every register value.
 
 Bits 0–5 are the bits this function reads. Bit 6 (`IOLC`) and bit 7 (reserved) are not in the table. `$C000–$FFFF` stays 0 here; `bank_shadow_write` handles that window before this call.
 
-`is_rom03` is the only construction input. On a ROM03, slots 2 and 66 hold `TEXT2` (`0x20`). On a ROM01 those slots hold `0`.
+`is_rom03` is the only construction input. On a ROM03, slots 2 and 66 hold `TEXT2` (`0x20`) in `or_mask`. On a ROM01 those slots hold `0`.
 
-| Slots | Addresses | Mask |
-|---|---|---|
-| 1 and 65 | `$x400–$x7FF` | `TEXT1` `0x01` |
-| 2 and 66 | `$x800–$xBFF` | `TEXT2` `0x20` on ROM03, else `0` |
-| 8–15 | even `$2000–$3FFF` | `HGR1` `0x02` |
-| 16–23 | even `$4000–$5FFF` | `HGR2` `0x04` |
-| 72–87 | odd `$2000–$5FFF` | `SHR\|AUXHGR` `0x18` |
-| 88–103 | odd `$6000–$9FFF` | `SHR` `0x08` |
+| Slots | Addresses | or_mask | and_mask |
+|---|---|---|---|
+| 1 and 65 | `$x400–$x7FF` | `TEXT1` `0x01` | `0` |
+| 2 and 66 | `$x800–$xBFF` | `TEXT2` `0x20` on ROM03, else `0` | `0` |
+| 8–15 | even `$2000–$3FFF` | `HGR1` `0x02` | `0` |
+| 16–23 | even `$4000–$5FFF` | `HGR2` `0x04` | `0` |
+| 72–79 | odd `$2000–$3FFF` | `SHR` `0x08` | `HGR1\|AUXHGR` `0x12` |
+| 80–87 | odd `$4000–$5FFF` | `SHR` `0x08` | `HGR2\|AUXHGR` `0x14` |
+| 88–103 | odd `$6000–$9FFF` | `SHR` `0x08` | `0` |
 
-Odd `$2000–$5FFF` is the overlap. Shadow is on when either inhibit bit is clear, which is the OR already stored in `0x18`. Odd `$6000–$9FFF` is SHR only. Even `$6000–$FFFF` is 0.
+Odd `$2000–$5FFF` is the overlap of a hi-res page and the super-hi-res buffer. The page copies when its page inhibit and `AUXHGR` are both clear, and also when `SHR` is clear. Those are an AND term and an OR term. A single OR of the inhibit bits cannot say both: `SHR|AUXHGR` (`0x18`) ignores the page inhibit and copies `01:2000` when `SHADOW=$0A`. Odd `$6000–$9FFF` is SHR only. Even `$6000–$FFFF` is 0.
 
-Power-on `reg_shadow = 0x08` inhibits SHR and leaves the other display regions enabled. Odd `$2000` is on (`0x18 & ~0x08 = 0x10`). Odd `$6000` is off.
+Power-on `reg_shadow = 0x08` inhibits SHR and leaves the other display regions enabled. Odd `$2000` is on because `HGR1` and `AUXHGR` are both clear. Odd `$6000` is off. `SHADOW=$0A` sets `HGR1` and `SHR` and leaves `AUXHGR` clear, so odd `$2000` is off and odd `$4000` stays on.
 
 ### Out
 

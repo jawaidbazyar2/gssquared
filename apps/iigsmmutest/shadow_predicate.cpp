@@ -51,8 +51,9 @@ bool make_machine(Machine &machine, const char *name, size_t rom_size) {
 }
 
 bool compare_machine(Machine &machine) {
-    uint8_t snapshot[128];
-    std::memcpy(snapshot, machine.mmu->shadow_mask_bytes(), sizeof(snapshot));
+    const size_t mask_bytes = machine.mmu->shadow_mask_nbytes();
+    std::vector<uint8_t> snapshot(mask_bytes);
+    std::memcpy(snapshot.data(), machine.mmu->shadow_mask_bytes(), mask_bytes);
 
     for (int reg = 0; reg <= 0xFF; reg++) {
         machine.mmu->set_shadow_register(static_cast<uint8_t>(reg));
@@ -70,13 +71,13 @@ bool compare_machine(Machine &machine) {
         }
     }
 
-    if (std::memcmp(snapshot, machine.mmu->shadow_mask_bytes(), sizeof(snapshot)) != 0) {
+    if (std::memcmp(snapshot.data(), machine.mmu->shadow_mask_bytes(), mask_bytes) != 0) {
         std::printf("%s: mask changed during set_shadow_register sweep\n", machine.name);
         return false;
     }
 
     machine.mmu->reset();
-    if (std::memcmp(snapshot, machine.mmu->shadow_mask_bytes(), sizeof(snapshot)) != 0) {
+    if (std::memcmp(snapshot.data(), machine.mmu->shadow_mask_bytes(), mask_bytes) != 0) {
         std::printf("%s: mask changed across reset\n", machine.name);
         return false;
     }

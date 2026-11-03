@@ -20,8 +20,9 @@ namespace shadow_pred {
     if (is_rom03 && ((address_16 >= 0x0800 && address_16 <= 0x0BFF) && !(reg_shadow & SHADOW_INH_TEXT2))) {
         return true;
     }
-    // HGR1/HGR2: even banks only. Odd-bank $2000-$5FFF is gated by AUXHGR|SHR
-    // (inhibit only when both are set; see SHADOW.s inhbt1).
+    // Even banks: the page inhibit alone. Odd banks: the page inhibit and
+    // AUXHGR must both be clear. SHR is a separate enable for odd $2000-$9FFF.
+    // SHADOW=$0A sets HGR1 and SHR, so 01:2000 is not copied.
     if (!odd_bank) {
         if ((address_16 >= 0x2000 && address_16 <= 0x3FFF) && !(reg_shadow & SHADOW_INH_HGR1)) {
             return true;
@@ -29,11 +30,19 @@ namespace shadow_pred {
         if ((address_16 >= 0x4000 && address_16 <= 0x5FFF) && !(reg_shadow & SHADOW_INH_HGR2)) {
             return true;
         }
+    } else {
+        if ((address_16 >= 0x2000 && address_16 <= 0x3FFF)
+            && !(reg_shadow & SHADOW_INH_HGR1)
+            && !(reg_shadow & SHADOW_INH_AUXHGR)) {
+            return true;
+        }
+        if ((address_16 >= 0x4000 && address_16 <= 0x5FFF)
+            && !(reg_shadow & SHADOW_INH_HGR2)
+            && !(reg_shadow & SHADOW_INH_AUXHGR)) {
+            return true;
+        }
     }
     if ((address_17 >= 0x12000 && address_17 <= 0x19FFF) && !(reg_shadow & SHADOW_INH_SHR)) {
-        return true;
-    }
-    if ((address_17 >= 0x12000 && address_17 <= 0x15FFF) && !(reg_shadow & SHADOW_INH_AUXHGR)) {
         return true;
     }
     return false;
