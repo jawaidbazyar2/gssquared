@@ -73,8 +73,10 @@ struct Test {
     // Text page 2 shadowing exists only on ROM 03 hardware (is_rom03 from 256K ROM).
     bool requires_rom03 = false;
     
-    Test(int n, std::string desc, std::initializer_list<Operation> ops, bool rom03 = false)
-        : number(n), description(std::move(desc)), operations(ops), requires_rom03(rom03) {}
+    bool requires_rom01 = false;
+
+    Test(int n, std::string desc, std::initializer_list<Operation> ops, bool rom03 = false, bool rom01 = false)
+        : number(n), description(std::move(desc)), operations(ops), requires_rom03(rom03), requires_rom01(rom01) {}
 };
 
 /**
@@ -901,6 +903,93 @@ inline const std::vector<Test> ALL_TESTS = {
     // not a test: just set memory state registers back to known good values.
     // C068: 0C
     // C035: ??
+
+    // $C028 read or write toggles C068 bit 1. The data byte is ignored, including bit 7.
+    Test{
+        50,
+        "C028 toggles ROMBANK; written bit 7 is not a ROM/RAM select",
+        {
+            WriteOp{0xE0'C068, 0x0C},
+            AssertOp{0xE0'C068, 0x0C},
+            AssertOp{0x00'D000, 0x6F},
+            WriteOp{0xE0'C028, 0x00},       // bit 7 clear; toggles ROMBANK on
+            AssertOp{0xE0'C068, 0x0E},
+            WriteOp{0xE0'C028, 0x80},       // bit 7 set; toggles ROMBANK off, stays on ROM
+            AssertOp{0xE0'C068, 0x0C},
+            AssertOp{0x00'D000, 0x6F},
+            ReadOp{0xE0'C028, 0x00},        // a read toggles too
+            AssertOp{0xE0'C068, 0x0E},
+            ReadOp{0xE0'C028, 0x00},
+            AssertOp{0xE0'C068, 0x0C},
+        }
+    },
+    // ROM 01: ROMBANK forces A14 low for the Mega II ROM windows. $FF itself stays put.
+    Test{
+        51,
+        "ROM01 ROMBANK moves LC, slot, and IRQ ROM windows by clearing A14",
+        {
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C068, 0x0F},       // INTCXROM | ROMBANK | LCBNK2 | RDROM
+            AssertOp{0x00'D000, 0x38},      // $FF/9000
+            AssertOp{0x00'E000, 0xCB},      // $FF/A000
+            AssertOp{0x01'D000, 0x38},
+            AssertOp{0xE0'D000, 0x38},
+            AssertOp{0xE0'E000, 0xCB},
+            AssertOp{0xE1'D000, 0x38},
+            AssertOp{0xE1'E000, 0xCB},
+            AssertOp{0xFF'D000, 0x6F},      // direct bank $FF is not shifted
+            AssertOp{0xFF'E000, 0x4C},
+            AssertOp{0x00'C071, {0xD0, 0x03, 0xCA, 0x10}}, // $FF/8071
+            AssertOp{0xFF'C071, {0xE2, 0x40, 0x50, 0xB8}},
+            AssertOp{0x00'C100, {0xAF, 0x84, 0x1B, 0xA5}}, // $FF/8100
+            AssertOp{0xE0'C100, {0xAF, 0x84, 0x1B, 0xA5}},
+            AssertOp{0xFF'C100, {0xE2, 0x40, 0x70, 0x25}},
+            AssertOp{0x00'C800, {0x90, 0x43, 0x90, 0x49}}, // $FF/8800
+            AssertOp{0xFF'C800, {0x4C, 0xB0, 0xC9, 0x20}},
+            WriteOp{0xE0'C068, 0x0C},
+            AssertOp{0x00'D000, 0x6F},
+            AssertOp{0x00'C071, {0xE2, 0x40, 0x50, 0xB8}},
+        },
+        false,
+        true
+    },
+    // ROM 3 stores the latch in C068. The same windows a ROM 01 would shift stay on A14,
+    // including while C028 holds the bit set. $FF/9000 is the image a shift would show.
+    Test{
+        52,
+        "ROM03 tracks ROMBANK and does not move ROM windows",
+        {
+            WriteOp{0xE0'C029, 0x01},
+            WriteOp{0xE0'C068, 0x0F},       // INTCXROM | ROMBANK | LCBNK2 | RDROM
+            AssertOp{0xE0'C068, 0x0F},
+            AssertOp{0x00'D000, 0x6F},
+            AssertOp{0x00'E000, 0x4C},
+            AssertOp{0x01'D000, 0x6F},
+            AssertOp{0xE0'D000, 0x6F},
+            AssertOp{0xE1'D000, 0x6F},
+            AssertOp{0xE1'E000, 0x4C},
+            AssertOp{0xFF'D000, 0x6F},
+            AssertOp{0xFF'9000, 0x5C},
+            AssertOp{0x00'C071, {0xE2, 0x40, 0x50, 0xB8}},
+            AssertOp{0xFF'8071, {0xC8, 0x90, 0xF6, 0xA0}},
+            AssertOp{0x00'C100, {0xE2, 0x40, 0x70, 0x27}},
+            AssertOp{0xE0'C100, {0xE2, 0x40, 0x70, 0x27}},
+            AssertOp{0xFF'C100, {0xE2, 0x40, 0x70, 0x27}},
+            AssertOp{0x00'C800, {0x4C, 0xB0, 0xC9, 0x20}},
+            WriteOp{0xE0'C028, 0x00},       // toggle the bit off
+            AssertOp{0xE0'C068, 0x0D},
+            AssertOp{0x00'D000, 0x6F},
+            AssertOp{0x00'C100, {0xE2, 0x40, 0x70, 0x27}},
+            WriteOp{0xE0'C028, 0xFF},       // toggle it back on; data bit 7 is irrelevant
+            AssertOp{0xE0'C068, 0x0F},
+            AssertOp{0x00'D000, 0x6F},
+            AssertOp{0x00'E000, 0x4C},
+            AssertOp{0x00'C071, {0xE2, 0x40, 0x50, 0xB8}},
+            AssertOp{0x00'C800, {0x4C, 0xB0, 0xC9, 0x20}},
+            WriteOp{0xE0'C068, 0x0C},
+        },
+        true
+    },
 
     // TODO: verify C000 operates in bank E1
     // TODO: verify C011-C01F "read switch status" works

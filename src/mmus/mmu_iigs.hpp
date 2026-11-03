@@ -205,10 +205,22 @@ class MMU_IIgs : public MMU {
         }
         inline void set_state_register(uint8_t value) { 
             if (DEBUG(DEBUG_MMUGS)) printf("setting state register: %02X\n", value); 
+            const uint8_t changed = static_cast<uint8_t>(reg_state ^ value);
             reg_state = value; 
             ll.FF_READ_ENABLE = !g_rdrom; // sync LC state with state reg 
             ll.FF_BANK_1 = !g_lcbnk2; // this was missing.. 
+            if (!map_initialized) return;
+            // ROM 03 keeps ROMBANK in this register and does not rebuild ROM for it.
+            if (is_rom03 && (changed & ~0x02) == 0) return;
+            sync_rom_windows();
         }
+        /* $C028 read or write toggles C068 bit 1. The data byte is ignored.
+           MAME's do_io($28) does the same: it never receives the data byte, so
+           bit 7 does not choose ROM versus RAM. RAM versus ROM stays the
+           language-card RDROM bit. */
+        void toggle_rombank();
+        void sync_rom_windows();
+        void map_internal_cx_rom();
         inline uint8_t shadow_register() { return reg_shadow; }
         inline uint8_t speed_register() { return reg_speed; }
         inline uint8_t state_register() { return reg_state; }
@@ -263,6 +275,18 @@ class MMU_IIgs : public MMU {
         // embedded IIe-compat ROM pointer) key off bank $FF and used to
         // hardcode 0x10000, silently only correct for a 128KB ROM.
         inline uint32_t rom_bank_ff_offset() const { return (rom_banks - 1) * BANK_SIZE; }
+
+        /* ROM 01 ROMBANK forces A14 low on the Mega II windows that alias bank $FF:
+           $C071–$C07F, internal $C1xx–$CFxx, and language-card ROM $D000–$FFFF.
+           $D000 becomes $9000. Direct $FE/$FF reads do not come through here.
+           ROM 03 stores the bit (CYA pin 60 is grounded) and does not move A14. */
+        inline uint16_t mega_rom_offset(uint16_t a16) const {
+            if (!is_rom03 && g_rombank) a16 = static_cast<uint16_t>(a16 & ~0x4000);
+            return a16;
+        }
+        inline uint8_t read_mega_rom(uint16_t a16) const {
+            return main_rom[rom_bank_ff_offset() + mega_rom_offset(a16)];
+        }
         uint8_t *get_memory_base() override { return main_ram; }
         uint32_t get_memory_size() override { return ram_banks * BANK_SIZE; }
         inline bool is_rom03_machine() const { return is_rom03; }

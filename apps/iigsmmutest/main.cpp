@@ -400,6 +400,10 @@ int main(int argc, char *argv[])
                 printf("Skipping: %d - %s (requires ROM03 / -3)\n\n", test.number, test.description.c_str());
                 continue;
             }
+            if (test.requires_rom01 && use_rom03) {
+                printf("Skipping: %d - %s (ROM01 only)\n\n", test.number, test.description.c_str());
+                continue;
+            }
             if (!test.requires_rom03 && use_rom03 && test.number == 204) {
                 printf("Skipping: %d - %s (ROM01-only negative case)\n\n", test.number, test.description.c_str());
                 continue;

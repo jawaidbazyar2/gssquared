@@ -97,7 +97,7 @@ inline uint8_t bank_e1_read(void *context, uint32_t address) {
            against a real ROM 01. Cycle type stays SYNC - whether the FPI serves this
            as a fast ROM cycle instead is unverified. */
         if (a16 >= 0xD000 && !mmu_iigs->is_lc_read_enable()) {
-            return mmu_iigs->get_rom_base()[mmu_iigs->rom_bank_ff_offset() + a16];
+            return mmu_iigs->read_mega_rom(a16);
         }
         uint8_t *ram = mmu_iigs->megaii->get_memory_base();
         return ram[mmu_iigs->e1_aux_index(a16)];
@@ -186,6 +186,21 @@ inline uint8_t MMU_IIgs::read_c0xx(uint16_t address) {
     }
     megaii_compose_map();
     return retval;
+}
+
+// $C028 toggles ROMBANK. Read and write both count; the data byte does not.
+uint8_t read_c028(void *context, uint32_t address) {
+    (void)address;
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->toggle_rombank();
+    return mmu_iigs->megaii->floating_bus_read();
+}
+
+void write_c028(void *context, uint32_t address, uint8_t value) {
+    (void)address;
+    (void)value;
+    MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
+    mmu_iigs->toggle_rombank();
 }
 
 uint8_t read_c068(void *context, uint32_t address) {
@@ -395,7 +410,7 @@ void MMU_IIgs::bsr_map_memory() {
     //uint8_t *bank = (lc->FF_BANK_1 == 1) ? lc->ram : lc->ram + 0x1000;
     uint8_t *bankd0 = megaii->get_memory_base() + bankd0offset;
     uint8_t *banke0 = megaii->get_memory_base() + banke0offset;
-    uint8_t *rom = megaii->get_rom_base();
+    uint8_t *ff_rom = main_rom + rom_bank_ff_offset();
 
     const char *bank_d = (ll.FF_BANK_1 == 1) ? "LC_BANK1" : "LC_BANK2";
 
@@ -404,9 +419,8 @@ void MMU_IIgs::bsr_map_memory() {
         if (ll.FF_READ_ENABLE) {
             megaii->map_page_read(i + 0xD0, bankd0 + (i*GS2_PAGE_SIZE), bank_d);
         } else { // reads == READ_ROM
-        // TODO: this is wrong - needs to somehow know to return to ROM D0/etc wherever that may be.
-        // right now hard-code to what we know about the iie rom.
-            megaii->map_page_read(i + 0xD0, rom + 0x1000 + (i*GS2_PAGE_SIZE), "SYS_ROM");
+            const uint16_t rom_addr = mega_rom_offset(static_cast<uint16_t>(0xD000 + i * GS2_PAGE_SIZE));
+            megaii->map_page_read(i + 0xD0, ff_rom + rom_addr, "SYS_ROM");
         }
 
         if (!ll._FF_WRITE_ENABLE) {
@@ -423,8 +437,8 @@ void MMU_IIgs::bsr_map_memory() {
             megaii->map_page_read(i+0xE0, banke0 + (i * GS2_PAGE_SIZE), "LC RAM");
 
         } else { // reads == READ_ROM
-            // TODO: this is wrong - needs to somehow know to return to ROM D0/etc wherever that may be.
-            megaii->map_page_read(i+0xE0, rom + 0x2000 + (i * GS2_PAGE_SIZE), "SYS_ROM");
+            const uint16_t rom_addr = mega_rom_offset(static_cast<uint16_t>(0xE000 + i * GS2_PAGE_SIZE));
+            megaii->map_page_read(i+0xE0, ff_rom + rom_addr, "SYS_ROM");
         }
 
         if (!ll._FF_WRITE_ENABLE) {
@@ -595,7 +609,7 @@ uint8_t bank_shadow_read(void *context, uint32_t address) {
             // rom
             mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM); // even though it's in "LC" area it's ROM. 
             if (DEBUG(DEBUG_MMUGS)) printf("Read: ROM Effective address: %06X\n", address);
-            return mmu_iigs->get_rom_base()[mmu_iigs->rom_bank_ff_offset() + (address & 0xFFFF)];
+            return mmu_iigs->read_mega_rom(static_cast<uint16_t>(address));
         }
     }
     // we know at this point we were not originally C0 IO space. so.. 
@@ -653,7 +667,26 @@ void bank_shadow_write(void *context, uint32_t address, uint8_t value) {
 uint8_t iolc_rom_read(void *context, uint32_t address) {
     MMU_IIgs *mmu_iigs = (MMU_IIgs *)context;
     mmu_iigs->set_next_cycle_type(CYCLE_TYPE_FAST_ROM);
-    return mmu_iigs->get_rom_base()[mmu_iigs->rom_bank_ff_offset() + (address & 0xFFFF)];
+    return mmu_iigs->read_mega_rom(static_cast<uint16_t>(address));
+}
+
+void MMU_IIgs::toggle_rombank() {
+    g_rombank = !g_rombank;
+    // ROM 03 tracks the latch. CYA pin 60 is grounded, so the windows stay put.
+    if (map_initialized && !is_rom03) sync_rom_windows();
+}
+
+void MMU_IIgs::map_internal_cx_rom() {
+    uint8_t *ff_rom = main_rom + rom_bank_ff_offset();
+    for (int i = 1; i < 16; i++) {
+        const uint16_t rom_addr = mega_rom_offset(static_cast<uint16_t>((0xC0 + i) << 8));
+        megaii->map_c1cf_internal_rom(0xC0 + i, ff_rom + rom_addr, "GS INT");
+    }
+}
+
+void MMU_IIgs::sync_rom_windows() {
+    map_internal_cx_rom();
+    bsr_map_memory();
 }
 
 read_handler_t float_read_handler = { (memory_read_func)float_area_read, nullptr };
@@ -697,6 +730,8 @@ void MMU_IIgs::init_c0xx_handlers() {
     megaii->set_C0XX_write_handler(0xC029, {megaii_c0xx_write, this});
     megaii->set_C0XX_read_handler(0xC029, {megaii_c0xx_read, this});
     
+    megaii->set_C0XX_read_handler(0xC028, {read_c028, this});
+    megaii->set_C0XX_write_handler(0xC028, {write_c028, this});
     megaii->set_C0XX_read_handler(0xC068, {read_c068, this});
     megaii->set_C0XX_write_handler(0xC068, {write_c068, this});
 }
@@ -774,10 +809,7 @@ void MMU_IIgs::init_map() {
 
     set_ram_shadow_banks();
 
-    // use new routine.
-    for (int i = 1; i < 16; i++) {
-        megaii->map_c1cf_internal_rom(0xC0 + i, main_rom + rom_bank_ff_offset() + 0xC000 + i * GS2_PAGE_SIZE, "GS INT");
-    }
+    map_internal_cx_rom();
 
     /* megaii->set_slot_rom(SLOT_1, main_rom + 0x1'C100, "GS INT");
     megaii->set_slot_rom(SLOT_2, main_rom + 0x1'C200, "GS INT");
@@ -864,7 +896,7 @@ void MMU_IIgs::debug_dump(DebugFormatter *df) {
 
 uint8_t MMU_IIgs::vp_read(uint32_t address) {
     if (is_iolc_shadowed()) { // if IOLC is shadowed, read from ROM.
-        return get_rom_base()[rom_bank_ff_offset() + (address & 0xFFFF)];
+        return read_mega_rom(static_cast<uint16_t>(address));
     } else {
         return read(address);
     }

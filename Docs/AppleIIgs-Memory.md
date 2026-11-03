@@ -264,7 +264,7 @@ The State Register duplicates in the FPI certain memory management bits that can
 | 4 | RAMWRT | 1 = aux RAM is write-enabled |
 | 3 | RDROM | 1 = ROM is read enabled in LC area; 0 = RAM read enabled in LC area |
 | 2 | LCBNK2 | 1 = LC Bank 2 Selected |
-| 1 | ROMBANK | Must always be 0 (unused on ROM01; removed on ROM03 — see [Unimplemented.md](Unimplemented.md)) |
+| 1 | ROMBANK | See below |
 | 0 | INTCXROM | 1 = internal ROM at $Cx00 is selected; 0 = peripheral-card ROM |
 
 This is a read-write register - intention being to dramatically speed up interrupt handling.
@@ -273,6 +273,8 @@ Here is an interesting question - is this -all- the softswitches that control II
 It's missing: 80STORE; but that's the only one I think.
 
 LCBNK2 here: the GS HW Reference has this bit's description backwards. HW Ref says "1 means Bank 1 selected". In fact, 1 means Bank 2 selected, just like the name says.
+
+ROMBANK is `$C068` bit 1, and `$C028` toggles that same bit. A read or a write of `$C028` toggles it. The data byte is ignored: bit 7 does not choose ROM versus RAM. Language-card RDROM still does that. On a ROM 01, the set bit forces A14 low for the Mega II windows that alias bank `$FF`: `$C071–$C07F`, internal `$C1xx–$CFxx`, and language-card ROM `$D000–$FFFF` (`$D000` reads `$FF/9000`). A direct read of bank `$FE` or `$FF` keeps A14. On a ROM 03 the bit still reads back, and CYA pin 60 is grounded so the windows do not move.
 
 ## Memory Translation
 
