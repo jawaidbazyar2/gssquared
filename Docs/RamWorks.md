@@ -11,6 +11,8 @@ The card is always **8MB**: 128 auxiliary banks, numbered **AUX 0 .. AUX 127**. 
 - **AUX 0** is the stock IIe auxiliary 64K (the extended 80-column card).
 - **AUX 1 .. AUX 127** are the additional banks.
 - Each bank is a full 64K, including the `$C000–$CFFF` hole where language-card bank 1 is stored.
+- **AUX 1 .. AUX N-1** are the additional banks.
+- Each bank is a full 64K, including the `$C000–$CFFF` hole where language-card bank 2 is stored.
 - The motherboard still decides main versus auxiliary: `RAMRD`, `RAMWRT`, `ALTZP`, `80STORE`, `PAGE2`, `HIRES`.
 - The card only decides *which* 64K auxiliary bank those accesses hit.
 - **Video always reads AUX 0.** The scanner does not follow the bank register.
@@ -75,7 +77,7 @@ Regions that follow `cpu_aux` when the motherboard has selected auxiliary memory
 
 | Switch | CPU pages | Which bank |
 |--------|-----------|------------|
-| `ALTZP` | `$00–$01` (zero page and stack), and the language-card window `$D0–$FF` | selected aux bank. LC bank 1 still lives at `$C000` inside that bank |
+| `ALTZP` | `$00–$01` (zero page and stack), and the language-card window `$D0–$FF` | selected aux bank. LC bank 2 still lives at `$C000` inside that bank |
 | `RAMRD` / `RAMWRT` | `$02–$03`, `$08–$1F`, `$40–$BF` | selected aux bank |
 | `80STORE` + `PAGE2` | text `$04–$07` | selected aux bank |
 | `80STORE` + `PAGE2` + `HIRES` | text `$04–$07` and hires `$20–$3F` | selected aux bank |

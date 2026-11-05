@@ -6,20 +6,6 @@ Add new entries here when we decide something is out of scope, obsolete, or unus
 
 ---
 
-## Apple IIgs — ROMBANK (`$C028` / STATEREG bit 1)
-
-| | |
-|-|-|
-| **Hardware** | On ROM 00/01 boards, access to `$C028` toggles **ROMBANK**. The same bit appears as bit 1 of `$C068` (STATEREG). |
-| **Effect** | When language-card ROM is mapped at `$D000–$FFFF`, the toggle flips **A14** into the system ROM for that window: normal `$FF/D000–$FFFF` vs alternate `$FF/9000–$BFFF` (shown in the `$D000` window). It does **not** swap banks `$FE`/`$FF`. |
-| **ROM 01 firmware** | Unused. Apple docs say STATEREG ROMBANK “must always be 0.” IIgs firmware and GS/OS never touch it. |
-| **ROM 03** | Removed from the hardware (CYA era). `$C028` / the STATEREG bit are inert. |
-| **GSSquared** | `g_rombank` exists in the STATEREG bitfield for completeness / debugger display, but `$C028` is not handled and nothing remaps LC ROM from the bit. Behavior is “always 0,” which matches real software. |
-
-**Related (ROM image layout, not ROMBANK):** Physical ROM01 dumps sometimes present banks `$FE`/`$FF` swapped relative to linear address space. Our ROM01 image is stored with `$FE` then `$FF` (bank `$FF` last) so the MMU can map the top `N` banks of the file linearly. ROM03’s four banks are already linear `FC–FF` that way. That normalization is independent of the ROMBANK softswitch.
-
----
-
 ## Cassette interface (`$C020` / `$C060`)
 
 Listed in [Documentation.md](Documentation.md) as **no support planned**.

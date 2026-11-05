@@ -64,6 +64,9 @@ enum : uint32_t {
     DEVOP_STATE_SET = 2,
 };
 
+/** Tag for the headless constructor defined by apps/iiemmutest. */
+struct computer_bare_t {};
+
 struct computer_t {
 
     using ResetHandler = std::function<bool (bool cold_start)>;
@@ -82,6 +85,7 @@ struct computer_t {
     };
 
     computer_t(NClockII *clock);
+    explicit computer_t(computer_bare_t);
     ~computer_t();
 
     cpu_state *cpu = nullptr;

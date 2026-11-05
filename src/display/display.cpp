@@ -444,9 +444,10 @@ void display_write_switches(void *context, uint32_t address, uint8_t value) {
 /**
  * IIGS Video Control Registers
  */
+// Bits 4,3,2,1 must be 0.
 uint8_t display_read_C029(void *context, uint32_t address) {
     display_state_t *ds = (display_state_t *)context;
-    return ds->new_video;
+    return static_cast<uint8_t>(ds->new_video & 0xE1);
 }
 
 void set_new_video(display_state_t *ds, uint8_t value) {
@@ -467,7 +468,7 @@ void set_new_video(display_state_t *ds, uint8_t value) {
 
 void display_write_C029(void *context, uint32_t address, uint8_t value) {
     display_state_t *ds = (display_state_t *)context;
-    set_new_video(ds, value);
+    set_new_video(ds, static_cast<uint8_t>(value & 0xE1));
 }
 
 /**

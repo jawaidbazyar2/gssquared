@@ -37,30 +37,24 @@
  * ROM: C1-CF     ROM + 0x0100 
  * ROM: D0-DF     ROM + 0x1000
  * ROM: E0-FF     ROM + 0x2000 (- 0x3FFF)
- * RAM: D0-DF     Bank 1:  RAM + 0xC000
- * RAM: D0-DF     Bank 2:  RAM + 0xD000
+ * RAM: D0-DF     Bank 2:  RAM + 0xC000
+ * RAM: D0-DF     Bank 1:  RAM + 0xD000
  * RAM: E0-FF              RAM + 0xE000
- * ALT RAM:       the selected auxiliary bank (MMU_IIe::cpu_aux).
- *                AUX 0 is ram + 0x10000. Further RamWorks banks live beside that block.
+ * ALT RAM:       add 0x10000 to address 
  */
-
-static MMU_IIe *iie_mmu(iiememory_state_t *d) {
-    return static_cast<MMU_IIe *>(d->mmu);
-}
-
-/** Page pointer in main, or in the CPU's current auxiliary bank. */
-static uint8_t *ram_page(iiememory_state_t *d, bool aux, int page) {
-    uint8_t *base = aux ? iie_mmu(d)->cpu_aux_base() : d->ram;
-    return base + page * GS2_PAGE_SIZE;
-}
 
 void bsr_map_memory(iiememory_state_t *lc) {
 
-    uint8_t *bank_base = lc->f_altzp ? iie_mmu(lc)->cpu_aux_base() : lc->ram;
-    uint32_t bankd0offset = (lc->ll.FF_BANK_1 == 1) ? 0xC000 : 0xD000;
+    uint32_t bankd0offset = (lc->ll.FF_BANK_1 == 1) ? 0xD000 : 0xC000;
+    uint32_t banke0offset = 0xE000;
+    if (lc->f_altzp) {
+        bankd0offset += 0x1'0000; // alternate bank!
+        banke0offset += 0x1'0000; // alternate bank!
+    }
 
-    uint8_t *bankd0 = bank_base + bankd0offset;
-    uint8_t *banke0 = bank_base + 0xE000;
+    //uint8_t *bank = (lc->FF_BANK_1 == 1) ? lc->ram : lc->ram + 0x1000;
+    uint8_t *bankd0 = lc->ram + bankd0offset;
+    uint8_t *banke0 = lc->ram + banke0offset;
     uint8_t *rom = lc->mmu->get_rom_base();
 
     const char *bank_d = (lc->ll.FF_BANK_1 == 1) ? "LC_BANK1" : "LC_BANK2";
@@ -167,7 +161,7 @@ void iiememory_debug(iiememory_state_t *iiememory_d) {
         iiememory_d->m_zp, iiememory_d->m_text1_r, iiememory_d->m_text1_w, iiememory_d->m_hires1_r, iiememory_d->m_hires1_w, iiememory_d->m_all_r, iiememory_d->m_all_w); */
 }
 
-void iiememory_compose_map(iiememory_state_t *iiememory_d, bool force) {
+void iiememory_compose_map(iiememory_state_t *iiememory_d) {
     const char *TAG_MAIN = "MAIN";
     const char *TAG_ALT = "AUX";
         
@@ -201,62 +195,72 @@ void iiememory_compose_map(iiememory_state_t *iiememory_d, bool force) {
         n_hires1_w = iiememory_d->f_ramwrt;
     }
 
-    if (force || n_zp != iiememory_d->m_zp) { // this is both read and write.
+    uint8_t *memory_base = iiememory_d->ram;
+
+    if (n_zp != iiememory_d->m_zp) { // this is both read and write.
         // change $00, $01, $D0 - $FF
-        iiememory_d->mmu->map_page_read(0x00, ram_page(iiememory_d, n_zp, 0x00), n_zp ? TAG_ALT : TAG_MAIN);
-        iiememory_d->mmu->map_page_write(0x00, ram_page(iiememory_d, n_zp, 0x00), n_zp ? TAG_ALT : TAG_MAIN);
-        iiememory_d->mmu->map_page_read(0x01, ram_page(iiememory_d, n_zp, 0x01), n_zp ? TAG_ALT : TAG_MAIN);
-        iiememory_d->mmu->map_page_write(0x01, ram_page(iiememory_d, n_zp, 0x01), n_zp ? TAG_ALT : TAG_MAIN);
+        uint32_t altoffset = n_zp ? 0x1'0000 : 0x0'0000;
+
+        iiememory_d->mmu->map_page_read(0x00, memory_base + altoffset + 0x0000, n_zp ? TAG_ALT : TAG_MAIN);
+        iiememory_d->mmu->map_page_write(0x00, memory_base + altoffset + 0x0000, n_zp ? TAG_ALT : TAG_MAIN);
+        iiememory_d->mmu->map_page_read(0x01, memory_base + altoffset + 0x0100, n_zp ? TAG_ALT : TAG_MAIN);
+        iiememory_d->mmu->map_page_write(0x01, memory_base + altoffset + 0x0100, n_zp ? TAG_ALT : TAG_MAIN);
         
         // handle mapping the "language card" portion.
         bsr_map_memory(iiememory_d); // handle the 'language card' portion.
     }
-    if (force || n_text1_r != iiememory_d->m_text1_r) {
+    if (n_text1_r != iiememory_d->m_text1_r) {
         // change $04 - $07
+        uint32_t altoffset = n_text1_r ? 0x1'0000 : 0x0'0000;
         for (int i = 0x04; i <= 0x07; i++) {
-            iiememory_d->mmu->map_page_read(i, ram_page(iiememory_d, n_text1_r, i), n_text1_r ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_read(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_text1_r ? TAG_ALT : TAG_MAIN);
         }
     }
-    if (force || n_text1_w != iiememory_d->m_text1_w) {
+    if (n_text1_w != iiememory_d->m_text1_w) {
         // change $04 - $07
+        uint32_t altoffset = n_text1_w ? 0x1'0000 : 0x0'0000;
         for (int i = 0x04; i <= 0x07; i++) {
-            iiememory_d->mmu->map_page_write(i, ram_page(iiememory_d, n_text1_w, i), n_text1_w ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_text1_w ? TAG_ALT : TAG_MAIN);
         }
     }
-    if (force || n_hires1_r != iiememory_d->m_hires1_r) {
+    if (n_hires1_r != iiememory_d->m_hires1_r) {
         // change $20 - $3F
+        uint32_t altoffset = n_hires1_r ? 0x1'0000 : 0x0'0000;
         for (int i = 0x20; i <= 0x3F; i++) {
-            iiememory_d->mmu->map_page_read(i, ram_page(iiememory_d, n_hires1_r, i), n_hires1_r ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_read(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_hires1_r ? TAG_ALT : TAG_MAIN);
         }
     }
-    if (force || n_hires1_w != iiememory_d->m_hires1_w) {
+    if (n_hires1_w != iiememory_d->m_hires1_w) {
         // change $20 - $3F
+        uint32_t altoffset = n_hires1_w ? 0x1'0000 : 0x0'0000;
         for (int i = 0x20; i <= 0x3F; i++) {
-            iiememory_d->mmu->map_page_write(i, ram_page(iiememory_d, n_hires1_w, i), n_hires1_w ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_hires1_w ? TAG_ALT : TAG_MAIN);
         }
     }
-    if (force || n_all_r != iiememory_d->m_all_r) {  
+    if (n_all_r != iiememory_d->m_all_r) {  
         // change $02 - $03, $08 - $1F, $40 - $BF
+        uint32_t altoffset = n_all_r ? 0x1'0000 : 0x0'0000;
         for (int i = 0x02; i <= 0x03; i++) {
-            iiememory_d->mmu->map_page_read(i, ram_page(iiememory_d, n_all_r, i), n_all_r ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_read(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_all_r ? TAG_ALT : TAG_MAIN);
         }
         for (int i = 0x08; i <= 0x1F; i++) {
-            iiememory_d->mmu->map_page_read(i, ram_page(iiememory_d, n_all_r, i), n_all_r ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_read(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_all_r ? TAG_ALT : TAG_MAIN);
         }
         for (int i = 0x40; i <= 0xBF; i++) {
-            iiememory_d->mmu->map_page_read(i, ram_page(iiememory_d, n_all_r, i), n_all_r ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_read(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_all_r ? TAG_ALT : TAG_MAIN);
         }
     }
-    if (force || n_all_w != iiememory_d->m_all_w) {
+    if (n_all_w != iiememory_d->m_all_w) {
         // change $02 - $03, $08 - $1F, $40 - $BF
+        uint32_t altoffset = n_all_w ? 0x1'0000 : 0x0'0000;
         for (int i = 0x02; i <= 0x03; i++) {
-            iiememory_d->mmu->map_page_write(i, ram_page(iiememory_d, n_all_w, i), n_all_w ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_all_w ? TAG_ALT : TAG_MAIN);
         }
         for (int i = 0x08; i <= 0x1F; i++) {
-            iiememory_d->mmu->map_page_write(i, ram_page(iiememory_d, n_all_w, i), n_all_w ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_all_w ? TAG_ALT : TAG_MAIN);
         }
         for (int i = 0x40; i <= 0xBF; i++) {
-            iiememory_d->mmu->map_page_write(i, ram_page(iiememory_d, n_all_w, i), n_all_w ? TAG_ALT : TAG_MAIN);
+            iiememory_d->mmu->map_page_write(i, memory_base + altoffset + (i * GS2_PAGE_SIZE), n_all_w ? TAG_ALT : TAG_MAIN);
         }
     }
 
@@ -300,7 +304,7 @@ void iiememory_write_C00X(void *context, uint32_t address, uint8_t data) {
             iiememory_d->f_altzp = true;
             break;
     }
-    iiememory_compose_map(iiememory_d, false);
+    iiememory_compose_map(iiememory_d);
 
 }
 
@@ -377,7 +381,7 @@ uint8_t iiememory_read_display(void *context, uint32_t address) {
             assert(false && "iiememory: Unhandled display read");
     }
     // recompose the memory map
-    iiememory_compose_map(iiememory_d, false);
+    iiememory_compose_map(iiememory_d);
     return retval;
 }
 
@@ -392,9 +396,8 @@ DebugFormatter *debug_iiememory(iiememory_state_t *iiememory_d) {
     MMU_IIe *mmu = (MMU_IIe *)iiememory_d->mmu; // we are in fact a iie
 
     // dump the page table
-    f->addLine("80ST: %1d RAMR: %1d RAMW: %1d ALTZP: %1d SLOTC3: %1d AUXBK: %02X",
-        iiememory_d->f_80store, iiememory_d->f_ramrd, iiememory_d->f_ramwrt, iiememory_d->f_altzp, mmu->f_slotc3rom,
-        iie_mmu(iiememory_d)->get_aux_bank());
+    f->addLine("80ST: %1d RAMR: %1d RAMW: %1d ALTZP: %1d SLOTC3: %1d",
+        iiememory_d->f_80store, iiememory_d->f_ramrd, iiememory_d->f_ramwrt, iiememory_d->f_altzp, mmu->f_slotc3rom);
     f->addLine("INTCX: %1d LC [ BNK1: %1d READ: %1d WRT: %1d ]",
         mmu->f_intcxrom, iiememory_d->ll.FF_BANK_1, iiememory_d->ll.FF_READ_ENABLE, !iiememory_d->ll._FF_WRITE_ENABLE);
     f->addLine("TEXT: %1d MIXED: %1d PAGE2: %1d HIRES: %1d",
@@ -438,15 +441,8 @@ void reset_iiememory(iiememory_state_t *lc) {
 
     // TODO: what about the display flags? I don't think these are reset on RESET, but give some consideration.
 
-    iie_mmu(lc)->set_aux_bank(0);
-    iiememory_compose_map(lc, true);
-}
-
-void iiememory_set_aux_bank(computer_t *computer, uint8_t bank) {
-    iiememory_state_t *d = (iiememory_state_t *)computer->get_module_state(MODULE_IIEMEMORY);
-    if (!d) return;
-    iie_mmu(d)->set_aux_bank(bank);
-    iiememory_compose_map(d, true);
+    bsr_map_memory(lc);
+    iiememory_compose_map(lc);
 }
 
 void init_iiememory(computer_t *computer, SlotType_t slot) {

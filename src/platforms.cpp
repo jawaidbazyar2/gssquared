@@ -72,9 +72,8 @@ static  platform_info platforms[] = {
         CLOCK_1_024MHZ, 
         MMU_MMU_IIE,
         {
-            DEVICE_ID_DISPLAY,          // display must be before IIE_MEMORY
-            DEVICE_ID_KEYBOARD_IIE,     // Keyboard should be before IIE_MEMORY
-            DEVICE_ID_IIE_MEMORY,
+            DEVICE_ID_DISPLAY,
+            DEVICE_ID_KEYBOARD_IIE,
             DEVICE_ID_SPEAKER,
             DEVICE_ID_CASSETTE,
             DEVICE_ID_GAMECONTROLLER,
@@ -91,9 +90,8 @@ static  platform_info platforms[] = {
         CLOCK_1_024MHZ,
         MMU_MMU_IIE,
         {
-            DEVICE_ID_DISPLAY,          // display must be before IIE_MEMORY
-            DEVICE_ID_KEYBOARD_IIE,     // Keyboard should be before IIE_MEMORY
-            DEVICE_ID_IIE_MEMORY,
+            DEVICE_ID_DISPLAY,
+            DEVICE_ID_KEYBOARD_IIE,
             DEVICE_ID_SPEAKER,
             DEVICE_ID_CASSETTE,
             DEVICE_ID_GAMECONTROLLER,
@@ -110,9 +108,8 @@ static  platform_info platforms[] = {
         CLOCK_1_024MHZ,
         MMU_MMU_IIE,
         {
-            DEVICE_ID_DISPLAY,          // display must be before IIE_MEMORY
-            DEVICE_ID_KEYBOARD_IIE,     // Keyboard should be before IIE_MEMORY
-            DEVICE_ID_IIE_MEMORY,
+            DEVICE_ID_DISPLAY,
+            DEVICE_ID_KEYBOARD_IIE,
             DEVICE_ID_SPEAKER,
             DEVICE_ID_CASSETTE,
             DEVICE_ID_GAMECONTROLLER,

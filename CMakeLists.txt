@@ -490,7 +490,7 @@ add_library(gs2_debugger  src/debugger/debugwindow.cpp src/debugger/Monitor.cpp
     src/debugger/DebugProtocolServer.cpp src/debugger/BreakpointTable.cpp
     src/debugger/DebugVideoView.cpp)
 
-add_library(gs2_mmu src/mmus/mmu.cpp src/mmus/mmu_ii.cpp src/mmus/mmu_iie.cpp src/mmus/mmu_iigs.cpp)
+add_library(gs2_mmu src/mmus/mmu.cpp src/mmus/mmu_ii.cpp src/mmus/mmu_iie.cpp src/mmus/mmu_iie2.cpp src/mmus/mmu_iigs.cpp)
 
 #add_library(gs2_cpu src/cpus/cpu_6502.cpp src/cpus/cpu_65c02.cpp src/cpu.cpp )
 #add_library(gs2_cpu src/cpus/core_6502.cpp src/cpu.cpp )
@@ -785,6 +785,9 @@ if(NOT EMSCRIPTEN)
     add_subdirectory(apps/iigsmmutest)
 
     add_subdirectory(apps/mmutest)
+
+    add_subdirectory(apps/iiemmutest)
+    add_subdirectory(apps/iiemmu2test)
 
     add_subdirectory(apps/cputest)
 

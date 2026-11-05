@@ -12786,3 +12786,54 @@ Testing a "fix" for "screensaver never kicks in" report.
 doing some of the same performance work on VSG_RGB that we did on VSG_Comp.
 
 Also cleaning up composite's handling and generation of colorburst. The timing of when we detect colorburst now matches IIe.
+
+## Oct 31, 2026
+
+boo!!
+
+So I refactored the iie mmu code to be hella cleaner by merging iiememory and mmu_iie. I had taken that approach with mmu_iigs, and this is definitely better. I executed an exhaustive test of all possible memory map combinations. So we had a baseline of operation. So far, the blast radius is pretty small and I can't find any errors.
+
+Working on the MMU is, of course, fraught with peril. 
+
+The AI here is thinking that switching mmu to struct-of-arrays could yield some significant performance benefits. and I'm inclined to do it. However, I am going to finish this cleanup first.
+
+The next step is for the iigs_mmu to use the new iie mmu for megaii. it should "just work". famous last words.
+
+Phase 2: Mega II is `MMU_IIe2` with `install_memory_switches` false. Aux and language-card pages still come from `megaii_compose_map` / `bsr_map_memory`. IIgs INTCXROM and SLOTC3ROM go through `megaii->set_intcxrom` / `set_slotc3rom` (those already call `compose_c1cf`).
+
+c024 , c02c; c027, c02f in SWITCHES do not behave the same way as the v1.0.0 release. I don't think this is going to be this MMU work.
+
+## Nov 2, 2026
+
+rikkles hit us with a big test report. cool! @IIGS-MMU-COMPARISONS.html is the file. First up, some low-hanging fruit.
+
+C029 should be masked with E1 on writes and reads, because C029[4-1] are unused bits "must be 0" according to firmware reference.
+
+C02D should be masked with F6. This is interesting. So even if I write C02D=81, it should come back 80. because C02D[0] and C02D[3] are "must be 0".
+
+C036 is the disk speed register aka CYAREG. This is saying we're good, and yes, I guess we are.
+
+Also, LC Bank 1 / 2 were flipped from where they ought to be. Bank 1 is at D000, Bank 2 is at C000. So it's Bank 2 that is the "odd man out". I have fixed this in the GS and in the IIe.
+
+## Nov 5, 2026
+
+I recently stumbled back across this discussion:
+
+Me: Does this seem accurate to you, Arekkusu? referring to C029
+
+in short: EITHER bit 6 or bit 7 will do the “linearization”.
+
+Bit 6 ($40) — Explicit Linearization: Exists so software can write to the Super Hi-Res (SHR) frame buffer linearly while the display is off ($41). This prevents screen tearing and visual jitter while building the initial display buffer off-screen.
+Bit 7 ($80) — SHR Display Enable: Enables the VGC’s Super Hi-Res video output. On real hardware, enabling SHR mode inherently forces linear address translation for CPU reads and writes to the $E1/2000–$E1/9FFF region.
+arekkusu  [11:16 PM]
+
+Arekkusu: Yes, that much of the HWRef appears to be correct ^_^;
+
+Regarding SHADOW'S testing of this, the question is: when does linearization happen?
+A) write to E1/2001, linearize, notice bank latch is off, redirect to E0/
+or
+B) write to E1/2001, notice bank latch is off, redirect to E0/, not linearize
+
+The HWRef doesn't say, but the hardware actually does B)
+
+ok, double checked and we already work that way.

@@ -37,12 +37,23 @@ With the exception of the N6502 above, this is cosmetic and none causes software
 | XMAS Demo | IIgs | We don't handle display pixel clock shift between 14MHz/16MHz correctly |
 | Woz Test Disks | IIe, IIgs | ✅ | All copy-protected woz disk images boot and run correctly |
 | Alien Mind | IIgs | ✅ | Copy-protected 3.5" disk title, runs correctly |
+| [MMUProbe](https://github.com/hasseily/apple2gs-tests) | IIgs | ✅ | Rikkles (Hasseily) Test of various IIgs MMU behaviors |
 
 ## Arekkusu
 
 This series of tests deserves its own section because they are so intricate and thorough.
 
 ### Switches
+
+[Vidmodes/Switches](https://github.com/mamedev/mame/pull/15247)
+
+| Platforms | Pass/Fail | Notes |
+|-|-|-|
+| II+ | ✅❌ | |
+| IIe | ✅❌ | |
+| IIgs | ✅❌ | |
+
+### Vidmodes
 
 | Platforms | Pass/Fail | Notes |
 |-|-|-|
@@ -55,8 +66,23 @@ Generally speaking, GS2 is:
 [ ] Doing it about half right
 
 [x] AppleColor composite monitor colorburst latency. The IIe still emits burst on the burst window of the next scanline. The monitor waits 6 scanlines before decoding color, and keeps color for 131 scanlines (half a frame) after burst stops, including through VBL.
+not correctly reflecting colorburst hold latency. This was fixed on IIe Composite, but not yet on GS RGB. We are determining colorburst per scanline based on the video mode at start of scanline. real monitors hold colorburst for some period via a PLL even after II stops sending colorburst.
 
-[ ] not switching character widths quite right (e.g. when switching from 40 to 80, latency in the switch interacting with the video shift registers )
+not switching character widths quite right (e.g. when switching from 40 to 80, latency in the switch interacting with the video shift registers).
+
+On IIe, the issue is that 80 col output is shifted to the left 7 pixels compared to 40 col, and we are only adjusting for this at start of scanline; we need to adjust any time there is a switch from 80 to 40 or vice-versa.
+
+
+### MemState
+
+Latest version of this is at :
+
+[Memstate](https://github.com/mamedev/mame/pull/15803)
+
+| Platforms | Pass/Fail | Notes |
+|-|-|-|
+| IIe | ✅ | |
+| IIgs | ✅ | |
 
 ### CPU
 

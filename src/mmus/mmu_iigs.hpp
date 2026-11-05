@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mmu.hpp"
-#include "mmu_iie.hpp"
+#include "mmu_iie2.hpp"
 #include "iigs_shadow_flags.hpp"
 #include "iigs_aux_linear.hpp"
 #include "debug.hpp"
@@ -23,6 +23,24 @@ class MMU_IIgs : public MMU {
 
         uint8_t reg_slot = 0;
         uint8_t reg_shadow = 0;
+        /* 1K slots in the low 17 address bits. Filled once in the constructor.
+           reg_shadow stays live.
+           or_mask: shadow when any listed inhibit bit is clear.
+           and_mask: shadow when the mask is nonzero and every listed bit is clear.
+           An OR of inhibit bits cannot express odd $2000-$5FFF: that page copies
+           when its page inhibit and AUXHGR are both clear, and also when SHR is clear. */
+        struct shadow_slot {
+            uint8_t or_mask;
+            uint8_t and_mask;
+        };
+        shadow_slot shadow_mask[128]{};
+        void fill_shadow_mask();
+        /* One region bit per 256-byte page. Filled once in the constructor.
+           aux_read_flags / aux_write_flags stay live and are packed by megaii_compose_map. */
+        uint8_t aux_region[256]{};
+        uint8_t aux_read_flags{};
+        uint8_t aux_write_flags{};
+        void fill_aux_region();
         uint8_t reg_speed = 0x08;
         union {
             uint8_t reg_state = 0;
@@ -75,14 +93,16 @@ class MMU_IIgs : public MMU {
         NClock *clock = nullptr;
 
     public:
-        MMU_IIe *megaii = nullptr;
+        MMU_IIe2 *megaii = nullptr;
         LanguageCardLogic ll;
 
-        MMU_IIgs(size_t num_banks, int ram_size, uint32_t rom_size, uint8_t *rom, MMU_IIe *mmu_iie) : MMU(num_banks, BANK_SIZE), megaii(mmu_iie) {
+        MMU_IIgs(size_t num_banks, int ram_size, uint32_t rom_size, uint8_t *rom, MMU_IIe2 *mmu_iie2) : MMU(num_banks, BANK_SIZE), megaii(mmu_iie2) {
             ram_banks = ram_size / BANK_SIZE;
             main_ram = new uint8_t[ram_banks * BANK_SIZE];
             rom_banks = rom_size / BANK_SIZE;
             is_rom03 = rom_banks >= 4;
+            fill_shadow_mask();
+            fill_aux_region();
             main_rom = rom;
             map_initialized = false;
             dma_bank_register = 0;
@@ -103,37 +123,37 @@ class MMU_IIgs : public MMU {
             MMU::write(address, value);
         }
 
+        /* Odd $2000-$3FFF: (HGR1 clear AND AUXHGR clear) OR SHR clear.
+           Odd $4000-$5FFF: (HGR2 clear AND AUXHGR clear) OR SHR clear. */
         inline bool shadow_is_enabled(uint32_t address) {
-            uint32_t address_16 = address & 0xFFFF;
-            uint32_t address_17 = address & 0x1FFFF;
-            const bool odd_bank = (address & 0x10000) != 0;
-            
-            if ((address_16 >= 0x0400 && address_16 <= 0x07FF) && !(reg_shadow & SHADOW_INH_TEXT1)) {
-                return true;
-            }
-            if (is_rom03 && ((address_16 >= 0x0800 && address_16 <= 0x0BFF) && !(reg_shadow & SHADOW_INH_TEXT2))) {
-                return true;
-            }
-            // HGR1/HGR2: even banks only. Odd-bank $2000-$5FFF is gated by AUXHGR|SHR
-            // (inhibit only when both are set; see SHADOW.s inhbt1).
-            if (!odd_bank) {
-                if ((address_16 >= 0x2000 && address_16 <= 0x3FFF) && !(reg_shadow & SHADOW_INH_HGR1)) {
-                    return true;
-                }
-                if ((address_16 >= 0x4000 && address_16 <= 0x5FFF) && !(reg_shadow & SHADOW_INH_HGR2)) {
-                    return true;
-                }
-            }
-            if ((address_17 >= 0x12000 && address_17 <= 0x19FFF) && !(reg_shadow & SHADOW_INH_SHR)) {
-                return true;
-            }
-            if ((address_17 >= 0x12000 && address_17 <= 0x15FFF) && !(reg_shadow & SHADOW_INH_AUXHGR)) {
-                return true;
-            }
-            
-            
-            return false;
+            const uint32_t slot = (address >> 10) & 0x7F;
+            const shadow_slot &entry = shadow_mask[slot];
+            const uint8_t reg = reg_shadow;
+            const bool or_enabled = (entry.or_mask & static_cast<uint8_t>(~reg)) != 0;
+            const bool and_enabled = entry.and_mask != 0 && (entry.and_mask & reg) == 0;
+            return or_enabled || and_enabled;
         }
+
+        const uint8_t *shadow_mask_bytes() const {
+            return reinterpret_cast<const uint8_t *>(shadow_mask);
+        }
+        size_t shadow_mask_nbytes() const { return sizeof(shadow_mask); }
+
+        /* Odd bank returns 0. Otherwise one region bit selects main (0) or aux (0x10000). */
+        inline uint32_t calc_aux_read(uint32_t address) {
+            if (address & 0x10000) return 0;
+            const uint32_t page = (address >> 8) & 0xFF;
+            const bool use_aux = (aux_read_flags & aux_region[page]) != 0;
+            return static_cast<uint32_t>(use_aux) << 16;
+        }
+        inline uint32_t calc_aux_write(uint32_t address) {
+            if (address & 0x10000) return 0;
+            const uint32_t page = (address >> 8) & 0xFF;
+            const bool use_aux = (aux_write_flags & aux_region[page]) != 0;
+            return static_cast<uint32_t>(use_aux) << 16;
+        }
+
+        const uint8_t *aux_region_bytes() const { return aux_region; }
 
         // TODO: remove, not used anywhere any more. bank_e1_read handles bank latch directly.
         /* inline uint8_t megaiiRead(uint32_t address) {
@@ -168,11 +188,11 @@ class MMU_IIgs : public MMU {
 
         /* Physical aux index for a direct bank $E1 access (bank latch on). Aux is
            forced, so ALTZP / RAMRD / RAMWRT / 80STORE / PAGE2 do not apply here -
-           those select main vs aux for bank $E0. The LC bank 1 $D000 image (parked in
+           those select main vs aux for bank $E0. The LC bank 2 $D000 image (parked in
            the $C000 I/O hole, as in bsr_map_memory) and the linear/SHR aux mapping do
            still apply; the two ranges are disjoint. */
         inline uint32_t e1_aux_index(uint16_t a16) {
-            if (a16 >= 0xD000 && a16 <= 0xDFFF && is_lc_bank1()) return 0x1'0000 | (a16 - 0x1000);
+            if (a16 >= 0xD000 && a16 <= 0xDFFF && !is_lc_bank1()) return 0x1'0000 | (a16 - 0x1000);
             if (is_aux_linear()) return 0x1'0000 | iigs_aux_linear_to_phys(a16);
             return 0x1'0000 | a16;
         }
@@ -185,10 +205,22 @@ class MMU_IIgs : public MMU {
         }
         inline void set_state_register(uint8_t value) { 
             if (DEBUG(DEBUG_MMUGS)) printf("setting state register: %02X\n", value); 
+            const uint8_t changed = static_cast<uint8_t>(reg_state ^ value);
             reg_state = value; 
             ll.FF_READ_ENABLE = !g_rdrom; // sync LC state with state reg 
             ll.FF_BANK_1 = !g_lcbnk2; // this was missing.. 
+            if (!map_initialized) return;
+            // ROM 03 keeps ROMBANK in this register and does not rebuild ROM for it.
+            if (is_rom03 && (changed & ~0x02) == 0) return;
+            sync_rom_windows();
         }
+        /* $C028 read or write toggles C068 bit 1. The data byte is ignored.
+           MAME's do_io($28) does the same: it never receives the data byte, so
+           bit 7 does not choose ROM versus RAM. RAM versus ROM stays the
+           language-card RDROM bit. */
+        void toggle_rombank();
+        void sync_rom_windows();
+        void map_internal_cx_rom();
         inline uint8_t shadow_register() { return reg_shadow; }
         inline uint8_t speed_register() { return reg_speed; }
         inline uint8_t state_register() { return reg_state; }
@@ -213,7 +245,9 @@ class MMU_IIgs : public MMU {
         inline void set_mixed(bool value) { g_mixed = value; }
         inline bool is_altzp() { return g_altzp; }
         inline void set_altzp(bool value) { g_altzp = value; }
-        
+        inline bool is_ramrd() { return g_ramrd; }
+        inline bool is_ramwrt() { return g_ramwrt; }
+
         inline bool is_80store() { return g_80store ? true : false; }
         inline bool is_slotc3rom() { return megaii->f_slotc3rom ? true : false; }
         inline void set_intcxrom(bool value);
@@ -227,8 +261,6 @@ class MMU_IIgs : public MMU {
         void bsr_map_memory();
         virtual uint8_t vp_read(uint32_t address) override;
 
-        uint32_t calc_aux_write(uint32_t address);
-        uint32_t calc_aux_read(uint32_t address);
         void init_c0xx_handlers();
         void write_c0xx(uint16_t address, uint8_t value);
         uint8_t read_c0xx(uint16_t address);
@@ -243,6 +275,18 @@ class MMU_IIgs : public MMU {
         // embedded IIe-compat ROM pointer) key off bank $FF and used to
         // hardcode 0x10000, silently only correct for a 128KB ROM.
         inline uint32_t rom_bank_ff_offset() const { return (rom_banks - 1) * BANK_SIZE; }
+
+        /* ROM 01 ROMBANK forces A14 low on the Mega II windows that alias bank $FF:
+           $C071–$C07F, internal $C1xx–$CFxx, and language-card ROM $D000–$FFFF.
+           $D000 becomes $9000. Direct $FE/$FF reads do not come through here.
+           ROM 03 stores the bit (CYA pin 60 is grounded) and does not move A14. */
+        inline uint16_t mega_rom_offset(uint16_t a16) const {
+            if (!is_rom03 && g_rombank) a16 = static_cast<uint16_t>(a16 & ~0x4000);
+            return a16;
+        }
+        inline uint8_t read_mega_rom(uint16_t a16) const {
+            return main_rom[rom_bank_ff_offset() + mega_rom_offset(a16)];
+        }
         uint8_t *get_memory_base() override { return main_ram; }
         uint32_t get_memory_size() override { return ram_banks * BANK_SIZE; }
         inline bool is_rom03_machine() const { return is_rom03; }

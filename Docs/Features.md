@@ -545,7 +545,6 @@ User-language summary of [Unimplemented.md](Unimplemented.md):
 |-------|-------------|
 | Cassette tape | No load/save of tape images or WAV |
 | REPT key | Use host keyboard repeat |
-| IIgs ROMBANK softswitch | No effect; matches unused ROM 01 behavior |
 | IIgs DMABank register | Unimplemented |
 | IIgs diagnostic register | Unimplemented |
 | RAMfast SCSI | Not emulated |

@@ -7,7 +7,7 @@
 #include "tests.hpp"
 
 #include "mmus/mmu_iigs.hpp"
-#include "mmus/mmu_iie.hpp"
+#include "mmus/mmu_iie2.hpp"
 #include "mmus/iigs_memory.hpp"
 
 uint64_t debug_level = 0;
@@ -135,6 +135,8 @@ void EmitTestAssembly(const MMUTest::Test& test, AsmFile *a) {
 void EmitAssemblyPreamble(AsmFile *a) {
     std::vector<std::string> testnames = {
         "        org $0800",
+        "        php",   // IRQs off: IOLC-inhibit tests make $FFFE read RAM, not ROM
+        "        sei",
         "        ldy #00",
         "        lda #00",
         };
@@ -149,7 +151,8 @@ void EmitAssemblyPostamble(AsmFile *a) {
     "testfailed   cpy #00",
     "        beq exittest",
     "        jsr displayfail",
-    "exittest     rts",
+    "exittest     plp",
+    "        rts",
 
     "recordfail",
     "        sta failtable,Y",  // test number
@@ -264,17 +267,33 @@ static FILE *open_rom_file(const char *path) {
     return fopen(alt, "rb");
 }
 
+int run_shadow_predicate();
+int run_aux_predicate();
+
 void printUsage(const char *progname) {
     printf("Usage: %s [-a] [-l] [-3] [-p] [testnum]\n", progname);
+    printf("       %s --shadow\n", progname);
+    printf("       %s --aux\n", progname);
     printf("  -a  Emit assembly output (test.asm)\n");
     printf("  -l  Run live test against MMU module (ROM01 128K by default)\n");
     printf("  -3  With -l: use ROM03 256K image (enables is_rom03 / text page 2 shadow)\n");
     printf("  -p  Print the tests\n");
+    printf("  --shadow  Compare embedded shadow predicates and time them\n");
+    printf("  --aux     Compare embedded calc_aux predicates and time them\n");
     printf("\nIf no flags are specified, all operations are performed.\n");
 }
 
 int main(int argc, char *argv[]) 
 {
+    for (int i = 1; i < argc; i++) {
+        if (std::strcmp(argv[i], "--shadow") == 0) {
+            return run_shadow_predicate();
+        }
+        if (std::strcmp(argv[i], "--aux") == 0) {
+            return run_aux_predicate();
+        }
+    }
+
     bool emit_assembly = false;
     bool live_test = false;
     bool print_tests = false;
@@ -372,13 +391,17 @@ int main(int argc, char *argv[])
                rom_path, rom_size, use_rom03 ? 1 : 0, fast_ram,
                iigs_memory::last_ram_bank(fast_ram));
 
-        MMU_IIe *mmu_iie = new MMU_IIe(256, 128*1024, rom.data() + rom_bank_ff_offset + 0xC000);
+        MMU_IIe2 *mmu_iie = new MMU_IIe2(256, 128*1024, rom.data() + rom_bank_ff_offset + 0xC000, false);
         MMU_IIgs *mmu_iigs = new MMU_IIgs(256, (int)fast_ram, (uint32_t)rom_size, rom.data(), mmu_iie);
         mmu_iigs->init_map();
         for (const auto& test : MMUTest::ALL_TESTS) {
             if (testNumber != -1 && test.number != testNumber) continue;
             if (test.requires_rom03 && !use_rom03) {
                 printf("Skipping: %d - %s (requires ROM03 / -3)\n\n", test.number, test.description.c_str());
+                continue;
+            }
+            if (test.requires_rom01 && use_rom03) {
+                printf("Skipping: %d - %s (ROM01 only)\n\n", test.number, test.description.c_str());
                 continue;
             }
             if (!test.requires_rom03 && use_rom03 && test.number == 204) {

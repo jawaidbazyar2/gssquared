@@ -64,7 +64,7 @@
 #include "debugger/BreakpointTable.hpp"
 #include "computer.hpp"
 #include "mmus/mmu_ii.hpp"
-#include "mmus/mmu_iie.hpp"
+#include "mmus/mmu_iie2.hpp"
 #include "mmus/mmu_iigs.hpp"
 #include "mmus/iigs_memory.hpp"
 #include "ui/SelectSystem.hpp"
@@ -758,7 +758,7 @@ struct GS2AppState {
 
     // MMU pointers tracked for cleanup
     MMU_II *mmu_ii = nullptr;
-    MMU_IIe *mmu_iie = nullptr;
+    MMU_II *mmu_iie = nullptr; // IIe: MMU_IIe2. IIgs Mega II: MMU_IIe2 (switches off).
     MMU_IIgs *mmu_iigs = nullptr;
 };
 
@@ -1224,12 +1224,19 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
             computer->set_mmu(state->mmu_ii);
             computer->debug_window->set_mmu(state->mmu_ii);
             break;
-        case MMU_MMU_IIE:
-            state->mmu_iie = new MMU_IIe(256, 128*1024, (uint8_t *) rd->main_rom_data);
-            computer->cpu->set_mmu(state->mmu_iie);
-            computer->set_mmu(state->mmu_iie);
-            computer->debug_window->set_mmu(state->mmu_iie);
+        case MMU_MMU_IIE: {
+            auto *mmu = new MMU_IIe2(256, 128 * 1024, (uint8_t *)rd->main_rom_data);
+            mmu->set_message_bus(computer->mbus);
+            state->mmu_iie = mmu;
+            computer->cpu->set_mmu(mmu);
+            computer->set_mmu(mmu);
+            computer->debug_window->set_mmu(mmu);
+            computer->register_debug_display_handler(
+                "iiememory",
+                DH_IIEMEMORY,
+                [mmu]() { return mmu->debug_formatter(); });
             break;
+        }
         case MMU_MMU_IIGS:
         {
             // Bank $FF (the IIe-compatibility ROM the emulation-mode 6502
@@ -1255,8 +1262,9 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
                    exp_ram / (1024 * 1024),
                    fast_ram,
                    last_bank);
-            state->mmu_iie = new MMU_IIe(256, 128*1024, /* (uint8_t *) */rd->main_rom_data + rom_bank_ff_offset + 0xC000);
-            state->mmu_iigs = new MMU_IIgs(256, (int)fast_ram, (uint32_t) main_rom_size, /* (uint8_t *) */rd->main_rom_data, state->mmu_iie);
+            auto *mega = new MMU_IIe2(256, 128 * 1024, rd->main_rom_data + rom_bank_ff_offset + 0xC000, false);
+            state->mmu_iie = mega;
+            state->mmu_iigs = new MMU_IIgs(256, (int)fast_ram, (uint32_t)main_rom_size, rd->main_rom_data, mega);
         }
             state->mmu_iigs->init_map();
             computer->cpu->set_mmu(state->mmu_iigs); // cpu gets FPI
