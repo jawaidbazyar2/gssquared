@@ -12814,3 +12814,26 @@ C02D should be masked with F6. This is interesting. So even if I write C02D=81, 
 C036 is the disk speed register aka CYAREG. This is saying we're good, and yes, I guess we are.
 
 Also, LC Bank 1 / 2 were flipped from where they ought to be. Bank 1 is at D000, Bank 2 is at C000. So it's Bank 2 that is the "odd man out". I have fixed this in the GS and in the IIe.
+
+## Nov 5, 2026
+
+I recently stumbled back across this discussion:
+
+Me: Does this seem accurate to you, Arekkusu? referring to C029
+
+in short: EITHER bit 6 or bit 7 will do the “linearization”.
+
+Bit 6 ($40) — Explicit Linearization: Exists so software can write to the Super Hi-Res (SHR) frame buffer linearly while the display is off ($41). This prevents screen tearing and visual jitter while building the initial display buffer off-screen.
+Bit 7 ($80) — SHR Display Enable: Enables the VGC’s Super Hi-Res video output. On real hardware, enabling SHR mode inherently forces linear address translation for CPU reads and writes to the $E1/2000–$E1/9FFF region.
+arekkusu  [11:16 PM]
+
+Arekkusu: Yes, that much of the HWRef appears to be correct ^_^;
+
+Regarding SHADOW'S testing of this, the question is: when does linearization happen?
+A) write to E1/2001, linearize, notice bank latch is off, redirect to E0/
+or
+B) write to E1/2001, notice bank latch is off, redirect to E0/, not linearize
+
+The HWRef doesn't say, but the hardware actually does B)
+
+ok, double checked and we already work that way.
