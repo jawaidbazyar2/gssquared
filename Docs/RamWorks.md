@@ -9,8 +9,6 @@ RamWorks is not the Apple II Memory Expansion Card ("Slinky"). Slinky is a slott
 The card is always **8MB**: 128 auxiliary banks, numbered **AUX 0 .. AUX 127**. There is no size setting.
 
 - **AUX 0** is the stock IIe auxiliary 64K (the extended 80-column card).
-- **AUX 1 .. AUX 127** are the additional banks.
-- Each bank is a full 64K, including the `$C000–$CFFF` hole where language-card bank 1 is stored.
 - **AUX 1 .. AUX N-1** are the additional banks.
 - Each bank is a full 64K, including the `$C000–$CFFF` hole where language-card bank 2 is stored.
 - The motherboard still decides main versus auxiliary: `RAMRD`, `RAMWRT`, `ALTZP`, `80STORE`, `PAGE2`, `HIRES`.
