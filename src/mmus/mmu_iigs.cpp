@@ -677,15 +677,23 @@ void MMU_IIgs::toggle_rombank() {
 }
 
 void MMU_IIgs::map_internal_cx_rom() {
-    uint8_t *ff_rom = main_rom + rom_bank_ff_offset();
+    // The base is already A14-adjusted by sync_rom_windows. Clearing A14 again
+    // would map $C100 to $4100.
+    uint8_t *base = megaii->get_rom_base();
     for (int i = 1; i < 16; i++) {
-        const uint16_t rom_addr = mega_rom_offset(static_cast<uint16_t>((0xC0 + i) << 8));
-        megaii->map_c1cf_internal_rom(0xC0 + i, ff_rom + rom_addr, "GS INT");
+        megaii->map_c1cf_internal_rom(0xC0 + i, base + i * GS2_PAGE_SIZE, "GS INT");
     }
 }
 
 void MMU_IIgs::sync_rom_windows() {
+    // ROMBANK clear keeps $FF/C000. ROMBANK set on a ROM 01 selects $FF/8000.
+    // mega_rom_offset is a no-op on ROM 03, so this writes the constructor pointer again.
+    megaii->set_rom_base(main_rom + rom_bank_ff_offset() + mega_rom_offset(0xC000));
     map_internal_cx_rom();
+    if (megaii->get_C8xx_slot() == SLOT_3) {
+        megaii->call_C8xx_handler(SLOT_3);
+    }
+    megaii->compose_c1cf();
     bsr_map_memory();
 }
 

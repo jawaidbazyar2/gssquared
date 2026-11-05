@@ -64,6 +64,7 @@ class MMU_IIe2 : public MMU_II {
 
         void set_intcxrom(bool on);
         void set_slotc3rom(bool on);
+        void set_rom_base(uint8_t *rom) { main_rom_D0 = rom; }
         void set_80store(bool on) { f_80store = on; }
         void set_ramrd(bool on) { f_ramrd = on; }
         void set_ramwrt(bool on) { f_ramwrt = on; }
