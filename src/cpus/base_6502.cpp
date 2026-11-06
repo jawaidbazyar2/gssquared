@@ -57,7 +57,7 @@
         } \
     }
 
-template<typename CPUTraits, typename TraceTraits = TraceEnabled>
+template<typename CPUTraits, typename TraceTraits = TraceEnabled, bool DirectIIgsClock = false>
 class CPU6502Core : public BaseCPU {
 public:
     CPU6502Core(NClock *clock) : BaseCPU(clock) {
@@ -71,7 +71,13 @@ public:
         /* cpu->irq_sample1 = cpu->irq_sample0;
         cpu->irq_sample0 = (!cpu->I) ? cpu->irq_asserted : 0; */
         //printf(">> [%llu] [%llu %llu]\n", this->clock->get_cycles(), cpu->irq_sample1, cpu->irq_sample0);
-        this->clock->incr_cycles(); 
+        // The Second Sight host path can bind the concrete IIgs clock once
+        // at CPU construction. Keep virtual dispatch for all other clocks.
+        if constexpr (DirectIIgsClock) {
+            static_cast<NClockIIgs *>(this->clock)->NClockIIgs::slow_incr_cycles();
+        } else {
+            this->clock->incr_cycles();
+        }
     }
 
     void reset(cpu_state* cpu) override {
@@ -2152,7 +2158,9 @@ int execute_next(cpu_state *cpu) override {
     TRACE(
     // Clear access flags every insn so DATA/IO breakpoints see a fresh f_write.
     tb->flags = 0;
-    if (cpu->trace) {
+    // A 65816 debugger may consume an instruction with history off.
+    // Keep the original behavior for the other processor families.
+    if (cpu->trace || CPUTraits::has_65816_ops) {
         tb->cycle = clock->get_cycles();
         tb->pc = cpu->pc;
         tb->a = cpu->a;

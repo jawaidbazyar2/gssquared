@@ -41,19 +41,39 @@ These are matters of personal preference, so you get to pick the one you like be
 
 ## CRT Effect / Shader
 
-GS2 has a "CRT Shader" option under the Display menu, that turns on a "CRT Emulation" effect.
+GS2 has a "Shadow Mask" option under the Display menu, that turns on a GPU CRT shader effect.
 
 The effect modifies the normal display output, applying a "shadow mask" and some other enhancements to attempt to emulate the way pixels appear on an 80s-era CRT display.
 
 Available on macOS (Metal), Windows (D3D12), and Linux (Vulkan / SPIR-V). Works best on Retina / high-DPI displays but works pretty well on other monitors such as 27" e.g. 1440p (2560 x 1440).
 
-The shader mode can be activated with Display > CRT Shader, or by pressing F7. The [`-g`](CommandLine.md) command-line flag enables it at boot.
+The shader mode can be activated with Display > Shadow Mask, or by pressing F7. The [`-g`](CommandLine.md) command-line flag enables it at boot.
+
+The GPU shader is not available in the web build. Its SDL renderer has no WebGPU backend. Second Sight uses the same Shadow Mask switch for a software scanline effect, available in either native window and in the browser.
+
+GPU effects are optional. If a shader or its render target cannot be created, the corresponding effect is disabled and its menu item is grayed out. Composite and monochrome retain their CPU decoders. **GS Composite** requires its GPU encoder; **Monochrome persistence** also requires its history texture and blend operations. Second Sight's software scanlines do not require a GPU shader.
 
 ## Second Sight Text
 
-If the current machine has a **Second Sight** card, **Display → Second Sight Text** renders Apple II fullscreen 40- or 80-column text through the card’s VGA path, using an Apple-ified font from the Second Sight ROM. Graphics modes and Second Sight’s own VGA modes are unchanged.
+If the current machine has the simulated **Second Sight** card, **Display → Second Sight Text** renders Apple II fullscreen 40- or 80-column text through the card’s VGA path, using an Apple-ified font from the Second Sight ROM. Graphics modes and Second Sight’s own VGA modes are unchanged.
 
 The menu item is grayed out when no Second Sight card is present. The setting is remembered in app settings. See [Second Sight](Cards_SecondSight.md).
+
+## Second Sight with Z180
+
+Second Sight with Z180 has its own monitor output, separate from the IIgs display. **Display → Second Sight → Monitor → VGA** (default) and **AppleColor RGB** select its monitor type. The ROM reads the monitor sense at each card mode change and offers different modes for each monitor. The choice takes effect at the next card mode change; **Machine → Restart** shows it at once.
+
+**Display → Second Sight → View → IIgs monitor**, **Second Sight monitor**, and **Both** select one or both outputs. With one selected, the main window and full screen show that monitor. With both selected, the native app uses a separate card window; the browser shows both pictures side by side. **F11** cycles these three views. Both is the default.
+
+The IIgs renderer runs normally every frame, independently of the card. The card monitor shows only its own VRAM and DAC output, including any IIgs picture captured and mirrored by its firmware. Hiding either monitor does not stop it. Closing the separate card window returns to the IIgs view.
+
+These options are grayed out when the machine has no **Second Sight (with Z180)**. They are remembered in app settings, just like Second Sight Text. Browser settings last until the page is reloaded. See [Second Sight](Cards_SecondSight.md) for card selection and the included firmware.
+
+The card monitor includes the scan's border in its programmed overscan color, at the same scale as the picture. AppleColor RGB uses the same visible time and line window as GS2's IIgs SHR display. Standard VGA and VESA modes use their standard monitor windows. Other modes use their unblanked area, like a multisync monitor sized to that signal. Both monitors use GS2's aspect fitting. The browser reserves space above them for its menu bar.
+
+**Display → Shadow Mask** / **F7** adds scanlines to the whole card picture, including its border. It is off by default. The line spacing follows the signal: VGA has fine 400- or 480-line scanning, including doubled 200-line modes; AppleColor RGB has visible gaps between progressive lines, or alternating fields for interlaced modes such as $61. AppleColor RGB cannot display 480p VGA timing.
+
+The card effect is the same in native and web builds and reuses unchanged rows. It changes only the displayed picture; it does not change the card's pixels, timing, or monitor sense. The IIgs monitor keeps its existing native GPU effect.
 
 ## Pixel Modes
 

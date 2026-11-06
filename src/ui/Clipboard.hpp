@@ -75,6 +75,6 @@ struct ClipboardImage {
 
     ClipboardImage();
     ~ClipboardImage();
-    void Clip(SDL_Surface *surface);
+    void Clip(SDL_Surface *surface, bool double_scanlines = true);
 };
 

@@ -210,6 +210,8 @@ std::optional<device_id> parse_card_type(const std::string& value, std::string& 
         {"vidhd", DEVICE_ID_VIDHD},
         {"bazfast3", DEVICE_ID_PD_BLOCK3},
         {"second_sight", DEVICE_ID_SECOND_SIGHT},
+        // Select the Second Sight model that runs the physical card firmware.
+        {"second_sight_z180", DEVICE_ID_SECOND_SIGHT_Z180},
         {"uthernet2", DEVICE_ID_UTHERNET2},
         {"super_serial", DEVICE_ID_SUPER_SERIAL},
         {"voc", DEVICE_ID_VOC},
@@ -277,6 +279,14 @@ bool validate_cards(const SystemConfig_t& config, PlatformId_t platform,
                         + " are not allowed";
             return false;
         }
+    }
+
+    // Both Second Sight models answer fixed ports $C0B0-$C0BF regardless of
+    // their configured slot. Installing both would create conflicting replies
+    // (Second Sight host protocol; ROM_BEEF.asm command handlers).
+    if (instance_counts[DEVICE_ID_SECOND_SIGHT] + instance_counts[DEVICE_ID_SECOND_SIGHT_Z180] > 1) {
+        error_out = "Second Sight devices share C0B0-C0BF; choose one";
+        return false;
     }
 
     if (card_extras != nullptr && warnings != nullptr) {
@@ -544,6 +554,8 @@ const char* card_type_name(device_id id) {
         case DEVICE_ID_VIDHD: return "vidhd";
         case DEVICE_ID_PD_BLOCK3: return "bazfast3";
         case DEVICE_ID_SECOND_SIGHT: return "second_sight";
+        // Preserve the firmware-executing Second Sight choice when saving a machine.
+        case DEVICE_ID_SECOND_SIGHT_Z180: return "second_sight_z180";
         case DEVICE_ID_UTHERNET2: return "uthernet2";
         case DEVICE_ID_SUPER_SERIAL: return "super_serial";
         case DEVICE_ID_VOC: return "voc";
@@ -568,6 +580,8 @@ static const char* card_display_name(device_id id) {
         case DEVICE_ID_VIDHD: return "VIDHD";
         case DEVICE_ID_PD_BLOCK3: return "BazFast 3";
         case DEVICE_ID_SECOND_SIGHT: return "Second Sight";
+        // Distinguish the firmware-executing Second Sight in configuration messages.
+        case DEVICE_ID_SECOND_SIGHT_Z180: return "Second Sight (with Z180)";
         case DEVICE_ID_UTHERNET2: return "Uthernet II";
         case DEVICE_ID_SUPER_SERIAL: return "Super Serial Card";
         case DEVICE_ID_VOC: return "Video Overlay Card";
@@ -599,7 +613,11 @@ std::vector<slot_card_choice_t> cards_allowed_for_slot(
         if (occupied_slots != nullptr && !device->multipleInstances) {
             bool used_elsewhere = false;
             for (int s = 0; s < NUM_SLOTS; ++s) {
-                if (s != slot && occupied_slots[s] == id) {
+                // Treat either Second Sight model as occupying their shared
+                // host ports, so the chooser cannot offer a conflicting card.
+                if (s != slot && (occupied_slots[s] == id ||
+                    ((id == DEVICE_ID_SECOND_SIGHT || is_second_sight_z180(id)) &&
+                     (occupied_slots[s] == DEVICE_ID_SECOND_SIGHT || is_second_sight_z180(occupied_slots[s]))))) {
                     used_elsewhere = true;
                     break;
                 }

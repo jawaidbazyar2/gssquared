@@ -39,6 +39,15 @@ static HMENU g_speedMenu      = NULL;
 static HMENU g_controllerMenu = NULL;
 static HMENU g_joyportSelectMenu = NULL;
 static HMENU g_appleKeysMenu = NULL;
+// Second Sight submenu handles owned by the native menu tree; used on the UI
+// thread to refresh availability and saved-choice checkmarks before display.
+static HMENU g_secondSightMenu = NULL;
+static HMENU g_ssFirmwareMenu = NULL;
+static HMENU g_ssLatticeMenu = NULL;
+static HMENU g_ssInt0Menu = NULL;
+static HMENU g_ssDisplayMenu = NULL;
+static HMENU g_ssMonitorMenu = NULL;
+static HMENU g_ssViewMenu = NULL;
 static HMENU g_monitorMenu    = NULL;
 static HMENU g_hudMenu        = NULL;
 static HMENU g_scalingMenu    = NULL;
@@ -180,7 +189,7 @@ static void updatePopupState(HMENU popup)
         for (int i = 0; i < n; ++i) {
             int id = static_cast<int>(getItemId(g_monitorMenu, i));
             setItemCheck(g_monitorMenu,  i, id == current);
-            setItemEnable(g_monitorMenu, i, running);
+            setItemEnable(g_monitorMenu, i, running && mi->monitorAvailable(id));
         }
         return;
     }
@@ -272,6 +281,29 @@ static void updatePopupState(HMENU popup)
         return;
     }
 
+    // Second Sight cable/view item indices match the shared preference values.
+    // Refresh them each time the popup opens, including after F11 changes view.
+    if (popup == g_ssDisplayMenu || popup == g_ssMonitorMenu || popup == g_ssViewMenu) {
+        const int selected = popup == g_ssMonitorMenu
+            ? mi->getSecondSightRGBMonitor() : mi->getSecondSightView();
+        for (int i = 0; i < GetMenuItemCount(popup); ++i) {
+            if (popup != g_ssDisplayMenu) setItemCheck(popup, i, i == selected);
+            setItemEnable(popup, i, mi->hasSecondSightZ180());
+        }
+        return;
+    }
+
+    // Second Sight hardware checkmarks show the saved choice for Restart.
+    if (popup == g_ssFirmwareMenu || popup == g_ssLatticeMenu || popup == g_ssInt0Menu) {
+        const int selected = popup == g_ssFirmwareMenu ? mi->getSecondSightFirmware()
+            : popup == g_ssLatticeMenu ? mi->getSecondSightLattice() : mi->getSecondSightInt0Pullup();
+        for (int i = 0; i < GetMenuItemCount(popup); ++i) {
+            setItemCheck(popup, i, i == selected);
+            setItemEnable(popup, i, mi->hasSecondSightZ180());
+        }
+        return;
+    }
+
     // ── Settings (top-level popup; contains Speed+Controller submenus + Sleep) ─
     if (popup == g_settingsPopup) {
         bool sleeping   = mi->getSleepMode();
@@ -298,7 +330,10 @@ static void updatePopupState(HMENU popup)
                 mii.fMask  = MIIM_SUBMENU;
                 GetMenuItemInfoW(g_settingsPopup, static_cast<UINT>(i), TRUE, &mii);
                 // Apple Keys is a host preference; Speed and Game Controller need a machine.
-                bool enable = running || (mii.hSubMenu == g_appleKeysMenu);
+                // Second Sight hardware controls need its installed card, not
+                // merely any running Apple machine.
+                bool enable = mii.hSubMenu == g_secondSightMenu ? mi->hasSecondSightZ180()
+                    : running || (mii.hSubMenu == g_appleKeysMenu);
                 setItemEnable(g_settingsPopup, i, enable);
             }
         }
@@ -312,7 +347,10 @@ static void updatePopupState(HMENU popup)
         int n = GetMenuItemCount(g_displayPopup);
         for (int i = 0; i < n; ++i) {
             UINT id = getItemId(g_displayPopup, i);
-            if (id == static_cast<UINT>(MENU_DISPLAY_SS_TEXT)) {
+            // Gate the Second Sight display submenu on its live display hook.
+            if (GetSubMenu(g_displayPopup, i) == g_ssDisplayMenu) {
+                setItemEnable(g_displayPopup, i, mi->hasSecondSightZ180());
+            } else if (id == static_cast<UINT>(MENU_DISPLAY_SS_TEXT)) {
                 setItemCheck(g_displayPopup, i, ss_text_on);
                 setItemEnable(g_displayPopup, i, running && has_ss);
             } else if (id == static_cast<UINT>(MENU_DISPLAY_CRT_SHADER)) {
@@ -400,6 +438,20 @@ static void dispatchCommand(UINT id)
     case MENU_MONITOR_MONO_WHITE: mi->setMonitor(MONITOR_MONO_WHITE); return;
 
     // Display
+    // Route Second Sight command IDs to shared preferences. Indices match
+    // SystemSettings; no native menu action accesses emulated chip state.
+    case MENU_SS_FIRMWARE_14: mi->setSecondSightFirmware(0); return;
+    case MENU_SS_FIRMWARE_15: mi->setSecondSightFirmware(1); return;
+    case MENU_SS_FIRMWARE_20: mi->setSecondSightFirmware(2); return;
+    case MENU_SS_LATTICE_ORIGINAL: mi->setSecondSightLattice(false); return;
+    case MENU_SS_LATTICE_V2: mi->setSecondSightLattice(true); return;
+    case MENU_SS_INT0_NONE: mi->setSecondSightInt0Pullup(false); return;
+    case MENU_SS_INT0_ADDED: mi->setSecondSightInt0Pullup(true); return;
+    case MENU_SS_MONITOR_VGA: mi->setSecondSightMonitor(false); return;
+    case MENU_SS_MONITOR_RGB: mi->setSecondSightMonitor(true); return;
+    case MENU_SS_SCREEN_IIGS: mi->setSecondSightView(0); return;
+    case MENU_SS_SCREEN_CARD: mi->setSecondSightView(1); return;
+    case MENU_SS_SCREEN_BOTH: mi->setSecondSightView(2); return;
     case MENU_DISPLAY_FULLSCREEN: mi->displayFullScreen(); return;
     case MENU_HUD_STATS:          mi->toggleHudStats();    return;
     case MENU_HUD_DRIVES:         mi->toggleHudDrives();   return;
@@ -610,6 +662,24 @@ static void setupMenus()
     AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_appleKeysMenu), L"Apple Keys");
 
+    // Second Sight hardware choices remain independent and apply at Restart.
+    g_secondSightMenu = CreatePopupMenu();
+    g_ssFirmwareMenu = CreatePopupMenu();
+    g_ssLatticeMenu = CreatePopupMenu();
+    g_ssInt0Menu = CreatePopupMenu();
+    AppendMenuW(g_secondSightMenu, MF_STRING | MF_GRAYED, 0, L"Applies at power-on or Restart");
+    AppendMenuW(g_ssFirmwareMenu, MF_STRING, MENU_SS_FIRMWARE_14, L"1.4-BEEF (original)");
+    AppendMenuW(g_ssFirmwareMenu, MF_STRING, MENU_SS_FIRMWARE_15, L"1.5-CBFC");
+    AppendMenuW(g_ssFirmwareMenu, MF_STRING, MENU_SS_FIRMWARE_20, L"2.0-3277");
+    AppendMenuW(g_ssLatticeMenu, MF_STRING, MENU_SS_LATTICE_ORIGINAL, L"Original (BE8C)");
+    AppendMenuW(g_ssLatticeMenu, MF_STRING, MENU_SS_LATTICE_V2, L"v2.0 (BBB1)");
+    AppendMenuW(g_ssInt0Menu, MF_STRING, MENU_SS_INT0_NONE, L"None (stock card)");
+    AppendMenuW(g_ssInt0Menu, MF_STRING, MENU_SS_INT0_ADDED, L"Added (card modification)");
+    AppendMenuW(g_secondSightMenu, MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(g_ssFirmwareMenu), L"Firmware");
+    AppendMenuW(g_secondSightMenu, MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(g_ssLatticeMenu), L"Lattice chip");
+    AppendMenuW(g_secondSightMenu, MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(g_ssInt0Menu), L"INT0 pull-up");
+    AppendMenuW(g_settingsPopup, MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(g_secondSightMenu), L"Second Sight");
+
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_SLEEP,        L"Sleep / Busy Wait");
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_PAUSE_MINIMIZED, L"Pause when Minimized");
     AppendMenuW(g_settingsPopup, MF_STRING, IDM_SETTINGS_AUDIO_DECORR, L"Mono Helper");
@@ -632,6 +702,20 @@ static void setupMenus()
     AppendMenuW(g_monitorMenu, MF_STRING, MENU_MONITOR_MONO_WHITE, L"Monochrome - White");
     AppendMenuW(g_displayPopup, MF_STRING | MF_POPUP,
                 reinterpret_cast<UINT_PTR>(g_monitorMenu), L"Monitor");
+    // Second Sight cable sense and visible monitor arrangement are separate
+    // choices; F11 cycles the same view preference.
+    g_ssDisplayMenu = CreatePopupMenu();
+    g_ssMonitorMenu = CreatePopupMenu();
+    g_ssViewMenu = CreatePopupMenu();
+    AppendMenuW(g_ssMonitorMenu, MF_STRING, MENU_SS_MONITOR_VGA, L"VGA");
+    AppendMenuW(g_ssMonitorMenu, MF_STRING, MENU_SS_MONITOR_RGB, L"AppleColor RGB");
+    AppendMenuW(g_ssViewMenu, MF_STRING, MENU_SS_SCREEN_IIGS, L"IIgs monitor\tF11");
+    AppendMenuW(g_ssViewMenu, MF_STRING, MENU_SS_SCREEN_CARD, L"Second Sight monitor\tF11");
+    AppendMenuW(g_ssViewMenu, MF_STRING, MENU_SS_SCREEN_BOTH, L"Both\tF11");
+    AppendMenuW(g_ssDisplayMenu, MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(g_ssMonitorMenu), L"Monitor");
+    AppendMenuW(g_ssDisplayMenu, MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(g_ssViewMenu), L"View");
+    AppendMenuW(g_displayPopup, MF_STRING | MF_POPUP, reinterpret_cast<UINT_PTR>(g_ssDisplayMenu), L"Second Sight");
+    AppendMenuW(g_displayPopup, MF_SEPARATOR, 0, nullptr);
 
     AppendMenuW(g_scalingMenu, MF_STRING, MENU_DISPLAY_SCALE_SMOOTH, L"Smooth\tF5");
     AppendMenuW(g_scalingMenu, MF_STRING, MENU_DISPLAY_SCALE_SHARP,  L"Sharp\tF5");

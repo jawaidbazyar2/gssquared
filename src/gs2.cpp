@@ -24,6 +24,7 @@
 #include <getopt.h>
 #include <regex>
 #include <memory>
+#include <deque>
 #define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
 
@@ -45,6 +46,7 @@
 #include "util/Gs2Url.hpp"
 #include "util/SystemSettings.hpp"
 #include "ui/OSD.hpp"
+#include "devices/secondsight/ss_card.hpp"
 #ifndef __EMSCRIPTEN__
 #include "ui/PackFetchModal.hpp"
 #include "platform-specific/HttpsGet.hpp"
@@ -53,6 +55,7 @@
 #include "platform-specific/emscripten/web_file_dialog.hpp"
 #include "platform-specific/emscripten/web_collection_put.hpp"
 #include <emscripten.h>
+#include "util/WebFramePacing.hpp"
 #elif defined(__APPLE__)
 #include "platform-specific/macos/gs2_save_dialog.hpp"
 #endif
@@ -133,6 +136,10 @@ void handle_single_event(computer_t *computer, cpu_state *cpu, SDL_Event &event)
     if (computer->debug_window->handle_event(event)) { // ignores event if not for debug window
         return;
     }
+    // Second Sight translates its monitor input to the existing Apple input
+    // path. Consume it here so it is not dispatched a second time.
+    if (computer->video_system->additional_display_event &&
+        computer->video_system->additional_display_event(event)) return;
     if (!osd->event(event)) { // if osd doesn't handle it..
         computer->dispatch->dispatch(event); // they say call "once per frame"
     }
@@ -199,6 +206,48 @@ void frame_appevent(computer_t *computer, cpu_state *cpu) {
 /*
  * Update window
  */
+#if defined(__EMSCRIPTEN__)
+// Browser-main-thread state for splitting Apple execution into short tasks.
+// A slice return retains the frame's starting CPU count and skips frame
+// finalization. Deferred events wait until no slice remains pending.
+static bool gs2_web_defer_present = false;
+static bool gs2_web_frame_rendered = false;
+static bool gs2_web_hidden = false;
+static bool gs2_web_partial_frame = false;
+static uint64_t gs2_web_frame_cpu_start = 0;
+static uint64_t gs2_web_slice_deadline_ns = 0;
+static unsigned gs2_web_slice_count = 0;
+
+// Check the host-time budget once per 256 guest instructions. A zero deadline
+// disables slicing, including while a browser gesture must finish synchronously.
+static bool gs2_web_slice_expired() {
+    // Avoid a system clock query for every instruction.
+    return gs2_web_slice_deadline_ns && (++gs2_web_slice_count & 255) == 0 &&
+        SDL_GetTicksNS() >= gs2_web_slice_deadline_ns;
+}
+#endif
+
+// Present the prepared monitor images and overlays. Browser catch-up defers
+// this call until after its loop; other rendering paths call it directly.
+static void frame_video_present(computer_t *computer) {
+    video_system_t *vs = computer->video_system;
+
+    // If the CRT post-process shader is active, composite the offscreen scene
+    // onto the swapchain (through the shader) before the OSD is drawn on top.
+    vs->present_scene();
+
+    // The overlay uses window points; the emulator image uses output pixels.
+    // Restore pixel coordinates after drawing the overlay for high-DPI windows.
+    int points_w = 0, points_h = 0;
+    SDL_GetWindowSize(vs->window, &points_w, &points_h);
+    SDL_SetRenderLogicalPresentation(vs->renderer, points_w, points_h,
+        SDL_LOGICAL_PRESENTATION_STRETCH);
+    osd->render();
+    SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+    computer->debug_window->render();
+    vs->present();
+}
+
 void frame_video_update(computer_t *computer, bool force_full_frame = false) {
     video_system_t *vs = computer->video_system;
     display_state_t *ds = (display_state_t *)computer->cached_display_state;
@@ -216,28 +265,13 @@ void frame_video_update(computer_t *computer, bool force_full_frame = false) {
 
     vs->update_display(force_full_frame);
 
-    // If the CRT post-process shader is active, composite the offscreen scene
-    // onto the swapchain (through the shader) before the OSD is drawn on top.
-    vs->present_scene();
-
-    // The OSD and its modals/HUD are authored in window-point coordinates (the
-    // OSD lays out against SDL_GetWindowSize, which returns points). On a high-DPI
-    // backbuffer the renderer output is in real pixels, so render the UI through a
-    // points-sized logical presentation to keep its layout correct, then restore
-    // the emulator's "draw in real output pixels" convention (DISABLED).
-    //
-    // The logical size MUST match the point coordinate space the OSD uses; scaling
-    // it by the display scale here would desync the layout and make the UI render
-    // oversized (the STRETCH already maps points onto the full pixel backbuffer).
-    int points_w = 0, points_h = 0;
-    SDL_GetWindowSize(vs->window, &points_w, &points_h);
-    SDL_SetRenderLogicalPresentation(vs->renderer, points_w, points_h,
-        SDL_LOGICAL_PRESENTATION_STRETCH);
-    osd->render();
-    SDL_SetRenderLogicalPresentation(vs->renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
-
-    computer->debug_window->render();
-    vs->present();
+#if defined(__EMSCRIPTEN__)
+    if (gs2_web_defer_present) {
+        gs2_web_frame_rendered = true;
+        return;
+    }
+#endif
+    frame_video_present(computer);
 }
 
 #if defined(__EMSCRIPTEN__)
@@ -256,32 +290,16 @@ static void gs2_web_lock_raf() {
     emscripten_set_main_loop_timing(EM_TIMING_RAF, 1);
 }
 
-// The next guest frame cannot start until the browser calls us back, which is
-// after we return. Spinning all the way to the deadline stacks that delay on
-// top of the frame, and the slower wasm work then slips. Return this much
-// early so the callback lands on the deadline. Adapted from how late the
-// previous wake actually was.
-static uint64_t gs2_web_wake_lead_ns = 2'000'000;
+// Second Sight shares browser execution with Apple video and audio. Keep
+// the guest deadline across requestAnimationFrame (RAF) display callbacks;
+// an early callback yields until the guest frame is due.
 static uint64_t gs2_web_target_start_ns = 0;
 
-static void gs2_web_begin_frame(computer_t *computer) {
-    (void)computer;
-    uint64_t now = SDL_GetTicksNS();
-    if (gs2_web_target_start_ns == 0) {
-        return;
-    }
-    int64_t late = (int64_t)now - (int64_t)gs2_web_target_start_ns;
-    int64_t lead = (int64_t)gs2_web_wake_lead_ns + late / 2;
-    if (lead < 0) lead = 0;
-    if (lead > 8'000'000) lead = 8'000'000;
-    gs2_web_wake_lead_ns = (uint64_t)lead;
-    // The browser often calls back before the guest deadline. Starting the
-    // frame then, and rebasing last_cycle_time to that early wake, shortens
-    // every frame (measured 60.5 fps). Hold until the stamped boundary.
-    if (now < gs2_web_target_start_ns) {
-        while (SDL_GetTicksNS() < gs2_web_target_start_ns) {
-        }
-    }
+// Apple execution and presentation share the browser main thread; the card
+// has its own worker. Return false before the next frame deadline so browser
+// input and audio can run until another callback.
+static bool gs2_web_begin_frame() {
+    return web_frame_pacing::due(gs2_web_target_start_ns, SDL_GetTicksNS());
 }
 #endif
 
@@ -299,7 +317,9 @@ static bool emulator_or_debugger_focused(computer_t *computer) {
         return false;
     }
     video_system_t *vs = computer->video_system;
-    if (vs != nullptr && window_has_input_focus(vs->window)) {
+    // The Second Sight monitor window counts the same as the Apple monitor.
+    if (vs != nullptr && (window_has_input_focus(vs->window)
+        || window_has_input_focus(vs->additional_window))) {
         return true;
     }
     if (computer->debug_window != nullptr && computer->debug_window->window_open
@@ -316,33 +336,25 @@ void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per
 
     uint64_t wakeup_time = last_cycle_time + ns_per_frame; /*  + (frame_count & 1); */ // even frames have 16688154, odd frames have 16688154 + 1
 
+#ifdef __EMSCRIPTEN__
+    // Second Sight execution can occupy much of a browser frame. Schedule the
+    // next frame here instead of spinning and blocking browser input/audio.
+    const uint64_t now = SDL_GetTicksNS();
+    computer->frame_slipped = now > wakeup_time;
+    if (computer->frame_slipped) ++computer->clock_slip;
+    // Keep the guest deadline; long host suspensions are handled on entry.
+    gs2_web_target_start_ns = wakeup_time;
+    return;
+#else
     // sleep out the rest of this frame.
     uint64_t sleep_loops = 0;
     uint64_t current_time = SDL_GetTicksNS();
     if (current_time > wakeup_time) {
         computer->clock_slip++;
         computer->frame_slipped = true;
-#if defined(__EMSCRIPTEN__)
-        gs2_web_target_start_ns = 0;
-#endif
         // TODO: log clock slip for later display.
         //printf("Clock slip: event_time: %10llu, audio_time: %10llu, display_time: %10llu, app_event_time: %10llu, total: %10llu\n", event_time, audio_time, display_time, app_event_time, event_time + audio_time + display_time + app_event_time);
     } else {
-#if defined(__EMSCRIPTEN__)
-        // No Asyncify, so this cannot yield. Return early by the lead so the
-        // browser can deliver the next callback at the guest deadline.
-        // gs2_web_begin_frame() holds if that callback arrives early; that
-        // hold is what keeps the rate at 59.9227 Hz instead of creeping up.
-        uint64_t lead = gs2_web_wake_lead_ns;
-        if (lead > ns_per_frame / 2) lead = ns_per_frame / 2;
-        uint64_t return_at = wakeup_time - lead;
-        if (current_time < return_at) {
-            while (SDL_GetTicksNS() < return_at) {
-                sleep_loops++;
-            }
-        }
-        gs2_web_target_start_ns = wakeup_time;
-#else
         // Sleep toggle, or the app is not focused. The menu checkmark stays the
         // user's choice; unfocus only overrides the wait for this frame.
         // Sleep most of it, but sneak up on the target more aggressively than
@@ -354,8 +366,8 @@ void frame_sleep(computer_t *computer, uint64_t last_cycle_time, uint64_t ns_per
         do {
             sleep_loops++;
         } while (SDL_GetTicksNS() < wakeup_time);
-#endif
     }
+#endif
 }
 
 #if 0
@@ -409,9 +421,32 @@ Called from transition_to_emulation() when a system is selected.
 */
 void run_cpus_init(computer_t *computer) {
     computer->last_cycle_time = SDL_GetTicksNS();
+#ifdef __EMSCRIPTEN__
+    // Start a machine with no stale Second Sight/browser frame deadline.
+    gs2_web_target_start_ns = 0;
+    gs2_web_partial_frame = false;
+    gs2_web_slice_deadline_ns = 0;
+#endif
     computer->last_start_frame_c14m = 0;
     computer->cached_speaker_state = computer->get_module_state(MODULE_SPEAKER);
     computer->cached_display_state = computer->get_module_state(MODULE_DISPLAY);
+}
+
+// Keep the trace choice outside the instruction loop while sharing its body.
+template<bool Untraced>
+[[gnu::always_inline]] static inline bool run_normal_instructions(cpu_state *cpu, NClock *clock) {
+    while (clock->get_c14m() < clock->get_frame_end_c14M()) {
+        clock->process_due();
+        if constexpr (Untraced) cpu->cpun->execute_next_untraced(cpu);
+        else cpu->cpun->execute_next(cpu);
+#if defined(__EMSCRIPTEN__)
+        if (gs2_web_slice_expired() && clock->get_c14m() < clock->get_frame_end_c14M()) {
+            gs2_web_partial_frame = true;
+            return false;
+        }
+#endif
+    }
+    return true;
 }
 
 /*
@@ -419,6 +454,18 @@ Execute one frame of emulation. Returns true if emulation should continue,
 false if the user requested a halt.
 */
 bool run_one_frame(computer_t *computer) {
+    // Card instruction-boundary grants end before the next full-state observer.
+    // Debug stops and wall-timed calibration have no known frame fence. An absent
+    // optional card is normal, so use the nullable module slot without a diagnostic.
+    auto *card = static_cast<SSCard *>(computer->module_store[MODULE_SECOND_SIGHT_Z180]);
+    if (card
+#if defined(__EMSCRIPTEN__)
+        && !gs2_web_partial_frame
+#endif
+        ) card->set_observation_limit(computer->execution_mode == EXEC_NORMAL &&
+        !computer->debug_window->needs_breakpoint_checks() && computer->ludicrous_cal_state != LS_CAL_PROBE
+        ? computer->clock->get_frame_end_c14M() : 0);
+
     cpu_state *cpu = computer->cpu;
     NClock *clock = computer->clock;
     display_state_t *ds = (display_state_t *)computer->cached_display_state;
@@ -496,10 +543,19 @@ bool run_one_frame(computer_t *computer) {
     } else if (computer->execution_mode == EXEC_NORMAL) {
 
 #if defined(__EMSCRIPTEN__)
-        gs2_web_begin_frame(computer);
+        // A browser callback may arrive early; do no Apple/card work until due.
+        if (!gs2_web_partial_frame && !gs2_web_begin_frame()) return true;
 #endif
+#if defined(__EMSCRIPTEN__)
+        if (!gs2_web_partial_frame) {
+            computer->set_frame_start_cycle();
+            gs2_web_frame_cpu_start = clock->get_cycles();
+        }
+        uint64_t frame_cpu_start = gs2_web_frame_cpu_start;
+#else
         computer->set_frame_start_cycle();
         uint64_t frame_cpu_start = clock->get_cycles();
+#endif
 
 #ifndef LUDICROUS_BINARY_SEARCH_PROBE
         // One wall-timed probe frame: count CPU cycles with scanner on (N=1),
@@ -630,12 +686,17 @@ bool run_one_frame(computer_t *computer) {
                 }
 
             }
-        } else { // skip all debug checks if debug window is not open - this may seem repetitious but it saves all kinds of cycles where every cycle counts 
-            while (clock->get_c14m() < clock->get_frame_end_c14M()) {
-                clock->process_due();
-                (cpu->cpun->execute_next)(cpu);
-            }
+        } else if (cpu->cpu_type == PROCESSOR_65816 && !cpu->trace) {
+            // Debug events are handled between frames; stepping and
+            // breakpoint paths always use the traced core.
+            if (!run_normal_instructions<true>(cpu, clock)) return true;
+        } else {
+            if (!run_normal_instructions<false>(cpu, clock)) return true;
         }
+
+#if defined(__EMSCRIPTEN__)
+        gs2_web_partial_frame = false;
+#endif
 
         /* Process Events */
         MEASURE(computer->event_times, frame_event(computer, cpu));
@@ -679,14 +740,9 @@ bool run_one_frame(computer_t *computer) {
             gs2_app_values.modal_tracking,
             clock->get_cycles() - frame_cpu_start);
 #if defined(__EMSCRIPTEN__)
-        // Stamp the guest boundary, not the early return. The next callback
-        // is the rest of the wait; stamping "now" would shrink every frame
-        // by the lead and run fast.
-        if (!computer->frame_slipped && gs2_web_target_start_ns != 0) {
-            computer->last_cycle_time = gs2_web_target_start_ns;
-        } else {
-            computer->last_cycle_time = SDL_GetTicksNS();
-        }
+        // Keep the scheduled boundary so browser callback jitter does not
+        // change the rate of Apple execution and Second Sight bus traffic.
+        computer->last_cycle_time = gs2_web_target_start_ns;
 #else
         computer->last_cycle_time = SDL_GetTicksNS();
 #endif 
@@ -1092,7 +1148,7 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     vs->update_target_from_output();
 
     // Emulation manages its own timing, so turn off vsync.
-    // On the web, frame_sleep holds the guest frame and gs2_web_lock_raf()
+    // On the web, frame_sleep schedules the next guest frame and gs2_web_lock_raf()
     // keeps requestAnimationFrame. SDL_SetRenderVSync(1) must not be used
     // there: it arms a one-shot 60 Hz software vsync that does not survive
     // close/reopen (the second renderer then runs at the panel refresh).
@@ -1112,6 +1168,13 @@ void transition_to_emulation(GS2AppState *state, const SystemConfig_t *system_co
     //set_clock_mode(computer->cpu, platform->default_clock_mode);
 
     computer->cpu->set_processor(platform->cpu_type);
+#if defined(__EMSCRIPTEN__)
+    // The web IIgs has no debugger window. A debug protocol, if present,
+    // keeps history collection enabled; a later trace consumer selects the
+    // traced core before the next instruction.
+    if ((platform->id == PLATFORM_APPLE_IIGS || platform->id == PLATFORM_APPLE_IIGS_ROM3)
+        && !computer->debug_protocol) computer->cpu->trace = false;
+#endif
     // important to do this before setting up the rest of the computer.
     clock_mode_t boot_speed = system_config->clock_mode;
     if (boot_speed == INVALID_CLOCK_MODE) {
@@ -2240,8 +2303,44 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     return SDL_APP_CONTINUE;
 }
 
+#if defined(__EMSCRIPTEN__)
+// Browser-main-thread queue entry. Copying SDL_Event leaves its text pointers
+// borrowed, so retain those bytes here until replay.
+struct WebDeferredEvent {
+    SDL_Event event;
+    std::string text;
+    explicit WebDeferredEvent(const SDL_Event &e) : event(e) {
+        if (e.type == SDL_EVENT_TEXT_INPUT && e.text.text) text = e.text.text;
+        if (e.type == SDL_EVENT_TEXT_EDITING && e.edit.text) text = e.edit.text;
+    }
+    // Rebind text after construction/moves, immediately before event delivery.
+    void fix_pointers() {
+        if (event.type == SDL_EVENT_TEXT_INPUT && event.text.text) event.text.text = text.c_str();
+        if (event.type == SDL_EVENT_TEXT_EDITING && event.edit.text) event.edit.text = text.c_str();
+    }
+};
+static std::deque<WebDeferredEvent> gs2_web_events;
+static bool gs2_web_replaying_events = false;
+#endif
+
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     GS2AppState *state = (GS2AppState *)appstate;
+
+#if defined(__EMSCRIPTEN__)
+    if (event->type == SDL_EVENT_WINDOW_HIDDEN) gs2_web_hidden = true;
+    if (event->type == SDL_EVENT_WINDOW_SHOWN) gs2_web_hidden = false;
+    // Queue these input and menu events while a CPU slice is pending, so a
+    // browser yield alone does not move their delivery into the guest frame.
+    const auto type = event->type;
+    if (!gs2_web_replaying_events && gs2_web_partial_frame && state->phase == PHASE_EMULATION &&
+        ((type >= SDL_EVENT_KEY_DOWN && type <= SDL_EVENT_TEXT_INPUT) ||
+         (type >= SDL_EVENT_MOUSE_MOTION && type <= SDL_EVENT_MOUSE_WHEEL) ||
+         (type >= SDL_EVENT_JOYSTICK_AXIS_MOTION && type <= SDL_EVENT_GAMEPAD_STEAM_HANDLE_UPDATED) ||
+         type == gs2_app_values.menu_event_type)) {
+        gs2_web_events.emplace_back(*event);
+        return SDL_APP_CONTINUE;
+    }
+#endif
 
     // Let the platform menu consume the event first (Linux hamburger/right-click)
     if (handleMenuEvent(event)) return SDL_APP_CONTINUE;
@@ -2314,7 +2413,16 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
             save_collection_now(state);
             return SDL_APP_CONTINUE;
         }
+#if defined(__EMSCRIPTEN__)
+        const uint64_t reset_before = computer->last_reset;
+#endif
         handle_single_event(computer, cpu, *event);
+#if defined(__EMSCRIPTEN__)
+        if (computer->last_reset != reset_before) {
+            gs2_web_target_start_ns = 0;
+            computer->last_cycle_time = SDL_GetTicksNS();
+        }
+#endif
 
         // handled in computer now
         /* if (event->type == SDL_EVENT_QUIT) {
@@ -2325,6 +2433,21 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
     return SDL_APP_CONTINUE;
 }
+
+#if defined(__EMSCRIPTEN__)
+// Replay queued events once no CPU slice is pending. The flag prevents
+// SDL_AppEvent from queuing them again; release owned text after delivery.
+static void gs2_web_deliver_events(GS2AppState *state) {
+    gs2_web_replaying_events = true;
+    while (!gs2_web_events.empty()) {
+        auto &saved = gs2_web_events.front();
+        saved.fix_pointers();
+        SDL_AppEvent(state, &saved.event);
+        gs2_web_events.pop_front();
+    }
+    gs2_web_replaying_events = false;
+}
+#endif
 
 #if defined(__EMSCRIPTEN__)
 // Pull SDL events off the queue and run them through SDL_AppEvent. The main
@@ -2368,6 +2491,14 @@ extern "C" EMSCRIPTEN_KEEPALIVE void gs2_web_user_gesture(void)
         return;
 
     g_web_gesture_depth++;
+    // File dialogs require the browser's original click stack. Finish the
+    // partial frame before processing this gesture so both the input boundary
+    // and browser activation are retained.
+    if (gs2_web_partial_frame) {
+        gs2_web_slice_deadline_ns = 0;
+        if (!run_one_frame(state->computer)) g_web_gesture_result = SDL_APP_SUCCESS;
+        if (!gs2_web_partial_frame && !gs2_web_events.empty()) gs2_web_deliver_events(state);
+    }
     for (int pass = 0; pass < 3; ++pass) {
         const int generation = web_file_dialog_generation();
         gs2_web_dispatch_queued(state);
@@ -2399,6 +2530,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE void gs2_web_user_gesture(void)
 static void render_menu_overlay_for_ui_phase(video_system_t *vs) {
 #if defined(__linux__) || defined(__EMSCRIPTEN__)   // ImGui menu (see menu.h)
     SDL_FRect content = vs->target_rect_in_window_points();
+    // The overlay uses window points; the emulator image uses output pixels.
+    // Restore pixel coordinates after drawing the overlay for high-DPI windows.
     int points_w = 0, points_h = 0;
     SDL_GetWindowSize(vs->window, &points_w, &points_h);
     SDL_SetRenderLogicalPresentation(vs->renderer, points_w, points_h,
@@ -2439,7 +2572,8 @@ static void update_display_sleep(GS2AppState *state) {
 
 #ifndef __EMSCRIPTEN__
 // Freeze the guest while the main window is minimized when the user opted in.
-// A focused debugger window still counts as being in the app.
+// A focused debugger or Second Sight monitor window still counts as being in
+// the app.
 static bool should_pause_for_minimize(computer_t *computer) {
     if (computer == nullptr || !SystemSettings::instance().pause_when_minimized()) {
         return false;
@@ -2449,6 +2583,9 @@ static bool should_pause_for_minimize(computer_t *computer) {
         return false;
     }
     if ((SDL_GetWindowFlags(vs->window) & SDL_WINDOW_MINIMIZED) == 0) {
+        return false;
+    }
+    if (window_has_input_focus(vs->additional_window)) {
         return false;
     }
     if (computer->debug_window != nullptr && computer->debug_window->window_open
@@ -2463,6 +2600,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     GS2AppState *state = (GS2AppState *)appstate;
 
 #if defined(__EMSCRIPTEN__)
+    const uint64_t web_callback_start_ns = SDL_GetTicksNS();
+    if (!gs2_web_partial_frame && !gs2_web_events.empty()) gs2_web_deliver_events(state);
     poll_web_collection_put(state);
     if (state->web_exit_after_save && !web_collection_busy()) {
         if (state->computer != nullptr && state->computer->cpu != nullptr
@@ -2487,8 +2626,21 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     pumpMenuEvents();
 
     // Drain main-thread debug commands every frame (including while paused / on selector).
-    if (state->debug_protocol) {
+    if (state->debug_protocol
+#if defined(__EMSCRIPTEN__)
+        && !gs2_web_partial_frame
+#endif
+        ) {
+#if defined(__EMSCRIPTEN__)
+        const uint64_t reset_before = state->computer ? state->computer->last_reset : 0;
+#endif
         state->debug_protocol->process_main_thread(state->computer);
+#if defined(__EMSCRIPTEN__)
+        if (state->computer && state->computer->last_reset != reset_before) {
+            gs2_web_target_start_ns = 0;
+            state->computer->last_cycle_time = SDL_GetTicksNS();
+        }
+#endif
     }
 
     // After debug commands, so a pause/continue this frame is reflected immediately.
@@ -2654,7 +2806,93 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         }
 #endif
 
+#if defined(__EMSCRIPTEN__)
+        // Normal execution may catch up without waiting for another display
+        // refresh. Debugging and wall-timed calibration disable this catch-up loop.
+        static bool was_batchable = false;
+        static bool catching_up = false;
+        static uint64_t estimated_frame_ns = 16688154;
+        const bool batchable = computer->execution_mode == EXEC_NORMAL &&
+            !computer->debug_window->needs_breakpoint_checks() &&
+            computer->clock->get_clock_mode() != CLOCK_FREE_RUN &&
+            !gs2_app_values.modal_tracking && !gs2_web_hidden &&
+            computer->cpu->halt != HLT_USER;
+        uint64_t now = SDL_GetTicksNS();
+        if (batchable != was_batchable || computer->speed_shift) {
+            gs2_web_target_start_ns = 0;
+            computer->last_cycle_time = now;
+            catching_up = false;
+            was_batchable = batchable;
+        }
+        if (batchable) {
+            // Bound debt after suspension or sustained overload without
+            // changing guest clocks or skipping guest frames.
+            const uint64_t bounded = web_frame_pacing::bound_debt(
+                gs2_web_target_start_ns, now, computer->clock->get_us_per_frame_even());
+            if (bounded != gs2_web_target_start_ns) {
+                gs2_web_target_start_ns = bounded;
+                computer->last_cycle_time = bounded;
+            }
+        }
+        bool keep_running = true;
+        if (batchable) {
+            const uint64_t batch_start = now;
+            // Yield between short tasks so the browser can render whenever a
+            // refresh is due, then resume without waiting for requestAnimationFrame
+            // (the browser callback tied to display refresh). The 5 ms slice is
+            // a host responsiveness budget, not a guest clock interval.
+            gs2_web_slice_deadline_ns = web_callback_start_ns + 5000000;
+            gs2_web_slice_count = 0;
+            if (web_frame_pacing::needs_catch_up(gs2_web_target_start_ns, now))
+                catching_up = true;
+            gs2_web_defer_present = true;
+            gs2_web_frame_rendered = false;
+            for (unsigned count = 0; count < web_frame_pacing::max_frames &&
+                    (gs2_web_partial_frame || gs2_web_begin_frame()); ++count) {
+                if (SDL_GetTicksNS() >= gs2_web_slice_deadline_ns) break;
+                const uint64_t frame_start = SDL_GetTicksNS();
+                if (!gs2_web_partial_frame && !gs2_web_target_start_ns) computer->last_cycle_time = frame_start;
+                keep_running = run_one_frame(computer);
+                const uint64_t end = SDL_GetTicksNS();
+                if (gs2_web_partial_frame) break;
+                if (!gs2_web_events.empty()) {
+                    gs2_web_deliver_events(state);
+                    break;
+                }
+                // This measures the completed call, which may be only the
+                // tail of a frame resumed after an earlier browser yield.
+                estimated_frame_ns = end - frame_start;
+                if (web_frame_pacing::needs_catch_up(gs2_web_target_start_ns, end))
+                    catching_up = true;
+                else if (!web_frame_pacing::due(gs2_web_target_start_ns, end))
+                    catching_up = false;
+                if (!keep_running || computer->execution_mode != EXEC_NORMAL ||
+                    computer->speed_shift || !catching_up || !web_frame_pacing::another_frame(
+                        count + 1, end - batch_start, estimated_frame_ns))
+                    break;
+            }
+            gs2_web_defer_present = false;
+            if (gs2_web_frame_rendered) frame_video_present(computer);
+            // SDL's wrapper pumps input on the next iteration; SETIMMEDIATE
+            // yields to the browser without nested setTimeout clamping.
+            now = SDL_GetTicksNS();
+            if (web_frame_pacing::needs_catch_up(gs2_web_target_start_ns, now))
+                catching_up = true;
+            else if (!web_frame_pacing::due(gs2_web_target_start_ns, now))
+                catching_up = false;
+            if (keep_running && computer->execution_mode == EXEC_NORMAL &&
+                (gs2_web_partial_frame || (catching_up && gs2_web_target_start_ns &&
+                    now >= gs2_web_target_start_ns))) {
+                emscripten_set_main_loop_timing(EM_TIMING_SETIMMEDIATE, 0);
+            }
+        } else {
+            gs2_web_slice_deadline_ns = 0;
+            keep_running = run_one_frame(computer);
+        }
+        if (!keep_running) {
+#else
         if (!run_one_frame(computer)) {
+#endif
             // Finder Open of another .gs2 while emulating: tear down and
             // boot the pending config. Must not take the auto_launched exit
             // path — that would quit the process before the switch.

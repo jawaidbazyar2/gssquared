@@ -28,6 +28,13 @@ enum MenuEventCode {
 	MENU_DISPLAY_PERSISTENCE,
 	MENU_DISPLAY_SCALE_SMOOTH,
 	MENU_DISPLAY_SCALE_SHARP,
+	// Second Sight display actions: cable sense followed by IIgs/card/both views.
+	// These are menu IDs, not hardware register or port numbers.
+	MENU_SS_MONITOR_VGA,
+	MENU_SS_MONITOR_RGB,
+	MENU_SS_SCREEN_IIGS,
+	MENU_SS_SCREEN_CARD,
+	MENU_SS_SCREEN_BOTH,
 
 	MENU_EDIT_COPY_SCREEN = 400,
 	MENU_EDIT_PASTE_TEXT,
@@ -54,6 +61,16 @@ enum MenuEventCode {
 	MENU_CONTROLLER_JOYPORT_LEFT,
 	MENU_CONTROLLER_JOYPORT_CENTER,
 	MENU_CONTROLLER_JOYPORT_RIGHT,
+
+	// Second Sight hardware actions are saved for power-on/Restart. Keep their
+	// IDs distinct from the existing Apple-key preference range.
+	MENU_SS_FIRMWARE_14 = 720,
+	MENU_SS_FIRMWARE_15,
+	MENU_SS_FIRMWARE_20,
+	MENU_SS_LATTICE_ORIGINAL,
+	MENU_SS_LATTICE_V2,
+	MENU_SS_INT0_NONE,
+	MENU_SS_INT0_ADDED,
 
 	MENU_APPLE_KEYS_COMMAND = 710,
 	MENU_APPLE_KEYS_ALT,

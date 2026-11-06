@@ -1,6 +1,8 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
+#include <new>
 
 #include <SDL3/SDL_clipboard.h>
 
@@ -63,49 +65,60 @@ void ClipboardImage::Clip(computer_t *computer) {
 }
 #endif
 
-void ClipboardImage::Clip(SDL_Surface *surface) {
+void ClipboardImage::Clip(SDL_Surface *surface, bool double_scanlines) {
+    if (!surface || surface->w <= 0 || surface->h <= 0) return;
+    const int repeats = double_scanlines ? 2 : 1;
+    const int width = surface->w;
+    const int height = surface->h;
+    if (width > std::numeric_limits<int32_t>::max() / 4 ||
+        height > std::numeric_limits<int32_t>::max() / repeats) return;
+    const size_t row_bytes = static_cast<size_t>(width) * 3;
+    const size_t stride = (row_bytes + 3) & ~size_t(3);
+    const size_t out_height = static_cast<size_t>(height) * repeats;
+    if (stride > static_cast<size_t>(std::numeric_limits<int32_t>::max()) / out_height) return;
+    const size_t image_bytes = stride * out_height;
+    if (image_bytes > std::numeric_limits<uint32_t>::max() - sizeof(BMPHeader)) return;
 
-    // pass back the size.
-    uint32_t width = surface->w;
-    uint32_t height = surface->h;
-
-    uint32_t lineextra = 0;
-    if (width % 4 != 0) {
-        lineextra = 4 - (width % 4);
+    SDL_Surface *converted = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
+    if (!converted) return;
+    auto *new_buffer = new (std::nothrow) uint8_t[sizeof(BMPHeader) + image_bytes];
+    auto *new_header = new (std::nothrow) BMPHeader(width, static_cast<int32_t>(out_height));
+    if (!new_buffer || !new_header) {
+        delete[] new_buffer;
+        delete new_header;
+        SDL_DestroySurface(converted);
+        return;
     }
-
-    // BMP files have the last scanline first. What? 
-    // Copy RGB values without alpha channel
-    //RGBA_t *src = (RGBA_t *)ds->buffer;
-    uint8_t *dst = clip_buffer + sizeof(BMPHeader); // start past BPHeader
-
-    for (int scanline = height - 1; scanline >= 0; scanline--) {
-        for (int doub = 0; doub < 2; doub++) {
-            for (int i = 0; i < width; i++) {
-                RGBA_t *pix = (RGBA_t *)surface->pixels + (scanline * width + i);
-                //RGBA_t pix = { .r = pixel[0], .g = pixel[1], .b = pixel[2], .a = pixel[3] };
-                *dst++ = pix->b;  // TODO: this order may be platform-dependent. works on mac and windows so far..
-                *dst++ = pix->g;
-                *dst++ = pix->r;
+    std::memcpy(new_buffer, new_header, sizeof(BMPHeader));
+    uint8_t *dst = new_buffer + sizeof(BMPHeader);
+    // BMP is bottom-up, with BGR pixels and each row padded to four bytes.
+    for (int y = height - 1; y >= 0; --y) {
+        const auto *src = static_cast<const uint8_t *>(converted->pixels) + static_cast<size_t>(y) * converted->pitch;
+        for (int copy = 0; copy < repeats; ++copy) {
+            for (int x = 0; x < width; ++x) {
+                *dst++ = src[x * 4 + 2];
+                *dst++ = src[x * 4 + 1];
+                *dst++ = src[x * 4];
             }
-            // pad out to the next multiple of 4 bytes.
-            for (int i = 0; i < lineextra * 3; i++) {
-                *dst++ = 0;
-            }
+            std::memset(dst, 0, stride - row_bytes);
+            dst += stride - row_bytes;
         }
-        
     }
+    SDL_DestroySurface(converted);
 
+    uint8_t *old_buffer = clip_buffer;
+    BMPHeader *old_header = header;
+    clip_buffer = new_buffer;
+    header = new_header;
     const char *mime_types[] = { "image/bmp" };
-
-    if (header != nullptr) {
-        delete header;
-        header = nullptr;
-    }
-    header = new BMPHeader(width, height*2);
-    memcpy(clip_buffer, header, sizeof(BMPHeader));
-    bool res = SDL_SetClipboardData(clip_callback, nullptr, (void *)this, mime_types, 1 );
-    if (!res) {
+    if (!SDL_SetClipboardData(clip_callback, nullptr, this, mime_types, 1)) {
+        clip_buffer = old_buffer;
+        header = old_header;
+        delete[] new_buffer;
+        delete new_header;
         printf("Failed to set clipboard data: %s\n", SDL_GetError());
+        return;
     }
+    delete[] old_buffer;
+    delete old_header;
 }

@@ -35,7 +35,70 @@ void MenuInterface::setSpeed(int speed_id) {
 }
 
 void MenuInterface::setMonitor(int monitor_id) {
-	pushMenuEvent(monitor_id);
+	if (monitorAvailable(monitor_id)) pushMenuEvent(monitor_id);
+}
+
+// Second Sight shares the monitor menu with the built-in display. Disable
+// only choices whose required renderer is unavailable; monitor_id is a menu ID.
+bool MenuInterface::monitorAvailable(int monitor_id) {
+    return computer_ && computer_->video_system &&
+        (monitor_id != MONITOR_GS_COMPOSITE || computer_->video_system->gscomposite_allowed);
+}
+
+// Second Sight firmware senses the selected cable: true means AppleColor RGB.
+// Store the choice for the next frame hook; firmware applies it at mode setup.
+void MenuInterface::setSecondSightMonitor(bool rgb) {
+	SystemSettings::instance().set_ss_rgb_monitor(rgb);
+}
+
+// Select the visible Second Sight/IIgs monitor arrangement without resetting chips.
+void MenuInterface::setSecondSightView(int view) {
+	SystemSettings::instance().set_ss_view(view);
+}
+
+// Store the next power-on firmware choice through the shared settings path.
+void MenuInterface::setSecondSightFirmware(int firmware) {
+	SystemSettings::instance().set_ss_firmware(firmware);
+}
+
+// Store the next power-on Lattice choice independently of firmware.
+void MenuInterface::setSecondSightLattice(bool v2) {
+	SystemSettings::instance().set_ss_lattice_v2(v2);
+}
+
+// Return the persisted option for menu checkmarks, which may await Restart.
+int MenuInterface::getSecondSightFirmware() {
+	return SystemSettings::instance().ss_firmware();
+}
+
+// Return the persisted chip option for menu checkmarks, which may await Restart.
+bool MenuInterface::getSecondSightLattice() {
+	return SystemSettings::instance().ss_lattice_v2();
+}
+
+// Store the next power-on INT0 pull-up choice.
+void MenuInterface::setSecondSightInt0Pullup(bool fitted) {
+	SystemSettings::instance().set_ss_int0_pullup(fitted);
+}
+
+// Return the persisted INT0 pull-up option, which may await Restart.
+bool MenuInterface::getSecondSightInt0Pullup() {
+	return SystemSettings::instance().ss_int0_pullup();
+}
+
+// Enable Second Sight controls only while its independent display is installed.
+bool MenuInterface::hasSecondSightZ180() {
+	return computer_ && computer_->video_system && bool(computer_->video_system->additional_display);
+}
+
+// Supply the Second Sight cable checkmark from the saved monitor preference.
+bool MenuInterface::getSecondSightRGBMonitor() {
+	return SystemSettings::instance().ss_rgb_monitor();
+}
+
+// Supply the Second Sight view checkmark: IIgs=0, card=1, both=2.
+int MenuInterface::getSecondSightView() {
+	return SystemSettings::instance().ss_view();
 }
 
 void MenuInterface::openDebugWindow() { pushMenuEvent(MENU_OPEN_DEBUG_WINDOW); }

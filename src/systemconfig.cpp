@@ -253,6 +253,25 @@ SystemConfig_t BuiltinSystemConfigs[] = {
             DEVICE_ID_PD_BLOCK3,
         }
     },
+    {
+        "Apple IIgs 8 MB + Second Sight (ROM 3)",
+        PLATFORM_APPLE_IIGS_ROM3,
+        true,
+        CLOCK_SET_US,
+        Scanner_AppleIIgs,
+        "Apple IIgs (ROM 3) 8MB RAM; Second Sight",
+        "be822ec0-1386-45f5-ae35-b04049a28f7d",
+        {
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_SECOND_SIGHT_Z180,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_NONE,
+            DEVICE_ID_PD_BLOCK3,
+        }
+    },
 /*     {
         "Apple IIc",
         PLATFORM_APPLE_IIC,

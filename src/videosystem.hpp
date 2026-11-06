@@ -64,6 +64,13 @@ struct video_system_t {
 
     std::multimap<int, FrameHandler, std::greater<int>> frame_handlers;
 
+    // Second Sight owns these main-thread display hooks and detaches them on
+    // shutdown. The window is borrowed; its pixels do not pass through the
+    // built-in Apple video frame processors.
+    SDL_Window *additional_window = nullptr;
+    std::function<void()> additional_display;
+    std::function<bool(const SDL_Event &)> additional_display_event;
+
     SDL_Window *window; // primary emulated display window
     SDL_Renderer* renderer;
     // Non-null when the renderer is the SDL GPU-backed renderer (required for
@@ -89,11 +96,13 @@ struct video_system_t {
     
     display_fullscreen_mode_t display_fullscreen_mode = DISPLAY_WINDOWED_MODE;
     display_color_engine_t display_color_engine = DM_ENGINE_NTSC;
-    // Set by the display for IIgs platforms; F2 skips GS Composite otherwise.
+    // Set only when the IIgs encoder and its output target are available.
     bool gscomposite_allowed = false;
     display_mono_color_t display_mono_color = DM_MONO_GREEN;
     display_pixel_mode_t display_pixel_mode = DM_PIXEL_FUZZ;
     bool mono_persistence_enabled = true;
+    // The decoder, history target and required blend modes must all initialize.
+    bool mono_persistence_ready = false;
 
     SDL_FRect target = { 0.0f, 0.0f, 0.0f, 0.0f };
     // Guest-visible screen area within the render target (excludes bezel borders).
@@ -118,6 +127,7 @@ struct video_system_t {
     bool osd_control_panel_open = false;
     
     SDL_Texture *last_texture = nullptr;
+    SDL_Texture *last_card_texture = nullptr;
     SDL_FRect last_srcrect = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     RGBA_t mono_color_table[DM_NUM_MONO_MODES] = {
@@ -188,10 +198,9 @@ public:
     void flip_display_scale_mode();
     void set_display_pixel_mode(display_pixel_mode_t mode);
     void set_mono_persistence(bool enabled);
-    // Persistence needs a GPU decoder (Apple II composite or IIgs GS composite).
-    bool mono_persistence_available() const { return ntsc_gpu || gscomposite_gpu; }
-    // True when the CRT post-process shader is available to be used.
-    bool crt_shader_available() const { return crt_pass.ok(); }
+    bool mono_persistence_available() const { return mono_persistence_ready; }
+    // The card supplies a software scan filter when a GPU shader is unavailable.
+    bool crt_shader_available() const { return crt_pass.ok() || bool(additional_display); }
     NtscGpu *get_ntsc_gpu() const { return ntsc_gpu; }
     GsCompositeGpu *get_gscomposite_gpu() const { return gscomposite_gpu; }
     bool get_crt_shader_enabled() const { return crt_shader_enabled; }

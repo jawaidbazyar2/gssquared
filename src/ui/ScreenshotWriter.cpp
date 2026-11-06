@@ -11,6 +11,8 @@
 
 #include <cstdio>
 #include <cstring>
+#include <limits>
+#include <new>
 
 #include <SDL3_image/SDL_image.h>
 
@@ -25,6 +27,7 @@ int SDLCALL ScreenshotWriter::thread_entry(void *data) {
 ScreenshotWriter::ScreenshotWriter() {
     const size_t buf_size = static_cast<size_t>(MAX_SCREENSHOT_WIDTH) * MAX_SCREENSHOT_HEIGHT * 4;
     buffer_ = new uint8_t[buf_size];
+    buffer_capacity_ = buf_size;
     sem_ = SDL_CreateSemaphore(0);
     thread_ = SDL_CreateThread(thread_entry, "gs2-screenshot", this);
     if (!thread_) {
@@ -50,7 +53,7 @@ ScreenshotWriter::~ScreenshotWriter() {
     buffer_ = nullptr;
 }
 
-bool ScreenshotWriter::try_submit(SDL_Surface *surface, const std::string &path) {
+bool ScreenshotWriter::try_submit(SDL_Surface *surface, const std::string &path, bool double_scanlines) {
     if (!surface || !buffer_ || !sem_ || !thread_) {
         return false;
     }
@@ -68,7 +71,10 @@ bool ScreenshotWriter::try_submit(SDL_Surface *surface, const std::string &path)
 
     const int w = converted->w;
     const int h = converted->h;
-    if (w <= 0 || h <= 0 || w > MAX_SCREENSHOT_WIDTH || h > MAX_SCREENSHOT_SRC_HEIGHT) {
+    const int repeats = double_scanlines ? 2 : 1;
+    if (w <= 0 || h <= 0 || w > std::numeric_limits<int>::max() / 4 ||
+        h > std::numeric_limits<int>::max() / repeats ||
+        static_cast<size_t>(w) > std::numeric_limits<size_t>::max() / 4 / repeats / static_cast<size_t>(h)) {
         SDL_DestroySurface(converted);
         pending_.store(false, std::memory_order_release);
         return false;
@@ -76,18 +82,32 @@ bool ScreenshotWriter::try_submit(SDL_Surface *surface, const std::string &path)
 
     const int bpp = 4;
     const int src_row_bytes = w * bpp;
+    const size_t required = static_cast<size_t>(src_row_bytes) * h * repeats;
+    if (required > buffer_capacity_) {
+        uint8_t *replacement = new (std::nothrow) uint8_t[required];
+        if (!replacement) {
+            SDL_DestroySurface(converted);
+            pending_.store(false, std::memory_order_release);
+            return false;
+        }
+        delete[] buffer_;
+        buffer_ = replacement;
+        buffer_capacity_ = required;
+    }
     uint8_t *dst = buffer_;
     for (int y = 0; y < h; y++) {
         const uint8_t *src = static_cast<const uint8_t *>(converted->pixels) + y * converted->pitch;
-        std::memcpy(dst, src, static_cast<size_t>(src_row_bytes));
-        dst += src_row_bytes;
+        if (double_scanlines) {
+            std::memcpy(dst, src, static_cast<size_t>(src_row_bytes));
+            dst += src_row_bytes;
+        }
         std::memcpy(dst, src, static_cast<size_t>(src_row_bytes));
         dst += src_row_bytes;
     }
     SDL_DestroySurface(converted);
 
     width_ = w;
-    height_ = h * 2;
+    height_ = h * repeats;
     path_ = path;
     SDL_SignalSemaphore(sem_);
     return true;

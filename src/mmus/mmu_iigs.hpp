@@ -1,6 +1,11 @@
 #pragma once
 
+// Second Sight installs a callback for accesses on the slow Apple II bus,
+// supplied by the Mega II chip.
+#include <functional>
 #include "mmu.hpp"
+// Carry the original bank/select signals so the card can choose its copy bank.
+#include "megaii_bus.hpp"
 #include "mmu_iie2.hpp"
 #include "iigs_shadow_flags.hpp"
 #include "iigs_aux_linear.hpp"
@@ -91,6 +96,21 @@ class MMU_IIgs : public MMU {
 
         //cpu_state *cpu = nullptr;
         NClock *clock = nullptr;
+        // Second Sight's host-thread observer may supply read data and return
+        // an RDY (Ready) delay: the card holds Ready low to make the Apple wait.
+        // The result counts 14.31818 MHz host-clock ticks, about 70 ns each.
+        std::function<uint64_t(megaii_transfer_t &)> megaii_observer;
+        // Only the outstanding CPU write owns these strobes. A null RAM
+        // destination means use the ordinary selected Mega II bus decoder.
+        uint8_t *held_write_destination = nullptr;
+        uint16_t held_write_address = 0;
+        uint8_t held_write_data = 0;
+        uint64_t held_write_fall = 0;
+        bool held_write_active = false, held_write_strobed = false;
+        // Called only with an installed observer; keep the empty-card check
+        // inline so ordinary Apple accesses need no callback or transfer record.
+        bool observe_megaii_access(uint32_t address, uint8_t &value, bool read);
+        void write_megaii_observed_access(uint32_t address, uint8_t value, uint8_t *destination);
 
     public:
         MMU_IIe2 *megaii = nullptr;
@@ -163,17 +183,58 @@ class MMU_IIgs : public MMU {
             else return megaii->read(address & 0xFFFF);
         } */
 
-        inline void megaiiWrite(uint32_t address, uint8_t value) { 
+        // Attach Second Sight on startup; pass an empty callback before shutdown.
+        void set_megaii_observer(std::function<uint64_t(megaii_transfer_t &)> observer) {
+            megaii_observer = std::move(observer);
+        }
+
+        // Called on the CPU owner, never on the card worker. Only the current
+        // retained access may advance motherboard time while RDY holds it.
+        void advance_megaii_hold(uint64_t ticks);
+        // Perform a write with a retained physical destination across RDY.
+        inline void write_megaii_observed(uint32_t address, uint8_t value, uint8_t *destination = nullptr) {
+            // Keep the ordinary store inline when no card observes the bus.
+            if (megaii_observer) write_megaii_observed_access(address, value, destination);
+            else if (destination) *destination = value;
+            else megaii->write(address & 0xffff, value);
+        }
+
+        // Report an original CPU address before completion; true means the card
+        // supplied value for a read. Any card delay advances the host clock.
+        bool observe_megaii(uint32_t address, uint8_t &value, bool read) {
+            return megaii_observer && observe_megaii_access(address, value, read);
+        }
+        // Fetch the retained bus byte only when a card can answer. Without
+        // a card, use ordinary Mega II decode directly.
+        uint8_t megaii_bus_read(uint32_t address) {
+            if (megaii_observer) {
+                uint8_t value = megaii->floating_bus_read();
+                if (observe_megaii_access(address, value, true)) return value;
+            }
+            return megaii->read(address & 0xffff);
+        }
+        // Capture and finish an RDY hold before the ordinary write completes.
+        void megaii_bus_write(uint32_t address, uint8_t value) {
+            write_megaii_observed(address, value);
+        }
+
+        // A shadow copy also reaches Second Sight. m2b0 is the original CPU
+        // bank bit, saved before soft switches redirected the RAM destination
+        // (Apple IIgs Technical Note 68, "The Mega II Bank 0 Signal").
+        inline void megaiiWrite(uint32_t address, uint8_t value, bool m2b0) {
+            // Select the bus cycle before the observer can retain it with RDY.
+            // Selecting SYNC afterward would overwrite the held retirement.
+            set_next_cycle_type(CYCLE_TYPE_SYNC);
+            const uint32_t original = (address & 0xffff) | (uint32_t(m2b0) << 16);
             if ((address & 0x1'0000) && g_bank_latch) {
                 uint32_t idx = address & 0x1'FFFF;
                 if (is_aux_linear()) {
                     idx = 0x1'0000 | iigs_aux_linear_to_phys((uint16_t)idx);
                 }
-                megaii->get_memory_base()[idx] = value;
+                write_megaii_observed(original, value, megaii->get_memory_base() + idx);
             } else {
-                megaii->write(address & 0xFFFF, value);
+                write_megaii_observed(original, value);
             }
-            set_next_cycle_type(CYCLE_TYPE_SYNC);
         }
 
         void megaii_compose_map();

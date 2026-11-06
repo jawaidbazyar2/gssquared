@@ -61,6 +61,8 @@ static const DeviceInfo_t DeviceInfos[NUM_DEVICE_IDS - 1] = {
     {DEVICE_ID_VOC, "Video Overlay Card", false, 0b00001000, PLATFLAG_ANY_IIGS},
     {DEVICE_ID_RAMWORKS, "RamWorks", false, 0b00000001,
         PLATFLAG_APPLE_IIE | PLATFLAG_APPLE_IIE_ENHANCED | PLATFLAG_APPLE_IIE_65816},
+    // Second Sight needs the IIgs bus observer; permit one card in slots 1-7.
+    {DEVICE_ID_SECOND_SIGHT_Z180, "Second Sight (with Z180)", false, 0b11111110, PLATFLAG_ANY_IIGS},
 };
 
 const DeviceInfo_t *get_device_info(device_id id) {

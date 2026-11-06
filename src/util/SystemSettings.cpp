@@ -27,6 +27,26 @@
 #include "paths.hpp"
 #include "util/applekeys.hpp"
 #include "util/toml.hpp"
+#ifdef __EMSCRIPTEN__
+// Second Sight hardware choices also persist in browser local storage.
+#include <emscripten.h>
+
+// The browser memory filesystem lasts for one page session. Keep Second
+// Sight hardware choices in local storage as a small integer: bits 0-1 are
+// the firmware index, bit 2 selects the revised U7 Lattice chip equations,
+// bit 3 adds the INT0 pull-up modification.
+// Return zero (original hardware) if storage is absent or unavailable.
+EM_JS(int, load_second_sight_options, (), {
+    try { return Number(localStorage.getItem('gs2.second_sight')) || 0; }
+    catch (e) { return 0; }
+});
+// Save that Second Sight option byte; blocked browser storage leaves the
+// in-memory choice usable for this session.
+EM_JS(void, save_second_sight_options, (int options), {
+    try { localStorage.setItem('gs2.second_sight', String(options)); }
+    catch (e) {}
+});
+#endif
 
 namespace {
 
@@ -125,6 +145,22 @@ bool SystemSettings::load() {
     disconnected_when_no_gamepad_ = false;
     joyport_select_ = 1; // center
     ss_text_mode_ = false;
+    // Second Sight defaults match the original card with a VGA cable; show
+    // both monitors so firmware startup does not hide the built-in Apple screen.
+    ss_rgb_monitor_ = false;
+    ss_view_ = SS_VIEW_BOTH;
+    ss_firmware_ = SS_FW_14;
+    ss_lattice_v2_ = false;
+    ss_int0_pullup_ = false;
+#ifdef __EMSCRIPTEN__
+    // Reject invalid encodings; firmware and capture-chip choices are independent.
+    const int options = load_second_sight_options();
+    if (options >= 0 && options <= 14 && (options & 3) < SS_FW_COUNT) {
+        ss_firmware_ = options & 3;
+        ss_lattice_v2_ = options & 4;
+        ss_int0_pullup_ = options & 8;
+    }
+#endif
     mono_persistence_ = true;
     scaling_sharp_ = false;
     pause_when_minimized_ = false;
@@ -183,8 +219,22 @@ bool SystemSettings::load() {
                 }
             }
         }
+        // Second Sight hardware choices are application-wide, so switching
+        // machine configurations does not silently change the card firmware.
+        if (const auto* ss = table["second_sight"].as_table()) {
+            const std::string firmware = (*ss)["firmware"].value_or("1.4");
+            ss_firmware_ = firmware == "2.0" ? SS_FW_20 : firmware == "1.5" ? SS_FW_15 : SS_FW_14;
+            const std::string lattice = (*ss)["lattice_chip"].value_or("original");
+            ss_lattice_v2_ = lattice == "v2.0";
+            ss_int0_pullup_ = (*ss)["int0_pullup"].value_or(false);
+        }
         if (const auto* display = table["display"].as_table()) {
             ss_text_mode_ = (*display)["ss_text_mode"].value_or(false);
+            // Restore Second Sight cable sense and visibility separately from
+            // hardware, clamping an invalid view to both monitors.
+            ss_rgb_monitor_ = (*display)["ss_rgb_monitor"].value_or(false);
+            ss_view_ = (*display)["ss_view"].value_or(SS_VIEW_BOTH);
+            if (ss_view_ < SS_VIEW_IIGS || ss_view_ >= SS_VIEW_COUNT) ss_view_ = SS_VIEW_BOTH;
             mono_persistence_ = (*display)["mono_persistence"].value_or(true);
             if (const auto s = (*display)["scaling"].value<std::string>()) {
                 scaling_sharp_ = (*s == "sharp");
@@ -251,8 +301,22 @@ bool SystemSettings::save() const {
     game_controller.insert("joyport_select", joyport_select_name);
     table.insert("game_controller", std::move(game_controller));
 
+    // Save Second Sight hardware with readable names; the card applies these
+    // at power-on/Restart. The browser mirror uses the packed option byte.
+    toml::table second_sight;
+    second_sight.insert("firmware", ss_firmware_ == SS_FW_20 ? "2.0" : ss_firmware_ == SS_FW_15 ? "1.5" : "1.4");
+    second_sight.insert("lattice_chip", ss_lattice_v2_ ? "v2.0" : "original");
+    second_sight.insert("int0_pullup", ss_int0_pullup_);
+    table.insert("second_sight", std::move(second_sight));
+#ifdef __EMSCRIPTEN__
+    save_second_sight_options(ss_firmware_ | (ss_lattice_v2_ ? 4 : 0) | (ss_int0_pullup_ ? 8 : 0));
+#endif
+
     toml::table display;
     display.insert("ss_text_mode", ss_text_mode_);
+    // Second Sight cable and visible monitors are host display preferences.
+    display.insert("ss_rgb_monitor", ss_rgb_monitor_);
+    display.insert("ss_view", ss_view_);
     display.insert("mono_persistence", mono_persistence_);
     display.insert("scaling", scaling_sharp_ ? "sharp" : "smooth");
     table.insert("display", std::move(display));
@@ -348,6 +412,50 @@ void SystemSettings::set_ss_text_mode(bool enabled) {
         return;
     }
     ss_text_mode_ = enabled;
+    save();
+}
+
+// Select the EPROM resource independently of the Lattice-chip preference.
+const char *SystemSettings::ss_rom_filename() const {
+    switch (ss_firmware_) {
+    case SS_FW_15: return "ROM_CBFC.bin";
+    case SS_FW_20: return "ROM_3277.bin";
+    default: return "ROM_BEEF.bin";
+    }
+}
+
+// Persist the firmware choice without changing the independently selected chip.
+void SystemSettings::set_ss_firmware(int firmware) {
+    if (firmware < SS_FW_14 || firmware >= SS_FW_COUNT || firmware == ss_firmware_) return;
+    ss_firmware_ = firmware;
+    save();
+}
+
+// Persist the Lattice-chip choice for the next power-on or Restart.
+void SystemSettings::set_ss_lattice_v2(bool enabled) {
+    if (ss_lattice_v2_ == enabled) return;
+    ss_lattice_v2_ = enabled;
+    save();
+}
+
+// Persist the INT0 pull-up modification for the next power-on or Restart.
+void SystemSettings::set_ss_int0_pullup(bool fitted) {
+    if (ss_int0_pullup_ == fitted) return;
+    ss_int0_pullup_ = fitted;
+    save();
+}
+
+// Remember the monitor sense selection used by the card firmware.
+void SystemSettings::set_ss_rgb_monitor(bool enabled) {
+    if (ss_rgb_monitor_ == enabled) return;
+    ss_rgb_monitor_ = enabled;
+    save();
+}
+
+// Remember which monitor output the host presents; this does not disable the card.
+void SystemSettings::set_ss_view(int view) {
+    if (view < SS_VIEW_IIGS || view >= SS_VIEW_COUNT || ss_view_ == view) return;
+    ss_view_ = view;
     save();
 }
 

@@ -11,6 +11,7 @@
 #include <cmath>
 #include "util/dialog.hpp"
 #include "util/SystemSettings.hpp"
+#include "platform-specific/menu.h" // Reserve the native/web overlay menu strip.
 #include "display/NtscGpu.hpp"
 #include "display/GsCompositeGpu.hpp"
 #if defined(__EMSCRIPTEN__)
@@ -98,13 +99,6 @@ video_system_t::video_system_t(computer_t *computer) {
     init_ntsc_gpu();
     init_gscomposite_gpu();
 
-    screencap_texture = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, 910, 263);
-    if (!screencap_texture) {
-        printf("Failed to create txt_shr\n");
-        printf("SDL Error: %s\n", SDL_GetError());
-        system_failure("Failed to create screencap texture");
-    }
-
     // Set scaling quality to nearest neighbor for sharp pixels
     //SDL_SetRenderScale(renderer, SCALE_X, SCALE_Y);
 
@@ -163,6 +157,12 @@ video_system_t::video_system_t(computer_t *computer) {
             toggle_display_engine();
             return true;
         }
+        // Second Sight cycles monitor visibility without stopping either display.
+        if (key == SDLK_F11 && additional_display) {
+            auto &settings = SystemSettings::instance();
+            settings.set_ss_view((settings.ss_view() + 1) % SystemSettings::SS_VIEW_COUNT);
+            return true;
+        }
         if (key == SDLK_F7) {
             toggle_crt_shader();
             return true;
@@ -179,6 +179,9 @@ video_system_t::video_system_t(computer_t *computer) {
     computer->sys_event->registerHandler(SDL_EVENT_KEY_DOWN, [this, computer](const SDL_Event &event) {
         int key = event.key.key;
         switch (key) {
+            // Consume the paired key-down so F11 does not reach the Apple keyboard.
+            case SDLK_F11:
+                return bool(additional_display);
             case SDLK_F3:
             case SDLK_F1:
             case SDLK_F5:
@@ -211,6 +214,7 @@ video_system_t::~video_system_t() {
         screenshot_writer = nullptr;
     }
     if (scene_target) SDL_DestroyTexture(scene_target);
+    if (screencap_texture) SDL_DestroyTexture(screencap_texture);
     if (ntsc_gpu) {
         ntsc_gpu->shutdown(gpu_device);
         delete ntsc_gpu;
@@ -381,6 +385,7 @@ void video_system_t::render_frame_vga(SDL_Texture *texture, SDL_FRect *srcrect,
     SDL_RenderTexture(renderer, texture, srcrect, &dest);
     content = dest;
     last_texture = texture;
+    last_card_texture = texture;
     last_srcrect = *srcrect;
 }
 
@@ -457,6 +462,9 @@ void video_system_t::ensure_scene_target(int w, int h) {
     if (!scene_target) {
         printf("CRT shader: failed to create scene_target %dx%d: %s\n", w, h, SDL_GetError());
         scene_target_w = scene_target_h = 0;
+        // A shader without its output target is unavailable, not a blank frame.
+        crt_pass.destroy(gpu_device);
+        crt_shader_enabled = false;
         return;
     }
     SDL_SetTextureBlendMode(scene_target, SDL_BLENDMODE_NONE);
@@ -560,6 +568,8 @@ void video_system_t::toggle_display_engine() {
 }
 
 void video_system_t::set_display_engine(display_color_engine_t mode) {
+    // Menus and F2 agree: a missing optional encoder keeps plain composite usable.
+    if (mode == DM_ENGINE_GSCOMPOSITE && !gscomposite_allowed) return;
     display_color_engine = mode;
     send_engine_message();
 }
@@ -578,6 +588,8 @@ void video_system_t::set_display_pixel_mode(display_pixel_mode_t mode) {
 }
 
 void video_system_t::set_mono_persistence(bool enabled) {
+    // Preserve the saved preference when this renderer cannot provide the effect.
+    if (enabled && !mono_persistence_available()) return;
     mono_persistence_enabled = enabled;
     SystemSettings::instance().set_mono_persistence(enabled);
 }
@@ -617,16 +629,42 @@ void video_system_t::toggle_crt_shader() {
 }
 
 SDL_Surface *video_system_t::capture_screen_surface() {
-    if (!last_texture || !screencap_texture) {
+    if (!last_texture || last_srcrect.w <= 0 || last_srcrect.h <= 0) {
         return nullptr;
     }
-    SDL_Rect srect = { (int)last_srcrect.x, (int)last_srcrect.y, (int)last_srcrect.w, (int)last_srcrect.h };
-    SDL_FRect trect = { last_srcrect.x, last_srcrect.y, last_srcrect.w, last_srcrect.h };
-    SDL_SetRenderTarget(renderer, screencap_texture);
-    SDL_SetTextureBlendMode(last_texture, SDL_BLENDMODE_NONE);
-    SDL_RenderTexture(renderer, last_texture, &trect, &trect); // ensure no scaling.
-    SDL_Surface *surface = SDL_RenderReadPixels(renderer, &srect);
-    SDL_SetRenderTarget(renderer, nullptr);
+    SDL_Texture *previous_target = SDL_GetRenderTarget(renderer);
+    if (previous_target && previous_target == screencap_texture) return nullptr;
+
+    const int width = static_cast<int>(std::ceil(last_srcrect.w));
+    const int height = static_cast<int>(std::ceil(last_srcrect.h));
+    float old_width = 0, old_height = 0;
+    if (!screencap_texture || !SDL_GetTextureSize(screencap_texture, &old_width, &old_height) ||
+        old_width != width || old_height != height) {
+        SDL_Texture *replacement = SDL_CreateTexture(renderer, PIXEL_FORMAT, SDL_TEXTUREACCESS_TARGET, width, height);
+        if (!replacement) return nullptr;
+        if (screencap_texture) SDL_DestroyTexture(screencap_texture);
+        screencap_texture = replacement;
+    }
+
+    SDL_BlendMode old_blend;
+    Uint8 r, g, b, a;
+    if (!SDL_GetTextureBlendMode(last_texture, &old_blend) ||
+        !SDL_GetRenderDrawColor(renderer, &r, &g, &b, &a) ||
+        !SDL_SetRenderTarget(renderer, screencap_texture)) return nullptr;
+
+    const SDL_FRect dest = {0, 0, last_srcrect.w, last_srcrect.h};
+    SDL_Surface *surface = nullptr;
+    if (SDL_SetRenderLogicalPresentation(renderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED) &&
+        SDL_SetRenderViewport(renderer, nullptr) && SDL_SetRenderScale(renderer, 1, 1) &&
+        SDL_SetRenderClipRect(renderer, nullptr) && SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255) &&
+        SDL_RenderClear(renderer) && SDL_SetTextureBlendMode(last_texture, SDL_BLENDMODE_NONE) &&
+        SDL_RenderTexture(renderer, last_texture, &last_srcrect, &dest)) {
+        surface = SDL_RenderReadPixels(renderer, nullptr);
+    }
+    SDL_SetTextureBlendMode(last_texture, old_blend);
+    SDL_SetRenderDrawColor(renderer, r, g, b, a);
+    // Viewport, clip, scale and logical presentation belong to each target.
+    SDL_SetRenderTarget(renderer, previous_target);
     return surface;
 }
 
@@ -635,7 +673,7 @@ void video_system_t::copy_screen() {
     if (!surface) {
         return;
     }
-    clip->Clip(surface);
+    clip->Clip(surface, !(last_texture && last_texture == last_card_texture));
     SDL_DestroySurface(surface);
 }
 
@@ -653,7 +691,8 @@ void video_system_t::save_screenshot() {
         return;
     }
     const std::string path = Paths::make_screenshot_path();
-    if (!screenshot_writer->try_submit(surface, path)) {
+    const bool card_scan = last_texture && last_texture == last_card_texture;
+    if (!screenshot_writer->try_submit(surface, path, !card_scan)) {
         event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, "Screenshot busy"));
     }
     SDL_DestroySurface(surface);
@@ -667,17 +706,56 @@ void video_system_t::update_display(bool force_full_frame) {
     // When the CRT shader is active, draw the emulator frame into the offscreen
     // scene_target so it can be post-processed during present_scene(). Otherwise
     // draw straight to the swapchain exactly as before.
-    bool use_scene = crt_shader_enabled && crt_pass.ok() && scene_target;
+    // The card filters its complete scan itself, including the separate window.
+    // Keep the GPU pass for the IIgs, without filtering the card twice.
+    bool use_scene = crt_shader_enabled && crt_pass.ok() && scene_target &&
+        !(additional_display && SystemSettings::instance().ss_view() == SystemSettings::SS_VIEW_CARD);
     if (use_scene) {
         SDL_SetRenderTarget(renderer, scene_target);
     }
 
     clear(); // clear the current render target (scene_target or swapchain).
 
+    // Second Sight shares the browser canvas. Save the full Apple target and
+    // reserve its left half for the built-in monitor when both are visible.
+    const SDL_FRect full_target = target;
+#if defined(__linux__) || defined(__EMSCRIPTEN__)
+    // The ImGui menu uses window points. Reserve its strip in physical output
+    // pixels before fitting either monitor, so neither scan sits under the bar.
+    if (additional_display) {
+        int points_w, points_h, pixels_w, pixels_h;
+        SDL_GetWindowSize(window, &points_w, &points_h);
+        SDL_GetCurrentRenderOutputSize(renderer, &pixels_w, &pixels_h);
+        const float top = points_h > 0 ? menuBarHeight() * pixels_h / points_h : 0;
+        if (target.y < top) {
+            const float scale = std::max(0.0f, (target.y + target.h - top) / target.h);
+            target.x += target.w * (1.0f - scale) * 0.5f;
+            target.y = top;
+            target.w *= scale;
+            target.h *= scale;
+        }
+    }
+#endif
+#if defined(__EMSCRIPTEN__)
+    if (additional_display && SystemSettings::instance().ss_view() == SystemSettings::SS_VIEW_BOTH) {
+        target.w *= 0.5f;
+        target.h *= 0.5f;
+        target.y += target.h * 0.5f;
+    }
+#endif
     for (const auto& pair : frame_handlers) {
         if (pair.second(force_full_frame)) {
             break; // Stop processing if handler returns true
         }
+    }
+
+    // Draw Second Sight after the Apple frame, then restore the full target
+    // so overlays and the next frame do not inherit the split layout.
+    if (additional_display) {
+        SDL_Texture *previous = last_texture;
+        additional_display();
+        last_card_texture = last_texture != previous ? last_texture : nullptr;
+        target = full_target;
     }
 
     if (use_scene) {
@@ -686,7 +764,8 @@ void video_system_t::update_display(bool force_full_frame) {
 }
 
 void video_system_t::present_scene() {
-    if (!(crt_shader_enabled && crt_pass.ok() && scene_target)) {
+    if (!(crt_shader_enabled && crt_pass.ok() && scene_target) ||
+        (additional_display && SystemSettings::instance().ss_view() == SystemSettings::SS_VIEW_CARD)) {
         return; // shader disabled/unavailable: update_display drew to the swapchain.
     }
     // Feed the CRT shader a resolution that matches the emulated source texture
