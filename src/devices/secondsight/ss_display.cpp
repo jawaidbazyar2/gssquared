@@ -110,15 +110,19 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
     const int hs = crtc.horz_blank_start;
     const int hn = (crtc.horz_blank_end - hs) & 63;
     const int vs = crtc.vert_blank_start;
-    const int vn = (crtc.vert_blank_end - crtc.vert_blank_start) & 255;
     const int rows = timing.height / (crtc.vert_disp_end + 1);
-    // Center the monitor window on the active display using the user's
-    // position controls.
+    const int hfirst = int(hs * timing.total_width / timing.line_characters);
+    const int hlength = std::min(timing.total_width, int((hn ? hn : 64) * timing.total_width / timing.line_characters));
+    const int vfirst = vs * rows, vlength = std::min(timing.total_height, int(video.vertical_blank_length()) * rows);
+    const auto hspan = ss_monitor::unblanked(timing.total_width, timing.width, hfirst % timing.total_width, hlength);
+    const auto vspan = ss_monitor::unblanked(timing.total_height, timing.height, vfirst % timing.total_height, vlength);
+    // The monitor window holds the whole unblanked signal, centered, as the
+    // user's position and size controls would set it.
     const double line_hz = 1.0 / timing.line_period();
     const int fields = timing.interlaced ? 2 : 1;
     const bool vga_monitor = video.vga_monitor();
     SecondSightMonitorWindow window = ss_monitor::card_monitor(vga_monitor, line_hz, fields / timing.frame_period(),
-        1.0 / timing.pixel_period(), timing.total_width, timing.total_height, fields,
+        1.0 / timing.pixel_period(), timing.total_width, timing.total_height, hspan.length, vspan.length, fields,
         video.misc_output() & 0x40, video.misc_output() & 0x80);
     if (!window.locked) {
         // No picture, as on a monitor that cannot lock.
@@ -140,11 +144,10 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
     }
     const int window_width = std::clamp(window.width, 1, timing.total_width);
     const int window_height = std::clamp(window.height, 1, timing.total_height);
-    const int left = ss_monitor::floor_half(window_width - timing.width);
-    const int top = ss_monitor::floor_half(window_height - timing.height);
-    const int hfirst = int(hs * timing.total_width / timing.line_characters);
-    const int hlength = std::min(timing.total_width, int((hn ? hn : 64) * timing.total_width / timing.line_characters));
-    const int vfirst = vs * rows, vlength = std::min(timing.total_height, (vn ? vn : 256) * rows);
+    const int left = window.locked ? ss_monitor::active_offset(window_width, timing.width, hspan)
+                                   : ss_monitor::floor_half(window_width - timing.width);
+    const int top = window.locked ? ss_monitor::active_offset(window_height, timing.height, vspan)
+                                  : ss_monitor::floor_half(window_height - timing.height);
     const SecondSightCrt::Axis horizontal{timing.total_width, (timing.total_width - left) % timing.total_width,
         window_width, hfirst % timing.total_width, hlength};
     const SecondSightCrt::Axis vertical{timing.total_height, (timing.total_height - top) % timing.total_height,
