@@ -1,0 +1,7 @@
+gs2_version = 1
+name = "Disabled Alias Test"
+platform = "apple2plus"
+
+[[cards]]
+slot = 7
+card = "pdblock2"
