@@ -382,8 +382,6 @@ add_library(gs2_devices_mouse
     src/devices/applemouseiii/PIA6520.cpp
 )
 
-add_library(gs2_devices_iiememory src/devices/iiememory/iiememory.cpp)
-
 add_library(gs2_devices_ensoniq src/devices/es5503/ensoniq.cpp src/devices/es5503/soundglu.cpp)
 
 add_library(gs2_devices_scc8530 src/devices/scc8530/scc8530.cpp)
@@ -593,7 +591,6 @@ set(GS2_DEVICE_REGISTRY_LIBS
     gs2_devices_pdblock2
     gs2_devices_pdblock3
     gs2_devices_mockingboard
-    gs2_devices_iiememory
     gs2_devices_ensoniq
     gs2_devices_scc8530
     gs2_devices_ssc
@@ -727,7 +724,6 @@ target_link_libraries(GSSquared
     gs2_devices_pdblock2
     gs2_devices_pdblock3
     gs2_devices_mockingboard
-    gs2_devices_iiememory
     gs2_devices_ensoniq
     gs2_devices_scc8530
     gs2_devices_ssc
@@ -786,7 +782,8 @@ if(NOT EMSCRIPTEN)
 
     add_subdirectory(apps/mmutest)
 
-    add_subdirectory(apps/iiemmutest)
+    # iiemmutest drove the removed iiememory device. The golden and oracle stay
+    # for iiemmu2test. Do not build apps/iiemmutest.
     add_subdirectory(apps/iiemmu2test)
 
     add_subdirectory(apps/cputest)

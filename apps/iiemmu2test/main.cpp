@@ -26,6 +26,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -78,6 +79,53 @@ static void check_setters() {
     }
 }
 
+static uint8_t *page_read(MMU_IIe2 *mmu, page_t page) {
+    page_table_entry_t entry{};
+    mmu->get_page_table_entry(page, &entry);
+    return entry.read_p;
+}
+
+static void require_ptr(uint8_t *got, uint8_t *expected, const char *why) {
+    if (got == expected) {
+        return;
+    }
+    std::fprintf(stderr, "%s\n  got %p expected %p\n", why, static_cast<void *>(got),
+                 static_cast<void *>(expected));
+    std::exit(1);
+}
+
+// $C073 with RAMRD already on must republish. Bank 0 is main_ram+0x10000.
+// Bank 1 is aux_extra. ALTZP language-card bank 2 is cpu_aux+$C000.
+static void check_ramworks() {
+    Fixture f;
+    MMU_IIe2 *mmu = f.mmu;
+    mmu->install_ramworks();
+    mmu->write(0xC003, 0);
+
+    mmu->set_aux_bank(1);
+    if (mmu->get_aux_bank() != 1) {
+        std::fprintf(stderr, "RamWorks bank 1 did not stick\n");
+        std::exit(1);
+    }
+    const uint32_t page8_off = 0x08u * GS2_PAGE_SIZE;
+    uint8_t *aux0_page8 = f.main() + MMU_IIe2::kAuxBankBytes + page8_off;
+    uint8_t *bank1_page8 = mmu->aux_extra + page8_off;
+    require_ptr(page_read(mmu, 0x08), bank1_page8, "RAMRD page $08 stayed off AUX 1");
+
+    mmu->set_aux_bank(0);
+    if (mmu->get_aux_bank() != 0) {
+        std::fprintf(stderr, "RamWorks bank 0 did not stick\n");
+        std::exit(1);
+    }
+    require_ptr(page_read(mmu, 0x08), aux0_page8, "RAMRD page $08 did not return to AUX 0");
+
+    mmu->set_aux_bank(1);
+    mmu->write(0xC009, 0);
+    mmu->read(0xC080);
+    require_ptr(page_read(mmu, 0xD0), mmu->cpu_aux_base() + 0xC000,
+                "ALTZP language-card bank 2 is not at cpu_aux+$C000");
+}
+
 // 10M reads through MMU*, addresses in $0000-$BFFF. One warmup, five timed passes.
 static int run_bench() {
     constexpr uint32_t kReads = 10000000;
@@ -126,5 +174,6 @@ int main(int argc, char **argv) {
         return rc;
     }
     check_setters();
+    check_ramworks();
     return 0;
 }

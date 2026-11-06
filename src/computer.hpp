@@ -64,7 +64,7 @@ enum : uint32_t {
     DEVOP_STATE_SET = 2,
 };
 
-/** Tag for the headless constructor defined by apps/iiemmutest. */
+/** Headless constructor. Defined only by the unbuilt apps/iiemmutest. */
 struct computer_bare_t {};
 
 struct computer_t {

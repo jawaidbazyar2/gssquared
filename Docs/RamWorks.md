@@ -1,6 +1,6 @@
 # RamWorks
 
-Implementation spec for an Applied Engineering RamWorks-style auxiliary memory card on the Apple IIe models. Not implemented yet.
+Implementation spec for an Applied Engineering RamWorks-style auxiliary memory card on the Apple IIe models. The card is the slot-0 device. The CPU map lives on `MMU_IIe2`.
 
 RamWorks is not the Apple II Memory Expansion Card ("Slinky"). Slinky is a slotted RAM disk with its own address registers. RamWorks replaces the 64K on the IIe auxiliary slot with 128 banks of 64K (8MB) and leaves the motherboard's soft switches in charge of *when* the CPU sees auxiliary memory.
 
@@ -27,7 +27,7 @@ Real RamWorks plugs into the auxiliary slot. The IIe has no slot 0; the language
 - Apple IIe Enhanced
 - Apple IIe Enhanced + 65816
 
-Not the II, II+, or IIgs. The IIgs `computer->mmu` pointer is the Mega II, which is also an `MMU_IIe`. Offering the card there would grow the wrong memory.
+Not the II, II+, or IIgs. The IIgs `computer->mmu` pointer is the Mega II, an `MMU_IIe2` constructed with memory switches off. Offering the card there would grow the wrong memory. `set_aux_bank` does not call `compose_map` when that flag is off, so a stray call cannot overwrite the IIgs page table.
 
 The card has no slot ROM and no `$C800` firmware. Its only bus presence is the bank register.
 
@@ -43,7 +43,7 @@ Slinky stays a separate slot 1–7 card and can be installed next to RamWorks.
 
 ## Physical layout
 
-`MMU_IIe` keeps the 128K block it allocates today. The card does not reallocate it.
+`MMU_IIe2` keeps the 128K block it allocates today. The card does not reallocate it.
 
 ```
 main_ram + 0x00000   motherboard main 64K
@@ -55,21 +55,21 @@ aux_extra + 0x10000  AUX 2
 
 `aux_extra` is 127 × 64K, allocated by the card at startup. Together with AUX 0 that is 8MB. `get_memory_base()` / `get_memory_size()` continue to describe the 128K block. Video, 80-column text, the debug video view, and anything else that already adds `0x10000` keeps meaning AUX 0.
 
-Fill `aux_extra` with the same power-on pattern `MMU_IIe` writes into AUX 0 (`CC CC 00 00` repeating).
+Fill `aux_extra` with the same power-on pattern `MMU_IIe2` writes into AUX 0 (`CC CC 00 00` repeating).
 
 ## The one pointer
 
-`MMU_IIe` holds the CPU's current auxiliary bank:
+`MMU_IIe2` holds the CPU's current auxiliary bank:
 
 ```
 uint8_t *cpu_aux;   // starts as main_ram + 0x10000
 ```
 
-`iiememory_compose_map` and `bsr_map_memory` use `cpu_aux` as the base of every region they currently build with `+ 0x10000`. Main regions stay at `main_ram + page`. With no card, `cpu_aux` is set in the `MMU_IIe` constructor and never moves, so the composed map is the one we have now.
+`MMU_IIe2::compose_map` and `MMU_IIe2::bsr_map_memory` use `cpu_aux` as the base of every region they currently build with `+ 0x10000`. Main regions stay at `main_ram + page`. With no card, `cpu_aux` is set in the `MMU_IIe2` constructor and never moves, so the composed map is the one we have now.
 
 `MMU::read` and `MMU::write` stay direct `read_p` / `write_p` loads. The bank register does not belong on that path.
 
-A bank write updates `cpu_aux`, then forces those two composers to republish. The composers skip a region when the corresponding `m_*` flag did not change, so a bank change with the same `RAMRD` / `ALTZP` / `80STORE` state would otherwise leave the page table pointing at the previous bank. Language-card bank 1 versus bank 2, read-enable, and write-enable stay as they are. Only the 64K those pages point into changes.
+A `$C073` write calls `MMU_IIe2::set_aux_bank`. That updates `cpu_aux` and calls `compose_map(true)`. `compose_map` skips a region when the corresponding `m_*` flag did not change, so a bank change with the same `RAMRD` / `ALTZP` / `80STORE` state has to pass `force`. `force` also calls `bsr_map_memory`, which is how language-card `$D0–$FF` follows the bank under `ALTZP`. Language-card bank 1 versus bank 2, read-enable, and write-enable stay as they are. Only the 64K those pages point into changes.
 
 Regions that follow `cpu_aux` when the motherboard has selected auxiliary memory:
 
@@ -98,7 +98,7 @@ The scanner caches `get_memory_base()` at construction. That is safe because thi
 
 | Address | Access | Effect |
 |---------|--------|--------|
-| `$C073` | write | Select the auxiliary bank. Value is masked with `0x7F` (AUX 0–127). |
+| `$C073` | write | Select the auxiliary bank. Value is masked with `0x7F` (AUX 0–127). Calls `MMU_IIe2::set_aux_bank`. |
 | `$C071` | read | Return the current bank number, `0`–`127`. Bit 7 reads as 0. |
 
 Any access in `$C070–$C07F` also strobes the paddle timers, as on a stock IIe. The game controller already owns that range.
@@ -106,18 +106,18 @@ Any access in `$C070–$C07F` also strobes the paddle timers, as on a stock IIe.
 `$C0xx` has two handler slots, and both run. Built-in devices power on before slot cards, so the paddle strobe is slot 0 and the card takes slot 1.
 
 - **Write `$C073`:** both handlers run. The card stores the bank. The paddle strobe still fires.
-- **Read `$C071`:** the two read results are OR'd, and the paddle handler returns the floating bus. The bank number has to be the value the CPU reads, not the bank OR'd into the floating bus. The strobe side effect still happens.
+- **Read `$C071`:** the two read results are OR'd, and the paddle handler returns the floating bus. The bank number has to be the value the CPU reads, not the bank OR'd into the floating bus. The card's read handler uses the replace-read slot. The strobe side effect still happens.
 
-Reset clears the bank to 0, points `cpu_aux` back at AUX 0, and republishes. That belongs with the rest of `reset_iiememory`, which already returns the IIe to main RAM.
+Reset clears the bank to 0, points `cpu_aux` back at AUX 0, and republishes. `MMU_IIe2::reset` does this on the IIe path (`install_memory_switches == true`), after it clears `80STORE`, `RAMRD`, `RAMWRT`, `ALTZP`, and `PAGE2`. The Mega II path returns before that and does not compose. The card does not register its own reset handler.
 
 ## Startup
 
 Order today, which this design relies on:
 
-1. `MMU_IIe` allocates 128K. Constructor sets `cpu_aux = main_ram + 0x10000`.
-2. Built-in `power_on`. Display caches the RAM base. IIe memory caches it and composes the map against `cpu_aux`. The game controller hooks `$C070–$C07F`.
-3. Slot `power_on`. RamWorks calls `MMU_IIe::install_ramworks()`, which allocates the 127 extra banks and leaves `main_ram` in place, then registers `$C071` and `$C073`.
-4. CPU reset. The bank is already 0; reset makes that explicit.
+1. `MMU_IIe2` allocates 128K. Constructor sets `cpu_aux = main_ram + 0x10000`.
+2. Built-in `power_on`. Display caches the RAM base. The MMU has already composed the map against `cpu_aux`. The game controller hooks `$C070–$C07F`.
+3. Slot `power_on`. RamWorks calls `MMU_IIe2::install_ramworks()`, which allocates the 127 extra banks and leaves `main_ram` in place, then registers `$C071` and `$C073`.
+4. CPU reset. The bank is already 0; `MMU_IIe2::reset` makes that explicit and republishes.
 
 No guest code has run at step 3, and nothing that cached `main_ram` needs to be told about the extra banks.
 

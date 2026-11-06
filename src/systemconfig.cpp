@@ -50,9 +50,8 @@ DeviceMap_t DeviceMap_IIPLUS[] = {
 };
 
 DeviceMap_t DeviceMap_IIE[] = {
-    /* {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
-    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
-    {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
+    /* {DEVICE_ID_DISPLAY, SLOT_NONE},
+    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE},
     {DEVICE_ID_SPEAKER, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE}, */
@@ -66,9 +65,8 @@ DeviceMap_t DeviceMap_IIE[] = {
 
 DeviceMap_t DeviceMap_IIE_MOUSE[] = {
     /* {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
-    {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
-    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
-    {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
+    {DEVICE_ID_DISPLAY, SLOT_NONE},
+    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE}, */
     {DEVICE_ID_MEM_EXPANSION, SLOT_2},
@@ -80,9 +78,8 @@ DeviceMap_t DeviceMap_IIE_MOUSE[] = {
 
 DeviceMap_t DeviceMap_IIX[] = {
     /* {DEVICE_ID_SPEAKER, SLOT_NONE}, // speaker must be before display so iigs can override some things.
-    {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
-    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
-    {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
+    {DEVICE_ID_DISPLAY, SLOT_NONE},
+    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE}, */
     {DEVICE_ID_MEM_EXPANSION, SLOT_2},
@@ -94,9 +91,8 @@ DeviceMap_t DeviceMap_IIX[] = {
 };
 
 DeviceMap_t DeviceMap_IIE_ENH_2MB[] = {
-    /* {DEVICE_ID_DISPLAY, SLOT_NONE}, // display must be before IIE_MEMORY
-    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE}, // Keyboard should be before IIE_MEMORY
-    {DEVICE_ID_IIE_MEMORY, SLOT_NONE},
+    /* {DEVICE_ID_DISPLAY, SLOT_NONE},
+    {DEVICE_ID_KEYBOARD_IIE, SLOT_NONE},
     {DEVICE_ID_SPEAKER, SLOT_NONE},
     {DEVICE_ID_CASSETTE, SLOT_NONE},
     {DEVICE_ID_GAMECONTROLLER, SLOT_NONE}, */

@@ -32,7 +32,6 @@
 #include "devices/parallel/parallel.hpp"
 #include "devices/videx/videx.hpp"
 #include "devices/mockingboard/mb2.hpp"
-#include "devices/iiememory/iiememory.hpp"
 #include "devices/applemouseiii/applemouseiii.hpp"
 #include "devices/cassette/cassette.hpp"
 #include "devices/vidhd/vidhd.hpp"
@@ -93,7 +92,6 @@ Device_t Devices[NUM_DEVICE_IDS] = {
     make_device(DEVICE_ID_PARALLEL, init_slot_parallel, NULL),
     make_device(DEVICE_ID_VIDEX, init_slot_videx, NULL),
     make_device(DEVICE_ID_MOCKINGBOARD, init_slot_mockingboard, NULL),
-    make_device(DEVICE_ID_IIE_MEMORY, init_iiememory, NULL),
     make_device(DEVICE_ID_MOUSE, init_applemouseiii, NULL),
     make_device(DEVICE_ID_CASSETTE, init_mb_cassette, NULL),
     make_device(DEVICE_ID_VIDHD, init_slot_vidhd, NULL),

@@ -102,9 +102,9 @@ void MMU_IIe2::map_rom_slot3(void *context, SlotType_t slot) {
 }
 
 void MMU_IIe2::map_range(int lo, int hi, bool aux, bool is_write) {
-    const uint32_t altoffset = aux ? 0x1'0000u : 0;
     const char *tag = aux ? "AUX" : "MAIN";
-    uint8_t *base = main_ram + altoffset + static_cast<uint32_t>(lo) * GS2_PAGE_SIZE;
+    uint8_t *ram = aux ? cpu_aux : main_ram;
+    uint8_t *base = ram + static_cast<uint32_t>(lo) * GS2_PAGE_SIZE;
     if (is_write) {
         map_range_write(static_cast<page_t>(lo), static_cast<page_t>(hi), base, tag);
     } else {
@@ -113,15 +113,9 @@ void MMU_IIe2::map_range(int lo, int hi, bool aux, bool is_write) {
 }
 
 void MMU_IIe2::bsr_map_memory() {
-    uint32_t bankd0offset = (ll.FF_BANK_1 == 1) ? 0xD000 : 0xC000;
-    uint32_t banke0offset = 0xE000;
-    if (f_altzp) {
-        bankd0offset += 0x1'0000;
-        banke0offset += 0x1'0000;
-    }
-
-    uint8_t *bankd0 = main_ram + bankd0offset;
-    uint8_t *banke0 = main_ram + banke0offset;
+    uint8_t *base = f_altzp ? cpu_aux : main_ram;
+    uint8_t *bankd0 = base + ((ll.FF_BANK_1 == 1) ? 0xD000 : 0xC000);
+    uint8_t *banke0 = base + 0xE000;
     uint8_t *rom = get_rom_base();
     const char *bank_d = (ll.FF_BANK_1 == 1) ? "LC_BANK1" : "LC_BANK2";
     const bool ram_read = ll.FF_READ_ENABLE != 0;
@@ -317,6 +311,8 @@ MMU_IIe2::MMU_IIe2(int page_table_size, int ram_amount, uint8_t *rom_pointer,
     }
     init_map();
     power_on_randomize(main_ram, static_cast<int>(ram_size_));
+    cpu_aux = main_ram + kAuxBankBytes;
+    aux_bank = 0;
     install_slot_rom();
     if (install_memory_switches_) {
         install_memory_handlers();
@@ -324,7 +320,41 @@ MMU_IIe2::MMU_IIe2(int page_table_size, int ram_amount, uint8_t *rom_pointer,
     }
 }
 
-MMU_IIe2::~MMU_IIe2() = default;
+MMU_IIe2::~MMU_IIe2() {
+    delete[] aux_extra;
+    aux_extra = nullptr;
+}
+
+void MMU_IIe2::install_ramworks() {
+    if (aux_extra != nullptr) {
+        return;
+    }
+    const uint32_t extra = static_cast<uint32_t>(kRamWorksBankCount - 1) * kAuxBankBytes;
+    aux_extra = new uint8_t[extra];
+    for (uint32_t i = 0; i < extra; i += 4) {
+        aux_extra[i] = 0xCC;
+        aux_extra[i + 1] = 0xCC;
+        aux_extra[i + 2] = 0x00;
+        aux_extra[i + 3] = 0x00;
+    }
+    set_aux_bank(0);
+}
+
+void MMU_IIe2::set_aux_bank(uint8_t bank) {
+    bank &= 0x7F;
+    if (aux_extra == nullptr) {
+        bank = 0;
+    }
+    aux_bank = bank;
+    if (bank == 0) {
+        cpu_aux = main_ram + kAuxBankBytes;
+    } else {
+        cpu_aux = aux_extra + (static_cast<uint32_t>(bank - 1) * kAuxBankBytes);
+    }
+    if (install_memory_switches_) {
+        compose_map(true);
+    }
+}
 
 DebugFormatter *MMU_IIe2::debug_formatter() {
     auto *f = new DebugFormatter();
@@ -333,6 +363,7 @@ DebugFormatter *MMU_IIe2::debug_formatter() {
     f->addLine("INTCX: %1d LC [ BNK1: %1d READ: %1d WRT: %1d ]",
                f_intcxrom, ll.FF_BANK_1, ll.FF_READ_ENABLE, !ll._FF_WRITE_ENABLE);
     f->addLine("PAGE2: %1d HIRES: %1d", s_page2, s_hires);
+    f->addLine("AUX bank: %d", aux_bank);
     f->addLine("SlotReg: %02X", get_slot_register());
     debug_output_page(f, 0x00, true);
     debug_output_page(f, 0x02);
@@ -364,6 +395,5 @@ void MMU_IIe2::reset(bool cold_start) {
     f_ramwrt = false;
     f_altzp = false;
     s_page2 = false;
-    bsr_map_memory();
-    compose_map(true);
+    set_aux_bank(0);
 }

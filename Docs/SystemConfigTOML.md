@@ -227,7 +227,6 @@ Present automatically per platform; listed for reference:
 | `"speaker"` | `DEVICE_ID_SPEAKER` | All |
 | `"display"` | `DEVICE_ID_DISPLAY` | All |
 | `"game_controller"` | `DEVICE_ID_GAMECONTROLLER` | All |
-| `"iie_memory"` | `DEVICE_ID_IIE_MEMORY` | IIe family |
 | `"cassette"` | `DEVICE_ID_CASSETTE` | All |
 | `"rtc_pram"` | `DEVICE_ID_RTC_PRAM` | IIgs |
 | `"adb"` | `DEVICE_ID_KEYGLOO` | IIgs |

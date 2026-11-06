@@ -489,9 +489,9 @@ Share host folder as GS/OS `:Host`.
 
 Composed per platform; mapping docs are the user surface ([KeyboardShortcuts.md](KeyboardShortcuts.md)). No separate slot config.
 
-### Motherboard: IIe memory (`iie_memory`)
+### Motherboard: IIe auxiliary memory
 
-Aux / main memory layout for //e family — platform-composed, not user-pluggable.
+Main versus auxiliary mapping for the IIe family lives on `MMU_IIe2`. It is not a slot card.
 
 ### Motherboard: cassette (`cassette`)
 

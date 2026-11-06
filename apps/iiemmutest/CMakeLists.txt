@@ -1,9 +1,4 @@
-add_executable(iiemmutest main.cpp)
-
-target_link_libraries(iiemmutest PRIVATE
-    gs2_devices_iiememory
-    gs2_mmu
-    gs2_message_bus
-)
-
-add_test(NAME iiemmutest COMMAND iiemmutest ${CMAKE_CURRENT_SOURCE_DIR}/iie_mmu_map.golden)
+# Deprecated. Not added from the top-level CMakeLists.txt.
+# The IIe aux map lives on MMU_IIe2, covered by apps/iiemmu2test.
+# This directory keeps iie_mmu_oracle.hpp and iie_mmu_map.golden for that test.
+# main.cpp still calls init_iiememory, which has been removed.

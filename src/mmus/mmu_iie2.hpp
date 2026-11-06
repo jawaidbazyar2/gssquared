@@ -7,8 +7,9 @@ class MessageBus;
 
 /**
  * IIe motherboard memory map: slot ROM ($C1-$CF) plus auxiliary RAM and the
- * language-card window. Independent of MMU_IIe. Auxiliary pages are
- * get_memory_base() + 0x10000.
+ * language-card window. Independent of MMU_IIe. AUX 0 is
+ * get_memory_base() + 0x10000. Composers publish auxiliary pages from cpu_aux.
+ * With no RamWorks card, cpu_aux stays on AUX 0.
  *
  * install_memory_switches selects the aux / language-card handlers. The slot-ROM
  * writes ($C006, $C007, $C00A, $C00B) are always installed. The flag exists so a
@@ -71,6 +72,24 @@ class MMU_IIe2 : public MMU_II {
         void set_altzp(bool on) { f_altzp = on; }
         void set_page2(bool on) { s_page2 = on; }
         void set_hires(bool on) { s_hires = on; }
+
+        /** CPU's current auxiliary 64K. AUX 0 is main_ram + 0x10000. */
+        uint8_t *cpu_aux = nullptr;
+        /** AUX 1..127. Null until a RamWorks card calls install_ramworks(). */
+        uint8_t *aux_extra = nullptr;
+        uint8_t aux_bank = 0;
+
+        static constexpr int kRamWorksBankCount = 128;
+        static constexpr uint32_t kAuxBankBytes = 0x10000;
+
+        uint8_t *cpu_aux_base() const { return cpu_aux; }
+        uint8_t get_aux_bank() const { return aux_bank; }
+        bool ramworks_installed() const { return aux_extra != nullptr; }
+        /** Allocate AUX 1..127 beside the existing 128K block. AUX 0 stays put. */
+        void install_ramworks();
+        /** Mask to 0x7F. Bank 0 is AUX 0; bank k>0 is aux_extra + (k-1)*64K.
+         *  Recomposes only when memory switches are installed. */
+        void set_aux_bank(uint8_t bank);
 
         void set_default_C8xx_map() override;
         void compose_c1cf() override;
