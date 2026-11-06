@@ -780,8 +780,7 @@ void OTI087::render(ss_video_buffer_t surface, ss_video_rect_t clip) {
         // Probe vertical blank separately from horizontal blank at x=0.
         unsigned const line = y / ((get_interlace_mode() ? 2 : 1) * vertical_divisor());
         unsigned const vt = crtc.vert_total + 2;
-        unsigned const vb = (crtc.vert_blank_end - crtc.vert_blank_start) & 255;
-        if ((line + vt - crtc.vert_blank_start % vt) % vt < (vb ? vb : 256))
+        if ((line + vt - crtc.vert_blank_start % vt) % vt < vertical_blank_length())
             surface.fill(0xff000000, {bounds.left, bounds.right, y, y});
         else {
             surface.fill(0xff000000, ss_video_rect_t{hb_start, hb_end - 1, y, y}.intersect(bounds));
@@ -805,10 +804,9 @@ bool OTI087::render_packed_frame(ss_video_buffer_t surface) {
     // The row-reuse path assumes the active rectangle is outside blanking.
     // Nonstandard blank windows use the same interval renderer as other modes.
     unsigned const hblank = (crtc.horz_blank_end - crtc.horz_blank_start) & 63;
-    unsigned const vblank = (crtc.vert_blank_end - crtc.vert_blank_start) & 255;
     if (crtc.horz_blank_start <= crtc.horz_disp_end || crtc.vert_blank_start <= crtc.vert_disp_end ||
         crtc.horz_blank_start + (hblank ? hblank : 64) > crtc.horz_total + 5 ||
-        crtc.vert_blank_start + (vblank ? vblank : 256) > crtc.vert_total + 2)
+        crtc.vert_blank_start + vertical_blank_length() > crtc.vert_total + 2u)
         return false;
     // Row reuse needs ordered start-address changes beginning at line zero.
     // Reject ambiguous spans so the general renderer handles them instead.

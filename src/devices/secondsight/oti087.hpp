@@ -612,6 +612,10 @@ public:
     // view includes aliases and pin values without their I/O side effects.
     uint8_t extended_read(unsigned offset, bool backing = false) const;
     const auto &crtc_state() const { return crtc; }
+    // Lines of vertical blanking. IBM VGA/XGA TRM 2-73: End = Start + Width - 1
+    // in eight low bits, so the last encoded line blanks too; horizontal
+    // blanking (2-59/60) has no such line.
+    unsigned vertical_blank_length() const { return ((crtc.vert_blank_end - crtc.vert_blank_start) & 255) + 1; }
     const auto &sequencer_state() const { return sequencer; }
     uint8_t misc_output() const { return miscellaneous_output; }
     // Cable sense: true when a VGA monitor is attached.
