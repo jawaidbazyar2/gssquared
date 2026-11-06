@@ -572,6 +572,57 @@
       Module.setStatus('Exception thrown, see JavaScript console');
     };
   </script>
-  {{{ SCRIPT }}}
+  <!-- Inert here: the script below starts the emulator only in an isolated page. -->
+  <template id="gs2-main">{{{ SCRIPT }}}</template>
+  <script>
+    // The threads need SharedArrayBuffer, which browsers give only to a
+    // cross-origin isolated page. A server with the headers of live.htaccess
+    // isolates it at once. On a host that cannot send headers, register
+    // isolation-worker.js and load the page once more, through the worker.
+    (function () {
+      function start() {
+        var main = document.getElementById('gs2-main').content.querySelector('script');
+        var script = document.createElement('script');
+        script.src = main.getAttribute('src');
+        script.async = true;
+        document.body.appendChild(script);
+      }
+      function fail(message) {
+        overlaySpinner.style.display = 'none';
+        overlayHint.textContent = message;
+        statusElement.textContent = message;
+      }
+      if (window.crossOriginIsolated) {
+        start();
+        return;
+      }
+      // Browsers isolate only secure pages: https://, or http://localhost.
+      var workers = window.isSecureContext ? navigator.serviceWorker : null;
+      if (!workers) {
+        fail('GSSquared cannot start on an http:// address. Open this page with https://, or as http://localhost on this computer.');
+        return;
+      }
+      // The worker already served this page and it is still not isolated:
+      // a second reload cannot help.
+      if (workers.controller) {
+        fail('This browser blocked the threads that GSSquared needs, so it cannot start.');
+        return;
+      }
+      workers.register('isolation-worker.js').then(function () {
+        return workers.ready;
+      }).then(function () {
+        // The pack script removed #pack= from the address; put it back for the
+        // reload. Only reload() loads the page again: a new address that differs
+        // in the fragment only would just scroll.
+        if (window.__gs2PackRequest) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search
+            + '#pack=' + encodeURIComponent(window.__gs2PackRequest));
+        }
+        window.location.reload();
+      }, function () {
+        fail('GSSquared could not start isolation-worker.js.');
+      });
+    })();
+  </script>
 </body>
 </html>
