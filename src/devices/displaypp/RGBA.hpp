@@ -10,8 +10,10 @@
  * This likely needs to be more like 'Mac' etc.
  */
 
-#ifdef __APPLE__
-// Apple - ABGR 
+#if defined(__APPLE__) || defined(__EMSCRIPTEN__)
+// Metal and WebGL accept RGBA bytes directly. On little-endian WebAssembly,
+// ABGR8888 has that byte order; RGBA8888 would make SDL convert the whole
+// locked IIgs texture on the CPU at every unlock.
 struct RGBA_t {
     union {
         struct {
@@ -33,8 +35,8 @@ struct RGBA_t {
     }
 };
 #define PIXEL_FORMAT SDL_PIXELFORMAT_ABGR8888
-#elif defined(__linux__) || defined(__FreeBSD__) || defined(__EMSCRIPTEN__)
-// Linux / Emscripten (wasm is little-endian) - RGBA
+#elif defined(__linux__) || defined(__FreeBSD__)
+// Linux - RGBA
 struct RGBA_t {
     union {
         struct {
