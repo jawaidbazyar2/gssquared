@@ -18,7 +18,7 @@
 
 #include "util/EventQueue.hpp"
 
-// screencap_texture is 910x263; PNG output doubles scanlines for aspect.
+// Initial buffer for IIgs screenshots; larger card scans grow it on demand.
 #define MAX_SCREENSHOT_WIDTH 910
 #define MAX_SCREENSHOT_SRC_HEIGHT 263
 #define MAX_SCREENSHOT_HEIGHT (MAX_SCREENSHOT_SRC_HEIGHT * 2)
@@ -67,6 +67,7 @@ public:
 
 class ScreenshotWriter {
     uint8_t *buffer_ = nullptr;
+    size_t buffer_capacity_ = 0;
     int width_ = 0;
     int height_ = 0;
     std::string path_;
@@ -87,10 +88,11 @@ public:
     ScreenshotWriter(const ScreenshotWriter &) = delete;
     ScreenshotWriter &operator=(const ScreenshotWriter &) = delete;
 
-    /** Copy surface (with scanline doubling) into the prealloc buffer and wake the worker.
-     *  Returns false if a write is already pending or the surface is too large.
+    /** Copy a surface into the buffer and wake the worker. IIgs scans may
+     *  request scanline doubling; card scans retain their native dimensions.
+     *  Returns false if a write is already pending or allocation fails.
      *  Main thread only. */
-    bool try_submit(SDL_Surface *surface, const std::string &path);
+    bool try_submit(SDL_Surface *surface, const std::string &path, bool double_scanlines = true);
     bool is_pending() const { return pending_.load(std::memory_order_acquire); }
 
     /** Drain worker status messages into EventQueue. Main thread only; never blocks. */

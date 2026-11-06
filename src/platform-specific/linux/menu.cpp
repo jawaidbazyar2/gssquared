@@ -301,6 +301,36 @@ static void build_menu_bar()
 
         ImGui::Separator();
 
+        // Second Sight hardware controls persist firmware and capture equations
+        // for Restart. Disable the whole group if this card is not installed.
+        if (!mi->hasSecondSightZ180()) ImGui::BeginDisabled();
+        if (begin_menu("Second Sight")) {
+            ImGui::MenuItem("Applies at power-on or Restart", nullptr, false, false);
+            if (begin_menu("Firmware")) {
+                const char *labels[] = { "1.4-BEEF (original)", "1.5-CBFC", "2.0-3277" };
+                for (int i = 0; i < 3; ++i)
+                    if (ImGui::MenuItem(labels[i], nullptr, mi->getSecondSightFirmware() == i))
+                        mi->setSecondSightFirmware(i);
+                end_menu();
+            }
+            if (begin_menu("Lattice chip")) {
+                if (ImGui::MenuItem("Original (BE8C)", nullptr, !mi->getSecondSightLattice()))
+                    mi->setSecondSightLattice(false);
+                if (ImGui::MenuItem("v2.0 (BBB1)", nullptr, mi->getSecondSightLattice()))
+                    mi->setSecondSightLattice(true);
+                end_menu();
+            }
+            if (begin_menu("INT0 pull-up")) {
+                if (ImGui::MenuItem("None (stock card)", nullptr, !mi->getSecondSightInt0Pullup()))
+                    mi->setSecondSightInt0Pullup(false);
+                if (ImGui::MenuItem("Added (card modification)", nullptr, mi->getSecondSightInt0Pullup()))
+                    mi->setSecondSightInt0Pullup(true);
+                end_menu();
+            }
+            end_menu();
+        }
+        if (!mi->hasSecondSightZ180()) ImGui::EndDisabled();
+
         // Sleep / Busy Wait — available regardless of running state
         bool sleep_on = mi->getSleepMode();
         if (ImGui::MenuItem("Sleep / Busy Wait", nullptr, sleep_on))
@@ -338,11 +368,36 @@ static void build_menu_bar()
             };
             for (auto &m : monitors) {
                 bool checked = (cur_mon == m.id);
-                if (ImGui::MenuItem(m.label, nullptr, checked))
+                if (ImGui::MenuItem(m.label, nullptr, checked, mi->monitorAvailable(m.id)))
                     mi->setMonitor(m.id);
             }
             end_menu();
         }
+
+        // Second Sight display controls change cable sense and visible monitors
+        // through the shared settings path; they do not write card registers.
+        if (begin_menu("Second Sight", mi->hasSecondSightZ180())) {
+            if (begin_menu("Monitor")) {
+                const bool rgb = mi->getSecondSightRGBMonitor();
+                if (ImGui::MenuItem("VGA", nullptr, !rgb))
+                    mi->setSecondSightMonitor(false);
+                if (ImGui::MenuItem("AppleColor RGB", nullptr, rgb))
+                    mi->setSecondSightMonitor(true);
+                end_menu();
+            }
+            if (begin_menu("View")) {
+                const int view = mi->getSecondSightView();
+                if (ImGui::MenuItem("IIgs monitor", "F11", view == 0))
+                    mi->setSecondSightView(0);
+                if (ImGui::MenuItem("Second Sight monitor", "F11", view == 1))
+                    mi->setSecondSightView(1);
+                if (ImGui::MenuItem("Both", "F11", view == 2))
+                    mi->setSecondSightView(2);
+                end_menu();
+            }
+            end_menu();
+        }
+        ImGui::Separator();
 
         if (begin_menu("Scaling")) {
             bool sharp = mi->getScalingSharp();

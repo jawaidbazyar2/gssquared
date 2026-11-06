@@ -187,6 +187,29 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
+	// GS Composite requires its optional encoder, unlike CPU composite and mono.
+	if (menuItem.action == @selector(monitorGSComposite:)) {
+		return getMenuInterface()->monitorAvailable(MONITOR_GS_COMPOSITE);
+	}
+	// Second Sight menus follow the installed card. Checkmarks show saved
+	// preferences; hardware selections may still be waiting for Restart.
+	if (menuItem.action == @selector(secondSightOptions:))
+		return getMenuInterface()->hasSecondSightZ180();
+	if (menuItem.action == @selector(secondSightFirmware:) || menuItem.action == @selector(secondSightLattice:) ||
+		menuItem.action == @selector(secondSightInt0:)) {
+		MenuInterface *mi = getMenuInterface();
+		const int selected = menuItem.action == @selector(secondSightFirmware:) ? mi->getSecondSightFirmware()
+			: menuItem.action == @selector(secondSightLattice:) ? mi->getSecondSightLattice() : mi->getSecondSightInt0Pullup();
+		[menuItem setState:(selected == menuItem.tag) ? NSControlStateValueOn : NSControlStateValueOff];
+		return mi->hasSecondSightZ180();
+	}
+	if (menuItem.action == @selector(secondSightMonitor:) || menuItem.action == @selector(secondSightScreen:)) {
+		MenuInterface *mi = getMenuInterface();
+		int selected = menuItem.action == @selector(secondSightMonitor:)
+			? mi->getSecondSightRGBMonitor() : mi->getSecondSightView();
+		[menuItem setState:(selected == menuItem.tag) ? NSControlStateValueOn : NSControlStateValueOff];
+		return mi->hasSecondSightZ180();
+	}
 	if (menuItem.action == @selector(appQuit:)) {
 		return !getMenuInterface()->isEmulationRunning();
 	}
@@ -305,6 +328,18 @@ I don't know what all these words mean exactly. But I confirmed it does seem to 
 - (void)monitorMonoGreen:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_GREEN); (void)sender; }
 - (void)monitorMonoAmber:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_AMBER); (void)sender; }
 - (void)monitorMonoWhite:(id)sender  { getMenuInterface()->setMonitor(MONITOR_MONO_WHITE); (void)sender; }
+// Give Second Sight submenu parents an action so Cocoa validates availability.
+- (void)secondSightOptions:(id)sender { (void)sender; }
+// Menu tags match Second Sight firmware indices saved for Restart.
+- (void)secondSightFirmware:(id)sender { getMenuInterface()->setSecondSightFirmware([sender tag]); }
+// A nonzero tag selects the revised Second Sight U7 Lattice chip equations.
+- (void)secondSightLattice:(id)sender { getMenuInterface()->setSecondSightLattice([sender tag] != 0); }
+// A nonzero tag adds the Second Sight INT0 pull-up modification.
+- (void)secondSightInt0:(id)sender { getMenuInterface()->setSecondSightInt0Pullup([sender tag] != 0); }
+// A nonzero tag selects the AppleColor RGB cable sensed by Second Sight.
+- (void)secondSightMonitor:(id)sender { getMenuInterface()->setSecondSightMonitor([sender tag] != 0); }
+// Tags 0/1/2 select IIgs/card/both without stopping Second Sight execution.
+- (void)secondSightScreen:(id)sender { getMenuInterface()->setSecondSightView([sender tag]); }
 - (void)displayFullScreen:(id)sender { getMenuInterface()->displayFullScreen(); (void)sender; }
 - (void)toggleCrtShader:(id)sender   { getMenuInterface()->toggleCrtShader(); (void)sender; }
 - (void)togglePersistence:(id)sender { getMenuInterface()->toggleMonoPersistence(); (void)sender; }
@@ -789,6 +824,37 @@ static void setupMenus(void) {
 	[appleKeysMenuItem setSubmenu:appleKeysMenu];
 	[settingsMenu addItem:appleKeysMenuItem];
 
+	// Second Sight hardware menus use item indices as setting values. Keep
+	// firmware independent of the capture-chip choice and explain Restart.
+	NSMenu *ssMenu = [[[NSMenu alloc] initWithTitle:@"Second Sight"] autorelease];
+	NSMenuItem *ssItem = [[[NSMenuItem alloc] initWithTitle:@"Second Sight"
+		action:@selector(secondSightOptions:) keyEquivalent:@""] autorelease];
+	[ssItem setTarget:sMenuHandler];
+	[ssItem setSubmenu:ssMenu];
+	[settingsMenu addItem:ssItem];
+	NSMenuItem *ssNotice = [[[NSMenuItem alloc] initWithTitle:@"Applies at power-on or Restart"
+		action:nil keyEquivalent:@""] autorelease];
+	[ssNotice setEnabled:NO];
+	[ssMenu addItem:ssNotice];
+	for (int group = 0; group < 3; ++group) {
+		NSString *title = group == 0 ? @"Firmware" : group == 1 ? @"Lattice chip" : @"INT0 pull-up";
+		NSMenu *submenu = [[[NSMenu alloc] initWithTitle:title] autorelease];
+		NSMenuItem *parent = [[[NSMenuItem alloc] initWithTitle:title action:nil keyEquivalent:@""] autorelease];
+		[parent setSubmenu:submenu];
+		[ssMenu addItem:parent];
+		NSArray *labels = group == 0 ? @[@"1.4-BEEF (original)", @"1.5-CBFC", @"2.0-3277"]
+			: group == 1 ? @[@"Original (BE8C)", @"v2.0 (BBB1)"] : @[@"None (stock card)", @"Added (card modification)"];
+		SEL action = group == 0 ? @selector(secondSightFirmware:) : group == 1 ? @selector(secondSightLattice:) : @selector(secondSightInt0:);
+		for (NSUInteger i = 0; i < labels.count; ++i) {
+			NSMenuItem *item = [[[NSMenuItem alloc] initWithTitle:labels[i]
+				action:action
+				keyEquivalent:@""] autorelease];
+			[item setTarget:sMenuHandler];
+			[item setTag:i];
+			[submenu addItem:item];
+		}
+	}
+
 	NSMenuItem *sleepItem = [[[NSMenuItem alloc]
 		initWithTitle:NSLocalizedString(@"Sleep / Busy Wait", nil)
 		       action:@selector(toggleSleepMode:)
@@ -853,6 +919,34 @@ static void setupMenus(void) {
 		keyEquivalent:@""] autorelease];
 	[monitorMenuItem setSubmenu:monitorMenu];
 	[displayMenu addItem:monitorMenuItem];
+	// Second Sight monitor/view menus use the same tags as shared settings,
+	// so Cocoa validation can derive checkmarks without touching the card.
+	NSMenu *ssDisplayMenu = [[[NSMenu alloc] initWithTitle:@"Second Sight"] autorelease];
+	NSMenuItem *ssDisplayItem = [[[NSMenuItem alloc] initWithTitle:@"Second Sight"
+		action:@selector(secondSightOptions:) keyEquivalent:@""] autorelease];
+	[ssDisplayItem setTarget:sMenuHandler];
+	[ssDisplayItem setSubmenu:ssDisplayMenu];
+	[displayMenu addItem:ssDisplayItem];
+	for (int group = 0; group < 2; ++group) {
+		NSString *title = group == 0 ? @"Monitor" : @"View";
+		NSMenu *submenu = [[[NSMenu alloc] initWithTitle:title] autorelease];
+		NSMenuItem *parent = [[[NSMenuItem alloc] initWithTitle:title
+			action:@selector(secondSightOptions:) keyEquivalent:@""] autorelease];
+		[parent setTarget:sMenuHandler];
+		[parent setSubmenu:submenu];
+		[ssDisplayMenu addItem:parent];
+		NSArray *labels = group == 0 ? @[@"VGA", @"AppleColor RGB"]
+			: @[@"IIgs monitor", @"Second Sight monitor", @"Both"];
+		for (NSUInteger i = 0; i < labels.count; ++i) {
+			NSMenuItem *item = [[[NSMenuItem alloc] initWithTitle:labels[i]
+				action:group == 0 ? @selector(secondSightMonitor:) : @selector(secondSightScreen:)
+				keyEquivalent:@""] autorelease];
+			[item setTarget:sMenuHandler];
+			[item setTag:i];
+			[submenu addItem:item];
+		}
+	}
+	[displayMenu addItem:[NSMenuItem separatorItem]];
 
 	NSMenu *scalingMenu = [[[NSMenu alloc] initWithTitle:NSLocalizedString(@"Scaling", nil)] autorelease];
 	struct { NSString *title; SEL action; } scalingItems[] = {

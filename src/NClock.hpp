@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cstdint>
+#include <algorithm>
 #include "ui/MainAtlas.hpp" 
 #include "devices/displaypp/VideoScannerII.hpp"
 #include "PlatformIDs.hpp"
@@ -50,6 +51,8 @@ enum cycle_type_t {
     CYCLE_TYPE_FAST_ROM = 1,
     CYCLE_TYPE_FAST = 2,
     CYCLE_TYPE_REFRESH = 3,
+    // RDY has advanced the motherboard clocks for this retained CPU cycle.
+    CYCLE_TYPE_HELD = 4,
 };
 
 class NClock {
@@ -325,6 +328,10 @@ protected:
     uint64_t ram_refresh_cycles = 0;
     uint64_t vidlinecycles = 0;
     uint64_t video_c14m = 0;
+    // Second Sight can retain one slow-bus cycle with RDY low. Keep its
+    // accepted end tick so CPU retirement does not charge that time twice.
+    uint64_t slot_cycle_end = 0;
+    bool slot_cycle_held = false;
 
     public:
     NClockIIgs(clock_set_t clock_set = CLOCK_SET_US, clock_mode_t clock_mode = CLOCK_2_8MHZ) : NClockII(clock_set, clock_mode) {
@@ -336,18 +343,99 @@ protected:
     /* set the next cycle type. This is called by the MMU when it knows what kind of cycle it's doing. */
     inline void set_next_cycle_type(cycle_type_t type) { cycle_type = type; }
 
+    // A slot period is 14 ticks except at the extended raster period. Each
+    // caller retains its own phase calculation; this only selects its length.
+    static constexpr uint64_t slot_period(bool extended) { return extended ? 16 : 14; }
+
+    // Retain the selected slow transfer's completion opportunity. The FPI
+    // (Fast Processor Interface) synchronizes the CPU clock PH2 to the Apple
+    // bus clock PH0; the raster's 65th period is 16 master ticks,
+    // the others 14 (IIgs Hardware Reference, 2nd ed., pp.13-15; Cortland
+    // Custom ICs, 14 February 1986, pp.22-24). No CPU cycle retires here.
+    uint64_t begin_slot_cycle() {
+        // Predict the ordinary sync path below without advancing it. A card
+        // that leaves RDY high must not change refresh accounting or timing.
+        uint64_t duration = 14;
+        if (video_cycle_14M_count) duration += 14 - video_cycle_14M_count;
+        if (video_scanner && vidlinecycles + (video_cycle_14M_count + duration) / 14 >= 65)
+            duration += current.extra_per_scanline;
+        slot_cycle_end = get_c14m() + duration;
+        slot_cycle_held = false;
+        return slot_cycle_end;
+    }
+
+    // Second Sight holds RDY (Ready) low while the CPU waits. end is an
+    // absolute 14.31818 MHz host tick through which the card has resolved its
+    // bus pins. Advance video and scheduled devices without advancing the
+    // CPU cycle counter or its
+    // interrupt pipeline (Apple IIgs Technical Note 68, "Using the Ready
+    // Signal"; Apple IIgs Hardware Reference, pp. 58-60, 104).
+    void advance_slot_hold(uint64_t end) {
+        // The card worker can publish a time already consumed by the
+        // access that waited for it. It must not hold the next CPU cycle.
+        if (end <= get_c14m()) return;
+        slot_cycle_held = true;
+        cycle_type = CYCLE_TYPE_HELD;
+        if (end > slot_cycle_end) slot_cycle_end = end;
+        c14m.process_due();
+        vid.process_due();
+        // Stop at each video-period end or earlier scheduled device event.
+        // Device callbacks run before selecting the next stop, so they can
+        // schedule another event inside the same RDY hold.
+        while (get_c14m() < end) {
+            const uint64_t period = slot_period(vidlinecycles == 64);
+            const uint64_t raster = get_c14m() + period - video_cycle_14M_count;
+            const uint64_t stop = std::min({end, raster, c14m.next_event().v});
+            const uint64_t elapsed = stop - get_c14m();
+            c14m.add(elapsed);
+            video_c14m = stop;
+            video_cycle_14M_count += elapsed;
+            ram_refresh_cycles = (ram_refresh_cycles + elapsed) % 50;
+            if (stop == raster) {
+                video_cycle_14M_count = 0;
+                vidlinecycles = (vidlinecycles + 1) % 65;
+                if (video_scanner) video_scanner->video_cycle();
+                vid.tick();
+                for (auto &handler : cycle_handlers) handler();
+                vid.process_due();
+            }
+            c14m.process_due();
+        }
+    }
+
+    // Keep RDY retirement out of ordinary IIgs cycles. Only a retained slot
+    // access needs the device-clock advance (Apple IIgs Technical Note 68,
+    // "Using the Ready Signal").
+    [[gnu::noinline, gnu::cold]] void retire_held_slot() {
+        advance_slot_hold(slot_cycle_end);
+        slot_cycle_end = 0;
+        slot_cycle_held = false;
+        cycle_type = CYCLE_TYPE_FAST;
+        cpu_div = 0;
+    }
+
     // IIgs
     // Fast path: N CPU cycles per 14M when ludicrous. SYNC / slow / 1 MHz ignore N.
     inline void slow_incr_cycles() override {
         cpu.add(1);
-        if (slow_mode) cycle_type = CYCLE_TYPE_SYNC;
-        if (current.hz_rate == 1020484) cycle_type = CYCLE_TYPE_SYNC; // also get refresh for "free" here.
-
-        const bool sync_cycle = (cycle_type == CYCLE_TYPE_SYNC);
-        if (sync_cycle) {
-            // Slow accesses stay 1 MHz; do not apply ludicrous multiplier.
-            cpu_div = 0;
-        } else if (cpu_per_14m > 1) {
+        uint64_t c14m_this_cycle;
+        // Use the existing cycle selection for RDY retirement, so ordinary
+        // cycles need no separate held-flag load. Only advance_slot_hold sets
+        // HELD; the MMU retains that bus cycle until it may retire
+        // (Apple IIgs Technical Note 68, "Using the Ready Signal").
+        switch (cycle_type) {
+        case CYCLE_TYPE_HELD:
+            retire_held_slot();
+            return;
+        case CYCLE_TYPE_SYNC:
+            goto sync_cycle;
+        default:
+            break;
+        }
+        // A slow machine still synchronizes every ordinary cycle. A held
+        // cycle above has already advanced its clocks and must not repeat it.
+        if (slow_mode || current.hz_rate == 1020484) goto sync_cycle;
+        if (cpu_per_14m > 1) {
             if (++cpu_div < cpu_per_14m) {
                 cycle_type = CYCLE_TYPE_FAST;
                 return;
@@ -355,17 +443,7 @@ protected:
             cpu_div = 0;
         }
         
-        uint64_t c14m_this_cycle;
-        if (sync_cycle) {
-    
-            c14m_this_cycle = 14;                                   // if PH2 start lines up with PH0 start.. 
-            if (video_cycle_14M_count) c14m_this_cycle += (14 - video_cycle_14M_count); // otherwise wait until end of next PH0, then 14 more C14s.
-            //ram_refresh_cycles = 0;                                 // our refresh needs are satisfied for a bit.
-            ram_refresh_cycles += c14m_this_cycle;
-            if (ram_refresh_cycles >= 50) {
-                ram_refresh_cycles -= 50;
-            }
-        } else if (cycle_type == CYCLE_TYPE_FAST_ROM) {
+        if (cycle_type == CYCLE_TYPE_FAST_ROM) {
     
             c14m_this_cycle = current.c_14M_per_cpu_cycle;
             //ram_refresh_cycles = 0;
@@ -382,6 +460,17 @@ protected:
                 c14m_this_cycle += 5; // a refresh cycle is 10 14M's long total.
             } 
         } 
+        goto advance_cycle;
+
+    sync_cycle:
+        // Slow accesses stay 1 MHz; do not apply the ludicrous multiplier.
+        cpu_div = 0;
+        c14m_this_cycle = 14;
+        if (video_cycle_14M_count) c14m_this_cycle += 14 - video_cycle_14M_count;
+        ram_refresh_cycles += c14m_this_cycle;
+        if (ram_refresh_cycles >= 50) ram_refresh_cycles -= 50;
+
+    advance_cycle:
         c14m.add(c14m_this_cycle);
     
         // if a slow cycle we can use 14-video_accum (or, 16-video_accum for h=64) to get the number of 14Ms to add to

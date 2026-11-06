@@ -15,6 +15,9 @@ public:
     BaseCPU(NClock *clock) { this->clock = clock; }
     virtual ~BaseCPU() = default;
     virtual int execute_next(cpu_state *cpu) = 0;
+    // Second Sight's host loop can omit trace collection between debugger
+    // stops. CPUs without a separate implementation keep their ordinary path.
+    virtual int execute_next_untraced(cpu_state *cpu) { return execute_next(cpu); }
     virtual void reset(cpu_state *cpu) = 0;
     virtual const char *get_name() = 0;
     virtual void set_clock(NClock *clock) { this->clock = clock; }

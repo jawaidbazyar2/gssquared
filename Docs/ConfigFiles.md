@@ -139,8 +139,18 @@ card = "bazfast3"
 Rules that bite people:
 
 - **One card per slot.** Do not list the same slot twice.
-- **Some cards only fit certain slots or machines.** Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. Second Sight and the Video Overlay Card are IIgs-only and slot 3 only.
+- **Some cards only fit certain slots or machines.** Example: Videx 80-column card is slot 3 only, and only on Apple II / II+. The simulated Second Sight and the Video Overlay Card are IIgs-only and slot 3 only. Second Sight (with Z180) is IIgs-only and can use slots 1–7.
 - **Most cards allow only one instance.** Mockingboard and Disk II are exceptions — you can have two Mockingboards in different slots.
+
+For **Second Sight (with Z180)**, select the card in the config editor slot list or write:
+
+```toml
+[[cards]]
+slot = 3
+card = "second_sight_z180"
+```
+
+Use only one Second Sight implementation per machine. Firmware and Lattice chip are Settings → Second Sight preferences; monitor type and visible screen are Display menu preferences. They are saved in app settings, not card fields in this file. See [Second Sight](Cards_SecondSight.md).
 
 ### Card types
 
@@ -160,7 +170,8 @@ Rules that bite people:
 | `"prodos_block2"` | Deprecated - do not use; prefer `"bazfast3"` |
 | `"bazfast3"` | SmartPort / hard-disk controller (also accepts `"smartport"` or `"pdblock3"`) |
 | `"vidhd"` | [VIDHD](Cards_VIDHD.md) (65816 //e only) |
-| `"second_sight"` | [Second Sight](Cards_SecondSight.md) (IIgs only) |
+| `"second_sight"` | [Second Sight](Cards_SecondSight.md), simulated card (IIgs only) |
+| `"second_sight_z180"` | [Second Sight (with Z180)](Cards_SecondSight.md) (IIgs only) |
 | `"voc"` | [Video Overlay Card](Cards_VOC.md) (IIgs only, slot 3) |
 | `"super_serial"` | [Super Serial Card](Cards_SuperSerial.md) |
 | `"uthernet2"` | [Uthernet II](Cards_UthernetII.md) (IIe + IIgs; slots 1–7) |
@@ -512,3 +523,5 @@ App settings and leftover PrefPath BRAM stay in the per-user prefs directory (`S
 
 - **[SystemConfigTOML.md](SystemConfigTOML.md)** — full schema, validation rules, connection port registry, load/save behavior, and design notes.
 - **Fixture examples in the repo** — `apps/systemconfigtest/fixtures/*.gs2` and `* Settings.txt` are real files GS2’s tests load successfully; useful as copy-paste starting points.
+
+The `[second_sight]` app-settings table stores `firmware` (`1.4`, `1.5`, or `2.0`), `lattice_chip` (`original` or `v2.0`) and `int0_pullup` (`false` for the stock card, `true` for the pull-up modification). Older chip selections are migrated when settings load.

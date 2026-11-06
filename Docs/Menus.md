@@ -80,6 +80,10 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
     * Command = Open Apple
     * Alt = Open Apple
     * Left Option = Open Apple
+  * Second Sight
+    * Firmware: 1.4-BEEF (original) / 1.5-CBFC / 2.0-3277
+    * Lattice chip: Original (BE8C) / v2.0 (BBB1)
+    * INT0 pull-up: None (stock card) / Added (card modification)
   * Sleep / Busy Wait
   * Mono Helper
   * Right Mouse Button Accelerate
@@ -91,6 +95,8 @@ Capture Mouse - see [Using a Mouse](Mouse.md)
 **Disconnected When No Gamepad** — when checked, paddle/button lines float as if no joystick were plugged in. When unchecked (default), an absent gamepad still reports a centered stick so software like Total Replay keeps joystick titles visible. See [Joysticks](Joysticks.md).
 
 **Apple Keys** chooses the host keys for Open Apple and Closed Apple. Available whether or not a machine is running. See [Using a Keyboard](KeyboardShortcuts.md).
+
+**Second Sight** selects the firmware and Lattice chip for **Second Sight (with Z180)**. The options are grayed out without that card, remembered in app settings (also across browser reloads), and applied at power-on or **Machine → Restart**. Every firmware/chip pairing is selectable. Changing firmware leaves the chip choice intact. Defaults are 1.4-BEEF (original) and Original (BE8C). **INT0 pull-up** adds a card modification that lets the VGA retrace interrupt reach the Z180; the default is the stock card. See [Second Sight](Cards_SecondSight.md).
 
 **Sleep / Busy Wait** — when checked, the emulator sleeps between frames instead of busy-waiting (lower host CPU). Same as the [`-s`](CommandLine.md) flag.
 
@@ -112,14 +118,28 @@ Drive seek/activity sounds play in stereo (drive 1 toward the left, drive 2 towa
     * Drives
   * Full Screen
   * Second Sight Text
-  * CRT Shader
+  * Second Sight
+    * Monitor
+      * VGA
+      * AppleColor RGB
+    * View
+      * IIgs monitor
+      * Second Sight monitor
+      * Both
+  * Shadow Mask
 
 **HUD → Stats** toggles the small performance/stats overlay (off by default).  
 **HUD → Drives** toggles the drive-activity strip at the bottom of the screen (on by default).  
 Both are useful when recording video and you want a clean picture. Preferences are remembered in app settings.
 
-**Second Sight Text** (IIgs with a Second Sight card) renders Apple II 40/80-column text through the card’s VGA path. Grayed out if the current machine has no Second Sight. See [Second Sight](Cards_SecondSight.md) and [Displays](Displays.md).  
-**CRT Shader** applies a GPU CRT effect. Shortcut: **F7**. Available on macOS, Windows, and Linux. See [Displays](Displays.md).
+**Second Sight Text** (IIgs with the simulated Second Sight card) renders Apple II 40/80-column text through the card’s VGA path. Grayed out if the current machine has no Second Sight. See [Second Sight](Cards_SecondSight.md) and [Displays](Displays.md).
+**Second Sight → Monitor → VGA / AppleColor RGB** selects the monitor attached to **Second Sight (with Z180)**. VGA is the default. The ROM reads the monitor sense at each card mode change. The choice takes effect at the next card mode change; **Machine → Restart** shows it at once.
+
+**Second Sight → View → IIgs monitor / Second Sight monitor / Both** selects the main-window picture or shows both independent outputs. Native builds use a separate card window for both; the browser shows them side by side. **F11** cycles the three choices. Both is the default. These view and monitor-type items are grayed out without Second Sight (with Z180) and remembered in app settings. See [Second Sight](Cards_SecondSight.md).
+
+**Shadow Mask** toggles the CRT effect. Shortcut: **F7**. The IIgs uses the GPU shader on macOS, Windows, and Linux. Second Sight uses software scanlines in either window and in the browser, including its border; line spacing and interlaced fields follow the card's signal. Off is the default. See [Displays](Displays.md).
+
+GPU-only choices, including **GS Composite** and **Monochrome persistence**, are grayed out when their required shaders or render targets are unavailable. Composite and monochrome still work through the CPU decoder.
 
 Hover speed and display widgets appear automatically when the mouse is over the window and is not captured. There is no Hover Enable menu item. See [On-Screen Display](OSD.md).
 
