@@ -183,11 +183,31 @@ static const float normalized_levels[16] = {
                 chips[c].registers[Mixer_Control] = 0x3F; // channels disabled
                 chips[c].live_registers[Mixer_Control] = 0x3F; // channels disabled
                 chips[c].mixer_control = 0x3F; // channels disabled
+                // With tone and noise both disabled the mixer passes the level
+                // straight through, so stale volumes would become a DC step.
+                for (int i = 0; i < 3; i++) {
+                    chips[c].tone_channels[i].period = 0;
+                    chips[c].tone_channels[i].counter = 1;
+                    chips[c].tone_channels[i].output = false;
+                    chips[c].tone_channels[i].volume = 0;
+                    chips[c].tone_channels[i].use_envelope = false;
+                }
+                chips[c].noise_period = 1;
+                chips[c].noise_output = false;
+                chips[c].envelope_period = 0;
+                chips[c].envelope_shape = 0;
+                chips[c].envelope_counter = 0;
+                chips[c].envelope_output = 0;
+                chips[c].envelope_hold = false;
+                chips[c].envelope_attack = false;
+                chips[c].current_envelope_level = 0.0f;
+                chips[c].target_envelope_level = 0.0f;
                 // Invalidate the AY register-address latch on reset (see
                 // constructor comment). Any value >= AY_8913_REGISTER_COUNT
                 // serves as the sentinel for "no register selected".
                 reg_num[c] = 0xFF;
             }
+            pending_events.clear();
             // Zero the R-channel decorrelation delay line so reset produces
             // a clean output with no residual samples from the previous run.
             for (size_t i = 0; i < MONO_DECORR_DELAY; i++) r_delay_buf[i] = 0.0f;
@@ -600,6 +620,11 @@ static const float normalized_levels[16] = {
                         const ToneChannel& tone = chip.tone_channels[channel];
                         bool tone_dis  = (chip.mixer_control >> channel) & 1;       // 1 = disabled
                         bool noise_dis = (chip.mixer_control >> (channel + 3)) & 1; // 1 = disabled
+                        // The tone generator doesn't run at period 0, so tone.output is
+                        // frozen; gating on it turns volume changes into clicks.
+                        if (!tone_dis && tone.period == 0) {
+                            continue;
+                        }
                         bool gate = (tone.output || tone_dis) && (chip.noise_output || noise_dis);
                         mixed_output[c] += gate ? tone.volume : 0.0f;
                     }
