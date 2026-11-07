@@ -183,11 +183,31 @@ static const float normalized_levels[16] = {
                 chips[c].registers[Mixer_Control] = 0x3F; // channels disabled
                 chips[c].live_registers[Mixer_Control] = 0x3F; // channels disabled
                 chips[c].mixer_control = 0x3F; // channels disabled
+                // With tone and noise both disabled the mixer passes the level
+                // straight through, so stale volumes would become a DC step.
+                for (int i = 0; i < 3; i++) {
+                    chips[c].tone_channels[i].period = 0;
+                    chips[c].tone_channels[i].counter = 1;
+                    chips[c].tone_channels[i].output = false;
+                    chips[c].tone_channels[i].volume = 0;
+                    chips[c].tone_channels[i].use_envelope = false;
+                }
+                chips[c].noise_period = 1;
+                chips[c].noise_output = false;
+                chips[c].envelope_period = 0;
+                chips[c].envelope_shape = 0;
+                chips[c].envelope_counter = 0;
+                chips[c].envelope_output = 0;
+                chips[c].envelope_hold = false;
+                chips[c].envelope_attack = false;
+                chips[c].current_envelope_level = 0.0f;
+                chips[c].target_envelope_level = 0.0f;
                 // Invalidate the AY register-address latch on reset (see
                 // constructor comment). Any value >= AY_8913_REGISTER_COUNT
                 // serves as the sentinel for "no register selected".
                 reg_num[c] = 0xFF;
             }
+            pending_events.clear();
             // Zero the R-channel decorrelation delay line so reset produces
             // a clean output with no residual samples from the previous run.
             for (size_t i = 0; i < MONO_DECORR_DELAY; i++) r_delay_buf[i] = 0.0f;
@@ -592,53 +612,22 @@ static const float normalized_levels[16] = {
                 for (int c = 0; c < 2; c++) {
     
                     const AY3_8910& chip = chips[c];
-#if 0
+                    // AY data sheet mixer: a channel conducts while its tone and
+                    // noise gates are both open; a disabled source is open. With
+                    // both disabled, the level register drives the output
+                    // directly, which is how samples are played.
                     for (int channel = 0; channel < 3; channel++) {
                         const ToneChannel& tone = chip.tone_channels[channel];
                         bool tone_dis  = (chip.mixer_control >> channel) & 1;       // 1 = disabled
                         bool noise_dis = (chip.mixer_control >> (channel + 3)) & 1; // 1 = disabled
-                    
-                        bool tone_gate  = tone.output  || tone_dis;   // disabled = forced open
-                        bool noise_gate = chip.noise_output || noise_dis;
-                    
-                        bool gate = tone_gate && noise_gate;           // AND logic
-                    
-                        float channel_output = gate ? tone.volume : 0.0f;
-                        mixed_output[c] += channel_output;
-                    }
-#endif
-#if 1
-                    for (int channel = 0; channel < 3; channel++) {
-                        const ToneChannel& tone = chip.tone_channels[channel];
-                        bool tone_enabled = !(chip.mixer_control & (1 << channel));
-                        bool noise_enabled = !(chip.mixer_control & (1 << (channel + 3)));
-    
-                        // Only process if the channel has volume
-                        // If either tone or noise is enabled for this channel
-                        bool is_tone = tone_enabled && tone.period > 0 && (chip.registers[Ampl_A + channel] > 0);
-                        bool is_noise = noise_enabled;
-    
-                        if (is_tone || is_noise) {
-                            // For tone: true = +volume, false = -volume
-                            float tone_contribution = tone.output ? tone.volume : 0 /* -tone.volume */;
-                            
-                            // For noise: true = +volume, false = -volume
-                            float noise_contribution = (chip.noise_output ? tone.volume : 0 /* -tone.volume */) /* * 0.6f */;
-                            float channel_output;
-    
-                            // If both are enabled, average them
-                            if (is_tone && is_noise) {
-                                channel_output = (tone_contribution + noise_contribution) /* * 0.5f */;
-                            } else if (is_tone) {
-                                channel_output = tone_contribution;
-                            } else if (is_noise) {
-                                channel_output = noise_contribution;
-                            }
-                            //channel_output = applyLowPassFilter(channel_output, c, channel);
-                            mixed_output[c] += channel_output;
+                        // The tone generator doesn't run at period 0, so tone.output is
+                        // frozen; gating on it turns volume changes into clicks.
+                        if (!tone_dis && tone.period == 0) {
+                            continue;
                         }
+                        bool gate = (tone.output || tone_dis) && (chip.noise_output || noise_dis);
+                        mixed_output[c] += gate ? tone.volume : 0.0f;
                     }
-#endif
                     
                 }
                 // TODO: add checks here to detect overdriving/exceeding -1.0/1.0.
