@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdint>
 #include <cassert>
 #include <cstring>
@@ -86,7 +87,14 @@ static void ensoniq_flush_sdl_staging(ensoniq_state_t *st) {
     // Once the host is already holding ~100ms, drop this frame. Oscillator
     // state was already advanced in catch-up. Same idea as the speaker
     // MAX_QUEUE skip.
-    const int cap_bytes = (int)((uint64_t)dst_rate * (uint32_t)ch * sizeof(int16_t) * 100 / 1000);
+    // SDL's Emscripten callback can be 64 ms at 16 kHz. Reserve two complete
+    // callback buffers there, so a single long video frame need not empty it.
+    // Keep the queue cap at least three callback buffers and the target at
+    // two. This absorbs long frames without changing Ensoniq DOC (Digital
+    // Oscillator Chip) sample generation or interrupt timing.
+    const int callback_bytes = (int)(st->sdl_callback_frames * ch * sizeof(int16_t));
+    const int cap_bytes = std::max((int)((uint64_t)dst_rate * (uint32_t)ch * sizeof(int16_t) * 100 / 1000),
+                                   3 * callback_bytes);
     if (cap_bytes > 0 && queued_now > cap_bytes) {
         st->sdl_staging_count = 0;
         st->resample_pos = 0.0;
@@ -97,9 +105,9 @@ static void ensoniq_flush_sdl_staging(ensoniq_state_t *st) {
     // 1024 frames); if the queue dips below that, the callback pads with silence,
     // which is an audible dropout. Prefill on (re)start, then trim the resample
     // ratio ±0.5% to hold the target depth.
-    const int target_bytes = (int)(dst_rate * ch * sizeof(int16_t) * 60 / 1000);
+    const int target_bytes = std::max((int)(dst_rate * ch * sizeof(int16_t) * 60 / 1000), 2 * callback_bytes);
     if (queued_now == 0) {
-        uint32_t pre = dst_rate / 20;  // 50ms of silence (frames)
+        uint32_t pre = std::max(dst_rate / 20, 2 * st->sdl_callback_frames); // Startup reserve, in frames.
         if (pre > ensoniq_state_t::SDL_STAGING_CAP) pre = ensoniq_state_t::SDL_STAGING_CAP;
         std::memset(st->sdl_resample_buf, 0, pre * ch * sizeof(int16_t));
         SDL_PutAudioStreamData(st->stream, st->sdl_resample_buf, (int)(pre * ch * sizeof(int16_t)));
@@ -521,6 +529,14 @@ void init_ensoniq_slot(computer_t *computer, SlotType_t slot) {
     
     // SDL stream at host device rate; we resample DOC→device once per frame.
     st->sdl_device_rate = st->audio_system->get_device_sample_rate();
+#ifdef __EMSCRIPTEN__
+    // Query the opened device, not a nominal sample rate: Chrome may choose
+    // 16 kHz, where SDL's 1024-frame callback lasts 64 ms.
+    SDL_AudioSpec device_spec;
+    int callback_frames = 0;
+    if (SDL_GetAudioDeviceFormat(st->audio_system->get_audio_device_id(), &device_spec, &callback_frames))
+        st->sdl_callback_frames = std::max(0, callback_frames);
+#endif
     uint32_t es5503_output_rate = st->chip->calculate_output_rate();
     st->samples_per_frame = (float)es5503_output_rate / st->frame_rate;
     st->samples_accumulated = 0.0f;
