@@ -54,7 +54,7 @@ Generally speaking, GS2 is:
 
 [ ] Doing it about half right
 
-[x] AppleColor composite monitor colorburst latency. The IIe still emits burst on the burst window of the next scanline. The monitor waits 6 scanlines before decoding color, and keeps color for 131 scanlines (half a frame) after burst stops, including through VBL.
+[x] AppleColor composite monitor colorburst latency (issues #217, #223). The IIe emits burst on horz 13-16 (Sather clocks 53-56) when graphics is selected. The monitor's burst gate only sees the last two of those cycles (horz 15-16). It integrates burst energy: each line adds the number of gated cycles (0-2), and lines without burst bleed it off. Full burst: color on the 13th line, held 131 lines after burst stops (through VBL). VIDSYNC phase 0 (graphics through horz 14) never shows color. Phase 1 (one gated cycle on a 32-line box) turns color on at box line ~25 and off ~14 lines after the box. Phases 2-4 (two gated cycles) turn color on at box line ~13 and off ~40 lines after the box. Hardware shows unstable color near the switch points; we switch cleanly. Known gaps: on hardware #217 turns color on at line 7, not 13, and phase 3 turns color off later than phase 2.
 
 [ ] not switching character widths quite right (e.g. when switching from 40 to 80, latency in the switch interacting with the video shift registers )
 

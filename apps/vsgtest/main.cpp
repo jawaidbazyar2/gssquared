@@ -395,14 +395,14 @@ void check_bounds(Context &ctx) {
             break;
         }
     }
-    // Cold killer: the first 6 burst lines stay mono; color starts on line 6.
+    // Cold killer: the first 12 burst lines stay mono; color starts on line 12.
     if (bits->line_start(1) != 7 || bits->colorburst(1) != 0 || bits->phase_offset(1) != 0) {
         failures++;
         printf("\n  FAIL line 1 mode word %08X\n", l1[FrameBits::DOT_WORDS]);
     }
-    if (bits->colorburst(5) != 0 || bits->colorburst(6) != 1) {
+    if (bits->colorburst(11) != 0 || bits->colorburst(12) != 1) {
         failures++;
-        printf("\n  FAIL on-delay colorburst line5=%u line6=%u\n", bits->colorburst(5), bits->colorburst(6));
+        printf("\n  FAIL on-delay colorburst line11=%u line12=%u\n", bits->colorburst(11), bits->colorburst(12));
     }
     const uint32_t *l191 = bits->line(191);
     if (l191[17] != 0xFFFFFFFFu || bits->line_start(191) != 0 || bits->phase_offset(191) != 1) {
@@ -680,9 +680,9 @@ void check_gscomposite_rgb(Context &ctx) {
 }
 
 // Issue #217: hires from VBL end, text at line 100, hires again next frame.
-// Lines 0-5 stay mono (on delay). Lines 6-191 stay color, including the text
-// after the switch (off hold). The hold expires in VBL, so the next frame's
-// lines 0-5 are mono again.
+// Lines 0-11 stay mono (on delay; hardware shows 0-5, see AppleColorKiller).
+// Lines 12-191 stay color, including the text after the switch (off hold).
+// The hold expires in VBL, so the next frame's top lines are mono again.
 void check_colorburst_latency(Context &ctx) {
     printf("%-44s ", "AppleColor colorburst on/off latency");
     fflush(stdout);
@@ -699,7 +699,7 @@ void check_colorburst_latency(Context &ctx) {
     auto check = [&](const char *which) {
         const FrameBits *bits = vsgc.get_frame_bits();
         for (uint32_t y = 0; y < FrameBits::LINES; y++) {
-            const uint32_t want = (y < AppleColorKiller::kOnDelay) ? 0u : 1u;
+            const uint32_t want = (y < 12) ? 0u : 1u;
             if (bits->colorburst(y) != want) {
                 failures++;
                 printf("\n  FAIL %s line %u colorburst %u, expected %u\n",
@@ -725,6 +725,65 @@ void check_colorburst_latency(Context &ctx) {
         check(frame == 0 ? "switch frame" : "next frame");
     }
     delete scanner;
+    printf("%s\n", failures == before ? "ok" : "");
+}
+
+// Issue #223: VIDSYNC phases on a real IIe + AppleColor monitor. Text, with a
+// 32-line box (lines 80-111) whose HBL graphics pulse runs through horz 14 + phase.
+// The monitor gates horz 15-16, so phase 0 never shows color, phase 1 gives one
+// gated cycle, and phases 2-4 give two (they look the same on hardware).
+void check_colorburst_partial(Context &ctx) {
+    printf("%-44s ", "AppleColor partial burst window");
+    fflush(stdout);
+    int before = failures;
+    constexpr uint32_t BOX_TOP = 80, BOX_LINES = 32;
+
+    // first color line, first mono line after it (0, 0 = never color)
+    struct Expect { uint32_t phase, on, off; };
+    const Expect cases[] = {
+        { 0, 0, 0 },
+        { 1, BOX_TOP + 24, 125 },
+        { 2, BOX_TOP + 12, 151 },
+        { 3, BOX_TOP + 12, 151 },
+        { 4, BOX_TOP + 12, 151 },
+    };
+
+    for (const Expect &e : cases) {
+        VideoScannerII *scanner = make_scanner(SC_IIE, ctx.mmu);
+        VideoScanGenerator_Comp vsgc(ctx.rom_iie, false, nullptr);
+        vsgc.set_display_shift(true);
+        struct Capture : Render {
+            void render_lines(const FrameBits &, RGBA_t *, uint32_t) override {}
+        } capture;
+        vsgc.set_render(&capture);
+        scanner->set_hires();
+
+        for (int frame = 0; frame < 2; frame++) {
+            for (uint32_t c = 0; c < CYCLES_PER_FRAME; c++) {
+                const uint32_t line = c / 65;
+                const uint32_t hc = c % 65;
+                // VIDSYNC's HBL pulse: TEXT/GRAF takes effect one cycle after the write,
+                // so graphics runs horz 5 through horz 14 + phase.
+                if (line >= BOX_TOP && line < BOX_TOP + BOX_LINES) {
+                    if (hc == 4) scanner->set_graf();
+                    else if (hc == 14 + e.phase) scanner->set_text();
+                }
+                scanner->video_cycle();
+            }
+            vsgc.generate_frame(scanner->get_frame_scan());
+            const FrameBits *bits = vsgc.get_frame_bits();
+            for (uint32_t y = 0; y < FrameBits::LINES; y++) {
+                const uint32_t want = (y >= e.on && y < e.off) ? 1u : 0u;
+                if (bits->colorburst(y) != want) {
+                    failures++;
+                    printf("\n  FAIL phase %u, frame %d line %u colorburst %u, expected %u\n",
+                           e.phase, frame, y, bits->colorburst(y), want);
+                    break;
+                }
+            }
+        }
+        delete scanner;
+    }
     printf("%s\n", failures == before ? "ok" : "");
 }
 
@@ -895,6 +954,7 @@ int main(int argc, char **argv) {
     check_geometry(ctx);
     check_bounds(ctx);
     check_colorburst_latency(ctx);
+    check_colorburst_partial(ctx);
     if (ctx.gpu && ctx.gpu->gs_ok && ctx.gpu->src) {
         check_gscomposite_image(ctx);
         check_gscomposite_rgb(ctx);
