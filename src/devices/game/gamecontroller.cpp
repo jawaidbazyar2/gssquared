@@ -45,16 +45,13 @@
  */
 
 /**
- * Each input (start with two) will decay to 0 over time,
- * at which point we flip the high bit of the register on.
- * At each read of -any- inputs, we decrement -all- the input
- * counters.
- * 
- * The counters are measured in cycles.
- * 
- * Read the Mouse X,Y location.
- * 3ms is what the //e reference says the decay time is.
- * 3ms = 2800 cycles.
+ * Paddle axes are NE558 one-shots (Apple IIe Tech Note #6; MAME PR 8504).
+ * A $C070 strobe restarts an axis only after that axis has expired.
+ * A running axis is left alone. Each axis is independent, so a second
+ * read of a longer axis can return early.
+ *
+ * game_input_trigger[] is the 14 MHz cycle when the axis expires.
+ * Bit 7 of $C064–$C067 stays set until then. Full scale is ~3 ms.
  */
 
 // and scaled for 14M cycles
@@ -84,6 +81,16 @@ inline bool paddles_report_disconnected(const gamec_state_t *ds) {
 inline uint64_t paddle_trigger_at(gamec_state_t *ds, int apple_0_255) {
     return ds->clock->get_c14m()
          + (GAME_INPUT_DECAY_TIME * apple_0_255) / 255;
+}
+
+// Restart one axis. A finite timer still running is not retriggerable.
+// UINT64_MAX is the open-input sentinel (no pot), not a timing cycle, so a
+// later real position — or another open strobe — may replace it.
+inline void arm_paddle_axis(gamec_state_t *ds, int axis, uint64_t trigger_at) {
+    uint64_t current = ds->game_input_trigger[axis];
+    if (current == UINT64_MAX || current <= ds->clock->get_c14m()) {
+        ds->game_input_trigger[axis] = trigger_at;
+    }
 }
 
 inline uint8_t bit7_with_float(gamec_state_t *ds, bool pressed) {
@@ -205,20 +212,21 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
         int x = std::clamp(static_cast<int>(std::round(float(mouse_x) / WINDOW_WIDTH * 255)), 0, 255);
         int y = std::clamp(static_cast<int>(std::round(float(mouse_y) / WINDOW_HEIGHT * 255)), 0, 255);
         if (ds->paddle_flip_01) {
-            ds->game_input_trigger[0] = paddle_trigger_at(ds, 255 - y);
-            ds->game_input_trigger[1] = paddle_trigger_at(ds, 255 - x);
+            arm_paddle_axis(ds, 0, paddle_trigger_at(ds, 255 - y));
+            arm_paddle_axis(ds, 1, paddle_trigger_at(ds, 255 - x));
         } else {
-            ds->game_input_trigger[0] = paddle_trigger_at(ds, x);
-            ds->game_input_trigger[1] = paddle_trigger_at(ds, y);
+            arm_paddle_axis(ds, 0, paddle_trigger_at(ds, x));
+            arm_paddle_axis(ds, 1, paddle_trigger_at(ds, y));
         }
         if (DEBUG(DEBUG_GAME)) fprintf(stdout, "Strobe game inputs: %f, %f: %llu, %llu\n", mouse_x, mouse_y, u64_t(ds->game_input_trigger[0]), u64_t(ds->game_input_trigger[1]));
     } else if (ds->joystick_mode == JOYSTICK_APPLE_GAMEPAD /* ds->gps[0].game_type == GAME_INPUT_TYPE_GAMEPAD */) {
         JoystickValues jv;
         if (ds->gps[0].gamepad == nullptr) {
             if (SystemSettings::instance().disconnected_when_no_gamepad()) {
-                // Never expire: classic "no paddle connected" (bit 7 stays set).
+                // Open input: an expired axis never times out (bit 7 stays set).
+                // An axis still running keeps its original expiry.
                 for (int i = 0; i < 4; i++) {
-                    ds->game_input_trigger[i] = UINT64_MAX;
+                    arm_paddle_axis(ds, i, UINT64_MAX);
                 }
                 ds->last_jv = {0, 0};
                 return ds->mmu->floating_bus_read();
@@ -234,8 +242,8 @@ uint8_t strobe_game_inputs(void *context, uint32_t address) {
         }
 
         ds->last_jv = jv;
-        ds->game_input_trigger[0] = paddle_trigger_at(ds, jv.x);
-        ds->game_input_trigger[1] = paddle_trigger_at(ds, jv.y);
+        arm_paddle_axis(ds, 0, paddle_trigger_at(ds, jv.x));
+        arm_paddle_axis(ds, 1, paddle_trigger_at(ds, jv.y));
     }
     return ds->mmu->floating_bus_read();
 }
