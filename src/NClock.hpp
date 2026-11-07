@@ -393,6 +393,14 @@ protected:
     
             // delta between previous video clock and current CPU clock.
             uint64_t delta = c14m.now().v - video_c14m;
+            // Softswitch writes are stamped before this stretch. On a misaligned
+            // slow cycle the first video cycles only wait for PH0; the Mega II
+            // access is the last one. Measure the write's delay from there.
+            if (sync_cycle) {
+                uint64_t nvideo = (video_cycle_14M_count + delta) / 14;
+                if (nvideo > 1)
+                    video_scanner->rebase_slow_access(static_cast<uint16_t>(nvideo - 1));
+            }
             video_cycle_14M_count += delta;
             //scanline_14M += delta;
     

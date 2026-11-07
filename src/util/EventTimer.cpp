@@ -9,9 +9,6 @@
 /* EventTimer::EventTimer(cpu_state *cpu) : cpu(cpu) {
 } */
 
-// Destructor implementation 
-EventTimer::~EventTimer() = default;
-
 inline void EventTimer::updateNextEventCycle() {
     // Update next_event_cycle to the earliest event's trigger time
     next_event_cycle = events.empty() ? std::numeric_limits<uint64_t>::max() : events.front().triggerCycles;

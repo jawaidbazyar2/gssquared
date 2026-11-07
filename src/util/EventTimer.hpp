@@ -13,7 +13,7 @@ public:
     };
     uint64_t next_event_cycle = 0;
     EventTimer() = default;
-    ~EventTimer();
+    ~EventTimer() = default;
 
     void scheduleEvent(uint64_t triggerCycles, void (*callback)(uint64_t, void*), uint64_t instanceID, void* userData = nullptr);
     void processEvents(uint64_t currentCycles);

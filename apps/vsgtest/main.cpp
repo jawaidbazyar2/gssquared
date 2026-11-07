@@ -41,6 +41,7 @@
 #include "display/GsCompositeGpu.hpp"
 #include "devices/displaypp/VideoScanGenerator_RGB.hpp"
 #include "gs2.hpp"
+#include "NClock.hpp"
 
 #include "RefComposite.hpp"
 
@@ -679,6 +680,151 @@ void check_gscomposite_rgb(Context &ctx) {
     printf("%s\n", failures == before ? "ok" : "");
 }
 
+// Issue #232: TEXT/GRAF is a queue of apply cycles, not one pending register.
+// A write at cycle N (IIe delay 1) shows on N+1. The next cycle's write must
+// not erase that, so GRAF then TEXT on consecutive cycles is one graphics cycle.
+void check_mode_change_queue(Context &ctx) {
+    printf("%-44s ", "back-to-back softswitch queue");
+    fflush(stdout);
+    int before = failures;
+
+    VideoScannerII *scanner = make_scanner(SC_IIE, ctx.mmu);
+    scanner->set_hires();
+
+    auto last = [](VideoScannerII *s) {
+        ScanBuffer *sb = s->get_frame_scan();
+        return sb->get(sb->get_count() - 1);
+    };
+
+    uint8_t pulse_mode[4] = {};
+    uint8_t burst_flags[2] = {};
+    uint8_t mixed_mode[2] = {};
+    uint8_t mixed_flags[2] = {};
+
+    for (uint32_t c = 0; c < CYCLES_PER_FRAME; c++) {
+        const uint32_t line = c / 65;
+        const uint32_t hc = c % 65;
+        // Visible pulse: graf at 30, text at 31, graf at 32.
+        // Modes land on 31, 32, 33.
+        if (line == 10) {
+            if (hc == 30) scanner->set_graf();
+            else if (hc == 31) scanner->set_text();
+            else if (hc == 32) scanner->set_graf();
+            else if (hc == 34) scanner->set_text();
+        }
+        // The case from #232: graf at horz 12, text at horz 13. Burst window
+        // horz 13 must still be graphics; horz 14 is text again.
+        if (line == 20) {
+            if (hc == 12) scanner->set_graf();
+            else if (hc == 13) scanner->set_text();
+        }
+        // A later TEXT write must not drop a different switch queued beside it.
+        if (line == 30) {
+            if (hc == 30) {
+                scanner->set_graf();
+                scanner->set_mixed();
+            } else if (hc == 31) {
+                scanner->set_text();
+            }
+        }
+        scanner->video_cycle();
+        if (line == 10 && hc >= 30 && hc <= 33) pulse_mode[hc - 30] = last(scanner).mode;
+        if (line == 20 && hc >= 13 && hc <= 14) burst_flags[hc - 13] = last(scanner).flags;
+        if (line == 30 && hc >= 31 && hc <= 32) {
+            Scan_t s = last(scanner);
+            mixed_mode[hc - 31] = s.mode;
+            mixed_flags[hc - 31] = s.flags;
+        }
+    }
+    delete scanner;
+
+    const uint8_t want_pulse[] = { VM_TEXT40, VM_HIRES, VM_TEXT40, VM_HIRES };
+    for (int i = 0; i < 4; i++) {
+        if (pulse_mode[i] != want_pulse[i]) {
+            failures++;
+            printf("\n  FAIL pulse horz %d mode %s, expected %s\n",
+                   30 + i, video_mode_names[pulse_mode[i]], video_mode_names[want_pulse[i]]);
+            break;
+        }
+    }
+    if ((burst_flags[0] & VS_FL_COLORBURST) == 0 || (burst_flags[1] & VS_FL_COLORBURST) != 0) {
+        failures++;
+        printf("\n  FAIL horz 12/13 pulse: horz13 flags %02X horz14 flags %02X\n",
+               burst_flags[0], burst_flags[1]);
+    }
+    if (mixed_mode[0] != VM_HIRES || (mixed_flags[0] & VS_FL_MIXED) == 0 ||
+        mixed_mode[1] != VM_TEXT40 || (mixed_flags[1] & VS_FL_MIXED) == 0) {
+        failures++;
+        printf("\n  FAIL mixed survives text: modes %s/%s flags %02X/%02X\n",
+               video_mode_names[mixed_mode[0]], video_mode_names[mixed_mode[1]],
+               mixed_flags[0], mixed_flags[1]);
+    }
+    printf("%s\n", failures == before ? "ok" : "");
+}
+
+// 16-bit STA $C050 on a fast IIgs writes $C050 then $C051. The slow-cycle
+// stretch waits for PH0 before the access, so each graphics pulse is one
+// video cycle: lores, then text, not two cycles of lores.
+void check_iigs_slow_graf_pulse(Context &ctx) {
+    printf("%-44s ", "IIgs slow-cycle one-cycle graf pulse");
+    fflush(stdout);
+    int before = failures;
+
+    VideoScannerII *scanner = make_scanner(SC_IIGS, ctx.mmu);
+    NClockIIgs clock(CLOCK_SET_US, CLOCK_2_8MHZ);
+    clock.set_video_scanner(scanner);
+
+    auto pull_picture = [&](std::vector<uint8_t> &modes) {
+        ScanBuffer *sb = scanner->get_frame_scan();
+        while (sb->get_count()) {
+            Scan_t s = sb->pull();
+            if (s.mode == VM_LORES || s.mode == VM_TEXT40) modes.push_back(s.mode);
+        }
+    };
+
+    std::vector<uint8_t> modes;
+    auto fast = [&]() {
+        clock.slow_incr_cycles(); // cycle_type resets to fast
+        pull_picture(modes);
+    };
+    auto slow_write = [&](bool graf) {
+        if (graf) scanner->set_graf();
+        else scanner->set_text();
+        clock.set_next_cycle_type(CYCLE_TYPE_SYNC);
+        clock.slow_incr_cycles();
+        pull_picture(modes);
+    };
+
+    // STA abs (3 fast fetches + graf write + text write) + BRA (3 fast).
+    for (int i = 0; i < 400; i++) {
+        fast(); fast(); fast();
+        slow_write(true);
+        slow_write(false);
+        fast(); fast(); fast();
+    }
+
+    int lores_runs = 0;
+    int max_lores = 0;
+    int run = 0;
+    for (uint8_t m : modes) {
+        if (m == VM_LORES) {
+            run++;
+            if (run > max_lores) max_lores = run;
+        } else if (run) {
+            lores_runs++;
+            run = 0;
+        }
+    }
+    if (run) lores_runs++;
+
+    if (lores_runs == 0 || max_lores != 1) {
+        failures++;
+        printf("\n  FAIL lores runs %d, widest %d (expected a run of one)\n", lores_runs, max_lores);
+    }
+    delete scanner;
+    printf("%s\n", failures == before ? "ok" : "");
+}
+
 // Issue #217: hires from VBL end, text at line 100, hires again next frame.
 // Lines 0-11 stay mono (on delay; hardware shows 0-5, see AppleColorKiller).
 // Lines 12-191 stay color, including the text after the switch (off hold).
@@ -953,6 +1099,8 @@ int main(int argc, char **argv) {
     for (const Scenario &sc : scenarios()) run_scenario(ctx, sc, seed++);
     check_geometry(ctx);
     check_bounds(ctx);
+    check_mode_change_queue(ctx);
+    check_iigs_slow_graf_pulse(ctx);
     check_colorburst_latency(ctx);
     check_colorburst_partial(ctx);
     if (ctx.gpu && ctx.gpu->gs_ok && ctx.gpu->src) {

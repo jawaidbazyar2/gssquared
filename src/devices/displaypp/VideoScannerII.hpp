@@ -199,7 +199,9 @@ protected:
     uint8_t mode_q_count = 0;
 
     void apply_mode_change(vs_mode_switch_t sw, uint8_t value);
-    void cancel_pending_mode_change(vs_mode_switch_t sw);
+    // Drop a queued change for sw only when it would apply on apply_at.
+    // Other cycles for that switch stay queued.
+    void cancel_pending_mode_change(vs_mode_switch_t sw, uint16_t apply_at);
     void queue_mode_change(vs_mode_switch_t sw, uint8_t value);
     void drain_due_mode_changes();
     void clear_mode_change_queue();
@@ -317,6 +319,12 @@ public:
     inline virtual void set_irq_handler(device_irq_handler_s irq_handler) { this->irq_handler = irq_handler; }
 
     ScanBuffer *get_frame_scan();
+
+    // A misaligned IIgs slow cycle emits `wait_cycles` video cycles while PH2
+    // waits for PH0, then the Mega II access on the last cycle. Mode changes
+    // queued on this CPU cycle were stamped before that wait; measure their
+    // delay from the access cycle.
+    void rebase_slow_access(uint16_t wait_cycles);
 };
 
 void init_mb_video_scanner(computer_t *computer, SlotType_t slot);

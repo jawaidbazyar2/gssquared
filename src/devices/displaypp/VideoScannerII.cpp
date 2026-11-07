@@ -230,14 +230,14 @@ void VideoScannerII::apply_mode_change(vs_mode_switch_t sw, uint8_t value)
     }
 }
 
-void VideoScannerII::cancel_pending_mode_change(vs_mode_switch_t sw)
+void VideoScannerII::cancel_pending_mode_change(vs_mode_switch_t sw, uint16_t apply_at)
 {
     if (!mode_q_count) {
         return;
     }
     uint8_t idx = mode_q_head;
     for (uint8_t i = 0; i < mode_q_count; i++) {
-        if (mode_q[idx].sw == sw) {
+        if (mode_q[idx].sw == sw && mode_q[idx].apply_at == apply_at) {
             // Remove entry at idx by shifting subsequent entries forward.
             uint8_t src = idx;
             for (uint8_t j = i + 1; j < mode_q_count; j++) {
@@ -260,8 +260,9 @@ void VideoScannerII::queue_mode_change(vs_mode_switch_t sw, uint8_t value)
     const uint8_t delay = mode_change_delay(sw);
     // Delay 0: apply now for the upcoming video_cycle, and revise the sample just
     // emitted — 0-cycle switches affect the video byte of the same CPU cycle.
+    // A change already queued for this cycle would be drained on top of that.
     if (delay == 0) {
-        cancel_pending_mode_change(sw);
+        cancel_pending_mode_change(sw, static_cast<uint16_t>(scan_index));
         apply_mode_change(sw, value);
         set_video_mode();
         if (frame_scan) {
@@ -270,8 +271,14 @@ void VideoScannerII::queue_mode_change(vs_mode_switch_t sw, uint8_t value)
         return;
     }
 
-    // Supersede any pending change for the same softswitch.
-    cancel_pending_mode_change(sw);
+    uint16_t apply_at = static_cast<uint16_t>(scan_index + delay);
+    if (apply_at >= cycles_per_frame) {
+        apply_at = static_cast<uint16_t>(apply_at - cycles_per_frame);
+    }
+
+    // Replace a queued change of this switch only when the new write lands on
+    // the same cycle. Earlier cycles stay queued, so a one-cycle pulse shows.
+    cancel_pending_mode_change(sw, apply_at);
 
     if (mode_q_count >= MODE_Q_SIZE) {
         // Queue full: apply oldest entry immediately so we never drop a mode bit.
@@ -281,14 +288,31 @@ void VideoScannerII::queue_mode_change(vs_mode_switch_t sw, uint8_t value)
         mode_q_count--;
     }
 
-    uint16_t apply_at = static_cast<uint16_t>(scan_index + delay);
-    if (apply_at >= cycles_per_frame) {
-        apply_at = static_cast<uint16_t>(apply_at - cycles_per_frame);
-    }
-
     mode_q[mode_q_tail] = { apply_at, sw, value };
     mode_q_tail = static_cast<uint8_t>((mode_q_tail + 1) & (MODE_Q_SIZE - 1));
     mode_q_count++;
+}
+
+void VideoScannerII::rebase_slow_access(uint16_t wait_cycles)
+{
+    if (!wait_cycles || !mode_q_count) return;
+
+    const uint16_t now = static_cast<uint16_t>(scan_index);
+    uint8_t idx = mode_q_head;
+    for (uint8_t i = 0; i < mode_q_count; i++) {
+        const uint8_t delay = mode_change_delay(mode_q[idx].sw);
+        uint16_t queued_at;
+        if (mode_q[idx].apply_at >= delay)
+            queued_at = static_cast<uint16_t>(mode_q[idx].apply_at - delay);
+        else
+            queued_at = static_cast<uint16_t>(mode_q[idx].apply_at + cycles_per_frame - delay);
+        if (queued_at == now) {
+            uint32_t at = static_cast<uint32_t>(mode_q[idx].apply_at) + wait_cycles;
+            while (at >= cycles_per_frame) at -= cycles_per_frame;
+            mode_q[idx].apply_at = static_cast<uint16_t>(at);
+        }
+        idx = static_cast<uint8_t>((idx + 1) & (MODE_Q_SIZE - 1));
+    }
 }
 
 void VideoScannerII::drain_due_mode_changes()
