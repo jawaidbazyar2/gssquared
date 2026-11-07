@@ -9,3 +9,4 @@ builtin = false
 [[cards]]
 slot = 1
 card = "parallel"
+output = "printouts/session.txt"

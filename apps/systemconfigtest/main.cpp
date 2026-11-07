@@ -283,7 +283,12 @@ static bool test_aliases() {
     std::string error;
     CHECK(config.load(path.string(), error), "aliases load: " << error);
     CHECK(config.config().slot_devices[5] == DEVICE_ID_PD_BLOCK3, "smartport alias");
-    CHECK(config.config().slot_devices[7] == DEVICE_ID_PD_BLOCK2, "pdblock2 alias");
+    SystemConfig disabled_config;
+    error.clear();
+    CHECK(!disabled_config.load((fixture_dir() / "aliases_disabled.gs2").string(), error),
+          "disabled pdblock2 alias must be rejected");
+    CHECK(error.find("prodos_block2") != std::string::npos &&
+          error.find("not allowed") != std::string::npos, "pdblock2 alias policy: " << error);
     return true;
 }
 
