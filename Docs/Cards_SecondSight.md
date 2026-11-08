@@ -32,7 +32,7 @@ Use `card = "second_sight"` for the simulated card. Monitor and screen choices b
 
 ## Display choices for Second Sight with Z180
 
-**Display → Second Sight → Monitor → VGA CRT** is the default. **VGA LCD** puts a current LCD monitor on the same VGA cable (see [Displays](Displays.md)). **AppleColor RGB** selects the AppleColor RGB monitor. The firmware uses this choice to select its supported modes; some VGA modes are unavailable on RGB. The ROM reads the monitor sense at each card mode change, so the choice takes effect then. **Machine → Restart** shows the change at once.
+**Display → Second Sight → Monitor → AppleColor RGB** is the default. **VGA CRT** selects a VGA monitor, and **VGA LCD** puts a current LCD monitor on the same VGA cable (see [Displays](Displays.md)). The firmware uses this choice to select its supported modes; some VGA modes are unavailable on RGB. The ROM reads the monitor sense at each card mode change, so the choice takes effect then. **Machine → Restart** shows the change at once.
 
 **Display → Second Sight → View → IIgs monitor** shows the IIgs output in the main window. **Second Sight monitor** shows the card output there instead. **Both** (the default) keeps the IIgs in the main window and opens a separate Second Sight window. In the browser, both pictures appear side by side. Full screen shows the selected view. **F11** cycles IIgs → Second Sight → both.
 

@@ -54,7 +54,7 @@ private:
     bool ss_text_mode_ = false;
     // Second Sight monitor/view can change while running. Firmware and the
     // U7 Lattice chip equations are applied by the card reset handler.
-    bool ss_rgb_monitor_ = false;
+    bool ss_rgb_monitor_ = true;
     bool ss_vga_lcd_ = false;
     int ss_view_ = SS_VIEW_BOTH;
     int ss_firmware_ = SS_FW_14;

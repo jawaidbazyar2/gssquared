@@ -61,7 +61,7 @@ The menu item is grayed out when no Second Sight card is present. The setting is
 
 ## Second Sight with Z180
 
-Second Sight with Z180 has its own monitor output, separate from the IIgs display. **Display → Second Sight → Monitor → VGA CRT** (default), **VGA LCD** and **AppleColor RGB** select its monitor. The ROM reads the monitor sense at each card mode change and offers different modes for VGA and AppleColor RGB. The choice of cable takes effect at the next card mode change; **Machine → Restart** shows it at once. VGA CRT and VGA LCD use the same cable, so a change between them shows at once.
+Second Sight with Z180 has its own monitor output, separate from the IIgs display. **Display → Second Sight → Monitor → VGA CRT**, **VGA LCD** and **AppleColor RGB** (default) select its monitor. The ROM reads the monitor sense at each card mode change and offers different modes for VGA and AppleColor RGB. The choice of cable takes effect at the next card mode change; **Machine → Restart** shows it at once. VGA CRT and VGA LCD use the same cable, so a change between them shows at once.
 
 **Display → Second Sight → View → IIgs monitor**, **Second Sight monitor**, and **Both** select one or both outputs. With one selected, the main window and full screen show that monitor. With both selected, the native app uses a separate card window; the browser shows both pictures side by side. **F11** cycles these three views. Both is the default.
 

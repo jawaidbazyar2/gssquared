@@ -145,9 +145,10 @@ bool SystemSettings::load() {
     disconnected_when_no_gamepad_ = false;
     joyport_select_ = 1; // center
     ss_text_mode_ = false;
-    // Second Sight defaults match the original card with a VGA cable; show
-    // both monitors so firmware startup does not hide the built-in Apple screen.
-    ss_rgb_monitor_ = false;
+    // Second Sight defaults to the AppleColor RGB cable, the IIgs's own
+    // monitor; show both monitors so firmware startup does not hide the
+    // built-in Apple screen.
+    ss_rgb_monitor_ = true;
     ss_vga_lcd_ = false;
     ss_view_ = SS_VIEW_BOTH;
     ss_firmware_ = SS_FW_14;
@@ -233,7 +234,7 @@ bool SystemSettings::load() {
             ss_text_mode_ = (*display)["ss_text_mode"].value_or(false);
             // Restore Second Sight cable sense and visibility separately from
             // hardware, clamping an invalid view to both monitors.
-            ss_rgb_monitor_ = (*display)["ss_rgb_monitor"].value_or(false);
+            ss_rgb_monitor_ = (*display)["ss_rgb_monitor"].value_or(true);
             ss_vga_lcd_ = (*display)["ss_vga_lcd"].value_or(false);
             ss_view_ = (*display)["ss_view"].value_or(SS_VIEW_BOTH);
             if (ss_view_ < SS_VIEW_IIGS || ss_view_ >= SS_VIEW_COUNT) ss_view_ = SS_VIEW_BOTH;

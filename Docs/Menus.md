@@ -134,7 +134,7 @@ Drive seek/activity sounds play in stereo (drive 1 toward the left, drive 2 towa
 Both are useful when recording video and you want a clean picture. Preferences are remembered in app settings.
 
 **Second Sight Text** (IIgs with the simulated Second Sight card) renders Apple II 40/80-column text through the card’s VGA path. Grayed out if the current machine has no Second Sight. See [Second Sight](Cards_SecondSight.md) and [Displays](Displays.md).
-**Second Sight → Monitor → VGA CRT / VGA LCD / AppleColor RGB** selects the monitor attached to **Second Sight (with Z180)**. VGA CRT is the default. VGA LCD is a current LCD monitor on the VGA cable; the browser version shows it only with a hardware GPU. The ROM reads the monitor sense at each card mode change. A change of cable takes effect at the next card mode change; **Machine → Restart** shows it at once.
+**Second Sight → Monitor → VGA CRT / VGA LCD / AppleColor RGB** selects the monitor attached to **Second Sight (with Z180)**. AppleColor RGB is the default. VGA LCD is a current LCD monitor on the VGA cable; the browser version shows it only with a hardware GPU. The ROM reads the monitor sense at each card mode change. A change of cable takes effect at the next card mode change; **Machine → Restart** shows it at once.
 
 **Second Sight → View → IIgs monitor / Second Sight monitor / Both** selects the main-window picture or shows both independent outputs. Native builds use a separate card window for both; the browser shows them side by side. **F11** cycles the three choices. Both is the default. These view and monitor-type items are grayed out without Second Sight (with Z180) and remembered in app settings. See [Second Sight](Cards_SecondSight.md).
 
