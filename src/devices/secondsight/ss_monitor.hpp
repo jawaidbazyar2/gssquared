@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include "oti087.hpp"
+#include "ss_crt.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -15,11 +17,14 @@ struct SecondSightMonitorWindow {
 
 namespace ss_monitor {
 
-// The monitors the card drives are CRTs. Each places the picture by the
-// signal's timing. The user sets the position and size controls for the best
-// picture: the whole unblanked signal, the active picture and its border,
-// shows and is centered. Where the monitor's own window is larger, the rest
-// of the window is blanked signal.
+// The CRT monitors place the picture by the signal's timing. The user sets
+// the size and position controls for the best picture of each mode: the
+// picture keeps the aspect that the monitor's factory raster, below, gives
+// its scan rates, and fills the screen. Both sizes change together until the
+// unblanked signal, the active picture and its border, covers the screen, and
+// further only where the whole active picture needs it. The unblanked signal
+// is centered: border that does not fit is cropped evenly, the active picture
+// never; any rest of the window is blanked signal.
 //
 // VGA, a multisync monitor: it keeps its raster a fixed part of the line and
 // of the frame. At 31.5 kHz the sync polarities select the IBM vertical size
@@ -50,26 +55,30 @@ inline constexpr double applecolor_line_min = 28'322'000.0 / 2 / 1064, applecolo
 inline constexpr double applecolor_field_min = 50.0, applecolor_field_max = 28'322'000.0 / 2 / 856 / 222;
 
 // The signal's line, field and pixel rates, its line in pixels, its frame in
-// lines (both fields when interlaced), its unblanked pixels and lines, fields
-// per frame and sync polarities.
+// lines (both fields when interlaced), its unblanked and active pixels and
+// lines, fields per frame and sync polarities.
 inline SecondSightMonitorWindow card_monitor(bool vga, double line_hz, double field_hz, double pixel_hz,
                                              int total_width, int total_height, int unblanked_width,
-                                             int unblanked_height, int fields, bool h_negative, bool v_negative) {
-    SecondSightMonitorWindow window;
+                                             int unblanked_height, int active_width, int active_height, int fields,
+                                             bool h_negative, bool v_negative) {
+    double width, height;
+    bool locked;
     if (vga) {
         double part = 496.0 / 525.0;
         if (std::abs(line_hz / vga_line - 1.0) <= vga_tolerance && h_negative != v_negative)
             part = (v_negative ? 362.0 : 414.0) / 449.0;
-        window = {int(total_width * vga_window_part + 0.5), int(total_height * part + 0.5),
-                  line_hz >= vga_line_min && line_hz <= vga_line_max && field_hz >= vga_field_min && field_hz <= vga_field_max};
+        width = total_width * vga_window_part;
+        height = total_height * part;
+        locked = line_hz >= vga_line_min && line_hz <= vga_line_max && field_hz >= vga_field_min && field_hz <= vga_field_max;
     } else {
-        window = {int(applecolor_window_time * pixel_hz + 0.5), int(applecolor_window_frame * line_hz * fields + 0.5),
-                  line_hz >= applecolor_line_min && line_hz <= applecolor_line_max &&
-                  field_hz >= applecolor_field_min && field_hz <= applecolor_field_max};
+        width = applecolor_window_time * pixel_hz;
+        height = applecolor_window_frame * line_hz * fields;
+        locked = line_hz >= applecolor_line_min && line_hz <= applecolor_line_max &&
+                 field_hz >= applecolor_field_min && field_hz <= applecolor_field_max;
     }
-    window.width = std::max(window.width, unblanked_width);
-    window.height = std::max(window.height, unblanked_height);
-    return window;
+    const double scale = std::max({std::min(unblanked_width / width, unblanked_height / height),
+                                   active_width / width, active_height / height});
+    return {int(width * scale + 0.5), int(height * scale + 0.5), locked};
 }
 
 // Floor of half a signed difference, so both directions round the same way.
@@ -91,10 +100,94 @@ inline Unblanked unblanked(int total, int active, int blank_first, int blank_len
 }
 
 // Offset of the active display in a window that is centered on the unblanked
-// part. With no unblanked part, center the window on the active display.
+// part. With no unblanked part, center the window on the active display. The
+// active display always stays in the window.
 inline int active_offset(int window, int active, Unblanked span) {
-    if (span.length <= 0) return floor_half(window - active);
-    return floor_half(window - span.length) - span.start;
+    const int centered = span.length <= 0 ? floor_half(window - active) : floor_half(window - span.length) - span.start;
+    return std::clamp(centered, 0, std::max(0, window - active));
+}
+
+// On the AppleColor RGB, a mode with the IIgs screen's shape mirrors the IIgs
+// screen: text of 24 rows, or graphics of 192 or 200 lines. The user sets the
+// monitor to show it as GSSquared shows the IIgs screen (content_rec_vsg2 in
+// display.cpp): the 19 lines above the picture and 240 lines in all, the lines
+// with border in the IIgs RGB signal (Apple A2M6014 RGB Monitor timing chart),
+// and 3/40 of the width at each side. The whole frame is border color, also
+// where the card's signal blanks.
+struct Frame {
+    int width, height, left, top;
+};
+inline bool iigs_mirror(const OTI087 &video) {
+    const auto &timing = video.display_timing();
+    if (video.vga_monitor() || timing.interlaced) return false;
+    if (video.gc_read(6) & 1) return timing.height == 192 || timing.height == 200;
+    const int row = video.crtc_state().maximum_scan_line;
+    return row > 0 && timing.height == 24 * row;
+}
+inline Frame iigs_frame(int active_width, int active_height) {
+    const int side = (active_width * 3 + 20) / 40;
+    return {side + active_width + side, std::max(240, active_height + 19), side, 19};
+}
+
+// The part of the card's signal that the monitor shows, and whether the
+// monitor locks to it. Reads stopped Oak state only.
+struct Scan {
+    SecondSightCrt::Axis horizontal, vertical;
+    bool locked;
+};
+
+// The output blanking in pixels and lines of the frame, from the start of
+// the active display.
+struct Blanking {
+    int hfirst, hlength, vfirst, vlength;
+};
+inline Blanking blanking(const OTI087 &video) {
+    const auto &timing = video.display_timing();
+    // IBM VGA/XGA CRTC blanking excludes retrace, while attribute $11 colors
+    // every visible overscan sample. Read stored state after synchronization;
+    // neither monitor sense nor native image dimensions select a cosmetic mode.
+    const auto &crtc = video.crtc_state();
+    const int rows = timing.height / (crtc.vert_disp_end + 1);
+    return {int(video.horizontal_blank_first() * timing.total_width / timing.line_characters) % timing.total_width,
+            std::min(timing.total_width,
+                int(video.horizontal_blank_length() * timing.total_width / timing.line_characters)),
+            int(video.vertical_blank_first()) * rows % timing.total_height,
+            std::min(timing.total_height, int(video.vertical_blank_length()) * rows)};
+}
+
+inline Scan scan(const OTI087 &video) {
+    const auto &timing = video.display_timing();
+    const auto [hfirst, hlength, vfirst, vlength] = blanking(video);
+    const auto hspan = unblanked(timing.total_width, timing.width, hfirst, hlength);
+    const auto vspan = unblanked(timing.total_height, timing.height, vfirst, vlength);
+    // The monitor window, as the user's controls would set it.
+    const int fields = timing.interlaced ? 2 : 1;
+    SecondSightMonitorWindow window = card_monitor(video.vga_monitor(), 1.0 / timing.line_period(),
+        fields / timing.frame_period(), 1.0 / timing.pixel_period(), timing.total_width, timing.total_height,
+        hspan.length > 0 ? hspan.length : timing.width, vspan.length > 0 ? vspan.length : timing.height,
+        timing.width, timing.height, fields, video.misc_output() & 0x40, video.misc_output() & 0x80);
+    if (!window.locked) {
+        // No picture, as on a monitor that cannot lock.
+        window.width = timing.width;
+        window.height = timing.height;
+    }
+    int window_width = std::clamp(window.width, 1, timing.total_width);
+    int window_height = std::clamp(window.height, 1, timing.total_height);
+    int left = window.locked ? active_offset(window_width, timing.width, hspan) : floor_half(window_width - timing.width);
+    int top = window.locked ? active_offset(window_height, timing.height, vspan) : floor_half(window_height - timing.height);
+    const bool mirror = window.locked && iigs_mirror(video);
+    if (mirror) {
+        const auto frame = iigs_frame(timing.width, timing.height);
+        window_width = std::min(frame.width, timing.total_width);
+        window_height = std::min(frame.height, timing.total_height);
+        left = frame.left;
+        top = frame.top;
+    }
+    return {{timing.total_width, (timing.total_width - left) % timing.total_width, window_width,
+             hfirst, mirror ? 0 : hlength},
+            {timing.total_height, (timing.total_height - top) % timing.total_height, window_height,
+             vfirst, mirror ? 0 : vlength},
+            window.locked};
 }
 
 } // namespace ss_monitor

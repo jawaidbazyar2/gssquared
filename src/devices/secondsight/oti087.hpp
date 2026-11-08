@@ -209,6 +209,15 @@ public:
     int vsync_r();
     // Horizontal sync, including CRTC skew and Miscellaneous Output polarity.
     int hsync_r() const;
+    // Characters or lines of a CRTC retrace pulse. It starts where the counter
+    // equals start and ends where the low bits (mask) of the counter equal
+    // end; the counter wraps at total first (IBM VGA/XGA TRM pp. 2-60, 2-71).
+    // 0 when the counter never matches end, so the pulse never ends.
+    static int retrace_length(int start, int end, int mask, int total) {
+        for (int n = 1; n < total; ++n)
+            if ((((start + n) % total) & mask) == end) return n;
+        return 0;
+    }
     // Borrow the board's retained SD7:0 byte; the owner outlives this chip.
     // Scan-test convention: second-sight-reference
     // docs/reference/oti087-registers.md, extended register $03.
@@ -612,10 +621,23 @@ public:
     // view includes aliases and pin values without their I/O side effects.
     uint8_t extended_read(unsigned offset, bool backing = false) const;
     const auto &crtc_state() const { return crtc; }
-    // Lines of vertical blanking. IBM VGA/XGA TRM 2-73: End = Start + Width - 1
-    // in eight low bits, so the last encoded line blanks too; horizontal
-    // blanking (2-59/60) has no such line.
-    unsigned vertical_blank_length() const { return ((crtc.vert_blank_end - crtc.vert_blank_start) & 255) + 1; }
+    // Blanking at the output. The vertical start register holds the line where
+    // blanking begins, minus 1 (IBM VGA/XGA TRM p. 2-73); blanking ends with
+    // the line whose low eight bits equal the end register. Horizontal output
+    // blanking also comes one character after its register counts. IBM's
+    // 640 x 480 timing with these registers has 8 border dots and 8 border
+    // lines at each side, and 18 characters and 29 lines of blanking (IBM PS/2
+    // Video Subsystem, Oct 1990, Figs. 106, 108 and 109).
+    unsigned horizontal_blank_first() const { return crtc.horz_blank_start + 1u; }
+    unsigned horizontal_blank_length() const {
+        unsigned const n = (crtc.horz_blank_end - crtc.horz_blank_start) & 63;
+        return n ? n : 64;
+    }
+    unsigned vertical_blank_first() const { return crtc.vert_blank_start + 1u; }
+    unsigned vertical_blank_length() const {
+        unsigned const n = (crtc.vert_blank_end - crtc.vert_blank_start) & 255;
+        return n ? n : 256;
+    }
     const auto &sequencer_state() const { return sequencer; }
     uint8_t misc_output() const { return miscellaneous_output; }
     // Cable sense: true when a VGA monitor is attached.

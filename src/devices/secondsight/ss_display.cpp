@@ -103,55 +103,29 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
     if (timing.width < 1 || timing.height < 1 || timing.width > OTI087::MAX_FRAME_DIMENSION || timing.height > OTI087::MAX_FRAME_DIMENSION)
         return nullptr;
     bool full = last_renderer != dest;
-    // IBM VGA/XGA CRTC blanking excludes retrace, while attribute $11 colors
-    // every visible overscan sample. Read stored state after synchronization;
-    // neither monitor sense nor native image dimensions select a cosmetic mode.
-    const auto &crtc = video.crtc_state();
-    const int hs = crtc.horz_blank_start;
-    const int hn = (crtc.horz_blank_end - hs) & 63;
-    const int vs = crtc.vert_blank_start;
-    const int rows = timing.height / (crtc.vert_disp_end + 1);
-    const int hfirst = int(hs * timing.total_width / timing.line_characters);
-    const int hlength = std::min(timing.total_width, int((hn ? hn : 64) * timing.total_width / timing.line_characters));
-    const int vfirst = vs * rows, vlength = std::min(timing.total_height, int(video.vertical_blank_length()) * rows);
-    const auto hspan = ss_monitor::unblanked(timing.total_width, timing.width, hfirst % timing.total_width, hlength);
-    const auto vspan = ss_monitor::unblanked(timing.total_height, timing.height, vfirst % timing.total_height, vlength);
-    // The monitor window holds the whole unblanked signal, centered, as the
-    // user's position and size controls would set it.
+    const auto scan = ss_monitor::scan(video);
     const double line_hz = 1.0 / timing.line_period();
     const int fields = timing.interlaced ? 2 : 1;
-    const bool vga_monitor = video.vga_monitor();
-    SecondSightMonitorWindow window = ss_monitor::card_monitor(vga_monitor, line_hz, fields / timing.frame_period(),
-        1.0 / timing.pixel_period(), timing.total_width, timing.total_height, hspan.length, vspan.length, fields,
-        video.misc_output() & 0x40, video.misc_output() & 0x80);
-    if (!window.locked) {
-        // No picture, as on a monitor that cannot lock.
-        window.width = timing.width;
-        window.height = timing.height;
-    }
     // A monitor locks to timing that holds for a whole frame. The states that
-    // pass while a mode is programmed never reach the screen.
-    if (window.locked != lock_candidate) {
-        lock_candidate = window.locked;
+    // pass while a mode is programmed never reach the screen. A CRTC with no
+    // programmed totals, as after reset, gives no timing to lock to or reject.
+    const auto &crtc = video.crtc_state();
+    if (crtc.horz_total && crtc.horz_disp_end && crtc.vert_disp_end && scan.locked != lock_candidate) {
+        lock_candidate = scan.locked;
         lock_since = video.frame_number();
     }
     if (lock_candidate == out_of_range && video.frame_number() >= lock_since + 2) {
         out_of_range = !lock_candidate;
-        if (out_of_range)
-            fprintf(stderr, "Second Sight %s monitor: out of range (%.2f kHz, %.2f Hz)\n",
-                vga_monitor ? "VGA" : "AppleColor RGB", line_hz / 1000.0,
-                fields / timing.frame_period());
+        if (out_of_range) {
+            // The event keeps this pointer until the heads-up display copies the text.
+            static char message[96];
+            snprintf(message, sizeof message, "Second Sight %s monitor: out of range (%.2f kHz, %.2f Hz)",
+                video.vga_monitor() ? "VGA" : "AppleColor RGB", line_hz / 1000.0, fields / timing.frame_period());
+            fprintf(stderr, "%s\n", message);
+            computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, message));
+        }
     }
-    const int window_width = std::clamp(window.width, 1, timing.total_width);
-    const int window_height = std::clamp(window.height, 1, timing.total_height);
-    const int left = window.locked ? ss_monitor::active_offset(window_width, timing.width, hspan)
-                                   : ss_monitor::floor_half(window_width - timing.width);
-    const int top = window.locked ? ss_monitor::active_offset(window_height, timing.height, vspan)
-                                  : ss_monitor::floor_half(window_height - timing.height);
-    const SecondSightCrt::Axis horizontal{timing.total_width, (timing.total_width - left) % timing.total_width,
-        window_width, hfirst % timing.total_width, hlength};
-    const SecondSightCrt::Axis vertical{timing.total_height, (timing.total_height - top) % timing.total_height,
-        window_height, vfirst % timing.total_height, vlength};
+    const auto &horizontal = scan.horizontal, &vertical = scan.vertical;
     const bool filtered = computer->video_system->get_crt_shader_enabled();
     const int phase = timing.interlaced ? video.odd_field_sync_phase() : 0;
     const bool odd = timing.interlaced && video.vpos() >= timing.total_height / 2;

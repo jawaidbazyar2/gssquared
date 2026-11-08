@@ -773,14 +773,13 @@ void OTI087::render(ss_video_buffer_t surface, ss_video_rect_t clip) {
                     surface.pixel(y, x) = ramdac.pixel_select(attribute.data[0x11]);
     // Blanking can begin inside the displayed rectangle. Fill intervals,
     // not individual pixels, so the common raster has no per-pixel test.
-    int const hb_start = crtc.horz_blank_start * dots * horizontal_multiplier() / pixel_divisor();
-    unsigned const hb = (crtc.horz_blank_end - crtc.horz_blank_start) & 63;
-    int const hb_end = hb_start + (hb ? hb : 64) * dots * horizontal_multiplier() / pixel_divisor();
+    int const hb_start = horizontal_blank_first() * dots * horizontal_multiplier() / pixel_divisor();
+    int const hb_end = hb_start + horizontal_blank_length() * dots * horizontal_multiplier() / pixel_divisor();
     for (int y = bounds.top; y <= bounds.bottom; ++y) {
         // Probe vertical blank separately from horizontal blank at x=0.
         unsigned const line = y / ((get_interlace_mode() ? 2 : 1) * vertical_divisor());
         unsigned const vt = crtc.vert_total + 2;
-        if ((line + vt - crtc.vert_blank_start % vt) % vt < vertical_blank_length())
+        if ((line + vt - vertical_blank_first() % vt) % vt < vertical_blank_length())
             surface.fill(0xff000000, {bounds.left, bounds.right, y, y});
         else {
             surface.fill(0xff000000, ss_video_rect_t{hb_start, hb_end - 1, y, y}.intersect(bounds));
@@ -803,10 +802,9 @@ bool OTI087::render_packed_frame(ss_video_buffer_t surface) {
         return false;
     // The row-reuse path assumes the active rectangle is outside blanking.
     // Nonstandard blank windows use the same interval renderer as other modes.
-    unsigned const hblank = (crtc.horz_blank_end - crtc.horz_blank_start) & 63;
-    if (crtc.horz_blank_start <= crtc.horz_disp_end || crtc.vert_blank_start <= crtc.vert_disp_end ||
-        crtc.horz_blank_start + (hblank ? hblank : 64) > crtc.horz_total + 5 ||
-        crtc.vert_blank_start + vertical_blank_length() > crtc.vert_total + 2u)
+    if (horizontal_blank_first() <= crtc.horz_disp_end || vertical_blank_first() <= crtc.vert_disp_end ||
+        horizontal_blank_first() + horizontal_blank_length() > crtc.horz_total + 5u ||
+        vertical_blank_first() + vertical_blank_length() > crtc.vert_total + 2u)
         return false;
     // Row reuse needs ordered start-address changes beginning at line zero.
     // Reject ambiguous spans so the general renderer handles them instead.

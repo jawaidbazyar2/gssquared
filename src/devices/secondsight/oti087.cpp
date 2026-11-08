@@ -128,12 +128,14 @@ uint8_t OTI087::io_read_impl(uint32_t port) {
                 // Blank-end registers store only low counter bits. Subtract
                 // modulo that width, treating zero as a full wrap, then test
                 // distance from blank start. This handles blank intervals
-                // that cross the end of a line or frame.
+                // that cross the end of a line or frame. Status follows the
+                // horizontal register count (IBM VGA/XGA TRM p. 2-57); only
+                // the output blanking comes one character later.
                 int const hb_len = (crtc.horz_blank_end - crtc.horz_blank_start) & 63;
                 int const ht = crtc.horz_total + 5;
                 bool const hb = (hchar + ht - crtc.horz_blank_start % ht) % ht <
                                 (hb_len ? hb_len : 64);
-                bool const vb = (field_y + vt - crtc.vert_blank_start % vt) % vt < int(vertical_blank_length());
+                bool const vb = (field_y + vt - vertical_blank_first() % vt) % vt < int(vertical_blank_length());
                 bool const de = hchar < crtc.disp_enable_skew ||
                                 hchar > crtc.horz_disp_end + crtc.disp_enable_skew || field_y > crtc.vert_disp_end;
                 return (hb || vb || de ? 1 : 0) | (vertical_retrace() ? 8 : 0);
@@ -546,20 +548,24 @@ bool OTI087::vertical_retrace() {
     // OTI p40: odd-field vertical retrace starts at the character
     // position in index15, rather than invariably half a scan line.
     int const phase = odd ? odd_field_sync_phase() : 0;
-    int const length = (crtc.vert_retrace_end - crtc.vert_retrace_start) & 15;
+    int const lines = crtc.vert_total + 2;
+    if (int(crtc.vert_retrace_start) >= lines)
+        return false;
+    int const length = retrace_length(crtc.vert_retrace_start, crtc.vert_retrace_end & 15, 15, lines);
     int const position = field_y * ht + hpos();
     int const sync_start = crtc.vert_retrace_start * vertical_divisor() * ht + phase;
-    return (position + vt * ht - sync_start % (vt * ht)) % (vt * ht) <
-           (length ? length : 16) * int(vertical_divisor()) * ht;
+    return !length || (position + vt * ht - sync_start % (vt * ht)) % (vt * ht) <
+           length * int(vertical_divisor()) * ht;
 }
 
 // IBM VGA/XGA p2-60: horizontal retrace delay shifts both pulse edges.
 int OTI087::hsync_r() const {
-    unsigned const h = hpos() * pixel_divisor() / (char_dots() * horizontal_multiplier());
-    unsigned const total = crtc.horz_total + 5;
-    unsigned const start = (crtc.horz_retrace_start + crtc.horz_retrace_skew) % total;
-    unsigned const width = (crtc.horz_retrace_end - crtc.horz_retrace_start) & 31;
-    bool const active = crtc.sync_en && (h + total - start) % total < (width ? width : 32);
+    int const h = hpos() * pixel_divisor() / (char_dots() * horizontal_multiplier());
+    int const total = crtc.horz_total + 5;
+    int const start = (crtc.horz_retrace_start + crtc.horz_retrace_skew) % total;
+    int const width = retrace_length(crtc.horz_retrace_start, crtc.horz_retrace_end & 31, 31, total);
+    bool const active = crtc.sync_en && crtc.horz_retrace_start < total &&
+                        (!width || (h + total - start) % total < width);
     return active ^ bit(miscellaneous_output, 6);
 }
 
@@ -576,18 +582,14 @@ int OTI087::vsync_r() {
     return vertical_retrace() ^ bit(miscellaneous_output, 7) ^ bit(ext[3], 5);
 }
 
-// Test horizontal and vertical blank intervals with their hardware wraparound.
-// Vertical blank covers Start Vertical Blanking up to the line whose low
-// eight bits equal End Vertical Blanking, like horizontal blank. IBM p. 2-73
-// gives two different rules; with this one, an end on the last line keeps
-// line 0 visible.
+// Test the output blank intervals (horizontal_blank_first) with their
+// counter wraparound.
 bool OTI087::blanked(int x, int y) const {
     int const ht = crtc.horz_total + 5, vt = crtc.vert_total + 2;
     int const hx = x * pixel_divisor() / (char_dots() * horizontal_multiplier());
     int const vy = y / ((bit(ext[0x14], 7) ? 2 : 1) * vertical_divisor());
-    int const hb = (crtc.horz_blank_end - crtc.horz_blank_start) & 63;
-    return (hx + ht - crtc.horz_blank_start % ht) % ht < (hb ? hb : 64) ||
-           (vy + vt - crtc.vert_blank_start % vt) % vt < int(vertical_blank_length());
+    return (hx + ht - horizontal_blank_first() % ht) % ht < int(horizontal_blank_length()) ||
+           (vy + vt - vertical_blank_first() % vt) % vt < int(vertical_blank_length());
 }
 
 // Allocate board VRAM and establish chip state before any firmware access.

@@ -83,7 +83,7 @@ static void mode(OTI087 &v, bool packed = false, bool c256 = true) {
     v.reset();
     enable(v);
     v.io_w(0x3c6, 255);
-    cr(v, 0x11, 0); cr(v, 0, 15); cr(v, 1, 7); cr(v, 2, 8); cr(v, 3, 20);
+    cr(v, 0x11, 0); cr(v, 0, 15); cr(v, 1, 7); cr(v, 2, 8); cr(v, 3, 19);
     cr(v, 4, 12); cr(v, 5, 16); cr(v, 6, 14); cr(v, 7, 0x10);
     cr(v, 8, 0); cr(v, 9, 0x40); cr(v, 0x10, 12); cr(v, 0x11, 0x1e);
     cr(v, 0x12, 7); cr(v, 0x13, 4); cr(v, 0x14, 31); cr(v, 0x15, 9);
@@ -628,13 +628,13 @@ static void address_checks() {
 static void display_control_checks() {
     OTI087 v; mode(v);
     for(unsigned a=0;a<2048;++a) v.mem_linear_w(a,1);
-    // Blanking is independent of display end (IBM pp2-58/73). Vertical
-    // blank begins at its start register and also blanks the line its end
-    // register names: End = Start - 1 + Width (IBM p2-73).
+    // Blanking is independent of display end (IBM pp2-58/73). Output
+    // blanking begins one count after its start register and ends with the
+    // count its end register names (OTI087::horizontal_blank_first).
     cr(v,2,2); cr(v,3,4); cr(v,0x15,2); cr(v,0x16,4);
     auto pixels=frame(v);
     for(unsigned y=0;y<8;++y) for(unsigned x=0;x<32;++x)
-        EQ(pixels[y*32+x],(x>=8&&x<16)||(y>=2&&y<=4) ? color(0) : color(1));
+        EQ(pixels[y*32+x],(x>=12&&x<20)||(y>=3&&y<=4) ? color(0) : color(1));
     beam(v,3,0); EQ(v.io_r(0x3da)&1,1); beam(v,6,0); EQ(v.io_r(0x3da)&1,0);
     // Sync skew changes the pulse edges; screen off keeps those pulses.
     mode(v); cr(v,5,0x30); beam(v,0,48); EQ(v.hsync_r(),0);
@@ -643,7 +643,7 @@ static void display_control_checks() {
     // The mid-line screen-off preserves the part already scanned.
     EQ(pixels[0],color(1)); EQ(pixels[32],color(0));
     // Restore at frame start so the following checks use a constant mode.
-    mode(v); cr(v,3,0x34); attr(v,0x11,0x2a); pixels=frame(v);
+    mode(v); cr(v,3,0x33); attr(v,0x11,0x2a); pixels=frame(v);
     EQ(pixels[0],color(0x2a)); EQ(pixels[4],color(1));
     // PS and Color Select replace P5:P4 and supply P7:P6 (IBM pp2-92/96).
     mode(v,false,false); for(unsigned a=0;a<2048;++a) v.mem_linear_w(a,0);
