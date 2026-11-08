@@ -481,8 +481,9 @@ static const float normalized_levels[16] = {
                         
                         // State machine logic
                         if (chip.envelope_hold) {
-                            // Do nothing when in hold state
-                            return;
+                            // A held envelope stops on this chip only. Go on to
+                            // the other chip: it has its own envelope.
+                            continue;
                         }
                         
                         if (chip.envelope_attack) {
