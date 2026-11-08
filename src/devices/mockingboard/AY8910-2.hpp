@@ -415,15 +415,16 @@ static const float normalized_levels[16] = {
                         continue;
                     }
 
-                    if (channel.counter > 0) {
-                        channel.counter--;
-                        // Check for half period
-                        if (channel.counter == channel.period / 2) {
-                            channel.output = !channel.output;
-                        }
-                    } else {
-                        // Reset counter and toggle output
-                        channel.counter = channel.period;
+                    // Tone period TP (R0-R5, 12 bits). The AY-3-8910 data sheet
+                    // gives f = fCLOCK / (16 * TP), so the output flips every
+                    // 8 * TP master clocks. One call here is one chip cycle of 16
+                    // master clocks, so the counter adds 2 (in units of 8 clocks)
+                    // and flips each time it passes TP. This keeps the exact
+                    // frequency for an odd TP, where a half wave is not a whole
+                    // number of chip cycles.
+                    channel.counter += 2;
+                    while (channel.counter >= channel.period) {
+                        channel.counter -= channel.period;
                         channel.output = !channel.output;
                     }
                 }
