@@ -96,6 +96,11 @@ private:
     // frame: lock_since is the card frame of the change.
     bool out_of_range = false, lock_candidate = true;
     uint64_t lock_since = 0;
+    // A mode that needs a back-panel control turned gets one short notice:
+    // hold_line and hold_field are its rates, 0 for no such mode.
+    double hold_line = 0, hold_field = 0;
+    uint64_t hold_since = 0;
+    bool hold_shown = false;
     // The LCD monitor's controller and the picture shape of its last Auto.
     ss_lcd::Monitor lcd;
     ss_monitor::LcdShape lcd_shape;

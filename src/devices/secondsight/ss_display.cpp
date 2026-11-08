@@ -22,6 +22,8 @@
 #include "videosystem.hpp"
 #include "util/SystemSettings.hpp"
 #include <algorithm>
+#include <string>
+#include <utility>
 
 // Attach card rendering and input routing to the existing video system.
 SecondSightDisplay::SecondSightDisplay(computer_t *computer, SSCard &card)
@@ -133,20 +135,61 @@ SDL_Texture *SecondSightDisplay::prepare_texture(SDL_Renderer *dest, Texture &te
         lock_candidate = scan.locked;
         lock_since = video.frame_number();
     }
+    const double field_hz = fields / timing.frame_period();
     if (lock_candidate == out_of_range && video.frame_number() >= lock_since + 2) {
         out_of_range = !lock_candidate;
         if (out_of_range) {
             // The event keeps this pointer until the heads-up display copies the text.
-            static char message[96];
+            static char message[128];
             const char *name = on_lcd ? "VGA LCD" : video.vga_monitor() ? "VGA CRT" : "AppleColor RGB";
-            if (on_lcd && !signal.present)
-                snprintf(message, sizeof message, "Second Sight %s monitor: no signal", name);
-            else
-                snprintf(message, sizeof message, "Second Sight %s monitor: out of range (%.2f kHz, %.2f Hz)",
-                    name, line_hz / 1000.0, fields / timing.frame_period());
+            if (on_lcd && !signal.present) {
+                snprintf(message, sizeof message, "Second Sight %s: no signal", name);
+            } else if (scan.no_sync) {
+                snprintf(message, sizeof message, "Second Sight %s: no sync, the card sends no sync pulses", name);
+            } else if (scan.bad_sync) {
+                snprintf(message, sizeof message, "Second Sight %s: no sync, %s", name,
+                    (video.misc_output() & 0x40) ? "VSync must be positive" : "HSync must be negative");
+            } else if (on_lcd) {
+                snprintf(message, sizeof message, "Second Sight %s: out of range (%.2f kHz, %.2f Hz)", name,
+                    line_hz / 1000.0, field_hz);
+            } else {
+                // Name the rate the monitor cannot follow, with the range it takes.
+                const auto &limits = video.vga_monitor() ? ss_monitor::vga_limits : ss_monitor::applecolor_limits;
+                const bool line_out = line_hz < limits.line_min || line_hz > limits.line_max;
+                const bool field_out = field_hz < limits.field_min || field_hz > limits.field_max;
+                char line[48] = "", field[48] = "";
+                if (line_out || !field_out)
+                    snprintf(line, sizeof line, "lines %.2f kHz (%.2f-%.2f)", line_hz / 1000.0,
+                        limits.line_min / 1000.0, limits.line_max / 1000.0);
+                if (field_out || !line_out)
+                    snprintf(field, sizeof field, "fields %.1f Hz (%.1f-%.1f)", field_hz, limits.field_min,
+                        limits.field_max);
+                snprintf(message, sizeof message, "Second Sight %s: out of range, %s%s%s", name, line,
+                    *line && *field ? ", " : "", field);
+            }
             fprintf(stderr, "%s\n", message);
             computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, message));
         }
+    }
+    if (!scan.h_hold && !scan.v_hold && !scan.v_height) {
+        hold_line = hold_field = 0;
+    } else if (line_hz != hold_line || field_hz != hold_field) {
+        hold_line = line_hz;
+        hold_field = field_hz;
+        hold_since = video.frame_number();
+        hold_shown = false;
+    }
+    if (hold_line && !hold_shown && !out_of_range && video.frame_number() >= hold_since + 2) {
+        hold_shown = true;
+        std::string controls;
+        for (const auto &[turned, name] : {std::pair{scan.h_hold, "H-HOLD"}, {scan.v_hold, "V-HOLD"},
+                 {scan.v_height, "V-HEIGHT"}})
+            if (turned) controls += (controls.empty() ? "" : ", ") + std::string(name);
+        static char notice[128];
+        snprintf(notice, sizeof notice, "Second Sight AppleColor RGB: this mode needs %s adjusted (%.2f kHz, %.2f Hz)",
+            controls.c_str(), line_hz / 1000.0, field_hz);
+        fprintf(stderr, "%s\n", notice);
+        computer->event_queue->addEvent(new Event(EVENT_SHOW_MESSAGE, 0, notice));
     }
     const auto &horizontal = scan.horizontal, &vertical = scan.vertical;
     // An LCD has no scan lines and shows the fields of an interlaced signal woven.
