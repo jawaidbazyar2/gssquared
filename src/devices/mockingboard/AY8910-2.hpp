@@ -111,7 +111,6 @@ static const float normalized_levels[16] = {
         static constexpr double MASTER_CLOCK = /* 1020500.0 */ 1020484.0; // 1MHz
         static constexpr int CLOCK_DIVIDER = 16;
         static constexpr double CHIP_FREQUENCY = MASTER_CLOCK / CLOCK_DIVIDER; // 62.5kHz
-        static constexpr int ENVELOPE_CLOCK_DIVIDER = 256;  // First stage divider for envelope
         static constexpr float FILTER_CUTOFF = 0.3f; // Filter coefficient (0-1) (lower is more aggressive)
         
         float get_volume(uint8_t volsetting) {
@@ -120,7 +119,7 @@ static const float normalized_levels[16] = {
 
     public:
         AY8910s(std::vector<float>* buffer, NClock *clock, AudioSystem *audio_system /* , InterruptController *irq_control, uint8_t slot */) 
-            : current_time(0.0), time_accumulator(0.0), envelope_time_accumulator(0.0), audio_buffer(buffer), audio_system(audio_system) {
+            : current_time(0.0), time_accumulator(0.0), audio_buffer(buffer), audio_system(audio_system) {
             // Initialize per-chip bus address latch to "invalid / no register
             // selected" so writes without a preceding LATCH are ignored
             // (matches AY8913 power-on/reset behavior; audited by mb-audit
@@ -452,17 +451,25 @@ static const float normalized_levels[16] = {
                     chip.noise_output = (chip.noise_rng & 1) != 0;  // Use LSB of RNG as noise output
                 }
             }
+            // The envelope period counter also counts chip cycles (master
+            // clock / 16), so step it here, once per chip cycle.
+            processEnvelope();
         }
         
-        // Process envelope generator at correct rate
-        void processEnvelope(double time_step) {
+        // Envelope generator. The envelope period EP (R11 low byte, R12 high
+        // byte) counts chip cycles. Each time the count reaches EP, the envelope
+        // moves one of its 16 levels, so one full ramp is 16 * 16 * EP master
+        // clocks: the AY-3-8910 data sheet's f = fCLOCK / (256 * EP). Keep this
+        // step exact. Music often runs the envelope at audio rate as a bass or
+        // buzz voice, and a coarser step clock plays those notes off key.
+        void processEnvelope() {
             for (int c = 0; c < 2; c++) {
                 AY3_8910& chip = chips[c];
                 
                 if (chip.envelope_period > 0) {
                     // Update envelope counter at the correct rate
                     chip.envelope_counter++;
-                    if (chip.envelope_counter >= (chip.envelope_period / 16)) {
+                    if (chip.envelope_counter >= chip.envelope_period) {
                         chip.envelope_counter = 0;
                         
                         // Extract control bits
@@ -558,26 +565,17 @@ static const float normalized_levels[16] = {
             
             const double output_time_step = 1.0f / OUTPUT_SAMPLE_RATE_INT;
             const double chip_time_step = 1.0 / CHIP_FREQUENCY;
-            const double envelope_base_frequency = MASTER_CLOCK / ENVELOPE_CLOCK_DIVIDER;
-            const double envelope_base_time_step = 1.0 / envelope_base_frequency;
             
             for (int i = 0; i < num_samples; i++) {
                 // Track current time based on the sample index and output time step
                 double sample_time = current_time + (i * output_time_step);
                 time_accumulator += output_time_step;
-                envelope_time_accumulator += output_time_step;
                 
                 // Process all chip cycles that should occur during this output sample
                 while (time_accumulator >= chip_time_step) {
                     double cycle_time = sample_time - time_accumulator;
                     processChipCycle(cycle_time);
                     time_accumulator -= chip_time_step;
-                }
-                
-                // Process envelope at the correct rate (master_clock / 256)
-                while (envelope_time_accumulator >= envelope_base_time_step) {
-                    processEnvelope(envelope_base_time_step);
-                    envelope_time_accumulator -= envelope_base_time_step;
                 }
                 
                 // Do envelope interpolation at audio rate. This makes changes to envelope levels transition smoothly on a per-sample basis.
@@ -796,7 +794,6 @@ static const float normalized_levels[16] = {
     private:
         double current_time;
         double time_accumulator;
-        double envelope_time_accumulator;  // New accumulator for envelope timing
         std::deque<RegisterEvent> pending_events;
         std::vector<float>* audio_buffer;  // Pointer to external audio buffer
         AudioSystem *audio_system = nullptr;  // Shared audio settings (decorrelation, etc.)
