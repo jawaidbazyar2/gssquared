@@ -111,7 +111,6 @@ static const float normalized_levels[16] = {
         static constexpr double MASTER_CLOCK = /* 1020500.0 */ 1020484.0; // 1MHz
         static constexpr int CLOCK_DIVIDER = 16;
         static constexpr double CHIP_FREQUENCY = MASTER_CLOCK / CLOCK_DIVIDER; // 62.5kHz
-        static constexpr int ENVELOPE_CLOCK_DIVIDER = 256;  // First stage divider for envelope
         static constexpr float FILTER_CUTOFF = 0.3f; // Filter coefficient (0-1) (lower is more aggressive)
         
         float get_volume(uint8_t volsetting) {
@@ -120,7 +119,7 @@ static const float normalized_levels[16] = {
 
     public:
         AY8910s(std::vector<float>* buffer, NClock *clock, AudioSystem *audio_system /* , InterruptController *irq_control, uint8_t slot */) 
-            : current_time(0.0), time_accumulator(0.0), envelope_time_accumulator(0.0), audio_buffer(buffer), audio_system(audio_system) {
+            : current_time(0.0), time_accumulator(0.0), audio_buffer(buffer), audio_system(audio_system) {
             // Initialize per-chip bus address latch to "invalid / no register
             // selected" so writes without a preceding LATCH are ignored
             // (matches AY8913 power-on/reset behavior; audited by mb-audit
@@ -183,11 +182,31 @@ static const float normalized_levels[16] = {
                 chips[c].registers[Mixer_Control] = 0x3F; // channels disabled
                 chips[c].live_registers[Mixer_Control] = 0x3F; // channels disabled
                 chips[c].mixer_control = 0x3F; // channels disabled
+                // With tone and noise both disabled the mixer passes the level
+                // straight through, so stale volumes would become a DC step.
+                for (int i = 0; i < 3; i++) {
+                    chips[c].tone_channels[i].period = 0;
+                    chips[c].tone_channels[i].counter = 1;
+                    chips[c].tone_channels[i].output = false;
+                    chips[c].tone_channels[i].volume = 0;
+                    chips[c].tone_channels[i].use_envelope = false;
+                }
+                chips[c].noise_period = 1;
+                chips[c].noise_output = false;
+                chips[c].envelope_period = 0;
+                chips[c].envelope_shape = 0;
+                chips[c].envelope_counter = 0;
+                chips[c].envelope_output = 0;
+                chips[c].envelope_hold = false;
+                chips[c].envelope_attack = false;
+                chips[c].current_envelope_level = 0.0f;
+                chips[c].target_envelope_level = 0.0f;
                 // Invalidate the AY register-address latch on reset (see
                 // constructor comment). Any value >= AY_8913_REGISTER_COUNT
                 // serves as the sentinel for "no register selected".
                 reg_num[c] = 0xFF;
             }
+            pending_events.clear();
             // Zero the R-channel decorrelation delay line so reset produces
             // a clean output with no residual samples from the previous run.
             for (size_t i = 0; i < MONO_DECORR_DELAY; i++) r_delay_buf[i] = 0.0f;
@@ -396,15 +415,16 @@ static const float normalized_levels[16] = {
                         continue;
                     }
 
-                    if (channel.counter > 0) {
-                        channel.counter--;
-                        // Check for half period
-                        if (channel.counter == channel.period / 2) {
-                            channel.output = !channel.output;
-                        }
-                    } else {
-                        // Reset counter and toggle output
-                        channel.counter = channel.period;
+                    // Tone period TP (R0-R5, 12 bits). The AY-3-8910 data sheet
+                    // gives f = fCLOCK / (16 * TP), so the output flips every
+                    // 8 * TP master clocks. One call here is one chip cycle of 16
+                    // master clocks, so the counter adds 2 (in units of 8 clocks)
+                    // and flips each time it passes TP. This keeps the exact
+                    // frequency for an odd TP, where a half wave is not a whole
+                    // number of chip cycles.
+                    channel.counter += 2;
+                    while (channel.counter >= channel.period) {
+                        channel.counter -= channel.period;
                         channel.output = !channel.output;
                     }
                 }
@@ -432,17 +452,25 @@ static const float normalized_levels[16] = {
                     chip.noise_output = (chip.noise_rng & 1) != 0;  // Use LSB of RNG as noise output
                 }
             }
+            // The envelope period counter also counts chip cycles (master
+            // clock / 16), so step it here, once per chip cycle.
+            processEnvelope();
         }
         
-        // Process envelope generator at correct rate
-        void processEnvelope(double time_step) {
+        // Envelope generator. The envelope period EP (R11 low byte, R12 high
+        // byte) counts chip cycles. Each time the count reaches EP, the envelope
+        // moves one of its 16 levels, so one full ramp is 16 * 16 * EP master
+        // clocks: the AY-3-8910 data sheet's f = fCLOCK / (256 * EP). Keep this
+        // step exact. Music often runs the envelope at audio rate as a bass or
+        // buzz voice, and a coarser step clock plays those notes off key.
+        void processEnvelope() {
             for (int c = 0; c < 2; c++) {
                 AY3_8910& chip = chips[c];
                 
                 if (chip.envelope_period > 0) {
                     // Update envelope counter at the correct rate
                     chip.envelope_counter++;
-                    if (chip.envelope_counter >= (chip.envelope_period / 16)) {
+                    if (chip.envelope_counter >= chip.envelope_period) {
                         chip.envelope_counter = 0;
                         
                         // Extract control bits
@@ -453,8 +481,9 @@ static const float normalized_levels[16] = {
                         
                         // State machine logic
                         if (chip.envelope_hold) {
-                            // Do nothing when in hold state
-                            return;
+                            // A held envelope stops on this chip only. Go on to
+                            // the other chip: it has its own envelope.
+                            continue;
                         }
                         
                         if (chip.envelope_attack) {
@@ -538,26 +567,17 @@ static const float normalized_levels[16] = {
             
             const double output_time_step = 1.0f / OUTPUT_SAMPLE_RATE_INT;
             const double chip_time_step = 1.0 / CHIP_FREQUENCY;
-            const double envelope_base_frequency = MASTER_CLOCK / ENVELOPE_CLOCK_DIVIDER;
-            const double envelope_base_time_step = 1.0 / envelope_base_frequency;
             
             for (int i = 0; i < num_samples; i++) {
                 // Track current time based on the sample index and output time step
                 double sample_time = current_time + (i * output_time_step);
                 time_accumulator += output_time_step;
-                envelope_time_accumulator += output_time_step;
                 
                 // Process all chip cycles that should occur during this output sample
                 while (time_accumulator >= chip_time_step) {
                     double cycle_time = sample_time - time_accumulator;
                     processChipCycle(cycle_time);
                     time_accumulator -= chip_time_step;
-                }
-                
-                // Process envelope at the correct rate (master_clock / 256)
-                while (envelope_time_accumulator >= envelope_base_time_step) {
-                    processEnvelope(envelope_base_time_step);
-                    envelope_time_accumulator -= envelope_base_time_step;
                 }
                 
                 // Do envelope interpolation at audio rate. This makes changes to envelope levels transition smoothly on a per-sample basis.
@@ -592,53 +612,22 @@ static const float normalized_levels[16] = {
                 for (int c = 0; c < 2; c++) {
     
                     const AY3_8910& chip = chips[c];
-#if 0
+                    // AY data sheet mixer: a channel conducts while its tone and
+                    // noise gates are both open; a disabled source is open. With
+                    // both disabled, the level register drives the output
+                    // directly, which is how samples are played.
                     for (int channel = 0; channel < 3; channel++) {
                         const ToneChannel& tone = chip.tone_channels[channel];
                         bool tone_dis  = (chip.mixer_control >> channel) & 1;       // 1 = disabled
                         bool noise_dis = (chip.mixer_control >> (channel + 3)) & 1; // 1 = disabled
-                    
-                        bool tone_gate  = tone.output  || tone_dis;   // disabled = forced open
-                        bool noise_gate = chip.noise_output || noise_dis;
-                    
-                        bool gate = tone_gate && noise_gate;           // AND logic
-                    
-                        float channel_output = gate ? tone.volume : 0.0f;
-                        mixed_output[c] += channel_output;
-                    }
-#endif
-#if 1
-                    for (int channel = 0; channel < 3; channel++) {
-                        const ToneChannel& tone = chip.tone_channels[channel];
-                        bool tone_enabled = !(chip.mixer_control & (1 << channel));
-                        bool noise_enabled = !(chip.mixer_control & (1 << (channel + 3)));
-    
-                        // Only process if the channel has volume
-                        // If either tone or noise is enabled for this channel
-                        bool is_tone = tone_enabled && tone.period > 0 && (chip.registers[Ampl_A + channel] > 0);
-                        bool is_noise = noise_enabled;
-    
-                        if (is_tone || is_noise) {
-                            // For tone: true = +volume, false = -volume
-                            float tone_contribution = tone.output ? tone.volume : 0 /* -tone.volume */;
-                            
-                            // For noise: true = +volume, false = -volume
-                            float noise_contribution = (chip.noise_output ? tone.volume : 0 /* -tone.volume */) /* * 0.6f */;
-                            float channel_output;
-    
-                            // If both are enabled, average them
-                            if (is_tone && is_noise) {
-                                channel_output = (tone_contribution + noise_contribution) /* * 0.5f */;
-                            } else if (is_tone) {
-                                channel_output = tone_contribution;
-                            } else if (is_noise) {
-                                channel_output = noise_contribution;
-                            }
-                            //channel_output = applyLowPassFilter(channel_output, c, channel);
-                            mixed_output[c] += channel_output;
+                        // The tone generator doesn't run at period 0, so tone.output is
+                        // frozen; gating on it turns volume changes into clicks.
+                        if (!tone_dis && tone.period == 0) {
+                            continue;
                         }
+                        bool gate = (tone.output || tone_dis) && (chip.noise_output || noise_dis);
+                        mixed_output[c] += gate ? tone.volume : 0.0f;
                     }
-#endif
                     
                 }
                 // TODO: add checks here to detect overdriving/exceeding -1.0/1.0.
@@ -807,7 +796,6 @@ static const float normalized_levels[16] = {
     private:
         double current_time;
         double time_accumulator;
-        double envelope_time_accumulator;  // New accumulator for envelope timing
         std::deque<RegisterEvent> pending_events;
         std::vector<float>* audio_buffer;  // Pointer to external audio buffer
         AudioSystem *audio_system = nullptr;  // Shared audio settings (decorrelation, etc.)

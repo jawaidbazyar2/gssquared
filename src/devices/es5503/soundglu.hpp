@@ -28,6 +28,8 @@ struct ensoniq_state_t {
     static constexpr uint32_t SDL_STAGING_CAP = 16384; // frames; >1 frame even at max DOC rate
     int16_t *sdl_resample_buf = nullptr;
     uint32_t sdl_device_rate = 48000;
+    // Browser audio consumes a complete ScriptProcessor buffer per callback.
+    uint32_t sdl_callback_frames = 0;
     double resample_pos = 0.0;       // fractional DOC-frame index carried across frames
     AudioSystem *audio_system = nullptr;
     SDL_AudioStream *stream = nullptr;

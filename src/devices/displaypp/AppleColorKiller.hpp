@@ -1,29 +1,38 @@
 #pragma once
 
+#include <algorithm>
+
 #include "VideoScannerII.hpp"
 
-// AppleColor Composite Monitor IIe color killer (issue #217).
-// The IIe emits colorburst on the burst window of a scanline. This monitor
-// decodes the first 6 burst lines as mono and starts color on the 7th, and it
-// keeps decoding color for 131 lines after burst stops (half of a 262-line
-// NTSC frame). The hold counts vertical-blank lines, so it expires during VBL
-// and the next picture starts mono.
+// AppleColor Composite Monitor IIe color killer (issues #217, #223).
+// The monitor's burst gate only sees the last two of the IIe's four burst
+// cycles (horz 15-16; the IIe emits burst on horz 13-16). It integrates burst
+// energy: each line adds the number of gated burst cycles (0-2), and each line
+// without burst bleeds the level off. Color turns on above kOnLevel and off
+// below kOffLevel.
+// Fit to hardware:
+//   100 full-burst lines then text: color holds 131 lines, gone by next frame (#217)
+//   VIDSYNC phase 0: graphics ends before horz 15, never color (#223)
+//   VIDSYNC phase 1 (1 gated cycle): color from box line ~25, mono ~14 lines after the box
+//   VIDSYNC phases 2-4 (2 gated cycles): color from box line ~12, mono ~40 lines after
+// Known gap: #217 (full-line graphics) turns color on at line 7 on hardware,
+// faster than VIDSYNC's full burst; this model gives line 13 for both.
+// Level units are quarter burst cycles.
 struct AppleColorKiller {
-    static constexpr int kOnDelay = 6;
-    static constexpr int kOffHold = 131;
+    static constexpr int kPerCycle = 4;
+    static constexpr int kDecay = 5;
+    static constexpr int kOnLevel = 24 * kPerCycle;
+    static constexpr int kOffLevel = 15 * kPerCycle;
+    static constexpr int kMaxLevel = 179 * kPerCycle;
 
     bool color = false;
-    int on_count = 0;
-    int off_count = 0;
+    int level = 0;
 
-    bool observe(bool emitted) noexcept {
-        if (emitted) {
-            off_count = 0;
-            if (!color && ++on_count > kOnDelay) color = true;
-        } else {
-            on_count = 0;
-            if (color && ++off_count > kOffHold) color = false;
-        }
+    bool observe(int burst_cycles) noexcept {
+        if (burst_cycles > 0) level = std::min(level + burst_cycles * kPerCycle, kMaxLevel);
+        else level = std::max(level - kDecay, 0);
+        if (!color && level > kOnLevel) color = true;
+        else if (color && level < kOffLevel) color = false;
         return color;
     }
 };
@@ -31,9 +40,15 @@ struct AppleColorKiller {
 // One observe() per scanline, including VBL blanks that never become picture lines.
 // After the line's emitted burst is known, color_mode.colorburst is the monitor decision.
 struct AppleColorBurstGate {
+    // The monitor gates the 3rd and 4th burst-window cycles.
+    static constexpr int kGateFirst = 2;
+    static constexpr int kGateCycles = 2;
+
     AppleColorKiller killer;
     bool line_noted = false;
     bool monitor_color = false;
+    int burst_cycles = 0;
+    int window_pos = 0;
 
     void begin_line() noexcept { line_noted = false; }
 
@@ -44,18 +59,26 @@ struct AppleColorBurstGate {
             line_noted = false;
             burst_latched = false;
         }
-        latch_colorburst(cm, burst_latched, flags);
+        if (flags & VS_FL_BURST_WIN) {
+            if (!burst_latched) {
+                burst_cycles = 0;
+                window_pos = 0;
+            }
+            if ((flags & VS_FL_COLORBURST) && window_pos >= kGateFirst) burst_cycles++;
+            window_pos++;
+            burst_latched = true;
+        }
         if (!line_noted && burst_latched && !(flags & VS_FL_BURST_WIN))
-            note(cm.colorburst && !suppress_burst);
+            note(suppress_burst ? 0 : burst_cycles);
         else if (!line_noted && mode_fallback && !burst_latched)
-            note(fallback_burst && !suppress_burst);
+            note((fallback_burst && !suppress_burst) ? kGateCycles : 0);
         if (line_noted)
             cm.colorburst = monitor_color ? 1 : 0;
     }
 
 private:
-    void note(bool emitted) noexcept {
+    void note(int cycles) noexcept {
         line_noted = true;
-        monitor_color = killer.observe(emitted);
+        monitor_color = killer.observe(cycles);
     }
 };

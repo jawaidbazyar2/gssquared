@@ -111,7 +111,7 @@ From [DevelopLog.md](DevelopLog.md), [AppleIIgs.md](AppleIIgs.md), [Compatibilit
 - [X] Split GR/text in Ludicrous Speed should be color/NTSC, not mono
 - [X] First pixel of HGR row disappears in Ludicrous Speed
 - [-] Mid-line text→hires transitions (Crazy Cycles-style) need correct monochrome bit emission
-- [ ] Make SHR work again in composite
+- [X] Make SHR work again in composite (made the special GS composite)
 - [X] Mono DHGR / graphics when `$C05E` active (incl. HIRES_NODELAY)
 - [ ] IIe/65816: missing composite SHR; ctrl-reset should reset video registers based on scanner, not platform
 - [ ] PAL //e broken (needs more scanlines; garbage/overrun)
@@ -240,7 +240,7 @@ From [CPUs.md](CPUs.md), [DevelopLog.md](DevelopLog.md), [Documentation.md](Docu
 - [ ] Audit address-mode edge cases across 6502 / 65c02 / 65816
 - [ ] Check 65c02 vs NMOS differences thoroughly
 - [ ] IIe reset conditions vs Understanding the Apple IIe tables 5.4 and 7.1
-- [ ] Bank latch / direct bank `$E1` tests and analysis
+- [X] Bank latch / direct bank `$E1` tests and analysis
 - [ ] MMU SoA + static aligned page table experiment (perf)
 - [ ] Address mask + debug OOB warnings on MMU
 - [X] Thunderclock: interrupts, writing clock, more testing
